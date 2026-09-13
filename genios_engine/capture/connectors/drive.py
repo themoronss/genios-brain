@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import re
 from datetime import datetime, timezone
 from typing import Any, Mapping
 
@@ -53,6 +54,31 @@ _FIELD_MASK_REJECTED = ("fields", "invalid_argument", "invalid argument", "unkno
 #: `composio_base.execute` deadline.
 _NEVER_RETRY = ("401", "403", "429", "unauthor", "unauthenticated", "forbidden", "permission",
                 "quota", "rate limit", "ratelimit", "expired", "timeout", "timed out")
+
+
+#: A native Google Doc: there are no bytes to download, only an export.
+GOOGLE_DOC_MIME = "application/vnd.google-apps.document"
+
+#: P5 · UNVERIFIED — the Composio action, its file-id argument and the export argument used to
+#: read a Google Doc as plain text. Kept in ONE constant so the live check changes one line. The
+#: Drive API itself is `files.export(fileId, mimeType="text/plain")`; whether Composio names it
+#: `GOOGLEDRIVE_EXPORT_FILE` with `file_id` / `mime_type` has not been run against the live
+#: broker. A wrong name raises inside `_transcript_raw`, which then lands an EMPTY export — the
+#: transcript is skipped, never ingested through the generic ORG path.
+DOC_TEXT_EXPORT: dict[str, Any] = {"action": "GOOGLEDRIVE_EXPORT_FILE", "file_id_arg": "file_id",
+                                   "args": {"mime_type": "text/plain"}}
+
+#: What a Meet transcript Doc is emitted as. Must equal capture/transcripts/ingest.DRIVE_OBJECT_TYPE;
+#: `sync_runner` diverts it to the transcript door.
+MEET_TRANSCRIPT_OBJECT_TYPE = "gmeet_transcript"
+#: UNVERIFIED — Meet names its transcript Docs "<meeting title> (<date time>) - Transcript" (and
+#: localised variants). A Google Doc whose name contains the word is treated as one.
+_TRANSCRIPT_NAME = re.compile(r"\btranscript\b", re.I)
+
+
+def is_meet_transcript(f: Mapping[str, Any]) -> bool:
+    return (str(f.get("mimeType") or "") == GOOGLE_DOC_MIME
+            and bool(_TRANSCRIPT_NAME.search(str(f.get("name") or ""))))
 
 
 def _rejects_the_field_mask(exc: BaseException) -> bool:
@@ -196,10 +222,38 @@ class ComposioDriveConnector:
         obj = self._to_raw(dict(file))
         return (obj,) if obj is not None else ()
 
+    def _transcript_raw(self, f: dict) -> RawObject:
+        """A Meet transcript Doc → a `gmeet_transcript` object carrying the EXPORTED text in
+        `raw.transcript_export` and an EMPTY body: `sync_runner` diverts it to the transcript door
+        (private to the meeting's attendees), and if anything ever routed it generically there
+        would be no text to extract under the knowledge family's ORG scope."""
+        fid = str(f.get("id"))
+        spec = DOC_TEXT_EXPORT
+        try:
+            dl = self._x.execute(spec["action"], {**spec["args"], spec["file_id_arg"]: fid})
+        except Exception:        # noqa: BLE001 — an export failure skips the transcript, not the page
+            dl = {}
+        body = _raw_bytes(dl if isinstance(dl, dict) else {})
+        exported = (body.decode("utf-8", errors="replace") if isinstance(body, (bytes, bytearray))
+                    else str(body or ""))
+        meta = file_metadata(f)
+        owner = meta["owner_email"] or meta["last_modified_by"]
+        return RawObject(
+            source="gdrive", object_type=MEET_TRANSCRIPT_OBJECT_TYPE, source_object_id=fid,
+            occurred_at=_parse_ts(f.get("createdTime") or f.get("modifiedTime")),
+            actor_email=owner, actor_type="internal_user",
+            content_version=str(f.get("modifiedTime")) if f.get("modifiedTime") else None,
+            raw={"subject": meta["name"], "body": "", "mime": GOOGLE_DOC_MIME,
+                 "transcript_export": {"text": exported, "file_id": fid, "name": meta["name"],
+                                       "owner_email": owner, "created_at": meta["created_at"],
+                                       "modified_at": meta["modified_at"]}})
+
     def _to_raw(self, f: dict) -> RawObject | None:
         fid = f.get("id")
         if not fid:
             return None
+        if is_meet_transcript(f):
+            return self._transcript_raw(f)
         mime, name = f.get("mimeType") or "", f.get("name") or ""
         dl = self._x.execute("GOOGLEDRIVE_DOWNLOAD_FILE", {"file_id": str(fid)})
         r = process_document(mime=mime, data=_raw_bytes(dl), filename=name, ocr=self._ocr)

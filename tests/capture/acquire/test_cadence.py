@@ -34,7 +34,7 @@ ORG = "org_cadence"
     ("gcal", 3600, "policy"),
     ("hubspot", 2 * 3600, "policy"),
     ("notion", 12 * 3600, "policy"),     # a quarterly page does not repay hourly listing
-    ("gdrive", 6 * 3600, "policy"),
+    ("gdrive", 3600, "policy"),          # P5: Meet transcript Docs within the hour
     ("database", 3600, "policy"),
     ("slack", 6 * 3600, "default"),      # unknown source → the historical global interval
 ])

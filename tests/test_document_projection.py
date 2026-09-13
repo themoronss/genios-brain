@@ -210,7 +210,10 @@ def test_the_pipeline_files_content_on_the_document_and_not_on_its_last_editor()
     does: a Drive file's sender is whoever last fixed a typo in it."""
     from genios_engine.context.pipeline import process_event
     source = inspect.getsource(process_event)
-    assert "content_subject = canon_node or document_node or sender_node" in source
+    # P5 slots a linked transcript's meeting between the document and the sender; the order this
+    # test protects — canon, then document, both ahead of the sender — is unchanged.
+    assert ("content_subject = canon_node or document_node or meeting_node or sender_node"
+            in source)
     # Resolve, never create. A Drive owner is usually a colleague who has written to nobody, and
     # minting a node for them would add a person with no observations and no edges — which every
     # other Layer 2 reading treats as somebody who has gone quiet.

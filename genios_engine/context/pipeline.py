@@ -23,6 +23,8 @@ from genios_engine.context.extract.extractor import Extraction, extract
 from genios_engine.context.graph_store import GraphStore
 from genios_engine.platform.config import get_settings
 from genios_engine.context.guard import _norm, annotate_grounding, keep_grounded
+from genios_engine.context.fact_visibility import strict_private_evidence
+from genios_engine.capture.documents.base import UNKNOWN_SPEAKER
 from genios_engine.context.correlation import correlate_event
 from genios_engine.context.canon import register_canon_node, resolve_canon_mention
 from genios_engine.context.documents import register_document_node, resolve_owner_node
@@ -827,7 +829,15 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
     facts = annotate_grounding(content, ex.fact_candidates)
     obs = annotate_grounding(content, ex.observations)
 
-    with store.engine.begin() as conn:          # one transaction (B7)
+    # P5 · A MEETING TRANSCRIPT (`raw.transcript`, written by capture/transcripts/ingest). Three
+    # rules change for it, and only for it: speakers resolve against the meeting's own speaker map
+    # (seeded below, never an org-wide name guess); a promise whose actor resolves to no speaker
+    # has NO owner (the uploader is not a fallback — `upload_routes` makes the uploader the
+    # event's sender); an undated promise is still a commitment. Its facts, work facts included,
+    # keep the event's private audience (`strict_private_evidence`).
+    transcript_meta = (canon_meta or {}).get("transcript") if isinstance(canon_meta, dict) else None
+    transcript_mode = isinstance(transcript_meta, dict)
+    with store.engine.begin() as conn, strict_private_evidence(transcript_mode):  # one txn (B7)
         version = store.bump_version(conn, org_id)
         name_to_node: dict[str, str] = {}
         #: node id -> the address that node was anchored on. See the write below.
@@ -932,6 +942,46 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         if sender_email:
             sender_node = _person(sender_email)
             nodes += 1
+
+        # P5 · SEED THE SPEAKERS. Each §3 speaker label (and its first name, where no other
+        # speaker shares it) maps to the person the ingest door matched against the meeting's
+        # attendees + the uploader — or to None, which is a real answer: a known label nobody
+        # could be matched to, so its promises get no owner. `speaker_keys` then keeps the entity
+        # loop below from re-resolving those names org-wide.
+        speaker_keys: set[str] = set()
+        meeting_node = None
+        if transcript_mode:
+            spk = [s for s in (transcript_meta.get("speakers") or []) if isinstance(s, dict)]
+            firsts: dict[str, set[str]] = {}
+            for s in spk:
+                lab = _norm(str(s.get("label") or ""))
+                if lab:
+                    firsts.setdefault(lab.split()[0], set()).add(lab)
+            for s in spk:
+                lab = _norm(str(s.get("label") or ""))
+                if not lab:
+                    continue
+                s_email = _norm_email(s.get("email"))
+                s_node = s.get("person_node_id") or None
+                if s_email and not s_node:
+                    s_node = _person(s_email)          # an attendee anchored by their address
+                elif s_node:
+                    touched.setdefault(s_node, "person")
+                if s_node and s_email:
+                    node_email[s_node] = s_email
+                keys = {lab} | ({lab.split()[0]} if len(firsts.get(lab.split()[0], ())) == 1
+                                else set())
+                for k in keys:
+                    name_to_node[k] = s_node
+                    speaker_keys.add(k)
+            name_to_node[_norm(UNKNOWN_SPEAKER)] = None
+            speaker_keys.add(_norm(UNKNOWN_SPEAKER))
+            mid = (transcript_meta.get("meeting") or {}).get("meeting_node_id")
+            if mid and conn.execute(text(
+                    "select 1 from graph_nodes where org_id=:o and node_id=:n "
+                    "and node_type='meeting' and valid_to is null"),
+                    {"o": org_id, "n": mid}).first() is not None:
+                meeting_node = mid
 
         # DOCUMENTS — a file becomes a node of its own, for exactly the reason canon does.
         #
@@ -1078,6 +1128,8 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             etype = str(e.get("type") or "person").strip().lower()
             email = _norm_email(e.get("email"))
             name = e.get("name")
+            if transcript_mode and name and _norm(str(name)) in speaker_keys:
+                continue      # a speaker is resolved against the meeting, never re-guessed here
             if etype == "person" and email:                  # anchored contact → real node
                 nid = store.find_or_create_node(
                     conn, org_id=org_id, node_type="person", canonical_key=email,
@@ -1166,7 +1218,9 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         # authoritative subject; above the sender because a Drive file's sender is whoever last
         # edited it, and filing a policy's contents on that colleague is the exact
         # facts-about-the-wrong-subject bug this seam already exists to fix.
-        content_subject = canon_node or document_node or sender_node
+        # A linked transcript's un-subjected content (a decision the room took) is about the
+        # MEETING, not about whoever uploaded the transcript.
+        content_subject = canon_node or document_node or meeting_node or sender_node
         fact_n = 0
 
         # DEAL NODES. `deal.*` facts used to land on whichever person happened to be the subject,
@@ -1567,8 +1621,8 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         # A machine sender is never "away".
         def _availability_subject(person: str | None) -> str | None:
             if person is None:
-                node = sender_node
-            elif "@" in person:
+                node = None if transcript_mode else sender_node    # a transcript's author is
+            elif "@" in person:                                     # not its every speaker
                 node = name_to_node.get(_norm(person)) or (
                     _person(person) if _norm_email(person) else None)
             else:
@@ -1611,9 +1665,14 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         for cm in ([] if auto_reply else keep_grounded(content, ex.commitments)):
             if not _is_a_promise(cm):
                 continue          # a question or an availability window, not an obligation
-            subj = _resolve_subject(cm.get("actor"), name_to_node, sender_node)
+            # P5 · a transcript's promise belongs to its SPEAKER: an actor that resolves to no
+            # speaker gets no owner (fallback None, never the uploader), and an undated promise is
+            # kept as a commitment without `due_at` rather than dropped. Other sources are
+            # unchanged (their undated promises still drop — flagged, an owner decision).
+            subj = _resolve_subject(cm.get("actor"), name_to_node,
+                                    None if transcript_mode else sender_node)
             due = parse_due(cm.get("due_text"), occurred_at) if occurred_at else None
-            if subj and due:
+            if subj and (due or transcript_mode):
                 cm_text = str(cm.get("evidence_text") or "").strip()
                 # The NORMALISED obligation ("share the updated deck"), with the verbatim quote
                 # kept as evidence. The extractor has always returned both and the pipeline read
@@ -1622,7 +1681,8 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                 # characters: "Deliver I'll be in PST starting this weekend, let's find som".
                 cm_action = str(cm.get("action") or "").strip() or cm_text
                 ck = "commitment:" + hashlib.sha1(
-                    f"{subj}:{_norm(cm_text)}:{due.date().isoformat()}".encode()).hexdigest()[:20]
+                    f"{subj}:{_norm(cm_text)}:{due.date().isoformat() if due else 'undated'}"
+                    .encode()).hexdigest()[:20]
                 cnode = store.find_or_create_node(
                     conn, org_id=org_id, node_type="commitment", canonical_key=ck,
                     display_name=(cm_action[:80] or "commitment"), event_id=event_id)
@@ -1631,6 +1691,13 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                                     occurred_at=occurred_at, event_id=event_id,
                                     evidence={"derived": "commitment actor"}, source=source,
                                     authority_rank=2):
+                    edge_n += 1
+                # P5 · where it was promised: commitment → raised_in → the meeting.
+                if meeting_node and store.write_edge(
+                        conn, org_id=org_id, edge_type="raised_in", from_node_id=cnode,
+                        to_node_id=meeting_node, confidence=0.95, occurred_at=occurred_at,
+                        event_id=event_id, evidence={"derived": "transcript meeting"},
+                        source=source, authority_rank=2):
                     edge_n += 1
                 # WHO OWNS IT, AS A FACT AND NOT ONLY AS AN EDGE.
                 #
@@ -1655,7 +1722,8 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                 owner_email = node_email.get(subj)
                 extra_facts = ((("commitment.owner", owner_email, "string"),)
                                if owner_email else ())
-                for fld, val, vt in (("commitment.due_at", due.isoformat(), "timestamp"),
+                dated = ((("commitment.due_at", due.isoformat(), "timestamp"),) if due else ())
+                for fld, val, vt in (*dated,
                                      ("commitment.text", cm_action, "string"),
                                      ("commitment.status", "open", "enum"),
                                      *extra_facts):
@@ -1677,14 +1745,15 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                 # relationship — while the promise itself lives on its own node where a second
                 # one cannot overwrite the first. The old mirror wrote the full promise here and
                 # collided; this writes a single derived timestamp that is meant to be latest-wins.
-                store.write_fact(conn, org_id=org_id, subject_node_id=subj,
-                                 field="commitment.last_due_at", value=due.isoformat(),
-                                 value_type="timestamp",
-                                 confidence=FACT_CONF_BY_RANK[2],
-                                 relevance=ex.relevance, occurred_at=due,
-                                 event_id=event_id,
-                                 evidence={"derived": "soonest open commitment"},
-                                 source=source, authority_rank=2)
+                if due is not None:                    # an undated promise has no soonest due
+                    store.write_fact(conn, org_id=org_id, subject_node_id=subj,
+                                     field="commitment.last_due_at", value=due.isoformat(),
+                                     value_type="timestamp",
+                                     confidence=FACT_CONF_BY_RANK[2],
+                                     relevance=ex.relevance, occurred_at=due,
+                                     event_id=event_id,
+                                     evidence={"derived": "soonest open commitment"},
+                                     source=source, authority_rank=2)
 
         # CORRELATION — the last thing in the same transaction, because a situation must
         # never reference nodes that rolled back. Anchors are the COUNTERPARTY only: our

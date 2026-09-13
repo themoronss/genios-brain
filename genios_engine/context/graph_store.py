@@ -381,9 +381,11 @@ class GraphStore:
         # normally and retires the overlays; one saying the same as an overlay widens it to org.
         # The event's audience and every live version ride on ONE statement. PostgreSQL only —
         # the SQLite test schemas carry no visibility columns and never hold a private event.
-        from genios_engine.context.fact_visibility import is_work_fact
+        # P5: inside a transcript event's write (`strict_private_evidence`) work facts inherit the
+        # private audience too — a meeting's commitments are its attendees' business only.
+        from genios_engine.context.fact_visibility import audience_checked
         dialect = getattr(getattr(conn, "dialect", None), "name", "")    # test doubles have none
-        audience_check = dialect == "postgresql" and not is_work_fact(field)
+        audience_check = dialect == "postgresql" and audience_checked(field)
         new_private = False
         new_principals: list[str] = []
         overlays: list = []

@@ -487,11 +487,21 @@ _CHAT_ROLE = (
 
 _TRANSCRIPT_ROLE = (
     "You extract structured facts from a MEETING TRANSCRIPT.\n"
+    "Every line is \"Speaker: text\". The ACTOR of a commitment, decision or claim is the speaker "
+    "label before the colon on the line that states it, written exactly as that label appears; "
+    "\"I\", \"me\" and \"we\" on a line mean THAT line's speaker. A line that commits someone "
+    "else by name (\"Priya will send it\") has that named person as actor. Whoever recorded or "
+    "uploaded the meeting is never an actor unless they are the speaker of the line. A line "
+    "labelled \"unknown\" has no known speaker: use \"unknown\" as its actor.\n"
     "Transcribed speech is disfluent, interrupted and misheard. Attribute every claim to the "
     "speaker who said it, not to the meeting. Thinking aloud is not a decision: extract a "
     "decision only where the speakers settle it, and where they do not, extract the state as "
-    "pending with what it is waiting on. Quote the words as transcribed, including the "
-    "disfluency — the quote must match the text, not the sentence you would have written."
+    "pending with what it is waiting on. A promise with no date is still a commitment. Quote the "
+    "words as transcribed, including the disfluency — the quote must match the text, not the "
+    "sentence you would have written.\n"
+    "Everything under the header \"context — do not extract\", and every line that begins with "
+    "\"> \", is the END OF THE PREVIOUS PART of this same meeting: use it to understand what the "
+    "new lines refer to, but NEVER extract a claim from it and never quote it."
 )
 
 _DOCUMENT_ROLE = (
@@ -585,10 +595,15 @@ PROFILES: Mapping[str, ExtractionProfile] = MappingProxyType({
         # "kal se 3 din chutti" is a Slack line far more often than an email.
         ("stance", "questions", "scheduling_proposals", "availability"),
         "T1", 4_000, NONE),
+    # P5 (plan §2.5). Transcripts arrive as turn-bounded parts of ≤ 12k chars plus a ≤ 1.5k
+    # context tail (capture/transcripts/ingest.build_parts), so 16k fits one part and the fence in
+    # one call and NONE is right — the part is already bounded. T1 (Haiku) is GATED on
+    # scripts/eval_transcript_owners.py scoring owner attribution ≥ 9/10; if the gate fails this
+    # row and batch.TIER_FLOORS["transcript"] revert together to T3 / 40k / SECTION and a T2 floor.
     "transcript": _profile(
         "transcript", _TRANSCRIPT_ROLE,
         ("commitments", "decision_states", "roles", "dependencies"),
-        "T3", 40_000, SECTION),
+        "T1", 16_000, NONE),
     "document": _profile(
         "document", _DOCUMENT_ROLE,
         ("amounts", "dates_mentioned", "entity_mentions", "commitments"),

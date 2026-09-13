@@ -92,7 +92,8 @@ BP_FULL = 10000
 #: floor only the router enforces is a floor the budget walks straight through. A document that
 #: cannot be afforded at T2 is REFUSED, not demoted to T1: an unread contract is a gap somebody
 #: notices, and a contract read badly is a wrong renewal date nobody notices until it renews.
-TIER_FLOORS = {"email": "T1", "chat": "T1", "crm_note": "T1", "document": "T2", "transcript": "T2",
+#: P5: `transcript` floors at T1 — bounded parts, owner attribution eval-gated (profiles.py).
+TIER_FLOORS = {"email": "T1", "chat": "T1", "crm_note": "T1", "document": "T2", "transcript": "T1",
                # P2 screen profiles: bounded parts, T1 by design (plan §4).
                "screen_session": "T1", "screen_generic": "T1"}
 

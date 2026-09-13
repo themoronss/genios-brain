@@ -21,7 +21,9 @@ ever written there.
 """
 from __future__ import annotations
 
-from typing import Iterable, Mapping
+from contextlib import contextmanager
+from contextvars import ContextVar
+from typing import Iterable, Iterator, Mapping
 
 from sqlalchemy import text
 
@@ -56,6 +58,33 @@ def is_work_fact(field: str | None) -> bool:
     if name in WORK_FACT_FIELDS:
         return True
     return any(entry.endswith(".") and name.startswith(entry) for entry in WORK_FACT_FIELDS)
+
+
+#: P5 · STRICT PRIVATE EVIDENCE. A meeting transcript is its attendees' conversation (plan §2.4,
+#: §7 "non-attendee sees nothing"): its commitments are exactly the work facts the rule above lets
+#: cross seats, so while Layer 2 writes a transcript event this flag makes EVERY field — work
+#: families included — inherit the event's private audience. Set by `context/pipeline.py` for the
+#: length of one transcript event's transaction; read by `GraphStore.write_fact`.
+_STRICT_PRIVATE: ContextVar[bool] = ContextVar("genios_strict_private_evidence", default=False)
+
+
+@contextmanager
+def strict_private_evidence(on: bool = True) -> Iterator[None]:
+    token = _STRICT_PRIVATE.set(bool(on))
+    try:
+        yield
+    finally:
+        _STRICT_PRIVATE.reset(token)
+
+
+def strict_private_active() -> bool:
+    return _STRICT_PRIVATE.get()
+
+
+def audience_checked(field: str | None) -> bool:
+    """Does a write of `field` inherit a private event's audience? Outside a strict transcript
+    write: every non-work field. Inside one: every field."""
+    return strict_private_active() or not is_work_fact(field)
 
 
 def _norm(emails: Iterable[str] | None) -> frozenset[str]:

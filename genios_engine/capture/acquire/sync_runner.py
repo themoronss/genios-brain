@@ -561,6 +561,21 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
             summary.scanned += len(batch.objects)
 
             def _cap(raw: RawObject):
+                # P5 · a Meet transcript Doc never takes the generic door (knowledge family → ORG
+                # scope). It goes to the transcript door, which lands it as PRIVATE parts for the
+                # meeting's attendees — or nothing, when the org has not opted in. Its result is
+                # the LIST of part results.
+                from genios_engine.capture.transcripts.ingest import (
+                    DRIVE_OBJECT_TYPE, ingest_connector_transcript)
+                if raw.object_type == DRIVE_OBJECT_TYPE:
+                    try:
+                        return raw, ingest_connector_transcript(
+                            raw, org_id=org_id, connection_id=connection_id, repo=repo,
+                            payload_store=payload_store, prepared_store=prepared_store,
+                            trace_repo=trace_repo, coverage_fn=coverage_fn, semantic=semantic,
+                            esqe=esqe), None
+                    except Exception as e:      # noqa: BLE001 — poison isolation, as below
+                        return raw, None, e
                 sk = sender_resolver(raw) if sender_resolver else False
                 res, err = _capture_bounded(raw, retries=2, org_id=org_id,
                                             connection_id=connection_id, repo=repo,
@@ -625,20 +640,28 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
                             source=raw.source, reason_code="poison_quarantine", stage="capture",
                             trace=[{"error": type(err).__name__, "detail": str(err)[:200]}]))
                     continue
-                summary.results.append(res)
-                setattr(summary, res.outcome, getattr(summary, res.outcome) + 1)
-                if res.gated is not None:
-                    summary.gated.append(res.gated)
-                if res.extraction_parked is not None and parked_store is not None:
-                    # S2 parks are separate from GATE parks: the event itself emitted, and this
-                    # row exists so a transport failure can be retried and a schema refusal can
-                    # be read. Dropping it because the event was fine would lose the only record
-                    # that a message reached the model and came back unusable.
-                    parked_store.add(res.extraction_parked)
-                if res.outcome == "parked" and parked_store is not None:
-                    reason = res.trace.records[-1].reason_code if res.trace.records else "unknown"
-                    parked_store.add(parked_from_trace(org_id, res.event.event_id,
-                                                       res.event.source, reason or "unknown", res.trace))
+                # P5 · a diverted transcript returns its part results — one object, several
+                # events — or [] when it was not ingested (org opted out, empty export).
+                results_of = res if isinstance(res, list) else [res]
+                if not results_of:
+                    summary.dropped += 1
+                for res in results_of:
+                    summary.results.append(res)
+                    setattr(summary, res.outcome, getattr(summary, res.outcome) + 1)
+                    if res.gated is not None:
+                        summary.gated.append(res.gated)
+                    if res.extraction_parked is not None and parked_store is not None:
+                        # S2 parks are separate from GATE parks: the event itself emitted, and
+                        # this row exists so a transport failure can be retried and a schema
+                        # refusal can be read. Dropping it because the event was fine would lose
+                        # the only record that a message reached the model and came back unusable.
+                        parked_store.add(res.extraction_parked)
+                    if res.outcome == "parked" and parked_store is not None:
+                        reason = (res.trace.records[-1].reason_code if res.trace.records
+                                  else "unknown")
+                        parked_store.add(parked_from_trace(org_id, res.event.event_id,
+                                                           res.event.source, reason or "unknown",
+                                                           res.trace))
                 if watermark is None or raw.watermark_at > watermark:
                     watermark = raw.watermark_at
             page_cursor = batch.next_cursor

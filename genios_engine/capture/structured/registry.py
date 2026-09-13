@@ -202,7 +202,10 @@ register(StructuredMapping(
             FieldMap("end", "meeting.end_at", "timestamp"),
             FieldMap("status", "meeting.status", "enum"),
             FieldMap("description", "meeting.description", "string"),
-            FieldMap("location", "meeting.location", "string")],
+            FieldMap("location", "meeting.location", "string"),
+            # P5 · how a Drive transcript Doc finds its meeting (capture/transcripts/link.py).
+            FieldMap("conferenceId", "meeting.conference_id", "string"),
+            FieldMap("attachment_file_ids", "meeting.attachment_file_ids", "string")],
     intent="scheduling_move", name_field="meeting.title",
     relations=[RelationMap("attendees", "person", "attended", "in", "email")],
     emit_on_change=["start", "status"]))

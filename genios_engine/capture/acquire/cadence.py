@@ -80,7 +80,9 @@ DEFAULT_CADENCE_POLICY = CadencePolicy(
         SourceCadence("gcal", 3600),
         SourceCadence("hubspot", 2 * 3600),
         SourceCadence("notion", 12 * 3600),
-        SourceCadence("gdrive", 6 * 3600),
+        # P5: hourly, so a Meet transcript Doc reaches its attendees' follow-up within the hour
+        # (the since-filter keeps an unchanged Drive to one list call per poll).
+        SourceCadence("gdrive", 3600),
         SourceCadence("database", 3600),
     ),
     #: the historical `sync_interval_hours` — an unknown source behaves exactly as it does today

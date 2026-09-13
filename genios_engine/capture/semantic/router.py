@@ -84,6 +84,9 @@ CHAT_OBJECT_TYPES: frozenset[str] = frozenset({
 TRANSCRIPT_OBJECT_TYPES: frozenset[str] = frozenset({
     "transcript", "meeting_transcript", "call_transcript", "recording", "call_recording",
     "voice_memo",
+    # P5: the per-platform spellings a connector may emit (Meet via Drive today; Zoom / Teams
+    # REST are P5.1). `meeting_transcript` is what the ingest door lands every part as.
+    "gmeet_transcript", "zoom_transcript", "msteams_transcript",
 })
 
 #: Sources whose every object is a meeting recording.

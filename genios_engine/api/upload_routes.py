@@ -306,11 +306,30 @@ def _row(r) -> dict:
 @router.post("/api/org/{org_id}/upload")
 async def upload_resource(org_id: str, background_tasks: BackgroundTasks,
                           file: UploadFile = File(...), tag: str | None = Form(None),
-                          scope: str = Form("company"),
+                          scope: str | None = Form(None),
+                          kind: str = Form("document"),
+                          provider: str | None = Form(None),
+                          calendar_event_id: str | None = Form(None),
+                          meeting_node_id: str | None = Form(None),
+                          meeting_title: str | None = Form(None),
+                          meeting_date: str | None = Form(None),
                           ctx: AuthCtx = Depends(_upload_ctx)) -> dict:
     """`scope` = company (default — org-visible, today's behaviour, canon for SOP/policy tags) or
-    personal (private to the uploading seat)."""
+    personal (private to the uploading seat).
+
+    `kind=transcript` (P5 §3): a meeting transcript — `scope` attendees (default) or personal,
+    linked to `meeting_node_id` › `calendar_event_id` › `meeting_title` + `meeting_date`."""
     org = ctx.org_id
+    if (kind or "document").strip().lower() == "transcript":
+        data = await file.read()
+        return _upload_transcript(
+            ctx, background_tasks, name=file.filename or "transcript.txt", data=data,
+            content_type=file.content_type or "", scope=scope, provider=provider,
+            calendar_event_id=calendar_event_id, meeting_node_id=meeting_node_id,
+            meeting_title=meeting_title, meeting_date=meeting_date)
+    if (kind or "document").strip().lower() != "document":
+        raise HTTPException(422, {"error": "invalid_kind",
+                                  "message": "kind must be document or transcript"})
     scope = (scope or "company").strip().lower()
     if scope not in UPLOAD_SCOPES:
         raise HTTPException(422, {"error": "invalid_scope",
@@ -470,6 +489,171 @@ async def upload_resource(org_id: str, background_tasks: BackgroundTasks,
     return {"file_id": file_id, "status": status, "chunks": len(chunks), "scope": scope}
 
 
+# ── P5 · transcripts ───────────────────────────────────────────────────────────────────────────
+TRANSCRIPT_SCOPES = ("attendees", "personal")
+
+
+def _retire_transcript_versions(org_id: str, transcript_id: str, keep_version: str) -> None:
+    """Before a transcript's new content version lands (a speaker re-map, a relink): retire what
+    its EARLIER versions extracted — facts and observations deleted, their edges closed — so a
+    corrected speaker map does not leave the old owner's commitment beside the new one. Nodes
+    stay (they may be shared); the new version re-asserts what is still true."""
+    like = f"%:meeting_transcript:{transcript_id}:part_%"
+    with _graph.engine.begin() as c:
+        evids = [r.event_id for r in c.execute(text(
+            "select event_id from source_events where org_id=:o and dedup_key like :p "
+            "and dedup_key not like :k"),
+            {"o": org_id, "p": like, "k": f"%:{keep_version}"})]
+        if not evids:
+            return
+        _graph.bump_version(c, org_id)
+        c.execute(text("delete from graph_facts where org_id=:o and created_by_event_id = any(:e)"),
+                  {"o": org_id, "e": evids})
+        c.execute(text("delete from graph_observations where org_id=:o "
+                       "and created_by_event_id = any(:e)"), {"o": org_id, "e": evids})
+        c.execute(text("update graph_edges set valid_to=now() where org_id=:o "
+                       "and created_by_event_id = any(:e) and valid_to is null"),
+                  {"o": org_id, "e": evids})
+
+
+def _transcript_doors(org: str):
+    """The upload door's stores, finalizer and warm lane, for the transcript door — the same
+    one-door path a document chunk takes."""
+    from genios_engine.capture.transcripts.ingest import TranscriptDoors
+    from genios_engine.platform import warm_lane
+    engine = getattr(_graph, "engine", None)
+
+    def finalize(results):
+        finalize_l1(ManualSweep(org_id=org, results=tuple(results), emitted=len(results),
+                                scanned=len(results)), org_id=org, stores=_l1_stores())
+
+    def enqueue(ids):
+        if engine is not None:
+            warm_lane.enqueue(engine, org, ids, source="upload")
+
+    return TranscriptDoors(repo=_repo, payload_store=_payloads, prepared_store=_prepared,
+                           trace_repo=_trace_repo, coverage_fn=make_coverage_fn(org),
+                           semantic=make_semantic_lane(org, engine=engine),
+                           esqe=make_esqe_stage(org, engine=engine), connection_id="upload",
+                           finalize=finalize, enqueue=enqueue,
+                           retire=_retire_transcript_versions)
+
+
+def _ingest_transcript_bg(org_id: str, transcript_id: str, file_id: str | None,
+                          event_ids: tuple[str, ...] = ()) -> None:
+    """Background: the full chain for the transcript's new part events, then `extracted` + the
+    upload row's counts. Best-effort, like `_ingest`."""
+    from genios_engine.capture.transcripts.ingest import set_status
+    try:
+        _run_chain_for_upload(org_id, file_id or transcript_id, tuple(event_ids))
+    except Exception:
+        _log.exception("transcript chain failed org=%s t=%s", org_id, transcript_id)
+    like = f"%:meeting_transcript:{transcript_id}:part_%"
+    try:
+        set_status(_graph.engine, org_id, transcript_id, "extracted")
+        if not file_id:
+            return
+        with _graph.engine.begin() as c:
+            facts = c.execute(text(
+                "select count(*) from graph_facts where org_id=:o and valid_to is null "
+                "and status='active' and created_by_event_id in (select event_id from "
+                "source_events where org_id=:o and dedup_key like :p)"),
+                {"o": org_id, "p": like}).scalar()
+            ents = c.execute(text(
+                "select count(*) from graph_nodes where org_id=:o and valid_to is null "
+                "and created_by_event_id in (select event_id from source_events "
+                "where org_id=:o and dedup_key like :p)"), {"o": org_id, "p": like}).scalar()
+            c.execute(text(
+                "update resource_uploads set status='indexed', facts_count=:f, entities_count=:e, "
+                "error=:err, processed_at=now() where org_id=:o and file_id=:fid"),
+                {"f": int(facts or 0), "e": int(ents or 0), "o": org_id, "fid": file_id,
+                 "err": None if _llm is not None else
+                 "Stored — AI extraction is currently disabled (no model configured)."})
+    except Exception:
+        _log.exception("transcript status update failed org=%s t=%s", org_id, transcript_id)
+
+
+def _upload_transcript(ctx: AuthCtx, background_tasks: BackgroundTasks, *, name: str, data: bytes,
+                       content_type: str, scope: str | None, provider: str | None,
+                       calendar_event_id: str | None, meeting_node_id: str | None,
+                       meeting_title: str | None, meeting_date: str | None) -> dict:
+    """`kind=transcript`. Idempotent on the content hash + scope + seat: the same bytes uploaded
+    again by the same seat under the same scope return the existing row and transcript."""
+    from datetime import date as _date
+
+    from genios_engine.capture.transcripts.ingest import (TranscriptError, ingest_transcript,
+                                                          load_row, transcript_id_for, view)
+    from genios_engine.capture.transcripts.parse import decode_transcript_bytes
+    org = ctx.org_id
+    scope = (scope or "attendees").strip().lower()
+    if scope not in TRANSCRIPT_SCOPES:
+        raise HTTPException(422, {"error": "invalid_scope",
+                                  "message": "a transcript's scope must be attendees or personal"})
+    if not (ctx.seat_id and ctx.email):
+        raise HTTPException(403, {"error": "seat_required",
+                                  "message": "a transcript upload needs a signed-in seat"})
+    day = None
+    if meeting_date:
+        try:
+            day = _date.fromisoformat(meeting_date.strip())
+        except ValueError:
+            raise HTTPException(422, {"error": "invalid_date",
+                                      "message": "meeting_date must be YYYY-MM-DD"}) from None
+    if _graph is None:
+        raise HTTPException(400, "graph store not configured")
+    if not data:
+        raise HTTPException(422, {"error": "empty_file", "message": "file is empty"})
+    if len(data) > MAX_BYTES:
+        raise HTTPException(413, {"error": "too_large", "message": "file exceeds 10 MiB"})
+    raw_hash = hashlib.sha256(data).hexdigest()
+    salt = f"{org}:transcript:{scope}:{ctx.seat_id}".encode()
+    file_id = "upl_" + hashlib.sha256(salt + b":" + data).hexdigest()[:24]
+    source_ref = f"{scope}:{ctx.seat_id}:{raw_hash}"
+    transcript_id = transcript_id_for(org, "upload", source_ref)
+    with _graph.engine.connect() as c:
+        existing = c.execute(text(
+            "select status, chunks from resource_uploads where org_id=:o and file_id=:f"),
+            {"o": org, "f": file_id}).first()
+        trow = load_row(c, org, transcript_id)
+    if existing is not None and trow is not None:
+        return {"file_id": file_id, "status": existing.status, "chunks": int(existing.chunks or 0),
+                "duplicate": True, "scope": scope, "kind": "transcript",
+                "transcript": view(trow)}
+    content = decode_transcript_bytes(data, filename=name, content_type=content_type,
+                                      ocr=make_ocr(org))
+    uploader = ctx.email.strip().lower()
+    try:
+        out = ingest_transcript(
+            _graph.engine, org_id=org, text_content=content, source="upload",
+            source_ref=source_ref, uploader_email=uploader, seat_id=ctx.seat_id,
+            doors=_transcript_doors(org), provider_hint=provider, filename=name,
+            meeting_node_id=meeting_node_id, calendar_event_id=calendar_event_id,
+            meeting_title=meeting_title, meeting_date=day, scope=scope, file_id=file_id,
+            crypto_key=get_settings().crypto_key or None)
+    except TranscriptError as exc:
+        raise HTTPException(422, {"error": exc.code, "message": str(exc)}) from None
+    t = out.transcript
+    with _graph.engine.begin() as c:
+        # No bytes on disk: the transcript's text is kept only encrypted (transcripts.enc_text)
+        # and inside the encrypted raw payloads, never as a plaintext file.
+        c.execute(text(
+            "insert into resource_uploads (file_id, org_id, file_name, file_type, "
+            "file_size_bytes, storage_path, tag, status, source_item_prefix, chunks, error, "
+            "uploaded_by, scope, seat_id, kind) values (:fid,:o,:fn,:ft,:sz,null,null,"
+            "'extracting',:pref,:ch,null,:by,:scope,:seat,'transcript') on conflict do nothing"),
+            {"fid": file_id, "o": org, "fn": name, "ft": _ext(name), "sz": len(data),
+             "pref": f"upload:meeting_transcript:{transcript_id}", "ch": int(t["parts"]),
+             "by": uploader, "scope": scope, "seat": ctx.seat_id})
+    background_tasks.add_task(_ingest_transcript_bg, org, transcript_id, file_id,
+                              tuple(out.emitted_ids))
+    from genios_engine.platform.audit import record
+    record(org, "data_accessed", actor_type="user", actor_id=uploader, target_type="transcript",
+           target_id=transcript_id, metadata={"file_name": name, "bytes": len(data),
+                                              "parts": t["parts"], "scope": scope})
+    return {"file_id": file_id, "status": "extracting", "chunks": int(t["parts"]),
+            "scope": scope, "kind": "transcript", "duplicate": out.duplicate, "transcript": t}
+
+
 @router.get("/api/org/{org_id}/uploads")
 def list_uploads(org_id: str, ctx: AuthCtx = Depends(_upload_ctx)) -> dict:
     """Company files to everyone who works here; a PERSONAL file only to the seat that uploaded it
@@ -499,10 +683,14 @@ def delete_upload(org_id: str, file_id: str, org: str = Depends(_upload_org),
         _may_change(ctx, c.execute(text(
             "select scope, seat_id from resource_uploads where org_id=:o and file_id=:f"),
             {"o": org, "f": file_id}).first())
+        # A transcript upload's events are keyed on its transcript id, every content version.
+        trn = c.execute(text("select transcript_id from transcripts where org_id=:o "
+                             "and file_id=:f limit 1"), {"o": org, "f": file_id}).scalar()
+        like_trn = f"%:meeting_transcript:{trn}:part_%" if trn else like_new
         evids = [r.event_id for r in c.execute(text(
             "select event_id from source_events where org_id=:o "
-            "and (dedup_key like :p or dedup_key like :p2)"),
-            {"o": org, "p": like_old, "p2": like_new})]
+            "and (dedup_key like :p or dedup_key like :p2 or dedup_key like :p3)"),
+            {"o": org, "p": like_old, "p2": like_new, "p3": like_trn})]
         if evids:
             # remove the facts learned from THIS file + its capture artifacts (raw payload,
             # prepared text, observations). Shared graph_nodes are left in place (they may
@@ -521,6 +709,9 @@ def delete_upload(org_id: str, file_id: str, org: str = Depends(_upload_org),
                       {"o": org, "e": evids})
             c.execute(text("delete from source_events where org_id=:o and event_id = any(:e)"),
                       {"o": org, "e": evids})
+        if trn:
+            c.execute(text("delete from transcripts where org_id=:o and transcript_id=:t"),
+                      {"o": org, "t": trn})
         c.execute(text("delete from resource_uploads where org_id=:o and file_id=:f"),
                   {"o": org, "f": file_id})
     try:
