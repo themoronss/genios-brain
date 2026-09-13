@@ -14,7 +14,8 @@ window for pushes that interrupt someone who is away. A moment is about what the
 at right now, so the default would only mute a person working late (or, with no timezone known,
 their whole Indian morning — the defect `deliver/gate.build_context` records). The window applies
 when a `delivery_preferences` row configures it for the seat (or '*') on `desktop` (or '*'), in
-that row's zone, else the org's.
+that row's zone, else the org's. It is evaluated with the shared `platform/quiet_hours.QuietWindow`
+(same rules as the delivery profile) — this Layer 4 module never imports Layer 6.
 """
 from __future__ import annotations
 
@@ -23,7 +24,10 @@ from datetime import datetime
 
 from sqlalchemy import text
 
-from genios_engine.deliver.timing import AttentionProfile
+from genios_engine.platform.quiet_hours import QuietWindow
+
+#: The delivery profile's defaults, for a configured window that leaves an hour unset.
+_DEFAULT_START, _DEFAULT_END = 21, 8
 
 SHADOW = "shadow"
 DND = "dnd"
@@ -44,26 +48,19 @@ class GuardState:
     shown_hour: int = 0
     shown_day: int = 0
     dnd: bool = False
-    quiet: AttentionProfile | None = None      # None = no quiet window configured
+    quiet: QuietWindow | None = None           # None = no quiet window configured
 
 
-def quiet_profile(prefs: dict | None, org_tz: str | None) -> AttentionProfile | None:
-    """A configured quiet window → its AttentionProfile; unconfigured or unusable → None."""
-    if not prefs or prefs.get("quiet_enabled") is None:
+def quiet_profile(prefs: dict | None, org_tz: str | None) -> QuietWindow | None:
+    """A configured quiet window → its QuietWindow; unconfigured or unusable → None."""
+    if not prefs or not prefs.get("quiet_enabled"):
         return None
-    if not prefs.get("quiet_enabled"):
-        return None
-    base = AttentionProfile()
-    tz = prefs.get("tz_name") or org_tz
+    start, end = prefs.get("quiet_start_hour"), prefs.get("quiet_end_hour")
     try:
-        return AttentionProfile(
-            timezone=str(tz or base.timezone), timezone_known=bool(tz), quiet_enabled=True,
-            quiet_start_hour=int(prefs.get("quiet_start_hour", base.quiet_start_hour)
-                                 if prefs.get("quiet_start_hour") is not None
-                                 else base.quiet_start_hour),
-            quiet_end_hour=int(prefs.get("quiet_end_hour") if prefs.get("quiet_end_hour")
-                               is not None else base.quiet_end_hour),
-            quiet_weekends=bool(prefs.get("quiet_weekends") or False))
+        return QuietWindow(timezone=str(prefs.get("tz_name") or org_tz or "UTC"),
+                           start_hour=int(start if start is not None else _DEFAULT_START),
+                           end_hour=int(end if end is not None else _DEFAULT_END),
+                           weekends=bool(prefs.get("quiet_weekends") or False))
     except (ValueError, TypeError):
         return None
 
@@ -76,7 +73,7 @@ def decide(state: GuardState, *, kind: str, priority: str, now: datetime) -> tup
     if state.dnd and not critical:
         return False, DND
     if (state.quiet is not None and not critical and kind != "reminder"
-            and state.quiet.is_quiet(now.astimezone(state.quiet.zone))):
+            and state.quiet.is_quiet_at(now)):
         return False, QUIET
     if kind != "reminder":
         if state.shown_hour >= state.max_per_hour:

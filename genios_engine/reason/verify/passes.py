@@ -15,6 +15,7 @@ Never credit-charged (D6). A failure is logged by the caller's hook, never fails
 from __future__ import annotations
 
 import hashlib
+import importlib
 import json
 from datetime import datetime, timezone
 
@@ -27,6 +28,7 @@ from genios_engine.reason.verify import store as V
 _log = get_logger("genios.verify")
 
 PASS_ID = "verify"
+EMIT_MODULE = "genios_engine.reason.team.emit"
 TTL_SECONDS = 7 * 86400
 BATCH = 200
 _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
@@ -159,8 +161,10 @@ def run(engine, card_store, org_id: str, *, now: datetime | None = None) -> int:
     now = now or datetime.now(timezone.utc)
     total = 0
     try:
-        from genios_engine.reason.team.emit import emit_situation
-    except ImportError:         # group A's emitter not merged yet → nothing to emit through
+        # By name, not a static import: group A's `reason/team/emit.py` (P4 §3.1) is a separate
+        # merge, and until it lands this pass must skip cleanly rather than fail to import.
+        emit_situation = importlib.import_module(EMIT_MODULE).emit_situation
+    except (ImportError, AttributeError):   # emitter not merged yet → nothing to emit through
         emit_situation = None
         _log.info("verify pass: reason.team.emit unavailable; discrepancies not announced")
     if emit_situation is not None:
