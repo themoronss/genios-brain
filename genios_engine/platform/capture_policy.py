@@ -69,6 +69,7 @@ SENSITIVE_DOMAINS: tuple[str, ...] = (
     # HR / payroll / health
     "bamboohr.com", "myworkday.com", "workday.com", "gusto.com", "rippling.com", "greythr.com",
     "keka.com", "darwinbox.in", "darwinbox.com", "zenefits.com", "adp.com", "practo.com",
+    "people.zoho.com", "people.zoho.in", "payroll.zoho.com", "payroll.zoho.in",
     "1mg.com", "zocdoc.com", "*mychart*",
 )
 

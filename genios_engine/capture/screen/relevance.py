@@ -36,6 +36,23 @@ WORK_HOSTS: tuple[str, ...] = (
     "quickbooks.intuit.com", "xero.com", "tallysolutions.com", "chargebee.com",
     "docusign.net", "docusign.com", "pandadoc.com", "calendly.com", "office.com",
     "sharepoint.com", "live.com", "dropbox.com", "box.com",
+    # Admin domain (SCREEN_INTELLIGENCE_HOW_IT_WORKS §9a). Login/payment pages of these stay
+    # blocked by the sensitive path markers; HR tools stay blocked (decision 12 not taken).
+    # meetings
+    "zoom.us", "meet.google.com", "teams.microsoft.com",
+    # contracts & procurement
+    "adobesign.com", "echosign.com", "spotdraft.com", "leegality.com", "ariba.com",
+    "coupahost.com", "netsuite.com",
+    # finance admin & expenses
+    "concursolutions.com", "fylehq.com", "expensify.com", "happay.com", "happay.in",
+    # requests & service desks
+    "freshservice.com", "service-now.com",
+    # compliance & governance
+    "mca.gov.in", "gst.gov.in", "epfindia.gov.in", "diligent.com",
+    # travel (business portals only)
+    "mybiz.makemytrip.com", "navan.com", "travelperk.com",
+    # facilities & assets
+    "snipe-it.io", "assetpanda.com", "typeform.com",
 )
 #: Native apps that are work by construction (bundle id prefixes).
 WORK_BUNDLES: tuple[str, ...] = (
@@ -43,6 +60,11 @@ WORK_BUNDLES: tuple[str, ...] = (
     "com.microsoft.teams", "com.apple.iWork.", "notion.id", "com.linear",
     "com.figma.", "com.hnc.Discord",
 )
+#: Windows: the bundle id is the executable name, matched case-insensitively.
+WORK_EXES: frozenset[str] = frozenset({
+    "excel.exe", "winword.exe", "powerpnt.exe", "ms-teams.exe", "teams.exe", "notion.exe",
+    "figma.exe", "linear.exe", "discord.exe", "tally.exe", "tallyprime.exe",
+})
 
 
 def _work_host(host: str | None) -> bool:
@@ -52,6 +74,8 @@ def _work_host(host: str | None) -> bool:
 
 def _work_bundle(bundle_id: str | None) -> bool:
     b = (bundle_id or "").strip()
+    if b.lower().endswith(".exe"):
+        return b.lower() in WORK_EXES
     return bool(b) and any(b.startswith(w) for w in WORK_BUNDLES)
 
 
@@ -116,5 +140,5 @@ class ScreenDocRelevance:
         return self._ask(ctx, prepared)
 
 
-__all__ = ["PERSONAL_CHAT_APPS", "ScreenDocRelevance", "WORK_BUNDLES", "WORK_HOSTS",
+__all__ = ["PERSONAL_CHAT_APPS", "ScreenDocRelevance", "WORK_BUNDLES", "WORK_EXES", "WORK_HOSTS",
            "personal_chat_verdict", "rule_verdict"]
