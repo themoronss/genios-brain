@@ -5,7 +5,7 @@ from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from sqlalchemy import text
 
-from genios_engine.contracts.events import (AGENT_ACTIONS, AGENT_API_SCOPES,
+from genios_engine.contracts.events import (ACT_API_SCOPES, AGENT_ACTIONS, AGENT_API_SCOPES,
                                             HUMAN_API_SCOPES, INTELLIGENCE_API_SCOPES)
 from genios_engine.platform.auth import (ROLE_OWNER, AuthCtx, get_auth_ctx, hash_password,
                                          invalidate_key_cache, jwt_decode, new_api_key,
@@ -39,7 +39,8 @@ def _enc_key(raw: str) -> bytes | None:
 # `refresh_token`. The response keeps every field it had; the session fields are additions.
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-GRANTABLE = AGENT_ACTIONS | AGENT_API_SCOPES | HUMAN_API_SCOPES | INTELLIGENCE_API_SCOPES
+GRANTABLE = (AGENT_ACTIONS | AGENT_API_SCOPES | HUMAN_API_SCOPES | INTELLIGENCE_API_SCOPES
+             | ACT_API_SCOPES)
 
 
 def _engine():

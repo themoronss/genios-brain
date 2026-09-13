@@ -539,7 +539,71 @@ def lookup(conn, *, org_id: str, seat_id: str, email: str | None, meeting_node_i
         content = compose(read(conn, org_id=org_id, att=att, email=email, now=now), now=now)
     if content is None:
         return None
+    content = with_delegate(conn, org_id=org_id, att=att, content=content, now=now)
     return Prep(key=dedupe, content=content, subject_ids=subject_ids(att))
+
+
+# ── P6 §3.5 · "Ask my agent" to reschedule ────────────────────────────────────────────────────
+_CALENDAR_PROVIDER = {"gcal": "google", "outlook": "microsoft", "msgraph": "microsoft"}
+
+
+def delegate_reschedule(conn, *, org_id: str, att: Attendance, now: datetime) -> dict | None:
+    """The `delegate` action for `email.reschedule` — only when an active agent runs that play
+    and the meeting carries a provider event id (a `gcal:<id>` node). The windows and message are
+    deterministic starting points the person edits before approving; nothing is sent here."""
+    from zoneinfo import ZoneInfo
+
+    from genios_engine.executive import plays as PL
+    if att.start_at is None:
+        return None
+    agent = PL.select_agent(conn, org_id, PL.PLAY_RESCHEDULE)
+    if agent is None:
+        return None
+    key = conn.execute(text(
+        "select canonical_key from graph_nodes where org_id = :o and node_id = :m "
+        "and valid_to is null"), {"o": org_id, "m": att.meeting_node_id}).scalar()
+    source, _, event_id = str(key or "").partition(":")
+    provider = _CALENDAR_PROVIDER.get(source)
+    if provider is None or not event_id:
+        return None
+    emails = sorted({str(r.alias_key).strip().lower() for r in conn.execute(text(
+        "select alias_key from graph_aliases where org_id = :o and alias_type = 'email' "
+        "and node_id = any(:ids)"), {"o": org_id, "ids": list(att.attendees)}) if r.alias_key})
+    tz_name = conn.execute(text("select timezone from orgs where id = :o"),
+                           {"o": org_id}).scalar() or "UTC"
+    try:
+        tz = ZoneInfo(tz_name)
+    except Exception:              # noqa: BLE001 — an unknown stored zone falls back to UTC
+        tz_name, tz = "UTC", ZoneInfo("UTC")
+    windows = PL.reschedule_windows(att.start_at, att.end_at, now=now)
+
+    def local(v: str) -> str:
+        return datetime.fromisoformat(v.replace("Z", "+00:00")).astimezone(tz).strftime(
+            "%a %d %b %H:%M")
+    offer = "; ".join(f"{local(w['start'])}–{local(w['end'])[-5:]}" for w in windows)
+    params = {"meeting_ref": {"provider": provider, "event_id": event_id},
+              "attendees": emails, "current_start": PL.iso_utc(att.start_at),
+              "proposed_windows": windows,
+              "message_draft": (f"Hi — could we move “{att.title}”? Would one of these work "
+                                f"instead: {offer} ({tz_name})? Thanks."),
+              "timezone": tz_name}
+    return PL.delegate_action(PL.PLAY_RESCHEDULE, params, agent)
+
+
+def with_delegate(conn, *, org_id: str, att: Attendance, content: dict | None,
+                  now: datetime) -> dict | None:
+    """`content` + the §3.5 delegate action when one applies (never twice). A failed lookup never
+    costs the prep itself."""
+    if content is None or any(isinstance(a, dict) and a.get("id") == "delegate"
+                              for a in content.get("actions") or ()):
+        return content
+    try:
+        action = delegate_reschedule(conn, org_id=org_id, att=att, now=now)
+    except Exception:              # noqa: BLE001 — the prep is worth more than the extra button
+        return content
+    if action is None:
+        return content
+    return {**content, "actions": [*(content.get("actions") or []), action]}
 
 
 def precompute(engine, *, org_id: str, seat_id: str, email: str | None, meeting_node_id: str,
@@ -555,6 +619,7 @@ def precompute(engine, *, org_id: str, seat_id: str, email: str | None, meeting_
         if M.cached(c, pre, now) is not None:
             return False
         content = compose(read(c, org_id=org_id, att=att, email=email, now=now), now=now)
+        content = with_delegate(c, org_id=org_id, att=att, content=content, now=now)
     if content is None:
         return False
     with engine.begin() as c:

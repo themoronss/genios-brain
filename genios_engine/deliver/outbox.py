@@ -89,6 +89,162 @@ NO_TRANSPORT_ERROR = "channel unregistered or inactive"
 
 _log = get_logger("genios.deliver.outbox")
 
+#: P6 · an approved delegation's outbox row (written by `executive/delegation.approve_and_enqueue`,
+#: migration 0157): channel `agent_action`, synthetic card id `dlg:<delegation_id>`, the frozen
+#: §3.1 request bytes in `payload.body`. Literals here, not an import, so the drain module stays
+#: importable without the executive layer.
+ACT_CHANNEL = "agent_action"
+ACT_CARD_PREFIX = "dlg:"
+#: The act lane's OWN retry ladder (seconds after the Nth failed attempt). The card ladder above
+#: (5/30/120/720 min) would make one agent hiccup delay an action a person just approved by five
+#: minutes; this one gives up after ~13 min and 5 attempts — well inside the 24 h approval window.
+ACT_BACKOFF_SECONDS: tuple[int, ...] = (10, 30, 120, 600)
+#: Claim lease for an in-flight action row (a crashed sender's row is re-claimed after this). The
+#: agent transport's own timeout is a few seconds, so a minute never double-sends a live attempt.
+ACT_LEASE_SECONDS = 60
+_CLAIM_COLS = ("id,org_id,card_id,channel,payload,attempts,signal_id,reasoning_run_id,"
+               "reasoning_decision_hash,authority_pack_revision,authority_expires_at,"
+               "recipient,band,channel_class,interrupt,defer_count,delivery_id,delegation_id")
+
+
+def act_retry_delay(attempts: int) -> int | None:
+    """Seconds until the next attempt after `attempts` failed ones; None = give up."""
+    if 1 <= attempts <= len(ACT_BACKOFF_SECONDS):
+        return ACT_BACKOFF_SECONDS[attempts - 1]
+    return None
+
+
+def drain_actions(engine, *, eval_time: datetime | None = None, limit: int = 20) -> dict:
+    """The act lane alone: claim due `agent_action` rows (SKIP LOCKED, short lease) and send each
+    — the pump's pass (`deliver/act_pump.py`). The generic `drain` still handles such rows too,
+    through the same branch, so either path converges on one send per attempt."""
+    now = eval_time or datetime.now(timezone.utc)
+    out = {"delivered": 0, "retried": 0, "terminal": 0, "cancelled": 0, "deferred": 0,
+           "suppressed": 0, "parked": 0}
+    with engine.begin() as c:
+        claimed = [dict(r._mapping) for r in c.execute(text(
+            f"select {_CLAIM_COLS} from delivery_outbox where status='queued' "
+            "and channel=:ch and next_attempt_at <= :now and dedupe_key is null "
+            "order by next_attempt_at asc limit :l for update skip locked"),
+            {"ch": ACT_CHANNEL, "now": now, "l": max(1, min(int(limit), 200))}).fetchall()]
+        for r in claimed:
+            c.execute(text("update delivery_outbox set next_attempt_at=:na where id=:i"),
+                      {"na": now + timedelta(seconds=ACT_LEASE_SECONDS), "i": r["id"]})
+    for r in claimed:
+        payload = r["payload"] if isinstance(r["payload"], dict) else json.loads(r["payload"])
+        _drain_agent_action(engine, r, payload, now, out)
+    return out
+
+
+def next_action_due_seconds(engine, *, now: datetime | None = None) -> float | None:
+    """Seconds until the earliest queued action row is due (≤ 0 = now); None = none queued."""
+    with engine.connect() as c:
+        due = c.execute(text(
+            "select min(next_attempt_at) from delivery_outbox where status='queued' "
+            "and channel=:ch and dedupe_key is null"), {"ch": ACT_CHANNEL}).scalar()
+    if due is None:
+        return None
+    due = due if due.tzinfo else due.replace(tzinfo=timezone.utc)
+    return (due - (now or datetime.now(timezone.utc))).total_seconds()
+
+
+def _retry_action(engine, row: dict, now: datetime, *, detail: str, seconds: int,
+                  out: dict) -> None:
+    with engine.begin() as c:
+        c.execute(text(
+            "update delivery_outbox set attempts=attempts+1, last_error=:e, next_attempt_at=:na "
+            "where id=:i"),
+            {"e": detail[:300], "na": now + timedelta(seconds=seconds), "i": row["id"]})
+    out["retried"] += 1
+
+
+def _send_action():
+    """The agent transport (`deliver/channels/agent.send_action(body, cfg, *, delegation_id)`,
+    frozen in SCREEN_INTEL_P6_BUILD §3.1 and owned by group B). Imported lazily so this module
+    loads before that seam exists; tests replace this accessor."""
+    from genios_engine.deliver.channels.agent import send_action
+    return send_action
+
+
+def _action_outcome(res) -> tuple[bool, bool, str]:
+    """(ok, parked, detail) from whatever `send_action` returns — a ChannelResult-like object, a
+    dict or a bool. `parked` = the transport refused to try (e.g. an egress refusal): revivable
+    configuration, not a failed attempt."""
+    if isinstance(res, bool):
+        return res, False, "" if res else "agent webhook refused the request"
+    get = res.get if isinstance(res, dict) else (lambda k, d=None: getattr(res, k, d))
+    parked = bool(get("parked", False)) or get("status", None) == "parked"
+    ok = bool(get("ok", False)) and not parked
+    return ok, parked, str(get("detail", "") or get("error", "") or "")
+
+
+def _drain_agent_action(engine, r: dict, payload: dict, now: datetime, out: dict) -> None:
+    """Send one approved delegation's frozen bytes to its agent — or say why not.
+
+    Re-checked NOW, not at approval: the delegation must still be `dispatched` (a result that
+    already landed, a cancel, or a missing row sends nothing) and inside its approval window. The
+    bytes are exactly what the human approved, and every retry reuses them and the same
+    Delivery-Id / Idempotency-Key (= delegation_id), so a timeout is retried with the same key and
+    the receiver's dedupe makes it one execution. No lock is held across the POST: an agent that
+    posts its result before answering must not wait on us.
+    """
+    from genios_engine.executive import delegation as DLG
+    from genios_engine.platform import realtime
+    dlg_id = r.get("delegation_id") or payload.get("delegation_id")
+    with engine.connect() as c:
+        d = DLG.send_state(c, r["org_id"], dlg_id) if dlg_id else None
+        agent = c.execute(text(
+            "select agent_id, webhook_url, webhook_secret from agent_registry "
+            "where org_id=:o and agent_id=:a and status='active'"),
+            {"o": r["org_id"], "a": d.agent_id if d is not None else r["recipient"]}
+        ).mappings().first()
+    if d is None or d.state != "dispatched":
+        _cancel(engine, r, f"delegation is {d.state if d is not None else 'missing'}; "
+                           "nothing sent", out)
+        return
+    expires = d.approval_expires_at
+    if expires is not None and expires.tzinfo is None:
+        expires = expires.replace(tzinfo=timezone.utc)
+    if expires is not None and now >= expires:
+        _cancel(engine, r, "approval expired before delivery", out)
+        if not r["attempts"]:          # never attempted → nothing can have run
+            with engine.begin() as c:
+                DLG.close_undelivered(c, org_id=r["org_id"], delegation_id=dlg_id,
+                                      state="expired", detail="approval expired before delivery",
+                                      at=now)
+            realtime.wake()
+        return
+    if agent is None:
+        _park(engine, r, now, detail=NO_TRANSPORT_ERROR, out=out)
+        return
+    body = str(payload.get("body") or "").encode("ascii")
+    if not body:
+        _cancel(engine, r, "no frozen request body", out)
+        return
+    try:
+        res = _send_action()(body, dict(agent), delegation_id=dlg_id)
+        ok, parked, detail = _action_outcome(res)
+    except Exception as exc:      # noqa: BLE001 — a transport crash is a failed attempt, retried
+        ok, parked, detail = False, False, f"agent send failed: {exc}"
+    if parked:
+        _park(engine, r, now, detail=(detail or "egress refused")[:300], out=out)
+        return
+    if ok:
+        _finish(engine, r, now, ok=True, detail="", terminal=False, out=out)
+        return
+    delay = act_retry_delay(r["attempts"] + 1)
+    if delay is not None:
+        _retry_action(engine, r, now, detail=detail or "agent webhook failed", seconds=delay,
+                      out=out)
+        return
+    # Gave up: the row is terminal and the delegation says so (failed + moment.updated).
+    _finish(engine, r, now, ok=False, detail=detail or "agent webhook failed", terminal=True,
+            out=out)
+    with engine.begin() as c:
+        DLG.close_undelivered(c, org_id=r["org_id"], delegation_id=dlg_id, state="failed",
+                              detail=detail or "agent webhook failed", at=now)
+    realtime.wake()
+
 
 def card_confidence_bp(score_block) -> int:
     """The reasoner's confidence in this card, in basis points.
@@ -656,10 +812,7 @@ def drain(engine, *, eval_time: datetime | None = None, limit: int = 50) -> dict
 
     with engine.begin() as c:
         due = c.execute(text(
-            "select id,org_id,card_id,channel,payload,attempts,signal_id,reasoning_run_id,"
-            "reasoning_decision_hash,authority_pack_revision,authority_expires_at,"
-            "recipient,band,channel_class,interrupt,defer_count,delivery_id "
-            "from delivery_outbox "
+            f"select {_CLAIM_COLS} from delivery_outbox "
             # `dedupe_key` is set by exactly one writer — `spine.materialize` — and this legacy
             # drain and `spine.claim_due` were not mechanically disjoint: neither excluded rows
             # the OTHER path could also claim. Risk was zero only because the v2 path has never
@@ -673,8 +826,10 @@ def drain(engine, *, eval_time: datetime | None = None, limit: int = 50) -> dict
         # mark in-flight rows' next_attempt into the future so a crashed drain retries
         # them on schedule instead of double-sending on the very next tick
         for r in claimed:
+            lease = (timedelta(seconds=ACT_LEASE_SECONDS) if r["channel"] == ACT_CHANNEL
+                     else timedelta(minutes=5))
             c.execute(text("update delivery_outbox set next_attempt_at=:na where id=:i"),
-                      {"na": now + timedelta(minutes=5), "i": r["id"]})
+                      {"na": now + lease, "i": r["id"]})
 
     # One resolver for the whole pass: a tenant's quiet hours are read once, and — the part that
     # matters — the burst counter carries this pass's own sends forward. Ten intrusive messages
@@ -721,6 +876,13 @@ def _drain_claimed(engine, claimed: list[dict], gate: PgDeliveryContext, now: da
 
     for r in claimed:
         payload = r["payload"] if isinstance(r["payload"], dict) else json.loads(r["payload"])
+        if r["channel"] == ACT_CHANNEL:
+            # P6 · an APPROVED delegation. It skips `admit()` on purpose: quiet hours and burst
+            # caps protect a PERSON from being interrupted, and this row interrupts nobody — a
+            # named human approved these exact bytes for now, and holding them overnight would
+            # run the approval window out before the client's agent ever saw the request.
+            _drain_agent_action(engine, r, payload, now, out)
+            continue
         if r["channel_class"] == ChannelClass.AGENT.value:
             # An agent delivery's "config" is its agent_registry row, keyed by recipient —
             # org_channels describes human surfaces a tenant configures, and an agent is neither.
@@ -1038,7 +1200,7 @@ def _finish(engine, row: dict, now: datetime, *, ok: bool, detail: str, terminal
                  "r": decision.reason_code if decision else None})
             _mark_lifecycle(c, row, "delivered", "delivered", now)
             out["delivered"] += 1
-            if not str(row["card_id"]).startswith("digest:") \
+            if not str(row["card_id"]).startswith(("digest:", ACT_CARD_PREFIX)) \
                     and not is_executive_delivery(row["card_id"]):
                 c.execute(text(
                     "insert into card_events (id, org_id, card_id, kind, cause, detail) "
