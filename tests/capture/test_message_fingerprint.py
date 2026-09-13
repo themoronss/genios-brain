@@ -185,6 +185,33 @@ def _check_b_style_fresh(engine, org):
     assert set(got.values()) == {"ev_alone"} and again == got
 
 
+def _check_lookup_is_read_only(engine, org):
+    """Group A's screen-second path: the promoter LOOKS before landing a screen message."""
+    with engine.begin() as c:
+        claim(c, org, [message_fp(SENDER, T, BODY)], "gmail", "ev_gm_l")
+    with engine.begin() as c:
+        before = c.execute(text("select count(*) from message_fingerprints where org_id=:o"),
+                           {"o": org}).scalar()
+        screen_fps = candidate_fps(SENDER, T + timedelta(minutes=1), BODY)
+        found = lookup(c, org, screen_fps)
+        assert found == {screen_fps[1]: "ev_gm_l"}          # the −1 minute fp is Gmail's
+        assert lookup(c, org, ["0" * 64]) == {}
+        after = c.execute(text("select count(*) from message_fingerprints where org_id=:o"),
+                          {"o": org}).scalar()
+    assert before == after == 1
+
+
+@pytest.mark.unit
+def test_lookup_finds_the_gmail_claim_and_writes_nothing():
+    _check_lookup_is_read_only(_sqlite(), ORG)
+
+
+@pytest.mark.pg
+def test_pg_lookup_finds_the_gmail_claim_and_writes_nothing(pg_engine):
+    engine, org = pg_engine
+    _check_lookup_is_read_only(engine, org)
+
+
 @pytest.mark.unit
 def test_b_style_three_minute_fps_find_the_screen_copy_and_insert_the_rest():
     _check_b_style(_sqlite(), ORG)
