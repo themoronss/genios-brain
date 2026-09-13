@@ -33,6 +33,46 @@ _DEFAULT_ACTIONS = ["read_context"]      # a dashboard-minted agent reads the br
 #: P6 §3.6 — the MCP read grant. Given when the agent is bound to a seat (it reads AS that seat);
 #: kept on unbind (the key then answers SEAT_REQUIRED) and across operating-profile edits.
 MCP_SCOPE = "mcp.read"
+#: P6 §3.4 — an agent that may run plays posts their results with this grant.
+RESULT_SCOPE = "actions.result"
+#: P6 §3.2 play names (frozen). `executive/plays.PLAYS` is the authority when present; this is the
+#: same set, so registration validates identically before group A merges.
+P6_PLAYS = frozenset({"email.reschedule", "task.reassign", "email.follow_up_draft"})
+
+
+def _known_plays() -> frozenset[str]:
+    try:
+        from genios_engine.executive.plays import PLAYS
+        return frozenset(PLAYS)
+    except ImportError:
+        return P6_PLAYS
+
+
+def _plays_from_scope(scope: dict | None) -> list[str] | None:
+    """The plays named in `scope.allowed_actions` (None when the key is absent). Unknown → 422.
+    They are stored in `agent_registry.allowed_actions`, which `executive/plays.select_agent`
+    reads to pick the agent for a play."""
+    if not isinstance(scope, dict) or "allowed_actions" not in scope:
+        return None
+    raw = scope.get("allowed_actions") or []
+    if not isinstance(raw, list) or not all(isinstance(x, str) for x in raw):
+        raise HTTPException(422, {"error": "invalid_allowed_actions",
+                                  "message": "scope.allowed_actions must be a list of play names."})
+    known = _known_plays()
+    unknown = sorted({x for x in raw if x not in known})
+    if unknown:
+        raise HTTPException(422, {"error": "unknown_play", "unknown": unknown,
+                                  "allowed": sorted(known)})
+    return sorted(set(raw))
+
+
+def _with_plays(actions: list[str], plays) -> list[str]:
+    """`actions` with every play and `actions.result` removed, then the given plays (and
+    `actions.result` when there is at least one) added — the one place the act grant is spelled."""
+    known = _known_plays()
+    kept = [a for a in actions if a not in known and a != RESULT_SCOPE]
+    plays = sorted(set(plays or ()))
+    return kept + (plays + [RESULT_SCOPE] if plays else [])
 
 
 def _scope(v) -> dict:
@@ -136,12 +176,14 @@ class CreateAgent(BaseModel):
 # The L5 action grants an agent needs, derived from its handoff mode — so a claim-capable agent can
 # actually be created from the dashboard (the old default was read_context only). notify reads;
 # draft/execute additionally claim and report results.
-def _actions_for_handoff(profile: dict | None) -> list[str]:
+def _actions_for_handoff(profile: dict | None, plays=()) -> list[str]:
+    """Grants from the handoff mode, plus the P6 plays the agent may run (each play name, and
+    `actions.result` so it can post the outcome). No plays → exactly the pre-P6 grant."""
     acts = ["read_context", "signals.read", "artifacts.read"]
     mode = (profile or {}).get("handoff_mode")
     if mode in ("draft", "execute_when_permitted"):
         acts += ["signals.claim", "signals.result"]
-    return acts
+    return _with_plays(acts, plays)
 
 
 def _load_profile(v):
@@ -216,7 +258,8 @@ def create_agent(body: CreateAgent, ctx: AuthCtx = Depends(require_owner)) -> di
     webhook_url = _clean_webhook_url(body.webhook_url)
     webhook_secret = _mint_webhook_secret() if webhook_url else None
     profile = body.operating_profile
-    actions = _actions_for_handoff(profile)          # claim-capable when handoff is draft/execute
+    plays = _plays_from_scope(body.scope)            # 422 on an unknown play, before anything is minted
+    actions = _actions_for_handoff(profile, plays)   # claim-capable when handoff is draft/execute
     seat_id = (body.seat_id or "").strip() or None
     if seat_id:
         actions = [*actions, MCP_SCOPE]
@@ -254,7 +297,7 @@ def create_agent(body: CreateAgent, ctx: AuthCtx = Depends(require_owner)) -> di
     record(org_id, "permission_changed", actor_type="user", target_type="agent", target_id=aid,
            metadata={"event": "agent_created", "webhook": bool(webhook_url)})
     out = {"agent_id": aid, "key": raw, "key_prefix": prefix, "scope": scope,
-           "operating_profile": profile, "seat_id": seat_id,
+           "operating_profile": profile, "seat_id": seat_id, "allowed_actions": actions,
            "warning": "Copy this key now — it is shown only once and cannot be recovered."}
     if webhook_url:
         out["webhook_url"] = webhook_url
@@ -293,15 +336,38 @@ class ScopeUpdate(BaseModel):
 @router.patch("/v1/agents/{aid}/scope")
 def edit_scope(aid: str, body: ScopeUpdate,
                ctx: AuthCtx = Depends(require_owner)) -> dict:
+    """Edit the data scope. `scope.allowed_actions` (when present) replaces the plays the agent may
+    run — stored in `agent_registry.allowed_actions` (what play selection reads) and on its active
+    keys, with `actions.result` granted while any play is allowed."""
     org_id = ctx.org_id
     scope = _scope(body.scope)
+    plays = _plays_from_scope(body.scope)
+    hashes: list[str] = []
+    actions = None
     with _graph.engine.begin() as c:
         _get_agent(c, org_id, aid)
         ver = c.execute(text(
             "update agent_registry set scope=cast(:sc as jsonb), scope_version=scope_version+1, "
             "scope_updated_at=now() where org_id=:o and agent_id=:a returning scope_version"),
             {"sc": json.dumps(scope), "o": org_id, "a": aid}).scalar()
-    return {"agent_id": aid, "scope": scope, "version": int(ver)}
+        if plays is not None:
+            current = c.execute(text("select allowed_actions from agent_registry "
+                                     "where org_id=:o and agent_id=:a"),
+                                {"o": org_id, "a": aid}).scalar()
+            actions = _with_plays(list(current or []), plays)
+            c.execute(text("update agent_registry set allowed_actions=:acts "
+                           "where org_id=:o and agent_id=:a"), {"acts": actions, "o": org_id, "a": aid})
+            hashes = [r.key_hash for r in c.execute(text(
+                "select key_hash from api_keys where org_id=:o and agent_id=:a and is_active"),
+                {"o": org_id, "a": aid})]
+            c.execute(text("update api_keys set scopes=:sc where org_id=:o and agent_id=:a "
+                           "and is_active"), {"sc": actions, "o": org_id, "a": aid})
+    for h in hashes:
+        invalidate_key_cache(h)                 # the new grant takes effect on the next request
+    out = {"agent_id": aid, "scope": scope, "version": int(ver)}
+    if actions is not None:
+        out["allowed_actions"] = actions
+    return out
 
 
 class ProfileUpdate(BaseModel):
@@ -321,6 +387,8 @@ def edit_operating_profile(aid: str, body: ProfileUpdate,
         _get_agent(c, org_id, aid)
         current = c.execute(text("select allowed_actions from agent_registry "
                                  "where org_id=:o and agent_id=:a"), {"o": org_id, "a": aid}).scalar()
+        known = _known_plays()
+        actions = _actions_for_handoff(profile, [a for a in (current or []) if a in known])
         if MCP_SCOPE in (current or []) and MCP_SCOPE not in actions:
             actions = [*actions, MCP_SCOPE]          # the MCP grant is the seat binding's, not handoff's
         row = c.execute(text(
