@@ -14,6 +14,17 @@ from genios_engine.reason.authority import (
     authority_time,
 )
 
+#: P4 SITUATION CARDS (reason/team/emit.py): the durable copy of a team/verify situation. They have
+#: no Layer 4 run by construction, so the authority joins would hide them; the queue reads them
+#: through a second door that matches ONLY what emit_situation writes — its builder stamp, a
+#: signal with no reasoning run, and a `team.*` / `verify.*` capability that is also the rule id.
+#: Every other card still needs the full authority chain. Kept equal to emit.BUILDER_VERSION by
+#: tests/test_team_unit.py (a literal here: deliver must not import the reasoning hot path).
+SITUATION_CARD_BUILDER = "team.emit.v1"
+SITUATION_CARD_SQL = (
+    "k.builder_version = :situation_builder and s.reasoning_run_id is null "
+    "and s.rule_id = s.capability_id and split_part(s.capability_id, '.', 1) in ('team', 'verify')")
+
 # CardStore — persistence + the queue state machine (§5.12). Every transition writes a timestamped
 # card_event with an enumerated cause; nothing moves without one. One card per signal (enforced by
 # a unique index — a re-run never double-delivers).
@@ -391,25 +402,32 @@ class CardStore:
         Defaults to `assignee` so every existing caller — the digest, the tests, the agent
         lane — behaves exactly as it did.
         """
+        # The APP surface, not every card the org holds. A rejected deal past its deadline
+        # still answers "what happened with Antler?" — it just does not belong in a queue
+        # whose only honest measure is whether the reader acts on every line.
+        common = (" where k.org_id=:o and k.state = any(:states) and s.status='open' "
+                  "and 'app' = any(k.surfaces) and k.expires_at > :authority_time ")
         q = ("select k.card_id, k.signal_id, k.assignee, k.domain, k.urgency_band, k.headline, "
              "k.situation, " + AUTHORITATIVE_SCORE_SQL +
              " as score, k.state, k.render_mode, k.created_at, k.expires_at "
              "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "
-             + AUTHORITATIVE_SIGNAL_JOINS +
-             # The APP surface, not every card the org holds. A rejected deal past its deadline
-             # still answers "what happened with Antler?" — it just does not belong in a queue
-             # whose only honest measure is whether the reader acts on every line.
-             " where k.org_id=:o and k.state = any(:states) and s.status='open' "
-             "and 'app' = any(k.surfaces) "
-             "and k.expires_at > :authority_time and " + AUTHORITATIVE_SIGNAL_PREDICATE)
+             + AUTHORITATIVE_SIGNAL_JOINS + common + "and " + AUTHORITATIVE_SIGNAL_PREDICATE)
+        # THE SECOND DOOR, for P4 situation cards only (see SITUATION_CARD_SQL). Same states,
+        # surface, expiry and seat-visibility clauses; the L4 query above is untouched.
+        sq = ("select k.card_id, k.signal_id, k.assignee, k.domain, k.urgency_band, k.headline, "
+              "k.situation, k.score, k.state, k.render_mode, k.created_at, k.expires_at "
+              "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id"
+              + common + "and " + SITUATION_CARD_SQL)
         params = {"o": org_id, "states": list(states),
-                  "authority_time": datetime.now(timezone.utc)}
+                  "authority_time": datetime.now(timezone.utc),
+                  "situation_builder": SITUATION_CARD_BUILDER}
         if not admin and assignee is not None and strict_seat:
             # A MEMBER SEAT sees what is routed to it and nothing else (deliver/seat_access.py):
             # its assignment and its declared responsibilities. An unassigned card sits in the
             # ADMIN queue by routing's own rule, so it is not a member's to read.
             from genios_engine.deliver.seat_access import SEAT_REACH_SQL
             q += " and " + SEAT_REACH_SQL
+            sq += " and " + SEAT_REACH_SQL
             params["seat"] = assignee
         elif not admin and assignee is not None:
             # A seat- or agent-bound credential sees loops routed to IT plus the org's UNCLAIMED
@@ -425,12 +443,15 @@ class CardStore:
             # A SEAT SEES ITS OWN, THE UNCLAIMED, AND WHAT IT ANSWERS FOR. The third arm is a
             # LEFT-JOINLESS `exists` on purpose: on a tenant with no declarations the subquery
             # matches nothing and the queue is byte-identical to what it was.
-            q += (" and (k.assignee=:a or k.assignee is null or exists ("
-                  "select 1 from card_recipients cr where cr.org_id=k.org_id "
-                  "and cr.card_id=k.card_id and cr.seat_id=:a))")
+            reach = (" and (k.assignee=:a or k.assignee is null or exists ("
+                     "select 1 from card_recipients cr where cr.org_id=k.org_id "
+                     "and cr.card_id=k.card_id and cr.seat_id=:a))")
+            q += reach
+            sq += reach
             params["a"] = assignee
         q += (" order by selected_rc.final_utility_bp desc, k.created_at asc, k.card_id "
               "for share of k,s,rr,ro,selected_rc,rcap,authority_ctx,authority_cfg,authority_pack")
+        sq += " order by k.score desc, k.created_at asc, k.card_id for share of k,s"
         with self._engine.begin() as c:
             # Impression and the exact authority projection it describes share one transaction.
             # Graph/config writers and card claims cannot interleave a revocation after SELECT but
@@ -438,6 +459,11 @@ class CardStore:
             c.execute(text("select graph_version from graph_versions where org_id=:o for share"),
                       {"o": org_id})
             rows = [dict(r) for r in c.execute(text(q), params).mappings()]
+            situation_rows = [dict(r) for r in c.execute(text(sq), params).mappings()]
+            if situation_rows:
+                # One ranked list: a stable sort by score keeps the L4 utility order (score is
+                # its monotone rounding) and slots situation cards in by their own score.
+                rows = sorted(rows + situation_rows, key=lambda r: -(r.get("score") or 0))
             if rows and record_impressions:
                 c.execute(text(
                     "insert into card_events (id,card_id,org_id,kind,cause,actor_id) "

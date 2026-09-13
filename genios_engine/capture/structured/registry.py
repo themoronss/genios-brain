@@ -166,6 +166,27 @@ register(StructuredMapping(
                RelationMap("contacts", "person", "involves", "in", "email")],
     emit_on_change=["dealstage", "amount"]))
 
+# Linear issues → `task` nodes (P4 readiness counts done / pending from these). The connector
+# (capture/connectors/linear.py) flattens Linear's nested state/assignee/project/labels into these
+# columns; `state_type` (completed / canceled / started …) is the reliable done signal, `state_name`
+# the human word. The assignee becomes a person edge that merges with mail/calendar persons.
+register(StructuredMapping(
+    mapping_id="linear.issue.v1", source="linear", object_type="issue",
+    identity_field="id", node_type="task",
+    fields=[FieldMap("title", "task.title", "string"),
+            FieldMap("identifier", "task.identifier", "string"),
+            FieldMap("state_name", "task.status", "enum"),
+            FieldMap("state_type", "task.state_type", "enum"),
+            FieldMap("project", "task.project", "string"),
+            FieldMap("team", "task.team", "string"),
+            FieldMap("labels", "task.labels", "string"),
+            FieldMap("assignee_email", "task.assignee", "string"),
+            FieldMap("due_date", "task.due_at", "timestamp"),
+            FieldMap("completed_at", "task.completed_at", "timestamp")],
+    intent="task_update", name_field="task.title", tags=["task_change"],
+    relations=[RelationMap("assignee_email", "person", "assigned", "in", "email")],
+    emit_on_change=["state_name", "state_type", "due_date"]))
+
 register(StructuredMapping(
     mapping_id="stripe.subscription.v1", source="stripe", object_type="subscription",
     identity_field="id", node_type="subscription",
