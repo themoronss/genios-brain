@@ -536,6 +536,14 @@ _SCREEN_CONTEXT_RULE = (
     "new lines above that header."
 )
 
+#: Screen profiles only: output is over half the cost of a screen extraction, and screen batches
+#: are frequent. Email prompts (and their cached answers) are deliberately left untouched.
+_SCREEN_COMPACT_RULE = (
+    "Keep the answer short. Quote the fewest words that prove each claim — under 120 "
+    "characters. Leave out a claim you cannot support instead of writing empty, null or "
+    "\"unknown\" placeholder values."
+)
+
 _SCREEN_SESSION_ROLE = (
     "You extract structured facts from a SCREEN CONVERSATION — the NEW messages of one chat or "
     "mail thread (WhatsApp, LinkedIn, Slack, Gmail, Outlook), read off the user's own screen.\n"
@@ -548,7 +556,7 @@ _SCREEN_SESSION_ROLE = (
     "fact `deal.status` (open | won | lost) with the organisation as its subject, plus `deal.stage` "
     "in their own words. Declining or choosing another vendor is `lost`; signing or confirming "
     "is `won`. Only for a stated outcome, never for a guess.\n"
-    + _SCREEN_CONTEXT_RULE
+    + _SCREEN_CONTEXT_RULE + "\n" + _SCREEN_COMPACT_RULE
 )
 
 _SCREEN_GENERIC_ROLE = (
@@ -560,7 +568,7 @@ _SCREEN_GENERIC_ROLE = (
     "under a heading is a message or comment by that person. A label is not a fact on its own "
     "— extract a value only together with what its label and heading say it is, and never "
     "round, convert or infer a currency.\n"
-    + _SCREEN_CONTEXT_RULE
+    + _SCREEN_CONTEXT_RULE + "\n" + _SCREEN_COMPACT_RULE
 )
 
 

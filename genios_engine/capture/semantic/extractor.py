@@ -1728,6 +1728,19 @@ def _guarded(result: ExtractionResult, request: ExtractionRequest,
                             eval_time=request.eval_time, store=open_lane).result
 
 
+def _call_model(llm: LLMClient, prompt: str, max_tokens: int) -> LLMResponse:
+    """One model call, with the fixed instructions marked as a cacheable prefix when the client
+    can. Everything before `ENVELOPE_MARKER` (role, safety, schema, vocabulary, evidence and
+    open-lane blocks) is identical across calls of one profile; the envelope and content after
+    it are per message. The model reads the same text either way — only the price changes —
+    so the replay cache key, which hashes the prompt, is unaffected."""
+    if getattr(llm, "supports_prompt_cache", False):
+        cut = prompt.find(ENVELOPE_MARKER)
+        if cut > 0:
+            return llm.call(prompt, max_tokens=max_tokens, cache_prefix_chars=cut)
+    return llm.call(prompt, max_tokens=max_tokens)
+
+
 def _run_calls(request: ExtractionRequest, call: AssembledCall, llm: LLMClient,
                ledger: _CallLedger,
                open_lane: OpenLaneStore | None = None) -> ExtractionResult:
@@ -1749,7 +1762,7 @@ def _run_calls(request: ExtractionRequest, call: AssembledCall, llm: LLMClient,
     prompt = call.prompt
     raw = ""
     while ledger.calls < MAX_MODEL_CALLS:
-        response = llm.call(prompt, max_tokens=request.max_output_tokens)
+        response = _call_model(llm, prompt, request.max_output_tokens)
         ledger.calls += 1
         ledger.input_tokens += max(int(response.input_tokens), 0)
         ledger.output_tokens += max(int(response.output_tokens), 0)
