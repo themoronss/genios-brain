@@ -191,8 +191,10 @@ def _write_card(c, *, org_id, kind, key, seat_id, subjects, headline, body, acti
                 "update signals set evidence = cast(:ev as jsonb), score = :score, "
                 "eval_time = :now where signal_id = :sig and org_id = :o"),
                 {"ev": why, "score": score, "now": now, "sig": refreshed.signal_id, "o": org_id})
+            # the words ride on the event: a card refreshed in place otherwise loses what it said
             _log_card_event(c, held_card_id, org_id, "card.rebuilt", capability,
-                            {"digest": digest, "builder_version": BUILDER_VERSION})
+                            {"digest": digest, "builder_version": BUILDER_VERSION,
+                             "headline": head, "situation": sit})
             return held_card_id
         # The user SNOOZED the previous card: its words stay as answered, but it must not wake
         # later beside the new generation saying something no longer true — resolve it.
@@ -230,7 +232,8 @@ def _write_card(c, *, org_id, kind, key, seat_id, subjects, headline, body, acti
         return c.execute(text("select card_id from cards where signal_id = :s and org_id = :o"),
                          {"s": signal_id, "o": org_id}).scalar()
     _log_card_event(c, card_id, org_id, "card.created", capability,
-                    {"band": band, "render_mode": "template", "situation_key": key})
+                    {"band": band, "render_mode": "template", "situation_key": key,
+                     "digest": digest, "headline": head, "situation": sit})
     return card_id
 
 
