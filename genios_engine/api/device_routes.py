@@ -341,7 +341,10 @@ def _ingest(ctx: D.DeviceCtx, envelope: SessionUpload, cstore, key: str) -> dict
         rows.append({"session_key": s.session_key, "message_watermark": s.message_watermark,
                      "seat_id": ctx.seat_id, "app": s.app.strip().lower(),
                      "thread_key": s.thread_key, "payload_enc": encrypt(payload, key),
-                     "message_count": len(s.messages), "captured_at": s.captured_at})
+                     # a generic session's unit is the block (§3.7)
+                     "message_count": (len(s.blocks) if s.app == P.GENERIC_APP
+                                       else len(s.messages)),
+                     "captured_at": s.captured_at})
         outcome.append(("pending", s.session_key, str(s.message_watermark)))
     inserted = cstore.insert_deltas(rows, org_id=ctx.org_id, device_id=ctx.device_id, now=now)
     accepted, duplicate, rejected = [], [], []

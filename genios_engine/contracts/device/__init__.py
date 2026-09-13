@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 #: The one session-upload / heartbeat shape this server accepts.
 SCHEMA_VERSION = 1
@@ -66,13 +66,34 @@ class CapturePause(BaseModel):
 
 
 # ── §3.3 session upload (plan §18.2 + schema_version) ──────────────────────────────────────
-class ScreenSession(BaseModel):
-    """One hour-bucket session of one thread. Unknown fields are KEPT (sealed into the payload
-    with the rest) so a newer app never loses data to an older server; the fields the server
-    checks are named here.
+#: The generic reader's app id (§3.7) — any native app or site without a dedicated reader.
+#: `web` is accepted as an alias (it was the name before D2 was revised).
+GENERIC_APP = "generic"
+GENERIC_ALIASES = frozenset({"generic", "web"})
+MAX_BLOCKS = 500
+MAX_TABLE_ROWS = 200
 
-    `url`, `bundle_id` and `private_window` are what the server-side privacy gate re-checks — the
-    reader output (§3.6) carries the first two; a native app with no URL simply omits it."""
+
+class ScreenBlock(BaseModel):
+    """One block of a generic `screen_doc` (§3.7): heading, kv, table, message, … Unknown fields
+    are kept, like everything else in a session."""
+    model_config = ConfigDict(extra="allow")
+
+    fp: str | None = Field(default=None, max_length=128)
+    role: str = Field(min_length=1, max_length=32)
+    header: list | None = Field(default=None, max_length=100)
+    rows: list[list] | None = Field(default=None, max_length=MAX_TABLE_ROWS)
+
+
+class ScreenSession(BaseModel):
+    """One hour-bucket session of one thread or screen. Unknown fields are KEPT (sealed into the
+    payload with the rest) so a newer app never loses data to an older server; the fields the
+    server checks are named here.
+
+    A dedicated-reader session (gmail, linkedin, …) carries `messages[]`; a GENERIC session
+    (`app:"generic"`, native or web) carries `blocks[]` instead — exactly one of the two is
+    non-empty. `url`, `bundle_id` and `private_window` are what the server-side privacy gate
+    re-checks; a native app has no URL, and a generic session must name its `bundle_id`."""
     model_config = ConfigDict(extra="allow")
 
     session_key: str = Field(min_length=1, max_length=300)
@@ -82,11 +103,25 @@ class ScreenSession(BaseModel):
     participants: list[dict] = Field(default_factory=list, max_length=500)
     context_messages: list[dict] = Field(default_factory=list, max_length=2000)
     messages: list[dict] = Field(default_factory=list, max_length=2000)
+    blocks: list[ScreenBlock] = Field(default_factory=list, max_length=MAX_BLOCKS)
     message_watermark: int = Field(ge=0)
     captured_at: datetime | None = None
     url: str | None = Field(default=None, max_length=4096)
     bundle_id: str | None = Field(default=None, max_length=255)
     private_window: bool = False
+
+    @model_validator(mode="after")
+    def _one_shape(self):
+        app = self.app.strip().lower()
+        self.app = GENERIC_APP if app in GENERIC_ALIASES else app
+        if self.app == GENERIC_APP:
+            if not (self.bundle_id or "").strip():
+                raise ValueError("a generic session must name its bundle_id")
+            if not self.blocks or self.messages:
+                raise ValueError("a generic session carries blocks[] and no messages[]")
+        elif not self.messages or self.blocks:
+            raise ValueError("a dedicated-reader session carries messages[] and no blocks[]")
+        return self
 
 
 class SessionUpload(BaseModel):

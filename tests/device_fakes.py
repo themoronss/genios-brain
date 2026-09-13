@@ -181,13 +181,13 @@ class MemoryCaptureStore:
     def save_org_policy(self, org_id, changes, *, updated_by):
         p = self.w.policies.setdefault(org_id, {
             "enabled": False, "allowed_apps": list(P.DEFAULT_ALLOWED_APPS), "blocked_domains": [],
-            "generic_web_allowed": False, "draft_assist_allowed": False, "retention_days": 90})
+            "generic_web_allowed": True, "draft_assist_allowed": False, "retention_days": 90})
         p.update({k: v for k, v in changes.items() if v is not None})
         p["updated_by"] = updated_by
 
     def save_seat_settings(self, org_id, seat_id, changes):
         s = self.w.seat_settings.setdefault((org_id, seat_id), {
-            "enabled": False, "draft_assist": False, "generic_web": False, "paused_until": None,
+            "enabled": False, "draft_assist": False, "generic_web": True, "paused_until": None,
             "blocked_apps": [], "blocked_domains": []})
         for k, v in changes.items():
             if v is not None or k == "paused_until":

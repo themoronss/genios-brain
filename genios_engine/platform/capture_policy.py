@@ -39,12 +39,16 @@ from sqlalchemy import text
 
 from genios_engine.platform.config import get_settings
 
-APP_IDS: tuple[str, ...] = ("gmail", "linkedin", "slack", "whatsapp", "outlook", "gcal")
-#: Decision D-B, first cut. Also the column default in 0141.
-DEFAULT_ALLOWED_APPS: tuple[str, ...] = ("gmail", "linkedin", "slack")
-#: Generic web capture is not an app id in `allowed_apps`; a session with this `app` is accepted
-#: only when both the org and the seat turned `generic_web` on.
-GENERIC_WEB_APP = "web"
+#: The DEDICATED readers. Since D2 was revised (2026-09-13, plan §3.7) every app is read:
+#: `allowed_apps` says which of these dedicated readers are enabled, and everything else — or a
+#: dedicated app whose reader is off — is the generic reader's, which runs when `generic_web` is
+#: on for both the org and the seat.
+APP_IDS: tuple[str, ...] = ("gmail", "whatsapp", "linkedin", "slack", "outlook", "gcal")
+#: All six by default. Also the column default in 0141.
+DEFAULT_ALLOWED_APPS: tuple[str, ...] = APP_IDS
+#: A session from the generic reader (`screen_doc` blocks, native or web). `web` is an alias.
+GENERIC_APP = "generic"
+GENERIC_ALIASES = frozenset({"generic", "web"})
 DEFAULT_RETENTION_DAYS = 90
 
 SENSITIVE_DOMAINS: tuple[str, ...] = (
@@ -205,7 +209,7 @@ class OrgPolicy:
     enabled: bool = False
     allowed_apps: tuple[str, ...] = DEFAULT_ALLOWED_APPS
     blocked_domains: tuple[str, ...] = ()
-    generic_web_allowed: bool = False
+    generic_web_allowed: bool = True              # D2 revised: every app is read (plan §3.7)
     draft_assist_allowed: bool = False
     retention_days: int = DEFAULT_RETENTION_DAYS
 
@@ -214,7 +218,7 @@ class OrgPolicy:
 class SeatSettings:
     enabled: bool = False
     draft_assist: bool = False
-    generic_web: bool = False
+    generic_web: bool = True                      # still switchable off, per seat
     paused_until: datetime | None = None
     blocked_apps: tuple[str, ...] = ()
     blocked_domains: tuple[str, ...] = field(default=())
@@ -300,7 +304,9 @@ def policy_document(org: OrgPolicy, seat: SeatSettings, *, now: datetime) -> dic
 ORG_DISABLED = "capture_disabled"
 SEAT_DISABLED = "seat_capture_disabled"
 PAUSED = "paused"
-APP_NOT_ALLOWED = "app_not_allowed"
+APP_NOT_ALLOWED = "app_not_allowed"        # not a dedicated reader and not the generic one
+READER_DISABLED = "reader_disabled"        # a dedicated reader the org or seat switched off
+GENERIC_DISABLED = "generic_disabled"      # the generic reader, switched off by org or seat
 DOMAIN_BLOCKED = "domain_blocked"
 APP_BLOCKED = "app_blocked"
 PRIVATE_WINDOW = "private_window"
@@ -310,7 +316,8 @@ INVALID = "invalid_session"
 def check_session(org: OrgPolicy, seat: SeatSettings, *, app: str, url: str | None,
                   bundle_id: str | None, private_window: bool, now: datetime) -> str | None:
     """The server-side re-check of one session: the reason it is refused, or None to accept.
-    Order is most-general first, so a disabled org reports that and not a per-URL detail."""
+    Order is most-general first, so a disabled org reports that and not a per-URL detail. The
+    sensitive URL / bundle checks apply to generic and dedicated sessions alike."""
     if not org.enabled:
         return ORG_DISABLED
     if not seat.enabled:
@@ -319,11 +326,13 @@ def check_session(org: OrgPolicy, seat: SeatSettings, *, app: str, url: str | No
     if eff["paused_until"] is not None:
         return PAUSED
     a = (app or "").strip().lower()
-    if a == GENERIC_WEB_APP:
+    if a in GENERIC_ALIASES:
         if not eff["generic_web"]:
-            return APP_NOT_ALLOWED
-    elif a not in eff["apps"]:
+            return GENERIC_DISABLED
+    elif a not in APP_IDS:
         return APP_NOT_ALLOWED
+    elif a not in eff["apps"]:
+        return READER_DISABLED
     if private_window:
         return PRIVATE_WINDOW
     if bundle_blocked(bundle_id):
@@ -413,9 +422,10 @@ class CaptureStore:
                 "insert into capture_policies (org_id, enabled, allowed_apps, blocked_domains, "
                 "generic_web_allowed, draft_assist_allowed, retention_days, updated_by, updated_at) "
                 "values (:o, coalesce(:enabled, false), "
-                "coalesce(cast(:allowed_apps as jsonb), '[\"gmail\", \"linkedin\", \"slack\"]'::jsonb), "
+                "coalesce(cast(:allowed_apps as jsonb), '[\"gmail\", \"whatsapp\", \"linkedin\", "
+                "\"slack\", \"outlook\", \"gcal\"]'::jsonb), "
                 "coalesce(cast(:blocked_domains as jsonb), '[]'::jsonb), "
-                "coalesce(:generic_web_allowed, false), coalesce(:draft_assist_allowed, false), "
+                "coalesce(:generic_web_allowed, true), coalesce(:draft_assist_allowed, false), "
                 "coalesce(:retention_days, 90), :by, now()) "
                 "on conflict (org_id) do update set "
                 "enabled = coalesce(:enabled, capture_policies.enabled), "
@@ -442,7 +452,7 @@ class CaptureStore:
                 "insert into seat_capture_settings (org_id, seat_id, enabled, draft_assist, "
                 "generic_web, paused_until, blocked_apps, blocked_domains, updated_at) "
                 "values (:o, :s, coalesce(:enabled, false), coalesce(:draft_assist, false), "
-                "coalesce(:generic_web, false), cast(:paused_until as timestamptz), "
+                "coalesce(:generic_web, true), cast(:paused_until as timestamptz), "
                 "coalesce(cast(:blocked_apps as jsonb), '[]'::jsonb), "
                 "coalesce(cast(:blocked_domains as jsonb), '[]'::jsonb), now()) "
                 "on conflict (org_id, seat_id) do update set "
@@ -555,7 +565,8 @@ def shred_seat_capture(conn, *, org_id: str, seat_id: str) -> int:
     return n
 
 
-__all__ = ["APP_IDS", "CaptureStore", "DEFAULT_ALLOWED_APPS", "GENERIC_WEB_APP", "OrgPolicy",
+__all__ = ["APP_IDS", "CaptureStore", "DEFAULT_ALLOWED_APPS", "GENERIC_ALIASES", "GENERIC_APP",
+           "OrgPolicy",
            "SENSITIVE_BUNDLE_IDS", "SENSITIVE_DOMAINS", "SeatSettings", "app_version_supported",
            "bundle_blocked", "check_session", "effective_policy", "is_blocked",
            "min_supported_app_version", "normalize_apps", "normalize_patterns",

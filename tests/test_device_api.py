@@ -150,6 +150,23 @@ def _session(key="li:conv:abc:2026-09-17T10", wm=37, app="linkedin",
             "bundle_id": "com.google.Chrome", **extra}
 
 
+def _generic(key="doc:crm.acme.test/deals/42:2026-09-17T10", wm=3,
+             url="https://crm.acme.test/deals/42", bundle_id="com.google.Chrome",
+             **extra) -> dict:
+    """A generic-reader session (§3.7 `screen_doc` blocks in place of messages)."""
+    return {"session_key": key, "thread_key": "doc:crm.acme.test/deals/42", "app": "generic",
+            "title": "Acme — Deal",
+            "blocks": [{"fp": "sha256:a", "role": "heading", "text": "Acme renewal"},
+                       {"fp": "sha256:b", "role": "kv", "label": "Stage",
+                        "value": "Negotiation"},
+                       {"fp": "sha256:c", "role": "table", "header": ["Invoice", "Due", "Status"],
+                        "rows": [["INV-9", "2026-09-20", "Unpaid"]]},
+                       {"fp": "sha256:d", "role": "message", "sender": "Priya", "ts": None,
+                        "text": "Can you send the invoice?", "is_outgoing": False}],
+            "message_watermark": wm, "captured_at": "2026-09-17T10:42:03+05:30", "url": url,
+            "bundle_id": bundle_id, **extra}
+
+
 def _upload(client, token: str, sessions: list, **env):
     return client.post("/v1/sessions", json={"schema_version": 1, "sessions": sessions, **env},
                        headers=H(token))
@@ -548,9 +565,9 @@ def test_a_body_repeating_one_session_counts_it_once(client, world):
     (_session(url="https://www.linkedin.com/login"), "domain_blocked"),
     (_session(bundle_id="com.1password.1password"), "app_blocked"),
     (_session(private_window=True), "private_window"),
-    (_session(app="whatsapp"), "app_not_allowed"),
-    (_session(app="web", url="https://example.com/"), "app_not_allowed"),
     (_session(app="spotify"), "app_not_allowed"),
+    (_generic(url="https://accounts.google.com/signin"), "domain_blocked"),
+    (_generic(bundle_id="com.apple.Terminal", url=None), "app_blocked"),
 ])
 def test_what_the_device_should_never_have_sent_is_rejected_server_side(client, world,
                                                                         session, reason):
@@ -640,11 +657,16 @@ _DOC_KEYS = {"policy_version", "min_supported_app_version", "sensitive_defaults"
 def test_the_default_policy_is_off_and_carries_the_sensitive_defaults(client, world):
     doc = client.get("/v1/capture/policy", headers=H(_seat(world, "seat_rep"))).json()
     assert set(doc) == _DOC_KEYS
-    assert doc["org"] == {"enabled": False, "allowed_apps": ["gmail", "linkedin", "slack"],
-                          "blocked_domains": [], "generic_web_allowed": False,
+    # D2 revised (plan §3.7): every dedicated reader on, and the generic reader on — capture as a
+    # whole still waits for the org switch and the seat's own opt-in.
+    assert doc["org"] == {"enabled": False,
+                          "allowed_apps": ["gmail", "whatsapp", "linkedin", "slack", "outlook",
+                                           "gcal"],
+                          "blocked_domains": [], "generic_web_allowed": True,
                           "draft_assist_allowed": False, "retention_days": 90}
-    assert doc["seat"] == {"enabled": False, "draft_assist": False, "generic_web": False,
+    assert doc["seat"] == {"enabled": False, "draft_assist": False, "generic_web": True,
                            "paused_until": None, "blocked_apps": [], "blocked_domains": []}
+    assert doc["effective"]["generic_web"] is True
     assert doc["effective"]["capture_on"] is False
     assert "accounts.google.com" in doc["sensitive_defaults"]
     assert set(doc["sensitive_defaults"]) <= set(doc["effective"]["blocked_domains"])
@@ -687,7 +709,8 @@ def test_a_seat_opts_in_pauses_and_resumes(client, world):
     assert on.status_code == 200 and set(on.json()) == _DOC_KEYS
     doc = on.json()
     assert doc["effective"]["capture_on"] is True
-    assert doc["effective"]["apps"] == ["gmail", "linkedin"]           # the seat narrowed it
+    assert doc["effective"]["apps"] == ["gcal", "gmail", "linkedin", "outlook",
+                                        "whatsapp"]                    # the seat narrowed it
     assert [a[1] for a in world.audit][-1] == "seat_capture_enabled"
     version = doc["policy_version"]
 
@@ -857,3 +880,109 @@ def test_an_org_or_seat_pattern_blocks_too():
         "example.com", "/login", "*bank*"]
     with pytest.raises(ValueError):
         P.normalize_patterns(["not a domain"])
+
+
+# ── D2 revised (plan §3.7): every app is read ───────────────────────────────────────────────
+def _on(world, **org):
+    """Only the two master switches — every other capture setting stays at its default."""
+    cstore = MemoryCaptureStore(world)
+    cstore.save_org_policy(ORG, {"enabled": True, **org}, updated_by="seat_owner")
+    cstore.save_seat_settings(ORG, "seat_rep", {"enabled": True})
+    return cstore
+
+
+def test_generic_sessions_native_and_web_are_accepted_by_default(client, world):
+    _on(world)
+    dev = _sign_in(client, world)
+    res = _upload(client, dev["access_token"], [
+        _generic(),                                                     # web, via Chrome
+        _generic(key="doc:web:1", app="web"),                           # `web` is an alias
+        _generic(key="doc:erp:1", url=None, bundle_id="com.acme.erp"),  # a native app, no url
+        _session(key="wa:1", app="whatsapp", url=None,                  # every dedicated reader
+                 bundle_id="net.whatsapp.WhatsApp")]).json()
+    assert res == {"accepted": ["doc:crm.acme.test/deals/42:2026-09-17T10", "doc:web:1",
+                                "doc:erp:1", "wa:1"], "duplicate": [], "rejected": []}
+    rows = {k[2]: r for k, r in world.deltas.items()}
+    assert {rows[k]["app"] for k in ("doc:web:1", "doc:erp:1")} == {"generic"}
+    assert rows["doc:erp:1"]["message_count"] == 4                     # the block count
+    assert rows["wa:1"]["message_count"] == 1
+    sealed = json.loads(decrypt(rows["doc:erp:1"]["payload_enc"], get_settings().crypto_key))
+    assert sealed["app"] == "generic" and sealed["messages"] == []
+    assert sealed["blocks"][2] == {"fp": "sha256:c", "role": "table",
+                                   "header": ["Invoice", "Due", "Status"],
+                                   "rows": [["INV-9", "2026-09-20", "Unpaid"]]}
+    assert sealed["blocks"][1]["label"] == "Stage"                     # unknown keys kept
+    # idempotent exactly like a dedicated session
+    again = _upload(client, dev["access_token"], [_generic()]).json()
+    assert again["duplicate"] == ["doc:crm.acme.test/deals/42:2026-09-17T10"]
+
+
+def test_a_dedicated_reader_switched_off_is_reader_disabled(client, world):
+    cstore = _on(world, allowed_apps=["gmail", "linkedin"])
+    dev = _sign_in(client, world)
+    res = _upload(client, dev["access_token"], [
+        _session(key="wa:1", app="whatsapp", url=None), _session(key="li:1"),
+        _session(key="sp:1", app="spotify")]).json()
+    assert res["accepted"] == ["li:1"]
+    assert res["rejected"] == [{"session_key": "wa:1", "reason": "reader_disabled"},
+                               {"session_key": "sp:1", "reason": "app_not_allowed"}]
+    cstore.save_seat_settings(ORG, "seat_rep", {"blocked_apps": ["linkedin"]})
+    seat_off = _upload(client, dev["access_token"], [_session(key="li:2")]).json()
+    assert seat_off["rejected"] == [{"session_key": "li:2", "reason": "reader_disabled"}]
+    # the generic reader is unaffected by which dedicated readers are on
+    assert _upload(client, dev["access_token"], [_generic()]).json()["accepted"]
+
+
+def test_generic_can_still_be_switched_off_by_the_org_or_the_seat(client, world):
+    cstore = _on(world, generic_web_allowed=False)
+    dev = _sign_in(client, world)
+    assert _upload(client, dev["access_token"], [_generic()]).json()["rejected"] == [
+        {"session_key": "doc:crm.acme.test/deals/42:2026-09-17T10", "reason": "generic_disabled"}]
+    cstore.save_org_policy(ORG, {"generic_web_allowed": True}, updated_by="seat_owner")
+    cstore.save_seat_settings(ORG, "seat_rep", {"generic_web": False})
+    assert _upload(client, dev["access_token"], [_generic(wm=4)]).json()["rejected"][0][
+        "reason"] == "generic_disabled"
+    assert _upload(client, dev["access_token"], [_session()]).json()["accepted"]
+
+
+def _blocks(n: int) -> list:
+    return [{"fp": f"sha256:{i}", "role": "text", "text": f"line {i}"} for i in range(n)]
+
+
+@pytest.mark.parametrize("session,ok", [
+    (_generic(bundle_id=None), False),                                  # generic names its app
+    (_generic(bundle_id="  "), False),
+    (_generic(blocks=[]), False),                                       # blocks[] required
+    (_generic(messages=[{"text": "hi"}]), False),                       # never both
+    (_session(blocks=_blocks(1)), False),                               # dedicated: no blocks
+    (_session(messages=[]), False),                                     # dedicated: messages
+    (_generic(blocks=_blocks(500)), True),                              # the block cap …
+    (_generic(blocks=_blocks(501)), False),
+    (_generic(blocks=[{"role": "table", "header": ["a"],
+                       "rows": [["x"]] * 200}]), True),                 # … and the row cap
+    (_generic(blocks=[{"role": "table", "header": ["a"], "rows": [["x"]] * 201}]), False),
+    (_generic(blocks=[{"text": "no role"}]), False),
+])
+def test_the_generic_session_shape_and_caps(client, world, session, ok):
+    _on(world)
+    dev = _sign_in(client, world)
+    res = _upload(client, dev["access_token"], [session]).json()
+    if ok:
+        assert res["accepted"] == [session["session_key"]], res
+    else:
+        assert res["rejected"] == [{"session_key": session["session_key"],
+                                    "reason": "invalid_session"}]
+
+
+def test_the_generic_gate_on_its_own():
+    org, seat = P.OrgPolicy(enabled=True), P.SeatSettings(enabled=True)
+    for app in ("generic", "web", "GENERIC"):
+        assert P.check_session(org, seat, app=app, url=None, bundle_id="com.acme.erp",
+                               private_window=False, now=NOW) is None
+    assert P.check_session(org, seat, app="generic", url="https://my.1password.com/",
+                           bundle_id="com.google.Chrome", private_window=False,
+                           now=NOW) == "domain_blocked"
+    assert P.check_session(org, seat, app="generic", url=None, bundle_id="com.apple.Terminal",
+                           private_window=False, now=NOW) == "app_blocked"
+    assert P.check_session(org, seat, app="generic", url=None, bundle_id="com.acme.erp",
+                           private_window=True, now=NOW) == "private_window"

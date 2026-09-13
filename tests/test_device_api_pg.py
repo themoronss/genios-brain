@@ -411,3 +411,63 @@ def test_account_deletion_cascades_every_capture_table(client):
     for table in ("devices", "device_auth_codes", "capture_policies", "seat_capture_settings",
                   "screen_session_deltas", "presence_leases"):
         assert _count(f"select count(*) from {table} where org_id=:o", o=org) == 0, table
+
+
+# ── D2 revised (plan §3.7): every app is read ───────────────────────────────────────────────
+def _generic(key="doc:erp:1", wm=1, url=None, bundle_id="com.acme.erp", **extra) -> dict:
+    return {"session_key": key, "app": "generic", "title": "Invoices", "url": url,
+            "bundle_id": bundle_id, "message_watermark": wm,
+            "blocks": [{"fp": "sha256:a", "role": "heading", "text": "Open invoices"},
+                       {"fp": "sha256:b", "role": "table", "header": ["Invoice", "Due"],
+                        "rows": [["INV-9", "2026-09-20"]]},
+                       {"fp": "sha256:c", "role": "kv", "label": "Owner", "value": "Priya"}],
+            **extra}
+
+
+def test_every_app_is_read_by_default_and_each_reader_can_be_switched_off(client):
+    owner = _register(client)
+    org = owner["org_id"]
+    doc = client.get("/v1/capture/policy", headers=H(owner["token"])).json()
+    assert doc["org"]["allowed_apps"] == ["gmail", "whatsapp", "linkedin", "slack", "outlook",
+                                          "gcal"]
+    assert doc["org"]["generic_web_allowed"] is True and doc["seat"]["generic_web"] is True
+    # the column defaults agree with the in-code defaults once a row exists
+    client.put("/v1/capture/policy", json={"enabled": True}, headers=H(owner["token"]))
+    client.put("/v1/capture/settings", json={"enabled": True}, headers=H(owner["token"]))
+    with _engine().connect() as c:
+        p = c.execute(text("select allowed_apps, generic_web_allowed from capture_policies "
+                           "where org_id=:o"), {"o": org}).first()
+        s = c.execute(text("select generic_web from seat_capture_settings where org_id=:o"),
+                      {"o": org}).first()
+    assert list(p.allowed_apps) == ["gmail", "whatsapp", "linkedin", "slack", "outlook", "gcal"]
+    assert p.generic_web_allowed is True and s.generic_web is True
+
+    dev = _sign_in(client, owner)
+    tok = dev["access_token"]
+    res = client.post("/v1/sessions", headers=H(tok), json={"schema_version": 1, "sessions": [
+        _generic(),                                                    # native: no url
+        _generic(key="doc:web:1", app="web", url="https://erp.acme.test/invoices",
+                 bundle_id="com.google.Chrome"),                       # `web` = generic
+        _generic(key="doc:bank:1", url="https://netbanking.hdfcbank.com/",
+                 bundle_id="com.google.Chrome"),
+        _generic(key="doc:nobundle:1", bundle_id=None),
+        _session(key="wa:1", app="whatsapp", url=None, bundle_id="net.whatsapp.WhatsApp")]}).json()
+    assert res["accepted"] == ["doc:erp:1", "doc:web:1", "wa:1"]
+    assert res["rejected"] == [{"session_key": "doc:bank:1", "reason": "domain_blocked"},
+                               {"session_key": "doc:nobundle:1", "reason": "invalid_session"}]
+    with _engine().connect() as c:
+        rows = {r.session_key: r for r in c.execute(text(
+            "select session_key, app, message_count from screen_session_deltas "
+            "where org_id=:o"), {"o": org})}
+    assert (rows["doc:erp:1"].app, rows["doc:erp:1"].message_count) == ("generic", 3)
+    assert rows["doc:web:1"].app == "generic"
+    assert (rows["wa:1"].app, rows["wa:1"].message_count) == ("whatsapp", 1)
+
+    client.put("/v1/capture/policy", json={"allowed_apps": ["gmail"]}, headers=H(owner["token"]))
+    off = client.post("/v1/sessions", headers=H(tok), json={"schema_version": 1, "sessions": [
+        _session(key="wa:2", app="whatsapp", url=None)]}).json()
+    assert off["rejected"] == [{"session_key": "wa:2", "reason": "reader_disabled"}]
+    client.put("/v1/capture/settings", json={"generic_web": False}, headers=H(owner["token"]))
+    gen = client.post("/v1/sessions", headers=H(tok), json={"schema_version": 1, "sessions": [
+        _generic(key="doc:erp:2")]}).json()
+    assert gen["rejected"] == [{"session_key": "doc:erp:2", "reason": "generic_disabled"}]
