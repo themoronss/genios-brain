@@ -11,7 +11,9 @@ from genios_engine.api.approval_routes import router as approval_router
 from genios_engine.api.audit_routes import router as audit_router
 from genios_engine.api.authority_routes import router as authority_router
 from genios_engine.api.auth_routes import router as auth_router
+from genios_engine.api.capture_routes import router as capture_router
 from genios_engine.api.channel_routes import router as channel_router
+from genios_engine.api.device_routes import router as device_router
 from genios_engine.api.delivery_routes import router as delivery_router
 from genios_engine.api.executive_routes import router as executive_router
 from genios_engine.api.expertise_routes import router as expertise_router
@@ -160,6 +162,8 @@ app.include_router(quality_router)   # L2.5.5 typed absence + L-5 coverage epoch
 app.include_router(correlation_router)  # L2.4.7 declared metric pairs, read on demand
 app.include_router(pattern_router)    # L2.6 pattern registry — shadow evaluation + activation guard
 app.include_router(l4_seam_router)     # L4 Z6 seams OUT: the critique endpoint + the book-level brief
+app.include_router(device_router)      # P1 screen capture: device sign-in (RFC 8628), uploads, presence
+app.include_router(capture_router)     # P1 screen capture: org policy + seat opt-in + pause
 
 
 @app.get("/")

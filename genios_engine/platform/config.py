@@ -113,6 +113,11 @@ class Settings(BaseSettings):
     # dropped the link line on all three production payloads. Kept empty by default because a
     # guessed hostname produces a broken link, which is worse than no link.
     dashboard_url: str = ""
+    # The oldest desktop app build the device API still serves. `/v1/presence` answers 426 below
+    # it and `/v1/capture/policy` reports it, so a build with a known capture bug can be retired
+    # without a server-side special case. The device sign-in `verification_uri` is
+    # `{dashboard_url}/device` — the same GENIOS_DASHBOARD_URL above, not a second setting.
+    desktop_min_app_version: str = "0.1.0"
 
     # LLM (L2 extraction) — Anthropic. The single combined relevance+extraction call.
     anthropic_api_key: str = ""

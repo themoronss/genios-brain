@@ -752,6 +752,15 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
         except Exception:                                    # noqa: BLE001 — never kill the heartbeat
             _log.exception("retention purge failed for reasoning_context_payloads")
             retention["reasoning_context_payloads"] = "error"
+        # Screen capture (migration 0142): held deltas past their org's `retention_days`, in
+        # bounded batches, plus long-dead presence leases and device codes. Same heartbeat, same
+        # reason as every purge above — no Celery beat on the quota-limited broker.
+        try:
+            from genios_engine.platform.capture_policy import CaptureStore
+            retention["screen_capture"] = CaptureStore(_graph.engine).purge_expired(now=now)
+        except Exception:                                    # noqa: BLE001 — never kill the heartbeat
+            _log.exception("retention purge failed for screen_session_deltas")
+            retention["screen_capture"] = "error"
         # expertise_packages, and this one is not theoretical: it reached 995 MB — 67% of the whole
         # database — and took the project over its disk quota into read-only, which stops every
         # write the product makes. Content-addressing (see contracts/domain_expertise.py) stops the

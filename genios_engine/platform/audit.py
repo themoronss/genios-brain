@@ -21,6 +21,9 @@ ACTIONS = [
     "module_activated", "module_deactivated", "scope_granted", "scope_revoked",
     "secret_accessed", "config_changed", "data_subject_access", "data_subject_erasure",
     "retention_swept",
+    # screen capture (P1): a device joining or leaving, the org policy, a seat's own opt-in
+    "device_registered", "device_revoked", "capture_policy_changed",
+    "seat_capture_enabled", "seat_capture_disabled",
 ]
 
 

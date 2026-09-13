@@ -580,11 +580,22 @@ def _deactivate_member(org: str, member_id: str, ctx: AuthCtx) -> dict:
                       {"o": org, "s": m.seat_id})
             revoked = revoke_seat_sessions(c, org_id=org, seat_id=m.seat_id,
                                            reason="seat_deactivated")
+            # Their capture devices stop too (the next heartbeat gets DEVICE_REVOKED and the app
+            # wipes its local store), and what those devices uploaded is deleted now rather than
+            # at the retention horizon: a removed teammate's screen text is not the org's to keep.
+            from genios_engine.platform.capture_policy import shred_seat_capture
+            from genios_engine.platform.devices import revoke_seat_devices
+            devices_revoked = revoke_seat_devices(c, org_id=org, seat_id=m.seat_id,
+                                                  revoked_by=ctx.seat_id or ctx.actor_id)
+            shred_seat_capture(c, org_id=org, seat_id=m.seat_id)
+        else:
+            devices_revoked = 0
     from genios_engine.platform.audit import record
     record(org, "member_deactivated", actor_type="user", actor_id=ctx.email or ctx.actor_id,
-           target_type="seat", target_id=m.seat_id, metadata={"sessions_revoked": revoked})
+           target_type="seat", target_id=m.seat_id,
+           metadata={"sessions_revoked": revoked, "devices_revoked": devices_revoked})
     return {"deactivated": True, "member_id": m.id, "seat_id": m.seat_id,
-            "sessions_revoked": revoked}
+            "sessions_revoked": revoked, "devices_revoked": devices_revoked}
 
 
 @router.post("/api/org/{org_id}/members/{member_id}/deactivate")
@@ -614,6 +625,9 @@ def cancel_invite(org_id: str, invite_id: str, ctx: AuthCtx = Depends(_admin_org
 # unrecoverable UI state (the upload API has no re-index-existing-file operation).
 # Full account deletion is guaranteed separately by org FKs in migration 0033.
 _ORG_SCOPED_TABLES = [
+    # migration 0142: what capture devices uploaded (held, encrypted) and who is at their desk.
+    # Captured content, not configuration — devices, capture policy and seat opt-ins survive.
+    "screen_session_deltas", "presence_leases",
     "delivery_outbox", "agent_claims", "card_build_claims", "card_feedback_revisions",
     # migration 0135: who else a card reached by declared responsibility — named staff
     "card_feedback_verdicts", "card_events", "card_recipients", "cards", "signals",
