@@ -552,10 +552,24 @@ class CaptureStore:
                 "device_auth_codes": codes}
 
 
+def screen_connection_id(seat_id: str) -> str:
+    """The `source_events.connection_id` of a seat's promoted screen events — ONE definition,
+    shared by the promoter that writes it and the shred that finds the seat's events by it."""
+    return f"screen:{seat_id}"
+
+
 def shred_seat_capture(conn, *, org_id: str, seat_id: str) -> int:
     """A removed seat's capture, gone in the caller's transaction: every uploaded delta (the
-    crypto-shred the P1 plan asks for — nothing of theirs stays to be decrypted), their presence
-    and their opt-in. Returns deltas deleted."""
+    crypto-shred the P1 plan asks for — nothing of theirs stays to be decrypted), the raw payload
+    and prepared text of every screen event promoted from them (P2 §14), their presence and their
+    opt-in. Returns deltas deleted."""
+    screen_events = ("select event_id from source_events where org_id = :o "
+                     "and source = 'screen_session' and connection_id = :c")
+    params = {"o": org_id, "c": screen_connection_id(seat_id)}
+    conn.execute(text(f"delete from raw_payloads where org_id = :o and event_id in "
+                      f"({screen_events})"), params)
+    conn.execute(text(f"delete from prepared_content where org_id = :o and event_id in "
+                      f"({screen_events})"), params)
     n = conn.execute(text("delete from screen_session_deltas where org_id=:o and seat_id=:s"),
                      {"o": org_id, "s": seat_id}).rowcount or 0
     conn.execute(text("delete from presence_leases where org_id=:o and seat_id=:s"),
@@ -570,5 +584,6 @@ __all__ = ["APP_IDS", "CaptureStore", "DEFAULT_ALLOWED_APPS", "GENERIC_ALIASES",
            "SENSITIVE_BUNDLE_IDS", "SENSITIVE_DOMAINS", "SeatSettings", "app_version_supported",
            "bundle_blocked", "check_session", "effective_policy", "is_blocked",
            "min_supported_app_version", "normalize_apps", "normalize_patterns",
-           "policy_document", "policy_version", "shred_seat_capture", "should_write_presence",
+           "policy_document", "policy_version", "screen_connection_id", "shred_seat_capture",
+           "should_write_presence",
            "url_block_reason", "version_tuple"]
