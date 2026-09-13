@@ -534,6 +534,7 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
     # named by one pack and missed because only the other was consulted is the same silent loss
     # the seam fix exists to prevent.
     effective = _effective_packs(store, org_id, registry)
+    transcript_events: set[str] = set()       # P5: parts this drain touched → settle status
     while done < max_total:
         rows = [r for r in _pull(store, org_id, _BATCH) if r.event_id not in seen]
         if not rows:
@@ -557,12 +558,24 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
                 _record_hold(store, org_id, row.event_id, outcome)
             elif outcome in _DONE_OUTCOMES:
                 _record_done(store, org_id, row.event_id)
+            if getattr(row, "object_type", None) == "meeting_transcript":
+                transcript_events.add(row.event_id)
         done += len(rows)
         if on_progress is not None:
             try:
                 on_progress(done)              # a live count for the sync progress bar
             except Exception:      # noqa: BLE001 — a report must never stop the drain
                 pass
+
+    if transcript_events:
+        # P5 · a transcript is `extracted` when all its parts are done, `failed` when one parked —
+        # for every door (the sync door has no background wait; group B's follow-up reads this).
+        try:
+            from genios_engine.capture.transcripts.ingest import settle_transcripts
+            settle_transcripts(store.engine, org_id, transcript_events)
+        except Exception:      # noqa: BLE001 — a status flip must never stop the drain
+            from genios_engine.platform.logging import get_logger
+            get_logger("genios.l2").exception("transcript settle failed for org=%s", org_id)
 
     for node_id in affected:                          # B9 rebuild affected read models
         build_entity_360(store, org_id=org_id, node_id=node_id)

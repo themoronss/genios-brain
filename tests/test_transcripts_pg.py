@@ -344,6 +344,28 @@ def test_reupload_is_idempotent_and_meeting_node_id_wins(monkeypatch):
     assert bad.status_code == 422
 
 
+def test_drive_transcripts_settle_to_extracted_or_failed_after_the_drain():
+    """The sync door has no background wait: the L2 drain's ledger settles the status."""
+    from genios_engine.capture.transcripts.ingest import settle_transcripts
+    from genios_engine.context.runner import _MAX_ATTEMPTS, _record_done, _record_failure
+    o = _org()
+    body = FIXTURE.read_text()
+    ok = _ingest(o, body, ref="drive_file_ok")
+    bad = _ingest(o, body.replace("Okay, let's start.", "Right, let's begin."), ref="drive_file_bad")
+    assert ok.transcript["status"] == bad.transcript["status"] == "extracting"
+    for e in ok.emitted_ids:
+        _record_done(o.store, o.org, e)
+    for _ in range(_MAX_ATTEMPTS):
+        _record_failure(o.store, o.org, bad.emitted_ids[0], "model unavailable")
+    assert settle_transcripts(_engine(), o.org, ok.emitted_ids + bad.emitted_ids) == 2
+    with _engine().connect() as c:
+        rows = dict(c.execute(text("select transcript_id, status || ':' || coalesce(error, '') "
+                                   "from transcripts where org_id=:o"), {"o": o.org}).fetchall())
+    assert rows[ok.transcript["transcript_id"]] == "extracted:"
+    assert rows[bad.transcript["transcript_id"]] == "failed:model unavailable"
+    assert settle_transcripts(_engine(), o.org, ok.emitted_ids) == 0      # settled once
+
+
 def test_personal_scope_is_private_to_the_uploader_alone():
     o = _org()
     out = _ingest(o, FIXTURE.read_text(), scope="personal")
