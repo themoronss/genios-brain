@@ -417,6 +417,11 @@ async def upload_resource(org_id: str, background_tasks: BackgroundTasks,
     # PDF would pay for both thirty times. `semantic` is None for a tenant with no activation
     # row, which is the state every tenant is in until a pilot switches one on — and the file
     # still lands, is still chunked and still reaches L2 exactly as before.
+    try:
+        from genios_engine.platform.intelligence_onboarding import make_tenant_live
+        make_tenant_live(getattr(_graph, "engine", None), org)      # idempotent, never fatal
+    except Exception:      # noqa: BLE001
+        pass
     semantic = make_semantic_lane(org, engine=getattr(_graph, "engine", None))
     esqe = make_esqe_stage(org, engine=getattr(_graph, "engine", None))
     results = []

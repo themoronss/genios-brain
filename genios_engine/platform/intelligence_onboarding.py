@@ -149,4 +149,89 @@ def provision_intelligence(engine, org_id: str, *, by: str = PROVISIONED_BY) -> 
     return result
 
 
-__all__ = ["PROVISIONED_BY", "Provisioned", "provision_intelligence"]
+#: Layer 4's features in wave order (`l4_activation.PRECONDITIONS`): each one's prerequisites are
+#: switched on before it.
+L4_DEFAULT_FEATURES = ("roster_v2", "ranking_v2", "bundle", "critique", "brief")
+
+
+@dataclass(frozen=True, slots=True)
+class TenantLive:
+    """What `make_tenant_live` switched on, per layer, plus the L3 provisioning it ran."""
+
+    switched_on: tuple[str, ...] = ()
+    provisioned: Provisioned | None = None
+    errors: tuple[str, ...] = ()
+
+    @property
+    def changed(self) -> bool:
+        return bool(self.switched_on) or bool(self.provisioned and self.provisioned.changed)
+
+
+def make_tenant_live(engine, org_id: str, *, by: str = PROVISIONED_BY) -> TenantLive:
+    """Switch the whole lane on for a tenant: L1 semantic → L2 analytic + patterns → L3 domains
+    (`provision_intelligence`) → L4 features, in the order `scripts/activate_tenant.py` flips them.
+
+    WHY THIS EXISTS. Measured on production 2026-09-13: a tenant signed up, connected Gmail and ran
+    Sync; 1,665 events landed and 14 facts came out, because `l1_semantic_activation` had no row
+    for it. Without that row `make_semantic_lane` returns None, no email is extracted, nothing is
+    published to `qualified_signals`, and Layer 2 — which only pulls events with an active QES —
+    has nothing to read. Only the pilot tenant worked, because a person had run the script.
+
+    Same rules as `provision_intelligence`: idempotent, never fatal, and it never overrules an
+    operator. A switch with ANY row — live or stamped off — is left exactly as it is; only a switch
+    that was never decided is turned on.
+    """
+    if engine is None or not org_id:
+        return TenantLive(errors=("no engine or no org",))
+    on: list[str] = []
+    errors: list[str] = []
+
+    def _step(name: str, fn) -> None:
+        try:
+            if fn():
+                on.append(name)
+        except Exception as exc:      # noqa: BLE001 — one switch, never the tenant
+            logger.exception("switch-on failed org=%s switch=%s", org_id, name)
+            errors.append(f"{name}: {type(exc).__name__}: {str(exc)[:120]}")
+
+    notes = "switched on by default for every tenant; an operator can switch it off"
+
+    def _l1() -> bool:
+        from genios_engine.platform.activation import activate_semantic, get_semantic_activation
+        if get_semantic_activation(engine, org_id) is not None:
+            return False
+        activate_semantic(engine, org_id, by=by, notes=notes)
+        return True
+
+    _step("l1.semantic", _l1)
+
+    from genios_engine.platform import l2_activation as l2
+    for switch in l2.SWITCHES:
+        def _l2(switch=switch) -> bool:
+            record = l2.get_l2_activation(engine, org_id)
+            if record is not None and (record.enabled_at(switch) is not None
+                                       or record.disabled_at(switch) is not None):
+                return False
+            l2.activate(engine, org_id, switch=switch, by=by, notes=notes)
+            return True
+        _step(f"l2.{switch}", _l2)
+
+    provisioned = provision_intelligence(engine, org_id, by=by)
+
+    from genios_engine.platform import l4_activation as l4
+    for feature in L4_DEFAULT_FEATURES:
+        def _l4(feature=feature) -> bool:
+            if l4.get_l4_activation(engine, org_id, feature) is not None:
+                return False
+            l4.activate(engine, org_id, feature=feature, by=by, notes=notes)
+            return True
+        _step(f"l4.{feature}", _l4)
+
+    result = TenantLive(switched_on=tuple(on), provisioned=provisioned, errors=tuple(errors))
+    if result.switched_on:
+        logger.info("tenant switched on org=%s switches=%s", org_id, result.switched_on)
+    return result
+
+
+__all__ = ["L4_DEFAULT_FEATURES", "PROVISIONED_BY", "Provisioned", "TenantLive",
+           "make_tenant_live", "provision_intelligence"]
