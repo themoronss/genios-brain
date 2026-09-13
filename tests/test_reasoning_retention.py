@@ -91,6 +91,21 @@ def test_scheduled_maintenance_purges_expired_reasoning_context_payloads(monkeyp
     monkeypatch.setattr(expertise_publisher, "purge_superseded_expertise_packages",
                         lambda eng, **kw: (packages_calls.append(eng), 4)[1])
 
+    # Screen capture (migration 0142): held deltas past each org's retention_days ride the same
+    # heartbeat — stubbed like the passes above, and asserted to run with the tenant's engine.
+    capture_calls = []
+
+    class _CaptureStore:
+        def __init__(self, eng):
+            self.eng = eng
+
+        def purge_expired(self, *, now):
+            capture_calls.append((self.eng, now))
+            return {"screen_session_deltas": 6}
+
+    from genios_engine.platform import capture_policy
+    monkeypatch.setattr(capture_policy, "CaptureStore", _CaptureStore)
+
     result = routes.run_maintenance_sweep()
 
     assert result["retention"] == {
@@ -98,8 +113,11 @@ def test_scheduled_maintenance_purges_expired_reasoning_context_payloads(monkeyp
         "prepared_content": 2,
         "unclassified_observations": 5,
         "reasoning_context_payloads": 3,
+        "screen_capture": {"screen_session_deltas": 6},
         "expertise_packages": 4,
     }
+    assert [e for e, _ in capture_calls] == [engine]
+    assert capture_calls[0][1].tzinfo is not None
     assert packages_calls == [engine]
     assert len(_ReasoningStore.calls) == 1
     called_engine, eval_time = _ReasoningStore.calls[0]
