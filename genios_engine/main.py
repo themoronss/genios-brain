@@ -40,6 +40,7 @@ from genios_engine.api.situation_routes import router as situation_router
 from genios_engine.api.lifecycle_routes import router as lifecycle_router
 from genios_engine.api.moment_routes import router as moment_router
 from genios_engine.api.team_routes import router as team_router
+from genios_engine.api.discrepancy_routes import router as discrepancy_router
 from genios_engine.api.stream_routes import router as stream_router
 from genios_engine.api.upload_routes import router as upload_router
 from genios_engine.api.usermodel_routes import router as usermodel_router
@@ -176,6 +177,7 @@ app.include_router(l4_seam_router)     # L4 Z6 seams OUT: the critique endpoint 
 app.include_router(device_router)      # P1 screen capture: device sign-in (RFC 8628), uploads, presence
 app.include_router(capture_router)     # P1 screen capture: org policy + seat opt-in + pause
 app.include_router(moment_router)      # P3 hot lane: slice, moments (evaluate/device), feedback, history
+app.include_router(discrepancy_router)  # P4 verify: seat-filtered discrepancies + resolve
 app.include_router(stream_router)      # P3 realtime: SSE /v1/stream over the realtime_events outbox
 
 

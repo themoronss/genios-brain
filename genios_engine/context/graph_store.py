@@ -30,6 +30,13 @@ def _ts(v) -> datetime | None:
     return None
 
 
+def challenger_digest(value: Any) -> str:
+    """The identity of a challenger VALUE (P4 §3.3 keep-blocking): a person who kept the held
+    value is not asked again about the same challenger — whatever event re-asserts it."""
+    blob = json.dumps(value, default=str, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(blob.encode()).hexdigest()[:32]
+
+
 def fact_write_action(*, held_value_json: str | None, held_rank: int | None,
                       held_occurred_at, new_value_json: str, new_rank: int,
                       new_occurred_at, replay: bool = False) -> str:
@@ -476,11 +483,16 @@ class GraphStore:
             # held keeps its OWN value (the system-of-record), challenger carries the new one.
             # (Was a bug: both sides recorded the challenger value → 'paid vs paid', real
             #  conflict lost — e.g. Stripe 'paid' R3 vs email 'unpaid' R2.)
+            # `fact_version_id` / `occurred_at` let a reader say WHERE and WHEN each side came from
+            # (P4 §3.3) and let the seat filter read the held version's audience.
             self.write_discrepancy(conn, org_id=org_id, subject_node_id=subject_node_id,
                                    field=field,
-                                   held={"value": json.loads(held_val), "rank": held.authority_rank},
+                                   held={"value": json.loads(held_val), "rank": held.authority_rank,
+                                         "fact_version_id": held.fact_version_id,
+                                         "occurred_at": held.occurred_at},
                                    challenger={"value": value, "rank": authority_rank,
-                                               "source": source, "event_id": event_id})
+                                               "source": source, "event_id": event_id,
+                                               "occurred_at": occurred_at})
             return None
         if action == "supersede":
             conn.execute(text("update graph_facts set valid_to=now(), status='superseded' "
@@ -553,6 +565,10 @@ class GraphStore:
         payload = {"o": org_id, "s": subject_node_id, "f": field,
                    "h": json.loads(json.dumps(held, default=str)),
                    "c": json.loads(json.dumps(challenger, default=str))}
+        if getattr(getattr(conn, "dialect", None), "name", "") == "postgresql":
+            self._write_discrepancy_pg(conn, payload,
+                                       digest=challenger_digest((challenger or {}).get("value")))
+            return
         updated = conn.execute(text(
             "update discrepancies set held=:h, challenger=:c "
             "where org_id=:o and subject_node_id=:s and field=:f and status='open'").bindparams(
@@ -571,10 +587,51 @@ class GraphStore:
         after the sources agree again. Called on supersede — the field's state has moved
         on, so a disagreement recorded against the OLD held value is settled. Returns the
         number closed."""
+        if getattr(getattr(conn, "dialect", None), "name", "") == "postgresql":
+            # A snoozed disagreement about the OLD value is settled too; the resolution says it
+            # was the sources, not a person, that settled it (P4 §3.3, migration 0153).
+            return conn.execute(text(
+                "update discrepancies set status='resolved', resolution='superseded', "
+                "resolved_at=now(), updated_at=now() where org_id=:o and subject_node_id=:s "
+                "and field=:f and status in ('open', 'snoozed')"),
+                {"o": org_id, "s": subject_node_id, "f": field}).rowcount or 0
         return conn.execute(text(
             "update discrepancies set status='resolved' where org_id=:o "
             "and subject_node_id=:s and field=:f and status='open'"),
             {"o": org_id, "s": subject_node_id, "f": field}).rowcount or 0
+
+    #: A kept challenger is not raised again for this long (P4 §3.3).
+    KEEP_DAYS = 30
+
+    def _write_discrepancy_pg(self, conn, payload: dict, *, digest: str) -> None:
+        """PostgreSQL: the same one-row-per-field rule, plus P4's resolution state.
+
+        * a challenger a person KEPT (same digest) within KEEP_DAYS is not raised again;
+        * a snoozed row is refreshed but stays snoozed until it wakes;
+        * `updated_at` moves only when the challenger actually changed — the verify pass reads
+          by it, so a re-sync of the same stale email is not a new disagreement."""
+        kept = conn.execute(text(
+            "select 1 from discrepancies where org_id=:o and subject_node_id=:s and field=:f "
+            "and status='kept' and challenger_digest=:d "
+            "and resolved_at > now() - make_interval(days => :k) limit 1"),
+            {"o": payload["o"], "s": payload["s"], "f": payload["f"], "d": digest,
+             "k": self.KEEP_DAYS}).first()
+        if kept is not None:
+            return
+        params = {**payload, "d": digest}
+        updated = conn.execute(text(
+            "update discrepancies set held=:h, challenger=:c, "
+            "updated_at = case when challenger_digest is distinct from :d then now() "
+            "else updated_at end, challenger_digest=:d "
+            "where org_id=:o and subject_node_id=:s and field=:f "
+            "and status in ('open', 'snoozed')").bindparams(
+                bindparam("h", type_=JSON), bindparam("c", type_=JSON)), params).rowcount
+        if not updated:
+            conn.execute(text(
+                "insert into discrepancies (id, org_id, subject_node_id, field, held, challenger, "
+                "challenger_digest, updated_at) values (:id, :o, :s, :f, :h, :c, :d, now())"
+            ).bindparams(bindparam("h", type_=JSON), bindparam("c", type_=JSON)),
+                {"id": new_id("disc"), **params})
 
     def write_observation(self, conn, *, org_id: str, subject_node_id: str | None,
                           kind: str, confidence: float, occurred_at: datetime | None,

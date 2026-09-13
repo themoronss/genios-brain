@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -585,6 +586,73 @@ _DEAL_WON_PHRASES = (
     "closed won", "deal won", "contract signed", "agreement signed", "po signed", "po issued",
     "purchase order issued", "signed the", "go ahead with you", "moving forward with you",
 )
+
+
+#: The seat's OWN outgoing screen lines (capture/screen/render.CHAT_SENT) — never a counterparty.
+_SEAT_SENT_OBJECT_TYPES = frozenset({"screen_chat_sent"})
+
+
+def _decision_decline(facts) -> str | None:
+    """The receipt of the first `decision.*` fact whose words state a LOST outcome, else None.
+
+    Reads the decision's value, subject and quote together: the model may put "declined" in the
+    state, "going with another vendor" in the quote, or either in the subject — the words are the
+    reliable part, their slot is not."""
+    for f in facts or ():
+        if not str(f.get("field") or "").startswith("decision."):
+            continue
+        quote = str(f.get("evidence_text") or "").strip()
+        blob = " ".join(str(f.get(k) or "") for k in ("value", "subject", "evidence_text")).lower()
+        if any(m in blob for m in _DEAL_LOST_PHRASES):
+            return quote or str(f.get("value") or "")
+    return None
+
+
+def _write_decline(conn, store, *, org_id: str, event_id: str, source: str, sender: str | None,
+                   internal_set, is_inbound: bool, touched: dict, internal_nodes: set, rank: int,
+                   occurred_at, relevance, quote: str) -> bool:
+    """`deal.status=lost` on the ONE open deal of the event's ONE external account, when the
+    counterparty wrote it. Returns True when a fact version was written."""
+    if not is_inbound or (sender and sender in (internal_set or ())):
+        return False                       # our own words about a deal are not the buyer's no
+    if sender and (_is_automated_sender(sender) or is_platform_sender(sender)):
+        return False
+    otype = conn.execute(text("select object_type from source_events where org_id=:o "
+                              "and event_id=:e"), {"o": org_id, "e": event_id}).scalar()
+    if otype in _SEAT_SENT_OBJECT_TYPES:
+        return False
+    external = sorted(c for c, t in touched.items() if t == "company" and c not in internal_nodes)
+    if len(external) != 1:
+        return False                       # two accounts on one event: never a guess between them
+    deals = conn.execute(text(
+        "select distinct d.node_id, st.value as status from graph_edges e "
+        "join graph_nodes d on d.org_id = e.org_id and d.valid_to is null and d.node_type = 'deal' "
+        " and d.node_id = case when e.from_node_id = :c then e.to_node_id else e.from_node_id end "
+        "left join graph_facts st on st.org_id = d.org_id and st.subject_node_id = d.node_id "
+        " and st.field = 'deal.status' and st.valid_to is null and st.status = 'active' "
+        " and st.visibility_scope is distinct from 'private' "
+        "where e.org_id = :o and e.valid_to is null and (e.from_node_id = :c or e.to_node_id = :c)"),
+        {"o": org_id, "c": external[0]}).fetchall()
+    open_deals = sorted({r.node_id for r in deals
+                         if str(_json_scalar(r.status) or "open").lower() not in ("won", "lost")})
+    if len(open_deals) != 1:
+        return False
+    return bool(store.write_fact(
+        conn, org_id=org_id, subject_node_id=open_deals[0], field="deal.status", value="lost",
+        value_type="string", confidence=FACT_CONF_BY_RANK.get(rank, FACT_CONF_BY_RANK[2]),
+        relevance=relevance, occurred_at=occurred_at, event_id=event_id, source=source,
+        authority_rank=rank,
+        evidence={"text": quote, "derived": "counterparty decline (decision.*)",
+                  "standing": "observed"}))
+
+
+def _json_scalar(raw):
+    if isinstance(raw, str) and raw[:1] == '"':
+        try:
+            return json.loads(raw)
+        except ValueError:
+            return raw
+    return raw
 
 
 def _normalise_meeting_status(value):
@@ -1227,6 +1295,20 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                                      authority_rank=claim_rank)
             if wrote:
                 fact_n += 1
+        # A COUNTERPARTY'S STATED DECLINE → the deal is lost (SCREEN_INTEL_P4 carry-over, P2 §7b).
+        # The extraction reliably returns the decline as a `decision.*` fact — its subject and
+        # field wording vary run to run, which is why routing it through `deal.*` lost it on some
+        # runs. So the rule reads the reliable fact and nothing the model named: a decision whose
+        # words state a lost outcome, written BY the counterparty (never the seat's own sent
+        # line, never an internal sender), on an event with exactly one external account that has
+        # exactly one open deal → `deal.status=lost` at this event's claim rank. A higher held rank
+        # (a CRM) raises a discrepancy through `write_fact`, never an overwrite.
+        if (decline := _decision_decline(facts)) is not None and not is_noise:
+            fact_n += int(_write_decline(
+                conn, store, org_id=org_id, event_id=event_id, source=source,
+                sender=sender_norm, internal_set=internal_set, is_inbound=is_inbound,
+                touched=touched, internal_nodes=internal_nodes, rank=claim_rank,
+                occurred_at=occurred_at, relevance=ex.relevance, quote=decline))
         # observation hygiene: one email quoting the same moment twice must not commit the
         # same (kind, evidence) twice — duplicates double-count in derived sentiment.
         seen_obs: set[tuple[str, str]] = set()

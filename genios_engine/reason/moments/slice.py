@@ -37,10 +37,20 @@ from sqlalchemy import text
 
 from genios_engine.platform.identity import norm_email, person_name_key
 from genios_engine.reason.moments.common import (VISIBLE_EVENT_SQL, VISIBLE_FACT_SQL, aware,
-                                                 iso, parse_ts, text_of, viewer_key)
+                                                 iso, parse_ts, text_of, value_of, viewer_key)
 
-SCHEMA_VERSION = 1
+#: v2 (P4 §3.4): `companies[].other_seats` (org-visible touches by other seats, 7 d) and
+#: `recent_changes` (≤ 14 d, seat-visible). Both additive; a v1 reader ignores them.
+SCHEMA_VERSION = 2
 TOUCH_DAYS = 90
+CHANGE_DAYS = 14
+CHANGE_MAX = 200
+#: The fields whose CHANGE a person acts on (P-14: "you are about to say the old value").
+CHANGE_FIELDS = ("deal.status", "deal.stage", "deal.value", "deal.amount", "deal.close_date",
+                 "deal.owner", "commitment.due_at", "commitment.status", "commitment.owner",
+                 "meeting.start_at", "meeting.status", "meeting.title", "person.title",
+                 "company.name", "contract.status", "contract.end_date", "contract.value")
+_VISIBLE_PRIOR = VISIBLE_FACT_SQL.replace("f.", "p.")
 MEETING_DAYS = 14
 DELTA_MARGIN = timedelta(minutes=15)
 MAX_DELTA_AGE = timedelta(days=7)
@@ -146,6 +156,42 @@ def _alias_out(alias_type: str, key: str) -> str:
     return key
 
 
+def recent_changes(conn, *, org_id: str, node_ids, viewer: str | None, now: datetime,
+                   days: int = CHANGE_DAYS, fields=CHANGE_FIELDS,
+                   limit: int = CHANGE_MAX) -> list[dict]:
+    """`[{node_id, field, old, new, changed_at}]`, newest first: live facts on `node_ids` that
+    replaced an earlier value in the last `days`. BOTH values must be readable by `viewer` — the
+    old value of another seat's private overlay is as private as the new one."""
+    ids = sorted(set(node_ids or ()))
+    if not ids:
+        return []
+    cut = now - timedelta(days=days)
+    rows = conn.execute(text(
+        "select f.subject_node_id, f.field, p.value as old, f.value as new, f.valid_from "
+        "from graph_facts f join lateral (select p.value from graph_facts p "
+        " where p.org_id = f.org_id and p.subject_node_id = f.subject_node_id "
+        " and p.field = f.field and p.status = 'superseded' and p.valid_to is not null "
+        " and p.valid_to <= f.valid_from and p.valid_to > :cut and " + _VISIBLE_PRIOR + " "
+        " order by p.valid_to desc, p.fact_version_id desc limit 1) p on true "
+        "where f.org_id = :o and f.subject_node_id = any(:ids) and f.field = any(:fields) "
+        "and f.valid_to is null and f.status = 'active' and f.valid_from > :cut and "
+        + VISIBLE_FACT_SQL + " order by f.valid_from desc, f.subject_node_id, f.field "
+        "limit :n"),
+        {"o": org_id, "ids": ids, "fields": list(fields), "cut": cut, "viewer": viewer,
+         "n": limit}).fetchall()
+    out, seen = [], set()
+    for r in rows:
+        key = (r.subject_node_id, r.field)
+        old, new = value_of(r.old), value_of(r.new)
+        if key in seen or json.dumps(old, sort_keys=True, default=str) == json.dumps(
+                new, sort_keys=True, default=str):
+            continue
+        seen.add(key)
+        out.append({"node_id": r.subject_node_id, "field": r.field, "old": old, "new": new,
+                    "changed_at": iso(aware(r.valid_from))})
+    return out
+
+
 def ensure_version(conn, org_id: str, seat_id: str) -> tuple[int, bool]:
     r = conn.execute(_VERSION, {"o": org_id, "s": seat_id}).first()
     return int(r.version), bool(r.created)
@@ -172,7 +218,7 @@ def build(engine, *, org_id: str, seat_id: str, email: str | None, since: int | 
 def _build(c, *, org_id: str, seat_id: str, email: str | None, viewer: str | None,
            now: datetime, threshold: datetime | None) -> dict:
     empty = {"people": [], "companies": [], "meetings": [], "busy": [], "commitments": [],
-             "removed": []}
+             "removed": [], "recent_changes": []}
     if not email:
         return empty
     from genios_engine.platform.capture_policy import screen_connection_id
@@ -360,10 +406,18 @@ def _build(c, *, org_id: str, seat_id: str, email: str | None, viewer: str | Non
     live_companies = {employer[p] for p in live_people if p in employer} | {
         n for n, (t, _) in nodes.items() if t == "company" and n in companies
         and n not in employer.values() and last_touch.get(n)}
+    # P-13 (v2): other seats' ORG-VISIBLE touches of these companies in 7 d — never a screen or
+    # private event (reason/moments/engagement.py). A new touch marks the company changed.
+    from genios_engine.reason.moments.engagement import other_seats
+    others = other_seats(c, org_id=org_id, seat_id=seat_id, company_ids=sorted(live_companies),
+                         now=now)
     companies_out = []
     for comp in sorted(live_companies):
         deal = company_deal.get(comp)
-        if not fresh(comp, deal):
+        seen_by = others.get(comp, [])
+        if not fresh(comp, deal) and not any(
+                threshold is not None and o["last_at"] and o["last_at"] >= threshold
+                for o in seen_by):
             continue
         staff = [last_touch[p] for p in live_people if employer.get(p) == comp and p in last_touch]
         lt = max([t for t in [last_touch.get(comp), *staff] if t is not None], default=None)
@@ -373,7 +427,9 @@ def _build(c, *, org_id: str, seat_id: str, email: str | None, viewer: str | Non
                               or nodes[comp][1], "aliases": aliases.get(comp, []),
                               "deal_status": text_of(df.get("deal.status")),
                               "deal_stage": text_of(df.get("deal.stage")),
-                              "last_touch_at": iso(lt)})
+                              "last_touch_at": iso(lt),
+                              "other_seats": [{"name": o["name"], "since": o["since"]}
+                                              for o in seen_by]})
     if threshold is not None:
         removed.extend(r.node_id for r in c.execute(text(
             "select distinct g.node_id from graph_nodes g where g.org_id = :o "
@@ -384,7 +440,10 @@ def _build(c, *, org_id: str, seat_id: str, email: str | None, viewer: str | Non
             {"o": org_id, "t": threshold}))
     return {"people": people_out, "companies": companies_out, "meetings": meeting_out,
             "busy": _merge_busy(busy), "commitments": commitments,
-            "removed": sorted(set(removed))}
+            "removed": sorted(set(removed)),
+            # P-14 (v2): small and time-windowed, so always the complete current set.
+            "recent_changes": recent_changes(c, org_id=org_id, node_ids=fact_ids, viewer=viewer,
+                                             now=now)}
 
 
 def encode(doc: dict) -> bytes:
