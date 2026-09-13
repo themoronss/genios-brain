@@ -33,7 +33,8 @@ def _active_agent_webhooks(conn, org_id: str) -> list[dict]:
         "where org_id=:o and coalesce(status,'active')='active' "
         "and 'signals.read'=any(coalesce(allowed_actions,array[]::text[])) "
         "and webhook_url is not null and webhook_url <> ''"), {"o": org_id}).mappings().all()
-    return [dict(r) for r in rows]
+    from genios_engine.platform.secret_box import unseal
+    return [{**dict(r), "webhook_secret": unseal(r["webhook_secret"])} for r in rows]
 
 
 def _card_projection(conn, org_id: str, card_id: str) -> dict | None:

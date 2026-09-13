@@ -222,7 +222,8 @@ def _drain_agent_action(engine, r: dict, payload: dict, now: datetime, out: dict
         _cancel(engine, r, "no frozen request body", out)
         return
     try:
-        res = _send_action()(body, dict(agent), delegation_id=dlg_id)
+        from genios_engine.platform.secret_box import unsealed_row
+        res = _send_action()(body, unsealed_row(agent), delegation_id=dlg_id)
         ok, parked, detail = _action_outcome(res)
     except Exception as exc:      # noqa: BLE001 — a transport crash is a failed attempt, retried
         ok, parked, detail = False, False, f"agent send failed: {exc}"
@@ -891,7 +892,11 @@ def _drain_claimed(engine, claimed: list[dict], gate: PgDeliveryContext, now: da
                     "select agent_id, webhook_url, webhook_secret from agent_registry "
                     "where org_id=:o and agent_id=:a and status='active'"),
                     {"o": r["org_id"], "a": r["recipient"]}).mappings().first()
-            cfg = dict(agent_row) if agent_row else None
+            if agent_row:
+                from genios_engine.platform.secret_box import unseal
+                cfg = {**dict(agent_row), "webhook_secret": unseal(agent_row["webhook_secret"])}
+            else:
+                cfg = None
         else:
             cfg = configs.get((r["org_id"], r["channel"]))
         ch = get_channel(r["channel"])

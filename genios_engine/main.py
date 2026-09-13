@@ -92,6 +92,13 @@ async def lifespan(app: FastAPI):
                                                         stop_screen_promoter)
     from genios_engine.platform.warm_lane import start_warm_lane, stop_warm_lane
     if get_settings().use_real_db:
+        # P6: seal any agent webhook secret still stored in plain text (idempotent, never raises).
+        try:
+            from genios_engine.platform.db import get_engine
+            from genios_engine.platform.secret_box import backfill_agent_webhook_secrets
+            backfill_agent_webhook_secrets(get_engine(get_settings().database_url))
+        except Exception:  # noqa: BLE001 — startup must not fail on a backfill
+            pass
         start_scheduler()
         start_sync_worker()          # durable sync-job worker: runs Sync jobs, resumes on restart
         start_warm_lane()            # pushed mail / uploads → graph + reasoning + cards in minutes

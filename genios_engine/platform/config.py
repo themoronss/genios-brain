@@ -110,6 +110,10 @@ class Settings(BaseSettings):
     # dropped the link line on all three production payloads. Kept empty by default because a
     # guessed hostname produces a broken link, which is worse than no link.
     dashboard_url: str = ""
+    # Where agents post delegation results (`result_url`, api/delegation_routes.result_base_url).
+    # Behind a proxy the request's own base URL can name an internal host; set this to the public
+    # API address. Empty = the request's base URL.
+    public_api_url: str = ""
     # The oldest desktop app build the device API still serves. `/v1/presence` answers 426 below
     # it and `/v1/capture/policy` reports it, so a build with a known capture bug can be retired
     # without a server-side special case. The device sign-in `verification_uri` is

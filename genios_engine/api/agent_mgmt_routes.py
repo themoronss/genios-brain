@@ -216,6 +216,9 @@ def _encrypt_key(raw: str) -> bytes | None:
         return None
 
 
+from genios_engine.platform.secret_box import seal  # noqa: E402 — agent webhook secrets at rest
+
+
 def _mint_webhook_secret() -> str:
     """Per-agent HMAC signing secret for outbound push. Shown once; the agent verifies
     X-Genios-Signature = sha256 hex of the raw body with this secret."""
@@ -280,7 +283,7 @@ def create_agent(body: CreateAgent, ctx: AuthCtx = Depends(require_owner)) -> di
             "on conflict (org_id, agent_id) do nothing returning agent_id"),
             {"id": new_id("agt"), "o": org_id, "a": aid, "kh": key_hash, "ke": key_enc, "acts": actions,
              "nm": body.name, "desc": body.description, "sc": json.dumps(scope), "kp": prefix,
-             "wu": webhook_url, "ws": webhook_secret,
+             "wu": webhook_url, "ws": seal(webhook_secret),   # encrypted at rest (P6)
              "op": json.dumps(profile) if profile else None,
              "opv": body.operating_profile_version or (1 if profile else 0),
              "opu": now if profile else None, "ts": now, "seat": seat_id}).first()
@@ -474,7 +477,7 @@ def set_webhook(aid: str, body: WebhookUpdate,
         secret = _mint_webhook_secret()
         c.execute(text("update agent_registry set webhook_url=:u, webhook_secret=:s "
                        "where org_id=:o and agent_id=:a"),
-                  {"u": url, "s": secret, "o": org_id, "a": aid})
+                  {"u": url, "s": seal(secret), "o": org_id, "a": aid})
     from genios_engine.platform.audit import record
     record(org_id, "config_changed", actor_type="user", target_type="agent", target_id=aid,
            metadata={"event": "webhook_set"})
