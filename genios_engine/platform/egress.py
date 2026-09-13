@@ -8,7 +8,8 @@ metadata service tomorrow.
 
 Rules:
   * https only. The single exception is the DEV loopback: `http(s)://localhost` / `127.0.0.1` /
-    `[::1]`, allowed only when `GENIOS_ENV` is `dev`.
+    `[::1]`, allowed only when `GENIOS_ENV` is EXPLICITLY `dev` / `development` / `test`. Unset
+    or unknown is production (safe by default — see `is_dev`).
   * The host is resolved and EVERY address it resolves to must be public: private, loopback,
     link-local, CGNAT (100.64/10), multicast, reserved/unspecified and the metadata address
     (169.254.169.254, fd00:ec2::254) are refused. IPv4-mapped IPv6 is judged as the IPv4 it maps.
@@ -56,9 +57,21 @@ class Target:
     addresses: tuple[str, ...]    # the checked addresses; empty = dev loopback (not pinned)
 
 
+#: The only environments where the loopback exception applies — named EXPLICITLY.
+_DEV_ENVS = frozenset({"dev", "development", "test"})
+
+
 def is_dev(env: str | None = None) -> bool:
-    value = get_settings().env if env is None else env
-    return str(value or "").strip().lower() == "dev"
+    """SAFE BY DEFAULT. `Settings.env` defaults to "dev" for the rest of the engine, but egress does
+    not trust that default: an UNSET `GENIOS_ENV` (the field not explicitly provided by the
+    environment / .env) or any unknown value is production — https only, localhost refused.
+    Local to this module; how other code reads GENIOS_ENV is unchanged."""
+    if env is None:
+        s = get_settings()
+        if "env" not in s.model_fields_set:
+            return False
+        env = s.env
+    return str(env or "").strip().lower() in _DEV_ENVS
 
 
 def _system_resolver(host: str, port: int) -> list[str]:
