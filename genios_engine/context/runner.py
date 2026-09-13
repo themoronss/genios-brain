@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
@@ -13,13 +14,17 @@ from genios_engine.capture.gate.rules import availability_marker
 from genios_engine.capture.structured.apply import (apply_mapping, apply_relations,
                                                     calendar_availability)
 from genios_engine.capture.structured.registry import get_mapping
+from genios_engine.capture.validate.spans import apply_verdicts
 from genios_engine.context.graph_store import GraphStore
 from genios_engine.context.llm.client import LLMClient
 from genios_engine.context.pipeline import process_event
 from genios_engine.context.qes_adapter import adapt_qes_extraction
 from genios_engine.context.read_models import build_entity_360
 from genios_engine.context.structured import commit_structured
+from genios_engine.contracts.extraction import ExtractionResult
 from genios_engine.platform.crypto import decrypt
+
+_grade_log = logging.getLogger(__name__)
 
 # B0 — intake + L1→L2 handoff. PRODUCTION: drains EVERY pending emitted event (no test
 # cap), processes them CONCURRENTLY (the LLM call is the bottleneck — parallel = 5-6x),
@@ -99,6 +104,33 @@ def _internal_emails(store: GraphStore, org_id: str) -> frozenset[str]:
     return frozenset(r.e for r in rows if r.e)
 
 
+def graded_extraction(qes_output, source_text: str | None, event_id: str = "?"):
+    """The cached L1 extraction, with its evidence spans GRADED against the event's own text.
+
+    L1 files the extractor's UNVERIFIED output in the permanent cache on purpose (an audit and a
+    replay need the original) and grades it on the way out of its lane — "every reader, cache hit
+    included, is graded" (`capture/pipeline._grade_spans`). Layer 2 is a reader too, but it read
+    `l1_extraction_results.output` raw, so every span arrived `verified: false` and
+    `adapt_qes_extraction` — which keeps a business fact only with a verified receipt — dropped
+    EVERY business fact from every source: `deal.stage`, `party.role`, amounts. Found by the P2
+    gate (a declined deal read off LinkedIn never reached the graph); on the local prod copy 715
+    Gmail business-fact spans had produced 17 graph facts.
+
+    Same text L1 graded against (`prepared_content.clean_text`), same function, no model call.
+    No text, or a grading failure → the ungraded extraction travels, exactly as before.
+    """
+    if not source_text or qes_output is None:
+        return qes_output
+    try:
+        result = (qes_output if isinstance(qes_output, ExtractionResult)
+                  else ExtractionResult.model_validate(dict(qes_output)))
+        graded, _ = apply_verdicts(result, source_text)
+        return graded
+    except Exception:      # noqa: BLE001 — a grading failure costs receipts, never the event
+        _grade_log.warning("could not grade evidence for event=%s in L2", event_id, exc_info=True)
+        return qes_output
+
+
 def _process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozenset(),
                  effective=None):
     """Route + process ONE event. Returns (outcome, affected_node_id | None)."""
@@ -135,6 +167,7 @@ def _process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozens
         return "held_missing_qes_extraction", None
     if not isinstance(qes_output, dict):
         qes_output = json.loads(qes_output)
+    qes_output = graded_extraction(qes_output, getattr(row, "prepared_text", None), row.event_id)
     qualified = adapt_qes_extraction(
         qes_output,
         confidence_bp=int(getattr(row, "qes_confidence_bp", 0) or 0),

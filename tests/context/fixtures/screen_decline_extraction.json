@@ -1,0 +1,251 @@
+{
+ "output": {
+  "roles": [
+   {
+    "role": "decision maker",
+    "party": "Priya Shah",
+    "evidence_text": "update from Acme Logistics: we have decided"
+   }
+  ],
+  "intent": "reject",
+  "stance": "negative",
+  "topics": [
+   "vendor selection",
+   "proposal decision"
+  ],
+  "amounts": [],
+  "questions": [],
+  "commitments": [],
+  "all_evidence": [
+   {
+    "page": null,
+    "quote": "Priya Shah",
+    "section": null,
+    "verified": false,
+    "end_offset": 10,
+    "source_ref": "prepared_content:pc_d8d5b4ae31ae44b5a4abdbe9",
+    "start_offset": 0
+   },
+   {
+    "page": null,
+    "quote": "Acme Logistics",
+    "section": null,
+    "verified": false,
+    "end_offset": 54,
+    "source_ref": "prepared_content:pc_d8d5b4ae31ae44b5a4abdbe9",
+    "start_offset": 40
+   },
+   {
+    "page": null,
+    "quote": "this quarter",
+    "section": null,
+    "verified": false,
+    "end_offset": 107,
+    "source_ref": "prepared_content:pc_d8d5b4ae31ae44b5a4abdbe9",
+    "start_offset": 95
+   },
+   {
+    "page": null,
+    "quote": "we have decided to go with another vendor this quarter, so we will not proceed with your proposal",
+    "section": null,
+    "verified": false,
+    "end_offset": 153,
+    "source_ref": "prepared_content:pc_d8d5b4ae31ae44b5a4abdbe9",
+    "start_offset": 56
+   },
+   {
+    "page": null,
+    "quote": "we have decided to go with another vendor this quarter",
+    "section": null,
+    "verified": false,
+    "end_offset": 110,
+    "source_ref": "prepared_content:pc_d8d5b4ae31ae44b5a4abdbe9",
+    "start_offset": 56
+   },
+   {
+    "page": null,
+    "quote": "Priya Shah: Hi Rohit, update from Acme Logistics: we have decided",
+    "section": null,
+    "verified": false,
+    "end_offset": 77,
+    "source_ref": "prepared_content:pc_d8d5b4ae31ae44b5a4abdbe9",
+    "start_offset": 12
+   }
+  ],
+  "availability": [],
+  "dependencies": [],
+  "input_tokens": 5072,
+  "output_tokens": 1371,
+  "relationships": [
+   {
+    "party": "Acme Logistics",
+    "nature": "vendor evaluation / proposal consideration",
+    "direction": "inbound",
+    "evidence_text": "we have decided to go with another vendor this quarter, so we will not proceed with your proposal"
+   }
+  ],
+  "business_facts": [
+   {
+    "field": "deal.stage",
+    "value": "decided to go with another vendor",
+    "subject": "Acme Logistics",
+    "evidence": [
+     {
+      "page": null,
+      "quote": "we have decided to go with another vendor this quarter",
+      "section": null,
+      "verified": false,
+      "end_offset": 110,
+      "source_ref": "prepared_content:pc_d8d5b4ae31ae44b5a4abdbe9",
+      "start_offset": 56
+     }
+    ],
+    "standing": "observed",
+    "confidence_bp": 9500
+   },
+   {
+    "field": "party.role",
+    "value": "decision maker at Acme Logistics",
+    "subject": "Priya Shah",
+    "evidence": [
+     {
+      "page": null,
+      "quote": "Priya Shah: Hi Rohit, update from Acme Logistics: we have decided",
+      "section": null,
+      "verified": false,
+      "end_offset": 77,
+      "source_ref": "prepared_content:pc_d8d5b4ae31ae44b5a4abdbe9",
+      "start_offset": 12
+     }
+    ],
+    "standing": "observed",
+    "confidence_bp": 8500
+   }
+  ],
+  "model_snapshot": "claude-haiku-4-5-20251001",
+  "prompt_version": "l1.4.2:screen_session:7357e0810502",
+  "schema_version": "1",
+  "dates_mentioned": [
+   {
+    "latest": "2026-09-30T23:59:59Z",
+    "earliest": "2026-09-13T09:22:11.391699Z",
+    "evidence": [
+     {
+      "page": null,
+      "quote": "this quarter",
+      "section": null,
+      "verified": false,
+      "end_offset": 107,
+      "source_ref": "prepared_content:pc_d8d5b4ae31ae44b5a4abdbe9",
+      "start_offset": 95
+     }
+    ],
+    "certainty": "range",
+    "as_written": "this quarter",
+    "resolved_against": "2026-09-13T09:22:11.391699Z"
+   }
+  ],
+  "decision_states": [
+   {
+    "owner": "Acme Logistics",
+    "state": "made",
+    "subject": "proceeding with Rohit's proposal",
+    "evidence": [
+     {
+      "page": null,
+      "quote": "we have decided to go with another vendor this quarter, so we will not proceed with your proposal",
+      "section": null,
+      "verified": false,
+      "end_offset": 153,
+      "source_ref": "prepared_content:pc_d8d5b4ae31ae44b5a4abdbe9",
+      "start_offset": 56
+     }
+    ],
+    "blocked_on": null,
+    "confidence_bp": 9500
+   }
+  ],
+  "entity_mentions": [
+   {
+    "evidence": [
+     {
+      "page": null,
+      "quote": "Priya Shah",
+      "section": null,
+      "verified": false,
+      "end_offset": 10,
+      "source_ref": "prepared_content:pc_d8d5b4ae31ae44b5a4abdbe9",
+      "start_offset": 0
+     }
+    ],
+    "entity_type": "person",
+    "surface_form": "Priya Shah",
+    "confidence_bp": 9500,
+    "canonical_hint": "priya shah"
+   },
+   {
+    "evidence": [
+     {
+      "page": null,
+      "quote": "Acme Logistics",
+      "section": null,
+      "verified": false,
+      "end_offset": 54,
+      "source_ref": "prepared_content:pc_d8d5b4ae31ae44b5a4abdbe9",
+      "start_offset": 40
+     }
+    ],
+    "entity_type": "organization",
+    "surface_form": "Acme Logistics",
+    "confidence_bp": 9500,
+    "canonical_hint": "acme logistics"
+   }
+  ],
+  "exchange_intent": {
+   "tone": "direct",
+   "motive": "to inform of vendor selection decision and rejection of proposal",
+   "category": "working",
+   "formality": "professional",
+   "engagement": "high",
+   "asks_for_reply": false,
+   "human_authored": true,
+   "addressed_personally": true
+  },
+  "implied_actions": [
+   "Rohit should cease pursuit of this proposal with Acme Logistics"
+  ],
+  "field_confidence": {
+   "roles": 8500,
+   "intent": 9500,
+   "stance": 9500,
+   "relationships": 8500,
+   "business_facts": 9000,
+   "decision_states": 9500,
+   "entity_mentions": 9500,
+   "exchange_intent": 8500,
+   "implied_actions": 8500,
+   "unclassified_observations": 9500
+  },
+  "extraction_profile": "screen_session",
+  "scheduling_proposals": [],
+  "unclassified_observations": [
+   {
+    "evidence": [
+     {
+      "page": null,
+      "quote": "we have decided to go with another vendor this quarter, so we will not proceed with your proposal",
+      "section": null,
+      "verified": false,
+      "end_offset": 153,
+      "source_ref": "prepared_content:pc_d8d5b4ae31ae44b5a4abdbe9",
+      "start_offset": 56
+     }
+    ],
+    "description": "Acme Logistics has chosen a competing vendor over the recipient's proposal for the current quarter.",
+    "confidence_bp": 9500,
+    "proposed_kind": "vendor_selection_outcome"
+   }
+  ]
+ },
+ "clean_text": "Priya Shah\n\nPriya Shah: Hi Rohit, update from Acme Logistics: we have decided to go with another vendor this quarter, so we will not proceed with your proposal. e7982d"
+}
