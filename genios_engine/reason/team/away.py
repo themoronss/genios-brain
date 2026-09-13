@@ -74,8 +74,10 @@ def deadline_situations(conn, ctx: TeamContext) -> list[Situation]:
                 else (b.label if b is not None else (link.owed_to or "a counterparty")))
         what = clip(link.text, 60)
         headline = f"{owner.label} is away {span(window)} — “{what}” due {day(link.due)}"
-        body = (f"{owner.label} owes {owed} “{what}” by {day(link.due)} and is away "
-                f"{span(window)}. {cover.sentence()}")
+        # THE COVER LEADS. The card keeps ≤ 140 characters of this body, and the headline already
+        # says who is away and when; the one thing the reader can act on must survive the clip.
+        body = (f"{cover.sentence()} {owner.label} owes {owed} “{what}” by {day(link.due)}, "
+                f"away {span(window)}.")
         evidence = [window_evidence(owner, window),
                     {"kind": "commitment", "node_id": link.node_id, "text": link.text,
                      "due": link.due.isoformat(), "owed_to": owed if owed != "you" else None},

@@ -424,6 +424,49 @@ def test_screen_mail_promise_to_the_reader_reaches_him_with_project_cover(client
     assert res.json()["away"] == 3 and res.json()["pending"] == 1, res.json()
 
 
+# ── 7 · the cover survives the card's 140-char clip; one chain run rewrites it ────────────────
+def test_first_card_names_available_cover_and_next_pass_rewrites_it(client):
+    ws = _voltex(client)
+    org, cm = ws["org"], f"node_cmt_{ws['uid']}"
+    long_text = ("send the complete ISO audit evidence documents, signed access logs and the "
+                 "updated risk register")
+    with _engine().begin() as c:
+        c.execute(text("insert into graph_nodes (node_id, version, org_id, node_type, "
+                       "canonical_key, display_name) values (:n, 1, :o, 'commitment', :k, :d)"),
+                  {"n": cm, "o": org, "k": f"commitment:{cm}", "d": long_text[:80]})
+        for field, value in (("commitment.text", long_text), ("commitment.status", "open"),
+                             ("commitment.owner", ws["mails"]["anisha"]),
+                             ("commitment.owed_to", "Emru"),
+                             ("commitment.due_at", (NOW + timedelta(days=5)).isoformat())):
+            _fact(c, org, cm, field, value)
+        for seat, acc in (("anisha", "owns"), ("shalini", "covers")):
+            c.execute(text(
+                "insert into seat_responsibilities (org_id, seat_id, scope_kind, scope_key, "
+                "accountability, source, valid_from) values (:o, :s, 'project', 'iso audit', "
+                ":a, 'admin_declared', :f)"),
+                {"o": org, "s": ws["seats"][seat], "a": acc, "f": NOW - timedelta(days=30)})
+    _away(ws, "anisha", 2, 9)
+
+    assert _team_pass(ws) == 1
+    card = _team_cards(ws, "team.deadline_at_risk")[0]
+    assert card["situation"].startswith("Proposed cover: Shalini Iyer (covers project iso audit)."), \
+        card["situation"]
+    assert any(e.get("kind") == "responsibility" and e.get("seat_id") == ws["seats"]["shalini"]
+               for e in card["why"])
+
+    _away(ws, "shalini", 3, 8)                          # her OOO lands → ONE pass rewrites it
+    assert _team_pass(ws) == 1
+    after = _team_cards(ws, "team.deadline_at_risk")
+    assert len(after) == 1 and after[0]["card_id"] == card["card_id"]
+    assert after[0]["situation"].startswith("No cover available: Shalini Iyer is also away."), \
+        after[0]["situation"]
+    history = _rows("select kind, detail from card_events where card_id=:c order by occurred_at",
+                    c=card["card_id"])
+    assert [h["kind"] for h in history] == ["card.created", "card.rebuilt"]
+    assert history[0]["detail"]["situation"].startswith("Proposed cover: Shalini Iyer")
+    assert history[1]["detail"]["situation"].startswith("No cover available")
+
+
 # ── 4 · the away view ─────────────────────────────────────────────────────────────────────────
 def test_team_away_is_who_and_when_only(client):
     ws = _voltex(client)
