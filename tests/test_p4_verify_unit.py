@@ -32,6 +32,40 @@ def test_no_decline_without_a_decision_fact_or_without_lost_words():
     assert _decision_decline([{"field": "deal.stage", "value": QUOTE}]) is None
 
 
+_CTX = "\n\ncontext — do not extract\n"
+_LI = ("Priya: Thanks for the demo. After discussing internally we have decided to go with "
+       "another vendor for this rollout. Appreciate your time.")
+
+
+def test_counterparty_words_with_a_negative_reading_are_a_decline():
+    from genios_engine.context.pipeline import _counterparty_decline as cd
+    hit = cd(_LI + _CTX + "You: sharing the proposal", intent="inform", stance="negative")
+    assert hit == ("After discussing internally we have decided to go with another vendor for "
+                   "this rollout.")
+    assert cd(_LI, intent="reject", stance="neutral") is not None
+    assert cd(_LI, intent="inform", stance="neutral") is None          # no negative reading
+
+
+def test_counterparty_decline_false_positive_guards():
+    from genios_engine.context.pipeline import _counterparty_decline as cd
+    # choosing US, although "decided against" / "other vendor" appear
+    assert cd("We decided against the other vendor and will go with you.",
+              intent="reject", stance="negative") is None
+    # negated
+    assert cd("We have not declined, we just need another week.", intent="reject",
+              stance="negative") is None
+    assert cd("We are not going with another vendor.", intent="reject",
+              stance="negative") is None
+    # the lost words only in the context section / quoted history
+    assert cd("Priya: Thanks, will revert next week." + _CTX
+              + "You: are you going with another vendor?", intent="reject",
+              stance="negative") is None
+    assert cd("Thanks.\n> we have decided to go with another vendor", intent="reject",
+              stance="negative") is None
+    assert cd("Noted.\n\nOn Mon, 8 Sep 2026 Rohit wrote:\nif you go with another vendor…",
+              intent="reject", stance="negative") is None
+
+
 def test_challenger_digest_is_a_value_identity():
     assert challenger_digest("lost") == challenger_digest("lost")
     assert challenger_digest({"a": 1, "b": 2}) == challenger_digest({"b": 2, "a": 1})
