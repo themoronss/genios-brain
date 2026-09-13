@@ -473,6 +473,15 @@ def _run_l2_chain(org_id: str) -> bool:
             with stage("deliver.build_cards", org_id):
                 build_cards_for_org(graph=_graph, card_store=_card_store, org_id=org_id,
                                     llm=_llm, registry=_registry)
+            # P4 post-passes (reason/team, reason/verify — SCREEN_INTEL_P4 §3.1): deterministic
+            # team/verify situations → card + moment. Logged, never fails the chain.
+            try:
+                from datetime import datetime as _dt, timezone as _tz
+                from genios_engine.reason.team.postpass import run_post_passes
+                with stage("post.passes", org_id):
+                    run_post_passes(_graph.engine, _card_store, org_id, now=_dt.now(_tz.utc))
+            except Exception:      # noqa: BLE001
+                _log.exception("post-passes failed for org_id=%s", org_id)
     except Exception:
         _log.exception("L2/L3/L5 background pass failed for org_id=%s", org_id)
         return False
