@@ -508,7 +508,46 @@ def load_evidence_quotes(store, org_id: str, node_id: str, limit: int = 8,
     return out
 
 
-def _visible_quotes(quotes, seat_id, *, store, org_id: str) -> list[dict]:
+def filter_card_facts(store, org_id: str, node_id: str, facts: dict, assignee: str | None,
+                      co_recipients=()) -> dict:
+    """The node's facts minus the PRIVATE ones some recipient of this card may not read (§3.4).
+
+    A private fact (learned only from a seat's screen or personal upload, outside the work
+    families) stays on the card only when EVERY seat the card reaches — owner and co-recipients —
+    is one of its principals; an unrouted card (no owner) carries none. One query for the node's
+    private fields; the org-seat read only when there are any. Fails CLOSED: if the audience
+    cannot be read, every non-work field is dropped rather than risk one.
+    """
+    from genios_engine.context.fact_visibility import drop_unreadable, is_work_fact
+    try:
+        with store.engine.connect() as c:
+            if c.dialect.name != "postgresql":
+                return facts
+            private = {r.field: frozenset(str(p).strip().lower()
+                                          for p in (r.visibility_principals or ()))
+                       for r in c.execute(text(
+                           "select field, visibility_principals from graph_facts "
+                           "where org_id=:o and subject_node_id=:n and visibility_scope='private' "
+                           "and valid_to is null and status='active'"),
+                           {"o": org_id, "n": node_id})}
+            if not private:
+                return facts
+            seats = [s for s in [assignee, *[(r or {}).get("seat_id") for r in co_recipients or ()]]
+                     if s]
+            found = {r.seat_id: r.email for r in c.execute(text(
+                "select seat_id, email from org_seats where org_id=:o and seat_id in :s")
+                .bindparams(bindparam("s", expanding=True)), {"o": org_id, "s": seats or [""]})}
+    except Exception:      # noqa: BLE001 — see FAILS CLOSED above
+        return {f: v for f, v in facts.items() if is_work_fact(f)}
+    if not assignee:
+        return drop_unreadable(facts, private, ())
+    audience = [str(found.get(s) or "").strip().lower() for s in seats]
+    if not all(audience):
+        return drop_unreadable(facts, private, ())
+    return drop_unreadable(facts, private, audience)
+
+
+def _visible_quotes(quotes, seat_id, *, store, org_id: str, co_seats=()) -> list[dict]:
     """Only the quotes this card's recipient is allowed to have derived from.
 
     THE LEAK THIS CLOSES. `capture/visibility_rules` marks every mail, chat, meeting and
@@ -522,37 +561,56 @@ def _visible_quotes(quotes, seat_id, *, store, org_id: str) -> list[dict]:
     upload, a CRM row — is `ORG`, and every seat may see it. Only PARTICIPANTS narrows, and it
     narrows to the addresses actually on the exchange.
 
-    AN UNROUTED CARD KEEPS ITS QUOTES. `seat_id` is None when the card is going to the admin
-    QUEUE rather than to a named person, and that queue is read by whoever runs the account.
-    Dropping every participants-scoped quote there would silently gut the admin view; the honest
-    boundary for a queue is the tenant, which `org_id` already enforces. What this stops is the
-    narrower and worse case: a card ADDRESSED to a named seat who was not a participant.
+    PRIVATE NARROWS EXACTLY LIKE PARTICIPANTS. A `private` source — a seat's screen session, a
+    personal upload — names one owner in its principals. It used to fall through the
+    `!= "participants"` test and reach ANY seat, so seat 2 could be quoted what seat 1's screen
+    showed, or a sentence from seat 1's personal file (SCREEN_INTEL_P2 §1.1).
+
+    AN UNROUTED CARD KEEPS ITS PARTICIPANTS QUOTES, AND LOSES ITS PRIVATE ONES. `seat_id` is None
+    when the card is going to the admin QUEUE rather than to a named person, and that queue is
+    read by whoever runs the account. Dropping every participants-scoped quote there would
+    silently gut the admin view; the honest boundary for a queue of work mail is the tenant, which
+    `org_id` already enforces. A private source is different in kind: it was never the org's to
+    read — the admin is not its owner — so with no named viewer there is nobody it may reach.
 
     FAILS OPEN ON A LOOKUP ERROR, deliberately and narrowly: if the seat's address cannot be
-    read, the quotes are kept. A card that silently loses its evidence looks identical to a
-    situation with none, and this function must not be able to blank a card because a directory
-    query timed out. The tenant boundary is not what is failing open here — `org_id` is enforced
-    in the query itself.
+    read, the org and participants quotes are kept. A card that silently loses its evidence looks
+    identical to a situation with none, and this function must not be able to blank a card because
+    a directory query timed out. The tenant boundary is not what is failing open here — `org_id`
+    is enforced in the query itself. PRIVATE QUOTES FAIL CLOSED on the same error: failing open
+    there is the exact leak this function exists to stop.
     """
     rows = list(quotes or ())
-    if not rows or not seat_id:
+    if not rows:
         return rows
+    if not seat_id:
+        return [q for q in rows if q.get("visibility_scope") != "private"]
+    # A PRIVATE quote must be readable by EVERY seat the card reaches — the owner and each
+    # co-recipient (`card_recipients`) — not only the owner: they all read the same card body.
+    seats = [seat_id] + [s for s in (co_seats or ()) if s and s != seat_id]
     try:
         from sqlalchemy import text as _text
 
         with store.engine.connect() as c:
-            email = c.execute(_text(
-                "select email from org_seats where org_id = :o and seat_id = :s"),
-                {"o": org_id, "s": seat_id}).scalar()
+            found = {r.seat_id: r.email for r in c.execute(_text(
+                "select seat_id, email from org_seats where org_id = :o and seat_id in :s")
+                .bindparams(bindparam("s", expanding=True)), {"o": org_id, "s": seats})}
     except Exception:      # noqa: BLE001 — see FAILS OPEN above
-        return rows
-    viewer = str(email or "").strip().lower() or None
+        return [q for q in rows if q.get("visibility_scope") != "private"]
+    viewer = str(found.get(seat_id) or "").strip().lower() or None
+    audience = [str(found.get(s) or "").strip().lower() for s in seats]
 
     kept: list[dict] = []
     for quote in rows:
         scope = quote.get("visibility_scope")
-        if scope != "participants":
+        if scope not in ("participants", "private"):
             kept.append(quote)                      # org, public, or pre-0067
+            continue
+        if scope == "private":
+            owners = {str(x).strip().lower()
+                      for x in (quote.get("visibility_principals") or ()) if str(x).strip()}
+            if all(a and a in owners for a in audience):
+                kept.append(quote)
             continue
         # NORMALISED AT THE COMPARISON, not only at the loader. `load_evidence_quotes` already
         # lowercases and strips, and relying on that would make this check depend on every
@@ -776,6 +834,8 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
     # upsert on `cards_one_per_signal` and every count in the product reads rows — so the people
     # it reaches ride BESIDE it in `card_recipients`, each told which slice made it theirs.
     co_recipients = list(co_recipients_for(store, org_id, facts, scoped_attrs, owner=assignee))
+    # Every reader of this card now known → drop the private facts one of them may not read.
+    facts = filter_card_facts(store, org_id, node_id, facts, assignee, co_recipients)
     # The rule's own declared clock, not a hand-written lookup. Each pack rule states the field
     # its urgency is timed from; the renderer used a 6-entry map and printed "severald" for the
     # other 19.
@@ -907,7 +967,8 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
     # quotes are read at `load_evidence_quotes` before `resolve_assignee` has run — the recipient
     # is not known yet at the point the SQL executes, which is the structural reason this check
     # never existed.
-    quotes = _visible_quotes(quotes, assignee, store=store, org_id=org_id)
+    quotes = _visible_quotes(quotes, assignee, store=store, org_id=org_id,
+                             co_seats=[(r or {}).get("seat_id") for r in co_recipients])
     grounding = quotable(quotes)
     if not grounding and reason_code in _GROUNDED_BY_OUR_OWN_WORDS:
         grounding = [q for q in (quotes or ())
@@ -946,6 +1007,9 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
         "abstained_because": abstained,
         "urgency_band": urgency_band, "assignee": assignee, "resolved_rule": rule,
         "co_recipients": co_recipients,
+        # The quotes THIS recipient may see — what E1's renderer must be handed, never the
+        # loader's unfiltered list (deliver/pipeline.py). Internal, like `_facts` / `_slots`.
+        "_quotes": quotes,
         "score": int(signal["score"]),
         "score_block": {"S": int(signal["score"]), **{k: score_inputs.get(k) for k in
                         ("U", "I", "R", "C")}, "inputs": score_inputs},

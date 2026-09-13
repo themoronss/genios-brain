@@ -433,6 +433,12 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
     # one the per-node read built. Copied per situation below: the bulk dicts are shared, and one
     # situation's context must never be able to see another's edits.
     facts_by_node = _bulk_load_facts(store, org_id)
+    # node → {field: principals} of the org's live PRIVATE facts (§3.4); {} for almost every org,
+    # which makes every per-situation filter below a no-op.
+    from genios_engine.context.fact_visibility import (drop_unreadable, private_fact_index,
+                                                       readable_fact_idx, situation_audience)
+    with store.engine.connect() as _pc:
+        private_idx = private_fact_index(_pc, org_id)
     obs_by_node = _bulk_load_obs(store, org_id)
     counts: Counter = Counter()
     # `registry` is injectable for the same reason `run()` takes one: `make_registry()` resolves
@@ -709,11 +715,20 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                 counts["no_anchor"] += 1
                 continue
             try:
+                # WHO THIS SITUATION MAY REASON FOR decides which PRIVATE facts it may see
+                # (§3.4): only a situation private to a fact's principals reads that fact —
+                # a paraphrase of seat 1's screen in a card reaching seat 2 is still a leak.
+                # Read first (moved up from below) so the slice is built already filtered.
+                situation_visibility = gather_visibility(conn, org_id, row["correlation_id"])
+                audience = situation_audience(situation_visibility)
                 node_ctx = _load_context(store, org_id, anchor, row["anchor_type"],
                                          facts_by_node=facts_by_node, obs_by_node=obs_by_node)
-                node_ctx = replace(node_ctx, facts=deepcopy(node_ctx.facts),
+                node_ctx = replace(node_ctx,
+                                   facts=deepcopy(drop_unreadable(
+                                       node_ctx.facts, private_idx.get(anchor), audience)),
                                    obs=[dict(o) for o in node_ctx.obs])
-                neighbor = _neighborhood(anchor, adj, obs_idx, fact_idx)
+                neighbor = _neighborhood(anchor, adj, obs_idx,
+                                         readable_fact_idx(fact_idx, private_idx, audience))
                 # Attach the neighbourhood to the context the CAPABILITY reasons over, not just to
                 # the slice the compiler reads. Every situation here anchors on a `company`, and a
                 # company node holds no facts of its own — 15 of 18 had literally zero. Everything a
@@ -728,7 +743,6 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                 signal_ids, evidence = gather_evidence_and_signals(
                     conn, org_id, row["correlation_id"], str(row["situation_id"]))
                 members = gather_members(conn, org_id, row["correlation_id"])
-                situation_visibility = gather_visibility(conn, org_id, row["correlation_id"])
                 # WHAT LAYER 1 PUBLISHED about these same events. Read on the same connection as
                 # every other gather, and handed to the builder rather than re-derived: the score,
                 # the receipts and the conflict pointers are Layer 1's decisions, and this pass

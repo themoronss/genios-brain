@@ -628,6 +628,8 @@ _ORG_SCOPED_TABLES = [
     # migration 0142: what capture devices uploaded (held, encrypted) and who is at their desk.
     # Captured content, not configuration — devices, capture policy and seat opt-ins survive.
     "screen_session_deltas", "presence_leases",
+    # migration 0144: one-way fingerprints of messages the tenant's sources carried.
+    "message_fingerprints",
     "delivery_outbox", "agent_claims", "card_build_claims", "card_feedback_revisions",
     # migration 0135: who else a card reached by declared responsibility — named staff
     "card_feedback_verdicts", "card_events", "card_recipients", "cards", "signals",
