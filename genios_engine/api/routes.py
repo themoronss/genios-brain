@@ -379,6 +379,7 @@ def _notify_sync_failure(*, org_id: str, source: str, error: str) -> None:
 #: and `no_op` gave them nothing however much work we did.
 _BILLABLE_L2_OUTCOMES = ("committed", "committed_structured", "committed_structural",
                          "committed_facts", "committed_observation")
+_SCREEN_SOURCE = "screen_session"
 
 
 def _charge_ingestion(org_id: str, result) -> None:
@@ -395,6 +396,12 @@ def _charge_ingestion(org_id: str, result) -> None:
         return
     outcomes = result.get("outcomes") or {}
     read = sum(int(outcomes.get(k, 0) or 0) for k in _BILLABLE_L2_OUTCOMES)
+    # Screen capture is not charged as `message_read` unless the owner switches it on: only the
+    # screen share of the sweep is removed, so every other source is billed exactly as before
+    # (same units, same idem key, same bucket).
+    if not get_settings().screen_message_charge_enabled:
+        screen = (result.get("outcomes_by_source") or {}).get(_SCREEN_SOURCE) or {}
+        read -= sum(int(screen.get(k, 0) or 0) for k in _BILLABLE_L2_OUTCOMES)
     if read <= 0:
         return
     try:

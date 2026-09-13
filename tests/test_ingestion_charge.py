@@ -96,6 +96,64 @@ def test_a_result_that_is_not_a_dict_is_ignored(monkeypatch):
     routes._charge_ingestion("org_1", None)                             # must not raise
 
 
+def _charge_result(monkeypatch, result, *, screen_flag=False):
+    from genios_engine.api import routes
+    from genios_engine.platform import billing
+    from genios_engine.platform.config import get_settings
+
+    charged = []
+    monkeypatch.setattr(routes, "_graph", SimpleNamespace(engine=_Engine(charged)))
+    monkeypatch.setattr(billing, "charge_units",
+                        lambda _c, org, action, units, **kw: charged.append(
+                            (org, action, units, kw)) or True)
+    monkeypatch.setattr(get_settings(), "screen_message_charge_enabled", screen_flag)
+    routes._charge_ingestion("org_1", result)
+    return charged
+
+
+def test_an_email_only_sweep_is_charged_exactly_as_before(monkeypatch):
+    before = _charge(monkeypatch, {"committed": 900, "committed_facts": 340})
+    after = _charge_result(monkeypatch, {
+        "outcomes": {"committed": 900, "committed_facts": 340},
+        "outcomes_by_source": {"gmail": {"committed": 900, "committed_facts": 340}}})
+    assert [(o, a, u, kw["bucket"]) for o, a, u, kw in after] == \
+        [(o, a, u, kw["bucket"]) for o, a, u, kw in before] == \
+        [("org_1", "message_read", 1_240, "ingest")]
+    assert after[0][3]["idem"].startswith("read:org_1:")
+
+
+def test_a_mixed_sweep_charges_only_the_email_units(monkeypatch):
+    """Screen capture is not `message_read` unless the owner switches it on."""
+    charged = _charge_result(monkeypatch, {
+        "outcomes": {"committed": 130, "parked_low_relevance": 9},
+        "outcomes_by_source": {"gmail": {"committed": 100, "parked_low_relevance": 9},
+                               "screen_session": {"committed": 30}}})
+    assert [(a, u) for _o, a, u, _kw in charged] == [("message_read", 100)]
+
+
+def test_a_screen_only_sweep_files_no_row(monkeypatch):
+    assert _charge_result(monkeypatch, {
+        "outcomes": {"committed": 30},
+        "outcomes_by_source": {"screen_session": {"committed": 30}}}) == []
+
+
+def test_the_flag_charges_screen_like_email(monkeypatch):
+    charged = _charge_result(monkeypatch, {
+        "outcomes": {"committed": 130},
+        "outcomes_by_source": {"gmail": {"committed": 100},
+                               "screen_session": {"committed": 30}}}, screen_flag=True)
+    assert [(a, u) for _o, a, u, _kw in charged] == [("message_read", 130)]
+
+
+def test_process_pending_reports_billable_outcomes_per_source():
+    """The per-source counts come off the pulled rows — no extra statement."""
+    import inspect
+
+    from genios_engine.context import runner
+    src = inspect.getsource(runner.process_pending)
+    assert "outcomes_by_source" in src and "row, \"source\"" in src
+
+
 def test_a_dirty_mailbox_costs_less_than_a_clean_one(monkeypatch):
     """5,000 messages either way; the one that is half spam is charged half as much."""
     clean = _charge(monkeypatch, {"committed": 5_000})[0][2]

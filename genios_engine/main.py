@@ -72,12 +72,16 @@ async def lifespan(app: FastAPI):
     # a real DB is configured — no point sweeping in-memory dev. Disable via GENIOS_SCHEDULER_ENABLED.
     from genios_engine.platform.scheduler import start_scheduler, stop_scheduler
     from genios_engine.platform.sync_worker import start_sync_worker, stop_sync_worker
+    from genios_engine.platform.screen_promoter import (start_screen_promoter,
+                                                        stop_screen_promoter)
     from genios_engine.platform.warm_lane import start_warm_lane, stop_warm_lane
     if get_settings().use_real_db:
         start_scheduler()
         start_sync_worker()          # durable sync-job worker: runs Sync jobs, resumes on restart
         start_warm_lane()            # pushed mail / uploads → graph + reasoning + cards in minutes
+        start_screen_promoter()      # held screen deltas → screen_session events → warm lane
     yield
+    stop_screen_promoter()
     stop_warm_lane()
     stop_sync_worker()
     stop_scheduler()

@@ -352,6 +352,10 @@ def _ingest(ctx: D.DeviceCtx, envelope: SessionUpload, cstore, key: str) -> dict
                      "captured_at": s.captured_at})
         outcome.append(("pending", s.session_key, str(s.message_watermark)))
     inserted = cstore.insert_deltas(rows, org_id=ctx.org_id, device_id=ctx.device_id, now=now)
+    if inserted:
+        # P2: the promoter turns held deltas into events; wake it instead of waiting for its poll.
+        from genios_engine.platform import screen_promoter
+        screen_promoter.wake()
     accepted, duplicate, rejected = [], [], []
     for kind, skey, extra in outcome:
         if kind == "rejected":

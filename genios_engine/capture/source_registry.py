@@ -105,6 +105,12 @@ SOURCES: tuple[SourceDescriptor, ...] = (
     SourceDescriptor("teams", "communication"),
     SourceDescriptor("whatsapp", "communication"),
     SourceDescriptor("sms", "communication"),
+    # What a seat's desktop app read on screen (P2). Not a connector and not offered in the
+    # catalog: it arrives through `/v1/sessions` and the screen promoter. A thread grows, so each
+    # delta is a new version keyed by the device's message watermark.
+    SourceDescriptor("screen_session", "communication",
+                     object_types=("screen_chat_thread", "screen_email_thread", "screen_doc"),
+                     immutable=False, version_field="message_watermark"),
     # A meeting is rescheduled, cancelled and re-titled; `updated` is what makes the new
     # version land instead of being deduped away as "already seen".
     SourceDescriptor("gcal", "communication", capability="calendar", buildable=True,
@@ -275,6 +281,8 @@ def version_field_for(source: str) -> str | None:
 # all: it is not a thing a tenant connects, and putting it on a waitlist would invite a
 # request nobody could ever fulfil.
 _NOT_OFFERED_FAMILIES: frozenset[str] = frozenset({"intelligence"})
+#: Sources with their own door that is not a tile: screen capture is the desktop app's.
+_NOT_OFFERED_SOURCES: frozenset[str] = frozenset({"screen_session"})
 
 #: The three answers `SourceOffer.status` may carry. Declared, not derived, so a test can
 #: assert the set rather than discover it from whatever the current SOURCES happen to be.
@@ -318,7 +326,8 @@ def _status_of(descriptor: SourceDescriptor) -> str:
 def offer_of(source: str) -> SourceOffer | None:
     """The offer for one source id or alias — None for an unknown or unoffered source."""
     descriptor = descriptor_of(source)
-    if descriptor is None or descriptor.family in _NOT_OFFERED_FAMILIES:
+    if (descriptor is None or descriptor.family in _NOT_OFFERED_FAMILIES
+            or descriptor.source in _NOT_OFFERED_SOURCES):
         return None
     status = _status_of(descriptor)
     return SourceOffer(source=descriptor.source, family=descriptor.family, status=status,
