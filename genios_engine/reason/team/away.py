@@ -84,7 +84,7 @@ def _delegate_actions(conn, ctx: TeamContext, link: CommitmentLink, cover, windo
     """P6 §3.5 on a deadline-at-risk situation: `task.reassign` to the proposed cover when the
     commitment IS a tracker task, and `email.follow_up_draft` (never sent) to an external
     beneficiary on their open mail thread — each only when an active agent runs that play."""
-    from genios_engine.executive import plays as PL
+    from genios_engine.contracts import plays as PL
     out: list[dict] = []
     owner = link.owner
     what = clip(link.text, 120)
@@ -117,7 +117,7 @@ def _delegate_actions(conn, ctx: TeamContext, link: CommitmentLink, cover, windo
 
 
 def deadline_situations(conn, ctx: TeamContext) -> list[Situation]:
-    from genios_engine.executive.plays import agents_by_play
+    from genios_engine.platform.agent_plays import agents_by_play
     out: list[Situation] = []
     horizon = ctx.today + timedelta(days=DEADLINE_HORIZON_DAYS)
     agents = agents_by_play(conn, ctx.org_id)       # one statement; {} → no delegate actions

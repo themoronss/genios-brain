@@ -246,11 +246,6 @@ def _agent_audience(conn, org_id: str, agent_id: str, subject: Subject) -> list[
     seat's private evidence; an unbound agent serves the org and reads none."""
     if conn.dialect.name != "postgresql" or not subject.seat_id:
         return []
-    bound = conn.execute(text(
-        "select 1 from information_schema.columns where table_name = 'agent_registry' "
-        "and column_name = 'seat_id'")).first()
-    if bound is None:
-        return []
     email = conn.execute(text(
         "select s.email from agent_registry a join org_seats s on s.org_id = a.org_id "
         "and s.seat_id = a.seat_id where a.org_id = :o and a.agent_id = :a and a.seat_id = :s"),
