@@ -136,6 +136,10 @@ def evaluate(body: EvaluateRequest, request: Request):
     if not eff["capture_on"] or P.is_blocked(s.url_domain, s.bundle_id, eff):
         return Response(status_code=_NO_CONTENT)
     engine = cstore.engine
+    # P4 §3.4 draft review: only when the org allows it AND the seat turned it on. Otherwise the
+    # draft is ignored (never stored either way) and the request is an ordinary evaluate.
+    if body.draft_text and body.draft_text.strip() and eff.get("draft_assist"):
+        return _draft_review(body, p, engine, now, started)
     viewer = viewer_key(p.email)
     moment_id = M.server_moment_id(p.seat_id, body.moment_request_id)
     chosen = None
@@ -174,6 +178,35 @@ def evaluate(body: EvaluateRequest, request: Request):
     _log.info("moment evaluated org=%s seat=%s cap=%s display=%s reason=%s ms=%.0f", p.org_id,
               p.seat_id, R.CAPABILITY_ID, out["display"], out["reason"],
               (time.perf_counter() - started) * 1000)
+    return out
+
+
+def _draft_review(body: EvaluateRequest, p: Principal, engine, now: datetime, started: float):
+    """≤ 2 notes about the draft, or 204 (nothing to say / the 2.8 s budget ran out). The draft
+    text is never stored: only its hash is in the dedupe key and the evidence."""
+    from genios_engine.reason.moments import draft_review as DR
+    moment_id = M.server_moment_id(p.seat_id, body.moment_request_id)
+    with engine.connect() as c:
+        prior = _stored(c, moment_id=moment_id, org_id=p.org_id, seat_id=p.seat_id)
+    if prior is not None:
+        return prior
+    res = DR.review(engine, org_id=p.org_id, email=p.email, participants=body.participants,
+                    entities=body.features.entities, draft=body.draft_text or "", now=now)
+    if res is None:
+        return Response(status_code=_NO_CONTENT)
+    key = M.cache_key(seat_id=p.seat_id, capability_id=DR.CAPABILITY_ID,
+                      subject_ids=res["subject_ids"],
+                      trigger=M.trigger_digest(DR.CAPABILITY_ID,
+                                               DR.draft_digest(body.draft_text or "")),
+                      subject_version="draft")
+    try:
+        out = M.persist(engine, org_id=p.org_id, seat_id=p.seat_id, device_id=p.device_id,
+                        origin="server", moment={"moment_id": moment_id, **res["content"]},
+                        subject_ids=res["subject_ids"], now=now, key=key)
+    except M.MomentConflict:
+        return _err(409, "MOMENT_ID_CONFLICT", "That moment id belongs to another seat.")
+    _log.info("draft review org=%s seat=%s display=%s reason=%s ms=%.0f", p.org_id, p.seat_id,
+              out["display"], out["reason"], (time.perf_counter() - started) * 1000)
     return out
 
 
