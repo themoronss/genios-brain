@@ -59,6 +59,15 @@ SPEC_TABLE = (
      "T3", 40_000, SECTION, {"dates_mentioned": "dates", "commitments": "obligations"}),
     ("crm_note", ("decision_states", "stance", "entity_mentions"),
      "T1", 4_000, NONE, {}),
+    # P2 screen profiles (SCREEN_INTEL_P2_BUILD.md §4). Not in doc 04. `screen_generic` holds
+    # 16k, not the plan's 12k: the renderer's generic parts reach 12k chars of blocks, and the
+    # extractor refuses content + fence over the limit, so 12k would refuse every full part.
+    ("screen_session", ("commitments", "availability", "business_facts", "scheduling_proposals",
+                        "questions"),
+     "T1", 8_000, NONE, {}),
+    ("screen_generic", ("entity_mentions", "business_facts", "commitments", "dates_mentioned",
+                        "amounts"),
+     "T1", 16_000, NONE, {}),
 )
 
 ROWS = [pytest.param(*row, id=row[0]) for row in SPEC_TABLE]
@@ -87,10 +96,13 @@ def _profile_with(**overrides) -> ExtractionProfile:
 # U1 · the registry
 # --------------------------------------------------------------------------------------------
 
-def test_exactly_the_five_declared_profiles_are_registered():
-    """Doc 04: five profiles, and the mapping is keyed by the id each one calls itself."""
+def test_exactly_the_declared_profiles_are_registered():
+    """Doc 04's five plus the two P2 screen profiles, keyed by the id each one calls itself."""
     assert tuple(PROFILES) == PROFILE_IDS
-    assert len(PROFILES) == 5
+    assert PROFILE_IDS == ("email", "chat", "transcript", "document", "crm_note",
+                           "screen_session", "screen_generic")
+    assert len(PROFILES) == 7
+    assert tuple(row[0] for row in SPEC_TABLE) == PROFILE_IDS
     assert {key: p.profile_id for key, p in PROFILES.items()} == {k: k for k in PROFILE_IDS}
 
 
@@ -238,7 +250,7 @@ def test_a_malformed_template_is_refused_at_construction(label, mutate, fragment
 
 def test_prompt_versions_are_distinct_per_profile_and_shaped_for_a_cache_key():
     versions = {p.profile_id: p.prompt_version for p in PROFILES.values()}
-    assert len(set(versions.values())) == 5
+    assert len(set(versions.values())) == 7
     for profile_id, version in versions.items():
         family, named, digest = version.split(":")
         assert family == mod.PROMPT_FAMILY

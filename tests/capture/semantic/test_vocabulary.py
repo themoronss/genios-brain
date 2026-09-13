@@ -125,7 +125,15 @@ def test_extraction_profile_holds_the_five_doc_04_profiles_and_the_bypass_lane()
     it. Without the word here, S-3 rejects the only lane that cannot hallucinate.
     """
     assert set(EXTRACTION_PROFILE) == {"email", "chat", "transcript", "document", "crm_note",
-                                       STRUCTURED_PROFILE}
+                                       STRUCTURED_PROFILE, "screen_session", "screen_generic"}
+
+
+@pytest.mark.gate
+def test_every_registered_profile_is_a_valid_extraction_profile_word():
+    """S-3 validates `extraction_profile` against this set; a profile the registry serves but
+    the vocabulary refuses would fail every extraction it ran (the P2 screen profiles)."""
+    from genios_engine.capture.semantic.profiles import PROFILE_IDS
+    assert set(PROFILE_IDS) <= set(EXTRACTION_PROFILE)
 
 
 @pytest.mark.gate

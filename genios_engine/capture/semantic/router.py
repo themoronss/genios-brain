@@ -56,10 +56,21 @@ from genios_engine.contracts.source_event import SourceEvent
 #: gmail descriptor declares the object type `message`, and the two have to meet somewhere.
 #: `_object_tokens` produces both the bare name and the `source/name` qualification, so the
 #: doc's word and the connector's word both land here and neither had to be renamed.
+#:
+#: `screen_email_thread` is a Gmail / Outlook thread read off the seat's screen (P2, plan §3.1):
+#: the same prose the mail connector delivers, so the same reading task.
 EMAIL_OBJECT_TYPES: frozenset[str] = frozenset({
     "email_message", "email", "gmail/message", "outlook/message", "imap/message",
-    "inkbox/message",
+    "inkbox/message", "screen_email_thread",
 })
+
+#: A dedicated chat app's thread read off the seat's screen (whatsapp, linkedin, slack — P2).
+#: NOT the `chat` profile: a screen delta carries new messages AND the context already on
+#: screen, and only the `screen_session` prompt knows to leave the context unextracted.
+SCREEN_CHAT_OBJECT_TYPES: frozenset[str] = frozenset({"screen_chat_thread"})
+
+#: Any other app read off the screen as blocks (P2 generic reader) -> `screen_generic`.
+SCREEN_DOC_OBJECT_TYPES: frozenset[str] = frozenset({"screen_doc"})
 
 #: Short, fast, low-context turns. `-30` on the tier score downstream: a Slack line put through
 #: a frontier model is the single most expensive way to learn nothing.
@@ -239,7 +250,15 @@ def _rule_5_crm_note(routing: RoutingInput) -> bool:
     return routing.source_id in CRM_SOURCES and is_note_field(routing.field_name)
 
 
-def _rule_6_fallback(routing: RoutingInput) -> bool:  # noqa: ARG001 — the table needs an arity
+def _rule_6_screen_chat(routing: RoutingInput) -> bool:
+    return any(token in SCREEN_CHAT_OBJECT_TYPES for token in routing.object_tokens)
+
+
+def _rule_7_screen_doc(routing: RoutingInput) -> bool:
+    return any(token in SCREEN_DOC_OBJECT_TYPES for token in routing.object_tokens)
+
+
+def _rule_fallback(routing: RoutingInput) -> bool:  # noqa: ARG001 — the table needs an arity
     return True
 
 
@@ -279,7 +298,13 @@ RULES: tuple[RoutingRule, ...] = (
                 "object_type is a file, an attachment, an uploaded chunk or a wiki page"),
     RoutingRule(5, "crm_note_field", "crm_note", _rule_5_crm_note,
                 "a CRM source, and the field being extracted holds a written note"),
-    RoutingRule(6, "fallback", FALLBACK_PROFILE_ID, _rule_6_fallback,
+    # P2 (plan §4). Disjoint from rows 1-5 by object type, so their place in the order changes
+    # nothing above them; `screen_email_thread` is already an email under row 1.
+    RoutingRule(6, "screen_chat_object_type", "screen_session", _rule_6_screen_chat,
+                "object_type is a chat thread read off the seat's screen"),
+    RoutingRule(7, "screen_doc_object_type", "screen_generic", _rule_7_screen_doc,
+                "object_type is a generic app screen read as blocks"),
+    RoutingRule(8, "fallback", FALLBACK_PROFILE_ID, _rule_fallback,
                 "no rule matched; the email profile is the widest prose reader, so an unknown "
                 "shape is read thinly rather than wrongly"),
 )
@@ -297,7 +322,7 @@ def _check_table() -> None:
     if len(set(names)) != len(names):
         raise ValueError(f"RULES has duplicate names {names}; a decision cannot then be "
                          "explained by the name it reports")
-    if RULES[-1].matches is not _rule_6_fallback:
+    if RULES[-1].matches is not _rule_fallback:
         raise ValueError("the last rule must be the total fallback, or an event can reach the "
                          "end of the table with no profile at all")
 
@@ -346,6 +371,7 @@ def select_profile(routing: RoutingInput) -> ProfileChoice:
 
 
 __all__ = ["CHAT_OBJECT_TYPES", "CRM_SOURCES", "DOCUMENT_OBJECT_TYPES", "EMAIL_OBJECT_TYPES",
-           "FALLBACK_RULE_NUMBER", "NOTE_FIELD_NAMES", "RULES", "TRANSCRIPT_OBJECT_TYPES",
+           "FALLBACK_RULE_NUMBER", "NOTE_FIELD_NAMES", "RULES", "SCREEN_CHAT_OBJECT_TYPES",
+           "SCREEN_DOC_OBJECT_TYPES", "TRANSCRIPT_OBJECT_TYPES",
            "TRANSCRIPT_SOURCES", "ProfileChoice", "RoutingInput", "RoutingRule",
            "is_note_field", "routing_input_for", "select_profile"]

@@ -156,6 +156,14 @@ SOURCE_OBJECT_AUTHORITY: Mapping[tuple[str, str], Authority] = MappingProxyType(
     ("teams", "message"): Authority.CHAT_ASIDE,
     ("whatsapp", "message"): Authority.CHAT_ASIDE,
     ("sms", "message"): Authority.CHAT_ASIDE,
+    # P2 screen sessions (plan §3.4). A chat read off the screen is a chat aside; a mail thread
+    # read off the screen is the same prose the mail connector would have delivered; a generic
+    # screen capture (a CRM page, a dashboard) is held at CHAT_ASIDE on purpose — it is a
+    # reading of a screen, not the system of record, and ALG-12 must never let it outrank the
+    # typed field it was read from.
+    ("screen_session", "screen_chat_thread"): Authority.CHAT_ASIDE,
+    ("screen_session", "screen_email_thread"): Authority.EMAIL_PROSE,
+    ("screen_session", "screen_doc"): Authority.CHAT_ASIDE,
 })
 
 #: ``SourceEvent.object_type`` -> provenance class, for the object types the connectors and
@@ -197,6 +205,8 @@ SOURCE_AUTHORITY: Mapping[str, Authority] = MappingProxyType({
     "teams": Authority.CHAT_ASIDE,
     "whatsapp": Authority.CHAT_ASIDE,
     "sms": Authority.CHAT_ASIDE,
+    # Any future screen object type is at most a chat aside until it earns its own pair row.
+    "screen_session": Authority.CHAT_ASIDE,
     "hubspot": Authority.STRUCTURED_SOURCE,
     "salesforce": Authority.STRUCTURED_SOURCE,
     "pipedrive": Authority.STRUCTURED_SOURCE,

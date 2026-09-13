@@ -93,8 +93,11 @@ STANCE: frozenset[str] = frozenset({
 #: the mapper names, filing a HubSpot deal under `crm_note`, is a lie about a typed column and
 #: is not even a plausible one for a calendar event. The word is admitted here, which is where
 #: the mapper's own comment says the fix belongs.
+#:
+#: `screen_session` and `screen_generic` are the two P2 screen profiles (`profiles.PROFILE_IDS`).
 EXTRACTION_PROFILE: frozenset[str] = frozenset({
     "email", "chat", "transcript", "document", "crm_note", "structured",
+    "screen_session", "screen_generic",
 })
 
 #: Set name -> the set. The keys are exactly the field names of
@@ -187,7 +190,10 @@ FIELD_TO_SET: Mapping[str, str] = MappingProxyType({
 #: moves with it and the fingerprint moves underneath both.
 #:
 #: "3" — the `availability` lane (who is away, from/to as quoted words, coverage).
-VOCABULARY_VERSION = "3"
+#:
+#: "4" — `extraction_profile` gained the two screen profiles (P2). The VOCAB block lists that
+#: set, so every profile's prompt and every cache key moves with it.
+VOCABULARY_VERSION = "4"
 
 #: Length of the hex digest `vocabulary_fingerprint()` returns. Twelve hex characters is 48 bits
 #: — collision-free for a set of words a human curates, and short enough that the composite cache
