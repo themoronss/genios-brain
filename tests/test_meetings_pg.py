@@ -38,13 +38,42 @@ pytestmark = [pytest.mark.pg,
 SECRET = "SECRET-MEMBER-ONLY"
 _ORGS: list[str] = []
 
-# Minimal fixture for group A's 0155 table (§3 transcript object as columns).
-_TRANSCRIPTS_DDL = (
-    "create table if not exists transcripts (transcript_id text primary key, "
-    "org_id text not null references orgs (id) on delete cascade, source text, source_ref text, "
-    "provider text, status text not null, scope text, principals text[], meeting jsonb, "
-    "content_hash text, created_at timestamptz not null default now(), "
-    "updated_at timestamptz not null default now())")
+# Group A's 0155 `transcripts` DDL, verbatim (p5/ingest) — until A merges, the scratch DB lacks it.
+_TRANSCRIPTS_DDL = """
+create table if not exists transcripts (
+    transcript_id     text primary key,
+    org_id            text not null references orgs (id) on delete cascade,
+    source            text not null,
+    source_ref        text not null,
+    file_id           text,
+    seat_id           text,
+    uploader_email    text,
+    provider          text not null default 'other'
+                      check (provider in ('gmeet', 'granola', 'fireflies', 'otter', 'zoom',
+                                          'teams', 'other')),
+    scope             text not null default 'attendees'
+                      check (scope in ('attendees', 'personal')),
+    calendar_event_id text,
+    meeting_node_id   text,
+    title             text,
+    started_at        timestamptz,
+    ended_at          timestamptz,
+    meeting           jsonb not null default '{}'::jsonb,
+    speakers          jsonb not null default '[]'::jsonb,
+    attendees         jsonb not null default '[]'::jsonb,
+    principals        text[] not null default '{}',
+    parts             integer not null default 0,
+    event_ids         text[] not null default '{}',
+    content_hash      text not null,
+    content_version   text,
+    enc_text          bytea,
+    status            text not null default 'queued'
+                      check (status in ('queued', 'extracting', 'extracted', 'failed')),
+    error             text,
+    created_at        timestamptz not null default now(),
+    updated_at        timestamptz not null default now(),
+    unique (org_id, source, source_ref)
+)"""
 
 
 def _engine():
@@ -106,16 +135,21 @@ def _edge(c, org, typ, frm, to, event=None):
 
 
 def _fact(c, org, subj, field, value, *, scope="org", who=None, status="active",
-          valid_from=None, valid_to=None):
+          valid_from=None, valid_to=None, event=None, quote=None):
     fid = uuid.uuid4().hex[:12]
     c.execute(text(
         "insert into graph_facts (fact_version_id, fact_id, org_id, subject_node_id, field, value, "
-        "visibility_scope, visibility_principals, status, valid_from, valid_to) values (:v, :f, "
-        ":o, :s, :field, cast(:val as jsonb), :scope, cast(:who as text[]), :st, "
-        "coalesce(cast(:vf as timestamptz), now()), :vt)"),
+        "visibility_scope, visibility_principals, status, valid_from, valid_to, "
+        "created_by_event_id) values (:v, :f, :o, :s, :field, cast(:val as jsonb), :scope, "
+        "cast(:who as text[]), :st, coalesce(cast(:vf as timestamptz), now()), :vt, :ev)"),
         {"v": "fv_" + fid, "f": "f_" + fid, "o": org, "s": subj, "field": field,
          "val": json.dumps(value), "scope": scope, "who": who, "st": status, "vf": valid_from,
-         "vt": valid_to})
+         "vt": valid_to, "ev": event})
+    if quote is not None:          # the fact's evidence quote, as the pipeline's source ref
+        c.execute(text("insert into graph_source_refs (source_ref_id, org_id, fact_version_id, "
+                       "event_id, evidence) values (:r, :o, :v, :e, cast(:ev as jsonb))"),
+                  {"r": "ref_" + fid, "o": org, "v": "fv_" + fid, "e": event or "evt_none",
+                   "ev": json.dumps({"text": quote})})
 
 
 def _event(c, org, *, days_ago=0.0, scope="org", who=None) -> str:
@@ -135,7 +169,7 @@ def _commitment(c, org, nid, text_, *, owner=None, owed_to=None, due=None, statu
     _node(c, org, nid, "commitment", f"commitment:{nid}", text_ if scope == "org" else "x")
     if owner:
         _edge(c, org, "owns", owner, nid, event)
-    _fact(c, org, nid, "commitment.text", text_, scope=scope, who=who)
+    _fact(c, org, nid, "commitment.text", text_, scope=scope, who=who, event=event)
     _fact(c, org, nid, "commitment.status", status)
     if owed_to:
         _fact(c, org, nid, "commitment.owed_to", owed_to)
@@ -298,7 +332,7 @@ def test_followup_once_per_attendee_seat_and_rerun_emits_nothing(client):
     now = datetime.now(timezone.utc)
     ended = now - timedelta(hours=2)
     n = {k: f"node_{k}_{uuid.uuid4().hex[:8]}" for k in
-         ("me1", "me2", "priya", "mtg", "c_you", "c_priya", "c_priv", "dec")}
+         ("me1", "me2", "priya", "mtg", "c_you", "c_priya", "c_priv", "c_loose")}
     tid = f"tr_{uuid.uuid4().hex[:10]}"
     with _engine().begin() as c:
         c.execute(text(_TRANSCRIPTS_DDL))
@@ -319,17 +353,33 @@ def test_followup_once_per_attendee_seat_and_rerun_emits_nothing(client):
                     due=now + timedelta(days=4))
         _commitment(c, org, n["c_priya"], "confirm the audit date", owner=n["priya"], event=tev)
         _commitment(c, org, n["c_priv"], SECRET + " scope", scope="private", who=[m_mail])
-        _node(c, org, n["dec"], "decision", f"decision:{n['dec']}", "x")
-        _fact(c, org, n["dec"], "decision.text", "go with Vendor X")
-        for item in ("c_you", "c_priya", "dec"):
+        # no raised_in edge: reached only through the transcript's part event (fact provenance)
+        _commitment(c, org, n["c_loose"], "book the auditor", event=tev)
+        for item in ("c_you", "c_priya"):
             _edge(c, org, "raised_in", n[item], n["mtg"], tev)
         priv = _event(c, org, scope="private", who=[m_mail])
         _edge(c, org, "raised_in", n["c_priv"], n["mtg"], priv)
+        # decisions = `decision.status` facts on the MEETING node (A's pipeline): an earlier one
+        # superseded by a later one from the same transcript — both are listed — plus one the
+        # member alone may read, and one from ANOTHER source that is not this transcript's.
+        _fact(c, org, n["mtg"], "decision.status", "made", scope="private",
+              who=[o_mail, m_mail], event=tev, quote="We will go with Vendor X",
+              status="superseded", valid_from=now - timedelta(hours=2),
+              valid_to=now - timedelta(hours=1))
+        _fact(c, org, n["mtg"], "decision.status", "made", scope="private",
+              who=[o_mail, m_mail], event=tev, quote="Audit moves to 3 Oct",
+              valid_from=now - timedelta(hours=1))
+        _fact(c, org, n["mtg"], "decision.status", "pending", scope="private", who=[m_mail],
+              event=tev, quote=SECRET + " pricing")
+        other = _event(c, org)
+        _fact(c, org, n["mtg"], "decision.status", "made", event=other, quote="unrelated call",
+              status="superseded", valid_to=now - timedelta(minutes=30))
         c.execute(text(
             "insert into transcripts (transcript_id, org_id, source, source_ref, provider, status, "
-            "scope, principals, meeting, content_hash) values (:t, :o, 'upload', :t, 'granola', "
-            "'extracted', 'attendees', cast(:p as text[]), cast(:m as jsonb), 'h1')"),
-            {"t": tid, "o": org, "p": [o_mail, m_mail],
+            "scope, meeting_node_id, title, principals, meeting, event_ids, content_hash) values "
+            "(:t, :o, 'upload', :t, 'granola', 'extracted', 'attendees', :mid, 'ISO audit prep', "
+            "cast(:p as text[]), cast(:m as jsonb), cast(:ev as text[]), 'h1')"),
+            {"t": tid, "o": org, "p": [o_mail, m_mail], "mid": n["mtg"], "ev": [tev],
              "m": json.dumps({"meeting_node_id": n["mtg"], "title": "ISO audit prep"})})
     assert MS.run(_engine(), None, org, now=now) == 2
     with _engine().connect() as c:
@@ -344,13 +394,17 @@ def test_followup_once_per_attendee_seat_and_rerun_emits_nothing(client):
     assert mine.key == f"followup:{tid}:{ws['owner']['seat_id']}"
     assert mine.capability_id == "meeting.followup" and mine.kind == "team"
     assert mine.body.startswith("You: send the ISO evidence pack (due ")
-    assert "Priya: confirm the audit date" in mine.body and "Decided: go with Vendor X" in mine.body
+    assert "Priya: confirm the audit date" in mine.body
+    assert "No owner: book the auditor" in mine.body
+    assert mine.body.endswith("Decided: We will go with Vendor X; Audit moves to 3 Oct")
     assert SECRET not in mine.body and SECRET not in mine.headline
+    assert "unrelated call" not in mine.body
     assert mine.headline == "Follow-ups from ISO audit prep — 1 for you"
     assert {"id": "open_meeting", "payload": {"meeting_node_id": n["mtg"], "url": None}} \
         in mine.actions
     theirs = sits[ws["member"]["seat_id"]]
     assert "Emru: send the ISO evidence pack" in theirs.body and f"{SECRET} scope" in theirs.body
+    assert theirs.body.endswith(f"Open decision: {SECRET} pricing")
     # rerun: nothing new, the outsider never got anything
     assert MS.run(_engine(), None, org, now=now + timedelta(minutes=5)) == 0
     with _engine().connect() as c:

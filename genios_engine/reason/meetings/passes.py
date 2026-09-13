@@ -5,22 +5,30 @@
   (a) PREP PRECOMPUTE — for every seat holding a live (unrevoked) device, each meeting it attends
       starting in the next 3 h gets its P-15 prep built into `moment_cache` (prep.precompute), so
       the desktop's evaluate is a cache read. Nothing is shown here; the evaluate shows it.
-  (b) P-16 FOLLOW-UP — every `transcripts` row with `status='extracted'` → ONE
+  (b) P-16 FOLLOW-UP — every `transcripts` row (0155) with `status='extracted'` → ONE
       `emit_situation(kind="team", capability_id="meeting.followup",
       key=f"followup:{transcript_id}:{seat}")` per seat that can see the transcript (its email is
-      one of the transcript's principals — `context/fact_visibility.viewer_may_read`; a transcript
-      is always PRIVATE to its principals, P5 §2.4). Body "You: … · Priya: … · Decided: …" from
-      the commitments / decisions `raised_in` the meeting, each filtered for THAT seat (fact and
-      edge-evidence visibility). A seat that can read none of them gets nothing. Re-emits only
-      when the digest changes, so a rerun emits nothing.
+      one of the transcript's `principals` — `context/fact_visibility.viewer_may_read`; a
+      transcript is always PRIVATE to its principals, P5 §2.4). Body "You: … · Priya: … ·
+      Decided: …", each piece filtered for THAT seat (fact / edge-evidence visibility). A seat
+      that can read none of it gets nothing. Re-emits only when the digest changes, so a rerun
+      emits nothing.
 
-The `transcripts` table is group A's (0155); until it exists (b) is skipped. The row is read
-tolerantly — contract fields as columns, or inside a jsonb document column (`transcript` /
-`doc` / `raw_extra.transcript`). Never credit-charged (D6). A failure in (a) never blocks (b).
+WHAT THE MEETING RAISED (group A's pipeline, p5/ingest):
+  * commitments — `raised_in` → the meeting node (linked transcripts), or any commitment whose
+    `commitment.text` was written by one of the transcript's current part events (`event_ids`;
+    the only route to an UNLINKED transcript's commitments);
+  * decisions — NOT nodes: `decision.status` facts (value = pending | made | blocked | deferred |
+    abandoned) written by those part events on the meeting node (or the uploader's node when
+    unlinked); the words are the fact's evidence quote (`graph_source_refs.evidence.text`). Facts
+    key on (subject, field), so a later decision supersedes an earlier one on the same node — the
+    superseded versions written by THIS transcript's events are still read, so every decision
+    the room took is listed. With no `event_ids`, the meeting node's live decision is used.
+
+Until 0155 exists (b) is skipped. Never credit-charged (D6). A failure in (a) never blocks (b).
 """
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Mapping
@@ -38,8 +46,11 @@ PREP_HORIZON = timedelta(hours=3)
 FOLLOWUP_CAPABILITY = "meeting.followup"
 FOLLOWUP_TTL_SECONDS = 86400
 OPEN_STATUSES = ("open", "pending", "in_progress")
-ITEM_TYPES = ("commitment", "decision")
-_DECISION_FIELDS = ("decision.text", "decision.summary")
+#: `DecisionState.state` (contracts/extraction): made → "Decided"; still moving → "Open decision";
+#: abandoned is not worth a follow-up line.
+DECIDED_STATES = ("made", "decided", "approved", "final")
+OPEN_DECISION_STATES = ("pending", "blocked", "deferred")
+QUOTE_MAX = 160
 
 
 # ── (a) prep precompute ─────────────────────────────────────────────────────────────────────
@@ -101,61 +112,80 @@ def _doc(raw) -> dict:
     return v if isinstance(v, dict) else {}
 
 
+def _strings(raw) -> list[str]:
+    v = value_of(raw)
+    if isinstance(v, str):
+        return [v]
+    return [str(x) for x in (v or ()) if x]
+
+
 def transcript_of(row: Mapping) -> Transcript | None:
-    """A `transcripts` row → Transcript. Contract fields are read from columns first, then from a
-    jsonb document column holding the §3 transcript object."""
-    doc = (_doc(row.get("transcript")) or _doc(row.get("doc")) or _doc(row.get("document"))
-           or _doc(_doc(row.get("raw_extra")).get("transcript")))
-    tid = row.get("transcript_id") or doc.get("transcript_id")
+    """A `transcripts` row (0155 columns; the `meeting` jsonb is the §3 object) → Transcript."""
+    tid = row.get("transcript_id")
     if not tid:
         return None
-    meeting = _doc(row.get("meeting")) or _doc(doc.get("meeting"))
-    principals = row.get("principals") or doc.get("principals") or ()
-    if isinstance(principals, str):
-        principals = value_of(principals) if principals.strip().startswith("[") else [principals]
-    events = [row.get(k) or doc.get(k) for k in ("event_id", "source_event_id")]
+    meeting = _doc(row.get("meeting"))
     return Transcript(
         transcript_id=str(tid),
         meeting_node_id=row.get("meeting_node_id") or meeting.get("meeting_node_id"),
-        title=row.get("meeting_title") or row.get("title") or meeting.get("title"),
-        principals=tuple(sorted({str(p).strip().lower() for p in principals or () if p})),
-        event_ids=tuple(sorted({str(e) for e in events if e})),
-        updated_at=aware(row.get("updated_at") or row.get("extracted_at")))
-
-
-def _readable(scope, principals, viewer) -> bool:
-    return viewer_may_read(scope, principals, viewer)
+        title=row.get("title") or meeting.get("title"),
+        principals=tuple(sorted({p.strip().lower() for p in _strings(row.get("principals"))
+                                 if p.strip()})),
+        event_ids=tuple(dict.fromkeys(_strings(row.get("event_ids")))),
+        updated_at=aware(row.get("updated_at")))
 
 
 @dataclass
 class Items:
-    """Everything raised in one meeting, with the visibility of each piece so each seat's view is
+    """Everything one meeting raised, with the visibility of each piece so each seat's view is
     filtered in Python (one read serves every seat)."""
-    nodes: dict            # node → (type, [(scope, principals)] of its raised_in evidence)
+    nodes: dict            # commitment → [(scope, principals)] of the evidence that links it
     facts: list            # (node, field, value, scope, principals), overlay-first, newest first
     owners: list           # (commitment, person, name, {emails}, scope, principals)
+    decisions: list        # (state, words, scope, principals), oldest first
 
 
 def load_items(conn, org_id: str, tx: Transcript) -> Items:
+    """Four statements."""
+    empty = Items({}, [], [], [])
     if not tx.meeting_node_id and not tx.event_ids:
-        return Items({}, [], [])
-    nodes: dict[str, tuple[str, list]] = {}
+        return empty
+    params = {"o": org_id, "m": tx.meeting_node_id, "evs": list(tx.event_ids)}
+    decisions = []
     for r in conn.execute(text(
-            "select e.from_node_id, n.node_type, se.event_id as ev, se.visibility_scope as sc, "
-            "se.visibility_principals as who from graph_edges e "
-            "join graph_nodes n on n.org_id = e.org_id and n.node_id = e.from_node_id "
-            " and n.valid_to is null and n.node_type = any(:types) "
-            "left join source_events se on se.org_id = e.org_id "
-            " and se.event_id = e.created_by_event_id "
-            "where e.org_id = :o and e.edge_type = 'raised_in' and e.valid_to is null "
-            " and (e.to_node_id = cast(:m as text) "
-            "  or e.created_by_event_id = any(cast(:evs as text[]))) order by e.from_node_id"),
-            {"o": org_id, "types": list(ITEM_TYPES), "m": tx.meeting_node_id,
-             "evs": list(tx.event_ids)}):
-        entry = nodes.setdefault(r.from_node_id, (r.node_type, []))
-        entry[1].append((r.sc if r.ev is not None else None, r.who))
+            "select f.value, f.visibility_scope, f.visibility_principals, "
+            "(select s.evidence ->> 'text' from graph_source_refs s where s.org_id = f.org_id "
+            " and s.fact_version_id = f.fact_version_id and s.evidence ? 'text' "
+            " order by s.created_at limit 1) as quote "
+            "from graph_facts f where f.org_id = :o and f.field = 'decision.status' "
+            "and ((cardinality(cast(:evs as text[])) > 0 "
+            "      and f.created_by_event_id = any(cast(:evs as text[])) "
+            "      and f.status in ('active', 'superseded')) "
+            "  or (cardinality(cast(:evs as text[])) = 0 "
+            "      and f.subject_node_id = cast(:m as text) "
+            "      and f.valid_to is null and f.status = 'active')) "
+            "order by f.occurred_at nulls last, f.valid_from, f.fact_version_id"), params):
+        decisions.append((text_of(r.value), r.quote, r.visibility_scope,
+                          r.visibility_principals))
+    nodes: dict[str, list] = {}
+    for r in conn.execute(text(
+            "select x.nid, x.ev, x.sc, x.who from ("
+            " select e.from_node_id as nid, se.event_id as ev, se.visibility_scope as sc, "
+            " se.visibility_principals as who from graph_edges e "
+            " left join source_events se on se.org_id = e.org_id "
+            "  and se.event_id = e.created_by_event_id "
+            " where e.org_id = :o and e.edge_type = 'raised_in' and e.valid_to is null "
+            "  and (e.to_node_id = cast(:m as text) "
+            "   or e.created_by_event_id = any(cast(:evs as text[]))) "
+            " union all select f.subject_node_id, f.fact_version_id, f.visibility_scope, "
+            " f.visibility_principals from graph_facts f where f.org_id = :o "
+            "  and f.field = 'commitment.text' and f.valid_to is null and f.status = 'active' "
+            "  and f.created_by_event_id = any(cast(:evs as text[]))) x "
+            "join graph_nodes n on n.org_id = :o and n.node_id = x.nid and n.valid_to is null "
+            " and n.node_type = 'commitment' order by x.nid"), params):
+        nodes.setdefault(r.nid, []).append((r.sc if r.ev is not None else None, r.who))
     if not nodes:
-        return Items({}, [], [])
+        return Items({}, [], [], decisions)
     ids = sorted(nodes)
     facts = [(r.subject_node_id, r.field, r.value, r.visibility_scope, r.visibility_principals)
              for r in conn.execute(text(
@@ -165,8 +195,7 @@ def load_items(conn, org_id: str, tx: Transcript) -> Items:
                  "order by subject_node_id, field, (visibility_scope = 'private') desc, "
                  "occurred_at desc nulls last, fact_version_id"),
                  {"o": org_id, "ids": ids,
-                  "fields": ["commitment.text", "commitment.status", "commitment.due_at",
-                             *_DECISION_FIELDS]})]
+                  "fields": ["commitment.text", "commitment.status", "commitment.due_at"]})]
     owners = [(r.to_node_id, r.from_node_id, r.display_name, set(r.emails or ()),
                r.sc if r.ev is not None else None, r.who)
               for r in conn.execute(text(
@@ -182,7 +211,7 @@ def load_items(conn, org_id: str, tx: Transcript) -> Items:
                   "where e.org_id = :o and e.edge_type = 'owns' and e.valid_to is null "
                   " and e.to_node_id = any(:ids) order by e.to_node_id, e.valid_from desc"),
                   {"o": org_id, "ids": ids})]
-    return Items(nodes, facts, owners)
+    return Items(nodes, facts, owners, decisions)
 
 
 def _first(name: str | None) -> str:
@@ -194,40 +223,35 @@ def _day(dt: datetime) -> str:
     return f"{dt.day} {dt.strftime('%b')}"
 
 
+def _clip(s: str) -> str:
+    s = " ".join(s.split())
+    return s if len(s) <= QUOTE_MAX else s[:QUOTE_MAX - 1].rstrip() + "…"
+
+
 def compose_followup(items: Items, *, viewer: str, title: str | None,
                      meeting_node_id: str | None) -> dict | None:
     """One seat's follow-up (headline, body, subjects, evidence), or None when it can read
     nothing. Pure."""
-    visible = {n: t for n, (t, ev) in items.nodes.items()
-               if any(_readable(sc, who, viewer) for sc, who in ev)}
-    if not visible:
-        return None
+    visible = sorted(n for n, ev in items.nodes.items()
+                     if any(viewer_may_read(sc, who, viewer) for sc, who in ev))
     fv: dict[str, dict[str, object]] = {}
     for node, field_, value, sc, who in items.facts:
-        if node in visible and _readable(sc, who, viewer):
+        if node in visible and viewer_may_read(sc, who, viewer):
             fv.setdefault(node, {}).setdefault(field_, value)
     owner: dict[str, tuple[str, str | None, set]] = {}
     for cm, person, name, emails, sc, who in items.owners:
-        if cm in visible and cm not in owner and _readable(sc, who, viewer):
+        if cm in visible and cm not in owner and viewer_may_read(sc, who, viewer):
             owner[cm] = (person, name, emails)
     groups: dict[str, list[str]] = {}
-    order: list[str] = []
     evidence: list[dict] = []
-    decided: list[str] = []
     mine = 0
     for node in sorted(visible, key=lambda n: (text_of(fv.get(n, {}).get("commitment.due_at"))
                                                or "9999", n)):
         f = fv.get(node, {})
-        if visible[node] == "decision":
-            what = next((text_of(f.get(k)) for k in _DECISION_FIELDS if text_of(f.get(k))), None)
-            if what:
-                decided.append(what)
-                evidence.append({"node_id": node, "field": "decision.text", "source": "graph"})
-            continue
         what = text_of(f.get("commitment.text"))
-        status = (text_of(f.get("commitment.status")) or "open").lower()
         if not what:
             continue                    # never a node's display name: it is the same text
+        status = (text_of(f.get("commitment.status")) or "open").lower()
         due = parse_ts(f.get("commitment.due_at"))
         item = what + (f" (due {_day(due)})" if due else "") + (
             "" if status in OPEN_STATUSES else " (done)")
@@ -239,22 +263,36 @@ def compose_followup(items: Items, *, viewer: str, title: str | None,
             mine += 1
         else:
             label = _first(who_[1])
-        if label not in groups:
-            groups[label] = []
-            order.append(label)
-        groups[label].append(item)
+        groups.setdefault(label, []).append(item)
         evidence.append({"node_id": node, "field": "commitment.text", "source": "graph"})
-    order.sort(key=lambda lb: (lb != "You", lb == "No owner", lb))
+    order = sorted(groups, key=lambda lb: (lb != "You", lb == "No owner", lb))
     parts = [f"{lb}: " + "; ".join(groups[lb]) for lb in order]
+    decided, undecided, seen = [], [], set()
+    for state, quote, sc, who in items.decisions:
+        if not viewer_may_read(sc, who, viewer):
+            continue
+        words = _clip(quote or state or "")
+        st = (state or "").lower()
+        if not words or words in seen:
+            continue
+        seen.add(words)
+        if st in DECIDED_STATES:
+            decided.append(words)
+        elif st in OPEN_DECISION_STATES:
+            undecided.append(words)
     if decided:
         parts.append("Decided: " + "; ".join(decided))
+        evidence.append({"node_id": meeting_node_id, "field": "decision.status",
+                         "source": "graph"})
+    if undecided:
+        parts.append("Open decision: " + "; ".join(undecided))
     if not parts:
         return None
     label = title or "your meeting"
     tail = f" — {mine} for you" if mine else ""
     return {"headline": f"Follow-ups from {label}{tail}",
             "body": " · ".join(parts),
-            "subjects": ([meeting_node_id] if meeting_node_id else []) + sorted(visible)[:19],
+            "subjects": ([meeting_node_id] if meeting_node_id else []) + visible[:19],
             "evidence": evidence[:19]}
 
 
@@ -270,8 +308,10 @@ def emit_followups(engine, card_store, org_id: str, *, now: datetime) -> int:
     with engine.connect() as c:
         if c.execute(text("select to_regclass('transcripts')")).scalar() is None:
             return 0
-        rows = c.execute(text("select * from transcripts where org_id = :o "
-                              "and status = 'extracted'"), {"o": org_id}).mappings().all()
+        rows = c.execute(text(
+            "select transcript_id, meeting_node_id, title, meeting, principals, event_ids, "
+            "updated_at from transcripts where org_id = :o and status = 'extracted'"),
+            {"o": org_id}).mappings().all()
         if not rows:
             return 0
         seats = _active_seats(c, org_id)
