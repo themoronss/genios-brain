@@ -41,6 +41,8 @@ from sqlalchemy import text
 #: `f"{FACT_PREFIX}.missing_prerequisite"`, so a literal here would keep selecting nothing the day
 #: the prefix moved — the exact trap `condition_situations` records against its own twin, and the
 #: one `tests/test_nothing_is_written_and_never_read.py` was written to catch.
+from genios_engine.context.angles.contract import fan_subject_ref
+from genios_engine.context.angles.queues import BLOCKER_KIND_FIELD
 from genios_engine.context.correlation_dependency import (
     FIELD_MISSING_PREREQUISITE as BLOCKER_FIELD)
 
@@ -128,7 +130,8 @@ def _absence_type(entry: Mapping) -> str | None:
 
 
 def read_unnamed_blockers(rows: Mapping[str, object], now: datetime,
-                          employers: dict | None = None) -> list:
+                          employers: dict | None = None,
+                          verdicts: Mapping[str, str] | None = None) -> list:
     """One finding per named blocker that resolved to nobody.
 
     An entry with no name yields nothing: "somebody is blocked by something" is not a card, and
@@ -142,6 +145,11 @@ def read_unnamed_blockers(rows: Mapping[str, object], now: datetime,
     the typed absence, the name and the spans, and none of the three records WHEN the dependency
     was stated — so this reading has no clock to read and declares the gap instead of inventing
     an age from the sweep time.
+
+    `verdicts` MAPS A FANNED SUBJECT REF TO WHAT THE CLASSIFIER LAST SAID, and it is optional in
+    the strong sense: absent, empty, or missing this absence, every finding above is produced
+    byte-identically. No gate may refuse on absence — only on positive contrary evidence — and a
+    reader that has learned to expect a model is where that rule is easiest to break.
     """
     from genios_engine.context.outreach_situations import _Finding
 
@@ -177,6 +185,19 @@ def read_unnamed_blockers(rows: Mapping[str, object], now: datetime,
             display = (f"blocked on {named} — not in your records" if searched
                        else f"blocked on {named} — we could not find it")
 
+            # THE CLASSIFICATION, ADDED AND NEVER SUBTRACTED. It cannot drop a finding, rename
+            # one, or touch the `we_searched` warrant above it — that flag is COMPUTED from the
+            # typed absence and stays the only licence for saying nobody is there. This appends
+            # one field saying what the blocker was CALLED: a party, a function, or a sentence
+            # Layer 1 should not have read as a dependency at all.
+            #
+            # KEYED THROUGH THE EVALUATOR'S OWN FUNCTION. `fan_subject_ref` is how the angle
+            # store named this subject when it asked, and rebuilding that string by hand here is
+            # the two-spellings failure that ends with a join quietly matching nothing.
+            kind = (verdicts or {}).get(fan_subject_ref(str(node_id), named))
+            if kind:
+                facts.append((BLOCKER_KIND_FIELD, kind, "enum"))
+
             findings.append(_Finding(
                 anchor=ANCHOR_UNNAMED_BLOCKER,
                 canonical_key=f"blocker:{blocker_key(str(node_id), named)}",
@@ -203,5 +224,5 @@ def gather_unnamed_blockers(conn, org_id: str) -> dict[str, object]:
     return {str(row["node_id"]): row["value"] for row in rows}
 
 
-__all__ = ["ANCHOR_UNNAMED_BLOCKER", "BLOCKER_FIELD", "GENUINELY_ABSENT", "MAX_PER_NODE",
+__all__ = ["ANCHOR_UNNAMED_BLOCKER", "BLOCKER_FIELD", "BLOCKER_KIND_FIELD", "GENUINELY_ABSENT", "MAX_PER_NODE",
            "blocker_key", "gather_unnamed_blockers", "read_unnamed_blockers"]

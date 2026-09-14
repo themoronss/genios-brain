@@ -169,4 +169,76 @@ REPLY_OWED_TRIAGE = register(Angle(
           "removes nothing — an angle cannot delete a residue row or retire a fact."),
 ))
 
-__all__ = ["CONDITION_QUEUE_TRIAGE", "REPLY_OWED_TRIAGE"]
+#: WHAT KIND OF THING IS THIS BLOCKER NOBODY COULD RESOLVE?
+#:
+#: THE QUEUE IS A REFUSAL, WHICH IS WHY A MODEL MAY SEE IT. `correlation_dependency` resolves both
+#: ends of every dependency claim. When the BLOCKED end resolves and the BLOCKER end does not, it
+#: refuses to invent a node — *"a false chain is worse than a missing one"* — and files a typed
+#: absence carrying the name and the sentence. U4.1 gave those a card; this says which ones are
+#: worth a founder's attention and which are an identity gap wearing the same shape.
+#:
+#: THE SPLIT THAT IS WORTH A CALL. `MissingPrerequisite` names its own examples — "Finance",
+#: "legal", "the security review" — and those are NOT resolver failures: they were never people in
+#: a mailbox, the graph is correct to hold no node, and the dependency is real. A blocker named as
+#: a PERSON or a FIRM is the opposite: either identity resolution failed to match somebody we do
+#: hold, or we have no record of them at all, and both are coverage questions rather than work.
+#: Today the two are indistinguishable — every card says "we could not find it" in the same voice.
+#:
+#: IT IS ASKED WHAT IT CAN ACTUALLY SEE, and that bounded the enum rather than the other way
+#: round. An earlier cut offered `unmatched_known_party` — "somebody we know, that identity missed"
+#: — and it had to go: `sees` carries the blocked subject's own facts and NOT the tenant's roster,
+#: so nothing in the slice could distinguish a contact we hold from a stranger. A model answering
+#: it would be guessing at the one word that decides whether an engineer goes looking for a
+#: resolver bug. `named_party` claims only what the sentence itself shows — that the blocker is
+#: named as a person or a company — and leaves whether we hold them to a reader who can check.
+#:
+#: FANNED OUT, BECAUSE A CLASSIFICATION CANNOT BE SHARED. The gate row is one fact per node whose
+#: value is a LIST of absences. `condition_queue_triage` next door answers at node level and names
+#: its fields `queue` to say so; that works for "is anything here worth opening" and fails
+#: completely here — "Finance" and "Ankit's team" on one node are different kinds, and one verdict
+#: covering both is not approximate, it is wrong. `fan_out` makes each absence its own subject, so
+#: a verdict lands on exactly the card it is about.
+#:
+#: `not_a_dependency` IS HOW THE MODEL DISAGREES WITH LAYER 1, and it is allowed to. The claim came
+#: from an extractor that cannot always tell a blocking relation from a turn of phrase. Saying so
+#: removes nothing — an angle cannot delete a fact, retire an absence or suppress a card — it only
+#: marks the card for a reader who can. Without the option, every over-extraction is forced into
+#: `named_party` or `named_function` and the queue keeps exactly the noise this would expose.
+BLOCKER_ABSENCE = register(Angle(
+    angle_id="blocker_absence",
+    version="1.0.0",
+    gate=("derived.dependency.missing_prerequisite",),
+    gate_source=GateSource.FACTS,
+    fan_out=("absences", "blocker_named"),
+    sees=(
+        # The absence itself, and after the fan-out this is ONE of them rather than the list:
+        # the name exactly as the source wrote it, the typed absence, and the sentence that named
+        # it. Already in hand from the gate, so it costs no second read — and it is very nearly
+        # the whole question, because what a blocker IS is mostly legible in what it was called.
+        "derived.dependency.missing_prerequisite",
+        # Who is waiting, which changes how the same words read: "legal" from an investor and
+        # "legal" from a vendor are different blockers. Both are written to the resolved
+        # counterparty node, which is exactly the node `subject_node_id` names here.
+        "party.role",
+        "relationship.nature",
+    ),
+    returns=("named_party", "named_function", "not_a_dependency", "unknowable"),
+    refusal="unknowable",
+    # The same walls as every other angle. This verdict classifies a card that already exists and
+    # must never outrank the typed absence beside it — `blocker.we_searched` remains the only
+    # warrant for saying nobody is there, and it is computed, not answered.
+    confidence_band=(2_000, 8_000),
+    # Counted in ABSENCES, not nodes, because the fan-out makes each its own subject. Not a
+    # truncation: `evaluate_angle` charges budget only for subjects it actually asks about and an
+    # unchanged slice is free for ever, so a backlog drains over a few sweeps and then costs one
+    # SELECT. `derived.dependency.blocked_count` is deliberately NOT in `sees` for the reason
+    # `reply_owed_triage` excludes `thread.days_waiting`: it is built from resolved CHAINS, and a
+    # node whose only dependency claim went unresolved has no edge, so no chain and no count. It
+    # would be blank in exactly the common case and billed for on every sweep.
+    max_per_sweep=80,
+    cost_tier=CostTier.CHEAP,
+    note=("Classifies an absence; it resolves none. Identity stays deterministic — this says "
+          "what the blocker was CALLED, never who it is, and mints no node, edge or merge."),
+))
+
+__all__ = ["BLOCKER_ABSENCE", "CONDITION_QUEUE_TRIAGE", "REPLY_OWED_TRIAGE"]

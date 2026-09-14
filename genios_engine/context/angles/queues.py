@@ -90,4 +90,32 @@ def triaged_residue(conn, org_id: str, *, kind: str | None = None,
     return rows
 
 
-__all__ = ["TRIAGE_ANGLE_BY_KIND", "TRIAGE_KEY", "triaged_residue"]
+#: The angle that classifies one unresolved blocker, and the fact its answer is carried in.
+BLOCKER_ANGLE_ID = "blocker_absence"
+BLOCKER_KIND_FIELD = "blocker.absence_kind"
+
+_BLOCKER_VERDICTS = ("select subject_ref, verdict from context_angle_verdicts "
+                     "where org_id = :o and angle_id = :a and refused = false")
+
+
+def blocker_absence_verdicts(conn, org_id: str) -> dict[str, str]:
+    """`{subject_ref: verdict}` for the blocker angle, keyed exactly as the evaluator wrote them.
+
+    THE KEYS ARE FANNED REFS, not node ids — `"<node>#<digest>"` — and the reader joins by
+    rebuilding them through `contract.fan_subject_ref`, the same function the evaluator used. Two
+    independent spellings of "how we name an item" is the trap `condition_situations` records
+    against its own field name, and it fails silently in both directions.
+
+    GUARDED FOR THE REASON `_verdicts` ABOVE IS. `context_angle_verdicts` arrived in migration
+    0165, and a card that exists today must not stop existing because an ordering is unavailable.
+    """
+    try:
+        rows = conn.execute(text(_BLOCKER_VERDICTS),
+                            {"o": org_id, "a": BLOCKER_ANGLE_ID}).mappings().all()
+    except Exception:      # noqa: BLE001 — a classification must never cost the card
+        return {}
+    return {str(r["subject_ref"]): str(r["verdict"]) for r in rows}
+
+
+__all__ = ["BLOCKER_ANGLE_ID", "BLOCKER_KIND_FIELD", "TRIAGE_ANGLE_BY_KIND", "TRIAGE_KEY",
+           "blocker_absence_verdicts", "triaged_residue"]

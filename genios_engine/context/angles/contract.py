@@ -176,6 +176,26 @@ class Angle:
 
     confidence_band: tuple[int, int]
     max_per_sweep: int
+    #: ONE GATE ROW, MANY SUBJECTS — for a queue whose fact value is a LIST.
+    #:
+    #: WHY THIS EXISTS, and it is a correction rather than a feature. Both fact-shaped refusal
+    #: queues in this layer store one row per NODE whose value is a list:
+    #: `derived.timeline.condition_review` holds `{"review": [...]}` and
+    #: `derived.dependency.missing_prerequisite` holds `{"absences": [...]}`. Without a fan-out
+    #: the gate admits one subject per node, so an angle can only ever answer for the whole list.
+    #: `condition_queue_triage` absorbed that by asking a question that is TRUE at node level and
+    #: naming its fields `queue`. A CLASSIFICATION cannot: "Finance" and "Ankit's team" on one
+    #: node are different kinds of absence, and one verdict covering both is not approximate, it
+    #: is wrong.
+    #:
+    #: `(list_key, item_key)` — the key holding the list inside the gate value, and the key inside
+    #: each item that names it. The subject becomes `"<node>#<digest of the item key>"`, the slice
+    #: carries THAT ITEM ALONE, and `store._seen` fetches node facts against the node half. Items
+    #: with a blank key are skipped rather than merged: an unnamed item is not a subject.
+    #:
+    #: Requires exactly one gate name — with two, there is no answer to WHICH value gets fanned.
+    fan_out: tuple[str, ...] = ()
+
     cost_tier: CostTier = CostTier.CHEAP
 
     #: Free-form notes for the reviewer. Never read by the engine.
@@ -199,6 +219,18 @@ class Angle:
                 raise UnavailableAngle(
                     f"{self.angle_id}: {self.gate_source!r} is not a queue this engine can read — "
                     f"one of {[s.value for s in GateSource]}") from exc
+
+        fan = _names(self.fan_out, "fan_out")
+        if fan:
+            if len(fan) != 2:
+                raise UnavailableAngle(
+                    f"{self.angle_id}: fan_out is (list_key, item_key) — the key holding the list "
+                    "inside the gate value, and the key inside each item that names it")
+            if len(self.gate) != 1:
+                raise UnavailableAngle(
+                    f"{self.angle_id}: fan_out needs exactly one gate name — with two there is no "
+                    "answer to which value gets fanned out")
+        object.__setattr__(self, "fan_out", fan)
 
         sees = _names(self.sees, "sees")
         if not sees:
@@ -253,6 +285,35 @@ class Angle:
         over-claiming, which is a thing to bound, not a reason to lose the verdict."""
         low, high = self.confidence_band
         return max(low, min(high, int(confidence_bp)))
+
+
+#: What separates a node from the item within it in a fanned subject ref. A digest follows it and
+#: digests contain no `#`, so `rsplit` recovers the node exactly even if a node id ever carried one.
+FAN_SEP = "#"
+
+
+def fan_subject_ref(node_ref: str, item_key: str) -> str:
+    """The subject ref for one item inside a fanned gate row.
+
+    ONE SPELLING, SHARED. The evaluator builds these and a reader joining verdicts back onto cards
+    has to build the same string; two independent implementations of "how we name an item" is the
+    trap `condition_situations` records against its own field name — "two spellings of one name,
+    and the reader's copy would have kept selecting nothing".
+
+    HASHED, NOT INTERPOLATED, because the item key is free text out of somebody's sentence — "the
+    security review", a name with a `#` or a colon in it — and this string is split on a delimiter
+    by its own reader.
+    """
+    import hashlib
+
+    normalised = " ".join(str(item_key).split()).lower()
+    digest = hashlib.sha256(normalised.encode("utf-8")).hexdigest()[:16]
+    return f"{node_ref}{FAN_SEP}{digest}"
+
+
+def fan_node_ref(subject_ref: str) -> str:
+    """The node half of a subject ref, or the whole thing when it was never fanned."""
+    return subject_ref.rsplit(FAN_SEP, 1)[0]
 
 
 @dataclass(frozen=True, slots=True)
@@ -347,6 +408,7 @@ def registered() -> tuple[Angle, ...]:
     return tuple(_REGISTRY[key] for key in sorted(_REGISTRY))
 
 
-__all__ = ["Angle", "AngleVerdict", "CONFIDENCE_CEILING_BP", "CONFIDENCE_FLOOR_BP",
+__all__ = [
+    "FAN_SEP", "fan_node_ref", "fan_subject_ref","Angle", "AngleVerdict", "CONFIDENCE_CEILING_BP", "CONFIDENCE_FLOOR_BP",
            "CostTier", "GateSource",
            "MAX_CALLS_PER_SWEEP", "UnavailableAngle", "register", "registered", "resolve"]

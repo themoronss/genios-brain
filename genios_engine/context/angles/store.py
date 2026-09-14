@@ -47,7 +47,9 @@ from typing import Any, Callable, Mapping, Sequence
 
 from sqlalchemy import text
 
-from genios_engine.context.angles.contract import Angle, AngleVerdict, GateSource, registered
+from genios_engine.context.angles.contract import (Angle, AngleVerdict, GateSource,
+                                                   fan_node_ref, fan_subject_ref,
+                                                   registered)
 
 #: What an asker is handed and what it must return. A mapping of the angle's `sees` names to the
 #: subject's values, and one `(verdict, confidence_bp)` back. Deliberately not a model client:
@@ -134,7 +136,51 @@ def _slices(conn, org_id: str, angle: Angle) -> dict[str, dict[str, Any]]:
     held: dict[str, dict[str, Any]] = {}
     for row in conn.execute(statement, {"o": org_id, "fields": list(angle.gate)}):
         held.setdefault(str(row.ref), {})[str(row.name)] = row.value
-    return {ref: values for ref, values in held.items() if len(values) == len(angle.gate)}
+    complete = {ref: values for ref, values in held.items() if len(values) == len(angle.gate)}
+    return complete if not angle.fan_out else _fanned(angle, complete)
+
+
+def _decode(value: Any) -> Any:
+    """A `jsonb` column is a mapping from Postgres and text from a driver that has not decoded it.
+
+    Both are accepted for the reason `condition_situations._entries` gives against the same shape:
+    a malformed row must cost one subject, never every subject on the tenant.
+    """
+    if isinstance(value, (str, bytes)):
+        try:
+            return json.loads(value)
+        except ValueError:
+            return None
+    return value
+
+
+def _fanned(angle: Angle, complete: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """One subject per ITEM inside each gate row, rather than one per node.
+
+    The slice carries THAT ITEM ALONE — not the list it came from — because the point of fanning
+    out is that a verdict is about one item, and showing a model its siblings invites an answer
+    about the group wearing a subject's name.
+
+    AN ITEM WITH NO KEY IS SKIPPED, never merged under a blank. Two unnamed items sharing one
+    subject ref would overwrite each other's verdicts in a table keyed on it, and the second would
+    silently win.
+    """
+    field = angle.gate[0]
+    list_key, item_key = angle.fan_out
+    out: dict[str, dict[str, Any]] = {}
+    for ref, values in complete.items():
+        payload = _decode(values.get(field))
+        items = payload.get(list_key) if isinstance(payload, Mapping) else None
+        if not isinstance(items, (list, tuple)):
+            continue
+        for item in items:
+            if not isinstance(item, Mapping):
+                continue
+            key = " ".join(str(item.get(item_key) or "").split())
+            if not key:
+                continue
+            out[fan_subject_ref(ref, key)] = {field: item}
+    return out
 
 
 def _seen(conn, org_id: str, angle: Angle, subject_ref: str,
@@ -156,7 +202,11 @@ def _seen(conn, org_id: str, angle: Angle, subject_ref: str,
             "where org_id = :o and subject_node_id = :s and field in :fields "
             "  and status = 'active' and valid_to is null"
         ).bindparams(bindparam("fields", expanding=True))
-        for row in conn.execute(statement, {"o": org_id, "s": subject_ref, "fields": wanted}):
+        # THE NODE HALF, for a fanned subject. `n_rohit#f9381803…` is not a `subject_node_id` and
+        # selecting on it would return nothing — silently, which is the failure mode this whole
+        # file is built to refuse. Unfanned refs pass through `fan_node_ref` unchanged.
+        node_ref = fan_node_ref(subject_ref)
+        for row in conn.execute(statement, {"o": org_id, "s": node_ref, "fields": wanted}):
             seen[str(row.name)] = row.value
     return seen
 

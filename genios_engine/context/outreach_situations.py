@@ -1216,7 +1216,11 @@ def read_blockers_for_dispatch(rows: dict, now: datetime, employers: dict) -> li
     """
     from genios_engine.context.blocker_situations import read_unnamed_blockers
 
-    return read_unnamed_blockers(rows.get("_blockers") or {}, now, employers)
+    # `or {}` is the whole failure handling the classification needs: a build with no angle layer,
+    # a sweep that made no calls, and a tenant whose absences the model refused all arrive here as
+    # an empty map and produce exactly the cards U4.1 produced.
+    return read_unnamed_blockers(rows.get("_blockers") or {}, now, employers,
+                                 rows.get("_blocker_kinds") or {})
 
 
 def read_conditions_met_for_dispatch(rows: dict, now: datetime, employers: dict) -> list[_Finding]:
@@ -1384,11 +1388,16 @@ def _gather(store, org_id: str, *, now: datetime | None = None,
         # the engine selected it — a typed absence, with the sentence that named it, computed and
         # shown to nobody. Guarded like the readings above: a driver that cannot run the query is
         # a gap in what this sweep can read, never a crash.
+        from genios_engine.context.angles.queues import blocker_absence_verdicts
         from genios_engine.context.blocker_situations import gather_unnamed_blockers
         try:
             held["_blockers"] = gather_unnamed_blockers(c, org_id)
         except Exception:      # noqa: BLE001 — one reading's gather is not the sweep's
             held["_blockers"] = {}
+        # …and what the classifier last said about each of them. Read here rather than inside the
+        # reader because the readers take rows, not a connection, and this is the one place in the
+        # dispatch that holds both.
+        held["_blocker_kinds"] = blocker_absence_verdicts(c, org_id)
         held["_mailbox_owner"] = _mailbox_owner(c, org_id)
         # THE MEETINGS, through the query that already knows how to find them. `meeting_touch.
         # _MEETINGS` joins the `attended` edge, excludes retired attendances, excludes our own
