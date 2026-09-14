@@ -22,6 +22,11 @@ OBS_POSITIVE: frozenset[str] = frozenset({
     # opening diligence is not a customer's security team, and one card must never be written as
     # though it were the other.
     "approval_granted", "intro_made", "diligence_started", "payment_confirmed",
+    # LAYER 1'S OWN. `qes_adapter` turns each `classifier.PRECEDENCE` type straight into a kind,
+    # and these sets are the FALLBACK the engine uses when `kinds.yaml` cannot be read — so a
+    # type missing here goes weightless again on exactly the day the file breaks, which is the
+    # failure the file was written to end.
+    "opportunity_signal",
 })
 
 OBS_NEGATIVE: frozenset[str] = frozenset({
@@ -34,6 +39,8 @@ OBS_NEGATIVE: frozenset[str] = frozenset({
     # same accelerator invites a re-application to the next cohort — and filing it as a lost deal
     # is what produced "Save the deal now" on a fundraising rejection.
     "pass_received", "approval_blocked", "payment_overdue", "decision_deferred",
+    # LAYER 1'S OWN — see the note in `OBS_POSITIVE`. The two whose direction the type carries.
+    "escalation", "risk_flagged",
 })
 
 
@@ -51,6 +58,13 @@ OBS_NEUTRAL: frozenset[str] = frozenset({
     "approval_requested", "information_requested", "intro_requested",
     "document_sent", "investor_update_sent", "invoice_sent",
     "meeting_scheduled", "meeting_cancelled", "deadline_stated",
+    # LAYER 1'S OWN — see the note in `OBS_POSITIVE`. Neutral because the TYPE carries no
+    # direction: an anomaly can be a surprise order or a churn signal, a `relationship_change` can
+    # be a champion arriving or leaving, a `decision_made` can go either way. Guessing adds a bias
+    # to `derived.sentiment` that nobody can trace back.
+    "anomaly", "availability_change", "commitment_due", "commitment_made",
+    "contract_renewal", "decision_made", "decision_pending", "financial_obligation",
+    "information_conflict", "relationship_change",
 })
 
 #: Where the per-kind MEANING record lives. One row per kind, four answers each.
