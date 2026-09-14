@@ -156,6 +156,7 @@ class Settings(BaseSettings):
     # reader's deltas are capped per seat per org-local day; over the cap they are DEFERRED to the
     # next local midnight, never dropped.
     screen_promoter_enabled: bool = True
+    screen_insight_daily_cap: int = 100       # P-20: AI screen-insight checks per seat per UTC day
     screen_generic_daily_cap: int = 40
     screen_promoter_batch: int = 50
     # Whether screen-captured messages are charged as `message_read` like email. Off: the

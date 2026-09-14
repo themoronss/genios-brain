@@ -146,6 +146,10 @@ def evaluate(body: EvaluateRequest, request: Request):
     # draft is ignored (never stored either way) and the request is an ordinary evaluate.
     if body.draft_text and body.draft_text.strip() and eff.get("draft_assist"):
         return _draft_review(body, p, engine, now, started)
+    # P-20 screen insight: one short, grounded note about whatever is on screen (known people or
+    # new ones). The screen text is never stored.
+    if body.insight and body.visible_messages:
+        return _screen_insight(body, p, engine, now, started)
     viewer = viewer_key(p.email)
     moment_id = M.server_moment_id(p.seat_id, body.moment_request_id)
     chosen = None
@@ -239,6 +243,45 @@ def _draft_review(body: EvaluateRequest, p: Principal, engine, now: datetime, st
     except M.MomentConflict:
         return _err(409, "MOMENT_ID_CONFLICT", "That moment id belongs to another seat.")
     _log.info("draft review org=%s seat=%s display=%s reason=%s ms=%.0f", p.org_id, p.seat_id,
+              out["display"], out["reason"], (time.perf_counter() - started) * 1000)
+    return out
+
+
+def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, started: float):
+    """P-20: 204 unless the screen has something worth one note. The same screen is judged once
+    (dedupe key = screen hash), and each seat gets `screen_insight_daily_cap` checks per day."""
+    from genios_engine.reason.moments import screen_insight as SI
+    screen = SI.visible_text(body.visible_messages)
+    if len(screen) < SI.MIN_TEXT_CHARS:
+        return Response(status_code=_NO_CONTENT)
+    moment_id = M.server_moment_id(p.seat_id, body.moment_request_id)
+    digest = SI.text_digest(screen)
+    key = M.cache_key(seat_id=p.seat_id, capability_id=SI.CAPABILITY_ID, subject_ids=[],
+                      trigger=M.trigger_digest(SI.CAPABILITY_ID, digest), subject_version="screen")
+    with engine.connect() as c:
+        prior = _stored(c, moment_id=moment_id, org_id=p.org_id, seat_id=p.seat_id)
+        if prior is not None:
+            return prior
+        if M.cached(c, key, now) is not None:          # this exact screen was already judged
+            return Response(status_code=_NO_CONTENT)
+    cap = int(getattr(get_settings(), "screen_insight_daily_cap", SI.DEFAULT_DAILY_CAP) or 0)
+    if not SI.reserve(engine, org_id=p.org_id, seat_id=p.seat_id, cap=cap, now=now):
+        _log.info("screen insight capped org=%s seat=%s", p.org_id, p.seat_id)
+        return Response(status_code=_NO_CONTENT)
+    res = SI.insight(engine, org_id=p.org_id, email=p.email, app=body.surface.app,
+                     participants=body.participants, entities=body.features.entities,
+                     screen=screen)
+    if res is None:
+        _log.info("screen insight: nothing to say org=%s seat=%s ms=%.0f", p.org_id, p.seat_id,
+                  (time.perf_counter() - started) * 1000)
+        return Response(status_code=_NO_CONTENT)
+    try:
+        out = M.persist(engine, org_id=p.org_id, seat_id=p.seat_id, device_id=p.device_id,
+                        origin="server", moment={"moment_id": moment_id, **res["content"]},
+                        subject_ids=res["subject_ids"], now=now, key=key)
+    except M.MomentConflict:
+        return _err(409, "MOMENT_ID_CONFLICT", "That moment id belongs to another seat.")
+    _log.info("screen insight org=%s seat=%s display=%s reason=%s ms=%.0f", p.org_id, p.seat_id,
               out["display"], out["reason"], (time.perf_counter() - started) * 1000)
     return out
 

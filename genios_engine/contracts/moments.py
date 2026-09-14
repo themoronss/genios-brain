@@ -60,6 +60,8 @@ class EvaluateRequest(BaseModel):
     features: Features = Field(default_factory=Features)
     draft_text: str | None = Field(default=None, max_length=20000)
     visible_messages: list | None = Field(default=None, max_length=200)
+    # P-20 screen insight: judge what is on screen (`visible_messages`) for one short note.
+    insight: bool = False
     slice_version: int | None = None
     client_ts: datetime | None = None
 
