@@ -61,6 +61,48 @@ ANCHOR_OUTREACH = "outreach"
 #: tells the user to chase somebody for something the user themselves owes.
 ANCHOR_COMMITMENT = "commitment"
 
+#: ANCHOR NAMES THAT ARE ALSO REAL GRAPH NODE TYPES, and the reason the two had to stop being one
+#: string. A reading mints a node per finding and the minting site passed the anchor name straight
+#: through as `node_type`, so "the thing a domain routes on" and "the kind of thing this is in the
+#: graph" were the same value — harmless for `outreach` or `cohort`, which nothing else mints, and
+#: quietly destructive for these two.
+#:
+#: `commitment` FAILED CLOSED. `_WAITING_ROWS` excludes this node type to stop the reading reading
+#: its own projected facts back (one promise became fifteen cards, doubling every sweep). The
+#: pipeline mints its genuine promises under the SAME type, so the exclusion took those with it:
+#: `_COMMITMENT_OWNERS` joins on a commitment node id, `_WAITING_ROWS` never returns one, and
+#: `_owner_name`/`_owner_key` were therefore ALWAYS None. The owner filter in
+#: `read_overdue_commitments` — the fix for "six of fifteen cards were somebody else's promise" —
+#: could not fire once. Verified by running both queries against a graph holding one of each.
+#:
+#: `meeting` FAILS OPEN, which is the same defect pointing the other way: the meeting reading's
+#: own anchors are NOT excluded, and today nothing goes wrong only because `_WAITING_ROWS` filters
+#: on a field allow-list that happens to contain no `meeting.*` name. That is the accident this
+#: module's own comment says `outreach` escaped by, and it lasts exactly until somebody adds a
+#: field.
+#:
+#: ONLY THESE TWO ARE NAMESPACED. Renaming the other four would cost something and buy nothing:
+#: `situation_bso` classifies an anchor as company-like by the literal string "organization", so a
+#: blanket prefix would silently drop that scope key. A reading may namespace an anchor type only
+#: where it collides with a type the graph already mints.
+_GRAPH_NODE_TYPE_ANCHORS = frozenset({"commitment", "meeting"})
+
+#: The prefix. Chosen over a suffix so an exclusion can be written `like 'reading:%'` the day a
+#: third collision appears, and consistent with the colons this layer already uses in identity
+#: keys (`commitment:`, `thread:`, `li:`).
+READING_ANCHOR_PREFIX = "reading:"
+
+
+def anchor_node_type(anchor: str) -> str:
+    """The `graph_nodes.node_type` a reading mints its anchor under.
+
+    Not the anchor name: `domains_declaring()` and `DomainSpec.type_for()` both take the anchor
+    name from the `READINGS` tuple and never read the graph, so corpus routing is untouched by
+    what this returns.
+    """
+    return (f"{READING_ANCHOR_PREFIX}{anchor}" if anchor in _GRAPH_NODE_TYPE_ANCHORS
+            else anchor)
+
 #: One CAMPAIGN — everyone contacted with the same stated objective. The first anchor in this
 #: system whose subject is a GROUP rather than a thing: every situation until now was about one
 #: person, one promise or one meeting, so the question "of everyone I contacted about the raise,
@@ -128,7 +170,7 @@ _WAITING_AFTER_DAYS = 2
 
 _WAITING_ROWS = (
     "select f.subject_node_id as node_id, f.field as field, f.value as value, "
-    "       n.display_name as name "
+    "       n.display_name as name, n.node_type as node_type "
     "from graph_facts f "
     "join graph_nodes n on n.org_id = f.org_id and n.node_id = f.subject_node_id "
     "     and n.valid_to is null "
@@ -150,8 +192,17 @@ _WAITING_ROWS = (
     # its own output back — and that is exactly the accident the comment above says `outreach`
     # escaped by. The exclusion is on node TYPE precisely so a future field rename cannot spring
     # the trap; leaving two anchors out of it leaves two doors open.
-    "and n.node_type not in ('outreach', 'commitment', 'cohort', 'condition', "
-    "                        'organization', 'campaign') "
+    #
+    # AND IT NAMES THE READING'S ANCHORS, NOT THE GRAPH'S SUBJECTS. Two of these names used to be
+    # both at once. `commitment` is the type the PIPELINE mints for a genuine promise, so excluding
+    # the string took the real promises out with the reading's own anchors: `_COMMITMENT_OWNERS`
+    # joins on a commitment node id, this query could never return one, and `_owner_name` /
+    # `_owner_key` were therefore always None — the owner filter in `read_overdue_commitments`
+    # never fired once. The reading still produced cards, through the weaker path only: the
+    # extractor may emit `commitment.due_at` as a plain fact candidate on a PERSON, and those do
+    # arrive here, without an owner, a status or a normalised action. See `anchor_node_type`.
+    "and n.node_type not in ('outreach', 'reading:commitment', 'reading:meeting', "
+    "                        'cohort', 'condition', 'organization', 'campaign') "
     "where f.org_id = :o and f.valid_to is null and f.status = 'active' "
     "and f.field in ('thread.days_waiting', 'thread.follow_up_count', 'thread.last_heard_days', "
     "                'thread.response_expected', 'party.reply_cadence_days', "
@@ -549,13 +600,30 @@ def read_overdue_commitments(rows: dict, now: datetime, employers: dict) -> list
         overdue = (now - due).total_seconds() / 86400.0
         if overdue <= _OVERDUE_AFTER_DAYS:
             continue
-        name = held.get("_name") or "this contact"
-        action = held.get("commitment.action")
+        # TWO SHAPES OF SUBJECT REACH THIS READING, and until the commitment node type stopped
+        # being excluded only one of them ever did.
+        #
+        #   a PERSON carrying `commitment.*` facts — the extractor's plain fact-candidate path.
+        #   `_name` is the counterparty, which is what "promise to {name}" was written to mean.
+        #
+        #   a COMMITMENT node — the pipeline's dedicated path, which carries the owner, the
+        #   status and the normalised action. Its display name is the PROMISE'S OWN TEXT, so
+        #   reading `_name` as a counterparty here renders "promise to send the deck past due"
+        #   and files the action as `commitment.owed_to`, which is not a party at all.
+        #
+        # Nothing in the graph records who a pipeline-extracted promise was made TO, so that
+        # field is left ABSENT rather than filled with the nearest string — the same discipline
+        # this reading already keeps for an owner it cannot name.
+        on_commitment_node = str(held.get("_node_type") or "") == "commitment"
+        subject_name = held.get("_name")
+        counterparty = None if on_commitment_node else (subject_name or "this contact")
+        action = held.get("commitment.action") or (subject_name if on_commitment_node else None)
         facts: list[tuple[str, object, str]] = [
             ("commitment.days_overdue", int(overdue), "number"),
-            ("commitment.owed_to", name, "string"),
             ("commitment.due_at", due.isoformat(), "timestamp"),
         ]
+        if counterparty:
+            facts.append(("commitment.owed_to", counterparty, "string"))
         if action:
             facts.append(("commitment.action", str(action), "string"))
         # WHOSE PROMISE IT IS. Read from the `owns` edge the extractor has always written from the
@@ -568,11 +636,22 @@ def read_overdue_commitments(rows: dict, now: datetime, employers: dict) -> list
             facts.append(("commitment.owner", str(owner_name), "string"))
         if owner_key:
             facts.append(("commitment.owner_key", str(owner_key), "string"))
+        # Say only what is known, in that order. Naming the counterparty is the strongest
+        # sentence and it is available only on the fact-candidate shape; on a pipeline promise
+        # the owner and the promise's own words are what there is, and the card says that
+        # instead of inventing a recipient for it.
+        if owner_name and counterparty:
+            headline = f"{owner_name} — promise to {counterparty} past due"
+        elif owner_name:
+            headline = f"{owner_name} — promise past due"
+        elif counterparty:
+            headline = f"{counterparty} — promise past due"
+        else:
+            headline = f"{action} — promise past due" if action else "Promise past due"
         findings.append(_Finding(
             anchor=ANCHOR_COMMITMENT,
             canonical_key=f"commitment:{node_id}",
-            display_name=(f"{owner_name} — promise to {name} past due" if owner_name
-                          else f"{name} — promise past due"),
+            display_name=headline,
             facts=facts,
             concerns_node=node_id,
             correlation_id=f"commitment:{node_id}",
@@ -1000,6 +1079,12 @@ def _gather(store, org_id: str, *, now: datetime | None = None,
             entry = held.setdefault(str(row.node_id), {})
             entry[str(row.field)] = row.value
             entry["_name"] = row.name
+            # WHAT SHAPE OF SUBJECT THIS IS. A reading used to be handed one shape only — a
+            # person, carrying facts about them — so `_name` could be read as "the counterparty"
+            # everywhere. Genuine promises arrive on a `commitment` node whose display name is
+            # the promise's own text, and a reading that cannot tell the two apart renders the
+            # action where a person belongs.
+            entry["_node_type"] = row.node_type
         # Keep the exact previous snapshot for fail-open refinement failures below.
         counts = {str(r.node_id): r for r in c.execute(text(_DIRECT_EVENT_COUNTS), {"o": org_id})}
         # person -> employing company NAME. Read here rather than per finding: the cohort reading
@@ -1100,7 +1185,7 @@ def refresh_state_situations(store, org_id: str, *, now: datetime | None = None,
                 receipts = (group_receipts if group_receipts is not None else
                             _finding_receipts(c, org_id=org_id, finding=finding))
                 node_id = store.find_or_create_node(
-                    c, org_id=org_id, node_type=anchor,
+                    c, org_id=org_id, node_type=anchor_node_type(anchor),
                     canonical_key=finding.canonical_key,
                     display_name=finding.display_name, event_id=None)
                 for field_name, value, value_type in finding.facts:
@@ -1155,4 +1240,5 @@ def refresh_state_situations(store, org_id: str, *, now: datetime | None = None,
 
 
 __all__ = ["refresh_state_situations", "state_domains",
-           "ANCHOR_OUTREACH", "ANCHOR_COMMITMENT"]
+           "ANCHOR_OUTREACH", "ANCHOR_COMMITMENT", "anchor_node_type",
+           "READING_ANCHOR_PREFIX"]
