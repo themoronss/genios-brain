@@ -1,26 +1,24 @@
-"""M-6 is finished, correct, and unreachable — and the reason is a design constraint, not neglect.
+"""M-6 is wired, and a template keyed on an unroutable type can still never be selected.
 
-`context/framing` is 629 lines with no caller in any layer. That looks like the dead code this
-branch has been removing, and it is not. Two things prevent it running, and only one of them is a
-wiring job:
+`api/pattern_routes.py` reaches both framing sites on `POST /api/org/{org}/patterns/evaluate`, and
+`test_pattern_path` drives that route end to end — including the model branch with an injected
+asker. So framing is not dead code, and it is not waiting on a caller.
 
-  1. **IT IS PER-READER.** `FramingInput.for_viewer(..., viewer_email=...)` drops every fact the
-     reader may not see BEFORE the prompt is built — "barrier one of two", and the reason a leak
-     would require the model to INVENT a fact rather than repeat one. A sweep has no reader. So
-     framing cannot run in `process_pending` at all; it belongs where a card is rendered for
-     somebody, one viewer at a time.
-  2. **IT HAS NOTHING TO FRAME.** Its input is a pattern's `matched_conditions`, and
-     `is_patterns_activated` is false for every tenant — fail-closed, deliberately, because
-     activation is an operator's decision about an unbudgeted graph read.
+WHAT IT IS WAITING ON is input. Its argument is a pattern's `matched_conditions`, and
+`is_patterns_activated` is false for every tenant by deliberate fail-closed default, because
+activation is an operator's decision about an unbudgeted graph read.
 
-So this file does not wire it. It locks in the two properties that decide whether wiring it later
-is a one-line change or a debugging session, and pins the invariant that must survive either way.
+WHERE IT MUST NEVER BE CALLED FROM is a sweep. `FramingInput.for_viewer(..., viewer_email=...)`
+drops every fact the reader may not see BEFORE the prompt is built — "barrier one of two", and the
+reason a leak would require the model to INVENT a fact rather than repeat one. A sweep has no
+reader, and the only `viewer_email` it could honestly pass is None, which is the value that empties
+the filter. That is an invariant rather than a gap, and the last test here holds it.
 
 THE COUPLING IS THE PART THAT ALREADY BIT. A template is selected by `situation_type`, and U5.2
-found the `condition_met` template keyed on `condition_now_satisfied` — a name no domain binds —
-so the one pattern whose inputs exist on a mail-only tenant would have framed into nothing.
-Nothing checked it. `test_framing.py` checks patterns → templates; this checks the direction that
-failed, templates → a type the corpus can actually route.
+found `condition_met` keyed on `condition_now_satisfied` — a name no domain binds — so the one
+pattern whose inputs exist on a mail-only tenant would have framed into nothing. Nothing checked
+it: `test_framing.py` checks patterns → templates and never templates → a routable type. Both
+directions are checked here.
 """
 import pathlib
 
@@ -106,8 +104,9 @@ def _input(situation_type: str = "condition_satisfied") -> FramingInput:
 def test_a_headline_exists_with_no_model_at_all() -> None:
     """`ask=None` IS THE DEFAULT, the same shape `angles/store` keeps: "a test drives the same
     code path with a stub and no network, and the sweep path cannot reach a model even by
-    accident because it never receives one". So wiring framing costs no budget and no model
-    decision — it produces the deterministic sentence until somebody injects an asker."""
+    accident because it never receives one". `pattern_routes.framing_asker()` returns None "in
+    this wave, deliberately", so the live route already takes this path: activating a pattern
+    costs no model budget, and injecting an asker later changes one function."""
     unasked = frame(_input())
     assert unasked.headline
     assert unasked.fallback_reason == "no_model"
@@ -143,8 +142,8 @@ def test_a_reader_who_may_see_nothing_is_not_even_told_the_subject() -> None:
 
 
 def test_no_sweep_can_reach_the_framing_site() -> None:
-    """THE PERMANENT INVARIANT, and the reason this unit does not wire framing into
-    `process_pending`. Framing is filtered FOR ONE READER before the prompt is built; a sweep has
+    """THE PERMANENT INVARIANT. The route may call framing because a request has a viewer; a
+    sweep may not, and this is why it is not merely unwired but forbidden. Framing is filtered FOR ONE READER before the prompt is built; a sweep has
     no reader, so a sweep that framed anything would be framing for nobody — and the only honest
     `viewer_email` it could pass is None, which is the value that empties the filter.
 

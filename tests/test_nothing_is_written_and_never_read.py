@@ -44,6 +44,13 @@ ENGINE = pathlib.Path("genios_engine")
 #: `correlation.py` is the anchor/tool/user join; the rest are their own modules.
 MUST_BE_CONSUMED: dict[str, str] = {
     "correlation": "context/pipeline.py and structured.py, via correlate_event",
+    # M-6 and M-7. Reached through `POST /api/org/{org}/patterns/evaluate`, which
+    # `test_pattern_path` drives end to end over BOTH framing sites, including the model branch
+    # with an injected asker. Listed because it looks unreachable and is not: it is per-reader, so
+    # a sweep can never call it, and a search that stops at `context/runner.py` concludes it is
+    # dead. It is reached from the route, where a viewer exists.
+    "headline": "api/pattern_routes.py, via _framing_for on the evaluate route",
+    "timeline": "api/pattern_routes.py, via _framing_for, and context/framing/headline.py",
     "correlation_resource": "context/runner.py, via refresh_contract_spend",
     "correlation_timeline": "context/runner.py and condition_situations.py",
     "correlation_dependency": "context/runner.py and importance.py",
@@ -132,21 +139,6 @@ KNOWN_UNREAD: dict[str, str] = {
         "now reaches a card through `condition_situations.py`; this one is the PARSED half, and "
         "surfacing it needs a situation that can say 'this becomes true when X', which nothing "
         "authors yet. MOVES WHEN: that situation is authored.",
-    "context/framing":
-        "M-6 and M-7, finished and correct and called by nothing in any layer. TWO things stop "
-        "it and only one is a wiring job. It is PER-READER: `FramingInput.for_viewer` drops every "
-        "fact the reader may not see before the prompt is built, which is the barrier that makes "
-        "a leak require the model to INVENT a fact rather than repeat one — and a sweep has no "
-        "reader, so `process_pending` is the one place it must never be called from. And it has "
-        "nothing to frame: its input is a pattern's `matched_conditions`, and "
-        "`is_patterns_activated` is false for every tenant by deliberate fail-closed default, "
-        "because activation is an operator's decision about an unbudgeted graph read. Wiring it "
-        "costs no model and no budget — `ask=None` is the default and yields the deterministic "
-        "template sentence — so the change is small once there is something to frame and a reader "
-        "to frame it for. `test_framing_is_ready_to_be_wired` holds both properties and the "
-        "invariant that no sweep may reach it. "
-        "MOVES WHEN: patterns are activated for a tenant and a render-time caller passes a "
-        "viewer.",
     "context/angles":
         "NARROWED, AND THE RESIDUE HALF IS CLOSED. Four angles are registered and three of the "
         "four now reach a card: `condition_now_true` and `blocker_absence` stamp facts onto "
