@@ -165,7 +165,11 @@ def default_doors() -> Doors:
         # the thread's memory before the AI gate. The seat is the one this connection belongs to.
         seat_id = connection_id.removeprefix("screen:")
         verdicts = verdict_lookup(get_engine(get_settings().database_url), org_id, seat_id)
-        gate = ScreenDocRelevance(make_relevance_classifier(org_id), verdicts)
+        # SCREEN_INTEL_SYSTEM_DESIGN phase 1 ("instant", the default): the screen-insight judge's
+        # items ARE the screen memory (screen_memory.write_items below) — no AI gate (a thread
+        # with no verdict keeps as a chat / parks as a page, by rule) and no heavy L1 read.
+        instant = (get_settings().screen_memory_mode or "instant").strip().lower() == "instant"
+        gate = ScreenDocRelevance(None if instant else make_relevance_classifier(org_id), verdicts)
         return PushIngestWiring(
             repo=R._repo, trace_repo=R._trace_repo, payload_store=R._payload_store,
             prepared_store=R._prepared_store, document_job_store=R._documents,
@@ -175,7 +179,7 @@ def default_doors() -> Doors:
             esqe=R._esqe_stage_for(org_id),
             # K3: S4's relevance page never re-asks a model what S2's one call (or the verdict)
             # already answered for this screen object — at most ONE AI call per object.
-            semantic=screen_semantic_lane(R._semantic_lane_for(org_id), gate),
+            semantic=None if instant else screen_semantic_lane(R._semantic_lane_for(org_id), gate),
             structured=R._structured_lane_for(org_id), sync_mode=SyncMode.incremental)
 
     def stores():
@@ -701,6 +705,16 @@ def promote_batch(engine, org_id: str, seat_id: str, deltas: list[Delta], *,
         else:
             settle_group(g, Outcome("skipped", event_ids=[], error="duplicate"))
     unreserve(failed)
+
+    # S3 (SCREEN_INTEL_SYSTEM_DESIGN phase 1): each promoted thread's one-judge items become graph
+    # observations on the person they are about, sourced by the thread's seat-private event.
+    from genios_engine.reason.moments.screen_memory import write_items
+    live = set(emitted)
+    for g in pending:
+        ev = next((e for e in events[g] if e in live), None)
+        if g not in failed and ev:
+            write_items(engine, org_id=org_id, seat_id=seat_id, seat_email=seat_email,
+                        thread_key=members[g][0].thread_key, event_id=ev, now=now)
 
     if result.results:
         finalize_l1(ManualSweep(org_id=org_id, results=result.results, emitted=len(emitted),

@@ -374,3 +374,46 @@ def test_undecryptable_payload_parks_at_once():
     _drain(_doors(_CountingLLM()))
     r = _rows(org)[0]
     assert r.status == "parked" and r.last_error.startswith("undecryptable")
+
+
+# ── SCREEN_INTEL_SYSTEM_DESIGN phase 1 · the one judge's items become graph memory (S3) ────────
+def test_instant_mode_writes_the_judges_items_on_their_person_once_with_no_model_call():
+    from genios_engine.platform import screen_promoter as SP
+    from genios_engine.platform.config import get_settings
+    assert get_settings().screen_memory_mode == "instant"
+    org, seat, email = _org()
+    assert SP.default_doors().wiring_for(org, email, f"screen:{seat}").semantic is None
+    now = datetime.now(timezone.utc)
+    with _engine().begin() as c:
+        c.execute(text("insert into screen_thread_verdicts (org_id, seat_id, thread_key, work, "
+                       "memory, judged_at) values (:o, :s, 'li:conv:abc', true, true, :now)"),
+                  {"o": org, "s": seat, "now": now})
+        for fid, kind, who, quote in (("fu_a", "ask", "Priya Shah (Acme)", "send the deck"),
+                                      ("fu_b", "deadline", None, "the board meets Friday")):
+            c.execute(text(
+                "insert into screen_followups (id, org_id, seat_id, thread_key, kind, text, who, "
+                "topic_key, quote) values (:i, :o, :s, 'li:conv:abc', :k, :t, :w, :tk, :q)"),
+                {"i": fid + org[-6:], "o": org, "s": seat, "k": kind, "t": f"{kind} note",
+                 "w": who, "tk": fid + org, "q": quote})
+    llm = _CountingLLM()
+    _insert(org, seat, [_chat()])
+    _drain(_doors(llm))
+    assert llm.calls == 0                        # the verdict decided; no heavy read, no AI gate
+    (ev,) = [e for e in _events(org) if e.outcome == "emitted"]
+    with _engine().connect() as c:
+        rows = c.execute(text("select kind, graph_written_at, subject_node_id from "
+                              "screen_followups where org_id=:o order by kind"), {"o": org}).all()
+        obs = c.execute(text(
+            "select o.kind, o.subject_node_id, n.display_name from graph_observations o "
+            "left join graph_nodes n on n.org_id = o.org_id and n.node_id = o.subject_node_id "
+            "and n.valid_to is null where o.org_id=:o and o.created_by_event_id=:e "
+            "and o.kind like 'screen.%' order by o.kind"), {"o": org, "e": ev.event_id}).all()
+    assert all(r.graph_written_at is not None for r in rows)
+    assert [o.kind for o in obs] == ["screen.ask", "screen.deadline"]
+    assert obs[0].display_name == "Priya Shah" and obs[0].subject_node_id == rows[0].subject_node_id
+    # once: the next promotion of the same chat writes nothing again
+    _insert(org, seat, [_chat(key="li:conv:abc:2026-09-17T11", wm=9, text_="any update?")])
+    _drain(_doors(llm))
+    with _engine().connect() as c:
+        assert c.execute(text("select count(*) from graph_observations where org_id=:o "
+                              "and kind like 'screen.%'"), {"o": org}).scalar() == 2

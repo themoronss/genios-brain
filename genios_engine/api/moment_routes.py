@@ -254,19 +254,52 @@ def _draft_review(body: EvaluateRequest, p: Principal, engine, now: datetime, st
 QUEUED_FOR_BRIEF = "queued_for_brief"
 
 
+_MEETINGS_TTL_S = 600.0
+_meetings_memo: dict[tuple[str, str], tuple[float, list]] = {}
+
+
+def _meetings_soon(engine, p: Principal, now: datetime) -> list[dict]:
+    """The seat's meetings in the next 2 days, for the one judge's "does this clash?" — read from
+    the same graph the slice reads, memoised 10 min per seat so a burst of checks costs one read."""
+    from datetime import timedelta
+
+    from genios_engine.platform.identity import norm_email
+    from genios_engine.reason.moments import slice as S
+    from genios_engine.reason.moments.common import parse_ts
+    k = (p.org_id, p.seat_id)
+    hit = _meetings_memo.get(k)
+    if hit is not None and time.monotonic() - hit[0] < _MEETINGS_TTL_S:
+        return hit[1]
+    try:
+        with engine.connect() as c:
+            doc = S._build(c, org_id=p.org_id, seat_id=p.seat_id,
+                           email=norm_email(p.email) or viewer_key(p.email),
+                           viewer=viewer_key(p.email), now=now, threshold=None)
+        end = now + timedelta(days=2)
+        out = [m for m in doc.get("meetings") or []
+               if (s := parse_ts(m.get("start_at"))) is not None and s <= end]
+    except Exception:      # noqa: BLE001 — a clash check is a bonus, never a failed request
+        _log.info("screen insight: no meetings for the clash check org=%s", p.org_id)
+        out = []
+    _meetings_memo[k] = (time.monotonic(), out)
+    return out
+
+
 def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, started: float):
-    """P-20 + P8: 204 unless the screen has something worth one note.
+    """P-20 · the ONE judge (SCREEN_INTEL_SYSTEM_DESIGN.html phase 1): 204 unless the screen ADDS
+    something the manager cannot see on it. Every judged item is saved either way.
 
       waste rules  the same screen is judged once (screen-hash key); `screen_insight_daily_cap`
-                   model checks per seat per day; an open ask of this thread whose line now has a
-                   `You:` line after it is closed `answered` first (structural, no model);
-      K4 mute      a thread muted by "Not useful" (7 days) or "Mute chat" gets no popup and no
-                   model call; the seat's last ≤ 5 not-useful notes go into the prompt;
-      the model    judges work vs personal + memory (verdict stored per thread, C9 / K2) and
-                   the note (C1 / K1);
-      C2 topic     one SHOWN note per topic per day — a repeat refreshes the follow-up → 204;
+                   model checks per seat per day; a web SITE judged personal in the last 24 h
+                   gets no model call; a muted thread gets none either (K4); an open ask whose
+                   quote now has a `You:` line after it is closed `answered` first (structural);
+      the model    one call judges work / remember (verdict per thread, per site for web pages),
+                   0–3 grounded items, and a note only when it adds (repeat ask, promise owed,
+                   calendar clash, same ask elsewhere, urgent risk);
+      items        every item → a follow-up with its quote (nudges, brief, "answered", memory);
+      C2 topic     one SHOWN note per topic per day;
       C3 budget    ≤ `screen_insight_max_per_hour` shown per seat; over → stored hidden
-                   (`queued_for_brief`), the follow-up still recorded (C4)."""
+                   (`queued_for_brief`)."""
     from genios_engine.reason.moments import followups as F
     from genios_engine.reason.moments import screen_insight as SI
     screen = SI.visible_text(body.visible_messages)
@@ -275,6 +308,7 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
     moment_id = M.server_moment_id(p.seat_id, body.moment_request_id)
     digest = SI.text_digest(screen)
     thread = (body.surface.thread_key or "").strip() or None
+    vkey = F.verdict_key(thread)
     app = (body.surface.app or "").strip().lower() or None
     key = M.cache_key(seat_id=p.seat_id, capability_id=SI.CAPABILITY_ID, subject_ids=[],
                       trigger=M.trigger_digest(SI.CAPABILITY_ID, digest), subject_version="screen")
@@ -284,16 +318,26 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
             return prior
         judged = M.cached(c, key, now) is not None     # this exact screen was already judged
         tz = F.seat_tz(c, p.org_id, p.seat_id)
-        muted = F.is_muted(c, org_id=p.org_id, seat_id=p.seat_id, thread_key=thread, now=now)
-        notes = ([] if judged or muted else
-                 F.not_useful_notes(c, org_id=p.org_id, seat_id=p.seat_id,
-                                    capability_id=SI.CAPABILITY_ID))
+        muted = any(F.is_muted(c, org_id=p.org_id, seat_id=p.seat_id, thread_key=t, now=now)
+                    for t in {thread, vkey} if t)
+        site = (F.thread_verdict(c, org_id=p.org_id, seat_id=p.seat_id, thread_key=vkey, now=now)
+                if vkey and vkey != thread else None)
+        personal_site = site is not None and site["work"] is False
+        skip = judged or muted or personal_site
+        notes = [] if skip else F.not_useful_notes(c, org_id=p.org_id, seat_id=p.seat_id,
+                                                  capability_id=SI.CAPABILITY_ID)
+        context = [] if skip else F.open_context(c, org_id=p.org_id, seat_id=p.seat_id,
+                                                 thread_key=thread, screen=screen)
+        me = [] if skip else F.seat_names(c, org_id=p.org_id, email=p.email)
     F.mark_answered(engine, org_id=p.org_id, seat_id=p.seat_id, thread_key=thread,
                     lines=screen.split("\n"), capability_id=SI.CAPABILITY_ID, now=now)
     if judged:
         return Response(status_code=_NO_CONTENT)
     if muted:                                          # K4: the person said this chat is noise
         _log.info("screen insight: thread muted org=%s seat=%s", p.org_id, p.seat_id)
+        return Response(status_code=_NO_CONTENT)
+    if personal_site:                                  # one judgement per site per day
+        _log.info("screen insight: site judged personal org=%s seat=%s", p.org_id, p.seat_id)
         return Response(status_code=_NO_CONTENT)
     settings = get_settings()
     cap = int(getattr(settings, "screen_insight_daily_cap", SI.DEFAULT_DAILY_CAP) or 0)
@@ -302,36 +346,37 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
         return Response(status_code=_NO_CONTENT)
     res = SI.insight(engine, org_id=p.org_id, email=p.email, app=body.surface.app,
                      participants=body.participants, entities=body.features.entities,
-                     screen=screen, now_local=SI.local_label(now, tz), not_useful=notes)
-    if res is not None and thread and res["work"] is not None:
-        F.set_verdict(engine, org_id=p.org_id, seat_id=p.seat_id, thread_key=thread,
+                     screen=screen, now_local=SI.local_label(now, tz), not_useful=notes, me=me,
+                     open_items=context, meetings=_meetings_soon(engine, p, now),
+                     thread_key=thread, tz_name=tz)
+    if res is not None and vkey and res["work"] is not None:
+        F.set_verdict(engine, org_id=p.org_id, seat_id=p.seat_id, thread_key=vkey,
                       work=res["work"], memory=res.get("memory"), now=now)
-    note = res["insight"] if res is not None else None
-    if note is None:
-        _log.info("screen insight: nothing to say org=%s seat=%s work=%s ms=%.0f", p.org_id,
-                  p.seat_id, res and res["work"], (time.perf_counter() - started) * 1000)
+    j = res["judged"] if res is not None else None
+    local_date = now.astimezone(F.zone(tz)).date()
+    topics: list[str] = []
+    for it in (j["items"] if j else []):
+        topic = F.topic_key(seat_id=p.seat_id, thread_key=thread, app=app, kind=it["kind"],
+                            who=it["who"], local_date=local_date)
+        F.upsert(engine, org_id=p.org_id, seat_id=p.seat_id, kind=it["kind"], note=it["text"],
+                 who=it["who"], due_at=F.parse_due(it["due"], tz_name=tz, now=now),
+                 thread_key=thread, app=app, topic=topic, tz_name=tz, now=now, quote=it["quote"])
+        topics.append(topic)
+    if j is None or j["note"] is None:                 # the product rule: nothing it ADDS → silent
+        _log.info("screen insight: saved silently org=%s seat=%s work=%s items=%d ms=%.0f",
+                  p.org_id, p.seat_id, res and res["work"], len(topics),
+                  (time.perf_counter() - started) * 1000)
         return Response(status_code=_NO_CONTENT)
-    fkind = F.map_kind(note["kind"], note["owner"])
-    topic = F.topic_key(seat_id=p.seat_id, thread_key=thread, app=app, kind=fkind or note["kind"],
-                        who=note["who"], local_date=now.astimezone(F.zone(tz)).date())
-    due = F.parse_due(note["due"], tz_name=tz, now=now)
-
-    def follow_up() -> None:
-        if fkind:
-            F.upsert(engine, org_id=p.org_id, seat_id=p.seat_id, kind=fkind,
-                     note=note["insight"], who=note["who"], due_at=due, thread_key=thread,
-                     app=app, topic=topic, tz_name=tz, now=now)
-
+    topic = topics[0]
     with engine.connect() as c:
         repeat = F.topic_shown(c, org_id=p.org_id, seat_id=p.seat_id,
                                capability_id=SI.CAPABILITY_ID, topic=topic, now=now)
         shown = 0 if repeat else F.shown_last_hour(c, org_id=p.org_id, seat_id=p.seat_id,
                                                    capability_id=SI.CAPABILITY_ID, now=now)
-    if repeat:                                         # C2: refresh the follow-up, no popup
-        follow_up()
+    if repeat:                                         # C2: the follow-up is refreshed, no popup
         return Response(status_code=_NO_CONTENT)
     budget = int(getattr(settings, "screen_insight_max_per_hour", 3) or 0)
-    content = SI.moment_content(note, digest=digest, topic_key=topic, thread_key=thread)
+    content = SI.moment_content(j, digest=digest, topic_key=topic, thread_key=thread)
     try:
         out = M.persist(engine, org_id=p.org_id, seat_id=p.seat_id, device_id=p.device_id,
                         origin="server", moment={"moment_id": moment_id, **content},
@@ -339,9 +384,8 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
                         hidden_reason=QUEUED_FOR_BRIEF if shown >= budget else None)
     except M.MomentConflict:
         return _err(409, "MOMENT_ID_CONFLICT", "That moment id belongs to another seat.")
-    follow_up()
-    _log.info("screen insight org=%s seat=%s display=%s reason=%s followup=%s ms=%.0f",
-              p.org_id, p.seat_id, out["display"], out["reason"], fkind,
+    _log.info("screen insight org=%s seat=%s display=%s reason=%s adds=%s items=%d ms=%.0f",
+              p.org_id, p.seat_id, out["display"], out["reason"], j["adds"], len(topics),
               (time.perf_counter() - started) * 1000)
     return out
 

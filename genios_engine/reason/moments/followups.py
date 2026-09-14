@@ -15,8 +15,13 @@ turns into a brief line, a wrap count or a nudge (migration 0159):
                due; an ask 7 days unresolved; a deadline 1 day after its due (undated: 7 days);
                a risk / next step after 3 days (P9 K5).
 
-`text` is the model's note (≤ 140 chars), never screen text. The ask's quote needed for "answered"
-is read from the insight moment that carries the topic (`moments.body`, already stored there).
+`text` is the model's note (≤ 140 chars), never screen text. The item's ≤ 12-word grounding quote is
+kept in `quote` (0161) so "answered" works for items saved WITHOUT a popup; rows from before 0161 fall
+back to the insight moment's body. Every item of the one judge (screen_insight v4) is a row here —
+this table is the seat's screen memory of asks, promises, deadlines, risks and next steps.
+
+Web pages are judged per SITE (`verdict_key`: every Naukri page is one "personal" judgement);
+chats, mail threads and app windows per thread.
 
 `screen_thread_verdicts` keeps the model's latest "is this thread work?" and "is it worth memory?"
 per (seat, thread); the screen relevance gate reads them for 24 h (C9, P9 K2/K3). `muted_until`
@@ -28,6 +33,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from datetime import date, datetime, timedelta, timezone
 from datetime import time as dtime
 from zoneinfo import ZoneInfo
@@ -159,6 +165,27 @@ def _unquote(body: str | None) -> str:
     return (body or "").strip().strip("“”\"").strip()
 
 
+#: Hosts whose pages are conversations: one verdict per thread there, not per site.
+CHAT_HOSTS = ("mail.google.com", "outlook.live.com", "outlook.office.com", "outlook.office365.com",
+              "web.whatsapp.com", "app.slack.com", "teams.microsoft.com", "teams.live.com",
+              "www.linkedin.com/messaging", "linkedin.com/messaging")
+_WEB_DOC = re.compile(r"^doc:[^:]+:(?!title:)(?P<host>[^/\s]+)(?P<path>/\S*)?$")
+
+
+def verdict_key(thread_key: str | None) -> str | None:
+    """Where the work / personal verdict lives: a web page → its site (`site:naukri.com`), so one
+    judgement covers every page of a job board or a shop; a chat, a mail thread or an app window
+    → the thread itself."""
+    t = (thread_key or "").strip()
+    m = _WEB_DOC.match(t)
+    if not m:
+        return t or None
+    host = m.group("host").lower()
+    if any((host + (m.group("path") or "")).startswith(h) for h in CHAT_HOSTS):
+        return t
+    return "site:" + host.removeprefix("www.")
+
+
 # ── reads ─────────────────────────────────────────────────────────────────────────────────────
 _COLS = ("id, kind, text, who, thread_key, app, due_at, nudge_at, created_at, updated_at, "
          "resolved_at, resolution")
@@ -210,6 +237,36 @@ def open_items(conn, *, org_id: str, seat_id: str, limit: int = SLICE_MAX) -> li
         "and resolved_at is null order by created_at desc, id desc limit :n"),
         {"o": org_id, "s": seat_id, "n": limit}).fetchall()
     return [item_out(r) for r in rows]
+
+
+def seat_names(conn, *, org_id: str, email: str | None) -> list[str]:
+    """Who the manager is, for the model: the seat's email, and its person node's name when the
+    node carries a real name (not the email again)."""
+    from genios_engine.platform.identity import norm_email
+    e = norm_email(email)
+    if not e:
+        return []
+    r = conn.execute(text(
+        "select n.display_name from graph_aliases a join graph_nodes n on n.org_id = a.org_id "
+        "and n.node_id = a.node_id and n.valid_to is null where a.org_id = :o "
+        "and a.alias_type = 'email' and a.alias_key = :e limit 1"), {"o": org_id, "e": e}).first()
+    name = (r.display_name or "").strip() if r is not None else ""
+    return [e] + ([name] if name and name.casefold() != e else [])
+
+
+def open_context(conn, *, org_id: str, seat_id: str, thread_key: str | None, screen: str,
+                 limit: int = 5) -> list[dict]:
+    """The open follow-ups the model should see for this screen: this thread's, and those whose
+    `who` is named on screen (the same person elsewhere → "repeat ask" / "same ask elsewhere")."""
+    hay = " ".join((screen or "").split()).casefold()
+    out: list[dict] = []
+    for it in open_items(conn, org_id=org_id, seat_id=seat_id, limit=LIST_MAX):
+        names = [w for w in re.split(r"[\s,()/]+", (it.get("who") or "").casefold()) if len(w) >= 4]
+        if (thread_key and it.get("thread_key") == thread_key) or any(n in hay for n in names):
+            out.append(it)
+            if len(out) >= limit:
+                break
+    return out
 
 
 def removed_since(conn, *, org_id: str, seat_id: str, threshold: datetime) -> list[str]:
@@ -266,7 +323,7 @@ def verdict_lookup(engine, org_id: str, seat_id: str):
         if thread_key not in memo:
             with engine.connect() as c:
                 memo[thread_key] = thread_verdict(c, org_id=org_id, seat_id=seat_id,
-                                                  thread_key=thread_key,
+                                                  thread_key=verdict_key(thread_key),
                                                   now=datetime.now(timezone.utc))
         return memo[thread_key]
 
@@ -345,7 +402,7 @@ def learn_from_feedback(engine, *, org_id: str, seat_id: str, moment_id: str, ac
 
 def upsert(engine, *, org_id: str, seat_id: str, kind: str, note: str, who: str | None,
            due_at: datetime | None, thread_key: str | None, app: str | None, topic: str,
-           tz_name: str | None, now: datetime) -> dict | None:
+           tz_name: str | None, now: datetime, quote: str | None = None) -> dict | None:
     """Open (or refresh) the topic's follow-up. A topic already resolved today stays closed →
     None. The nudge clock runs from the row's FIRST sighting, so a repeat never delays it."""
     if kind not in KINDS:
@@ -365,14 +422,16 @@ def upsert(engine, *, org_id: str, seat_id: str, kind: str, note: str, who: str 
         due = due_at or (aware(prev.due_at) if prev is not None else None)
         r = c.execute(text(
             "insert into screen_followups as f (id, org_id, seat_id, thread_key, app, kind, text, "
-            "who, due_at, nudge_at, topic_key, created_at, updated_at) values (:id, :o, :s, :t, "
-            ":app, :kind, :text, :who, :due, :nudge, :k, :now, :now) "
+            "who, due_at, nudge_at, topic_key, created_at, updated_at, quote) values (:id, :o, "
+            ":s, :t, :app, :kind, :text, :who, :due, :nudge, :k, :now, :now, :quote) "
             "on conflict (org_id, seat_id, topic_key) do update set text = excluded.text, "
             "who = coalesce(excluded.who, f.who), due_at = excluded.due_at, "
+            "quote = coalesce(excluded.quote, f.quote), "
             "nudge_at = excluded.nudge_at, updated_at = excluded.updated_at "
             "where f.resolved_at is null returning " + _COLS),
             {"id": fid, "o": org_id, "s": seat_id, "t": thread_key, "app": app, "kind": kind,
              "text": note, "who": who, "due": due, "k": topic, "now": now,
+             "quote": (" ".join(quote.split())[:200] or None) if quote else None,
              "nudge": nudge_at(kind, created_at=created, due_at=due, tz_name=tz_name)}).first()
         if r is not None:
             shown = _bump(c, org_id, seat_id)
@@ -389,13 +448,14 @@ def mark_answered(engine, *, org_id: str, seat_id: str, thread_key: str | None,
         return []
     with engine.connect() as c:
         asks = c.execute(text(
-            "select f.id, q.body from screen_followups f join lateral (select m.body from moments m "
+            "select f.id, coalesce(f.quote, q.body) as body from screen_followups f "
+            "left join lateral (select m.body from moments m "
             " where m.org_id = f.org_id and m.seat_id = f.seat_id and m.capability_id = :cap "
             " and m.created_at > f.created_at - interval '1 hour' "
             " and m.evidence @> jsonb_build_array(jsonb_build_object('topic_key', f.topic_key)) "
             " order by m.created_at desc limit 1) q on true "
             "where f.org_id = :o and f.seat_id = :s and f.thread_key = :t and f.kind = 'ask' "
-            "and f.resolved_at is null"),
+            "and f.resolved_at is null and coalesce(f.quote, q.body) is not null"),
             {"o": org_id, "s": seat_id, "t": thread_key, "cap": capability_id}).fetchall()
     done = [a.id for a in asks if answered(lines, _unquote(a.body))]
     if not done:
