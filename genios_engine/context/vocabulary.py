@@ -7,6 +7,7 @@ score. (It used to live in reason/signals_derived — which forced context to ei
 import upward or duplicate the sets.)"""
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -64,6 +65,16 @@ class ObservationMeaning:
     polarity: str = "neutral"
     is_ask: bool = False
     is_progress: bool = False
+    #: WHICH ASKS THIS KIND ANSWERS. Declared on the ANSWERING kind rather than on the ask,
+    #: because that is the direction the lookup runs: a message arrives, it carries kinds, and
+    #: the question is which open asks it discharges.
+    #:
+    #: EMPTY IS THE HONEST DEFAULT AND MOST KINDS KEEP IT. "What is your ARR?" is discharged by
+    #: a sentence, and no kind in this vocabulary means "answered the question" — so `question`
+    #: has no discharger and a reply to one is recorded as contact, not as an answer. Only pairs
+    #: that are true by definition are listed: an approval is granted or blocked, an intro is
+    #: made, a requested document is sent.
+    discharges: frozenset[str] = frozenset()
 
 
 def load_meanings(path: "Path | None" = None) -> dict[str, ObservationMeaning]:
@@ -96,7 +107,9 @@ def load_meanings(path: "Path | None" = None) -> dict[str, ObservationMeaning]:
             out[kind] = ObservationMeaning(
                 kind=kind,
                 polarity=polarity if polarity in ("positive", "negative", "neutral") else "neutral",
-                is_ask=bool(row.get("is_ask")), is_progress=bool(row.get("is_progress")))
+                is_ask=bool(row.get("is_ask")), is_progress=bool(row.get("is_progress")),
+                discharges=frozenset(str(k).strip() for k in (row.get("discharges") or ())
+                                     if str(k).strip()))
     except Exception:      # noqa: BLE001 — see FAILS SOFT above
         return {}
     return out
@@ -200,3 +213,54 @@ def owner_basis(value: object) -> str:
     if text in OWNER_BASIS:
         return text
     return _LEGACY_OWNER_BASIS.get(text, OWNER_UNKNOWN)
+
+
+# ── WHAT A CLOSED LOOP RESTS ON ──────────────────────────────────────────────────────────────
+#
+# `close_loops_for_reply` closes every open loop this person has on the thread, whatever the
+# closing message said, and its call site claims otherwise in as many words: "the ledger says
+# WHICH requests this reply answered — one row each, never the whole person". It does not. They
+# ask "what is your ARR?", we write back "let me check and get back to you", and the ledger
+# records the question as answered.
+#
+# That is the failure `read_overdue_commitments` refuses by name one module over — "Sending
+# something afterwards is not sending THE thing, and claiming otherwise is the failure BS-04
+# names: received, complete, valid and accepted are four different facts."
+#
+# THE FIX IS NOT TO STOP CLOSING. Holding a loop open until an answer can be PROVEN would refuse
+# on an absence — every reply this vocabulary cannot classify would leave an obligation standing
+# for ever, and a founder would be chased about questions that were answered months ago. The loop
+# closes exactly when it closed before. What changes is that the ledger stops saying it knows
+# something it does not.
+#
+# CAPTURED AT WRITE TIME BECAUSE IT CANNOT BE RECOVERED LATER. Once a closure is recorded as a
+# flat `closed`, what the closing message carried is gone: the observations remain, but which of
+# them the closer saw, and which loops it was closing, does not. That is what separates this from
+# a value that can be derived on demand whenever somebody finally needs it.
+
+#: The closing message carried a kind that answers this loop's ask, by the `discharges` table in
+#: `kinds.yaml` — an approval granted or blocked, an intro made, a requested document sent.
+CLOSED_ANSWERED = "answered"
+
+#: A message arrived on the thread and nothing in it can be said to answer the ask. The honest
+#: description of every closure this system performed before the distinction existed, and still
+#: the great majority: "what is your ARR?" is discharged by a sentence, and no kind in this
+#: vocabulary means "answered the question".
+CLOSED_REPLIED = "replied"
+
+CLOSED_BASIS: frozenset[str] = frozenset({CLOSED_ANSWERED, CLOSED_REPLIED})
+
+
+def discharged_asks(kinds: "Iterable[str]") -> frozenset[str]:
+    """The ask kinds that the observations on one message answer.
+
+    Empty for almost every message, and that is the point: a reply is contact until something in
+    it is a stated discharge. Unknown kinds contribute nothing rather than defaulting either way.
+    """
+    meanings = OBSERVATION_MEANINGS
+    out: set[str] = set()
+    for kind in kinds or ():
+        meaning = meanings.get(str(kind).strip())
+        if meaning is not None:
+            out.update(meaning.discharges)
+    return frozenset(out)

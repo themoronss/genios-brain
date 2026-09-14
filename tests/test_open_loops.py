@@ -34,6 +34,10 @@ def conn():
                 ask_count int not null default 1, opened_by_event text not null,
                 closed_at timestamp, closed_by_event text,
                 awaited_from_node_id text,
+                -- migration 0161. Nullable and never defaulted: a closure recorded before the
+                -- column existed is one whose basis was not observed, which is a third thing
+                -- from either answer.
+                closed_basis text,
                 primary key (org_id, loop_id))"""))
     with engine.begin() as c:
         yield c

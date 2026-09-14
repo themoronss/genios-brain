@@ -16,6 +16,8 @@ from datetime import datetime
 
 from sqlalchemy import text
 
+from genios_engine.context.vocabulary import CLOSED_ANSWERED, CLOSED_REPLIED
+
 from genios_engine.contracts.open_loop import open_loop_id
 
 
@@ -57,8 +59,26 @@ def record_ask(conn, *, org_id: str, subject_node_id: str, kind: str,
     return loop
 
 
+#: The closure basis, decided PER ROW. One message can answer one of a person's three open asks
+#: and not the other two, so the verdict cannot be a single value passed to the statement — it is
+#: a CASE over each loop's own `kind`. An empty discharge set skips the CASE entirely rather than
+#: emitting `kind in ()`, which is both a SQL error on some drivers and a lie on the rest.
+def _closed_basis_clause(discharged: "frozenset[str] | None") -> tuple[str, dict]:
+    if not discharged:
+        return ", closed_basis = :basis_replied", {"basis_replied": CLOSED_REPLIED}
+    names = sorted(discharged)
+    keys = [f"dk{i}" for i in range(len(names))]
+    placeholders = ", ".join(f":{k}" for k in keys)
+    clause = (f", closed_basis = case when kind in ({placeholders}) "
+              f"then :basis_answered else :basis_replied end")
+    params = {k: n for k, n in zip(keys, names)}
+    params.update({"basis_answered": CLOSED_ANSWERED, "basis_replied": CLOSED_REPLIED})
+    return clause, params
+
+
 def close_loops_awaited_from(conn, *, org_id: str, node_id: str, thread_id: str | None,
-                             event_id: str, at: datetime) -> int:
+                             event_id: str, at: datetime,
+                             discharged: "frozenset[str] | None" = None) -> int:
     """THEIR reply closes the asks WE were waiting on them for. The mirror of the verb above.
 
     `close_loops_for_reply` closes by SUBJECT, which answers "we replied, so their questions are
@@ -72,15 +92,19 @@ def close_loops_awaited_from(conn, *, org_id: str, node_id: str, thread_id: str 
     identity at all, and only loops opened BEFORE the reply — a message cannot answer a question
     asked after it.
     """
+    basis_clause, basis_params = _closed_basis_clause(discharged)
     return conn.execute(text(
-        "update open_loops set status='closed', closed_at=:at, closed_by_event=:ev "
-        "where org_id=:o and awaited_from_node_id=:n and status='open' and opened_at <= :at "
+        "update open_loops set status='closed', closed_at=:at, closed_by_event=:ev"
+        + basis_clause +
+        " where org_id=:o and awaited_from_node_id=:n and status='open' and opened_at <= :at "
         "and (thread_id = :t or thread_id is null)"),
-        {"o": org_id, "n": node_id, "t": thread_id, "at": at, "ev": event_id}).rowcount
+        {"o": org_id, "n": node_id, "t": thread_id, "at": at, "ev": event_id,
+         **basis_params}).rowcount
 
 
 def close_loops_for_reply(conn, *, org_id: str, subject_node_id: str,
-                          thread_id: str | None, event_id: str, at: datetime) -> int:
+                          thread_id: str | None, event_id: str, at: datetime,
+                          discharged: "frozenset[str] | None" = None) -> int:
     """OUR outbound reply closes this person's open loops on ITS thread — and only its thread.
 
     Answering one conversation must not mark every other conversation answered (the same rule
@@ -89,11 +113,14 @@ def close_loops_for_reply(conn, *, org_id: str, subject_node_id: str,
     the best completion evidence such a loop can ever have. Only loops opened BEFORE the reply
     close — a reply cannot answer a question that has not been asked yet.
     """
+    basis_clause, basis_params = _closed_basis_clause(discharged)
     result = conn.execute(text(
-        "update open_loops set status='closed', closed_at=:at, closed_by_event=:ev "
-        "where org_id=:o and subject_node_id=:s and status='open' and opened_at <= :at "
+        "update open_loops set status='closed', closed_at=:at, closed_by_event=:ev"
+        + basis_clause +
+        " where org_id=:o and subject_node_id=:s and status='open' and opened_at <= :at "
         "and (thread_id = :t or thread_id is null)"),
-        {"o": org_id, "s": subject_node_id, "t": thread_id, "at": at, "ev": event_id})
+        {"o": org_id, "s": subject_node_id, "t": thread_id, "at": at, "ev": event_id,
+         **basis_params})
     return result.rowcount
 
 

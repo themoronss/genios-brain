@@ -36,7 +36,8 @@ from genios_engine.context.documents import register_document_node, resolve_owne
 from genios_engine.context.identity import (observe_company_name, observe_person_name,
                                             resolve_company_mention, resolve_person_name)
 from genios_engine.context.llm.client import LLMClient
-from genios_engine.context.vocabulary import OWNER_DECLARED, OWNER_INFERRED
+from genios_engine.context.vocabulary import (OWNER_DECLARED, OWNER_INFERRED,
+                                              discharged_asks)
 
 _WEEKDAYS = {"monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3,
              "friday": 4, "saturday": 5, "sunday": 6}
@@ -970,6 +971,13 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
 
         sender_norm = _norm_email(sender_email) or (sender_email or "").strip().lower()
         internal_set = internal_emails or frozenset()
+        # WHICH ASKS THIS MESSAGE ACTUALLY ANSWERS, computed once and handed to both closers.
+        # Normalised through `norm_obs_kind` exactly as the observation loop below does, so the
+        # kind this consults and the kind that reaches the graph cannot be different strings.
+        # Empty for almost every message, which is the honest answer: "what is your ARR?" is
+        # discharged by a sentence, and no kind in the vocabulary means "answered the question".
+        discharged_here = discharged_asks(
+            norm_obs_kind(o.get("kind")) for o in (ex.observations or ()))
         sender_node = None
         # A machine sender is noise for the NETWORK too: it gets a `service` node (facts attach) but
         # never anchors a relationship edge or a situation — same treatment as a newsletter.
@@ -1152,11 +1160,18 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                 if (not is_inbound and not is_noise and occurred_at is not None
                         and rn_email not in internal_set):
                     # …and the reply CLOSES this thread's open loops for this person. The
-                    # ball_in_court flip below says whose turn it is; the ledger says WHICH
-                    # requests this reply answered — one row each, never the whole person.
+                    # ball_in_court flip below says whose turn it is; the ledger says which
+                    # requests this reply REACHED — one row each, never the whole person.
+                    #
+                    # It used to say "answered", and that was a claim the code could not support:
+                    # every open loop on the thread closes whatever the message said, so "what is
+                    # your ARR?" met by "let me check and get back to you" was recorded as
+                    # answered. The closure is unchanged — holding loops open until an answer can
+                    # be proven would refuse on an absence — but `closed_basis` now records which
+                    # of the two actually happened.
                     close_loops_for_reply(conn, org_id=org_id, subject_node_id=rnode,
                                           thread_id=thread_id, event_id=event_id,
-                                          at=occurred_at)
+                                          at=occurred_at, discharged=discharged_here)
                     store.write_fact(conn, org_id=org_id, subject_node_id=rnode,
                                      field="thread.last_outbound", value=occurred_at.isoformat(),
                                      value_type="timestamp", confidence=FACT_CONF_BY_RANK[2],
@@ -1623,7 +1638,8 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             # put to somebody opened a loop on our own node that nothing could ever shut, so
             # every ask the founder ever sent was still open, answered ones included.
             close_loops_awaited_from(conn, org_id=org_id, node_id=speaker_node,
-                                     thread_id=thread_id, event_id=event_id, at=occurred_at)
+                                     thread_id=thread_id, event_id=event_id, at=occurred_at,
+                                     discharged=discharged_here)
             store.write_fact(conn, org_id=org_id, subject_node_id=speaker_node,
                              field="thread.last_inbound", value=occurred_at.isoformat(),
                              value_type="timestamp", confidence=FACT_CONF_BY_RANK[2],

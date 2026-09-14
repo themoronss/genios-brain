@@ -27,8 +27,8 @@
 # already paid for. The point is that the row is one place instead of three.
 
 kinds:
-  - {kind: approval_blocked, polarity: negative}
-  - {kind: approval_granted, polarity: positive, is_progress: true}
+  - {kind: approval_blocked, polarity: negative, discharges: [approval_requested]}
+  - {kind: approval_granted, polarity: positive, is_progress: true, discharges: [approval_requested]}
   - {kind: approval_requested, polarity: neutral, is_ask: true}
   - {kind: budget_approved, polarity: positive}
   - {kind: budget_freeze, polarity: negative}
@@ -44,19 +44,19 @@ kinds:
   - {kind: demo_requested, polarity: positive, is_ask: true, is_progress: true}
   - {kind: diligence_started, polarity: positive, is_progress: true}
   - {kind: discount_pressure, polarity: negative}
-  - {kind: document_sent, polarity: neutral, is_progress: true}
+  - {kind: document_sent, polarity: neutral, is_progress: true, discharges: [information_requested]}
   - {kind: followup_sent, polarity: neutral, is_progress: true}
   - {kind: going_dark, polarity: negative}
   - {kind: information_requested, polarity: neutral, is_ask: true}
-  - {kind: intro_made, polarity: positive, is_progress: true}
+  - {kind: intro_made, polarity: positive, is_progress: true, discharges: [intro_requested]}
   - {kind: intro_requested, polarity: neutral, is_ask: true}
   - {kind: introduction, polarity: neutral}
   - {kind: investor_update_sent, polarity: neutral, is_ask: true, is_progress: true}
   - {kind: invoice_sent, polarity: neutral}
   - {kind: legal_review, polarity: neutral}
-  - {kind: meeting_cancelled, polarity: neutral}
+  - {kind: meeting_cancelled, polarity: neutral, discharges: [meeting_request]}
   - {kind: meeting_request, polarity: neutral, is_ask: true, is_progress: true}
-  - {kind: meeting_scheduled, polarity: neutral, is_progress: true}
+  - {kind: meeting_scheduled, polarity: neutral, is_progress: true, discharges: [meeting_request, demo_requested]}
   - {kind: negative_reply, polarity: negative}
   - {kind: next_step_agreed, polarity: positive, is_ask: true, is_progress: true}
   - {kind: objection, polarity: negative}
