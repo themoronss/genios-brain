@@ -1318,6 +1318,31 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
     # without a model call; structured rows are deterministic too.  Charging either at this seam
     # billed the same L1 interpretation twice.  The two remaining L2 model sites write their own
     # token/cost receipts through `context.model_audit`.
+    # L2.1.9 · WHAT THIS SWEEP COULD NOT EXPLAIN.
+    #
+    # LAST OF THE MEASURING PASSES, after every pass that can produce a situation — including the
+    # pattern evaluation above it, because a pattern that fired is coverage like any other. Run
+    # any earlier and it would report as unexplained the very subjects the passes behind it were
+    # about to speak about.
+    #
+    # THE MEASUREMENT NOTHING TOOK. Every pass in this function reports what it PRODUCED; not one
+    # reported what it left behind, so a sweep that explained nothing and a sweep with nothing to
+    # explain read identically in the result. "What is happening in my mailbox that this never
+    # mentioned?" had no answer in the engine — the only way to find out was to read the graph by
+    # hand against the cards, which is how every defect on this branch was found.
+    #
+    # DETERMINISTIC AND BOUNDED: four bulk statements over tables this sweep has already written,
+    # no model and no clock of its own. It adds no judgement — it does not decide that a residue
+    # item MATTERS, only that nothing spoke about it. Never fatal, for the reason every pass here
+    # is: a missed measurement costs one cycle of visibility, and the next sweep takes it again.
+    residue: dict = {}
+    try:
+        from genios_engine.context.residue import detect_residue
+        residue = detect_residue(store, org_id, eval_time=sweep_at).as_record()
+    except Exception:      # noqa: BLE001 — a measurement must never break ingestion
+        from genios_engine.platform.logging import get_logger
+        get_logger("genios.l2").exception("residue detection failed for org=%s", org_id)
+
     # ONE BUMP FOR EVERYTHING THE DERIVED PASSES DID.
     #
     # `bump_version` is taken per EVENT, inside `process_event`, and `bump_slice_versions`
@@ -1380,6 +1405,10 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
             # looks identical to one with nothing to delete unless the number is returned,
             # and the first is a backlog still draining while the second is steady state.
             "outbox_rows_pruned": outbox_rows_pruned,
+            # The only number here that counts what the sweep did NOT do. A zero means
+            # this layer explained everything it holds; a zero because the pass failed is
+            # why it carries its own key rather than being folded into a total.
+            "residue": residue,
             "history_backfilled": history_backfilled,
             "metric_points": metric_points, "trend_facts": trend_facts,
             "anomaly_facts": anomaly_facts, "cohort_changes": cohort_changes,
