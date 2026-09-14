@@ -90,5 +90,11 @@ class FeedbackRequest(BaseModel):
     at: datetime | None = None
 
 
+class FollowupResolveRequest(BaseModel):
+    """P8 C5: the person closes a screen follow-up (toast `done` / panel dismiss)."""
+    model_config = ConfigDict(extra="ignore")
+    resolution: Literal["done", "dismissed"]
+
+
 __all__ = ["DatePhrase", "DeviceMoment", "EvaluateRequest", "FEEDBACK_ACTIONS", "FeedbackRequest",
-           "Features", "KINDS", "PRIORITIES", "Participant", "Surface"]
+           "Features", "FollowupResolveRequest", "KINDS", "PRIORITIES", "Participant", "Surface"]

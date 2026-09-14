@@ -230,8 +230,10 @@ def test_slice_is_seat_visible_versioned_and_announced(client):
     assert one.status_code == 200, one.text
     assert time.perf_counter() - t0 < 0.5
     a = one.json()
-    # P4 §3.4: slice v2 — additive `companies[].other_seats` + `recent_changes` in every response
-    assert a["schema_version"] == 2 and a["full"] is True and a["version"] > 0
+    # P4 §3.4: slice v2 — additive `companies[].other_seats` + `recent_changes` in every response;
+    # P8 C5: v3 adds `followups` + `removed_followups` (additive)
+    assert a["schema_version"] == 3 and a["full"] is True and a["version"] > 0
+    assert a["followups"] == [] and a["removed_followups"] == []
     assert isinstance(a["recent_changes"], list)
     assert all(isinstance(co.get("other_seats"), list) for co in a["companies"])
     priya = next(p for p in a["people"] if p["node_id"] == n["priya"])

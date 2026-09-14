@@ -5,6 +5,9 @@
   POST /v1/moments                                device token   device-local moments (P-01/P-18)
   POST /v1/moments/{moment_id}/feedback           device or seat
   GET  /v1/moments?limit&before&kind              device or seat the seat's own history
+  GET  /v1/followups?status=open|all&limit        device or seat P8 C5 screen follow-ups
+  POST /v1/followups/{id}/resolve                 device or seat done | dismissed
+  GET  /v1/seats/me/weekly-report?week_start      device or seat P8 C8 the week in counts
 
 NEVER CREDIT-CHARGED (D6). Every handler is a few statements on the process's one pool (session
 pooler 8+4): auth is one, the slice ~9, an evaluate ~10 including the persist transaction.
@@ -14,14 +17,15 @@ from __future__ import annotations
 import gzip
 import time
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from fastapi import APIRouter, Query, Request, Response
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
 from genios_engine.api.device_routes import _bearer, _err
-from genios_engine.contracts.moments import KINDS, DeviceMoment, EvaluateRequest, FeedbackRequest
+from genios_engine.contracts.moments import (KINDS, DeviceMoment, EvaluateRequest,
+                                             FeedbackRequest, FollowupResolveRequest)
 from genios_engine.platform import capture_policy as P
 from genios_engine.platform import devices as D
 from genios_engine.platform.auth import check_org_kill, jwt_decode, verify_bearer
@@ -247,43 +251,128 @@ def _draft_review(body: EvaluateRequest, p: Principal, engine, now: datetime, st
     return out
 
 
+QUEUED_FOR_BRIEF = "queued_for_brief"
+
+
 def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, started: float):
-    """P-20: 204 unless the screen has something worth one note. The same screen is judged once
-    (dedupe key = screen hash), and each seat gets `screen_insight_daily_cap` checks per day."""
+    """P-20 + P8: 204 unless the screen has something worth one note.
+
+      waste rules  the same screen is judged once (screen-hash key); `screen_insight_daily_cap`
+                   model checks per seat per day; an open ask of this thread whose line now has a
+                   `You:` line after it is closed `answered` first (structural, no model);
+      the model    judges work vs personal (verdict stored per thread, C9) and the note (C1);
+      C2 topic     one SHOWN note per topic per day — a repeat refreshes the follow-up → 204;
+      C3 budget    ≤ `screen_insight_max_per_hour` shown per seat; over → stored hidden
+                   (`queued_for_brief`), the follow-up still recorded (C4)."""
+    from genios_engine.reason.moments import followups as F
     from genios_engine.reason.moments import screen_insight as SI
     screen = SI.visible_text(body.visible_messages)
     if len(screen) < SI.MIN_TEXT_CHARS:
         return Response(status_code=_NO_CONTENT)
     moment_id = M.server_moment_id(p.seat_id, body.moment_request_id)
     digest = SI.text_digest(screen)
+    thread = (body.surface.thread_key or "").strip() or None
+    app = (body.surface.app or "").strip().lower() or None
     key = M.cache_key(seat_id=p.seat_id, capability_id=SI.CAPABILITY_ID, subject_ids=[],
                       trigger=M.trigger_digest(SI.CAPABILITY_ID, digest), subject_version="screen")
     with engine.connect() as c:
         prior = _stored(c, moment_id=moment_id, org_id=p.org_id, seat_id=p.seat_id)
         if prior is not None:
             return prior
-        if M.cached(c, key, now) is not None:          # this exact screen was already judged
-            return Response(status_code=_NO_CONTENT)
-    cap = int(getattr(get_settings(), "screen_insight_daily_cap", SI.DEFAULT_DAILY_CAP) or 0)
+        judged = M.cached(c, key, now) is not None     # this exact screen was already judged
+        tz = F.seat_tz(c, p.org_id, p.seat_id)
+    F.mark_answered(engine, org_id=p.org_id, seat_id=p.seat_id, thread_key=thread,
+                    lines=screen.split("\n"), capability_id=SI.CAPABILITY_ID, now=now)
+    if judged:
+        return Response(status_code=_NO_CONTENT)
+    settings = get_settings()
+    cap = int(getattr(settings, "screen_insight_daily_cap", SI.DEFAULT_DAILY_CAP) or 0)
     if not SI.reserve(engine, org_id=p.org_id, seat_id=p.seat_id, cap=cap, now=now):
         _log.info("screen insight capped org=%s seat=%s", p.org_id, p.seat_id)
         return Response(status_code=_NO_CONTENT)
     res = SI.insight(engine, org_id=p.org_id, email=p.email, app=body.surface.app,
                      participants=body.participants, entities=body.features.entities,
-                     screen=screen)
-    if res is None:
-        _log.info("screen insight: nothing to say org=%s seat=%s ms=%.0f", p.org_id, p.seat_id,
-                  (time.perf_counter() - started) * 1000)
+                     screen=screen, now_local=SI.local_label(now, tz))
+    if res is not None and thread and res["work"] is not None:
+        F.set_verdict(engine, org_id=p.org_id, seat_id=p.seat_id, thread_key=thread,
+                      work=res["work"], now=now)
+    note = res["insight"] if res is not None else None
+    if note is None:
+        _log.info("screen insight: nothing to say org=%s seat=%s work=%s ms=%.0f", p.org_id,
+                  p.seat_id, res and res["work"], (time.perf_counter() - started) * 1000)
         return Response(status_code=_NO_CONTENT)
+    fkind = F.map_kind(note["kind"], note["owner"])
+    topic = F.topic_key(seat_id=p.seat_id, thread_key=thread, app=app, kind=fkind or note["kind"],
+                        who=note["who"], local_date=now.astimezone(F.zone(tz)).date())
+    due = F.parse_due(note["due"], tz_name=tz, now=now)
+
+    def follow_up() -> None:
+        if fkind:
+            F.upsert(engine, org_id=p.org_id, seat_id=p.seat_id, kind=fkind,
+                     note=note["insight"], who=note["who"], due_at=due, thread_key=thread,
+                     app=app, topic=topic, tz_name=tz, now=now)
+
+    with engine.connect() as c:
+        repeat = F.topic_shown(c, org_id=p.org_id, seat_id=p.seat_id,
+                               capability_id=SI.CAPABILITY_ID, topic=topic, now=now)
+        shown = 0 if repeat else F.shown_last_hour(c, org_id=p.org_id, seat_id=p.seat_id,
+                                                   capability_id=SI.CAPABILITY_ID, now=now)
+    if repeat:                                         # C2: refresh the follow-up, no popup
+        follow_up()
+        return Response(status_code=_NO_CONTENT)
+    budget = int(getattr(settings, "screen_insight_max_per_hour", 3) or 0)
+    content = SI.moment_content(note, digest=digest, topic_key=topic, thread_key=thread)
     try:
         out = M.persist(engine, org_id=p.org_id, seat_id=p.seat_id, device_id=p.device_id,
-                        origin="server", moment={"moment_id": moment_id, **res["content"]},
-                        subject_ids=res["subject_ids"], now=now, key=key)
+                        origin="server", moment={"moment_id": moment_id, **content},
+                        subject_ids=res["subject_ids"], now=now, key=key,
+                        hidden_reason=QUEUED_FOR_BRIEF if shown >= budget else None)
     except M.MomentConflict:
         return _err(409, "MOMENT_ID_CONFLICT", "That moment id belongs to another seat.")
-    _log.info("screen insight org=%s seat=%s display=%s reason=%s ms=%.0f", p.org_id, p.seat_id,
-              out["display"], out["reason"], (time.perf_counter() - started) * 1000)
+    follow_up()
+    _log.info("screen insight org=%s seat=%s display=%s reason=%s followup=%s ms=%.0f",
+              p.org_id, p.seat_id, out["display"], out["reason"], fkind,
+              (time.perf_counter() - started) * 1000)
     return out
+
+
+# ── P8 C5 follow-ups + C8 weekly report ───────────────────────────────────────────────────────
+@router.get("/v1/followups")
+def list_followups(request: Request, status: str = Query(default="open", pattern="^(open|all)$"),
+                   limit: int = Query(default=50, ge=1, le=200)):
+    from genios_engine.reason.moments import followups as F
+    dstore, cstore = D.stores()
+    p = principal(request, dstore)
+    if isinstance(p, JSONResponse):
+        return p
+    return F.listing(cstore.engine, org_id=p.org_id, seat_id=p.seat_id, status=status,
+                     limit=limit, now=_now())
+
+
+@router.post("/v1/followups/{followup_id}/resolve")
+def resolve_followup(followup_id: str, body: FollowupResolveRequest, request: Request):
+    from genios_engine.reason.moments import followups as F
+    dstore, cstore = D.stores()
+    p = principal(request, dstore)
+    if isinstance(p, JSONResponse):
+        return p
+    res = F.resolve(cstore.engine, org_id=p.org_id, seat_id=p.seat_id, followup_id=followup_id,
+                    resolution=body.resolution, now=_now())
+    if res is None:
+        return _err(404, "FOLLOWUP_NOT_FOUND", "No such follow-up for this seat.")
+    return res
+
+
+@router.get("/v1/seats/me/weekly-report")
+def weekly_report(request: Request, week_start: date | None = None):
+    from genios_engine.reason.moments import followups as F
+    from genios_engine.reason.moments import screen_insight as SI
+    dstore, cstore = D.stores()
+    p = principal(request, dstore)
+    if isinstance(p, JSONResponse):
+        return p
+    return F.weekly_report(cstore.engine, org_id=p.org_id, seat_id=p.seat_id,
+                           capability_id=SI.CAPABILITY_ID, week_start=week_start, now=_now())
 
 
 # ── §2.3 device-local moments ─────────────────────────────────────────────────────────────────

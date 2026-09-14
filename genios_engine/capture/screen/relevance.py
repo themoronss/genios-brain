@@ -12,6 +12,9 @@ from it is downgraded to `park`: screen text is never deleted on a model's judgm
 delete) — a park keeps the payload and can be re-adjudicated. With no model configured, an
 unmatched doc parks too (recoverable) instead of spending extraction on an unknown page.
 
+FIRST, for any screen object (P8 C9): when the screen-insight model judged this thread in the last
+24 h (`screen_thread_verdicts`), work keeps it and personal parks it, with no gate call.
+
 Chat and email screen objects are conversations the seat is actively reading in a dedicated
 reader; they go to the same fallback gate (the email junk gate's "is a human writing?" test is
 exactly right for them), with the same drop → park downgrade, and route when no gate exists.
@@ -79,17 +82,19 @@ def _work_bundle(bundle_id: str | None) -> bool:
     return bool(b) and any(b.startswith(w) for w in WORK_BUNDLES)
 
 
-#: Personal messengers. A chat here with nobody this org knows is most likely family or friends:
-#: it is parked (kept, recoverable) with no model call. A known contact (alias hit) still goes
-#: through the ordinary gate, so work chats on WhatsApp are unaffected.
-PERSONAL_CHAT_APPS = frozenset({"whatsapp"})
+def thread_verdict(raw: dict, lookup) -> RelevanceVerdict | None:
+    """P8 C9: the screen-insight model's judgement of this thread in the last 24 h — work → keep,
+    personal → park (kept, recoverable; never dropped) — or None (no verdict: the usual gate).
 
-
-def personal_chat_verdict(raw: dict) -> RelevanceVerdict | None:
-    """Park a personal-messenger chat with no known contact; None when it is not one."""
-    if (str(raw.get("app") or "").strip().lower() in PERSONAL_CHAT_APPS
-            and int(raw.get("alias_hits") or 0) == 0):
-        return RelevanceVerdict(False, 0.30, disposition="park", reason="personal_chat")
+    This replaced the P3 rule "WhatsApp + nobody known → park": whether a chat is work is MEANING,
+    so the model judges it; rules only remove waste."""
+    if lookup is None:
+        return None
+    work = lookup(str(raw.get("thread_key") or "") or None)
+    if work is True:
+        return RelevanceVerdict(True, 0.85, disposition="keep", reason="insight_work")
+    if work is False:
+        return RelevanceVerdict(False, 0.30, disposition="park", reason="insight_personal")
     return None
 
 
@@ -106,12 +111,14 @@ def rule_verdict(raw: dict) -> RelevanceVerdict | None:
 
 
 class ScreenDocRelevance:
-    """RelevanceClassifier for screen objects. `fallback` is the org's ordinary gate or None."""
+    """RelevanceClassifier for screen objects. `fallback` is the org's ordinary gate or None;
+    `verdicts` is `thread_key -> bool | None` (followups.verdict_lookup) or None."""
 
     name = "relevance-screen-1"
 
-    def __init__(self, fallback=None) -> None:
+    def __init__(self, fallback=None, verdicts=None) -> None:
         self.fallback = fallback
+        self.verdicts = verdicts
 
     def _ask(self, ctx: GateContext, prepared: PreparedContent | None) -> RelevanceVerdict:
         v = self.fallback.classify(ctx, prepared)
@@ -124,6 +131,9 @@ class ScreenDocRelevance:
 
     def classify(self, ctx: GateContext, prepared: PreparedContent | None) -> RelevanceVerdict:
         raw = ctx.raw or {}
+        judged = thread_verdict(raw, self.verdicts)
+        if judged is not None:
+            return judged
         if ctx.event.object_type == DOC_OBJECT_TYPE:
             ruled = rule_verdict(raw)
             if ruled is not None:
@@ -132,13 +142,10 @@ class ScreenDocRelevance:
                 return RelevanceVerdict(False, 0.40, disposition="park",
                                         reason="no_work_signal")
             return self._ask(ctx, prepared)
-        personal = personal_chat_verdict(raw)
-        if personal is not None:
-            return personal
         if self.fallback is None:
             return RelevanceVerdict(True, 0.60, disposition="keep", reason="screen_thread")
         return self._ask(ctx, prepared)
 
 
-__all__ = ["PERSONAL_CHAT_APPS", "ScreenDocRelevance", "WORK_BUNDLES", "WORK_EXES", "WORK_HOSTS",
-           "personal_chat_verdict", "rule_verdict"]
+__all__ = ["ScreenDocRelevance", "WORK_BUNDLES", "WORK_EXES", "WORK_HOSTS", "rule_verdict",
+           "thread_verdict"]

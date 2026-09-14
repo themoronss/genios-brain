@@ -57,9 +57,13 @@ def _public(moment: dict) -> dict:
 
 def persist(engine, *, org_id: str, seat_id: str, device_id: str | None, origin: str,
             moment: dict, subject_ids, now: datetime | None = None,
-            key: str | None = None) -> dict:
+            key: str | None = None, hidden_reason: str | None = None) -> dict:
     """Store `moment` (the §6.2 shape) and decide whether it is shown. Returns the moment with
-    `display` and `reason`. Raises MomentConflict when the id belongs to another seat."""
+    `display` and `reason`. Raises MomentConflict when the id belongs to another seat.
+
+    `hidden_reason` (P8 C3): the caller's own reason to keep a moment the guards WOULD show off
+    screen (a capability's popup budget, "queued_for_brief"). The guards' reason wins when they
+    already suppress it (shadow reports shadow)."""
     now = now or datetime.now(timezone.utc)
     ttl = int(moment.get("ttl_seconds") or 900)
     shown = False
@@ -81,6 +85,8 @@ def persist(engine, *, org_id: str, seat_id: str, device_id: str | None, origin:
         state = G.load_state(c, org_id=org_id, seat_id=seat_id, device_id=device_id, now=now)
         display, reason = G.decide(state, kind=moment["kind"], priority=moment["priority"],
                                    now=now)
+        if display and hidden_reason:
+            display, reason = False, hidden_reason
         if hit is not None and not display:
             return {**_public(hit), "display": False, "reason": reason}
         c.execute(text(
@@ -217,7 +223,11 @@ def purge_expired(engine, *, now: datetime | None = None, batch: int = 5000,
         deleted += n
         if n < batch:
             break
-    return {"moment_cache": cache_n, "moments": deleted}
+    # P8: resolved screen follow-ups keep the same capture clock; thread verdicts a week.
+    from genios_engine.reason.moments import followups as F
+    with engine.begin() as c:
+        fu = F.purge(c, now=now)
+    return {"moment_cache": cache_n, "moments": deleted, **fu}
 
 
 __all__ = ["MomentConflict", "cache_key", "cached", "history", "moment_out", "persist",

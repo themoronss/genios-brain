@@ -52,7 +52,7 @@ def test_a_new_person_still_gets_an_insight(monkeypatch):
         "quote": "revised pricing by Friday"})
     out = SI._compute(None, org_id="o", email=None, app="whatsapp", participants=[],
                       entities=[], screen=SCREEN, deadline=time.monotonic() + 3)
-    assert out and out["subject_ids"] == [] and out["content"]["kind"] == "advice"
+    assert out and out["subject_ids"] == [] and out["insight"]["kind"] == "ask"
 
 
 def test_no_model_configured_is_silence():

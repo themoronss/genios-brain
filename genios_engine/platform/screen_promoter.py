@@ -149,12 +149,18 @@ def default_doors() -> Doors:
         from genios_engine.capture.connectors.push_ingest import PushIngestWiring
         from genios_engine.capture.screen.relevance import ScreenDocRelevance
         from genios_engine.contracts.source_event import SyncMode
+        from genios_engine.platform.db import get_engine
         from genios_engine.platform.wiring import make_relevance_classifier
+        from genios_engine.reason.moments.followups import verdict_lookup
+        # P8 C9: the screen-insight model's 24 h work / personal verdict per thread routes the
+        # thread's memory before the AI gate. The seat is the one this connection belongs to.
+        seat_id = connection_id.removeprefix("screen:")
+        verdicts = verdict_lookup(get_engine(get_settings().database_url), org_id, seat_id)
         return PushIngestWiring(
             repo=R._repo, trace_repo=R._trace_repo, payload_store=R._payload_store,
             prepared_store=R._prepared_store, document_job_store=R._documents,
             parked_store=R._parked,
-            relevance=ScreenDocRelevance(make_relevance_classifier(org_id)),
+            relevance=ScreenDocRelevance(make_relevance_classifier(org_id), verdicts),
             sender_resolver=R._sender_resolver_for(org_id),
             mailbox_owner=seat_email, coverage_fn=R._coverage_fn_for(org_id),
             esqe=R._esqe_stage_for(org_id), semantic=R._semantic_lane_for(org_id),

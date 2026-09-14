@@ -41,7 +41,8 @@ from genios_engine.reason.moments.common import (VISIBLE_EVENT_SQL, VISIBLE_FACT
 
 #: v2 (P4 §3.4): `companies[].other_seats` (org-visible touches by other seats, 7 d) and
 #: `recent_changes` (≤ 14 d, seat-visible). Both additive; a v1 reader ignores them.
-SCHEMA_VERSION = 2
+#: v3 (P8 C5): `followups` (open, ≤ 50, newest first) and `removed_followups`. Additive.
+SCHEMA_VERSION = 3
 TOUCH_DAYS = 90
 CHANGE_DAYS = 14
 CHANGE_MAX = 200
@@ -210,6 +211,15 @@ def build(engine, *, org_id: str, seat_id: str, email: str | None, since: int | 
         threshold = None if full else version_instant(since) - DELTA_MARGIN
         doc = _build(c, org_id=org_id, seat_id=seat_id, email=norm_email(email) or viewer,
                      viewer=viewer, now=now, threshold=threshold)
+        # v3 (P8 C5): the seat's open screen follow-ups (complete current set, like commitments)
+        # and those closed since `since`. Promises 2 days past due are expired here, on read.
+        from genios_engine.reason.moments import followups as F
+        F.expire(c, org_id=org_id, seat_id=seat_id, now=now)
+        c.commit()
+        doc["followups"] = F.open_items(c, org_id=org_id, seat_id=seat_id)
+        doc["removed_followups"] = ([] if threshold is None else
+                                    F.removed_since(c, org_id=org_id, seat_id=seat_id,
+                                                    threshold=threshold))
     doc.update({"schema_version": SCHEMA_VERSION, "version": version, "full": full,
                 "generated_at": iso(now)})
     return _fit(doc)

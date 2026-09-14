@@ -1,8 +1,8 @@
-"""P3 leftover · personal WhatsApp chats are parked before any model call.
+"""P8 C9 · a screen thread's memory is routed by the screen-insight model's verdict, not a rule.
 
-A WhatsApp chat with nobody the org knows is most likely family or friends. It must never reach
-the AI gate (cost + privacy), and it must be PARKED, not dropped (store-don't-delete). A chat
-with a known contact still goes to the ordinary gate.
+The P3 rule "WhatsApp + nobody known → park" is gone: whether a chat is work is MEANING, so the
+model judges it (screen_thread_verdicts, 24 h). A verdict routes with no AI gate call — work
+keeps, personal PARKS (store-don't-delete: never dropped). No verdict → the ordinary gate.
 """
 
 from __future__ import annotations
@@ -22,22 +22,41 @@ class _Gate:
         return RelevanceVerdict(True, 0.8, disposition="keep", reason="gate")
 
 
-def _ctx(app: str, alias_hits: int, object_type: str = "chat_thread"):
-    return SimpleNamespace(raw={"app": app, "alias_hits": alias_hits},
+def _ctx(app: str, alias_hits: int, object_type: str = "chat_thread", thread: str = "wa:1"):
+    return SimpleNamespace(raw={"app": app, "alias_hits": alias_hits, "thread_key": thread},
                            event=SimpleNamespace(object_type=object_type))
 
 
-def test_a_whatsapp_chat_with_nobody_known_is_parked_without_a_model_call():
+def _verdicts(table: dict):
+    return lambda thread_key: table.get(thread_key)
+
+
+def test_a_whatsapp_chat_with_nobody_known_now_goes_to_the_gate():
     gate = _Gate()
     v = ScreenDocRelevance(gate).classify(_ctx("whatsapp", 0), None)
-    assert (v.relevant, v.disposition, v.reason) == (False, "park", "personal_chat")
+    assert v.reason == "gate" and gate.calls == 1
+
+
+def test_a_personal_verdict_parks_without_a_gate_call():
+    gate = _Gate()
+    v = ScreenDocRelevance(gate, _verdicts({"wa:1": False})).classify(_ctx("whatsapp", 3), None)
+    assert (v.relevant, v.disposition, v.reason) == (False, "park", "insight_personal")
     assert gate.calls == 0
 
 
-def test_a_whatsapp_chat_with_a_known_contact_goes_to_the_gate():
+def test_a_work_verdict_keeps_without_a_gate_call():
     gate = _Gate()
-    v = ScreenDocRelevance(gate).classify(_ctx("WhatsApp", 2), None)
-    assert v.reason == "gate" and gate.calls == 1
+    v = ScreenDocRelevance(gate, _verdicts({"wa:1": True})).classify(_ctx("whatsapp", 0), None)
+    assert (v.relevant, v.disposition, v.reason) == (True, "keep", "insight_work")
+    assert gate.calls == 0
+
+
+def test_no_verdict_for_this_thread_is_the_ordinary_path():
+    gate = _Gate()
+    lookup = _verdicts({"other": False})
+    assert ScreenDocRelevance(gate, lookup).classify(_ctx("whatsapp", 0), None).reason == "gate"
+    assert ScreenDocRelevance(None, lookup).classify(_ctx("whatsapp", 0), None).reason == \
+        "screen_thread"
 
 
 def test_work_chat_apps_are_unaffected():
@@ -46,6 +65,6 @@ def test_work_chat_apps_are_unaffected():
         assert ScreenDocRelevance(gate).classify(_ctx(app, 0), None).reason == "gate"
 
 
-def test_parked_even_when_no_gate_is_configured():
-    v = ScreenDocRelevance(None).classify(_ctx("whatsapp", 0), None)
+def test_a_personal_verdict_parks_even_with_no_gate_configured():
+    v = ScreenDocRelevance(None, _verdicts({"wa:1": False})).classify(_ctx("whatsapp", 0), None)
     assert v.disposition == "park"
