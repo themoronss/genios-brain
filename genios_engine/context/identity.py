@@ -60,6 +60,18 @@ ALIAS_CANON = "canon"
 _STRONG = frozenset({ALIAS_EMAIL, ALIAS_DOMAIN, ALIAS_LINKEDIN})
 
 
+def strong_proposal_reasons() -> frozenset[str]:
+    """The `merge_proposals.reason` values raised by an alias that proves identity alone.
+
+    DERIVED FROM `_STRONG`, NOT RESTATED BESIDE IT. `situations.identity_score` prices a strong
+    collision differently from a weak one, so it has to know which is which — and a second
+    hand-written copy of this set is a copy that silently stops matching the day a strong alias
+    kind is added here. `register_node_identity` writes the reason as `shared_<alias_type>` and
+    is the only caller of `propose_merge`, so this mapping is total.
+    """
+    return frozenset(f"shared_{alias_type}" for alias_type in _STRONG)
+
+
 def alias_keys_for_node(*, node_type: str, canonical_key: str | None,
                         display_name: str | None) -> list[tuple[str, str, str]]:
     """The keys a node can legitimately be found by, derived from what anchors it.

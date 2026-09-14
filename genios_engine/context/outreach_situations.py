@@ -1040,20 +1040,14 @@ def _gather(store, org_id: str, *, now: datetime | None = None,
         # OPEN DUPLICATE PROPOSALS PER NODE, for the identity axis. Read here with every other
         # bulk gather; `support_situations` reads the same table for the same purpose and this
         # module was passing a hardcoded zero.
-        held["_merge_proposals"] = {
-            str(r[0]): int(r[1] or 0) for r in c.execute(text(
-                # left_node_id / right_node_id — the columns the table actually has. This read
-                # shipped as from_node_id/to_node_id, which exist on no table here, so
-                # `refresh_state_situations` raised UndefinedColumn on EVERY sweep and the
-                # boundary in runner.py swallowed it: the entire outreach state-readings pass
-                # never ran once. `support_situations.py:1449` reads the same table correctly.
-                "select node_id, count(*) from ("
-                "  select left_node_id as node_id from merge_proposals "
-                "  where org_id = :o and status = 'open' "
-                "  union all "
-                "  select right_node_id as node_id from merge_proposals "
-                "  where org_id = :o and status = 'open') x group by node_id"),
-                {"o": org_id}).all()}
+        # ONE READER NOW, in `situations.merge_pressure`. This module's own copy shipped naming
+        # from_node_id/to_node_id — columns this table has never had — so
+        # `refresh_state_situations` raised UndefinedColumn on EVERY sweep and the boundary in
+        # runner.py swallowed it: the entire outreach state-readings pass never ran once. A
+        # hand-written third dialect of one query is how that happens again, so there is no
+        # longer a third. It also returns the STRENGTH, which the old `count(*)` could not.
+        from genios_engine.context.situations import merge_pressure
+        held["_merge_proposals"] = merge_pressure(c, org_id)
         # The campaigns, same route. `find_campaigns` requires an explicit window and has no
         # default: an unbounded read over a founder's whole mailbox is the query that makes a
         # sweep unpredictable.
@@ -1148,7 +1142,9 @@ def refresh_state_situations(store, org_id: str, *, now: datetime | None = None,
                             # column, one of them asserting certainty it had not checked.
                             identity=identity_score(
                                 open_merge_proposals=merge_open.get(
-                                    finding.concerns_node, 0)),
+                                    finding.concerns_node, (0, 0))[0],
+                                strong_proposals=merge_open.get(
+                                    finding.concerns_node, (0, 0))[1]),
                             first_seen=getattr(stats, "first_at", None), last_seen=last_at)
                     written += 1
             for domain, live in minted.items():

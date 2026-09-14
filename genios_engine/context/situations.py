@@ -54,6 +54,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import text
 
 from genios_engine.context.domain_spec import spec_for, spec_version
+from genios_engine.context.identity import strong_proposal_reasons
 from genios_engine.context.quality.lens import read_coverage_lens
 from genios_engine.context.quality.missing import AbsenceSubject, refresh_typed_absences
 from genios_engine.platform.ids import new_id
@@ -191,16 +192,52 @@ def consistency_score(*, open_discrepancies: int) -> int:
     return max(0, 100 - min(100, max(0, int(open_discrepancies)) * 34))
 
 
-def identity_score(*, open_merge_proposals: int) -> int:
+def identity_score(*, open_merge_proposals: int, strong_proposals: int | None = None) -> int:
     """Are we sure WHO this is about?
 
     An unresolved duplicate means the evidence may be split across two nodes, so this
     situation is probably missing half its material — or is about the wrong entity
     entirely. Neither is a small doubt, which is why one open proposal costs so much.
+
+    WHY THE STRENGTH OF THE PROPOSAL DECIDES HOW MUCH IT COSTS. `compute_confidence` takes the
+    MINIMUM of the trust axes, not their average — "you are only as sure as your weakest link" —
+    so this number is a CAP on the whole situation and not one opinion among four. A situation
+    with perfect evidence, current freshness and no contradiction still publishes at 40 if one
+    proposal is open against its anchor, and `confidence_overall` is what orders the home feed
+    (`api/home_routes.py`: `order by confidence_overall desc`). One open proposal therefore does
+    not soften a situation; it buries it.
+
+    That is the right price for the collision `identity._STRONG` names — a shared email, a shared
+    domain, a shared LinkedIn url — because each of those identifies one party on its own, so the
+    collision IS a duplicate and the evidence IS split. `identity.py` says so where it defines the
+    set: "a collision on these is a real duplicate ... a high-signal one worth a human's
+    attention".
+
+    It is the wrong price for a WEAK collision, which is almost always two people sharing a first
+    name or two projects sharing a word. That is a hypothesis that two nodes might be one, not a
+    finding that they are, and charging it what a shared email costs buries a well-evidenced
+    situation behind a coincidence of spelling.
+
+    So: a strong proposal costs exactly what it always did, and a weak one costs less without
+    ever costing nothing — 70 keeps every unproposed situation (100) ranked above it, which is the
+    ordering the review queue exists to produce, while leaving the situation somewhere a reader
+    will actually see it.
+
+    `strong_proposals=None` means the CALLER DID NOT ASK, which is not the same as "none are
+    strong". Every reader that has not been taught to fetch the strength keeps today's answer
+    exactly, so this can be adopted one call site at a time and a reader that is never updated is
+    conservative rather than wrong.
     """
     if open_merge_proposals <= 0:
         return 100
-    return 40 if open_merge_proposals == 1 else 20
+    if strong_proposals is None:
+        return 40 if open_merge_proposals == 1 else 20
+    strong = max(0, int(strong_proposals))
+    if strong >= 2:
+        return 20
+    if strong == 1:
+        return 40
+    return 70 if open_merge_proposals == 1 else 55
 
 
 #: THE UNIT OF EVERY SCORE ON `context_situations`. All four confidence dimensions and `coverage`
@@ -445,6 +482,7 @@ def score_situation(*, event_count: int, source_count: int, voice_count: int = 0
                     last_seen_at: datetime | None, open_discrepancies: int,
                     open_merge_proposals: int, present_fields: set[str],
                     expected_fields: dict[str, str], now: datetime,
+                    strong_merge_proposals: int | None = None,
                     trends=(), cohort_positions=(), anomalies=()) -> Confidence:
     """The whole confidence vector. Pure — every input explicit, fully replayable.
 
@@ -457,7 +495,8 @@ def score_situation(*, event_count: int, source_count: int, voice_count: int = 0
                               voice_count=voice_count)
     freshness, freshness_known = freshness_score(last_seen_at=last_seen_at, now=now)
     consistency = consistency_score(open_discrepancies=open_discrepancies)
-    identity = identity_score(open_merge_proposals=open_merge_proposals)
+    identity = identity_score(open_merge_proposals=open_merge_proposals,
+                              strong_proposals=strong_merge_proposals)
     coverage, missing = coverage_score(present_fields=present_fields,
                                        expected=expected_fields)
     coverage_known = coverage_is_known(coverage)
@@ -494,6 +533,11 @@ def score_situation(*, event_count: int, source_count: int, voice_count: int = 0
                 **analytic_receipt_keys,
                 "open_discrepancies": open_discrepancies,
                 "open_merge_proposals": open_merge_proposals,
+                # Recorded beside the total because the SCORE now depends on it: a stored
+                # confidence that cannot be recomputed from its own inputs is not replayable.
+                # `None` is preserved as `None` — "the reader did not ask" is a third state,
+                # and writing it as 0 would claim we checked and found none strong.
+                "strong_merge_proposals": strong_merge_proposals,
                 "last_seen_at": last_seen_at.isoformat() if last_seen_at else None,
                 # Which domain registry typed this situation. A change here explains a
                 # re-typing that would otherwise look like the world changed.
@@ -631,6 +675,40 @@ def decide_lifecycle(*, current_status: str | None, resolved_by: str | None,
 
 def _bulk(conn, sql: str, params: dict) -> list:
     return conn.execute(text(sql), params).fetchall()
+
+
+def merge_pressure(conn, org_id: str) -> dict[str, tuple[int, int]]:
+    """`{node_id: (open_proposals, strong_proposals)}` for every node carrying one.
+
+    ONE READER, BECAUSE THREE OF THEM HAVE ALREADY COST A SWEEP. `merge_proposals` was being read
+    in three places for one purpose — here, in `outreach_situations._gather` and in
+    `support_situations`' desk — in three different dialects of the same query, and the outreach
+    copy shipped naming `from_node_id`/`to_node_id`, columns this table has never had. That raised
+    `UndefinedColumn` on EVERY sweep; `runner.py`'s per-pass boundary logged it and moved on, so
+    the entire outreach state-readings pass never ran once while the sweep reported a clean run.
+    A fourth divergent copy is how that happens again, so there is one.
+
+    AN UNREADABLE STRENGTH COUNTS AS STRONG. `reason` arrived in migration 0036, so a proposal
+    raised before it carries NULL, and a null is "we cannot tell how serious this is" — the same
+    thing `identity_score(strong_proposals=None)` means, and it is answered the same way. Being
+    lenient about a doubt we cannot size would make the one case we know least about the cheapest.
+
+    Both sides of a pair are charged: a duplicate splits the evidence in both directions, and a
+    situation anchored on either node is missing the half that lives on the other.
+    """
+    strong_reasons = strong_proposal_reasons()
+    pressure: dict[str, tuple[int, int]] = {}
+    for row in _bulk(conn,
+            "select left_node_id, right_node_id, reason from merge_proposals "
+            "where org_id = :o and status = 'open'", {"o": org_id}):
+        reason = str(row.reason or "").strip()
+        is_strong = (not reason) or reason in strong_reasons
+        for node in (row.left_node_id, row.right_node_id):
+            if not node:
+                continue
+            total, strong = pressure.get(str(node), (0, 0))
+            pressure[str(node)] = (total + 1, strong + (1 if is_strong else 0))
+    return pressure
 
 
 #: Situations whose correlation id no `context_correlations` row backs. Five of the six writers
@@ -783,13 +861,9 @@ def refresh_situations(store, org_id: str, *, eval_time: datetime | None = None)
             "select subject_node_id, count(*) as n from discrepancies "
             "where org_id = :o and status = 'open' group by subject_node_id", {"o": org_id})}
 
-        # An open duplicate on EITHER side means we are unsure who this is about.
-        proposals: dict[str, int] = {}
-        for row in _bulk(conn,
-                "select left_node_id, right_node_id from merge_proposals "
-                "where org_id = :o and status = 'open'", {"o": org_id}):
-            for node in (row.left_node_id, row.right_node_id):
-                proposals[node] = proposals.get(node, 0) + 1
+        # An open duplicate on EITHER side means we are unsure who this is about, and HOW unsure
+        # depends on what collided — see `merge_pressure` and `identity_score`.
+        proposals = merge_pressure(conn, org_id)
 
         existing = {r.correlation_id: r for r in _bulk(conn,
             "select correlation_id, situation_id, status, resolved_by, resolved_at "
@@ -826,7 +900,8 @@ def refresh_situations(store, org_id: str, *, eval_time: datetime | None = None)
                 voice_count=voices.get(corr.correlation_id, 0),
                 last_seen_at=corr.last_event_at,
                 open_discrepancies=discrepancies.get(corr.anchor_node_id, 0),
-                open_merge_proposals=proposals.get(corr.anchor_node_id, 0),
+                open_merge_proposals=proposals.get(corr.anchor_node_id, (0, 0))[0],
+                strong_merge_proposals=proposals.get(corr.anchor_node_id, (0, 0))[1],
                 # The anchor's own facts PLUS whatever this situation's evidence
                 # established elsewhere — a deal's stage sits on the deal, but whose turn
                 # it is sits on a person.

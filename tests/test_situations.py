@@ -108,6 +108,52 @@ def test_an_unresolved_duplicate_is_a_large_doubt() -> None:
     assert identity_score(open_merge_proposals=3) < identity_score(open_merge_proposals=1)
 
 
+def test_a_caller_that_does_not_know_the_strength_gets_the_old_answer() -> None:
+    """`strong_proposals=None` means the caller did not ask, NOT that none are strong.
+
+    The three readers of `merge_proposals` are updated one at a time; one that has not been
+    taught to fetch the strength must stay conservative rather than silently become lenient.
+    """
+    for n in (0, 1, 2, 7):
+        assert identity_score(open_merge_proposals=n) == identity_score(
+            open_merge_proposals=n, strong_proposals=None)
+
+
+def test_a_shared_email_still_costs_what_it_always_cost() -> None:
+    """The collision `identity._STRONG` names is a real duplicate: the evidence IS split."""
+    assert identity_score(open_merge_proposals=1, strong_proposals=1) == 40
+    assert identity_score(open_merge_proposals=3, strong_proposals=2) == 20
+    # A weak proposal riding alongside a strong one changes nothing: strong already dominates.
+    assert identity_score(open_merge_proposals=4, strong_proposals=1) == 40
+
+
+def test_two_people_sharing_a_first_name_does_not_bury_the_situation() -> None:
+    """A weak collision is a HYPOTHESIS that two nodes are one, not a finding that they are.
+
+    `compute_confidence` takes the minimum, so this number caps the whole situation and orders
+    the home feed. Charging a spelling coincidence what a shared email costs hides a
+    well-evidenced situation behind it.
+    """
+    weak = identity_score(open_merge_proposals=1, strong_proposals=0)
+    assert weak == 70
+    assert weak > identity_score(open_merge_proposals=1, strong_proposals=1)
+
+
+def test_a_weak_proposal_never_costs_nothing() -> None:
+    """It is still unresolved. Clean situations must keep ranking above proposed ones."""
+    clean = identity_score(open_merge_proposals=0)
+    for weak_count in (1, 2, 9):
+        scored = identity_score(open_merge_proposals=weak_count, strong_proposals=0)
+        assert scored < clean, "an open proposal must never score as clean"
+        assert scored > 40, "a weak-only collision must not cost what a shared email costs"
+
+
+def test_more_weak_collisions_are_worse_than_one() -> None:
+    """A node colliding with several others by name is a genuinely messy node."""
+    assert (identity_score(open_merge_proposals=3, strong_proposals=0)
+            < identity_score(open_merge_proposals=1, strong_proposals=0))
+
+
 # ── the vector ───────────────────────────────────────────────────────────────────
 
 def test_overall_is_the_minimum_not_the_average() -> None:

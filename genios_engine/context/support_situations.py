@@ -72,6 +72,7 @@ from genios_engine.context.situations import (
     freshness_score,
     identity_score,
 )
+from genios_engine.context.situations import merge_pressure as read_merge_pressure
 from genios_engine.platform.ids import new_id
 
 # ── anchors ──────────────────────────────────────────────────────────────────────────────────
@@ -578,7 +579,9 @@ class Desk:
     loops: tuple[Loop, ...] = ()
     mailboxes: dict[str, str] = field(default_factory=dict)
     account_rate: dict[str, float] = field(default_factory=dict)
-    merge_pressure: dict[str, int] = field(default_factory=dict)
+    #: `{node_id: (open_proposals, strong_proposals)}` — see `situations.merge_pressure`. The
+    #: pair, not a count, because a shared email and a shared first name are not the same doubt.
+    merge_pressure: dict[str, tuple[int, int]] = field(default_factory=dict)
     policy: ResponsePolicy = ResponsePolicy()
 
     @property
@@ -1470,12 +1473,11 @@ def gather(store, org_id: str, *, now: datetime, policy: ResponsePolicy) -> Desk
                 {"o": org_id}):
             account_rate[str(r.key).split(":", 1)[1]] = float(r.value)
 
-        merge_pressure: dict[str, int] = {}
-        for r in c.execute(text(
-                "select left_node_id, right_node_id from merge_proposals "
-                "where org_id=:o and status='open'"), {"o": org_id}):
-            for node in (r.left_node_id, r.right_node_id):
-                merge_pressure[node] = merge_pressure.get(node, 0) + 1
+        # One reader for this table across all three of its consumers — see
+        # `situations.merge_pressure` for why a third hand-written dialect is the defect and not
+        # the convenience. It also carries the STRENGTH, which this `count(*)` could not, and
+        # which decides whether a collision is a duplicate or a coincidence of spelling.
+        merge_pressure = read_merge_pressure(c, org_id)
 
     return Desk(org_id=org_id, now=now, internal=frozenset(addresses),
                 internal_domains=internal_domains, messages=tuple(messages),
@@ -1586,7 +1588,10 @@ def refresh_support_situations(store, org_id: str, *, now: datetime | None = Non
                     coverage, gaps = _coverage(domain, stype, present, f.coverage_cap_pct)
                     fresh, fresh_known = freshness_score(last_seen_at=f.last_seen_at, now=now)
                     identity = identity_score(
-                        open_merge_proposals=desk.merge_pressure.get(f.identity_node or "", 0))
+                        open_merge_proposals=desk.merge_pressure.get(
+                            f.identity_node or "", (0, 0))[0],
+                        strong_proposals=desk.merge_pressure.get(
+                            f.identity_node or "", (0, 0))[1])
                     evidence = evidence_score(event_count=f.event_count,
                                               source_count=f.source_count)
                     _upsert(c, org_id=org_id, corr=corr, node_id=node_id, stype=stype,
