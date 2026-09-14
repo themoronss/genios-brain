@@ -2,7 +2,7 @@
 import pytest
 from sqlalchemy import create_engine, text
 
-from genios_engine.context.outreach_situations import _EVENT_COUNTS
+from genios_engine.context.outreach_situations import _event_counts_sql
 from genios_engine.context.situations import evidence_score
 
 
@@ -16,7 +16,7 @@ def neighborhood_db():
             "create table graph_observations (org_id text,observation_id text,subject_node_id text,status text,occurred_at timestamp)",
             "create table graph_facts (org_id text,fact_version_id text,subject_node_id text,status text,valid_to timestamp)",
             "create table graph_source_refs (org_id text,observation_id text,fact_version_id text,event_id text,source text)",
-            "create table source_events (org_id text,event_id text,source text,occurred_at timestamp)",
+            "create table source_events (org_id text,event_id text,source text,occurred_at timestamp,actor text)",  # `actor` is jsonb NOT NULL since 0001; the
         ):
             conn.execute(text(sql))
         for node, kind in (("anchor", "thread"), ("p1", "person"), ("p2", "person"),
@@ -25,7 +25,8 @@ def neighborhood_db():
         conn.execute(text("insert into graph_edges values ('o','p1','anchor',null),('o','anchor','p2',null),('o','p1','far',null),('o','empty-person','empty',null)"))
         for i in range(7):
             node = "p1" if i < 3 else "p2" if i < 6 else "far"
-            conn.execute(text("insert into source_events values ('o',:e,'gmail','2026-08-11T12:00:00+00:00')"), {"e": f"e{i}"})
+            conn.execute(text("insert into source_events (org_id,event_id,source,occurred_at,actor) values ('o',:e,'gmail','2026-08-11T12:00:00+00:00',:a)"),
+                              {"e": f"e{i}", "a": '{"email": "them@example.com"}'})
             conn.execute(text("insert into graph_observations values ('o',:id,:n,'active','2026-09-10T12:00:00+00:00')"), {"id": f"obs{i}", "n": node})
             conn.execute(text("insert into graph_source_refs values ('o',:id,null,:e,'gmail')"), {"id": f"obs{i}", "e": f"e{i}"})
         yield conn
@@ -33,7 +34,7 @@ def neighborhood_db():
 
 
 def _counts(conn):
-    return {r.node_id: r for r in conn.execute(text(_EVENT_COUNTS),
+    return {r.node_id: r for r in conn.execute(text(_event_counts_sql(conn.dialect.name)),
         {"o": "o", "now": "2026-09-10T12:00:00+00:00"})}
 
 
@@ -56,7 +57,7 @@ def test_duplicate_observations_facts_and_foreign_refs_do_not_inflate_evidence(n
     c.execute(text("insert into graph_observations values ('o','copy','p2','active','2026-09-10')"))
     c.execute(text("insert into graph_facts values ('o','fv','anchor','active',null)"))
     c.execute(text("insert into graph_source_refs values ('o','copy',null,'e0','gmail'),('o',null,'fv','e0','gmail'),('foreign','obs1',null,'foreign','crm')"))
-    c.execute(text("insert into source_events values ('foreign','foreign','crm','2026-09-10')"))
+    c.execute(text("insert into source_events (org_id,event_id,source,occurred_at) values ('foreign','foreign','crm','2026-09-10')"))
     stats = _counts(c).get("anchor")
     assert stats is not None and (stats.events, stats.sources) == (6, 1)
 

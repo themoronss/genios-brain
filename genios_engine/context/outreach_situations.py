@@ -292,20 +292,58 @@ _THREAD_COVERED_BY_PARTY = (
     "where e.org_id = :o and e.edge_type = 'corresponded_with' and e.valid_to is null"
 )
 
-_DIRECT_EVENT_COUNTS = (
-    "select o.subject_node_id as node_id, count(*) as events, "
-    "       count(distinct r.source) as sources, min(o.occurred_at) as first_at, "
-    "       max(o.occurred_at) as last_at "
-    "from graph_observations o "
-    "left join graph_source_refs r on r.observation_id = o.observation_id and r.org_id = :o "
-    "where o.org_id = :o and o.status = 'active' and o.subject_node_id is not null "
-    "group by o.subject_node_id"
-)
+def _direct_event_counts(dialect: str) -> str:
+    """Per-node evidence counts, including HOW MANY PARTIES contributed.
+
+    `voices` is the count `evidence_score` asks for and this reading never supplied. The fix
+    that added the argument reached `situations.py` and stopped there, so the six readings
+    dispatched from `READINGS` — which produce most of the situations on a correspondence-only
+    tenant — went on scoring `voice_count=0`. That is not a rounding difference: with one
+    connected source, corroboration stops at 25 of its available 60, evidence caps at 65, and
+    `min()` makes 65 the ceiling on the whole situation. A founder whose raise is a hundred
+    emails between four people could never be spoken about confidently, which is the exact
+    failure `evidence_score`'s own docstring was rewritten to end.
+
+    The party is the EVENT'S ACTOR, not the observation's subject — "what we sent is our own act
+    and theirs is theirs". Since outbound mail became evidence, a two-way thread puts both on the
+    counterparty's node, and that is two independent accounts in the way twenty mails from one
+    of them are not.
+
+    One expression per dialect for the same reason `situations.py` carries one: `->>` is Postgres
+    and `json_extract` is the SQLite the tests run on, and comparing the whole actor blob instead
+    of the email inside it is what once produced a "gmail and calendar share nobody" reading.
+    """
+    email = ("se.actor ->> 'email'" if dialect == "postgresql"
+             else "json_extract(se.actor, '$.email')")
+    return (  # noqa: S608 — the only interpolation is the dialect expression above
+        "select o.subject_node_id as node_id, count(*) as events, "
+        "       count(distinct r.source) as sources, "
+        f"       count(distinct lower({email})) as voices, "
+        "       min(o.occurred_at) as first_at, max(o.occurred_at) as last_at "
+        "from graph_observations o "
+        "left join graph_source_refs r on r.observation_id = o.observation_id and r.org_id = :o "
+        "left join source_events se on se.org_id = o.org_id and se.event_id = r.event_id "
+        "where o.org_id = :o and o.status = 'active' and o.subject_node_id is not null "
+        "group by o.subject_node_id")
 
 # All 1001 measured observations lived on people; person -> thread alone accounts for
 # 64 live edges. Both directions are therefore necessary. UNION deduplicates event IDs
 # across observation copies and derived facts; six Gmail events still score 65, not 100.
-_EVENT_COUNTS = """
+def _event_counts_sql(dialect: str) -> str:
+    """The neighbourhood evidence read, now counting PARTIES as well as tools.
+
+    THE PRIMARY PATH, which is why the direct read above was not enough on its own:
+    `_refined_stats` tries this first and falls back to `_direct_event_counts` only when it
+    returns None. Fixing the fallback alone would have left the fix almost never firing.
+
+    `party` rides inside the `events` CTE rather than being joined again outside it, because the
+    CTE already has `source_events` open and the DISTINCT there is what deduplicates an event
+    reached through two neighbours. Same dialect split as everywhere else in this layer: `->>` is
+    Postgres, `json_extract` is the SQLite the tests run on.
+    """
+    email = ("e.actor ->> \'email\'" if dialect == "postgresql"
+             else "json_extract(e.actor, \'$.email\')")
+    return """
 with neighbors as (
     select node_id as anchor, node_id as subject from graph_nodes
     where org_id=:o and valid_to is null
@@ -328,15 +366,15 @@ with neighbors as (
     join graph_source_refs r on r.org_id=f.org_id and r.fact_version_id=f.fact_version_id
     where f.org_id=:o and f.status='active' and f.valid_to is null
 ), events as (
-    select distinct n.anchor, e.event_id, e.source, e.occurred_at
+    select distinct n.anchor, e.event_id, e.source, e.occurred_at, lower({email}) as party
     from neighbors n join origins r on r.subject=n.subject
     join source_events e on e.org_id=:o and e.event_id=r.event_id
     where e.occurred_at <= :now
 )
 select anchor as node_id, count(distinct event_id) as events,
-       count(distinct source) as sources, min(occurred_at) as first_at,
-       max(occurred_at) as last_at from events group by anchor
-"""
+       count(distinct source) as sources, count(distinct party) as voices,
+       min(occurred_at) as first_at,
+       max(occurred_at) as last_at from events group by anchor""".format(email=email)  # noqa: S608 — dialect expression only
 
 
 def _num(value):
@@ -424,12 +462,14 @@ def _visible_receipts(receipts, now):
 
 
 def _event_counts(conn, *, org_id: str, now: datetime, node_id: str | None = None):
-    statement = _EVENT_COUNTS + (" having anchor=:node" if node_id is not None else "")
+    statement = (_event_counts_sql(conn.dialect.name)
+                 + (" having anchor=:node" if node_id is not None else ""))
     try:
         with conn.begin_nested():
             rows = conn.execute(text(statement), {"o": org_id, "now": now, "node": node_id}).all()
         return {str(r.node_id): SimpleNamespace(events=r.events, sources=r.sources,
-                first_at=_ts(r.first_at), last_at=_ts(r.last_at)) for r in rows}
+                voices=r.voices, first_at=_ts(r.first_at), last_at=_ts(r.last_at))
+                for r in rows}
     except Exception:  # noqa: BLE001 — caller retains the original observation-only read
         return None
 
@@ -438,15 +478,22 @@ def _refined_stats(conn, *, org_id: str, node_id: str, finding: _Finding,
                    now: datetime, fallback, group_receipts):
     if group_receipts is not None:
         times = [r.occurred_at for r in group_receipts if r.occurred_at is not None]
+        # `voices=0` HERE AND SAID OUT LOUD. `load_event_receipts` selects no actor, and
+        # widening `EventReceipt` reaches consumers outside this module. It costs nothing
+        # arithmetically: this branch is the campaign/cohort scope, where the contributing party
+        # is us on every message, and `evidence_score` reads `max(0, voices - 1)` — so one voice
+        # and none score identically. A campaign that a counterparty replied into produces a
+        # per-person finding as well, and that one takes the path below, which does count.
         return SimpleNamespace(events=len({r.event_id for r in group_receipts}),
-            sources=len({r.source for r in group_receipts if r.source}),
+            sources=len({r.source for r in group_receipts if r.source}), voices=0,
             first_at=min(times, default=None), last_at=max(times, default=None))
     # Query the actual newly established anchor. Reading its representative's neighbourhood
     # would accidentally turn a one-hop allowance into two hops, borrowing unrelated history.
     counts = _event_counts(conn, org_id=org_id, now=now, node_id=node_id)
     if counts is None:
         return fallback
-    return counts.get(node_id, SimpleNamespace(events=0, sources=0, first_at=None, last_at=None))
+    return counts.get(node_id, SimpleNamespace(events=0, sources=0, voices=0,
+                                               first_at=None, last_at=None))
 
 
 def _finding_receipts(conn, *, org_id: str, finding: _Finding):
@@ -1114,7 +1161,8 @@ def _gather(store, org_id: str, *, now: datetime | None = None,
             # action where a person belongs.
             entry["_node_type"] = row.node_type
         # Keep the exact previous snapshot for fail-open refinement failures below.
-        counts = {str(r.node_id): r for r in c.execute(text(_DIRECT_EVENT_COUNTS), {"o": org_id})}
+        counts = {str(r.node_id): r for r in
+                  c.execute(text(_direct_event_counts(c.dialect.name)), {"o": org_id})}
         # person -> employing company NAME. Read here rather than per finding: the cohort reading
         # needs it for every member at once, and one bulk read is the same discipline every other
         # pass in this layer keeps.
@@ -1245,7 +1293,12 @@ def refresh_state_situations(store, org_id: str, *, now: datetime | None = None,
                             inputs=finding.inputs,
                             evidence=evidence_score(
                                 event_count=int(getattr(stats, "events", 0) or 0),
-                                source_count=int(getattr(stats, "sources", 0) or 0)),
+                                source_count=int(getattr(stats, "sources", 0) or 0),
+                                # THE PARTIES, which this call omitted. See
+                                # `_direct_event_counts`: without it every reading here caps
+                                # at 65 on a single-source tenant, and `min()` makes that the
+                                # ceiling on the situation.
+                                voice_count=int(getattr(stats, "voices", 0) or 0)),
                             freshness=fresh if fresh_known else None,
                             # OPEN DUPLICATES COUNT AGAINST IDENTITY, and this was hardcoded
                             # to zero — so all six readings dispatched from `READINGS` published

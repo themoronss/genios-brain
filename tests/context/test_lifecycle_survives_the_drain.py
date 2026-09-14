@@ -70,7 +70,7 @@ def store():
             "create table graph_edges (org_id text, edge_type text, from_node_id text, "
             "to_node_id text, valid_to timestamp)",
             "create table graph_source_refs (org_id text, event_id text, fact_version_id text)",
-            "create table source_events (event_id text, org_id text, occurred_at timestamp)",
+            "create table source_events (event_id text, org_id text, occurred_at timestamp, actor text)",
         ):
             c.execute(text(ddl))
     return Store(engine)
@@ -94,7 +94,8 @@ def message(store, node: str, field: str, at: datetime) -> None:
             "  value, value_type, status, valid_from, occurred_at) "
             "values (:v,:f,:o,:n,:fd,'','ts','active',:at,:at)"),
             {"v": f"fv_{key}", "f": f"f_{key}", "o": ORG, "n": node, "fd": field, "at": at})
-        c.execute(text("insert into source_events values (:e,:o,:at)"),
+        c.execute(text("insert into source_events (event_id, org_id, occurred_at) "
+                       "values (:e,:o,:at)"),
                   {"e": f"evt_{key}", "o": ORG, "at": at})
         c.execute(text("insert into graph_source_refs values (:o,:e,:v)"),
                   {"o": ORG, "e": f"evt_{key}", "v": f"fv_{key}"})
