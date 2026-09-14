@@ -13,7 +13,9 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import text
 
-from genios_engine.context.merge import apply_merge, open_proposals, reject_merge
+from genios_engine.context.merge import (DEFAULT_DEFER_DAYS, apply_merge,
+                                         defer_proposal, open_proposals,
+                                         reject_merge)
 from genios_engine.platform.auth import get_current_org
 from genios_engine.platform.wiring import make_graph_store
 
@@ -113,8 +115,22 @@ def reject(org_id: str, merge_id: str, org: str = Depends(_org)) -> dict:
 
 
 @router.post("/v1/merge/{org_id}/queue/{merge_id}/defer")
-def defer(org_id: str, merge_id: str, org: str = Depends(_org)) -> dict:
-    # No deferred state in the identity model — the proposal simply stays open for later.
-    with _store().engine.connect() as conn:
-        _load_proposal(conn, org, merge_id)
-    return {"status": "deferred", "note": "left open for later review"}
+def defer(org_id: str, merge_id: str, days: int = DEFAULT_DEFER_DAYS,
+          org: str = Depends(_org)) -> dict:
+    """Take this pair out of the queue until a date, and say which date.
+
+    This used to load the row, write NOTHING, and answer `{"status": "deferred"}`. The UI marked
+    the item handled and the next read returned it in the same position, so a reviewer working
+    down a backlog was shown the identical list every time. A control that reports success and
+    changes nothing is worse than no control.
+
+    Deferring is not deciding: the pair still counts against every situation's identity
+    confidence while it waits, and `merged` / `reject` remain the only ways out of the queue.
+    """
+    with _store().engine.begin() as conn:
+        prop = _load_proposal(conn, org, merge_id)
+        if prop.status != "open":
+            raise HTTPException(409, {"error": "already_decided", "status": prop.status})
+        until = defer_proposal(conn, org_id=org, proposal_id=merge_id, days=days)
+    return {"status": "deferred", "deferred_until": until.isoformat() if until else None,
+            "note": "out of the queue until this date; still counts against identity confidence"}
