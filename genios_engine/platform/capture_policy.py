@@ -83,6 +83,10 @@ SENSITIVE_BUNDLE_IDS: tuple[str, ...] = (
     # password managers / keychain
     "com.1password.*", "com.agilebits.onepassword*", "com.bitwarden.desktop",
     "com.lastpass.LastPass", "com.dashlane.*", "com.apple.keychainaccess", "com.apple.Passwords",
+    # system utilities: not work content, never worth a read (screen-intel phase 2). Preview is
+    # NOT here: a PDF open in it is often a contract or an invoice.
+    "com.apple.finder", "com.apple.systempreferences", "com.apple.ActivityMonitor",
+    "com.apple.quicklook.*",
     # GeniOS itself
     "ai.genios.*",
 )
