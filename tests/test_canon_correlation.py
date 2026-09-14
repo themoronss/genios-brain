@@ -13,6 +13,7 @@ The most authoritative material in the system was also the least connected.
 from __future__ import annotations
 
 import inspect
+import re
 
 from genios_engine.capture.internal_knowledge import (ANCHORING_KINDS, INTERNAL_KINDS,
                                                       is_anchoring)
@@ -125,7 +126,16 @@ def test_canon_facts_attach_to_the_document_not_its_author() -> None:
     """
     from genios_engine.context.pipeline import process_event
     source = inspect.getsource(process_event)
-    assert "content_subject = canon_node or document_node or sender_node" in source
+    # THE ORDER IS THE CONTRACT, not the spelling of the line. This assertion matched the
+    # expression literally and had been FAILING on this branch before the relay work touched it:
+    # P5 added `meeting_node` to the chain and left the literal here naming three terms. A second
+    # copy of the same brittle assertion lives in `test_document_projection.py`; both now read the
+    # terms and check their order, which is the property either file actually protects.
+    terms = [t.strip() for t in
+             re.search(r"content_subject = (.+)", source).group(1).split(" or ")]
+    assert terms[0] == "canon_node", "a deliberate statement at rank 4 outranks everything"
+    assert terms.index("document_node") < terms.index(terms[-1]), "the document beats the sender"
+    assert terms[-1] in ("sender_node", "speaker_node"), "the person is the last resort"
     assert "_resolve_subject(f.get(\"subject\"), name_to_node, content_subject)" in source
 
 

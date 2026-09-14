@@ -17,7 +17,8 @@ from genios_engine.context.open_loops import (
     record_ask,
 )
 from genios_engine.contracts.open_loop import is_ask, open_loop_id
-from genios_engine.capture.gate.rules import AUTO_REPLY, addressed_to_a_list
+from genios_engine.capture.gate.rules import (AUTO_REPLY, addressed_to_a_list,
+                                              reply_to_party, sender_is_a_relay)
 from genios_engine.capture.internal_knowledge import authority_rank_for
 from genios_engine.capture.structured.apply import _PERSONAL_DOMAINS
 from genios_engine.context.availability import write_availability_window
@@ -997,6 +998,33 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             sender_node = _person(sender_email)
             nodes += 1
 
+        # WHO SPOKE, as distinct from WHICH ADDRESS CARRIED IT — and until now those were one
+        # variable. "Sehan Sanjula via Boardy" is not Boardy speaking, and every sentence Sehan
+        # wrote was filed as Boardy's: their questions, their commitments, and — worse, because
+        # it is what the follow-up readings are built on — `thread.last_inbound` and
+        # `thread.ball_in_court`, so a reply from a person reached through an intro network made
+        # it OUR TURN WITH THE NETWORK and left the person looking like somebody who never wrote.
+        #
+        # NOT WHAT `is_noise` COVERS. That routes everything `_is_automated_sender` matches out of
+        # the network graph and out of correlation, which is right for a newsletter and wrong
+        # here: a relayed human reply is the most valuable mail in the mailbox and only its
+        # attribution is wrong. An intro network's `hello@` matches no machine pattern.
+        #
+        # `None` WHEN THE RELAY NAMES NOBODY, and that is a real answer rather than a gap. A
+        # display name proves the From address did not write this without saying who did; with no
+        # `Reply-To` to name them there is no honest subject, and the sites below skip rather than
+        # attribute. A missing card beats a card addressed to the wrong party — the same trade
+        # `correlation_resource` makes when it files an ambiguous item UNATTRIBUTED rather than
+        # allocating it to the likelier of two vendors.
+        relayed = sender_is_a_relay(canon_meta, sender_name=sender_name,
+                                    sender_email=sender_email)
+        relay_party = reply_to_party(canon_meta, sender_email) if relayed else None
+        if relay_party:
+            speaker_node = _person(relay_party)
+            nodes += 1
+        else:
+            speaker_node = None if relayed else sender_node
+
         # P5 · SEED THE SPEAKERS. Each §3 speaker label (and its first name, where no other
         # speaker shares it) maps to the person the ingest door matched against the meeting's
         # attendees + the uploader — or to None, which is a real answer: a known label nobody
@@ -1260,9 +1288,9 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                 name_to_node[_norm(str(name))] = canon_id
                 touched.setdefault(canon_id, canon_type)
                 nodes += 1
-            elif name and sender_node:                       # anchorless mention → context on sender
+            elif name and speaker_node:                      # anchorless mention → context on speaker
                 store.write_observation(
-                    conn, org_id=org_id, subject_node_id=sender_node,
+                    conn, org_id=org_id, subject_node_id=speaker_node,
                     kind="mention:" + (etype if etype in _NODE_TYPES else "entity"),
                     confidence=ex.relevance, occurred_at=occurred_at, event_id=event_id,
                     evidence={"name": name, "type": etype, "text": e.get("evidence_text")},
@@ -1281,7 +1309,11 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         # facts-about-the-wrong-subject bug this seam already exists to fix.
         # A linked transcript's un-subjected content (a decision the room took) is about the
         # MEETING, not about whoever uploaded the transcript.
-        content_subject = canon_node or document_node or meeting_node or sender_node
+        # The fourth term is `speaker_node`, not `sender_node`: a relay carried the message and
+        # did not write it, so its own address is never the subject of what it delivered. See the
+        # block where `speaker_node` is derived for why that is a separate question from
+        # `is_noise`, and why it is None rather than a guess when the relay names nobody.
+        content_subject = canon_node or document_node or meeting_node or speaker_node
         fact_n = 0
 
         # DEAL NODES. `deal.*` facts used to land on whichever person happened to be the subject,
@@ -1516,7 +1548,7 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             obs_n += _mirror_to_recipients(
                 store, conn, org_id=org_id, recipients=outbound_recipient_nodes, kind=kind,
                 confidence=obs_conf, occurred_at=occurred_at, event_id=event_id,
-                quoted=o.get("evidence_text"), speaker_node_id=sender_node, source=source)
+                quoted=o.get("evidence_text"), speaker_node_id=speaker_node, source=source)
         # INTENT, finally committed: the LLM already extracts open questions — the pipeline
         # parsed and DROPPED them for months. A question directed at us is the strongest
         # "they expect an answer" signal the twin can hold.
@@ -1525,20 +1557,20 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             if key in seen_obs or content_subject is None:
                 continue
             seen_obs.add(key)
-            store.write_observation(conn, org_id=org_id, subject_node_id=sender_node,
+            store.write_observation(conn, org_id=org_id, subject_node_id=speaker_node,
                                     kind="question", confidence=ex.relevance,
                                     occurred_at=occurred_at, event_id=event_id,
                                     evidence={"text": q.get("evidence_text"),
                                               "directed_at": q.get("directed_at"),
                                               "open_loop_id": (record_ask(
                                                   conn, org_id=org_id,
-                                                  subject_node_id=sender_node,
+                                                  subject_node_id=speaker_node,
                                                   kind="question", thread_id=thread_id,
                                                   event_id=event_id, at=occurred_at,
                                                   awaited_from=sole_answerer)
                                                   if occurred_at else open_loop_id(
                                                       org_id=org_id,
-                                                      subject_node_id=sender_node,
+                                                      subject_node_id=speaker_node,
                                                       kind="question", thread_id=thread_id))},
                                     source=source)
             obs_n += 1
@@ -1547,12 +1579,17 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             obs_n += _mirror_to_recipients(
                 store, conn, org_id=org_id, recipients=outbound_recipient_nodes, kind="question",
                 confidence=ex.relevance, occurred_at=occurred_at, event_id=event_id,
-                quoted=q.get("evidence_text"), speaker_node_id=sender_node, source=source)
+                quoted=q.get("evidence_text"), speaker_node_id=speaker_node, source=source)
 
         # per-email relevance recorded as an append-only signal so L3/queries can RANK — the
         # "score, don't delete" record: even a low-relevance email leaves its score, never a gap.
         # domains (which business areas the email touches) ride along — extracted since day
         # one, dropped until now.
+        # THE ONE PLACE THAT STAYS ON `sender_node`, and deliberately. Everything else this
+        # function attributes is a claim about a PERSON and follows `speaker_node`; this is a
+        # claim about the MESSAGE — how relevant it scored, which noise class it fell in — and
+        # the address that delivered it is the honest subject of that. A relay's own delivery
+        # record belongs to the relay.
         if sender_node:
             store.write_observation(
                 conn, org_id=org_id, subject_node_id=sender_node,
@@ -1571,22 +1608,29 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         # Confidence is deterministic rank-2 (the mailbox is certain the message arrived);
         # the email's LLM relevance is stored on the fact's relevance column for RANKING —
         # it no longer decides whether the signal clears the c_min gate (D3).
-        if (is_inbound and sender_node and occurred_at is not None and not is_noise
+        # `speaker_node`, NOT `sender_node`, and this is the write that makes it matter. These two
+        # facts are what every follow-up reading is built on — `waiting.py` derives
+        # `thread.last_heard_days` from `thread.last_inbound`, and `ball_in_court` decides whose
+        # turn it is — so a reply relayed through an intro network put the ball in our court WITH
+        # THE NETWORK and left the person who actually wrote looking like somebody who never had.
+        # A relay that names nobody writes neither fact rather than writing them against itself:
+        # no card beats a card telling a founder to answer a mailing service.
+        if (is_inbound and speaker_node and occurred_at is not None and not is_noise
                 and sender_norm not in internal_set):
             # THEIR REPLY CLOSES WHAT WE ASKED THEM. The mirror of the outbound leg's
             # `close_loops_for_reply`, and until now the ledger had no such verb: a question we
             # put to somebody opened a loop on our own node that nothing could ever shut, so
             # every ask the founder ever sent was still open, answered ones included.
-            close_loops_awaited_from(conn, org_id=org_id, node_id=sender_node,
+            close_loops_awaited_from(conn, org_id=org_id, node_id=speaker_node,
                                      thread_id=thread_id, event_id=event_id, at=occurred_at)
-            store.write_fact(conn, org_id=org_id, subject_node_id=sender_node,
+            store.write_fact(conn, org_id=org_id, subject_node_id=speaker_node,
                              field="thread.last_inbound", value=occurred_at.isoformat(),
                              value_type="timestamp", confidence=FACT_CONF_BY_RANK[2],
                              relevance=ex.relevance,
                              occurred_at=occurred_at, event_id=event_id,
                              evidence={"derived": "inbound event"},
                              source=source, authority_rank=2)
-            store.write_fact(conn, org_id=org_id, subject_node_id=sender_node,
+            store.write_fact(conn, org_id=org_id, subject_node_id=speaker_node,
                              field="thread.ball_in_court", value="us", value_type="enum",
                              confidence=FACT_CONF_BY_RANK[2], relevance=ex.relevance,
                              occurred_at=occurred_at,
@@ -1599,7 +1643,7 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                                  event_id=event_id, counterparty=sender_norm)
             if tnode:
                 if store.write_edge(conn, org_id=org_id, edge_type="corresponded_with",
-                                    from_node_id=sender_node, to_node_id=tnode, confidence=0.95,
+                                    from_node_id=speaker_node, to_node_id=tnode, confidence=0.95,
                                     occurred_at=occurred_at, event_id=event_id,
                                     evidence={"derived": "thread participant"},
                                     source=source, authority_rank=2):

@@ -20,6 +20,7 @@ instead of on the customer who wrote it.
 from __future__ import annotations
 
 import inspect
+import re
 
 from genios_engine.capture.connectors.drive import ComposioDriveConnector, file_metadata
 from genios_engine.context.documents import (
@@ -210,10 +211,18 @@ def test_the_pipeline_files_content_on_the_document_and_not_on_its_last_editor()
     does: a Drive file's sender is whoever last fixed a typo in it."""
     from genios_engine.context.pipeline import process_event
     source = inspect.getsource(process_event)
-    # P5 slots a linked transcript's meeting between the document and the sender; the order this
-    # test protects — canon, then document, both ahead of the sender — is unchanged.
-    assert ("content_subject = canon_node or document_node or meeting_node or sender_node"
-            in source)
+    # THE ORDER IS THE CONTRACT; the spelling of the line is not. This assertion matched the
+    # expression literally and broke three times for changes that never touched the property it
+    # exists to protect — P5 slotting a linked transcript's meeting in, and the last term becoming
+    # `speaker_node` once a relay's address stopped counting as the author of what it carried. It
+    # now reads the terms and checks their ORDER, which is what "the document beats the sender"
+    # actually means and what a future term must not violate.
+    terms = [t.strip() for t in
+             re.search(r"content_subject = (.+)", source).group(1).split(" or ")]
+    assert terms[0] == "canon_node", "a file the org tagged `policy` outranks everything"
+    assert terms.index("document_node") == 1, "the document beats the sender"
+    assert terms[-1] in ("sender_node", "speaker_node"), "the person is the last resort"
+    assert terms.index("document_node") < terms.index(terms[-1])
     # Resolve, never create. A Drive owner is usually a colleague who has written to nobody, and
     # minting a node for them would add a person with no observations and no edges — which every
     # other Layer 2 reading treats as somebody who has gone quiet.
