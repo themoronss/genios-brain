@@ -241,4 +241,68 @@ BLOCKER_ABSENCE = register(Angle(
           "what the blocker was CALLED, never who it is, and mints no node, edge or merge."),
 ))
 
-__all__ = ["BLOCKER_ABSENCE", "CONDITION_NOW_TRUE", "REPLY_OWED_TRIAGE"]
+#: ARE THESE SENDS ONE MESSAGE, ONE TOPIC, OR A COINCIDENCE OF VOCABULARY?
+#:
+#: M-3, THE SITE THE SPEC NAMED AND NOTHING FILLED. `correlation_dependency`'s header states the
+#: census: *"Correlation's two model sites are M-3 (ambiguous conversation matching) and M-5
+#: (condition parsing)"*. M-5 is `condition_now_true`. This is M-3, and it could not be declared
+#: until U4.3 built it a queue, because `find_campaigns` persists nothing.
+#:
+#: THE QUEUE IS A REFUSAL. `correlation_conversation` groups outbound mail by the EXACT sentence
+#: and will not soften it: *"a similarity threshold here would quietly merge two different pitches
+#: on a bad day … the one nobody can debug from a stored score."* That is right, and the cost is a
+#: blind spot with a strange shape — copy-paste your raise to eighteen people and it is one
+#: campaign; retype each email and it is eighteen unrelated threads. `campaign_candidates`
+#: publishes what that rule declined to merge, with the distinctive words the sends have in common,
+#: and this adjudicates one bounded instance instead of a threshold guessing at all of them.
+#:
+#: `same_topic_not_one_message` IS THE ANSWER THE BINARY WOULD HAVE LOST, and it is the case this
+#: tenant actually has. An introducer makes five introductions; the founder answers each one
+#: personally the same morning; every reply mentions the raise. Those share distinctive wording,
+#: land in one window, and go to enough people — they will reach this queue every time — and they
+#: are NOT a campaign. They are five separate relationships that happen to be about one thing.
+#: Forced into `one_campaign` they produce a card telling a founder to follow up on an outreach
+#: they never sent, and forced into `unrelated` they lose the one true thing about them. A model
+#: can tell the difference from the sentences: one message reworded reads as one message reworded.
+#:
+#: WHAT IT SEES IS THE CANDIDATE AND NOTHING ELSE, and that is a deliberate ceiling rather than an
+#: oversight. After the fan-out the gate value IS the question — the sentences, the shared words,
+#: how many went out and over what span. `store._seen` can only fetch facts of the SUBJECT node,
+#: and the subject here is the TENANT node (`campaign_candidates` anchors the queue there because
+#: a candidate is about the org's own outbound, not any one counterparty), so naming
+#: `party.role` or `relationship.nature` would fetch the tenant's facts and tell the model nothing
+#: about the recipients. The recipients' own facts are unreachable from a subject-scoped slice.
+#: That is a real limit on what this angle can know and it is the right side of the trade: M-3 is
+#: a question about SENTENCES, and a model given the sentences can answer it.
+#:
+#: `CAPABLE`, NOT `CHEAP`. Every other angle here classifies a short field; this one reads up to
+#: six sentences of real prose and decides whether they are one voice. That is the judgement
+#: `CostTier` reserves a better model for, and the budget below is small enough to afford it:
+#: `MAX_CANDIDATES` caps a tenant's queue at forty, and an unchanged slice is never re-asked.
+SAME_SITUATION_TWO_THREADS = register(Angle(
+    angle_id="same_situation_two_threads",
+    version="1.0.0",
+    gate=("derived.conversation.campaign_candidate",),
+    gate_source=GateSource.FACTS,
+    fan_out=("candidates", "candidate_id"),
+    # ONE FIELD, AND IT IS THE WHOLE QUESTION. Reused from the gate, so this angle costs exactly
+    # one SELECT per tenant however many candidates it adjudicates.
+    sees=("derived.conversation.campaign_candidate",),
+    returns=("one_campaign", "same_topic_not_one_message", "unrelated", "unknowable"),
+    refusal="unknowable",
+    # An opinion about mail the deterministic rule declined to group. It must never outrank a
+    # campaign `find_campaigns` actually found — those are an exact-sentence match with the
+    # sentence on the card, and nothing here can reach that standard.
+    confidence_band=(2_000, 8_000),
+    # `campaign_candidates.MAX_CANDIDATES` caps a tenant's queue at forty, so this is the whole
+    # queue rather than a slice of it — and a candidate whose membership is unchanged is free for
+    # ever, so the steady-state cost is the rate at which a founder starts new outreach.
+    max_per_sweep=40,
+    cost_tier=CostTier.CAPABLE,
+    note=("Adjudicates a proposal; it merges nothing. No campaign, group or card is minted from a "
+          "verdict — `find_campaigns` remains the only thing that mints a campaign, and it still "
+          "requires the exact sentence."),
+))
+
+__all__ = ["BLOCKER_ABSENCE", "CONDITION_NOW_TRUE", "REPLY_OWED_TRIAGE",
+           "SAME_SITUATION_TWO_THREADS"]

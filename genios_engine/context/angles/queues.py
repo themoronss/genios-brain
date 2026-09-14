@@ -117,5 +117,59 @@ def blocker_absence_verdicts(conn, org_id: str) -> dict[str, str]:
     return {str(r["subject_ref"]): str(r["verdict"]) for r in rows}
 
 
-__all__ = ["BLOCKER_ANGLE_ID", "BLOCKER_KIND_FIELD", "TRIAGE_ANGLE_BY_KIND", "TRIAGE_KEY",
-           "blocker_absence_verdicts", "triaged_residue"]
+#: The angle that adjudicates one near-miss, and the key its answer arrives under.
+CAMPAIGN_ANGLE_ID = "same_situation_two_threads"
+VERDICT_KEY = "verdict"
+
+_CAMPAIGN_VERDICTS = ("select subject_ref, verdict from context_angle_verdicts "
+                      "where org_id = :o and angle_id = :a and refused = false")
+
+
+def adjudicated_candidates(conn, org_id: str) -> list[dict[str, Any]]:
+    """The near-miss queue with M-3's answer beside each entry, newest window first.
+
+    NOTHING IS MERGED HERE, and the shape says so: this returns the CANDIDATES, annotated. A
+    `one_campaign` verdict does not mint a campaign — `find_campaigns` remains the only thing that
+    does, and it still requires the exact sentence. Turning an adjudicated candidate into a card is
+    a separate decision with a separate name (`is_this_worth_a_card`), and it belongs to whoever
+    makes it rather than to the angle that offered the opinion.
+
+    An entry with no verdict is one nothing has answered yet — no asker was supplied, the budget
+    ran out, or the model refused. It is returned unannotated rather than hidden, because a queue
+    that shows only what a model reached is a queue that cannot be reviewed.
+    """
+    from genios_engine.context.angles.contract import fan_subject_ref
+    from genios_engine.context.campaign_candidates import read_candidates
+
+    found = list(read_candidates(conn, org_id))
+    if not found:
+        return []
+    try:
+        rows = conn.execute(text(_CAMPAIGN_VERDICTS),
+                            {"o": org_id, "a": CAMPAIGN_ANGLE_ID}).mappings().all()
+        verdicts = {str(r["subject_ref"]): str(r["verdict"]) for r in rows}
+    except Exception:      # noqa: BLE001 — an opinion must never cost the queue itself
+        verdicts = {}
+
+    node_id = _tenant_of(conn, org_id)
+    out: list[dict[str, Any]] = []
+    for candidate in found:
+        entry = dict(candidate)
+        word = verdicts.get(fan_subject_ref(node_id, str(candidate.get("candidate_id") or "")))
+        if word is not None:
+            entry[VERDICT_KEY] = word
+        out.append(entry)
+    out.sort(key=lambda e: str(e.get("first_sent") or ""), reverse=True)
+    return out
+
+
+def _tenant_of(conn, org_id: str) -> str:
+    """The node the candidate queue hangs off — the same one the evaluator fanned subjects from."""
+    from genios_engine.context.periodic import tenant_node_id
+
+    return str(tenant_node_id(conn, org_id) or "")
+
+
+__all__ = ["BLOCKER_ANGLE_ID", "BLOCKER_KIND_FIELD", "CAMPAIGN_ANGLE_ID", "TRIAGE_ANGLE_BY_KIND",
+           "TRIAGE_KEY", "VERDICT_KEY", "adjudicated_candidates", "blocker_absence_verdicts",
+           "triaged_residue"]
