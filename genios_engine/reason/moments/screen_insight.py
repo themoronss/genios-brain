@@ -47,7 +47,7 @@ CAPABILITY_VERSION = "4"
 TIMEOUT_S = 3.5
 TTL_SECONDS = 600
 COUNTER_KIND = "screen_insight"
-DEFAULT_DAILY_CAP = 100
+DEFAULT_DAILY_CAP = 300
 MAX_TEXT_CHARS = 4000
 MIN_TEXT_CHARS = 30
 INSIGHT_MAX_CHARS = 140
@@ -270,15 +270,22 @@ def judge(raw: dict | None, screen: str, *, me: list[str] | None = None,
 
 
 def moment_content(res: dict, *, digest: str, topic_key: str | None = None,
-                   thread_key: str | None = None) -> dict:
+                   thread_key: str | None = None, followup_id: str | None = None) -> dict:
     """The popup for a judged answer with a note. Evidence carries the screen HASH, what the
     note adds and the topic (C2 dedupe); the body is the first item's grounding quote.
-    `mute_chat` needs a thread to mute."""
+    `mute_chat` needs a thread to mute. When the first item became a follow-up (`followup_id`),
+    P10 adds "Tomorrow" (snooze its nudge) and "Draft reply" — the device calls
+    `/v1/followups/{id}/snooze` / `/draft` with the payload's id."""
     first = res["items"][0]
     actions = [dict(a) for a in ACTIONS]
     if thread_key:
         actions.append({"id": "mute_chat", "label": "Mute chat",
                         "payload": {"thread_key": thread_key}})
+    if followup_id:
+        actions += [{"id": "remind_tomorrow", "label": "Tomorrow",
+                     "payload": {"followup_id": followup_id}},
+                    {"id": "draft_reply", "label": "Draft reply",
+                     "payload": {"followup_id": followup_id}}]
     evidence = {"kind": "screen", "sha256": digest, "insight_kind": first["kind"],
                 "adds": res["adds"]}
     if topic_key:
@@ -346,6 +353,26 @@ def reserve(engine, *, org_id: str, seat_id: str, cap: int, now: datetime) -> bo
                           "and kind = :kind and window_start = :d"), params)
             return False
     return True
+
+
+def budget(engine, *, org_id: str, seat_id: str, cap: int, now: datetime) -> dict:
+    """P10: today's checks for the capture policy's `insight_budget` — `{"used", "cap",
+    "resets_at"}` (UTC day, reset at the next UTC midnight). A failed read is 0 used."""
+    day = now.astimezone(timezone.utc).date()
+    used = 0
+    if engine is not None:
+        try:
+            with engine.connect() as c:
+                used = int(c.execute(sql(
+                    "select count from rate_counters where scope_key = :k and kind = :kind "
+                    "and window_start = :d"),
+                    {"k": f"{org_id}:{seat_id}", "kind": COUNTER_KIND, "d": day}).scalar() or 0)
+        except Exception:      # noqa: BLE001 — a budget line never fails the policy document
+            _log.info("screen insight budget not read org=%s", org_id)
+    resets = datetime.combine(day + timedelta(days=1), datetime.min.time(), tzinfo=timezone.utc)
+    cap = max(0, int(cap or 0))
+    return {"used": min(max(0, used), cap), "cap": cap,
+            "resets_at": resets.isoformat().replace("+00:00", "Z")}
 
 
 def build_prompt(*, app: str | None, screen: str, facts: list[dict], now_local: str = "",
@@ -459,7 +486,7 @@ def insight(engine, *, org_id: str, email: str | None, app: str | None, particip
         return None
 
 
-__all__ = ["ACTIONS", "ADDS", "CAPABILITY_ID", "CAPABILITY_VERSION", "DEFAULT_DAILY_CAP",
+__all__ = ["ACTIONS", "ADDS", "budget", "CAPABILITY_ID", "CAPABILITY_VERSION", "DEFAULT_DAILY_CAP",
            "ITEM_KINDS", "MIN_TEXT_CHARS", "fix_weekday", "NOT_USEFUL_EXAMPLES", "build_prompt", "insight",
            "is_me", "judge", "local_label", "meetings_block", "memory_of", "moment_content",
            "not_useful_block", "open_items_block", "reserve", "text_digest", "visible_text",

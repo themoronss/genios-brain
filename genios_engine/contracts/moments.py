@@ -99,5 +99,14 @@ class FollowupResolveRequest(BaseModel):
     resolution: Literal["done", "dismissed"]
 
 
+class FollowupSnoozeRequest(BaseModel):
+    """P10: move a follow-up's nudge — a preset (`1h`, `tonight`, `tomorrow`) or an instant.
+    Exactly one of the two (checked by the route: 422 otherwise)."""
+    model_config = ConfigDict(extra="ignore")
+    preset: Literal["1h", "tonight", "tomorrow"] | None = None
+    until: datetime | None = None
+
+
 __all__ = ["DatePhrase", "DeviceMoment", "EvaluateRequest", "FEEDBACK_ACTIONS", "FeedbackRequest",
-           "Features", "FollowupResolveRequest", "KINDS", "PRIORITIES", "Participant", "Surface"]
+           "Features", "FollowupResolveRequest", "FollowupSnoozeRequest", "KINDS", "PRIORITIES",
+           "Participant", "Surface"]
