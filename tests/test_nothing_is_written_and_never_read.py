@@ -133,14 +133,14 @@ KNOWN_UNREAD: dict[str, str] = {
         "surfacing it needs a situation that can say 'this becomes true when X', which nothing "
         "authors yet. MOVES WHEN: that situation is authored.",
     "context/angles":
-        "The bounded-question schema — `Angle`, `AngleVerdict` and the registry that refuses a "
-        "bad declaration before it can cost anything. Registered nowhere and evaluated by nothing "
-        "yet: it is the CONTRACT half of the first model sites in this layer, and the two angles "
-        "it was written for (`condition_now_true` over `derived.timeline.condition_review`, and "
-        "the residue triage over `context_residue`) are the units after it. Landed first and "
-        "alone on purpose — a schema reviewed on its own is a schema a reviewer can argue with, "
-        "and one that arrives welded to its first caller is a schema nobody reads. MOVES WHEN: "
-        "`angles/store.py` evaluates a registered angle on the drain.",
+        "The bounded-question schema and its evaluator. `runner.process_pending` now runs "
+        "`angles.store.evaluate_org` on every sweep, so the module is consumed — but NO ANGLE IS "
+        "REGISTERED, so the pass costs nothing and answers nothing. That is the intended state "
+        "and not an oversight: the sweep supplies no asker either, which is the pattern the "
+        "cohort pass established so a tenant cannot reach a model by accident. What is still "
+        "missing is the two declarations the schema was written for — `condition_now_true` over "
+        "`derived.timeline.condition_review`, and the residue triage over `context_residue`. "
+        "MOVES WHEN: either is registered.",
     "open_loops.closed_basis":
         "Both closers record whether the closing message ANSWERED the ask (a kind in the "
         "`discharges` table) or merely arrived on the thread, and no reading selects it yet. "

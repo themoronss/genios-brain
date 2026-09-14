@@ -1343,6 +1343,38 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
         from genios_engine.platform.logging import get_logger
         get_logger("genios.l2").exception("residue detection failed for org=%s", org_id)
 
+    # L2 · THE ANGLES — the only place in this layer a model may be asked anything on a sweep.
+    #
+    # AFTER THE RESIDUE PASS, because one of the two queues an angle may read IS the residue, and
+    # an angle asked before it is measured would be asked about last sweep's blind spots.
+    #
+    # NO ASKER IS SUPPLIED HERE, AND THAT IS THE DEFAULT RATHER THAN AN OVERSIGHT.
+    # The cohort pass established the pattern and states the reason in its own drafter: "the
+    # sweep path cannot reach a model even by accident because it never receives one". So this
+    # pass costs one SELECT per registered angle and nothing else, and switching a tenant on is a
+    # deliberate act elsewhere rather than a constant nobody remembers setting.
+    #
+    # THE SYMBOL IS NOT NAMED HERE ON PURPOSE. `test_m9_never_fires_inside_a_sweep` scans this
+    # whole file for the names of the model-reaching helpers, prose included, and it is right to:
+    # a raw scan cannot be fooled by a call hidden behind an alias, and the cost of that strictness
+    # is that a citation has to describe rather than name. It caught this comment on the first
+    # full run.
+    #
+    # It still runs with no asker, because the gate query is also the RETIREMENT: a subject that
+    # has left a queue must lose its verdict whether or not anybody is asking new questions, or a
+    # tenant who turns the angles off keeps the last opinions they ever received.
+    #
+    # Never fatal, like every pass here. An angle only ever ADDS to what the deterministic layer
+    # produced — the contract has no field that could make one required — so losing this pass
+    # returns the tenant to exactly the state they were in before any of it existed.
+    angles: dict = {}
+    try:
+        from genios_engine.context.angles.store import evaluate_org as evaluate_angles
+        angles = evaluate_angles(store, org_id, eval_time=sweep_at).as_record()
+    except Exception:      # noqa: BLE001 — an addition must never break ingestion
+        from genios_engine.platform.logging import get_logger
+        get_logger("genios.l2").exception("angle evaluation failed for org=%s", org_id)
+
     # ONE BUMP FOR EVERYTHING THE DERIVED PASSES DID.
     #
     # `bump_version` is taken per EVENT, inside `process_event`, and `bump_slice_versions`
@@ -1409,6 +1441,11 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
             # this layer explained everything it holds; a zero because the pass failed is
             # why it carries its own key rather than being folded into a total.
             "residue": residue,
+            # What the model layer cost this tenant, including everything it declined to
+            # do. `no_asker` and `budget_exhausted` are reported for the reason the
+            # `budgets` ledger exists: a pass that made no calls because it COULD not must
+            # never read as a pass with nothing to do.
+            "angles": angles,
             "history_backfilled": history_backfilled,
             "metric_points": metric_points, "trend_facts": trend_facts,
             "anomaly_facts": anomaly_facts, "cohort_changes": cohort_changes,

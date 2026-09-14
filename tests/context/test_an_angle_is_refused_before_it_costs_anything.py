@@ -15,14 +15,17 @@ import dataclasses
 
 import pytest
 
-from genios_engine.context.angles.contract import (CONFIDENCE_CEILING_BP, CONFIDENCE_FLOOR_BP,
-                                                   MAX_CALLS_PER_SWEEP, Angle, AngleVerdict,
-                                                   CostTier, UnavailableAngle, register,
-                                                   registered, resolve)
+from genios_engine.context.angles.contract import (CONFIDENCE_CEILING_BP,
+                                                   CONFIDENCE_FLOOR_BP,
+                                                   MAX_CALLS_PER_SWEEP, Angle,
+                                                   AngleVerdict, CostTier,
+                                                   GateSource, UnavailableAngle,
+                                                   register, registered, resolve)
 
 VALID = dict(
     angle_id="condition_now_true", version="1.0.0",
     gate=("derived.timeline.condition_review",),
+    gate_source=GateSource.FACTS,
     sees=("condition.quote", "condition.stated_at"),
     returns=("met", "not_met", "not_a_condition", "unknowable"),
     refusal="unknowable",
@@ -211,3 +214,20 @@ def test_an_angle_declares_no_model_and_no_prompt() -> None:
     fields = {f.name for f in dataclasses.fields(Angle)}
     assert not fields & {"model", "prompt", "temperature", "max_tokens", "system"}
     assert isinstance(_angle().cost_tier, CostTier)
+
+
+def test_an_angle_must_say_which_queue_its_gate_names() -> None:
+    """ADDED WHEN THE STORE WAS WRITTEN, and the schema landing alone is what surfaced it.
+    `derived.timeline.condition_review` is a `graph_facts` row and `ball_in_court_unreported` is a
+    `context_residue` row; nothing in the declaration said which a gate meant, so the first thing
+    that had to EXECUTE one could not. A store inferring it from the string's shape would read the
+    wrong table the day somebody names a fact after a residue kind."""
+    with pytest.raises(UnavailableAngle, match="not a queue this engine can read"):
+        _angle(gate_source="inbox")
+
+
+def test_the_queue_sources_are_closed_so_the_store_can_match_exhaustively() -> None:
+    """A source the store does not implement must be undeclarable, rather than discovered as an
+    angle that quietly never fires — the failure `patterns/registry.py` refuses loudly for
+    condition kinds."""
+    assert {s.value for s in GateSource} == {"facts", "residue"}

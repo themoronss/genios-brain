@@ -16,8 +16,8 @@ An ANGLE is a question asked of one of those queues, and nothing else. It is not
 read the graph.
 """
 from genios_engine.context.angles.contract import (Angle, AngleVerdict, CostTier,
-                                                   UnavailableAngle, register, registered,
-                                                   resolve)
+                                                   GateSource, UnavailableAngle,
+                                                   register, registered, resolve)
 
-__all__ = ["Angle", "AngleVerdict", "CostTier", "UnavailableAngle", "register", "registered",
-           "resolve"]
+__all__ = ["Angle", "AngleVerdict", "CostTier", "GateSource", "UnavailableAngle",
+           "register", "registered", "resolve"]

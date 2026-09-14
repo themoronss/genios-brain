@@ -89,6 +89,33 @@ class CostTier(str, Enum):
     CAPABLE = "capable"    # a judgement needing prose, reserved and budgeted harder
 
 
+class GateSource(str, Enum):
+    """WHICH QUEUE the gate names, because the two are different tables and guessing is not an
+    option this layer permits anywhere else.
+
+    ADDED WHEN THE STORE WAS WRITTEN, not before. `gate` shipped as a tuple of names and the
+    schema landed alone deliberately — "a schema reviewed on its own is a schema a reviewer can
+    argue with". The first thing that had to EXECUTE a gate could not, because
+    `derived.timeline.condition_review` is a `graph_facts` row and `ball_in_court_unreported` is a
+    `context_residue` row, and nothing said which a given angle meant. A store that inferred it
+    from the string's shape would be a store that silently reads the wrong table the day somebody
+    names a fact after a residue kind.
+
+    CLOSED, so `angles/store.py` matches over it exhaustively: a source the store does not
+    implement cannot be declared, rather than being discovered as an angle that quietly never
+    fires — which is exactly the failure `patterns/registry.py` refuses loudly for condition kinds.
+    """
+
+    #: Subjects carrying every named field as a live `graph_facts` row. The common case: a queue
+    #: the deterministic layer built by publishing a fact it could not act on.
+    FACTS = "facts"
+
+    #: Rows of `context_residue` of the named kinds — what L2 measured it could not explain. The
+    #: only queue in the layer that is defined by the absence of a reading rather than the
+    #: presence of a fact.
+    RESIDUE = "residue"
+
+
 class UnavailableAngle(ValueError):
     """Raised at REGISTRATION, never at evaluation.
 
@@ -132,6 +159,10 @@ class Angle:
     #: model is reached, so a gate miss costs nothing at all.
     gate: tuple[str, ...]
 
+    #: Which queue `gate` names. See `GateSource` — the store matches over this exhaustively, so
+    #: an angle cannot name a source nothing implements.
+    gate_source: GateSource
+
     #: EXACTLY WHICH FIELDS REACH THE MODEL. A reviewer reads this tuple to know what leaves the
     #: tenant. A field the prompt uses and this does not name is a field that does not exist.
     sees: tuple[str, ...]
@@ -161,6 +192,13 @@ class Angle:
                 f"{self.angle_id}: an angle with no gate is asked about every subject on every "
                 "sweep — the gate is the cost control, not a convenience")
         object.__setattr__(self, "gate", gate)
+        if not isinstance(self.gate_source, GateSource):
+            try:
+                object.__setattr__(self, "gate_source", GateSource(str(self.gate_source)))
+            except ValueError as exc:
+                raise UnavailableAngle(
+                    f"{self.angle_id}: {self.gate_source!r} is not a queue this engine can read — "
+                    f"one of {[s.value for s in GateSource]}") from exc
 
         sees = _names(self.sees, "sees")
         if not sees:
@@ -309,5 +347,6 @@ def registered() -> tuple[Angle, ...]:
     return tuple(_REGISTRY[key] for key in sorted(_REGISTRY))
 
 
-__all__ = ["Angle", "AngleVerdict", "CONFIDENCE_CEILING_BP", "CONFIDENCE_FLOOR_BP", "CostTier",
+__all__ = ["Angle", "AngleVerdict", "CONFIDENCE_CEILING_BP", "CONFIDENCE_FLOOR_BP",
+           "CostTier", "GateSource",
            "MAX_CALLS_PER_SWEEP", "UnavailableAngle", "register", "registered", "resolve"]
