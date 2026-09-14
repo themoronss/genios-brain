@@ -3592,32 +3592,63 @@ def _days_since_iso(v, now) -> int:
         return 999
 
 
+def _graph_visibility(c, ctx: AuthCtx) -> tuple[bool, dict]:
+    """(postgres?, bind params) for the graph views' seat-visibility clauses: another seat's
+    private screen / upload evidence is readable only by its principals (`:viewer`, the caller's
+    email; an API key has none and reads nothing private). Off PostgreSQL there are no
+    visibility columns and nothing private."""
+    from genios_engine.reason.moments.common import viewer_key
+    pg = c.dialect.name == "postgresql"
+    return pg, ({"viewer": viewer_key(ctx.email)} if pg else {})
+
+
+def _event_visible(pg: bool, alias: str) -> tuple[str, str]:
+    """(left join on the row's source event, the readable-event condition) — both empty off PG."""
+    from genios_engine.reason.moments.common import VISIBLE_EVENT_SQL
+    if not pg:
+        return "", ""
+    return (f" left join source_events se on se.org_id = {alias}.org_id "
+            f"and se.event_id = {alias}.created_by_event_id ", " and " + VISIBLE_EVENT_SQL)
+
+
 @router.get("/graph")
-def graph_data(org_id: str = Depends(get_current_org)) -> dict:
+def graph_data(org_id: str = Depends(get_current_org),
+               ctx: AuthCtx = Depends(get_auth_ctx)) -> dict:
     """The tenant's context graph — nodes (people/companies/deals/meetings) + edges + type counts.
-    What the dashboard graph view renders; a node click drills into its facts via read-models."""
+    What the dashboard graph view renders; a node click drills into its facts via read-models.
+    Seat-visible: a node known only from another seat's private evidence, an edge from a private
+    event and a private fact are left out (context/fact_visibility.unreadable_nodes)."""
     if _graph is None:
         raise HTTPException(400, "graph store not configured")
     from collections import Counter
     from datetime import datetime, timezone
     from sqlalchemy import text
+
+    from genios_engine.context.fact_visibility import unreadable_nodes
+    from genios_engine.reason.moments.common import VISIBLE_FACT_SQL
     now = datetime.now(timezone.utc)
     with _graph.engine.connect() as c:
+        pg, vis = _graph_visibility(c, ctx)
+        hidden = unreadable_nodes(c, org_id, vis.get("viewer"))
+        join, cond = _event_visible(pg, "e")
         nodes = c.execute(text("select node_id, node_type, display_name, canonical_key "
                                "from graph_nodes where org_id=:o and valid_to is null"),
                           {"o": org_id}).fetchall()
-        edges = c.execute(text("select from_node_id, to_node_id, edge_type, confidence "
-                               "from graph_edges where org_id=:o"), {"o": org_id}).fetchall()
+        edges = c.execute(text("select e.from_node_id, e.to_node_id, e.edge_type, e.confidence "
+                               "from graph_edges e" + join + "where e.org_id=:o" + cond),
+                          {"o": org_id, **vis}).fetchall()
         last_in = {r.subject_node_id: r.value for r in c.execute(text(
-            "select subject_node_id, value from graph_facts where org_id=:o "
-            "and field='thread.last_inbound' and valid_to is null and status='active'"),
-            {"o": org_id})}
+            "select f.subject_node_id, f.value from graph_facts f where f.org_id=:o "
+            "and f.field='thread.last_inbound' and f.valid_to is null and f.status='active'"
+            + (" and " + VISIBLE_FACT_SQL if pg else "")),
+            {"o": org_id, **vis})}
     node_list = [{"id": n.node_id, "name": n.display_name, "type": n.node_type,
                   "email": n.canonical_key if n.node_type == "person" else None,
                   "last_interaction_days": _days_since_iso(last_in.get(n.node_id), now)}
-                 for n in nodes]
+                 for n in nodes if n.node_id not in hidden]
     links = [{"source": e.from_node_id, "target": e.to_node_id, "type": e.edge_type,
-              "weight": float(e.confidence)} for e in edges]
+              "weight": float(e.confidence)} for e in edges
+             if e.from_node_id not in hidden and e.to_node_id not in hidden]
     tools = sorted({c.source_type for c in _connections.list_active() if c.org_id == org_id})
     return {"nodes": node_list, "links": links,
             "entity_type_counts": dict(Counter(n["type"] for n in node_list)),
@@ -3625,44 +3656,59 @@ def graph_data(org_id: str = Depends(get_current_org)) -> dict:
 
 
 @router.get("/graph/node/{node_id}")
-def graph_node_detail(node_id: str, org_id: str = Depends(get_current_org)) -> dict:
+def graph_node_detail(node_id: str, org_id: str = Depends(get_current_org),
+                      ctx: AuthCtx = Depends(get_auth_ctx)) -> dict:
     """One node's full detail for the graph side-panel: its facts + who/what it is connected to
     (a meeting's attendees, the meetings a person attended, a deal's champion…). Computed LIVE from
-    the graph so it works for every node — not only ones that happen to have a pre-built read model."""
+    the graph so it works for every node — not only ones that happen to have a pre-built read model.
+    Seat-visible like GET /graph: a node known only from another seat's private evidence is a 404;
+    private facts, observations and edges are shown only to their principals."""
     if _graph is None:
         raise HTTPException(400, "graph store not configured")
     from sqlalchemy import text
+
+    from genios_engine.context.fact_visibility import unreadable_nodes
+    from genios_engine.reason.moments.common import VISIBLE_FACT_SQL
 
     def _clean(v):
         return v.strip('"') if isinstance(v, str) else v
 
     with _graph.engine.connect() as c:
+        pg, vis = _graph_visibility(c, ctx)
         node = c.execute(text(
             "select node_id, node_type, display_name, canonical_key, identity_strength "
             "from graph_nodes where org_id=:o and node_id=:n and valid_to is null limit 1"),
             {"o": org_id, "n": node_id}).first()
-        if node is None:
+        if node is None or unreadable_nodes(c, org_id, vis.get("viewer"), among=[node_id]):
             raise HTTPException(404, "node not found")
+        p = {"o": org_id, "n": node_id, **vis}
         facts = c.execute(text(
-            "select field, value, confidence, authority_rank, occurred_at from graph_facts "
-            "where org_id=:o and subject_node_id=:n and valid_to is null and status='active' "
-            "order by occurred_at desc nulls last"), {"o": org_id, "n": node_id}).fetchall()
+            "select f.field, f.value, f.confidence, f.authority_rank, f.occurred_at "
+            "from graph_facts f where f.org_id=:o and f.subject_node_id=:n and f.valid_to is null "
+            "and f.status='active'" + (" and " + VISIBLE_FACT_SQL if pg else "")
+            + " order by f.occurred_at desc nulls last"), p).fetchall()
+        join, cond = _event_visible(pg, "e")
         out_edges = c.execute(text(
             "select e.edge_type, e.confidence, e.to_node_id as other_id, "
             "  o.display_name as other_name, o.node_type as other_type "
             "from graph_edges e join graph_nodes o on o.node_id=e.to_node_id and o.org_id=e.org_id "
-            "where e.org_id=:o and e.valid_to is null and e.from_node_id=:n"),
-            {"o": org_id, "n": node_id}).fetchall()
+            + join + "where e.org_id=:o and e.valid_to is null and e.from_node_id=:n" + cond),
+            p).fetchall()
         in_edges = c.execute(text(
             "select e.edge_type, e.confidence, e.from_node_id as other_id, "
             "  o.display_name as other_name, o.node_type as other_type "
             "from graph_edges e join graph_nodes o on o.node_id=e.from_node_id and o.org_id=e.org_id "
-            "where e.org_id=:o and e.valid_to is null and e.to_node_id=:n"),
-            {"o": org_id, "n": node_id}).fetchall()
+            + join + "where e.org_id=:o and e.valid_to is null and e.to_node_id=:n" + cond),
+            p).fetchall()
+        join, cond = _event_visible(pg, "g")
         obs = c.execute(text(
-            "select kind, occurred_at from graph_observations where org_id=:o "
-            "and subject_node_id=:n and status='active' order by occurred_at desc limit 20"),
-            {"o": org_id, "n": node_id}).fetchall()
+            "select g.kind, g.occurred_at from graph_observations g" + join
+            + "where g.org_id=:o and g.subject_node_id=:n and g.status='active'" + cond
+            + " order by g.occurred_at desc limit 20"), p).fetchall()
+        others = unreadable_nodes(c, org_id, vis.get("viewer"),
+                                  among=[r.other_id for r in (*out_edges, *in_edges)])
+        out_edges = [r for r in out_edges if r.other_id not in others]
+        in_edges = [r for r in in_edges if r.other_id not in others]
 
     rels = ([{"edge_type": r.edge_type, "direction": "out", "other_id": r.other_id,
               "other_name": r.other_name, "other_type": r.other_type, "confidence": float(r.confidence)}

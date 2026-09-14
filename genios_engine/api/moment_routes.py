@@ -7,6 +7,8 @@
   GET  /v1/moments?limit&before&kind              device or seat the seat's own history
   GET  /v1/followups?status=open|all&limit        device or seat P8 C5 screen follow-ups
   POST /v1/followups/{id}/resolve                 device or seat done | dismissed
+  POST /v1/followups/{id}/snooze                  device or seat P10 move the nudge
+  POST /v1/followups/{id}/draft                   device or seat P10 a reply draft (never stored)
   GET  /v1/seats/me/weekly-report?week_start      device or seat P8 C8 the week in counts
 
 NEVER CREDIT-CHARGED (D6). Every handler is a few statements on the process's one pool (session
@@ -26,7 +28,8 @@ from sqlalchemy import text
 
 from genios_engine.api.device_routes import _bearer, _err
 from genios_engine.contracts.moments import (KINDS, DeviceMoment, EvaluateRequest,
-                                             FeedbackRequest, FollowupResolveRequest)
+                                             FeedbackRequest, FollowupResolveRequest,
+                                             FollowupSnoozeRequest)
 from genios_engine.platform import capture_policy as P
 from genios_engine.platform import devices as D
 from genios_engine.platform.auth import check_org_kill, jwt_decode, verify_bearer
@@ -366,6 +369,7 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
     if not SI.reserve(engine, org_id=p.org_id, seat_id=p.seat_id, cap=cap, now=now):
         _log.info("screen insight capped org=%s seat=%s", p.org_id, p.seat_id)
         return Response(status_code=_NO_CONTENT)
+    _ensure_profile(engine, p, now)
     res = SI.insight(engine, org_id=p.org_id, email=p.email, app=body.surface.app,
                      participants=body.participants, entities=body.features.entities,
                      screen=screen, now_local=SI.local_label(now, tz), not_useful=notes, me=me,
@@ -377,12 +381,16 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
     j = res["judged"] if res is not None else None
     local_date = now.astimezone(F.zone(tz)).date()
     topics: list[str] = []
+    first_followup: str | None = None
     for it in (j["items"] if j else []):
         topic = F.topic_key(seat_id=p.seat_id, thread_key=thread, app=app, kind=it["kind"],
                             who=it["who"], local_date=local_date)
-        F.upsert(engine, org_id=p.org_id, seat_id=p.seat_id, kind=it["kind"], note=it["text"],
-                 who=it["who"], due_at=F.parse_due(it["due"], tz_name=tz, now=now),
-                 thread_key=thread, app=app, topic=topic, tz_name=tz, now=now, quote=it["quote"])
+        saved = F.upsert(engine, org_id=p.org_id, seat_id=p.seat_id, kind=it["kind"],
+                         note=it["text"], who=it["who"],
+                         due_at=F.parse_due(it["due"], tz_name=tz, now=now), thread_key=thread,
+                         app=app, topic=topic, tz_name=tz, now=now, quote=it["quote"])
+        if not topics and saved is not None:           # the popup's first item is a follow-up
+            first_followup = F.followup_id(p.org_id, p.seat_id, topic)
         topics.append(topic)
     if j is None or j["note"] is None:                 # the product rule: nothing it ADDS → silent
         _log.info("screen insight: saved silently org=%s seat=%s work=%s items=%d ms=%.0f",
@@ -398,7 +406,8 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
     if repeat:                                         # C2: the follow-up is refreshed, no popup
         return Response(status_code=_NO_CONTENT)
     budget = int(getattr(settings, "screen_insight_max_per_hour", 3) or 0)
-    content = SI.moment_content(j, digest=digest, topic_key=topic, thread_key=thread)
+    content = SI.moment_content(j, digest=digest, topic_key=topic, thread_key=thread,
+                                followup_id=first_followup)
     try:
         out = M.persist(engine, org_id=p.org_id, seat_id=p.seat_id, device_id=p.device_id,
                         origin="server", moment={"moment_id": moment_id, **content},
@@ -410,6 +419,16 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
               p.org_id, p.seat_id, out["display"], out["reason"], j["adds"], len(topics),
               (time.perf_counter() - started) * 1000)
     return out
+
+
+def _ensure_profile(engine, p: Principal, now: datetime) -> None:
+    """P10: the weekly manager profile is (re)built in the background when missing or a week
+    old — never on the request's critical path, never a failed request."""
+    try:
+        from genios_engine.reason.moments import seat_profile as SP
+        SP.ensure_profile(engine, org_id=p.org_id, seat_id=p.seat_id, email=p.email, now=now)
+    except Exception:      # noqa: BLE001
+        _log.exception("seat profile schedule failed org=%s", p.org_id)
 
 
 # ── P8 C5 follow-ups + C8 weekly report ───────────────────────────────────────────────────────
@@ -437,6 +456,62 @@ def resolve_followup(followup_id: str, body: FollowupResolveRequest, request: Re
     if res is None:
         return _err(404, "FOLLOWUP_NOT_FOUND", "No such follow-up for this seat.")
     return res
+
+
+@router.post("/v1/followups/{followup_id}/snooze")
+def snooze_followup(followup_id: str, body: FollowupSnoozeRequest, request: Request):
+    """P10: `{"preset": "1h" | "tonight" | "tomorrow"}` or `{"until": iso}` → the nudge moves
+    (an open row only; a resolved one answers unchanged). Returns the full item."""
+    from genios_engine.reason.moments import followups as F
+    dstore, cstore = D.stores()
+    p = principal(request, dstore)
+    if isinstance(p, JSONResponse):
+        return p
+    if (body.preset is None) == (body.until is None):
+        return _err(422, "INVALID_SNOOZE", "Send one of preset (1h, tonight, tomorrow) or until.")
+    now = _now()
+    engine = cstore.engine
+    if body.preset is not None:
+        with engine.connect() as c:
+            tz = F.seat_tz(c, p.org_id, p.seat_id)
+        until = F.snooze_until(body.preset, now=now, tz_name=tz)
+    else:
+        until = body.until if body.until.tzinfo else body.until.replace(tzinfo=timezone.utc)
+        if until <= now or until > now + F.SNOOZE_MAX:
+            return _err(422, "INVALID_SNOOZE", "until must be within the next 60 days.")
+    res = F.snooze(engine, org_id=p.org_id, seat_id=p.seat_id, followup_id=followup_id,
+                   until=until, now=now)
+    if res is None:
+        return _err(404, "FOLLOWUP_NOT_FOUND", "No such follow-up for this seat.")
+    return res
+
+
+@router.post("/v1/followups/{followup_id}/draft")
+def draft_followup(followup_id: str, request: Request):
+    """P10: `{"text": "..."}` — a short reply the manager could send to the item's `who`, in the
+    quote's language / style. 204 when no model answers. Never stored, never sent."""
+    from genios_engine.reason.moments import followups as F
+    from genios_engine.reason.moments import reply_draft as RD
+    from genios_engine.reason.moments import seat_profile as SP
+    dstore, cstore = D.stores()
+    p = principal(request, dstore)
+    if isinstance(p, JSONResponse):
+        return p
+    engine = cstore.engine
+    with engine.connect() as c:
+        item = F.get_item(c, org_id=p.org_id, seat_id=p.seat_id, followup_id=followup_id)
+        tz = F.seat_tz(c, p.org_id, p.seat_id) if item is not None else "UTC"
+    if item is None:
+        return _err(404, "FOLLOWUP_NOT_FOUND", "No such follow-up for this seat.")
+    if not SP.model_available():
+        return Response(status_code=_NO_CONTENT)
+    from genios_engine.reason.moments.common import parse_ts
+    due = parse_ts(item["due_at"]) if item.get("due_at") else None
+    due_local = f"{due.astimezone(F.zone(tz)):%a %d %b %H:%M}" if due else None
+    out = RD.draft(engine, org_id=p.org_id, item=item, due_local=due_local)
+    if not out:
+        return Response(status_code=_NO_CONTENT)
+    return {"text": out}
 
 
 @router.get("/v1/seats/me/weekly-report")

@@ -7,13 +7,16 @@ turns into a brief line, a wrap count or a nudge (migration 0159):
                deadline / risk / next_step → the same. A commitment with no owner has no row.
     topic_key  sha256(seat | thread_key or app | kind | lower(who) | local date): one row per topic
                per day; a repeat updates the note / due instead of a new popup (C2).
-    nudge_at   ask +3 h · my_promise due −60 min, undated +3 working days · their_promise due +1 h,
+    nudge_at   ask +3 h, no later than 18:00 local that day (after 17:30 → the next working day
+               09:30; never before 09:30) · my_promise due −60 min, undated +3 working days · their_promise due +1 h,
                undated +2 working days · deadline due −24 h · risk / next_step none (brief only).
     resolved   answered — STRUCTURAL, never meaning: a later look at the same thread has a `You:`
                line after the line that holds the ask's quote; done / dismissed — the person;
                expired (lazily, on the next read: no periodic task) — a promise 2 days past its
                due; an ask 7 days unresolved; a deadline 1 day after its due (undated: 7 days);
                a risk / next step after 3 days (P9 K5).
+    snooze     the person moves the nudge (1 h, tonight 19:00, the next working day 09:30, or an
+               instant); `snoozed_at` keeps it through later sightings of the topic (P10).
 
 `text` is the model's note (≤ 140 chars), never screen text. The item's ≤ 12-word grounding quote is
 kept in `quote` (0161) so "answered" works for items saved WITHOUT a popup; rows from before 0161 fall
@@ -62,6 +65,20 @@ MUTE_REASON = "mute_chat"
 NOT_USEFUL_ACTION = "wrong"
 NOT_USEFUL_NOTES = 5
 ASK_NUDGE = timedelta(hours=3)
+#: P10: an ask nudges no later than 18:00 local the same day; one first seen after 17:30 waits for
+#: the next working day's 09:30, and none nudges before 09:30.
+ASK_LATEST = dtime(18, 0)
+ASK_CUTOFF = dtime(17, 30)
+WORKDAY_START = dtime(9, 30)
+#: Snooze presets: "tonight" is 19:00 local (after 18:00 → one hour); "tomorrow" the next
+#: working day at 09:30; an explicit instant at most this far ahead.
+TONIGHT = dtime(19, 0)
+TONIGHT_CUTOFF = dtime(18, 0)
+SNOOZE_HOUR = timedelta(hours=1)
+SNOOZE_MAX = timedelta(days=60)
+SNOOZE_PRESETS = ("1h", "tonight", "tomorrow")
+#: The weekly report's "you would have missed it": these kinds closed after their nudge.
+NUDGED_KINDS = ("ask", "my_promise", "their_promise", "deadline")
 MY_PROMISE_LEAD = timedelta(minutes=60)
 THEIR_PROMISE_GRACE = timedelta(hours=1)
 DEADLINE_LEAD = timedelta(hours=24)
@@ -113,10 +130,48 @@ def add_working_days(start: datetime, n: int, tz_name: str | None) -> datetime:
     return datetime.combine(day, local.time(), tzinfo=tz).astimezone(timezone.utc)
 
 
+def next_working_day_at(start: datetime, at: dtime, tz_name: str | None) -> datetime:
+    """The first working day (Mon–Fri, in the seat's zone) AFTER `start`'s local day, at `at`."""
+    tz = zone(tz_name)
+    day = aware(start).astimezone(tz).date() + timedelta(days=1)
+    while day.weekday() in _WEEKEND:
+        day += timedelta(days=1)
+    return datetime.combine(day, at, tzinfo=tz).astimezone(timezone.utc)
+
+
+def ask_nudge_at(created_at: datetime, tz_name: str | None) -> datetime:
+    """+3 h, but no later than 18:00 local the same day and never before 09:30; an ask first seen
+    after 17:30 local nudges the next working day at 09:30."""
+    tz = zone(tz_name)
+    local = aware(created_at).astimezone(tz)
+    if local.time() > ASK_CUTOFF:
+        return next_working_day_at(created_at, WORKDAY_START, tz_name)
+    latest = datetime.combine(local.date(), ASK_LATEST, tzinfo=tz)
+    earliest = datetime.combine(local.date(), WORKDAY_START, tzinfo=tz)
+    return max(min(aware(created_at) + ASK_NUDGE, latest), earliest).astimezone(timezone.utc)
+
+
+def snooze_until(preset: str, *, now: datetime, tz_name: str | None) -> datetime:
+    """A snooze preset → the new nudge instant: `1h` now + 1 h; `tonight` 19:00 local today (now
+    + 1 h once it is past 18:00); `tomorrow` the next working day 09:30 local."""
+    now = aware(now)
+    if preset == "1h":
+        return now + SNOOZE_HOUR
+    tz = zone(tz_name)
+    local = now.astimezone(tz)
+    if preset == "tonight":
+        if local.time() > TONIGHT_CUTOFF:
+            return now + SNOOZE_HOUR
+        return datetime.combine(local.date(), TONIGHT, tzinfo=tz).astimezone(timezone.utc)
+    if preset == "tomorrow":
+        return next_working_day_at(now, WORKDAY_START, tz_name)
+    raise ValueError(f"unknown snooze preset: {preset}")
+
+
 def nudge_at(kind: str, *, created_at: datetime, due_at: datetime | None,
              tz_name: str | None) -> datetime | None:
     if kind == "ask":
-        return created_at + ASK_NUDGE
+        return ask_nudge_at(created_at, tz_name)
     if kind == "my_promise":
         return (due_at - MY_PROMISE_LEAD if due_at
                 else add_working_days(created_at, MY_PROMISE_UNDATED_DAYS, tz_name))
@@ -441,7 +496,9 @@ def upsert(engine, *, org_id: str, seat_id: str, kind: str, note: str, who: str 
             "or f.due_at is distinct from excluded.due_at "
             "or coalesce(excluded.who, f.who) is distinct from f.who "
             "then null else f.graph_written_at end, "
-            "nudge_at = excluded.nudge_at, updated_at = excluded.updated_at "
+            # a snoozed nudge is the person's choice: a later sighting keeps it (P10)
+            "nudge_at = case when f.snoozed_at is not null then f.nudge_at "
+            "else excluded.nudge_at end, updated_at = excluded.updated_at "
             "where f.resolved_at is null returning " + _COLS),
             {"id": fid, "o": org_id, "s": seat_id, "t": thread_key, "app": app, "kind": kind,
              "text": note, "who": who, "due": due, "k": topic, "now": now,
@@ -512,6 +569,37 @@ def resolve(engine, *, org_id: str, seat_id: str, followup_id: str, resolution: 
     return item_out(r, full=True) if r is not None else None
 
 
+def snooze(engine, *, org_id: str, seat_id: str, followup_id: str, until: datetime,
+           now: datetime) -> dict | None:
+    """P10: move an OPEN follow-up's nudge to `until` (a resolved one answers its current state,
+    unchanged). The seat's slice is bumped + announced like upsert / resolve. None when it is not
+    this seat's."""
+    shown = False
+    with engine.begin() as c:
+        r = c.execute(text(
+            "update screen_followups set nudge_at = :u, snoozed_at = :now, updated_at = :now "
+            "where id = :id and org_id = :o and seat_id = :s and resolved_at is null "
+            "returning " + _COLS),
+            {"id": followup_id, "o": org_id, "s": seat_id, "u": aware(until), "now": now}).first()
+        if r is None:
+            r = c.execute(text(f"select {_COLS} from screen_followups where id = :id "
+                               "and org_id = :o and seat_id = :s"),
+                          {"id": followup_id, "o": org_id, "s": seat_id}).first()
+        else:
+            shown = _bump(c, org_id, seat_id)
+    if shown:
+        realtime.wake()
+    return item_out(r, full=True) if r is not None else None
+
+
+def get_item(conn, *, org_id: str, seat_id: str, followup_id: str) -> dict | None:
+    """One of the seat's follow-ups with its grounding `quote` (for a reply draft), or None."""
+    r = conn.execute(text(f"select {_COLS}, quote from screen_followups where id = :id "
+                          "and org_id = :o and seat_id = :s"),
+                     {"id": followup_id, "o": org_id, "s": seat_id}).first()
+    return None if r is None else {**item_out(r, full=True), "quote": r.quote}
+
+
 def expire(conn, *, org_id: str, seat_id: str, now: datetime) -> int:
     """Open follow-ups past their life → `expired`. Run on read (slice, list): no periodic task.
     Promises 2 days past due (undated: never); asks 7 days after they were first seen; deadlines
@@ -560,7 +648,9 @@ def week_bounds(week_start: date | None, *, tz_name: str | None,
 def weekly_report(engine, *, org_id: str, seat_id: str, capability_id: str,
                   week_start: date | None = None, now: datetime | None = None) -> dict:
     """C8: the seat's week in counts — follow-ups created that week (and how they ended), and the
-    screen insights shown that week (and what the person said about them)."""
+    screen insights shown that week (and what the person said about them). `nudged_then_closed`
+    (P10, "you would have missed it"): asks / promises / deadlines closed done or answered that
+    week AFTER their nudge time."""
     now = now or datetime.now(timezone.utc)
     with engine.connect() as c:
         tz = seat_tz(c, org_id, seat_id)
@@ -584,12 +674,18 @@ def weekly_report(engine, *, org_id: str, seat_id: str, capability_id: str,
             " where x.moment_id = m.moment_id and x.action = 'wrong')) as not_useful "
             "from moments m where m.org_id = :o and m.seat_id = :s and m.capability_id = :cap "
             "and m.created_at >= :a and m.created_at < :b"), p).mappings().first()
+        nudged = c.execute(text(
+            "select count(*) from screen_followups where org_id = :o and seat_id = :s "
+            "and kind = any(:kinds) and resolution in ('done', 'answered') "
+            "and nudge_at is not null and resolved_at > nudge_at "
+            "and resolved_at >= :a and resolved_at < :b"),
+            {**p, "kinds": list(NUDGED_KINDS)}).scalar()
     return {"week_start": ws.isoformat(), "week_end": (ws + timedelta(days=6)).isoformat(),
             "promises_caught": int(f["caught"] or 0), "promises_kept": int(f["kept"] or 0),
             "asks_flagged": int(f["asks"] or 0), "asks_answered": int(f["answered"] or 0),
             "deadlines_flagged": int(f["deadlines"] or 0), "risks_flagged": int(f["risks"] or 0),
             "popups_shown": int(m["shown"] or 0), "useful": int(m["useful"] or 0),
-            "not_useful": int(m["not_useful"] or 0)}
+            "not_useful": int(m["not_useful"] or 0), "nudged_then_closed": int(nudged or 0)}
 
 
 def purge(conn, *, now: datetime) -> dict:
@@ -607,8 +703,10 @@ def purge(conn, *, now: datetime) -> dict:
     return {"screen_followups": fu, "screen_thread_verdicts": vd}
 
 
-__all__ = ["KINDS", "MUTE_FOREVER", "NOT_USEFUL_MUTE", "RESOLUTIONS", "add_working_days",
-           "answered", "expire", "followup_id", "is_muted", "item_out", "learn_from_feedback",
+__all__ = ["KINDS", "MUTE_FOREVER", "NOT_USEFUL_MUTE", "RESOLUTIONS", "SNOOZE_PRESETS",
+           "add_working_days", "answered", "ask_nudge_at", "expire", "followup_id", "get_item",
+           "is_muted", "item_out", "learn_from_feedback", "next_working_day_at", "snooze",
+           "snooze_until",
            "listing", "map_kind", "mark_answered", "mute", "not_useful_notes", "nudge_at",
            "open_items",
            "parse_due", "purge", "removed_since", "resolve", "seat_tz", "set_verdict",

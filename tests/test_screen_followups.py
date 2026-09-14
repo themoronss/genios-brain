@@ -233,7 +233,8 @@ def test_an_ask_is_saved_silently_answered_by_its_quote_and_in_the_slice(  # noq
     (fu,) = _q("select * from screen_followups where org_id=:o", o=org)
     assert (fu.kind, fu.who, fu.text, fu.seat_id, fu.quote) == (
         "ask", "Priya Shah", ASK_ITEM["text"], seat, ASK_ITEM["quote"])
-    assert fu.nudge_at - fu.created_at == timedelta(hours=3)
+    with _engine().connect() as c:                  # +3 h, capped at 18:00 local (P10)
+        assert fu.nudge_at == F.ask_nudge_at(fu.created_at, F.seat_tz(c, org, seat))
     assert _q("select 1 from moments where org_id=:o", o=org) == []
     (v,) = _q("select work, memory from screen_thread_verdicts where org_id=:o", o=org)
     assert (v.work, v.memory) == (True, True)
@@ -265,8 +266,12 @@ def test_an_ask_is_saved_silently_answered_by_its_quote_and_in_the_slice(  # noq
     assert (m["display"], m["reason"], m["headline"]) == (
         True, None, "Ravi asked for the MSA on Monday too")
     assert m["body"] == "“please send the MSA today”" and m["evidence"][0]["adds"] == "repeat_ask"
-    assert [a["id"] for a in m["actions"]] == ["useful", "not_useful", "mute_chat"]
+    assert [a["id"] for a in m["actions"]] == ["useful", "not_useful", "mute_chat",
+                                               "remind_tomorrow", "draft_reply"]
     assert m["actions"][2]["payload"] == {"thread_key": "slack:ravi"}
+    (ravi_fu,) = _q("select id from screen_followups where org_id=:o and thread_key='slack:ravi'",
+                    o=org)
+    assert m["actions"][3]["payload"] == m["actions"][4]["payload"] == {"followup_id": ravi_fu.id}
     again = _look(client, dev, ravi + ["Ravi Menon: any update?"], thread="slack:ravi",
                   app="slack")
     assert again.status_code == 204
@@ -411,7 +416,7 @@ def test_budget_promises_personal_resolve_expiry_and_week(client, monkeypatch): 
                    "week_end": (monday + timedelta(days=6)).isoformat(),
                    "promises_caught": 3, "promises_kept": 1, "asks_flagged": 0,
                    "asks_answered": 0, "deadlines_flagged": 0, "risks_flagged": 0,
-                   "popups_shown": 1, "useful": 1, "not_useful": 1}
+                   "popups_shown": 1, "useful": 1, "not_useful": 1, "nudged_then_closed": 0}
     last = client.get(f"/v1/seats/me/weekly-report?week_start={monday - timedelta(days=7)}",
                       headers=dev_h).json()
     assert last["promises_caught"] == 0 and last["popups_shown"] == 0

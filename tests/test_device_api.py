@@ -651,7 +651,7 @@ def test_without_a_crypto_key_nothing_is_stored(client, world, monkeypatch):
 
 # ── §3.2 capture policy API ───────────────────────────────────────────────────────────────────
 _DOC_KEYS = {"policy_version", "min_supported_app_version", "sensitive_defaults", "org", "seat",
-             "effective", "catching_up"}
+             "effective", "catching_up", "insight_budget"}
 
 
 def test_the_default_policy_is_off_and_carries_the_sensitive_defaults(client, world):
@@ -676,6 +676,8 @@ def test_the_default_policy_is_off_and_carries_the_sensitive_defaults(client, wo
     assert "app.genios.test" in doc["sensitive_defaults"]              # GeniOS itself
     assert re.fullmatch(r"[0-9a-f]{12}", doc["policy_version"])
     assert doc["catching_up"] == 0                     # P9 K6: nothing deferred to the night
+    budget = doc["insight_budget"]                     # P10: no store engine here → 0 used
+    assert (budget["used"], budget["cap"]) == (0, 300) and budget["resets_at"].endswith("T00:00:00Z")
 
 
 def test_catching_up_counts_only_this_seats_deferred_screen_batches(client, world):

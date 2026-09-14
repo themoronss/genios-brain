@@ -158,7 +158,7 @@ class Settings(BaseSettings):
     # seat per org-local day, not a budget: over it a thread is DEFERRED to the next local
     # midnight (never dropped) and the seat's capture policy reports `catching_up`.
     screen_promoter_enabled: bool = True
-    screen_insight_daily_cap: int = 100       # P-20: AI screen-insight checks per seat per UTC day
+    screen_insight_daily_cap: int = 300       # P-20: AI screen-insight checks per seat per UTC day
     screen_insight_max_per_hour: int = 3      # P8 C3: screen-insight popups shown per seat per rolling hour
     screen_memory_interval_minutes: int = 60
     screen_memory_max_builds_per_day: int = 400

@@ -38,9 +38,20 @@ def _catching_up(cstore, ctx: AuthCtx) -> int:
         return 0
 
 
+def _insight_budget(cstore, ctx: AuthCtx) -> dict:
+    """P10: the seat's AI screen-insight checks today — `{"used", "cap", "resets_at"}` (UTC day,
+    from `rate_counters`). Evaluate still answers 204 once `used` reaches `cap`."""
+    from genios_engine.platform.config import get_settings
+    from genios_engine.reason.moments import screen_insight as SI
+    cap = int(getattr(get_settings(), "screen_insight_daily_cap", SI.DEFAULT_DAILY_CAP) or 0)
+    return SI.budget(getattr(cstore, "engine", None), org_id=ctx.org_id, seat_id=ctx.seat_id,
+                     cap=cap, now=_now())
+
+
 def _document(cstore, ctx: AuthCtx) -> dict:
     org, seat, _ = cstore.load(ctx.org_id, ctx.seat_id)
-    return {**P.policy_document(org, seat, now=_now()), "catching_up": _catching_up(cstore, ctx)}
+    return {**P.policy_document(org, seat, now=_now()), "catching_up": _catching_up(cstore, ctx),
+            "insight_budget": _insight_budget(cstore, ctx)}
 
 
 def _clean(changes: dict, *, apps_key: str, domains_key: str) -> dict:
