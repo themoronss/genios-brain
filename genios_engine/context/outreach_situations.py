@@ -1204,7 +1204,23 @@ def read_conditions_for_dispatch(rows: dict, now: datetime, employers: dict) -> 
     return read_conditions_in_review(queue, now, owner, rows.get("_condition_verdicts") or {})
 
 
+from genios_engine.context.attention_situations import ANCHOR_UNREPORTED
 from genios_engine.context.blocker_situations import ANCHOR_UNNAMED_BLOCKER
+
+
+def read_attention_for_dispatch(rows: dict, now: datetime, employers: dict) -> list[_Finding]:
+    """The last-resort reading, in the shape the dispatch loop hands every reader.
+
+    `or ()` is the whole failure handling it needs, and it is the rule rather than caution: with
+    no angle layer, no budget, or a model that refused, this produces nothing and the sweep
+    returns exactly the cards it produced before. The card is an addition; its absence removes
+    nothing.
+    """
+    from genios_engine.context.attention_situations import read_unreported_attention
+
+    return read_unreported_attention(rows.get("_unreported") or (), now,
+                                     rows.get("_node_names") or {},
+                                     rows.get("_unreported_facts") or {})
 
 
 def read_blockers_for_dispatch(rows: dict, now: datetime, employers: dict) -> list[_Finding]:
@@ -1278,6 +1294,10 @@ READINGS = (
     # every sweep and said to nobody — most often because the blocker is real and simply was
     # never a person in a mailbox, which is exactly when the graph is right to hold no node.
     (ANCHOR_UNNAMED_BLOCKER, read_blockers_for_dispatch),
+    # LAST, AND LAST FOR A REASON. Every reading above it is a deterministic answer about a
+    # subject; this one reports the subjects none of them reached. Dispatched after them so the
+    # residue it reads was measured against a sweep that had already produced everything it could.
+    (ANCHOR_UNREPORTED, read_attention_for_dispatch),
 )
 
 
@@ -1398,6 +1418,23 @@ def _gather(store, org_id: str, *, now: datetime | None = None,
         # reader because the readers take rows, not a connection, and this is the one place in the
         # dispatch that holds both.
         held["_blocker_kinds"] = blocker_absence_verdicts(c, org_id)
+        # THE COVERAGE MISS, AND THE ONLY GATHER HERE THAT CAN COME BACK EMPTY BY DESIGN. Residue
+        # triaged `important` is what nothing on the board mentioned; with no angle layer it is
+        # empty and the sweep is unchanged. Guarded like the rest: an unreadable queue is a gap in
+        # what this sweep can see, never a crash.
+        from genios_engine.context.attention_situations import (gather_display_names,
+                                                                gather_unreported_attention)
+        try:
+            unreported = gather_unreported_attention(c, org_id)
+            held["_unreported"] = unreported
+            held["_node_names"] = gather_display_names(c, org_id) if unreported else {}
+            held["_unreported_facts"] = {
+                str(row["subject_ref"]): held.get(str(row["subject_ref"])) or {}
+                for row in unreported}
+        except Exception:      # noqa: BLE001 — one reading's gather is not the sweep's
+            held["_unreported"] = ()
+            held["_node_names"] = {}
+            held["_unreported_facts"] = {}
         held["_mailbox_owner"] = _mailbox_owner(c, org_id)
         # THE MEETINGS, through the query that already knows how to find them. `meeting_touch.
         # _MEETINGS` joins the `attended` edge, excludes retired attendances, excludes our own

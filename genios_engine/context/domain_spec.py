@@ -447,6 +447,15 @@ register(DomainSpec(
                      # gives: being stuck on somebody else's step is follow-through work whoever
                      # the counterparty is.
                      "unnamed_blocker": "blocked_on_unnamed",
+                     # THE CARD OF LAST RESORT, and the only one in this file whose existence
+                     # depends on a model. `residue.py` measures what no reading explained;
+                     # `reply_owed_triage` says which of those matter; this is where an
+                     # `important` verdict becomes something a person sees. It fires ONLY where
+                     # the deterministic reading did not — residue exists exactly where no live
+                     # situation covers the subject — so it and `reply_owed` can never both speak
+                     # about one counterparty. Admin for the same reason as the block above:
+                     # answering somebody is follow-through work whoever they are.
+                     "unreported": "attention_unreported",
                      # THE SECOND GROUP-SHAPED SUBJECT, and it is not the first one re-keyed.
                      # `cohort` groups by OBJECTIVE — "of everyone I contacted about the raise,
                      # who has gone quiet?" — which spans funds on purpose. This groups by FIRM.

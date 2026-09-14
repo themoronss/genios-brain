@@ -29,8 +29,12 @@ _SCHEMA = (
     "create table context_residue (org_id text, residue_kind text, subject_ref text, "
     "detail text, first_seen_at timestamp, last_seen_at timestamp, "
     "primary key (org_id, residue_kind, subject_ref))",
+    # `situation_type` is in the real table (migration 0038) and was missing here, so the
+    # coverage predicate could not read the one column that tells a card reporting a gap apart
+    # from a card explaining one. A fixture short of a column the engine selects on is a test
+    # that passes on a schema nobody runs.
     "create table context_situations (org_id text, situation_id text, correlation_id text, "
-    "anchor_node_id text, status text)",
+    "anchor_node_id text, status text, situation_type text)",
     "create table context_correlation_members (org_id text, correlation_id text, event_id text)",
     "create table graph_observations (org_id text, observation_id text, subject_node_id text, "
     "status text)",
@@ -117,7 +121,7 @@ def test_layer_one_signals_nothing_consumes_are_counted_by_type(store) -> None:
 
 def test_a_situation_anchored_on_the_subject_explains_it(store) -> None:
     _watched(store)
-    _sql(store, "insert into context_situations values ('o','sit1','c1','sehan','active')")
+    _sql(store, "insert into context_situations values ('o','sit1','c1','sehan','active','admin_contact')")
     assert _counts(store)[RESIDUE_NODE_EVIDENCE] == 0
 
 
@@ -127,7 +131,7 @@ def test_a_concerns_hop_from_a_state_readings_anchor_explains_it(store) -> None:
     counterparty in the tenant as unexplained."""
     _watched(store)
     _sql(store,
-         "insert into context_situations values ('o','sit1','corr_state','anchor1','active')",
+         "insert into context_situations values ('o','sit1','corr_state','anchor1','active','admin_contact')",
          "insert into graph_edges values ('o','concerns','anchor1','sehan',null)")
     assert _counts(store)[RESIDUE_NODE_EVIDENCE] == 0
 
@@ -136,7 +140,7 @@ def test_a_partial_situation_explains_it(store) -> None:
     """`partial` is live at both Layer 3 doors — a partially-resolved situation is still open on
     the half nobody closed."""
     _watched(store)
-    _sql(store, "insert into context_situations values ('o','sit1','c1','sehan','partial')")
+    _sql(store, "insert into context_situations values ('o','sit1','c1','sehan','partial','admin_contact')")
     assert _counts(store)[RESIDUE_NODE_EVIDENCE] == 0
 
 
@@ -146,7 +150,7 @@ def test_a_situation_that_cannot_reach_a_card_explains_nothing(store, status: st
     so counting a dormant row as coverage would hide exactly the staleness this table exists to
     find — a subject with evidence, a situation on file, and no way to be told about it."""
     _watched(store)
-    _sql(store, f"insert into context_situations values ('o','sit1','c1','sehan','{status}')")
+    _sql(store, f"insert into context_situations values ('o','sit1','c1','sehan','{status}','admin_contact')")
     assert _counts(store)[RESIDUE_NODE_EVIDENCE] == 1
 
 
@@ -157,7 +161,7 @@ def test_a_signal_reached_through_correlation_membership_is_not_residue(store) -
     _sql(store,
          "insert into qualified_signals values ('o','s1','e1','deadline')",
          "insert into context_correlation_members values ('o','c1','e1')",
-         "insert into context_situations values ('o','sit1','c1','n1','active')")
+         "insert into context_situations values ('o','sit1','c1','n1','active','admin_contact')")
     assert _counts(store)[RESIDUE_SIGNAL] == 0
 
 
@@ -172,7 +176,7 @@ def test_a_signal_reached_only_through_a_state_reading_is_not_residue(store) -> 
          "insert into qualified_signals values ('o','s1','e1','deadline')",
          "insert into graph_source_refs values ('o','ob1','e1')",
          "insert into graph_observations values ('o','ob1','sehan','active')",
-         "insert into context_situations values ('o','sit1','corr_state_x','sehan','active')")
+         "insert into context_situations values ('o','sit1','corr_state_x','sehan','active','admin_contact')")
     assert _counts(store)[RESIDUE_SIGNAL] == 0
 
 
@@ -183,7 +187,7 @@ def test_residue_that_gets_explained_disappears(store) -> None:
     nothing to keep consistent with the first."""
     _watched(store)
     assert _counts(store)[RESIDUE_NODE_EVIDENCE] == 1
-    _sql(store, "insert into context_situations values ('o','sit1','c1','sehan','active')")
+    _sql(store, "insert into context_situations values ('o','sit1','c1','sehan','active','admin_contact')")
     assert _counts(store, at=NOW + timedelta(hours=1))[RESIDUE_NODE_EVIDENCE] == 0
     with store._engine.connect() as c:
         assert read_residue(c, ORG) == []

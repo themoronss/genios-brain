@@ -37,13 +37,34 @@ _LIVE = "('active', 'partial')"
 #: `concerns` it. The second half is not optional: every state reading mints its own anchor node
 #: and links the person with one `concerns` hop, so checking `anchor_node_id` alone would report
 #: every correctly-served counterparty in the tenant as unexplained.
+#: THE ONE SITUATION TYPE THAT IS NOT COVERAGE, and excluding it is what stops a card from
+#: flapping every sweep.
+#:
+#: `attention_situations` mints this type FROM a residue row: "we hold evidence about this person,
+#: nothing on the board mentions it, and a model said it matters". It links the person with the
+#: same `concerns` hop every reading uses — so without this exclusion the sequence is: sweep one
+#: records the residue and the card appears; sweep two sees the card, calls the subject covered
+#: and DELETES the residue row; the row's verdict is retired, the reading produces nothing, the
+#: card retires; sweep three finds the subject unexplained again. A card appearing and vanishing
+#: on alternate sweeps, for ever.
+#:
+#: The fix is semantic rather than a suppression: A CARD THAT SAYS NOTHING EXPLAINS THIS SUBJECT
+#: DOES NOT ITSELF EXPLAIN IT. It reports the gap; it does not close it. Every other situation
+#: type asserts something about the relationship and is coverage; this one asserts only that
+#: coverage is missing. `correlation_dependency` makes the same distinction between a finding and
+#: a typed absence, and `correlation_timeline` records the identical flapping failure for its own
+#: truncation order: "a dormant condition would flap between 'waiting' and 'gone' every period".
+SELF_REPORTED_TYPE = "attention_unreported"
+
 _COVERED = (
     "(exists (select 1 from context_situations s "
-    f"         where s.org_id = :o and s.anchor_node_id = {{ref}} and s.status in {_LIVE}) "
+    f"         where s.org_id = :o and s.anchor_node_id = {{ref}} and s.status in {_LIVE} "
+    f"           and s.situation_type <> '{SELF_REPORTED_TYPE}') "
     " or exists (select 1 from graph_edges ce "
     "            join context_situations cs on cs.org_id = ce.org_id "
     "                 and cs.anchor_node_id = ce.from_node_id "
     f"                 and cs.status in {_LIVE} "
+    f"                 and cs.situation_type <> '{SELF_REPORTED_TYPE}' "
     "            where ce.org_id = :o and ce.edge_type = 'concerns' "
     f"              and ce.to_node_id = {{ref}} and ce.valid_to is null))")
 
@@ -219,6 +240,6 @@ def read_residue(conn, org_id: str, *, kind: str | None = None,
     return [dict(r) for r in conn.execute(text(sql), params).mappings().all()]
 
 
-__all__ = ["DEFAULT_LIMIT", "RESIDUE_BALL_IN_COURT", "RESIDUE_NODE_EVIDENCE",
+__all__ = ["DEFAULT_LIMIT", "SELF_REPORTED_TYPE", "RESIDUE_BALL_IN_COURT", "RESIDUE_NODE_EVIDENCE",
            "RESIDUE_OPEN_LOOP", "RESIDUE_SIGNAL", "ResidueReport", "detect_residue",
            "read_residue"]

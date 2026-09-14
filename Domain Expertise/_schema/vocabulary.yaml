@@ -606,6 +606,18 @@ substrate:
                                 # records" when the absence is typed GENUINELY_ABSENT; otherwise
                                 # it says "we could not find it", which is the claim that is
                                 # always safe.
+    # THE COVERAGE MISS, RECOVERED — and the only type here whose existence depends on a model.
+    # `context_residue` records the subjects no reading explained; `reply_owed_triage` says which
+    # matter; an `important` verdict becomes this. It cannot collide with `reply_owed`: residue
+    # exists only where no live situation covers the subject, so the deterministic reading having
+    # fired is precisely what keeps this one silent. Its facts are all measured — the model
+    # decides whether the card exists, never what it says.
+    - attention_unreported      # admin, anchored on an UNREPORTED subject — one counterparty the
+                                # layer holds evidence about and never mentioned. Excluded from
+                                # the residue coverage predicate by `residue.SELF_REPORTED_TYPE`:
+                                # a card reporting that nothing explains a subject does not
+                                # itself explain it, and without that it would appear and vanish
+                                # on alternate sweeps for ever.
     - organization_gone_quiet   # admin, anchored on an ORGANIZATION — one counterparty FIRM
                                 # where more than one person has gone quiet. Not `cohort`
                                 # re-keyed: that groups by objective and spans funds, this

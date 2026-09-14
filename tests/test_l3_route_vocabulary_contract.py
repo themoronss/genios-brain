@@ -226,6 +226,20 @@ def test_producible_vocabulary_is_small_and_closed():
         # records" ONLY where the absence is typed GENUINELY_ABSENT — otherwise "we could not
         # find it", because only the first licenses telling somebody to stop waiting.
         "blocked_on_unnamed",
+        # THE ONLY TYPE IN THIS SET WHOSE EXISTENCE DEPENDS ON A MODEL, and the reason it is
+        # allowed is that its ABSENCE removes nothing. `context_residue` measures the subjects no
+        # reading explained; `reply_owed_triage` says which matter; an `important` verdict becomes
+        # this card. With no angle layer, no budget, or a refusal there is no card and the tenant
+        # has exactly what they have today — nothing is withheld or downgraded. The agreed law
+        # permits this shape ("a model may propose a situation; it may never rank one, and never
+        # produces a number a card asserts") and every fact on the card is measured: the model
+        # decides only whether the card exists.
+        #
+        # It cannot collide with `reply_owed`. Residue exists only where NO live situation covers
+        # the subject, so the deterministic reading having fired is what keeps this one silent,
+        # and `residue.SELF_REPORTED_TYPE` excludes this type from that coverage predicate —
+        # otherwise the card would explain its own subject and flap on alternate sweeps.
+        "attention_unreported",
     }, "the L2 situation vocabulary changed — re-check every corpus route against it"
 
 

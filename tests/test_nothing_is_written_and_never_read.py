@@ -133,27 +133,23 @@ KNOWN_UNREAD: dict[str, str] = {
         "surfacing it needs a situation that can say 'this becomes true when X', which nothing "
         "authors yet. MOVES WHEN: that situation is authored.",
     "context/angles":
-        "STALE ENTRY, CORRECTED. This said 'NO ANGLE IS REGISTERED · MOVES WHEN: either is "
-        "registered'. Both are: `condition_now_true` over `derived.timeline.condition_review` "
-        "and `reply_owed_triage` over `context_residue`, declared in `angles/library.py` and "
-        "registered by importing the package. The condition verdict reaches a card through "
-        "`condition_situations.read_conditions_in_review`. What is genuinely unread is narrower "
-        "and worth naming on its own: `angles/queues.triaged_residue` — the residue work queue "
-        "with its verdicts attached — has no production caller, because nothing in "
-        "`process_pending` surfaces the residue queue to a human at all. The angle answers; "
-        "there is no reader yet to carry the answer anywhere. Writing one belongs with the "
-        "situation that decides whether an unexplained subject deserves a card, not here. "
-        "MOVES WHEN: a reader calls `triaged_residue` — `is_this_worth_a_card` is the one that "
-        "will.",
+        "NARROWED, AND THE RESIDUE HALF IS CLOSED. Four angles are registered and three of the "
+        "four now reach a card: `condition_now_true` and `blocker_absence` stamp facts onto "
+        "cards that already existed, and `reply_owed_triage` produces one that did not — "
+        "`attention_situations` turns an `important` verdict on ball-in-court residue into "
+        "`attention_unreported`, the coverage miss no deterministic reading surfaced. What "
+        "remains is the M-3 half, recorded against its own field above rather than here. "
+        "MOVES WHEN: the reader named in that entry is written.",
     "derived.conversation.campaign_candidate":
-        "READ NOW, and the entry stays only to name what is still not. The near-miss queue is the "
-        "gate for `same_situation_two_threads` (M-3), which is registered, so the field reaches a "
-        "model and its answers are readable through `angles/queues.adjudicated_candidates`. What "
-        "has no production caller is that reader: nothing in `process_pending` surfaces an "
-        "adjudicated candidate to a human, and a `one_campaign` verdict deliberately mints "
-        "nothing — `find_campaigns` remains the only thing that mints a campaign and it still "
-        "requires the exact sentence. Turning an adjudicated candidate into a card is a separate "
-        "decision with a separate name. MOVES WHEN: `is_this_worth_a_card` reads it.",
+        "READ BY THE M-3 GATE, which is the half that is done. The near-miss queue is what "
+        "`find_campaigns` declined to group, and `same_situation_two_threads` adjudicates each "
+        "candidate; its answers are readable through `angles/queues.adjudicated_candidates`. "
+        "Nothing carries those answers to a person. Unlike the residue queue next door — which "
+        "now reaches a card as `attention_unreported` — a `one_campaign` verdict mints nothing "
+        "on purpose: `find_campaigns` is still the only thing that mints a campaign and it still "
+        "requires the exact sentence, so turning an adjudicated candidate into a card is a "
+        "separate decision nobody has made. MOVES WHEN: a reader carries an adjudicated "
+        "candidate somewhere a person sees it.",
     "open_loops.closed_basis":
         "Both closers record whether the closing message ANSWERED the ask (a kind in the "
         "`discharges` table) or merely arrived on the thread, and no reading selects it yet. "
