@@ -444,6 +444,14 @@ class CaptureStore:
     def __init__(self, engine) -> None:
         self.engine = engine
 
+    def catching_up(self, org_id: str, seat_id: str) -> int:
+        """P9 K6: the seat's screen batches deferred to the night by the memory runaway guard
+        (`screen_session_deltas.status = 'deferred'`). 0 when none."""
+        with self.engine.connect() as c:
+            return int(c.execute(text(
+                "select count(*) from screen_session_deltas where org_id = :o and seat_id = :s "
+                "and status = 'deferred'"), {"o": org_id, "s": seat_id}).scalar() or 0)
+
     def load(self, org_id: str, seat_id: str, device_id: str | None = None):
         """(OrgPolicy, SeatSettings, lease dict | None) in ONE statement."""
         with self.engine.connect() as c:

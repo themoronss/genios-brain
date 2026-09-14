@@ -260,7 +260,10 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
       waste rules  the same screen is judged once (screen-hash key); `screen_insight_daily_cap`
                    model checks per seat per day; an open ask of this thread whose line now has a
                    `You:` line after it is closed `answered` first (structural, no model);
-      the model    judges work vs personal (verdict stored per thread, C9) and the note (C1);
+      K4 mute      a thread muted by "Not useful" (7 days) or "Mute chat" gets no popup and no
+                   model call; the seat's last ≤ 5 not-useful notes go into the prompt;
+      the model    judges work vs personal + memory (verdict stored per thread, C9 / K2) and
+                   the note (C1 / K1);
       C2 topic     one SHOWN note per topic per day — a repeat refreshes the follow-up → 204;
       C3 budget    ≤ `screen_insight_max_per_hour` shown per seat; over → stored hidden
                    (`queued_for_brief`), the follow-up still recorded (C4)."""
@@ -281,9 +284,16 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
             return prior
         judged = M.cached(c, key, now) is not None     # this exact screen was already judged
         tz = F.seat_tz(c, p.org_id, p.seat_id)
+        muted = F.is_muted(c, org_id=p.org_id, seat_id=p.seat_id, thread_key=thread, now=now)
+        notes = ([] if judged or muted else
+                 F.not_useful_notes(c, org_id=p.org_id, seat_id=p.seat_id,
+                                    capability_id=SI.CAPABILITY_ID))
     F.mark_answered(engine, org_id=p.org_id, seat_id=p.seat_id, thread_key=thread,
                     lines=screen.split("\n"), capability_id=SI.CAPABILITY_ID, now=now)
     if judged:
+        return Response(status_code=_NO_CONTENT)
+    if muted:                                          # K4: the person said this chat is noise
+        _log.info("screen insight: thread muted org=%s seat=%s", p.org_id, p.seat_id)
         return Response(status_code=_NO_CONTENT)
     settings = get_settings()
     cap = int(getattr(settings, "screen_insight_daily_cap", SI.DEFAULT_DAILY_CAP) or 0)
@@ -292,10 +302,10 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
         return Response(status_code=_NO_CONTENT)
     res = SI.insight(engine, org_id=p.org_id, email=p.email, app=body.surface.app,
                      participants=body.participants, entities=body.features.entities,
-                     screen=screen, now_local=SI.local_label(now, tz))
+                     screen=screen, now_local=SI.local_label(now, tz), not_useful=notes)
     if res is not None and thread and res["work"] is not None:
         F.set_verdict(engine, org_id=p.org_id, seat_id=p.seat_id, thread_key=thread,
-                      work=res["work"], now=now)
+                      work=res["work"], memory=res.get("memory"), now=now)
     note = res["insight"] if res is not None else None
     if note is None:
         _log.info("screen insight: nothing to say org=%s seat=%s work=%s ms=%.0f", p.org_id,
@@ -412,6 +422,15 @@ def post_feedback(moment_id: str, body: FeedbackRequest, request: Request):
                             reason=body.reason, at=at)
     if res is None:
         return _err(404, "MOMENT_NOT_FOUND", "No such moment for this seat.")
+    # P9 K4: "Not useful" / "Mute chat" on a screen insight mutes that thread's popups.
+    try:
+        from genios_engine.reason.moments import followups as F
+        from genios_engine.reason.moments import screen_insight as SI
+        F.learn_from_feedback(cstore.engine, org_id=p.org_id, seat_id=p.seat_id,
+                              moment_id=moment_id, action=body.action, reason=body.reason,
+                              capability_id=SI.CAPABILITY_ID, now=_now())
+    except Exception:      # noqa: BLE001 — learning never fails the feedback itself
+        _log.exception("screen insight mute failed org=%s moment=%s", p.org_id, moment_id)
     return res
 
 

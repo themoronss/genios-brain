@@ -11,13 +11,18 @@ turns into a brief line, a wrap count or a nudge (migration 0159):
                undated +2 working days · deadline due −24 h · risk / next_step none (brief only).
     resolved   answered — STRUCTURAL, never meaning: a later look at the same thread has a `You:`
                line after the line that holds the ask's quote; done / dismissed — the person;
-               expired — a promise 2 days past its due (lazily, on the next read: no periodic task).
+               expired (lazily, on the next read: no periodic task) — a promise 2 days past its
+               due; an ask 7 days unresolved; a deadline 1 day after its due (undated: 7 days);
+               a risk / next step after 3 days (P9 K5).
 
 `text` is the model's note (≤ 140 chars), never screen text. The ask's quote needed for "answered"
 is read from the insight moment that carries the topic (`moments.body`, already stored there).
 
-`screen_thread_verdicts` keeps the model's latest "is this thread work?" per (seat, thread); the
-screen relevance gate reads it for 24 h (C9). Never credit-charged.
+`screen_thread_verdicts` keeps the model's latest "is this thread work?" and "is it worth memory?"
+per (seat, thread); the screen relevance gate reads them for 24 h (C9, P9 K2/K3). `muted_until`
+(K4): "Not useful" on an insight mutes the thread's popups for 7 days, "Mute chat" for good; the
+seat's last ≤ 5 not-useful notes are shown to the model as kinds not to repeat. Never
+credit-charged.
 """
 from __future__ import annotations
 
@@ -39,7 +44,17 @@ WHO_MAX = 120
 SLICE_MAX = 50
 LIST_MAX = 200
 VERDICT_HOURS = 24
-EXPIRE_AFTER = timedelta(days=2)
+EXPIRE_AFTER = timedelta(days=2)                   # promises: 2 days past due
+ASK_EXPIRE = timedelta(days=7)                     # K5: an ask unresolved for 7 days
+DEADLINE_EXPIRE = timedelta(days=1)                # K5: a deadline 1 day after its due …
+UNDATED_EXPIRE = timedelta(days=7)                 # … or 7 days when it has no due
+BRIEF_EXPIRE = timedelta(days=3)                   # K5: risk / next_step after 3 days
+#: K4: "Not useful" mutes the thread's insight popups this long; "Mute chat" mutes it for good.
+NOT_USEFUL_MUTE = timedelta(days=7)
+MUTE_FOREVER = datetime(9999, 12, 31, tzinfo=timezone.utc)
+MUTE_REASON = "mute_chat"
+NOT_USEFUL_ACTION = "wrong"
+NOT_USEFUL_NOTES = 5
 ASK_NUDGE = timedelta(hours=3)
 MY_PROMISE_LEAD = timedelta(minutes=60)
 THEIR_PROMISE_GRACE = timedelta(hours=1)
@@ -205,21 +220,47 @@ def removed_since(conn, *, org_id: str, seat_id: str, threshold: datetime) -> li
 
 
 def thread_verdict(conn, *, org_id: str, seat_id: str, thread_key: str | None,
-                   now: datetime, hours: int = VERDICT_HOURS) -> bool | None:
-    """C9: the model's work (True) / personal (False) judgement of the thread in the last 24 h."""
+                   now: datetime, hours: int = VERDICT_HOURS) -> dict | None:
+    """C9 + K2: the model's judgement of the thread in the last 24 h — `{"work": bool,
+    "memory": bool | None}` (memory None: the model gave none, e.g. a P8 row) — or None."""
     if not thread_key:
         return None
-    return conn.execute(text(
-        "select work from screen_thread_verdicts where org_id = :o and seat_id = :s "
+    r = conn.execute(text(
+        "select work, memory from screen_thread_verdicts where org_id = :o and seat_id = :s "
         "and thread_key = :t and judged_at > :now - make_interval(hours => :h)"),
-        {"o": org_id, "s": seat_id, "t": thread_key, "now": now, "h": hours}).scalar()
+        {"o": org_id, "s": seat_id, "t": thread_key, "now": now, "h": hours}).first()
+    return None if r is None else {"work": bool(r.work), "memory": r.memory}
+
+
+def is_muted(conn, *, org_id: str, seat_id: str, thread_key: str | None, now: datetime) -> bool:
+    """K4: is this thread's insight popup muted right now (Not useful → 7 days, Mute chat)?"""
+    if not thread_key:
+        return False
+    return conn.execute(text(
+        "select 1 from screen_thread_verdicts where org_id = :o and seat_id = :s "
+        "and thread_key = :t and muted_until > :now"),
+        {"o": org_id, "s": seat_id, "t": thread_key, "now": now}).first() is not None
+
+
+def not_useful_notes(conn, *, org_id: str, seat_id: str, capability_id: str,
+                     limit: int = NOT_USEFUL_NOTES) -> list[str]:
+    """K4: the seat's last ≤ 5 insight notes it marked "not useful", newest first — the model's
+    own notes (moments.headline), never screen text."""
+    return [r.headline for r in conn.execute(text(
+        "select m.headline from moments m join lateral (select max(f.at) as at "
+        " from moment_feedback f where f.moment_id = m.moment_id and f.action = :a) f on true "
+        "where m.org_id = :o and m.seat_id = :s and m.capability_id = :cap and f.at is not null "
+        "order by f.at desc limit :n"),
+        {"o": org_id, "s": seat_id, "cap": capability_id, "a": NOT_USEFUL_ACTION,
+         "n": max(0, int(limit))}) if r.headline]
 
 
 def verdict_lookup(engine, org_id: str, seat_id: str):
-    """`thread_key -> bool | None` for one promotion batch (one read per thread, memoised)."""
-    memo: dict[str, bool | None] = {}
+    """`thread_key -> {"work", "memory"} | None` for one promotion batch (one read per thread,
+    memoised)."""
+    memo: dict[str, dict | None] = {}
 
-    def lookup(thread_key: str | None) -> bool | None:
+    def lookup(thread_key: str | None) -> dict | None:
         if not thread_key:
             return None
         if thread_key not in memo:
@@ -250,13 +291,56 @@ def _bump(conn, org_id: str, seat_id: str) -> bool:
 
 
 def set_verdict(engine, *, org_id: str, seat_id: str, thread_key: str, work: bool,
-                now: datetime) -> None:
+                now: datetime, memory: bool | None = None) -> None:
+    """The instant call's latest judgement of the thread (K2). A mute is left as it is."""
+    mem = False if not work else memory
     with engine.begin() as c:
         c.execute(text(
-            "insert into screen_thread_verdicts (org_id, seat_id, thread_key, work, judged_at) "
-            "values (:o, :s, :t, :w, :now) on conflict (org_id, seat_id, thread_key) do update "
-            "set work = excluded.work, judged_at = excluded.judged_at"),
-            {"o": org_id, "s": seat_id, "t": thread_key, "w": bool(work), "now": now})
+            "insert into screen_thread_verdicts (org_id, seat_id, thread_key, work, memory, "
+            "judged_at) values (:o, :s, :t, :w, :m, :now) on conflict (org_id, seat_id, "
+            "thread_key) do update set work = excluded.work, memory = excluded.memory, "
+            "judged_at = excluded.judged_at"),
+            {"o": org_id, "s": seat_id, "t": thread_key, "w": bool(work), "m": mem, "now": now})
+
+
+def mute(engine, *, org_id: str, seat_id: str, thread_key: str, until: datetime,
+         now: datetime) -> None:
+    """K4: no insight popups for (seat, thread) until `until` (a longer mute is never shortened).
+    A thread with no verdict row gets one that is NOT a verdict (judged before the 24 h window),
+    so a mute never changes how the thread's memory is routed."""
+    with engine.begin() as c:
+        c.execute(text(
+            "insert into screen_thread_verdicts as v (org_id, seat_id, thread_key, work, "
+            "judged_at, muted_until) values (:o, :s, :t, true, :old, :u) "
+            "on conflict (org_id, seat_id, thread_key) do update "
+            "set muted_until = greatest(coalesce(v.muted_until, excluded.muted_until), "
+            "excluded.muted_until)"),
+            {"o": org_id, "s": seat_id, "t": thread_key, "u": until,
+             "old": now - timedelta(hours=VERDICT_HOURS + 1)})
+
+
+def learn_from_feedback(engine, *, org_id: str, seat_id: str, moment_id: str, action: str,
+                        reason: str | None, capability_id: str, now: datetime) -> datetime | None:
+    """K4: feedback on a screen-insight moment → mute its thread. "Not useful" (`wrong`) → 7 days;
+    reason `mute_chat` (the device's Mute chat, any action) → for good. Returns the mute's end,
+    or None (another capability, no thread on the moment, or an ordinary action)."""
+    muting = (reason or "").strip().lower() == MUTE_REASON
+    if action != NOT_USEFUL_ACTION and not muting:
+        return None
+    with engine.connect() as c:
+        r = c.execute(text(
+            "select capability_id, actions from moments where moment_id = :m and org_id = :o "
+            "and seat_id = :s"), {"m": moment_id, "o": org_id, "s": seat_id}).first()
+    if r is None or r.capability_id != capability_id:
+        return None
+    actions = r.actions if isinstance(r.actions, list) else json.loads(r.actions or "[]")
+    thread = next((str((a.get("payload") or {}).get("thread_key") or "") for a in actions
+                   if isinstance(a, dict) and a.get("id") == MUTE_REASON), "").strip()
+    if not thread:
+        return None
+    until = MUTE_FOREVER if muting else now + NOT_USEFUL_MUTE
+    mute(engine, org_id=org_id, seat_id=seat_id, thread_key=thread, until=until, now=now)
+    return until
 
 
 def upsert(engine, *, org_id: str, seat_id: str, kind: str, note: str, who: str | None,
@@ -355,12 +439,20 @@ def resolve(engine, *, org_id: str, seat_id: str, followup_id: str, resolution: 
 
 
 def expire(conn, *, org_id: str, seat_id: str, now: datetime) -> int:
-    """Promises 2 days past due → `expired`. Run on read (slice, list): no periodic task."""
+    """Open follow-ups past their life → `expired`. Run on read (slice, list): no periodic task.
+    Promises 2 days past due (undated: never); asks 7 days after they were first seen; deadlines
+    1 day after due (undated: 7 days); risks / next steps after 3 days (K5)."""
     return conn.execute(text(
         "update screen_followups set resolved_at = :now, resolution = 'expired', updated_at = :now "
-        "where org_id = :o and seat_id = :s and resolved_at is null "
-        "and kind in ('my_promise', 'their_promise') and due_at is not null and due_at < :cut"),
-        {"o": org_id, "s": seat_id, "now": now, "cut": now - EXPIRE_AFTER}).rowcount or 0
+        "where org_id = :o and seat_id = :s and resolved_at is null and ("
+        " (kind in ('my_promise', 'their_promise') and due_at is not null and due_at < :promise)"
+        " or (kind = 'ask' and created_at < :ask)"
+        " or (kind = 'deadline' and ((due_at is not null and due_at < :deadline)"
+        "      or (due_at is null and created_at < :undated)))"
+        " or (kind in ('risk', 'next_step') and created_at < :brief))"),
+        {"o": org_id, "s": seat_id, "now": now, "promise": now - EXPIRE_AFTER,
+         "ask": now - ASK_EXPIRE, "deadline": now - DEADLINE_EXPIRE,
+         "undated": now - UNDATED_EXPIRE, "brief": now - BRIEF_EXPIRE}).rowcount or 0
 
 
 def listing(engine, *, org_id: str, seat_id: str, status: str = "open", limit: int = 50,
@@ -429,19 +521,22 @@ def weekly_report(engine, *, org_id: str, seat_id: str, capability_id: str,
 def purge(conn, *, now: datetime) -> dict:
     """Retention (maintenance heartbeat, via store.purge_expired): resolved follow-ups on their
     org's capture `retention_days` (90 without a policy row), like the moments they came from;
-    thread verdicts a week after their 24 h use."""
+    thread verdicts a week after their 24 h use — unless a mute on them is still running."""
     fu = conn.execute(text(
         "delete from screen_followups f where f.resolved_at is not null and f.resolved_at < "
         ":now - make_interval(days => coalesce((select p.retention_days from capture_policies p "
         "where p.org_id = f.org_id), 90))"), {"now": now}).rowcount or 0
     vd = conn.execute(text(
-        "delete from screen_thread_verdicts where judged_at < :cut"),
-        {"cut": now - timedelta(days=VERDICT_RETENTION_DAYS)}).rowcount or 0
+        "delete from screen_thread_verdicts where judged_at < :cut "
+        "and (muted_until is null or muted_until < :now)"),
+        {"cut": now - timedelta(days=VERDICT_RETENTION_DAYS), "now": now}).rowcount or 0
     return {"screen_followups": fu, "screen_thread_verdicts": vd}
 
 
-__all__ = ["KINDS", "RESOLUTIONS", "add_working_days", "answered", "expire", "followup_id",
-           "item_out", "listing", "map_kind", "mark_answered", "nudge_at", "open_items",
+__all__ = ["KINDS", "MUTE_FOREVER", "NOT_USEFUL_MUTE", "RESOLUTIONS", "add_working_days",
+           "answered", "expire", "followup_id", "is_muted", "item_out", "learn_from_feedback",
+           "listing", "map_kind", "mark_answered", "mute", "not_useful_notes", "nudge_at",
+           "open_items",
            "parse_due", "purge", "removed_since", "resolve", "seat_tz", "set_verdict",
            "shown_last_hour", "thread_verdict", "topic_key", "topic_shown", "upsert",
            "verdict_lookup", "week_bounds", "weekly_report"]

@@ -651,7 +651,7 @@ def test_without_a_crypto_key_nothing_is_stored(client, world, monkeypatch):
 
 # ── §3.2 capture policy API ───────────────────────────────────────────────────────────────────
 _DOC_KEYS = {"policy_version", "min_supported_app_version", "sensitive_defaults", "org", "seat",
-             "effective"}
+             "effective", "catching_up"}
 
 
 def test_the_default_policy_is_off_and_carries_the_sensitive_defaults(client, world):
@@ -675,6 +675,20 @@ def test_the_default_policy_is_off_and_carries_the_sensitive_defaults(client, wo
     assert set(doc["sensitive_defaults"]) <= set(doc["effective"]["blocked_domains"])
     assert "app.genios.test" in doc["sensitive_defaults"]              # GeniOS itself
     assert re.fullmatch(r"[0-9a-f]{12}", doc["policy_version"])
+    assert doc["catching_up"] == 0                     # P9 K6: nothing deferred to the night
+
+
+def test_catching_up_counts_only_this_seats_deferred_screen_batches(client, world):
+    """P9 K6: the device panel's "Catching up on N screens tonight"."""
+    world.deltas[(ORG, "dev_x", "s1", 1)] = {"seat_id": "seat_rep", "status": "deferred"}
+    world.deltas[(ORG, "dev_x", "s1", 2)] = {"seat_id": "seat_rep", "status": "deferred"}
+    world.deltas[(ORG, "dev_x", "s2", 1)] = {"seat_id": "seat_rep", "status": "held"}
+    world.deltas[(ORG, "dev_y", "s3", 1)] = {"seat_id": "seat_owner", "status": "deferred"}
+    doc = client.get("/v1/capture/policy", headers=H(_seat(world, "seat_rep"))).json()
+    assert doc["catching_up"] == 2
+    paused = client.post("/v1/capture/pause", json={"minutes": 5},
+                         headers=H(_seat(world, "seat_rep"))).json()
+    assert paused["catching_up"] == 2                  # every write answers the same document
 
 
 def test_only_an_admin_changes_the_org_half_and_it_is_audited(client, world):

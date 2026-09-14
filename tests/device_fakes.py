@@ -179,6 +179,10 @@ class MemoryCaptureStore:
         return (P._org_from_row(row or None), P._seat_from_row(row or None),
                 dict(lease) if lease else None)
 
+    def catching_up(self, org_id, seat_id):
+        return sum(1 for (o, *_), r in self.w.deltas.items()
+                   if o == org_id and r.get("seat_id") == seat_id and r.get("status") == "deferred")
+
     def save_org_policy(self, org_id, changes, *, updated_by):
         p = self.w.policies.setdefault(org_id, {
             "enabled": False, "allowed_apps": list(P.DEFAULT_ALLOWED_APPS), "blocked_domains": [],

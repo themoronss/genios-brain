@@ -1,4 +1,5 @@
-"""P8 manager value, brain side (SCREEN_INTEL_MANAGER_VALUE_BUILD C1–C6, C8).
+"""P8 manager value, brain side (SCREEN_INTEL_MANAGER_VALUE_BUILD C1–C6, C8) + P9 K1, K4, K5
+(SCREEN_INTEL_COST_RELEVANCE_BUILD: memory in the one call, not-useful mutes + examples, expiry).
 
 Pure halves first (kind mapping, nudge clocks incl. working days, topic key, due parsing, the
 structural "ask answered" test, the v2 model answer, popup actions), then real-Postgres flows
@@ -117,7 +118,27 @@ def test_work_false_is_silence_whatever_else_the_model_wrote(monkeypatch):
         "work": False})
     out = SI._compute(None, org_id="o", email=None, app="whatsapp", participants=[],
                       entities=[], screen=screen, deadline=time.monotonic() + 3)
-    assert out["work"] is False and out["insight"] is None
+    assert out["work"] is False and out["insight"] is None and out["memory"] is False
+
+
+def test_v3_memory_follows_work_and_the_prompt_names_personal_pages():
+    assert SI.CAPABILITY_VERSION == "3"
+    assert SI.memory_of({"work": True, "memory": True}) is True
+    assert SI.memory_of({"work": True, "memory": "false"}) is False
+    assert SI.memory_of({"work": False, "memory": True}) is False     # work:false ⇒ memory:false
+    assert SI.memory_of({"work": True}) is None and SI.memory_of(None) is None
+    flat = " ".join(SI._PROMPT.split())
+    assert ("OWN job search, job boards, shopping, banking, personal admin and entertainment "
+            "are PERSONAL") in flat
+    assert '"memory": true' in SI._PROMPT and '"memory": true or false' in SI._PROMPT
+    block = SI.not_useful_block(["Reply to the Naukri alert", "", "b", "c", "d", "e", "f"])
+    assert "NOT useful" in block and block.count("\n- ") == 5 and "- f" not in block
+    assert SI.not_useful_block([]) == "" and SI.not_useful_block(None) == ""
+    prompt = SI._PROMPT.format(app="slack", now_local="Monday", facts="(none)",
+                               not_useful=SI.not_useful_block(["Call Ravi about the MSA"]),
+                               text="Ravi: hi")
+    assert "- Call Ravi about the MSA" in prompt and prompt.index("Call Ravi") < \
+        prompt.index("SCREEN TEXT")
 
 
 def test_popup_actions_teach_and_mute_the_thread():
@@ -127,7 +148,7 @@ def test_popup_actions_teach_and_mute_the_thread():
                             {"id": "not_useful", "label": "Not useful"},
                             {"id": "mute_chat", "label": "Mute chat",
                              "payload": {"thread_key": "wa:1"}}]
-    assert m["evidence"][0]["topic_key"] == "t1" and m["capability_version"] == "2"
+    assert m["evidence"][0]["topic_key"] == "t1" and m["capability_version"] == "3"
     assert [a["id"] for a in SI.moment_content(res, digest="d")["actions"]] == \
         ["useful", "not_useful"]                       # nothing to mute without a thread
     label = SI.local_label(datetime(2026, 9, 14, 6, 0, tzinfo=timezone.utc), "Asia/Kolkata")
@@ -302,3 +323,108 @@ def test_budget_promises_personal_resolve_expiry_and_week(client, monkeypatch): 
     last = client.get(f"/v1/seats/me/weekly-report?week_start={monday - timedelta(days=7)}",
                       headers=dev_h).json()
     assert last["promises_caught"] == 0 and last["popups_shown"] == 0
+
+
+# ── P9 K4 · not useful mutes the thread; the notes teach the prompt ───────────────────────────
+@pytest.mark.pg
+@pytest.mark.skipif(not URL, reason="GENIOS_TEST_DATABASE_URL not set")
+def test_not_useful_mutes_the_thread_and_teaches_the_prompt(client, monkeypatch):  # noqa: F811
+    ws = _workspace(client)
+    _enable_display(client, ws)
+    dev, org, seat = ws["member_dev"], ws["org"], ws["member"]["seat_id"]
+    dev_h = H(dev["access_token"])
+    calls: list = []
+
+    def model(answer):
+        def fake(*a, **kw):
+            calls.append(kw.get("not_useful"))
+            return dict(answer)
+        monkeypatch.setattr(SI, "llm_insight", fake)
+
+    model({**ASK_NOTE, "memory": True})
+    m = _look(client, dev, [ASK]).json()
+    assert calls == [[]]                                 # nothing marked not useful yet
+    (v,) = _q("select work, memory, muted_until from screen_thread_verdicts where org_id=:o",
+              o=org)
+    assert (v.work, v.memory, v.muted_until) == (True, True, None)       # K2
+
+    before = datetime.now(timezone.utc)
+    assert client.post(f"/v1/moments/{m['moment_id']}/feedback", json={"action": "wrong"},
+                       headers=dev_h).status_code == 200
+    (v,) = _q("select muted_until from screen_thread_verdicts where org_id=:o", o=org)
+    assert timedelta(days=6, hours=23) < v.muted_until - before <= timedelta(days=7, minutes=1)
+
+    # the muted thread: a new screen → 204 and NO model call
+    assert _look(client, dev, [ASK, "Priya Shah: hello?"]).status_code == 204
+    assert len(calls) == 1
+
+    # another thread: the model is told what the manager found not useful
+    model({"insight": "Ravi wants the MSA today", "kind": "ask", "quote": "send the MSA today",
+           "work": True, "memory": True, "who": "Ravi", "owner": "me", "due": None})
+    r = _look(client, dev, ["Ravi: please send the MSA today"], thread="slack:ravi", app="slack")
+    assert r.status_code == 200 and calls[-1] == [ASK_NOTE["insight"]]
+
+    # "Mute chat" (device) → recorded server-side, for good; a later "not useful" never shortens it
+    mid = r.json()["moment_id"]
+    assert client.post(f"/v1/moments/{mid}/feedback",
+                       json={"action": "dismissed", "reason": "mute_chat"},
+                       headers=dev_h).status_code == 200
+    assert client.post(f"/v1/moments/{mid}/feedback", json={"action": "wrong"},
+                       headers=dev_h).status_code == 200
+    (ravi,) = _q("select muted_until from screen_thread_verdicts where org_id=:o "
+                 "and thread_key='slack:ravi'", o=org)
+    assert ravi.muted_until == F.MUTE_FOREVER
+    assert _look(client, dev, ["Ravi: and the NDA too"], thread="slack:ravi",
+                 app="slack").status_code == 204
+    with _engine().connect() as c:
+        assert F.not_useful_notes(c, org_id=org, seat_id=seat,
+                                  capability_id=SI.CAPABILITY_ID) == [
+            "Ravi wants the MSA today", ASK_NOTE["insight"]]
+
+    # a mute on a thread with no verdict yet is NOT a memory verdict
+    now = datetime.now(timezone.utc)
+    F.mute(_engine(), org_id=org, seat_id=seat, thread_key="wa:new", until=now + timedelta(days=7),
+           now=now)
+    with _engine().connect() as c:
+        assert F.is_muted(c, org_id=org, seat_id=seat, thread_key="wa:new", now=now)
+        assert F.thread_verdict(c, org_id=org, seat_id=seat, thread_key="wa:new", now=now) is None
+
+    # retention: a running mute outlives the verdict's week; an ended one does not
+    with _engine().begin() as c:
+        F.purge(c, now=now + timedelta(days=8))
+    left = {r.thread_key for r in _q("select thread_key from screen_thread_verdicts "
+                                     "where org_id=:o", o=org)}
+    assert left == {"slack:ravi"}
+
+
+# ── P9 K5 · follow-ups expire by kind ─────────────────────────────────────────────────────────
+@pytest.mark.pg
+@pytest.mark.skipif(not URL, reason="GENIOS_TEST_DATABASE_URL not set")
+def test_followups_expire_by_kind(client):  # noqa: F811
+    ws = _workspace(client)
+    org, seat = ws["org"], ws["member"]["seat_id"]
+    now = datetime.now(timezone.utc)
+    d = timedelta(days=1)
+    rows = {  # id: (kind, created_at, due_at, expired?)
+        "fu_ask_8d": ("ask", now - 8 * d, None, True),
+        "fu_ask_6d": ("ask", now - 6 * d, now - 5 * d, False),
+        "fu_dl_due_2d": ("deadline", now - 3 * d, now - 2 * d, True),
+        "fu_dl_due_12h": ("deadline", now - 3 * d, now - d / 2, False),
+        "fu_dl_undated_8d": ("deadline", now - 8 * d, None, True),
+        "fu_dl_undated_6d": ("deadline", now - 6 * d, None, False),
+        "fu_risk_4d": ("risk", now - 4 * d, None, True),
+        "fu_step_2d": ("next_step", now - 2 * d, None, False),
+        "fu_mine_undated_30d": ("my_promise", now - 30 * d, None, False),   # promises unchanged
+        "fu_theirs_due_3d": ("their_promise", now - 5 * d, now - 3 * d, True),
+    }
+    with _engine().begin() as c:
+        for fid, (kind, created, due, _) in rows.items():
+            c.execute(text(
+                "insert into screen_followups (id, org_id, seat_id, kind, text, due_at, "
+                "topic_key, created_at) values (:i, :o, :s, :k, 'note', :due, :t, :cr)"),
+                {"i": fid + org[-6:], "o": org, "s": seat, "k": kind, "due": due,
+                 "t": fid, "cr": created})
+        assert F.expire(c, org_id=org, seat_id=seat, now=now) == 5
+    got = {r.topic_key: r.resolution for r in _q(
+        "select topic_key, resolution from screen_followups where org_id=:o", o=org)}
+    assert got == {fid: ("expired" if exp else None) for fid, (*_, exp) in rows.items()}

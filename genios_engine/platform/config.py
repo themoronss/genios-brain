@@ -152,13 +152,16 @@ class Settings(BaseSettings):
     warm_lane_enabled: bool = True
     warm_lane_workers: int = 1
     # SCREEN PROMOTER (platform/screen_promoter.py) — held screen deltas → `screen_session`
-    # events, one (org, seat) batch at a time, only for semantically activated orgs. The generic
-    # reader's deltas are capped per seat per org-local day; over the cap they are DEFERRED to the
-    # next local midnight, never dropped.
+    # events, one (org, seat) batch at a time, only for semantically activated orgs. P9 K3: a
+    # page / chat (seat, thread_key) is promoted at most once per `screen_memory_interval_minutes`,
+    # all its new content in one event. `screen_memory_max_builds_per_day` is a RUNAWAY GUARD per
+    # seat per org-local day, not a budget: over it a thread is DEFERRED to the next local
+    # midnight (never dropped) and the seat's capture policy reports `catching_up`.
     screen_promoter_enabled: bool = True
     screen_insight_daily_cap: int = 100       # P-20: AI screen-insight checks per seat per UTC day
     screen_insight_max_per_hour: int = 3      # P8 C3: screen-insight popups shown per seat per rolling hour
-    screen_generic_daily_cap: int = 40
+    screen_memory_interval_minutes: int = 60
+    screen_memory_max_builds_per_day: int = 400
     screen_promoter_batch: int = 50
     # Whether screen-captured messages are charged as `message_read` like email. Off: the
     # ingestion charge excludes `screen_session` events and bills every other source unchanged.

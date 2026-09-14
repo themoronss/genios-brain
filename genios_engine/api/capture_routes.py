@@ -28,9 +28,19 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _catching_up(cstore, ctx: AuthCtx) -> int:
+    """P9 K6: screen batches deferred to the night for this seat; the device panel says
+    "Catching up on N screens tonight" when > 0. A failed count is 0, never a failed policy."""
+    count = getattr(cstore, "catching_up", None)
+    try:
+        return int(count(ctx.org_id, ctx.seat_id)) if callable(count) else 0
+    except Exception:      # noqa: BLE001
+        return 0
+
+
 def _document(cstore, ctx: AuthCtx) -> dict:
     org, seat, _ = cstore.load(ctx.org_id, ctx.seat_id)
-    return P.policy_document(org, seat, now=_now())
+    return {**P.policy_document(org, seat, now=_now()), "catching_up": _catching_up(cstore, ctx)}
 
 
 def _clean(changes: dict, *, apps_key: str, domains_key: str) -> dict:

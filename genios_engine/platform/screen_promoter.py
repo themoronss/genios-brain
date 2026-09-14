@@ -9,8 +9,13 @@ BackgroundTasks) turns them into Layer 1 events, one (org, seat) batch at a time
      (the filter is IN the claim, so an unactivated org never costs a claim or an attempt);
   2. decrypt, drop messages the fingerprint ledger has already seen (group C's module, loaded
      lazily: absent = no dedupe), count graph alias hits, render (`capture/screen/render.py`);
-  3. the generic reader is capped per seat per org-local day (`screen_generic_daily_cap`); over
-     the cap a delta is DEFERRED to the next local midnight, never dropped;
+  3. P9 K3 — ONE MEMORY BUILD PER PAGE / CHAT PER HOUR: the batch's deltas are grouped per
+     (seat, thread_key); a thread is promoted once its oldest open delta is
+     `screen_memory_interval_minutes` old (earlier → held until then, not an attempt), with ALL
+     its new messages / blocks merged into one render (the renderer splits parts only when the
+     profile's size limit requires it). `screen_memory_max_builds_per_day` per seat per
+     org-local day is a runaway guard only: over it a thread is DEFERRED to the next local
+     midnight (never dropped) and `GET /v1/capture/policy` reports `catching_up`;
   4. the webhook door's own wiring (`api/routes.py` composio_webhook) with `mailbox_owner` = the
      seat's email → `finalize_l1(ManualSweep)` → `warm_lane.enqueue(source="screen_session")`;
   5. mark `promoted` with the event ids (or `skipped` / `deferred` / back off / `parked`).
@@ -20,7 +25,7 @@ source's own rule cannot know whose screen it was.
 
 POOL BUDGET. The session pooler is 8+4. One worker thread per process, ONE batch per claim, and
 the promoter's own statements per batch are fixed (claim 3, seat 1, alias 1, fingerprints ≤ 2,
-cap ≤ 2, settle 1) whatever the batch size — the per-object work is the capture pipeline's.
+thread anchors 1, guard ≤ 2, settle 1) whatever the batch size — the per-object work is the capture pipeline's.
 """
 from __future__ import annotations
 
@@ -46,7 +51,10 @@ from genios_engine.platform.logging import get_logger
 _log = get_logger("genios.screen_promoter")
 
 SOURCE = "screen_session"
-GENERIC_KIND = "screen_generic"
+GENERIC_KIND = "screen_generic"            # P2's generic cap counter (retired by K3; pruned)
+MEMORY_KIND = "screen_memory_build"        # K3 runaway guard: memory builds per seat per day
+INTERVAL_WAIT = "memory_interval"
+DAILY_GUARD = "memory_daily_guard"
 GENERIC_APPS = frozenset({"generic", "web"})
 VISIBILITY_DERIVED_FROM = "device:screen_session:seat"
 MAX_ATTEMPTS = 5
@@ -96,7 +104,7 @@ class Outcome:
     event_ids: list[str] | None = None
     error: str | None = None
     not_before: datetime | None = None
-    refund_attempt: bool = False             # a cap deferral is not a failed attempt
+    refund_attempt: bool = False             # a wait / deferral is not a failed attempt
 
 
 def backoff_seconds(attempts: int) -> float:
@@ -147,23 +155,27 @@ def default_doors() -> Doors:
     def wiring_for(org_id: str, seat_email: str, connection_id: str):
         from genios_engine.api import routes as R      # lazy: routes wires stores at import
         from genios_engine.capture.connectors.push_ingest import PushIngestWiring
-        from genios_engine.capture.screen.relevance import ScreenDocRelevance
+        from genios_engine.capture.screen.relevance import (ScreenDocRelevance,
+                                                            screen_semantic_lane)
         from genios_engine.contracts.source_event import SyncMode
         from genios_engine.platform.db import get_engine
         from genios_engine.platform.wiring import make_relevance_classifier
         from genios_engine.reason.moments.followups import verdict_lookup
-        # P8 C9: the screen-insight model's 24 h work / personal verdict per thread routes the
-        # thread's memory before the AI gate. The seat is the one this connection belongs to.
+        # P8 C9 / P9 K3: the screen-insight model's 24 h work + memory verdict per thread routes
+        # the thread's memory before the AI gate. The seat is the one this connection belongs to.
         seat_id = connection_id.removeprefix("screen:")
         verdicts = verdict_lookup(get_engine(get_settings().database_url), org_id, seat_id)
+        gate = ScreenDocRelevance(make_relevance_classifier(org_id), verdicts)
         return PushIngestWiring(
             repo=R._repo, trace_repo=R._trace_repo, payload_store=R._payload_store,
             prepared_store=R._prepared_store, document_job_store=R._documents,
-            parked_store=R._parked,
-            relevance=ScreenDocRelevance(make_relevance_classifier(org_id), verdicts),
+            parked_store=R._parked, relevance=gate,
             sender_resolver=R._sender_resolver_for(org_id),
             mailbox_owner=seat_email, coverage_fn=R._coverage_fn_for(org_id),
-            esqe=R._esqe_stage_for(org_id), semantic=R._semantic_lane_for(org_id),
+            esqe=R._esqe_stage_for(org_id),
+            # K3: S4's relevance page never re-asks a model what S2's one call (or the verdict)
+            # already answered for this screen object — at most ONE AI call per object.
+            semantic=screen_semantic_lane(R._semantic_lane_for(org_id), gate),
             structured=R._structured_lane_for(org_id), sync_mode=SyncMode.incremental)
 
     def stores():
@@ -295,7 +307,8 @@ def _seat(engine, org_id: str, seat_id: str) -> tuple[str | None, str]:
     return (r.email or None), str(r.tz or "UTC")
 
 
-def reserve_generic(engine, scope_key: str, day: date, n: int, cap: int) -> int:
+def reserve_generic(engine, scope_key: str, day: date, n: int, cap: int,
+                    kind: str = MEMORY_KIND) -> int:
     """Take up to `n` of today's `cap`; returns how many were granted. Atomic under
     concurrency: the upsert's increment is one statement, so `new - n` is exactly the old count."""
     if n <= 0:
@@ -305,24 +318,25 @@ def reserve_generic(engine, scope_key: str, day: date, n: int, cap: int) -> int:
             "insert into rate_counters as r (scope_key, kind, window_start, count) "
             "values (:k, :kind, :d, :n) on conflict (scope_key, kind, window_start) "
             "do update set count = r.count + :n returning count"),
-            {"k": scope_key, "kind": GENERIC_KIND, "d": day, "n": n}).scalar())
+            {"k": scope_key, "kind": kind, "d": day, "n": n}).scalar())
         granted = max(0, min(n, cap - (new - n)))
         if granted < n:
             c.execute(text(
                 "update rate_counters set count = count - :back where scope_key = :k "
                 "and kind = :kind and window_start = :d"),
-                {"k": scope_key, "kind": GENERIC_KIND, "d": day, "back": n - granted})
+                {"k": scope_key, "kind": kind, "d": day, "back": n - granted})
     return granted
 
 
-def release_generic(engine, scope_key: str, day: date, n: int) -> None:
+def release_generic(engine, scope_key: str, day: date, n: int,
+                    kind: str = MEMORY_KIND) -> None:
     if n <= 0:
         return
     with engine.begin() as c:
         c.execute(text(
             "update rate_counters set count = greatest(count - :n, 0) where scope_key = :k "
             "and kind = :kind and window_start = :d"),
-            {"k": scope_key, "kind": GENERIC_KIND, "d": day, "n": n})
+            {"k": scope_key, "kind": kind, "d": day, "n": n})
 
 
 def alias_candidates(doc: dict) -> set[tuple[str, str]]:
@@ -481,9 +495,70 @@ def _record_claims(F, engine, org_id: str, claims: list[tuple[str, list[str]]],
         _log.exception("fingerprint claims failed org=%s", org_id)
 
 
+def group_key(delta: Delta) -> str:
+    """The page / chat a delta belongs to (K3): its thread, else its session."""
+    return delta.thread_key or delta.session_key
+
+
+def thread_anchors(engine, org_id: str, seat_id: str, keys: list[str]) -> dict[str, datetime]:
+    """K3: the oldest OPEN (held / deferred) delta per thread — the ones in this claim and the
+    ones already waiting — so every delta of one thread shares one promotion time."""
+    if not keys:
+        return {}
+    with engine.connect() as c:
+        return {r.g: r.at for r in c.execute(text(
+            "select coalesce(thread_key, session_key) as g, min(received_at) as at "
+            "from screen_session_deltas where org_id = :o and seat_id = :s "
+            "and status in ('held', 'deferred') "
+            "and coalesce(thread_key, session_key) = any(cast(:gs as text[])) group by 1"),
+            {"o": org_id, "s": seat_id, "gs": keys})}
+
+
+def _dedupe_key(item) -> str:
+    return json.dumps(item, sort_keys=True, default=str) if isinstance(item, dict) else str(item)
+
+
+def merge_plans(plans: list[_Plan]) -> _Plan:
+    """ONE document for a thread's deltas (K3), newest delta last: every message / block once, in
+    arrival order; title, url, context and watermark from the newest; participants unioned. The
+    message dicts are the SAME objects, so their fingerprints (keyed by id) still apply."""
+    if len(plans) == 1:
+        return plans[0]
+    last = plans[-1]
+    doc = dict(last.doc)
+    for name in ("messages", "blocks"):
+        seen: set[str] = set()
+        merged: list = []
+        for p in plans:
+            for item in p.doc.get(name) or []:
+                k = _dedupe_key(item)
+                if k not in seen:
+                    seen.add(k)
+                    merged.append(item)
+        if merged or name in doc:
+            doc[name] = merged
+    people: list = []
+    pkeys: set[str] = set()
+    for p in reversed(plans):
+        for person in p.doc.get("participants") or []:
+            k = _dedupe_key(person)
+            if k not in pkeys:
+                pkeys.add(k)
+                people.append(person)
+    if people:
+        doc["participants"] = people
+    fps: dict[int, str] = {}
+    seen_refs: list[tuple[str, str]] = []
+    for p in plans:
+        fps.update(p.fps_by_msg)
+        seen_refs.extend(p.seen)
+    return _Plan(last.delta, doc, fps_by_msg=fps, seen=seen_refs)
+
+
 def promote_batch(engine, org_id: str, seat_id: str, deltas: list[Delta], *,
                   doors: Doors | None = None, now: datetime | None = None,
-                  cap: int | None = None, crypto_key: str | None = None) -> dict[tuple, Outcome]:
+                  cap: int | None = None, crypto_key: str | None = None,
+                  interval_minutes: int | None = None) -> dict[tuple, Outcome]:
     from genios_engine.capture.connectors.push_ingest import ingest_pushed_objects
     from genios_engine.capture.esqe.finalize import ManualSweep, finalize_l1
     from genios_engine.capture.screen.render import render_session
@@ -494,7 +569,9 @@ def promote_batch(engine, org_id: str, seat_id: str, deltas: list[Delta], *,
     doors = doors or default_doors()
     now = now or datetime.now(timezone.utc)
     s = get_settings()
-    cap = int(s.screen_generic_daily_cap if cap is None else cap)
+    cap = int(s.screen_memory_max_builds_per_day if cap is None else cap)
+    interval = int(s.screen_memory_interval_minutes if interval_minutes is None
+                   else interval_minutes)
     key = crypto_key or s.crypto_key
     out: dict[tuple, Outcome] = {}
     seat_email, tz = _seat(engine, org_id, seat_id)
@@ -508,48 +585,83 @@ def promote_batch(engine, org_id: str, seat_id: str, deltas: list[Delta], *,
         except Exception as exc:      # noqa: BLE001 — undecryptable is permanent: park now
             out[d.key] = Outcome("parked", error=f"undecryptable: {type(exc).__name__}")
 
-    # per-seat generic cap, in arrival order; over it → the next org-local midnight
+    # K3: one group per page / chat, in arrival order of its first delta in this batch.
+    groups: dict[str, list[_Plan]] = {}
+    for p in plans:
+        groups.setdefault(group_key(p.delta), []).append(p)
+
+    # … promoted at most once per interval: a thread whose oldest open delta is younger than the
+    # interval waits (held, not an attempt) until then, every delta of it on one clock.
+    if interval > 0 and groups:
+        anchors = thread_anchors(engine, org_id, seat_id, list(groups))
+        for g, ps in list(groups.items()):
+            first = anchors.get(g) or min(p.delta.received_at for p in ps)
+            due = first + timedelta(minutes=interval)
+            if due > now:
+                for p in ps:
+                    out[p.delta.key] = Outcome("held", error=INTERVAL_WAIT, not_before=due,
+                                               refund_attempt=True)
+                del groups[g]
+
+    # the runaway guard, per memory build (one thread = one build), in arrival order; over it →
+    # the next org-local midnight, never dropped (the seat's capture status says catching_up)
     day, scope = local_day(now, tz), seat_scope(org_id, seat_id)
-    generic = [p for p in plans if p.delta.generic]
-    granted = reserve_generic(engine, scope, day, len(generic), cap) if generic else 0
+    granted = reserve_generic(engine, scope, day, len(groups), cap) if groups else 0
     midnight = next_local_midnight(now, tz)
-    for p in generic[granted:]:
-        out[p.delta.key] = Outcome("deferred", error="generic_daily_cap", not_before=midnight,
-                                   refund_attempt=True)
-    plans = [p for p in plans if p.delta.key not in out]
-    if not plans:
+    for g in list(groups)[granted:]:
+        for p in groups.pop(g):
+            out[p.delta.key] = Outcome("deferred", error=DAILY_GUARD, not_before=midnight,
+                                       refund_attempt=True)
+    if not groups:
         return out
+    reserved = set(groups)
 
     F = _fingerprint_module()
     if F is not None:
-        _dedupe(F, engine, org_id, plans, seat_email)
-    hits = count_alias_hits(engine, org_id, {p.delta.key: p.doc for p in plans})
+        _dedupe(F, engine, org_id, [p for ps in groups.values() for p in ps], seat_email)
+    merged = {g: merge_plans(ps) for g, ps in groups.items()}
+    members = {g: [p.delta for p in ps] for g, ps in groups.items()}
+    hits = count_alias_hits(engine, org_id, {g: m.doc for g, m in merged.items()})
+
+    def settle_group(g: str, outcome: Outcome) -> None:
+        for d in members[g]:
+            out[d.key] = replace(outcome)
+
+    def fail_group(g: str, error: str) -> None:
+        for d in members[g]:
+            out[d.key] = failure_outcome(d, error, now=now)
+
+    def unreserve(gs) -> None:
+        n = sum(1 for g in set(gs) if g in reserved)
+        reserved.difference_update(gs)
+        release_generic(engine, scope, day, n)
 
     visibility = Visibility(scope=PRIVATE, principals=[seat_email],
                             derived_from=VISIBILITY_DERIVED_FROM)
     objects, owner, fps_of, refs = [], {}, {}, []
-    for p in plans:
+    for g, p in merged.items():
         d = p.delta
         for fp, canonical in p.seen:
             refs.append({"event_id": canonical, "independence_group": f"same_message:{fp}",
                          "source_object_id": f"{d.thread_key or d.session_key}"
                                              f"#{d.message_watermark}",
                          "evidence": {"seen_on": SOURCE, "session_key": d.session_key}})
-        rendered = render_session(p.doc, seat_email=seat_email, watermark=d.message_watermark,
+        watermark = max(int(x.message_watermark) for x in members[g])
+        rendered = render_session(p.doc, seat_email=seat_email, watermark=watermark,
                                   received_at=d.received_at, captured_at=d.captured_at,
-                                  alias_hits=hits.get(d.key, 0))
+                                  alias_hits=hits.get(g, 0))
         if not rendered:
-            out[d.key] = Outcome("skipped", event_ids=[],
-                                 error="already_seen" if p.seen else "nothing_new")
+            settle_group(g, Outcome("skipped", event_ids=[],
+                                    error="already_seen" if p.seen else "nothing_new"))
+            unreserve([g])
             continue
         for r in rendered:
             r.raw.visibility = visibility
             objects.append(r.raw)
-            owner[r.raw.source_object_id] = d.key
+            owner[r.raw.source_object_id] = g
             fps_of[r.raw.source_object_id] = [p.fps_by_msg[id(m)] for m in r.messages
                                               if id(m) in p.fps_by_msg]
-    by_key = {p.delta.key: p.delta for p in plans}
-    pending = [k for k in by_key if k not in out]
+    pending = [g for g in merged if members[g][0].key not in out]
     if not objects:
         if F is not None and refs:
             _record_claims(F, engine, org_id, [], refs)
@@ -564,31 +676,31 @@ def promote_batch(engine, org_id: str, seat_id: str, deltas: list[Delta], *,
                                        connection_id=connection_id, wiring=wiring)
     except Exception as exc:      # noqa: BLE001 — the whole batch retries
         _log.exception("screen promotion failed org=%s seat=%s", org_id, seat_id)
-        fail = {k: failure_outcome(by_key[k], f"{type(exc).__name__}: {exc}", now=now)
-                for k in pending}
-        release_generic(engine, scope, day, sum(1 for k in fail if by_key[k].generic))
-        return {**out, **fail}
+        for g in pending:
+            fail_group(g, f"{type(exc).__name__}: {exc}")
+        unreserve(pending)
+        return out
 
-    events: dict[tuple, list[str]] = {k: [] for k in pending}
+    events: dict[str, list[str]] = {g: [] for g in pending}
     claims: list[tuple[str, list[str]]] = []
     emitted: list[str] = []
     for r in result.results:
-        k = owner.get(r.event.source_object_id)
-        if k is None or r.outcome == "duplicate":
+        g = owner.get(r.event.source_object_id)
+        if g is None or r.outcome == "duplicate":
             continue
-        events[k].append(r.event.event_id)
+        events[g].append(r.event.event_id)
         claims.append((r.event.event_id, fps_of.get(r.event.source_object_id) or []))
         if r.outcome == "emitted":
             emitted.append(r.event.event_id)
     failed = {owner[oid] for oid in result.quarantined if oid in owner}
-    for k in pending:
-        if k in failed:
-            out[k] = failure_outcome(by_key[k], "quarantined object", now=now)
-        elif events[k]:
-            out[k] = Outcome("promoted", event_ids=events[k])
+    for g in pending:
+        if g in failed:
+            fail_group(g, "quarantined object")
+        elif events[g]:
+            settle_group(g, Outcome("promoted", event_ids=events[g]))
         else:
-            out[k] = Outcome("skipped", event_ids=[], error="duplicate")
-    release_generic(engine, scope, day, sum(1 for k in failed if by_key[k].generic))
+            settle_group(g, Outcome("skipped", event_ids=[], error="duplicate"))
+    unreserve(failed)
 
     if result.results:
         finalize_l1(ManualSweep(org_id=org_id, results=result.results, emitted=len(emitted),
@@ -603,7 +715,7 @@ def promote_batch(engine, org_id: str, seat_id: str, deltas: list[Delta], *,
 
 def run_once(engine, worker_id: str, *, doors: Doors | None = None,
              batch: int | None = None, now: datetime | None = None,
-             cap: int | None = None) -> bool:
+             cap: int | None = None, interval_minutes: int | None = None) -> bool:
     """One claim → one batch → settle. True when a batch was taken."""
     claimed = claim_batch(engine, worker_id, batch=batch)
     if claimed is None:
@@ -616,7 +728,7 @@ def run_once(engine, worker_id: str, *, doors: Doors | None = None,
         with stage("screen.promote", org_id, deltas=len(deltas)) as st:
             try:
                 outcomes = promote_batch(engine, org_id, seat_id, deltas, doors=doors, now=now,
-                                         cap=cap)
+                                         cap=cap, interval_minutes=interval_minutes)
             except Exception as exc:      # noqa: BLE001 — a crashed batch is a failed attempt
                 _log.exception("screen promoter batch crashed org=%s", org_id)
                 outcomes = {d.key: failure_outcome(d, f"{type(exc).__name__}: {exc}", now=now)
@@ -636,9 +748,9 @@ def housekeep(engine, *, now: float | None = None) -> None:
     if now - _housekeeping["prune"] >= 3600:
         _housekeeping["prune"] = now
         with engine.begin() as c:
-            c.execute(text("delete from rate_counters where kind = :k "
+            c.execute(text("delete from rate_counters where kind = any(cast(:k as text[])) "
                            "and window_start < current_date - :d"),
-                      {"k": GENERIC_KIND, "d": COUNTER_RETENTION_DAYS})
+                      {"k": [GENERIC_KIND, MEMORY_KIND], "d": COUNTER_RETENTION_DAYS})
 
 
 # ── the worker ──────────────────────────────────────────────────────────────────────────────
@@ -697,7 +809,8 @@ def stop_screen_promoter(timeout: float = 5.0) -> None:
     _threads.clear()
 
 
-__all__ = ["Delta", "Doors", "Outcome", "backoff_seconds", "claim_batch", "count_alias_hits",
-           "default_doors", "failure_outcome", "local_day", "next_local_midnight",
-           "promote_batch", "reserve_generic", "run_once", "settle", "start_screen_promoter",
+__all__ = ["DAILY_GUARD", "Delta", "Doors", "INTERVAL_WAIT", "MEMORY_KIND", "Outcome",
+           "backoff_seconds", "claim_batch", "count_alias_hits", "default_doors",
+           "failure_outcome", "group_key", "local_day", "merge_plans", "next_local_midnight",
+           "promote_batch", "thread_anchors", "reserve_generic", "run_once", "settle", "start_screen_promoter",
            "stop_screen_promoter", "wake"]
