@@ -124,7 +124,10 @@ def _observation_counts(c, org_id: str, recent_from: datetime, baseline_from: da
         "count(*) filter (where occurred_at >= :recent) as recent_n, "
         "count(*) filter (where occurred_at >= :baseline) as baseline_n "
         "from graph_observations "
+        # Screen memory writes notes about no one (the manager's own deadline, a file) with no
+        # subject; there is no node to hang a derived.* fact on, and a null would abort the pass.
         "where org_id = :o and status = 'active' and occurred_at >= :baseline "
+        "and subject_node_id is not null "
         "group by subject_node_id, kind"),
         {"o": org_id, "recent": recent_from, "baseline": baseline_from}).all()
 
