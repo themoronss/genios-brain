@@ -106,7 +106,7 @@ def gather(conn, *, org_id: str, seat_id: str, now: datetime) -> dict:
         "and not work and judged_at >= :since order by judged_at desc limit :k"),
         {**p, "k": TOP_PERSONAL})]
     hours = {str(int(r.h)): int(r.n) for r in conn.execute(text(
-        "select extract(hour from created_at at time zone :tz) as h, count(*) as n "
+        "select date_part('hour', created_at at time zone :tz) as h, count(*) as n "
         "from screen_followups where org_id = :o and seat_id = :s and created_at >= :since "
         "group by 1 order by 1"), {**p, "tz": tz})}
     notes = F.not_useful_notes(conn, org_id=org_id, seat_id=seat_id,
