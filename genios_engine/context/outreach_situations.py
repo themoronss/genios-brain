@@ -102,6 +102,10 @@ ANCHOR_ORGANIZATION = "organization"
 #: an objective-keyed cohort covering the same people rather than minting a second card about them.
 ANCHOR_CAMPAIGN = "campaign"
 
+#: One meeting, and whether it was finished. Imported rather than re-declared so the anchor this
+#: module dispatches on and the one the reading stamps on its findings can never drift apart.
+from genios_engine.context.meeting_situations import ANCHOR_MEETING  # noqa: E402
+
 #: How far back a campaign may have been sent and still be worth a card.
 #:
 #: A DEFAULT, NOT A LAW. `refresh_state_situations` takes it as an argument and `find_campaigns`
@@ -497,9 +501,28 @@ def read_overdue_commitments(rows: dict, now: datetime, employers: dict) -> list
     without a time is a different situation and needs a different card.
     """
     findings: list[_Finding] = []
+    # WHO WE ARE, so that "a promise of ours" can be checked rather than assumed. `None` covers
+    # both "no outbound observed" and "several sending seats"; neither is a basis for deciding
+    # somebody else owns a promise, so neither refuses anything below.
+    us = str(rows.get("_mailbox_owner") or "").strip().lower() or None
     for node_id, held in rows.items():
         # Reserved keys carry the condition queue and the mailbox owner, not a node's facts.
         if node_id.startswith("_") or not isinstance(held, dict):
+            continue
+        # A PROMISE SOMEBODY ELSE MADE IS NOT OUR OVERDUE COMMITMENT. This reading's own
+        # docstring says "one finding per promise of ours" and nothing checked it: it emitted for
+        # every commitment whose stated date had passed, whichever way the promise pointed.
+        # Measured on the pilot, SIX of fifteen cards were a counterparty's obligation rendered as
+        # the founder's — an incubator's marketing promise was the loudest card in the product, at
+        # critical urgency, in his voice. Naming the owner (`_COMMITMENT_OWNERS`) fixed the
+        # sentence and left the card standing.
+        #
+        # REFUSED ONLY ON POSITIVE EVIDENCE. Both halves must be known: an owner the graph can
+        # name, and an address of ours to compare it against. An unknown owner still produces a
+        # finding, because "we cannot tell whose this is" has never been evidence that it is not
+        # ours, and inferring an owner from silence is the move this module refuses everywhere.
+        owner = str(held.get("_owner_key") or "").strip().lower()
+        if us and owner and owner != us:
             continue
         # A PROMISE THAT IS NO LONGER OUTSTANDING IS NOT OVERDUE, and this reading used to have
         # no way to know. `lifecycle/store.obligations_for` already filters on
@@ -889,6 +912,19 @@ def read_conditions_for_dispatch(rows: dict, now: datetime, employers: dict) -> 
 #: `thread.*` rows — see `_gather`, which stamps it on. Wired here so it travels the same
 #: `find_or_create_node` / `_write_fact` / `concerns`-edge path every other state reading takes,
 #: instead of a second persistence route that would drift from this one.
+def read_meetings_for_dispatch(rows: dict, now: datetime, employers: dict) -> list[_Finding]:
+    """The meeting follow-through reading, in the shape the dispatch loop hands every reader.
+
+    `_gather` stamps the meetings onto `rows` under `_meetings` — a list, not one entry per node —
+    because `meeting_touch._MEETINGS` returns its own row shape and these facts live on the
+    meeting node rather than in the `thread.*` map the outreach readings share. Same reserved-key
+    route `_conditions`, `_organizations` and `_campaigns` take.
+    """
+    from genios_engine.context.meeting_situations import read_meeting_follow_through
+
+    return read_meeting_follow_through(rows.get("_meetings") or (), now)
+
+
 READINGS = (
     (ANCHOR_OUTREACH, read_awaiting_response),
     (ANCHOR_COMMITMENT, read_overdue_commitments),
@@ -896,6 +932,11 @@ READINGS = (
     (ANCHOR_CONDITION, read_conditions_for_dispatch),
     (ANCHOR_ORGANIZATION, read_organization_silence),
     (ANCHOR_CAMPAIGN, read_campaign_silence),
+    # Fifty calendar events on the pilot produced nodes, facts and edges and not one situation,
+    # because this line did not exist. Sales has had its own meeting reading for some time
+    # (`meeting_touch`, typed `channel_touch`); it answers which channels reached an account,
+    # which is a different question from whether a meeting was finished.
+    (ANCHOR_MEETING, read_meetings_for_dispatch),
 )
 
 
@@ -979,6 +1020,17 @@ def _gather(store, org_id: str, *, now: datetime | None = None,
         from genios_engine.context.condition_situations import gather_conditions_in_review
         held["_conditions"] = gather_conditions_in_review(c, org_id)
         held["_mailbox_owner"] = _mailbox_owner(c, org_id)
+        # THE MEETINGS, through the query that already knows how to find them. `meeting_touch.
+        # _MEETINGS` joins the `attended` edge, excludes retired attendances, excludes our own
+        # seats and keeps EVERY external attendee rather than one picked by sort order — three
+        # corrections its comments record, each of which this reading would otherwise have had to
+        # learn again. Guarded like `_mailbox_owner`: the query uses `#>>` and `array_agg`, so a
+        # driver without them is a gap in what this sweep can read, never a crash.
+        try:
+            from genios_engine.context.meeting_touch import _MEETINGS
+            held["_meetings"] = [dict(r._mapping) for r in c.execute(text(_MEETINGS), {"o": org_id})]
+        except Exception:      # noqa: BLE001
+            held["_meetings"] = []
         # The counterparty organisations, under the same reserved-key route. Computed over the
         # WHOLE tenant rather than over `held`: `works_at` membership is what makes two people one
         # firm, and a firm's size — "two of the two partners we know are silent" — is only true if

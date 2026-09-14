@@ -672,6 +672,50 @@ class GraphStore:
                             source=source, evidence=evidence)
         return bool(inserted)
 
+    def write_received_observation(self, conn, *, org_id: str, subject_node_id: str,
+                                   kind: str, confidence: float, occurred_at: datetime | None,
+                                   event_id: str, evidence: dict, source: str | None) -> bool:
+        """What WE said, recorded as evidence about the person we said it to.
+
+        `write_event_presence` above establishes that an event touched a node. It deliberately
+        carries no substance, and for a while that was all an outbound recipient ever got — so a
+        founder who wrote to an investor twice left two content-free markers on that investor,
+        while every commitment, question and observation in those mails was filed against the
+        founder's OWN node. Measured on the pilot: 398 of 1001 observations on the mailbox owner,
+        and 30 of 60 people carrying zero — the exact people who never replied, which is the
+        subject of every "they have gone quiet" reading. `evidence_score` counts observations on
+        the anchor, so those anchors scored zero and the publisher held them. Our own work was not
+        counted as knowledge about the relationship it was done in.
+
+        THE KIND IS `received:` AND THAT PREFIX IS THE WHOLE SAFETY PROPERTY. A recipient must
+        never become the SPEAKER of words they did not write — `test_outbound_recipient_
+        observations.py` exists to protect exactly that and its intent is correct. "They were told
+        this" and "they said this" are different claims about a person, so they are different
+        rows: the prefix cannot be read as speech, and `speaker_node_id` in the evidence names who
+        actually wrote it. Any reader selecting on a bare kind sees only what somebody really said.
+
+        CONTENT-ADDRESSED, unlike `write_observation`. That one mints `new_id("obs")` and is
+        therefore not replay-safe; it is called once per extraction on one subject, where a
+        re-sync is guarded upstream. This fans one event out across every recipient, so a re-sync
+        would multiply the very number the evidence axis reads. The id is derived from the event,
+        the subject, the kind and the quoted text, which makes a second sweep a no-op.
+        """
+        digest = hashlib.sha256(json.dumps(
+            [org_id, event_id, subject_node_id, kind, str(evidence.get("text") or "")],
+        ).encode()).hexdigest()[:32]
+        obs_id = f"obs_received_{digest}"
+        inserted = conn.execute(text(
+            "insert into graph_observations (observation_id,org_id,subject_node_id,kind,"
+            "occurred_at,confidence,created_by_event_id) "
+            "values (:id,:org,:subject,:kind,:at,:conf,:event) "
+            "on conflict (observation_id) do nothing"),
+            {"id": obs_id, "org": org_id, "subject": subject_node_id, "kind": kind,
+             "at": occurred_at, "conf": confidence, "event": event_id}).rowcount
+        if inserted:
+            self._write_ref(conn, org_id=org_id, observation_id=obs_id, event_id=event_id,
+                            source=source, evidence=evidence)
+        return bool(inserted)
+
     # ── relationships (B7 edges) ──────────────────────────────────────────────
     def write_edge(self, conn, *, org_id: str, edge_type: str, from_node_id: str,
                    to_node_id: str, confidence: float, occurred_at: datetime | None,

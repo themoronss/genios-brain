@@ -1,0 +1,125 @@
+# The twin of `meeting-without-follow-through`, and deliberately a separate file rather than a
+# branch inside it. That one starts "the meeting happened"; this one starts "it did not". A recap
+# and a re-book are opposite instructions, and the sibling's own `when` block excludes a cancelled
+# meeting for exactly that reason — which left the cancellation with nowhere to go.
+#
+# `context/meeting_situations.py` produces both. Until it existed, fifty calendar events on the
+# pilot tenant produced nodes, facts and edges and not one situation, so neither this file nor its
+# sibling could ever match anything.
+
+identity:
+  id: admin.sit.meeting_cancelled_not_rebooked
+  name: Meeting Cancelled, Not Rebooked
+  domain: admin
+  owner_capability: admin.meeting_operations.meeting_scheduling
+  version: 1.0.0
+  status: stable
+
+description: >
+  A meeting with somebody outside the company was cancelled, and nothing has gone back into the
+  diary with them since. This is the quietest way a live conversation ends: nobody decided to stop
+  talking, a slot moved and was never replaced, and because the event left the calendar there is
+  nothing in front of anybody to say so.
+
+  The evidence is the calendar's own and not a model's. `capture/connectors/calendar.py` fetches
+  with `showDeleted` precisely so that a cancellation is an event the system RECEIVES rather than
+  an absence it infers, and `capture/structured/registry.py` lands it as `meeting.status`.
+
+  Rebooking is the resolution, and the only form of it this layer can see is another meeting with
+  the same counterparty, later. That is deliberately narrow: meeting somebody else is not
+  rebooking this, and a card telling a founder to chase a call already back in the diary is worse
+  than no card. `meeting.rebooked` carries the answer, computed over the whole diary rather than
+  one row at a time.
+
+  What this must never say is WHY it was cancelled, or by whom. The calendar records that a
+  booking ended, not who ended it or what they meant by it — and "they cancelled on you" reads as
+  a verdict on the relationship that the evidence cannot support.
+
+matches:
+  l2_situation_types:
+    - meeting_follow_through
+  scope: meeting
+  when:
+    # It did NOT happen. The sibling file takes every other case.
+    - path: meeting.status
+      op: "="
+      value: cancelled
+    # And nothing has replaced it. Without this the card fires on a meeting that was moved an
+    # hour later, which is the ordinary rhythm of a working diary rather than a situation.
+    - path: meeting.rebooked
+      op: "="
+      value: false
+    # With somebody outside the company. An internal block that got dropped is not a commitment
+    # to anyone.
+    - exists: meeting.external_counterparty
+
+also_serves:
+  - admin.meeting_operations.agenda_preparation
+  - admin.executive_support.commitment_tracking
+
+objects:
+  load:
+    - admin.obj.core.request
+  optional:
+    - admin.obj.core.deadline
+    - admin.obj.core.commitment
+  never_load:
+    - admin.obj.core.invoice
+    - admin.obj.core.employee_record
+    - admin.obj.core.asset
+
+priority_bp: 6400
+typical_duration_days: 7
+
+signals_of_progress:
+  - meeting_scheduled
+  - next_step_agreed
+  - followup_sent
+
+signals_of_decay:
+  - going_dark
+  - decision_deferred
+
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    Headline: who the meeting was with, and that it has not been put back.
+
+    Situation: that a meeting with them was cancelled, when it was due, and that nothing with them
+    has been booked since. State the elapsed time — a slot dropped yesterday and one dropped six
+    weeks ago are different situations wearing the same words.
+
+    Never say who cancelled it or why. The calendar records that a booking ended and nothing else,
+    and a sentence that assigns the decision to the counterparty is an invented finding about a
+    relationship.
+
+    Artifact: a short note proposing two concrete times. Not "let me know when suits" — the whole
+    failure here is that nobody re-opened the diary, and a message that asks the other side to do
+    it repeats the failure.
+  fallback:
+    # Names the finding, with its elapsed time. `not rebooked` and not "they went cold": the
+    # second is a judgement about a person, the first is a fact about a diary.
+    headline: "{entity} — meeting cancelled {days}d ago, not rebooked"
+    situation: >-
+      The meeting with {entity} was cancelled and nothing has been booked with them in the
+      {days} days since.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: rohit
+  last_updated: '2026-09-13'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-09-13'
+  notes: >
+    Split from `meeting-without-follow-through` rather than folded into it: that file's `when`
+    block excludes `cancelled` on purpose, because a recap and a re-book are opposite
+    instructions. `meeting.rebooked` is computed by `context/meeting_situations.py` over the whole
+    diary — any later live meeting with the same counterparty resolves it — and is the narrow
+    reading deliberately, since a card chasing a call already back in the diary is worse than
+    silence. No window bound here, unlike the sibling: a slot dropped and never replaced does not
+    stop being true after ten days, it gets worse.
+
+admission:
+  accepted_content_hash: 487fab6cdde4ab055b9fe61b2a6d9de8f7881387e34fce8c07961157f1075246

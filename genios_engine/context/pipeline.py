@@ -11,7 +11,11 @@ from sqlalchemy import text
 # Load-bearing at RUNTIME only (the ask/reply branches) — exactly how their absence shipped:
 # module imported cleanly, suite green, and the first real extraction with an ask observation
 # would have raised NameError and zeroed the whole L2 processing phase.
-from genios_engine.context.open_loops import close_loops_for_reply, record_ask
+from genios_engine.context.open_loops import (
+    close_loops_awaited_from,
+    close_loops_for_reply,
+    record_ask,
+)
 from genios_engine.contracts.open_loop import is_ask, open_loop_id
 from genios_engine.capture.gate.rules import AUTO_REPLY
 from genios_engine.capture.internal_knowledge import authority_rank_for
@@ -733,6 +737,32 @@ def _normalise_meeting_status(value):
     return "cancelled" if raw.lower() in CANCELLED else raw
 
 
+def _mirror_to_recipients(store, conn, *, org_id: str, recipients: list[str], kind: str,
+                          confidence: float, occurred_at: datetime | None, event_id: str,
+                          quoted: str | None, speaker_node_id: str | None,
+                          source: str | None) -> int:
+    """File one thing we said against every person we said it to. Returns rows written.
+
+    The kind is prefixed, never bare. `received:question` is a fact about somebody we asked;
+    `question` is a fact about somebody who asked. Every existing reader selects on the bare
+    kinds, so none of them can mistake our words for theirs, and a reader that wants "what have
+    we put to this person" now has a row to select.
+
+    The speaker is skipped: writing our own mail back onto ourselves would double-count the
+    398 observations already sitting on the mailbox owner's node.
+    """
+    written = 0
+    for rnode in recipients:
+        if not rnode or rnode == speaker_node_id:
+            continue
+        written += int(store.write_received_observation(
+            conn, org_id=org_id, subject_node_id=rnode, kind=f"received:{kind}",
+            confidence=confidence, occurred_at=occurred_at, event_id=event_id,
+            evidence={"text": quoted, "speaker_node_id": speaker_node_id},
+            source=source))
+    return written
+
+
 def process_event(*, org_id: str, event_id: str, source: str, content: str,
                   sender_email: str | None, occurred_at: datetime | None,
                   sender_name: str | None = None,
@@ -845,6 +875,16 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         nodes = 0
         edge_n = 0
         obs_n = 0
+        #: The people WE wrote to on this event, resolved to nodes. Filled by the recipient loop
+        #: below and read by the observation loops far further down, which is why it is declared
+        #: here rather than beside either: what we said has to reach the person we said it to, and
+        #: the two halves of that sentence are 400 lines apart. Empty on an inbound mail — a
+        #: message they sent is already evidence about them, on the ordinary sender path.
+        outbound_recipient_nodes: list[str] = []
+        #: The external half of the same list. An ask needs exactly one answerer to be closable
+        #: (see `migrations/0159_open_loop_awaited_from.sql`), and a colleague on Cc is not the
+        #: person we are waiting on.
+        outbound_external_nodes: list[str] = []
 
         # Which nodes this event was ABOUT, and which of them are US. Correlation anchors
         # a situation on the COUNTERPARTY: anchoring on our own company would file every
@@ -1040,6 +1080,12 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                         occurred_at=occurred_at, event_id=event_id, source=source,
                         evidence={"presence": "outbound_recipient",
                                   "speaker_node_id": sender_node, "recipient": rn_email}))
+                    # …and the SUBSTANCE of what we sent follows, further down. Presence alone
+                    # said an event touched them; it did not say what we asked or promised, so
+                    # an anchor about somebody we have only ever written to still scored zero.
+                    outbound_recipient_nodes.append(rnode)
+                    if rn_email not in internal_set:
+                        outbound_external_nodes.append(rnode)
                 _works_at(rn_email, rnode)
                 if sender_node:
                     # canonicalise pair direction (lexically smaller email = from) → ONE edge per
@@ -1421,6 +1467,11 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         # observation hygiene: one email quoting the same moment twice must not commit the
         # same (kind, evidence) twice — duplicates double-count in derived sentiment.
         seen_obs: set[tuple[str, str]] = set()
+        #: Who owes us an answer for anything we ask on this event. One external recipient is a
+        #: question put to a person; seven is a broadcast, and naming one of the seven as THE
+        #: answerer would close the loop the moment any one of them replied.
+        sole_answerer = (outbound_external_nodes[0]
+                         if len(outbound_external_nodes) == 1 else None)
         for o in obs:
             kind = norm_obs_kind(o.get("kind"))
             key = (kind, str(o.get("evidence_text") or ""))
@@ -1438,7 +1489,7 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             if is_ask(kind) and content_subject:
                 obs_evidence["open_loop_id"] = record_ask(
                     conn, org_id=org_id, subject_node_id=content_subject, kind=kind,
-                    thread_id=thread_id, event_id=event_id,
+                    thread_id=thread_id, event_id=event_id, awaited_from=sole_answerer,
                     at=occurred_at) if occurred_at else open_loop_id(
                     org_id=org_id, subject_node_id=content_subject, kind=kind,
                     thread_id=thread_id)
@@ -1447,6 +1498,10 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                                     occurred_at=occurred_at, event_id=event_id,
                                     evidence=obs_evidence, source=source)
             obs_n += 1
+            obs_n += _mirror_to_recipients(
+                store, conn, org_id=org_id, recipients=outbound_recipient_nodes, kind=kind,
+                confidence=obs_conf, occurred_at=occurred_at, event_id=event_id,
+                quoted=o.get("evidence_text"), speaker_node_id=sender_node, source=source)
         # INTENT, finally committed: the LLM already extracts open questions — the pipeline
         # parsed and DROPPED them for months. A question directed at us is the strongest
         # "they expect an answer" signal the twin can hold.
@@ -1464,13 +1519,20 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                                                   conn, org_id=org_id,
                                                   subject_node_id=sender_node,
                                                   kind="question", thread_id=thread_id,
-                                                  event_id=event_id, at=occurred_at)
+                                                  event_id=event_id, at=occurred_at,
+                                                  awaited_from=sole_answerer)
                                                   if occurred_at else open_loop_id(
                                                       org_id=org_id,
                                                       subject_node_id=sender_node,
                                                       kind="question", thread_id=thread_id))},
                                     source=source)
             obs_n += 1
+            # A question WE put to somebody is the strongest evidence there is that we are owed
+            # an answer by them — and it was landing on us, because we sent it.
+            obs_n += _mirror_to_recipients(
+                store, conn, org_id=org_id, recipients=outbound_recipient_nodes, kind="question",
+                confidence=ex.relevance, occurred_at=occurred_at, event_id=event_id,
+                quoted=q.get("evidence_text"), speaker_node_id=sender_node, source=source)
 
         # per-email relevance recorded as an append-only signal so L3/queries can RANK — the
         # "score, don't delete" record: even a low-relevance email leaves its score, never a gap.
@@ -1496,6 +1558,12 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         # it no longer decides whether the signal clears the c_min gate (D3).
         if (is_inbound and sender_node and occurred_at is not None and not is_noise
                 and sender_norm not in internal_set):
+            # THEIR REPLY CLOSES WHAT WE ASKED THEM. The mirror of the outbound leg's
+            # `close_loops_for_reply`, and until now the ledger had no such verb: a question we
+            # put to somebody opened a loop on our own node that nothing could ever shut, so
+            # every ask the founder ever sent was still open, answered ones included.
+            close_loops_awaited_from(conn, org_id=org_id, node_id=sender_node,
+                                     thread_id=thread_id, event_id=event_id, at=occurred_at)
             store.write_fact(conn, org_id=org_id, subject_node_id=sender_node,
                              field="thread.last_inbound", value=occurred_at.isoformat(),
                              value_type="timestamp", confidence=FACT_CONF_BY_RANK[2],

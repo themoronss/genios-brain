@@ -356,24 +356,28 @@ map:
 
   meeting_follow_through:
     situations:
+      - admin.sit.meeting_cancelled_not_rebooked
       - admin.sit.meeting_without_follow_through
     capabilities:
       - admin.executive_support.commitment_tracking
       - admin.meeting_operations.action_item_tracking
+      - admin.meeting_operations.agenda_preparation
       - admin.meeting_operations.follow_up_coordination
+      - admin.meeting_operations.meeting_scheduling
       - admin.meeting_operations.minutes_and_documentation
     objects:
       load:
         - admin.obj.core.action_item
+        - admin.obj.core.approver
         - admin.obj.core.commitment
         - admin.obj.core.deadline
         - admin.obj.core.document
         - admin.obj.core.meeting
+        - admin.obj.core.request
       optional:
         - admin.obj.core.approval
         - admin.obj.core.escalation
         - admin.obj.core.policy
-        - admin.obj.core.request
       never_load:
         - admin.obj.core.asset
         - admin.obj.core.employee_record
@@ -573,7 +577,7 @@ stats:
   l2_types_routed_here: 12
   l2_types_unrouted_globally: 6
   l2_types_pending: 6
-  situations: 27
+  situations: 28
   capabilities: 59
   capabilities_stub: 0
   capabilities_complete: 59

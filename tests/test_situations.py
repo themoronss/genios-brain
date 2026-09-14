@@ -419,3 +419,58 @@ def test_ordering_is_by_confidence_and_says_it_is_not_priority() -> None:
     source = inspect.getsource(active_situations)
     assert "order by s.confidence_overall desc" in source
     assert "not prioritisation" in source.lower() or "NOT prioritisation" in source
+
+
+# ── corroboration counts voices, not only tools ───────────────────────────────────────────────
+#
+# `source_count` is `count(distinct se.source)`, so a fundraise living entirely in Gmail scored 1
+# for ever and corroboration stopped at 25 of its 60 — capping the whole axis at 65 for every
+# correspondence-only tenant, however many people were in the conversation.
+
+
+def test_an_absent_voice_count_scores_exactly_what_it_always_did():
+    """The compatibility floor: a caller that does not know the party count is unaffected."""
+    from genios_engine.context.situations import evidence_score
+
+    for events, sources in ((0, 0), (1, 1), (3, 1), (20, 1), (3, 3), (10_000, 50)):
+        assert (evidence_score(event_count=events, source_count=sources)
+                == evidence_score(event_count=events, source_count=sources, voice_count=0))
+
+
+def test_one_voice_is_not_corroboration():
+    """We wrote and nobody answered: real evidence that we acted, no second account of it."""
+    from genios_engine.context.situations import evidence_score
+
+    assert (evidence_score(event_count=3, source_count=1, voice_count=1)
+            == evidence_score(event_count=3, source_count=1))
+
+
+def test_both_sides_writing_corroborates_like_a_second_tool():
+    """Two parties in one thread are two independent accounts; twenty mails from one are not."""
+    from genios_engine.context.situations import evidence_score
+
+    two_parties_one_tool = evidence_score(event_count=5, source_count=1, voice_count=2)
+    one_party_two_tools = evidence_score(event_count=5, source_count=2, voice_count=1)
+    assert two_parties_one_tool == one_party_two_tools
+    assert two_parties_one_tool > evidence_score(event_count=5, source_count=1, voice_count=1)
+
+
+def test_a_gmail_only_relationship_is_no_longer_capped_at_sixty_five():
+    """The defect this change exists to remove."""
+    from genios_engine.context.situations import evidence_score
+
+    assert evidence_score(event_count=5, source_count=1) == 65
+    assert evidence_score(event_count=5, source_count=1, voice_count=3) > 65
+
+
+def test_corroboration_still_cannot_exceed_its_own_cap():
+    from genios_engine.context.situations import evidence_score
+
+    assert evidence_score(event_count=100, source_count=9, voice_count=9) == 100
+    assert evidence_score(event_count=0, source_count=0, voice_count=99) == 60
+
+
+def test_a_negative_voice_count_is_refused_like_every_other_negative():
+    from genios_engine.context.situations import evidence_score
+
+    assert evidence_score(event_count=-5, source_count=-2, voice_count=-7) == 0

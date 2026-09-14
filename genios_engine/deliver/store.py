@@ -136,6 +136,24 @@ class CardStore:
                  "token": build_claim_token, "authority_time": as_of}).first()
             if lease is None:
                 return None, False, False
+            # A CARD WITH NOTHING IN IT MUST NOT REACH A PERSON. Measured on the pilot: of fifteen
+            # cards the founder was shown, one had `headline` NULL and `situation` NULL and was
+            # queued anyway, at score 44, ahead of two real cards. The validators this function's
+            # docstring relies on check that the words are ALLOWED — grounded, inside the budget,
+            # not invented — and never that there are any. A blank card costs its reader the
+            # seconds to open it plus the belief that the product knows what it is doing.
+            #
+            # AFTER THE LEASE, NOT BEFORE, and the ordering is the contract rather than taste:
+            # `test_card_insert_is_fenced_by_the_current_build_lease` asserts the lease is
+            # consulted on every call, so a cheaper check in front of it silently unfences the
+            # one thing that stops two builders writing the same card.
+            #
+            # Refused, never repaired: manufacturing a headline for a card that has none is the
+            # invention every renderer here exists to prevent. Reported as "not created", the same
+            # answer a lost lease gives, so no caller learns a new failure shape.
+            if (not str(copy.get("headline") or "").strip()
+                    or not str(copy.get("situation") or "").strip()):
+                return None, False, False
             authority = card.get("_authority") or {}
             if authority:
                 c.execute(text(

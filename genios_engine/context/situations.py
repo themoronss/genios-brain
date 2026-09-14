@@ -114,7 +114,7 @@ def normalize_stage(value) -> str:
 
 # ── the confidence dimensions ────────────────────────────────────────────────────
 
-def evidence_score(*, event_count: int, source_count: int) -> int:
+def evidence_score(*, event_count: int, source_count: int, voice_count: int = 0) -> int:
     """How much independent material backs this situation.
 
     Sources outweigh volume on purpose: twenty emails in one thread are one person's
@@ -126,9 +126,35 @@ def evidence_score(*, event_count: int, source_count: int) -> int:
     noisy single-source thread can never outscore genuine cross-tool agreement. An
     earlier split (60 volume / 40 sources) inverted it and made this docstring a lie;
     tests/test_situations.py now pins the ordering.
+
+    A TOOL WAS NEVER THE ONLY KIND OF INDEPENDENT SOURCE, and reading it that way put a
+    structural ceiling on every correspondence-only tenant. `source_count` is
+    `count(distinct se.source)`, so a fundraise that lives entirely in Gmail scores 1 — for
+    ever, however many people are in it — and corroboration stops at 25 of its 60. The whole
+    axis then caps that tenant at 65, the confidence ceiling takes it as a `min`, and a
+    founder whose raise is a hundred emails can never be spoken about confidently.
+
+    That conflated two different things. The docstring's own principle is INDEPENDENT
+    AGREEMENT, and two parties writing in a thread are two independent accounts of it in
+    exactly the way twenty mails from one of them are not. What we sent is our own act and
+    theirs is theirs; a system of record agreeing is a third. `voice_count` carries the number
+    of distinct parties who contributed an event, and each one past the first corroborates
+    like a further source would.
+
+    `voice_count=0` reproduces the old arithmetic exactly, so a caller that does not know the
+    party count scores precisely what it scored before this argument existed.
+
+    THIS CHANGES STORED SCORES, and that is not a side effect. `tree.yaml` froze this formula
+    (`protected: freshness_score and evidence_score formulas remain unchanged`) for the
+    three-problems build; the freeze is lifted here deliberately and on the record, at the
+    request of the person who owns the number. Every situation rescores on its next sweep and
+    replays taken against the old formula are no longer comparable — the `inputs` dict on
+    `score_situation` records `voice_count` so an old receipt is distinguishable from a new one
+    rather than silently reinterpreted.
     """
     volume = min(40, max(0, int(event_count)) * 8)
-    corroboration = min(60, max(0, int(source_count)) * 25)
+    voices = max(0, int(voice_count))
+    corroboration = min(60, (max(0, int(source_count)) + max(0, voices - 1)) * 25)
     return max(0, min(100, volume + corroboration))
 
 
@@ -415,7 +441,7 @@ class Confidence:
     inputs: dict = field(default_factory=dict)
 
 
-def score_situation(*, event_count: int, source_count: int,
+def score_situation(*, event_count: int, source_count: int, voice_count: int = 0,
                     last_seen_at: datetime | None, open_discrepancies: int,
                     open_merge_proposals: int, present_fields: set[str],
                     expected_fields: dict[str, str], now: datetime,
@@ -427,7 +453,8 @@ def score_situation(*, event_count: int, source_count: int,
     most callers make no comparison at all, and that is a not-applicable axis rather than a bad
     one (see `analytic_score`).
     """
-    evidence = evidence_score(event_count=event_count, source_count=source_count)
+    evidence = evidence_score(event_count=event_count, source_count=source_count,
+                              voice_count=voice_count)
     freshness, freshness_known = freshness_score(last_seen_at=last_seen_at, now=now)
     consistency = consistency_score(open_discrepancies=open_discrepancies)
     identity = identity_score(open_merge_proposals=open_merge_proposals)
@@ -455,6 +482,7 @@ def score_situation(*, event_count: int, source_count: int,
         consistency=consistency, identity=identity, coverage=coverage,
         analytic=analytic, missing=tuple(missing),
         inputs={"event_count": event_count, "source_count": source_count,
+                "voice_count": voice_count,
                 "freshness_known": freshness_known,
                 # Same shape as freshness: a dimension with no basis is REPORTED as having no
                 # basis rather than being scored, so "we never said what complete means for this
@@ -713,6 +741,21 @@ def refresh_situations(store, org_id: str, *, eval_time: datetime | None = None)
             "join source_events se on se.org_id = m.org_id and se.event_id = m.event_id "
             "where m.org_id = :o group by m.correlation_id", {"o": org_id})}
 
+        # distinct VOICES per correlation — how many parties actually contributed to it, which
+        # is the other kind of independent agreement `evidence_score` takes. `actor` is jsonb and
+        # the email inside it is the identity; comparing the whole blob is the mistake that once
+        # produced a "gmail and calendar share nobody" reading, because two records of the same
+        # person differ in every other key. One expression per dialect, because `->>` is Postgres
+        # and `json_extract` is the SQLite the tests run on.
+        _email = ("se.actor ->> 'email'" if conn.dialect.name == "postgresql"
+                  else "json_extract(se.actor, '$.email')")
+        voices: dict[str, int] = {r.correlation_id: int(r.n) for r in _bulk(conn,
+            f"select m.correlation_id, count(distinct lower({_email})) as n "  # noqa: S608
+            "from context_correlation_members m "
+            "join source_events se on se.org_id = m.org_id and se.event_id = m.event_id "
+            f"where m.org_id = :o and {_email} is not null "
+            "group by m.correlation_id", {"o": org_id})}
+
         facts_by_node: dict[str, dict[str, str]] = {}
         for row in _bulk(conn,
                 "select subject_node_id, field, value from graph_facts "
@@ -780,6 +823,7 @@ def refresh_situations(store, org_id: str, *, eval_time: datetime | None = None)
             confidence = score_situation(
                 event_count=int(corr.event_count),
                 source_count=sources.get(corr.correlation_id, 0),
+                voice_count=voices.get(corr.correlation_id, 0),
                 last_seen_at=corr.last_event_at,
                 open_discrepancies=discrepancies.get(corr.anchor_node_id, 0),
                 open_merge_proposals=proposals.get(corr.anchor_node_id, 0),
