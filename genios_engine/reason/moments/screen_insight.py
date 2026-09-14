@@ -12,7 +12,8 @@ judges it, and its answer is used four ways — follow-up, memory, brief and (ra
                        about known participants, the seat's last ≤ 5 "not useful" notes;
     JSON v4            {work, remember, items[0..3]{kind, text, who, due, quote}, adds, note};
     grounding          an item whose quote is not on screen is dropped; an item naming the
-                       manager as "who" loses its who;
+                       manager as "who" loses its who; a due resolved from ONE weekday named in
+                       the quote is moved onto that weekday when the model copied another day;
     THE PRODUCT RULE   the manager has already read the screen: a note exists only when it ADDS
                        something not on it (repeat ask, promise owed, calendar clash, same ask
                        elsewhere, urgent risk). Everything else is saved silently as items;
@@ -32,7 +33,7 @@ import re
 import time
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FutureTimeout
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from sqlalchemy import text as sql
 
@@ -207,7 +208,32 @@ def is_me(who: str | None, me: list[str] | None) -> bool:
     return False
 
 
-def _item(it, screen: str, me: list[str] | None) -> dict | None:
+_WEEKDAYS = {"monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3, "friday": 4,
+             "saturday": 5, "sunday": 6}
+
+
+def fix_weekday(due: str | None, quote: str | None, today: date | None) -> str | None:
+    """A due the model resolved from a weekday named in the quote must fall on that weekday.
+    Measured: Haiku copied "Thursday 5 pm" as the Friday of the day list. Only when the quote
+    names exactly ONE weekday and the model's date falls on another: the next such weekday on or
+    after today is taken, the model's time kept. Anything else is left as the model wrote it."""
+    if not due or today is None:
+        return due
+    named = {_WEEKDAYS[w] for w in re.findall(r"[a-z]+", (quote or "").casefold())
+             if w in _WEEKDAYS}
+    if len(named) != 1:
+        return due
+    try:
+        d = date.fromisoformat(due[:10])
+    except ValueError:
+        return due
+    want = named.pop()
+    if d.weekday() == want:
+        return due
+    return (today + timedelta(days=(want - today.weekday()) % 7)).isoformat() + due[10:]
+
+
+def _item(it, screen: str, me: list[str] | None, today: date | None = None) -> dict | None:
     """One model item → a grounded item, or None (unknown kind, no text, quote not on screen)."""
     if not isinstance(it, dict):
         return None
@@ -221,10 +247,11 @@ def _item(it, screen: str, me: list[str] | None) -> dict | None:
         return None
     who = _opt(it.get("who"), WHO_MAX_CHARS)
     return {"kind": kind, "text": text, "who": None if is_me(who, me) else who,
-            "due": _opt(it.get("due"), 32), "quote": quote[:200]}
+            "due": fix_weekday(_opt(it.get("due"), 32), quote, today), "quote": quote[:200]}
 
 
-def judge(raw: dict | None, screen: str, *, me: list[str] | None = None) -> dict:
+def judge(raw: dict | None, screen: str, *, me: list[str] | None = None,
+          today: date | None = None) -> dict:
     """The model's v4 answer → `{work, remember, items, adds, note}`. Items are grounded; a note
     survives only with a known `adds` AND at least one grounded item (it is about them)."""
     work = work_of(raw)
@@ -232,7 +259,7 @@ def judge(raw: dict | None, screen: str, *, me: list[str] | None = None) -> dict
     if work is False or not isinstance(raw, dict):
         return out
     listed = raw.get("items") if isinstance(raw.get("items"), list) else []
-    out["items"] = [i for i in (_item(it, screen, me) for it in listed[:MAX_ITEMS]) if i]
+    out["items"] = [i for i in (_item(it, screen, me, today) for it in listed[:MAX_ITEMS]) if i]
     adds = str(raw.get("adds") or "").strip().lower()
     note = _opt(raw.get("note"), INSIGHT_MAX_CHARS)
     if out["items"] and note and adds in ADDS:
@@ -378,7 +405,8 @@ def _compute(engine, *, org_id: str, email: str | None, app: str | None, partici
              entities, screen: str, deadline: float, now_local: str = "",
              not_useful: list[str] | None = None, me: list[str] | None = None,
              open_items: list[dict] | None = None, meetings: list[dict] | None = None,
-             thread_key: str | None = None, tz_name: str | None = None) -> dict | None:
+             thread_key: str | None = None, tz_name: str | None = None,
+             today: date | None = None) -> dict | None:
     sids: list[str] = []
     facts: list[dict] = []
     try:
@@ -400,7 +428,7 @@ def _compute(engine, *, org_id: str, email: str | None, app: str | None, partici
                       tz_name=tz_name)
     if raw is None:
         return None
-    judged = judge(raw, screen, me=me)
+    judged = judge(raw, screen, me=me, today=today)
     return {"subject_ids": sids, "work": judged["work"], "memory": judged["remember"],
             "judged": judged}
 
@@ -409,7 +437,8 @@ def insight(engine, *, org_id: str, email: str | None, app: str | None, particip
             screen: str, timeout_s: float = TIMEOUT_S, now_local: str = "",
             not_useful: list[str] | None = None, me: list[str] | None = None,
             open_items: list[dict] | None = None, meetings: list[dict] | None = None,
-            thread_key: str | None = None, tz_name: str | None = None) -> dict | None:
+            thread_key: str | None = None, tz_name: str | None = None,
+            today: date | None = None) -> dict | None:
     """`{"subject_ids", "work", "memory", "judged"}` — `judged` is `judge()`'s answer, `work` /
     `memory` the model's judgements or None — or None (no answer: no model, time ran out)."""
     deadline = time.monotonic() + timeout_s
@@ -417,7 +446,7 @@ def insight(engine, *, org_id: str, email: str | None, app: str | None, particip
                        participants=participants, entities=entities, screen=screen,
                        deadline=deadline, now_local=now_local, not_useful=not_useful, me=me,
                        open_items=open_items, meetings=meetings, thread_key=thread_key,
-                       tz_name=tz_name)
+                       tz_name=tz_name, today=today)
     try:
         return fut.result(timeout=max(0.0, deadline - time.monotonic()))
     except FutureTimeout:
@@ -429,7 +458,7 @@ def insight(engine, *, org_id: str, email: str | None, app: str | None, particip
 
 
 __all__ = ["ACTIONS", "ADDS", "CAPABILITY_ID", "CAPABILITY_VERSION", "DEFAULT_DAILY_CAP",
-           "ITEM_KINDS", "MIN_TEXT_CHARS", "NOT_USEFUL_EXAMPLES", "build_prompt", "insight",
+           "ITEM_KINDS", "MIN_TEXT_CHARS", "fix_weekday", "NOT_USEFUL_EXAMPLES", "build_prompt", "insight",
            "is_me", "judge", "local_label", "meetings_block", "memory_of", "moment_content",
            "not_useful_block", "open_items_block", "reserve", "text_digest", "visible_text",
            "work_of"]

@@ -79,6 +79,29 @@ def test_the_manager_is_never_who():
     assert j["items"][0]["who"] is None
 
 
+def test_a_named_weekday_wins_over_a_wrongly_copied_date():
+    from datetime import date
+    today = date(2026, 9, 14)                                     # a Monday
+    # measured: Haiku copied "Thursday 5 pm" as Friday the 18th
+    assert SI.fix_weekday("2026-09-18T17:00", "send the signed MSA by Thursday 5 pm",
+                          today) == "2026-09-17T17:00"
+    assert SI.fix_weekday("2026-09-17T17:00", "by Thursday 5 pm", today) == "2026-09-17T17:00"
+    assert SI.fix_weekday("2026-09-14T18:00", "by Monday EOD", today) == "2026-09-14T18:00"
+    assert SI.fix_weekday("2026-09-18T18:00", "Friday or Monday works", today) == \
+        "2026-09-18T18:00"                                        # two weekdays: left alone
+    assert SI.fix_weekday("2026-09-18T18:00", "by the 18th", today) == "2026-09-18T18:00"
+    assert SI.fix_weekday("2026-09-18", "by Thursday", today) == "2026-09-17"
+    assert SI.fix_weekday(None, "Thursday", today) is None
+    assert SI.fix_weekday("soon", "Thursday", today) == "soon"
+    assert SI.fix_weekday("2026-09-18T17:00", "Thursday", None) == "2026-09-18T17:00"
+    screen = "Ravi: can you share it?\nYou: I'll send the signed MSA by Thursday 5 pm"
+    j = SI.judge({"work": True, "items": [{"kind": "my_promise", "text": "Send Ravi the MSA",
+                                           "who": "Ravi", "due": "2026-09-18T17:00",
+                                           "quote": "send the signed MSA by Thursday 5 pm"}]},
+                 screen, today=today)
+    assert j["items"][0]["due"] == "2026-09-17T17:00"
+
+
 def test_the_moment_carries_the_note_the_quote_and_a_hash_never_the_screen():
     j = SI.judge({"work": True, "items": [ASK], "adds": "conflict",
                   "note": "Friday clashes with your Voltex review"}, SCREEN)

@@ -348,7 +348,7 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
                      participants=body.participants, entities=body.features.entities,
                      screen=screen, now_local=SI.local_label(now, tz), not_useful=notes, me=me,
                      open_items=context, meetings=_meetings_soon(engine, p, now),
-                     thread_key=thread, tz_name=tz)
+                     thread_key=thread, tz_name=tz, today=now.astimezone(F.zone(tz)).date())
     if res is not None and vkey and res["work"] is not None:
         F.set_verdict(engine, org_id=p.org_id, seat_id=p.seat_id, thread_key=vkey,
                       work=res["work"], memory=res.get("memory"), now=now)
