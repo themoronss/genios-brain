@@ -377,7 +377,9 @@ def test_undecryptable_payload_parks_at_once():
 
 
 # ── SCREEN_INTEL_SYSTEM_DESIGN phase 1 · the one judge's items become graph memory (S3) ────────
-def test_instant_mode_writes_the_judges_items_on_their_person_once_with_no_model_call():
+def test_instant_mode_writes_items_on_existing_people_once_and_never_creates_one():
+    from genios_engine.context.graph_store import GraphStore
+    from genios_engine.context.identity import observe_person_name
     from genios_engine.platform import screen_promoter as SP
     from genios_engine.platform.config import get_settings
     assert get_settings().screen_memory_mode == "instant"
@@ -385,11 +387,17 @@ def test_instant_mode_writes_the_judges_items_on_their_person_once_with_no_model
     assert SP.default_doors().wiring_for(org, email, f"screen:{seat}").semantic is None
     now = datetime.now(timezone.utc)
     with _engine().begin() as c:
+        priya = GraphStore(engine=_engine()).find_or_create_node(
+            c, org_id=org, node_type="person", canonical_key="priya@acme.test",
+            display_name="Priya Shah", event_id=None)
+        observe_person_name(c, org_id=org, node_id=priya, name="Priya Shah")
         c.execute(text("insert into screen_thread_verdicts (org_id, seat_id, thread_key, work, "
                        "memory, judged_at) values (:o, :s, 'li:conv:abc', true, true, :now)"),
                   {"o": org, "s": seat, "now": now})
         for fid, kind, who, quote in (("fu_a", "ask", "Priya Shah (Acme)", "send the deck"),
-                                      ("fu_b", "deadline", None, "the board meets Friday")):
+                                      ("fu_b", "deadline", None, "the board meets Friday"),
+                                      ("fu_c", "ask", "Stranger Person", "call me back"),
+                                      ("fu_d", "their_promise", "Deepak @ Rentomojo", "will call")):
             c.execute(text(
                 "insert into screen_followups (id, org_id, seat_id, thread_key, kind, text, who, "
                 "topic_key, quote) values (:i, :o, :s, 'li:conv:abc', :k, :t, :w, :tk, :q)"),
@@ -401,19 +409,36 @@ def test_instant_mode_writes_the_judges_items_on_their_person_once_with_no_model
     assert llm.calls == 0                        # the verdict decided; no heavy read, no AI gate
     (ev,) = [e for e in _events(org) if e.outcome == "emitted"]
     with _engine().connect() as c:
-        rows = c.execute(text("select kind, graph_written_at, subject_node_id from "
-                              "screen_followups where org_id=:o order by kind"), {"o": org}).all()
-        obs = c.execute(text(
-            "select o.kind, o.subject_node_id, n.display_name from graph_observations o "
-            "left join graph_nodes n on n.org_id = o.org_id and n.node_id = o.subject_node_id "
-            "and n.valid_to is null where o.org_id=:o and o.created_by_event_id=:e "
-            "and o.kind like 'screen.%' order by o.kind"), {"o": org, "e": ev.event_id}).all()
-    assert all(r.graph_written_at is not None for r in rows)
-    assert [o.kind for o in obs] == ["screen.ask", "screen.deadline"]
-    assert obs[0].display_name == "Priya Shah" and obs[0].subject_node_id == rows[0].subject_node_id
-    # once: the next promotion of the same chat writes nothing again
+        rows = {r.who: r for r in c.execute(text(
+            "select who, graph_written_at, subject_node_id from screen_followups "
+            "where org_id=:o"), {"o": org})}
+        kinds = [r.kind for r in c.execute(text(
+            "select kind from graph_observations where org_id=:o and created_by_event_id=:e "
+            "and kind like 'screen.%' order by kind"), {"o": org, "e": ev.event_id})]
+        strangers = c.execute(text("select count(*) from graph_nodes where org_id=:o and "
+                                   "(display_name ilike '%stranger%' or display_name ilike "
+                                   "'%deepak%' or canonical_key like 'screen:%')"),
+                              {"o": org}).scalar()
+    assert all(r.graph_written_at is not None for r in rows.values())
+    assert kinds == ["screen.ask", "screen.ask", "screen.deadline", "screen.their_promise"]
+    assert rows["Priya Shah (Acme)"].subject_node_id == priya          # an existing person
+    assert rows["Stranger Person"].subject_node_id is None             # never created
+    assert rows["Deepak @ Rentomojo"].subject_node_id is None          # "@" is not an email
+    assert strangers == 0, "a private screen never adds a person to the org's graph"
+    # once: the next promotion of the same chat writes nothing again …
     _insert(org, seat, [_chat(key="li:conv:abc:2026-09-17T11", wm=9, text_="any update?")])
     _drain(_doors(llm))
     with _engine().connect() as c:
         assert c.execute(text("select count(*) from graph_observations where org_id=:o "
-                              "and kind like 'screen.%'"), {"o": org}).scalar() == 2
+                              "and kind like 'screen.%'"), {"o": org}).scalar() == 4
+    # … unless what memory holds changed (a due arrived): then it is written again
+    from genios_engine.reason.moments import followups as F
+    with _engine().connect() as c:
+        topic = c.execute(text("select topic_key from screen_followups where org_id=:o and "
+                               "who='Priya Shah (Acme)'"), {"o": org}).scalar()
+    F.upsert(_engine(), org_id=org, seat_id=seat, kind="ask", note="ask note",
+             who="Priya Shah (Acme)", due_at=now + timedelta(days=2), thread_key="li:conv:abc",
+             app="linkedin", topic=topic, tz_name="UTC", now=now, quote="send the deck")
+    with _engine().connect() as c:
+        assert c.execute(text("select graph_written_at from screen_followups where org_id=:o "
+                              "and who='Priya Shah (Acme)'"), {"o": org}).scalar() is None

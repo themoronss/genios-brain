@@ -150,8 +150,12 @@ def test_web_pages_share_one_verdict_per_site_chats_and_mail_do_not():
     assert F.verdict_key("doc:com.google.Chrome:www.naukri.com/mnjuser/Inbox") == "site:naukri.com"
     assert F.verdict_key("doc:com.google.Chrome:www.naukri.com/job-listings-ai") == \
         "site:naukri.com"
-    assert F.verdict_key("doc:com.google.Chrome:chatgpt.com") == "site:chatgpt.com"
-    for t in ("doc:com.google.Chrome:mail.google.com/mail/u/0",
+    assert F.verdict_key("doc:com.google.Chrome:shop.furlenco.com/cart") == "site:shop.furlenco.com"
+    # shared hosts: every page is a different document (a CV and a proposal on Google Docs)
+    for t in ("doc:com.google.Chrome:docs.google.com/document/d/abc",
+              "doc:com.google.Chrome:chatgpt.com", "doc:com.google.Chrome:www.notion.so/page",
+              "doc:com.google.Chrome:acme.atlassian.net/browse/X-1",
+              "doc:com.google.Chrome:mail.google.com/mail/u/0",
               "doc:com.google.Chrome:web.whatsapp.com/",
               "doc:com.google.Chrome:www.linkedin.com/messaging/thread/1",
               "doc:net.whatsapp.WhatsApp:title:\u200ewhatsapp",

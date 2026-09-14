@@ -214,9 +214,10 @@ _WEEKDAYS = {"monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3, "friday":
 
 def fix_weekday(due: str | None, quote: str | None, today: date | None) -> str | None:
     """A due the model resolved from a weekday named in the quote must fall on that weekday.
-    Measured: Haiku copied "Thursday 5 pm" as the Friday of the day list. Only when the quote
-    names exactly ONE weekday and the model's date falls on another: the next such weekday on or
-    after today is taken, the model's time kept. Anything else is left as the model wrote it."""
+    Measured: Haiku copied "Thursday 5 pm" as the Friday of the day list — a neighbour. So only
+    that: the quote names exactly ONE weekday, and the model's date is ONE day away from the next
+    such weekday on or after today → that weekday, the model's time kept. Anything else ("next
+    Monday", "Monday's call … by 18 Sep") is left as the model wrote it."""
     if not due or today is None:
         return due
     named = {_WEEKDAYS[w] for w in re.findall(r"[a-z]+", (quote or "").casefold())
@@ -228,9 +229,10 @@ def fix_weekday(due: str | None, quote: str | None, today: date | None) -> str |
     except ValueError:
         return due
     want = named.pop()
-    if d.weekday() == want:
+    fixed = today + timedelta(days=(want - today.weekday()) % 7)
+    if d.weekday() == want or abs((d - fixed).days) != 1:
         return due
-    return (today + timedelta(days=(want - today.weekday()) % 7)).isoformat() + due[10:]
+    return fixed.isoformat() + due[10:]
 
 
 def _item(it, screen: str, me: list[str] | None, today: date | None = None) -> dict | None:

@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import gzip
 import time
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 
@@ -255,34 +256,52 @@ QUEUED_FOR_BRIEF = "queued_for_brief"
 
 
 _MEETINGS_TTL_S = 600.0
+_MEETINGS_MEMO_MAX = 5000
 _meetings_memo: dict[tuple[str, str], tuple[float, list]] = {}
+_meetings_inflight: set[tuple[str, str]] = set()
+_MEETINGS_POOL = ThreadPoolExecutor(max_workers=2, thread_name_prefix="clash-meetings")
 
 
-def _meetings_soon(engine, p: Principal, now: datetime) -> list[dict]:
-    """The seat's meetings in the next 2 days, for the one judge's "does this clash?" — read from
-    the same graph the slice reads, memoised 10 min per seat so a burst of checks costs one read."""
+def _refresh_meetings(engine, org_id: str, seat_id: str, email: str | None) -> None:
     from datetime import timedelta
 
     from genios_engine.platform.identity import norm_email
     from genios_engine.reason.moments import slice as S
     from genios_engine.reason.moments.common import parse_ts
-    k = (p.org_id, p.seat_id)
-    hit = _meetings_memo.get(k)
-    if hit is not None and time.monotonic() - hit[0] < _MEETINGS_TTL_S:
-        return hit[1]
+    k = (org_id, seat_id)
+    out = (_meetings_memo.get(k) or (0.0, []))[1]          # a failure keeps the last known list
     try:
+        now = datetime.now(timezone.utc)
         with engine.connect() as c:
-            doc = S._build(c, org_id=p.org_id, seat_id=p.seat_id,
-                           email=norm_email(p.email) or viewer_key(p.email),
-                           viewer=viewer_key(p.email), now=now, threshold=None)
+            doc = S._build(c, org_id=org_id, seat_id=seat_id,
+                           email=norm_email(email) or viewer_key(email),
+                           viewer=viewer_key(email), now=now, threshold=None)
         end = now + timedelta(days=2)
         out = [m for m in doc.get("meetings") or []
                if (s := parse_ts(m.get("start_at"))) is not None and s <= end]
     except Exception:      # noqa: BLE001 — a clash check is a bonus, never a failed request
-        _log.info("screen insight: no meetings for the clash check org=%s", p.org_id)
-        out = []
-    _meetings_memo[k] = (time.monotonic(), out)
-    return out
+        _log.info("screen insight: meetings for the clash check not read org=%s", org_id)
+    finally:
+        if len(_meetings_memo) >= _MEETINGS_MEMO_MAX and k not in _meetings_memo:
+            _meetings_memo.pop(next(iter(_meetings_memo)))
+        _meetings_memo[k] = (time.monotonic(), out)
+        _meetings_inflight.discard(k)
+
+
+def _meetings_soon(engine, p: Principal, now: datetime) -> list[dict]:
+    """The seat's meetings in the next 2 days, for the one judge's "does this clash?". Never on
+    the request's critical path: the last known list is returned at once and a stale or missing
+    one is refreshed in the background (the slice's own graph read, at most every 10 min per seat
+    and process)."""
+    k = (p.org_id, p.seat_id)
+    hit = _meetings_memo.get(k)
+    if (hit is None or time.monotonic() - hit[0] >= _MEETINGS_TTL_S) and k not in _meetings_inflight:
+        _meetings_inflight.add(k)
+        try:
+            _MEETINGS_POOL.submit(_refresh_meetings, engine, p.org_id, p.seat_id, p.email)
+        except RuntimeError:       # interpreter shutting down
+            _meetings_inflight.discard(k)
+    return hit[1] if hit is not None else []
 
 
 def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, started: float):

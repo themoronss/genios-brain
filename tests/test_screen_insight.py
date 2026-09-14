@@ -94,6 +94,10 @@ def test_a_named_weekday_wins_over_a_wrongly_copied_date():
     assert SI.fix_weekday(None, "Thursday", today) is None
     assert SI.fix_weekday("soon", "Thursday", today) == "soon"
     assert SI.fix_weekday("2026-09-18T17:00", "Thursday", None) == "2026-09-18T17:00"
+    # only a date ONE day off is a copying slip; anything else is the model's reading
+    assert SI.fix_weekday("2026-09-21T18:00", "by Monday", today) == "2026-09-21T18:00"   # next Monday
+    assert SI.fix_weekday("2026-09-18T18:00", "after Monday's call, send it by 18 Sep",
+                          today) == "2026-09-18T18:00"
     screen = "Ravi: can you share it?\nYou: I'll send the signed MSA by Thursday 5 pm"
     j = SI.judge({"work": True, "items": [{"kind": "my_promise", "text": "Send Ravi the MSA",
                                            "who": "Ravi", "due": "2026-09-18T17:00",

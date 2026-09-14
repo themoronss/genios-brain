@@ -169,6 +169,13 @@ def _unquote(body: str | None) -> str:
 CHAT_HOSTS = ("mail.google.com", "outlook.live.com", "outlook.office.com", "outlook.office365.com",
               "web.whatsapp.com", "app.slack.com", "teams.microsoft.com", "teams.live.com",
               "www.linkedin.com/messaging", "linkedin.com/messaging")
+#: Hosts where every page is a different document or conversation (a CV and a client proposal
+#: both live on docs.google.com): judged per page, never per site.
+SHARED_HOSTS = ("google.com", "notion.so", "notion.site", "github.com", "gitlab.com", "linkedin.com",
+                "figma.com", "dropbox.com", "box.com", "onedrive.live.com", "sharepoint.com",
+                "office.com", "atlassian.net", "canva.com", "airtable.com", "trello.com", "asana.com",
+                "monday.com", "clickup.com", "miro.com", "claude.ai", "chatgpt.com", "openai.com",
+                "perplexity.ai", "youtube.com", "zoho.com", "zoho.in", "slack.com", "whatsapp.com")
 _WEB_DOC = re.compile(r"^doc:[^:]+:(?!title:)(?P<host>[^/\s]+)(?P<path>/\S*)?$")
 
 
@@ -182,6 +189,8 @@ def verdict_key(thread_key: str | None) -> str | None:
         return t or None
     host = m.group("host").lower()
     if any((host + (m.group("path") or "")).startswith(h) for h in CHAT_HOSTS):
+        return t
+    if any(host == h or host.endswith("." + h) for h in SHARED_HOSTS):
         return t
     return "site:" + host.removeprefix("www.")
 
@@ -427,6 +436,11 @@ def upsert(engine, *, org_id: str, seat_id: str, kind: str, note: str, who: str 
             "on conflict (org_id, seat_id, topic_key) do update set text = excluded.text, "
             "who = coalesce(excluded.who, f.who), due_at = excluded.due_at, "
             "quote = coalesce(excluded.quote, f.quote), "
+            # what memory holds changed → it is written to the graph again (0162)
+            "graph_written_at = case when f.text is distinct from excluded.text "
+            "or f.due_at is distinct from excluded.due_at "
+            "or coalesce(excluded.who, f.who) is distinct from f.who "
+            "then null else f.graph_written_at end, "
             "nudge_at = excluded.nudge_at, updated_at = excluded.updated_at "
             "where f.resolved_at is null returning " + _COLS),
             {"id": fid, "o": org_id, "s": seat_id, "t": thread_key, "app": app, "kind": kind,

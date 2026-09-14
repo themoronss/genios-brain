@@ -7,10 +7,12 @@ This module turns those rows into graph memory WITHOUT another AI read:
     when       the thread's screen content is promoted (screen_promoter, at most once an hour per
                thread); its seat-private source event is the observation's source, so the graph's
                visibility rules treat the item like any other private screen evidence;
-    on whom    the person the item is about: an email → that person's node; a name → the one
-               person already holding that exact name alias, else a node for this seat's screen
-               (canonical key `screen:<seat>:<name key>`, stable across sightings); no one → the
-               manager's own node (their seat email's person);
+    on whom    the person the item is about, ONLY when that person already exists in the graph
+               (an email in `who` → its email alias; else the one person holding that exact name
+               alias). A screen never CREATES a person: nodes are listed org-wide, and a private
+               WhatsApp contact must not appear to the rest of the org. Unknown people stay in the
+               seat's private follow-ups (and on the observation's evidence) with no subject; no
+               one named → the manager's own node (their seat email's person);
     what       one observation per item, kind `screen.<item kind>`, evidence = the model's note,
                who, due and quote (never more screen text);
     once       `graph_written_at` marks the row, so a later promotion never writes it twice.
@@ -35,6 +37,7 @@ SOURCE = "screen_insight"
 BATCH = 50
 #: "Deepak (Rentomojo)", "Deepak, Rentomojo", "Deepak - Rentomojo", "Deepak from Rentomojo"
 _COMPANY_SPLIT = re.compile(r"\s*(?:\(|,|\s-\s|\s–\s|\sfrom\s|\sat\s|@\s)", re.IGNORECASE)
+_EMAIL = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
 
 
 def name_part(who: str | None) -> str | None:
@@ -46,24 +49,16 @@ def name_part(who: str | None) -> str | None:
     return head or None
 
 
-def _person(conn, store, *, org_id: str, seat_id: str, who: str, event_id: str) -> str | None:
-    from genios_engine.context.identity import resolve_person_name
-    from genios_engine.platform.identity import norm_email, person_name_key
-    email = norm_email(who) if "@" in who else None
-    if email:
-        return store.find_or_create_node(conn, org_id=org_id, node_type="person",
-                                         canonical_key=email, display_name=email,
-                                         event_id=event_id)
-    name = name_part(who)
-    found = resolve_person_name(conn, org_id=org_id, name=name)
-    if found:
-        return found
-    key = person_name_key(name)
-    if not key:
-        return None
-    return store.find_or_create_node(conn, org_id=org_id, node_type="person",
-                                     canonical_key=f"screen:{seat_id}:{key}", display_name=name,
-                                     event_id=event_id)
+def _person(conn, *, org_id: str, who: str) -> str | None:
+    """The EXISTING person `who` names, or None (never creates one — see the module note)."""
+    from genios_engine.context.identity import ALIAS_EMAIL, resolve_alias, resolve_person_name
+    from genios_engine.platform.identity import norm_email
+    m = _EMAIL.search(who)
+    if m:
+        email = norm_email(m.group(0))
+        return (resolve_alias(conn, org_id=org_id, alias_type=ALIAS_EMAIL, alias_key=email)
+                if email else None)
+    return resolve_person_name(conn, org_id=org_id, name=name_part(who))
 
 
 def write_items(engine, *, org_id: str, seat_id: str, seat_email: str | None,
@@ -91,8 +86,7 @@ def write_items(engine, *, org_id: str, seat_id: str, seat_email: str | None,
             me = (resolve_alias(c, org_id=org_id, alias_type=ALIAS_EMAIL, alias_key=me_key)
                   if me_key else None)
             for r in rows:
-                node = (_person(c, store, org_id=org_id, seat_id=seat_id, who=r.who,
-                                event_id=event_id) if r.who else None) or (None if r.who else me)
+                node = _person(c, org_id=org_id, who=r.who) if r.who else me
                 store.write_observation(
                     c, org_id=org_id, subject_node_id=node, kind=KIND_PREFIX + r.kind,
                     confidence=CONFIDENCE, occurred_at=aware(r.created_at), event_id=event_id,
