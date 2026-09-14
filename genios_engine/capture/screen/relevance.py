@@ -37,6 +37,9 @@ from genios_engine.capture.gate.relevance import RelevanceVerdict
 from genios_engine.contracts.prepared_content import PreparedContent
 
 DOC_OBJECT_TYPE = "screen_doc"
+#: Instant screen memory (S4): an unjudged page with at least this much text is kept for the hourly
+#: batch update, which judges work / personal itself; a shorter one (flicked past) stays parked.
+UNJUDGED_KEEP_MIN_CHARS = 400
 STRUCTURED_BLOCKS_MIN = 3
 
 #: Host suffixes of work systems. A suffix match (`x.hubspot.com` ⊂ `hubspot.com`).
@@ -150,9 +153,13 @@ class ScreenDocRelevance:
 
     name = "relevance-screen-1"
 
-    def __init__(self, fallback=None, verdicts=None) -> None:
+    def __init__(self, fallback=None, verdicts=None, keep_unjudged: bool = False) -> None:
         self.fallback = fallback
         self.verdicts = verdicts
+        #: instant screen memory: a page no model judged (the instant check never ran on it —
+        #: daily limit, time-out, a short look) is kept for the hourly batch update instead of
+        #: parked, when it holds real text.
+        self.keep_unjudged = keep_unjudged
         self.model_judged: set[str] = set()
 
     def _judged(self, ctx: GateContext) -> None:
@@ -183,6 +190,9 @@ class ScreenDocRelevance:
             if ruled is not None:
                 return ruled
             if self.fallback is None:
+                if self.keep_unjudged and len(str(raw.get("body") or "")) >= UNJUDGED_KEEP_MIN_CHARS:
+                    return RelevanceVerdict(True, 0.50, disposition="keep",
+                                            reason="await_memory_update")
                 return RelevanceVerdict(False, 0.40, disposition="park",
                                         reason="no_work_signal")
             return self._ask(ctx, prepared)

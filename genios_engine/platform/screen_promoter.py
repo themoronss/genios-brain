@@ -169,7 +169,8 @@ def default_doors() -> Doors:
         # items ARE the screen memory (screen_memory.write_items below) — no AI gate (a thread
         # with no verdict keeps as a chat / parks as a page, by rule) and no heavy L1 read.
         instant = (get_settings().screen_memory_mode or "instant").strip().lower() == "instant"
-        gate = ScreenDocRelevance(None if instant else make_relevance_classifier(org_id), verdicts)
+        gate = ScreenDocRelevance(None if instant else make_relevance_classifier(org_id), verdicts,
+                                  keep_unjudged=instant and bool(get_settings().screen_memory_batch_enabled))
         return PushIngestWiring(
             repo=R._repo, trace_repo=R._trace_repo, payload_store=R._payload_store,
             prepared_store=R._prepared_store, document_job_store=R._documents,
