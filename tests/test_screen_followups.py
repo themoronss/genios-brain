@@ -198,9 +198,11 @@ def _model(monkeypatch, answer: dict) -> None:
     monkeypatch.setattr(SI, "llm_insight", lambda *a, **kw: dict(answer))
 
 
-def _look(client, dev, lines, *, thread="wa:chat:priya", app="whatsapp"):
+def _look(client, dev, lines, *, thread="wa:chat:priya", app="whatsapp", viewer=None):
     body = {"moment_request_id": uuid.uuid4().hex, "insight": True,
             "surface": {"app": app, "thread_key": thread}, "visible_messages": lines}
+    if viewer:
+        body["viewer_name"] = viewer
     return client.post("/v1/moments/evaluate", json=body, headers=H(dev["access_token"]))
 
 
@@ -306,11 +308,13 @@ def test_web_pages_are_judged_once_per_site_and_open_items_reach_the_model(  # n
     _look(client, dev, [ASK], thread="wa:chat:priya")
     answer[0] = NOTHING
     _look(client, dev, ["From: Priya Shah. Re: pricing. Following up for our board next week"],
-          thread="doc:com.google.Chrome:mail.google.com/mail/u/0", app="chrome")
+          thread="doc:com.google.Chrome:mail.google.com/mail/u/0", app="chrome",
+          viewer="Harsh  Tripathi")
     ctx = calls[-1]["open_items"]
     assert [(i["who"], i["thread_key"]) for i in ctx] == [("Priya Shah", "wa:chat:priya")]
     assert calls[-1]["thread_key"] == "doc:com.google.Chrome:mail.google.com/mail/u/0"
     assert calls[-1]["me"] and "@" in calls[-1]["me"][0]           # who the manager is
+    assert calls[-1]["me"][-1] == "Harsh Tripathi"                  # + the device account's name
     assert isinstance(calls[-1]["meetings"], list)
 
 

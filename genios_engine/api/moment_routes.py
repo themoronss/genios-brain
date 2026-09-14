@@ -329,6 +329,9 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
         context = [] if skip else F.open_context(c, org_id=p.org_id, seat_id=p.seat_id,
                                                  thread_key=thread, screen=screen)
         me = [] if skip else F.seat_names(c, org_id=p.org_id, email=p.email)
+    viewer = " ".join((body.viewer_name or "").split())[:200]
+    if viewer and not skip and viewer.casefold() not in {m.casefold() for m in me}:
+        me.append(viewer)                              # the device account's full name
     F.mark_answered(engine, org_id=p.org_id, seat_id=p.seat_id, thread_key=thread,
                     lines=screen.split("\n"), capability_id=SI.CAPABILITY_ID, now=now)
     if judged:
