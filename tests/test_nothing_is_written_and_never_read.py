@@ -133,14 +133,18 @@ KNOWN_UNREAD: dict[str, str] = {
         "surfacing it needs a situation that can say 'this becomes true when X', which nothing "
         "authors yet. MOVES WHEN: that situation is authored.",
     "context/angles":
-        "The bounded-question schema and its evaluator. `runner.process_pending` now runs "
-        "`angles.store.evaluate_org` on every sweep, so the module is consumed — but NO ANGLE IS "
-        "REGISTERED, so the pass costs nothing and answers nothing. That is the intended state "
-        "and not an oversight: the sweep supplies no asker either, which is the pattern the "
-        "cohort pass established so a tenant cannot reach a model by accident. What is still "
-        "missing is the two declarations the schema was written for — `condition_now_true` over "
-        "`derived.timeline.condition_review`, and the residue triage over `context_residue`. "
-        "MOVES WHEN: either is registered.",
+        "STALE ENTRY, CORRECTED. This said 'NO ANGLE IS REGISTERED · MOVES WHEN: either is "
+        "registered'. Both are: `condition_queue_triage` over `derived.timeline.condition_review` "
+        "and `reply_owed_triage` over `context_residue`, declared in `angles/library.py` and "
+        "registered by importing the package. The condition verdict reaches a card through "
+        "`condition_situations.read_conditions_in_review`. What is genuinely unread is narrower "
+        "and worth naming on its own: `angles/queues.triaged_residue` — the residue work queue "
+        "with its verdicts attached — has no production caller, because nothing in "
+        "`process_pending` surfaces the residue queue to a human at all. The angle answers; "
+        "there is no reader yet to carry the answer anywhere. Writing one belongs with the "
+        "situation that decides whether an unexplained subject deserves a card, not here. "
+        "MOVES WHEN: a reader calls `triaged_residue` — `is_this_worth_a_card` is the one that "
+        "will.",
     "open_loops.closed_basis":
         "Both closers record whether the closing message ANSWERED the ask (a kind in the "
         "`discharges` table) or merely arrived on the thread, and no reading selects it yet. "
