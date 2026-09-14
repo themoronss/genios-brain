@@ -34,6 +34,7 @@ from sqlalchemy import bindparam, text
 
 from genios_engine.context.derived_provenance import load_event_receipts
 from genios_engine.context.domain_spec import domains_declaring, spec_for
+from genios_engine.context.vocabulary import owner_basis
 from genios_engine.context.situations import (
     evidence_score,
     freshness_score,
@@ -209,6 +210,11 @@ _WAITING_ROWS = (
     "                'relationship.nature', 'party.role', 'thread.ball_in_court', "
     "                'thread.objective', "
     "                'commitment.due_at', 'commitment.action', 'commitment.status', "
+    # HOW WE KNOW WHOSE PROMISE THIS IS, beside the promise itself. Safe to add here only
+    # because the exclusion above now names the reading's OWN anchors rather than the node
+    # type it shares with the pipeline — before that, adding a `commitment.*` field was how
+    # the self-eating trap got sprung.
+    "                'commitment.owner_basis', "
     "                'thread.last_outbound')"
 )
 
@@ -632,14 +638,36 @@ def read_overdue_commitments(rows: dict, now: datetime, employers: dict) -> list
         # this" are different cards, and the second one was being shown for both.
         owner_name = held.get("_owner_name")
         owner_key = held.get("_owner_key")
+        # …AND HOW WE KNOW. The owner arrives from the `owns` edge, which records WHO and says
+        # nothing about WHERE IT CAME FROM; the pipeline writes the provenance beside it as a
+        # fact. Two live cases produce `unknown` rather than one:
+        #
+        #   a promise recorded before this fact had a writer, and
+        #   a promise whose owner node carries no address — the `owns` edge is written from
+        #   `subj` unconditionally, while `commitment.owner` is only written when that node
+        #   resolves to an email. The edge names somebody the facts do not.
+        #
+        # `vocabulary.owner_basis` maps both to `unknown`, which every consumer must read as no
+        # weaker than `inferred`, never as a statement somebody made.
+        basis = owner_basis(held.get("commitment.owner_basis")) if owner_name else None
         if owner_name:
             facts.append(("commitment.owner", str(owner_name), "string"))
+            facts.append(("commitment.owner_basis", basis, "enum"))
         if owner_key:
             facts.append(("commitment.owner_key", str(owner_key), "string"))
         # Say only what is known, in that order. Naming the counterparty is the strongest
         # sentence and it is available only on the fact-candidate shape; on a pipeline promise
         # the owner and the promise's own words are what there is, and the card says that
         # instead of inventing a recipient for it.
+        # THE OWNER IS NAMED WHATEVER THE BASIS SAYS, and the basis travels as a fact beside it.
+        # An earlier cut of this withheld the name on `unknown`, which was over-hedging twice
+        # over: `unknown` means we did not RECORD how we know, not that we invented it — the
+        # `owns` edge still came from the extractor resolving an actor — and withholding it drops
+        # the card back to naming the promise's own text as its subject, which is the exact
+        # confusion the two-shapes branch above exists to prevent. `test_the_display_name_says_
+        # who_owes_whom` states the property in one line: naming the owner is what stops the card
+        # being about the wrong person before anyone opens it. A reader that wants to weigh the
+        # provenance reads `commitment.owner_basis`; a reader that wants a sentence gets one.
         if owner_name and counterparty:
             headline = f"{owner_name} — promise to {counterparty} past due"
         elif owner_name:

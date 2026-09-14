@@ -36,6 +36,7 @@ from genios_engine.context.documents import register_document_node, resolve_owne
 from genios_engine.context.identity import (observe_company_name, observe_person_name,
                                             resolve_company_mention, resolve_person_name)
 from genios_engine.context.llm.client import LLMClient
+from genios_engine.context.vocabulary import OWNER_DECLARED, OWNER_INFERRED
 
 _WEEKDAYS = {"monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3,
              "friday": 4, "saturday": 5, "sunday": 6}
@@ -1796,8 +1797,25 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             # speaker gets no owner (fallback None, never the uploader), and an undated promise is
             # kept as a commitment without `due_at` rather than dropped. Other sources are
             # unchanged (their undated promises still drop — flagged, an owner decision).
-            subj = _resolve_subject(cm.get("actor"), name_to_node,
-                                    None if transcript_mode else sender_node)
+            # WHO PROMISED, AND HOW WE KNOW — two answers, and only the first was kept.
+            #
+            # `_resolve_subject` returns the named actor when the extractor named one and it
+            # resolved to a node, and the fallback otherwise. That fork IS the provenance of the
+            # owner, and it was computed and thrown away on every promise: "Sunil said he would
+            # send it Friday" and an email from Sunil that says "I'll send it Friday" produced
+            # byte-identical rows, though the first states an owner and the second assumes one.
+            # Downstream could not tell a stated obligation from an attributed one, which is the
+            # distinction an ownership surface is built out of.
+            #
+            # `speaker_node`, not `sender_node`: a promise carried by a relay is not the relay's.
+            # U1.2 moved every other content write and missed this one because the fallback is
+            # POSITIONAL here rather than a `subject_node_id=` keyword.
+            named_actor = _resolve_subject(cm.get("actor"), name_to_node, None)
+            subj = named_actor or (None if transcript_mode else speaker_node)
+            # `unknown` is never written here — this site always knows which fork it took. It
+            # exists for the READER, which resolves an owner from the `owns` edge and may find a
+            # promise recorded before this fact had a writer.
+            owner_basis = OWNER_DECLARED if named_actor else OWNER_INFERRED
             due = parse_due(cm.get("due_text"), occurred_at) if occurred_at else None
             if subj and (due or transcript_mode):
                 cm_text = str(cm.get("evidence_text") or "").strip()
@@ -1847,7 +1865,14 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                 # a seat id or an EMAIL, and handing it a node id would resolve to nobody —
                 # silently, which is how this gap survived in the first place.
                 owner_email = node_email.get(subj)
-                extra_facts = ((("commitment.owner", owner_email, "string"),)
+                # THE BASIS RIDES WITH THE OWNER AND NEVER WITHOUT IT. A basis on its own would
+                # describe how confident we are about a name we did not record, which is the
+                # shape of every "well-typed value nobody can use" this layer has had to delete.
+                # `subj` is set by the time this runs — the branch above returns when it is not —
+                # so an owner that resolves to no address is a node we know without an address,
+                # not an owner we failed to establish.
+                extra_facts = ((("commitment.owner", owner_email, "string"),
+                                ("commitment.owner_basis", owner_basis, "enum"))
                                if owner_email else ())
                 dated = ((("commitment.due_at", due.isoformat(), "timestamp"),) if due else ())
                 for fld, val, vt in (*dated,

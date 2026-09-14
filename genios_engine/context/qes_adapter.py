@@ -16,6 +16,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from typing import Any
 
+from genios_engine.context.vocabulary import OWNER_INFERRED
 from genios_engine.context.extract.extractor import Extraction
 from genios_engine.contracts.extraction import ExtractionResult
 
@@ -94,8 +95,12 @@ def adapt_qes_extraction(
         if item.owner:
             facts.append({"subject": item.subject, "field": "decision.owner",
                           "value": item.owner, "evidence_text": quote})
+            # L1 derived this owner from the signal rather than being told it, so it is an
+            # ATTRIBUTION. `vocabulary.OWNER_*` is the one vocabulary for that question; the
+            # value here used to be `inferred_from_qes`, which named the producer instead of the
+            # category and so could not be compared with the document store's answer.
             facts.append({"subject": item.subject, "field": "decision.owner_basis",
-                          "value": "inferred_from_qes", "evidence_text": quote})
+                          "value": OWNER_INFERRED, "evidence_text": quote})
     for amount in result.amounts:
         # Money is already normalised once in L1.  Keep integer minor units and currency together;
         # a bare number here would undo the Money contract at the first upper-layer boundary.

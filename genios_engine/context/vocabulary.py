@@ -148,3 +148,55 @@ OBS_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("Meetings", ("meeting_request", "meeting_scheduled", "meeting_cancelled")),
     ("General", ("followup_sent", "introduction", "question")),
 )
+
+
+# ── HOW WE KNOW WHO OWNS SOMETHING ───────────────────────────────────────────────────────────
+#
+# ONE VOCABULARY, BECAUSE THERE WERE ALREADY TWO. `documents.py` writes `document.owner_basis` as
+# `declared_by_source`; `qes_adapter.py` writes `decision.owner_basis` as `inferred_from_qes`.
+# Each names the WRITER rather than the category, so no consumer could ask "is this owner stated
+# or attributed?" without knowing every producer by name — and a third producer would have
+# invented a third string. Neither value is read by anything today, which is exactly why the
+# vocabulary is cheap to unify now and would not have been later.
+#
+# The distinction is the one `quality/missing.py` says an Ownership surface is built out of: a
+# renewal with no owner recorded is not missing data, it IS the finding. A renewal whose owner we
+# GUESSED is a third state, and it was indistinguishable from a stated one.
+
+#: Somebody said so. The extractor named an actor and it resolved; a file store reports its own
+#: owner. The strongest thing this system can say about who holds an obligation.
+OWNER_DECLARED = "declared"
+
+#: We attributed it from context — almost always the speaker, because a person writing "I'll send
+#: it Friday" is usually the person who will. A good default and still not a statement: an email
+#: REPORTING somebody else's promise resolves the same way and names the wrong owner.
+OWNER_INFERRED = "inferred"
+
+#: An owner is recorded and its provenance is not. Reached by a reader, never by a writer — every
+#: writer knows which fork it took. It covers rows written before a basis had a writer at all, and
+#: it is treated as `inferred` wherever the two must be ranked, because a provenance we cannot
+#: establish must never be read as a stated one.
+OWNER_UNKNOWN = "unknown"
+
+OWNER_BASIS: frozenset[str] = frozenset({OWNER_DECLARED, OWNER_INFERRED, OWNER_UNKNOWN})
+
+#: The two strings already in the tables, mapped rather than migrated. Nothing reads them, so a
+#: migration would be motion without a beneficiary; a reader that understands them costs one dict
+#: and keeps every historical row classifiable.
+_LEGACY_OWNER_BASIS: dict[str, str] = {
+    "declared_by_source": OWNER_DECLARED,
+    "inferred_from_qes": OWNER_INFERRED,
+}
+
+
+def owner_basis(value: object) -> str:
+    """Normalise a stored `*.owner_basis` to this vocabulary. Unreadable input is UNKNOWN.
+
+    Conservative by construction: anything this function cannot place becomes `unknown`, which
+    every consumer must treat as weakly as `inferred`. The failure it refuses is the one that
+    matters — a value we cannot interpret being read as a statement somebody made.
+    """
+    text = str(value or "").strip().lower()
+    if text in OWNER_BASIS:
+        return text
+    return _LEGACY_OWNER_BASIS.get(text, OWNER_UNKNOWN)
