@@ -252,6 +252,19 @@ def _finish(run: Sequence[tuple[str, str, datetime]], sentence: str, *,
     ),)
 
 
+def outbound_with_sentences(conn, org_id: str, *, since: datetime) -> Sequence[Mapping]:
+    """The raw outbound-with-sentence rows, for callers that group them differently.
+
+    ONE SPELLING OF THE QUERY. `campaign_candidates` asks the same question of the same rows and
+    reaches the opposite conclusion — it looks for sends this module DECLINED to group — so it
+    must read exactly what this module read. A second copy of the join would drift, and the two
+    passes would disagree about what the tenant even sent: this one carries the `corresponded_with`
+    coalesce that stopped the 11 August raise reporting fourteen recipients for seven real people,
+    the sender exclusion, and the no-JSON-operators rule that keeps it runnable on SQLite.
+    """
+    return conn.execute(text(_OUTBOUND_WITH_SENTENCE), {"o": org_id, "since": since}).mappings().all()
+
+
 def find_campaigns(conn, org_id: str, *, since: datetime,
                    window_hours: int = WINDOW_HOURS,
                    min_recipients: int = MIN_RECIPIENTS) -> tuple[Campaign, ...]:
@@ -261,7 +274,7 @@ def find_campaigns(conn, org_id: str, *, since: datetime,
     that makes a sweep unpredictable, and a caller choosing the window is a caller who knows which
     window their answer is about.
     """
-    rows = conn.execute(text(_OUTBOUND_WITH_SENTENCE), {"o": org_id, "since": since}).mappings().all()
+    rows = outbound_with_sentences(conn, org_id, since=since)
     return _rows_to_campaigns(rows, org_id=org_id, window_hours=window_hours,
                               min_recipients=min_recipients)
 
@@ -275,4 +288,6 @@ __all__ = [
     "campaign_id_for",
     "find_campaigns",
     "normalise_sentence",
+    "outbound_with_sentences",
+    "sender_email",
 ]

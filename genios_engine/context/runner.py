@@ -1343,6 +1343,25 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
         from genios_engine.platform.logging import get_logger
         get_logger("genios.l2").exception("residue detection failed for org=%s", org_id)
 
+    # L2 · THE NEAR-MISS CAMPAIGNS — sends the exact-sentence grouping DECLINED to merge.
+    #
+    # `correlation_conversation` groups outbound mail by the exact sentence and is right to: "a
+    # similarity threshold here would quietly merge two different pitches on a bad day". The cost
+    # is that a founder who paraphrases sends one raise to eighteen people and the system sees
+    # eighteen unrelated threads — the difference being a typing habit, not a fact about the raise.
+    #
+    # THIS PASS ASSERTS NOTHING. It mints no campaign and no card; it publishes a CANDIDATE with
+    # the distinctive words its members have in common, so the question can be adjudicated once by
+    # a model instead of guessed at by a threshold nobody can debug. Deterministic, bounded, no
+    # clock of its own, and before the angles pass because that is the queue an angle reads.
+    candidates: dict = {}
+    try:
+        from genios_engine.context.campaign_candidates import refresh_campaign_candidates
+        candidates = refresh_campaign_candidates(store, org_id, eval_time=sweep_at).as_record()
+    except Exception:      # noqa: BLE001 — a proposal must never break ingestion
+        from genios_engine.platform.logging import get_logger
+        get_logger("genios.l2").exception("campaign candidates failed for org=%s", org_id)
+
     # L2 · THE ANGLES — the only place in this layer a model may be asked anything on a sweep.
     #
     # AFTER THE RESIDUE PASS, because one of the two queues an angle may read IS the residue, and
@@ -1441,6 +1460,7 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
             # this layer explained everything it holds; a zero because the pass failed is
             # why it carries its own key rather than being folded into a total.
             "residue": residue,
+            "campaign_candidates": candidates,
             # What the model layer cost this tenant, including everything it declined to
             # do. `no_asker` and `budget_exhausted` are reported for the reason the
             # `budgets` ledger exists: a pass that made no calls because it COULD not must

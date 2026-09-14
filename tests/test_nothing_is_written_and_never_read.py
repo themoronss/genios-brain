@@ -145,6 +145,16 @@ KNOWN_UNREAD: dict[str, str] = {
         "situation that decides whether an unexplained subject deserves a card, not here. "
         "MOVES WHEN: a reader calls `triaged_residue` — `is_this_worth_a_card` is the one that "
         "will.",
+    "derived.conversation.campaign_candidate":
+        "The near-miss queue: sends in one window, to enough distinct counterparties, sharing "
+        "wording this tenant does not use everywhere, that `find_campaigns` DECLINED to group "
+        "because their sentences differ. Published on the tenant node with the shared words "
+        "attached, deliberately as a candidate and not a finding — proposing it as a card would "
+        "be the wrongful merge `correlation_conversation` refuses, done one layer up. It is the "
+        "gate for M-3, which the spec names as one of correlation's two model sites and which "
+        "nothing registers yet. Written before its reader on purpose: the queue has to exist for "
+        "an angle to be declared over it, and a queue nobody can inspect is a queue nobody can "
+        "review. MOVES WHEN: `same_situation_two_threads` is registered.",
     "open_loops.closed_basis":
         "Both closers record whether the closing message ANSWERED the ask (a kind in the "
         "`discharges` table) or merely arrived on the thread, and no reading selects it yet. "
