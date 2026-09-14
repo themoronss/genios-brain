@@ -436,6 +436,17 @@ register(DomainSpec(
                      # `condition-now-satisfied.yaml` is authored and approved and had been bound
                      # to `admin_contact` — the nearest live type — for want of this line.
                      "condition_met": "condition_satisfied",
+                     # THE FOURTH FIELD THE DEPENDENCY CORRELATOR PUBLISHES, and the one that
+                     # reached no reader at all. When a dependency's BLOCKED end resolves and its
+                     # BLOCKER end does not, the traversal refuses to invent a node — "a false
+                     # chain is worse than a missing one" — and files a typed absence carrying
+                     # the name and the sentence. `MissingPrerequisite` names its own examples:
+                     # "Finance", "legal", "the security review". Those are not resolver failures;
+                     # they are real blockers that were never people in a mailbox, and the graph
+                     # is right to hold no node for them. Admin for the reason the block above
+                     # gives: being stuck on somebody else's step is follow-through work whoever
+                     # the counterparty is.
+                     "unnamed_blocker": "blocked_on_unnamed",
                      # THE SECOND GROUP-SHAPED SUBJECT, and it is not the first one re-keyed.
                      # `cohort` groups by OBJECTIVE — "of everyone I contacted about the raise,
                      # who has gone quiet?" — which spans funds on purpose. This groups by FIRM.

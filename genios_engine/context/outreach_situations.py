@@ -1204,6 +1204,21 @@ def read_conditions_for_dispatch(rows: dict, now: datetime, employers: dict) -> 
     return read_conditions_in_review(queue, now, owner, rows.get("_condition_verdicts") or {})
 
 
+from genios_engine.context.blocker_situations import ANCHOR_UNNAMED_BLOCKER
+
+
+def read_blockers_for_dispatch(rows: dict, now: datetime, employers: dict) -> list[_Finding]:
+    """The unnamed-blocker reading, in the shape the dispatch loop hands every reader.
+
+    Stamped under a reserved key like the condition queues, and for the same reason: these rows
+    are keyed by SUBJECT NODE in their own store and do not belong in the `thread.*` map the
+    correspondence readings share.
+    """
+    from genios_engine.context.blocker_situations import read_unnamed_blockers
+
+    return read_unnamed_blockers(rows.get("_blockers") or {}, now, employers)
+
+
 def read_conditions_met_for_dispatch(rows: dict, now: datetime, employers: dict) -> list[_Finding]:
     """The satisfied-condition reading, in the same shape and stamped the same way.
 
@@ -1254,6 +1269,11 @@ READINGS = (
     # (`meeting_touch`, typed `channel_touch`); it answers which channels reached an account,
     # which is a different question from whether a meeting was finished.
     (ANCHOR_MEETING, read_meetings_for_dispatch),
+    # THE FOURTH FIELD `correlation_dependency` PUBLISHES, and the only one that reached no
+    # reader. "You are blocked on Finance and there is no Finance in your graph" was computed
+    # every sweep and said to nobody — most often because the blocker is real and simply was
+    # never a person in a mailbox, which is exactly when the graph is right to hold no node.
+    (ANCHOR_UNNAMED_BLOCKER, read_blockers_for_dispatch),
 )
 
 
@@ -1359,6 +1379,16 @@ def _gather(store, org_id: str, *, now: datetime | None = None,
         # …and the conditions that have COME TRUE. Published by the same correlator, in the same
         # shape, and read by nothing until now.
         held["_conditions_met"] = gather_conditions_satisfied(c, org_id)
+        # THE FOURTH DEPENDENCY FIELD, read here for the first time. `correlation_dependency`
+        # has published `missing_prerequisite` on every sweep since it shipped and no query in
+        # the engine selected it — a typed absence, with the sentence that named it, computed and
+        # shown to nobody. Guarded like the readings above: a driver that cannot run the query is
+        # a gap in what this sweep can read, never a crash.
+        from genios_engine.context.blocker_situations import gather_unnamed_blockers
+        try:
+            held["_blockers"] = gather_unnamed_blockers(c, org_id)
+        except Exception:      # noqa: BLE001 — one reading's gather is not the sweep's
+            held["_blockers"] = {}
         held["_mailbox_owner"] = _mailbox_owner(c, org_id)
         # THE MEETINGS, through the query that already knows how to find them. `meeting_touch.
         # _MEETINGS` joins the `attended` edge, excludes retired attendances, excludes our own

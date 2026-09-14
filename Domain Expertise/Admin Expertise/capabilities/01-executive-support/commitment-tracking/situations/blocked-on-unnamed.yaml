@@ -1,0 +1,117 @@
+# The surface for `correlation_dependency`'s fourth published field, and the only one that reached
+# no reader. The traversal resolves both ends of every dependency claim; when the BLOCKED end
+# resolves and the BLOCKER end does not, it refuses to invent a node — "a false chain is worse
+# than a missing one" — and files a typed absence carrying the name and the sentence.
+#
+# THE COMMON CASE IS NOT A DEFECT. `MissingPrerequisite` names its own examples: "Finance",
+# "legal", "the security review". Those were never people in a mailbox, so the graph is correct to
+# hold no node for them — and the dependency is real regardless. A founder waiting on their lawyer
+# had that computed on every sweep and shown to nobody.
+#
+# `context/blocker_situations.read_unnamed_blockers` produces it.
+
+identity:
+  id: admin.sit.blocked_on_unnamed
+  name: Blocked On Something Unnamed
+  domain: admin
+  owner_capability: admin.executive_support.commitment_tracking
+  version: 1.0.0
+  status: stable
+
+description: >
+  Something is holding up work here, the record names it, and it is not anything this system can
+  point at. A counterparty wrote that they were waiting on Finance, on legal, on a security
+  review; the identity cascade found no such party and — correctly — declined to invent one. What
+  remains is a real dependency with no other end.
+
+  The evidence is the sentence that named it. `correlation_dependency` refuses an edge whose
+  endpoint it cannot resolve, so nothing here claims a relationship between two parties; the claim
+  is only that somebody said they were waiting on a named thing, and that the thing is not in the
+  graph. `blocker.quote` carries their words so the reader can judge the blocker for themselves.
+
+  It must never say the blocker does not exist. `blocker.we_searched` is the only warrant for that
+  sentence, and it is true only when the absence was typed against a declared coverage basis —
+  "we could not find it" and "there is nobody there" are different claims and only the second one
+  licenses telling somebody to stop waiting. It also cannot say how long this has been true: the
+  published absence carries no timestamp, and the situation declares that gap rather than dating
+  it from the sweep.
+
+matches:
+  l2_situation_types:
+    - blocked_on_unnamed
+  scope: person
+  when:
+    # The name is the whole finding — "somebody is blocked by something" is not a card.
+    - exists: blocker.named
+
+also_serves:
+  - admin.executive_support.inbox_and_correspondence
+  - admin.executive_support.delegation_and_task_routing
+
+objects:
+  load:
+    - admin.obj.core.request
+  optional:
+    - admin.obj.core.commitment
+    - admin.obj.core.deadline
+  never_load:
+    - admin.obj.core.invoice
+    - admin.obj.core.employee_record
+    - admin.obj.core.asset
+
+priority_bp: 5600
+typical_duration_days: 14
+
+signals_of_progress:
+  - next_step_agreed
+  - meeting_scheduled
+  - followup_sent
+
+signals_of_decay:
+  - going_dark
+  - decision_deferred
+
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    Headline: who is waiting, and on what, in the words the record used. Quote the blocker's name
+    rather than paraphrasing it — "the security review" and "security" are not the same thing to
+    the person who has to chase it.
+
+    Situation: that the dependency was stated, by whom, and that the named blocker is not
+    something this system holds. Say that plainly and without apology: it is ordinary for a real
+    blocker — a lawyer, a bank, an auditor — never to appear in a mailbox, and the absence is not
+    evidence the blocker is imaginary.
+
+    Never say the blocker does not exist unless `blocker.we_searched` is true. Never state how
+    long the wait has been: no timestamp reaches this card, and an age taken from the sweep clock
+    would be invented. Never assert who owns the blocker or what would clear it.
+
+    Artifact: a message that asks the one question the record cannot answer — who is actually on
+    the other side of this, and what are they waiting for.
+  fallback:
+    headline: "{entity} — blocked on something outside the record"
+    situation: >-
+      {entity} is waiting on something the record names and this system cannot identify.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: rohit
+  last_updated: '2026-09-14'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-09-14'
+  notes: >
+    Authored because the field had no reader at all, not because the corpus lacked a nearby type.
+    Binding it to `commitment_overdue` — the closest live type — was considered and rejected for
+    the reason `condition-now-satisfied` records against its own former binding: a promise whose
+    date has passed and a dependency with no resolvable other end need opposite sentences, and the
+    second has no date to be overdue against. The gate is one positive fact rather than a
+    threshold because there is no number here to threshold: the absence either has a name or it
+    is not a finding. `scope: person` matches the subject the correlator resolves — the BLOCKED
+    end, which is always a resolved party; the unresolved end is what the card is about and is by
+    definition not a node.
+
+admission:
+  accepted_content_hash: 3e27212fa3b73d5cb2e2dab14403e8c41669ae1681a7c2d14965b1ab5b249add

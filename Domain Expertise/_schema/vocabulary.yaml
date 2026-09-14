@@ -591,6 +591,21 @@ substrate:
                                 #   silence"; that half did not exist and the pilot's queue held
                                 #   24 unread. Its own anchor because a counterparty can leave
                                 #   several across months and they close separately.
+    # THE FOURTH FIELD `correlation_dependency` PUBLISHES, and the only one no reader selected.
+    # When a dependency's BLOCKED end resolves and its BLOCKER end does not, the traversal
+    # refuses to invent a node — "a false chain is worse than a missing one" — and files a typed
+    # absence carrying the name and the sentence that named it. `MissingPrerequisite` gives its
+    # own examples: "Finance", "legal", "the security review". Those are usually not resolver
+    # failures at all: they are real blockers that were never people in a mailbox, and the graph
+    # is correct to hold no node for them. Computed on every sweep since the correlator shipped,
+    # and shown to nobody.
+    - blocked_on_unnamed        # admin, anchored on an UNNAMED BLOCKER — one thing a subject is
+                                # waiting on that the identity cascade could not resolve. Its own
+                                # anchor because a subject can be blocked on several at once and
+                                # they end one at a time. The card may only say "not in your
+                                # records" when the absence is typed GENUINELY_ABSENT; otherwise
+                                # it says "we could not find it", which is the claim that is
+                                # always safe.
     - organization_gone_quiet   # admin, anchored on an ORGANIZATION — one counterparty FIRM
                                 # where more than one person has gone quiet. Not `cohort`
                                 # re-keyed: that groups by objective and spans funds, this

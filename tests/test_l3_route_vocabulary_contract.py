@@ -214,6 +214,18 @@ def test_producible_vocabulary_is_small_and_closed():
         # ones it parsed and the world has since made true. The fact was published every sweep
         # — both evidence spans, refusing to exist with only one — and nothing read it.
         "condition_satisfied",
+        # THE FOURTH FIELD `correlation_dependency` PUBLISHES, and the only one that reached no
+        # reader at all. The traversal resolves both ends of a dependency claim; when the BLOCKED
+        # end resolves and the BLOCKER end does not it refuses to invent a node — "a false chain
+        # is worse than a missing one" — and files a typed absence carrying the name and the
+        # sentence. `MissingPrerequisite` names its own examples: "Finance", "legal", "the
+        # security review". Those are usually not resolver failures: they are real blockers that
+        # were never people in a mailbox, and the graph is correct to hold no node for them.
+        # Computed on every sweep since the correlator shipped, selected by no query in the
+        # engine. `admin.sit.blocked_on_unnamed` routes it, and the card may say "not in your
+        # records" ONLY where the absence is typed GENUINELY_ABSENT — otherwise "we could not
+        # find it", because only the first licenses telling somebody to stop waiting.
+        "blocked_on_unnamed",
     }, "the L2 situation vocabulary changed — re-check every corpus route against it"
 
 
