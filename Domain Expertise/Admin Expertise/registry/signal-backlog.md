@@ -13,9 +13,9 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 ## Where the brain stands
 
 - **123** patterns executable against the pipeline today
-- **232** patterns blocked, waiting on **214** distinct signals
-- **4** situation binding(s) waiting on an L2 type no pack emits
-- Substrate today: **106** fact paths · **34** observation kinds · **2** baselines
+- **232** patterns blocked, waiting on **215** distinct signals
+- **5** situation binding(s) waiting on an L2 type no pack emits
+- Substrate today: **141** fact paths · **51** observation kinds · **2** baselines
 
 ## The backlog
 
@@ -102,139 +102,140 @@ behind it never compiles at all, and nothing errors or logs when it doesn't.
 | 79 | `document_published` | obs_kind | L2 | 1 | 10000 | Document |
 | 80 | `employee_lifecycle_event` | l2_situation_type | L1 | 1 | 10000 | [situation] Employee Lifecycle Event |
 | 81 | `filing.reference_number` | fact_path | L2 | 1 | 10000 | Filing |
-| 82 | `obligation_falls_due` | l2_situation_type | L1 | 1 | 10000 | [situation] Obligation Falls Due |
-| 83 | `spend_against_a_commitment` | l2_situation_type | L1 | 1 | 10000 | [situation] Spend Against a Commitment |
-| 84 | `vendor.bank_account_fingerprint` | fact_path | L1 | 1 | 9900 | Vendor |
-| 85 | `approver.effective_to` | fact_path | L1 | 1 | 9800 | Approver |
-| 86 | `contract_countersigned` | obs_kind | L2 | 1 | 9800 | Contract |
-| 87 | `escalation_requested` | obs_kind | L2 | 1 | 9800 | Escalation |
-| 88 | `event.capacity` | fact_path | L1 | 1 | 9800 | Event |
-| 89 | `leave.state` | fact_path | L1 | 1 | 9800 | Leave Request |
-| 90 | `minutes_adopted` | obs_kind | L2 | 1 | 9800 | Meeting |
-| 91 | `request.category` | fact_path | L1 | 1 | 9800 | Request |
-| 92 | `screening_result_returned` | obs_kind | L1 | 1 | 9800 | Vendor |
-| 93 | `employee.right_to_work_expires_at` | fact_path | L1 | 1 | 9700 | Employee Record |
-| 94 | `auto_renewal_imminent` | obs_kind | L2 | 1 | 9600 | Deadline |
-| 95 | `expense.receipt_present` | fact_path | L1 | 1 | 9600 | Expense Claim |
-| 96 | `asset.due_back_at` | fact_path | L1 | 1 | 9500 | Asset |
-| 97 | `calendar.event.previous_start_at` | fact_path | L1 | 1 | 9500 | Time Block |
-| 98 | `contract.cancellation_schedule` | fact_path | L1 | 1 | 9500 | Event |
-| 99 | `derived.entitlement_set_by_identity` | derived | L2 | 1 | 9500 | Access Right |
-| 100 | `document_review_overdue` | obs_kind | L2 | 1 | 9500 | Document |
-| 101 | `event.final_numbers_due_at` | fact_path | L1 | 1 | 9500 | Event |
-| 102 | `event.start_at` | fact_path | L1 | 1 | 9500 | Event |
-| 103 | `invoice.due_at` | fact_path | L1 | 1 | 9500 | Invoice |
-| 104 | `meeting.quorum_required` | fact_path | L1 | 1 | 9500 | Meeting |
-| 105 | `notifiable_event_detected` | obs_kind | L2 | 1 | 9500 | Compliance Obligation |
-| 106 | `payroll.cutoff_at` | fact_path | L1 | 1 | 9500 | Deadline |
-| 107 | `request.acknowledged_at` | fact_path | L1 | 1 | 9500 | Request |
-| 108 | `sod.conflict_pairs` | fact_path | L1 | 1 | 9500 | Access Right |
-| 109 | `trip.visa_state` | fact_path | L1 | 1 | 9500 | Trip |
-| 110 | `vendor.bank_verification_method` | fact_path | L1 | 1 | 9500 | Vendor |
-| 111 | `vendor.diligence_expires_at` | fact_path | L1 | 1 | 9500 | Vendor |
-| 112 | `expense.incurred_at` | fact_path | L1 | 1 | 9400 | Expense Claim |
-| 113 | `policy.claim_window_days` | fact_path | L1 | 1 | 9400 | Expense Claim |
-| 114 | `record.access_log` | fact_path | L1 | 1 | 9400 | Employee Record |
-| 115 | `derived.onboarding_completeness` | derived | L2 | 1 | 9200 | Employee Record |
-| 116 | `filing_due` | obs_kind | L2 | 1 | 9200 | Deadline |
-| 117 | `filing_overdue` | obs_kind | L2 | 1 | 9200 | Deadline |
-| 118 | `vendor_bank_detail_change` | obs_kind | L2 | 1 | 9200 | Invoice |
-| 119 | `asset_issued` | obs_kind | L2 | 1 | 9000 | Asset |
-| 120 | `calendar.event.category` | fact_path | L1 | 1 | 9000 | Time Block |
-| 121 | `calendar.event.transparency` | fact_path | L1 | 1 | 9000 | Time Block |
-| 122 | `derived.approver_availability` | derived | L2 | 1 | 9000 | Leave Request |
-| 123 | `derived.document_cluster_key` | derived | L2 | 1 | 9000 | Document |
-| 124 | `derived.document_live_copies` | derived | L2 | 1 | 9000 | Document |
-| 125 | `derived.incident_window` | derived | L2 | 1 | 9000 | Access Right |
-| 126 | `derived.instrument_version_current` | derived | L2 | 1 | 9000 | Compliance Obligation |
-| 127 | `derived.performer_diversity` | derived | L2 | 1 | 9000 | Standard Operating Procedure |
-| 128 | `derived.recipient_is_external` | derived | L2 | 1 | 9000 | Document |
-| 129 | `derived.threshold_position` | derived | L2 | 1 | 9000 | Compliance Obligation |
-| 130 | `escalation_accepted` | obs_kind | L2 | 1 | 9000 | Escalation |
-| 131 | `event.contracted_minimum` | fact_path | L1 | 1 | 9000 | Event |
-| 132 | `event.licences_required` | fact_path | L1 | 1 | 9000 | Event |
-| 133 | `expense_claim_submitted` | obs_kind | L2 | 1 | 9000 | Trip |
-| 134 | `filing.penalty_basis` | fact_path | L1 | 1 | 9000 | Filing |
-| 135 | `filing_submitted` | obs_kind | L2 | 1 | 9000 | Filing |
-| 136 | `leave.evidence_due_at` | fact_path | L1 | 1 | 9000 | Leave Request |
-| 137 | `leave_evidence_received` | obs_kind | L2 | 1 | 9000 | Leave Request |
-| 138 | `licence_evidenced` | obs_kind | L2 | 1 | 9000 | Event |
-| 139 | `meeting.convened_at` | fact_path | L1 | 1 | 9000 | Meeting |
-| 140 | `meeting.notice_period_days` | fact_path | L1 | 1 | 9000 | Meeting |
-| 141 | `meeting.papers_deadline_at` | fact_path | L1 | 1 | 9000 | Meeting |
-| 142 | `request.type` | fact_path | L1 | 1 | 9000 | Request |
-| 143 | `retention_period_elapsed` | obs_kind | L2 | 1 | 9000 | Deadline |
-| 144 | `sla.target_resolution_at` | fact_path | L1 | 1 | 9000 | Request |
-| 145 | `sop.tooling_referenced` | fact_path | L1 | 1 | 9000 | Standard Operating Procedure |
-| 146 | `sop_executed` | obs_kind | L2 | 1 | 9000 | Standard Operating Procedure |
-| 147 | `system_change_recorded` | obs_kind | L2 | 1 | 9000 | Standard Operating Procedure |
-| 148 | `trip.claim_due_at` | fact_path | L1 | 1 | 9000 | Trip |
-| 149 | `trip.itinerary_source` | fact_path | L1 | 1 | 9000 | Trip |
-| 150 | `trip_departed` | obs_kind | L2 | 1 | 9000 | Trip |
-| 151 | `vendor.registration_number` | fact_path | L1 | 1 | 9000 | Vendor |
-| 152 | `calendar.event.hold_expires_at` | fact_path | L1 | 1 | 8800 | Time Block |
-| 153 | `derived.identity_owner_resolvable` | derived | L2 | 1 | 8800 | Access Right |
-| 154 | `renewal_window_open` | obs_kind | L2 | 1 | 8800 | Budget Line |
-| 155 | `vendor.onboarding_state` | fact_path | L1 | 1 | 8800 | Vendor |
-| 156 | `derived.attestation_coverage` | derived | L2 | 1 | 8500 | Policy |
-| 157 | `derived.days_by_jurisdiction_12m` | derived | L2 | 1 | 8500 | Trip |
-| 158 | `derived.escalation_pressure` | derived | L2 | 1 | 8500 | Escalation |
-| 159 | `derived.grant_provenance_completeness` | derived | L2 | 1 | 8500 | Access Right |
-| 160 | `derived.reporting_distance` | derived | L2 | 1 | 8500 | Approver |
-| 161 | `derived.vendor_first_seen` | derived | L2 | 1 | 8500 | Invoice |
-| 162 | `event.attendee_data_retention_until` | fact_path | L1 | 1 | 8500 | Event |
-| 163 | `event.end_at` | fact_path | L1 | 1 | 8500 | Event |
-| 164 | `final_invoice_received` | obs_kind | L2 | 1 | 8500 | Event |
-| 165 | `leave.carry_over_expires_at` | fact_path | L1 | 1 | 8500 | Leave Request |
-| 166 | `meeting.attendees` | fact_path | L1 | 1 | 8500 | Action Item |
-| 167 | `meeting.interests_declared` | fact_path | L1 | 1 | 8500 | Meeting |
-| 168 | `payment_released` | obs_kind | L2 | 1 | 8500 | Approval |
-| 169 | `person.working_hours` | fact_path | L1 | 1 | 8500 | Time Block |
-| 170 | `policy.exception_count` | fact_path | L1 | 1 | 8500 | Policy |
-| 171 | `policy.exception_expiry_at` | fact_path | L1 | 1 | 8500 | Policy |
-| 172 | `return_to_work_recorded` | obs_kind | L2 | 1 | 8500 | Leave Request |
-| 173 | `sop_step_skipped` | obs_kind | L2 | 1 | 8500 | Standard Operating Procedure |
-| 174 | `trip.unused_credit_expires_at` | fact_path | L1 | 1 | 8500 | Trip |
-| 175 | `vendor.last_reviewed_at` | fact_path | L1 | 1 | 8500 | Vendor |
-| 176 | `verbal_request_captured` | obs_kind | L2 | 1 | 8500 | Request |
-| 177 | `derived.reporting_line` | derived | L2 | 1 | 8400 | Expense Claim |
-| 178 | `commitment.previous_due_at` | fact_path | L2 | 1 | 8200 | Commitment |
-| 179 | `derived.invoice_fingerprint` | derived | L2 | 1 | 8200 | Invoice |
-| 180 | `derived.reschedule_count` | derived | L2 | 1 | 8200 | Time Block |
-| 181 | `expense.state` | fact_path | L1 | 1 | 8200 | Expense Claim |
-| 182 | `asset.last_verified_at` | fact_path | L1 | 1 | 8000 | Asset |
-| 183 | `calendar.free_capacity_minutes` | fact_path | L2 | 1 | 8000 | Time Block |
-| 184 | `derived.absence_occasions_12m` | derived | L2 | 1 | 8000 | Leave Request |
-| 185 | `derived.claim_fingerprint` | derived | L2 | 1 | 8000 | Expense Claim |
-| 186 | `derived.concurrent_travel_to_destination` | derived | L2 | 1 | 8000 | Trip |
-| 187 | `derived.contains_personal_data` | derived | L2 | 1 | 8000 | Document |
-| 188 | `derived.control_enforcement_rate` | derived | L2 | 1 | 8000 | Policy |
-| 189 | `derived.preparation_lead_time` | derived | L2 | 1 | 8000 | Deadline |
-| 190 | `derived.request_similarity` | derived | L2 | 1 | 8000 | Request |
-| 191 | `derived.supplier_role_count_per_event` | derived | L2 | 1 | 8000 | Event |
-| 192 | `derived.team_absence_overlap` | derived | L2 | 1 | 8000 | Leave Request |
-| 193 | `sla_breach` | obs_kind | L2 | 1 | 8000 | Vendor |
-| 194 | `sop_execution_observed` | obs_kind | L2 | 1 | 8000 | Standard Operating Procedure |
-| 195 | `vendor.service_level_target` | fact_path | L1 | 1 | 8000 | Vendor |
-| 196 | `asset.last_seen_at` | fact_path | L1 | 1 | 7500 | Asset |
-| 197 | `decision_recorded` | obs_kind | L2 | 1 | 7500 | Meeting |
-| 198 | `derived.approval_rejection_rate` | derived | L2 | 1 | 7500 | Approver |
-| 199 | `derived.backlog_age` | derived | L2 | 1 | 7500 | Request |
-| 200 | `derived.calendar_density` | derived | L2 | 1 | 7500 | Time Block |
-| 201 | `derived.decision_density` | derived | L2 | 1 | 7500 | Meeting |
-| 202 | `derived.merchant_category_sensitivity` | derived | L2 | 1 | 7500 | Expense Claim |
-| 203 | `derived.period_activity` | derived | L2 | 1 | 7500 | Filing |
-| 204 | `derived.request_repeat_rate` | derived | L2 | 1 | 7500 | Request |
-| 205 | `policy_breach_observed` | obs_kind | L2 | 1 | 7500 | Policy |
-| 206 | `contract.price_uplift_index` | fact_path | L1 | 1 | 7000 | Contract |
-| 207 | `derived.meeting_attendance_rate` | derived | L2 | 1 | 7000 | Meeting |
-| 208 | `derived.policy_clause_coverage` | derived | L2 | 1 | 7000 | Expense Claim |
-| 209 | `person.seniority` | fact_path | L1 | 1 | 7000 | Request |
-| 210 | `trip.return_at` | fact_path | L1 | 1 | 7000 | Time Block |
-| 211 | `derived.vendor_channel_norm` | derived | L2 | 1 | 6800 | Invoice |
-| 212 | `asset.issued_at` | fact_path | L1 | 1 | 6500 | Asset |
-| 213 | `derived.commitment_clustering` | derived | L2 | 1 | 6500 | Budget Line |
-| 214 | `derived.pool_loan_duration` | derived | L2 | 1 | 6500 | Asset |
+| 82 | `goal_behind_pace` | l2_situation_type | L2 | 1 | 10000 | [situation] Goal Behind Pace |
+| 83 | `obligation_falls_due` | l2_situation_type | L1 | 1 | 10000 | [situation] Obligation Falls Due |
+| 84 | `spend_against_a_commitment` | l2_situation_type | L1 | 1 | 10000 | [situation] Spend Against a Commitment |
+| 85 | `vendor.bank_account_fingerprint` | fact_path | L1 | 1 | 9900 | Vendor |
+| 86 | `approver.effective_to` | fact_path | L1 | 1 | 9800 | Approver |
+| 87 | `contract_countersigned` | obs_kind | L2 | 1 | 9800 | Contract |
+| 88 | `escalation_requested` | obs_kind | L2 | 1 | 9800 | Escalation |
+| 89 | `event.capacity` | fact_path | L1 | 1 | 9800 | Event |
+| 90 | `leave.state` | fact_path | L1 | 1 | 9800 | Leave Request |
+| 91 | `minutes_adopted` | obs_kind | L2 | 1 | 9800 | Meeting |
+| 92 | `request.category` | fact_path | L1 | 1 | 9800 | Request |
+| 93 | `screening_result_returned` | obs_kind | L1 | 1 | 9800 | Vendor |
+| 94 | `employee.right_to_work_expires_at` | fact_path | L1 | 1 | 9700 | Employee Record |
+| 95 | `auto_renewal_imminent` | obs_kind | L2 | 1 | 9600 | Deadline |
+| 96 | `expense.receipt_present` | fact_path | L1 | 1 | 9600 | Expense Claim |
+| 97 | `asset.due_back_at` | fact_path | L1 | 1 | 9500 | Asset |
+| 98 | `calendar.event.previous_start_at` | fact_path | L1 | 1 | 9500 | Time Block |
+| 99 | `contract.cancellation_schedule` | fact_path | L1 | 1 | 9500 | Event |
+| 100 | `derived.entitlement_set_by_identity` | derived | L2 | 1 | 9500 | Access Right |
+| 101 | `document_review_overdue` | obs_kind | L2 | 1 | 9500 | Document |
+| 102 | `event.final_numbers_due_at` | fact_path | L1 | 1 | 9500 | Event |
+| 103 | `event.start_at` | fact_path | L1 | 1 | 9500 | Event |
+| 104 | `invoice.due_at` | fact_path | L1 | 1 | 9500 | Invoice |
+| 105 | `meeting.quorum_required` | fact_path | L1 | 1 | 9500 | Meeting |
+| 106 | `notifiable_event_detected` | obs_kind | L2 | 1 | 9500 | Compliance Obligation |
+| 107 | `payroll.cutoff_at` | fact_path | L1 | 1 | 9500 | Deadline |
+| 108 | `request.acknowledged_at` | fact_path | L1 | 1 | 9500 | Request |
+| 109 | `sod.conflict_pairs` | fact_path | L1 | 1 | 9500 | Access Right |
+| 110 | `trip.visa_state` | fact_path | L1 | 1 | 9500 | Trip |
+| 111 | `vendor.bank_verification_method` | fact_path | L1 | 1 | 9500 | Vendor |
+| 112 | `vendor.diligence_expires_at` | fact_path | L1 | 1 | 9500 | Vendor |
+| 113 | `expense.incurred_at` | fact_path | L1 | 1 | 9400 | Expense Claim |
+| 114 | `policy.claim_window_days` | fact_path | L1 | 1 | 9400 | Expense Claim |
+| 115 | `record.access_log` | fact_path | L1 | 1 | 9400 | Employee Record |
+| 116 | `derived.onboarding_completeness` | derived | L2 | 1 | 9200 | Employee Record |
+| 117 | `filing_due` | obs_kind | L2 | 1 | 9200 | Deadline |
+| 118 | `filing_overdue` | obs_kind | L2 | 1 | 9200 | Deadline |
+| 119 | `vendor_bank_detail_change` | obs_kind | L2 | 1 | 9200 | Invoice |
+| 120 | `asset_issued` | obs_kind | L2 | 1 | 9000 | Asset |
+| 121 | `calendar.event.category` | fact_path | L1 | 1 | 9000 | Time Block |
+| 122 | `calendar.event.transparency` | fact_path | L1 | 1 | 9000 | Time Block |
+| 123 | `derived.approver_availability` | derived | L2 | 1 | 9000 | Leave Request |
+| 124 | `derived.document_cluster_key` | derived | L2 | 1 | 9000 | Document |
+| 125 | `derived.document_live_copies` | derived | L2 | 1 | 9000 | Document |
+| 126 | `derived.incident_window` | derived | L2 | 1 | 9000 | Access Right |
+| 127 | `derived.instrument_version_current` | derived | L2 | 1 | 9000 | Compliance Obligation |
+| 128 | `derived.performer_diversity` | derived | L2 | 1 | 9000 | Standard Operating Procedure |
+| 129 | `derived.recipient_is_external` | derived | L2 | 1 | 9000 | Document |
+| 130 | `derived.threshold_position` | derived | L2 | 1 | 9000 | Compliance Obligation |
+| 131 | `escalation_accepted` | obs_kind | L2 | 1 | 9000 | Escalation |
+| 132 | `event.contracted_minimum` | fact_path | L1 | 1 | 9000 | Event |
+| 133 | `event.licences_required` | fact_path | L1 | 1 | 9000 | Event |
+| 134 | `expense_claim_submitted` | obs_kind | L2 | 1 | 9000 | Trip |
+| 135 | `filing.penalty_basis` | fact_path | L1 | 1 | 9000 | Filing |
+| 136 | `filing_submitted` | obs_kind | L2 | 1 | 9000 | Filing |
+| 137 | `leave.evidence_due_at` | fact_path | L1 | 1 | 9000 | Leave Request |
+| 138 | `leave_evidence_received` | obs_kind | L2 | 1 | 9000 | Leave Request |
+| 139 | `licence_evidenced` | obs_kind | L2 | 1 | 9000 | Event |
+| 140 | `meeting.convened_at` | fact_path | L1 | 1 | 9000 | Meeting |
+| 141 | `meeting.notice_period_days` | fact_path | L1 | 1 | 9000 | Meeting |
+| 142 | `meeting.papers_deadline_at` | fact_path | L1 | 1 | 9000 | Meeting |
+| 143 | `request.type` | fact_path | L1 | 1 | 9000 | Request |
+| 144 | `retention_period_elapsed` | obs_kind | L2 | 1 | 9000 | Deadline |
+| 145 | `sla.target_resolution_at` | fact_path | L1 | 1 | 9000 | Request |
+| 146 | `sop.tooling_referenced` | fact_path | L1 | 1 | 9000 | Standard Operating Procedure |
+| 147 | `sop_executed` | obs_kind | L2 | 1 | 9000 | Standard Operating Procedure |
+| 148 | `system_change_recorded` | obs_kind | L2 | 1 | 9000 | Standard Operating Procedure |
+| 149 | `trip.claim_due_at` | fact_path | L1 | 1 | 9000 | Trip |
+| 150 | `trip.itinerary_source` | fact_path | L1 | 1 | 9000 | Trip |
+| 151 | `trip_departed` | obs_kind | L2 | 1 | 9000 | Trip |
+| 152 | `vendor.registration_number` | fact_path | L1 | 1 | 9000 | Vendor |
+| 153 | `calendar.event.hold_expires_at` | fact_path | L1 | 1 | 8800 | Time Block |
+| 154 | `derived.identity_owner_resolvable` | derived | L2 | 1 | 8800 | Access Right |
+| 155 | `renewal_window_open` | obs_kind | L2 | 1 | 8800 | Budget Line |
+| 156 | `vendor.onboarding_state` | fact_path | L1 | 1 | 8800 | Vendor |
+| 157 | `derived.attestation_coverage` | derived | L2 | 1 | 8500 | Policy |
+| 158 | `derived.days_by_jurisdiction_12m` | derived | L2 | 1 | 8500 | Trip |
+| 159 | `derived.escalation_pressure` | derived | L2 | 1 | 8500 | Escalation |
+| 160 | `derived.grant_provenance_completeness` | derived | L2 | 1 | 8500 | Access Right |
+| 161 | `derived.reporting_distance` | derived | L2 | 1 | 8500 | Approver |
+| 162 | `derived.vendor_first_seen` | derived | L2 | 1 | 8500 | Invoice |
+| 163 | `event.attendee_data_retention_until` | fact_path | L1 | 1 | 8500 | Event |
+| 164 | `event.end_at` | fact_path | L1 | 1 | 8500 | Event |
+| 165 | `final_invoice_received` | obs_kind | L2 | 1 | 8500 | Event |
+| 166 | `leave.carry_over_expires_at` | fact_path | L1 | 1 | 8500 | Leave Request |
+| 167 | `meeting.attendees` | fact_path | L1 | 1 | 8500 | Action Item |
+| 168 | `meeting.interests_declared` | fact_path | L1 | 1 | 8500 | Meeting |
+| 169 | `payment_released` | obs_kind | L2 | 1 | 8500 | Approval |
+| 170 | `person.working_hours` | fact_path | L1 | 1 | 8500 | Time Block |
+| 171 | `policy.exception_count` | fact_path | L1 | 1 | 8500 | Policy |
+| 172 | `policy.exception_expiry_at` | fact_path | L1 | 1 | 8500 | Policy |
+| 173 | `return_to_work_recorded` | obs_kind | L2 | 1 | 8500 | Leave Request |
+| 174 | `sop_step_skipped` | obs_kind | L2 | 1 | 8500 | Standard Operating Procedure |
+| 175 | `trip.unused_credit_expires_at` | fact_path | L1 | 1 | 8500 | Trip |
+| 176 | `vendor.last_reviewed_at` | fact_path | L1 | 1 | 8500 | Vendor |
+| 177 | `verbal_request_captured` | obs_kind | L2 | 1 | 8500 | Request |
+| 178 | `derived.reporting_line` | derived | L2 | 1 | 8400 | Expense Claim |
+| 179 | `commitment.previous_due_at` | fact_path | L2 | 1 | 8200 | Commitment |
+| 180 | `derived.invoice_fingerprint` | derived | L2 | 1 | 8200 | Invoice |
+| 181 | `derived.reschedule_count` | derived | L2 | 1 | 8200 | Time Block |
+| 182 | `expense.state` | fact_path | L1 | 1 | 8200 | Expense Claim |
+| 183 | `asset.last_verified_at` | fact_path | L1 | 1 | 8000 | Asset |
+| 184 | `calendar.free_capacity_minutes` | fact_path | L2 | 1 | 8000 | Time Block |
+| 185 | `derived.absence_occasions_12m` | derived | L2 | 1 | 8000 | Leave Request |
+| 186 | `derived.claim_fingerprint` | derived | L2 | 1 | 8000 | Expense Claim |
+| 187 | `derived.concurrent_travel_to_destination` | derived | L2 | 1 | 8000 | Trip |
+| 188 | `derived.contains_personal_data` | derived | L2 | 1 | 8000 | Document |
+| 189 | `derived.control_enforcement_rate` | derived | L2 | 1 | 8000 | Policy |
+| 190 | `derived.preparation_lead_time` | derived | L2 | 1 | 8000 | Deadline |
+| 191 | `derived.request_similarity` | derived | L2 | 1 | 8000 | Request |
+| 192 | `derived.supplier_role_count_per_event` | derived | L2 | 1 | 8000 | Event |
+| 193 | `derived.team_absence_overlap` | derived | L2 | 1 | 8000 | Leave Request |
+| 194 | `sla_breach` | obs_kind | L2 | 1 | 8000 | Vendor |
+| 195 | `sop_execution_observed` | obs_kind | L2 | 1 | 8000 | Standard Operating Procedure |
+| 196 | `vendor.service_level_target` | fact_path | L1 | 1 | 8000 | Vendor |
+| 197 | `asset.last_seen_at` | fact_path | L1 | 1 | 7500 | Asset |
+| 198 | `decision_recorded` | obs_kind | L2 | 1 | 7500 | Meeting |
+| 199 | `derived.approval_rejection_rate` | derived | L2 | 1 | 7500 | Approver |
+| 200 | `derived.backlog_age` | derived | L2 | 1 | 7500 | Request |
+| 201 | `derived.calendar_density` | derived | L2 | 1 | 7500 | Time Block |
+| 202 | `derived.decision_density` | derived | L2 | 1 | 7500 | Meeting |
+| 203 | `derived.merchant_category_sensitivity` | derived | L2 | 1 | 7500 | Expense Claim |
+| 204 | `derived.period_activity` | derived | L2 | 1 | 7500 | Filing |
+| 205 | `derived.request_repeat_rate` | derived | L2 | 1 | 7500 | Request |
+| 206 | `policy_breach_observed` | obs_kind | L2 | 1 | 7500 | Policy |
+| 207 | `contract.price_uplift_index` | fact_path | L1 | 1 | 7000 | Contract |
+| 208 | `derived.meeting_attendance_rate` | derived | L2 | 1 | 7000 | Meeting |
+| 209 | `derived.policy_clause_coverage` | derived | L2 | 1 | 7000 | Expense Claim |
+| 210 | `person.seniority` | fact_path | L1 | 1 | 7000 | Request |
+| 211 | `trip.return_at` | fact_path | L1 | 1 | 7000 | Time Block |
+| 212 | `derived.vendor_channel_norm` | derived | L2 | 1 | 6800 | Invoice |
+| 213 | `asset.issued_at` | fact_path | L1 | 1 | 6500 | Asset |
+| 214 | `derived.commitment_clustering` | derived | L2 | 1 | 6500 | Budget Line |
+| 215 | `derived.pool_loan_duration` | derived | L2 | 1 | 6500 | Asset |
 
 ## Why each one matters
 
@@ -983,6 +984,13 @@ WHY BINDING TO admin_contact WOULD BE WRONG, specifically. (1) Inference about a
 ### `filing.reference_number` · fact_path
 
 - blocks **Filing** / `fil.acknowledgement_received` (would yield 10000 bp)
+
+### `goal_behind_pace` · l2_situation_type
+
+- blocks **[situation] Goal Behind Pace** / `admin.sit.goal_behind_pace` (would yield 10000 bp)
+- Goal Behind Pace: Needs a stated goal to exist as data — target, date, owner and an evidence path — and a detector that counts observed evidence against that path. The emitted situation must carry all four plus the count, because a signal that carries only a verdict cannot be rendered into anything a reader can check. `admin_period_review` is the nearest live type and is deliberately not bound: it carries activity and no target, so a card built on it would be comparing against a benchmark the system invented.
+
+- Goal Behind Pace: closest type emitted today is `admin_period_review` — close enough to be tempting, not close enough to be true
 
 ### `obligation_falls_due` · l2_situation_type
 

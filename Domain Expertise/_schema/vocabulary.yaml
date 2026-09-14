@@ -768,7 +768,13 @@ planned_substrate:
     # `market_period_review` on external market data no SaaS in the stack contains. Listing them
     # is the point: the census records what is asked for, and an ask nobody records is an ask
     # nobody is tracking.
-    - channel_touch
+    #
+    # `channel_touch` WAS HERE AND HAS GRADUATED. This section's own rule is that "a name moves
+    # from here into `substrate` in the same commit that ships the pack emitting it" — the move
+    # happened (`context/meeting_touch.py` mints it, and `domain_spec` binds the `meeting` anchor
+    # to it) and the removal did not, so the name sat in both censuses at once. That is the exact
+    # state validate.py ERRORS on for a situation, described here as "silently routing nothing",
+    # and it survived because nothing counted the two lists against each other. A test does now.
     - market_period_review
     - sla_breach_imminent
     - sla_breached
@@ -783,6 +789,11 @@ planned_substrate:
     - churn_risk_from_support
     - coverage_gap
     - quality_review_failed
+    # DEFERRED BY AN AUTHORED SITUATION AND UNCOUNTED. `issue-under-diagnosis.yaml` names it in
+    # `pending_l2_situation_types`; validate.py could only WARN, and a warning among 296 is not a
+    # signal. The census records what is ASKED FOR — "an ask nobody records is an ask nobody is
+    # tracking" — and `backlog.py` counts demand from exactly this list.
+    - issue_under_diagnosis
 
 
   # ── Added by Admin ────────────────────────────────────────────────────────────────────
@@ -816,6 +827,17 @@ planned_substrate:
     - admin_request_aging
     - admin_sla_breach_imminent
     - meeting_prep_due
+    # THE FIVE ADMIN SITUATIONS WHOSE ASK WAS NEVER COUNTED. Each is deferred by an authored
+    # document with a full note on what would emit it and why binding to the nearest live type
+    # would be wrong — and none of the five appeared here, so `backlog.py` reported no demand for
+    # any of them. The names above are fine-grained TRIGGERS (`asset_unreturned`,
+    # `onboarding_task_overdue`); these are the SITUATION types the authored files actually defer,
+    # which is why listing one did not cover the other.
+    - asset_in_custody
+    - employee_lifecycle_event
+    - goal_behind_pace
+    - obligation_falls_due
+    - spend_against_a_commitment
 
   # Would be shipped by a support_v1 pack's L2 extraction whitelist.
   obs_kinds:
