@@ -19,5 +19,12 @@ from genios_engine.context.angles.contract import (Angle, AngleVerdict, CostTier
                                                    GateSource, UnavailableAngle,
                                                    register, registered, resolve)
 
+# REGISTRATION IS THE IMPORT, which is why this line sits below the re-exports and carries a
+# `noqa` rather than a name. `registered()` is what the sweep iterates; an angle in a module
+# nobody imports is a declaration that never fires and never errors — the failure
+# `patterns/registry.py` refuses loudly for condition kinds. Importing the package registers its
+# questions, so `evaluate_org` cannot silently have nothing to ask.
+from genios_engine.context.angles import library as _library  # noqa: E402,F401
+
 __all__ = ["Angle", "AngleVerdict", "CostTier", "GateSource", "UnavailableAngle",
            "register", "registered", "resolve"]

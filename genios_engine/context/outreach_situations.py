@@ -1198,7 +1198,10 @@ def read_conditions_for_dispatch(rows: dict, now: datetime, employers: dict) -> 
 
     queue = rows.get("_conditions") or {}
     owner = rows.get("_mailbox_owner")
-    return read_conditions_in_review(queue, now, owner)
+    # Stamped under its own reserved key by `_gather`, and `or {}` is the whole failure handling
+    # it needs: a build with no angle layer, a sweep that made no calls, and a tenant whose queue
+    # the model refused all arrive here as an empty map and produce exactly today's flat queue.
+    return read_conditions_in_review(queue, now, owner, rows.get("_condition_verdicts") or {})
 
 
 def read_conditions_met_for_dispatch(rows: dict, now: datetime, employers: dict) -> list[_Finding]:
@@ -1345,9 +1348,14 @@ def _gather(store, org_id: str, *, now: datetime | None = None,
                 entry["_covered_by_replier"] = str(row.party)
         # The review queue and the mailbox owner, under reserved keys rather than node ids: the
         # readings iterate `rows` by node, and a leading underscore cannot collide with one.
-        from genios_engine.context.condition_situations import (gather_conditions_in_review,
-                                                                 gather_conditions_satisfied)
+        from genios_engine.context.condition_situations import (
+            gather_condition_queue_verdicts, gather_conditions_in_review,
+            gather_conditions_satisfied)
         held["_conditions"] = gather_conditions_in_review(c, org_id)
+        # …and what the triage angle last said about each of those queues, so the reading can be
+        # ORDERED. Read here rather than inside the reader because the readers take rows, not a
+        # connection, and this is the one place in the dispatch that holds both.
+        held["_condition_verdicts"] = gather_condition_queue_verdicts(c, org_id)
         # …and the conditions that have COME TRUE. Published by the same correlator, in the same
         # shape, and read by nothing until now.
         held["_conditions_met"] = gather_conditions_satisfied(c, org_id)

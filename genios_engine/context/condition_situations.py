@@ -71,6 +71,25 @@ _REVIEW_ROWS = (
     "order by f.subject_node_id"
 )
 
+#: THE ANGLE THAT ORDERS THIS QUEUE, and the two fields its answer is carried in.
+#:
+#: WHY A SEPARATE FIELD NAME RATHER THAN `condition.predicate`. The predicate is what would let a
+#: condition be EVALUATED rather than reported, and its absence is the reason every row here
+#: exists — `missing=["condition.predicate"]` is declared on every finding below so the coverage
+#: score says "not evaluable" out loud. A model verdict is not a predicate and must never be
+#: mistaken for one: it cannot be re-evaluated on the next sweep, it carries no world key, and
+#: `SatisfiedCondition` would refuse it outright for having one evidence span where the contract
+#: demands two. So it is carried beside the reading under a name that says what it is.
+#:
+#: `queue`, NOT `condition`, IN THE VALUE'S MEANING. One fact per node holds a LIST of conditions,
+#: so the angle's subject is the counterparty and its verdict is about that person's whole queue.
+#: Stamping it on each of the node's cards is honest only because the field says `queue`: it reads
+#: "somewhere in what this person has left open, something looks met", never "this sentence is
+#: true". Where a node holds one condition — the ordinary case — the two readings coincide.
+TRIAGE_ANGLE_ID = "condition_queue_triage"
+QUEUE_READING_FIELD = "condition.queue_reading"
+QUEUE_CONFIDENCE_FIELD = "condition.queue_confidence_bp"
+
 #: How many of one node's conditions become findings. A counterparty with a long history can
 #: accumulate them, and the newest are the ones still live; the bound stops one busy thread
 #: filling a feed. Ordered by `stated_at` descending before the cut, so it is the newest that
@@ -172,12 +191,20 @@ def _is_owner(actor: str, owner: str) -> bool | None:
 
 
 def read_conditions_in_review(rows: Mapping[str, object], now: datetime,
-                              mailbox_owner: str | None = None) -> list:
+                              mailbox_owner: str | None = None,
+                              verdicts: Mapping[str, tuple[str, int]] | None = None) -> list:
     """One finding per unparsed condition. `rows` maps subject node id to the stored review value.
 
     A condition with no actor, no action and no quote yields nothing — there would be nothing for
     a card to say. Everything else is reported, including the ones whose actor is us: "you told
     them you would reply once it was booked" is as much an open loop as anything they said.
+
+    `verdicts` MAPS A NODE TO WHAT THE TRIAGE ANGLE LAST SAID, and it is optional in the strong
+    sense: absent, empty, or missing this node, every finding above is produced byte-identically.
+    That is this branch's standing rule — no gate may refuse on absence, only on positive contrary
+    evidence — expressed where it is easiest to break it. A model that is unavailable, over
+    budget, or simply not wired up returns the queue to exactly the state it is in today: a flat
+    list, in no order, which is worse than an ordered one and is still a queue somebody can work.
     """
     from genios_engine.context.outreach_situations import _Finding
 
@@ -234,6 +261,21 @@ def read_conditions_in_review(rows: Mapping[str, object], now: datetime,
             if owned is not None:
                 facts.append(("condition.actor_is_us", owned, "bool"))
 
+            # THE TRIAGE READING, ADDED AND NEVER SUBTRACTED. It cannot remove a finding, reorder
+            # one, or change a single fact above it — the card is fully built by the time this
+            # runs, and this appends two fields to it.
+            #
+            # A REFUSAL IS NOT CARRIED. `unknowable` means the model could not tell from the
+            # relationship slice, which is a fact about the ANGLE rather than about this
+            # counterparty; `AngleRun.refused` counts it, and that counter is where an angle whose
+            # refusals dominate becomes visible. Stamping "we asked and could not say" onto a card
+            # adds a field to every row and orders nothing.
+            reading = (verdicts or {}).get(node_id)
+            if reading is not None:
+                verdict, confidence_bp = reading
+                facts.append((QUEUE_READING_FIELD, verdict, "string"))
+                facts.append((QUEUE_CONFIDENCE_FIELD, int(confidence_bp), "number"))
+
             display = f"{actor} — condition awaiting review" if actor else "condition awaiting review"
             findings.append(_Finding(
                 anchor=ANCHOR_CONDITION,
@@ -263,6 +305,37 @@ def gather_conditions_in_review(conn, org_id: str) -> dict[str, object]:
     """The stored review rows for one org, keyed by subject node."""
     rows = conn.execute(text(_REVIEW_ROWS), {"o": org_id, "field": REVIEW_FIELD}).mappings().all()
     return {str(row["node_id"]): row["value"] for row in rows}
+
+
+#: `refused = false` IS IN THE QUERY, NOT IN THE LOOP, so a refusal never crosses the seam at all
+#: and no reader downstream has to know that `unknowable` is the word that means "I could not
+#: tell" for this angle's version. `angle_version` is deliberately NOT filtered: a verdict written
+#: by 1.0.0 stays readable when 1.1.0 ships, because `evaluate_angle` overwrites in place on the
+#: sweep that follows and the alternative is a card that silently loses its ordering the moment
+#: an angle's version string changes.
+_QUEUE_VERDICTS = (
+    "select subject_ref, verdict, confidence_bp from context_angle_verdicts "
+    "where org_id = :o and angle_id = :a and refused = false"
+)
+
+
+def gather_condition_queue_verdicts(conn, org_id: str) -> dict[str, tuple[str, int]]:
+    """What the triage angle currently says about each counterparty's review queue.
+
+    GUARDED, AND THE GUARD IS THE POINT rather than defensive habit. `context_angle_verdicts`
+    arrived in migration 0165; a database that predates it, a fixture that builds only the tables
+    its own subject needs, or a driver that cannot run the query must all produce a FLAT review
+    queue — which is precisely today's behaviour — instead of failing a sweep that was working
+    yesterday. An angle may only ever ADD, and a gather that can take the layer down with it
+    would be that rule broken at the one place nobody looks.
+    """
+    try:
+        rows = conn.execute(text(_QUEUE_VERDICTS),
+                            {"o": org_id, "a": TRIAGE_ANGLE_ID}).mappings().all()
+    except Exception:
+        return {}
+    return {str(row["subject_ref"]): (str(row["verdict"]), int(row["confidence_bp"] or 0))
+            for row in rows}
 
 
 # ── the twin: the conditions that have COME TRUE ─────────────────────────────────────────────
@@ -421,6 +494,10 @@ __all__ = [
     "MAX_PER_NODE",
     "REVIEW_FIELD",
     "STALE_AFTER_DAYS",
+    "QUEUE_CONFIDENCE_FIELD",
+    "QUEUE_READING_FIELD",
+    "TRIAGE_ANGLE_ID",
+    "gather_condition_queue_verdicts",
     "gather_conditions_in_review",
     "read_conditions_in_review",
 ]
