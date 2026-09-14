@@ -89,4 +89,84 @@ CONDITION_QUEUE_TRIAGE = register(Angle(
           "judging from facts can quote the promise but not the event that met it."),
 ))
 
-__all__ = ["CONDITION_QUEUE_TRIAGE"]
+#: WE OWE THIS PERSON A REPLY AND NOTHING ON THE BOARD SAYS SO — DOES IT MATTER?
+#:
+#: THE CASE THE FOUNDER NAMED, IN THEIR OWN WORDS. Boardy made many introductions, many of those
+#: people REPLIED, and the replies went unanswered. `migrations/0164` records the shape as the
+#: reason `ball_in_court_unreported` exists at all: *"a node whose `thread.ball_in_court` fact says
+#: the turn is OURS, with no live situation. This is the shape the founder named directly: they
+#: replied, we went quiet, and nothing said so."* A deterministic reading for it now exists —
+#: `outreach_situations.read_unanswered_replies`, anchor `unanswered` — so what remains in this
+#: residue kind is precisely what that reading MISSED. This angle triages the miss.
+#:
+#: WHICH MAKES IT A COVERAGE QUEUE, NOT A CARD QUEUE, and the distinction is the whole licence for
+#: this angle to exist. A residue row means no live situation covers the subject, so there is no
+#: card here to rank and none is minted: the verdict orders the work queue `read_residue` returns.
+#: The agreed law is *"a model may propose a situation; it may never rank one, and never produces
+#: a number a card asserts"* — deciding which unexplained subjects a HUMAN or a later unit should
+#: look at first is neither. Whether any of these becomes a card is `is_this_worth_a_card`'s
+#: question in Step 5, and this is the input it will read.
+#:
+#: `noise` IS HOW THE MODEL DISAGREES WITH THE FACT, and it is allowed to. `thread.ball_in_court`
+#: is derived from a thread reconstruction that cannot tell a personal note from a no-reply blast,
+#: so "the turn is ours" is sometimes true of a newsletter. Saying so removes nothing — an angle
+#: cannot delete a residue row, retire a fact or suppress a reading — it only sinks that subject in
+#: the queue. Without the option, every blast is forced to `important` or `ambient` and the queue
+#: keeps the exact noise it was built to expose.
+#:
+#: WHAT IT SEES IS EVERYTHING THAT SURVIVES A REPLY, AND THAT WORD IS LOAD-BEARING.
+#: `thread.days_waiting` is the field a reader reaches for first and it is the one field that is
+#: guaranteed ABSENT here: `waiting.py` lists it in `WAITING_ONLY_FIELDS`, retired through
+#: `retire_facts` the moment a counterparty answers — and `ball_in_court = us` MEANS they answered
+#: last. Naming it would not error; it would put a permanent blank in front of the model and bill
+#: for it. `thread.last_heard_days` and `party.reply_cadence_days` are the two the same module
+#: marks as staying true after a reply ("they stay true after a reply and are rewritten every
+#: sweep"), which is exactly what this queue needs: how long they have been waiting on US, and
+#: what their own rhythm looks like.
+#:
+#: THE GATE VALUE IS NOT IN `sees` BECAUSE IT IS EMPTY. `residue.detect_residue` writes this kind
+#: with `detail = "{}"` — the row's meaning is entirely in its existence. Naming it would add a
+#: constant to every slice and to `saw_hash` and tell the model nothing.
+REPLY_OWED_TRIAGE = register(Angle(
+    angle_id="reply_owed_triage",
+    version="1.0.0",
+    gate=("ball_in_court_unreported",),
+    gate_source=GateSource.RESIDUE,
+    sees=(
+        # Whose turn it is, from the fact the residue query itself selected on — so the gate
+        # cannot admit a subject that lacks it.
+        "thread.ball_in_court",
+        # When each side last spoke. Written by `derived.py` onto person nodes under the same
+        # `if row.subject_node_id in people` guard that writes `thread.ball_in_court`, so they
+        # co-locate on the node the gate returns.
+        "thread.last_inbound",
+        "thread.last_outbound",
+        # …and the two waiting-derived fields that OUTLIVE a reply. See the note above: the
+        # obvious third one is retired for exactly this population.
+        "thread.last_heard_days",
+        "party.reply_cadence_days",
+        # Who they are to this business. `relationship.nature` is what the counterparty IS;
+        # `party.role` is often the structural default — `correlation_organization` prefers the
+        # first over the second for that reason and both are cheap.
+        "party.role",
+        "relationship.nature",
+    ),
+    returns=("important", "developing", "ambient", "noise", "unknowable"),
+    refusal="unknowable",
+    # The same walls as every other angle. A verdict here orders a coverage queue and must never
+    # read as a measurement — `confidence_bp` reaches no card, by construction: nothing in the
+    # card path reads `context_angle_verdicts` for this angle.
+    confidence_band=(2_000, 8_000),
+    # HIGHER THAN THE CONDITION QUEUE BECAUSE THIS ONE IS UNBOUNDED BY NATURE — every counterparty
+    # who ever replied without an answer is a candidate, where conditions are only the sentences a
+    # parser refused. It does not need to cover the queue in one sweep: `store.evaluate_angle`
+    # charges budget only for subjects it actually ASKS about, and an unchanged slice is free
+    # forever, so a backlog drains over a few sweeps and then costs one SELECT.
+    max_per_sweep=60,
+    cost_tier=CostTier.CHEAP,
+    note=("Orders the residue work queue; it mints nothing and ranks no card. `noise` is the "
+          "model disagreeing that a reply is owed, which sinks a subject in the queue and "
+          "removes nothing — an angle cannot delete a residue row or retire a fact."),
+))
+
+__all__ = ["CONDITION_QUEUE_TRIAGE", "REPLY_OWED_TRIAGE"]
