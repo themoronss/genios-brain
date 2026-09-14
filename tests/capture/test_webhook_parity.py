@@ -620,6 +620,12 @@ def test_every_connector_ingest_door_in_the_api_supplies_the_owner_and_the_prepa
         keywords = {k.arg for k in node.keywords}
         if call == "ingest_pushed_objects":         # its wiring is one typed argument
             wiring = next(k.value for k in node.keywords if k.arg == "wiring")
+            if isinstance(wiring, ast.Name):
+                # Built once and reused (`wiring = _push_wiring_for(conn)`): gate its assignment.
+                func = next(f for f in ast.walk(tree) if isinstance(f, ast.FunctionDef)
+                            and any(n is node for n in ast.walk(f)))
+                wiring = next(n.value for n in ast.walk(func) if isinstance(n, ast.Assign)
+                              and any(getattr(t, "id", None) == wiring.id for t in n.targets))
             if getattr(wiring.func, "id", None) != "PushIngestWiring":
                 # A factory in routes.py (`_push_wiring_for`): gate the wiring it builds.
                 factory = next(f for f in ast.walk(tree) if isinstance(f, ast.FunctionDef)

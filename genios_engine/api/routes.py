@@ -1192,6 +1192,30 @@ def _push_wiring_for(conn) -> PushIngestWiring:
         structured=_structured_lane_for(conn.org_id))
 
 
+#: Emails re-read, published and restored together. Bounds both the wait before the first facts
+#: and what one restart can cost.
+_REREAD_BATCH = 25
+
+
+def _reread_connection(org_id: str, row, seen: dict):
+    """The connection to re-capture a stored event through.
+
+    A backfill runs on a throwaway `Connection(...)` whose random `con_<hex>` id is never stored,
+    so most backfilled events name a connection that does not exist (measured on production: 241
+    of one tenant's 344 unread emails). Those fall back to the tenant's own connection for the same
+    source, then to any active one of theirs for it."""
+    k = (row.connection_id, row.source)
+    if k not in seen:
+        conn = _connections.get(row.connection_id) if row.connection_id else None
+        if conn is None or conn.org_id != org_id:
+            conn = _connections.get(f"con_{org_id}_{row.source}")
+        if conn is None:
+            conn = next((c for c in _connections.list_active()
+                         if c.org_id == org_id and c.source_type == row.source), None)
+        seen[k] = conn
+    return seen[k]
+
+
 def _reread_unread(org_id: str, *, limit: int = 200) -> int:
     """Read again the mail this tenant captured while its L1 was switched off
     (`capture/landing/unread.py`), through the push door, so L2 can pull it. Bounded per call; the
@@ -1201,6 +1225,11 @@ def _reread_unread(org_id: str, *, limit: int = 200) -> int:
     from genios_engine.capture.landing import unread
     eng = _graph.engine
     try:
+        # Callers hold the org's run lease, so no other pass is mid-flight: anything still set
+        # aside is an orphan of a pass a deploy or crash interrupted.
+        back = unread.recover_orphans(eng, org_id)
+        if back:
+            _log.info("re-read: %s rows from an interrupted pass returned org=%s", back, org_id)
         rows = unread.find_unread(eng, org_id, limit=limit)
         if not rows:
             return 0
@@ -1211,42 +1240,47 @@ def _reread_unread(org_id: str, *, limit: int = 200) -> int:
         _log.exception("re-read lookup failed org=%s", org_id)
         return 0
     key = get_settings().crypto_key
-    by_conn: dict[str, list] = {}
+    by_conn: dict[str, tuple] = {}
+    seen: dict[tuple, object] = {}
     for row in rows:
-        by_conn.setdefault(row.connection_id, []).append(row)
+        conn = _reread_connection(org_id, row, seen)
+        if conn is not None:
+            by_conn.setdefault(conn.connection_id, (conn, []))[1].append(row)
     handed = 0
-    for connection_id, group in by_conn.items():
-        conn = _connections.get(connection_id)
-        if conn is None:
-            continue
+    for connection_id, (conn, group) in by_conn.items():
         pairs = [(row.event_id, unread.to_raw_object(row, key)) for row in group]
         pairs = [(eid, raw) for eid, raw in pairs if raw is not None]
         if not pairs:
             continue
-        ids = [eid for eid, _ in pairs]
-        objs = tuple(raw for _, raw in pairs)
-        try:
-            unread.set_aside(eng, org_id, ids)
-            outcome = ingest_pushed_objects(objs, org_id=conn.org_id,
-                                            connection_id=conn.connection_id,
-                                            wiring=_push_wiring_for(conn))
-            if outcome.results:
-                finalize_l1(ManualSweep(org_id=conn.org_id, results=outcome.results,
-                                        emitted=sum(1 for r in outcome.results
-                                                    if r.outcome == "emitted"),
-                                        scanned=len(objs)),
-                            org_id=conn.org_id, stores=_l1_stores())
-            handed += len(objs)
-        except Exception:      # noqa: BLE001
-            _log.exception("re-read failed org=%s connection=%s", org_id, connection_id)
-        finally:
+        wiring = _push_wiring_for(conn)
+        # SMALL BATCHES, each set aside, captured, PUBLISHED and restored before the next. Measured
+        # on production: ~20 s per email, so one 170-email batch published nothing for an hour, and
+        # a restart inside that hour lost the publish for every email already re-landed.
+        for start in range(0, len(pairs), _REREAD_BATCH):
+            batch = pairs[start:start + _REREAD_BATCH]
+            ids = [eid for eid, _ in batch]
+            objs = tuple(raw for _, raw in batch)
             try:
-                back = unread.restore(eng, org_id, ids)
-                if back:
-                    _log.info("re-read: %s of %s objects did not land again org=%s, restored",
-                              back, len(ids), org_id)
+                unread.set_aside(eng, org_id, ids)
+                outcome = ingest_pushed_objects(objs, org_id=conn.org_id,
+                                                connection_id=conn.connection_id, wiring=wiring)
+                if outcome.results:
+                    finalize_l1(ManualSweep(org_id=conn.org_id, results=outcome.results,
+                                            emitted=sum(1 for r in outcome.results
+                                                        if r.outcome == "emitted"),
+                                            scanned=len(objs)),
+                                org_id=conn.org_id, stores=_l1_stores())
+                handed += len(objs)
             except Exception:      # noqa: BLE001
-                _log.exception("re-read restore failed org=%s", org_id)
+                _log.exception("re-read failed org=%s connection=%s", org_id, connection_id)
+            finally:
+                try:
+                    back = unread.restore(eng, org_id, ids)
+                    if back:
+                        _log.info("re-read: %s of %s objects did not land again org=%s, "
+                                  "restored", back, len(ids), org_id)
+                except Exception:      # noqa: BLE001
+                    _log.exception("re-read restore failed org=%s", org_id)
     if handed:
         _log.info("re-read %s objects captured while L1 was off org=%s", handed, org_id)
     return handed

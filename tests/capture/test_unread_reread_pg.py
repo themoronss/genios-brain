@@ -120,3 +120,19 @@ def test_set_aside_frees_the_key_and_restore_returns_only_what_did_not_land(engi
                               {"o": org, "a": landed, "b": failed}).fetchall())
     assert rows == {landed: "superseded", failed: "emitted"}
     assert unread.find_unread(engine, org)[0].event_id == failed      # tried again next pass
+
+
+def test_a_pass_killed_before_restore_is_recovered_by_the_next_pass(engine, org):
+    """A deploy between `set_aside` and `restore` leaves rows superseded with a free key."""
+    landed = _event(engine, org, "m1", captured_at=NOW - timedelta(hours=2))
+    orphan = _event(engine, org, "m2", captured_at=NOW - timedelta(hours=2))
+    unread.set_aside(engine, org, [landed, orphan])
+    _event(engine, org, "m1", captured_at=NOW + timedelta(minutes=1))   # m1 re-landed, then death
+
+    assert unread.find_unread(engine, org) == []                       # the orphan is invisible
+    assert unread.recover_orphans(engine, org) == 1
+
+    assert [r.event_id for r in unread.find_unread(engine, org)] == [orphan]
+    with engine.connect() as c:
+        assert c.execute(text("select outcome from source_events where event_id = :e"),
+                         {"e": landed}).scalar() == "superseded"
