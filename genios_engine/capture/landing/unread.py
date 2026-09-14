@@ -70,6 +70,25 @@ _RESTORE = text(
 ).bindparams(bindparam("ids", expanding=True))
 
 
+# A pass that died between `set_aside` and `restore` (a deploy, a crash) leaves rows `superseded`
+# with their original key still free, and `find_unread` only reads `emitted` — so without this they
+# would never be read again. The chain holds the org's run lease, so when a pass STARTS no other
+# re-read for the org is in flight and every such row is an orphan.
+_RECOVER = text(
+    "update source_events se set outcome = 'emitted', "
+    "       dedup_key = split_part(se.dedup_key, :mark, 1) "
+    " where se.org_id = :o and se.outcome = :sup "
+    "   and not exists (select 1 from source_events n where n.org_id = se.org_id "
+    "                    and n.dedup_key = split_part(se.dedup_key, :mark, 1))")
+
+
+def recover_orphans(engine, org_id: str) -> int:
+    """Put back every row an interrupted pass set aside and never re-landed. Call only at the
+    start of a pass, under the org's run lease. Returns how many."""
+    with engine.begin() as c:
+        return c.execute(_RECOVER, {"o": org_id, "sup": SUPERSEDED, "mark": _MARK}).rowcount
+
+
 def find_unread(engine, org_id: str, *, limit: int = 200) -> list[Any]:
     """Events emitted while this tenant's L1 was off that nothing downstream has read yet.
 
@@ -123,4 +142,5 @@ def restore(engine, org_id: str, event_ids: list[str]) -> int:
                                     "ids": list(event_ids)}).rowcount
 
 
-__all__ = ["SUPERSEDED", "find_unread", "restore", "set_aside", "to_raw_object"]
+__all__ = ["SUPERSEDED", "find_unread", "recover_orphans", "restore", "set_aside",
+           "to_raw_object"]

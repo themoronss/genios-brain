@@ -61,3 +61,29 @@ def test_another_tenants_connection_is_never_used(store):
 
 def test_no_connection_for_the_source_is_a_skip(store):
     assert R._reread_connection(ORG, _row("con_x", "slack"), {}) is None
+
+
+def test_the_re_read_publishes_in_batches_and_restores_each_one(store, monkeypatch):
+    """60 unread emails → three batches, each set aside, captured, published, then restored."""
+    from genios_engine.capture.landing import unread
+
+    rows = [SimpleNamespace(event_id=f"evt_{i}", connection_id="con_bc00df", source="gmail")
+            for i in range(60)]
+    calls: list[tuple[str, int]] = []
+    monkeypatch.setattr(R, "_graph", SimpleNamespace(engine=object()))
+    monkeypatch.setattr(R, "_llm_over_daily_cap", lambda org: False)
+    monkeypatch.setattr(R, "_push_wiring_for", lambda conn: "wiring")
+    monkeypatch.setattr(R, "_l1_stores", lambda: None)
+    monkeypatch.setattr(unread, "recover_orphans", lambda e, o: 0)
+    monkeypatch.setattr(unread, "find_unread", lambda e, o, limit: rows)
+    monkeypatch.setattr(unread, "to_raw_object", lambda row, key: row.event_id)
+    monkeypatch.setattr(unread, "set_aside", lambda e, o, ids: calls.append(("aside", len(ids))))
+    monkeypatch.setattr(unread, "restore", lambda e, o, ids: calls.append(("restore", len(ids))))
+    monkeypatch.setattr(R, "ingest_pushed_objects", lambda objs, **kw: (
+        calls.append(("ingest", len(objs))) or SimpleNamespace(
+            results=[SimpleNamespace(outcome="emitted")] * len(objs))))
+    monkeypatch.setattr(R, "finalize_l1", lambda sweep, **kw: calls.append(("publish", sweep.scanned)))
+
+    assert R._reread_unread(ORG) == 60
+    assert calls == [step for n in (25, 25, 10)
+                     for step in (("aside", n), ("ingest", n), ("publish", n), ("restore", n))]
