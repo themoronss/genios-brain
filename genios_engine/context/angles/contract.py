@@ -183,8 +183,11 @@ class Angle:
     #: `derived.timeline.condition_review` holds `{"review": [...]}` and
     #: `derived.dependency.missing_prerequisite` holds `{"absences": [...]}`. Without a fan-out
     #: the gate admits one subject per node, so an angle can only ever answer for the whole list.
-    #: `condition_queue_triage` absorbed that by asking a question that is TRUE at node level and
-    #: naming its fields `queue`. A CLASSIFICATION cannot: "Finance" and "Ankit's team" on one
+    #: The condition angle shipped without this and absorbed the mismatch by asking a question
+    #: that is TRUE at node level, naming its fields `queue` so the aggregation was at least
+    #: honest about itself. It was still the wrong shape — a reader had to open every card on the
+    #: node to find which sentence a verdict meant — and `condition_now_true` now fans out too. A
+    #: CLASSIFICATION could never have absorbed it at all: "Finance" and "Ankit's team" on one
     #: node are different kinds of absence, and one verdict covering both is not approximate, it
     #: is wrong.
     #:

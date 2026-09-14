@@ -1,9 +1,10 @@
 """A classification cannot be shared, and the gate had no way to say so until now.
 
 Both fact-shaped refusal queues in this layer store ONE row per node whose value is a LIST.
-`condition_queue_triage` absorbed that by asking a question that is true at node level and naming
-its fields `queue`. A classification cannot: "Finance" and "Ankit's team" on one person are
-different kinds of absence, and one verdict covering both is not approximate — it is wrong.
+The condition angle shipped without a fan-out and absorbed that by asking a question true at node
+level, naming its fields `queue`; it has since been fanned out too. A classification could never
+have absorbed it: "Finance" and "Ankit's team" on one person are different kinds of absence, and
+one verdict covering both is not approximate — it is wrong.
 
 So `Angle.fan_out` makes each item its own subject. Half this file tests that machinery, because
 it is new and the ways it fails are silent: a slice carrying the whole list instead of one item

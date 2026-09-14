@@ -61,6 +61,7 @@ from sqlalchemy import text
 #: elsewhere: "two spellings of 'partial' would make this query quietly stop finding the rows this
 #: unit itself produced." Caught by `tests/test_nothing_is_written_and_never_read.py`, which found
 #: the field appearing in ONE module and asked how it could be both writer and reader.
+from genios_engine.context.angles.contract import fan_subject_ref
 from genios_engine.context.correlation_timeline import FIELD_REVIEW as REVIEW_FIELD
 
 _REVIEW_ROWS = (
@@ -81,14 +82,17 @@ _REVIEW_ROWS = (
 #: `SatisfiedCondition` would refuse it outright for having one evidence span where the contract
 #: demands two. So it is carried beside the reading under a name that says what it is.
 #:
-#: `queue`, NOT `condition`, IN THE VALUE'S MEANING. One fact per node holds a LIST of conditions,
-#: so the angle's subject is the counterparty and its verdict is about that person's whole queue.
-#: Stamping it on each of the node's cards is honest only because the field says `queue`: it reads
-#: "somewhere in what this person has left open, something looks met", never "this sentence is
-#: true". Where a node holds one condition — the ordinary case — the two readings coincide.
-TRIAGE_ANGLE_ID = "condition_queue_triage"
-QUEUE_READING_FIELD = "condition.queue_reading"
-QUEUE_CONFIDENCE_FIELD = "condition.queue_confidence_bp"
+#: ONE CONDITION, ONE VERDICT — AND THE FIELD NAMES SAY SO. The first cut of this angle could not
+#: do that: one fact per node holds a LIST of conditions, so before `Angle.fan_out` existed the
+#: gate admitted one subject per counterparty and the verdict had to be about that person's whole
+#: queue. The fields were named `condition.queue_reading` / `condition.queue_confidence_bp` so the
+#: aggregation was at least honest about itself, and a reader still had to open every card on the
+#: node to find which sentence it meant. `fan_out=("review", "condition_id")` gives each condition
+#: its own subject, so these now mean exactly what they say — and keeping `queue` in the name
+#: would make them lie in the other direction.
+TRIAGE_ANGLE_ID = "condition_now_true"
+MODEL_READING_FIELD = "condition.model_reading"
+MODEL_CONFIDENCE_FIELD = "condition.model_confidence_bp"
 
 #: How many of one node's conditions become findings. A counterparty with a long history can
 #: accumulate them, and the newest are the ones still live; the bound stops one busy thread
@@ -199,7 +203,7 @@ def read_conditions_in_review(rows: Mapping[str, object], now: datetime,
     a card to say. Everything else is reported, including the ones whose actor is us: "you told
     them you would reply once it was booked" is as much an open loop as anything they said.
 
-    `verdicts` MAPS A NODE TO WHAT THE TRIAGE ANGLE LAST SAID, and it is optional in the strong
+    `verdicts` MAPS A FANNED SUBJECT REF TO WHAT THE ANGLE LAST SAID ABOUT THAT ONE CONDITION, and it is optional in the strong
     sense: absent, empty, or missing this node, every finding above is produced byte-identically.
     That is this branch's standing rule — no gate may refuse on absence, only on positive contrary
     evidence — expressed where it is easiest to break it. A model that is unavailable, over
@@ -270,11 +274,15 @@ def read_conditions_in_review(rows: Mapping[str, object], now: datetime,
             # counterparty; `AngleRun.refused` counts it, and that counter is where an angle whose
             # refusals dominate becomes visible. Stamping "we asked and could not say" onto a card
             # adds a field to every row and orders nothing.
-            reading = (verdicts or {}).get(node_id)
+            # KEYED THROUGH THE EVALUATOR'S OWN FUNCTION. `fan_subject_ref` is how the angle store
+            # named this subject when it asked; rebuilding that string by hand here is the
+            # two-spellings failure this module records against its own field name, and it fails
+            # silently — every card simply lacks a reading and nobody can tell why.
+            reading = (verdicts or {}).get(fan_subject_ref(str(node_id), condition_id))
             if reading is not None:
                 verdict, confidence_bp = reading
-                facts.append((QUEUE_READING_FIELD, verdict, "string"))
-                facts.append((QUEUE_CONFIDENCE_FIELD, int(confidence_bp), "number"))
+                facts.append((MODEL_READING_FIELD, verdict, "string"))
+                facts.append((MODEL_CONFIDENCE_FIELD, int(confidence_bp), "number"))
 
             display = f"{actor} — condition awaiting review" if actor else "condition awaiting review"
             findings.append(_Finding(
@@ -320,7 +328,7 @@ _QUEUE_VERDICTS = (
 
 
 def gather_condition_queue_verdicts(conn, org_id: str) -> dict[str, tuple[str, int]]:
-    """What the triage angle currently says about each counterparty's review queue.
+    """What the angle currently says about each unparsed condition, keyed by fanned subject ref.
 
     GUARDED, AND THE GUARD IS THE POINT rather than defensive habit. `context_angle_verdicts`
     arrived in migration 0165; a database that predates it, a fixture that builds only the tables
@@ -494,8 +502,8 @@ __all__ = [
     "MAX_PER_NODE",
     "REVIEW_FIELD",
     "STALE_AFTER_DAYS",
-    "QUEUE_CONFIDENCE_FIELD",
-    "QUEUE_READING_FIELD",
+    "MODEL_CONFIDENCE_FIELD",
+    "MODEL_READING_FIELD",
     "TRIAGE_ANGLE_ID",
     "gather_condition_queue_verdicts",
     "gather_conditions_in_review",

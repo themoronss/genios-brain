@@ -1,6 +1,6 @@
 """The first declared angle, end to end — and the four ways it is forbidden to matter.
 
-`condition_queue_triage` asks about the one queue the deterministic layer built BY REFUSING:
+`condition_now_true` asks about the one queue the deterministic layer built BY REFUSING:
 `parse_condition` returns None for anything it cannot match to a date, a count or a named event,
 and files the sentence under `derived.timeline.condition_review` rather than guessing. That queue
 arrived flat — twenty-four conditions on the pilot, in no order, with no way to tell which
@@ -22,10 +22,11 @@ from datetime import datetime, timedelta, timezone
 import pytest
 from sqlalchemy import create_engine, text
 
-from genios_engine.context.angles.library import CONDITION_QUEUE_TRIAGE
+from genios_engine.context.angles.contract import fan_node_ref, fan_subject_ref
+from genios_engine.context.angles.library import CONDITION_NOW_TRUE
 from genios_engine.context.angles.store import evaluate_angle
-from genios_engine.context.condition_situations import (QUEUE_CONFIDENCE_FIELD,
-                                                        QUEUE_READING_FIELD, TRIAGE_ANGLE_ID,
+from genios_engine.context.condition_situations import (MODEL_CONFIDENCE_FIELD,
+                                                        MODEL_READING_FIELD, TRIAGE_ANGLE_ID,
                                                         gather_condition_queue_verdicts,
                                                         gather_conditions_in_review,
                                                         read_conditions_in_review)
@@ -94,10 +95,12 @@ def _relationship(store, node=PERSON):
     _fact(store, "relationship.nature", "investor", node=node)
 
 
-def _asker(word="something_is_met", confidence=6_000, seen=None):
+def _asker(word="met", confidence=6_000, seen=None, by_id=None):
     def ask(angle, subject_ref, slice_):
         if seen is not None:
             seen.append((subject_ref, dict(slice_)))
+        if by_id is not None:
+            return (by_id[slice_["derived.timeline.condition_review"]["condition_id"]], confidence)
         return (word, confidence)
     return ask
 
@@ -126,12 +129,16 @@ def test_every_field_the_angle_declares_reaches_the_model(store) -> None:
     _queued(store)
     _relationship(store)
     seen: list = []
-    evaluate_angle(store, ORG, CONDITION_QUEUE_TRIAGE, eval_time=NOW, asker=_asker(seen=seen))
+    evaluate_angle(store, ORG, CONDITION_NOW_TRUE, eval_time=NOW, asker=_asker(seen=seen))
 
     [(subject, slice_)] = seen
-    assert subject == PERSON
-    assert set(slice_) == set(CONDITION_QUEUE_TRIAGE.sees)
-    assert all(slice_[name] for name in CONDITION_QUEUE_TRIAGE.sees), slice_
+    # A FANNED REF, and the node half is what `_seen` must select on. `n_ankit#5cf2…` is not a
+    # `subject_node_id`; selecting on it returns nothing, with no error — the four relationship
+    # fields below would simply be blank on every sweep, and billed for.
+    assert subject == fan_subject_ref(PERSON, "cond_1")
+    assert fan_node_ref(subject) == PERSON
+    assert set(slice_) == set(CONDITION_NOW_TRUE.sees)
+    assert all(slice_[name] for name in CONDITION_NOW_TRUE.sees), slice_
 
 
 def test_the_gate_value_is_reused_rather_than_read_twice(store) -> None:
@@ -140,8 +147,11 @@ def test_the_gate_value_is_reused_rather_than_read_twice(store) -> None:
     _queued(store)
     _relationship(store)
     seen: list = []
-    evaluate_angle(store, ORG, CONDITION_QUEUE_TRIAGE, eval_time=NOW, asker=_asker(seen=seen))
-    assert "once we have spoken again" in str(seen[0][1]["derived.timeline.condition_review"])
+    evaluate_angle(store, ORG, CONDITION_NOW_TRUE, eval_time=NOW, asker=_asker(seen=seen))
+    item = seen[0][1]["derived.timeline.condition_review"]
+    # ONE condition after the fan-out, not the list it came from.
+    assert isinstance(item, dict) and "review" not in item
+    assert "once we have spoken again" in str(item)
 
 
 # ── the verdict reaches the card, and says what it actually knows ────────────────────────────
@@ -149,35 +159,66 @@ def test_the_gate_value_is_reused_rather_than_read_twice(store) -> None:
 def test_a_verdict_orders_the_queue(store) -> None:
     _queued(store)
     _relationship(store)
-    evaluate_angle(store, ORG, CONDITION_QUEUE_TRIAGE, eval_time=NOW,
-                   asker=_asker("something_is_met", 6_000))
+    evaluate_angle(store, ORG, CONDITION_NOW_TRUE, eval_time=NOW,
+                   asker=_asker("met", 6_000))
     with store._engine.begin() as c:
         verdicts = gather_condition_queue_verdicts(c, ORG)
-    assert verdicts == {PERSON: ("something_is_met", 6_000)}
+    assert verdicts == {fan_subject_ref(PERSON, "cond_1"): ("met", 6_000)}
 
     [card] = _cards(store, verdicts)
     facts = _facts_of(card)
-    assert facts[QUEUE_READING_FIELD] == "something_is_met"
-    assert facts[QUEUE_CONFIDENCE_FIELD] == 6_000
+    assert facts[MODEL_READING_FIELD] == "met"
+    assert facts[MODEL_CONFIDENCE_FIELD] == 6_000
 
 
-def test_one_verdict_covers_a_nodes_whole_queue_and_says_so_in_the_name(store) -> None:
-    """THE GRANULARITY IS FORCED BY THE DATA. `correlation_timeline._fact_rows` writes ONE fact
-    per node whose value is a LIST, so the gate admits one subject per counterparty and a four-way
-    enum cannot say WHICH of three sentences is met. The field is named `queue` rather than
-    `condition` so the stamp reads "something in what this person left open looks met" instead of
-    a claim about a sentence the model never singled out."""
+def test_each_condition_gets_its_own_verdict(store) -> None:
+    """THE CORRECTION THIS ANGLE SHIPPED WITHOUT. `correlation_timeline._fact_rows` writes ONE
+    fact per node whose value is a LIST, so before `Angle.fan_out` existed the gate admitted one
+    subject per counterparty and a four-way enum could not say WHICH of two sentences was met.
+    The first cut answered for the whole queue under fields named `queue`, and a reader still had
+    to open every card on the node to learn what the verdict meant.
+
+    Now each condition is its own subject, and two sentences from one counterparty may disagree.
+    """
     _queued(store, _condition("c1"), _condition("c2", action="introduce us"))
     _relationship(store)
-    evaluate_angle(store, ORG, CONDITION_QUEUE_TRIAGE, eval_time=NOW, asker=_asker())
+    evaluate_angle(store, ORG, CONDITION_NOW_TRUE, eval_time=NOW,
+                   asker=_asker(by_id={"c1": "met", "c2": "not_a_condition"}))
     with store._engine.begin() as c:
         verdicts = gather_condition_queue_verdicts(c, ORG)
 
     cards = _cards(store, verdicts)
     assert len(cards) == 2
-    assert all(_facts_of(card)[QUEUE_READING_FIELD] == "something_is_met" for card in cards)
-    assert not any(name.startswith("condition.reading") for card in cards
-                   for name, _v, _k in card.facts)
+    by_key = {card.canonical_key: _facts_of(card)[MODEL_READING_FIELD] for card in cards}
+    assert by_key == {"condition:c1": "met", "condition:c2": "not_a_condition"}
+
+
+def test_a_verdict_never_leaks_onto_a_sibling_condition(store) -> None:
+    """The failure the fan-out removes: one counterparty, two sentences, and an opinion about the
+    first quietly stamped on the second. A refusal on `c2` must leave `c2` unmarked rather than
+    inheriting `c1`'s answer."""
+    _queued(store, _condition("c1"), _condition("c2", action="introduce us"))
+    _relationship(store)
+    evaluate_angle(store, ORG, CONDITION_NOW_TRUE, eval_time=NOW,
+                   asker=_asker(by_id={"c1": "met", "c2": "unknowable"}))
+    with store._engine.begin() as c:
+        verdicts = gather_condition_queue_verdicts(c, ORG)
+
+    by_key = {card.canonical_key: _facts_of(card) for card in _cards(store, verdicts)}
+    assert by_key["condition:c1"][MODEL_READING_FIELD] == "met"
+    assert MODEL_READING_FIELD not in by_key["condition:c2"]
+
+
+def test_the_reader_and_the_evaluator_name_a_condition_the_same_way(store) -> None:
+    """Rebuilding the fanned ref by hand in the reader is the two-spellings failure this module
+    records against its own field name: the join matches nothing, silently, and every card simply
+    lacks a reading."""
+    _queued(store, _condition("c1"))
+    _relationship(store)
+    evaluate_angle(store, ORG, CONDITION_NOW_TRUE, eval_time=NOW, asker=_asker())
+    with store._engine.begin() as c:
+        [ref] = list(gather_condition_queue_verdicts(c, ORG))
+    assert ref == fan_subject_ref(PERSON, "c1")
 
 
 # ── the three ways it is forbidden to matter ─────────────────────────────────────────────────
@@ -190,14 +231,14 @@ def test_a_card_is_byte_identical_without_the_angle(store) -> None:
     _relationship(store)
     before = [_facts_of(card) for card in _cards(store, None)]
 
-    evaluate_angle(store, ORG, CONDITION_QUEUE_TRIAGE, eval_time=NOW, asker=_asker())
+    evaluate_angle(store, ORG, CONDITION_NOW_TRUE, eval_time=NOW, asker=_asker())
     with store._engine.begin() as c:
         verdicts = gather_condition_queue_verdicts(c, ORG)
     after = [_facts_of(card) for card in _cards(store, verdicts)]
 
     assert len(before) == len(after) == 1
     assert all(before[0][k] == after[0][k] for k in before[0])
-    assert set(after[0]) - set(before[0]) == {QUEUE_READING_FIELD, QUEUE_CONFIDENCE_FIELD}
+    assert set(after[0]) - set(before[0]) == {MODEL_READING_FIELD, MODEL_CONFIDENCE_FIELD}
 
 
 def test_a_refusal_never_reaches_a_card(store) -> None:
@@ -207,13 +248,13 @@ def test_a_refusal_never_reaches_a_card(store) -> None:
     nothing."""
     _queued(store)
     _relationship(store)
-    run = evaluate_angle(store, ORG, CONDITION_QUEUE_TRIAGE, eval_time=NOW,
+    run = evaluate_angle(store, ORG, CONDITION_NOW_TRUE, eval_time=NOW,
                          asker=_asker("unknowable", 3_000))
     assert run.refused == 1
 
     with store._engine.begin() as c:
         assert gather_condition_queue_verdicts(c, ORG) == {}
-    assert QUEUE_READING_FIELD not in _facts_of(_cards(store, {})[0])
+    assert MODEL_READING_FIELD not in _facts_of(_cards(store, {})[0])
 
 
 def test_the_predicate_stays_missing(store) -> None:
@@ -223,7 +264,7 @@ def test_the_predicate_stays_missing(store) -> None:
     next sweep — so the coverage score must keep saying "not evaluable" with a verdict present."""
     _queued(store)
     _relationship(store)
-    evaluate_angle(store, ORG, CONDITION_QUEUE_TRIAGE, eval_time=NOW, asker=_asker())
+    evaluate_angle(store, ORG, CONDITION_NOW_TRUE, eval_time=NOW, asker=_asker())
     with store._engine.begin() as c:
         verdicts = gather_condition_queue_verdicts(c, ORG)
 
@@ -251,11 +292,11 @@ def test_the_angle_cannot_read_its_own_verdict(store) -> None:
     the slice never moved."""
     _queued(store)
     _relationship(store)
-    first = evaluate_angle(store, ORG, CONDITION_QUEUE_TRIAGE, eval_time=NOW, asker=_asker())
+    first = evaluate_angle(store, ORG, CONDITION_NOW_TRUE, eval_time=NOW, asker=_asker())
     assert first.asked == 1
 
     seen: list = []
-    second = evaluate_angle(store, ORG, CONDITION_QUEUE_TRIAGE, eval_time=NOW,
+    second = evaluate_angle(store, ORG, CONDITION_NOW_TRUE, eval_time=NOW,
                             asker=_asker(seen=seen))
     assert (second.asked, second.unchanged) == (0, 1)
     assert seen == []
@@ -268,5 +309,5 @@ def test_the_queue_reading_is_not_a_field_any_gate_or_slice_names(store) -> None
     from genios_engine.context.angles.contract import registered
 
     for angle in registered():
-        assert QUEUE_READING_FIELD not in angle.gate + angle.sees
-        assert QUEUE_CONFIDENCE_FIELD not in angle.gate + angle.sees
+        assert MODEL_READING_FIELD not in angle.gate + angle.sees
+        assert MODEL_CONFIDENCE_FIELD not in angle.gate + angle.sees

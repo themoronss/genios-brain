@@ -134,7 +134,7 @@ KNOWN_UNREAD: dict[str, str] = {
         "authors yet. MOVES WHEN: that situation is authored.",
     "context/angles":
         "STALE ENTRY, CORRECTED. This said 'NO ANGLE IS REGISTERED · MOVES WHEN: either is "
-        "registered'. Both are: `condition_queue_triage` over `derived.timeline.condition_review` "
+        "registered'. Both are: `condition_now_true` over `derived.timeline.condition_review` "
         "and `reply_owed_triage` over `context_residue`, declared in `angles/library.py` and "
         "registered by importing the package. The condition verdict reaches a card through "
         "`condition_situations.read_conditions_in_review`. What is genuinely unread is narrower "
