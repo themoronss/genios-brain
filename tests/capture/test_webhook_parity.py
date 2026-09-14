@@ -620,6 +620,12 @@ def test_every_connector_ingest_door_in_the_api_supplies_the_owner_and_the_prepa
         keywords = {k.arg for k in node.keywords}
         if call == "ingest_pushed_objects":         # its wiring is one typed argument
             wiring = next(k.value for k in node.keywords if k.arg == "wiring")
+            if getattr(wiring.func, "id", None) != "PushIngestWiring":
+                # A factory in routes.py (`_push_wiring_for`): gate the wiring it builds.
+                factory = next(f for f in ast.walk(tree) if isinstance(f, ast.FunctionDef)
+                               and f.name == wiring.func.id)
+                wiring = next(n for n in ast.walk(factory) if isinstance(n, ast.Call)
+                              and getattr(n.func, "id", None) == "PushIngestWiring")
             keywords = {k.arg for k in wiring.keywords}
         missing = {"mailbox_owner", "prepared_store"} - keywords
         assert not missing, (f"{call} at routes.py:{node.lineno} ({why}) omits {sorted(missing)}")

@@ -458,6 +458,8 @@ def _run_l2_chain(org_id: str) -> bool:
         provision_intelligence(_graph.engine, org_id)
     except Exception:      # noqa: BLE001 — provisioning never blocks the pass it precedes
         _log.exception("intelligence provisioning failed for org_id=%s", org_id)
+    _ensure_tenant_live(org_id)
+    _reread_unread(org_id)          # mail captured while L1 was off, before L2 drains
     try:
         from genios_engine.context.runner import process_pending
         with stage("l2.process_pending", org_id) as st:
@@ -1143,8 +1145,111 @@ def _semantic_lane_for(org_id: str, activated=None):
     one of them costs money: coverage is always computed, extraction runs only for a tenant
     somebody deliberately switched on in `l1_semantic_activation`. Ships with that table empty, so
     every sweep behaves exactly as it does today until a person adds a row.
+
+    Every tenant is now switched on here first (`_ensure_tenant_live`), so any door that captures
+    mail — Sync, sync-all, the sweep, a backfill, a push — reads it. A sweep's `activated` set was
+    read before that switch-on, so a tenant missing from it is asked directly instead: that answer
+    is still OFF for a tenant an operator switched off.
     """
+    _ensure_tenant_live(org_id)
+    if activated is not None and org_id not in activated:
+        activated = None
     return make_semantic_lane(org_id, engine=getattr(_graph, "engine", None), activated=activated)
+
+
+#: Orgs switched on by this process. `make_tenant_live` is idempotent; this only saves its reads
+#: on every page of every sync after the first.
+_LIVE_ORGS: set[str] = set()
+
+
+def _ensure_tenant_live(org_id: str) -> None:
+    """Switch the tenant's L1 → L4 lane on unless it already is, or an operator switched it off.
+    Never raises: a tenant this cannot reach today is captured as before and tried again next time."""
+    if not org_id or org_id in _LIVE_ORGS or _graph is None:
+        return
+    try:
+        from genios_engine.platform.intelligence_onboarding import make_tenant_live
+        if not make_tenant_live(_graph.engine, org_id).errors:
+            _LIVE_ORGS.add(org_id)
+    except Exception:      # noqa: BLE001
+        _log.exception("switch-on failed for org_id=%s", org_id)
+
+
+def _push_wiring_for(conn) -> PushIngestWiring:
+    """THE SAME WIRING THE SWEEP USES (`_sync_source`), for a door that hands over ready-made
+    objects: the Composio push, and the re-read of mail captured while a tenant was switched off."""
+    return PushIngestWiring(
+        repo=_repo, trace_repo=_trace_repo, payload_store=_payload_store,
+        prepared_store=_prepared_store, document_job_store=_documents,
+        parked_store=_parked, relevance=make_relevance_classifier(conn.org_id),
+        sender_resolver=_sender_resolver_for(conn.org_id),
+        mailbox_owner=_mailbox_owner_for_connection(conn),
+        coverage_fn=_coverage_fn_for(conn.org_id),
+        esqe=_esqe_stage_for(conn.org_id),
+        # No floor_store / drop_ledger here: the floor runs in `finalize_l1`, exactly once, as
+        # on the sweep door. Filing it in the push wiring too filed every refusal twice.
+        semantic=_semantic_lane_for(conn.org_id),
+        structured=_structured_lane_for(conn.org_id))
+
+
+def _reread_unread(org_id: str, *, limit: int = 200) -> int:
+    """Read again the mail this tenant captured while its L1 was switched off
+    (`capture/landing/unread.py`), through the push door, so L2 can pull it. Bounded per call; the
+    rest follows on the next pass. Returns how many objects were handed to capture. Never raises."""
+    if _graph is None or _connections is None:
+        return 0
+    from genios_engine.capture.landing import unread
+    eng = _graph.engine
+    try:
+        rows = unread.find_unread(eng, org_id, limit=limit)
+        if not rows:
+            return 0
+        if _llm_over_daily_cap(org_id):
+            _log.warning("re-read deferred: org=%s hit the daily LLM cap", org_id)
+            return 0
+    except Exception:      # noqa: BLE001
+        _log.exception("re-read lookup failed org=%s", org_id)
+        return 0
+    key = get_settings().crypto_key
+    by_conn: dict[str, list] = {}
+    for row in rows:
+        by_conn.setdefault(row.connection_id, []).append(row)
+    handed = 0
+    for connection_id, group in by_conn.items():
+        conn = _connections.get(connection_id)
+        if conn is None:
+            continue
+        pairs = [(row.event_id, unread.to_raw_object(row, key)) for row in group]
+        pairs = [(eid, raw) for eid, raw in pairs if raw is not None]
+        if not pairs:
+            continue
+        ids = [eid for eid, _ in pairs]
+        objs = tuple(raw for _, raw in pairs)
+        try:
+            unread.set_aside(eng, org_id, ids)
+            outcome = ingest_pushed_objects(objs, org_id=conn.org_id,
+                                            connection_id=conn.connection_id,
+                                            wiring=_push_wiring_for(conn))
+            if outcome.results:
+                finalize_l1(ManualSweep(org_id=conn.org_id, results=outcome.results,
+                                        emitted=sum(1 for r in outcome.results
+                                                    if r.outcome == "emitted"),
+                                        scanned=len(objs)),
+                            org_id=conn.org_id, stores=_l1_stores())
+            handed += len(objs)
+        except Exception:      # noqa: BLE001
+            _log.exception("re-read failed org=%s connection=%s", org_id, connection_id)
+        finally:
+            try:
+                back = unread.restore(eng, org_id, ids)
+                if back:
+                    _log.info("re-read: %s of %s objects did not land again org=%s, restored",
+                              back, len(ids), org_id)
+            except Exception:      # noqa: BLE001
+                _log.exception("re-read restore failed org=%s", org_id)
+    if handed:
+        _log.info("re-read %s objects captured while L1 was off org=%s", handed, org_id)
+    return handed
 
 
 def _structured_lane_for(org_id: str):
@@ -2583,7 +2688,9 @@ def integrations_status(scope: str = "workspace",
             with _graph.engine.connect() as c:
                 ev = {r.source: r for r in c.execute(text(
                     "select se.source, count(*) pulled, max(se.captured_at) last "
-                    "from source_events se where se.org_id=:o" + own + " group by se.source"), p)}
+                    "from source_events se where se.org_id=:o "
+                    "and se.outcome is distinct from 'superseded'" + own
+                    + " group by se.source"), p)}
                 ent = {r.source: r.n for r in c.execute(text(
                     "select se.source, count(*) n from graph_nodes gn "
                     "join source_events se on se.event_id=gn.created_by_event_id and se.org_id=gn.org_id "
@@ -2879,6 +2986,8 @@ def _process_and_reason_unlocked(org_id: str, hb) -> bool:
         provision_intelligence(eng, org_id)
     except Exception:      # noqa: BLE001 — provisioning never blocks the pass it precedes
         _log.exception("intelligence provisioning failed for org_id=%s", org_id)
+    _ensure_tenant_live(org_id)
+    _reread_unread(org_id)          # mail captured while L1 was off, before L2 drains
     total = _pending_count(org_id)
     P.set_phase(eng, org_id, "processing", state="running", total=total, done=0,
                 detail="Reading your messages…")
@@ -3276,19 +3385,7 @@ async def composio_webhook(request: Request,
     # from, the known-sender whitelist and the park ledger all belong to both doors or to neither.
     outcome = ingest_pushed_objects(
         raw_objs, org_id=conn.org_id, connection_id=conn.connection_id,
-        wiring=PushIngestWiring(
-            repo=_repo, trace_repo=_trace_repo, payload_store=_payload_store,
-            prepared_store=_prepared_store, document_job_store=_documents,
-            parked_store=_parked, relevance=make_relevance_classifier(conn.org_id),
-            sender_resolver=_sender_resolver_for(conn.org_id),
-            mailbox_owner=_mailbox_owner_for_connection(conn),
-            coverage_fn=_coverage_fn_for(conn.org_id),
-            esqe=_esqe_stage_for(conn.org_id),
-            # No floor_store / drop_ledger here: the floor runs in `finalize_l1` below, exactly
-            # once, as on the sweep door. Filing it in the push wiring too filed every refusal
-            # twice.
-            semantic=_semantic_lane_for(conn.org_id),
-            structured=_structured_lane_for(conn.org_id)))
+        wiring=_push_wiring_for(conn))
     if outcome.results:
         # L1.6.10 · THE SAME FINALIZER THE SWEEP AND UPLOAD DOORS USE: conflicts → floor →
         # lifecycle → publish. Without it a pushed event was captured and scored but never

@@ -109,6 +109,13 @@ def register(body: Register) -> dict:
     from genios_engine.platform.audit import record
     record(org_id, "user_signed_up", actor_type="user", actor_id=body.email,
            metadata={"company": (body.company or "").strip()[:120] or None})
+    # The new tenant's L1 → L4 lane, switched on now so its first Sync reads mail. Never fatal:
+    # every sync door switches it on again if this could not reach the database.
+    try:
+        from genios_engine.platform.intelligence_onboarding import make_tenant_live
+        make_tenant_live(_engine(), org_id)
+    except Exception:      # noqa: BLE001
+        pass
     # Server-side signup event: the top of the funnel must be counted where the account is actually
     # created, not where a browser says it was — the client event can be blocked or replayed.
     from genios_engine.platform import analytics

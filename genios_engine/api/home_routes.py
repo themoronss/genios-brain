@@ -112,7 +112,8 @@ def first_scan(org_id: str, org: str = Depends(_org)) -> dict:
                 return int(conn.execute(text(sql), {"o": org}).scalar() or 0)
             except Exception:
                 return 0
-        items_read = count("select count(*) from source_events where org_id=:o")
+        items_read = count("select count(*) from source_events where org_id=:o "
+                           "and outcome is distinct from 'superseded'")
         entities = count("select count(*) from graph_nodes where org_id=:o and valid_to is null "
                          "and node_type in ('person','company')")
         facts = count("select count(*) from graph_facts where org_id=:o and valid_to is null "
