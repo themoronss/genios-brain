@@ -37,6 +37,7 @@ import pytest
 from sqlalchemy import create_engine, text
 
 from genios_engine.context import runner
+from genios_engine.context.situations import SITUATION_STATUS_ON_CONFLICT
 from genios_engine.context.waiting import WAITING_ONLY_FIELDS, compute_waiting
 
 pytestmark = pytest.mark.unit
@@ -223,11 +224,19 @@ def _upsert_source() -> str:
 def test_the_drain_preserves_a_human_resolution():
     """The provenance was ERASED, not overridden: `resolved_by = null` on conflict, every six
     hours. Nothing downstream could tell a re-derived row from one nobody had ever touched, and
-    `decide_lifecycle`'s "a human resolution sticks until new evidence" was unreachable."""
+    `decide_lifecycle`'s "a human resolution sticks until new evidence" was unreachable.
+
+    ASSERTED AGAINST THE SHARED CLAUSE, not against this module's own text. The literal used to
+    be typed out here and in `document_register`, and two more writers — `meeting_touch` and
+    `periodic` — turned out not to have it at all, which is how dormancy became a one-way door
+    for them. `situations.SITUATION_STATUS_ON_CONFLICT` is now the single definition and this
+    checks the rule where it lives.
+    """
     source = _upsert_source()
 
     assert "resolved_by = null" not in source
-    assert "context_situations.resolved_by = 'human'" in source
+    assert "SITUATION_STATUS_ON_CONFLICT" in source
+    assert "context_situations.resolved_by = 'human'" in SITUATION_STATUS_ON_CONFLICT
 
 
 def test_the_facts_underneath_still_refresh():
@@ -244,18 +253,26 @@ def test_a_situation_nobody_resolved_still_comes_back_active():
     is preserved; a machine-derived resolution is re-derived like everything else."""
     source = _upsert_source()
 
-    assert "else 'active' end" in source
+    assert "SITUATION_STATUS_ON_CONFLICT" in source
+    assert "else 'active' end" in SITUATION_STATUS_ON_CONFLICT
 
 
-def test_the_document_register_writes_the_same_rule():
-    """`document_register` carries its own copy of the upsert, and a rule enforced in one of two
-    identical statements is a rule that holds until somebody uses the other door."""
-    from genios_engine.context import document_register
+def test_every_writer_of_a_situation_row_writes_the_same_rule():
+    """This test's own sentence, now enforced on all four doors instead of two.
 
-    source = inspect.getsource(document_register)
+    It read: "a rule enforced in one of two identical statements is a rule that holds until
+    somebody uses the other door". There were FOUR doors. `meeting_touch` and `periodic` upsert
+    the same row on the same conflict key and set every column except `status`, so once
+    `age_uncorrelated_situations` moved one of their rows to `dormant`, re-minting it refreshed
+    the timestamps and the numbers and left it unreachable behind both Layer 3 status filters.
+    """
+    from genios_engine.context import (document_register, meeting_touch, periodic,
+                                       support_situations)
 
-    assert "resolved_by = null" not in source
-    assert "context_situations.resolved_by = 'human'" in source
+    for module in (support_situations, document_register, meeting_touch, periodic):
+        source = inspect.getsource(module)
+        assert "resolved_by = null" not in source, module.__name__
+        assert "SITUATION_STATUS_ON_CONFLICT" in source, module.__name__
 
 
 # =============================================================================================

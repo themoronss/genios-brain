@@ -61,6 +61,7 @@ from genios_engine.context.derived_provenance import load_event_receipts, write_
 from genios_engine.context.documents import DOCUMENT_NODE_TYPE, cluster_key, document_nodes
 from genios_engine.context.domain_spec import domains_declaring, spec_for
 from genios_engine.context.situations import (
+    SITUATION_STATUS_ON_CONFLICT,
     COVERAGE_UNKNOWN,
     RESOLVED_BY_FACT,
     STATUS_ACTIVE,
@@ -633,12 +634,7 @@ def _upsert(conn, *, org_id: str, corr: str, node_id: str, stype: str, domain: s
         # The FACTS still refresh underneath it. Confidence, coverage, evidence and last_seen are
         # this sweep's, because they are observations and observations do not care what somebody
         # decided. Only the three columns that record the DECISION are preserved.
-        "  status = case when context_situations.resolved_by = 'human' "
-        "                then context_situations.status else 'active' end, "
-        "  resolved_by = case when context_situations.resolved_by = 'human' "
-        "                     then context_situations.resolved_by else null end, "
-        "  resolved_at = case when context_situations.resolved_by = 'human' "
-        "                     then context_situations.resolved_at else null end, "
+        + SITUATION_STATUS_ON_CONFLICT +
         "  confidence_overall = excluded.confidence_overall, "
         "  confidence_evidence = excluded.confidence_evidence, "
         "  confidence_freshness = excluded.confidence_freshness, "

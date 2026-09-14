@@ -35,6 +35,7 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import bindparam, text
 
+from genios_engine.context.situations import SITUATION_STATUS_ON_CONFLICT
 from genios_engine.context.domain_spec import domains_declaring, spec_for
 from genios_engine.platform.ids import new_id
 
@@ -215,7 +216,15 @@ def refresh_period_situations(store, org_id: str, *, now: datetime | None = None
                 "  computed_at) "
                 "values (:sid, :o, :c, :n, :st, :d, 'active', :conf, :conf, :conf, :conf, "
                 "  100, :cov, cast(:missing as jsonb), cast(:inputs as jsonb), :now, :now, :now) "
+                # A RE-MINTED SITUATION IS ALIVE AGAIN, and this clause was missing here.
+                # `age_uncorrelated_situations` can move any synthetic-correlation row to
+                # `dormant`, and every column below then refreshed on the next sweep while
+                # `status` stayed where the ageing pass left it — so the row carried a
+                # current timestamp, current confidence and current coverage, and both
+                # Layer 3 doors filter `status in ('active','partial')`. It looked
+                # perfectly alive and could never reach a card again.
                 "on conflict (org_id, correlation_id) do update set "
+                + SITUATION_STATUS_ON_CONFLICT +
                 "  confidence_overall = excluded.confidence_overall, "
                 "  confidence_freshness = excluded.confidence_freshness, "
                 "  coverage = excluded.coverage, inputs = excluded.inputs, "

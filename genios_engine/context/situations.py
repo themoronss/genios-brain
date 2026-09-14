@@ -253,6 +253,33 @@ def identity_score(*, open_merge_proposals: int, strong_proposals: int | None = 
 #: `>= 60` reads as a percent, so a stored 5000 clears every gate an author can write.
 SCORE_MAX = 100
 
+#: THE `on conflict` CLAUSE THAT DECIDES WHETHER A RE-MINTED SITUATION IS ALIVE, named once
+#: because four writers need it and two of them did not have it.
+#:
+#: Every producer of a SYNTHETIC correlation id upserts on `(org_id, correlation_id)`, and what
+#: each does with `status` there decides whether dormancy is a door or a trap:
+#:
+#:   `support_situations` and `document_register` carried this clause and were correct.
+#:   `meeting_touch` and `periodic` set every column EXCEPT status. So once
+#:   `age_uncorrelated_situations` moved one of their rows to `dormant`, re-minting it refreshed
+#:   `last_seen_at`, confidence and coverage and left the status alone — and both Layer 3 doors
+#:   filter `status in ('active','partial')`. The row then looked perfectly alive and was
+#:   invisible: current timestamps, current numbers, and no path to a card ever again.
+#:   `meeting_touch`'s id is `corr_touch_{domain}_{node}`, stable for the life of the meeting
+#:   node, so that trap is reachable rather than theoretical.
+#:
+#: A HUMAN CLOSE STILL SURVIVES, which is the whole reason the clause is a CASE and not
+#: `status = 'active'`. `POST /situations/{id}/resolve` records `resolved_by='human'`, and
+#: `decide_lifecycle`'s rule is that a human resolution sticks until new evidence. The facts
+#: underneath refresh either way — observations do not care what somebody decided.
+SITUATION_STATUS_ON_CONFLICT = (
+    "  status = case when context_situations.resolved_by = 'human' "
+    "                then context_situations.status else 'active' end, "
+    "  resolved_by = case when context_situations.resolved_by = 'human' "
+    "                     then context_situations.resolved_by else null end, "
+    "  resolved_at = case when context_situations.resolved_by = 'human' "
+    "                     then context_situations.resolved_at else null end, ")
+
 #: The score returned when a domain registers no expectations. Sentinel, not a percentage: it is
 #: outside 0..100 on purpose so no consumer can average it into a number and lose the distinction
 #: between "nothing is missing" and "we never said what complete means here".
