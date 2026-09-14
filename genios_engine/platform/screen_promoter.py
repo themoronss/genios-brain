@@ -165,7 +165,7 @@ def default_doors() -> Doors:
         # the thread's memory before the AI gate. The seat is the one this connection belongs to.
         seat_id = connection_id.removeprefix("screen:")
         verdicts = verdict_lookup(get_engine(get_settings().database_url), org_id, seat_id)
-        # SCREEN_INTEL_SYSTEM_DESIGN phase 1 ("instant", the default): the screen-insight judge's
+        # docs/screen-intelligence/index.html, instant lane ("instant", the default): the screen-insight judge's
         # items ARE the screen memory (screen_memory.write_items below) — no AI gate (a thread
         # with no verdict keeps as a chat / parks as a page, by rule) and no heavy L1 read.
         instant = (get_settings().screen_memory_mode or "instant").strip().lower() == "instant"
@@ -726,7 +726,7 @@ def promote_batch(engine, org_id: str, seat_id: str, deltas: list[Delta], *,
             settle_group(g, Outcome("skipped", event_ids=[], error="duplicate"))
     unreserve(failed)
 
-    # S3 (SCREEN_INTEL_SYSTEM_DESIGN phase 1): each promoted thread's one-judge items become graph
+    # S3 (docs/screen-intelligence/index.html, instant lane): each promoted thread's one-judge items become graph
     # observations on the person they are about, sourced by the thread's seat-private event.
     from genios_engine.reason.moments.screen_memory import write_items
     live = set(emitted)

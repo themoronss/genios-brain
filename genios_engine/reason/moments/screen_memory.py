@@ -1,4 +1,4 @@
-"""Screen memory writer — design step S3 (docs/plans/SCREEN_INTEL_SYSTEM_DESIGN.html, phase 1).
+"""Screen memory writer — design step S3 (docs/screen-intelligence/index.html, phase 1).
 
 The one judge (screen_insight v4) already read the screen and wrote its items — asks, promises,
 deadlines, risks, next steps, each with who / due / a grounded quote — as `screen_followups` rows.

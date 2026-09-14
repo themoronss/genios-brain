@@ -162,7 +162,7 @@ class Settings(BaseSettings):
     screen_insight_max_per_hour: int = 3      # P8 C3: screen-insight popups shown per seat per rolling hour
     screen_memory_interval_minutes: int = 60
     screen_memory_max_builds_per_day: int = 400
-    # SCREEN_INTEL_SYSTEM_DESIGN phase 1: "instant" — the screen-insight judge's items ARE the
+    # docs/screen-intelligence/index.html, instant lane: "instant" — the screen-insight judge's items ARE the
     # screen memory (reason/moments/screen_memory.py): promoted screen content is stored as
     # seat-private events with NO heavy L1 read and NO AI gate. "full" — the pre-phase-1 path
     # (AI gate + L1 extraction on every promoted screen thread).

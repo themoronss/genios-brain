@@ -53,7 +53,7 @@ WORK_HOSTS: tuple[str, ...] = (
     "quickbooks.intuit.com", "xero.com", "tallysolutions.com", "chargebee.com",
     "docusign.net", "docusign.com", "pandadoc.com", "calendly.com", "office.com",
     "sharepoint.com", "live.com", "dropbox.com", "box.com",
-    # Admin domain (SCREEN_INTELLIGENCE_HOW_IT_WORKS §9a). Login/payment pages of these stay
+    # Admin domain (docs/screen-intelligence/index.html §3). Login/payment pages of these stay
     # blocked by the sensitive path markers; HR tools stay blocked (decision 12 not taken).
     # meetings
     "zoom.us", "meet.google.com", "teams.microsoft.com",

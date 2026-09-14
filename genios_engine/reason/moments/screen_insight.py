@@ -1,5 +1,5 @@
 """Screen insight — P-20 `moment.screen_insight`, the ONE judge of screen text
-(docs/plans/SCREEN_INTEL_SYSTEM_DESIGN.html, phase 1).
+(docs/screen-intelligence/index.html, phase 1).
 
 `POST /v1/moments/evaluate` with `insight: true` + `visible_messages`: the desktop sends what is on
 screen after the person has stayed on a chat / email / document for a few seconds. ONE Haiku call

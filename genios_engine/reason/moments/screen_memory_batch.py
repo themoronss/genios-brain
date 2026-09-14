@@ -1,4 +1,4 @@
-"""Screen memory batch — design step S4 (SCREEN_INTEL_SYSTEM_DESIGN.html, phase 1): the hourly short
+"""Screen memory batch — design step S4 (docs/screen-intelligence/index.html, phase 1): the hourly short
 memory update, via the Anthropic Message Batches API (half price; memory is not urgent).
 
 In "instant" mode the only screen memory is the instant judge's items. Anything that judge never

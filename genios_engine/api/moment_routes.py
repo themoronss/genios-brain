@@ -308,7 +308,7 @@ def _meetings_soon(engine, p: Principal, now: datetime) -> list[dict]:
 
 
 def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, started: float):
-    """P-20 · the ONE judge (SCREEN_INTEL_SYSTEM_DESIGN.html phase 1): 204 unless the screen ADDS
+    """P-20 · the ONE judge (docs/screen-intelligence/index.html phase 1): 204 unless the screen ADDS
     something the manager cannot see on it. Every judged item is saved either way.
 
       waste rules  the same screen is judged once (screen-hash key); `screen_insight_daily_cap`
