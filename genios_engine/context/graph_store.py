@@ -787,6 +787,44 @@ class GraphStore:
              "obs": observation_id, "e": event_id, "src": source,
              "ex": json.loads(json.dumps(evidence, default=str)), "xv": "b3-haiku-1"})
 
+    #: How long the change outbox answers for. Matched to `analytic/history.RETENTION_MONTHS`
+    #: rather than chosen independently: `graph_version_at` exists so an audit can resolve the
+    #: version a stamped artifact was produced under, and a horizon shorter than the layer's
+    #: longest-lived store would leave a retained metric point pointing at a version nothing can
+    #: name. Imported lazily in `prune_change_outbox` — `analytic` imports this module.
+    OUTBOX_RETENTION_MONTHS = 24
+
+    def prune_change_outbox(self, org_id: str, *, eval_time: datetime,
+                            batch_limit: int = 20_000) -> int:
+        """Delete outbox rows past the horizon. Returns rows removed.
+
+        ON THE DRAIN, for the two reasons `analytic/history.prune_history_for_drain` gives and
+        which apply unchanged: the broker is a quota-limited instance and this layer prefers
+        in-process work on a path that already runs, and the drain is the only thing that knows an
+        org is active — an org that is not draining is not growing this table either.
+
+        SAFE BECAUSE THE READER SAYS SO. `graph_version_at` already documents that it returns None
+        for "an org whose outbox rows have aged out", and a null there is honest where a 0 would
+        read as a real version. Nothing else reads this table.
+
+        BOUNDED, because the first prune on a tenant that has been draining for a year is the
+        expensive one and it runs inside the sweep's own transaction budget. The drain repeats, so
+        a bounded batch drains the backlog over a few sweeps; an unbounded DELETE on a long
+        untouched table would be an unbounded transaction on the path that ingests mail.
+
+        IDEMPOTENT WITHIN A MONTH: `months_before` anchors on the month START, so two prunes in
+        the same month compute the same cutoff and the second deletes nothing.
+        """
+        from genios_engine.context.analytic.history import months_before
+
+        cutoff = months_before(eval_time, self.OUTBOX_RETENTION_MONTHS)
+        with self._engine.begin() as conn:
+            return int(conn.execute(text(
+                "delete from graph_change_outbox where change_id in ("
+                "  select change_id from graph_change_outbox "
+                "  where org_id = :o and created_at < :cut limit :lim)"),
+                {"o": org_id, "cut": cutoff, "lim": batch_limit}).rowcount or 0)
+
     def write_change(self, conn, *, org_id: str, graph_version: int,
                      cause_event_id: str, payload: dict) -> None:
         conn.execute(text(

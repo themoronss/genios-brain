@@ -773,6 +773,24 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
         from genios_engine.platform.logging import get_logger
         get_logger("genios.l2").exception("metric history prune failed for org=%s", org_id)
 
+    # RETENTION on `graph_change_outbox`, beside the one above and for the same reasons. It is the
+    # SECOND store in this layer that only ever appends — one row per committed event, both lanes,
+    # for the life of the tenant — and unlike `metric_history` it had no horizon anywhere in the
+    # engine. Its own reader already expected one: `graph_version_at` documents that it answers
+    # None for "an org whose outbox rows have aged out", so the honest null was written before the
+    # pruning that produces it.
+    #
+    # Same instant, same never-fatal contract, and BOUNDED for a reason this one needs more than
+    # the metric prune does: the first sweep on a tenant that has been draining for a year meets
+    # the whole backlog at once, and an unbounded DELETE there would be an unbounded transaction
+    # on the path that ingests mail. The drain repeats; a bounded batch clears it over a few.
+    outbox_rows_pruned = 0
+    try:
+        outbox_rows_pruned = store.prune_change_outbox(org_id, eval_time=sweep_at)
+    except Exception:      # noqa: BLE001 — retention must never break ingestion
+        from genios_engine.platform.logging import get_logger
+        get_logger("genios.l2").exception("change outbox prune failed for org=%s", org_id)
+
     # Attention refresh — L2 is the SOLE writer of context_attention. Full-org refresh:
     # recency decays even for untouched nodes, and it is a few bulk queries, not per-node
     # round-trips.
@@ -1300,6 +1318,36 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
     # without a model call; structured rows are deterministic too.  Charging either at this seam
     # billed the same L1 interpretation twice.  The two remaining L2 model sites write their own
     # token/cost receipts through `context.model_audit`.
+    # ONE BUMP FOR EVERYTHING THE DERIVED PASSES DID.
+    #
+    # `bump_version` is taken per EVENT, inside `process_event`, and `bump_slice_versions`
+    # describes it as "the one step every graph write already takes". That was not true of
+    # anything above this line. Every pass between the drain and here writes to the graph —
+    # engagement, momentum, the waiting arithmetic, trends, cohort positions, situations and
+    # their lifecycle — and none of them bumped, so two things followed:
+    #
+    #   A SEAT HOLDING A LIVE DEVICE WAS NEVER TOLD. `bump_slice_versions` runs inside
+    #   `bump_version` and announces `slice.delta` to every live seat. The facts a card actually
+    #   shows are written in that block, and the seats watching them heard nothing until the next
+    #   event happened to arrive.
+    #
+    #   A MIXED READ PASSED THE GUARD THAT EXISTS TO CATCH IT.
+    #   `intelligence_routes._require_stable_query_inputs` rejects a query whose graph version
+    #   moved mid-read — "reject a mixed read if graph, signal authority, or config changed
+    #   mid-query" — and a query spanning this block saw the version stand still while the facts
+    #   under it moved.
+    #
+    # ONCE, not per fact: the version answers "did the graph change", not "how much", and a bump
+    # per derived row would announce thousands of slice deltas for one sweep. Placed after every
+    # writing pass and before the fixpoint hash for the same reason that hash is taken here.
+    # Never fatal — a missed bump costs one cycle of live freshness, and the next sweep bumps.
+    try:
+        with store.engine.begin() as _bump_conn:
+            store.bump_version(_bump_conn, org_id)
+    except Exception:      # noqa: BLE001 — a version bump must never break ingestion
+        from genios_engine.platform.logging import get_logger
+        get_logger("genios.l2").exception("post-derive version bump failed for org=%s", org_id)
+
     # L-4 · the fixpoint's "after", and the bookkeeping. LAST, after every pass that can move a
     # situation, a membership or a lifecycle state — a hash taken before the composer would call a
     # sweep converged that had not finished changing the graph.
@@ -1328,6 +1376,10 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
             "resolutions": resolutions,
             "resource_correlation": resource_correlation,
             "derived_rows": derived_rows, "history_points_pruned": history_points_pruned,
+            # REPORTED, not computed and dropped. A bounded prune that hit its batch limit
+            # looks identical to one with nothing to delete unless the number is returned,
+            # and the first is a backlog still draining while the second is steady state.
+            "outbox_rows_pruned": outbox_rows_pruned,
             "history_backfilled": history_backfilled,
             "metric_points": metric_points, "trend_facts": trend_facts,
             "anomaly_facts": anomaly_facts, "cohort_changes": cohort_changes,
