@@ -330,6 +330,29 @@ map:
         - admin.obj.core.employee_record
         - admin.obj.core.invoice
 
+  reply_owed:
+    situations:
+      - admin.sit.reply_owed
+    capabilities:
+      - admin.executive_support.commitment_tracking
+      - admin.executive_support.inbox_and_correspondence
+      - admin.meeting_operations.agenda_preparation
+    objects:
+      load:
+        - admin.obj.core.commitment
+        - admin.obj.core.deadline
+        - admin.obj.core.document
+        - admin.obj.core.meeting
+        - admin.obj.core.request
+      optional:
+        - admin.obj.core.action_item
+        - admin.obj.core.approval
+        - admin.obj.core.escalation
+      never_load:
+        - admin.obj.core.asset
+        - admin.obj.core.employee_record
+        - admin.obj.core.invoice
+
   commitment_overdue:
     situations:
       - admin.sit.promise_past_its_date
@@ -555,6 +578,7 @@ routed_l2_types:
   - meeting_follow_through
   - organization_gone_quiet
   - relationship
+  - reply_owed
 
 # Layer 2 emits these and NO situation in ANY domain binds them. Each is a signal
 # that compiles to nothing, silently. Global, not this domain's fault.
@@ -573,11 +597,11 @@ orphan_capabilities: []
 unreachable_objects: []
 
 stats:
-  l2_types_total: 35
-  l2_types_routed_here: 12
+  l2_types_total: 36
+  l2_types_routed_here: 13
   l2_types_unrouted_globally: 6
   l2_types_pending: 6
-  situations: 28
+  situations: 29
   capabilities: 59
   capabilities_stub: 0
   capabilities_complete: 59

@@ -617,6 +617,16 @@ substrate:
                                 #   are one raise, while a fundraising thread and a vendor
                                 #   thread with the same firm are two different things.
     - awaiting_response         # admin, anchored on the `outreach` node
+    # THE OTHER HALF OF THE SAME EXCHANGE, and the one nothing named. `awaiting_response`
+    # above fires while WE are waiting; support's `first_response_overdue` fires when THEY
+    # opened a thread we never answered — its predicate returns at the first internal message,
+    # so a conversation we started is not its case. Between them sits what actually fills a
+    # founder's mailbox: we wrote, they REPLIED, and the reply is still sitting there. An intro
+    # network's entire output has this shape.
+    #
+    # It cannot double with its sibling: `waiting.WAITING_ONLY_FIELDS` is retired the instant a
+    # reply lands, so the facts `awaiting_response` needs are gone exactly when these arrive.
+    - reply_owed                # admin, anchored on the `unanswered` node
                                 #   `context/outreach_situations.py` mints per waiting
                                 #   counterparty
     - commitment_overdue        # admin, anchored on the `commitment` node — a promise of OURS

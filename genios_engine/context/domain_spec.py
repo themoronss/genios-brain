@@ -404,6 +404,13 @@ register(DomainSpec(
                      "tenant": "admin_period_review",
                      "document": "document_under_control",
                      "outreach": "awaiting_response",
+                     # ITS MIRROR. `awaiting_response` is "we wrote and they went quiet";
+                     # `first_response_overdue` next door in Support is "they wrote FIRST and we
+                     # never answered". Between them sits the exchange that actually fills a
+                     # founder's mailbox — we wrote, they REPLIED, and the reply is still sitting
+                     # there — and nothing named it. Admin for the reason the block above gives:
+                     # answering somebody is follow-through work whoever they are.
+                     "unanswered": "reply_owed",
                      "commitment": "commitment_overdue",
                      "meeting": "meeting_follow_through",
                      # The first situation type whose subject is a GROUP. Everything else in this

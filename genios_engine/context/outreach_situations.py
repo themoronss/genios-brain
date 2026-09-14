@@ -62,6 +62,19 @@ ANCHOR_OUTREACH = "outreach"
 #: tells the user to chase somebody for something the user themselves owes.
 ANCHOR_COMMITMENT = "commitment"
 
+#: ONE MESSAGE OF THEIRS THAT WE HAVE NOT ANSWERED. The mirror of `outreach`, and the half this
+#: layer could not say.
+#:
+#: `read_awaiting_response` covers "we wrote and they went quiet". `support_situations.
+#: read_first_response` covers "they wrote FIRST and we never answered" — its predicate bails at
+#: `msgs[0].internal`, so a thread we opened is not its case. Between the two sits the exchange
+#: that actually happens: we wrote, THEY REPLIED, and we went quiet. Nothing named it.
+#:
+#: It is not a variant of waiting, it is its opposite, and the two cannot both be true of one
+#: conversation: `waiting.WAITING_ONLY_FIELDS` is retired the moment a reply lands, so the facts
+#: `read_awaiting_response` fires on are gone by the time this one can fire at all.
+ANCHOR_UNANSWERED = "unanswered"
+
 #: ANCHOR NAMES THAT ARE ALSO REAL GRAPH NODE TYPES, and the reason the two had to stop being one
 #: string. A reading mints a node per finding and the minting site passed the anchor name straight
 #: through as `node_type`, so "the thing a domain routes on" and "the kind of thing this is in the
@@ -215,6 +228,10 @@ _WAITING_ROWS = (
     # type it shares with the pipeline — before that, adding a `commitment.*` field was how
     # the self-eating trap got sprung.
     "                'commitment.owner_basis', "
+    # THEIR side of the exchange. `thread.last_outbound` was here and its mirror was not, so the
+    # gather could say when WE last wrote and never when they did — and "who spoke last" is the
+    # whole question `read_unanswered_replies` asks.
+    "                'thread.last_inbound', "
     "                'thread.last_outbound')"
 )
 
@@ -291,6 +308,35 @@ _THREAD_COVERED_BY_PARTY = (
     "                  and f.valid_to is null "
     "where e.org_id = :o and e.edge_type = 'corresponded_with' and e.valid_to is null"
 )
+
+#: THREADS WHOSE COUNTERPARTY ALREADY CARRIES THE REPLY, for the reading that fires on a message
+#: of THEIRS.
+#:
+#: `_THREAD_COVERED_BY_PARTY` above solves the same twin-card problem for waiting and cannot be
+#: reused here: it joins on `thread.days_waiting`, and `waiting.WAITING_ONLY_FIELDS` retires that
+#: fact the moment a reply lands — which is the precise moment `read_unanswered_replies` becomes
+#: relevant. So every conversation this reading is about is one that query cannot see, and both
+#: the thread node and the person would mint an anchor: two cards, one of them addressed to
+#: "Thread with sehan@sanjula.io".
+#:
+#: A SECOND STAMP RATHER THAN A WIDER FIRST ONE. Adding `thread.last_inbound` to the existing
+#: query would change what `read_awaiting_response` skips, and its own comment records the case
+#: that must not vanish — three of the pilot's twenty-one waiting threads have no waiting party,
+#: "exactly the case that must keep its situation rather than vanish into a gap nobody sees".
+#: Two readings, two questions, two stamps.
+_THREAD_COVERED_BY_REPLIER = (
+    "select distinct e.to_node_id as thread, e.from_node_id as party "
+    "from graph_edges e "
+    "join graph_nodes t on t.org_id = e.org_id and t.node_id = e.to_node_id "
+    "                  and t.node_type = 'thread' and t.valid_to is null "
+    "join graph_nodes p on p.org_id = e.org_id and p.node_id = e.from_node_id "
+    "                  and p.valid_to is null "
+    "join graph_facts f on f.org_id = e.org_id and f.subject_node_id = e.from_node_id "
+    "                  and f.field = 'thread.last_inbound' and f.status = 'active' "
+    "                  and f.valid_to is null "
+    "where e.org_id = :o and e.edge_type = 'corresponded_with' and e.valid_to is null"
+)
+
 
 def _direct_event_counts(dialect: str) -> str:
     """Per-node evidence counts, including HOW MANY PARTIES contributed.
@@ -593,6 +639,96 @@ def read_awaiting_response(rows: dict, now: datetime, employers: dict) -> list[_
             missing=[],
             inputs={"reading": ANCHOR_OUTREACH,
                     "derived_from": "message timeline; no source system reports silence"},
+        ))
+    return findings
+
+
+#: How long a reply may sit before it is a finding. Mirrors `_WAITING_AFTER_DAYS` deliberately:
+#: the two readings are the same clock pointed in opposite directions, and a founder who gives a
+#: counterparty two days before chasing them should get the same two before being chased.
+_REPLY_OWED_AFTER_DAYS = 2
+
+
+def read_unanswered_replies(rows: dict, now: datetime, employers: dict) -> list[_Finding]:
+    """They answered us and we went quiet. One finding per counterparty owed a reply.
+
+    THE HALF OF THE EXCHANGE NOTHING NAMED. `read_awaiting_response` fires while WE are waiting;
+    `support_situations.read_first_response` fires when THEY opened a thread we never answered —
+    its predicate returns at `msgs[0].internal`, so a conversation we started is not its case.
+    The exchange that actually fills a founder's mailbox falls between them: we wrote, they
+    replied, and the reply is still sitting there. An intro network's whole output has this shape.
+
+    THREE POSITIVE FACTS, AND NO INFERENCE FROM AN ABSENCE. It would be shorter to fire on
+    `thread.days_waiting` being GONE — `waiting.py` retires it the moment a reply lands — but a
+    reading built on a missing field fires just as happily when the waiting pass failed, when the
+    field was renamed, or when the node was never swept. So the gate asks for things that are
+    there:
+
+        `thread.last_inbound`   they spoke
+        `thread.last_outbound`  we wrote too — which is what separates this from the cold inbound
+                                `read_first_response` already owns, and stops this reading
+                                claiming every stranger who has ever mailed the tenant
+        in > out                theirs is the most recent
+
+    NO INTERNAL FILTER HERE, and none is needed: `pipeline.py` writes `thread.last_inbound` only
+    when `sender_norm not in internal_set`, so a colleague's reply never reaches this fact at all.
+    Filtering again would be a second opinion about who "us" is, which is how two answers to that
+    question start to disagree.
+
+    IT CANNOT DOUBLE WITH ITS MIRROR. `waiting.WAITING_ONLY_FIELDS` is retired when a reply lands,
+    so the facts `read_awaiting_response` needs are gone exactly when these arrive: one
+    conversation can satisfy one of the two readings, never both, and neither has to know about
+    the other to make that true.
+    """
+    findings: list[_Finding] = []
+    for node_id, held in rows.items():
+        # Reserved keys carry the condition queue and the mailbox owner, not a node's facts.
+        if node_id.startswith("_") or not isinstance(held, dict):
+            continue
+        last_in = _ts(held.get("thread.last_inbound"))
+        last_out = _ts(held.get("thread.last_outbound"))
+        if last_in is None or last_out is None or last_in <= last_out:
+            continue
+        owed = (now - last_in).total_seconds() / 86400.0
+        if owed < _REPLY_OWED_AFTER_DAYS:
+            continue
+        if held.get("_covered_by_replier"):
+            # ONE SITUATION PER CONVERSATION, the same rule `read_awaiting_response` keeps. This
+            # node is a thread whose counterparty carries the same facts and will mint the anchor
+            # themselves; a card reading "Thread with sehan@sanjula.io has not been answered" is
+            # the same sentence said worse.
+            continue
+        name = held.get("_name") or "this contact"
+        facts: list[tuple[str, object, str]] = [
+            ("outreach.days_owed", int(owed), "number"),
+            ("outreach.counterparty", name, "string"),
+        ]
+        # THEIR HABIT, carried rather than compared. `party.reply_cadence_days` is the median gap
+        # between THEIR replies, which says how quickly they answer — not how quickly we do — so
+        # it belongs on the card as context and not in the gate above. Turning "we are four times
+        # slower than they are" into a threshold needs our own cadence, which nothing derives yet.
+        cadence = _num(held.get("party.reply_cadence_days"))
+        if cadence is not None:
+            facts.append(("outreach.their_normal_reply_days", int(cadence), "number"))
+        # WHAT THEY ARE TO US changes the advice — an investor waiting on an answer and a vendor
+        # waiting on one need different sentences — so it travels on the anchor.
+        role = held.get("relationship.nature") or held.get("party.role")
+        if role:
+            facts.append(("outreach.counterparty_role", str(role), "enum"))
+        findings.append(_Finding(
+            anchor=ANCHOR_UNANSWERED,
+            canonical_key=f"unanswered:{node_id}",
+            display_name=f"{name} — replied {int(owed)}d ago, no answer sent",
+            facts=facts,
+            concerns_node=node_id,
+            correlation_id=f"unanswered:{node_id}",
+            # WHAT THIS CANNOT SEE, declared rather than left for a reader to discover. A reply
+            # may have been drafted and not sent, sent from an address the tenant has not
+            # connected, or answered by a colleague from their own mailbox. None of those is
+            # visible here, and the card says so rather than asserting silence it cannot prove.
+            missing=["outreach.reply_drafted", "outreach.answered_elsewhere"],
+            inputs={"reading": ANCHOR_UNANSWERED,
+                    "derived_from": "their last inbound is newer than our last outbound"},
         ))
     return findings
 
@@ -1081,6 +1217,10 @@ def read_meetings_for_dispatch(rows: dict, now: datetime, employers: dict) -> li
 
 READINGS = (
     (ANCHOR_OUTREACH, read_awaiting_response),
+    # Its mirror, dispatched beside it. The two are mutually exclusive by construction —
+    # `waiting.WAITING_ONLY_FIELDS` is retired the instant a reply lands — so a
+    # conversation reaches one of them and never both.
+    (ANCHOR_UNANSWERED, read_unanswered_replies),
     (ANCHOR_COMMITMENT, read_overdue_commitments),
     (ANCHOR_COHORT, read_outreach_cohorts),
     (ANCHOR_CONDITION, read_conditions_for_dispatch),
@@ -1176,6 +1316,13 @@ def _gather(store, org_id: str, *, now: datetime | None = None,
             entry = held.get(str(row.thread))
             if entry is not None:
                 entry["_covered_by_party"] = str(row.party_name or "") or str(row.party)
+        # …and the same for the reading that fires on a message of THEIRS. A separate stamp
+        # because the query above joins on `thread.days_waiting`, which is retired the instant a
+        # reply lands — see `_THREAD_COVERED_BY_REPLIER`.
+        for row in c.execute(text(_THREAD_COVERED_BY_REPLIER), {"o": org_id}):
+            entry = held.get(str(row.thread))
+            if entry is not None:
+                entry["_covered_by_replier"] = str(row.party)
         # The review queue and the mailbox owner, under reserved keys rather than node ids: the
         # readings iterate `rows` by node, and a leading underscore cannot collide with one.
         from genios_engine.context.condition_situations import gather_conditions_in_review
@@ -1321,5 +1468,6 @@ def refresh_state_situations(store, org_id: str, *, now: datetime | None = None,
 
 
 __all__ = ["refresh_state_situations", "state_domains",
-           "ANCHOR_OUTREACH", "ANCHOR_COMMITMENT", "anchor_node_type",
+           "ANCHOR_OUTREACH", "ANCHOR_COMMITMENT", "ANCHOR_UNANSWERED",
+           "read_unanswered_replies", "anchor_node_type",
            "READING_ANCHOR_PREFIX"]

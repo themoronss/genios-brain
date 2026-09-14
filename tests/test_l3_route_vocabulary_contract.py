@@ -202,6 +202,13 @@ def test_producible_vocabulary_is_small_and_closed():
         # people, so the day the extractor starts placing objectives the approved sibling takes
         # over and this one goes quiet on its own.
         "campaign_awaiting_reply",
+        # The mirror of `awaiting_response`, and the half of an exchange nothing named. That
+        # one fires while WE are waiting; Support's `first_response_overdue` fires when THEY
+        # opened a thread we never answered — its predicate returns at the first internal
+        # message, so a conversation we started is not its case. Between them sits what
+        # actually fills a mailbox: we wrote, they REPLIED, and the reply is still sitting
+        # there. `admin.sit.reply_owed` routes it.
+        "reply_owed",
     }, "the L2 situation vocabulary changed — re-check every corpus route against it"
 
 
