@@ -247,7 +247,14 @@ TEMPLATES: tuple[HeadlineTemplate, ...] = (
         requires_conditions=("authority.sole_approver_subject_count",)),
     HeadlineTemplate(
         template_id="condition_met",
-        situation_types=("condition_now_satisfied",),
+        # THE TYPE THE CORPUS BINDS. This named `condition_now_satisfied` to match the seed
+        # pattern, which emitted a name no domain claimed; the pattern now emits
+        # `condition_satisfied` — the type `domain_spec` derives from the `condition_met` anchor
+        # and `admin.sit.condition_now_satisfied` binds — so a template keyed on the old name
+        # would be a template no situation can ever select. The `template_id` keeps its own name
+        # for the same reason the pattern keeps its `pattern_id`: it identifies the SENTENCE, not
+        # the situation type.
+        situation_types=("condition_satisfied",),
         slots=("subject",),
         sentence="What {subject} was waiting on has happened, and the next move is ours",
         why_it_matters="The condition somebody set months ago is now true and nobody was told.",

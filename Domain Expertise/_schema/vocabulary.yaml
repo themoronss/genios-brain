@@ -714,8 +714,21 @@ substrate:
     # `pending_l2_situation_types` — a wish list for types nobody writes — when the type is
     # live, minted every sweep, and already routing. The corpus was refusing the one lane that
     # was open.
+    #
+    # ONE OF THE SIX HAS SINCE BEEN CORRECTED RATHER THAN LISTED. The `condition_now_satisfied`
+    # PATTERN emitted a situation type of the same name while `domain_spec` maps the
+    # `condition_met` anchor to `condition_satisfied`, and the authored document
+    # `admin.sit.condition_now_satisfied` binds THAT. Two names for one concept — and by the
+    # precedence stated above, an activated pattern's type REPLACES the anchor-derived one, so
+    # activating the only seed pattern whose inputs exist on a mail-only tenant would have
+    # overwritten a routable type with an unroutable one. The pattern now emits
+    # `condition_satisfied`, which is already in this census above, and the name below is gone
+    # because nothing emits it.
+    #
+    # The five that remain are unbound and DECLARED as such, with a reason and a mover each, in
+    # `context/patterns/routing.UNROUTED_PATTERN_TYPES`. A test fails if a seed pattern's type is
+    # neither bound nor declared there, and fails again if a declared one is quietly bound later.
     - commitment_unresolved
-    - condition_now_satisfied
     - founder_bottleneck
     - meeting_preparation_gap
     - relationship_going_cold

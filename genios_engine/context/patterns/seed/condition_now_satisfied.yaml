@@ -18,7 +18,13 @@ optional_signals:
   - {kind: observation, kind_name: deadline_stated,   within_days: 120, weight_bp: 1000}
   - {kind: observation, kind_name: next_step_agreed,  within_days: 120, weight_bp: 1000}
 emits:
-  situation_type: condition_now_satisfied
+  # THE TYPE THE CORPUS ACTUALLY BINDS, and the pattern_id above deliberately keeps its own name.
+  # This emitted `condition_now_satisfied` while `domain_spec` maps the `condition_met` anchor to
+  # `condition_satisfied` and `admin.sit.condition_now_satisfied` binds THAT — so the one seed
+  # pattern whose inputs exist on a mail-only tenant fired into a type no capability claims, and
+  # no card could ever compile from it. Two names for one concept, which is the failure
+  # `condition_situations` records against its own field name.
+  situation_type: condition_satisfied
 expected_fire_rate: {per_100_anchors_per_30d: 6}
 owner: harsh@thegenios.com
 first_evidence:
