@@ -351,6 +351,12 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
         context = [] if skip else F.open_context(c, org_id=p.org_id, seat_id=p.seat_id,
                                                  thread_key=thread, screen=screen)
         me = [] if skip else F.seat_names(c, org_id=p.org_id, email=p.email)
+        # the chat's earlier batch summary (S4) and the seat's weekly profile (S8), for context
+        from genios_engine.reason.moments import screen_memory_batch as MB
+        from genios_engine.reason.moments import seat_profile as SPF
+        summary = None if skip else MB.thread_summary(c, org_id=p.org_id, seat_id=p.seat_id,
+                                                      thread_key=thread, now=now)
+        profile = None if skip else SPF.profile_text(c, org_id=p.org_id, seat_id=p.seat_id, now=now)
     viewer = " ".join((body.viewer_name or "").split())[:200]
     if viewer and not skip and viewer.casefold() not in {m.casefold() for m in me}:
         me.append(viewer)                              # the device account's full name
@@ -374,7 +380,8 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
                      participants=body.participants, entities=body.features.entities,
                      screen=screen, now_local=SI.local_label(now, tz), not_useful=notes, me=me,
                      open_items=context, meetings=_meetings_soon(engine, p, now),
-                     thread_key=thread, tz_name=tz, today=now.astimezone(F.zone(tz)).date())
+                     thread_key=thread, tz_name=tz, today=now.astimezone(F.zone(tz)).date(),
+                     summary=summary, profile=profile)
     if res is not None and vkey and res["work"] is not None:
         F.set_verdict(engine, org_id=p.org_id, seat_id=p.seat_id, thread_key=vkey,
                       work=res["work"], memory=res.get("memory"), now=now)

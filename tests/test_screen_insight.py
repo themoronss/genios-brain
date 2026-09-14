@@ -135,7 +135,12 @@ def test_the_prompt_carries_who_the_manager_is_open_items_and_meetings():
     assert "has ALREADY READ this screen" in " ".join(p.split())
     assert p.index("Voltex review") < p.index("SCREEN TEXT")
     empty = SI.build_prompt(app=None, screen="x", facts=[])
-    assert empty.count("(none)") == 3 and "(unknown)" in empty
+    assert empty.count("(none)") == 5 and "(unknown)" in empty
+    # the weekly profile (S8) and the chat's batch summary (S4) travel as context
+    ctx = SI.build_prompt(app="whatsapp", screen="x", facts=[], profile="Founder of Acme; key: Priya (client)",
+                          summary="Priya is negotiating the Q3 renewal")
+    assert "About the manager (GeniOS's weekly notes; may be empty): Founder of Acme" in ctx
+    assert "Priya is negotiating the Q3 renewal" in ctx and ctx.index("Q3 renewal") < ctx.index("SCREEN TEXT")
 
 
 def test_a_new_person_still_gets_items(monkeypatch):

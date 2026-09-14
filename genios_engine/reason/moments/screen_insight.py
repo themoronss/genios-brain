@@ -72,6 +72,7 @@ _PROMPT = """You sit beside a busy manager and read what is on their screen righ
 The manager whose screen this is: {me}. Lines starting "You:" are the manager's own, and the
 account or mailbox owner shown on screen is the manager too. A CV, application or account in the
 manager's name is about the manager. The manager is never "who".
+About the manager (GeniOS's weekly notes; may be empty): {profile}
 For the manager it is now {now_local}.
 
 1. WORK or PERSONAL? Work = customers, clients, colleagues, vendors, partners, investors,
@@ -105,6 +106,8 @@ only when it ADDS something they cannot see here, and say what it adds:
 - urgent_risk: it must be handled within about 2 hours, or a customer / deal is at risk now
 Otherwise "adds" is "none" and "note" is null.
 
+This chat so far (GeniOS's earlier summary; may be empty):
+{summary}
 Open items GeniOS already holds for the manager (may be empty):
 {open_items}
 Facts about the people / companies involved (may be empty):
@@ -378,8 +381,11 @@ def budget(engine, *, org_id: str, seat_id: str, cap: int, now: datetime) -> dic
 def build_prompt(*, app: str | None, screen: str, facts: list[dict], now_local: str = "",
                  not_useful: list[str] | None = None, me: list[str] | None = None,
                  open_items: list[dict] | None = None, meetings: list[dict] | None = None,
-                 thread_key: str | None = None, tz_name: str | None = None) -> str:
+                 thread_key: str | None = None, tz_name: str | None = None,
+                 summary: str | None = None, profile: str | None = None) -> str:
     return _PROMPT.format(
+        profile=" ".join((profile or "").split())[:600] or "(none)",
+        summary=" ".join((summary or "").split())[:500] or "(none)",
         app=app or "an app", me=", ".join(m for m in (me or []) if m) or "(unknown)",
         now_local=now_local or local_label(datetime.now(timezone.utc), None),
         open_items=open_items_block(open_items, thread_key),
@@ -393,7 +399,8 @@ def llm_insight(engine, *, org_id: str, app: str | None, screen: str, facts: lis
                 deadline: float, now_local: str = "", not_useful: list[str] | None = None,
                 me: list[str] | None = None, open_items: list[dict] | None = None,
                 meetings: list[dict] | None = None, thread_key: str | None = None,
-                tz_name: str | None = None) -> dict | None:
+                tz_name: str | None = None, summary: str | None = None,
+                profile: str | None = None) -> dict | None:
     """One Haiku call → the parsed JSON, or None (no model, time short, failure)."""
     from genios_engine.platform.config import get_settings
     settings = get_settings()
@@ -407,7 +414,8 @@ def llm_insight(engine, *, org_id: str, app: str | None, screen: str, facts: lis
     model = tier_model("T1")
     prompt = build_prompt(app=app, screen=screen, facts=facts, now_local=now_local,
                           not_useful=not_useful, me=me, open_items=open_items,
-                          meetings=meetings, thread_key=thread_key, tz_name=tz_name)
+                          meetings=meetings, thread_key=thread_key, tz_name=tz_name,
+                          summary=summary, profile=profile)
     try:
         client = Anthropic(api_key=settings.anthropic_api_key, timeout=remaining, max_retries=0)
         resp = client.messages.create(model=model, max_tokens=MAX_OUTPUT_TOKENS, temperature=0,
@@ -435,7 +443,8 @@ def _compute(engine, *, org_id: str, email: str | None, app: str | None, partici
              not_useful: list[str] | None = None, me: list[str] | None = None,
              open_items: list[dict] | None = None, meetings: list[dict] | None = None,
              thread_key: str | None = None, tz_name: str | None = None,
-             today: date | None = None) -> dict | None:
+             today: date | None = None, summary: str | None = None,
+             profile: str | None = None) -> dict | None:
     sids: list[str] = []
     facts: list[dict] = []
     try:
@@ -454,7 +463,7 @@ def _compute(engine, *, org_id: str, email: str | None, app: str | None, partici
     raw = llm_insight(engine, org_id=org_id, app=app, screen=screen, facts=facts,
                       deadline=deadline, now_local=now_local, not_useful=not_useful, me=me,
                       open_items=open_items, meetings=meetings, thread_key=thread_key,
-                      tz_name=tz_name)
+                      tz_name=tz_name, summary=summary, profile=profile)
     if raw is None:
         return None
     judged = judge(raw, screen, me=me, today=today)
@@ -467,7 +476,8 @@ def insight(engine, *, org_id: str, email: str | None, app: str | None, particip
             not_useful: list[str] | None = None, me: list[str] | None = None,
             open_items: list[dict] | None = None, meetings: list[dict] | None = None,
             thread_key: str | None = None, tz_name: str | None = None,
-            today: date | None = None) -> dict | None:
+            today: date | None = None, summary: str | None = None,
+            profile: str | None = None) -> dict | None:
     """`{"subject_ids", "work", "memory", "judged"}` — `judged` is `judge()`'s answer, `work` /
     `memory` the model's judgements or None — or None (no answer: no model, time ran out)."""
     deadline = time.monotonic() + timeout_s
@@ -475,7 +485,7 @@ def insight(engine, *, org_id: str, email: str | None, app: str | None, particip
                        participants=participants, entities=entities, screen=screen,
                        deadline=deadline, now_local=now_local, not_useful=not_useful, me=me,
                        open_items=open_items, meetings=meetings, thread_key=thread_key,
-                       tz_name=tz_name, today=today)
+                       tz_name=tz_name, today=today, summary=summary, profile=profile)
     try:
         return fut.result(timeout=max(0.0, deadline - time.monotonic()))
     except FutureTimeout:
