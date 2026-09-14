@@ -576,6 +576,14 @@ substrate:
                                 #   `<domain>_<anchor>` default (`admin_person`) and no situation
                                 #   file could claim it.
     - condition_in_review       # admin, anchored on a CONDITION — one conditional statement
+    # ITS TWIN, and the more valuable half. The review queue above is what `parse_condition`
+    # could NOT turn into a predicate; this is what it could, and what the world has since made
+    # true. `correlation_timeline` has published it all along — `_satisfied_json` carries BOTH
+    # evidence spans and its constructor refuses to exist with only one, because "the card has
+    # to show the sentence from May, and a claim with no receipt is a guess" — and nothing read
+    # it. `condition-now-satisfied.yaml` was authored, approved, and bound to `admin_contact`
+    # for want of this entry; its own note said so.
+    - condition_satisfied      # admin, anchored on the `condition_met` node
                                 #   `correlation_timeline` could not turn into a checkable
                                 #   predicate. It has written them to
                                 #   `derived.timeline.condition_review` since it shipped and its

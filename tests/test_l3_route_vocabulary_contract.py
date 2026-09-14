@@ -209,6 +209,11 @@ def test_producible_vocabulary_is_small_and_closed():
         # actually fills a mailbox: we wrote, they REPLIED, and the reply is still sitting
         # there. `admin.sit.reply_owed` routes it.
         "reply_owed",
+        # The twin of `condition_in_review`, and the half `correlation_timeline` was built for.
+        # That one carries the conditions `parse_condition` REFUSED to parse; this carries the
+        # ones it parsed and the world has since made true. The fact was published every sweep
+        # — both evidence spans, refusing to exist with only one — and nothing read it.
+        "condition_satisfied",
     }, "the L2 situation vocabulary changed — re-check every corpus route against it"
 
 

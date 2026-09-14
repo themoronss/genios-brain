@@ -83,8 +83,13 @@ MAX_PER_NODE = 6
 STALE_AFTER_DAYS = 120
 
 
-def _entries(value) -> tuple[Mapping, ...]:
-    """The conditions inside one stored review row, defensively.
+def _entries(value, key: str = "review") -> tuple[Mapping, ...]:
+    """The conditions inside one stored row, defensively.
+
+    `key` names the list inside the stored object — `review` for the queue of conditions nobody
+    could parse, `satisfied` for the ones that have since come true. One reader for both because
+    the two facts are written by the same publisher in the same shape, and a second copy of this
+    defensiveness is a second place for a malformed row to raise instead of yield nothing.
 
     The column is `jsonb` and arrives as a mapping from Postgres and as a string from a driver
     that has not decoded it; both are accepted because this reading must not be the reason a
@@ -98,10 +103,10 @@ def _entries(value) -> tuple[Mapping, ...]:
             return ()
     if not isinstance(value, Mapping):
         return ()
-    review = value.get("review")
-    if not isinstance(review, (list, tuple)):
+    entries = value.get(key)
+    if not isinstance(entries, (list, tuple)):
         return ()
-    return tuple(item for item in review if isinstance(item, Mapping))
+    return tuple(item for item in entries if isinstance(item, Mapping))
 
 
 def _stated_at(entry: Mapping) -> datetime | None:
@@ -260,8 +265,159 @@ def gather_conditions_in_review(conn, org_id: str) -> dict[str, object]:
     return {str(row["node_id"]): row["value"] for row in rows}
 
 
+# ── the twin: the conditions that have COME TRUE ─────────────────────────────────────────────
+#
+# `read_conditions_in_review` above surfaces the conditions `parse_condition` could not turn into
+# a predicate — the ones the correlator refused to guess at. This is the other half, and the more
+# valuable one: the conditions it DID parse, and which the world has since satisfied.
+#
+# `correlation_timeline` has computed and published these all along. `_satisfied_json` writes both
+# evidence spans side by side, its constructor REFUSES to exist with only one of them, and the
+# module's own docstring names the case: "a partner said they'd revisit once you had two
+# enterprise references. You closed the second 11 days ago. Nothing else in this system connects
+# those two moments, because no human is holding both in mind and the two events share no thread,
+# no counterparty field and no window — they are four months apart, which is precisely why the
+# connection is worth anything."
+#
+# The fact was written and nothing read it. `condition-now-satisfied.yaml` is authored, reviewed
+# and approved, and bound to `admin_contact` — the nearest live type — because the type it wants
+# did not exist. Its own note says so: "`condition_satisfied` is not yet listed in
+# `_schema/vocabulary.yaml`".
+
+#: Where the satisfied conditions are stored, by the publisher that computes them.
+SATISFIED_FIELD = "derived.timeline.condition_satisfied"
+
+#: One condition that has come true. Its own anchor for the reason the review queue has one: a
+#: counterparty can leave several conditions across months, they come true separately, and
+#: `type_for` maps an anchor to exactly one name per domain.
+ANCHOR_CONDITION_MET = "condition_met"
+
+_SATISFIED_ROWS = (
+    "select subject_node_id as node_id, value from graph_facts "
+    "where org_id = :o and field = :field and status = 'active' and valid_to is null"
+)
+
+
+def gather_conditions_satisfied(conn, org_id: str) -> dict[str, object]:
+    """The stored satisfied-condition rows for one org, keyed by subject node."""
+    rows = conn.execute(text(_SATISFIED_ROWS),
+                        {"o": org_id, "field": SATISFIED_FIELD}).mappings().all()
+    return {str(row["node_id"]): row["value"] for row in rows}
+
+
+def read_conditions_satisfied(rows: Mapping[str, object], now: datetime,
+                              mailbox_owner: str | None = None) -> list:
+    """One finding per condition the world has satisfied.
+
+    BOTH SPANS OR NOTHING, and that rule is enforced upstream rather than restated here:
+    `SatisfiedCondition.__post_init__` refuses to construct without the original statement's
+    evidence, because "the card has to show the sentence from May, and a claim with no receipt is
+    a guess". A row that reached the graph therefore carries its quote, and this reading requires
+    one — a satisfaction it cannot quote is a row it does not understand, not a card.
+
+    STALENESS IS REPORTED, NEVER A GATE. `strength_bp` decays from the moment the world became
+    true and the correlator marks the row `stale` below its floor, because Globe's instruction is
+    to act while the evidence is fresh. A condition satisfied eight months ago is still satisfied;
+    it is simply worth less, and that is a ranking question for `importance.py` rather than a
+    reason for this layer to decide nobody should be told. The same discipline the review queue
+    keeps one function up.
+
+    THE ACTOR MAY BE US, and those are kept for the reason the sibling keeps them: "you told them
+    you would reply once it was booked" is as much an open loop as anything they said — and a
+    condition WE set that has now come true is a thing we said we would do and can.
+    """
+    from genios_engine.context.outreach_situations import _Finding
+
+    owner = (mailbox_owner or "").strip().lower()
+    findings: list = []
+    for node_id, value in rows.items():
+        for entry in _entries(value, "satisfied")[:MAX_PER_NODE]:
+            condition_id = str(entry.get("condition_id") or "").strip()
+            quote = _quote(entry)
+            if not condition_id or not quote:
+                continue
+            actor = str(entry.get("actor") or "").strip()
+            action = str(entry.get("action") or "").strip()
+
+            facts: list[tuple[str, object, str]] = [("condition.quote", quote, "string")]
+            if actor:
+                facts.append(("condition.actor", actor, "string"))
+            if action:
+                facts.append(("condition.action", action, "string"))
+            text_value = str(entry.get("condition_text") or "").strip()
+            if text_value:
+                facts.append(("condition.text", text_value, "string"))
+
+            stated = _stated_at(entry)
+            if stated is not None:
+                facts.append(("condition.stated_at", stated.isoformat(), "string"))
+            met = _satisfied_at(entry)
+            if met is not None:
+                facts.append(("condition.satisfied_at", met.isoformat(), "string"))
+                facts.append(("condition.days_since_satisfied",
+                              max(0, (now - met).days), "number"))
+                if stated is not None:
+                    # HOW LONG IT WAITED. The distance between the sentence and the world turning
+                    # is the whole reason this is worth saying: nobody remembers a condition set
+                    # four months ago, which is exactly why it is still unacted on.
+                    facts.append(("condition.waited_days",
+                                  max(0, (met - stated).days), "number"))
+
+            strength = entry.get("strength_bp")
+            if isinstance(strength, int):
+                facts.append(("condition.strength_bp", strength, "number"))
+            # Reported, never used to drop — see the docstring.
+            facts.append(("condition.stale", bool(entry.get("stale")), "bool"))
+
+            # WHAT MADE IT TRUE, carried so the card can say it rather than asserting the
+            # conclusion alone. "You closed the second enterprise reference" is the half that
+            # makes "their condition is met" checkable.
+            world_key = str(entry.get("world_key") or "").strip()
+            if world_key:
+                facts.append(("condition.satisfied_by", world_key, "string"))
+
+            owned = _is_owner(actor, owner)
+            if owned is not None:
+                facts.append(("condition.actor_is_us", owned, "bool"))
+
+            display = (f"{actor} — the condition they set is now met" if actor
+                       else "a condition set earlier is now met")
+            findings.append(_Finding(
+                anchor=ANCHOR_CONDITION_MET,
+                canonical_key=f"condition_met:{condition_id}",
+                display_name=display,
+                facts=facts,
+                concerns_node=node_id,
+                correlation_id=f"condition_met:{condition_id}",
+                # WHETHER THEY HAVE BEEN TOLD. Nothing in this system observes that we went back
+                # to somebody about a condition coming true, so the one thing a reader most wants
+                # — "did we already act on this?" — is not on the record. Declared rather than
+                # assumed, so the coverage score says "not known" instead of scoring the reading
+                # as complete.
+                missing=["condition.counterparty_informed"],
+                inputs={"reading": ANCHOR_CONDITION_MET,
+                        "derived_from": "correlation_timeline; both evidence spans required"},
+            ))
+    return findings
+
+
+def _satisfied_at(entry: Mapping) -> datetime | None:
+    raw = entry.get("satisfied_at")
+    if not isinstance(raw, str) or not raw:
+        return None
+    try:
+        moment = datetime.fromisoformat(raw)
+    except ValueError:
+        return None
+    return moment if moment.tzinfo else moment.replace(tzinfo=timezone.utc)
+
+
 __all__ = [
     "ANCHOR_CONDITION",
+    "ANCHOR_CONDITION_MET",
+    "SATISFIED_FIELD",
+    "gather_conditions_satisfied",
+    "read_conditions_satisfied",
     "MAX_PER_NODE",
     "REVIEW_FIELD",
     "STALE_AFTER_DAYS",

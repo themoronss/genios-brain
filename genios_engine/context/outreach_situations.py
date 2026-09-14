@@ -160,6 +160,9 @@ ANCHOR_CAMPAIGN = "campaign"
 
 #: One meeting, and whether it was finished. Imported rather than re-declared so the anchor this
 #: module dispatches on and the one the reading stamps on its findings can never drift apart.
+from genios_engine.context.condition_situations import (  # noqa: E402
+    ANCHOR_CONDITION_MET,
+)
 from genios_engine.context.meeting_situations import ANCHOR_MEETING  # noqa: E402
 
 #: How far back a campaign may have been sent and still be worth a card.
@@ -1198,6 +1201,20 @@ def read_conditions_for_dispatch(rows: dict, now: datetime, employers: dict) -> 
     return read_conditions_in_review(queue, now, owner)
 
 
+def read_conditions_met_for_dispatch(rows: dict, now: datetime, employers: dict) -> list[_Finding]:
+    """The satisfied-condition reading, in the same shape and stamped the same way.
+
+    Its twin above reports the conditions nobody could parse; this one reports the parsed ones the
+    world has since made true. `correlation_timeline` has published both all along and only the
+    review half was ever read.
+    """
+    from genios_engine.context.condition_situations import read_conditions_satisfied
+
+    met = rows.get("_conditions_met") or {}
+    owner = rows.get("_mailbox_owner")
+    return read_conditions_satisfied(met, now, owner)
+
+
 #: The dormant-condition review queue, read from its own store rather than from `_gather`'s
 #: `thread.*` rows — see `_gather`, which stamps it on. Wired here so it travels the same
 #: `find_or_create_node` / `_write_fact` / `concerns`-edge path every other state reading takes,
@@ -1224,6 +1241,9 @@ READINGS = (
     (ANCHOR_COMMITMENT, read_overdue_commitments),
     (ANCHOR_COHORT, read_outreach_cohorts),
     (ANCHOR_CONDITION, read_conditions_for_dispatch),
+    # Its twin. The review queue reports what could not be parsed; this reports what was
+    # parsed and has since become true — the half `correlation_timeline` was built for.
+    (ANCHOR_CONDITION_MET, read_conditions_met_for_dispatch),
     (ANCHOR_ORGANIZATION, read_organization_silence),
     (ANCHOR_CAMPAIGN, read_campaign_silence),
     # Fifty calendar events on the pilot produced nodes, facts and edges and not one situation,
@@ -1325,8 +1345,12 @@ def _gather(store, org_id: str, *, now: datetime | None = None,
                 entry["_covered_by_replier"] = str(row.party)
         # The review queue and the mailbox owner, under reserved keys rather than node ids: the
         # readings iterate `rows` by node, and a leading underscore cannot collide with one.
-        from genios_engine.context.condition_situations import gather_conditions_in_review
+        from genios_engine.context.condition_situations import (gather_conditions_in_review,
+                                                                 gather_conditions_satisfied)
         held["_conditions"] = gather_conditions_in_review(c, org_id)
+        # …and the conditions that have COME TRUE. Published by the same correlator, in the same
+        # shape, and read by nothing until now.
+        held["_conditions_met"] = gather_conditions_satisfied(c, org_id)
         held["_mailbox_owner"] = _mailbox_owner(c, org_id)
         # THE MEETINGS, through the query that already knows how to find them. `meeting_touch.
         # _MEETINGS` joins the `attended` edge, excludes retired attendances, excludes our own

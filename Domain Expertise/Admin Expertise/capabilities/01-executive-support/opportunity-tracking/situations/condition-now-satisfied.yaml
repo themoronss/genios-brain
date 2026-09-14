@@ -1,15 +1,22 @@
-# THE OTHER HALF, AND IT IS NOT REACHABLE YET.
+# THE OTHER HALF, AND IT IS REACHABLE NOW.
 #
 # This is founder surface 14 stated exactly: a condition someone set four months ago is now met.
-# It routes NOTHING today and that is the correct state, not a defect in the authoring. Layer 1
-# extracts a conditional commitment and Layer 2 must detect its satisfaction and emit
-# `condition_satisfied`; until that ships, the nearest live type is `admin_contact`, and binding
-# to it would produce a card asserting that something became true — the one claim this capability
-# is forbidden to make on evidence it does not have.
+# It routed NOTHING until `condition_satisfied` existed, and this file said so — "binding to
+# `admin_contact` would produce a card asserting that something became true, the one claim this
+# capability is forbidden to make on evidence it does not have". That was the correct state and
+# it is no longer the state.
 #
-# Authored now rather than later because the expertise is what the emitter has to be built
-# against: the satisfaction has to arrive carrying its evidence and its certainty, and a signal
-# that says only "satisfied" cannot be used by anything below.
+# `correlation_timeline` had computed the satisfaction all along. `_satisfied_json` writes BOTH
+# evidence spans side by side and `SatisfiedCondition.__post_init__` refuses to construct with
+# only one of them — "the card has to show the sentence from May, and a claim with no receipt is
+# a guess". The fact was published every sweep and nothing read it;
+# `condition_situations.read_conditions_satisfied` is the reading that does, and
+# `domain_spec` maps the `condition_met` anchor onto this type.
+#
+# The three things this file demanded of the emitter all arrive: the original condition text
+# (`condition.text`, with the counterparty's own sentence in `condition.quote`), the satisfying
+# evidence (`condition.satisfied_by`), and a certainty tier (`condition.strength_bp`, with
+# `condition.stale` below the correlator's freshness floor).
 
 identity:
   id: admin.sit.condition_now_satisfied
@@ -39,17 +46,17 @@ description: >
   right.
 
 matches:
-  pending_l2_situation_types:
-    - type: condition_satisfied
-      owner_layer: L2
-      nearest_today: admin_contact
-      note: >
-        Needs the conditional-commitment extraction at Layer 1 and the satisfaction detector at
-        Layer 2, and the emitted situation must carry the original condition text, the satisfying
-        evidence span, and a certainty tier. Without the evidence there is nothing to write into
-        the reopening; without the certainty every satisfaction is treated as definite and
-        `admin.rule.opportunity_tracking.no_reopening_on_an_inferred_satisfaction` has nothing to
-        read.
+  l2_situation_types:
+    - condition_satisfied
+  scope: person
+  when:
+    # The counterparty's own sentence. `SatisfiedCondition` refuses to exist without it, so a row
+    # that reached the graph has one — requiring it here is a second lock on the same door rather
+    # than a new judgement, and a satisfaction nobody can quote is not a card.
+    - exists: condition.quote
+    # And what made it true. Asserting "their condition is met" without naming the thing that met
+    # it is the claim this capability is forbidden to make.
+    - exists: condition.satisfied_by
 
 also_serves:
   - admin.executive_support.commitment_tracking
@@ -102,4 +109,4 @@ metadata:
     it too.
 
 admission:
-  accepted_content_hash: 3705ce5787bbae25fcb631e9927be0c5f6f846316fe8c7617e6b755dcddc9b05
+  accepted_content_hash: 877402fa98ad316126b404f7348cf3c24098fb97cc0acc653670111e89b821ca

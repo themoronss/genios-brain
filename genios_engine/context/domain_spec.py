@@ -426,6 +426,16 @@ register(DomainSpec(
                      # look and reconsider". Its own anchor because a counterparty can leave
                      # several conditions across months and they close separately.
                      "condition": "condition_in_review",
+                     # ITS TWIN, and the half `correlation_timeline` was actually built for. The
+                     # review queue above carries the conditions `parse_condition` REFUSED to
+                     # guess at; this carries the ones it parsed and the world has since made
+                     # true — "a partner said they'd revisit once you had two enterprise
+                     # references. You closed the second 11 days ago." The correlator published
+                     # both all along, `_satisfied_json` writes BOTH evidence spans and its
+                     # constructor refuses to exist with only one, and nothing read this half.
+                     # `condition-now-satisfied.yaml` is authored and approved and had been bound
+                     # to `admin_contact` — the nearest live type — for want of this line.
+                     "condition_met": "condition_satisfied",
                      # THE SECOND GROUP-SHAPED SUBJECT, and it is not the first one re-keyed.
                      # `cohort` groups by OBJECTIVE — "of everyone I contacted about the raise,
                      # who has gone quiet?" — which spans funds on purpose. This groups by FIRM.
