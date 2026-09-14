@@ -618,6 +618,17 @@ substrate:
                                 # a card reporting that nothing explains a subject does not
                                 # itself explain it, and without that it would appear and vanish
                                 # on alternate sweeps for ever.
+    # M-3's ANSWER ON A CARD, and the third grouping key in this layer. `cohort_outreach_gap`
+    # groups by stated objective and `campaign_awaiting_reply` by an exact shared sentence; this
+    # groups sends whose wording a model judged to be one message retyped. It is NOT a campaign
+    # and never says it is — `outreach.exact_sentence` is declared absent, because that absence is
+    # precisely why the deterministic grouping did not fire. `find_campaigns` remains the only
+    # thing that mints a `Campaign`.
+    - outreach_reworded         # admin, anchored on a REWORDED OUTREACH — sends in one window, to
+                                # enough distinct counterparties, sharing wording this tenant does
+                                # not use everywhere. Only the `one_campaign` verdict mints;
+                                # `same_topic_not_one_message` — five intros answered personally
+                                # in one morning — is the commoner answer and mints nothing.
     - organization_gone_quiet   # admin, anchored on an ORGANIZATION — one counterparty FIRM
                                 # where more than one person has gone quiet. Not `cohort`
                                 # re-keyed: that groups by objective and spans funds, this

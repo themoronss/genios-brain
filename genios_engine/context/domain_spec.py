@@ -456,6 +456,13 @@ register(DomainSpec(
                      # about one counterparty. Admin for the same reason as the block above:
                      # answering somebody is follow-through work whoever they are.
                      "unreported": "attention_unreported",
+                     # M-3's ANSWER, and the third way this layer groups people. `cohort` groups
+                     # by stated objective, `campaign` by an exact shared sentence, and this by
+                     # wording a model judged to be one message reworded — the blind spot the
+                     # exact-sentence rule leaves, where a founder who retypes each email sends
+                     # one raise to eighteen people and the system sees eighteen threads. It
+                     # yields to both of the other two: one group of people gets one group card.
+                     "reworded_outreach": "outreach_reworded",
                      # THE SECOND GROUP-SHAPED SUBJECT, and it is not the first one re-keyed.
                      # `cohort` groups by OBJECTIVE — "of everyone I contacted about the raise,
                      # who has gone quiet?" — which spans funds on purpose. This groups by FIRM.

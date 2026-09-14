@@ -206,6 +206,28 @@ map:
         - admin.obj.core.employee_record
         - admin.obj.core.invoice
 
+  outreach_reworded:
+    situations:
+      - admin.sit.outreach_reworded
+    capabilities:
+      - admin.executive_support.inbox_and_correspondence
+      - admin.executive_support.opportunity_tracking
+    objects:
+      load:
+        - admin.obj.core.commitment
+        - admin.obj.core.request
+      optional:
+        - admin.obj.core.approval
+        - admin.obj.core.deadline
+        - admin.obj.core.document
+        - admin.obj.core.escalation
+        - admin.obj.core.meeting
+      never_load:
+        - admin.obj.core.access_right
+        - admin.obj.core.asset
+        - admin.obj.core.employee_record
+        - admin.obj.core.invoice
+
   organization_gone_quiet:
     situations:
       - admin.sit.organization_gone_quiet
@@ -645,6 +667,7 @@ routed_l2_types:
   - document_under_control
   - meeting_follow_through
   - organization_gone_quiet
+  - outreach_reworded
   - relationship
   - reply_owed
 
@@ -664,11 +687,11 @@ orphan_capabilities: []
 unreachable_objects: []
 
 stats:
-  l2_types_total: 38
-  l2_types_routed_here: 16
+  l2_types_total: 39
+  l2_types_routed_here: 17
   l2_types_unrouted_globally: 5
   l2_types_pending: 5
-  situations: 31
+  situations: 32
   capabilities: 59
   capabilities_stub: 0
   capabilities_complete: 59

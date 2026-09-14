@@ -1,0 +1,119 @@
+# M-3's answer, on a card. `correlation_conversation` groups outbound mail by the EXACT sentence
+# and is right to refuse anything softer — "a similarity threshold would quietly merge two
+# different pitches on a bad day". The cost is a blind spot with a strange shape: a founder who
+# copies and pastes gets one campaign, a founder who retypes each email gets eighteen unrelated
+# threads. The difference is a typing habit, not a fact about the fundraise.
+#
+# IT IS NOT A CAMPAIGN AND MUST NEVER SAY IT IS. `find_campaigns` mints a `Campaign` and still
+# requires the sentence to match. This is the narrower claim: shared distinctive wording, one
+# window, enough people, and a model that read the sentences and judged them one message.
+#
+# `context/reworded_outreach.read_reworded_outreach` produces it.
+
+identity:
+  id: admin.sit.outreach_reworded
+  name: One Outreach, Reworded
+  domain: admin
+  owner_capability: admin.executive_support.inbox_and_correspondence
+  version: 1.0.0
+  status: stable
+
+description: >
+  Several messages went out inside one window, to several different people, saying the same thing
+  in different words. Nothing in the record ties them together, because the system groups outbound
+  mail by the exact sentence and no two of these share one — so each has been treated as an
+  unrelated thread, and the question "of everyone I told about this, who came back?" has had no
+  subject to be asked about.
+
+  The evidence is the vocabulary itself. Every member shares words this tenant does not use
+  everywhere — measured against their own sent mail, so a signature, a company name in a footer
+  and a calendar link all disqualify themselves — and those words travel on the card. A reader can
+  agree or dismiss in one second, which is more than a similarity score has ever offered.
+
+  It must never be described as a campaign, a blast or a send-out. There is no shared sentence;
+  that absence is the whole reason the deterministic grouping did not fire, and it is carried as a
+  declared gap. It also says nothing about who replied — the grouping is built from what was sent.
+
+matches:
+  l2_situation_types:
+    - outreach_reworded
+  scope: person
+  when:
+    # The group must be a group. Two is a coincidence of vocabulary between two emails.
+    - exists: outreach.recipients
+    - path: outreach.recipients
+      op: ">="
+      value: 3
+
+also_serves:
+  - admin.executive_support.opportunity_tracking
+
+objects:
+  load:
+    - admin.obj.core.request
+  optional:
+    - admin.obj.core.commitment
+  never_load:
+    - admin.obj.core.invoice
+    - admin.obj.core.employee_record
+    - admin.obj.core.asset
+
+priority_bp: 5200
+typical_duration_days: 10
+
+signals_of_progress:
+  - followup_sent
+  - next_step_agreed
+  - meeting_scheduled
+
+signals_of_decay:
+  - going_dark
+
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    Headline: that these are one outreach, how many people it reached, and how many different
+    wordings it went out in. The wording count is the interesting number — it is why nothing
+    connected them before.
+
+    Situation: name the shared words plainly, as the reason for the grouping. "These five all
+    mention preseed, traction and MRR" is a claim the reader can check against their own sent
+    folder in seconds, and it is what was shown to the model.
+
+    Never call it a campaign, a blast or a send-out, and never quote a sentence as though all of
+    them carried it — no two of them do. Never state a reply rate: this is built from what was
+    sent, and who answered is not in evidence here.
+
+    Artifact: a way to work the group as one thing — who has not come back, and what goes to them
+    next — rather than a reply to any single thread.
+  fallback:
+    # THE BODY NAMES ITS OWN ROW. `{entity}` is the representative recipient this situation hangs
+    # on — `outreach.recipients` carries the true size and `outreach.named` the sample — and a
+    # group body that names nobody is "a category label with a headline on top", which is the law
+    # `test_every_per_subject_situation_fallback_names_its_subject` holds for the whole corpus.
+    headline: "one outreach, reworded, to {entity} and others"
+    situation: >-
+      Messages to {entity} and others went out inside one window saying the same thing in
+      different words, so nothing tied them together.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: rohit
+  last_updated: '2026-09-15'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-09-15'
+  notes: >
+    The third grouping key in Layer 2, and deliberately its own type rather than a second way to
+    mint `campaign_awaiting_reply`: that one asserts an exact shared sentence and carries it on the
+    card, which this cannot. Gated on a model verdict like `attention_unreported`, and additive in
+    the same strict sense — with no angle layer there is no card and the tenant has what they have
+    today. `same_topic_not_one_message`, the verdict where five introductions are answered
+    personally in one morning, mints nothing: those are five relationships with five cards, and
+    grouping them would be the wrongful merge this whole lane exists to avoid. It yields to
+    `cohort_outreach_gap` and `campaign_awaiting_reply` on shared membership — one group of people
+    gets one group card.
+
+admission:
+  accepted_content_hash: 1243fd10735b3572a16346d19623a828273166f9a975b7be49488f0f9988f42f

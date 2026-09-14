@@ -1206,6 +1206,28 @@ def read_conditions_for_dispatch(rows: dict, now: datetime, employers: dict) -> 
 
 from genios_engine.context.attention_situations import ANCHOR_UNREPORTED
 from genios_engine.context.blocker_situations import ANCHOR_UNNAMED_BLOCKER
+from genios_engine.context.reworded_outreach import ANCHOR_REWORDED
+
+
+def read_reworded_for_dispatch(rows: dict, now: datetime, employers: dict) -> list[_Finding]:
+    """M-3's answer, in the shape the dispatch loop hands every reader.
+
+    YIELDS TO THE TWO GROUP READINGS THAT ALREADY EXIST, and computes their coverage the way
+    `read_campaign_silence` computes the cohort's — from their own `inputs["members"]`, so the
+    scope of a group is legible without re-deriving the grouping. A founder shown "your raise
+    outreach" and "one outreach, reworded" about the same eight people has been told one thing
+    twice.
+    """
+    from genios_engine.context.reworded_outreach import read_reworded_outreach
+
+    candidates = rows.get("_adjudicated") or ()
+    if not candidates:
+        return []
+    covered: set[str] = set()
+    for finding in (*read_outreach_cohorts(rows, now, employers),
+                    *read_campaign_silence(rows, now, employers)):
+        covered.update(finding.inputs.get("members") or ())
+    return read_reworded_outreach(candidates, now, rows.get("_node_names") or {}, covered)
 
 
 def read_attention_for_dispatch(rows: dict, now: datetime, employers: dict) -> list[_Finding]:
@@ -1297,6 +1319,9 @@ READINGS = (
     # LAST, AND LAST FOR A REASON. Every reading above it is a deterministic answer about a
     # subject; this one reports the subjects none of them reached. Dispatched after them so the
     # residue it reads was measured against a sweep that had already produced everything it could.
+    # BEFORE the last-resort reading and AFTER the two group readings it yields to: the dispatch
+    # order is the precedence, since each reading computes coverage from the ones it names.
+    (ANCHOR_REWORDED, read_reworded_for_dispatch),
     (ANCHOR_UNREPORTED, read_attention_for_dispatch),
 )
 
@@ -1435,6 +1460,20 @@ def _gather(store, org_id: str, *, now: datetime | None = None,
             held["_unreported"] = ()
             held["_node_names"] = {}
             held["_unreported_facts"] = {}
+        # M-3's ANSWERS. The near-misses a model called one message — empty with no angle layer,
+        # and the sweep is then exactly what it was. Names are needed to print who is in the
+        # group, so they are fetched once here whichever reading asked for them.
+        from genios_engine.context.angles.queues import adjudicated_candidates
+        from genios_engine.context.attention_situations import gather_display_names as _names_of
+        from genios_engine.context.reworded_outreach import ONE_CAMPAIGN
+        try:
+            adjudicated = [entry for entry in adjudicated_candidates(c, org_id)
+                           if str(entry.get("verdict") or "") == ONE_CAMPAIGN]
+            held["_adjudicated"] = adjudicated
+            if adjudicated and not held.get("_node_names"):
+                held["_node_names"] = _names_of(c, org_id)
+        except Exception:      # noqa: BLE001 — one reading's gather is not the sweep's
+            held["_adjudicated"] = []
         held["_mailbox_owner"] = _mailbox_owner(c, org_id)
         # THE MEETINGS, through the query that already knows how to find them. `meeting_touch.
         # _MEETINGS` joins the `attended` edge, excludes retired attendances, excludes our own

@@ -144,9 +144,31 @@ KNOWN_UNREAD: dict[str, str] = {
         "four now reach a card: `condition_now_true` and `blocker_absence` stamp facts onto "
         "cards that already existed, and `reply_owed_triage` produces one that did not — "
         "`attention_situations` turns an `important` verdict on ball-in-court residue into "
-        "`attention_unreported`, the coverage miss no deterministic reading surfaced. What "
-        "remains is the M-3 half, recorded against its own field above rather than here. "
-        "MOVES WHEN: the reader named in that entry is written.",
+        "`attention_unreported`, the coverage miss no deterministic reading surfaced. The fourth, "
+        "`same_situation_two_threads`, reaches `outreach_reworded` through `reworded_outreach`. "
+        "All four now end somewhere a person can see. Kept to record that reaching a card is not "
+        "the same as being USEFUL on live data, which no test can assert. "
+        "MOVES WHEN: a sweep on a real tenant shows what each of the four actually produces.",
+    "derived.conversation.campaign_candidate":
+        "CLOSED. The near-miss queue is read by the M-3 gate, adjudicated by "
+        "`same_situation_two_threads`, and a `one_campaign` verdict now reaches a card: "
+        "`reworded_outreach` mints `outreach_reworded`, its own type, which declares "
+        "`outreach.exact_sentence` absent because that absence is why the deterministic grouping "
+        "did not fire. `find_campaigns` is still the only thing that mints a `Campaign`. Kept as "
+        "an entry only to record that the verdict `same_topic_not_one_message` deliberately mints "
+        "nothing — five introductions answered personally in one morning are five relationships, "
+        "not one outreach. MOVES WHEN: nothing; this is the intended end state and the entry can "
+        "be deleted once a reviewer agrees.",
+    "context/angles":
+        "NARROWED, AND THE RESIDUE HALF IS CLOSED. Four angles are registered and three of the "
+        "four now reach a card: `condition_now_true` and `blocker_absence` stamp facts onto "
+        "cards that already existed, and `reply_owed_triage` produces one that did not — "
+        "`attention_situations` turns an `important` verdict on ball-in-court residue into "
+        "`attention_unreported`, the coverage miss no deterministic reading surfaced. The fourth, "
+        "`same_situation_two_threads`, reaches `outreach_reworded` through `reworded_outreach`. "
+        "All four now end somewhere a person can see. Kept to record that reaching a card is not "
+        "the same as being USEFUL on live data, which no test can assert. "
+        "MOVES WHEN: a sweep on a real tenant shows what each of the four actually produces.",
     "derived.conversation.campaign_candidate":
         "READ BY THE M-3 GATE, which is the half that is done. The near-miss queue is what "
         "`find_campaigns` declined to group, and `same_situation_two_threads` adjudicates each "

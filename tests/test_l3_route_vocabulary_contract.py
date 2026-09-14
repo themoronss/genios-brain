@@ -240,6 +240,19 @@ def test_producible_vocabulary_is_small_and_closed():
         # and `residue.SELF_REPORTED_TYPE` excludes this type from that coverage predicate —
         # otherwise the card would explain its own subject and flap on alternate sweeps.
         "attention_unreported",
+        # M-3's ANSWER, and the third way this layer groups people — `cohort_outreach_gap` by
+        # stated objective, `campaign_awaiting_reply` by an exact shared sentence, this by wording
+        # a model judged to be one message retyped. It exists because the exact-sentence rule
+        # leaves a blind spot with a strange shape: copy-paste your raise to eighteen people and
+        # it is one campaign, retype each one and it is eighteen unrelated threads.
+        #
+        # It is NOT a campaign and never claims to be: `outreach.exact_sentence` is declared
+        # ABSENT, because that absence is exactly why the deterministic grouping did not fire, and
+        # `find_campaigns` remains the only thing that mints a `Campaign`. Gated on the
+        # `one_campaign` verdict alone — `same_topic_not_one_message`, five introductions answered
+        # personally in one morning, mints nothing and is the commoner answer. Yields to both
+        # older group readings on shared membership: one group of people gets one group card.
+        "outreach_reworded",
     }, "the L2 situation vocabulary changed — re-check every corpus route against it"
 
 

@@ -168,9 +168,17 @@ def test_the_reader_and_the_evaluator_name_a_candidate_the_same_way(store) -> No
 # ── what a verdict is forbidden to do ────────────────────────────────────────────────────────
 
 def test_a_verdict_merges_nothing(store) -> None:
-    """`one_campaign` is an OPINION about mail the exact-sentence rule declined to group. It mints
-    no campaign, no group and no card: `find_campaigns` remains the only thing that mints a
-    campaign, and it still requires the sentence to match."""
+    """`one_campaign` is an OPINION about mail the exact-sentence rule declined to group, and the
+    ANGLE writes nothing: no fact, no node, no edge. `find_campaigns` remains the only thing that
+    mints a `Campaign`, and it still requires the sentence to match.
+
+    NARROWED DELIBERATELY IN U5.7, and the assertion below is untouched. This docstring also said
+    "no card", and a downstream reading now produces one — `reworded_outreach` turns a
+    `one_campaign` verdict into `outreach_reworded`, its own type, which declares
+    `outreach.exact_sentence` ABSENT precisely because that absence is why the deterministic
+    grouping did not fire. The rule that mattered was never "no card"; it was that a model verdict
+    must not be dressed as a campaign it cannot evidence. That rule still holds, and this test
+    still holds the half it always checked: evaluating the angle mutates no graph."""
     _queued(store, _candidate("c1", _BLAST))
     evaluate_angle(store, ORG, M3, eval_time=NOW, asker=_asker("one_campaign", 8_000))
 
