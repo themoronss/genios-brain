@@ -167,6 +167,15 @@ class Settings(BaseSettings):
     # seat-private events with NO heavy L1 read and NO AI gate. "full" — the pre-phase-1 path
     # (AI gate + L1 extraction on every promoted screen thread).
     screen_memory_mode: str = "instant"
+    # S4 (reason/moments/screen_memory_batch.py): in "instant" mode every promoted, not-personal
+    # thread is queued for ONE short memory update via the Message Batches API (half price; memory
+    # is not urgent). Queued jobs go out as one batch (≤ `_max`) once the oldest is `_wait_minutes`
+    # old; the promoter's daemon thread submits / polls at most every `_poll_seconds`. No model
+    # configured → jobs stay queued, nothing fails.
+    screen_memory_batch_enabled: bool = True
+    screen_memory_batch_wait_minutes: int = 10
+    screen_memory_batch_max: int = 100
+    screen_memory_batch_poll_seconds: int = 60
     screen_promoter_batch: int = 50
     # Whether screen-captured messages are charged as `message_read` like email. Off: the
     # ingestion charge excludes `screen_session` events and bills every other source unchanged.

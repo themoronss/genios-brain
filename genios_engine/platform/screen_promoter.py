@@ -559,6 +559,23 @@ def merge_plans(plans: list[_Plan]) -> _Plan:
     return _Plan(last.delta, doc, fps_by_msg=fps, seen=seen_refs)
 
 
+def _enqueue_memory(engine, *, org_id: str, seat_id: str, delta: Delta, event_id: str,
+                    text_: str, crypto_key: str, now: datetime, verdicts) -> bool:
+    """S4: queue the thread's short batch memory update unless its 24 h verdict is personal.
+    Never raises into the promoter: a missed job costs one thread's catch-up, not the batch."""
+    from genios_engine.reason.moments import screen_memory_batch as B
+    thread = delta.thread_key or group_key(delta)
+    try:
+        if B.personal(verdicts(thread)):
+            return False
+        return B.enqueue(engine, org_id=org_id, seat_id=seat_id, thread_key=thread,
+                         app=delta.app, event_id=event_id, text=text_, crypto_key=crypto_key,
+                         now=now)
+    except Exception:      # noqa: BLE001
+        _log.exception("screen memory batch: enqueue failed org=%s seat=%s", org_id, seat_id)
+        return False
+
+
 def promote_batch(engine, org_id: str, seat_id: str, deltas: list[Delta], *,
                   doors: Doors | None = None, now: datetime | None = None,
                   cap: int | None = None, crypto_key: str | None = None,
@@ -643,6 +660,7 @@ def promote_batch(engine, org_id: str, seat_id: str, deltas: list[Delta], *,
     visibility = Visibility(scope=PRIVATE, principals=[seat_email],
                             derived_from=VISIBILITY_DERIVED_FROM)
     objects, owner, fps_of, refs = [], {}, {}, []
+    texts: dict[str, str] = {}                     # S4: each thread's promoted text
     for g, p in merged.items():
         d = p.delta
         for fp, canonical in p.seen:
@@ -659,6 +677,7 @@ def promote_batch(engine, org_id: str, seat_id: str, deltas: list[Delta], *,
                                     error="already_seen" if p.seen else "nothing_new"))
             unreserve([g])
             continue
+        texts[g] = "\n\n".join(str((r.raw.raw or {}).get("body") or "") for r in rendered)
         for r in rendered:
             r.raw.visibility = visibility
             objects.append(r.raw)
@@ -710,11 +729,22 @@ def promote_batch(engine, org_id: str, seat_id: str, deltas: list[Delta], *,
     # observations on the person they are about, sourced by the thread's seat-private event.
     from genios_engine.reason.moments.screen_memory import write_items
     live = set(emitted)
+    # S4: … and, in instant mode, ONE short batch memory update per promoted thread that is not
+    # personal (unjudged threads included: the update judges work / personal itself). Only
+    # threads that got a build under the runaway guard reach here, so the guard bounds it too.
+    batch = ((s.screen_memory_mode or "instant").strip().lower() == "instant"
+             and bool(s.screen_memory_batch_enabled))
+    from genios_engine.reason.moments.followups import verdict_lookup
+    verdicts = verdict_lookup(engine, org_id, seat_id)     # lazy + memoised: no read until used
     for g in pending:
         ev = next((e for e in events[g] if e in live), None)
         if g not in failed and ev:
             write_items(engine, org_id=org_id, seat_id=seat_id, seat_email=seat_email,
                         thread_key=members[g][0].thread_key, event_id=ev, now=now)
+            if batch and texts.get(g):
+                _enqueue_memory(engine, org_id=org_id, seat_id=seat_id, delta=members[g][0],
+                                event_id=ev, text_=texts[g], crypto_key=key, now=now,
+                                verdicts=verdicts)
 
     if result.results:
         finalize_l1(ManualSweep(org_id=org_id, results=result.results, emitted=len(emitted),
@@ -765,6 +795,25 @@ def housekeep(engine, *, now: float | None = None) -> None:
             c.execute(text("delete from rate_counters where kind = any(cast(:k as text[])) "
                            "and window_start < current_date - :d"),
                       {"k": [GENERIC_KIND, MEMORY_KIND], "d": COUNTER_RETENTION_DAYS})
+        from genios_engine.reason.moments import screen_memory_batch as B
+        B.prune(engine, now=datetime.now(timezone.utc))
+
+
+def memory_batch_tick(engine, *, now: float | None = None) -> bool:
+    """S4: the batch memory update's submit / poll, at most every
+    `screen_memory_batch_poll_seconds`, on this daemon thread (no Celery, no periodic task).
+    True when a tick ran."""
+    s = get_settings()
+    if not s.screen_memory_batch_enabled:
+        return False
+    now = time.monotonic() if now is None else now
+    if now - _housekeeping.get("memory_batch", -1e18) < max(1, int(
+            s.screen_memory_batch_poll_seconds)):
+        return False
+    _housekeeping["memory_batch"] = now
+    from genios_engine.reason.moments import screen_memory_batch as B
+    B.tick(engine)
+    return True
 
 
 # ── the worker ──────────────────────────────────────────────────────────────────────────────
@@ -788,6 +837,12 @@ def _loop(worker_id: str, initial_delay: float) -> None:
             housekeep(engine)
         except Exception:      # noqa: BLE001 — a crash must never kill the loop
             _log.exception("screen promoter tick crashed")
+        try:
+            engine = _resolve_engine()
+            if engine is not None:
+                memory_batch_tick(engine)
+        except Exception:      # noqa: BLE001 — the batch memory update never kills the loop
+            _log.exception("screen memory batch tick crashed")
         if not ran:
             _wake.wait(POLL_SECONDS)
 

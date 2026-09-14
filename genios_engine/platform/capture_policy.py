@@ -648,6 +648,11 @@ def shred_seat_capture(conn, *, org_id: str, seat_id: str) -> int:
                  {"o": org_id, "s": seat_id})
     conn.execute(text("delete from seat_capture_settings where org_id=:o and seat_id=:s"),
                  {"o": org_id, "s": seat_id})
+    # S4: the seat's queued screen text (encrypted) and the model's thread summaries (0163)
+    conn.execute(text("delete from screen_memory_jobs where org_id=:o and seat_id=:s"),
+                 {"o": org_id, "s": seat_id})
+    conn.execute(text("delete from screen_thread_summaries where org_id=:o and seat_id=:s"),
+                 {"o": org_id, "s": seat_id})
     return n
 
 
