@@ -130,8 +130,10 @@ def test_popup_actions_teach_and_mute_the_thread():
     assert m["evidence"][0]["topic_key"] == "t1" and m["capability_version"] == "2"
     assert [a["id"] for a in SI.moment_content(res, digest="d")["actions"]] == \
         ["useful", "not_useful"]                       # nothing to mute without a thread
-    assert "Monday 2026-09-14 11:30 (Asia/Kolkata)" == SI.local_label(
-        datetime(2026, 9, 14, 6, 0, tzinfo=timezone.utc), "Asia/Kolkata")
+    label = SI.local_label(datetime(2026, 9, 14, 6, 0, tzinfo=timezone.utc), "Asia/Kolkata")
+    assert label.startswith("Monday 2026-09-14 11:30 (Asia/Kolkata)")
+    # The next 14 days are listed so the model copies "Friday" instead of counting to it.
+    assert "Fri 2026-09-18" in label and "Sun 2026-09-27" in label and label.count(", ") == 13
 
 
 # ── real Postgres through the routes ──────────────────────────────────────────────────────────

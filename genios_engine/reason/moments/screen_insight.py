@@ -63,6 +63,9 @@ For work, speak up ONLY if one short note would genuinely help them in the next 
 - deadline: a date or deadline that matters
 - risk: something that could go wrong (a refusal, a complaint, a delay, a lost deal)
 - next_step: an obvious next action they should take
+If someone asks the manager to do, send or decide something, kind is ask even when it has a
+date — the date goes in "due". Use deadline only for a date that matters with no request to the
+manager attached.
 
 Known context about the people / companies involved (may be empty):
 {facts}
@@ -155,10 +158,16 @@ def moment_content(res: dict, *, digest: str, topic_key: str | None = None,
 
 
 def local_label(now: datetime, tz_name: str | None) -> str:
-    """"Monday 2026-09-14 15:04 (Asia/Kolkata)" — the model's clock for resolving dates."""
+    """"Monday 2026-09-14 15:04 (Asia/Kolkata)" plus the next 14 days — the model's clock for
+    resolving dates. The day list is there so "Friday" is copied, never computed: a measured
+    Haiku run turned "Friday" into a Saturday when it had to count the days itself."""
+    from datetime import timedelta
+
     from genios_engine.reason.moments.followups import zone
     tz = tz_name or "UTC"
-    return f"{now.astimezone(zone(tz)):%A %Y-%m-%d %H:%M} ({tz})"
+    local = now.astimezone(zone(tz))
+    days = ", ".join(f"{local + timedelta(days=i):%a %Y-%m-%d}" for i in range(14))
+    return f"{local:%A %Y-%m-%d %H:%M} ({tz}). The next 14 days: {days}"
 
 
 def reserve(engine, *, org_id: str, seat_id: str, cap: int, now: datetime) -> bool:
