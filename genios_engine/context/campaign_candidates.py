@@ -67,6 +67,18 @@ FIELD_CANDIDATE = f"{FACT_PREFIX}.campaign_candidate"
 #: nowhere else sits far below.
 MAX_DOC_FREQUENCY_BP = 2_000
 
+#: THE OTHER EDGE OF THE SAME RULE, WRITTEN DOWN BECAUSE IT IS NOT OBVIOUS. A campaign that is a
+#: LARGE FRACTION of the mailbox is invisible here for exactly the reason boilerplate is: if two
+#: sends in five are the fundraise, "preseed" appears in 40% of the tenant's mail and reads as a
+#: habit. So this finds a raise hiding in ordinary correspondence and misses one that IS the
+#: correspondence.
+#:
+#: That is the right way round for what this feeds. A founder whose mailbox is mostly one campaign
+#: does not need to be told they are running a campaign; the whole failure this addresses is the
+#: one they cannot see, where eighteen rewordings scattered through months of ordinary mail never
+#: look like a group. Raising `MAX_DOC_FREQUENCY_BP` to catch the dominant case would admit the
+#: signature into every candidate and is the wrong trade.
+#:
 #: HOW MUCH MAIL THIS PASS NEEDS BEFORE IT WILL SAY ANYTHING, and the reason is a real limit
 #: rather than a safety margin. Distinctiveness is measured as "rare in this tenant's own sends",
 #: so it can only separate a campaign from a habit when there is mail OUTSIDE the campaign to
@@ -143,7 +155,14 @@ class Candidate:
     #: Distinct sentences, bounded. Two members that wrote the same thing appear once.
     sentences: tuple[str, ...]
     recipients: tuple[str, ...]
+    #: Bounded — see `MAX_SENDS_PER_CANDIDATE`. `sends` is the TRUE count and is not bounded.
     event_ids: tuple[str, ...]
+    #: How many sends are actually in this group. Carried separately because the list above is
+    #: capped and a proposal that understates its own size is worse than one that carries no list:
+    #: `correlation_conversation` records the live failure where a campaign reported fourteen
+    #: recipients for seven real people, "a campaign at twice its true size, which is worse than
+    #: not finding it, because the number is what the card would say". The same in reverse.
+    sends: int
     first_sent: datetime
     last_sent: datetime
 
@@ -153,6 +172,7 @@ class Candidate:
                 "sentences": list(self.sentences),
                 "recipients": list(self.recipients),
                 "event_ids": list(self.event_ids),
+                "sends": self.sends,
                 "first_sent": self.first_sent.isoformat(),
                 "last_sent": self.last_sent.isoformat()}
 
@@ -264,7 +284,11 @@ def find_candidates(rows: Sequence[Mapping], *, window_hours: int = WINDOW_HOURS
                 by_token.setdefault(token, []).append(send)
 
         for token in sorted(by_token):
-            members = by_token[token][:MAX_SENDS_PER_CANDIDATE]
+            # EVERY member, for every decision. An earlier cut sliced to
+            # `MAX_SENDS_PER_CANDIDATE` here, before counting recipients and intersecting tokens
+            # — so a group of twenty was judged on twelve of its members and then reported twelve
+            # recipients. The cap belongs on what TRAVELS, not on what is measured.
+            members = by_token[token]
             if len({send.node_id for send in members}) < min_recipients:
                 continue
             shared = frozenset.intersection(*(send.tokens & distinctive for send in members))
@@ -283,7 +307,8 @@ def find_candidates(rows: Sequence[Mapping], *, window_hours: int = WINDOW_HOURS
                 shared_tokens=tuple(sorted(shared)),
                 sentences=tuple(sentences[:MAX_SENTENCES_PER_CANDIDATE]),
                 recipients=tuple(sorted({send.node_id for send in members})),
-                event_ids=tuple(sorted(key)),
+                event_ids=tuple(sorted(key))[:MAX_SENDS_PER_CANDIDATE],
+                sends=len(members),
                 first_sent=min(send.sent_at for send in members),
                 last_sent=max(send.sent_at for send in members))
 

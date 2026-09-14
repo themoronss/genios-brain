@@ -94,6 +94,23 @@ def _corpus(start=200):
             for i, text in enumerate(_ERRANDS)]
 
 
+def _filler(count, start=900):
+    """Mail that exists only to be COUNTED — frequency mass, not scenery.
+
+    A second attempt at scaling `_corpus` repeated each errand five times with a unique tail, and
+    the detector correctly found twenty-four near-miss groups in it: five near-identical sends to
+    five different people IS the thing this pass looks for. The fixture was wrong, not the rule.
+
+    So every sentence here shares only the signature — which disqualifies itself — and is
+    otherwise built from words unique to it, which are distinctive but can never be shared by
+    three sends. The result adds frequency mass and forms no group of its own.
+    """
+    return [_row(f"n_fill{i}",
+                 f"Regarding matter {i}: zeta{i} kappa{i} lambda{i} omicron{i} noted. {BOILERPLATE}",
+                 minutes=start + i * 3, event=f"e_fill_{i}")
+            for i in range(count)]
+
+
 def _paraphrases():
     """One raise, retyped four times, inside a mailbox of ordinary mail.
 
@@ -247,12 +264,37 @@ def test_the_id_is_order_independent() -> None:
     assert candidate_id_for(["e2", "e1"]) == candidate_id_for(["e1", "e2"])
 
 
-def test_a_truncated_pass_says_so(monkeypatch) -> None:
+def test_a_truncated_pass_says_so() -> None:
     """A cost ceiling, not a sample — and a pass that cut cannot look like a clean one."""
     rows = _paraphrases()
     assert find_candidates(rows)[0] != (), "fixture must produce something to truncate"
     found, cut = find_candidates(rows, limit=0)
     assert (found, cut) == ((), True)
+
+
+def test_a_group_larger_than_the_carry_limit_still_reports_its_true_size() -> None:
+    """THE NUMBER IS WHAT THE CARD WOULD SAY. An earlier cut sliced the members to
+    `MAX_SENDS_PER_CANDIDATE` BEFORE counting recipients and intersecting tokens, so a group of
+    twenty was judged on twelve of them and then reported twelve. `correlation_conversation`
+    records the same failure pointing the other way — a campaign at twice its true size — and
+    calls it worse than not finding the campaign at all.
+
+    The cap belongs on what TRAVELS. `event_ids` is bounded because a payload should not grow
+    without limit; `sends` and `recipients` are measured over everyone.
+    """
+    from genios_engine.context.campaign_candidates import MAX_SENDS_PER_CANDIDATE
+
+    big = [_row(f"n_big{i}",
+                f"Opening our preseed, traction near 3k MRR, note {i}. {BOILERPLATE}",
+                minutes=i * 3, event=f"e_big_{i}")
+           for i in range(MAX_SENDS_PER_CANDIDATE + 8)]
+    # Five times the group in filler, because a campaign that DOMINATES a mailbox is invisible
+    # to a frequency rule — see the note beside `MIN_CORPUS_SENDS`.
+    [candidate], _cut = find_candidates(big + _filler(100))
+
+    assert candidate.sends == MAX_SENDS_PER_CANDIDATE + 8
+    assert len(candidate.recipients) == MAX_SENDS_PER_CANDIDATE + 8
+    assert len(candidate.event_ids) == MAX_SENDS_PER_CANDIDATE
 
 
 @pytest.mark.parametrize("quote", ["", None, "   "])
@@ -282,6 +324,30 @@ def test_a_mailbox_too_small_to_judge_is_declined_rather_than_guessed() -> None:
     assert find_candidates(just_the_raise) == ((), False)
 
 
+def test_the_floor_is_a_rule_and_not_a_rounding_artefact() -> None:
+    """WHERE THE FLOOR ACTUALLY DECIDES. Below about fifteen sends the ceiling arithmetic already
+    yields nothing, so a four-send mailbox proves nothing about `MIN_CORPUS_SENDS`. Between
+    fifteen and nineteen it does not: at sixteen sends the ceiling is three, a three-member group
+    sits exactly on it, and without the floor this pass would start naming candidates off a
+    sample too small to distinguish a pitch from a habit.
+
+    Removing the floor makes THIS test fail, which is what makes it a rule rather than a comment.
+    """
+    from genios_engine.context.campaign_candidates import MIN_CORPUS_SENDS
+
+    raise_ = [_row(f"n_r{i}", f"{text}. {BOILERPLATE}", minutes=i * 20, event=f"e_r{i}")
+              for i, text in enumerate((
+                  "We are raising a preseed round with traction at 3k MRR",
+                  "Quick note on our preseed, traction is now about 3k MRR",
+                  "Sharing that we opened a preseed and MRR traction sits near 3k"))]
+    small = raise_ + _filler(13)
+    assert len(small) == 16 < MIN_CORPUS_SENDS
+    assert find_candidates(small) == ((), False)
+
+    # …and the SAME raise, in a mailbox big enough to judge it against, is found.
+    assert find_candidates(raise_ + _filler(40))[0] != ()
+
+
 def test_the_exact_sentence_rule_still_wins_inside_a_real_mailbox() -> None:
     """The same campaign, copy-pasted, inside the same ordinary mail: `find_campaigns` owns it and
     this pass stays quiet. The two must not both speak about one group."""
@@ -302,3 +368,151 @@ def test_reading_candidates_without_a_tenant_node_is_empty_not_an_error() -> Non
         c.execute(text("create table graph_facts (org_id text, subject_node_id text, field text, "
                        "value text, status text, valid_to text)"))
         assert read_candidates(c, ORG) == ()
+
+
+# =================================================================================================
+# THE SWEEP HALF — the code that had never run
+# =================================================================================================
+#
+# `find_candidates` is pure and everything above tests it without a database. The half that
+# publishes was, until this section existed, NEVER EXECUTED BY ANYTHING: it looks up the tenant
+# node, reads the rows, calls the publisher and closes what it did not republish, and a wrong
+# keyword or a stale import in any of that would have surfaced on a real tenant rather than here.
+# The branch has that failure on record — a constant whose NAME a source-scan test found while the
+# runtime raised `NameError`, caught only once a behavioural test drove the real path.
+#
+# The publisher's own SQL takes `select … for update`, which SQLite has no form of, so the sibling
+# correlators test their publish paths against `pg_store` and skip where there is no Postgres.
+# These run everywhere: a recording stub stands in for the two publisher calls, so every line of
+# this module executes and the recorded keywords are bound against the REAL signatures — which is
+# what makes "it was called correctly" a check rather than a hope.
+
+class _Stub:
+    """A connection that answers the two queries this pass makes and records nothing else."""
+
+    def __init__(self, rows, tenant="n_tenant"):
+        self._rows, self._tenant = rows, tenant
+
+    def execute(self, statement, params=None):
+        # The tenant lookup does not come through here — `tenant_node_id` is patched at its own
+        # module below, because `refresh_campaign_candidates` imports it INSIDE the function and
+        # a patch on the importing module would never be seen.
+        return _Rows(self._rows)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+
+class _Rows:
+    def __init__(self, rows):
+        self._rows = rows
+
+    def mappings(self):
+        return self
+
+    def all(self):
+        return self._rows
+
+
+class _Store:
+    def __init__(self, conn):
+        self.engine = _Engine(conn)
+
+
+class _Engine:
+    def __init__(self, conn):
+        self._conn = conn
+
+    def begin(self):
+        return self._conn
+
+
+@pytest.fixture
+def published(monkeypatch):
+    """Record what the pass hands the publisher, and bind it against the real signature."""
+    import inspect
+
+    from genios_engine.context.analytic import publish as publish_module
+    import genios_engine.context.campaign_candidates as module
+
+    calls = {"publish": [], "close": []}
+    real_publish = inspect.signature(publish_module.publish_derived_fact)
+    real_close = inspect.signature(publish_module.close_derived_facts)
+
+    class _Published:
+        version_id = "fv_cand:1"
+        wrote = True
+
+    def fake_publish(target, **kw):
+        real_publish.bind(target, **kw)          # a wrong keyword fails HERE, loudly
+        calls["publish"].append(kw)
+        return _Published()
+
+    def fake_close(conn, **kw):
+        real_close.bind(conn, **kw)
+        calls["close"].append(kw)
+        return 0
+
+    from genios_engine.context import periodic as periodic_module
+
+    monkeypatch.setattr(publish_module, "publish_derived_fact", fake_publish)
+    monkeypatch.setattr(publish_module, "close_derived_facts", fake_close)
+    # PATCHED WHERE IT LIVES, not where it is used: the pass imports this inside the function, so
+    # the name is resolved at call time from `periodic` and a patch on the caller is never seen.
+    monkeypatch.setattr(periodic_module, "tenant_node_id", lambda conn, org: conn._tenant)
+    assert module.FIELD_CANDIDATE                 # the module under test is imported, not shadowed
+    return calls
+
+
+def _run(rows, published, tenant="n_tenant"):
+    from genios_engine.context.campaign_candidates import refresh_campaign_candidates
+
+    conn = _Stub(rows, tenant=tenant)
+    return refresh_campaign_candidates(_Store(conn), ORG, eval_time=NOW + timedelta(hours=12))
+
+
+def test_the_pass_publishes_what_it_found(published) -> None:
+    """EVERY LINE OF THE SWEEP HALF, executed. The keywords are bound against the publisher's real
+    signature, so a renamed parameter fails here instead of on a tenant."""
+    report = _run(_paraphrases(), published)
+
+    assert report.candidates == 1
+    assert report.written == 1 and report.truncated is False
+    [call] = published["publish"]
+    assert call["field"] == "derived.conversation.campaign_candidate"
+    assert call["subject_node_id"] == "n_tenant"
+    [candidate] = call["value"]["candidates"]
+    assert {"preseed", "traction", "mrr"} <= set(candidate["shared_tokens"])
+    assert candidate["sends"] == len(candidate["event_ids"]) == 4
+
+
+def test_a_tenant_with_no_near_misses_closes_the_row(published) -> None:
+    """A tenant whose candidates were resolved must stop carrying last month's. Closed with
+    `valid_to` rather than deleted, so an as-of read of last week keeps its answer."""
+    report = _run(_corpus(), published)
+
+    assert report.candidates == 0
+    assert published["publish"] == []
+    [close] = published["close"]
+    assert close["keep"] == []
+
+
+def test_a_graph_with_no_tenant_node_is_a_quiet_zero(published) -> None:
+    """`tenant_node_id` returns None before the first sweep mints one. Minting one here would make
+    this pass the reason a tenant node exists — a dependency nobody declared."""
+    report = _run(_paraphrases(), published, tenant=None)
+
+    assert report == type(report)()
+    assert published["publish"] == [] and published["close"] == []
+
+
+def test_the_value_survives_a_json_round_trip(published) -> None:
+    """It is stored as `jsonb` and read back by an angle's gate, so everything in it has to be
+    plain JSON — a `datetime` left in the payload serialises on Postgres and explodes on a driver
+    that hands the dict straight to `json.dumps`."""
+    _run(_paraphrases(), published)
+    [call] = published["publish"]
+    assert json.loads(json.dumps(call["value"])) == call["value"]
