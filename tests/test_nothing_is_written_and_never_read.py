@@ -132,6 +132,15 @@ KNOWN_UNREAD: dict[str, str] = {
         "now reaches a card through `condition_situations.py`; this one is the PARSED half, and "
         "surfacing it needs a situation that can say 'this becomes true when X', which nothing "
         "authors yet. MOVES WHEN: that situation is authored.",
+    "context/angles":
+        "The bounded-question schema — `Angle`, `AngleVerdict` and the registry that refuses a "
+        "bad declaration before it can cost anything. Registered nowhere and evaluated by nothing "
+        "yet: it is the CONTRACT half of the first model sites in this layer, and the two angles "
+        "it was written for (`condition_now_true` over `derived.timeline.condition_review`, and "
+        "the residue triage over `context_residue`) are the units after it. Landed first and "
+        "alone on purpose — a schema reviewed on its own is a schema a reviewer can argue with, "
+        "and one that arrives welded to its first caller is a schema nobody reads. MOVES WHEN: "
+        "`angles/store.py` evaluates a registered angle on the drain.",
     "open_loops.closed_basis":
         "Both closers record whether the closing message ANSWERED the ask (a kind in the "
         "`discharges` table) or merely arrived on the thread, and no reading selects it yet. "
