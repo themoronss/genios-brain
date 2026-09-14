@@ -17,7 +17,7 @@ from genios_engine.context.open_loops import (
     record_ask,
 )
 from genios_engine.contracts.open_loop import is_ask, open_loop_id
-from genios_engine.capture.gate.rules import AUTO_REPLY
+from genios_engine.capture.gate.rules import AUTO_REPLY, addressed_to_a_list
 from genios_engine.capture.internal_knowledge import authority_rank_for
 from genios_engine.capture.structured.apply import _PERSONAL_DOMAINS
 from genios_engine.context.availability import write_availability_window
@@ -190,8 +190,22 @@ _GROUNDING_PENALTY = 0.4      # ungrounded (paraphrased) claim → kept but scor
 # subscription/product_account, anchored by source-id) is NOT gated here.
 _NODE_TYPES = {"person", "company", "deal", "meeting", "commitment", "thread", "document", "agent"}
 _MAX_RECIPIENTS = 25          # cap fan-out from a mass To/Cc so one email can't explode the graph
-_BULK_RECIPIENTS = 10         # P2 — above this many recipients an email is a bulk blast: skip
-                              # per-recipient nodes/edges (not 1:1 relationships). HYP, tune in shadow.
+# `_BULK_RECIPIENTS = 10` stood here and it was a HEADCOUNT standing in for a judgement. Above ten
+# addresses EVERY recipient was discarded — not the eleventh onward, all of them — so an email to
+# eleven people produced no person nodes, no presence receipts, no `corresponded_with` edges, and
+# nothing for the outbound-evidence mirror further down to write against. A fundraise update to
+# twelve investors and a newsletter to twelve thousand were the same thing to it.
+#
+# The question it was trying to answer is answered properly by `gate.rules.addressed_to_a_list`,
+# on what the message SAYS about itself — an unsubscribe link, a list id, a bulk precedence, a
+# machine sender — and never on how many people are on the To line. That predicate lives in the
+# gate beside the N-02/N-04 header table for the reason `availability_marker` gives: L2 re-derives
+# it from the stored payload, and a value re-derived cannot drift from a copy.
+#
+# NOT MIRRORED ONTO `structured._BULK_ATTENDEES`, deliberately. A calendar event carries no mail
+# headers, so there is no positive evidence to read there and the count is the only signal — and
+# that path already keeps the whole attendee list as an `attendees` fact on the meeting node, so
+# it caps the fan-out without losing the data. This one lost the data.
 
 
 def _company_domain(email: str | None) -> str | None:
@@ -1060,11 +1074,12 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             if sender_node:
                 _works_at(sender_email, sender_node)
             # recipients (To + Cc) → person nodes + sender↔recipient correspondence + affiliation.
-            # P2 — skip per-recipient nodes on a mass fan-out (a large To/Cc blast is not a set of
-            # 1:1 relationships); small/direct threads still link everyone. Bulk lists stay in the
-            # L1 ledger, out of the graph.
+            # A genuine mailing list is skipped — its subscribers are not this tenant's
+            # relationships — and everything else keeps its recipients however many there are.
+            # See the `_MAX_RECIPIENTS` block above for the headcount this replaced.
             recips = recipient_emails or []
-            for rcpt in ([] if len(recips) > _BULK_RECIPIENTS else recips[:_MAX_RECIPIENTS]):
+            to_a_list = addressed_to_a_list(canon_meta, sender_email=sender_email)
+            for rcpt in ([] if to_a_list else recips[:_MAX_RECIPIENTS]):
                 rn_email = _norm_email(rcpt) or rcpt.strip().lower()
                 if not rn_email or rn_email == sender_norm:
                     continue

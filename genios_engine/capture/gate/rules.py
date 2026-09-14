@@ -101,6 +101,43 @@ def is_automated_sender(email: str | None) -> bool:
 _automated_sender = is_automated_sender
 
 
+#: Headers that name a MAILING LIST rather than a set of recipients. The same four N-02 reads,
+#: named once so a caller outside this gate cannot answer the question with a shorter list.
+LIST_HEADERS = ("List-Unsubscribe", "List-Id", "List-Post", "Feedback-ID")
+
+
+def addressed_to_a_list(raw: dict | None, *, sender_email: str | None = None) -> bool:
+    """POSITIVE evidence that a message went to a list rather than to people.
+
+    WHO ASKS AND WHY IT IS NOT JUST N-02. This gate DROPS bulk mail, so a message that reaches
+    Layer 2 has already survived N-01/N-02/N-03/N-04 — but not unconditionally: those four are
+    written `if not att`, so an attachment-bearing campaign passes, and the S1 whitelist runs
+    ahead of every drop so a known counterparty's mailshot passes too. Layer 2 therefore still
+    meets the occasional blast and needs the same question answered, on the same evidence.
+
+    SHARED RATHER THAN COPIED, for the reason `availability_marker` above states in its own
+    docstring: L2 re-derives this from the stored payload, and a value re-derived from the
+    payload cannot drift from a copy. A second reader with three of these four header names is
+    exactly the failure `connectors/composio.py:71` records — three of this gate's four bulk
+    rules silently off, with nothing going red.
+
+    POSITIVE ONLY, AND THAT IS THE POINT. Every clause below is a thing the message SAYS about
+    itself: an unsubscribe link, a list id, a bulk precedence, a machine sender. None of them is
+    a count. How many people are on the To line is not evidence of anything — a fundraise update
+    to twelve investors and a newsletter to twelve thousand differ in kind, not in size — and a
+    reader with no headers at all (a calendar event, a CRM record) gets False, which keeps its
+    recipients rather than discarding them on an absence.
+    """
+    hdrs = (raw or {}).get("headers") if isinstance(raw, dict) else None
+    if header(hdrs, "Precedence").strip().lower() in ("bulk", "list", "junk"):
+        return True
+    if any(header(hdrs, name).strip() for name in LIST_HEADERS):
+        return True
+    if header(hdrs, "Auto-Submitted", "no").strip().lower() not in ("no", ""):
+        return True
+    return is_automated_sender(sender_email)
+
+
 def light_junk(labels, sender_email: str, has_attachment: bool) -> str | None:
     """High-confidence deterministic junk from LIST-time fields ONLY (Gmail labels + sender local-
     part) — lets the connector drop obvious junk BEFORE the S2 LLM prime ever runs, so it costs no
