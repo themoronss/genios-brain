@@ -588,3 +588,148 @@ def backfill_business_facts(store, org_id: str, *, limit: int | None = None) -> 
     return {"extractions": len(rows), "claims_read": read, "facts_written": written,
             "by_field": dict(sorted(by_field.items(), key=lambda kv: -kv[1])),
             "dropped": dict(sorted(dropped.items(), key=lambda kv: -kv[1]))}
+
+
+# =================================================================================================
+# CONVERSATIONS NOBODY COULD TELL APART
+# =================================================================================================
+
+#: Threads renamed per pass. Bounded for the reason every sweep in this file is.
+_NAME_BATCH = 500
+
+
+def name_thread_nodes(store, org_id: str | None = None, *, limit: int = _NAME_BATCH) -> int:
+    """Give every conversation a name a reader can recognise, from what the graph already holds.
+
+    WHY A SWEEP AND NOT ONLY THE WRITE PATH. `name_thread_node` runs where `thread.objective` is
+    written, which repairs a conversation the next time anything is extracted from it. The threads
+    that most need a name are the ones nobody has written in for months — a card that says "nobody
+    answered this in 185 hours" is about a conversation that by definition went quiet — so the lazy
+    path reaches precisely the wrong set.
+
+    MEASURED ON THE PILOT, 2026-09-15: 236 threads, 151 named after a hex fragment
+    (`Thread 1a07a6e0ca77`) and the remaining 85 sharing labels — all fifteen of one counterparty's
+    conversations read `Thread with boardy@boardy.ai`. 31 live cards are anchored on a thread, so
+    this is what a third of the deck's headlines say.
+
+    THE COUNTERPARTY IS RESOLVED, NOT GUESSED. It comes from the `corresponded_with` edge the
+    pipeline already writes from a person to the thread they were in, and it uses that person's
+    DISPLAY NAME — which is a human name rather than an address for the first time, because
+    `index_person_names` now registers it. A thread with several correspondents takes the one whose
+    edge is oldest: the conversation is named after who it started with, which is stable, rather
+    than after whoever wrote most recently, which would rename the card every sweep.
+
+    Safe to re-run: `name_thread_node` promotes only over a label this module generated, so a
+    thread named by anything better is left alone and a second pass writes nothing.
+    """
+    scope = "" if org_id is None else " and t.org_id = :org"
+    rows = store.engine.connect().execute(text(
+        "select t.org_id as org_id, t.node_id as node_id, t.canonical_key as canonical_key, "
+        "       t.display_name as display_name, "
+        "       (select f.value from graph_facts f "
+        "         where f.org_id = t.org_id and f.subject_node_id = t.node_id "
+        "           and f.field = 'thread.objective' and f.status = 'active' "
+        "           and f.valid_to is null limit 1) as objective, "
+        # OLDEST EDGE WINS — see the docstring. `min(created_at)` rather than any row, so the
+        # answer does not depend on which correspondent the planner happened to return first.
+        "       (select p.display_name from graph_edges e "
+        "          join graph_nodes p on p.org_id = e.org_id and p.node_id = e.from_node_id "
+        "                            and p.node_type = 'person' and p.valid_to is null "
+        "         where e.org_id = t.org_id and e.to_node_id = t.node_id "
+        "           and e.edge_type = 'corresponded_with' and e.valid_to is null "
+        "         order by e.created_at, p.node_id limit 1) as party "
+        "  from graph_nodes t "
+        " where t.node_type = 'thread' and t.valid_to is null"
+        f"{scope} order by t.node_id limit :limit"),
+        {"limit": int(limit), **({} if org_id is None else {"org": org_id})}).mappings().all()
+
+    renamed = 0
+    with store.engine.begin() as conn:
+        for row in rows:
+            objective = str(row["objective"] or "").strip().strip('"')
+            party = str(row["party"] or "").strip()
+            # An address is not a name. It is still better than a hex fragment, so it is kept as
+            # the counterparty rather than dropped — `index_person_names` will improve it the day
+            # the graph learns what this person is called.
+            if store.name_thread_node(conn, org_id=row["org_id"], node_id=row["node_id"],
+                                      objective=objective or None, counterparty=party or None):
+                renamed += 1
+    return renamed
+
+
+def name_company_nodes(store, org_id: str, *, limit: int | None = None) -> dict:
+    """Give companies the human name L1 already extracted for them.
+
+    THE DEFECT WAS ONE WORD. L1's entity vocabulary calls a company an `organization`; every branch
+    in `pipeline` was written against `company`, and `qes_adapter` copies the type through verbatim
+    because it is "intentionally not a semantic translation". So the company branch — the only
+    caller of `name_company_node`, which is the only thing that gives a company a human name —
+    never fired once. Measured on the pilot 2026-09-15: 337 organization mentions across 147
+    distinct names, **48 of 48 company nodes displaying a hostname**, and 19 cards in the deck
+    opening on "peakxv.com" rather than "PeakXV".
+
+    `_company_type` closes it for events that arrive afterwards. This is the same argument
+    `backfill_business_facts` makes for the nouns: an event already processed is never processed
+    again, so a graph built before the fix keeps hostnames for ever while the code that would
+    name them is correct.
+
+    NOTHING IS INVENTED AND NO NODE IS CREATED. Each surface form is resolved through
+    `resolve_company_mention` — exact key equality against the company's own anchor, refusing where
+    two companies contend — and `name_company_node` promotes only while the display name still
+    restates that anchor. A company already carrying a human name is left alone.
+    """
+    from genios_engine.context.identity import observe_company_name, resolve_company_mention
+
+    read = named = 0
+    dropped: dict[str, int] = {}
+
+    def refuse(reason: str) -> None:
+        dropped[reason] = dropped.get(reason, 0) + 1
+
+    with store.engine.connect() as conn:
+        rows = conn.execute(text(
+            "select event_id, output from l1_extraction_results where org_id = :o "
+            "order by created_at" + (" limit :limit" if limit else "")),
+            {"o": org_id, **({"limit": int(limit)} if limit else {})}).mappings().all()
+
+    # ONE NAME PER NODE, DECIDED BEFORE ANYTHING IS WRITTEN. The same company is named in many
+    # messages and the spellings differ; taking them in order would let the last message seen
+    # decide, and re-running the pass on a different slice would produce a different name. The
+    # LONGEST surface form wins — "Titan Capital" over "Titan" — because it is the one that
+    # survives `company_slug` with the most of the company's actual name intact.
+    best: dict[str, str] = {}
+    with store.engine.connect() as conn:
+        for row in rows:
+            payload = row["output"]
+            payload = json.loads(payload) if isinstance(payload, (str, bytes)) else payload
+            if not isinstance(payload, dict):
+                continue
+            for mention in (payload.get("entity_mentions") or ()):
+                if not isinstance(mention, dict):
+                    continue
+                if str(mention.get("entity_type") or "").strip().lower() not in {
+                        "organization", "organisation", "company"}:
+                    continue
+                surface = " ".join(str(mention.get("surface_form") or "").split())
+                if not surface:
+                    continue
+                read += 1
+                node = resolve_company_mention(conn, org_id=org_id, name=surface)
+                if not node:
+                    # No company anchored under that name. The commonest answer by far, and the
+                    # correct one: a name nothing is anchored under must not mint a company.
+                    refuse("no_company_anchored_under_that_name")
+                    continue
+                if len(surface) > len(best.get(node, "")):
+                    best[node] = surface
+
+    with store.engine.begin() as conn:
+        for node, surface in sorted(best.items()):
+            observe_company_name(conn, org_id=org_id, node_id=node, name=surface)
+            if store.name_company_node(conn, org_id=org_id, node_id=node, name=surface):
+                named += 1
+            else:
+                refuse("already_carries_a_better_name")
+
+    return {"mentions_read": read, "companies_named": named,
+            "dropped": dict(sorted(dropped.items(), key=lambda kv: -kv[1]))}

@@ -20,7 +20,10 @@ def test_seven_campaign_messages_refresh_at_65_evidence_and_50_freshness(provena
         correlation_id="campaign:seven", concerns_node="representative", facts=[("campaign.contacted", 7, "number")],
         missing=[], inputs={}, event_ids=tuple(f"e{i}" for i in range(1, 8)))
     store = SimpleNamespace(engine=SimpleNamespace(begin=lambda: nullcontext(c)),
-        find_or_create_node=lambda *a, **kw: "anchor", write_edge=lambda *a, **kw: None)
+        find_or_create_node=lambda *a, **kw: "anchor", write_edge=lambda *a, **kw: None,
+        # The reading keeps its own anchor's headline current; a double standing in for
+        # GraphStore has to answer for that too.
+        rename_reading_anchor=lambda *a, **kw: False)
     captured = []
     monkeypatch.setattr(outreach, "_gather", lambda *a, **kw: ({}, {}, {}))
     monkeypatch.setattr(outreach, "READINGS", (("campaign", lambda *a: [finding]),))

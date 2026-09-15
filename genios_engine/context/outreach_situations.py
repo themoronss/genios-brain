@@ -1721,6 +1721,27 @@ def refresh_state_situations(store, org_id: str, *, now: datetime | None = None,
                     c, org_id=org_id, node_type=anchor_node_type(anchor),
                     canonical_key=finding.canonical_key,
                     display_name=finding.display_name, event_id=None)
+                # AND KEEP THAT LABEL CURRENT. `find_or_create_node` sets `display_name` when it
+                # CREATES a node and never touches it again — correct for a person or a company,
+                # whose name is a fact about them that a later sighting must not overwrite. It is
+                # wrong here: this node IS the reading's own output, minted under the reading's own
+                # canonical key, and its label is a sentence the reading composes fresh every
+                # sweep. So a headline written by an older version of the reading was frozen for
+                # ever, and nothing could repair it.
+                #
+                # MEASURED ON THE PILOT: six commitment anchors reading "makeportals.com — promise
+                # past due — promise past due", carrying a suffix twice from a build that composed
+                # it differently, on nodes still typed `commitment` from before migration 0166 gave
+                # reading anchors their own node type. `find_or_create_node` matches on the
+                # canonical key alone, so those nodes are still the anchors today, still wearing a
+                # sentence no current code path produces.
+                #
+                # SAFE BECAUSE THE KEY PROVES OWNERSHIP. Only a node found under the finding's own
+                # `canonical_key` is renamed — a namespace this reading mints and nothing else
+                # writes to — so no person, company or thread name can be reached from here.
+                store.rename_reading_anchor(c, org_id=org_id, node_id=node_id,
+                                            canonical_key=finding.canonical_key,
+                                            display_name=finding.display_name)
                 for field_name, value, value_type in finding.facts:
                     _write_fact(c, org_id=org_id, node_id=node_id, field_name=field_name,
                                 value=value, value_type=value_type, now=now,

@@ -883,6 +883,19 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
         except Exception:                                    # noqa: BLE001 — never kill the beat
             _log.exception("person name index failed")
             name_index = {"error": True}
+    # THREAD NAMES: the third lane of the same defect the two passes above fix. A conversation is
+    # created called "Thread 1a07a6e0ca77" and never revisited, and the threads that most need a
+    # readable name are the ones nobody has written in for months — which is exactly the set a
+    # write-path fix cannot reach. 236 threads on the pilot, 151 of them named after a hex
+    # fragment, and 31 live cards anchored on one.
+    thread_names = None
+    if _graph is not None:
+        try:
+            from genios_engine.context.backfill import name_thread_nodes
+            thread_names = name_thread_nodes(_graph)
+        except Exception:                                    # noqa: BLE001 — never kill the beat
+            _log.exception("thread naming failed")
+            thread_names = {"error": True}
     # L1 PARKED DRAIN: a park is "look at this again", so something has to look. Riding the
     # existing heartbeat on purpose — a new Celery periodic task would spend the quota-limited
     # Upstash broker on a pass that is cheap and idempotent here.
@@ -1081,6 +1094,7 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
             # it was written.
             "alias_prune": alias_prune,
             "name_index": name_index,
+            "thread_names": thread_names,
             "parked_drain": parked_drain,
             "attachment_refetch": attachment_refetch,
             "recapture_drain": recapture_drain,

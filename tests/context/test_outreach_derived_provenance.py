@@ -40,7 +40,10 @@ def test_the_outreach_refresh_actually_writes_the_campaign_receipts(provenance_d
     def begin():
         yield provenance_db
     store = SimpleNamespace(engine=SimpleNamespace(begin=begin),
-        find_or_create_node=lambda *a, **k: "anchor", write_edge=lambda *a, **k: None)
+        find_or_create_node=lambda *a, **k: "anchor", write_edge=lambda *a, **k: None,
+        # The reading keeps its own anchor's headline current; a double standing in for
+        # GraphStore has to answer for that too.
+        rename_reading_anchor=lambda *a, **k: False)
     monkeypatch.setattr(outreach, "_gather", lambda *a, **k: ({}, {}, {}))
     monkeypatch.setattr(outreach, "READINGS", (("campaign", lambda *a: [finding]),))
     monkeypatch.setattr(outreach, "domains_declaring", lambda _: ("admin",))

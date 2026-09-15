@@ -442,6 +442,27 @@ def _merge_domain_hints(l1_hints: list | None, model_domains: list | None) -> li
     return out
 
 
+#: WHAT L1 CALLS A COMPANY. The extractor's closed entity vocabulary says `organization`; every
+#: branch here was written against `company`, and the two never met. Measured on the pilot: 337
+#: organization mentions across 147 distinct names, and the `etype == "company"` branch — the only
+#: caller of `name_company_node`, which is the only thing that gives a company a human name — did
+#: not fire once. That is why ALL 48 company nodes display a hostname, and why 19 of the deck's
+#: cards open on "peakxv.com" instead of "PeakXV".
+#:
+#: NORMALISED HERE RATHER THAN IN THE ADAPTER, which states in its own docstring that it is
+#: "intentionally not a semantic translation" — it copies L1's typed claims through verbatim, and
+#: a rename inside it would hide which word L1 actually used from every other reader.
+#:
+#: SAFE BECAUSE THE BRANCH MINTS NOTHING. The company path resolves an EXISTING node by exact key
+#: equality and refuses otherwise, so widening what reaches it can attach a name to a company we
+#: already hold and can never invent one. The anchor rule is untouched.
+_COMPANY_TYPES = frozenset({"company", "organization", "organisation"})
+
+
+def _company_type(etype: str) -> str:
+    return "company" if etype in _COMPANY_TYPES else etype
+
+
 def _thread_node(store, conn, *, org_id: str, thread_id: str | None, event_id: str,
                  counterparty: str | None) -> str | None:
     """The conversation itself, as a node — so its state stops colliding with every other one.
@@ -1271,7 +1292,7 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         # them attaches to an anchored node (fallback is already sender). Kills the orphan
         # SAP/OpenClaw/Product/System nodes without losing a single extracted fact.
         for e in ents:
-            etype = str(e.get("type") or "person").strip().lower()
+            etype = _company_type(str(e.get("type") or "person").strip().lower())
             email = _norm_email(e.get("email"))
             name = e.get("name")
             if transcript_mode and name and _norm(str(name)) in speaker_keys:
@@ -1455,6 +1476,14 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                                         event_id=event_id, counterparty=None)
                     if subj:
                         touched[subj] = "thread"
+                        # AND NAME IT, now that we know what it is for. This is the one moment the
+                        # objective and the conversation are both in hand; before this line a
+                        # thread was called after a hex fragment for the rest of its life, and 31
+                        # live cards on the pilot are anchored on one.
+                        if isinstance(claim.value, str):
+                            store.name_thread_node(conn, org_id=org_id, node_id=subj,
+                                                   objective=claim.value,
+                                                   counterparty=sender_name or sender_email)
                 else:
                     subj = _business_subject(conn, org_id=org_id, name=claim.subject, field=claim.field)
                 if not subj:
