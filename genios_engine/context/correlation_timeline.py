@@ -1033,6 +1033,18 @@ def refresh_dormant_conditions(store, org_id: str, *, eval_time: datetime,
     rows, exhausted = _fact_rows(correlation)
     with store.engine.begin() as conn:
         written, unchanged, closed = _write_facts(conn, org_id=org_id, rows=rows, now=at)
+        # READ vs EMITTED, in the same transaction as the rows it counts. This pass reports five
+        # counts and none of them is the one that matters: how many CLAIM RECORDS it was given
+        # against how many conditions it could build from them. On the pilot that is 305
+        # commitments extracted by L1 and 2 published facts, which no surface in the engine said.
+        #
+        # `store_condition` REFUSES BEFORE A REASON EXISTS, which is why `dropped` is empty here
+        # rather than fabricated: a commitment with no resolvable subject, or none the vocabulary
+        # reads as conditional, is simply not a condition — it is not a condition that failed.
+        # The subtraction is honest on its own and `unaccounted` carries it.
+        from genios_engine.context.conversion import record_conversion
+        record_conversion(conn, org_id, correlator="timeline", read=len(records),
+                          emitted=len(conditions), eval_time=at)
     return TimelineSweep(conditions=len(conditions), satisfied=len(correlation.satisfied),
                          waiting=len(correlation.waiting), unknown=len(correlation.unknown),
                          review=len(correlation.review), facts_written=written,

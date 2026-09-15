@@ -1354,6 +1354,15 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
     # the distinctive words its members have in common, so the question can be adjudicated once by
     # a model instead of guessed at by a threshold nobody can debug. Deterministic, bounded, no
     # clock of its own, and before the angles pass because that is the queue an angle reads.
+    conversion: dict = {}
+    try:
+        from genios_engine.context.conversion import read_conversion
+        with store.engine.connect() as _c:
+            conversion = read_conversion(_c, org_id)
+    except Exception:      # noqa: BLE001 — a measurement must never break ingestion
+        from genios_engine.platform.logging import get_logger
+        get_logger("genios.l2").exception("conversion census unreadable for org=%s", org_id)
+
     candidates: dict = {}
     try:
         from genios_engine.context.campaign_candidates import refresh_campaign_candidates
@@ -1460,6 +1469,11 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
             # this layer explained everything it holds; a zero because the pass failed is
             # why it carries its own key rather than being folded into a total.
             "residue": residue,
+            # WHAT THE CORRELATORS CONVERTED. Reported here because the number that mattered —
+            # claims in against facts out — existed in two separate fields of two separate sweep
+            # objects and was never put beside itself. `conversion.read_conversion` reads the
+            # census the correlators now publish.
+            "conversion": conversion,
             "campaign_candidates": candidates,
             # What the model layer cost this tenant, including everything it declined to
             # do. `no_asker` and `budget_exhausted` are reported for the reason the

@@ -1027,6 +1027,16 @@ def refresh_dependency_chains(store, org_id: str, *, eval_time: datetime,
     rows, exhausted = _fact_rows(correlation)
     with store.engine.begin() as conn:
         written, unchanged, closed = _write_facts(conn, org_id=org_id, rows=rows, now=at)
+        # WHAT THIS SWEEP WAS GIVEN AND WHAT IT PRODUCED, published rather than returned and
+        # forgotten. `dropped_by_reason` is computed on every sweep and was handed to
+        # `runner.process_pending`, which reads `facts_written` from the same object and discards
+        # the rest — so "95 claims in, 0 edges out" was true for months with nothing able to say
+        # it. Written in the SAME transaction as the facts: a census that can disagree with the
+        # rows it counts is worse than none.
+        from genios_engine.context.conversion import record_conversion
+        record_conversion(conn, org_id, correlator="dependency", read=len(claims),
+                          emitted=len(correlation.edges), eval_time=at,
+                          dropped=correlation.material.dropped_by_reason)
 
     return DependencySweep(
         claims_read=len(claims), edges=len(correlation.edges),
