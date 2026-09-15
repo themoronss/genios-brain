@@ -85,6 +85,35 @@ signals_of_decay:
   - pass_received
   - going_dark
 
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    Headline: whose condition it was, and that it is now met. Name the person — the whole value of
+    this card is that somebody said "once X, then Y" months ago and X has quietly happened.
+
+    Situation: quote their condition back first, then say what satisfied it. Both halves are on the
+    record — `correlation_timeline` refuses to write this fact without BOTH evidence spans — so the
+    card can show the sentence from months ago and the thing that made it true, and a reader can
+    check each. `condition.waited_days` is how long the condition sat before the world met it;
+    `condition.days_since_satisfied` is how long it has been true with nobody acting. The second is
+    the urgent number.
+
+    Never say we have told them, and never imply the next move has been made. Nothing in this
+    system observes that anybody went back about a condition coming true, which is why
+    `condition.counterparty_informed` is declared missing — the one thing a reader most wants to
+    know is not on the record, and guessing it is how a card tells somebody a job is already done.
+
+    Never present a stale satisfaction as fresh: where `condition.stale` is true, say the
+    satisfying evidence is old rather than dropping the card.
+
+    Artifact: the message that goes back to them now, saying the thing they were waiting for has
+    happened — not a status note about it.
+  fallback:
+    headline: "{entity} — the condition they set is now met"
+    situation: >-
+      {entity} said it depended on something, and that has since happened. Nothing has gone back
+      to them about it.
+
 metadata:
   owner: Admin
   created_by: ai
@@ -94,9 +123,18 @@ metadata:
   confidence: experimental
   reviewed_at: '2026-09-07'
   notes: >
-    No `render` block, deliberately. A situation that routes nothing has no card to write, and
-    authoring the copy now would mean reviewing words against a signal whose shape is not yet
-    fixed — the review would be of a guess.
+    THE `render` BLOCK WAS ADDED WHEN ITS OWN PRECONDITION EXPIRED. This file shipped without one
+    and said why: "a situation that routes nothing has no card to write, and authoring the copy now
+    would mean reviewing words against a signal whose shape is not yet fixed — the review would be
+    of a guess". Both halves of that have since changed. `domain_spec` binds the `condition_met`
+    anchor to this type, so it routes; and `condition_situations.read_conditions_satisfied` fixes
+    the signal's shape — every slot below is a fact it actually emits.
+
+    Leaving it empty had become the more dangerous state. `card_builder` takes
+    `capability_render` from this block and falls through to the tenant pack when it is absent;
+    no pack authors `condition_satisfied`, so the lookup returned {} — an empty headline — and
+    `CardStore` refuses a card with no headline. The highest-priority situation in this corpus
+    was routing and could not reach a reader.
 
     `condition_satisfied` is not yet listed in `_schema/vocabulary.yaml`
     `planned_substrate.l2_situation_types`, so validate.py warns about it. The warning is correct
@@ -109,4 +147,4 @@ metadata:
     it too.
 
 admission:
-  accepted_content_hash: 877402fa98ad316126b404f7348cf3c24098fb97cc0acc653670111e89b821ca
+  accepted_content_hash: 8a818a5ec532d07cb505352f816a3295760062e32335119ef336ef6fb8c69b88

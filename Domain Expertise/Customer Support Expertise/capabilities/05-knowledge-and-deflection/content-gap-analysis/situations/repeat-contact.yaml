@@ -184,6 +184,24 @@ signals_of_decay:
   - ticket_reopened
   - angry_language
 
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    Headline: that the same person is back about the same thing.
+
+    Situation: the previous contact was answered and closed — by the system's own account, handled
+    correctly — and they have returned with what is, in substance, the same question. That is a
+    signal about the ANSWER, not about the person.
+
+    Never call it a reopened ticket and never suggest they did not read the reply. The useful
+    reading is that the first answer did not land.
+
+    Artifact: a reply that addresses what the first one missed rather than repeating it.
+  fallback:
+    headline: "{entity} — back about the same thing"
+    situation: >-
+      {entity} has returned with substantially the question we already answered and closed.
+
 metadata:
   owner: Customer Support
   created_by: ai

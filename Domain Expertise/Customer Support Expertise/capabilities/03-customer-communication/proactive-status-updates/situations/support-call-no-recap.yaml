@@ -106,6 +106,24 @@ signals_of_decay:
   - escalation_requested
   - angry_language
 
+render:
+  artifact_kind: draft_recap
+  render_hint: >
+    Headline: that the call happened and nothing was written afterwards.
+
+    Situation: the gap is custody, not courtesy — what was reproduced, what was ruled out, what we
+    said we would do next and by when all currently exist only in somebody's memory. Say that; it
+    is the reason this is worth a card at all.
+
+    Never state what was agreed on the call. Nothing in the record knows, and inventing it is
+    exactly the failure a missing recap creates.
+
+    Artifact: a recap that captures the outcome and one clear next step.
+  fallback:
+    headline: "{entity} — a call happened and nothing was written down"
+    situation: >-
+      A call with {entity} completed and no recap followed, so what was agreed is on no record.
+
 metadata:
   owner: Customer Support
   created_by: ai

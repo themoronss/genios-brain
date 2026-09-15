@@ -102,6 +102,25 @@ signals_of_decay:
   - escalation_requested
   - cancellation_threat
 
+render:
+  artifact_kind: draft_delivery
+  render_hint: >
+    Headline: the specific thing that was promised and that its time has passed — the callback
+    before end of day, the Friday update, the bug that was going to be filed.
+
+    Situation: what was promised, to whom, and that nothing has been sent. Quote the commitment
+    rather than paraphrasing it: the value here is that somebody on our side named a thing and a
+    time, and both are on the record.
+
+    Never say the customer has complained or chased unless that is in evidence separately. An
+    unmet promise is a fact about us, not about them.
+
+    Artifact: the thing itself, or a short note giving a new time and the reason.
+  fallback:
+    headline: "{entity} — a promise to them has come due"
+    situation: >-
+      Something specific was promised to {entity} by a stated time, and nothing has gone back.
+
 metadata:
   owner: Customer Support
   created_by: ai
