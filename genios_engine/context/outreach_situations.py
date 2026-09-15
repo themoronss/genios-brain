@@ -223,6 +223,7 @@ _WAITING_ROWS = (
     "where f.org_id = :o and f.valid_to is null and f.status = 'active' "
     "and f.field in ('thread.days_waiting', 'thread.follow_up_count', 'thread.last_heard_days', "
     "                'thread.response_expected', 'party.reply_cadence_days', "
+    "                'party.reply_cadence_basis', "
     "                'relationship.nature', 'party.role', 'thread.ball_in_court', "
     "                'thread.objective', "
     "                'commitment.due_at', 'commitment.action', 'commitment.status', "
@@ -611,6 +612,14 @@ def read_awaiting_response(rows: dict, now: datetime, employers: dict) -> list[_
             value = _num(held.get(source))
             if value is not None:
                 facts.append((target, int(value), kind))
+        # WHOSE NORMAL IT IS, carried beside the number. "They usually reply in two days" and
+        # "people at this firm usually do" are different claims, and a card holding only the
+        # number will make the first on the evidence of the second. `waiting.cadence_for` widens
+        # the measurement person -> firm -> tenant precisely so there IS a number here; this is
+        # what stops the widening from becoming a quiet overclaim.
+        basis = held.get("party.reply_cadence_basis")
+        if basis:
+            facts.append(("outreach.their_normal_reply_basis", str(basis), "enum"))
         expected = held.get("thread.response_expected")
         if expected is not None:
             facts.append(("outreach.response_expected", bool(expected), "bool"))
