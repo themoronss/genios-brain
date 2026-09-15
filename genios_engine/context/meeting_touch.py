@@ -102,9 +102,23 @@ _MEETINGS = (
     # the alphabetically-last name among the people who were there — so four unrelated meetings,
     # including one titled "Intro: Hirdesh & Rohit", all reported the same counterparty. A single
     # name is a claim about who the meeting was with; picking it by sort order is a wrong one.
-    "join graph_facts xf "
-    "  on xf.org_id = n.org_id and xf.subject_node_id = att.node_id "
-    "  and xf.field = 'meeting.external_counterparty' and xf.status = 'active' "
+    #
+    # THE `meeting.external_counterparty` JOIN IS GONE, AND THE FACT IT WAITED ON NEVER EXISTED.
+    # This query required that fact on the attendee's node. Measured across EVERY org in the
+    # database, at every version, live and closed: **zero rows have ever carried that field**. Its
+    # only producer is `meeting_lifecycle.reduce_meeting`, whose sole caller is `reason/runner` —
+    # Layer 4, which computes the boolean in memory for its own reasoning and never persists it.
+    # So the join could not match, `read_meetings_for_dispatch` received nothing, and
+    # `meeting_follow_through` produced zero cards for every customer since the day it shipped.
+    # The module docstring's "48 of them carrying `meeting.external_counterparty`" describes a
+    # state no table in this database has ever been in.
+    #
+    # NOTHING IS LOOSENED BY REMOVING IT, because the predicate below already answers the same
+    # question from data that does exist: an attendee is external when they are NOT one of our
+    # seats, the account owner, or a connected mailbox — the identical rule
+    # `reduce_meeting` applies, evaluated here against the `attended` edges the calendar
+    # connector really writes. The fact was a second, weaker statement of a test this query was
+    # already performing, and it was the only half that could fail.
     "where n.org_id = :o and n.node_type = 'meeting' and n.valid_to is null "
     # US IS NOT A COUNTERPARTY. `meeting.external_counterparty` is written on the owner's own
     # person node too, so every meeting listed the founder as someone it reached — and one

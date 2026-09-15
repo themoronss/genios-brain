@@ -50,9 +50,24 @@ def test_the_meeting_anchor_is_not_in_anchor_priority():
 
 
 def test_only_meetings_with_an_outside_party_are_touches():
-    """An internal standup is the org talking to itself, and the type is about reaching outward."""
-    assert "external_counterparty" in mt._MEETINGS
-    assert "is not null" in mt._MEETINGS, "internal meetings are not filtered out"
+    """An internal standup is the org talking to itself, and the type is about reaching outward.
+
+    CHECKED AS THE PROPERTY, NOT AS THE MECHANISM IT USED TO USE. This asserted that the query
+    joined `meeting.external_counterparty` — and measured across every org in the database, at
+    every version, live and closed, **zero rows have ever carried that field**: its only producer
+    is `meeting_lifecycle.reduce_meeting`, whose sole caller is Layer 4, which never persists it.
+    So the assertion passed while the lane it guarded returned nothing for every customer since
+    it shipped, which is the exact failure mode of testing for a mechanism instead of an outcome.
+
+    The outcome is enforced by the two clauses below, from data that exists: an attendee is
+    external when they are not one of our seats, not the account owner and not a connected
+    mailbox, and a meeting left with nobody external falls out of the `having`.
+    """
+    assert "org_seats" in mt._MEETINGS, "our own seats are not excluded from the attendees"
+    assert "connections" in mt._MEETINGS, "the connected mailbox is not excluded"
+    assert "having count(distinct att.node_id) > 0" in mt._MEETINGS, (
+        "a meeting with nobody external is not filtered out")
+    assert "e.valid_to is null" in mt._MEETINGS, "a retired attendance still counts"
 
 
 def test_coverage_is_capped_because_a_calendar_knows_scheduling_not_outcome():
