@@ -1511,8 +1511,16 @@ def _gather(store, org_id: str, *, now: datetime | None = None,
         unreported = _optional(
             c, "unexplained attention", lambda: gather_unreported_attention(c, org_id), ())
         held["_unreported"] = unreported
-        held["_node_names"] = _optional(
-            c, "node names", lambda: gather_display_names(c, org_id), {}) if unreported else {}
+        # ONE SHARED MAP, FILLED ONCE AND NEVER CLOBBERED. Three readings want display names and
+        # each used to assign this key outright — so a reading with nothing to show wrote `{}`
+        # over names another reading had already fetched, and its cards printed "this thread"
+        # instead of the counterparty. Set only when it is still empty and there is something to
+        # name; `setdefault` semantics rather than assignment, because the last writer here was
+        # deciding for everybody.
+        if unreported and not held.get("_node_names"):
+            held["_node_names"] = _optional(
+                c, "node names", lambda: gather_display_names(c, org_id), {})
+        held.setdefault("_node_names", {})
         held["_unreported_facts"] = {str(row["subject_ref"]): held.get(str(row["subject_ref"])) or {}
                                      for row in unreported}
         # M-3's ANSWERS. The near-misses a model called one message — empty with no angle layer,
@@ -1527,6 +1535,7 @@ def _gather(store, org_id: str, *, now: datetime | None = None,
         held["_adjudicated"] = adjudicated
         if adjudicated and not held.get("_node_names"):
             held["_node_names"] = _optional(c, "node names", lambda: _names_of(c, org_id), {})
+        held.setdefault("_node_names", {})
         held["_mailbox_owner"] = _optional(
             c, "mailbox owner", lambda: _mailbox_owner(c, org_id), None)
         # THE MEETINGS, through the query that already knows how to find them. `meeting_touch.
