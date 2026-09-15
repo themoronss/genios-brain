@@ -1,0 +1,121 @@
+# L2.4 measures every node against its own history and its cohort and publishes the verdict as
+# `derived.trend.*`, `derived.anomaly.*` and `derived.cohort_position.*`. On the pilot that is 566
+# live facts, and the ONLY thing that ever read one was BLG-18's importance modifiers — they can
+# make another card rank higher and can never be a card themselves. So "this relationship has been
+# going quiet" was computed every sweep and shown to nobody.
+#
+# `context/analytic_situations.read_analytic_movements` produces it. The detector already decided;
+# the reading admits what it called a movement and adds no opinion of its own.
+
+identity:
+  id: admin.sit.analytic_movement
+  name: A Measured Change In A Relationship
+  domain: admin
+  owner_capability: admin.executive_support.commitment_tracking
+  version: 1.0.0
+  status: stable
+
+description: >
+  A number about this counterparty has moved against its own history, and the movement was
+  measured rather than noticed. How often they write; how long since anything was exchanged; how
+  they sit against comparable accounts. The engine holds a reading per period and the change is
+  the difference between them, not an impression formed from the last email.
+
+  The evidence is arithmetic and its receipt travels with it: how many periods were read, how much
+  of the window could be read at all, and which connectors were silent while it was computed. That
+  last part is not a footnote. A relationship that looks quiet because a calendar stopped
+  reporting is our blind spot wearing the costume of their behaviour, and on the pilot every
+  single trend was computed across a window where a third of the periods were unreadable.
+
+  It must never say WHY the number moved. The stratum that produced it reads shape and never
+  reads a sentence — it knows the count fell and has no access to the reason anybody would give
+  for it. The cause is carried as a declared gap, and a card that supplies one has invented the
+  only part of this that matters.
+
+matches:
+  l2_situation_types:
+    - analytic_movement
+  scope: person
+  when:
+    # The metric and the detector's own verdict about it. Without both, there is no movement to
+    # report — only a reading.
+    - exists: analytic.metric
+    - exists: analytic.kind
+
+also_serves:
+  - admin.executive_support.inbox_and_correspondence
+
+objects:
+  load:
+    - admin.obj.core.request
+  optional:
+    - admin.obj.core.commitment
+  never_load:
+    - admin.obj.core.invoice
+    - admin.obj.core.employee_record
+    - admin.obj.core.asset
+
+priority_bp: 4500
+typical_duration_days: 28
+
+signals_of_progress:
+  - followup_sent
+  - meeting_scheduled
+  - next_step_agreed
+
+signals_of_decay:
+  - going_dark
+
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    Headline: what moved, which way, and about whom — in plain words. "Writing less often than
+    they used to", not "inbound_count_28d declining". The metric name is the engine's spelling of
+    the question, never the reader's.
+
+    Situation: how the change was measured. How many periods, over what window, and how much of
+    that window could actually be read. If a source was silent for part of it, say so in the same
+    breath as the finding — the reader needs both to judge it, and giving the number first and the
+    caveat later is how a coverage gap gets read as a decision.
+
+    State the size of the movement as the engine measured it and never round it up into a word
+    like "sharply" or "collapsing". A trend over one period of streak is one period of streak.
+
+    Never say why. No theory about what they are thinking, no link to a deal, a thread or a
+    decision, and no suggestion that the movement means anything in particular. The measurement
+    is that a number changed against its own baseline; everything past that is the reader's to
+    supply, and they have context this engine does not.
+
+    Artifact: a message that opens the conversation the number cannot — asking how things are
+    going, not asserting that something is wrong.
+  fallback:
+    headline: "{entity} — a measured change against their own baseline"
+    situation: >-
+      A number this system tracks about {entity} has moved against its own history. The reason is
+      not recorded.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: rohit
+  last_updated: '2026-09-15'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-09-15'
+  notes: >
+    Authored because 566 analytic facts on the pilot reached a reader only as importance
+    modifiers, so the whole of L2.4 could adjust an order and never state a finding. Deliberately
+    admits only what the detector called a movement: a trend with a DIRECTION (its FLAT and its
+    two insufficiency verdicts are a measurement and two refusals, not situations), a flagged
+    anomaly, a cohort position that was not refused. No threshold is declared in the reading or
+    here — a second opinion about how steep a slope must be would be a rule tuned on whoever we
+    looked at last.
+
+    The coverage caveat is mandatory rather than optional in the render hint, for a measured
+    reason: on the pilot EVERY trend carried `coverage_ratio_bp` of 6666 with `gcal` silent and
+    four unreadable periods. A card asserting a decline from that window without saying so is
+    reporting our own missing connector as the customer's behaviour, which doc 04 names as the
+    worst output this group can produce.
+
+admission:
+  accepted_content_hash: 080575c76a9bdfbd9b22850a8d297d3f91683c1f4933b7ebd099c6eeeabfbbcf

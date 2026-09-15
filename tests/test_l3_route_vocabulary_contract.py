@@ -260,6 +260,20 @@ def test_producible_vocabulary_is_small_and_closed():
         # neither resolved, anchored on the party whose thread carried the sentence. No chain, no
         # edge, no minted node — `chains`, `circular_wait` and `blocked_count` never see it.
         "dependency_stated",
+        # THE ANALYTIC STRATUM, GIVEN A SUBJECT — and the re-check this tripwire exists to force
+        # was done: `_tools/validate.py` is green with the type declared in `_schema/vocabulary`,
+        # `admin.sit.analytic_movement` is bound and content-hashed, and `index.py` regenerated
+        # the map. L2.4 has published a verdict per node per metric since it was built — 566 live
+        # facts on the pilot — and the only reader any of them ever had was BLG-18's importance
+        # modifiers, which can raise another card's rank and can never be a card. So "this
+        # relationship has been going quiet" was computed every sweep and stated to nobody.
+        #
+        # ADMITS ONLY WHAT THE DETECTOR CALLED A MOVEMENT: a trend with a DIRECTION, a flagged
+        # anomaly, a cohort position that was not refused. Its FLAT verdict and its two
+        # insufficiency verdicts are a measurement and two refusals, and none of the three is a
+        # thing that happened. No threshold is declared in the reading — a second opinion about
+        # how steep a slope must be would be a number tuned on one tenant.
+        "analytic_movement",
     }, "the L2 situation vocabulary changed — re-check every corpus route against it"
 
 

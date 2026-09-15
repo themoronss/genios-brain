@@ -471,6 +471,15 @@ register(DomainSpec(
                      # waits on another. Anchored on that counterparty, with both ends quoted and
                      # neither resolved. Admin, like the rest of the follow-through lane.
                      "stated_dependency": "dependency_stated",
+                     # THE ANALYTIC STRATUM, GIVEN A SUBJECT. L2.4 publishes a verdict per node
+                     # per metric — 566 of them on the pilot — and until this line the only thing
+                     # that ever read one was BLG-18's importance modifiers: able to make another
+                     # card rank higher, never able to be one. The reading admits exactly what
+                     # the detector called a movement (a trend with a DIRECTION, a flagged
+                     # anomaly, a cohort position that was not refused) and adds no second
+                     # opinion of its own. Admin, because "this relationship is going quiet" is
+                     # follow-through work whoever the counterparty is.
+                     "analytic_movement": "analytic_movement",
                      # THE SECOND GROUP-SHAPED SUBJECT, and it is not the first one re-keyed.
                      # `cohort` groups by OBJECTIVE — "of everyone I contacted about the raise,
                      # who has gone quiet?" — which spans funds on purpose. This groups by FIRM.

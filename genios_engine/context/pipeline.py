@@ -304,21 +304,58 @@ _OBS_CANON = {
 
 
 def objective_of(extraction) -> str | None:
-    """The exchange's objective, or None when the model could not place it.
+    """The exchange's objective, or None when nothing in the extraction states one.
 
-    `unknown` returns None on purpose. `relationship.nature` already distinguishes an investor
-    from a vendor; this distinguishes an investor we are RAISING FROM (`fundraising`) from one we
-    merely OWE A REPORT (`investor_update`) — same person, same nature, opposite follow-ups. A
-    label that carries neither of those readings is not worth storing, and storing it would empty
-    `outreach.objective` out of the situation's `missing` list while telling a card nothing.
+    WHY WE WROTE. The field that separates a follow-up from a reminder: `relationship.nature`
+    already distinguishes an investor from a vendor, and this distinguishes an investor we are
+    RAISING FROM from one we merely OWE A REPORT — same person, same nature, opposite follow-ups.
+    Every `awaiting_response` situation declared it missing on every row.
+
+    TWO PLACES, BECAUSE THE VALUE ARRIVES IN TWO SHAPES AND ONLY ONE OF THEM IS EVER FILLED.
+    `Extraction.objective` is a declared field holding a `type` from the closed set
+    `_OUTREACH_OBJECTIVES`, and it is what this function read. Measured on the pilot: the write
+    beside this one put `thread.last_outbound` on 45 nodes and this put `thread.objective` on
+    ZERO, because nothing on the QES path populates that dict — the extractor is asked for the
+    objective as a BUSINESS FACT (the prompt says so in as many words: "for thread.objective use
+    subject 'thread'"), and it supplied one 316 times, into `fact_candidates`.
+
+    SO THE DECLARED FIELD IS STILL TRIED FIRST and still screened against the enum, because a
+    caller that fills it is making a categorical claim and that is the stronger one. The
+    fallback reads the business fact, which is FREE TEXT — "Pitch GeniOS to Afore Capital and
+    establish founder credibility", not `fundraising` — and is therefore NOT screened against the
+    enum, because screening a sentence against a closed set of categories discards every real
+    answer. A sentence the model wrote and can point at in the source is worth more to a card
+    than a category it was never asked for.
+
+    THE RECEIPT STILL DECIDES, on both paths. The fallback returns a claim only where a span
+    survived grading against the message's own text — the same seam `_business_claim` enforces.
+    An objective nobody can point at in the source is exactly the invented label the enum screen
+    was there to keep out, and that part of the rule is unchanged.
     """
     block = getattr(extraction, "objective", None)
-    if not isinstance(block, dict):
-        return None
-    value = str(block.get("type") or "").strip().lower()
-    if value not in _OUTREACH_OBJECTIVES or value == "unknown":
-        return None
-    return value
+    if isinstance(block, dict):
+        value = str(block.get("type") or "").strip().lower()
+        if value in _OUTREACH_OBJECTIVES and value != "unknown":
+            return value
+
+    for candidate in (getattr(extraction, "fact_candidates", None) or ()):
+        if not isinstance(candidate, dict) or candidate.get("business_fact") is not True:
+            continue
+        if str(candidate.get("field") or "") != "thread.objective":
+            continue
+        if str(candidate.get("subject") or "").strip().lower() != "thread":
+            continue
+        stated = candidate.get("value")
+        if not isinstance(stated, str):
+            continue
+        text_value = " ".join(stated.split())
+        if not text_value or text_value.casefold() in {"unknown", "none", "n/a", "not known"}:
+            continue
+        if not any(isinstance(span, dict) and span.get("verified")
+                   for span in (candidate.get("evidence_spans") or ())):
+            continue
+        return text_value
+    return None
 
 
 def norm_obs_kind(kind) -> str:
@@ -1184,9 +1221,13 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                     # restating it. Skipped when the model returned `unknown` — see
                     # `objective_of`.
                     if (_objective := objective_of(ex)) is not None:
+                        # `string`, NOT `enum`. The value is the model's own sentence about why
+                        # this exchange exists, and typing a sentence as an enum tells every
+                        # reader downstream it may be compared against a closed set that does
+                        # not exist.
                         store.write_fact(conn, org_id=org_id, subject_node_id=rnode,
                                          field="thread.objective", value=_objective,
-                                         value_type="enum", confidence=FACT_CONF_BY_RANK[1],
+                                         value_type="string", confidence=FACT_CONF_BY_RANK[1],
                                          relevance=ex.relevance, occurred_at=occurred_at,
                                          event_id=event_id,
                                          evidence={"text": (ex.objective or {}).get(

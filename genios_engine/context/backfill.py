@@ -388,3 +388,203 @@ def backfill_layer2(store, org_id: str, *, limit: int | None = None,
         store, org_id, limit=limit, rebuild=rebuild or bool(deals["deal_nodes_created"]))
     situations = refresh_situations(store, org_id)
     return {**aliases, **deals, **correlations, "situations_written": situations}
+
+
+# =================================================================================================
+# THE NINE BUSINESS NOUNS, ON A GRAPH BUILT BEFORE THEY COULD BE WRITTEN
+# =================================================================================================
+
+#: Extractions re-graded per transaction. Same argument as `_BATCH` above; smaller because each
+#: one carries a whole message's clean text.
+_FACT_BATCH = 100
+
+
+def _event_parties(conn, *, org_id: str, row) -> tuple[str, ...]:
+    """The people this event was between, as graph nodes — by EMAIL and nothing else.
+
+    The only alias that identifies one human on its own. A name is deliberately not tried here:
+    `resolve_person_name` answers None where two live people share a name, and a backfill is
+    exactly the place where quietly awarding a shared name to the first claimant would write a
+    whole tenant's history onto the wrong person at once.
+    """
+    from genios_engine.context.identity import ALIAS_EMAIL, resolve_alias
+    from genios_engine.platform.identity import norm_email
+
+    raw = row["recipients"]
+    if isinstance(raw, str):
+        try:
+            raw = json.loads(raw)
+        except ValueError:
+            raw = [raw]
+    addresses = list(raw) if isinstance(raw, list) else []
+    if row["actor"]:
+        addresses.append(row["actor"])
+
+    found: list[str] = []
+    for address in addresses:
+        email = norm_email(str(address)) if address and "@" in str(address) else None
+        if not email:
+            continue
+        node = resolve_alias(conn, org_id=org_id, alias_type=ALIAS_EMAIL, alias_key=email)
+        if node and node not in found:
+            found.append(node)
+    return tuple(found)
+
+
+def backfill_business_facts(store, org_id: str, *, limit: int | None = None) -> dict:
+    """Re-grade stored L1 extractions and write the business facts today's code would produce.
+
+    WHY THIS HAS TO EXIST, and it is the module's own argument applied to a later fix. L1 files
+    the extractor's UNVERIFIED output in the permanent cache on purpose — an audit and a replay
+    need the original — and grades spans on the way OUT of the lane. Layer 2 is a reader too and
+    read `l1_extraction_results.output` raw, so every span arrived `verified: false` and
+    `_business_claim`, which keeps a fact only with a verified receipt, dropped EVERY business
+    fact from every source. `runner.graded_extraction` closed that, and it closed it only for
+    events that arrive AFTERWARDS. An event already processed is never processed again, so a
+    tenant onboarded before the fix keeps a graph with none of these nouns in it, for ever.
+
+    MEASURED ON THE PILOT, 2026-09-15. The extractor had emitted 1,211 business facts across all
+    nine fields; the graph held five. Re-grading the stored extractions against their own
+    prepared text verifies 811 of them — 256 of 267 `thread.objective`, 251 of 264 `party.role` —
+    with no model call, because the grader is integer work over a string. `thread.objective` in
+    particular is what `cohort_outreach_gap` groups on, and the approved corpus card bound to it
+    could not fire on a tenant whose graph had zero of them.
+
+    NOTHING IS RE-EXTRACTED AND NOTHING IS GUESSED. The claim, its value and its receipt are the
+    ones L1 already published; this re-runs the grading and the resolution, both of which are
+    deterministic. A claim whose span still does not resolve is dropped exactly as the live path
+    drops it, and a subject that does not resolve to a node of the right type is dropped exactly
+    as `_business_subject` drops it — this is the live path, replayed, not a looser one.
+
+    SAFE TO RE-RUN. `write_fact` supersedes on change and no-ops on an unchanged value, so a
+    second pass over a backfilled org writes nothing. Returns a census: what was read, what was
+    written, and why each of the rest was not.
+    """
+    from genios_engine.context.pipeline import (FACT_CONF_BY_RANK, _business_claim,
+                                                _business_subject, _thread_node)
+    from genios_engine.context.runner import graded_extraction
+
+    read = written = 0
+    dropped: dict[str, int] = {}
+    by_field: dict[str, int] = {}
+
+    def refuse(reason: str) -> None:
+        dropped[reason] = dropped.get(reason, 0) + 1
+
+    with store.engine.connect() as conn:
+        rows = conn.execute(text(
+            # `source_events.parent_object_id` IS the thread, spelled as `runner._process_one`
+            # spells it — it hands exactly this column to `process_event(thread_id=...)`, and a
+            # backfill that resolved the conversation differently from the live path would write
+            # a fact on a subject the live path would never have chosen.
+            "select x.event_id as event_id, x.output as output, x.created_at as created_at, "
+            "       p.clean_text as clean_text, se.parent_object_id as thread_id, "
+            "       se.occurred_at as occurred_at, se.source as source, "
+            "       se.recipients as recipients, se.actor as actor "
+            "  from l1_extraction_results x "
+            "  join prepared_content p on p.event_id = x.event_id and p.org_id = x.org_id "
+            "  left join source_events se on se.event_id = x.event_id and se.org_id = x.org_id "
+            " where x.org_id = :o order by x.created_at"
+            + (" limit :limit" if limit else "")),
+            {"o": org_id, **({"limit": int(limit)} if limit else {})}).mappings().all()
+
+    for start in range(0, len(rows), _FACT_BATCH):
+        with store.engine.begin() as conn:
+            for row in rows[start:start + _FACT_BATCH]:
+                raw = row["output"]
+                payload = json.loads(raw) if isinstance(raw, (str, bytes)) else raw
+                if not isinstance(payload, dict) or not payload.get("business_facts"):
+                    continue
+                graded = graded_extraction(payload, row["clean_text"], row["event_id"])
+                claims = getattr(graded, "business_facts", None)
+                if not claims:
+                    # The whole extraction failed to re-validate. One event's nouns, never the
+                    # tenant's — the same asymmetry every reading in this layer holds to.
+                    refuse("extraction_unreadable")
+                    continue
+                occurred = row["occurred_at"] or row["created_at"]
+                for claim_in in claims:
+                    read += 1
+                    candidate = {
+                        "field": str(getattr(claim_in, "field", "")),
+                        "subject": getattr(claim_in, "subject", None),
+                        "value": getattr(claim_in, "value", None),
+                        "standing": getattr(claim_in, "standing", None),
+                        "evidence_spans": [s.model_dump()
+                                           for s in (getattr(claim_in, "evidence", None) or ())],
+                    }
+                    claim = _business_claim(candidate, row["clean_text"] or "")
+                    if claim is None:
+                        # No receipt that resolves against the message's own text. The live path
+                        # refuses here and so does this: an unverifiable business noun is the one
+                        # thing the seam exists to keep out of the graph.
+                        refuse("no_verified_span")
+                        continue
+                    if claim.field == "thread.objective":
+                        if claim.subject not in {"thread", row["thread_id"],
+                                                 f"thread:{row['thread_id']}"}:
+                            refuse("objective_not_about_the_thread")
+                            continue
+                        subject = _thread_node(store, conn, org_id=org_id,
+                                               thread_id=row["thread_id"],
+                                               event_id=row["event_id"], counterparty=None)
+                        if subject is None:
+                            # No thread id on the event: nothing to hang a conversation's
+                            # objective on, and the person is the wrong subject for it — that is
+                            # the collision `_thread_node` was built to end.
+                            refuse("no_thread_node")
+                            continue
+                        value_text = claim.value if isinstance(claim.value, str) else ""
+                    else:
+                        subject = _business_subject(conn, org_id=org_id, name=claim.subject,
+                                                    field=claim.field)
+                        if subject is None:
+                            refuse("subject_unresolved")
+                            continue
+                        # AND ON THE COUNTERPARTY, for `thread.objective` only. The thread node
+                        # is the right subject for a conversation's objective — one person spans
+                        # 254 threads in the pilot's graph, so writing it on them means whichever
+                        # message landed last decides what every conversation was for. But
+                        # `read_outreach_cohorts` groups people by objective and compares each
+                        # against `thread.days_waiting`, which is a PERSON fact, so an objective
+                        # that exists only on threads gives it groups with no waiting state and
+                        # it reports nothing. The live path writes both — `pipeline` writes the
+                        # objective on the recipient node beside `thread.last_outbound` — and a
+                        # backfill that wrote only one of the two would leave the cohort lane
+                        # exactly as dead as it found it.
+                        for party in _event_parties(conn, org_id=org_id, row=row):
+                            store.write_fact(
+                                conn, org_id=org_id, subject_node_id=party,
+                                field="thread.objective", value=value_text,
+                                value_type="string", confidence=FACT_CONF_BY_RANK[1],
+                                relevance=1.0, occurred_at=occurred,
+                                event_id=row["event_id"], source=row["source"] or "backfill",
+                                authority_rank=1,
+                                evidence={"text": claim.evidence[0].quote,
+                                          "standing": claim.standing,
+                                          "spans": [s.model_dump(mode="json")
+                                                    for s in claim.evidence]})
+                    rank = 2 if claim.standing == "observed" else 1
+                    value = (claim.value if isinstance(claim.value, str)
+                             else claim.value.model_dump())
+                    if store.write_fact(
+                            conn, org_id=org_id, subject_node_id=subject, field=claim.field,
+                            value=value,
+                            value_type="money" if claim.field == "deal.value" else "string",
+                            confidence=FACT_CONF_BY_RANK[rank], relevance=1.0,
+                            occurred_at=occurred, event_id=row["event_id"],
+                            source=row["source"] or "backfill", authority_rank=rank,
+                            evidence={"text": claim.evidence[0].quote,
+                                      "standing": claim.standing,
+                                      "spans": [s.model_dump(mode="json")
+                                                for s in claim.evidence]}):
+                        written += 1
+                        by_field[claim.field] = by_field.get(claim.field, 0) + 1
+                    else:
+                        # The open version already held exactly this value. Not a loss, and
+                        # counted apart from the refusals so it does not read as one.
+                        refuse("already_current")
+
+    return {"extractions": len(rows), "claims_read": read, "facts_written": written,
+            "by_field": dict(sorted(by_field.items(), key=lambda kv: -kv[1])),
+            "dropped": dict(sorted(dropped.items(), key=lambda kv: -kv[1]))}

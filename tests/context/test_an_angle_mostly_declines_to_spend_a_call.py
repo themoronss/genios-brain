@@ -236,6 +236,25 @@ def test_the_backlog_drains_across_sweeps(store) -> None:
 
 # ── the audit receipt, and what a lost one costs ─────────────────────────────────────────────
 
+def _paying_asker(word="met", confidence=7_000, *, model="claude-haiku-4-5-20251001",
+                  in_tokens=1916, out_tokens=187):
+    """An asker that reports what its call COST, the way `angles.asker.model_asker` does through
+    its `.last`. The plain `_asker` above deliberately does not, so the two together pin both
+    halves: a receipt when the asker can say, and a verdict that survives when it cannot."""
+    from genios_engine.context.angles.asker import Usage
+
+    def ask(angle, subject_ref, seen):
+        # Populated by assignment, exactly as `model_asker` fills it — `Usage()` takes no
+        # arguments, and its attribute NAMES are the contract `record_model_run` reads.
+        usage = Usage()
+        usage.model, usage.input_tokens, usage.output_tokens = model, in_tokens, out_tokens
+        usage.ok, usage.raw, usage.parsed = True, word, {"verdict": word}
+        ask.last = usage
+        return (word, confidence)
+    ask.last = None
+    return ask
+
+
 def test_every_call_files_a_durable_receipt(store) -> None:
     _queued(store, "n1")
     evaluate_angle(store, ORG, _angle(), eval_time=NOW, asker=_asker())
@@ -245,6 +264,41 @@ def test_every_call_files_a_durable_receipt(store) -> None:
     assert row.site == AUDIT_SITE
     assert row.subject_ref == "condition_now_true:n1"
     assert linked is not None, "a verdict must be traceable to the prompt bytes it came from"
+
+
+def test_the_receipt_says_what_the_call_actually_cost(store) -> None:
+    """THE HALF THAT SHIPPED BROKEN, and the reason this file did not catch it: the test above
+    asserts the row EXISTS and never reads the numbers on it. `record_model_run` reads `model`,
+    `input_tokens`, `output_tokens` and `ok` off the object it is handed, and the store handed it
+    the verdict WORD — a bare string — so every getattr took its default: `model="unknown"`, zero
+    tokens, `success=False`. `max_tokens=0` then violated `l2_model_runs_max_tokens_check` and
+    the row was rejected outright, which is why 70 live calls left the angle layer unable to say
+    what it had spent. Cost planning reads exactly these columns."""
+    _queued(store, "n1")
+    evaluate_angle(store, ORG, _angle(), eval_time=NOW, asker=_paying_asker())
+    with store._engine.connect() as c:
+        row = c.execute(text(
+            "select model_snapshot, input_tokens, output_tokens, success, max_tokens "
+            "from l2_model_runs")).first()
+    assert row is not None, "the receipt row was rejected before it was written"
+    assert row.model_snapshot == "claude-haiku-4-5-20251001",         f"the receipt does not know which model answered: {row.model_snapshot!r}"
+    assert (row.input_tokens, row.output_tokens) == (1916, 187),         "the receipt carries no token counts, so nothing can cost a sweep"
+    # `is True` would be wrong here and not more strict: this suite runs on SQLite, which has no
+    # boolean type and returns 1. What must hold is that the call is recorded as having SUCCEEDED
+    # — the placeholder wrote False for every one of them.
+    assert bool(row.success) is True
+    assert row.max_tokens > 0, "max_tokens=0 is what the table's own check constraint rejects"
+
+
+def test_a_verdict_survives_an_asker_that_cannot_say_what_it_spent(store) -> None:
+    """The other half. An asker with no `.last` is not an error — the tenant still paid for an
+    answer, and discarding it to punish a missing receipt would be the audit costing the verdict.
+    The row is written with what IS known."""
+    _queued(store, "n1")
+    run = evaluate_angle(store, ORG, _angle(), eval_time=NOW, asker=_asker())
+    assert (run.asked, run.failed) == (1, 0)
+    with store._engine.connect() as c:
+        assert c.execute(text("select count(*) from l2_model_runs")).scalar() == 1
 
 
 def test_a_lost_receipt_does_not_cost_the_verdict(store) -> None:

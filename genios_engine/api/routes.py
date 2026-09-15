@@ -868,6 +868,21 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
         except Exception:                                    # noqa: BLE001 — never kill the beat
             _log.exception("alias prune failed")
             alias_prune = {"error": True}
+    # NAME INDEX: the other half of the same defect. The prune above removes keys pointing at
+    # nodes that are gone; this adds the keys for people who are HERE and unreachable — a person
+    # node the graph displays a human name for, with nothing in the index that answers to it.
+    # Measured on the pilot: 41 named people, 4 findable, and 49 conditional promises dropped
+    # because "once Keshav confirms" resolved to nobody. Runs after the prune on purpose, so a
+    # name freed by the prune can be claimed in the same tick.
+    name_index = None
+    if _graph is not None:
+        try:
+            from genios_engine.context.identity import index_person_names
+            with _graph.engine.begin() as c:
+                name_index = index_person_names(c)
+        except Exception:                                    # noqa: BLE001 — never kill the beat
+            _log.exception("person name index failed")
+            name_index = {"error": True}
     # L1 PARKED DRAIN: a park is "look at this again", so something has to look. Riding the
     # existing heartbeat on purpose — a new Celery periodic task would spend the quota-limited
     # Upstash broker on a pass that is cheap and idempotent here.
@@ -1061,6 +1076,11 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
                          len(unhealthy), unhealthy)
     return {"sync": sync, "lifecycle": lifecycle, "retention": retention,
             "billing": billing_tick,
+            # REPORTED, because a maintenance pass nobody can see is indistinguishable from one
+            # that is not running. `alias_prune` has been computed and dropped on the floor since
+            # it was written.
+            "alias_prune": alias_prune,
+            "name_index": name_index,
             "parked_drain": parked_drain,
             "attachment_refetch": attachment_refetch,
             "recapture_drain": recapture_drain,

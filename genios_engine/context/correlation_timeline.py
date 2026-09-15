@@ -841,6 +841,75 @@ def read_claim_records(engine, org_id: str, *, eval_time: datetime,
     return tuple(record for record in (_record_of(row) for row in rows) if record is not None)
 
 
+#: WHY A COMMITMENT DID NOT BECOME A CONDITION. The dependency correlator has carried its own
+#: `DropReason` from the start and this one carried nothing, so "306 claim records in, 9 conditions
+#: out" was true on the pilot with no surface able to say which step lost the other 297. The names
+#: are the four refusals `conditions_from` and `store_condition` actually make, and no others —
+#: a reason nobody emits is a reason nobody can act on.
+CONDITION_NOT_CONDITIONAL = "not_conditional"
+CONDITION_NO_TEXT = "no_condition_text"
+CONDITION_UNRESOLVED_SUBJECT = "unresolved_subject"
+CONDITION_DUPLICATE = "already_seen"
+
+
+def conditions_with_census(records: Sequence[ClaimRecord], resolve, *,
+                           vocabulary: ConditionVocabulary | None = None
+                           ) -> tuple[tuple[DormantCondition, ...], int, dict[str, int]]:
+    """`(conditions, commitments_examined, dropped_by_reason)`.
+
+    THE DENOMINATOR IS COMMITMENTS, NOT RECORDS. One claim record can carry several commitments
+    and usually carries none, so counting records answers "how much mail did we look at" when the
+    question is "how many promises did we look at". The pilot's first census read 306 — records —
+    against 9 conditions, and the 297 difference was mostly records that never held a promise at
+    all. That is not a loss, and reporting it as one sends somebody hunting a bug in a step that
+    behaved correctly.
+    """
+    found: dict[str, DormantCondition] = {}
+    dropped: dict[str, int] = {}
+    examined = 0
+
+    def refuse(reason: str) -> None:
+        dropped[reason] = dropped.get(reason, 0) + 1
+
+    for record in sorted(records, key=lambda item: (item.occurred_at, item.event_id)):
+        for commitment in record.commitments:
+            examined += 1
+            # CHECKED BEFORE THE SUBJECT, because it is the commoner and cheaper answer and
+            # because the two are different facts: a promise with no condition is not a promise
+            # whose owner we failed to find.
+            if not commitment.is_conditional:
+                refuse(CONDITION_NOT_CONDITIONAL)
+                continue
+            if not str(commitment.condition_text or "").strip():
+                refuse(CONDITION_NO_TEXT)
+                continue
+            subject = None
+            for candidate in (commitment.beneficiary, commitment.actor):
+                if candidate:
+                    subject = resolve(candidate)
+                if subject:
+                    break
+            if not subject:
+                refuse(CONDITION_UNRESOLVED_SUBJECT)
+                continue
+            condition = store_condition(commitment, subject_node_id=subject,
+                                        stated_at=record.occurred_at, event_id=record.event_id,
+                                        vocabulary=vocabulary)
+            if condition is None:
+                # `store_condition` refused for a reason the two checks above did not catch. Its
+                # own guards are the authority on what a condition is; counting this as a named
+                # reason would be this function claiming to know why.
+                refuse(CONDITION_NO_TEXT)
+                continue
+            if condition.condition_id in found:
+                # NOT A LOSS, AND COUNTED SEPARATELY SO IT DOES NOT READ AS ONE. The same promise
+                # restated across three emails is one condition, and the earliest is kept.
+                refuse(CONDITION_DUPLICATE)
+                continue
+            found[condition.condition_id] = condition
+    return tuple(found[key] for key in sorted(found)), examined, dropped
+
+
 def conditions_from(records: Sequence[ClaimRecord], resolve, *,
                     vocabulary: ConditionVocabulary | None = None) -> tuple[DormantCondition, ...]:
     """STEP 1 over a claim stream. `resolve` is the injected identity cascade — the beneficiary
@@ -849,24 +918,10 @@ def conditions_from(records: Sequence[ClaimRecord], resolve, *,
     One condition per content address: the same promise restated across three emails is one
     dormant condition, and the EARLIEST statement is the one kept, because "you said in May" is
     the sentence the card is built on.
+
+    The census version above is the same walk; this keeps the signature every caller already uses.
     """
-    found: dict[str, DormantCondition] = {}
-    for record in sorted(records, key=lambda item: (item.occurred_at, item.event_id)):
-        for commitment in record.commitments:
-            subject = None
-            for candidate in (commitment.beneficiary, commitment.actor):
-                if candidate:
-                    subject = resolve(candidate)
-                if subject:
-                    break
-            if not subject:
-                continue
-            condition = store_condition(commitment, subject_node_id=subject,
-                                        stated_at=record.occurred_at, event_id=record.event_id,
-                                        vocabulary=vocabulary)
-            if condition is not None and condition.condition_id not in found:
-                found[condition.condition_id] = condition
-    return tuple(found[key] for key in sorted(found))
+    return conditions_with_census(records, resolve, vocabulary=vocabulary)[0]
 
 
 # =================================================================================================
@@ -1025,8 +1080,9 @@ def refresh_dormant_conditions(store, org_id: str, *, eval_time: datetime,
     from genios_engine.context.correlation_dependency import graph_endpoint_resolver
 
     with store.engine.connect() as conn:
-        conditions = conditions_from(records, graph_endpoint_resolver(conn, org_id=org_id),
-                                     vocabulary=vocabulary)
+        conditions, examined, condition_drops = conditions_with_census(
+            records, graph_endpoint_resolver(conn, org_id=org_id),
+            vocabulary=vocabulary)
     world = build_world(records, vocabulary=vocabulary, qualifier_facts=qualifier_facts)
     correlation = correlate_timeline(conditions, world, eval_time=at)
 
@@ -1034,17 +1090,21 @@ def refresh_dormant_conditions(store, org_id: str, *, eval_time: datetime,
     with store.engine.begin() as conn:
         written, unchanged, closed = _write_facts(conn, org_id=org_id, rows=rows, now=at)
         # READ vs EMITTED, in the same transaction as the rows it counts. This pass reports five
-        # counts and none of them is the one that matters: how many CLAIM RECORDS it was given
-        # against how many conditions it could build from them. On the pilot that is 305
-        # commitments extracted by L1 and 2 published facts, which no surface in the engine said.
+        # counts and none of them was the one that matters: how many PROMISES it was given against
+        # how many conditions it could build from them.
         #
-        # `store_condition` REFUSES BEFORE A REASON EXISTS, which is why `dropped` is empty here
-        # rather than fabricated: a commitment with no resolvable subject, or none the vocabulary
-        # reads as conditional, is simply not a condition — it is not a condition that failed.
-        # The subtraction is honest on its own and `unaccounted` carries it.
+        # `read` IS COMMITMENTS, NOT CLAIM RECORDS. The first cut of this census counted records —
+        # 306 of them against 9 conditions — and most of that 297 gap was mail that carried no
+        # promise at all, which is not a loss and should never have been reported as one.
+        #
+        # AND EVERY REFUSAL NOW HAS A NAME. `conditions_with_census` counts the four the walk
+        # actually makes, so "97% did not convert" resolves into which step declined and whether
+        # that step was right to. A commitment with no resolvable subject is a different fact from
+        # one the vocabulary does not read as conditional, and only one of them is fixable here.
+        # `unaccounted` still carries whatever the named reasons do not.
         from genios_engine.context.conversion import record_conversion
-        record_conversion(conn, org_id, correlator="timeline", read=len(records),
-                          emitted=len(conditions), eval_time=at)
+        record_conversion(conn, org_id, correlator="timeline", read=examined,
+                          emitted=len(conditions), eval_time=at, dropped=condition_drops)
     return TimelineSweep(conditions=len(conditions), satisfied=len(correlation.satisfied),
                          waiting=len(correlation.waiting), unknown=len(correlation.unknown),
                          review=len(correlation.review), facts_written=written,

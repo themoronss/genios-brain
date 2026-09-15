@@ -4,6 +4,32 @@
 `derived.dependency.missing_prerequisite` reached NOTHING: it was computed, written, bounded,
 evidence-carrying, and selected by no query in the engine. This module is the missing half.
 
+DORMANT ON MAIL-ONLY DATA, DECLARED RATHER THAN LEFT TO LOOK BROKEN. Measured on the pilot
+2026-09-15 by running `refresh_dependency_chains` against the live graph: 95 dependency claims
+read, 0 edges, 0 chains, **0 missing prerequisites**, and all 95 dropped `unresolved_blocked`.
+This reading is correctly wired and correctly produces nothing, and the two are indistinguishable
+from outside — which is the state `patterns/routing.UNROUTED_PATTERN_TYPES` exists to prevent for
+patterns, and this paragraph is the same fact for this reading.
+
+WHY, precisely. The field is written only where the BLOCKED end resolves to a node and the blocker
+does not. Layer 1 extracts dependencies between OUTCOMES — "interview slot offer for GeniOS",
+"Shortlisting and showcase participation", "Meeting between Sehan and Rohit" — so on this tenant
+NEITHER end resolves and the traversal refuses before an absence can be typed. That refusal is
+right: a false chain is worse than a missing one, and inventing a node for an outcome would make
+every one of these a fabricated party. Re-measured after the person-name index landed (41 named
+people, 4 of them findable, now indexed): still 95 of 95, because these endpoints are not names.
+
+IT IS NOT FOLDED INTO `dependency_stated` AND MUST NOT BE. That lane carries the statements where
+neither end resolved, quoted and joined to nothing — 18 facts and 20 cards on the pilot. This one
+states an ABSENCE against a resolved subject: "you are blocked on Finance and there is no Finance
+in your graph". One is a sentence somebody wrote; the other is a claim about what the graph does
+not contain, and a card that merged them would assert the resolution this module's own gate spent
+a refusal to avoid.
+
+MOVES WHEN: L1 extracts a dependency whose BLOCKED end is a party rather than an outcome — a
+tenant with a ticketing or project source, or an extractor asked for the owing party alongside the
+owed outcome. Nothing in this module changes when that happens; the queue simply stops being empty.
+
 WHAT THE FIELD HOLDS, and why it is the most interesting of the four. The traversal resolves both
 ends of every dependency claim through the identity cascade. When the BLOCKED end resolves and the
 BLOCKER end does not, it refuses to invent a node — doc 03's hard rule, and the module's own

@@ -117,3 +117,73 @@ def test_a_legacy_objective_without_explicit_standing_is_a_judgement(business_st
     with business_store.engine.connect() as c:
         row = c.execute(text("select authority_rank,confidence from graph_facts where field='thread.objective' and status='active'")).one()
         assert (row.authority_rank,row.confidence) == (1,0.4)
+
+
+# =================================================================================================
+# THE OBJECTIVE ARRIVED IN THE OTHER SHAPE — 316 times, into a reader looking elsewhere
+# =================================================================================================
+
+def test_the_objective_is_read_from_the_business_fact_the_extractor_actually_sends(business_store):
+    """MEASURED ON THE PILOT: `thread.last_outbound` was written 45 times by the line beside this
+    one, and `thread.objective` ZERO times — while the extractor had supplied 316 objectives. Not
+    a model that could not place the exchange: nothing on the QES path fills `Extraction.objective`
+    at all. The prompt asks for it as a BUSINESS FACT ("for thread.objective use subject
+    'thread'"), so that is where it lands, and the reader was looking at the declared dict."""
+    commit(business_store, [business_fact(value="Pitch GeniOS to Afore Capital")],
+           recipients=["person@gmail.com"])
+    with business_store.engine.connect() as c:
+        values = [json.loads(v) for (v,) in c.execute(text(
+            "select value from graph_facts where field='thread.objective' and status='active'"))]
+    assert "Pitch GeniOS to Afore Capital" in values
+
+
+def test_a_free_text_objective_is_not_screened_against_a_closed_set(business_store):
+    """The enum screen described a shape the extractor was never asked to produce. Applying it to
+    the sentence it DOES produce discards every real answer — which is exactly what happened."""
+    from genios_engine.context.extract.extractor import Extraction
+    from genios_engine.context.pipeline import objective_of
+
+    sentence = "intro call to discuss converting design-partner traction into a paid motion"
+    ex = Extraction(ok=True, relevance=0.9, noise_type="none", domains=[], entity_mentions=[],
+                    fact_candidates=[business_fact(value=sentence)], commitments=[], questions=[],
+                    observations=[])
+    assert objective_of(ex) == sentence
+
+
+def test_a_declared_categorical_objective_still_wins(business_store):
+    """A caller that fills the declared field is making a CATEGORICAL claim, which is the stronger
+    one, and it is still screened against the closed set. The fallback is a fallback."""
+    from genios_engine.context.extract.extractor import Extraction
+    from genios_engine.context.pipeline import objective_of
+
+    ex = Extraction(ok=True, relevance=0.9, noise_type="none", domains=[], entity_mentions=[],
+                    fact_candidates=[business_fact(value="a sentence about the raise")],
+                    commitments=[], questions=[], observations=[],
+                    objective={"type": "fundraising", "evidence_text": TEXT})
+    assert objective_of(ex) == "fundraising"
+
+
+def test_an_objective_with_no_verified_receipt_is_refused(business_store):
+    """The half of the enum screen that was doing real work, kept. An objective nobody can point
+    at in the source is the invented label the screen existed to keep out."""
+    from genios_engine.context.extract.extractor import Extraction
+    from genios_engine.context.pipeline import objective_of
+
+    unreceipted = business_fact(value="something nobody said")
+    for span in unreceipted["evidence_spans"]:
+        span["verified"] = False
+    ex = Extraction(ok=True, relevance=0.9, noise_type="none", domains=[], entity_mentions=[],
+                    fact_candidates=[unreceipted], commitments=[], questions=[], observations=[])
+    assert objective_of(ex) is None
+
+
+def test_an_objective_about_something_other_than_the_thread_is_refused(business_store):
+    """`campaign.objective` is a different field with a different subject, and a claim whose
+    subject is a person is not this thread's purpose."""
+    from genios_engine.context.extract.extractor import Extraction
+    from genios_engine.context.pipeline import objective_of
+
+    ex = Extraction(ok=True, relevance=0.9, noise_type="none", domains=[], entity_mentions=[],
+                    fact_candidates=[business_fact(subject="Jane", value="fundraising")],
+                    commitments=[], questions=[], observations=[])
+    assert objective_of(ex) is None

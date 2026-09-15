@@ -313,6 +313,58 @@ _THREAD_COVERED_BY_PARTY = (
     "where e.org_id = :o and e.edge_type = 'corresponded_with' and e.valid_to is null"
 )
 
+#: WHAT EACH PERSON'S CONVERSATIONS WERE FOR — the objective, fetched through the thread that
+#: owns it rather than off the person.
+#:
+#: AN OBJECTIVE IS A PROPERTY OF A CONVERSATION, NOT OF A PERSON. The live path writes it on both,
+#: and the person-level copy is last-write-wins across every thread they are in — `graph_facts`
+#: keys on (org, subject, field), and one counterparty spans 254 threads in the pilot's graph. So
+#: a campaign of six people, every one of them written to about the same thing, ends up with one
+#: person still carrying that objective and five whose copy was overwritten by whatever they were
+#: last written to about. Measured after the objective backfill: the four largest groups were 5
+#: threads + 1 person, 4 + 1, 4 + 1 and 3 + 2 — every one of them above `_MIN_COHORT` and none of
+#: them with the two WAITING people the reading needs, because `thread.days_waiting` is a person
+#: fact and a thread node has none.
+#:
+#: Joined `corresponded_with`, which is the edge the pipeline already writes from a person to the
+#: thread they were in — 84 of them on the pilot. Nothing is minted and nothing is inferred: this
+#: reads an edge and a fact that both already exist.
+#:
+#: AND IT IS STILL NOT ENOUGH TO MAKE `cohort_outreach_gap` FIRE, which is worth writing down here
+#: because the traversal makes the reading correct without making it productive, and the next
+#: reader will otherwise spend the same day finding out why.
+#:
+#: The objective the extractor supplies is a bespoke SENTENCE, and it names the participants:
+#: "introduction and meeting between Rohit and Shourya", "schedule a meeting between Hirdesh and
+#: Rohit", "Convene GAM 1 Group 2 Launchpad 30 session via Zoom". A sentence built that way is
+#: unique to its thread BY CONSTRUCTION, so no two people can ever share one. Measured across all
+#: 210 objectives on the pilot: every group has exactly ONE person in it, and `_MIN_COHORT` is 3.
+#:
+#: The lane needs a CATEGORICAL objective — the closed set `_OUTREACH_OBJECTIVES` describes
+#: (`fundraising`, `hiring`, `selling`) — and the extractor is not asked for one. That belongs to
+#: L1's prompt and contract, not here: deriving a category from the sentence by matching words in
+#: Layer 2 would be a keyword rule tuned on one tenant's vocabulary, which is the failure mode the
+#: whole layer is built to avoid. Until then the group question is answered by
+#: `campaign_awaiting_reply`, which groups on the sentence we actually SENT — observed, carrying a
+#: verbatim receipt, and shared across recipients by construction rather than unique by it.
+#:
+#: This query stays because it is the CORRECT way to read an objective, because it costs one join
+#: per sweep, and because the moment a categorical objective exists the lane works with no further
+#: change. It also fixed the thing it was written for: `outreach.objective` was declared missing on
+#: every per-person outreach card since the system shipped, and now carries a value for 234 nodes.
+_PARTY_THREAD_OBJECTIVES = (
+    "select distinct e.from_node_id as party, f.value as objective "
+    "from graph_edges e "
+    "join graph_nodes t on t.org_id = e.org_id and t.node_id = e.to_node_id "
+    "                  and t.node_type = 'thread' and t.valid_to is null "
+    "join graph_nodes p on p.org_id = e.org_id and p.node_id = e.from_node_id "
+    "                  and p.node_type = 'person' and p.valid_to is null "
+    "join graph_facts f on f.org_id = e.org_id and f.subject_node_id = e.to_node_id "
+    "                  and f.field = 'thread.objective' and f.status = 'active' "
+    "                  and f.valid_to is null "
+    "where e.org_id = :o and e.edge_type = 'corresponded_with' and e.valid_to is null"
+)
+
 #: THREADS WHOSE COUNTERPARTY ALREADY CARRIES THE REPLY, for the reading that fires on a message
 #: of THEIRS.
 #:
@@ -913,9 +965,18 @@ def read_outreach_cohorts(rows: dict, now: datetime, employers: dict) -> list[_F
         # Reserved keys carry the condition queue and the mailbox owner, not a node's facts.
         if node_id.startswith("_") or not isinstance(held, dict):
             continue
-        objective = held.get("thread.objective")
-        if objective:
-            by_objective.setdefault(str(objective), []).append((node_id, held))
+        # EVERY OBJECTIVE THIS PERSON'S CONVERSATIONS CARRY, not the one their own row happens to
+        # hold. The person-level copy is last-write-wins across all of their threads, so grouping
+        # on it alone fragmented every real campaign — see `_PARTY_THREAD_OBJECTIVES`. Their own
+        # copy is still included: a person whose objective was written before the thread node
+        # existed has it in no other place.
+        seen: set[str] = set()
+        for value in [held.get("thread.objective"), *(held.get("_thread_objectives") or ())]:
+            objective = str(value or "").strip()
+            if not objective or objective in seen:
+                continue
+            seen.add(objective)
+            by_objective.setdefault(objective, []).append((node_id, held))
 
     findings: list[_Finding] = []
     for objective, members in sorted(by_objective.items()):
@@ -1216,6 +1277,7 @@ def read_conditions_for_dispatch(rows: dict, now: datetime, employers: dict) -> 
 from genios_engine.context.attention_situations import ANCHOR_UNREPORTED
 from genios_engine.context.blocker_situations import ANCHOR_UNNAMED_BLOCKER
 from genios_engine.context.reworded_outreach import ANCHOR_REWORDED
+from genios_engine.context.analytic_situations import ANCHOR_ANALYTIC
 from genios_engine.context.stated_dependency import ANCHOR_STATED
 
 
@@ -1224,6 +1286,14 @@ def read_stated_for_dispatch(rows: dict, now: datetime, employers: dict) -> list
     from genios_engine.context.stated_dependency import read_stated_dependencies
 
     return read_stated_dependencies(rows.get("_stated") or {}, now, rows.get("_node_names") or {})
+
+
+def read_analytic_for_dispatch(rows: dict, now: datetime, employers: dict) -> list[_Finding]:
+    """The analytic stratum's reading, in the shape the dispatch loop hands every reader."""
+    from genios_engine.context.analytic_situations import read_analytic_movements
+
+    return read_analytic_movements(rows.get("_analytic") or {}, now,
+                                   rows.get("_node_names") or {})
 
 
 def read_reworded_for_dispatch(rows: dict, now: datetime, employers: dict) -> list[_Finding]:
@@ -1339,6 +1409,12 @@ READINGS = (
     # BEFORE the last-resort reading and AFTER the two group readings it yields to: the dispatch
     # order is the precedence, since each reading computes coverage from the ones it names.
     (ANCHOR_STATED, read_stated_for_dispatch),
+    # THE ANALYTIC STRATUM, AS A SUBJECT RATHER THAN A MODIFIER. 566 verdicts on the pilot, read
+    # only by six importance modifiers — able to make another card rank higher and never to be
+    # one. Placed here rather than earlier because a measured movement is weaker evidence than
+    # anything a person actually wrote, and the readings above it are all sentences somebody
+    # sent.
+    (ANCHOR_ANALYTIC, read_analytic_for_dispatch),
     (ANCHOR_REWORDED, read_reworded_for_dispatch),
     (ANCHOR_UNREPORTED, read_attention_for_dispatch),
 )
@@ -1500,6 +1576,30 @@ def _gather(store, org_id: str, *, now: datetime | None = None,
         if held["_stated"] and not held.get("_node_names"):
             from genios_engine.context.attention_situations import gather_display_names as _n
             held["_node_names"] = _optional(c, "node names", lambda: _n(c, org_id), {})
+        # THE 566 THE FEED COULD NOT SEE. L2.4 has published a verdict per node per metric since
+        # it was built, and six importance modifiers were the only thing that ever read one.
+        # Gathered beside the rest and guarded the same way: an unreadable stratum is a gap in
+        # what this sweep can see, never a crash.
+        # WHAT EACH PERSON'S THREADS WERE FOR. Attached to the PERSON so the cohort reading can
+        # group people by an objective their conversations carry, rather than by the single
+        # overwritten copy on the person themselves. See `_PARTY_THREAD_OBJECTIVES`.
+        def _objectives() -> dict:
+            found: dict[str, list[str]] = {}
+            for row in c.execute(text(_PARTY_THREAD_OBJECTIVES), {"o": org_id}).mappings():
+                value = str(row["objective"] or "").strip()
+                if value:
+                    found.setdefault(str(row["party"]), []).append(value)
+            return found
+
+        for party, objectives in _optional(c, "thread objectives", _objectives, {}).items():
+            if party in held and isinstance(held[party], dict):
+                held[party]["_thread_objectives"] = objectives
+        from genios_engine.context.analytic_situations import gather_analytic_movements
+        held["_analytic"] = _optional(
+            c, "analytic movements", lambda: gather_analytic_movements(c, org_id), {})
+        if held["_analytic"] and not held.get("_node_names"):
+            from genios_engine.context.attention_situations import gather_display_names as _n2
+            held["_node_names"] = _optional(c, "node names", lambda: _n2(c, org_id), {})
         held["_blocker_kinds"] = _optional(
             c, "blocker verdicts", lambda: blocker_absence_verdicts(c, org_id), {})
         # THE COVERAGE MISS, AND THE ONLY GATHER HERE THAT CAN COME BACK EMPTY BY DESIGN. Residue

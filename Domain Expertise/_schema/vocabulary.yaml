@@ -641,6 +641,17 @@ substrate:
                                 # node. `dependency.blocker_identity` and `blocked_identity` are
                                 # declared missing, because their absence is the whole reason this
                                 # is a quoted statement instead of an edge.
+    # THE ANALYTIC STRATUM, GIVEN A SUBJECT. L2.4 publishes a verdict per node per metric — 566
+    # live facts on the pilot — and the only reader any of them ever had was BLG-18's importance
+    # modifiers, which can raise another card's rank and can never be a card. "This relationship
+    # has been going quiet" was computed every sweep and stated to nobody.
+    - analytic_movement         # admin, anchored on ONE MEASURED MOVEMENT — a trend the detector
+                                # gave a DIRECTION, a flagged anomaly, or a cohort position it did
+                                # not refuse. Its FLAT verdict and its two insufficiency verdicts
+                                # are a measurement and two refusals, and none of the three is a
+                                # thing that happened. `analytic.cause` is declared missing: the
+                                # stratum reads shape and never reads a sentence, so it knows the
+                                # number moved and has no access to any reason for it.
     - organization_gone_quiet   # admin, anchored on an ORGANIZATION — one counterparty FIRM
                                 # where more than one person has gone quiet. Not `cohort`
                                 # re-keyed: that groups by objective and spans funds, this
