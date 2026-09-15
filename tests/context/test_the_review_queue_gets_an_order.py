@@ -273,13 +273,32 @@ def test_the_predicate_stays_missing(store) -> None:
     assert "condition.predicate" not in _facts_of(card)
 
 
-def test_a_database_without_the_verdict_table_leaves_the_queue_flat(store) -> None:
-    """Migration 0165 is recent and a fixture builds only the tables its subject needs. A gather
-    that can take a sweep down is the "may only ever ADD" rule broken where nobody looks."""
+def test_a_missing_verdict_table_raises_so_the_seam_can_undo_it(store) -> None:
+    """THE PROPERTY MOVED TO THE SEAM THAT CAN ACTUALLY HONOUR IT, and this is the test that
+    moved with it.
+
+    This used to assert that the gather itself swallowed a missing table and returned an empty
+    default. It did — and that WAS the bug. Postgres aborts the whole transaction on a failed
+    statement, so the caught exception left the connection unusable and every LATER gather on it
+    returned nothing. Measured on the live tenant: `context_angle_verdicts` did not exist, this
+    guard behaved exactly as written, and eleven other gathers silently emptied. Twelve readings
+    dead, no error naming the cause.
+
+    So the gather now RAISES, and `outreach_situations._optional` is the single guard — it wraps
+    each call in a SAVEPOINT, which is the only thing that can undo a failed statement. The
+    degradation is unchanged from a reader's point of view; what changed is that it is now true.
+    """
+    from genios_engine.context.outreach_situations import _optional
+
     _queued(store)
     with store._engine.begin() as c:
         c.execute(text("drop table context_angle_verdicts"))
-        assert gather_condition_queue_verdicts(c, ORG) == {}
+        with pytest.raises(Exception):
+            gather_condition_queue_verdicts(c, ORG)
+
+    with store._engine.begin() as c:
+        assert _optional(c, "verdicts", lambda: gather_condition_queue_verdicts(c, ORG), {}) == {}
+        assert c.execute(text("select count(*) from graph_facts")).scalar() >= 1
 
 
 # ── the one-hop law, which this angle is the first thing able to violate ─────────────────────

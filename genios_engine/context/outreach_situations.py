@@ -1370,6 +1370,37 @@ def _mailbox_owner(c, org_id: str) -> str | None:
     return next(iter(seats)) if len(seats) == 1 else None
 
 
+def _optional(conn, label: str, call, default):
+    """Run one gather that MAY fail, without taking the rest of the sweep down with it.
+
+    A `try/except` around a database call is not enough, and believing it was cost this layer
+    every reading it has. Postgres aborts the whole transaction on a failed statement: the Python
+    exception is caught, the handler returns its empty default, and then EVERY later statement on
+    the same connection fails with `InFailedSqlTransaction` — including the ones that would have
+    worked. Measured on the live tenant: `context_angle_verdicts` did not exist, its guarded
+    gather returned `{}` exactly as designed, and the eleven gathers after it silently returned
+    nothing. Twelve readings, all of them dead, and not one error in the log that named the cause.
+    Every guard in this file read as safe and together they were the failure.
+
+    A SAVEPOINT is what makes the guard true. `begin_nested()` rolls back only this gather, so a
+    tenant missing a table — a migration not yet applied, a driver without an operator, a column
+    added last week — loses exactly that one reading and keeps the other eleven. That is the
+    property the guards were written to have.
+
+    NOT A RULE ABOUT WHICH TABLES ARE OPTIONAL, deliberately. Any gather may be wrapped; nothing
+    here names a tenant, a table or a migration, so a customer whose graph is shaped differently
+    gets the same degradation rather than a special case somebody has to remember to add.
+    """
+    try:
+        with conn.begin_nested():
+            return call()
+    except Exception:      # noqa: BLE001 — one reading's absence is never the sweep's
+        from genios_engine.platform.logging import get_logger
+        get_logger("genios.l2").warning("gather %s unavailable; the reading it feeds is skipped",
+                                        label, exc_info=True)
+        return default
+
+
 def _gather(store, org_id: str, *, now: datetime | None = None,
             campaign_window_days: int = CAMPAIGN_WINDOW_DAYS) -> tuple[dict, dict, dict]:
     """Everything the readings share, read once. `now` is THE SWEEP CLOCK, not the wall clock.
@@ -1420,14 +1451,17 @@ def _gather(store, org_id: str, *, now: datetime | None = None,
         from genios_engine.context.condition_situations import (
             gather_condition_queue_verdicts, gather_conditions_in_review,
             gather_conditions_satisfied)
-        held["_conditions"] = gather_conditions_in_review(c, org_id)
+        held["_conditions"] = _optional(
+            c, "condition review queue", lambda: gather_conditions_in_review(c, org_id), {})
         # …and what the triage angle last said about each of those queues, so the reading can be
         # ORDERED. Read here rather than inside the reader because the readers take rows, not a
         # connection, and this is the one place in the dispatch that holds both.
-        held["_condition_verdicts"] = gather_condition_queue_verdicts(c, org_id)
+        held["_condition_verdicts"] = _optional(
+            c, "condition verdicts", lambda: gather_condition_queue_verdicts(c, org_id), {})
         # …and the conditions that have COME TRUE. Published by the same correlator, in the same
         # shape, and read by nothing until now.
-        held["_conditions_met"] = gather_conditions_satisfied(c, org_id)
+        held["_conditions_met"] = _optional(
+            c, "satisfied conditions", lambda: gather_conditions_satisfied(c, org_id), {})
         # THE FOURTH DEPENDENCY FIELD, read here for the first time. `correlation_dependency`
         # has published `missing_prerequisite` on every sweep since it shipped and no query in
         # the engine selected it — a typed absence, with the sentence that named it, computed and
@@ -1435,63 +1469,56 @@ def _gather(store, org_id: str, *, now: datetime | None = None,
         # a gap in what this sweep can read, never a crash.
         from genios_engine.context.angles.queues import blocker_absence_verdicts
         from genios_engine.context.blocker_situations import gather_unnamed_blockers
-        try:
-            held["_blockers"] = gather_unnamed_blockers(c, org_id)
-        except Exception:      # noqa: BLE001 — one reading's gather is not the sweep's
-            held["_blockers"] = {}
+        held["_blockers"] = _optional(
+            c, "unnamed blockers", lambda: gather_unnamed_blockers(c, org_id), {})
         # …and what the classifier last said about each of them. Read here rather than inside the
         # reader because the readers take rows, not a connection, and this is the one place in the
         # dispatch that holds both.
-        held["_blocker_kinds"] = blocker_absence_verdicts(c, org_id)
+        held["_blocker_kinds"] = _optional(
+            c, "blocker verdicts", lambda: blocker_absence_verdicts(c, org_id), {})
         # THE COVERAGE MISS, AND THE ONLY GATHER HERE THAT CAN COME BACK EMPTY BY DESIGN. Residue
         # triaged `important` is what nothing on the board mentioned; with no angle layer it is
         # empty and the sweep is unchanged. Guarded like the rest: an unreadable queue is a gap in
         # what this sweep can see, never a crash.
         from genios_engine.context.attention_situations import (gather_display_names,
                                                                 gather_unreported_attention)
-        try:
-            unreported = gather_unreported_attention(c, org_id)
-            held["_unreported"] = unreported
-            held["_node_names"] = gather_display_names(c, org_id) if unreported else {}
-            held["_unreported_facts"] = {
-                str(row["subject_ref"]): held.get(str(row["subject_ref"])) or {}
-                for row in unreported}
-        except Exception:      # noqa: BLE001 — one reading's gather is not the sweep's
-            held["_unreported"] = ()
-            held["_node_names"] = {}
-            held["_unreported_facts"] = {}
+        unreported = _optional(
+            c, "unexplained attention", lambda: gather_unreported_attention(c, org_id), ())
+        held["_unreported"] = unreported
+        held["_node_names"] = _optional(
+            c, "node names", lambda: gather_display_names(c, org_id), {}) if unreported else {}
+        held["_unreported_facts"] = {str(row["subject_ref"]): held.get(str(row["subject_ref"])) or {}
+                                     for row in unreported}
         # M-3's ANSWERS. The near-misses a model called one message — empty with no angle layer,
         # and the sweep is then exactly what it was. Names are needed to print who is in the
         # group, so they are fetched once here whichever reading asked for them.
         from genios_engine.context.angles.queues import adjudicated_candidates
         from genios_engine.context.attention_situations import gather_display_names as _names_of
         from genios_engine.context.reworded_outreach import ONE_CAMPAIGN
-        try:
-            adjudicated = [entry for entry in adjudicated_candidates(c, org_id)
-                           if str(entry.get("verdict") or "") == ONE_CAMPAIGN]
-            held["_adjudicated"] = adjudicated
-            if adjudicated and not held.get("_node_names"):
-                held["_node_names"] = _names_of(c, org_id)
-        except Exception:      # noqa: BLE001 — one reading's gather is not the sweep's
-            held["_adjudicated"] = []
-        held["_mailbox_owner"] = _mailbox_owner(c, org_id)
+        adjudicated = [entry for entry in _optional(
+            c, "adjudicated candidates", lambda: adjudicated_candidates(c, org_id), [])
+            if str(entry.get("verdict") or "") == ONE_CAMPAIGN]
+        held["_adjudicated"] = adjudicated
+        if adjudicated and not held.get("_node_names"):
+            held["_node_names"] = _optional(c, "node names", lambda: _names_of(c, org_id), {})
+        held["_mailbox_owner"] = _optional(
+            c, "mailbox owner", lambda: _mailbox_owner(c, org_id), None)
         # THE MEETINGS, through the query that already knows how to find them. `meeting_touch.
         # _MEETINGS` joins the `attended` edge, excludes retired attendances, excludes our own
         # seats and keeps EVERY external attendee rather than one picked by sort order — three
         # corrections its comments record, each of which this reading would otherwise have had to
         # learn again. Guarded like `_mailbox_owner`: the query uses `#>>` and `array_agg`, so a
         # driver without them is a gap in what this sweep can read, never a crash.
-        try:
-            from genios_engine.context.meeting_touch import _MEETINGS
-            held["_meetings"] = [dict(r._mapping) for r in c.execute(text(_MEETINGS), {"o": org_id})]
-        except Exception:      # noqa: BLE001
-            held["_meetings"] = []
+        held["_meetings"] = _optional(
+            c, "meetings", lambda: [dict(r._mapping)
+                                    for r in c.execute(text(_MEETINGS), {"o": org_id})], [])
         # The counterparty organisations, under the same reserved-key route. Computed over the
         # WHOLE tenant rather than over `held`: `works_at` membership is what makes two people one
         # firm, and a firm's size — "two of the two partners we know are silent" — is only true if
         # the denominator counts everyone there, not only the ones who happen to be waiting.
         from genios_engine.context.correlation_organization import find_organizations
-        held["_organizations"] = find_organizations(c, org_id)
+        held["_organizations"] = _optional(
+            c, "organizations", lambda: find_organizations(c, org_id), ())
         # OPEN DUPLICATE PROPOSALS PER NODE, for the identity axis. Read here with every other
         # bulk gather; `support_situations` reads the same table for the same purpose and this
         # module was passing a hardcoded zero.
@@ -1502,14 +1529,15 @@ def _gather(store, org_id: str, *, now: datetime | None = None,
         # hand-written third dialect of one query is how that happens again, so there is no
         # longer a third. It also returns the STRENGTH, which the old `count(*)` could not.
         from genios_engine.context.situations import merge_pressure
-        held["_merge_proposals"] = merge_pressure(c, org_id)
+        held["_merge_proposals"] = _optional(
+            c, "merge pressure", lambda: merge_pressure(c, org_id), 0)
         # The campaigns, same route. `find_campaigns` requires an explicit window and has no
         # default: an unbounded read over a founder's whole mailbox is the query that makes a
         # sweep unpredictable.
         from genios_engine.context.correlation_conversation import find_campaigns
-        held["_campaigns"] = find_campaigns(
-            c, org_id, since=(now or datetime.now(timezone.utc))
-            - timedelta(days=CAMPAIGN_WINDOW_DAYS))
+        _since = (now or datetime.now(timezone.utc)) - timedelta(days=campaign_window_days)
+        held["_campaigns"] = _optional(
+            c, "campaigns", lambda: find_campaigns(c, org_id, since=_since), ())
         for row in c.execute(text(_COMMITMENT_OWNERS), {"o": org_id}):
             entry = held.get(str(row.commitment))
             if entry is None:

@@ -56,11 +56,15 @@ def _verdicts(conn, org_id: str) -> dict[tuple[str, str], str]:
     by_angle = {angle: kind for kind, angle in TRIAGE_ANGLE_BY_KIND.items()}
     if not by_angle:
         return {}
-    try:
-        rows = conn.execute(text(_VERDICTS).bindparams(bindparam("angles", expanding=True)),
-                            {"o": org_id, "angles": sorted(by_angle)}).mappings().all()
-    except Exception:      # noqa: BLE001 — an ordering must never cost the queue itself
-        return {}
+    # NO try/except HERE, DELIBERATELY. A guard that swallows a database error without
+    # owning the transaction is not a guard: Postgres aborts the whole transaction on a
+    # failed statement, so returning an empty default leaves every LATER query on the same
+    # connection failing with `InFailedSqlTransaction`. Measured on the live tenant — one
+    # missing table here silently emptied eleven other gathers and killed all twelve
+    # readings. The single guard is `outreach_situations._optional`, which wraps the call
+    # in a SAVEPOINT and therefore can actually undo it.
+    rows = conn.execute(text(_VERDICTS).bindparams(bindparam("angles", expanding=True)),
+                        {"o": org_id, "angles": sorted(by_angle)}).mappings().all()
     return {(by_angle[str(r["angle_id"])], str(r["subject_ref"])): str(r["verdict"])
             for r in rows if str(r["angle_id"]) in by_angle}
 
@@ -109,11 +113,15 @@ def blocker_absence_verdicts(conn, org_id: str) -> dict[str, str]:
     GUARDED FOR THE REASON `_verdicts` ABOVE IS. `context_angle_verdicts` arrived in migration
     0165, and a card that exists today must not stop existing because an ordering is unavailable.
     """
-    try:
-        rows = conn.execute(text(_BLOCKER_VERDICTS),
-                            {"o": org_id, "a": BLOCKER_ANGLE_ID}).mappings().all()
-    except Exception:      # noqa: BLE001 — a classification must never cost the card
-        return {}
+    # NO try/except HERE, DELIBERATELY. A guard that swallows a database error without
+    # owning the transaction is not a guard: Postgres aborts the whole transaction on a
+    # failed statement, so returning an empty default leaves every LATER query on the same
+    # connection failing with `InFailedSqlTransaction`. Measured on the live tenant — one
+    # missing table here silently emptied eleven other gathers and killed all twelve
+    # readings. The single guard is `outreach_situations._optional`, which wraps the call
+    # in a SAVEPOINT and therefore can actually undo it.
+    rows = conn.execute(text(_BLOCKER_VERDICTS),
+                        {"o": org_id, "a": BLOCKER_ANGLE_ID}).mappings().all()
     return {str(r["subject_ref"]): str(r["verdict"]) for r in rows}
 
 
@@ -144,12 +152,11 @@ def adjudicated_candidates(conn, org_id: str) -> list[dict[str, Any]]:
     found = list(read_candidates(conn, org_id))
     if not found:
         return []
-    try:
-        rows = conn.execute(text(_CAMPAIGN_VERDICTS),
-                            {"o": org_id, "a": CAMPAIGN_ANGLE_ID}).mappings().all()
-        verdicts = {str(r["subject_ref"]): str(r["verdict"]) for r in rows}
-    except Exception:      # noqa: BLE001 — an opinion must never cost the queue itself
-        verdicts = {}
+    # NO try/except HERE — see `_verdicts`. A guard that cannot roll back its own failed
+    # statement leaves the shared transaction aborted and empties every later gather silently.
+    rows = conn.execute(text(_CAMPAIGN_VERDICTS),
+                        {"o": org_id, "a": CAMPAIGN_ANGLE_ID}).mappings().all()
+    verdicts = {str(r["subject_ref"]): str(r["verdict"]) for r in rows}
 
     node_id = _tenant_of(conn, org_id)
     out: list[dict[str, Any]] = []

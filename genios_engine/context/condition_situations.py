@@ -337,11 +337,15 @@ def gather_condition_queue_verdicts(conn, org_id: str) -> dict[str, tuple[str, i
     yesterday. An angle may only ever ADD, and a gather that can take the layer down with it
     would be that rule broken at the one place nobody looks.
     """
-    try:
-        rows = conn.execute(text(_QUEUE_VERDICTS),
-                            {"o": org_id, "a": TRIAGE_ANGLE_ID}).mappings().all()
-    except Exception:
-        return {}
+    # NO try/except HERE, DELIBERATELY. A guard that swallows a database error without
+    # owning the transaction is not a guard: Postgres aborts the whole transaction on a
+    # failed statement, so returning an empty default leaves every LATER query on the same
+    # connection failing with `InFailedSqlTransaction`. Measured on the live tenant — one
+    # missing table here silently emptied eleven other gathers and killed all twelve
+    # readings. The single guard is `outreach_situations._optional`, which wraps the call
+    # in a SAVEPOINT and therefore can actually undo it.
+    rows = conn.execute(text(_QUEUE_VERDICTS),
+                        {"o": org_id, "a": TRIAGE_ANGLE_ID}).mappings().all()
     return {str(row["subject_ref"]): (str(row["verdict"]), int(row["confidence_bp"] or 0))
             for row in rows}
 

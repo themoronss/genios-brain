@@ -219,14 +219,32 @@ def test_the_queue_is_identical_without_the_angle(store) -> None:
     assert set(after[0]) - set(before[0]) == {TRIAGE_KEY}
 
 
-def test_a_database_without_the_verdict_table_still_answers(store) -> None:
-    """Migration 0165 is recent. A read that can fail because an ordering is unavailable is the
-    "may only ever ADD" rule broken where nobody looks."""
+def test_a_missing_verdict_table_raises_so_the_seam_can_undo_it(store) -> None:
+    """THE PROPERTY MOVED TO THE SEAM THAT CAN ACTUALLY HONOUR IT, and this is the test that
+    moved with it.
+
+    This used to assert that the gather itself swallowed a missing table and returned an empty
+    default. It did — and that WAS the bug. Postgres aborts the whole transaction on a failed
+    statement, so the caught exception left the connection unusable and every LATER gather on it
+    returned nothing. Measured on the live tenant: `context_angle_verdicts` did not exist, this
+    guard behaved exactly as written, and eleven other gathers silently emptied. Twelve readings
+    dead, no error naming the cause.
+
+    So the gather now RAISES, and `outreach_situations._optional` is the single guard — it wraps
+    each call in a SAVEPOINT, which is the only thing that can undo a failed statement. The
+    degradation is unchanged from a reader's point of view; what changed is that it is now true.
+    """
+    from genios_engine.context.outreach_situations import _optional
+
     _replied_and_we_went_quiet(store)
     with store._engine.begin() as c:
         c.execute(text("drop table context_angle_verdicts"))
-        rows = triaged_residue(c, ORG)
-    assert len(rows) == 1 and TRIAGE_KEY not in rows[0]
+        with pytest.raises(Exception):
+            triaged_residue(c, ORG)
+
+    with store._engine.begin() as c:
+        assert _optional(c, "triaged residue", lambda: triaged_residue(c, ORG), []) == []
+        assert c.execute(text("select count(*) from context_residue")).scalar() >= 1
 
 
 def test_a_kind_no_angle_looks_at_is_never_triaged(store) -> None:
