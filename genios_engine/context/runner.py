@@ -1438,6 +1438,31 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
         from genios_engine.platform.logging import get_logger
         get_logger("genios.l2").exception("second reading pass failed for org=%s", org_id)
 
+    # AND RANK WHAT THAT PASS JUST CREATED. The composer runs far above this line, for a reason
+    # that is still right — every one of its six modifiers reads a `derived.*` fact written by the
+    # analytic block, so composing any earlier reads last sweep's stratum. But the second reading
+    # pass writes situations AFTER it, and a situation the composer never saw carries a null
+    # importance. Its own docstring names that outcome precisely: "a null is invisible to the gate
+    # rather than failing it — the situations nobody ranks would be exactly the ones nobody
+    # notices."
+    #
+    # MEASURED ON THE PILOT the sweep this was found in: 138 open situations and 19 of them
+    # unranked — 8 `analytic_movement`, 6 `condition_in_review`, 5 `commitment_overdue`, every one
+    # of them a card the second pass had just made knowable, and every one unrankable into a feed.
+    #
+    # A SECOND RUN IS SAFE AND CHEAP, and the composer says so itself: it is "IDEMPOTENT, and
+    # byte-stable — running this twice at two instants over an unchanged graph writes an identical
+    # body", which is load-bearing because that body reaches the expertise package's content hash.
+    # So the situations the first run already ranked are rewritten with the same bytes and mint no
+    # new package row; only the ones it could not see change.
+    if second_pass_rows:
+        try:
+            from genios_engine.context.situation_bso import refresh_situation_importance as _rank
+            situations_ranked = _rank(store, org_id, eval_time=sweep_at)
+        except Exception:  # noqa: BLE001 — a derived view, recomputed on the next drain
+            from genios_engine.platform.logging import get_logger
+            get_logger("genios.l2").exception("second importance pass failed for org=%s", org_id)
+
     # ONE BUMP FOR EVERYTHING THE DERIVED PASSES DID.
     #
     # `bump_version` is taken per EVENT, inside `process_event`, and `bump_slice_versions`
