@@ -253,6 +253,13 @@ def test_producible_vocabulary_is_small_and_closed():
         # personally in one morning, mints nothing and is the commoner answer. Yields to both
         # older group readings on shared membership: one group of people gets one group card.
         "outreach_reworded",
+        # THE DEPENDENCY LANE'S ONLY LIVE OUTPUT ON A MAIL-ONLY TENANT. `correlation_dependency`
+        # refuses to invent a node for an endpoint it cannot resolve, and on the pilot NEITHER end
+        # resolved for 95 of 95 claims, so the lane produced nothing at all. This is the statement
+        # that survives the refusal: one named thing said to be waiting on another, both quoted,
+        # neither resolved, anchored on the party whose thread carried the sentence. No chain, no
+        # edge, no minted node — `chains`, `circular_wait` and `blocked_count` never see it.
+        "dependency_stated",
     }, "the L2 situation vocabulary changed — re-check every corpus route against it"
 
 

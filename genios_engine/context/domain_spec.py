@@ -463,6 +463,14 @@ register(DomainSpec(
                      # one raise to eighteen people and the system sees eighteen threads. It
                      # yields to both of the other two: one group of people gets one group card.
                      "reworded_outreach": "outreach_reworded",
+                     # THE 95 CLAIMS THE TRAVERSAL COULD NOT USE. L1 extracts dependencies
+                     # between OUTCOMES — "Shortlisting and showcase participation", "Meeting
+                     # between Sehan and Rohit" — and `correlation_dependency` needs parties at
+                     # both ends, so every one was dropped. The statement survives the refusal:
+                     # somebody said, in a thread with a real counterparty, that one named thing
+                     # waits on another. Anchored on that counterparty, with both ends quoted and
+                     # neither resolved. Admin, like the rest of the follow-through lane.
+                     "stated_dependency": "dependency_stated",
                      # THE SECOND GROUP-SHAPED SUBJECT, and it is not the first one re-keyed.
                      # `cohort` groups by OBJECTIVE — "of everyone I contacted about the raise,
                      # who has gone quiet?" — which spans funds on purpose. This groups by FIRM.

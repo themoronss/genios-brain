@@ -204,6 +204,15 @@ def test_the_facts_the_two_sweeps_write_are_findings_and_never_a_ranking():
     assert written == {"derived.dependency.blocked_count", "derived.dependency.chains",
                        "derived.dependency.circular_wait",
                        "derived.dependency.missing_prerequisite",
+                       # A FINDING, AND THE HARDEST-WON ONE. 95 of 95 claims on the pilot had
+                       # NEITHER end resolve — L1 extracts dependencies between outcomes and this
+                       # traversal needs parties — so the whole lane published nothing. This
+                       # carries the two ends as TEXT with the sentence that stated them, anchored
+                       # on the party whose thread it was said in. It sorts no queue and holds no
+                       # score: no `_bp`, no verb from FORBIDDEN_VERBS, and no edge or node is
+                       # minted for it, which is what keeps "a false chain is worse than a missing
+                       # one" true while the statement still reaches a reader.
+                       "derived.dependency.stated",
                        "derived.timeline.dormant_condition", "derived.timeline.condition_satisfied",
                        "derived.timeline.condition_review"}
 

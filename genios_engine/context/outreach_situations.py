@@ -1216,6 +1216,14 @@ def read_conditions_for_dispatch(rows: dict, now: datetime, employers: dict) -> 
 from genios_engine.context.attention_situations import ANCHOR_UNREPORTED
 from genios_engine.context.blocker_situations import ANCHOR_UNNAMED_BLOCKER
 from genios_engine.context.reworded_outreach import ANCHOR_REWORDED
+from genios_engine.context.stated_dependency import ANCHOR_STATED
+
+
+def read_stated_for_dispatch(rows: dict, now: datetime, employers: dict) -> list[_Finding]:
+    """The stated-dependency reading, in the shape the dispatch loop hands every reader."""
+    from genios_engine.context.stated_dependency import read_stated_dependencies
+
+    return read_stated_dependencies(rows.get("_stated") or {}, now, rows.get("_node_names") or {})
 
 
 def read_reworded_for_dispatch(rows: dict, now: datetime, employers: dict) -> list[_Finding]:
@@ -1330,6 +1338,7 @@ READINGS = (
     # residue it reads was measured against a sweep that had already produced everything it could.
     # BEFORE the last-resort reading and AFTER the two group readings it yields to: the dispatch
     # order is the precedence, since each reading computes coverage from the ones it names.
+    (ANCHOR_STATED, read_stated_for_dispatch),
     (ANCHOR_REWORDED, read_reworded_for_dispatch),
     (ANCHOR_UNREPORTED, read_attention_for_dispatch),
 )
@@ -1483,6 +1492,14 @@ def _gather(store, org_id: str, *, now: datetime | None = None,
         # …and what the classifier last said about each of them. Read here rather than inside the
         # reader because the readers take rows, not a connection, and this is the one place in the
         # dispatch that holds both.
+        # THE 95 CLAIMS THE TRAVERSAL COULD NOT USE, now readable. Names are needed to say whose
+        # thread a statement was made in, and are fetched once for whichever reading asks.
+        from genios_engine.context.stated_dependency import gather_stated_dependencies
+        held["_stated"] = _optional(
+            c, "stated dependencies", lambda: gather_stated_dependencies(c, org_id), {})
+        if held["_stated"] and not held.get("_node_names"):
+            from genios_engine.context.attention_situations import gather_display_names as _n
+            held["_node_names"] = _optional(c, "node names", lambda: _n(c, org_id), {})
         held["_blocker_kinds"] = _optional(
             c, "blocker verdicts", lambda: blocker_absence_verdicts(c, org_id), {})
         # THE COVERAGE MISS, AND THE ONLY GATHER HERE THAT CAN COME BACK EMPTY BY DESIGN. Residue

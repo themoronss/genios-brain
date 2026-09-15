@@ -629,6 +629,18 @@ substrate:
                                 # not use everywhere. Only the `one_campaign` verdict mints;
                                 # `same_topic_not_one_message` — five intros answered personally
                                 # in one morning — is the commoner answer and mints nothing.
+    # THE DEPENDENCY LANE'S ONLY LIVE OUTPUT ON A MAIL-ONLY TENANT. `correlation_dependency`
+    # refuses to invent a node for an endpoint it cannot resolve, and on the pilot NEITHER end
+    # resolved for 95 of 95 claims — Layer 1 extracts dependencies between outcomes, the traversal
+    # needs parties. What survives is the STATEMENT: one named thing waits on another, said in a
+    # thread with a real counterparty. Both ends travel as text, nothing is joined, and no chain
+    # or edge is minted, so the module's rule that a false chain is worse than a missing one is
+    # untouched.
+    - dependency_stated         # admin, anchored on a STATED DEPENDENCY — one sentence in which
+                                # something was said to wait on something else, neither of them a
+                                # node. `dependency.blocker_identity` and `blocked_identity` are
+                                # declared missing, because their absence is the whole reason this
+                                # is a quoted statement instead of an edge.
     - organization_gone_quiet   # admin, anchored on an ORGANIZATION — one counterparty FIRM
                                 # where more than one person has gone quiet. Not `cohort`
                                 # re-keyed: that groups by objective and spans funds, this
