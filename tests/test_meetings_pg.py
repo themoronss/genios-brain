@@ -279,6 +279,31 @@ def test_prep_lists_open_loops_per_known_attendee_fast(client):
     assert _evaluate(client, ws["owner_dev"], n["mtg"], rid="prep-1").json() == m
 
 
+
+def test_prep_adds_the_seats_own_screen_item_on_an_attendee(client):
+    # P11: an open screen follow-up the OWNER's screen caught on Ravi joins Ravi's line; the
+    # member's own item on Ravi never reaches the owner's prep.
+    ws = _ws(client)
+    start = datetime.now(timezone.utc).replace(microsecond=0) + timedelta(minutes=15)
+    n = _seed(ws, start=start)
+    with _engine().begin() as c:
+        for fid, seat, note in (("fu_own_" + uuid.uuid4().hex[:8], ws["owner"]["seat_id"],
+                                 "send the revised quote"),
+                                ("fu_mem_" + uuid.uuid4().hex[:8], ws["member"]["seat_id"],
+                                 "member private note")):
+            c.execute(text(
+                "insert into screen_followups (id, org_id, seat_id, kind, text, who, topic_key, "
+                "subject_node_id) values (:i, :o, :s, 'ask', :t, 'Ravi Kumar', :k, :n)"),
+                {"i": fid, "o": ws["org"], "s": seat, "t": note, "k": "k_" + fid,
+                 "n": n["ravi"]})
+    res = _evaluate(client, ws["owner_dev"], n["mtg"], rid="prep-screen")
+    assert res.status_code == 200, res.text
+    m = res.json()
+    ravi = next(ln for ln in m["body"].split("\n") if ln.startswith("Ravi Kumar"))
+    assert "They asked (on screen): send the revised quote" in ravi
+    assert "member private note" not in res.text
+    assert "4 open loops" in m["headline"]
+
 # ── 2 · not an attendee ───────────────────────────────────────────────────────────────────────
 def test_non_attendee_and_unknown_meeting_get_204(client):
     ws = _ws(client)

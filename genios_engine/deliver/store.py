@@ -420,14 +420,14 @@ class CardStore:
         # whose only honest measure is whether the reader acts on every line.
         common = (" where k.org_id=:o and k.state = any(:states) and s.status='open' "
                   "and 'app' = any(k.surfaces) and k.expires_at > :authority_time ")
-        q = ("select k.card_id, k.signal_id, k.assignee, k.domain, k.urgency_band, k.headline, "
+        q = ("select k.card_id, k.signal_id, k.assignee, k.domain, k.urgency_band, k.headline, s.subject_node_id, "
              "k.situation, " + AUTHORITATIVE_SCORE_SQL +
              " as score, k.state, k.render_mode, k.created_at, k.expires_at "
              "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "
              + AUTHORITATIVE_SIGNAL_JOINS + common + "and " + AUTHORITATIVE_SIGNAL_PREDICATE)
         # THE SECOND DOOR, for P4 situation cards only (see SITUATION_CARD_SQL). Same states,
         # surface, expiry and seat-visibility clauses; the L4 query above is untouched.
-        sq = ("select k.card_id, k.signal_id, k.assignee, k.domain, k.urgency_band, k.headline, "
+        sq = ("select k.card_id, k.signal_id, k.assignee, k.domain, k.urgency_band, k.headline, s.subject_node_id, "
               "k.situation, k.score, k.state, k.render_mode, k.created_at, k.expires_at "
               "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id"
               + common + "and " + SITUATION_CARD_SQL)

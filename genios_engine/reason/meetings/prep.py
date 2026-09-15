@@ -45,6 +45,10 @@ PRIOR_DAYS = 120
 TOUCH_DAYS = 365
 MAX_LINES = 4
 PER_ATTENDEE = 2
+SCREEN_PER_ATTENDEE = 1                        # what the screen caught, per attendee line
+_SCREEN_LABEL = {"ask": "They asked", "my_promise": "You promised",
+                 "their_promise": "They promised", "deadline": "Deadline", "risk": "Risk",
+                 "next_step": "Next step"}
 MAX_EVIDENCE = 20
 OPEN_STATUSES = ("open", "pending", "in_progress")
 _MEETING_FIELDS = ("meeting.title", "meeting.start_at", "meeting.end_at", "meeting.status")
@@ -95,6 +99,8 @@ class PrepRead:
     prior: tuple | None = None                     # (meeting node, title, start)
     prior_items: list = field(default_factory=list)
     changes: list = field(default_factory=list)
+    screen: dict = field(default_factory=dict)     # person → [(kind, note, due)]: the seat's open
+                                                   # screen follow-ups written on that person
 
 
 @dataclass(frozen=True)
@@ -232,8 +238,10 @@ def _prior_meeting(conn, *, org_id: str, att: Attendance, viewer, now: datetime)
     return best
 
 
-def read(conn, *, org_id: str, att: Attendance, email: str | None, now: datetime) -> PrepRead:
-    """Everything the prep says, seat-visible (≈ 8 statements)."""
+def read(conn, *, org_id: str, att: Attendance, email: str | None, now: datetime,
+         seat_id: str | None = None) -> PrepRead:
+    """Everything the prep says, seat-visible (≈ 9 statements). `seat_id` adds the seat's own
+    open screen follow-ups on the attendees (P11) — never another seat's."""
     from genios_engine.reason.moments.slice import _deals, recent_changes
     viewer = viewer_key(email)
     out = PrepRead(att=att)
@@ -291,6 +299,14 @@ def read(conn, *, org_id: str, att: Attendance, email: str | None, now: datetime
                         | {att.meeting_node_id})
     out.changes = recent_changes(conn, org_id=org_id, node_ids=change_ids, viewer=viewer,
                                  now=now, limit=10)
+    if seat_id and people:
+        for r in conn.execute(text(
+                "select subject_node_id, kind, text, due_at from screen_followups "
+                "where org_id = :o and seat_id = :s and resolved_at is null "
+                "and subject_node_id = any(:ids) order by coalesce(due_at, created_at), id"),
+                {"o": org_id, "s": seat_id, "ids": people}):
+            out.screen.setdefault(r.subject_node_id, []).append(
+                (r.kind, r.text, aware(r.due_at)))
     return out
 
 
@@ -319,6 +335,14 @@ def _loop_text(loop: Loop, now: datetime) -> str:
     if loop.due is not None and loop.due < now:
         return f"{who}: {loop.text} (overdue since {_day(loop.due)})"
     return f"{who}: {loop.text}" + (f" (due {_day(loop.due)})" if loop.due else "")
+
+
+def _screen_text(kind: str, note: str, due: datetime | None, now: datetime) -> str:
+    """"They asked (on screen): send the revised quote (due 18 Sep)"."""
+    when = ""
+    if due is not None:
+        when = f" (overdue since {_day(due)})" if due < now else f" (due {_day(due)})"
+    return f"{_SCREEN_LABEL.get(kind, 'Open')} (on screen): {note}{when}"
 
 
 def _ago(then: datetime, now: datetime) -> str:
@@ -380,6 +404,7 @@ def compose(read_: PrepRead, *, now: datetime) -> dict | None:
             ours_for.setdefault(target, []).append(loop)
     evidence: list[dict] = []
     shown_loops: set[str] = set()
+    screen_count: dict[str, int] = {}               # attendee name → screen items shown
     lines_by_person: list[tuple[tuple, str, list[Loop]]] = []
     for p in att.attendees:
         name = att.names.get(p)
@@ -399,11 +424,15 @@ def compose(read_: PrepRead, *, now: datetime) -> dict | None:
         if lt is not None:
             parts.append(_ago(lt, now))
         parts.extend(_loop_text(lp, now) for lp in top)
+        seen = read_.screen.get(p, [])
+        parts.extend(_screen_text(k, t, d, now) for k, t, d in seen[:SCREEN_PER_ATTENDEE])
+        if seen:
+            screen_count[name] = min(len(seen), SCREEN_PER_ATTENDEE)
         deal = read_.company_deal.get(comp) if comp else None
         stage = text_of(_fact(read_, deal, "deal.stage")) or text_of(_fact(read_, deal, "deal.status"))
         if stage and p not in read_.internal:
             parts.append(f"Deal: {stage}")
-        rank = (-len(loops), p in read_.internal,
+        rank = (-(len(loops) + min(len(seen), SCREEN_PER_ATTENDEE)), p in read_.internal,
                 -(lt.timestamp() if lt is not None else 0.0), name)
         lines_by_person.append((rank, " · ".join(parts), top))
     lines_by_person.sort(key=lambda t: t[0])
@@ -464,9 +493,13 @@ def compose(read_: PrepRead, *, now: datetime) -> dict | None:
         evidence.append({"node_id": read_.prior[0], "field": "raised_in", "source": "graph"})
     evidence.insert(0, {"node_id": att.meeting_node_id, "field": "meeting.start_at",
                         "source": "graph", "at": iso(att.start_at)})
-    who = [rank[-1] for rank, _, top in lines_by_person if top]     # most loops first
-    if all_loops:
-        n = len(all_loops)
+    for p in att.attendees:
+        if att.names.get(p) in screen_count:
+            evidence.append({"node_id": p, "field": "screen_followup", "source": "screen"})
+    who = [rank[-1] for rank, _, top in lines_by_person
+           if top or rank[-1] in screen_count]                    # most loops first
+    if all_loops or screen_count:
+        n = len(all_loops) + sum(screen_count.values())
         tail = f" — {n} open loop{'s' if n != 1 else ''}"
         if who:
             tail += f" with {_first(who[0])}" + (f" +{len(who) - 1}" if len(who) > 1 else "")
@@ -536,7 +569,8 @@ def lookup(conn, *, org_id: str, seat_id: str, email: str | None, meeting_node_i
     pre_hit = M.cached(conn, pre, now)
     content = retime(pre_hit, now) if pre_hit is not None else None
     if content is None:
-        content = compose(read(conn, org_id=org_id, att=att, email=email, now=now), now=now)
+        content = compose(read(conn, org_id=org_id, att=att, email=email, now=now,
+                               seat_id=seat_id), now=now)
     if content is None:
         return None
     content = with_delegate(conn, org_id=org_id, att=att, content=content, now=now)

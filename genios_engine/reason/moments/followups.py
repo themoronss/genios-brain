@@ -252,13 +252,15 @@ def verdict_key(thread_key: str | None) -> str | None:
 
 # ── reads ─────────────────────────────────────────────────────────────────────────────────────
 _COLS = ("id, kind, text, who, thread_key, app, due_at, nudge_at, created_at, updated_at, "
-         "resolved_at, resolution")
+         "resolved_at, resolution, subject_node_id")
 
 
 def item_out(r, *, full: bool = False) -> dict:
     out = {"id": r.id, "kind": r.kind, "text": r.text, "who": r.who, "thread_key": r.thread_key,
            "app": r.app, "due_at": iso(aware(r.due_at)), "nudge_at": iso(aware(r.nudge_at)),
-           "created_at": iso(aware(r.created_at))}
+           "created_at": iso(aware(r.created_at)),
+           # The person node it was written on — the panel shows it with that person's cards.
+           "subject_node_id": r.subject_node_id}
     if full:
         out.update({"updated_at": iso(aware(r.updated_at)),
                     "resolved_at": iso(aware(r.resolved_at)), "resolution": r.resolution})

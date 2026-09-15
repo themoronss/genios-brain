@@ -74,6 +74,32 @@ def test_prep_lists_open_loops_per_attendee_in_four_lines():
                                   "source": "graph", "at": "2026-09-17T05:15:00Z"}
 
 
+
+def test_prep_adds_what_the_screen_caught_for_an_attendee():
+    # P11: the seat's own open screen follow-up on Ravi joins his line and the count.
+    r = _read()
+    r.screen = {"ravi": [("ask", "send the revised quote", NOW + timedelta(days=1)),
+                         ("risk", "second item is not shown", None)]}
+    out = MP.compose(r, now=NOW)
+    # Ravi now has two open items (one shown from the screen) to Priya's one → he leads.
+    assert out["headline"] == "Acme review in 15 min — 4 open loops with Ravi +1"
+    lines = out["body"].split("\n")
+    assert lines[0] == ("Ravi Kumar · You owe: share the pricing deck · "
+                        "They asked (on screen): send the revised quote (due 18 Sep)")
+    assert "second item" not in out["body"]
+    assert {"node_id": "ravi", "field": "screen_followup", "source": "screen"} in out["evidence"]
+
+
+def test_prep_speaks_for_a_screen_item_alone():
+    # An attendee with nothing in the graph but an open screen item still gets a prep.
+    att = MP.Attendance(meeting_node_id="mtg", me="me", attendees=("neha",),
+                        names={"neha": "Neha Rao"}, title="Vendor sync", start_at=START)
+    r = MP.PrepRead(att=att)
+    r.screen = {"neha": [("their_promise", "share the invoice", NOW - timedelta(days=1))]}
+    out = MP.compose(r, now=NOW)
+    assert out["headline"] == "Vendor sync in 15 min — 1 open loop with Neha"
+    assert out["body"] == "Neha Rao · They promised (on screen): share the invoice (overdue since 16 Sep)"
+
 def test_prep_is_silent_with_nothing_to_say():
     att = MP.Attendance(meeting_node_id="m", me="me", attendees=(), title="Solo",
                         start_at=START)
