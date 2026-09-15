@@ -899,7 +899,7 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         #: message they sent is already evidence about them, on the ordinary sender path.
         outbound_recipient_nodes: list[str] = []
         #: The external half of the same list. An ask needs exactly one answerer to be closable
-        #: (see `migrations/0159_open_loop_awaited_from.sql`), and a colleague on Cc is not the
+        #: (see `migrations/0165_open_loop_awaited_from.sql`), and a colleague on Cc is not the
         #: person we are waiting on.
         outbound_external_nodes: list[str] = []
 

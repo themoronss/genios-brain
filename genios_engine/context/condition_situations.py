@@ -331,7 +331,7 @@ def gather_condition_queue_verdicts(conn, org_id: str) -> dict[str, tuple[str, i
     """What the angle currently says about each unparsed condition, keyed by fanned subject ref.
 
     GUARDED, AND THE GUARD IS THE POINT rather than defensive habit. `context_angle_verdicts`
-    arrived in migration 0165; a database that predates it, a fixture that builds only the tables
+    arrived in migration 0171; a database that predates it, a fixture that builds only the tables
     its own subject needs, or a driver that cannot run the query must all produce a FLAT review
     queue — which is precisely today's behaviour — instead of failing a sweep that was working
     yesterday. An angle may only ever ADD, and a gather that can take the layer down with it

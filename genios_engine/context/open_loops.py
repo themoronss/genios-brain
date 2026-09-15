@@ -34,7 +34,7 @@ def record_ask(conn, *, org_id: str, subject_node_id: str, kind: str,
     ASKED. It is supplied for an ask WE send, where the answerer is the person we sent it to, and
     left null both for an ask they sent us — our own reply closes that one by subject — and for
     an ask with more than one external recipient, where no single node is the answerer. See
-    `migrations/0159_open_loop_awaited_from.sql` for why a null is honest rather than a gap.
+    `migrations/0165_open_loop_awaited_from.sql` for why a null is honest rather than a gap.
     """
     loop = open_loop_id(org_id=org_id, subject_node_id=subject_node_id, kind=kind,
                         thread_id=thread_id)

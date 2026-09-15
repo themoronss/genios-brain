@@ -48,7 +48,7 @@ _VERDICTS = ("select angle_id, subject_ref, verdict from context_angle_verdicts 
 def _verdicts(conn, org_id: str) -> dict[tuple[str, str], str]:
     """`{(residue_kind, subject_ref): verdict}`, or nothing at all.
 
-    GUARDED, AND THE GUARD IS THE POINT. `context_angle_verdicts` arrived in migration 0165; a
+    GUARDED, AND THE GUARD IS THE POINT. `context_angle_verdicts` arrived in migration 0171; a
     database that predates it, a fixture that builds only the tables its own subject needs, or a
     driver that cannot run the query must all return the queue EXACTLY as it reads today —
     unordered — rather than fail a read that was working yesterday. An angle may only ever ADD.
@@ -111,7 +111,7 @@ def blocker_absence_verdicts(conn, org_id: str) -> dict[str, str]:
     against its own field name, and it fails silently in both directions.
 
     GUARDED FOR THE REASON `_verdicts` ABOVE IS. `context_angle_verdicts` arrived in migration
-    0165, and a card that exists today must not stop existing because an ordering is unavailable.
+    0171, and a card that exists today must not stop existing because an ordering is unavailable.
     """
     # NO try/except HERE, DELIBERATELY. A guard that swallows a database error without
     # owning the transaction is not a guard: Postgres aborts the whole transaction on a

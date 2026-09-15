@@ -1,7 +1,7 @@
 """They replied, we went quiet — and now the queue of those says which ones matter.
 
 `reply_owed_triage` is the second declared angle and the first to read `context_residue`. The kind
-it gates on is the one migration 0164 describes in the founder's own words: *"a node whose
+it gates on is the one migration 0170 describes in the founder's own words: *"a node whose
 `thread.ball_in_court` fact says the turn is OURS, with no live situation. This is the shape the
 founder named directly: they replied, we went quiet, and nothing said so."*
 
@@ -9,7 +9,7 @@ A residue row has no live situation BY DEFINITION, so there is no card here to r
 angle mints none. It orders the work queue `read_residue` returns, and the tests below spend most
 of their effort proving the things it must not do: it must not reorder the queue, must not remove
 a row it calls `noise`, must not let a refusal through, and must leave a database without
-migration 0165 reading exactly as it reads today.
+migration 0171 reading exactly as it reads today.
 
 The sharpest test in the file is `test_the_field_a_reader_would_reach_for_first_is_forbidden`.
 `thread.days_waiting` is the obvious field for a queue about waiting, and it is guaranteed ABSENT
