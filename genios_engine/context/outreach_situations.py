@@ -28,6 +28,13 @@ it, and a situation is a claim about which facts, together, are worth a decision
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+#: LATENT UNTIL A COHORT ACTUALLY FORMS. `read_outreach_cohorts` calls `median(cadences)` and
+#: nothing in this module bound the name — `waiting.py` imports it, this file never did. The line
+#: sits behind `len(members) >= _MIN_COHORT` and `len(waiting) >= _MIN_COHORT_AWAITING`, which no
+#: group on the pilot has ever satisfied, so it has never run. The first tenant whose campaign
+#: reaches three people would have raised `NameError` INSIDE the readings' write transaction,
+#: which is not a gap in one lane — it takes the whole reading pass down with it.
+from statistics import median
 from types import SimpleNamespace
 
 from sqlalchemy import bindparam, text
@@ -1644,9 +1651,17 @@ def _gather(store, org_id: str, *, now: datetime | None = None,
         # corrections its comments record, each of which this reading would otherwise have had to
         # learn again. Guarded like `_mailbox_owner`: the query uses `#>>` and `array_agg`, so a
         # driver without them is a gap in what this sweep can read, never a crash.
+        # IMPORTED, not referenced from thin air. This read `_MEETINGS` as a bare name that no
+        # import in this module ever bound, so the lambda raised `NameError` on every sweep,
+        # `_optional` caught it, logged "gather meetings unavailable; the reading it feeds is
+        # skipped", and handed back `[]`. `read_meetings_for_dispatch` then had nothing to read
+        # and `meeting_follow_through` produced ZERO cards — not on this tenant, on every tenant,
+        # since the line was written. The guard made a crash survivable and made the outage quiet;
+        # the same shape as `correlation_dependency.event_parties` calling an un-imported `text`.
+        from genios_engine.context.meeting_touch import _MEETINGS as _MEETING_ROWS
         held["_meetings"] = _optional(
             c, "meetings", lambda: [dict(r._mapping)
-                                    for r in c.execute(text(_MEETINGS), {"o": org_id})], [])
+                                    for r in c.execute(text(_MEETING_ROWS), {"o": org_id})], [])
         # The counterparty organisations, under the same reserved-key route. Computed over the
         # WHOLE tenant rather than over `held`: `works_at` membership is what makes two people one
         # firm, and a firm's size — "two of the two partners we know are silent" — is only true if
