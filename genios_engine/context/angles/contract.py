@@ -199,6 +199,16 @@ class Angle:
     #: Requires exactly one gate name — with two, there is no answer to WHICH value gets fanned.
     fan_out: tuple[str, ...] = ()
 
+    #: THE QUESTION, IN WORDS, and it belongs in the declaration rather than in a prompt file.
+    #: `angles/asker.py` builds the whole prompt from this object — `sees` is the evidence list,
+    #: `returns` the answer list, `refusal` the honest exit — so reviewing an angle IS reviewing
+    #: what a model is asked. A question living anywhere else could drift from the enum it is
+    #: supposed to be answerable with, and nobody reviewing the declaration would see it.
+    #:
+    #: Optional so every angle predating this still constructs; `build_prompt` falls back to the
+    #: id, which reads acceptably because ids here are already sentences in miniature.
+    question: str = ""
+
     cost_tier: CostTier = CostTier.CHEAP
 
     #: Free-form notes for the reviewer. Never read by the engine.

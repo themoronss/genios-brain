@@ -56,6 +56,10 @@ from genios_engine.context.angles.contract import Angle, CostTier, GateSource, r
 #: of a fanned ref and selects `subject_node_id = :s` — actually finds them.
 CONDITION_NOW_TRUE = register(Angle(
     angle_id="condition_now_true",
+    question=("A counterparty attached a condition to something. Given the sentence they wrote "
+              "and what has happened between the two parties since, is that condition true "
+              "TODAY? Answer `not_a_condition` if the sentence is a courtesy rather than a "
+              "real trigger, and `unknowable` if it depends on something not shown."),
     version="1.0.0",
     gate=("derived.timeline.condition_review",),
     gate_source=GateSource.FACTS,
@@ -129,6 +133,10 @@ CONDITION_NOW_TRUE = register(Angle(
 #: constant to every slice and to `saw_hash` and tell the model nothing.
 REPLY_OWED_TRIAGE = register(Angle(
     angle_id="reply_owed_triage",
+    question=("The record says the next move is ours with this person and nothing on the board "
+              "mentions them. Given how the two sides have corresponded, does this deserve "
+              "attention now? `important` means act, `developing` means watch, `ambient` "
+              "means no action needed, `noise` means no reply is genuinely owed."),
     version="1.0.0",
     gate=("ball_in_court_unreported",),
     gate_source=GateSource.RESIDUE,
@@ -206,6 +214,11 @@ REPLY_OWED_TRIAGE = register(Angle(
 #: `named_party` or `named_function` and the queue keeps exactly the noise this would expose.
 BLOCKER_ABSENCE = register(Angle(
     angle_id="blocker_absence",
+    question=("Something is recorded as blocked on a thing this system could not identify. From "
+              "the name and the sentence alone, what KIND of thing is the blocker? "
+              "`named_party` if it names a person or company, `named_function` if it names a "
+              "team, role, process or body, `not_a_dependency` if the sentence is not really "
+              "a blocking relation. Do not guess who it is."),
     version="1.0.0",
     gate=("derived.dependency.missing_prerequisite",),
     gate_source=GateSource.FACTS,
@@ -281,6 +294,10 @@ BLOCKER_ABSENCE = register(Angle(
 #: `MAX_CANDIDATES` caps a tenant's queue at forty, and an unchanged slice is never re-asked.
 SAME_SITUATION_TWO_THREADS = register(Angle(
     angle_id="same_situation_two_threads",
+    question=("These messages went out close together to different people and share unusual "
+              "wording. Are they ONE message reworded and sent out (`one_campaign`), separate "
+              "conversations that happen to be about one subject "
+              "(`same_topic_not_one_message`), or unrelated (`unrelated`)?"),
     version="1.0.0",
     gate=("derived.conversation.campaign_candidate",),
     gate_source=GateSource.FACTS,

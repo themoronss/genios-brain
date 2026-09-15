@@ -279,7 +279,8 @@ def evaluate_angle(store, org_id: str, angle: Angle, *, eval_time: datetime | No
                 verdict = AngleVerdict.of(angle, subject_ref=subject_ref, verdict=word,
                                           confidence_bp=confidence_bp,
                                           model_run_id=_record(store, org_id, angle, subject_ref,
-                                                               seen, word, now))
+                                                               seen, word, now,
+                                                               getattr(asker, "last", None)))
             except Exception:      # noqa: BLE001 — one subject's failure is not the sweep's
                 failed += 1
                 continue
@@ -296,7 +297,7 @@ def evaluate_angle(store, org_id: str, angle: Angle, *, eval_time: datetime | No
 
 
 def _record(store, org_id: str, angle: Angle, subject_ref: str, seen: Mapping[str, Any],
-            word: str, now: datetime) -> str | None:
+            word: str, now: datetime, usage: Any = None) -> str | None:
     """File the durable audit envelope, and never let filing it cost the verdict.
 
     `model_audit` stores "the prompt hash and the complete returned artifact, not the prompt
@@ -312,7 +313,16 @@ def _record(store, org_id: str, angle: Angle, subject_ref: str, seen: Mapping[st
             subject_ref=f"{angle.angle_id}:{subject_ref}",
             prompt_version=f"{angle.angle_id}.v{angle.version}",
             prompt=json.dumps({k: seen[k] for k in sorted(seen)}, default=str, sort_keys=True),
-            result=word, called_at=now, max_tokens=0)
+            # THE RECEIPT, NOT A PLACEHOLDER. `record_model_run` reads `model`, `input_tokens`,
+            # `output_tokens`, `ok` and `error` OFF THIS OBJECT — and this passed `word`, a bare
+            # string, so every one took its default: `model="unknown"`, zero tokens,
+            # `success=False`. `max_tokens=0` then violated `l2_model_runs_max_tokens_check` and
+            # the row was lost entirely, so the angle layer could not say what it had spent. The
+            # asker is the only thing that holds these facts; `model_asker` exposes them as
+            # `.last`.
+            result=usage if usage is not None else word,
+            called_at=now,
+            max_tokens=int(getattr(usage, "max_tokens", 0) or 0) or 1)
     except Exception:      # noqa: BLE001 — an audit row must never cost a verdict
         from genios_engine.platform.logging import get_logger
         get_logger("genios.l2").exception("angle audit write failed org=%s angle=%s",
