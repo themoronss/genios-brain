@@ -46,6 +46,51 @@ def test_ask_nudges_within_the_working_day():
         _ist(2026, 9, 22, 10)
 
 
+
+def test_an_item_with_a_due_time_gets_a_heads_up_a_final_and_an_overdue_reminder():
+    # P12 — "5:30 baje bhej dunga" typed at 11:00 → 4:30 heads-up, 5:20 final, 5:45 overdue.
+    tz = "Asia/Kolkata"
+    at11, due = _ist(2026, 9, 14, 11), _ist(2026, 9, 14, 17, 30)
+    assert F.ladder("my_promise", created_at=at11, due_at=due) == [
+        _ist(2026, 9, 14, 16, 30), _ist(2026, 9, 14, 17, 20), _ist(2026, 9, 14, 17, 45)]
+    assert F.nudge_at("my_promise", created_at=at11, due_at=due, tz_name=tz) == _ist(2026, 9, 14, 16, 30)
+    # An ask "within the hour": its due wins over the +3 h rule; too close for a heads-up.
+    noon = _ist(2026, 9, 14, 12)
+    assert F.ladder("ask", created_at=at11, due_at=noon) == [_ist(2026, 9, 14, 11, 50),
+                                                             _ist(2026, 9, 14, 12, 15)]
+    assert F.nudge_at("ask", created_at=at11, due_at=noon, tz_name=tz) == _ist(2026, 9, 14, 11, 50)
+    # A same-day deadline used to get NO reminder (its day-before nudge had already passed).
+    four = _ist(2026, 9, 14, 16)
+    assert F.ladder("deadline", created_at=_ist(2026, 9, 14, 10), due_at=four) == [
+        _ist(2026, 9, 14, 15), _ist(2026, 9, 14, 15, 50), _ist(2026, 9, 14, 16, 15)]
+    # A deadline days away keeps the day-before heads-up.
+    assert F.ladder("deadline", created_at=at11, due_at=_ist(2026, 9, 17, 17))[0] == _ist(2026, 9, 16, 17)
+    # Seen 3 min before it is due → only the overdue step; seen long after → nothing at all.
+    assert F.ladder("my_promise", created_at=due - timedelta(minutes=3), due_at=due) == [
+        due + timedelta(minutes=15)]
+    assert F.nudge_at("my_promise", created_at=due + timedelta(hours=2), due_at=due, tz_name=tz) is None
+    # Their promises, undated items and risks keep their single nudge (or none).
+    assert F.ladder("their_promise", created_at=at11, due_at=due) == []
+    assert F.ladder("ask", created_at=at11, due_at=None) == []
+    assert F.nudge_at("ask", created_at=_ist(2026, 9, 14, 10), due_at=None,
+                      tz_name=tz) == _ist(2026, 9, 14, 13)
+
+
+def test_remind_times_follow_the_ladder_unless_snoozed():
+    at11, due = _ist(2026, 9, 14, 11), _ist(2026, 9, 14, 17, 30)
+    row = SimpleNamespace(kind="my_promise", created_at=at11, due_at=due,
+                          nudge_at=_ist(2026, 9, 14, 16, 30), snoozed_at=None)
+    assert F.remind_times(row) == [_ist(2026, 9, 14, 16, 30), _ist(2026, 9, 14, 17, 20),
+                                   _ist(2026, 9, 14, 17, 45)]
+    # "Tomorrow" is the person's choice: only that time remains.
+    row.snoozed_at, row.nudge_at = at11, _ist(2026, 9, 15, 9, 30)
+    assert F.remind_times(row) == [_ist(2026, 9, 15, 9, 30)]
+    ask = SimpleNamespace(kind="ask", created_at=at11, due_at=None, nudge_at=_ist(2026, 9, 14, 14),
+                          snoozed_at=None)
+    assert F.remind_times(ask) == [_ist(2026, 9, 14, 14)]
+    assert F.remind_times(SimpleNamespace(kind="risk", created_at=at11, due_at=None,
+                                          nudge_at=None, snoozed_at=None)) == []
+
 def test_snooze_presets():
     tz = "Asia/Kolkata"
     mon3 = _ist(2026, 9, 14, 15)

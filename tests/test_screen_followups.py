@@ -53,8 +53,12 @@ def test_nudge_clocks_and_working_days():
         due + timedelta(hours=1)
     assert F.nudge_at("their_promise", created_at=fri, due_at=None, tz_name="Asia/Kolkata") == \
         datetime(2026, 9, 22, 10, 0, tzinfo=IST)
+    # P12: a day-before heads-up would land the moment it is read (due is exactly 24 h away), so
+    # the deadline's first reminder is an hour before; one days away keeps the day-before one.
     assert F.nudge_at("deadline", created_at=fri, due_at=due, tz_name=None) == \
-        due - timedelta(hours=24)
+        due - timedelta(minutes=60)
+    assert F.nudge_at("deadline", created_at=fri, due_at=due + timedelta(days=2), tz_name=None) == \
+        due + timedelta(days=1)
     assert F.nudge_at("deadline", created_at=fri, due_at=None, tz_name=None) is None
     for k in ("risk", "next_step"):
         assert F.nudge_at(k, created_at=fri, due_at=due, tz_name=None) is None
@@ -242,7 +246,8 @@ def test_an_ask_is_saved_silently_answered_by_its_quote_and_in_the_slice(  # noq
     sl = client.get(f"/v1/seats/me/slice?since={v0}", headers=H(dev["access_token"])).json()
     assert sl["schema_version"] == 3 and [f["id"] for f in sl["followups"]] == [fu.id]
     assert set(sl["followups"][0]) == {"id", "kind", "text", "who", "thread_key", "app",
-                                       "due_at", "nudge_at", "created_at", "subject_node_id"}
+                                       "due_at", "nudge_at", "created_at", "subject_node_id",
+                                       "remind_at"}
 
     # answered: a `You:` line after the ask's line — found by the follow-up's own quote
     _model(monkeypatch, NOTHING)

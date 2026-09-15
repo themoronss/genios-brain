@@ -82,6 +82,16 @@ NUDGED_KINDS = ("ask", "my_promise", "their_promise", "deadline")
 MY_PROMISE_LEAD = timedelta(minutes=60)
 THEIR_PROMISE_GRACE = timedelta(hours=1)
 DEADLINE_LEAD = timedelta(hours=24)
+#: P12 reminder ladder for an item with a due time (my promise, an ask with a due, a deadline):
+#: a heads-up (a deadline: the day before when there is time, else an hour before; others an
+#: hour before) → a final one 10 min before → an overdue one 15 min after. A step closer than
+#: these gaps to the item's first sighting is skipped: the manager has just read it.
+LADDER_KINDS = ("my_promise", "ask", "deadline")
+HEADS_UP_LEAD = timedelta(minutes=60)
+FINAL_LEAD = timedelta(minutes=10)
+OVERDUE_AFTER = timedelta(minutes=15)
+HEADS_UP_MIN_GAP = timedelta(minutes=15)
+FINAL_MIN_GAP = timedelta(minutes=5)
 MY_PROMISE_UNDATED_DAYS = 3
 THEIR_PROMISE_UNDATED_DAYS = 2
 #: A day named without a time ("by Friday") is due at the end of that working day.
@@ -168,8 +178,36 @@ def snooze_until(preset: str, *, now: datetime, tz_name: str | None) -> datetime
     raise ValueError(f"unknown snooze preset: {preset}")
 
 
+def ladder(kind: str, *, created_at: datetime, due_at: datetime | None) -> list[datetime]:
+    """P12: when an item with a due time reminds — heads-up → final → overdue. [] for an
+    undated item, a kind without a ladder, or one first seen too late for any step."""
+    if kind not in LADDER_KINDS or due_at is None:
+        return []
+    created, due = aware(created_at), aware(due_at)
+    heads = ([due - DEADLINE_LEAD, due - HEADS_UP_LEAD] if kind == "deadline"
+             else [due - HEADS_UP_LEAD])
+    steps = [t for t in heads if t >= created + HEADS_UP_MIN_GAP][:1]
+    steps += [t for t in (due - FINAL_LEAD, due + OVERDUE_AFTER) if t >= created + FINAL_MIN_GAP]
+    return steps
+
+
+def remind_times(r) -> list[datetime]:
+    """Every reminder the device fires for this row: its ladder; a snoozed row only the time
+    the person chose; anything else its one nudge."""
+    nudge = aware(r.nudge_at)
+    if getattr(r, "snoozed_at", None) is None:
+        steps = ladder(r.kind, created_at=aware(r.created_at), due_at=aware(r.due_at))
+        if steps:
+            return steps
+    return [nudge] if nudge is not None else []
+
+
 def nudge_at(kind: str, *, created_at: datetime, due_at: datetime | None,
              tz_name: str | None) -> datetime | None:
+    if kind in LADDER_KINDS and due_at is not None:
+        # P12: the item's own due wins (an ask "within the hour" no longer waits 3 h); the
+        # first step of its ladder, or None when it was first seen too late for any.
+        return next(iter(ladder(kind, created_at=created_at, due_at=due_at)), None)
     if kind == "ask":
         return ask_nudge_at(created_at, tz_name)
     if kind == "my_promise":
@@ -252,7 +290,7 @@ def verdict_key(thread_key: str | None) -> str | None:
 
 # ── reads ─────────────────────────────────────────────────────────────────────────────────────
 _COLS = ("id, kind, text, who, thread_key, app, due_at, nudge_at, created_at, updated_at, "
-         "resolved_at, resolution, subject_node_id")
+         "resolved_at, resolution, subject_node_id, snoozed_at")
 
 
 def item_out(r, *, full: bool = False) -> dict:
@@ -260,7 +298,9 @@ def item_out(r, *, full: bool = False) -> dict:
            "app": r.app, "due_at": iso(aware(r.due_at)), "nudge_at": iso(aware(r.nudge_at)),
            "created_at": iso(aware(r.created_at)),
            # The person node it was written on — the panel shows it with that person's cards.
-           "subject_node_id": r.subject_node_id}
+           "subject_node_id": r.subject_node_id,
+           # P12: every time the device reminds (heads-up → final → overdue, or the snooze)
+           "remind_at": [iso(t) for t in remind_times(r)]}
     if full:
         out.update({"updated_at": iso(aware(r.updated_at)),
                     "resolved_at": iso(aware(r.resolved_at)), "resolution": r.resolution})
@@ -709,7 +749,8 @@ __all__ = ["KINDS", "MUTE_FOREVER", "NOT_USEFUL_MUTE", "RESOLUTIONS", "SNOOZE_PR
            "add_working_days", "answered", "ask_nudge_at", "expire", "followup_id", "get_item",
            "is_muted", "item_out", "learn_from_feedback", "next_working_day_at", "snooze",
            "snooze_until",
-           "listing", "map_kind", "mark_answered", "mute", "not_useful_notes", "nudge_at",
+           "ladder", "listing", "map_kind", "mark_answered", "mute", "not_useful_notes", "nudge_at",
+           "remind_times",
            "open_items",
            "parse_due", "purge", "removed_since", "resolve", "seat_tz", "set_verdict",
            "shown_last_hour", "thread_verdict", "topic_key", "topic_shown", "upsert",
