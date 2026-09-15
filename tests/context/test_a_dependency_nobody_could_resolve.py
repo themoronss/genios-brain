@@ -151,3 +151,35 @@ def test_the_anchor_routes_and_is_dispatched() -> None:
     assert domains_declaring(ANCHOR_STATED) == ("admin",)
     assert spec_for("admin").type_for(ANCHOR_STATED) == "dependency_stated"
     assert ANCHOR_STATED in {a for a, _ in READINGS}
+
+
+def test_the_party_lookup_actually_executes() -> None:
+    """THE DEFECT THE SWEEP FOUND AND THIS FILE DID NOT. Every other test here inspects source or
+    drives the pure grouping; none of them ever RAN `event_parties`, and it referenced `text`
+    which the module did not import. `NameError` on the first live sweep, taking the whole
+    dependency pass with it — while the suite stayed green.
+
+    Driven against a real (SQLite) connection, because a name that exists only in a source scan is
+    the failure this branch keeps relearning."""
+    from sqlalchemy import create_engine, text as sql
+
+    from genios_engine.context.correlation_dependency import event_parties
+
+    engine = create_engine("sqlite://")
+    with engine.begin() as c:
+        c.execute(sql("create table graph_source_refs (org_id text, event_id text, "
+                      "fact_version_id text)"))
+        c.execute(sql("create table graph_facts (org_id text, fact_version_id text, "
+                      "subject_node_id text, status text)"))
+        c.execute(sql("create table graph_nodes (org_id text, node_id text, node_type text, "
+                      "valid_to text)"))
+        c.execute(sql("insert into graph_source_refs values ('o','evt_1','fv_1')"))
+        c.execute(sql("insert into graph_facts values ('o','fv_1','n_b','active')"))
+        c.execute(sql("insert into graph_nodes values ('o','n_b','person',null)"))
+        # a second party on the same event: the choice must be deterministic, not driver order
+        c.execute(sql("insert into graph_source_refs values ('o','evt_1','fv_2')"))
+        c.execute(sql("insert into graph_facts values ('o','fv_2','n_a','active')"))
+        c.execute(sql("insert into graph_nodes values ('o','n_a','person',null)"))
+        got = event_parties(c, "o")
+
+    assert got == {"evt_1": "n_a"}, "sorted-and-first, so two sweeps anchor on the same person"

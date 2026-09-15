@@ -70,6 +70,8 @@ from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any
 
+from sqlalchemy import text
+
 from genios_engine.context.analytic.publish import close_derived_facts, publish_derived_fact
 from genios_engine.contracts.dependency import (MAX_DEPENDENCY_DEPTH, DependencyChain,
                                                 DependencyLink)
