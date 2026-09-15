@@ -1403,6 +1403,41 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
         from genios_engine.platform.logging import get_logger
         get_logger("genios.l2").exception("angle evaluation failed for org=%s", org_id)
 
+    # L2.7 · THE SECOND READING PASS — the one that can see what the first could not.
+    #
+    # THE ORDER IN THIS FILE IS A CYCLE, AND IT IS NOT AN ACCIDENT OF LAYOUT. The state readings
+    # run near the top because `detect_residue` measures what they DID NOT explain, and the angles
+    # gate on that residue. So:
+    #
+    #     state situations -> residue (coverage) -> angles (gate on residue) -> readings again
+    #
+    # Four readings consume something written AFTER their first run:
+    # `stated_dependency` reads `derived.dependency.stated` from the dependency pass,
+    # `unreported` reads residue plus a verdict, `reworded_outreach` reads a campaign candidate
+    # plus a verdict, and `condition`/`condition_met` read the timeline correlator's facts. Run
+    # once, every one of them is a full sweep behind — and on a tenant's FIRST sweep they produce
+    # nothing at all, which is exactly what the live graph showed: sixty findings computable in
+    # memory and not one of the new types persisted.
+    #
+    # IDEMPOTENT BY DESIGN, WHICH IS WHY A SECOND CALL IS THE FIX RATHER THAN A REORDERING.
+    # `refresh_state_situations` says it: "every fact overwrites its own deterministic version id
+    # and every situation conflicts on `(org_id, correlation_id)`, so six sweeps a day produce one
+    # row per finding rather than six." The first pass is what residue is measured against; this
+    # one adds what the passes between them made knowable. Reordering instead would break the
+    # coverage measurement, because residue would then be measured against readings that had
+    # already consumed its own output.
+    #
+    # Never fatal, like every pass here: losing it costs one cycle of the model-gated cards and
+    # the correlator-fed ones, and the next sweep takes them again.
+    second_pass_rows = 0
+    try:
+        from genios_engine.context.outreach_situations import refresh_state_situations as _reread
+        second_pass_rows = _reread(store, org_id, now=sweep_at)
+        derived_rows += second_pass_rows
+    except Exception:      # noqa: BLE001 — a second look must never break ingestion
+        from genios_engine.platform.logging import get_logger
+        get_logger("genios.l2").exception("second reading pass failed for org=%s", org_id)
+
     # ONE BUMP FOR EVERYTHING THE DERIVED PASSES DID.
     #
     # `bump_version` is taken per EVENT, inside `process_event`, and `bump_slice_versions`
@@ -1475,6 +1510,9 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
             # census the correlators now publish.
             "conversion": conversion,
             "campaign_candidates": candidates,
+            # What the second reading pass added once the correlators, the residue
+            # and the angles had run — the cards the first pass could not see.
+            "second_pass_rows": second_pass_rows,
             # What the model layer cost this tenant, including everything it declined to
             # do. `no_asker` and `budget_exhausted` are reported for the reason the
             # `budgets` ledger exists: a pass that made no calls because it COULD not must
