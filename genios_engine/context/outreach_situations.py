@@ -660,7 +660,8 @@ def _finding_events(conn, *, org_id: str, finding: _Finding) -> tuple[str, ...] 
     return tuple(sorted({str(e) for e in (events or ()) if e}))
 
 
-def _declare_finding_events(conn, *, org_id: str, finding: _Finding) -> int:
+def _declare_finding_events(conn, *, org_id: str, finding: _Finding,
+                            correlation_id: str | None = None) -> int:
     """Write the membership a reading's own facts imply. Returns rows written.
 
     WHY THIS EXISTS. `gather_l1_signals` reaches Layer 1's qualified signals THROUGH
@@ -691,7 +692,9 @@ def _declare_finding_events(conn, *, org_id: str, finding: _Finding) -> int:
     read, and reconciling on that would delete real membership because a query failed. Absence is
     never read as negative evidence here, the same as everywhere else in this layer.
     """
-    correlation_id = str(getattr(finding, "correlation_id", "") or "").strip()
+    correlation_id = str(
+        correlation_id if correlation_id is not None
+        else getattr(finding, "correlation_id", "") or "").strip()
     if not correlation_id:
         return 0
     events = _finding_events(conn, org_id=org_id, finding=finding)
@@ -1863,11 +1866,6 @@ def refresh_state_situations(store, org_id: str, *, now: datetime | None = None,
                 store.rename_reading_anchor(c, org_id=org_id, node_id=node_id,
                                             canonical_key=finding.canonical_key,
                                             display_name=finding.display_name)
-                # AND DECLARE WHICH EVENTS THIS FINDING RESTS ON, in the same transaction as the
-                # facts. The reading's correlation had no membership, so Layer 1's qualified
-                # signals could not reach it and Layer 3 held it before reading its content. See
-                # `_declare_finding_events`.
-                _declare_finding_events(c, org_id=org_id, finding=finding)
                 for field_name, value, value_type in finding.facts:
                     _write_fact(c, org_id=org_id, node_id=node_id, field_name=field_name,
                                 value=value, value_type=value_type, now=now,
@@ -1888,6 +1886,16 @@ def refresh_state_situations(store, org_id: str, *, now: datetime | None = None,
                     stype = spec_for(domain).type_for(anchor)
                     corr = f"{finding.correlation_id}_{domain}"
                     minted[domain].add(corr)
+                    # DECLARE WHICH EVENTS THIS SITUATION RESTS ON, under the id the SITUATION
+                    # carries. `gather_l1_signals` is asked about `corr`, not about the finding's
+                    # bare correlation id, and the two differ by this suffix. The first cut wrote
+                    # membership for the bare id: 307 rows landed on the pilot, every one under an
+                    # id no situation holds, and the measured reach did not move off 20 of 129.
+                    #
+                    # Inside the loop rather than above it, because a finding claimed by two
+                    # domains is TWO situations and each needs its own membership.
+                    _declare_finding_events(
+                        c, org_id=org_id, finding=finding, correlation_id=corr)
                     coverage, gaps = _coverage(domain, stype, present, 100)
                     last_at = getattr(stats, "last_at", None)
                     fresh, fresh_known = freshness_score(last_seen_at=last_at, now=now)

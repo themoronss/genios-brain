@@ -169,6 +169,42 @@ def test_no_counter_is_invented_for_a_synthetic_correlation(conn) -> None:
     assert conn.execute(text("select count(*) from context_correlations")).scalar() == 0
 
 
+def test_membership_is_written_under_the_id_the_situation_carries(conn) -> None:
+    """CAUGHT ON THE LIVE TENANT, NOT HERE — and this is the test that should have caught it.
+
+    A finding is stored once per CLAIMING DOMAIN, under `f"{finding.correlation_id}_{domain}"`.
+    The first cut of this writer used the finding's bare correlation id, so it wrote membership
+    for `analytic:anomaly:node_df86…:engagement.days_since_contact` while the situation carried
+    `…days_since_contact_admin`. 307 rows landed, every one of them under an id no situation
+    holds, and the measured reach stayed at exactly 20 of 129.
+
+    The membership has to match the id `gather_l1_signals` will be asked about, which is the
+    situation's, not the finding's."""
+    _declare_finding_events(conn, org_id=ORG,
+                            finding=finding(correlation_id="outreach:n1_admin",
+                                            event_ids=("evt_a",)))
+    assert members(conn, "outreach:n1_admin") == [("evt_a", "reading")]
+    assert members(conn, "outreach:n1") == [], "written under the unsuffixed id"
+
+
+def test_the_persistence_loop_writes_one_membership_per_domain() -> None:
+    """The loop mints `corr` per claiming domain and upserts a situation for each. Membership is
+    written from inside that loop, so a finding claimed by two domains gets two memberships —
+    one for each id that actually exists."""
+    import ast
+    import inspect
+
+    from genios_engine.context import outreach_situations
+
+    tree = ast.parse(inspect.getsource(outreach_situations))
+    loops = [n for n in ast.walk(tree) if isinstance(n, ast.For)
+             and getattr(n.target, "id", "") == "domain"]
+    assert loops, "the per-domain loop was not found"
+    assert any(getattr(c.func, "id", "") == "_declare_finding_events"
+               for loop in loops for c in ast.walk(loop) if isinstance(c, ast.Call)), \
+        "membership is written outside the per-domain loop, so it uses an id no situation carries"
+
+
 def test_the_persistence_loop_calls_it(conn) -> None:
     """Wired at the seam, inside the transaction that writes the finding's facts — so membership
     and facts are the same write or neither is."""
