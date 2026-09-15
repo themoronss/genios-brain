@@ -879,3 +879,421 @@ milestones:
                       empty attachment. Live drain of supplied 767 count remains operator-only.
                     artifact: tests/capture/parked/test_business_attachment_recovery.py
                     depends_on: []
+
+# ═════════════════════════════════════════════════════════════════════════════════════════════
+# PERSONA BRAIN + LAYER 3 REPAIR — decomposed 2026-09-15.
+#
+# HISTORICAL WORK ABOVE IS UNTOUCHED. M1–M7 belong to earlier waves; this wave mints M8–M12 and
+# never reuses a retired id.
+#
+# Verify prelude every unit below assumes:
+#   cd "/Users/rohitswerashi/Downloads/Artifacts/Product/genios-brain (yc)/genios-brain"
+#   .venv/bin/python -m pytest <file> -q -p no:randomly
+#
+# MEASURED BASELINE this wave must not lower (taken 2026-09-15, after the Layer 2 wave):
+#   full suite                     35 failed   (all PRE-EXISTING; zero regressions is the bar)
+#   L2 active situations           143, all ranked, 18 types, every type corpus-bound
+#   lane audit                     10 producing, 4 declared dormant, 0 unexplained
+#   L3 funnel                      143 -> 94 reach -> 21 admitted -> 17 compiled -> 9 emitted
+#   cards saying "no expectations registered"   14 of 94
+#   learned_brain_entries / temporary_memories  0 rows each
+#   metrics sampled                10, every one a generic mail-activity count
+# ═════════════════════════════════════════════════════════════════════════════════════════════
+
+persona_brain_and_layer_repair:
+  status: planned_awaiting_confirmation
+  requested_order: [M8, M9, M10, M11, M12]
+
+  vision: >
+    On the pilot tenant, a card names what it lacks in the vocabulary of the business it is
+    about, ranks on a number Layer 1 measured rather than a default constant, and carries
+    doctrine about what good looks like for that kind of company and that person's role. A
+    tenant whose persona cannot be resolved behaves exactly as the engine does today, and says
+    so on the card.
+
+  laws:
+    - Persona shapes the QUESTION, never the ANSWER. It may add an expectation, a word, or a
+      metric to sample. It may never add a fact, close a gap, or move a confidence.
+    - Unknown persona is a first-class answer with a declared refusal, never a default persona.
+    - Ranking is Layer 4's. A role weight never reaches Layer 2.
+    - Every persona-derived expectation carries which level answered, the same discipline the
+      reply-cadence cascade already uses.
+    - Existing floors stay. `domain_spec.expected_fields` and `TRENDED_METRICS` are the floor a
+      persona adds to, never a thing a persona replaces.
+
+  milestones:
+
+    # ═══════════════════════════════════════════════════════════════════════════════════════
+    - id: M8
+      name: Persona substrate (Layer 2)
+      ships: >
+        Cards name their gaps in the tenant's own industry terms, and the 14 cards reading
+        "coverage unknown — no expectations registered" fall to zero without any card gaining a
+        fact it did not earn.
+      categories:
+
+        - id: M8.C1
+          name: Declaration
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M8.C1.L-contract.V0.U01
+                      what: persona document JSON schema — company category shape
+                      artifact: "Domain Expertise/_schema/persona-company.schema.json"
+                      verify: .venv/bin/python "Domain Expertise/_tools/validate.py"
+                      depends_on: []
+                    - id: M8.C1.L-contract.V0.U02
+                      what: persona document JSON schema — team role shape
+                      artifact: "Domain Expertise/_schema/persona-role.schema.json"
+                      verify: .venv/bin/python "Domain Expertise/_tools/validate.py"
+                      depends_on: []
+                - level: 1
+                  units:
+                    - id: M8.C1.L-contract.V1.U03
+                      what: >
+                        persona ids enter the corpus vocabulary so a document can be admitted by
+                        the ceremony every other corpus document already passes
+                      artifact: "Domain Expertise/_schema/vocabulary.yaml"
+                      verify: .venv/bin/python "Domain Expertise/_tools/validate.py"
+                      depends_on: [M8.C1.L-contract.V0.U01, M8.C1.L-contract.V0.U02]
+                    - id: M8.C1.L-contract.V1.U04
+                      what: >
+                        two seed persona documents authored and admitted — one company category
+                        and one role that this tenant actually is
+                      artifact: "Domain Expertise/_personas/"
+                      verify: .venv/bin/python "Domain Expertise/_tools/admit.py" --all
+                      depends_on: [M8.C1.L-contract.V1.U03]
+
+        - id: M8.C2
+          name: Resolution
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M8.C2.L-logic.V0.U01
+                      what: >
+                        persona registry — loads admitted persona documents, exposes them by id
+                        and by alias, refuses an unadmitted one
+                      artifact: genios_engine/context/persona.py
+                      verify: .venv/bin/python -m pytest tests/context/test_persona_registry.py -q -p no:randomly
+                      depends_on: [M8.C1.L-contract.V1.U04]
+                - level: 1
+                  units:
+                    - id: M8.C2.L-logic.V1.U02
+                      what: >
+                        company-category resolution from evidence already in the graph
+                        (company.industry, organization.relationship, email domain, signature),
+                        returning UNKNOWN rather than a guess when nothing resolves
+                      artifact: genios_engine/context/persona.py
+                      verify: .venv/bin/python -m pytest tests/context/test_persona_resolution.py -q -p no:randomly
+                      depends_on: [M8.C2.L-logic.V0.U01]
+                    - id: M8.C2.L-logic.V1.U03
+                      what: >
+                        role resolution from seats and person.title, with the same refusal — an
+                        unresolved seat holds no role rather than a default one
+                      artifact: genios_engine/context/persona.py
+                      verify: .venv/bin/python -m pytest tests/context/test_persona_resolution.py -q -p no:randomly
+                      depends_on: [M8.C2.L-logic.V0.U01]
+            - layer: data
+              levels:
+                - level: 2
+                  units:
+                    - id: M8.C2.L-data.V2.U04
+                      what: >
+                        persona written as ordinary facts with receipts — tenant.company_category
+                        and seat.role, each carrying which level answered
+                      artifact: genios_engine/context/persona.py
+                      verify: .venv/bin/python -m pytest tests/context/test_persona_facts.py -q -p no:randomly
+                      depends_on: [M8.C2.L-logic.V1.U02, M8.C2.L-logic.V1.U03]
+
+        - id: M8.C3
+          name: Consumption seams
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M8.C3.L-logic.V0.U01
+                      what: >
+                        persona `expects` overlays domain_spec.expected_fields at read time — the
+                        declared map stays the floor and the overlay only adds
+                      artifact: genios_engine/context/situations.py
+                      verify: .venv/bin/python -m pytest tests/context/test_persona_expectations.py -q -p no:randomly
+                      depends_on: [M8.C2.L-data.V2.U04]
+                    - id: M8.C3.L-logic.V0.U02
+                      what: >
+                        persona vocabulary reaches the observation kinds and extraction hints, so
+                        an industry's own words are read as that industry's words
+                      artifact: genios_engine/context/vocabulary.py
+                      verify: .venv/bin/python -m pytest tests/context/test_persona_vocabulary.py -q -p no:randomly
+                      depends_on: [M8.C2.L-data.V2.U04]
+                    - id: M8.C3.L-logic.V0.U03
+                      what: >
+                        persona declares a BOUNDED extra metric set for the sampler; the ten
+                        existing metrics stay, the storage-budget cap is enforced and tested
+                      artifact: genios_engine/context/analytic/sampler.py
+                      verify: .venv/bin/python -m pytest tests/context/test_persona_metrics.py -q -p no:randomly
+                      depends_on: [M8.C2.L-data.V2.U04]
+            - layer: integration
+              levels:
+                - level: 1
+                  units:
+                    - id: M8.C3.L-integration.V1.U04
+                      what: >
+                        persona resolution runs once per sweep, before the readings, and is
+                        reported on the sweep record like every other pass
+                      artifact: genios_engine/context/runner.py
+                      verify: .venv/bin/python -m pytest tests/context/test_persona_runs_in_the_sweep.py -q -p no:randomly
+                      depends_on: [M8.C3.L-logic.V0.U01, M8.C3.L-logic.V0.U02, M8.C3.L-logic.V0.U03]
+                    - id: M8.C3.L-integration.V1.U05
+                      what: >
+                        a tenant with no resolvable persona produces byte-identical output to
+                        today — the regression that proves persona is additive
+                      artifact: tests/context/test_persona_is_additive.py
+                      verify: .venv/bin/python -m pytest tests/context/test_persona_is_additive.py -q -p no:randomly
+                      depends_on: [M8.C3.L-integration.V1.U04]
+
+    # ═══════════════════════════════════════════════════════════════════════════════════════
+    - id: M9
+      name: The correlation seam (unblocks Layer 3)
+      ships: >
+        Reading-based situations carry correlation membership, so Layer 1's qualified signals
+        reach them and their importance is measured rather than defaulted. Admission holds fall
+        from 73 toward the number genuinely missing evidence.
+      categories:
+
+        - id: M9.C1
+          name: Membership
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M9.C1.L-logic.V0.U01
+                      what: >
+                        derive the event set behind one finding from the created_by_event_id its
+                        facts already carry — a pure function over facts, no writes
+                      artifact: genios_engine/context/outreach_situations.py
+                      verify: .venv/bin/python -m pytest tests/context/test_a_readings_events.py -q -p no:randomly
+                      depends_on: []
+            - layer: data
+              levels:
+                - level: 1
+                  units:
+                    - id: M9.C1.L-data.V1.U02
+                      what: >
+                        readings write context_correlation_members for their own correlation id,
+                        idempotently, inside the transaction that writes their facts
+                      artifact: genios_engine/context/outreach_situations.py
+                      verify: .venv/bin/python -m pytest tests/context/test_a_reading_declares_its_events.py -q -p no:randomly
+                      depends_on: [M9.C1.L-logic.V0.U01]
+            - layer: integration
+              levels:
+                - level: 2
+                  units:
+                    - id: M9.C1.L-integration.V2.U03
+                      what: >
+                        gather_l1_signals is UNCHANGED and starts finding signals — the proof that
+                        the seam was the defect and not the join
+                      artifact: tests/context/test_l1_signals_reach_a_reading.py
+                      verify: .venv/bin/python -m pytest tests/context/test_l1_signals_reach_a_reading.py -q -p no:randomly
+                      depends_on: [M9.C1.L-data.V1.U02]
+                    - id: M9.C1.L-integration.V2.U04
+                      what: >
+                        the funnel is re-measured against the live tenant and the new numbers are
+                        recorded as the baseline for M10
+                      artifact: scripts/l3_funnel_report.py
+                      verify: .venv/bin/python scripts/l3_funnel_report.py org_e97e86f858ad48b2bbf64b8a
+                      depends_on: [M9.C1.L-integration.V2.U03]
+
+    # ═══════════════════════════════════════════════════════════════════════════════════════
+    - id: M10
+      name: Persona brain (Layer 3)
+      ships: >
+        A compiled card carries what good looks like for that kind of company, retrieved from an
+        admitted persona document rather than stated by a model.
+      categories:
+
+        - id: M10.C1
+          name: Brain kind
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M10.C1.L-contract.V0.U01
+                      what: >
+                        `persona` registered as the fourth brain kind, including the hardcoded
+                        SQL literal in PostgresRuntimeBrains that silently excludes any new brain
+                      artifact: genios_engine/packs/compiler/runtime_brains.py
+                      verify: .venv/bin/python -m pytest tests/packs/test_persona_brain_kind.py -q -p no:randomly
+                      depends_on: [M9.C1.L-integration.V2.U03]
+
+        - id: M10.C2
+          name: Doctrine corpus
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M10.C2.L-contract.V0.U01
+                      what: company-category doctrine schema — metrics, meaning, what good looks like
+                      artifact: "Domain Expertise/_schema/persona-doctrine.schema.json"
+                      verify: .venv/bin/python "Domain Expertise/_tools/validate.py"
+                      depends_on: [M10.C1.L-contract.V0.U01]
+                - level: 1
+                  units:
+                    - id: M10.C2.L-contract.V1.U02
+                      what: doctrine authored and admitted for the categories this tenant actually is
+                      artifact: "Domain Expertise/_personas/"
+                      verify: .venv/bin/python "Domain Expertise/_tools/admit.py" --all
+                      depends_on: [M10.C2.L-contract.V0.U01]
+                    - id: M10.C2.L-contract.V1.U03
+                      what: doctrine authored and admitted for the roles this tenant actually holds
+                      artifact: "Domain Expertise/_personas/"
+                      verify: .venv/bin/python "Domain Expertise/_tools/admit.py" --all
+                      depends_on: [M10.C2.L-contract.V0.U01]
+
+        - id: M10.C3
+          name: Binding
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M10.C3.L-logic.V0.U01
+                      what: KnowledgeRetriever pulls persona doctrine into the plan
+                      artifact: genios_engine/packs/compiler/knowledge_retriever.py
+                      verify: .venv/bin/python -m pytest tests/packs/test_persona_doctrine_retrieval.py -q -p no:randomly
+                      depends_on: [M10.C2.L-contract.V1.U02]
+                    - id: M10.C3.L-logic.V0.U02
+                      what: BrainResolver binds persona beside organization, behavior and adaptive
+                      artifact: genios_engine/packs/compiler/brain_resolver.py
+                      verify: .venv/bin/python -m pytest tests/packs/test_persona_brain_binding.py -q -p no:randomly
+                      depends_on: [M10.C1.L-contract.V0.U01]
+            - layer: integration
+              levels:
+                - level: 1
+                  units:
+                    - id: M10.C3.L-integration.V1.U03
+                      what: >
+                        persona discovery proposes a category from evidence and never asserts one
+                        — the pointer-only shape org_rule_extract already uses
+                      artifact: genios_engine/packs/brains/persona_discovery.py
+                      verify: .venv/bin/python -m pytest tests/packs/test_persona_discovery_proposes.py -q -p no:randomly
+                      depends_on: [M10.C3.L-logic.V0.U01, M10.C3.L-logic.V0.U02]
+
+    # ═══════════════════════════════════════════════════════════════════════════════════════
+    - id: M11
+      name: The remaining Layer 3 losses
+      ships: >
+        Every situation that reaches the compiler either compiles, or its refusal is declared
+        with a measurement and a mover.
+      categories:
+
+        - id: M11.C1
+          name: Routing coverage
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M11.C1.L-logic.V0.U01
+                      what: >
+                        DECISION UNIT — what `general` domain means. Author a general corpus, or
+                        let activation govern the corpus that SERVES rather than the domain that
+                        produced. 12 situations and 36 of 52 delivered cards ride on this.
+                      artifact: docs/plans/GENERAL_DOMAIN.md
+                      verify: .venv/bin/python -m pytest tests/test_l3_route_vocabulary_contract.py -q -p no:randomly
+                      depends_on: [M9.C1.L-integration.V2.U04]
+                    - id: M11.C1.L-logic.V0.U02
+                      what: the four unrouted situation types get an authored capability
+                      artifact: "Domain Expertise/"
+                      verify: .venv/bin/python "Domain Expertise/_tools/validate.py"
+                      depends_on: [M9.C1.L-integration.V2.U04]
+
+        - id: M11.C2
+          name: Context completeness
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M11.C2.L-logic.V0.U01
+                      what: >
+                        a census of the 93 unknown projected fields by cause, the way the
+                        correlators publish their drop reasons
+                      artifact: genios_engine/reason/domain_shadow.py
+                      verify: .venv/bin/python -m pytest tests/reason/test_projection_says_what_it_could_not_fill.py -q -p no:randomly
+                      depends_on: [M9.C1.L-integration.V2.U04]
+                - level: 1
+                  units:
+                    - id: M11.C2.L-logic.V1.U02
+                      what: >
+                        the fillable half of that census is filled, persona expectations included;
+                        the unfillable half is declared
+                      artifact: genios_engine/reason/domain_shadow.py
+                      verify: .venv/bin/python -m pytest tests/reason/test_projection_says_what_it_could_not_fill.py -q -p no:randomly
+                      depends_on: [M11.C2.L-logic.V0.U01, M8.C3.L-integration.V1.U04]
+
+        - id: M11.C3
+          name: Hygiene
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M11.C3.L-contract.V0.U01
+                      what: >
+                        use_domain_compiler retired — a global boolean no environment sets,
+                        already superseded by the l3_activation table
+                      artifact: genios_engine/platform/config.py
+                      verify: .venv/bin/python -m pytest tests/test_l3_activation_is_a_table.py -q -p no:randomly
+                      depends_on: [M11.C1.L-logic.V0.U01]
+
+    # ═══════════════════════════════════════════════════════════════════════════════════════
+    - id: M12
+      name: Role ranking (Layer 4)
+      ships: >
+        Two people on the same graph see the same cards in a different order, and the card says
+        which role ordered it.
+      categories:
+
+        - id: M12.C1
+          name: Role weights
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M12.C1.L-logic.V0.U01
+                      what: >
+                        role persona weights the utility function, and the weight used travels on
+                        the decision so a reader can see why this came first
+                      artifact: genios_engine/reason/runner.py
+                      verify: .venv/bin/python -m pytest tests/reason/test_role_weights_the_order.py -q -p no:randomly
+                      depends_on: [M10.C2.L-contract.V1.U03, M8.C2.L-data.V2.U04]
+                - level: 1
+                  units:
+                    - id: M12.C1.L-logic.V1.U02
+                      what: >
+                        a seat with no resolved role gets today's order exactly — the additive
+                        proof, one layer up
+                      artifact: tests/reason/test_role_weights_the_order.py
+                      verify: .venv/bin/python -m pytest tests/reason/test_role_weights_the_order.py -q -p no:randomly
+                      depends_on: [M12.C1.L-logic.V0.U01]
+
+  uncertain_verify:
+    - id: M9.C1.L-integration.V2.U04
+      why: >
+        `scripts/l3_funnel_report.py` does not exist yet and its exit code is a reporting
+        decision, not a pass/fail one. It may need to become a pytest that asserts the funnel
+        improved against a recorded baseline, which is a stronger verify and a different unit.
+    - id: M11.C1.L-logic.V0.U01
+      why: >
+        This is a DECISION, not a build. Its verify only proves the vocabulary contract still
+        holds; it cannot prove the decision was the right one. Named here so it is not mistaken
+        for an engineering unit.
