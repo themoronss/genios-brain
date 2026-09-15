@@ -1,0 +1,139 @@
+# Early-stage AI product company — VERTICAL branch node, Admin's view of it.
+#
+# INHERITANCE: this file declares only what DIFFERS from canonical Admin. Capability and object
+# files are NOT copied into this branch; resolution is vertical -> model -> canonical.
+#
+# AUTHORED FROM MEASURED EVIDENCE, not from an impression of the category. Every claim below was
+# read off the pilot tenant's own graph on 2026-09-15, in its own words:
+#
+#   "converting GeniOS's design-partner traction into a repeatable paid sales motion"   x6
+#   "Pitch GeniOS to Afore Capital and establish founder credibility"                   x5
+#   "Introduction meeting on AI agent workflows"                                        x5
+#   "communicate investment decision on GeniOS pitch"                                   x3
+#   counterparty roles: organiser x6, introducer x2, "facilitator of founder introductions"
+#
+# and in the shape of its work: 143 live situations, of which 97 are Admin-domain
+# follow-through — not selling, not supporting.
+
+identity:
+  id: admin.model.early_stage_ai_product
+  name: Early-Stage AI Product Company
+  kind: vertical
+  domain: admin
+  # REQUIRED ON A VERTICAL — the schema says so, and resolution is vertical -> model -> canonical.
+  # `startup_lean` is the right parent: "administration performed by founders and generalists
+  # alongside their real jobs, nothing specialised, almost nothing documented". This branch
+  # inherits all of that and differs on ONE point its parent states as the binding risk — the
+  # parent says that risk is "a statutory obligation nobody knew existed", and at this stage there
+  # are no statutory obligations of consequence. The binding risk is a promise made in a
+  # conversation to somebody whose goodwill is the distribution channel.
+  parent: admin.model.startup_lean
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  A company building an AI product before it has a repeatable revenue motion. Its
+  administrative load does not come from the things Admin usually exists for — there are no
+  statutory filings of consequence, no payroll cut-offs that bind, no retention schedules
+  anyone will audit. It comes from PROMISES MADE IN CONVERSATION, at a volume no process was
+  designed for, by a founder who is simultaneously the salesperson, the product manager and
+  the person answering the inbox.
+
+  That single fact reorganises the function. The atom is still an obligation, but almost every
+  obligation is social rather than statutory: an introduction offered, a deck promised after a
+  call, a follow-up agreed in an accelerator session, an investor told they would hear back.
+  None of them converts into a penalty. All of them convert into a lost relationship, and the
+  loss is silent — nobody writes to say they stopped waiting. The deadline that matters is
+  therefore almost never stated, and the evidence that a promise existed is a sentence in a
+  thread rather than a record in a system.
+
+  The second structural fact is that the counterparty set is dominated by INTERMEDIARIES.
+  Organisers, introducers, programme facilitators, other founders comparing notes. These are
+  not customers and not suppliers; they are people whose goodwill is the distribution channel,
+  and the correct follow-up to each is different from the correct follow-up to a buyer. A
+  system that reads them all as pipeline gets both the urgency and the tone wrong.
+
+  The habit that breaks here is treating an unanswered thread as a task. At this stage most
+  threads are optional, and a queue that surfaces all of them equally is indistinguishable
+  from the inbox it was supposed to replace. What earns attention is a promise THIS company
+  made, or a relationship that was warm and has gone quiet — and the difference between those
+  two is the whole of the value.
+
+  The inverse error, imported from a larger company, is waiting for a record. There is no CRM
+  here, no ticketing system, no approvals table. If the engine will not act on a sentence in
+  an email it will not act at all.
+
+characteristics:
+  buyer: >
+    frequently not a buyer at all — an introducer, a programme organiser, an investor or a
+    design partner, where goodwill rather than budget is what is being asked for
+  typical_cycle_days: 90
+  committee_size: "one — the founder, who is also the operator and the inbox"
+  decision_style: >
+    founder-led and conversational; decisions are made in a call and recorded, if at all, in the
+    thread that follows it
+  primary_channels:
+    - email
+    - calendar
+  notes: >
+    Pre-repeatable-revenue: the company is converting design-partner traction into a paid motion
+    and raising at the same time, so investor correspondence and delivery correspondence occupy
+    the same inbox and the same person.
+
+capabilities:
+  emphasises:
+    # The promise made in a conversation is the whole obligation surface here.
+    - admin.executive_support.commitment_tracking
+    - admin.executive_support.inbox_and_correspondence
+    # Meetings are where the promises are made, so the follow-through after one is the moment
+    # this vertical most often fails.
+    - admin.meeting_operations.follow_up_coordination
+    - admin.meeting_operations.action_item_tracking
+
+objects:
+  extends:
+    - object: admin.obj.core.commitment
+      note: >
+        A promise made at this stage is carried by its QUOTE and its COUNTERPARTY, because there
+        is no system of record behind it. `verbatim_quote` stops being provenance and becomes the
+        commitment itself — if the sentence cannot be shown, there is nothing to show.
+      require_properties:
+        - verbatim_quote
+        - made_at
+        - parties
+    - object: admin.obj.core.request
+      note: >
+        Who asked, and in what capacity. An ask from an introducer and an identical ask from a
+        design partner are different obligations, and only `requester_ref` distinguishes them.
+      require_properties:
+        - raw_ask
+        - requester_ref
+        - received_at
+  # NOT LOADED IN THIS BRANCH. These are real Admin objects and they are genuinely absent at this
+  # stage — there is no procurement function, no asset register and no compliance calendar. Loading
+  # them produces a card whose every field is missing, which reads as a gap in the data rather than
+  # as a stage of company.
+  never_load:
+    - admin.obj.core.asset
+    - admin.obj.core.compliance-obligation
+    - admin.obj.core.budget-line
+    - admin.obj.core.employee-record
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: rohit
+  last_updated: '2026-09-16'
+  review_status: unreviewed
+  confidence: experimental
+  notes: >
+    Authored as the first vertical in the corpus. 88 models were authored before it and ZERO
+    verticals, while `l3_activation.variant_ids` — the column that selects them — reads `[]` on
+    every activation row, so no tenant has ever received a branch overlay. This document is the
+    first test of whether that path carries anything.
+
+    Deliberately `status: draft` and `review_status: unreviewed`: it carries no acceptance hash, so it
+    cannot reach a live prescriptive card until a named human accepts it. The claims are measured
+    from one tenant and the category is not yet known to generalise — a second early-stage AI
+    company would be the evidence for that, and there is not one in this database.
