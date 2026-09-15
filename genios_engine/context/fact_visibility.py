@@ -157,5 +157,72 @@ def readable_fact_idx(fact_idx: Mapping, private_idx: Mapping, audience) -> Mapp
     return out
 
 
+#: `source_events se` (left-joined; NULL = no event) / `graph_facts f` readable by `:viewer`
+#: (NULL viewer — an API key — reads nothing private). Same rule as reason/moments/common's
+#: VISIBLE_EVENT_SQL / VISIBLE_FACT_SQL, NULL-safe so it can be negated.
+_READABLE_EVENT = ("(se.event_id is null or se.visibility_scope is distinct from 'private' or "
+                   "coalesce(cast(:viewer as text) = any(coalesce(se.visibility_principals, "
+                   "cast('{}' as text[]))), false))")
+_READABLE_FACT = ("(f.visibility_scope is distinct from 'private' or "
+                  "coalesce(cast(:viewer as text) = any(coalesce(f.visibility_principals, "
+                  "cast('{}' as text[]))), false))")
+_UNREADABLE_NODES = f"""
+with priv as (
+  select event_id from source_events where org_id = :o and visibility_scope = 'private'
+     and not coalesce(cast(:viewer as text) = any(coalesce(visibility_principals,
+                                                           cast('{{}}' as text[]))), false)),
+cand as (
+  select n.node_id from graph_nodes n join priv p on p.event_id = n.created_by_event_id
+   where n.org_id = :o and n.valid_to is null
+  union
+  select o.subject_node_id from graph_observations o join priv p on p.event_id = o.created_by_event_id
+   where o.org_id = :o and o.status = 'active'
+  union
+  select f.subject_node_id from graph_facts f
+   where f.org_id = :o and f.valid_to is null and f.status = 'active' and not {_READABLE_FACT}
+  union
+  select x.node_id from graph_edges e join priv p on p.event_id = e.created_by_event_id
+   cross join lateral (values (e.from_node_id), (e.to_node_id)) as x(node_id)
+   where e.org_id = :o and e.valid_to is null)
+select c.node_id from cand c where c.node_id is not null __AMONG__
+  and not exists (select 1 from graph_nodes n join source_events se on se.org_id = n.org_id
+       and se.event_id = n.created_by_event_id
+       where n.org_id = :o and n.node_id = c.node_id and n.valid_to is null and {_READABLE_EVENT})
+  and not exists (select 1 from graph_observations o left join source_events se
+       on se.org_id = o.org_id and se.event_id = o.created_by_event_id
+       where o.org_id = :o and o.subject_node_id = c.node_id and o.status = 'active'
+       and {_READABLE_EVENT})
+  and not exists (select 1 from graph_facts f where f.org_id = :o
+       and f.subject_node_id = c.node_id and f.valid_to is null and f.status = 'active'
+       and {_READABLE_FACT})
+  and not exists (select 1 from graph_edges e left join source_events se
+       on se.org_id = e.org_id and se.event_id = e.created_by_event_id
+       where e.org_id = :o and e.valid_to is null
+       and (e.from_node_id = c.node_id or e.to_node_id = c.node_id) and {_READABLE_EVENT})
+"""
+
+
+def unreadable_nodes(conn, org_id: str, viewer: str | None,
+                     among: Iterable[str] | None = None) -> frozenset[str]:
+    """Nodes `viewer` may not see at all: every piece of their evidence — the event that created
+    them, their observations, their facts, their edges — is PRIVATE to other principals (another
+    seat's screen session, personal upload …). A node with no evidence rows at all (seeded, manual)
+    or with any readable evidence stays visible. `among` narrows the check to those nodes. Empty
+    (and no query) off PostgreSQL."""
+    if conn.dialect.name != "postgresql":
+        return frozenset()
+    params: dict = {"o": org_id, "viewer": str(viewer or "").strip().lower() or None}
+    clause = ""
+    if among is not None:
+        ids = sorted({str(n) for n in among if n})
+        if not ids:
+            return frozenset()
+        params["among"] = ids
+        clause = "and c.node_id = any(:among)"
+    return frozenset(r.node_id for r in conn.execute(
+        text(_UNREADABLE_NODES.replace("__AMONG__", clause)), params))
+
+
 __all__ = ["WORK_FACT_FIELDS", "is_work_fact", "viewer_may_read", "audience_may_read",
-           "situation_audience", "private_fact_index", "drop_unreadable", "readable_fact_idx"]
+           "situation_audience", "private_fact_index", "drop_unreadable", "readable_fact_idx",
+           "unreadable_nodes"]

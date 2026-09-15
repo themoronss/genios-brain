@@ -1,4 +1,5 @@
-"""Screen promoter against real Postgres — P2 acceptance 1, 2, 9, 10.
+"""Screen promoter against real Postgres — P2 acceptance 1, 2, 9, 10 + P9 K3 (one memory build
+per page / chat per interval, verdict routing, the runaway guard).
 
     GENIOS_TEST_DATABASE_URL=postgresql+psycopg://…/scratch pytest tests/test_screen_promoter_pg.py
 
@@ -52,7 +53,9 @@ def _doors(llm):
     def wiring_for(org_id, seat_email, connection_id):
         w = base.wiring_for(org_id, seat_email, connection_id)
         assert w.semantic is None                 # no model key in tests → no extraction lane
-        return replace(w, relevance=ScreenDocRelevance(LLMRelevanceClassifier(llm)))
+        # the stub model replaces the org's gate; the thread verdicts (C9 / K3) stay wired
+        return replace(w, relevance=ScreenDocRelevance(LLMRelevanceClassifier(llm),
+                                                       w.relevance.verdicts))
     return SP.Doors(wiring_for=wiring_for, stores=base.stores, enqueue=base.enqueue)
 
 
@@ -136,6 +139,7 @@ def _events(org):
 
 def _drain(doors, worker="w1", **kw):
     from genios_engine.platform import screen_promoter as SP
+    kw.setdefault("interval_minutes", 0)          # P2 acceptance: promote at once unless asked
     n = 0
     while SP.run_once(_engine(), worker, doors=doors, **kw):
         n += 1
@@ -155,7 +159,7 @@ def test_two_promoters_racing_one_delta_promote_it_once():
 
     def go(w):
         barrier.wait()
-        ran.append(SP.run_once(_engine(), w, doors=doors))
+        ran.append(SP.run_once(_engine(), w, doors=doors, interval_minutes=0))
     threads = [threading.Thread(target=go, args=(f"w{i}",)) for i in range(2)]
     [t.start() for t in threads]
     [t.join() for t in threads]
@@ -224,35 +228,109 @@ def test_watermark_five_then_nine_is_two_events_and_a_replay_of_nine_is_none():
     assert (last.device_id, last.status, last.last_error) == ("dev_2", "skipped", "duplicate")
 
 
-# ── acceptance 9 ────────────────────────────────────────────────────────────────────────────
-def test_the_41st_generic_delta_is_deferred_to_local_midnight_then_promoted():
+# ── acceptance 9 (P9 K3: the runaway guard replaces the generic daily cap) ─────────────────────
+def test_over_the_runaway_guard_a_thread_is_deferred_to_local_midnight_and_reported():
     from genios_engine.platform import screen_promoter as SP
+    from genios_engine.platform.capture_policy import CaptureStore
     from genios_engine.platform.config import get_settings
-    assert get_settings().screen_generic_daily_cap == 40
+    assert get_settings().screen_memory_max_builds_per_day == 400
+    assert get_settings().screen_memory_interval_minutes == 60
+    assert not hasattr(get_settings(), "screen_generic_daily_cap")
     org, seat, _ = _org(tz="Asia/Kolkata")
     llm = _CountingLLM()
     doors = _doors(llm)
     _insert(org, seat, [_doc(i) for i in range(41)])
     now = datetime.now(timezone.utc)
-    _drain(doors)
+    _drain(doors, cap=40)
     rows = _rows(org)
     assert sum(r.status == "promoted" for r in rows) == 40
     deferred = [r for r in rows if r.status == "deferred"]
-    assert len(deferred) == 1 and deferred[0].last_error == "generic_daily_cap"
+    assert len(deferred) == 1 and deferred[0].last_error == SP.DAILY_GUARD
     assert deferred[0].attempts == 0                          # a deferral is not a failure
     assert deferred[0].not_before == SP.next_local_midnight(now, "Asia/Kolkata")
     assert llm.calls == 0                                     # record-shaped: the rule decided
     assert len(_events(org)) == 40
-    _drain(doors)                                             # still today: nothing moves
+    assert CaptureStore(_engine()).catching_up(org, seat) == 1      # K6
+    _drain(doors, cap=40)                                     # still today: nothing moves
     assert sum(r.status == "deferred" for r in _rows(org)) == 1
     with _engine().begin() as c:                              # … the next local day
         c.execute(text("update screen_session_deltas set not_before = now() - interval '1 s' "
                        "where org_id=:o and status='deferred'"), {"o": org})
         c.execute(text("update rate_counters set window_start = window_start - 1 "
                        "where scope_key = :k"), {"k": SP.seat_scope(org, seat)})
-    _drain(doors)
+    _drain(doors, cap=40)
     assert {r.status for r in _rows(org)} == {"promoted"}
     assert len(_events(org)) == 41
+    assert CaptureStore(_engine()).catching_up(org, seat) == 0
+
+
+# ── P9 K3 ───────────────────────────────────────────────────────────────────────────────────
+def test_one_chat_is_one_memory_build_per_interval_with_all_its_messages(monkeypatch):
+    from genios_engine.capture.connectors import push_ingest
+    from genios_engine.platform import screen_promoter as SP
+    org, seat, _ = _org()
+    llm = _CountingLLM()
+    doors = _doors(llm)
+    seen = []
+    real = push_ingest.ingest_pushed_objects
+
+    def spy(objects, **kw):
+        seen.append(objects)
+        return real(objects, **kw)
+    monkeypatch.setattr(push_ingest, "ingest_pushed_objects", spy)
+
+    _insert(org, seat, [_chat(wm=5, text_="Can you send the deck?"),
+                        _chat(wm=6, text_="And the pricing sheet"),
+                        _chat(wm=7, text_="By Friday please")])
+    _drain(doors, interval_minutes=60)
+    rows = _rows(org)
+    assert {(r.status, r.last_error, r.attempts) for r in rows} == {
+        ("held", SP.INTERVAL_WAIT, 0)}                        # waiting is not an attempt
+    assert len({r.not_before for r in rows}) == 1 and _events(org) == [] and seen == []
+    _insert(org, seat, [_chat(wm=8, text_="Thanks!")])        # later content: the SAME clock
+    _drain(doors, interval_minutes=60)
+    assert len({r.not_before for r in _rows(org)}) == 1
+    with _engine().begin() as c:                              # … the hour passes
+        c.execute(text("update screen_session_deltas set not_before = now() - interval '1 s', "
+                       "received_at = received_at - interval '61 minutes' where org_id=:o"),
+                  {"o": org})
+    _drain(doors, interval_minutes=60)
+    rows = _rows(org)
+    ev = _events(org)
+    assert [e.source_object_id for e in ev] == ["li:conv:abc#8#in"]      # ONE event
+    assert {r.status for r in rows} == {"promoted"}
+    assert all(r.event_ids == [ev[0].event_id] for r in rows)
+    ((obj,),) = seen
+    for line in ("Can you send the deck?", "And the pricing sheet", "By Friday please",
+                 "Thanks!"):
+        assert line in obj.raw["body"]
+    assert llm.calls == 1                                     # one gate call for the chat
+    with _engine().connect() as c:
+        assert c.execute(text("select count(*) from rate_counters where scope_key=:k "
+                              "and kind=:kind"), {"k": SP.seat_scope(org, seat),
+                                                  "kind": SP.MEMORY_KIND}).scalar() == 1
+
+
+def test_a_memory_verdict_routes_the_thread_with_no_gate_call():
+    org, seat, _ = _org()
+    now = datetime.now(timezone.utc)
+    with _engine().begin() as c:
+        for thread, work, memory in (("li:conv:abc", True, False), ("li:conv:keep", True, True),
+                                     ("li:conv:fam", False, False)):
+            c.execute(text("insert into screen_thread_verdicts (org_id, seat_id, thread_key, "
+                           "work, memory, judged_at) values (:o, :s, :t, :w, :m, :now)"),
+                      {"o": org, "s": seat, "t": thread, "w": work, "m": memory, "now": now})
+    llm = _CountingLLM()
+    _insert(org, seat, [_chat(), {**_chat(key="k2"), "thread_key": "li:conv:keep"},
+                        {**_chat(key="k3"), "thread_key": "li:conv:fam"}])
+    _drain(_doors(llm))
+    assert llm.calls == 0                                     # every verdict decided alone
+    out = {e.source_object_id: e.outcome for e in _events(org)}
+    assert out["li:conv:keep#5#in"] == "emitted"
+    assert out["li:conv:abc#5#in"] != "emitted" and out["li:conv:fam#5#in"] != "emitted"
+    with _engine().connect() as c:                  # parked = KEPT (recoverable), never dropped
+        assert c.execute(text("select count(*) from parked_events where org_id=:o"),
+                         {"o": org}).scalar() == 2
 
 
 # ── acceptance 10 ───────────────────────────────────────────────────────────────────────────
@@ -296,3 +374,71 @@ def test_undecryptable_payload_parks_at_once():
     _drain(_doors(_CountingLLM()))
     r = _rows(org)[0]
     assert r.status == "parked" and r.last_error.startswith("undecryptable")
+
+
+# ── SCREEN_INTEL_SYSTEM_DESIGN phase 1 · the one judge's items become graph memory (S3) ────────
+def test_instant_mode_writes_items_on_existing_people_once_and_never_creates_one():
+    from genios_engine.context.graph_store import GraphStore
+    from genios_engine.context.identity import observe_person_name
+    from genios_engine.platform import screen_promoter as SP
+    from genios_engine.platform.config import get_settings
+    assert get_settings().screen_memory_mode == "instant"
+    org, seat, email = _org()
+    assert SP.default_doors().wiring_for(org, email, f"screen:{seat}").semantic is None
+    now = datetime.now(timezone.utc)
+    with _engine().begin() as c:
+        priya = GraphStore(engine=_engine()).find_or_create_node(
+            c, org_id=org, node_type="person", canonical_key="priya@acme.test",
+            display_name="Priya Shah", event_id=None)
+        observe_person_name(c, org_id=org, node_id=priya, name="Priya Shah")
+        c.execute(text("insert into screen_thread_verdicts (org_id, seat_id, thread_key, work, "
+                       "memory, judged_at) values (:o, :s, 'li:conv:abc', true, true, :now)"),
+                  {"o": org, "s": seat, "now": now})
+        for fid, kind, who, quote in (("fu_a", "ask", "Priya Shah (Acme)", "send the deck"),
+                                      ("fu_b", "deadline", None, "the board meets Friday"),
+                                      ("fu_c", "ask", "Stranger Person", "call me back"),
+                                      ("fu_d", "their_promise", "Deepak @ Rentomojo", "will call")):
+            c.execute(text(
+                "insert into screen_followups (id, org_id, seat_id, thread_key, kind, text, who, "
+                "topic_key, quote) values (:i, :o, :s, 'li:conv:abc', :k, :t, :w, :tk, :q)"),
+                {"i": fid + org[-6:], "o": org, "s": seat, "k": kind, "t": f"{kind} note",
+                 "w": who, "tk": fid + org, "q": quote})
+    llm = _CountingLLM()
+    _insert(org, seat, [_chat()])
+    _drain(_doors(llm))
+    assert llm.calls == 0                        # the verdict decided; no heavy read, no AI gate
+    (ev,) = [e for e in _events(org) if e.outcome == "emitted"]
+    with _engine().connect() as c:
+        rows = {r.who: r for r in c.execute(text(
+            "select who, graph_written_at, subject_node_id from screen_followups "
+            "where org_id=:o"), {"o": org})}
+        kinds = [r.kind for r in c.execute(text(
+            "select kind from graph_observations where org_id=:o and created_by_event_id=:e "
+            "and kind like 'screen.%' order by kind"), {"o": org, "e": ev.event_id})]
+        strangers = c.execute(text("select count(*) from graph_nodes where org_id=:o and "
+                                   "(display_name ilike '%stranger%' or display_name ilike "
+                                   "'%deepak%' or canonical_key like 'screen:%')"),
+                              {"o": org}).scalar()
+    assert all(r.graph_written_at is not None for r in rows.values())
+    assert kinds == ["screen.ask", "screen.ask", "screen.deadline", "screen.their_promise"]
+    assert rows["Priya Shah (Acme)"].subject_node_id == priya          # an existing person
+    assert rows["Stranger Person"].subject_node_id is None             # never created
+    assert rows["Deepak @ Rentomojo"].subject_node_id is None          # "@" is not an email
+    assert strangers == 0, "a private screen never adds a person to the org's graph"
+    # once: the next promotion of the same chat writes nothing again …
+    _insert(org, seat, [_chat(key="li:conv:abc:2026-09-17T11", wm=9, text_="any update?")])
+    _drain(_doors(llm))
+    with _engine().connect() as c:
+        assert c.execute(text("select count(*) from graph_observations where org_id=:o "
+                              "and kind like 'screen.%'"), {"o": org}).scalar() == 4
+    # … unless what memory holds changed (a due arrived): then it is written again
+    from genios_engine.reason.moments import followups as F
+    with _engine().connect() as c:
+        topic = c.execute(text("select topic_key from screen_followups where org_id=:o and "
+                               "who='Priya Shah (Acme)'"), {"o": org}).scalar()
+    F.upsert(_engine(), org_id=org, seat_id=seat, kind="ask", note="ask note",
+             who="Priya Shah (Acme)", due_at=now + timedelta(days=2), thread_key="li:conv:abc",
+             app="linkedin", topic=topic, tz_name="UTC", now=now, quote="send the deck")
+    with _engine().connect() as c:
+        assert c.execute(text("select graph_written_at from screen_followups where org_id=:o "
+                              "and who='Priya Shah (Acme)'"), {"o": org}).scalar() is None

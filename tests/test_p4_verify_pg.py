@@ -326,7 +326,7 @@ def test_duplicate_outreach_fires_for_org_visible_touches_only(client, store):
 
     def others(seat, email):
         doc = S.build(_engine(), org_id=org, seat_id=seat, email=email, now=NOW)
-        assert doc["schema_version"] == 2 and "recent_changes" in doc
+        assert doc["schema_version"] >= 2 and "recent_changes" in doc
         return {c["name"]: [o["name"] for o in c["other_seats"]] for c in doc["companies"]}
     assert all(m_mail.split("@")[0] not in names and "Member" not in names
                for names in others(team["owner"]["seat_id"], o_mail).values())

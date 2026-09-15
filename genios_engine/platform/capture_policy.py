@@ -83,6 +83,10 @@ SENSITIVE_BUNDLE_IDS: tuple[str, ...] = (
     # password managers / keychain
     "com.1password.*", "com.agilebits.onepassword*", "com.bitwarden.desktop",
     "com.lastpass.LastPass", "com.dashlane.*", "com.apple.keychainaccess", "com.apple.Passwords",
+    # system utilities: not work content, never worth a read (screen-intel phase 2). Preview is
+    # NOT here: a PDF open in it is often a contract or an invoice.
+    "com.apple.finder", "com.apple.systempreferences", "com.apple.ActivityMonitor",
+    "com.apple.quicklook.*",
     # GeniOS itself
     "ai.genios.*",
 )
@@ -444,6 +448,14 @@ class CaptureStore:
     def __init__(self, engine) -> None:
         self.engine = engine
 
+    def catching_up(self, org_id: str, seat_id: str) -> int:
+        """P9 K6: the seat's screen batches deferred to the night by the memory runaway guard
+        (`screen_session_deltas.status = 'deferred'`). 0 when none."""
+        with self.engine.connect() as c:
+            return int(c.execute(text(
+                "select count(*) from screen_session_deltas where org_id = :o and seat_id = :s "
+                "and status = 'deferred'"), {"o": org_id, "s": seat_id}).scalar() or 0)
+
     def load(self, org_id: str, seat_id: str, device_id: str | None = None):
         """(OrgPolicy, SeatSettings, lease dict | None) in ONE statement."""
         with self.engine.connect() as c:
@@ -635,6 +647,11 @@ def shred_seat_capture(conn, *, org_id: str, seat_id: str) -> int:
     conn.execute(text("delete from presence_leases where org_id=:o and seat_id=:s"),
                  {"o": org_id, "s": seat_id})
     conn.execute(text("delete from seat_capture_settings where org_id=:o and seat_id=:s"),
+                 {"o": org_id, "s": seat_id})
+    # S4: the seat's queued screen text (encrypted) and the model's thread summaries (0163)
+    conn.execute(text("delete from screen_memory_jobs where org_id=:o and seat_id=:s"),
+                 {"o": org_id, "s": seat_id})
+    conn.execute(text("delete from screen_thread_summaries where org_id=:o and seat_id=:s"),
                  {"o": org_id, "s": seat_id})
     return n
 

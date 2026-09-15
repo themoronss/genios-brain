@@ -60,6 +60,11 @@ class EvaluateRequest(BaseModel):
     features: Features = Field(default_factory=Features)
     draft_text: str | None = Field(default=None, max_length=20000)
     visible_messages: list | None = Field(default=None, max_length=200)
+    # P-20 screen insight: judge what is on screen (`visible_messages`) for one short note.
+    insight: bool = False
+    #: The device account's full name (the Mac / PC user) — who "you" are on screen, so the
+    #: screen-insight judge never names the manager as the other person. Never stored.
+    viewer_name: str | None = Field(default=None, max_length=200)
     slice_version: int | None = None
     client_ts: datetime | None = None
 
@@ -88,5 +93,20 @@ class FeedbackRequest(BaseModel):
     at: datetime | None = None
 
 
+class FollowupResolveRequest(BaseModel):
+    """P8 C5: the person closes a screen follow-up (toast `done` / panel dismiss)."""
+    model_config = ConfigDict(extra="ignore")
+    resolution: Literal["done", "dismissed"]
+
+
+class FollowupSnoozeRequest(BaseModel):
+    """P10: move a follow-up's nudge — a preset (`1h`, `tonight`, `tomorrow`) or an instant.
+    Exactly one of the two (checked by the route: 422 otherwise)."""
+    model_config = ConfigDict(extra="ignore")
+    preset: Literal["1h", "tonight", "tomorrow"] | None = None
+    until: datetime | None = None
+
+
 __all__ = ["DatePhrase", "DeviceMoment", "EvaluateRequest", "FEEDBACK_ACTIONS", "FeedbackRequest",
-           "Features", "KINDS", "PRIORITIES", "Participant", "Surface"]
+           "Features", "FollowupResolveRequest", "FollowupSnoozeRequest", "KINDS", "PRIORITIES",
+           "Participant", "Surface"]
