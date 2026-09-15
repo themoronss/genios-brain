@@ -60,6 +60,7 @@ from sqlalchemy import JSON, bindparam, text
 
 from genios_engine.context.derived_provenance import load_event_receipts, write_fact_source_refs
 
+from genios_engine.context.correlation_membership import declare_finding_events
 from genios_engine.context.domain_spec import domains_declaring, spec_for
 from genios_engine.context.periodic import WINDOW_DAYS
 from genios_engine.context.situations import (
@@ -1586,6 +1587,17 @@ def refresh_support_situations(store, org_id: str, *, now: datetime | None = Non
                     stype = spec_for(domain).type_for(anchor)
                     corr = f"{f.correlation_id}_{domain}"
                     minted[domain].add(corr)
+                    # DECLARE WHICH EVENTS THIS SITUATION RESTS ON. `gather_l1_signals` reaches
+                    # Layer 1's qualified signals through `context_correlation_members`, and a
+                    # desk reading's correlation id had no rows there — so 31
+                    # `first_response_overdue` and 20 `commitment_overdue` situations on the
+                    # pilot fell back to `DEFAULT_IMPORTANCE_BP` and Layer 3 held every one of
+                    # them at QES_REQUIRED before reading their content.
+                    #
+                    # `f.event_ids` is already the exact scope this finding was built from — the
+                    # same list `load_event_receipts` is handed above — so nothing is derived
+                    # here that was not already known.
+                    declare_finding_events(c, org_id=org_id, finding=f, correlation_id=corr)
                     coverage, gaps = _coverage(domain, stype, present, f.coverage_cap_pct)
                     fresh, fresh_known = freshness_score(last_seen_at=f.last_seen_at, now=now)
                     identity = identity_score(

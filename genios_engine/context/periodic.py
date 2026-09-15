@@ -202,6 +202,14 @@ def refresh_period_situations(store, org_id: str, *, now: datetime | None = None
                  "provenance": json.dumps([f"org:{org_id}", f"window:{WINDOW_DAYS}d"])})
             written += 1
 
+        # NO MEMBERSHIP IS DECLARED FOR A PERIOD REVIEW, and that is deliberate rather than
+        # missed. Every other writer of `context_situations` declares which events its situation
+        # rests on, so `gather_l1_signals` can reach Layer 1 through the correlation. A period
+        # review is an AGGREGATE over a window anchored on the tenant node — its honest event set
+        # is every event in the period, and claiming that membership would put the whole tenant's
+        # history inside one correlation and hand this row the importance of whichever signal
+        # scored highest that month. Its importance comes from its own counts, which is what a
+        # window is for.
         for domain in period_domains():
             stype = spec_for(domain).type_for("tenant")
             corr_id = f"corr_period_{domain}_{org_id}_{key}"

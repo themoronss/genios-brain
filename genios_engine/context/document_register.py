@@ -54,11 +54,14 @@ import json
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
+from types import SimpleNamespace
+
 from sqlalchemy import JSON, bindparam, text
 
 from genios_engine.context.derived_provenance import load_event_receipts, write_fact_source_refs
 
 from genios_engine.context.documents import DOCUMENT_NODE_TYPE, cluster_key, document_nodes
+from genios_engine.context.correlation_membership import declare_finding_events
 from genios_engine.context.domain_spec import domains_declaring, spec_for
 from genios_engine.context.situations import (
     SITUATION_STATUS_ON_CONFLICT,
@@ -567,6 +570,12 @@ def refresh_document_situations(store, org_id: str, *, now: datetime | None = No
                 stype = spec_for(domain).type_for(ANCHOR_DOCUMENT)
                 corr = f"corr_doc_{artefact.node_id}_{domain}"
                 minted[domain].add(corr)
+                # The artefact's own source events, for the reason `meeting_touch` gives: a
+                # correlation with no membership cannot reach a Layer 1 signal, whatever its
+                # content.
+                declare_finding_events(
+                    c, org_id=org_id, correlation_id=corr,
+                    finding=SimpleNamespace(concerns_node=artefact.node_id, correlation_id=corr))
                 pct, gaps = coverage_score(present_fields=present,
                                            expected=spec_for(domain).fields_for(stype))
                 coverage = (COVERAGE_UNKNOWN if pct == COVERAGE_UNKNOWN

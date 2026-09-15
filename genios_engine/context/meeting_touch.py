@@ -33,8 +33,11 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 
+from types import SimpleNamespace
+
 from sqlalchemy import bindparam, text
 
+from genios_engine.context.correlation_membership import declare_finding_events
 from genios_engine.context.domain_spec import domains_declaring, spec_for
 from genios_engine.context.situations import SITUATION_STATUS_ON_CONFLICT, SCORE_MAX, freshness_score
 from genios_engine.platform.ids import new_id
@@ -213,6 +216,14 @@ def refresh_channel_touch_situations(store, org_id: str, *,
                 # node alone would make the second domain's upsert overwrite the first's — the
                 # same collision the escalation reading hit on (account, date).
                 corr_id = f"corr_touch_{domain}_{r.node_id}"
+                # DECLARE THE MEETING'S OWN EVENTS. `gather_l1_signals` reaches Layer 1 through
+                # `context_correlation_members`, and this correlation id had no rows there, so a
+                # meeting situation could never carry a measured importance. The events are the
+                # meeting node's own source refs — nothing is derived that the graph did not
+                # already record.
+                declare_finding_events(
+                    c, org_id=org_id, correlation_id=corr_id,
+                    finding=SimpleNamespace(concerns_node=r.node_id, correlation_id=corr_id))
                 held = c.execute(text(
                     "select situation_id from context_situations "
                     "where org_id = :o and correlation_id = :c"),

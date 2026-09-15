@@ -221,3 +221,71 @@ def test_the_persistence_loop_calls_it(conn) -> None:
     assert any(getattr(c.func, "id", "") == "_declare_finding_events"
                for w in holders for c in ast.walk(w) if isinstance(c, ast.Call)), \
         "membership is not written inside the transaction that writes the facts"
+
+
+# =================================================================================================
+# SIX WRITERS, NOT ONE
+# =================================================================================================
+
+def test_every_writer_of_context_situations_declares_its_events() -> None:
+    """`context_situations` HAS SIX WRITERS and the first cut of this milestone wired one.
+
+    The runner's own comment names them: `situations.refresh_situations`, `periodic`,
+    `support_situations`, `meeting_touch`, `outreach_situations` and `document_register`. Wiring
+    only the readings loop left the two largest groups on the pilot at zero — 31
+    `first_response_overdue` and 20 `commitment_overdue`, both written by `support_situations` —
+    because a situation whose events are never declared cannot reach a Layer 1 signal no matter
+    how good its content is.
+
+    Checked per module by AST: any `for domain` loop that writes a `context_situations` row must
+    declare that correlation's events in the same loop. `periodic` is EXEMPT and says so in its
+    own source — a period review is an aggregate over a window anchored on the tenant node, and
+    claiming membership of every event in the period would put the whole tenant's history inside
+    one correlation. An exemption that is not declared in the code fails this test; the point is
+    that silence is never the answer.
+    """
+    import ast
+    import importlib
+    import inspect
+
+    WRITERS = ("outreach_situations", "support_situations", "meeting_touch",
+               "document_register", "periodic")
+    offenders, checked = [], 0
+    for name in WRITERS:
+        module = importlib.import_module(f"genios_engine.context.{name}")
+        source = inspect.getsource(module)
+        tree = ast.parse(source)
+        loops = [n for n in ast.walk(tree) if isinstance(n, ast.For)
+                 and getattr(n.target, "id", "") == "domain"
+                 and any(isinstance(lit, ast.Constant) and isinstance(lit.value, str)
+                         and "context_situations" in lit.value
+                         for lit in ast.walk(n))
+                 or (isinstance(n, ast.For) and getattr(n.target, "id", "") == "domain"
+                     and any(getattr(c.func, "id", "") == "_upsert"
+                             for c in ast.walk(n) if isinstance(c, ast.Call)))]
+        if not loops:
+            continue
+        checked += 1
+        declared = any(
+            getattr(c.func, "id", "") in {"_declare_finding_events", "declare_finding_events"}
+            for loop in loops for c in ast.walk(loop) if isinstance(c, ast.Call))
+        exempt = "NO MEMBERSHIP IS DECLARED" in source
+        if not declared and not exempt:
+            offenders.append(name)
+    assert checked >= 4, f"only {checked} writers were found — the check stopped seeing them"
+    assert offenders == [], (
+        f"these writers mint situations without declaring their events: {offenders}. "
+        f"Every situation they mint is unreachable by `gather_l1_signals` and will be held at "
+        f"QES_REQUIRED before its content is read. If that is correct for one of them, say so in "
+        f"its source the way `periodic` does.")
+
+
+def test_the_period_review_exemption_says_why() -> None:
+    """A declared exemption with no reason is the same silence in a longer sentence."""
+    import inspect
+
+    from genios_engine.context import periodic
+
+    source = inspect.getsource(periodic)
+    assert "NO MEMBERSHIP IS DECLARED" in source
+    assert "aggregate" in source.lower(), "the exemption does not say what makes it different"
