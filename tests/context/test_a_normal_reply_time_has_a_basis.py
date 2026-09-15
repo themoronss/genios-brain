@@ -109,3 +109,41 @@ def test_the_card_carries_which_level_answered() -> None:
     src = inspect.getsource(outreach_situations)
     assert "outreach.their_normal_reply_basis" in src
     assert "party.reply_cadence_basis" in src
+
+
+# ── the column is jsonb, and `repr` is not a JSON encoder ────────────────────────────────────
+
+def test_a_string_valued_state_field_is_written_as_json() -> None:
+    """THE BUG THIS UNIT SHIPPED AND THE SWEEP FOUND. `compute_waiting` wrote every non-bool value
+    with `repr(value)` and the type `"number"`. That is correct for a number — `repr(2.5)` is
+    `2.5`, which is valid JSON — and wrong for everything else: `repr("person")` is `'person'`,
+    and Postgres rejects it with *invalid input syntax for type json, Token "'" is invalid*.
+
+    Every value this pass wrote had been numeric since it was written, so the line was correct
+    until `party.reply_cadence_basis` arrived and took down the ENTIRE waiting pass on the first
+    sweep that carried a string. Encoded by type now, and asserted here because the failure is
+    invisible to every SQLite test in the suite — SQLite has no jsonb and accepts the bad string.
+    """
+    import ast
+    import inspect
+
+    from genios_engine.context import waiting
+
+    src = inspect.getsource(waiting.compute_waiting)
+    assert "repr(value)" not in src, "repr is not a JSON encoder"
+
+    tree = ast.parse(src.lstrip())
+    dumps = [n for n in ast.walk(tree) if isinstance(n, ast.Call)
+             and isinstance(n.func, ast.Attribute) and n.func.attr == "dumps"]
+    assert dumps, "state values must be JSON-encoded before reaching a jsonb column"
+
+
+def test_the_basis_is_written_with_a_string_value_type() -> None:
+    """A `"number"` type on a string value is the other half of the same defect: a reader that
+    trusts the declared type would parse it as one."""
+    import inspect
+
+    from genios_engine.context import waiting
+
+    src = inspect.getsource(waiting.compute_waiting)
+    assert '"string"' in src, "a non-numeric state value must declare its type"

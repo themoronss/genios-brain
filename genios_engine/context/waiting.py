@@ -24,6 +24,8 @@ from __future__ import annotations
 
 from genios_engine.context.vocabulary import kinds_where
 
+import json
+
 from collections.abc import Mapping
 from datetime import datetime, timedelta, timezone
 from statistics import median
@@ -335,11 +337,20 @@ def compute_waiting(store, org_id: str, *, now: datetime | None = None) -> int:
                 # opposite advice.  Absent would collapse them into one.
                 state["thread.response_expected"] = node_id in asked
             for field, value in state.items():
+                # THE COLUMN IS `jsonb`, SO THE VALUE MUST BE JSON — and `repr` is not a JSON
+                # encoder. It happens to produce valid JSON for a number (`repr(2.5)` -> `2.5`)
+                # and invalid JSON for anything else: `repr("person")` is `'person'`, which
+                # Postgres rejects with "Token ' is invalid". Every value here was a number until
+                # `party.reply_cadence_basis` arrived, so the bug was latent in a line that had
+                # been correct for as long as the state was numeric — and it took down the whole
+                # waiting pass on the first sweep that carried a string.
                 if isinstance(value, bool):
                     _write_fact(c, org_id, node_id, field, "true" if value else "false",
                                 "bool", now)
+                elif isinstance(value, (int, float)):
+                    _write_fact(c, org_id, node_id, field, json.dumps(value), "number", now)
                 else:
-                    _write_fact(c, org_id, node_id, field, repr(value), "number", now)
+                    _write_fact(c, org_id, node_id, field, json.dumps(str(value)), "string", now)
                 written += 1
     return written
 
