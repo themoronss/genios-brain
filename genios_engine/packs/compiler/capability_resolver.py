@@ -286,6 +286,60 @@ def variant_never_load(variants) -> set[str]:
     return never
 
 
+#: How specific a branch is, most specific LAST so a later overlay wins a merge. A tenant that
+#: declares both a vertical and a persona is making two statements about itself, and when they
+#: touch the same words the narrower one is the one that knows more: a CTO at an AI agency reads
+#: a CTO's card. Ordering by `identity.kind` rather than by id keeps the merge deterministic
+#: without depending on what anybody named a file.
+_AXIS_SPECIFICITY: dict[str, int] = {"model": 0, "offering": 1, "vertical": 2, "persona": 3}
+
+
+def _axis_rank(document) -> tuple[int, str]:
+    kind = str((document.content.get("identity") or {}).get("kind") or "")
+    return (_AXIS_SPECIFICITY.get(kind, 0), str(document.id))
+
+
+def variant_render_overlay(variants, base):
+    """The authored card copy, with each declared branch's own words merged over it.
+
+    THE WORDS ARE THE POINT OF A BRANCH. `render` is what a situation says a reader must be told
+    — `artifact_kind`, `render_hint`, and the deterministic `fallback` headline and sentence —
+    and it is already carried to the card: `plan.render` becomes `package.metadata["render"]`,
+    which becomes `manifest.metadata["render"]`, which `deliver/pipeline` reads as
+    `capability_render` and `card_builder` uses as its template. So a branch that overrides it
+    changes what a human reads, with no delivery change at all.
+
+    DEEP MERGE, BRANCH WINS, MOST SPECIFIC LAST. A branch states only what DIFFERS — the same
+    contract `vertical.yaml` already keeps for everything else, where resolution is
+    `persona -> vertical -> model -> canonical` and nothing is copied into a branch. So a vertical
+    that rewords the headline and says nothing about `artifact_kind` keeps the canonical kind.
+
+    A BRANCH WITH NO `render` BLOCK CHANGES NOTHING, and returns the base object unchanged rather
+    than a copy of it. That matters beyond tidiness: `render` travels in the metadata that is
+    hashed into the expertise package's content address, so a rebuilt-but-identical mapping would
+    be a new address for knowledge that did not change — the churn that took this database
+    read-only twice.
+
+    NOT IMPLEMENTED HERE: a `metrics:` block. A branch can say which number matters, and nothing
+    downstream can yet show it — the render contract has no metric slot and `card_builder` reads
+    none. Building the producer for a consumer that does not exist is how `models/` came to hold
+    18 files that changed nothing for a year, and this function exists because of that. When a
+    metric slot is authored into `render.fallback`, it merges through this function already.
+    """
+    blocks = [document.content.get("render") for document in sorted(variants, key=_axis_rank)]
+    blocks = [b for b in blocks if isinstance(b, Mapping) and b]
+    if not blocks:
+        return base
+    merged: dict[str, Any] = dict(base or {})
+    for block in blocks:
+        for key, value in block.items():
+            if isinstance(value, Mapping) and isinstance(merged.get(key), Mapping):
+                merged[key] = {**merged[key], **_plain(value)}
+            else:
+                merged[key] = _plain(value)
+    return merged
+
+
 class CapabilityResolver:
     """Uses the generated reverse index, then narrows it with authored situation predicates."""
 
@@ -543,6 +597,9 @@ class CapabilityResolver:
         never |= variant_never_load(variants)
         required -= never
         optional -= never
+        # AND THE WORDS. A branch that rewords the card is the half a reader actually notices;
+        # `never_load` above changes what can be said, this changes how it is said.
+        render = variant_render_overlay(variants, render)
 
         return RoutePlan(
             domain_ids=tuple(sorted(selected_domains)),

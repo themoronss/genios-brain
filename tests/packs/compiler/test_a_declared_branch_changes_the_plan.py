@@ -172,7 +172,10 @@ def _corpus_with_a_vertical(tmp_path: Path) -> Path:
         "objects:\n"
         # `champion` is the fixture route's OPTIONAL object. An agency selling delivery capacity
         # has no champion to multithread to, and says so.
-        "  never_load: [sales.obj.core.champion]\n")
+        "  never_load: [sales.obj.core.champion]\n"
+        "render:\n"
+        "  fallback:\n"
+        "    headline: \"{entity} — delivery capacity at risk\"\n")
     return root, module
 
 
@@ -242,3 +245,107 @@ def test_a_tenant_that_declares_a_branch_nobody_authored_still_compiles(tmp_path
     # `freeze_mapping` turns the builder's list into a tuple on the frozen package; what matters
     # is that the name survives to where a reader can see it.
     assert tuple(package.metadata["unresolved_variant_ids"]) == ("law_firm",)
+
+
+# ── the words ───────────────────────────────────────────────────────────────────────────────
+
+def _branch(doc_id: str, kind: str, render: dict | None = None):
+    content = {"identity": {"id": doc_id, "kind": kind, "name": f"{kind} branch"}}
+    if render is not None:
+        content["render"] = render
+    return _Doc(doc_id, content)
+
+
+BASE_RENDER = {
+    "artifact_kind": "brief",
+    "render_hint": "Lead with the promise and the date.",
+    "fallback": {"headline": "{entity} — promise past due",
+                 "situation": "A promise to {entity} is past its date."},
+}
+
+
+def test_a_branch_rewords_the_card() -> None:
+    """`render` is what a reader actually sees: it reaches `card_builder` as
+    `capability_render`. A branch overriding it changes the words with no delivery change."""
+    from genios_engine.packs.compiler.capability_resolver import variant_render_overlay
+
+    branch = _branch("sales.vertical.ai_agency", "vertical",
+                     {"fallback": {"headline": "{entity} — goodwill owed"}})
+    merged = variant_render_overlay((branch,), BASE_RENDER)
+    assert merged["fallback"]["headline"] == "{entity} — goodwill owed"
+
+
+def test_a_branch_states_only_what_differs() -> None:
+    """The contract every variant file already keeps — nothing is copied into a branch, and
+    resolution is persona -> vertical -> model -> canonical. A branch that rewords the headline
+    and says nothing about the kind keeps the canonical kind and the canonical sentence."""
+    from genios_engine.packs.compiler.capability_resolver import variant_render_overlay
+
+    branch = _branch("v", "vertical", {"fallback": {"headline": "new"}})
+    merged = variant_render_overlay((branch,), BASE_RENDER)
+    assert merged["artifact_kind"] == "brief"
+    assert merged["fallback"]["situation"] == BASE_RENDER["fallback"]["situation"]
+
+
+def test_the_more_specific_branch_wins() -> None:
+    """A tenant declaring both a vertical and a persona is making two statements about itself.
+    Where they touch the same words the narrower one knows more: a CTO at an AI agency reads a
+    CTO's card. Order comes from `identity.kind`, not from whatever the files were named."""
+    from genios_engine.packs.compiler.capability_resolver import variant_render_overlay
+
+    vertical = _branch("z.vertical.agency", "vertical", {"fallback": {"headline": "vertical"}})
+    persona = _branch("a.persona.cto", "persona", {"fallback": {"headline": "persona"}})
+    # Passed vertical-first and persona-first; the id sort would flip them, the axis sort must not.
+    assert variant_render_overlay((vertical, persona), BASE_RENDER)["fallback"]["headline"] \
+        == "persona"
+    assert variant_render_overlay((persona, vertical), BASE_RENDER)["fallback"]["headline"] \
+        == "persona"
+
+
+def test_a_branch_with_no_render_returns_the_base_object_itself() -> None:
+    """Not a copy of it. `render` travels in the metadata hashed into the package's content
+    address, so rebuilding an identical mapping would mint a new address for knowledge that did
+    not change — the churn that took this database read-only twice."""
+    from genios_engine.packs.compiler.capability_resolver import variant_render_overlay
+
+    assert variant_render_overlay((_branch("m", "model"),), BASE_RENDER) is BASE_RENDER
+    assert variant_render_overlay((), BASE_RENDER) is BASE_RENDER
+
+
+def test_a_branch_can_reword_a_route_that_authored_no_copy() -> None:
+    """A situation with no `render` block is the common case in the shipped corpus. A branch must
+    still be able to speak for it rather than silently doing nothing."""
+    from genios_engine.packs.compiler.capability_resolver import variant_render_overlay
+
+    branch = _branch("v", "vertical", {"fallback": {"headline": "spoken for"}})
+    assert variant_render_overlay((branch,), None)["fallback"]["headline"] == "spoken for"
+
+
+def test_the_branchs_words_reach_the_package_through_a_real_compile(tmp_path: Path) -> None:
+    """THE CALL SITE, not just the function. `variant_render_overlay` had five passing tests while
+    the line that calls it could be deleted without failing one of them — the overlay was correct
+    and unreachable, which is the exact shape of the defect this whole step exists to fix.
+
+    `package.metadata["render"]` is what becomes `manifest.metadata["render"]`, which
+    `deliver/pipeline` reads as `capability_render` and `card_builder` uses as its template. So
+    this assertion is the last compiler-side hop before a human reads different words.
+    """
+    from genios_engine.packs.compiler import (
+        DomainCompiler, ExpertBrainCatalog, InMemoryExpertisePublisher, InMemoryRuntimeBrains)
+
+    root, module = _corpus_with_a_vertical(tmp_path)
+
+    def compile_with(model_ids):
+        compiler = DomainCompiler(
+            catalog=ExpertBrainCatalog(root), require_admission=False,
+            runtime_brains=InMemoryRuntimeBrains(), publisher=InMemoryExpertisePublisher())
+        return compiler.compile(module._situation(model_ids=model_ids))
+
+    canonical = (compile_with(["sales.model.b2b"]).metadata.get("render") or {})
+    declared = (compile_with(["ai_agency"]).metadata.get("render") or {})
+
+    headline = (declared.get("fallback") or {}).get("headline")
+    assert headline == "{entity} — delivery capacity at risk", (
+        "the declared branch's words did not reach the package the card is built from")
+    assert (canonical.get("fallback") or {}).get("headline") != headline, (
+        "both compiles produced the same copy, so this proves nothing about the overlay")
