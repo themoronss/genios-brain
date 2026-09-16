@@ -362,6 +362,36 @@ _L2_TO_L3_DOMAIN = {"admin": "admin", "sales": "sales", "support": "customer_sup
                     "customer_support": "customer_support"}
 
 
+def live_lane(*, forced: bool, domain: str | None, activated: frozenset[str] | Iterable[str]) -> bool:
+    """Is THIS situation on the live lane — publishing a package and emitting a signal?
+
+    THE UNACTIVATABLE DOMAIN LOSES TO EVERYTHING, and that is the property this function exists to
+    hold. `domain is None` means no corpus claims this situation's L2 domain, so there is no
+    doctrine to compile and nothing that could author a card. The comment beside the caller has
+    always said such a situation "publishes no package and emits no signal — on EVERY tenant
+    configuration"; the expression it described did not, because it read
+    ``live or (domain is not None and domain in activated)`` and the global flag is checked FIRST.
+    With `use_domain_compiler` on, an unactivatable situation was handed the live compiler — the
+    one configuration in which the stated safety property is false is the one a global flag
+    creates.
+
+    TWO SWITCHES, AND ONLY ONE OF THEM IS A WAY BACK. `activated` is
+    `platform/l3_activation.activated_domains` — per tenant, per corpus, and reversible by
+    deleting the row. `forced` is `platform/config.use_domain_compiler`, one boolean for every
+    tenant at once; it is set in no environment and has never been true anywhere. It only ever
+    turns lanes ON: switching it off does not take an activated tenant off the live lane, because
+    the second clause still answers yes. It is therefore not a kill switch for the activation
+    table, whatever it is called elsewhere — the way back is the erasure row.
+
+    Kept rather than deleted because deleting it is a separate, gated decision (the L3 plan's
+    "retired, not extended", after a pilot passes J5). What this removes is its ability to
+    contradict the fail-closed rule while it waits.
+    """
+    if domain is None:
+        return False
+    return bool(forced or domain in activated)
+
+
 def l3_domain_for(l2_domain: Any) -> str | None:
     """The activatable corpus for one L2 domain, or None when no corpus claims it."""
     return _L2_TO_L3_DOMAIN.get(str(l2_domain or "").strip().lower())
@@ -682,7 +712,7 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
             # fail-closed direction: an unactivatable domain compiles and measures exactly as it
             # does today.
             row_domain = l3_domain_for(row["domain"])
-            live_row = bool(live or (row_domain is not None and row_domain in live_domains))
+            live_row = live_lane(forced=live, domain=row_domain, activated=live_domains)
             counts["live_situations" if live_row else "shadow_situations"] += 1
             if row_domain is None:
                 # UNACTIVATABLE, AND SILENT UNTIL NOW. A situation whose L2 domain no corpus
