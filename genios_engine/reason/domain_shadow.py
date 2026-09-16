@@ -748,7 +748,7 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                 # behind them scored 528-1920 against a floor of 2500. The gate is right; the
                 # silence was not.
                 refusal = (None if l1 is not None
-                           else l1_refusal(c, org_id, str(row["correlation_id"])))
+                           else l1_refusal(conn, org_id, str(row["correlation_id"])))
                 candidate = build_business_situation(
                     org_id=org_id, situation=row,
                     signal_ids=signal_ids, evidence=evidence, trace_id=trace_id,
