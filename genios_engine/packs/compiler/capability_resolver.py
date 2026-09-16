@@ -204,6 +204,88 @@ def _admission_reason(capability) -> str | None:
         return "content_changed_since_acceptance"
     return None
 
+def _declared_values(raw) -> tuple[str, ...]:
+    if not raw:
+        return ()
+    if isinstance(raw, str):
+        return (raw,)
+    return tuple(str(value) for value in raw)
+
+
+def resolve_declared_variants(catalog, domain_ids, situation) \
+        -> tuple[tuple[Any, ...], tuple[str, ...]]:
+    """`(resolved, unresolved)` for the branches this tenant declared. Moved here from
+    `KnowledgeRetriever`, and the move is the whole point of this change.
+
+    WHY IT HAD TO RUN EARLIER. The compiler's order is
+    `capability_resolver -> object_resolver -> knowledge_retriever`, and variants were resolved in
+    the last of the three. So a branch could be selected, loaded, carried into the package and
+    hashed into its address — and could not affect the PLAN, which had already decided which
+    objects bind and which never do. A `vertical` saying "this kind of company has no invoices"
+    was structurally unable to say it. That is why `models/` holds 18 authored files across three
+    corpora and has never changed a single output.
+
+    Matching is by ALIAS across every variant document regardless of which file it came from —
+    the full identifier, its last dotted segment, and the identity name slugified — so a request
+    resolves a `model`, a `vertical`, a `persona` or an `offering` without the caller naming the
+    axis. That is deliberate: a tenant declares what it IS, not which folder the answer lives in.
+
+    AMBIGUOUS AND MISSING BOTH DEGRADE TO "NO OVERLAY", NAMED. These used to raise
+    `AuthoringIntegrityError`, which `domain_shadow` does not catch by name — it landed in the
+    catch-all as `counts["error"] += 1`, per situation, for every situation, so a tenant's typo
+    became a silent tenant-wide outage. The shipped Sales corpus already has two ambiguous bare
+    aliases (`consulting`, `healthcare`), so this was reachable from an ordinary console entry.
+    """
+    metadata = situation.metadata
+    requested = set(_declared_values(
+        metadata.get("model_ids") or metadata.get("business_models") or metadata.get("models")))
+    requested.update(_declared_values(
+        metadata.get("offering_ids") or metadata.get("offerings")))
+    if not requested:
+        return (), ()
+    resolved: list[Any] = []
+    missing: list[str] = []
+    for request in sorted(requested):
+        matches: list[Any] = []
+        for domain_id in domain_ids:
+            for identifier, document in catalog.domain(domain_id).variants.items():
+                identity = document.content.get("identity") or {}
+                aliases = {
+                    identifier,
+                    identifier.rsplit(".", 1)[-1],
+                    str(identity.get("name") or "").strip().lower().replace(" ", "_"),
+                }
+                if request in aliases:
+                    matches.append(document)
+        if len(matches) > 1 or not matches:
+            missing.append(request)
+        else:
+            resolved.append(matches[0])
+    return (tuple(sorted(resolved, key=lambda item: item.id)), tuple(sorted(missing)))
+
+
+def variant_never_load(variants) -> set[str]:
+    """Object ids a declared branch says must never bind, from its `objects.never_load`.
+
+    THE FIRST THING A VARIANT ACTUALLY DOES. Until this, a variant document was loaded, resolved,
+    carried and hashed, and read by nothing that changes a decision: the rule compiler skips it
+    (`artifact_class != "rule"`), the citation builder skips it (`vertical` is not one of
+    `CITATION_CLASSES`), and the playbook adapter skips it. `never_load` is the narrowest useful
+    thing to give it — a set operation on a plan the resolver already computes from situations and
+    object manifests, with no new contract and no new failure mode.
+
+    It only ever REMOVES. A branch cannot add an object the canonical route did not offer, because
+    a vertical is a statement about what is IRRELEVANT here, not a licence to widen what a
+    capability may bind. Widening belongs to the capability's own manifest, which is admitted.
+    """
+    never: set[str] = set()
+    for document in variants:
+        objects = document.content.get("objects") or {}
+        if isinstance(objects, Mapping):
+            never.update(str(value) for value in (objects.get("never_load") or ()))
+    return never
+
+
 class CapabilityResolver:
     """Uses the generated reverse index, then narrows it with authored situation predicates."""
 
@@ -450,6 +532,18 @@ class CapabilityResolver:
                 f"route expands to {len(required | optional)} objects; limit is "
                 f"{self.max_objects}")
 
+        # THE DECLARED BRANCHES, resolved against the domains this route actually selected — and
+        # folded into `never` BEFORE the plan is sealed. This is the line that makes a variant do
+        # something: every other consumer of a variant document reads it as a knowledge artifact
+        # and skips it, because `vertical` is not a citation class and is not a rule.
+        variants, unresolved_variants = resolve_declared_variants(
+            self.catalog, tuple(sorted(selected_domains)), situation)
+        # Only ever narrows. A branch says what is IRRELEVANT for this kind of company; widening
+        # what a capability may bind belongs to the capability's own admitted manifest.
+        never |= variant_never_load(variants)
+        required -= never
+        optional -= never
+
         return RoutePlan(
             domain_ids=tuple(sorted(selected_domains)),
             situation_ids=tuple(sorted(situation_ids)),
@@ -459,6 +553,8 @@ class CapabilityResolver:
             never_object_ids=tuple(sorted(never)),
             unresolved_predicates=tuple(sorted(unresolved)),
             skipped_capability_ids=tuple(sorted(skipped_capabilities)),
+            variants=variants,
+            unresolved_variant_ids=unresolved_variants,
             admitted=not admission_gaps,
             admission_gaps=tuple(sorted(admission_gaps)),
             hollow_capability_ids=tuple(sorted(hollow_capabilities)),
