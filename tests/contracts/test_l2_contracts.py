@@ -52,8 +52,7 @@ from genios_engine.contracts.analytic import (BAND_SCHEMES, MAX_TREND_CONFIDENCE
                                               MetricPoint, MetricUnit, Trend, TrendDirection,
                                               expressible_divisions)
 from genios_engine.contracts.authority import (NO_AUTHORITY_RULE, AuthorityRule, AuthoritySource)
-from genios_engine.contracts.conflict import (Authority, Conflict, ConflictClaim,
-                                              ConflictResolution)
+from genios_engine.contracts.conflict import ConflictResolution, ConflictSummary
 from genios_engine.contracts.dependency import (MAX_DEPENDENCY_DEPTH, DependencyChain,
                                                 DependencyLink)
 from genios_engine.contracts.domain_expertise import (BUSINESS_SITUATION_VERSION,
@@ -202,23 +201,34 @@ def confidence(**overrides: Any) -> ConfidenceVector:
     return ConfidenceVector(**base)
 
 
-def conflict_74k_vs_84k() -> Conflict:
-    return Conflict(
+def conflict_74k_vs_84k() -> ConflictSummary:
+    """A SUMMARY, not ALG-12's record — because a summary is what a BSO can carry.
+
+    This fixture used to build the full `Conflict`: both claims verbatim, their authorities,
+    their evidence spans, and `detected_at`. `BusinessSituationObject.conflicts` accepted that
+    type and nothing ever handed it one, because the only producer —
+    `situation_publisher._TYPED_LANES`, reading `situation_bso._CONFLICT_SELECT` — projects
+    `signal_conflicts` into counted claims with no clock. The fixture therefore proved the object
+    round-trips a shape production cannot give it, while production's real shape was dropped
+    silently and `conflict_open` held all 52 situations that had a disagreement at all.
+
+    The record keeps its full coverage where it belongs, in `tests/contracts/test_l1_contracts.py`
+    — it is an L1 contract, and that file exercises its freeze, its no-winner rule and its
+    round trip. What this file is for is the L2 object, and the L2 object carries the summary.
+    """
+    return ConflictSummary(
+        conflict_id="cf_74k_vs_84k",
+        signal_id="sig_contract_value",
         field="contract.value",
-        claims=[
-            ConflictClaim(value=Money(minor_units=7_400_000, currency="USD",
-                                      as_written="$74,000"),
-                          authority=Authority.SIGNED_DOCUMENT, authority_rank=6,
-                          evidence=[span("Total annual commitment: $74,000",
-                                         source_ref="chunk:doc_msa_2026:3")]),
-            ConflictClaim(value=Money(minor_units=8_400_000, currency="USD",
-                                      as_written="$84K"),
-                          authority=Authority.EMAIL_PROSE, authority_rank=2,
-                          evidence=[span("the $84K annual contract")]),
-        ],
-        resolution=ConflictResolution.RESOLVED_BY_AUTHORITY,
-        resolved_value=Money(minor_units=7_400_000, currency="USD", as_written="$74,000"),
-        detected_at=EVAL_TIME)
+        subject_key="acct_northwind",
+        resolution=ConflictResolution.RESOLVED_BY_AUTHORITY.value,
+        # Money, not a float — the no-float assertion in this file reaches into every lane, and
+        # the projection keeps whatever the stored row held.
+        resolved_value=Money(minor_units=7_400_000, currency="USD",
+                             as_written="$74,000").model_dump(mode="json"),
+        event_ids=("evt_msa_2026", "evt_email_84k"),
+        # Two sides, COUNTED. This is what stops the situation reaching Layer 3 looking settled.
+        claim_count=2)
 
 
 def situation_kwargs(**overrides: Any) -> dict[str, Any]:
