@@ -422,3 +422,51 @@ class Conflict(BaseModel):
 __all__ = ["MAX_AUTHORITY_RANK", "Authority", "ClaimValue", "Conflict", "ConflictClaim",
            "ConflictResolution",
            "require_no_float"]
+
+
+class ConflictSummary(BaseModel):
+    """What a BusinessSituationObject carries about a disagreement — a summary, not the record.
+
+    `Conflict` above is ALG-12's permanent record: both claims verbatim, the instant it was
+    detected, frozen so it cannot be edited after the fact. A BSO must not carry either of those
+    two fields, and `situation_bso._CONFLICT_SELECT` omits them for reasons it states plainly:
+
+      * `detected_at` is a CLOCK, and this metadata is hashed into the expertise package's content
+        address. A clock there mints a fresh ~238 kB package row per situation per sweep — the
+        mechanism that put 995 MB on one tenant's database and took it read-only.
+      * `claims` holds both sides verbatim, including the losing claim's quoted text. A BSO is a
+        summary; it carries the COUNT so a reader knows a disagreement has two sides without the
+        object growing to hold them.
+
+    THE TWO SHAPES WERE NEVER RECONCILED, and the cost was silent. `situation_publisher._typed_
+    lanes` validated each stored row against `Conflict` and DROPPED whatever failed — so every
+    summary failed on two missing required fields plus five extras the frozen record forbids,
+    `carried["conflicts"]` was always empty, and `conflict_open` held every situation that had a
+    conflict at all. Measured on the pilot 2026-09-16: 52 situations carried conflict pointers,
+    52 carried the typed rows in metadata, and 49 were held anyway.
+
+    THIS IS A SECOND CONTRACT, NOT A LOOSER FIRST ONE. Widening `Conflict` to accept a summary
+    would let a caller store a disagreement with no claims in it, which is exactly what its
+    `frozen=True, extra="forbid"` exists to prevent.
+    """
+
+    #: Same two guarantees as the record, for the same reason: a summary that silently accepts
+    #: `winner=...` is a summary somebody will believe stored something.
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    #: The stored row's own identifiers, kept so a reader can reach the full record.
+    conflict_id: str
+    signal_id: str
+    #: The dotted field path the two claims disagree about.
+    field: str
+    subject_key: str
+    #: `ConflictResolution`'s value as stored. Kept as a string rather than the enum because this
+    #: is a projection of what another layer committed, and an unknown resolution must survive
+    #: the read rather than drop the disagreement it describes.
+    resolution: str
+    #: Present and `None` where nothing settled it — which is the state the gate exists to
+    #: protect, so it must survive the projection rather than be omitted.
+    resolved_value: Any = None
+    event_ids: tuple[str, ...] = ()
+    #: How many sides. COUNTED, never copied — see the class docstring.
+    claim_count: int = 0

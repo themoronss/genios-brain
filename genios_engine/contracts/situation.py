@@ -93,7 +93,7 @@ from genios_engine.contracts.analytic import (DIRECTIONAL, MAX_TREND_CONFIDENCE_
                                               MIN_TREND_POINTS, Anomaly, CohortPosition,
                                               MetricCorrelation, MetricPoint, Trend,
                                               require_measure)
-from genios_engine.contracts.conflict import Conflict, require_no_float
+from genios_engine.contracts.conflict import Conflict, ConflictSummary, require_no_float
 from genios_engine.contracts.dependency import DependencyChain
 from genios_engine.contracts.evidence import EvidenceSpan
 from genios_engine.contracts.quality import MissingFact
