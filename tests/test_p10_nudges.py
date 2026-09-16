@@ -91,6 +91,36 @@ def test_remind_times_follow_the_ladder_unless_snoozed():
     assert F.remind_times(SimpleNamespace(kind="risk", created_at=at11, due_at=None,
                                           nudge_at=None, snoozed_at=None)) == []
 
+
+def test_an_ai_chat_page_is_never_judged():
+    # P13: what the manager writes to Claude / ChatGPT is thinking out loud, not a person's request.
+    for page in ("doc:com.google.Chrome:claude.ai/chat/abc",
+                 "doc:com.google.Chrome:chatgpt.com/c/xyz",
+                 "doc:com.apple.Safari:gemini.google.com/app",
+                 "doc:com.google.Chrome:www.perplexity.ai/search/x"):
+        assert F.is_assistant_page(page) is True, page
+    for real in ("doc:com.google.Chrome:mail.google.com/mail/u/0", "wa:priya shah",
+                 "doc:net.whatsapp.WhatsApp:title:whatsapp", "doc:com.google.Chrome:docs.google.com/d/1",
+                 None, ""):
+        assert F.is_assistant_page(real) is False, real
+
+
+def test_one_topic_when_the_same_name_is_written_differently():
+    # The same community wrote its own name two ways on 2026-09-14 and the event was saved twice.
+    day = datetime(2026, 9, 14, tzinfo=IST).date()
+    key = lambda who: F.topic_key(seat_id="seat_1", thread_key="wa:ncr events", app="whatsapp",
+                                  kind="deadline", who=who, local_date=day)
+    assert key("NCR Events Updates community") == key("NCR Events Updates / Community")
+    assert key("Priya Shah") == key("priya  shah")
+    assert key("Priya Shah") != key("Ravi Kumar")
+    assert F.who_key(None) == F.who_key("") == ""
+
+
+def test_the_prompt_says_group_posts_are_not_asks_and_own_applications_are_personal():
+    p = SI.build_prompt(app="whatsapp", screen="x", facts=[])
+    assert "group, channel or broadcast list" in p and "NOT an ask" in p
+    assert "is personal" in p and "job portals" in p
+
 def test_snooze_presets():
     tz = "Asia/Kolkata"
     mon3 = _ist(2026, 9, 14, 15)

@@ -117,10 +117,18 @@ def map_kind(kind: str | None, owner: str | None) -> str | None:
     return k if k in ("ask", "deadline", "risk", "next_step") else None
 
 
+def who_key(who: str | None) -> str:
+    """A name as an identity: letters and digits only, lower-case, each word once, sorted — so
+    "NCR Events Updates community" and "NCR Events Updates / Community" are one topic, not two
+    (they were two on 2026-09-14, and the same event was saved twice)."""
+    words = {w for w in re.split(r"[^0-9a-z]+", (who or "").casefold()) if w}
+    return " ".join(sorted(words))
+
+
 def topic_key(*, seat_id: str, thread_key: str | None, app: str | None, kind: str,
               who: str | None, local_date: date) -> str:
     blob = "|".join([seat_id, (thread_key or app or "").strip(), kind,
-                     " ".join((who or "").split()).casefold(), local_date.isoformat()])
+                     who_key(who), local_date.isoformat()])
     return hashlib.sha256(blob.encode()).hexdigest()
 
 
@@ -269,7 +277,21 @@ SHARED_HOSTS = ("google.com", "notion.so", "notion.site", "github.com", "gitlab.
                 "office.com", "atlassian.net", "canva.com", "airtable.com", "trello.com", "asana.com",
                 "monday.com", "clickup.com", "miro.com", "claude.ai", "chatgpt.com", "openai.com",
                 "perplexity.ai", "youtube.com", "zoho.com", "zoho.in", "slack.com", "whatsapp.com")
+#: Pages where the manager is talking to an AI assistant. What they write there is thinking out
+#: loud, not a request from a person, so nothing on these pages becomes an item (P13).
+ASSISTANT_HOSTS = ("claude.ai", "chatgpt.com", "chat.openai.com", "openai.com", "gemini.google.com",
+                   "bard.google.com", "copilot.microsoft.com", "perplexity.ai", "poe.com",
+                   "chat.deepseek.com", "x.ai", "grok.com")
 _WEB_DOC = re.compile(r"^doc:[^:]+:(?!title:)(?P<host>[^/\s]+)(?P<path>/\S*)?$")
+
+
+def is_assistant_page(thread_key: str | None) -> bool:
+    """Is this screen an AI assistant's own chat page (Claude, ChatGPT, Gemini, …)?"""
+    m = _WEB_DOC.match((thread_key or "").strip())
+    if not m:
+        return False
+    host = m.group("host").lower().removeprefix("www.")
+    return any(host == h or host.endswith("." + h) for h in ASSISTANT_HOSTS)
 
 
 def verdict_key(thread_key: str | None) -> str | None:
@@ -749,8 +771,8 @@ __all__ = ["KINDS", "MUTE_FOREVER", "NOT_USEFUL_MUTE", "RESOLUTIONS", "SNOOZE_PR
            "add_working_days", "answered", "ask_nudge_at", "expire", "followup_id", "get_item",
            "is_muted", "item_out", "learn_from_feedback", "next_working_day_at", "snooze",
            "snooze_until",
-           "ladder", "listing", "map_kind", "mark_answered", "mute", "not_useful_notes", "nudge_at",
-           "remind_times",
+           "is_assistant_page", "ladder", "listing", "map_kind", "mark_answered", "mute", "not_useful_notes", "nudge_at",
+           "remind_times", "who_key",
            "open_items",
            "parse_due", "purge", "removed_since", "resolve", "seat_tz", "set_verdict",
            "shown_last_hour", "thread_verdict", "topic_key", "topic_shown", "upsert",

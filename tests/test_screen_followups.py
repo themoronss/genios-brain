@@ -291,6 +291,34 @@ def test_an_ask_is_saved_silently_answered_by_its_quote_and_in_the_slice(  # noq
               o=org) == []
 
 
+
+@pytest.mark.pg
+@pytest.mark.skipif(not URL, reason="GENIOS_TEST_DATABASE_URL not set")
+def test_an_ai_chat_page_costs_nothing_and_saves_nothing(client, monkeypatch):  # noqa: F811
+    # P13: the manager's own Claude / ChatGPT page — no model call, no item, no verdict, no popup.
+    ws = _workspace(client)
+    _enable_display(client, ws)
+    dev, org = ws["member_dev"], ws["org"]
+    called: list[int] = []
+
+    def never(*a, **kw):
+        called.append(1)
+        raise AssertionError("the model must not run on an AI chat page")
+
+    monkeypatch.setattr(SI, "llm_insight", never)
+    res = _look(client, dev, ["You: build the reminder ladder today", "Claude: here is the plan"],
+                thread="doc:com.google.Chrome:claude.ai/chat/abc", app="generic")
+    assert res.status_code == 204
+    assert called == []
+    assert _q("select 1 from screen_followups where org_id=:o", o=org) == []
+    assert _q("select 1 from moments where org_id=:o", o=org) == []
+    assert _q("select 1 from screen_thread_verdicts where org_id=:o", o=org) == []
+
+    # the same screen in a real chat still works
+    _model(monkeypatch, SILENT)
+    assert _look(client, dev, [ASK]).status_code == 204
+    assert len(_q("select 1 from screen_followups where org_id=:o", o=org)) == 1
+
 @pytest.mark.pg
 @pytest.mark.skipif(not URL, reason="GENIOS_TEST_DATABASE_URL not set")
 def test_web_pages_are_judged_once_per_site_and_open_items_reach_the_model(  # noqa: F811

@@ -345,7 +345,9 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
         site = (F.thread_verdict(c, org_id=p.org_id, seat_id=p.seat_id, thread_key=vkey, now=now)
                 if vkey and vkey != thread else None)
         personal_site = site is not None and site["work"] is False
-        skip = judged or muted or personal_site
+        # P13: an AI assistant's own chat page is the manager thinking out loud — never judged.
+        assistant = F.is_assistant_page(thread)
+        skip = judged or muted or personal_site or assistant
         notes = [] if skip else F.not_useful_notes(c, org_id=p.org_id, seat_id=p.seat_id,
                                                   capability_id=SI.CAPABILITY_ID)
         context = [] if skip else F.open_context(c, org_id=p.org_id, seat_id=p.seat_id,
@@ -369,6 +371,9 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
         return Response(status_code=_NO_CONTENT)
     if personal_site:                                  # one judgement per site per day
         _log.info("screen insight: site judged personal org=%s seat=%s", p.org_id, p.seat_id)
+        return Response(status_code=_NO_CONTENT)
+    if assistant:                                      # P13: an AI chat is not a person's request
+        _log.info("screen insight: assistant page org=%s seat=%s", p.org_id, p.seat_id)
         return Response(status_code=_NO_CONTENT)
     settings = get_settings()
     cap = int(getattr(settings, "screen_insight_daily_cap", SI.DEFAULT_DAILY_CAP) or 0)

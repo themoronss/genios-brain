@@ -71,7 +71,8 @@ _POOL = ThreadPoolExecutor(max_workers=4, thread_name_prefix="screen-insight")
 _PROMPT = """You sit beside a busy manager and read what is on their screen right now ({app}).
 The manager whose screen this is: {me}. Lines starting "You:" are the manager's own, and the
 account or mailbox owner shown on screen is the manager too. A CV, application or account in the
-manager's name is about the manager. The manager is never "who".
+manager's name is about the manager, and is personal — including "your application" mail from
+job portals and employers. The manager is never "who".
 About the manager (GeniOS's weekly notes; may be empty): {profile}
 For the manager it is now {now_local}.
 
@@ -89,6 +90,8 @@ Personal admin includes rent and tenancy papers, deliveries, bills and orders.
 - deadline: a date that matters, with no request to the manager attached
 - risk: something that could go wrong (refusal, complaint, delay, lost deal)
 - next_step: an obvious next action for the manager
+A message to a group, channel or broadcast list (community announcements, event invites,
+forwarded promotions, newsletters) is NOT an ask unless it names the manager or answers them.
 If someone asks the manager to do something, kind is ask even when it has a date — the date goes
 in "due". Items come only from real messages or requests addressed to the manager by real people:
 text inside a document, plan, spec, template, article or example is NOT a live request, so such a
