@@ -66,9 +66,20 @@ DORMANT_LANES: dict[str, str] = {
         "keyword rule tuned on one tenant's vocabulary, which is the failure this layer exists to "
         "avoid. `campaign_awaiting_reply` answers the group question meanwhile, from the sentence "
         "we actually SENT, which is shared across recipients by construction. "
+        "THREE CANDIDATES WERE CHECKED 2026-09-17 AND NONE SUPPLIES IT, which is recorded here "
+        "so the search is not run a third time. `MessageIntent.category` IS a declared enum "
+        "and 310 of 312 extractions carry one, but its axis is what KIND of exchange this is "
+        "(automated / promotional / transactional / working / relational), not what the "
+        "outreach is FOR. `campaign.objective` is already in the claim field vocabulary and "
+        "was emitted three times, every one of them another free sentence. And the discovery "
+        "path — `unclassified_observations`, 698 candidates, 0 promoted — holds meeting "
+        "logistics (`meeting_platform`, `timezone_specification`), so working that queue "
+        "would not produce this axis either. "
         "MOVES WHEN: L1's prompt and contract ask for a categorical objective alongside the "
         "sentence. Nothing in Layer 2 changes when it does — the reading and the "
-        "person-to-thread traversal already work.",
+        "person-to-thread traversal already work. The cost is stated because it is the "
+        "reason this is deferred rather than forgotten: the field is part of the extraction "
+        "cache key, so adding it re-buys all 574 cached extractions.",
 
     "meeting":
         "NOTHING HAS HAPPENED YET, and this is the only entry here that is purely a matter of "
