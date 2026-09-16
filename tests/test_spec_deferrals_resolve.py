@@ -29,8 +29,8 @@ from __future__ import annotations
 
 import ast
 import fnmatch
-import pathlib
 import re
+import pathlib
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
 ENGINE = REPO_ROOT / "genios_engine"
@@ -77,10 +77,31 @@ def _defined_names() -> set[str]:
                     names.add(node.id)
                 elif isinstance(node, ast.Attribute):
                     names.add(node.attr)
+
+    # THREE THINGS A READER CAN LAND ON THAT ARE NOT PYTHON NAMES. Each was a false positive
+    # here, and a false positive in this file is expensive in a particular way: it reads exactly
+    # like the real failure it exists to catch, so it survives as "a known red test" and takes
+    # the real ones with it. All three were verified to exist before being taught.
+
+    # A TABLE. `llm_costs` is created in `migrations/0004_l2_context_graph.sql` and three moment
+    # modules point a reader at it; nothing in Python is called that.
+    for sql in (REPO_ROOT / "migrations").rglob("*.sql"):
+        try:
+            text = sql.read_text()
+        except (OSError, UnicodeDecodeError):
+            continue
+        names.update(re.findall(r"create table if not exists (\w+)", text, re.IGNORECASE))
+        names.update(re.findall(r"create table (\w+)", text, re.IGNORECASE))
+
+    # AN ENVIRONMENT VARIABLE. `Settings` carries `env_prefix="GENIOS_"`, so the field
+    # `l4_llm_decision_maker_orgs` is spelled `GENIOS_L4_LLM_DECISION_MAKER_ORGS` everywhere a
+    # human would set it — which is the spelling a comment naturally uses and the one no AST walk
+    # ever sees.
+    names.update(f"GENIOS_{name.upper()}" for name in tuple(names))
     return names
 
 
-def _resolves(target: str, names: set[str]) -> bool:
+def _resolves(target: str, names: set[str], *, near: pathlib.Path | None = None) -> bool:
     target = target.strip().rstrip(".,;:").rstrip("()").strip()
     if not target or _NOT_A_POINTER.match(target):
         return True
@@ -88,6 +109,17 @@ def _resolves(target: str, names: set[str]) -> bool:
         candidate = target.split()[0]
         if (REPO_ROOT / candidate).exists() or (ENGINE / candidate).exists():
             return True
+        # RELATIVE TO THE MODULE THAT SAID IT. `context/angles/contract.py` points at
+        # `quality/missing.py`, meaning `context/quality/missing.py` — the way a reader of that
+        # file would read it, and the way its sibling packages are named everywhere else. Walked
+        # upward and stopped at `genios_engine`, so a bare `foo/bar.py` cannot resolve against
+        # some unrelated corner of the tree.
+        if near is not None:
+            for parent in near.parents:
+                if (parent / candidate).exists():
+                    return True
+                if parent == ENGINE:
+                    break
         # `capture/structured/mapper.STRUCTURED_PROFILE` — a module path with an attribute on it.
         head = candidate.rsplit("/", 1)[0] + "/" + candidate.rsplit("/", 1)[1].split(".")[0]
         return (ENGINE / f"{head}.py").exists() or (REPO_ROOT / f"{head}.py").exists()
@@ -108,7 +140,7 @@ def _dangling() -> list[tuple[str, int, str]]:
         rel = str(path.relative_to(REPO_ROOT))
         for lineno, line in enumerate(path.read_text().splitlines(), 1):
             for match in _DEFERRAL.finditer(line):
-                if not _resolves(match.group(1), names):
+                if not _resolves(match.group(1), names, near=path):
                     found.append((rel, lineno, match.group(1)))
     return found
 
