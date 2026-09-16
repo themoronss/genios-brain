@@ -225,10 +225,86 @@ def variant_ids_for(profile: dict[str, str]) -> tuple[str, ...]:
     return tuple(out)
 
 
+class UndeclaredProfileValue(ValueError):
+    """A category or persona no corpus authors. Refused at the declaration, never stored.
+
+    Storing it would put a value in `variant_ids` that `_resolve_variants` cannot match, and an
+    unmatched request degrades to "no overlay" — named in `unresolved_variant_ids` on the package,
+    but invisible on the screen, where the tenant simply keeps reading canonical doctrine while
+    the console shows them as configured. That is the shape of every silent-fallback bug in this
+    layer, and the declaration is the last place it is still cheap to refuse.
+    """
+
+    def __init__(self, axis: str, values: tuple[str, ...], known: tuple[str, ...]) -> None:
+        self.axis, self.values, self.known = axis, values, known
+        super().__init__(
+            f"no corpus declares {axis} {', '.join(values)!r} — authored: "
+            f"{', '.join(known) or '(none)'}")
+
+
+def declare(engine, store, org_id: str, *, category: str | None = None,
+            persona: str | None = None, by: str) -> dict[str, Any]:
+    """Record what this tenant is, and point Layer 3's branches at it. Returns what it did.
+
+    THE ORDER IS FACTS FIRST, THEN THE SWITCH, and it is not arbitrary. The facts are the record
+    of what somebody declared; `variant_ids` is a SELECTION derived from them. If the switch were
+    written first and the fact write failed, the tenant would be compiling against a branch with
+    nothing in the graph saying why — a configuration with no stated reason, which is exactly what
+    `l3_activation` already holds today (`variant_ids: []`, and nobody able to say what the tenant
+    is). Derived state must never outlive its source.
+
+    EVERY ACTIVATED DOMAIN GETS THE SAME PROFILE. A tenant is one company: it does not sell into
+    one vertical for Admin and another for Sales. The BRANCH each corpus resolves differs — Admin
+    authors `verticals/ai_agency`, Sales may not — and that difference is the corpus's to make,
+    reported as `unresolved_variant_ids` where a corpus has not authored the branch. Declaring
+    per domain would make the tenant answer the same question three times and let the answers
+    disagree.
+
+    REFUSES BEFORE IT WRITES. A value no corpus declares raises and nothing is stored — see
+    `UndeclaredProfileValue`. A tenant with no activated domain gets its facts written and no
+    switch touched, which is the honest half-state: we know what they are, Layer 3 is not on.
+    """
+    from genios_engine.platform.l3_activation import activated_domains, set_variants
+
+    for axis, value in (("vertical", category), ("persona", persona)):
+        if value:
+            missing = undeclared(axis, [value])
+            if missing:
+                raise UndeclaredProfileValue(axis, missing, declared(axis))
+
+    facts = profile_facts(category=category, persona=persona)
+    written: list[str] = []
+    if facts:
+        with engine.begin() as conn:
+            node_id = store.find_or_create_node(
+                conn, org_id=org_id, node_type="tenant", canonical_key=tenant_key(org_id),
+                display_name="This organisation", event_id=None)
+            for field, value, value_type in facts:
+                # `authority_rank=6` — a statement by the account holder about their own company
+                # outranks anything an extractor infers from prose. `event_id` names the
+                # declaration rather than a message, because no message caused this.
+                store.write_fact(
+                    conn, org_id=org_id, subject_node_id=node_id, field=field,
+                    value=value, value_type=value_type, confidence=1.0,
+                    occurred_at=None, event_id=f"declared:{org_id}",
+                    evidence={"declared_by": by}, source="declaration", authority_rank=6)
+                written.append(field)
+
+    profile = {field: value for field, value, _t in facts}
+    variants = variant_ids_for(profile)
+    switched: list[str] = []
+    for domain in sorted(activated_domains(engine, org_id)):
+        if set_variants(engine, org_id, domain=domain, variant_ids=variants, by=by) is not None:
+            switched.append(domain)
+    return {"facts_written": tuple(written), "variant_ids": variants,
+            "domains_switched": tuple(switched)}
+
+
 __all__ = [
+    "UndeclaredProfileValue",
     "BASIS_DECLARED", "BASIS_UNKNOWN",
     "CATEGORY_BASIS_FIELD", "CATEGORY_FIELD", "PERSONA_BASIS_FIELD", "PERSONA_FIELD",
     "VARIANT_AXES",
-    "categories", "declared", "personas", "profile_facts", "read_profile",
+    "categories", "declare", "declared", "personas", "profile_facts", "read_profile",
     "resolvable_slugs", "tenant_key", "undeclared", "unreachable_slugs", "variant_ids_for",
 ]

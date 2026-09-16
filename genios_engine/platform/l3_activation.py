@@ -389,6 +389,48 @@ def activate(engine, org_id: str, *, domain: str, by: str, notes: str | None = N
     return _record(row)
 
 
+def set_variants(engine, org_id: str, *, domain: str, variant_ids, by: str,
+                 at: datetime | None = None) -> L3Activation | None:
+    """Change which authored branches a LIVE tenant/domain runs under. Returns None if not live.
+
+    WHY THIS IS NOT `activate(variant_ids=...)`. That writer deliberately refuses to overwrite a
+    non-empty `variant_ids` on a live row — its own comment says changing which business model a
+    tenant runs under "is its own decision, not a side-effect of re-clicking activate", and that
+    is right. But a decision nobody can make is not a safe default, it is a dead end: a tenant
+    that declared `saas` on Monday and corrects itself to `ai_agency` on Tuesday had no way to be
+    heard. This is the deliberate half, and it is separate precisely so it cannot happen by
+    accident.
+
+    REFUSES A DEAD ROW. A pair that was switched off is not re-enabled here — reviving it is
+    `activate`'s decision and carries a new pilot period with it. Returning None rather than
+    raising: the caller is declaring a profile across every activated domain and a tenant that
+    holds three rows of which one is off should get the two it has, not an exception.
+
+    WRITES NOTHING ELSE AND STARTS NOTHING, the same contract `activate` keeps. The next ordinary
+    sweep reads the new branches; nothing is recompiled here. A setter that triggered a compile
+    would make "correct a typo" mean "recompile the corpus".
+    """
+    require_domain(domain)
+    from sqlalchemy import text
+    at = at or datetime.now(timezone.utc)
+    table = L3_ACTIVATION_TABLE
+    wanted = _variant_tuple(variant_ids)
+    with engine.begin() as conn:
+        changed = conn.execute(text(
+            f"update {table} set variant_ids = cast(:variants as jsonb), "
+            "    enabled_by = :by, updated_at = :at "
+            f"where org_id = :o and domain = :d and {table}.disabled_at is null "
+            "returning org_id"),
+            {"o": org_id, "d": domain, "by": by, "at": at,
+             "variants": __import__("json").dumps(list(wanted))}).first()
+        if changed is None:
+            return None
+        row = conn.execute(text(
+            f"select {_COLUMNS} from {table} where org_id = :o and domain = :d"),
+            {"o": org_id, "d": domain}).first()
+    return _record(row)
+
+
 def deactivate(engine, org_id: str, *, domain: str, by: str = "unrecorded",
                at: datetime | None = None) -> bool:
     """Switch ONE domain off. True when a LIVE row was switched off — the rollback half of the flip,
@@ -414,5 +456,5 @@ def deactivate(engine, org_id: str, *, domain: str, by: str = "unrecorded",
 
 __all__ = ["DOMAIN_ADMIN", "DOMAIN_CUSTOMER_SUPPORT", "DOMAIN_SALES", "EFFECTS", "L3Activation",
            "L3_ACTIVATION_TABLE", "L3_DOMAINS", "activate", "activated_domains", "deactivate",
-           "get_l3_activation", "is_l3_activated", "l3_activated_orgs", "list_l3_activations",
-           "require_domain"]
+           "declared_variants", "get_l3_activation", "is_l3_activated", "l3_activated_orgs",
+           "list_l3_activations", "require_domain", "set_variants"]
