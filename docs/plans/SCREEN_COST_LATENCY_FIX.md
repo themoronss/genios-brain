@@ -60,7 +60,7 @@ shadow/DND/quiet/rate guards, duplicate TTL) — only the decision itself is the
 |---|---|---|---|
 | 1 | Thread key carries the SPA route | desktop `capture/session.rs` | correctness; fewer wasted calls (verdicts stop being wrong) |
 | 2 | Deterministic triage before the paid call | brain `_screen_insight` + `screen_triage.py` | −30–40 % calls [estimate] |
-| 3 | Cached rulebook (system block ≥ 4,096 tok) + Hinglish few-shots | brain `screen_insight.py` | −30–40 % ₹/call [estimate]; accuracy lever is free |
+| 3 | Cached rulebook (≥ 4,096 tok) + 50 Hinglish/English few-shots | brain `screen_insight.py` | −11 % to −22 % input [derived]; the few-shots come almost free |
 | 4 | Deterministic interrupt gate + per-item confidence | brain `screen_insight.py`, `moment_routes.py` | popups only when code can verify them |
 
 **Invariants this plan does not touch:** device timers (dwell 5 s / 2 s, gaps 20 s / 10 s, focus
@@ -99,12 +99,35 @@ if it ever hides something. Every skip increments a counter the weekly report re
 
 ### 3 · Cached rulebook
 
-`build_prompt` splits into `rulebook()` (frozen, cached, `cache_control: ephemeral`) and a
-dynamic user block. The rulebook is not padding: it is the taxonomy, the safety rules, the five
-popup reasons with worked examples and 15–20 Hinglish/English few-shots — the cheapest accuracy
-lever available, and it is what takes the prefix past 4,096 tokens. The call goes through
+`build_prompt` splits into `_RULEBOOK` (frozen, marked `cache_control: ephemeral` at
+`RULEBOOK_CHARS`) and `_TASK` (everything per-screen). The call goes through
 `context/llm/client.py` so cost-equivalent tokens (uncached + 1.25 × writes + 0.1 × reads) land in
 `llm_costs` and the budget prices a cached call correctly.
+
+**Do not repeat the reference architecture's −37 %, and do not read the repo's own −88 % across.**
+That −88 % was measured on the extraction lane, where the static prefix was 4,203 of ~4,700
+tokens. Here the fixed half is ~1,200 of ~2,400, so caching it is worth much less. The arithmetic,
+with `R` the rulebook, `D` the dynamic half and `h` the hit rate — effective input =
+`(0.1h + 1.25(1−h))·R + D`:
+
+| | per check | vs today |
+|---|---:|---:|
+| today (1,200 fixed + 1,200 dynamic, uncached) | 2,400 | — |
+| rulebook 4,300 tok, 90 % hit | 2,124 | **−11 %** |
+| rulebook 4,300 tok, 95 % hit | 1,877 | **−22 %** |
+
+So the honest case for this change is **accuracy**: 50 worked examples — Hinglish asks and
+promises, the manager's own job search and pay as personal, buttons and missing-info lines that
+are not items, an ask addressed to someone else, and one worked example per popup reason — for
+about a tenth of their size on every call after the first. The cost win is real but modest, and a
+seat that checks once in a long while pays MORE for a big rulebook than a small one: the hit rate
+is the whole argument, which is why `llm_insight` logs `cache read=… write=…` on every call.
+
+**The token count is not measured yet.** Haiku 4.5 caches nothing under 4,096 tokens and a short
+prefix fails silently. The rulebook is 20,499 characters, which is ≥ 4,096 tokens even at a
+pessimistic 4.5 chars/token, and a test guards that floor — but characters are not tokens.
+`scripts/measure_insight_cache.py` settles it with `count_tokens`; it could not be run here
+because the workspace's Anthropic key is **over its usage limit until 2026-10-01**.
 
 ### 4 · The gate
 

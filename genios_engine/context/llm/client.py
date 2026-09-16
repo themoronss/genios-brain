@@ -57,11 +57,16 @@ class LLMClient:
     def content_hash(prompt: str) -> str:
         return hashlib.sha256(prompt.encode("utf-8")).hexdigest()
 
-    def call(self, prompt: str, *, max_tokens: int = 4096,
-             cache_prefix_chars: int = 0) -> LLMResult:
+    def call(self, prompt: str, *, max_tokens: int = 4096, cache_prefix_chars: int = 0,
+             timeout_s: float | None = None, max_retries: int | None = None) -> LLMResult:
         """`cache_prefix_chars` > 0 marks `prompt[:n]` as a cacheable prefix (the fixed
         instructions). The model sees the identical text either way; only the price changes.
-        A prefix under the model's minimum cacheable length is simply not cached."""
+        A prefix under the model's minimum cacheable length is simply not cached.
+
+        `timeout_s` / `max_retries` override the client's own for ONE call, without building a
+        second client (a new client is a new connection pool, and an interactive lane cannot
+        afford a TLS handshake): the screen lane answers a person who is looking at the screen
+        and has ~3 s, where a drain has a minute and wants the retries."""
         if 0 < cache_prefix_chars < len(prompt):
             content: Any = [
                 {"type": "text", "text": prompt[:cache_prefix_chars],
@@ -70,8 +75,16 @@ class LLMClient:
             ]
         else:
             content = prompt
+        client = self._c()
+        if timeout_s is not None or max_retries is not None:
+            opts = {}
+            if timeout_s is not None:
+                opts["timeout"] = timeout_s
+            if max_retries is not None:
+                opts["max_retries"] = max_retries
+            client = client.with_options(**opts)
         try:
-            resp = self._c().messages.create(
+            resp = client.messages.create(
                 model=self._model, max_tokens=max_tokens, temperature=0,
                 messages=[{"role": "user", "content": content}])
         except Exception as e:      # noqa: BLE001 — network/API errors surfaced, not raised

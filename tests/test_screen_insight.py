@@ -187,7 +187,10 @@ def test_the_prompt_carries_who_the_manager_is_open_items_and_meetings():
     p = SI.build_prompt(app="whatsapp", screen=SCREEN, facts=[], now_local="Monday",
                         me=["rohit@x.com", "Rohit"], open_items=items, meetings=meetings,
                         thread_key="wa:1", tz_name="Asia/Kolkata")
-    assert "The manager whose screen this is: rohit@x.com, Rohit." in p
+    assert "The manager whose screen this is: rohit@x.com, Rohit" in p
+    # who the manager is belongs to THE SCREEN, never to the cached rulebook: one seat's name in
+    # the prefix would be served to the next seat's call.
+    assert "rohit@x.com" not in SI._RULEBOOK and "whatsapp" not in SI._RULEBOOK
     assert "another chat (gmail)" in p and "this chat" in p and "since 2026-09-10" in p
     assert "- Fri 2026-09-18 16:00–17:00 Voltex review" in p           # in the seat's zone
     assert "has ALREADY READ this screen" in " ".join(p.split())
@@ -311,3 +314,66 @@ def test_confidence_is_recorded_and_never_invented():
     j = SI.judge({"work": True, "items": [{**ASK, "confidence": 0.77}]}, SCREEN)
     assert j["items"][0]["confidence"] == 0.77
     assert SI.judge({"work": True, "items": [ASK]}, SCREEN)["items"][0]["confidence"] is None
+
+
+# ── the cached rulebook (SCREEN_COST_LATENCY_FIX.md §2.3) ─────────────────────────────────────
+def test_nothing_about_one_seat_can_land_in_the_prefix_every_seat_shares():
+    # The rulebook is the cacheable prefix. A placeholder in it would put one manager's name,
+    # meetings or open items in front of the next manager's call.
+    import re
+    assert re.findall(r"\{[a-z_]+\}", SI._RULEBOOK) == []
+    for field in ("app", "me", "profile", "now_local", "summary", "open_items", "facts",
+                  "meetings", "text"):
+        assert "{" + field + "}" in SI._TASK, field
+
+
+def test_the_prompt_is_the_rulebook_then_the_screen_and_the_cut_is_the_boundary():
+    p = SI.build_prompt(app="whatsapp", screen="Priya: hi there", facts=[], now_local="Monday")
+    assert SI.RULEBOOK_CHARS == len(SI._RULEBOOK)
+    assert p[:SI.RULEBOOK_CHARS] == SI._RULEBOOK, "the cut must fall exactly on the frozen half"
+    assert "Priya: hi there" in p[SI.RULEBOOK_CHARS:]
+    # two different screens share every byte of the prefix — that is what makes it cacheable
+    q = SI.build_prompt(app="slack", screen="Rahul: proposal?", facts=[], now_local="Tuesday")
+    assert q[:SI.RULEBOOK_CHARS] == p[:SI.RULEBOOK_CHARS]
+
+
+def test_the_rulebook_teaches_by_example_not_by_adjective():
+    r = SI._RULEBOOK
+    assert "EXAMPLES" in r and r.count("SCREEN:") >= 20, "few-shots are the accuracy lever"
+    for lesson in ("kal tak revised quote bhej dena",      # Hinglish ask
+                   "Your application for Senior Product Manager",  # own job search = personal
+                   "link not visible",                     # a missing-info line is not a request
+                   "Join meeting",                         # a button is never an item
+                   "repeat_ask", "same_ask_elsewhere"):
+        assert lesson in r, lesson
+
+
+def test_the_call_marks_the_rulebook_as_the_cacheable_prefix(monkeypatch):
+    seen = {}
+
+    class FakeClient:
+        def call(self, prompt, **kw):
+            seen.update(kw, prompt=prompt)
+            return type("R", (), {"ok": True, "parsed": {"work": True}, "input_tokens": 10,
+                                  "output_tokens": 2, "cache_read_tokens": 4200,
+                                  "cache_write_tokens": 0, "error": None})()
+
+    monkeypatch.setattr(SI, "_client", lambda *a: FakeClient())
+    monkeypatch.setattr(SI, "build_prompt", lambda **kw: "RULEBOOK" + "SCREEN")
+    settings = type("S", (), {"use_real_llm": True, "anthropic_api_key": "sk-test"})()
+    monkeypatch.setattr("genios_engine.platform.config.get_settings", lambda: settings)
+    out = SI.llm_insight(None, org_id="o", app="whatsapp", screen="x", facts=[],
+                         deadline=time.monotonic() + 3)
+    assert out == {"work": True}
+    assert seen["cache_prefix_chars"] == SI.RULEBOOK_CHARS
+    assert seen["max_retries"] == 0 and 0.5 <= seen["timeout_s"] <= 3.0
+
+
+def test_the_rulebook_stays_long_enough_to_be_worth_caching():
+    # Haiku 4.5 caches no prefix under 4,096 tokens, and a short one fails SILENTLY: the flag is
+    # accepted and the bill is unchanged. Characters are not tokens, so this guards the
+    # PESSIMISTIC end (4.5 chars/token for English prose; Hinglish and JSON tokenize denser).
+    # The real number comes from scripts/measure_insight_cache.py with a working key.
+    assert SI.RULEBOOK_CHARS / 4.5 >= SI.RULEBOOK_TOKENS_MIN, (
+        f"{SI.RULEBOOK_CHARS} chars may tokenize under {SI.RULEBOOK_TOKENS_MIN}: add few-shots "
+        "that teach something, never padding")
