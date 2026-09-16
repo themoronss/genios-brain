@@ -163,6 +163,10 @@ class Settings(BaseSettings):
     # (the promoter and the hourly memory batch still see it, so nothing is lost — it arrives late
     # and at half price). Off → every screen with enough text is judged, as before.
     screen_insight_triage_enabled: bool = True
+    # The model's own per-item confidence (0..1). RECORDED and counted from the start; the floor
+    # ships at 0 — off — because a floor set before it is measured against a labelled set silences
+    # good items as readily as bad ones. Raise it once there is an eval to raise it against.
+    screen_insight_confidence_floor: float = 0.0
     screen_insight_max_per_hour: int = 3      # P8 C3: screen-insight popups shown per seat per rolling hour
     screen_memory_interval_minutes: int = 60
     screen_memory_max_builds_per_day: int = 400

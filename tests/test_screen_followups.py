@@ -127,7 +127,7 @@ def test_work_false_is_silence_whatever_else_the_model_wrote(monkeypatch):
     out = SI._compute(None, org_id="o", email=None, app="whatsapp", participants=[],
                       entities=[], screen=screen, deadline=time.monotonic() + 3)
     assert out["work"] is False and out["memory"] is False
-    assert out["judged"]["items"] == [] and out["judged"]["note"] is None
+    assert out["judged"]["items"] == [] and out["judged"]["note_candidate"] is None
 
 
 def test_v4_remember_follows_work_and_the_prompt_names_personal_pages_and_the_rule():
@@ -173,13 +173,15 @@ def test_popup_actions_teach_and_mute_the_thread():
                                              "quote": "revised pricing"}],
                     "adds": "repeat_ask", "note": "Priya asked for the pricing again"},
                    "Priya: the revised pricing please")
-    m = SI.moment_content(res, digest="d", topic_key="t1", thread_key="wa:1")
+    m = SI.moment_content(res, digest="d", adds="repeat_ask",
+                          note=res["note_candidate"], topic_key="t1", thread_key="wa:1")
     assert m["actions"] == [{"id": "useful", "label": "Useful"},
                             {"id": "not_useful", "label": "Not useful"},
                             {"id": "mute_chat", "label": "Mute chat",
                              "payload": {"thread_key": "wa:1"}}]
     assert m["evidence"][0]["topic_key"] == "t1" and m["capability_version"] == "4"
-    assert [a["id"] for a in SI.moment_content(res, digest="d")["actions"]] == \
+    assert [a["id"] for a in SI.moment_content(res, digest="d", adds="repeat_ask",
+                                               note="n")["actions"]] == \
         ["useful", "not_useful"]                       # nothing to mute without a thread
     label = SI.local_label(datetime(2026, 9, 14, 6, 0, tzinfo=timezone.utc), "Asia/Kolkata")
     assert label.startswith("Monday 2026-09-14 11:30 (Asia/Kolkata)")

@@ -397,11 +397,12 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
         _log.info("screen insight capped org=%s seat=%s", p.org_id, p.seat_id)
         return Response(status_code=_NO_CONTENT)
     _ensure_profile(engine, p, now)
+    meetings = _meetings_soon(engine, p, now)
     res = SI.insight(engine, org_id=p.org_id, email=p.email, app=body.surface.app,
                      participants=body.participants, entities=body.features.entities,
                      screen=screen, now_local=SI.local_label(now, tz), not_useful=notes,
                      useful=kept, said=SI.said_lines(body.visible_messages), me=me,
-                     open_items=context, meetings=_meetings_soon(engine, p, now),
+                     open_items=context, meetings=meetings,
                      thread_key=thread, tz_name=tz, today=now.astimezone(F.zone(tz)).date(),
                      summary=summary, profile=profile)
     if res is not None and vkey and res["work"] is not None:
@@ -421,7 +422,22 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
         if not topics and saved is not None:           # the popup's first item is a follow-up
             first_followup = F.followup_id(p.org_id, p.seat_id, topic)
         topics.append(topic)
-    if j is None or j["note"] is None:                 # the product rule: nothing it ADDS → silent
+    # THE INTERRUPT IS CODE'S. The model proposed one of the five reasons a popup may exist;
+    # `verify_adds` checks it against the open items read BEFORE this screen was judged and the
+    # meetings the prompt already carried. Unverifiable ⇒ the items are saved and nobody is
+    # interrupted — counted, because the suppression rate is the earliest drift signal there is.
+    verified = None if j is None else SI.verify_adds(
+        j["adds_candidate"], items=j["items"], open_items=context, meetings=meetings,
+        thread_key=thread, tz_name=tz, now=now)
+    if j is not None and j["note_candidate"] is not None and verified is None:
+        SI.note_skipped(engine, org_id=p.org_id, seat_id=p.seat_id, now=now,
+                        kind=SI.UNVERIFIED_KIND)
+        _log.info("screen insight: note unverified org=%s seat=%s adds=%s", p.org_id, p.seat_id,
+                  j["adds_candidate"])
+    floor = float(getattr(settings, "screen_insight_confidence_floor", 0.0) or 0.0)
+    below = bool(j and j["items"] and floor > 0
+                 and (j["items"][0].get("confidence") or 1.0) < floor)
+    if j is None or j["note_candidate"] is None or verified is None or below:
         _log.info("screen insight: saved silently org=%s seat=%s work=%s items=%d ms=%.0f",
                   p.org_id, p.seat_id, res and res["work"], len(topics),
                   (time.perf_counter() - started) * 1000)
@@ -435,8 +451,8 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
     if repeat:                                         # C2: the follow-up is refreshed, no popup
         return Response(status_code=_NO_CONTENT)
     budget = int(getattr(settings, "screen_insight_max_per_hour", 3) or 0)
-    content = SI.moment_content(j, digest=digest, topic_key=topic, thread_key=thread,
-                                followup_id=first_followup)
+    content = SI.moment_content(j, digest=digest, adds=verified, note=j["note_candidate"],
+                                topic_key=topic, thread_key=thread, followup_id=first_followup)
     try:
         out = M.persist(engine, org_id=p.org_id, seat_id=p.seat_id, device_id=p.device_id,
                         origin="server", moment={"moment_id": moment_id, **content},
@@ -445,7 +461,7 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
     except M.MomentConflict:
         return _err(409, "MOMENT_ID_CONFLICT", "That moment id belongs to another seat.")
     _log.info("screen insight org=%s seat=%s display=%s reason=%s adds=%s items=%d ms=%.0f",
-              p.org_id, p.seat_id, out["display"], out["reason"], j["adds"], len(topics),
+              p.org_id, p.seat_id, out["display"], out["reason"], verified, len(topics),
               (time.perf_counter() - started) * 1000)
     return out
 

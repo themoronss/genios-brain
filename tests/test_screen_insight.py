@@ -37,7 +37,7 @@ def test_items_survive_only_with_a_quote_on_screen_and_a_known_kind():
         {**ASK, "text": None},                               # no text → dropped
         "junk"], "adds": "none", "note": None}, SCREEN)
     assert [i["quote"] for i in j["items"]] == [ASK["quote"]]
-    assert (j["work"], j["remember"], j["adds"], j["note"]) == (True, True, "none", None)
+    assert (j["work"], j["remember"], j["adds_candidate"], j["note_candidate"]) == (True, True, "none", None)
     assert SI.judge(None, SCREEN)["items"] == [] and SI.judge({"items": "x"}, SCREEN)["items"] == []
     # at most three items are read
     many = SI.judge({"work": True, "items": [ASK] * 5}, SCREEN)
@@ -48,21 +48,22 @@ def test_a_note_only_when_it_adds_and_is_about_a_grounded_item():
     base = {"work": True, "remember": True, "items": [ASK]}
     ok = SI.judge({**base, "adds": "repeat_ask", "note": "Priya asked for this on Monday too"},
                   SCREEN)
-    assert (ok["adds"], ok["note"]) == ("repeat_ask", "Priya asked for this on Monday too")
+    assert (ok["adds_candidate"], ok["note_candidate"]) == ("repeat_ask", "Priya asked for this on Monday too")
     # "none", an unknown reason, or no grounded item → no note, the items are still kept
     for raw in ({**base, "adds": "none", "note": "Priya is waiting on pricing"},
                 {**base, "adds": "just_because", "note": "x"},
                 {**base, "items": [{**ASK, "quote": "not there"}], "adds": "repeat_ask",
                  "note": "x"}):
         j = SI.judge(raw, SCREEN)
-        assert (j["adds"], j["note"]) == ("none", None)
+        assert (j["adds_candidate"], j["note_candidate"]) == ("none", None)
     assert len(SI.judge({**base, "adds": "none", "note": "x"}, SCREEN)["items"]) == 1
 
 
 def test_personal_is_empty_whatever_else_the_model_wrote():
     j = SI.judge({"work": False, "remember": True, "items": [ASK], "adds": "urgent_risk",
                   "note": "Call your mother"}, SCREEN)
-    assert j == {"work": False, "remember": False, "items": [], "adds": "none", "note": None}
+    assert j == {"work": False, "remember": False, "items": [], "adds_candidate": "none",
+                 "note_candidate": None}
 
 
 
@@ -163,11 +164,14 @@ def test_a_named_weekday_wins_over_a_wrongly_copied_date():
 def test_the_moment_carries_the_note_the_quote_and_a_hash_never_the_screen():
     j = SI.judge({"work": True, "items": [ASK], "adds": "conflict",
                   "note": "Friday clashes with your Voltex review"}, SCREEN)
-    m = SI.moment_content(j, digest=SI.text_digest(SCREEN), topic_key="t1", thread_key="wa:1")
+    m = SI.moment_content(j, digest=SI.text_digest(SCREEN), adds="conflict",
+                          note=j["note_candidate"], topic_key="t1", thread_key="wa:1")
     assert m["capability_id"] == SI.CAPABILITY_ID and m["capability_version"] == "4"
-    assert (m["headline"], m["body"]) == (j["note"], f"“{ASK['quote']}”")
+    assert (m["headline"], m["body"]) == (j["note_candidate"], f"“{ASK['quote']}”")
+    # `verified` is on the evidence because the popup exists only when code could check it.
     assert m["evidence"] == [{"kind": "screen", "sha256": SI.text_digest(SCREEN),
-                              "insight_kind": "ask", "adds": "conflict", "topic_key": "t1"}]
+                              "insight_kind": "ask", "adds": "conflict", "verified": True,
+                              "topic_key": "t1"}]
     assert "board meeting" not in str(m), "screen text beyond the quote must not travel"
 
 
@@ -236,3 +240,74 @@ def test_the_daily_cap_is_enforced_per_seat(live_db_url):
         with engine.begin() as c:
             c.execute(text("delete from rate_counters where scope_key like :k"),
                       {"k": f"{org}:%"})
+
+
+# ── the interrupt is code's, not the model's (SCREEN_COST_LATENCY_FIX.md §2.4) ────────────────
+NOW = datetime(2026, 9, 17, 10, 0, tzinfo=timezone.utc)
+PRIYA_ASK = [{"kind": "ask", "text": "Priya needs pricing", "who": "Priya Shah",
+              "due": None, "quote": "revised pricing"}]
+
+
+def verify(candidate, **kw):
+    base = {"items": PRIYA_ASK, "open_items": [], "meetings": [], "thread_key": "wa:1",
+            "tz_name": "Asia/Kolkata", "now": NOW}
+    return SI.verify_adds(candidate, **{**base, **kw})
+
+
+def test_a_repeat_the_books_do_not_show_is_not_a_repeat():
+    assert verify("repeat_ask") is None, "no prior ask on file ⇒ the model is guessing"
+    prior = [{"kind": "ask", "who": "Priya Shah", "thread_key": "wa:1"}]
+    assert verify("repeat_ask", open_items=prior) == "repeat_ask"
+    # a prior ask from someone else is not this person asking again
+    assert verify("repeat_ask", open_items=[{"kind": "ask", "who": "Rahul"}]) is None
+
+
+def test_a_promise_owed_must_be_the_manager_s_own_and_to_this_person():
+    assert verify("promise_to_them",
+                  open_items=[{"kind": "their_promise", "who": "Priya Shah"}]) is None
+    assert verify("promise_to_them",
+                  open_items=[{"kind": "my_promise", "who": "Priya Shah"}]) == "promise_to_them"
+
+
+def test_the_same_ask_elsewhere_has_to_be_elsewhere():
+    same = [{"kind": "ask", "who": "Priya Shah", "thread_key": "wa:1"}]
+    other = [{"kind": "ask", "who": "Priya Shah", "thread_key": "mail:9"}]
+    assert verify("same_ask_elsewhere", open_items=same) is None
+    assert verify("same_ask_elsewhere", open_items=other) == "same_ask_elsewhere"
+
+
+def test_a_clash_is_calendar_arithmetic_not_an_opinion():
+    meetings = [{"title": "Voltex review", "start_at": "2026-09-18T10:30:00+00:00",
+                 "end_at": "2026-09-18T11:30:00+00:00"}]
+    inside = [{**PRIYA_ASK[0], "due": "2026-09-18T16:30"}]      # 11:00 UTC — inside the meeting
+    outside = [{**PRIYA_ASK[0], "due": "2026-09-18T20:00"}]
+    assert verify("conflict", items=inside, meetings=meetings) == "conflict"
+    assert verify("conflict", items=outside, meetings=meetings) is None
+    assert verify("conflict", items=inside, meetings=[]) is None
+
+
+def test_urgency_needs_a_clock_not_a_tone():
+    assert verify("urgent_risk") is None, "cancellation language alone is not enough"
+    soon = [{**PRIYA_ASK[0], "due": "2026-09-17T20:00"}]        # 14:30 UTC, same day
+    assert verify("urgent_risk", items=soon) == "urgent_risk"
+    assert verify("urgent_risk", open_items=[{"due_at": "2026-09-17T18:00:00+00:00"}]) == "urgent_risk"
+
+
+def test_nothing_the_gate_does_not_know_can_reach_the_screen():
+    assert verify("just_because", open_items=[{"kind": "ask", "who": "Priya Shah"}]) is None
+    assert verify("none") is None
+    assert verify("repeat_ask", items=[]) is None
+    # an item whose "who" was stripped (it named the manager) cannot be matched to anyone
+    anon = [{**PRIYA_ASK[0], "who": None}]
+    assert verify("repeat_ask", items=anon,
+                  open_items=[{"kind": "ask", "who": "Priya Shah"}]) is None
+
+
+def test_confidence_is_recorded_and_never_invented():
+    assert SI.confidence_of(0.91) == 0.91 and SI.confidence_of("0.5") == 0.5
+    assert SI.confidence_of(85) == 0.85, "a model that answered in percent"
+    assert SI.confidence_of(None) is None and SI.confidence_of("high") is None
+    assert SI.confidence_of(-1) is None and SI.confidence_of(1000) is None
+    j = SI.judge({"work": True, "items": [{**ASK, "confidence": 0.77}]}, SCREEN)
+    assert j["items"][0]["confidence"] == 0.77
+    assert SI.judge({"work": True, "items": [ASK]}, SCREEN)["items"][0]["confidence"] is None
