@@ -144,7 +144,37 @@ def _tenant_pack(registry, store, org_id: str, pack_id: str) -> dict | None:
         return None
     return {"pack_id": pack_id, "version": str(effective["version"]),
             "revision": int(row.authority_revision), "snapshot_id": snapshot_id,
-            "rule_ids": {str(rule.get("id")) for rule in (effective.get("rules") or ())}}
+            "rule_ids": {str(rule.get("id")) for rule in (effective.get("rules") or ())},
+            # THE DAILY CAP, carried from the same effective config the legacy lane reads. The
+            # budget is ORG-WIDE and not per pack — `runner._budget_used` counts every signal the
+            # tenant published today whatever wrote it, and `packs/general_v1` says so in as many
+            # words: "the daily signal budget is shared org-wide, so matching numbers keeps the
+            # cap combined, not doubled". Whichever pack resolves first therefore sets it.
+            "budget_per_day": int((effective.get("scoring") or {}).get("budget_per_user_day", 7))}
+
+
+def _daily_allowance(store, org_id: str, eval_time, pack: Mapping[str, Any]) -> int:
+    """How many more signals this tenant may publish today, across every lane.
+
+    THE SAME SUBTRACTION THE OTHER THREE LANES MAKE, read from the same two helpers, so there is
+    one cap rather than a second one hidden behind it: `budget_per_day * active_seats` minus
+    everything already published today. `_budget_used` counts by DATE and by org, not by pack, so
+    a legacy signal written an hour ago is already subtracted here.
+
+    NEVER NEGATIVE, and never an exception. A tenant whose seats cannot be read, or whose used
+    count cannot be, gets the pack's own per-day figure rather than zero — refusing to publish
+    because a COUNT failed would turn a transient database hiccup into a silent day with no
+    advice, which is a worse failure than one card over a soft cap.
+    """
+    from genios_engine.reason.runner import _active_seats, _budget_used
+
+    per_day = int(pack.get("budget_per_day") or 7)
+    try:
+        cap = per_day * _active_seats(store, org_id)
+        return max(0, cap - _budget_used(store, org_id, eval_time))
+    except Exception:      # noqa: BLE001 — see NEVER NEGATIVE above
+        logger.exception("domain-compiler: could not read the daily budget for org=%s", org_id)
+        return per_day
 
 
 def _rejected_candidates(decision, selected) -> list[dict]:
@@ -701,6 +731,11 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
         counts["l3_activated_domains"] = len(live_domains)
         # THE VARIANT DECLARATION, read once per sweep per live domain — the same shape and
         # source as `live_domains` itself. `()` for every domain that declared nothing.
+        # ONE-ELEMENT LIST AND NOT AN INT, because the loop below both reads and writes it and
+        # Python would otherwise need a `nonlocal` this function cannot give it. `None` means
+        # "not looked up yet" — the lookup costs two queries and a tenant with no live situation
+        # should not pay for them.
+        _remaining: list[int | None] = [None]
         from genios_engine.platform.l3_activation import declared_variants
         variants_by_domain = {d: declared_variants(store.engine, org_id, d) for d in live_domains}
         for row in situations:
@@ -915,11 +950,46 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                     counts["decided"] += 1
                     if not live_row:
                         continue
+                    # ── THE DAILY CAP, WHICH THIS LANE HAS NEVER OBEYED ────────────────
+                    #
+                    # Legacy, native and composite all check `budget_per_day * seats -
+                    # _budget_used` before publishing. This lane checked nothing, and it runs
+                    # LAST — so it spent past a cap the others had already respected. Measured on
+                    # the pilot 2026-09-15: 21 signals published on a day the cap said 15, the
+                    # surplus being this lane's 8. A user received six cards the budget existed
+                    # to prevent.
+                    #
+                    # SHARED POOL, NOT A SECOND ALLOWANCE. `_budget_used` counts every signal the
+                    # tenant published today whatever wrote it, so taking the same subtraction
+                    # keeps one cap rather than creating a second one behind it.
+                    #
+                    # RANKED BY THE ORDER THE PASS ALREADY WALKS, which is
+                    # `confidence_overall desc` (see `_ACTIVE_SITUATIONS`). Not final utility —
+                    # that is only known after the decision, and collecting every decision to
+                    # sort them would mean holding each audit bundle unwritten until the last
+                    # situation compiled. Confidence-descending is a principled order, and it is
+                    # named here rather than left to be inferred from a query two hundred lines
+                    # away.
+                    if live_row and pack is not None:
+                        if _remaining[0] is None:
+                            _remaining[0] = _daily_allowance(store, org_id, eval_time, pack)
+                            counts["budget_allowance"] = _remaining[0]
+                        if _remaining[0] <= 0:
+                            # Counted, never silent: a lane that stops publishing for a reason
+                            # nobody can see is indistinguishable from one that had nothing to say.
+                            counts["budget_exhausted"] += 1
+                            continue
                     try:
-                        counts[_persist_live(
+                        outcome = _persist_live(
                             store=store, reasoning_store=reasoning_store, org_id=org_id,
                             node_id=anchor, package=package, execution=execution,
-                            eval_time=eval_time, pack=pack)] += 1
+                            eval_time=eval_time, pack=pack)
+                        counts[outcome] += 1
+                        # Only a row that actually reached a human's queue spends the budget.
+                        # `standing` left yesterday's advice alone and `nothing_to_emit` concluded
+                        # no action — neither put a card in front of anybody.
+                        if outcome == "emitted" and _remaining[0] is not None:
+                            _remaining[0] -= 1
                     except Exception:
                         counts["persist_error"] += 1
                         logger.exception("domain-compiler live: persist %s failed",
