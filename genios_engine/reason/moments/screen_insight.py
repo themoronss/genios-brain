@@ -210,28 +210,53 @@ def _opt(value, limit: int) -> str | None:
     return s[:limit] if s and s.lower() not in ("null", "none") else None
 
 
-_UI_QUOTE = re.compile(r"^\s*(join(\s+(meeting|now|call))?|open|view|reply|forward|download|share|"
-                       r"sign\s*in|log\s*in|continue|next|submit|cancel|accept|decline|details|"
-                       r"see\s+the\s+logs.*)\s*[.!]?\s*$", re.I)
-_NO_INFORMATION = re.compile(r"\b(not (visible|available|shown|found)|unknown|no (link|details|id)\b)",
-                             re.I)
 _KIND_RANK = {"ask": 0, "my_promise": 1, "their_promise": 2, "deadline": 3, "next_step": 4,
               "risk": 5}
 
 
-def reject(item: dict) -> str | None:
-    """P15: why this item must NOT be saved, or None when it is worth keeping. Deterministic —
-    the model is not asked twice."""
+def reject(item: dict, *, said: list[str] | None = None) -> str | None:
+    """P15: why this item must NOT be saved, or None when it is worth keeping.
+
+    Structural, not a word list (a word list only fits the language and the app it was written
+    for):
+      said       on a chat screen every real line has a sender; a quote that is not in one of
+                 them came from a button, a menu or a status bar, and is not a request;
+    """
     quote = " ".join(str(item.get("quote") or "").split())
-    text = " ".join(str(item.get("text") or "").split())
-    if len(quote.split()) < MIN_QUOTE_WORDS or _UI_QUOTE.match(quote):
-        return "ui_label"                          # a button or menu, not a request
-    if _NO_INFORMATION.search(text):
-        return "no_information"                    # "link not visible on screen"
-    if (item.get("kind") in ("risk", "next_step") and not item.get("who")
-            and not item.get("due") and len(text.split()) < 6):
-        return "too_vague"
+    if len(quote.split()) < MIN_QUOTE_WORDS:
+        return "no_quote"
+    if said and not any(quote and _norm(quote) in line for line in said):
+        return "not_said"                          # screen furniture, not a message
     return None
+
+
+def said_lines(visible) -> list[str]:
+    """The lines a person actually wrote (they carry a sender). Screen furniture — buttons,
+    menus, status bars — has none, so a quote taken from it can be told apart without knowing
+    the language or the app. Empty for a page that is not a conversation."""
+    out = []
+    for item in visible or []:
+        if isinstance(item, dict) and str(item.get("sender") or "").strip():
+            line = _norm(str(item.get("text") or ""))
+            if line:
+                out.append(line)
+    return out
+
+
+def is_a_known_meeting(item: dict, meetings: list[dict] | None, tz_name: str | None) -> bool:
+    """The calendar owns meetings: this item just repeats one the manager already has (±30 min)."""
+    from genios_engine.reason.moments.common import parse_ts
+    from genios_engine.reason.moments.followups import zone
+    due = str(item.get("due") or "")[:16]
+    try:
+        local = datetime.strptime(due, "%Y-%m-%dT%H:%M").replace(tzinfo=zone(tz_name))
+    except ValueError:
+        return False
+    for m in meetings or []:
+        start = parse_ts(m.get("start_at"))
+        if start is not None and abs((start - local).total_seconds()) <= 1800:
+            return True
+    return False
 
 
 def _same_thing(a: dict, b: dict) -> bool:
@@ -321,7 +346,8 @@ def _item(it, screen: str, me: list[str] | None, today: date | None = None) -> d
 
 
 def judge(raw: dict | None, screen: str, *, me: list[str] | None = None,
-          today: date | None = None) -> dict:
+          today: date | None = None, said: list[str] | None = None,
+          meetings: list[dict] | None = None, tz_name: str | None = None) -> dict:
     """The model's v4 answer → `{work, remember, items, adds, note}`. Items are grounded; a note
     survives only with a known `adds` AND at least one grounded item (it is about them)."""
     work = work_of(raw)
@@ -332,11 +358,15 @@ def judge(raw: dict | None, screen: str, *, me: list[str] | None = None,
     grounded = [i for i in (_item(it, screen, me, today) for it in listed[:MAX_ITEMS]) if i]
     keep: list[dict] = []
     for it in grounded:
-        why = reject(it)
+        why = reject(it, said=said)
         if why is None:
             keep.append(it)
         else:
             _log.info("screen insight: item rejected (%s)", why)
+    # The calendar already holds the manager's meetings — an item that only repeats one is noise.
+    keep = [it for it in keep
+            if not (it.get("kind") in ("next_step", "deadline")
+                    and is_a_known_meeting(it, meetings, tz_name))]
     out["items"] = _one_per_thing(keep)
     adds = str(raw.get("adds") or "").strip().lower()
     note = _opt(raw.get("note"), INSIGHT_MAX_CHARS)
@@ -516,7 +546,7 @@ def llm_insight(engine, *, org_id: str, app: str | None, screen: str, facts: lis
 def _compute(engine, *, org_id: str, email: str | None, app: str | None, participants,
              entities, screen: str, deadline: float, now_local: str = "",
              not_useful: list[str] | None = None, useful: list[str] | None = None,
-             me: list[str] | None = None,
+             said: list[str] | None = None, me: list[str] | None = None,
              open_items: list[dict] | None = None, meetings: list[dict] | None = None,
              thread_key: str | None = None, tz_name: str | None = None,
              today: date | None = None, summary: str | None = None,
@@ -543,7 +573,7 @@ def _compute(engine, *, org_id: str, email: str | None, app: str | None, partici
                       tz_name=tz_name, summary=summary, profile=profile)
     if raw is None:
         return None
-    judged = judge(raw, screen, me=me, today=today)
+    judged = judge(raw, screen, me=me, today=today, said=said, meetings=meetings, tz_name=tz_name)
     return {"subject_ids": sids, "work": judged["work"], "memory": judged["remember"],
             "judged": judged}
 
@@ -551,7 +581,7 @@ def _compute(engine, *, org_id: str, email: str | None, app: str | None, partici
 def insight(engine, *, org_id: str, email: str | None, app: str | None, participants, entities,
             screen: str, timeout_s: float = TIMEOUT_S, now_local: str = "",
             not_useful: list[str] | None = None, useful: list[str] | None = None,
-            me: list[str] | None = None,
+            said: list[str] | None = None, me: list[str] | None = None,
             open_items: list[dict] | None = None, meetings: list[dict] | None = None,
             thread_key: str | None = None, tz_name: str | None = None,
             today: date | None = None, summary: str | None = None,
@@ -562,7 +592,7 @@ def insight(engine, *, org_id: str, email: str | None, app: str | None, particip
     fut = _POOL.submit(_compute, engine, org_id=org_id, email=email, app=app,
                        participants=participants, entities=entities, screen=screen,
                        deadline=deadline, now_local=now_local, not_useful=not_useful,
-                       useful=useful, me=me,
+                       useful=useful, said=said, me=me,
                        open_items=open_items, meetings=meetings, thread_key=thread_key,
                        tz_name=tz_name, today=today, summary=summary, profile=profile)
     try:

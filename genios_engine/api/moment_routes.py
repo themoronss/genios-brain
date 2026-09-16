@@ -387,7 +387,7 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
     res = SI.insight(engine, org_id=p.org_id, email=p.email, app=body.surface.app,
                      participants=body.participants, entities=body.features.entities,
                      screen=screen, now_local=SI.local_label(now, tz), not_useful=notes,
-                     useful=kept, me=me,
+                     useful=kept, said=SI.said_lines(body.visible_messages), me=me,
                      open_items=context, meetings=_meetings_soon(engine, p, now),
                      thread_key=thread, tz_name=tz, today=now.astimezone(F.zone(tz)).date(),
                      summary=summary, profile=profile)

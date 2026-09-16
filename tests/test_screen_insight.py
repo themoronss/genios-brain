@@ -66,16 +66,33 @@ def test_personal_is_empty_whatever_else_the_model_wrote():
 
 
 
-def test_a_button_a_missing_link_and_a_vague_line_are_rejected():
-    # P15, from the owner's real 16 Sep screens: "Join meeting" and "link not visible" became items.
-    assert SI.reject({"kind": "next_step", "text": "Join the Zoom meeting", "quote": "Join meeting"}) == "ui_label"
-    assert SI.reject({"kind": "next_step", "text": "Sign in to continue", "quote": "Sign in"}) == "ui_label"
-    assert SI.reject({"kind": "next_step", "text": "Join Zoom meeting (link or meeting ID not visible on screen)",
-                      "quote": "Join the meeting from this link"}) == "no_information"
-    assert SI.reject({"kind": "risk", "text": "Payment may slip", "quote": "payment may slip soon"}) == "too_vague"
-    # a real one survives
+def test_only_what_a_person_actually_said_becomes_an_item():
+    # Structural, not a word list: on a chat screen every real line carries a sender, so a quote
+    # taken from a button or a status bar is not in `said` and cannot become an item.
+    said = SI.said_lines([{"sender": "Priya", "text": "send the revised quote by Friday"},
+                          {"sender": "You", "text": "sure, tomorrow 5 pm"},
+                          "Join meeting", "Ln 1, Col 1  100%  UTF-8"])
+    assert len(said) == 2, "only the two real messages"
     assert SI.reject({"kind": "ask", "who": "Priya", "text": "Priya needs the revised quote",
-                      "quote": "send the revised quote by Friday"}) is None
+                      "quote": "send the revised quote by Friday"}, said=said) is None
+    assert SI.reject({"kind": "next_step", "text": "Join the Zoom meeting",
+                      "quote": "Join meeting now"}, said=said) == "not_said"
+    assert SI.reject({"kind": "ask", "who": "Priya", "text": "x", "quote": "PO"}, said=said) == "no_quote"
+    # A page has no senders, so the "was it said" rule cannot apply there and a real item stands.
+    assert SI.reject({"kind": "risk", "text": "Database full, writes blocked",
+                      "quote": "database at 1044 MB, writes blocked"}) is None
+
+
+def test_the_calendar_owns_meetings():
+    # "Join the 4 pm review" is not an item when the calendar already holds that meeting.
+    meetings = [{"start_at": "2026-09-17T10:30:00Z", "title": "Acme review"}]   # 4 PM IST
+    item = {"kind": "next_step", "text": "Attend the Acme review", "due": "2026-09-17T16:00",
+            "quote": "review at 4 pm today"}
+    assert SI.is_a_known_meeting(item, meetings, "Asia/Kolkata") is True
+    assert SI.is_a_known_meeting(item, [], "Asia/Kolkata") is False
+    raw = {"work": True, "remember": True, "adds": "none", "note": None, "items": [item]}
+    out = SI.judge(raw, "review at 4 pm today", meetings=meetings, tz_name="Asia/Kolkata")
+    assert out["items"] == [], "the calendar already reminds them"
 
 
 def test_one_event_becomes_one_item():
