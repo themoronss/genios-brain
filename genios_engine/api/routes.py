@@ -1754,6 +1754,26 @@ def get_qualification_drop(drop_id: str, org_id: str = Depends(get_current_org))
     return {**_drop_json(row), "explanation": explain_drop(row)}
 
 
+@router.get("/events/{event_id}/journey")
+def event_journey_report(event_id: str, org_id: str = Depends(get_current_org)) -> dict:
+    """*"Why did I never see X?"* — for one X, across every table that could hold the answer.
+
+    The ledgers beside this route each answer a PART: `/qualification/drops` knows about the
+    floor, `/parked` knows about the review queue. Neither knows about `event_trace`, which had
+    no read surface at all and is where most refusals actually land — on the pilot org, 103 of
+    138 events behind one support question stopped at `s4_esqe short_circuit bulk_headers`, a
+    row `/qualification/drops` would have reported as simply absent.
+
+    `found: false` is an answer, not a 404: "this org never captured that id" and "captured it
+    and refused it" are different support tickets, and returning 404 for the first would make
+    them look the same from outside exactly as they used to look the same from inside.
+    """
+    from genios_engine.capture.journey import event_journey
+    if _graph is None:
+        raise HTTPException(503, "no graph store configured")
+    return event_journey(_graph.engine, org_id=org_id, event_id=event_id)
+
+
 # ── conflicts ────────────────────────────────────────────────────────────────────
 def _card_json(card) -> dict:
     """L1.5.5-U3's card as JSON. `verdict` is carried as an explicit null rather than omitted:
