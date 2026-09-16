@@ -247,7 +247,7 @@ def test_an_ask_is_saved_silently_answered_by_its_quote_and_in_the_slice(  # noq
     assert sl["schema_version"] == 3 and [f["id"] for f in sl["followups"]] == [fu.id]
     assert set(sl["followups"][0]) == {"id", "kind", "text", "who", "thread_key", "app",
                                        "due_at", "nudge_at", "created_at", "subject_node_id",
-                                       "remind_at"}
+                                       "remind_at", "quote"}
 
     # answered: a `You:` line after the ask's line — found by the follow-up's own quote
     _model(monkeypatch, NOTHING)

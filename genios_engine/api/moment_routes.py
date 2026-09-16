@@ -350,6 +350,9 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
         skip = judged or muted or personal_site or assistant
         notes = [] if skip else F.not_useful_notes(c, org_id=p.org_id, seat_id=p.seat_id,
                                                   capability_id=SI.CAPABILITY_ID)
+        # P15: and the ones the manager kept — the kind of note to write more of.
+        kept = [] if skip else F.useful_notes(c, org_id=p.org_id, seat_id=p.seat_id,
+                                             capability_id=SI.CAPABILITY_ID)
         context = [] if skip else F.open_context(c, org_id=p.org_id, seat_id=p.seat_id,
                                                  thread_key=thread, screen=screen)
         me = [] if skip else F.seat_names(c, org_id=p.org_id, email=p.email)
@@ -383,7 +386,8 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
     _ensure_profile(engine, p, now)
     res = SI.insight(engine, org_id=p.org_id, email=p.email, app=body.surface.app,
                      participants=body.participants, entities=body.features.entities,
-                     screen=screen, now_local=SI.local_label(now, tz), not_useful=notes, me=me,
+                     screen=screen, now_local=SI.local_label(now, tz), not_useful=notes,
+                     useful=kept, me=me,
                      open_items=context, meetings=_meetings_soon(engine, p, now),
                      thread_key=thread, tz_name=tz, today=now.astimezone(F.zone(tz)).date(),
                      summary=summary, profile=profile)

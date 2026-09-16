@@ -65,6 +65,43 @@ def test_personal_is_empty_whatever_else_the_model_wrote():
     assert j == {"work": False, "remember": False, "items": [], "adds": "none", "note": None}
 
 
+
+def test_a_button_a_missing_link_and_a_vague_line_are_rejected():
+    # P15, from the owner's real 16 Sep screens: "Join meeting" and "link not visible" became items.
+    assert SI.reject({"kind": "next_step", "text": "Join the Zoom meeting", "quote": "Join meeting"}) == "ui_label"
+    assert SI.reject({"kind": "next_step", "text": "Sign in to continue", "quote": "Sign in"}) == "ui_label"
+    assert SI.reject({"kind": "next_step", "text": "Join Zoom meeting (link or meeting ID not visible on screen)",
+                      "quote": "Join the meeting from this link"}) == "no_information"
+    assert SI.reject({"kind": "risk", "text": "Payment may slip", "quote": "payment may slip soon"}) == "too_vague"
+    # a real one survives
+    assert SI.reject({"kind": "ask", "who": "Priya", "text": "Priya needs the revised quote",
+                      "quote": "send the revised quote by Friday"}) is None
+
+
+def test_one_event_becomes_one_item():
+    # The 11 Sep build failure became two items on 16 Sep: the risk and the next step.
+    screen = ("Your build job failed because it returned a non-zero exit code. "
+              "See the build logs for commit e18bf68 for details and fix the failure cause.")
+    raw = {"work": True, "remember": True, "adds": "none", "note": None, "items": [
+        {"kind": "risk", "text": "Build failed on Sep 11 for commit e18bf68", "who": None, "due": None,
+         "quote": "Your build job failed because it returned"},
+        {"kind": "next_step", "text": "Review build logs for commit e18bf68 to fix the failure", "who": None,
+         "due": None, "quote": "See the build logs for commit e18bf68"},
+    ]}
+    out = SI.judge(raw, screen)
+    assert len(out["items"]) == 1
+    assert out["items"][0]["kind"] == "next_step", "the one you can act on survives"
+
+
+def test_the_prompt_calls_salary_and_referrals_personal_and_shows_kept_notes():
+    p = SI.build_prompt(app="whatsapp", screen="x", facts=[])
+    assert "salary, pay, reimbursement or rent" in p and "job referral" in p
+    assert "never an item" in p and "One real thing = one item" in p
+    assert "kept these earlier notes as USEFUL" not in p, "nothing kept yet → no block"
+    kept = SI.build_prompt(app="whatsapp", screen="x", facts=[],
+                           useful=["Priya asked for this quote on 11 Sep too"])
+    assert "kept these earlier notes as USEFUL" in kept and "11 Sep too" in kept
+
 def test_the_manager_is_never_who():
     me = ["mrrohitswerashi@gmail.com", "Rohit Swerashi"]
     for who in ("Rohit Swerashi", "rohit swerashi", "mrrohitswerashi@gmail.com", "RohitSwerashi"):

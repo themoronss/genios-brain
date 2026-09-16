@@ -54,6 +54,11 @@ INSIGHT_MAX_CHARS = 140
 MAX_OUTPUT_TOKENS = 400
 #: K4: at most this many of the seat's "not useful" notes go into the prompt.
 NOT_USEFUL_EXAMPLES = 5
+USEFUL_EXAMPLES = 5                                #: P15: notes the manager kept, as the style to follow
+#: P15 rejects, measured on a real day: a button ("Join meeting") and a line that says the
+#: information is missing both became items. An item must be something the manager can act on.
+MIN_QUOTE_WORDS = 2                                #: the button list below catches the rest
+SAME_ITEM_WORDS = 0.6                              #: two items sharing this much wording are one
 WHO_MAX_CHARS = 120
 MAX_ITEMS = 3
 MAX_CONTEXT_ITEMS = 5
@@ -79,7 +84,9 @@ For the manager it is now {now_local}.
 1. WORK or PERSONAL? Work = customers, clients, colleagues, vendors, partners, investors,
 candidates the manager is hiring, deals, projects, the business's money. Personal = family,
 friends, private life — and the manager's OWN job search, job boards, shopping, banking, personal
-admin and entertainment. The manager's own job search includes job listings, applications, CVs,
+admin and entertainment. The manager's OWN salary, pay, reimbursement or rent — chasing it,
+being promised it, or its delay — is personal, and so is asking anyone for a job referral or an
+opening. The manager's own job search includes job listings, applications, CVs,
 recruiter messages, co-founder matching about the manager joining something, and interview prep.
 Personal admin includes rent and tenancy papers, deliveries, bills and orders.
 
@@ -95,7 +102,9 @@ forwarded promotions, newsletters) is NOT an ask unless it names the manager or 
 If someone asks the manager to do something, kind is ask even when it has a date — the date goes
 in "due". Items come only from real messages or requests addressed to the manager by real people:
 text inside a document, plan, spec, template, article or example is NOT a live request, so such a
-page has no items unless it is clearly addressed to the manager.
+page has no items unless it is clearly addressed to the manager. A button, menu or status label
+("Join meeting", "See the logs", "Sign in") is never an item, and neither is a line whose point
+is that something is missing ("link not visible"). One real thing = one item, never two.
 
 3. REMEMBER: is this chat / page worth long-term memory (people, companies, promises, asks,
 dates, deals, decisions)? Personal is never remembered.
@@ -117,7 +126,7 @@ Facts about the people / companies involved (may be empty):
 {facts}
 The manager's meetings in the next 2 days (may be empty):
 {meetings}
-{not_useful}
+{not_useful}{useful}
 SCREEN TEXT (newest last):
 <<<
 {text}
@@ -176,6 +185,16 @@ def memory_of(res: dict | None) -> bool | None:
     return _bool(res.get("remember", res.get("memory")))
 
 
+def useful_block(notes: list[str] | None) -> str:
+    """P15: the notes the manager kept — the kind to write more of (the mirror of K4)."""
+    notes = [" ".join(str(n or "").split())[:INSIGHT_MAX_CHARS] for n in notes or []]
+    notes = [n for n in notes if n][:USEFUL_EXAMPLES]
+    if not notes:
+        return ""
+    return ("\nThe manager kept these earlier notes as USEFUL — this is the kind that helps:\n"
+            + "\n".join(f"- {n}" for n in notes) + "\n")
+
+
 def not_useful_block(notes: list[str] | None) -> str:
     """K4: the seat's recent "not useful" notes, as kinds the model must not repeat."""
     notes = [" ".join(str(n or "").split())[:INSIGHT_MAX_CHARS] for n in notes or []]
@@ -189,6 +208,49 @@ def not_useful_block(notes: list[str] | None) -> str:
 def _opt(value, limit: int) -> str | None:
     s = " ".join(str(value or "").split())
     return s[:limit] if s and s.lower() not in ("null", "none") else None
+
+
+_UI_QUOTE = re.compile(r"^\s*(join(\s+(meeting|now|call))?|open|view|reply|forward|download|share|"
+                       r"sign\s*in|log\s*in|continue|next|submit|cancel|accept|decline|details|"
+                       r"see\s+the\s+logs.*)\s*[.!]?\s*$", re.I)
+_NO_INFORMATION = re.compile(r"\b(not (visible|available|shown|found)|unknown|no (link|details|id)\b)",
+                             re.I)
+_KIND_RANK = {"ask": 0, "my_promise": 1, "their_promise": 2, "deadline": 3, "next_step": 4,
+              "risk": 5}
+
+
+def reject(item: dict) -> str | None:
+    """P15: why this item must NOT be saved, or None when it is worth keeping. Deterministic —
+    the model is not asked twice."""
+    quote = " ".join(str(item.get("quote") or "").split())
+    text = " ".join(str(item.get("text") or "").split())
+    if len(quote.split()) < MIN_QUOTE_WORDS or _UI_QUOTE.match(quote):
+        return "ui_label"                          # a button or menu, not a request
+    if _NO_INFORMATION.search(text):
+        return "no_information"                    # "link not visible on screen"
+    if (item.get("kind") in ("risk", "next_step") and not item.get("who")
+            and not item.get("due") and len(text.split()) < 6):
+        return "too_vague"
+    return None
+
+
+def _same_thing(a: dict, b: dict) -> bool:
+    """The same event written twice (a build failure became 'build failed' and 'review the build
+    logs' on 2026-09-16): enough shared words, same person."""
+    wa = {w for w in _norm(str(a.get("text") or "")).split() if len(w) > 3}
+    wb = {w for w in _norm(str(b.get("text") or "")).split() if len(w) > 3}
+    if not wa or not wb or _norm(str(a.get("who") or "")) != _norm(str(b.get("who") or "")):
+        return False
+    return len(wa & wb) / min(len(wa), len(wb)) >= SAME_ITEM_WORDS
+
+
+def _one_per_thing(items: list[dict]) -> list[dict]:
+    """One item per real thing: the most actionable kind wins (ask > promise > deadline > …)."""
+    kept: list[dict] = []
+    for it in sorted(items, key=lambda i: _KIND_RANK.get(str(i.get("kind")), 9)):
+        if not any(_same_thing(it, k) for k in kept):
+            kept.append(it)
+    return [it for it in items if it in kept]
 
 
 def is_me(who: str | None, me: list[str] | None) -> bool:
@@ -267,7 +329,15 @@ def judge(raw: dict | None, screen: str, *, me: list[str] | None = None,
     if work is False or not isinstance(raw, dict):
         return out
     listed = raw.get("items") if isinstance(raw.get("items"), list) else []
-    out["items"] = [i for i in (_item(it, screen, me, today) for it in listed[:MAX_ITEMS]) if i]
+    grounded = [i for i in (_item(it, screen, me, today) for it in listed[:MAX_ITEMS]) if i]
+    keep: list[dict] = []
+    for it in grounded:
+        why = reject(it)
+        if why is None:
+            keep.append(it)
+        else:
+            _log.info("screen insight: item rejected (%s)", why)
+    out["items"] = _one_per_thing(keep)
     adds = str(raw.get("adds") or "").strip().lower()
     note = _opt(raw.get("note"), INSIGHT_MAX_CHARS)
     if out["items"] and note and adds in ADDS:
@@ -382,7 +452,8 @@ def budget(engine, *, org_id: str, seat_id: str, cap: int, now: datetime) -> dic
 
 
 def build_prompt(*, app: str | None, screen: str, facts: list[dict], now_local: str = "",
-                 not_useful: list[str] | None = None, me: list[str] | None = None,
+                 not_useful: list[str] | None = None, useful: list[str] | None = None,
+                 me: list[str] | None = None,
                  open_items: list[dict] | None = None, meetings: list[dict] | None = None,
                  thread_key: str | None = None, tz_name: str | None = None,
                  summary: str | None = None, profile: str | None = None) -> str:
@@ -395,11 +466,12 @@ def build_prompt(*, app: str | None, screen: str, facts: list[dict], now_local: 
         facts="\n".join(f"- {f.get('name') or f.get('node_id')} · {f.get('field')} = {f.get('value')}"
                         for f in facts) or "(none)",
         meetings=meetings_block(meetings, tz_name),
-        not_useful=not_useful_block(not_useful), text=screen)
+        not_useful=not_useful_block(not_useful), useful=useful_block(useful), text=screen)
 
 
 def llm_insight(engine, *, org_id: str, app: str | None, screen: str, facts: list[dict],
                 deadline: float, now_local: str = "", not_useful: list[str] | None = None,
+                useful: list[str] | None = None,
                 me: list[str] | None = None, open_items: list[dict] | None = None,
                 meetings: list[dict] | None = None, thread_key: str | None = None,
                 tz_name: str | None = None, summary: str | None = None,
@@ -416,7 +488,7 @@ def llm_insight(engine, *, org_id: str, app: str | None, screen: str, facts: lis
     from genios_engine.reason.llm_sites import tier_model
     model = tier_model("T1")
     prompt = build_prompt(app=app, screen=screen, facts=facts, now_local=now_local,
-                          not_useful=not_useful, me=me, open_items=open_items,
+                          not_useful=not_useful, useful=useful, me=me, open_items=open_items,
                           meetings=meetings, thread_key=thread_key, tz_name=tz_name,
                           summary=summary, profile=profile)
     try:
@@ -443,7 +515,8 @@ def llm_insight(engine, *, org_id: str, app: str | None, screen: str, facts: lis
 
 def _compute(engine, *, org_id: str, email: str | None, app: str | None, participants,
              entities, screen: str, deadline: float, now_local: str = "",
-             not_useful: list[str] | None = None, me: list[str] | None = None,
+             not_useful: list[str] | None = None, useful: list[str] | None = None,
+             me: list[str] | None = None,
              open_items: list[dict] | None = None, meetings: list[dict] | None = None,
              thread_key: str | None = None, tz_name: str | None = None,
              today: date | None = None, summary: str | None = None,
@@ -464,7 +537,8 @@ def _compute(engine, *, org_id: str, email: str | None, app: str | None, partici
     except Exception:      # noqa: BLE001 — context is a bonus; a new person has none anyway
         _log.info("screen insight: no graph context org=%s", org_id)
     raw = llm_insight(engine, org_id=org_id, app=app, screen=screen, facts=facts,
-                      deadline=deadline, now_local=now_local, not_useful=not_useful, me=me,
+                      deadline=deadline, now_local=now_local, not_useful=not_useful,
+                      useful=useful, me=me,
                       open_items=open_items, meetings=meetings, thread_key=thread_key,
                       tz_name=tz_name, summary=summary, profile=profile)
     if raw is None:
@@ -476,7 +550,8 @@ def _compute(engine, *, org_id: str, email: str | None, app: str | None, partici
 
 def insight(engine, *, org_id: str, email: str | None, app: str | None, participants, entities,
             screen: str, timeout_s: float = TIMEOUT_S, now_local: str = "",
-            not_useful: list[str] | None = None, me: list[str] | None = None,
+            not_useful: list[str] | None = None, useful: list[str] | None = None,
+            me: list[str] | None = None,
             open_items: list[dict] | None = None, meetings: list[dict] | None = None,
             thread_key: str | None = None, tz_name: str | None = None,
             today: date | None = None, summary: str | None = None,
@@ -486,7 +561,8 @@ def insight(engine, *, org_id: str, email: str | None, app: str | None, particip
     deadline = time.monotonic() + timeout_s
     fut = _POOL.submit(_compute, engine, org_id=org_id, email=email, app=app,
                        participants=participants, entities=entities, screen=screen,
-                       deadline=deadline, now_local=now_local, not_useful=not_useful, me=me,
+                       deadline=deadline, now_local=now_local, not_useful=not_useful,
+                       useful=useful, me=me,
                        open_items=open_items, meetings=meetings, thread_key=thread_key,
                        tz_name=tz_name, today=today, summary=summary, profile=profile)
     try:

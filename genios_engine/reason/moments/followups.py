@@ -312,7 +312,7 @@ def verdict_key(thread_key: str | None) -> str | None:
 
 # ── reads ─────────────────────────────────────────────────────────────────────────────────────
 _COLS = ("id, kind, text, who, thread_key, app, due_at, nudge_at, created_at, updated_at, "
-         "resolved_at, resolution, subject_node_id, snoozed_at")
+         "resolved_at, resolution, subject_node_id, snoozed_at, quote")
 
 
 def item_out(r, *, full: bool = False) -> dict:
@@ -322,7 +322,9 @@ def item_out(r, *, full: bool = False) -> dict:
            # The person node it was written on — the panel shows it with that person's cards.
            "subject_node_id": r.subject_node_id,
            # P12: every time the device reminds (heads-up → final → overdue, or the snooze)
-           "remind_at": [iso(t) for t in remind_times(r)]}
+           "remind_at": [iso(t) for t in remind_times(r)],
+           # P15: the words on screen that caused it — the reminder quotes them back.
+           "quote": r.quote}
     if full:
         out.update({"updated_at": iso(aware(r.updated_at)),
                     "resolved_at": iso(aware(r.resolved_at)), "resolution": r.resolution})
@@ -425,6 +427,19 @@ def is_muted(conn, *, org_id: str, seat_id: str, thread_key: str | None, now: da
         "select 1 from screen_thread_verdicts where org_id = :o and seat_id = :s "
         "and thread_key = :t and muted_until > :now"),
         {"o": org_id, "s": seat_id, "t": thread_key, "now": now}).first() is not None
+
+
+def useful_notes(conn, *, org_id: str, seat_id: str, capability_id: str,
+                 limit: int = NOT_USEFUL_NOTES) -> list[str]:
+    """P15: the seat's last notes it marked "useful", newest first — the kind the model should
+    write more of. The model's own notes, never screen text."""
+    return [r.headline for r in conn.execute(text(
+        "select m.headline from moments m join lateral (select max(f.at) as at "
+        " from moment_feedback f where f.moment_id = m.moment_id and f.action = 'useful') f on true "
+        "where m.org_id = :o and m.seat_id = :s and m.capability_id = :cap and f.at is not null "
+        "order by f.at desc limit :n"),
+        {"o": org_id, "s": seat_id, "cap": capability_id,
+         "n": max(0, int(limit))}) if r.headline]
 
 
 def not_useful_notes(conn, *, org_id: str, seat_id: str, capability_id: str,
@@ -771,7 +786,7 @@ __all__ = ["KINDS", "MUTE_FOREVER", "NOT_USEFUL_MUTE", "RESOLUTIONS", "SNOOZE_PR
            "add_working_days", "answered", "ask_nudge_at", "expire", "followup_id", "get_item",
            "is_muted", "item_out", "learn_from_feedback", "next_working_day_at", "snooze",
            "snooze_until",
-           "is_assistant_page", "ladder", "listing", "map_kind", "mark_answered", "mute", "not_useful_notes", "nudge_at",
+           "is_assistant_page", "ladder", "listing", "map_kind", "useful_notes", "mark_answered", "mute", "not_useful_notes", "nudge_at",
            "remind_times", "who_key",
            "open_items",
            "parse_due", "purge", "removed_since", "resolve", "seat_tz", "set_verdict",
