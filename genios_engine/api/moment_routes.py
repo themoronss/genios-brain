@@ -335,7 +335,8 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
         why = T.skip_reason(app=body.surface.app, bundle_id=body.surface.bundle_id,
                             url_domain=body.surface.url_domain,
                             thread_key=body.surface.thread_key,
-                            entities=body.features.entities, participants=body.participants)
+                            entities=body.features.entities, participants=body.participants,
+                            seat_email=p.email)
         if why is not None:
             SI.note_skipped(engine, org_id=p.org_id, seat_id=p.seat_id, now=now)
             _log.info("screen insight skipped org=%s seat=%s why=%s", p.org_id, p.seat_id, why)
@@ -400,7 +401,8 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
     meetings = _meetings_soon(engine, p, now)
     res = SI.insight(engine, org_id=p.org_id, email=p.email, app=body.surface.app,
                      participants=body.participants, entities=body.features.entities,
-                     screen=screen, now_local=SI.local_label(now, tz), not_useful=notes,
+                     screen=screen, now_local=SI.local_label(now, tz),
+                     dates=body.features.dates, not_useful=notes,
                      useful=kept, said=SI.said_lines(body.visible_messages), me=me,
                      open_items=context, meetings=meetings,
                      thread_key=thread, tz_name=tz, today=now.astimezone(F.zone(tz)).date(),

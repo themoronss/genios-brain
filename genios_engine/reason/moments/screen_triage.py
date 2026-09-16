@@ -96,24 +96,31 @@ def is_work_app(app: str | None, bundle_id: str | None) -> bool:
     return any(b.startswith(w) for w in WORK_BUNDLES + WORK_SURFACE_BUNDLES)
 
 
-def has_known_counterparty(entities, participants) -> bool:
+def has_known_counterparty(entities, participants, seat_email: str | None = None) -> bool:
     """Someone or something this org already knows is on screen. `entities` are slice node ids the
     device's matcher resolved; a participant with an email or a LinkedIn URL is resolvable by id.
-    A participant with only a display name is NOT a signal — that is every unknown number."""
+    A participant with only a display name is NOT a signal — that is every unknown number.
+
+    The manager's OWN address does not count. The device reads addresses off the page now, and
+    the mailbox owner's is on almost every one of them — treating that as a counterparty would
+    make every page in the browser worth a model call."""
     if [e for e in (entities or []) if str(e or "").strip()]:
         return True
+    me = str(seat_email or "").strip().lower()
     for p in participants or []:
         email = getattr(p, "email", None) if not isinstance(p, dict) else p.get("email")
         linkedin = getattr(p, "linkedin_url", None) if not isinstance(p, dict) else p.get("linkedin_url")
-        if str(email or "").strip() or str(linkedin or "").strip():
+        email = str(email or "").strip().lower()
+        if (email and email != me) or str(linkedin or "").strip():
             return True
     return False
 
 
 def skip_reason(*, app: str | None, bundle_id: str | None, url_domain: str | None,
-                thread_key: str | None, entities=None, participants=None) -> str | None:
+                thread_key: str | None, entities=None, participants=None,
+                seat_email: str | None = None) -> str | None:
     """Why this screen must not cost a model call, or None when it is worth judging."""
-    known = has_known_counterparty(entities, participants)
+    known = has_known_counterparty(entities, participants, seat_email)
     if known:
         return None
     a = (app or "").strip().lower()

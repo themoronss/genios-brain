@@ -35,9 +35,13 @@ class Participant(BaseModel):
 
 
 class DatePhrase(BaseModel):
+    """A date the DEVICE already resolved against the manager's own clock. `time` ("17:00") is
+    there because "kal 5 baje" without the hour is just "kal", and the brain would then let the
+    model guess an hour the device had already parsed."""
     model_config = ConfigDict(extra="ignore")
     text: str | None = Field(default=None, max_length=100)
     resolved: str | None = Field(default=None, max_length=64)
+    time: str | None = Field(default=None, max_length=8)
 
 
 class Features(BaseModel):

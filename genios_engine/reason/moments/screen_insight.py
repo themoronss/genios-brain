@@ -362,6 +362,8 @@ Facts about the people / companies involved (may be empty):
 {facts}
 The manager's meetings in the next 2 days (may be empty):
 {meetings}
+Dates GeniOS already resolved on this screen — copy these, never recompute them (may be empty):
+{dates}
 {not_useful}{useful}
 SCREEN TEXT (newest last):
 <<<
@@ -581,7 +583,55 @@ def fix_weekday(due: str | None, quote: str | None, today: date | None) -> str |
     return fixed.isoformat() + due[10:]
 
 
-def _item(it, screen: str, me: list[str] | None, today: date | None = None) -> dict | None:
+#: A day named without a time is due at the end of that working day (followups.DAY_ONLY_HOUR).
+DAY_ONLY_HOUR = 18
+MAX_DATES = 8
+
+
+def _phrase(d) -> tuple[str, str, str | None]:
+    """One DatePhrase (model or dict) → (text, resolved date, time or None)."""
+    get = d.get if isinstance(d, dict) else (lambda k: getattr(d, k, None))
+    return (" ".join(str(get("text") or "").split()),
+            str(get("resolved") or "").strip()[:10],
+            (str(get("time") or "").strip()[:5] or None))
+
+
+def dates_block(dates) -> str:
+    """The dates the DEVICE resolved on this screen, for the prompt. They are not a hint: they
+    were parsed against the manager's own clock by `matcher/dates.rs`, in English and Hinglish,
+    and `snap_due` overrides the model with them when the item quotes the phrase."""
+    lines = []
+    for d in (dates or [])[:MAX_DATES]:
+        text, day, clock = _phrase(d)
+        if text and day:
+            lines.append(f'- "{text}" → {day} {clock or f"{DAY_ONLY_HOUR:02d}:00"}')
+    return "\n".join(lines) or "(none)"
+
+
+def snap_due(due: str | None, quote: str | None, dates) -> str | None:
+    """THE DEVICE WINS ON DATES. When the item's quote contains a phrase the device already
+    resolved, the due is that resolution — not the model's arithmetic. A measured Haiku run
+    turned "Thursday 5 pm" into a Friday; `fix_weekday` repairs that case afterwards, but a
+    phrase the device parsed needs no repair because nothing was computed here at all.
+
+    Longest phrase first, so "next monday" wins over "monday"."""
+    q = _norm(quote or "")
+    if not q:
+        return due
+    best = None
+    for d in (dates or [])[:MAX_DATES]:
+        text, day, clock = _phrase(d)
+        n = _norm(text)
+        if n and day and n in q and (best is None or len(n) > len(best[0])):
+            best = (n, day, clock)
+    if best is None:
+        return due
+    _, day, clock = best
+    return f"{day}T{clock or f'{DAY_ONLY_HOUR:02d}:00'}"
+
+
+def _item(it, screen: str, me: list[str] | None, today: date | None = None,
+          dates=None) -> dict | None:
     """One model item → a grounded item, or None (unknown kind, no text, quote not on screen)."""
     if not isinstance(it, dict):
         return None
@@ -594,14 +644,17 @@ def _item(it, screen: str, me: list[str] | None, today: date | None = None) -> d
     if len(q) < 3 or q not in _norm(screen):
         return None
     who = _opt(it.get("who"), WHO_MAX_CHARS)
+    snapped = snap_due(_opt(it.get("due"), 32), quote, dates)
+    due = snapped if snapped != _opt(it.get("due"), 32) else fix_weekday(snapped, quote, today)
     return {"kind": kind, "text": text, "who": None if is_me(who, me) else who,
-            "due": fix_weekday(_opt(it.get("due"), 32), quote, today), "quote": quote[:200],
+            "due": due, "quote": quote[:200],
             "confidence": confidence_of(it.get("confidence"))}
 
 
 def judge(raw: dict | None, screen: str, *, me: list[str] | None = None,
           today: date | None = None, said: list[str] | None = None,
-          meetings: list[dict] | None = None, tz_name: str | None = None) -> dict:
+          meetings: list[dict] | None = None, tz_name: str | None = None,
+          dates=None) -> dict:
     """The model's v4 answer → `{work, remember, items, adds_candidate, note_candidate}`. Items are
     grounded; a note is a CANDIDATE — `verify_adds` decides whether code can stand behind it. The
     model may propose an interrupt; it may not author one."""
@@ -611,7 +664,7 @@ def judge(raw: dict | None, screen: str, *, me: list[str] | None = None,
     if work is False or not isinstance(raw, dict):
         return out
     listed = raw.get("items") if isinstance(raw.get("items"), list) else []
-    grounded = [i for i in (_item(it, screen, me, today) for it in listed[:MAX_ITEMS]) if i]
+    grounded = [i for i in (_item(it, screen, me, today, dates) for it in listed[:MAX_ITEMS]) if i]
     keep: list[dict] = []
     for it in grounded:
         why = reject(it, said=said)
@@ -847,6 +900,7 @@ def budget(engine, *, org_id: str, seat_id: str, cap: int, now: datetime) -> dic
 
 
 def build_prompt(*, app: str | None, screen: str, facts: list[dict], now_local: str = "",
+                 dates=None,
                  not_useful: list[str] | None = None, useful: list[str] | None = None,
                  me: list[str] | None = None,
                  open_items: list[dict] | None = None, meetings: list[dict] | None = None,
@@ -860,7 +914,7 @@ def build_prompt(*, app: str | None, screen: str, facts: list[dict], now_local: 
         open_items=open_items_block(open_items, thread_key),
         facts="\n".join(f"- {f.get('name') or f.get('node_id')} · {f.get('field')} = {f.get('value')}"
                         for f in facts) or "(none)",
-        meetings=meetings_block(meetings, tz_name),
+        meetings=meetings_block(meetings, tz_name), dates=dates_block(dates),
         not_useful=not_useful_block(not_useful), useful=useful_block(useful), text=screen)
 
 
@@ -879,7 +933,8 @@ def _client(api_key: str, model: str):
 
 
 def llm_insight(engine, *, org_id: str, app: str | None, screen: str, facts: list[dict],
-                deadline: float, now_local: str = "", not_useful: list[str] | None = None,
+                deadline: float, now_local: str = "", dates=None,
+                not_useful: list[str] | None = None,
                 useful: list[str] | None = None,
                 me: list[str] | None = None, open_items: list[dict] | None = None,
                 meetings: list[dict] | None = None, thread_key: str | None = None,
@@ -901,6 +956,7 @@ def llm_insight(engine, *, org_id: str, app: str | None, screen: str, facts: lis
     from genios_engine.reason.llm_sites import tier_model
     model = tier_model("T1")
     prompt = build_prompt(app=app, screen=screen, facts=facts, now_local=now_local,
+                          dates=dates,
                           not_useful=not_useful, useful=useful, me=me, open_items=open_items,
                           meetings=meetings, thread_key=thread_key, tz_name=tz_name,
                           summary=summary, profile=profile)
@@ -925,7 +981,7 @@ def llm_insight(engine, *, org_id: str, app: str | None, screen: str, facts: lis
 
 
 def _compute(engine, *, org_id: str, email: str | None, app: str | None, participants,
-             entities, screen: str, deadline: float, now_local: str = "",
+             entities, screen: str, deadline: float, now_local: str = "", dates=None,
              not_useful: list[str] | None = None, useful: list[str] | None = None,
              said: list[str] | None = None, me: list[str] | None = None,
              open_items: list[dict] | None = None, meetings: list[dict] | None = None,
@@ -948,19 +1004,20 @@ def _compute(engine, *, org_id: str, email: str | None, app: str | None, partici
     except Exception:      # noqa: BLE001 — context is a bonus; a new person has none anyway
         _log.info("screen insight: no graph context org=%s", org_id)
     raw = llm_insight(engine, org_id=org_id, app=app, screen=screen, facts=facts,
-                      deadline=deadline, now_local=now_local, not_useful=not_useful,
+                      deadline=deadline, now_local=now_local, dates=dates, not_useful=not_useful,
                       useful=useful, me=me,
                       open_items=open_items, meetings=meetings, thread_key=thread_key,
                       tz_name=tz_name, summary=summary, profile=profile)
     if raw is None:
         return None
-    judged = judge(raw, screen, me=me, today=today, said=said, meetings=meetings, tz_name=tz_name)
+    judged = judge(raw, screen, me=me, today=today, said=said, meetings=meetings,
+                   tz_name=tz_name, dates=dates)
     return {"subject_ids": sids, "work": judged["work"], "memory": judged["remember"],
             "judged": judged}
 
 
 def insight(engine, *, org_id: str, email: str | None, app: str | None, participants, entities,
-            screen: str, timeout_s: float = TIMEOUT_S, now_local: str = "",
+            screen: str, timeout_s: float = TIMEOUT_S, now_local: str = "", dates=None,
             not_useful: list[str] | None = None, useful: list[str] | None = None,
             said: list[str] | None = None, me: list[str] | None = None,
             open_items: list[dict] | None = None, meetings: list[dict] | None = None,
@@ -972,7 +1029,8 @@ def insight(engine, *, org_id: str, email: str | None, app: str | None, particip
     deadline = time.monotonic() + timeout_s
     fut = _POOL.submit(_compute, engine, org_id=org_id, email=email, app=app,
                        participants=participants, entities=entities, screen=screen,
-                       deadline=deadline, now_local=now_local, not_useful=not_useful,
+                       deadline=deadline, now_local=now_local, dates=dates,
+                       not_useful=not_useful,
                        useful=useful, said=said, me=me,
                        open_items=open_items, meetings=meetings, thread_key=thread_key,
                        tz_name=tz_name, today=today, summary=summary, profile=profile)
@@ -987,7 +1045,7 @@ def insight(engine, *, org_id: str, email: str | None, app: str | None, particip
 
 
 __all__ = ["ACTIONS", "ADDS", "budget", "confidence_of", "note_skipped", "SKIPPED_KIND", "UNVERIFIED_KIND", "verify_adds", "CAPABILITY_ID", "CAPABILITY_VERSION", "DEFAULT_DAILY_CAP",
-           "ITEM_KINDS", "MIN_TEXT_CHARS", "fix_weekday", "NOT_USEFUL_EXAMPLES", "build_prompt", "insight",
+           "ITEM_KINDS", "MIN_TEXT_CHARS", "fix_weekday", "NOT_USEFUL_EXAMPLES", "build_prompt", "dates_block", "insight", "snap_due",
            "is_me", "judge", "local_label", "meetings_block", "memory_of", "moment_content",
            "not_useful_block", "open_items_block", "reserve", "text_digest", "visible_text",
            "work_of"]

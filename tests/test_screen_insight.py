@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 import pytest
 
 from genios_engine.reason.moments import screen_insight as SI
+from genios_engine.reason.moments import screen_triage as T_
 
 SCREEN = ("Priya Shah: Can you send the revised pricing by Friday?\n"
           "You: Sure, let me check with the team\n"
@@ -196,7 +197,7 @@ def test_the_prompt_carries_who_the_manager_is_open_items_and_meetings():
     assert "has ALREADY READ this screen" in " ".join(p.split())
     assert p.index("Voltex review") < p.index("SCREEN TEXT")
     empty = SI.build_prompt(app=None, screen="x", facts=[])
-    assert empty.count("(none)") == 5 and "(unknown)" in empty
+    assert empty.count("(none)") == 6 and "(unknown)" in empty   # + the resolved-dates block
     # the weekly profile (S8) and the chat's batch summary (S4) travel as context
     ctx = SI.build_prompt(app="whatsapp", screen="x", facts=[], profile="Founder of Acme; key: Priya (client)",
                           summary="Priya is negotiating the Q3 renewal")
@@ -377,3 +378,46 @@ def test_the_rulebook_stays_long_enough_to_be_worth_caching():
     assert SI.RULEBOOK_CHARS / 4.5 >= SI.RULEBOOK_TOKENS_MIN, (
         f"{SI.RULEBOOK_CHARS} chars may tokenize under {SI.RULEBOOK_TOKENS_MIN}: add few-shots "
         "that teach something, never padding")
+
+
+# ── the device's own date resolutions win (SCREEN_COST_LATENCY_FIX.md wave 2) ─────────────────
+KAL = [{"text": "kal tak", "resolved": "2026-09-18", "time": "17:00"}]
+
+
+def test_a_phrase_the_device_resolved_is_not_recomputed_by_the_model():
+    # matcher/dates.rs parsed "kal tak" against the manager's own clock, in Hinglish. A measured
+    # Haiku run turned "Thursday 5 pm" into a Friday; nothing is computed here at all.
+    assert SI.snap_due("2026-09-25T12:00", "kal tak revised quote bhej dena", KAL) == "2026-09-18T17:00"
+    # a day with no hour is the end of that working day
+    assert SI.snap_due(None, "kal bhej dena", [{"text": "kal", "resolved": "2026-09-18"}]) == "2026-09-18T18:00"
+    # the longest phrase wins, so "next monday" beats "monday"
+    both = [{"text": "monday", "resolved": "2026-09-21"}, {"text": "next monday", "resolved": "2026-09-28"}]
+    assert SI.snap_due(None, "next monday tak chahiye", both) == "2026-09-28T18:00"
+    # no phrase in the quote ⇒ the model's own answer stands (fix_weekday still applies to it)
+    assert SI.snap_due("2026-09-25T12:00", "send it soon", KAL) == "2026-09-25T12:00"
+    assert SI.snap_due("2026-09-25T12:00", "", KAL) == "2026-09-25T12:00"
+    assert SI.snap_due(None, "kal tak", []) is None
+
+
+def test_the_resolved_dates_reach_the_prompt_and_the_item():
+    p = SI.build_prompt(app="whatsapp", screen="x", facts=[], dates=KAL)
+    assert '- "kal tak" → 2026-09-18 17:00' in p
+    assert SI.dates_block([{"text": "", "resolved": "2026-09-18"}]) == "(none)"
+    j = SI.judge({"work": True, "items": [{"kind": "ask", "text": "Priya needs the quote",
+                                           "who": "Priya", "due": "2026-09-30T10:00",
+                                           "quote": "kal tak revised quote bhej dena"}]},
+                 "Priya: kal tak revised quote bhej dena", dates=KAL)
+    assert j["items"][0]["due"] == "2026-09-18T17:00", "the device's date, not the model's"
+
+
+def test_the_manager_s_own_address_is_not_a_counterparty():
+    # The device reads addresses off the page now, and the mailbox owner's is on nearly all of
+    # them: counting it would make every page in the browser worth a model call.
+    from genios_engine.contracts.moments import Participant
+    mine = [Participant(email="harsh@genios.ai")]
+    assert not T_.has_known_counterparty([], mine, "harsh@genios.ai")
+    assert not T_.has_known_counterparty([], mine, "HARSH@genios.ai ")
+    assert T_.has_known_counterparty([], mine, "someone@else.com")
+    assert T_.skip_reason(app="generic", bundle_id=None, url_domain="unknown.example",
+                          thread_key=None, participants=mine,
+                          seat_email="harsh@genios.ai") == T_.NO_WORK_SIGNAL
