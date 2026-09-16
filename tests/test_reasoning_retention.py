@@ -81,6 +81,7 @@ def test_scheduled_maintenance_purges_expired_reasoning_context_payloads(monkeyp
 
     from genios_engine.reason import store as reason_store
     from genios_engine.platform import realtime
+    from genios_engine.reason import retention as reason_retention
     from genios_engine.reason.moments import store as moments_store
     monkeypatch.setattr(reason_store, "ReasoningStore", _ReasoningStore)
 
@@ -108,6 +109,15 @@ def test_scheduled_maintenance_purges_expired_reasoning_context_payloads(monkeyp
     # was recorded as `moments: "error"` — the heartbeat naming the wrong broken pass. They have
     # a guard each now, and stubbing both is what proves the split rather than assuming it.
     monkeypatch.setattr(realtime, "purge_expired", lambda engine_arg, *, now: {"channels": 8})
+    # THE REASONING TRAIL. Added when that family turned out to have no retention at all — 442 MB
+    # in one month, and the database read-only. Stubbed here rather than left to fail for the same
+    # reason `moments` is: a retention test that tolerates a pass not running has stopped being one.
+    reasoning_calls: list = []
+
+    def _purge_reasoning(engine_arg, *, now):
+        reasoning_calls.append((engine_arg, now))
+        return {"runs": 9, "context_snapshots": 2, "capability_snapshots": 1}
+    monkeypatch.setattr(reason_retention, "purge_expired_reasoning", _purge_reasoning)
     monkeypatch.setattr(expertise_publisher, "purge_superseded_expertise_packages",
                         lambda eng, **kw: (packages_calls.append(eng), 4)[1])
 
@@ -137,11 +147,14 @@ def test_scheduled_maintenance_purges_expired_reasoning_context_payloads(monkeyp
         "expertise_packages": 4,
         "moments": {"moment_cache": 7},
         "realtime_events": {"channels": 8},
+        "reasoning": {"runs": 9, "context_snapshots": 2, "capability_snapshots": 1},
     }
     # And it ran with the tenant's engine and an aware clock, the same two things every other
     # pass here is checked for — a pass that "ran" against the wrong engine has not run.
     assert [e for e, _ in moments_calls] == [engine]
     assert moments_calls[0][1].tzinfo is not None
+    assert [e for e, _ in reasoning_calls] == [engine]
+    assert reasoning_calls[0][1].tzinfo is not None
     assert [e for e, _ in capture_calls] == [engine]
     assert capture_calls[0][1].tzinfo is not None
     assert packages_calls == [engine]

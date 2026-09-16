@@ -848,6 +848,16 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
             except Exception:                                # noqa: BLE001 — never kill the heartbeat
                 _log.exception("retention purge failed for %s", _name)
                 retention[_name] = "error"
+        # THE REASONING TRAIL, which had no retention at all until it filled the disk. 442 MB
+        # across ~96,000 rows in one month, 97% of it belonging to runs no signal points at. The
+        # `signals` foreign keys make it impossible for this pass to remove evidence under a live
+        # card — Postgres refuses — so the failure mode here is an error, never a vanished card.
+        try:
+            from genios_engine.reason.retention import purge_expired_reasoning
+            retention["reasoning"] = purge_expired_reasoning(_graph.engine, now=now)
+        except Exception:                                    # noqa: BLE001 — never kill the heartbeat
+            _log.exception("retention purge failed for reasoning")
+            retention["reasoning"] = "error"
         # expertise_packages, and this one is not theoretical: it reached 995 MB — 67% of the whole
         # database — and took the project over its disk quota into read-only, which stops every
         # write the product makes. Content-addressing (see contracts/domain_expertise.py) stops the
