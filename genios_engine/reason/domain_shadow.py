@@ -38,6 +38,7 @@ from genios_engine.context.situation_bso import (
     gather_brain_subject_keys,
     gather_evidence_and_signals,
     gather_l1_signals_bulk,
+    l1_refusal,
     gather_members,
     gather_pattern_fires,
     gather_visibility,
@@ -740,10 +741,19 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                 # pass published before BLG-18 and is still correct.
                 composed = stored_importance(row)
                 trace_id = new_id("trace")
+                # WHY THIS SITUATION HAS NO LAYER 1 SIGNAL, when the answer is a refusal.
+                # 63 of 159 live situations on the pilot are held before their content is read,
+                # and `qes_required` and `verified_evidence_required` are the SAME cards — both
+                # gates read what Layer 1 published and Layer 1 published nothing. The events
+                # behind them scored 528-1920 against a floor of 2500. The gate is right; the
+                # silence was not.
+                refusal = (None if l1 is not None
+                           else l1_refusal(c, org_id, str(row["correlation_id"])))
                 candidate = build_business_situation(
                     org_id=org_id, situation=row,
                     signal_ids=signal_ids, evidence=evidence, trace_id=trace_id,
                     members=members, visibility=situation_visibility, l1=l1,
+                    refusal=refusal,
                     composed=composed, pattern=pattern_fires.get(str(anchor)),
                     # THE BRAIN ADDRESS, resolved on the same connection as every other gather
                     # above and for the same reason. This is the writer
