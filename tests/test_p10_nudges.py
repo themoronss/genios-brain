@@ -143,10 +143,14 @@ def test_popup_offers_tomorrow_and_draft_only_for_a_followup():
     m = SI.moment_content(res, digest="d", adds="repeat_ask", note=res["note_candidate"],
                           topic_key="t", thread_key="wa:1", followup_id="fu_1")
     assert [a["id"] for a in m["actions"]] == ["useful", "not_useful", "mute_chat",
-                                               "remind_tomorrow", "draft_reply"]
+                                               "remind_tomorrow", "already_handled", "draft_reply"]
+    # "Already handled" carries the item, because it CLOSES it — it is not a politer "Not useful"
+    # (which mutes the thread for a week and teaches the model to stop writing this kind of note).
+    handled = next(a for a in m["actions"] if a["id"] == "already_handled")
+    assert handled["payload"] == {"followup_id": "fu_1"}
     assert m["actions"][3] == {"id": "remind_tomorrow", "label": "Tomorrow",
                                "payload": {"followup_id": "fu_1"}}
-    assert m["actions"][4] == {"id": "draft_reply", "label": "Draft reply",
+    assert m["actions"][5] == {"id": "draft_reply", "label": "Draft reply",
                                "payload": {"followup_id": "fu_1"}}
     assert [a["id"] for a in SI.moment_content(res, digest="d", adds="repeat_ask",
                                                note="n")["actions"]] == \

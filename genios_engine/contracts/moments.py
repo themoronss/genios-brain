@@ -12,11 +12,16 @@ from pydantic import BaseModel, ConfigDict, Field
 
 KINDS = ("advice", "reminder", "verify", "team")
 PRIORITIES = ("low", "normal", "high", "critical")
-FEEDBACK_ACTIONS = ("shown", "clicked", "acted", "dismissed", "wrong", "snoozed", "useful")
+#: `handled` = "Already handled": the card was RIGHT, and the manager did it somewhere GeniOS
+#: cannot see. It is not `acted` (the product did not cause it) and it is emphatically not
+#: `wrong` (which mutes the topic and teaches the model to stop writing that kind of note).
+FEEDBACK_ACTIONS = ("shown", "clicked", "acted", "dismissed", "wrong", "snoozed", "useful",
+                    "handled")
 
 Kind = Literal["advice", "reminder", "verify", "team"]
 Priority = Literal["low", "normal", "high", "critical"]
-FeedbackAction = Literal["shown", "clicked", "acted", "dismissed", "wrong", "snoozed", "useful"]
+FeedbackAction = Literal["shown", "clicked", "acted", "dismissed", "wrong", "snoozed", "useful",
+                         "handled"]
 
 
 class Surface(BaseModel):
@@ -98,9 +103,10 @@ class FeedbackRequest(BaseModel):
 
 
 class FollowupResolveRequest(BaseModel):
-    """P8 C5: the person closes a screen follow-up (toast `done` / panel dismiss)."""
+    """P8 C5: the person closes a screen follow-up (toast `done` / panel dismiss), or says they
+    already handled it elsewhere — right card, invisible source."""
     model_config = ConfigDict(extra="ignore")
-    resolution: Literal["done", "dismissed"]
+    resolution: Literal["done", "dismissed", "handled"]
 
 
 class FollowupSnoozeRequest(BaseModel):

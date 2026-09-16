@@ -127,3 +127,56 @@ def test_a_refused_note_older_than_every_kept_one_still_comes_back(engine, seat)
         out = F.taught_notes(c, org_id=org, seat_id=seat_id, capability_id=CAP)
     assert out["not_useful"] == ["the one they refused"]
     assert out["useful"] == [f"kept {i}" for i in range(F.NOT_USEFUL_NOTES)]
+
+
+# ── "Already handled": the card was right, the source was invisible ───────────────────────────
+def _followup(c, org, seat_id, kind, resolution, *, nudged_before_close, created, topic):
+    fid = f"fu_{uuid.uuid4().hex[:12]}"
+    nudge = created + timedelta(hours=1)
+    closed = nudge + timedelta(hours=1) if nudged_before_close else nudge - timedelta(minutes=30)
+    c.execute(text(
+        "insert into screen_followups (id, org_id, seat_id, kind, text, who, topic_key, "
+        "created_at, updated_at, nudge_at, resolved_at, resolution) "
+        "values (:i, :o, :s, :k, 'the revised quote', 'Priya', :t, :c, :c, :n, :r, :res)"),
+        {"i": fid, "o": org, "s": seat_id, "k": kind, "t": topic, "c": created, "n": nudge,
+         "r": closed, "res": resolution})
+    return fid
+
+
+def test_handled_closes_the_item_like_done(engine, seat):
+    org, seat_id = seat
+    with engine.begin() as c:
+        fid = _followup(c, org, seat_id, "ask", None, nudged_before_close=True,
+                        created=NOW - timedelta(hours=3), topic=uuid.uuid4().hex)
+        c.execute(text("update screen_followups set resolved_at = null, resolution = null "
+                       "where id = :i"), {"i": fid})
+    out = F.resolve(engine, org_id=org, seat_id=seat_id, followup_id=fid,
+                    resolution="handled", now=NOW)
+    assert out["resolution"] == "handled" and out["resolved_at"] is not None
+    # idempotent, and the constraint really accepts it
+    again = F.resolve(engine, org_id=org, seat_id=seat_id, followup_id=fid,
+                      resolution="done", now=NOW)
+    assert again["resolution"] == "handled", "an already-closed item keeps its own answer"
+    with pytest.raises(ValueError):
+        F.resolve(engine, org_id=org, seat_id=seat_id, followup_id=fid, resolution="expired",
+                  now=NOW)
+
+
+def test_the_week_does_not_claim_what_it_did_not_cause(engine, seat):
+    org, seat_id = seat
+    created = NOW - timedelta(days=1)
+    with engine.begin() as c:
+        # closed after its nudge, by the product's prompting
+        _followup(c, org, seat_id, "ask", "done", nudged_before_close=True, created=created,
+                  topic=uuid.uuid4().hex)
+        # right card, but the manager had already answered on a channel GeniOS cannot see
+        _followup(c, org, seat_id, "ask", "handled", nudged_before_close=True, created=created,
+                  topic=uuid.uuid4().hex)
+        _followup(c, org, seat_id, "my_promise", "handled", nudged_before_close=True,
+                  created=created, topic=uuid.uuid4().hex)
+    r = F.weekly_report(engine, org_id=org, seat_id=seat_id, capability_id=CAP, now=NOW)
+    assert r["asks_answered"] == 2, "the ask WAS answered — the outcome is real either way"
+    assert r["promises_kept"] == 1
+    # …but the product only claims the one it caused
+    assert r["nudged_then_closed"] == 1, "'you would have missed it' is a causation claim"
+    assert r["handled_elsewhere"] == 2, "the source-coverage gap, in one number"

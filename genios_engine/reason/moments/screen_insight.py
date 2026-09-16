@@ -781,6 +781,11 @@ def moment_content(res: dict, *, digest: str, adds: str, note: str,
     if followup_id:
         actions += [{"id": "remind_tomorrow", "label": "Tomorrow",
                      "payload": {"followup_id": followup_id}},
+                    # The card was right and the manager did it where GeniOS cannot see. Without
+                    # this the only honest-looking button is "Not useful", which mutes the thread
+                    # for a week AND teaches the model to stop writing that kind of note.
+                    {"id": "already_handled", "label": "Already handled",
+                     "payload": {"followup_id": followup_id}},
                     {"id": "draft_reply", "label": "Draft reply",
                      "payload": {"followup_id": followup_id}}]
     evidence = {"kind": "screen", "sha256": digest, "insight_kind": first["kind"],

@@ -47,7 +47,11 @@ from genios_engine.platform import realtime
 from genios_engine.reason.moments.common import aware, iso
 
 KINDS = ("ask", "my_promise", "their_promise", "deadline", "risk", "next_step")
-RESOLUTIONS = ("answered", "done", "dismissed", "expired")
+#: `handled` — the card was right and the manager did it somewhere GeniOS cannot see. It closes
+#: the item like `done` and is counted apart from it everywhere the product claims credit.
+RESOLUTIONS = ("answered", "done", "dismissed", "expired", "handled")
+#: Resolutions the PERSON can choose (the other two are the product's own bookkeeping).
+BY_HAND = ("done", "dismissed", "handled")
 TEXT_MAX = 140
 WHO_MAX = 120
 SLICE_MAX = 50
@@ -658,10 +662,10 @@ def mark_answered(engine, *, org_id: str, seat_id: str, thread_key: str | None,
 
 def resolve(engine, *, org_id: str, seat_id: str, followup_id: str, resolution: str,
             now: datetime) -> dict | None:
-    """The person closes one (`done` / `dismissed`). Idempotent: an already-closed follow-up
-    answers its current state. None when it is not this seat's."""
-    if resolution not in ("done", "dismissed"):
-        raise ValueError(f"resolution must be done or dismissed, not {resolution}")
+    """The person closes one (`done` / `dismissed` / `handled`). Idempotent: an already-closed
+    follow-up answers its current state. None when it is not this seat's."""
+    if resolution not in BY_HAND:
+        raise ValueError(f"resolution must be one of {', '.join(BY_HAND)}, not {resolution}")
     shown = False
     with engine.begin() as c:
         r = c.execute(text(
@@ -761,7 +765,10 @@ def weekly_report(engine, *, org_id: str, seat_id: str, capability_id: str,
     """C8: the seat's week in counts — follow-ups created that week (and how they ended), and the
     screen insights shown that week (and what the person said about them). `nudged_then_closed`
     (P10, "you would have missed it"): asks / promises / deadlines closed done or answered that
-    week AFTER their nudge time."""
+    week AFTER their nudge time — never `handled`, which the manager closed somewhere the product
+    could not see, and claiming that would make the one number the product is judged on a lie.
+    `handled_elsewhere` counts exactly those: the source-coverage gap, and the number that says
+    which connector is worth building next."""
     now = now or datetime.now(timezone.utc)
     with engine.connect() as c:
         tz = seat_tz(c, org_id, seat_id)
@@ -770,11 +777,14 @@ def weekly_report(engine, *, org_id: str, seat_id: str, capability_id: str,
         f = c.execute(text(
             "select count(*) filter (where kind in ('my_promise', 'their_promise')) as caught, "
             "count(*) filter (where kind in ('my_promise', 'their_promise') "
-            " and resolution = 'done') as kept, "
+            " and resolution in ('done', 'handled')) as kept, "
             "count(*) filter (where kind = 'ask') as asks, "
-            "count(*) filter (where kind = 'ask' and resolution in ('answered', 'done')) as answered, "
+            "count(*) filter (where kind = 'ask' "
+            " and resolution in ('answered', 'done', 'handled')) as answered, "
             "count(*) filter (where kind = 'deadline') as deadlines, "
-            "count(*) filter (where kind = 'risk') as risks "
+            "count(*) filter (where kind = 'risk') as risks, "
+            # The coverage gap: caught by the screen, done where the screen could not see it.
+            "count(*) filter (where resolution = 'handled') as handled "
             "from screen_followups where org_id = :o and seat_id = :s "
             "and created_at >= :a and created_at < :b"), p).mappings().first()
         m = c.execute(text(
@@ -787,6 +797,8 @@ def weekly_report(engine, *, org_id: str, seat_id: str, capability_id: str,
             "and m.created_at >= :a and m.created_at < :b"), p).mappings().first()
         nudged = c.execute(text(
             "select count(*) from screen_followups where org_id = :o and seat_id = :s "
+            # 'handled' is NOT here on purpose: "you would have missed it" is a claim about
+            # what the product caused, and an item the manager closed elsewhere is not that.
             "and kind = any(:kinds) and resolution in ('done', 'answered') "
             "and nudge_at is not null and resolved_at > nudge_at "
             "and resolved_at >= :a and resolved_at < :b"),
@@ -796,7 +808,8 @@ def weekly_report(engine, *, org_id: str, seat_id: str, capability_id: str,
             "asks_flagged": int(f["asks"] or 0), "asks_answered": int(f["answered"] or 0),
             "deadlines_flagged": int(f["deadlines"] or 0), "risks_flagged": int(f["risks"] or 0),
             "popups_shown": int(m["shown"] or 0), "useful": int(m["useful"] or 0),
-            "not_useful": int(m["not_useful"] or 0), "nudged_then_closed": int(nudged or 0)}
+            "not_useful": int(m["not_useful"] or 0), "nudged_then_closed": int(nudged or 0),
+            "handled_elsewhere": int(f["handled"] or 0)}
 
 
 def purge(conn, *, now: datetime) -> dict:
