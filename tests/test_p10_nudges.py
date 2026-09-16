@@ -140,21 +140,26 @@ def test_popup_offers_tomorrow_and_draft_only_for_a_followup():
                                              "quote": "revised pricing"}],
                     "adds": "repeat_ask", "note": "Priya asked again"},
                    "Priya: the revised pricing please")
-    m = SI.moment_content(res, digest="d", topic_key="t", thread_key="wa:1", followup_id="fu_1")
+    m = SI.moment_content(res, digest="d", adds="repeat_ask", note=res["note_candidate"],
+                          topic_key="t", thread_key="wa:1", followup_id="fu_1")
     assert [a["id"] for a in m["actions"]] == ["useful", "not_useful", "mute_chat",
                                                "remind_tomorrow", "draft_reply"]
     assert m["actions"][3] == {"id": "remind_tomorrow", "label": "Tomorrow",
                                "payload": {"followup_id": "fu_1"}}
     assert m["actions"][4] == {"id": "draft_reply", "label": "Draft reply",
                                "payload": {"followup_id": "fu_1"}}
-    assert [a["id"] for a in SI.moment_content(res, digest="d")["actions"]] == \
+    assert [a["id"] for a in SI.moment_content(res, digest="d", adds="repeat_ask",
+                                               note="n")["actions"]] == \
         ["useful", "not_useful"]
 
 
 def test_budget_shape_without_a_store():
     b = SI.budget(None, org_id="o", seat_id="s", cap=300,
                   now=datetime(2026, 9, 14, 23, 59, tzinfo=timezone.utc))
-    assert b == {"used": 0, "cap": 300, "resets_at": "2026-09-15T00:00:00Z"}
+    # `skipped` and `unverified` ride along: what a rule answered for free, and what the gate
+    # would not stand behind. A budget that only ever counts spending hides both.
+    assert b == {"used": 0, "cap": 300, "skipped": 0, "unverified": 0,
+                 "resets_at": "2026-09-15T00:00:00Z"}
     ist_evening = _ist(2026, 9, 15, 4)                       # still 14 Sep in UTC
     assert SI.budget(None, org_id="o", seat_id="s", cap=5, now=ist_evening)["resets_at"] == \
         "2026-09-15T00:00:00Z"

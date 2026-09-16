@@ -1,6 +1,6 @@
 # Screen intelligence — cost, latency and the interrupt gate
 
-> **Created:** 2026-09-17 · **Status:** Active — wave 1 building
+> **Created:** 2026-09-17 · **Status:** Active — waves 1 and 2 built, nothing pushed
 
 **Purpose:** cut what one screen-reading seat costs per month and what one instant note costs in
 seconds, without removing a single card — by fixing four things the code itself shows are wrong:
@@ -146,14 +146,38 @@ Unverified ⇒ the items are still saved, the popup is not shown, and the suppre
 counted. `confidence` is stored and counted but the floor ships at 0 (off) — no floor is set
 before it is measured on a real labelled set.
 
-## 3 · Wave 2 (not in this plan)
+## 3 · Wave 2 — built
 
-Dedicated readers for Gmail, Google Calendar and Slack (`ReaderRegistry.dedicated` holds
-**only** `WhatsAppReader` today; the generic reader sends no participants and always a `nil`
-timestamp, which is *why* the prompt has to carry a 14-day date list and why `who` is a model
-guess); the four zero-LLM cards (ask priority, who-owns-X, post-meeting follow-ups, attention);
-collapsing the ~25 DB round trips of one instant check to ~8; and the reader canary. Readers are
-blocked on real AX trees (`scripts/measure.sh`) and therefore on the Accessibility grant.
+| Fix | Where | What it changes |
+|---|---|---|
+| Addresses on a page become participants | desktop `moments/focus.rs` | `who` becomes a lookup instead of a guess on Gmail / Outlook / CRM |
+| A parsed date keeps its hour on the wire | desktop `moments/client.rs` | "kal 5 baje" stops arriving as "kal" |
+| The matcher reads what actually travels | desktop `moments/service.rs` | names and dates five lines up are found, not guessed |
+| `snap_due` — the device's clock beats the model's arithmetic | brain `screen_insight.py` | a quoted phrase the device resolved is never recomputed |
+| Two duplicated read pairs merged | brain `followups.py` | `any_muted`, `taught_notes`; covered against real Postgres |
+| A reader that goes blind says so | desktop `capture/health.rs` + panel | NFR-04: silence stops being a valid outcome |
+| P-21 attention | desktop `moments/attention.rs` | the first card about where the manager is NOT looking; zero tokens |
+
+**Dedicated Gmail / Calendar / Slack readers are deliberately NOT built.** A dedicated reader is
+accessibility paths, and `ReaderEngine`'s own comment says they are written from real trees
+recorded by `scripts/measure.sh`. Guessing selectors would ship a reader that silently shadows the
+generic one and returns nothing — the exact failure `capture/health.rs` now exists to catch. What
+those readers were *for* — participants and timestamps — was obtained deterministically instead,
+from text the generic reader already sends. The readers themselves wait for the Accessibility
+grant.
+
+**The remaining round trips are left alone, on purpose.** At a 10 ms round trip one instant check
+spends roughly 250 ms in the database against a 1.5–3 s model call — about a tenth of it. Merging
+the other eight reads into one CTE would touch the visibility, verdict and mute rules to save
+that tenth. The two pairs that WERE merged were duplicates of each other, which is a different
+thing. Revisit if the pooler RTT is ever measured above ~25 ms.
+
+**Still open:** the other three zero-LLM cards (ask priority, who-owns-X, post-meeting
+follow-ups); who-owns-X needs task ownership in the slice, which needs Linear or Jira. WhatsApp
+Web's thread key (its URL carries no route and its tab title is `(3) WhatsApp` — it needs the
+dedicated reader). Quiet-hours *windows* are enforced server-side but not on device-made advice;
+the device sees DND and pause, not the configured window, and the capture policy does not carry
+it yet.
 
 ## 4 · Definition of done (wave 1)
 
