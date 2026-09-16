@@ -373,6 +373,41 @@ _PARTY_THREAD_OBJECTIVES = (
     "where e.org_id = :o and e.edge_type = 'corresponded_with' and e.valid_to is null"
 )
 
+#: PROMISES NOTHING TIES TO A MESSAGE. One row per commitment-carrying subject whose facts have
+#: NEITHER a `created_by_event_id` NOR a `graph_source_refs` row — not one of them, on any field.
+#:
+#: A `deterministic_derived` fact having no event is correct and expected: it was computed, not
+#: observed, and the pipeline writes its provenance as a source ref instead. A subject with
+#: neither is a promise that cannot be traced to anything anybody said. Measured on the pilot:
+#: 21 `commitment` nodes and 6 `company` nodes reach `read_overdue_commitments` in that state,
+#: and 10 prescriptive cards were minted on them.
+#:
+#: WHERE THEY CAME FROM, and why this is a guard and not a cleanup. Those 21 nodes carry four
+#: facts and nothing else — `action`, `due_at`, `days_overdue`, `owed_to`, every one of them
+#: `deterministic_derived` — and their display names carry this reading's own headline suffix
+#: TWICE: "confirm availability for a meeting — promise past due — promise past due". They are
+#: this reading's output, read back as its input. `anchor_node_type`'s `reading:` namespacing
+#: closed that loop, and the closure is measured: 37 doubled names exist, 0 tripled, across 418
+#: situation computations since the last write to one. The residue stays live, though, and
+#: nothing stopped a reading from anchoring on a promise with no origin — which is the property
+#: this guard states, so that a future loop cannot mint a card before anybody notices it opened.
+#:
+#: `sum(case when ...)` rather than `count(*) filter`, because this file's queries run against
+#: SQLite in tests and Postgres in production and FILTER is not portable to every SQLite this
+#: repo is built on.
+_UNTRACEABLE_COMMITMENTS = (
+    "select f.subject_node_id as node_id "
+    "  from graph_facts f "
+    " where f.org_id = :o and f.status = 'active' and f.valid_to is null "
+    "   and f.field like 'commitment.%' "
+    " group by f.subject_node_id "
+    "having sum(case when f.created_by_event_id is not null then 1 else 0 end) = 0 "
+    "   and sum(case when exists (select 1 from graph_source_refs g "
+    "                  where g.org_id = f.org_id "
+    "                    and g.fact_version_id = f.fact_version_id) "
+    "                then 1 else 0 end) = 0"
+)
+
 #: THREADS WHOSE COUNTERPARTY ALREADY CARRIES THE REPLY, for the reading that fires on a message
 #: of THEIRS.
 #:
@@ -834,6 +869,17 @@ def read_overdue_commitments(rows: dict, now: datetime, employers: dict) -> list
         # ours, and inferring an owner from silence is the move this module refuses everywhere.
         owner = str(held.get("_owner_key") or "").strip().lower()
         if us and owner and owner != us:
+            continue
+        # A PROMISE THE GRAPH CANNOT TRACE TO A MESSAGE IS NOT EVIDENCE THAT ONE WAS MADE.
+        # See `_UNTRACEABLE_COMMITMENTS`: every fact derived, none of them tied to anything
+        # anybody said. L3 was already refusing these downstream — all 21 sit at
+        # `verified_evidence_required` — but the situation was minted, ranked and in ten cases
+        # carded before that refusal, so the cost was paid and the founder saw promises nobody
+        # made. Refused HERE, where "we cannot show you why we believe this" is cheapest.
+        #
+        # Only on the stamp, never on its absence: an ungathered guard refuses nothing, which is
+        # the same discipline as the owner check directly above.
+        if held.get("_untraceable"):
             continue
         # A PROMISE THAT IS NO LONGER OUTSTANDING IS NOT OVERDUE, and this reading used to have
         # no way to know. `lifecycle/store.obligations_for` already filters on
@@ -1540,6 +1586,17 @@ def _gather(store, org_id: str, *, now: datetime | None = None,
             entry = held.get(str(row.thread))
             if entry is not None:
                 entry["_covered_by_party"] = str(row.party_name or "") or str(row.party)
+        # WHICH PROMISES NOTHING TIES TO A MESSAGE. Stamped NEGATIVE — the absence is what was
+        # positively determined — so that a gather which fails stamps nothing and refuses
+        # nothing. `_optional` is what makes that true rather than hopeful: a deployment without
+        # `graph_source_refs` loses this one guard and keeps every reading.
+        for node_id in _optional(c, "untraceable commitments",
+                                 lambda: [str(r.node_id) for r in
+                                          c.execute(text(_UNTRACEABLE_COMMITMENTS),
+                                                    {"o": org_id})], []):
+            entry = held.get(node_id)
+            if entry is not None:
+                entry["_untraceable"] = True
         # …and the same for the reading that fires on a message of THEIRS. A separate stamp
         # because the query above joins on `thread.days_waiting`, which is retired the instant a
         # reply lands — see `_THREAD_COVERED_BY_REPLIER`.
