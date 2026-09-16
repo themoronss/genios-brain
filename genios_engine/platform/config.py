@@ -159,6 +159,10 @@ class Settings(BaseSettings):
     # midnight (never dropped) and the seat's capture policy reports `catching_up`.
     screen_promoter_enabled: bool = True
     screen_insight_daily_cap: int = 300       # P-20: AI screen-insight checks per seat per UTC day
+    # reason/moments/screen_triage.py: refuse a screen no rule can call work BEFORE the model call
+    # (the promoter and the hourly memory batch still see it, so nothing is lost — it arrives late
+    # and at half price). Off → every screen with enough text is judged, as before.
+    screen_insight_triage_enabled: bool = True
     screen_insight_max_per_hour: int = 3      # P8 C3: screen-insight popups shown per seat per rolling hour
     screen_memory_interval_minutes: int = 60
     screen_memory_max_builds_per_day: int = 400

@@ -324,9 +324,22 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
                    (`queued_for_brief`)."""
     from genios_engine.reason.moments import followups as F
     from genios_engine.reason.moments import screen_insight as SI
+    from genios_engine.reason.moments import screen_triage as T
     screen = SI.visible_text(body.visible_messages)
     if len(screen) < SI.MIN_TEXT_CHARS:
         return Response(status_code=_NO_CONTENT)
+    # Free before paid: a screen no rule can call work does not buy a model call. It still
+    # reaches the promoter and the hourly memory batch, which judges work / personal itself —
+    # late and at half price instead of instantly and dear. Counted, never silent.
+    if getattr(get_settings(), "screen_insight_triage_enabled", True):
+        why = T.skip_reason(app=body.surface.app, bundle_id=body.surface.bundle_id,
+                            url_domain=body.surface.url_domain,
+                            thread_key=body.surface.thread_key,
+                            entities=body.features.entities, participants=body.participants)
+        if why is not None:
+            SI.note_skipped(engine, org_id=p.org_id, seat_id=p.seat_id, now=now)
+            _log.info("screen insight skipped org=%s seat=%s why=%s", p.org_id, p.seat_id, why)
+            return Response(status_code=_NO_CONTENT)
     moment_id = M.server_moment_id(p.seat_id, body.moment_request_id)
     digest = SI.text_digest(screen)
     thread = (body.surface.thread_key or "").strip() or None

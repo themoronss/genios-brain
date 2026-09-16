@@ -47,6 +47,9 @@ CAPABILITY_VERSION = "4"
 TIMEOUT_S = 3.5
 TTL_SECONDS = 600
 COUNTER_KIND = "screen_insight"
+#: Screens a rule refused before any spend (`screen_triage`). Counted, never silent: the 14 Sep
+#: lesson was that a limit which hides a seat's data is worse than the cost it saves.
+SKIPPED_KIND = "screen_insight_skipped"
 DEFAULT_DAILY_CAP = 300
 MAX_TEXT_CHARS = 4000
 MIN_TEXT_CHARS = 30
@@ -461,23 +464,42 @@ def reserve(engine, *, org_id: str, seat_id: str, cap: int, now: datetime) -> bo
     return True
 
 
+def note_skipped(engine, *, org_id: str, seat_id: str, now: datetime) -> None:
+    """One more screen judged by a rule instead of the model. Bookkeeping only — it never fails
+    the request, and it is what `GET /v1/capture/policy` reports as `skipped`."""
+    try:
+        with engine.begin() as c:
+            c.execute(sql(
+                "insert into rate_counters as r (scope_key, kind, window_start, count) "
+                "values (:k, :kind, :d, 1) on conflict (scope_key, kind, window_start) "
+                "do update set count = r.count + 1"),
+                {"k": f"{org_id}:{seat_id}", "kind": SKIPPED_KIND,
+                 "d": now.astimezone(timezone.utc).date()})
+    except Exception:      # noqa: BLE001 — a counter never fails an insight
+        _log.info("screen insight: skip not counted org=%s", org_id)
+
+
 def budget(engine, *, org_id: str, seat_id: str, cap: int, now: datetime) -> dict:
     """P10: today's checks for the capture policy's `insight_budget` — `{"used", "cap",
     "resets_at"}` (UTC day, reset at the next UTC midnight). A failed read is 0 used."""
     day = now.astimezone(timezone.utc).date()
-    used = 0
+    used = skipped = 0
     if engine is not None:
         try:
             with engine.connect() as c:
-                used = int(c.execute(sql(
-                    "select count from rate_counters where scope_key = :k and kind = :kind "
-                    "and window_start = :d"),
-                    {"k": f"{org_id}:{seat_id}", "kind": COUNTER_KIND, "d": day}).scalar() or 0)
+                rows = {r.kind: int(r.count or 0) for r in c.execute(sql(
+                    "select kind, count from rate_counters where scope_key = :k "
+                    "and (kind = :used_kind or kind = :skipped_kind) and window_start = :d"),
+                    {"k": f"{org_id}:{seat_id}", "used_kind": COUNTER_KIND,
+                     "skipped_kind": SKIPPED_KIND, "d": day})}
+            used, skipped = rows.get(COUNTER_KIND, 0), rows.get(SKIPPED_KIND, 0)
         except Exception:      # noqa: BLE001 — a budget line never fails the policy document
             _log.info("screen insight budget not read org=%s", org_id)
     resets = datetime.combine(day + timedelta(days=1), datetime.min.time(), tzinfo=timezone.utc)
     cap = max(0, int(cap or 0))
-    return {"used": min(max(0, used), cap), "cap": cap,
+    # `skipped` is not capped: it is how many screens a rule answered for free today, and a
+    # manager (or the owner) must be able to see that number rise.
+    return {"used": min(max(0, used), cap), "cap": cap, "skipped": max(0, skipped),
             "resets_at": resets.isoformat().replace("+00:00", "Z")}
 
 
@@ -605,7 +627,7 @@ def insight(engine, *, org_id: str, email: str | None, app: str | None, particip
         return None
 
 
-__all__ = ["ACTIONS", "ADDS", "budget", "CAPABILITY_ID", "CAPABILITY_VERSION", "DEFAULT_DAILY_CAP",
+__all__ = ["ACTIONS", "ADDS", "budget", "note_skipped", "SKIPPED_KIND", "CAPABILITY_ID", "CAPABILITY_VERSION", "DEFAULT_DAILY_CAP",
            "ITEM_KINDS", "MIN_TEXT_CHARS", "fix_weekday", "NOT_USEFUL_EXAMPLES", "build_prompt", "insight",
            "is_me", "judge", "local_label", "meetings_block", "memory_of", "moment_content",
            "not_useful_block", "open_items_block", "reserve", "text_digest", "visible_text",
