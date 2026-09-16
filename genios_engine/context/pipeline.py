@@ -986,6 +986,21 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             node = store.find_or_create_node(
                 conn, org_id=org_id, node_type=ntype,
                 canonical_key=key, display_name=label, event_id=event_id)
+            # AND KEEP IT CURRENT. `find_or_create_node` writes `display_name` when it CREATES a
+            # node and never again, so a person first seen on a To/Cc line — a bare address,
+            # because recipients are not described — stayed called by that address for ever, even
+            # after they had written to us a hundred times with their name in the From header.
+            #
+            # Measured on the pilot 2026-09-16: 35 of 76 person nodes displayed an address, and
+            # for 8 of them the name was already sitting in their own `source_events` rows,
+            # unused. The other 27 have never sent us anything and are correctly left alone.
+            #
+            # Promotion only while the label still restates the address, which is the rule
+            # `name_company_node` and `name_thread_node` already keep — a name from a better
+            # source must never be overwritten by a header line. Skipped when the label IS the
+            # address, so this costs a lookup only where a real name arrived.
+            if label != email and label == sender_name:
+                store.name_person_node(conn, org_id=org_id, node_id=node, name=label)
             touched[node] = ntype
             if key in internal_set:
                 internal_nodes.add(node)

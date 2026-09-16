@@ -342,6 +342,62 @@ class GraphStore:
                                event_id=event_id)
         return node_id
 
+    def name_person_node(self, conn, *, org_id: str, node_id: str,
+                         name: str | None) -> bool:
+        """Give a person node a human name, but only while it is still called after their address.
+
+        THE THIRD TWIN, and it exists for the same reason as `name_company_node` and
+        `name_thread_node`: `find_or_create_node` writes `display_name` when it CREATES a node and
+        never again. It re-registers aliases on every later sighting and leaves the label exactly
+        as the first event wrote it.
+
+        For a person that first arrival is usually a To/Cc line, which carries a bare address —
+        recipients are not described, only senders are. So somebody who was cc'd in March and has
+        written to us every week since is still called `theresa.hoffmann@antler.co` on every card,
+        while the From header of their own mail has said "Theresa Hoffmann" a hundred times.
+
+        MEASURED ON THE PILOT 2026-09-16: 35 of 76 person nodes displayed a bare address, and for
+        8 of them a From-header display name was already sitting in their own `source_events`
+        rows, unused. The remaining 27 have never sent us anything — they are named by nobody, and
+        this correctly leaves them alone.
+
+        NOTHING IS INFERRED. The caller has already matched the address to THIS node by exact key
+        equality; the name comes from `parseaddr` on the From header, not from a model and not
+        from similarity.
+
+        Promotion happens only while the display name restates the anchor. A name from anywhere
+        else — a connector, a human, an earlier and better sighting — outranks a header line and
+        must never be overwritten by one. Returns True when the node was renamed.
+        """
+        cleaned = str(name or "").strip()
+        if not cleaned:
+            return False
+        row = conn.execute(text(
+            "select canonical_key, display_name from graph_nodes "
+            "where org_id=:o and node_id=:n and valid_to is null"),
+            {"o": org_id, "n": node_id}).first()
+        if row is None:
+            return False
+        current = str(row.display_name or "").strip()
+        anchor_key = str(row.canonical_key or "").strip()
+        # Compare the rendered strings rather than carry a flag, so this is also true of every
+        # node created before the promotion existed — which is all of them.
+        if current and current.casefold() != anchor_key.casefold():
+            return False
+        if cleaned.casefold() == current.casefold():
+            return False
+        # AND THE NAME MUST NOT BE THE ADDRESS AGAIN. A From header reading
+        # `"priya@chat360.io" <priya@chat360.io>` parses to a display name that is the address,
+        # and promoting it would rewrite the label with the thing it was supposed to replace —
+        # a no-op that reports True and tells a reader the node was named.
+        if "@" in cleaned and cleaned.casefold() == anchor_key.casefold():
+            return False
+        conn.execute(text(
+            "update graph_nodes set display_name=:dn "
+            "where org_id=:o and node_id=:n and valid_to is null"),
+            {"dn": cleaned, "o": org_id, "n": node_id})
+        return True
+
     def name_company_node(self, conn, *, org_id: str, node_id: str,
                           name: str | None) -> bool:
         """Give a company node a human name, but only while it is still called after its anchor.

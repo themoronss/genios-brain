@@ -38,7 +38,12 @@ def inbound(monkeypatch):
         monkeypatch.setattr(store, "write_fact",
                             lambda *a, **kw: facts.append((kw.get("subject_node_id"),
                                                            kw.get("field"), kw.get("value"))))
-        for method in ("write_edge", "write_change"):
+        # `name_person_node` joins the list for the same reason the other two are on it: this
+        # fixture stubs every store WRITE and asserts on the facts, and `find_or_create_node` is
+        # stubbed to return the address itself as the node id — so a naming call would query
+        # `graph_nodes` for a row that this schema never creates. What the relay tests are about
+        # is which node the CONTENT lands on, which no label can change.
+        for method in ("write_edge", "write_change", "name_person_node"):
             monkeypatch.setattr(store, method, lambda *a, **kw: None)
         monkeypatch.setattr(store, "bump_version", lambda *a: 1)
         monkeypatch.setattr(store, "find_or_create_node", lambda *a, **kw: kw["canonical_key"])
