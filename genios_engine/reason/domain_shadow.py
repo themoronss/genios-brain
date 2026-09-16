@@ -795,10 +795,18 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                     # Empty for all but the contradicted few, which is the behaviour this pass had
                     # before the correlator existed.
                     contradicted_by=tuple(contradicted.get(str(row["situation_id"]), ())),
-                    # Which authored business-model overlay this situation's domain runs under.
+                    # Which authored overlay this situation's CORPUS runs under.
                     # Empty for every tenant that has declared nothing — the key is then absent
                     # from the situation's metadata and nothing re-mints.
-                    variant_ids=variants_by_domain.get(str(row.get("domain") or ""), ()))
+                    #
+                    # KEYED BY THE CORPUS DOMAIN, NOT LAYER 2'S. `variants_by_domain` is built
+                    # from `live_domains`, which are corpus ids (`customer_support`); `row["domain"]`
+                    # is Layer 2's (`support`). Looking one up with the other is the exact seam
+                    # `l3_domain_for` exists to bridge, and it silently returned `()` for every
+                    # support situation on the tenant — 33 of them — so that corpus could never
+                    # receive an overlay however it was declared. `admin` and `sales` spell the
+                    # same on both sides, which is why the miss was invisible.
+                    variant_ids=variants_by_domain.get(row_domain or "", ()))
                 current_absences = tuple(
                     absence.fact
                     for absence in absences_by_situation.get(str(row["situation_id"]), ())
