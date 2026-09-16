@@ -421,38 +421,70 @@ def thread_verdict(conn, *, org_id: str, seat_id: str, thread_key: str | None,
 
 def is_muted(conn, *, org_id: str, seat_id: str, thread_key: str | None, now: datetime) -> bool:
     """K4: is this thread's insight popup muted right now (Not useful → 7 days, Mute chat)?"""
-    if not thread_key:
+    return bool(thread_key) and any_muted(conn, org_id=org_id, seat_id=seat_id,
+                                          thread_keys=[thread_key], now=now)
+
+
+def any_muted(conn, *, org_id: str, seat_id: str, thread_keys, now: datetime) -> bool:
+    """The same question for a screen's two keys (its thread and its site) in ONE statement. A
+    screen check is a person waiting at their machine, and every statement is a round trip."""
+    keys = sorted({k for k in (thread_keys or []) if k})
+    if not keys:
         return False
+    where = " or ".join(f"thread_key = :t{i}" for i in range(len(keys)))
+    params = {"o": org_id, "s": seat_id, "now": now}
+    params.update({f"t{i}": k for i, k in enumerate(keys)})
     return conn.execute(text(
         "select 1 from screen_thread_verdicts where org_id = :o and seat_id = :s "
-        "and thread_key = :t and muted_until > :now"),
-        {"o": org_id, "s": seat_id, "t": thread_key, "now": now}).first() is not None
+        f"and ({where}) and muted_until > :now limit 1"), params).first() is not None
 
 
 def useful_notes(conn, *, org_id: str, seat_id: str, capability_id: str,
                  limit: int = NOT_USEFUL_NOTES) -> list[str]:
     """P15: the seat's last notes it marked "useful", newest first — the kind the model should
     write more of. The model's own notes, never screen text."""
-    return [r.headline for r in conn.execute(text(
-        "select m.headline from moments m join lateral (select max(f.at) as at "
-        " from moment_feedback f where f.moment_id = m.moment_id and f.action = 'useful') f on true "
-        "where m.org_id = :o and m.seat_id = :s and m.capability_id = :cap and f.at is not null "
-        "order by f.at desc limit :n"),
-        {"o": org_id, "s": seat_id, "cap": capability_id,
-         "n": max(0, int(limit))}) if r.headline]
+    return taught_notes(conn, org_id=org_id, seat_id=seat_id,
+                        capability_id=capability_id, limit=limit)["useful"]
+
+
+#: `row_number` per action, not one `limit` over both: a seat with ten kept notes and one refused
+#: note older than all of them would otherwise lose the refused one — and that one is the example
+#: the model most needs (K4).
+_TAUGHT = text(
+    "select x.action, x.headline from ("
+    " select f.action, m.headline, "
+    "  row_number() over (partition by f.action order by f.at desc) as rn "
+    " from moments m join lateral "
+    " (select fb.action, max(fb.at) as at from moment_feedback fb "
+    "  where fb.moment_id = m.moment_id and (fb.action = 'useful' or fb.action = :wrong) "
+    "  group by fb.action) f on true "
+    " where m.org_id = :o and m.seat_id = :s and m.capability_id = :cap) x "
+    "where x.rn <= :n order by x.action, x.rn")
+
+
+def taught_notes(conn, *, org_id: str, seat_id: str, capability_id: str,
+                 limit: int = NOT_USEFUL_NOTES) -> dict[str, list[str]]:
+    """Both halves of what the seat taught this capability — the notes it kept and the ones it
+    refused — newest first, in ONE statement. They came from the same two tables and the same
+    join, and a screen check paid two round trips for them."""
+    out: dict[str, list[str]] = {"useful": [], "not_useful": []}
+    n = max(0, int(limit))
+    if not n:
+        return out
+    for r in conn.execute(_TAUGHT, {"o": org_id, "s": seat_id, "cap": capability_id,
+                                    "wrong": NOT_USEFUL_ACTION, "n": n}):
+        bucket = "useful" if r.action == "useful" else "not_useful"
+        if r.headline:
+            out[bucket].append(r.headline)
+    return out
 
 
 def not_useful_notes(conn, *, org_id: str, seat_id: str, capability_id: str,
                      limit: int = NOT_USEFUL_NOTES) -> list[str]:
     """K4: the seat's last ≤ 5 insight notes it marked "not useful", newest first — the model's
     own notes (moments.headline), never screen text."""
-    return [r.headline for r in conn.execute(text(
-        "select m.headline from moments m join lateral (select max(f.at) as at "
-        " from moment_feedback f where f.moment_id = m.moment_id and f.action = :a) f on true "
-        "where m.org_id = :o and m.seat_id = :s and m.capability_id = :cap and f.at is not null "
-        "order by f.at desc limit :n"),
-        {"o": org_id, "s": seat_id, "cap": capability_id, "a": NOT_USEFUL_ACTION,
-         "n": max(0, int(limit))}) if r.headline]
+    return taught_notes(conn, org_id=org_id, seat_id=seat_id,
+                        capability_id=capability_id, limit=limit)["not_useful"]
 
 
 def verdict_lookup(engine, org_id: str, seat_id: str):

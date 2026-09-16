@@ -354,19 +354,19 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
             return prior
         judged = M.cached(c, key, now) is not None     # this exact screen was already judged
         tz = F.seat_tz(c, p.org_id, p.seat_id)
-        muted = any(F.is_muted(c, org_id=p.org_id, seat_id=p.seat_id, thread_key=t, now=now)
-                    for t in {thread, vkey} if t)
+        muted = F.any_muted(c, org_id=p.org_id, seat_id=p.seat_id,
+                            thread_keys=[thread, vkey], now=now)
         site = (F.thread_verdict(c, org_id=p.org_id, seat_id=p.seat_id, thread_key=vkey, now=now)
                 if vkey and vkey != thread else None)
         personal_site = site is not None and site["work"] is False
         # P13: an AI assistant's own chat page is the manager thinking out loud — never judged.
         assistant = F.is_assistant_page(thread)
         skip = judged or muted or personal_site or assistant
-        notes = [] if skip else F.not_useful_notes(c, org_id=p.org_id, seat_id=p.seat_id,
-                                                  capability_id=SI.CAPABILITY_ID)
-        # P15: and the ones the manager kept — the kind of note to write more of.
-        kept = [] if skip else F.useful_notes(c, org_id=p.org_id, seat_id=p.seat_id,
-                                             capability_id=SI.CAPABILITY_ID)
+        # K4 + P15: what the seat refused and what it kept — one statement, not two.
+        taught = ({"useful": [], "not_useful": []} if skip
+                  else F.taught_notes(c, org_id=p.org_id, seat_id=p.seat_id,
+                                      capability_id=SI.CAPABILITY_ID))
+        notes, kept = taught["not_useful"], taught["useful"]
         context = [] if skip else F.open_context(c, org_id=p.org_id, seat_id=p.seat_id,
                                                  thread_key=thread, screen=screen)
         me = [] if skip else F.seat_names(c, org_id=p.org_id, email=p.email)
