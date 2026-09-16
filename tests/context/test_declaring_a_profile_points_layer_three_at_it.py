@@ -31,7 +31,7 @@ pytestmark = pytest.mark.unit
 def corpus(tmp_path, monkeypatch):
     for domain, axis, slug, ident, fname in (
             ("Admin Expertise", "verticals", "ai_agency", "admin.vertical.ai_agency", "vertical.yaml"),
-            ("Admin Expertise", "personas", "cto", "admin.persona.cto", "persona.yaml")):
+            ("Admin Expertise", "roles", "cto", "admin.role.cto", "role.yaml")):
         d = tmp_path / domain / axis / slug
         d.mkdir(parents=True)
         (d / fname).write_text(f"identity:\n  id: {ident}\n")
@@ -86,7 +86,7 @@ def test_a_declaration_reaches_the_column_the_compiler_reads(corpus, monkeypatch
     _patch_activation(monkeypatch, log=log)
     store, engine = _Store(), _Engine()
 
-    out = TP.declare(engine, store, "org_1", category="ai_agency", persona="cto", by="rohit")
+    out = TP.declare(engine, store, "org_1", category="ai_agency", reader_role="cto", by="rohit")
 
     assert out["variant_ids"] == ("cto", "ai_agency"), "most specific first"
     assert log == [("admin", ("cto", "ai_agency"), "rohit")]

@@ -8,7 +8,7 @@ output. Not because it is switched off — because nothing consumed it. Traced 2
   * `rule_compiler.compile_package_rules` skips it — `artifact_class(record) != "rule"`;
   * `citations` skips it — `CITATION_CLASSES` is
     `(decision_framework, heuristic, mental_model, playbook, rule)` and a variant's kind is
-    `vertical` / `model` / `persona` / `offering`;
+    `vertical` / `model` / `role` / `offering`;
   * the playbook adapter skips it for the same reason.
 
 It reached the package as an entry in `expert_rules` and was hashed into `expert_snapshot_id`,
@@ -288,18 +288,18 @@ def test_a_branch_states_only_what_differs() -> None:
 
 
 def test_the_more_specific_branch_wins() -> None:
-    """A tenant declaring both a vertical and a persona is making two statements about itself.
+    """A tenant declaring both a vertical and a role is making two statements about itself.
     Where they touch the same words the narrower one knows more: a CTO at an AI agency reads a
     CTO's card. Order comes from `identity.kind`, not from whatever the files were named."""
     from genios_engine.packs.compiler.capability_resolver import variant_render_overlay
 
     vertical = _branch("z.vertical.agency", "vertical", {"fallback": {"headline": "vertical"}})
-    persona = _branch("a.persona.cto", "persona", {"fallback": {"headline": "persona"}})
+    role_branch = _branch("a.role.cto", "role", {"fallback": {"headline": "role"}})
     # Passed vertical-first and persona-first; the id sort would flip them, the axis sort must not.
-    assert variant_render_overlay((vertical, persona), BASE_RENDER)["fallback"]["headline"] \
-        == "persona"
-    assert variant_render_overlay((persona, vertical), BASE_RENDER)["fallback"]["headline"] \
-        == "persona"
+    assert variant_render_overlay((vertical, role_branch), BASE_RENDER)["fallback"]["headline"] \
+        == "role"
+    assert variant_render_overlay((role_branch, vertical), BASE_RENDER)["fallback"]["headline"] \
+        == "role"
 
 
 def test_a_branch_with_no_render_returns_the_base_object_itself() -> None:

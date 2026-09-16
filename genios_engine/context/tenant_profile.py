@@ -28,7 +28,7 @@ canonical exactly as it does today.
 Entrepreneur`. It answers "what are they to us". This answers "what are we", which nothing has
 ever asked.
 
-THE THREE-WAY DRIFT THIS CLOSES. A persona name appears in the vocabulary, in a corpus folder
+THE THREE-WAY DRIFT THIS CLOSES. A role name appears in the vocabulary, in a corpus folder
 name, and in `l3_activation.variant_ids`. If any two disagree the variant resolves to nothing and
 the card falls back to canonical doctrine silently — the same shape as the overlay bug that made
 one whole corpus unreachable. So the vocabulary is not maintained here at all: it is READ from the
@@ -52,7 +52,11 @@ VARIANT_AXES: dict[str, str] = {
     "model": "models",
     "vertical": "verticals",
     "offering": "offerings",
-    "persona": "personas",
+    # `role` and NOT `persona`: `objects/core/persona.yaml` already exists in the Sales corpus and
+    # means a BUYER persona. One word with two meanings in one corpus is the collision that
+    # `commitment` (pipeline node vs reading anchor) and `party.role` (the counterparty vs our own
+    # team) have each already cost this project a day.
+    "role": "roles",
 }
 
 #: The tenant-node fields a declaration writes. Each value is paired with its own `_basis`, the
@@ -60,8 +64,11 @@ VARIANT_AXES: dict[str, str] = {
 #: reader can always tell a thing somebody stated from a thing the system assumed.
 CATEGORY_FIELD = "org.category"
 CATEGORY_BASIS_FIELD = "org.category_basis"
-PERSONA_FIELD = "org.persona"
-PERSONA_BASIS_FIELD = "org.persona_basis"
+#: `org.reader_role`, not `org.role`: `orgs.role` is a PERMISSION column (admin /
+#: member) and `party.role` is free prose about a COUNTERPARTY. Three different
+#: questions; three different names.
+ROLE_FIELD = "org.reader_role"
+ROLE_BASIS_FIELD = "org.reader_role_basis"
 
 #: Only one of these is ever written by this module. There is no `inferred` arm, and that is the
 #: point — see WHAT IT REFUSES above. `unknown` exists for a declaration that was recorded before
@@ -129,15 +136,15 @@ def categories() -> tuple[str, ...]:
     return declared("vertical")
 
 
-def personas() -> tuple[str, ...]:
+def reader_roles() -> tuple[str, ...]:
     """What readers the corpus can speak as. Group B's closed set."""
-    return declared("persona")
+    return declared("role")
 
 
 def undeclared(axis: str, values) -> tuple[str, ...]:
     """Values asked for that no corpus declares — the drift, named before it is written.
 
-    A tenant switched on for a persona nobody authored resolves to nothing, and the compile falls
+    A tenant switched on for a role nobody authored resolves to nothing, and the compile falls
     back to canonical doctrine WITHOUT SAYING SO. Refusing at the point of declaration is the only
     place the mistake is still cheap.
     """
@@ -164,11 +171,11 @@ def unreachable_slugs(axis: str) -> tuple[tuple[str, str], ...]:
                         if declared_id.rsplit(".", 1)[-1] != slug))
 
 
-def profile_facts(*, category: str | None = None, persona: str | None = None,
+def profile_facts(*, category: str | None = None, reader_role: str | None = None,
                   basis: str = BASIS_DECLARED) -> tuple[tuple[str, str, str], ...]:
     """`(field, value, value_type)` for a declaration — what goes on the tenant node.
 
-    ABSENT IS NOT EMPTY. A tenant that declared no persona gets no `org.persona` fact at all,
+    ABSENT IS NOT EMPTY. A tenant that declared no role gets no `org.reader_role` fact at all,
     rather than one holding `""`. An empty string is a value a reader can act on; the absence of
     the field is the honest statement that nobody said. It is also the difference between a
     package that re-addresses and one that does not, because these facts reach the situation's
@@ -180,9 +187,9 @@ def profile_facts(*, category: str | None = None, persona: str | None = None,
     if category:
         facts.append((CATEGORY_FIELD, str(category), "enum"))
         facts.append((CATEGORY_BASIS_FIELD, basis, "enum"))
-    if persona:
-        facts.append((PERSONA_FIELD, str(persona), "enum"))
-        facts.append((PERSONA_BASIS_FIELD, basis, "enum"))
+    if reader_role:
+        facts.append((ROLE_FIELD, str(reader_role), "enum"))
+        facts.append((ROLE_BASIS_FIELD, basis, "enum"))
     return tuple(facts)
 
 
@@ -200,7 +207,7 @@ def read_profile(conn, org_id: str) -> dict[str, str]:
         "and f.status = 'active' and f.valid_to is null"),
         {"o": org_id, "k": tenant_key(org_id),
          "c": CATEGORY_FIELD, "cb": CATEGORY_BASIS_FIELD,
-         "p": PERSONA_FIELD, "pb": PERSONA_BASIS_FIELD}).fetchall()
+         "p": ROLE_FIELD, "pb": ROLE_BASIS_FIELD}).fetchall()
     return {str(row.field): str(row.value).strip('"') for row in rows}
 
 
@@ -208,7 +215,7 @@ def variant_ids_for(profile: dict[str, str]) -> tuple[str, ...]:
     """The `l3_activation.variant_ids` a declared profile implies.
 
     ORDER IS THE RESOLUTION ORDER — persona before vertical — and it is not cosmetic: the corpus
-    resolves `persona -> vertical -> model -> canonical`, most specific first, and a reader of the
+    resolves `role -> vertical -> model -> canonical`, most specific first, and a reader of the
     stored row should see the same precedence the compiler applies.
 
     A value this returns is a slug, which is what `_resolve_variants` matches on. It is NOT
@@ -218,34 +225,34 @@ def variant_ids_for(profile: dict[str, str]) -> tuple[str, ...]:
     rather than vanish from the row that records the decision.
     """
     out: list[str] = []
-    for field in (PERSONA_FIELD, CATEGORY_FIELD):
+    for field in (ROLE_FIELD, CATEGORY_FIELD):
         value = (profile.get(field) or "").strip()
         if value:
             out.append(value)
     return tuple(out)
 
 
-def answerable_domains(persona: str | None) -> frozenset[str]:
-    """Which corpus domains this persona is answerable for, from its own `answerable_for:` block.
+def answerable_domains(role: str | None) -> frozenset[str]:
+    """Which corpus domains this reader role is answerable for, from its `answerable_for:` block.
 
-    THE ONE THING RANKING NEEDS AND THE ONLY THING IT ASKS FOR. A persona file could declare a
+    THE ONE THING RANKING NEEDS AND THE ONLY THING IT ASKS FOR. A role file could declare a
     great deal about a reader; ranking reads exactly this, and reads it at the coarsest grain the
     corpus has — a domain, of which there are three — because that is the grain a human can
     actually author. There are 534 capabilities; nobody maintains a per-capability remit by hand,
     and a list nobody maintains is a list that quietly stops being true.
 
-    EMPTY MEANS "NOT STATED", AND NOT STATED MEANS NO PENALTY. A persona that declares no remit
+    EMPTY MEANS "NOT STATED", AND NOT STATED MEANS NO PENALTY. A role that declares no remit
     ranks exactly as this tenant ranks today. That is deliberate: a reader whose remit nobody
     wrote down should not have cards pushed down the brief on the strength of an omission.
 
-    Read from every corpus that authors this persona and unioned. Admin's view of a CTO and
+    Read from every corpus that authors this role and unioned. Admin's view of a CTO and
     Sales's view of a CTO are separate documents by design, and a CTO answerable for `admin` in
     one and `sales` in the other is answerable for both — the union is the reader, not either
     file's opinion of them.
     """
-    if not persona:
+    if not role:
         return frozenset()
-    directory = VARIANT_AXES["persona"]
+    directory = VARIANT_AXES["role"]
     remit: set[str] = set()
     try:
         root = corpus_root()
@@ -254,7 +261,7 @@ def answerable_domains(persona: str | None) -> frozenset[str]:
     except OSError:
         return frozenset()
     for domain_root in domains:
-        document = domain_root / directory / persona / "persona.yaml"
+        document = domain_root / directory / role / "role.yaml"
         if not document.is_file():
             continue
         try:
@@ -286,7 +293,7 @@ class UndeclaredProfileValue(ValueError):
 
 
 def declare(engine, store, org_id: str, *, category: str | None = None,
-            persona: str | None = None, by: str) -> dict[str, Any]:
+            reader_role: str | None = None, by: str) -> dict[str, Any]:
     """Record what this tenant is, and point Layer 3's branches at it. Returns what it did.
 
     THE ORDER IS FACTS FIRST, THEN THE SWITCH, and it is not arbitrary. The facts are the record
@@ -309,13 +316,13 @@ def declare(engine, store, org_id: str, *, category: str | None = None,
     """
     from genios_engine.platform.l3_activation import activated_domains, set_variants
 
-    for axis, value in (("vertical", category), ("persona", persona)):
+    for axis, value in (("vertical", category), ("role", reader_role)):
         if value:
             missing = undeclared(axis, [value])
             if missing:
                 raise UndeclaredProfileValue(axis, missing, declared(axis))
 
-    facts = profile_facts(category=category, persona=persona)
+    facts = profile_facts(category=category, reader_role=reader_role)
     written: list[str] = []
     if facts:
         with engine.begin() as conn:
@@ -346,8 +353,8 @@ def declare(engine, store, org_id: str, *, category: str | None = None,
 __all__ = [
     "UndeclaredProfileValue",
     "BASIS_DECLARED", "BASIS_UNKNOWN",
-    "CATEGORY_BASIS_FIELD", "CATEGORY_FIELD", "PERSONA_BASIS_FIELD", "PERSONA_FIELD",
+    "CATEGORY_BASIS_FIELD", "CATEGORY_FIELD", "ROLE_BASIS_FIELD", "ROLE_FIELD",
     "VARIANT_AXES",
-    "answerable_domains", "categories", "declare", "declared", "personas", "profile_facts", "read_profile",
+    "answerable_domains", "categories", "declare", "declared", "reader_roles", "profile_facts", "read_profile",
     "resolvable_slugs", "tenant_key", "undeclared", "unreachable_slugs", "variant_ids_for",
 ]

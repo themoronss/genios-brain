@@ -413,17 +413,17 @@ def daily_brief_ranking(engine, *, org_id: str, eval_time: datetime,
                         entry_cap: int = BRIEF_ENTRY_CAP) -> tuple[BookRanking, bool]:
     """Read → rank → store, in that order. The one entry point a request path calls."""
     # WHOSE BRIEF THIS IS, read once. `read_profile` returns `{}` for every tenant that has
-    # declared nothing, `answerable_domains` returns an empty set for a persona that states no
+    # declared nothing, `answerable_domains` returns an empty set for a role that states no
     # remit, and an empty set applies no penalty — so this whole seam is inert until somebody
     # declares, and inert means byte-identical to the day before.
     answerable: frozenset[str] = frozenset()
     if engine is not None:
         try:
             from genios_engine.context.tenant_profile import (
-                PERSONA_FIELD, answerable_domains, read_profile)
+                ROLE_FIELD, answerable_domains, read_profile)
             with engine.connect() as conn:
-                persona = read_profile(conn, org_id).get(PERSONA_FIELD)
-            answerable = answerable_domains(persona)
+                reader_role = read_profile(conn, org_id).get(ROLE_FIELD)
+            answerable = answerable_domains(reader_role)
         except Exception:      # noqa: BLE001 — a brief must not fail because a profile would not
             logger.exception("brief: could not read the tenant profile for org_id=%s", org_id)
     ranking = book_rank(org_id=org_id, eval_time=eval_time,

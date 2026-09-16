@@ -36,9 +36,9 @@ def corpus(tmp_path, monkeypatch):
     branch("Admin Expertise", "verticals", "ai_agency", "admin.vertical.ai_agency", "vertical.yaml")
     branch("Admin Expertise", "verticals", "saas", "admin.vertical.saas", "vertical.yaml")
     branch("Sales Expertise", "verticals", "ai_agency", "sales.vertical.ai_agency", "vertical.yaml")
-    branch("Admin Expertise", "personas", "cto", "admin.persona.cto", "persona.yaml")
+    branch("Admin Expertise", "roles", "cto", "admin.role.cto", "role.yaml")
     # THE TRAP: folder says `pm`, the id ends `product_manager`. Loaded, and unreachable by folder.
-    branch("Admin Expertise", "personas", "pm", "admin.persona.product_manager", "persona.yaml")
+    branch("Admin Expertise", "roles", "pm", "admin.role.product_manager", "role.yaml")
     (tmp_path / "_scratch").mkdir()
     monkeypatch.setattr(TP, "corpus_root", lambda: tmp_path)
     TP._axis_entries.cache_clear()
@@ -50,22 +50,22 @@ def test_the_vocabulary_is_the_corpus(corpus) -> None:
     """Not a list kept beside it. A category exists exactly when somebody authored it, and the
     same slug in two domains is ONE category, not two."""
     assert TP.categories() == ("ai_agency", "saas")
-    assert TP.personas() == ("cto", "pm")
+    assert TP.reader_roles() == ("cto", "pm")
 
 
 def test_a_value_no_corpus_declares_is_named(corpus) -> None:
-    """The drift, caught where it is still cheap. A tenant switched on for a persona nobody
+    """The drift, caught where it is still cheap. A tenant switched on for a role nobody
     authored resolves to nothing and the card silently falls back to canonical doctrine."""
     assert TP.undeclared("vertical", ["ai_agency", "law_firm"]) == ("law_firm",)
-    assert TP.undeclared("persona", ["cto"]) == ()
+    assert TP.undeclared("role", ["cto"]) == ()
 
 
 def test_a_branch_unreachable_by_its_own_folder_name_is_reported(corpus) -> None:
     """`_resolve_variants` matches a request against the full id, its last dotted segment, and the
     slugified name. A folder called `pm` whose id ends `product_manager` is authored, loaded, and
     can never be asked for by the name it sits under — the silent-fallback trap."""
-    assert TP.resolvable_slugs("persona") == ("cto",)
-    assert TP.unreachable_slugs("persona") == (("pm", "admin.persona.product_manager"),)
+    assert TP.resolvable_slugs("role") == ("cto",)
+    assert TP.unreachable_slugs("role") == (("pm", "admin.role.product_manager"),)
 
 
 def test_an_undeclared_axis_is_empty_rather_than_an_error(corpus) -> None:
@@ -75,7 +75,7 @@ def test_an_undeclared_axis_is_empty_rather_than_an_error(corpus) -> None:
 
 
 def test_absent_is_absent_and_not_an_empty_string() -> None:
-    """A tenant that declared no persona gets NO `org.persona` fact. An empty string is a value a
+    """A tenant that declared no role gets NO `org.persona` fact. An empty string is a value a
     reader can act on; the missing field is the honest statement that nobody said. It is also what
     keeps the package's content address still for a tenant that declared nothing."""
     facts = TP.profile_facts(category="ai_agency")
@@ -87,9 +87,9 @@ def test_every_declared_value_carries_its_basis() -> None:
     """The same pairing `commitment.owner`/`commitment.owner_basis` already uses: a reader must be
     able to tell a thing somebody stated from a thing the system assumed."""
     facts = dict((f[0], f[1]) for f in
-                 TP.profile_facts(category="saas", persona="cto"))
+                 TP.profile_facts(category="saas", reader_role="cto"))
     assert facts[TP.CATEGORY_BASIS_FIELD] == TP.BASIS_DECLARED
-    assert facts[TP.PERSONA_BASIS_FIELD] == TP.BASIS_DECLARED
+    assert facts[TP.ROLE_BASIS_FIELD] == TP.BASIS_DECLARED
 
 
 def test_there_is_no_inferred_basis() -> None:
@@ -100,9 +100,9 @@ def test_there_is_no_inferred_basis() -> None:
 
 
 def test_the_variant_ids_are_ordered_most_specific_first() -> None:
-    """The corpus resolves persona -> vertical -> model -> canonical. The stored row should show
+    """The corpus resolves role -> vertical -> model -> canonical. The stored row should show
     the same precedence the compiler applies, or an operator reading it is reading a lie."""
-    profile = {TP.CATEGORY_FIELD: "ai_agency", TP.PERSONA_FIELD: "cto"}
+    profile = {TP.CATEGORY_FIELD: "ai_agency", TP.ROLE_FIELD: "cto"}
     assert TP.variant_ids_for(profile) == ("cto", "ai_agency")
 
 

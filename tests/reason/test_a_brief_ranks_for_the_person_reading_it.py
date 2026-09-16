@@ -13,7 +13,7 @@ had". So this is not a fit bonus. A card inside your remit is left exactly where
 a card outside it steps down. Subtraction can only ever say "not this one, today".
 
 INERT UNTIL SOMEBODY DECLARES. `read_profile` returns `{}` for a tenant that has declared nothing,
-`answerable_domains` returns an empty set for a persona that states no remit, and an empty remit
+`answerable_domains` returns an empty set for a role that states no remit, and an empty remit
 penalises nothing. Every tenant today ranks byte-identically to the day before.
 """
 from __future__ import annotations

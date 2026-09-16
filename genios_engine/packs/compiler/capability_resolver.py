@@ -227,7 +227,7 @@ def resolve_declared_variants(catalog, domain_ids, situation) \
 
     Matching is by ALIAS across every variant document regardless of which file it came from —
     the full identifier, its last dotted segment, and the identity name slugified — so a request
-    resolves a `model`, a `vertical`, a `persona` or an `offering` without the caller naming the
+    resolves a `model`, a `vertical`, a `role` or an `offering` without the caller naming the
     axis. That is deliberate: a tenant declares what it IS, not which folder the answer lives in.
 
     AMBIGUOUS AND MISSING BOTH DEGRADE TO "NO OVERLAY", NAMED. These used to raise
@@ -287,11 +287,11 @@ def variant_never_load(variants) -> set[str]:
 
 
 #: How specific a branch is, most specific LAST so a later overlay wins a merge. A tenant that
-#: declares both a vertical and a persona is making two statements about itself, and when they
+#: declares both a vertical and a role is making two statements about itself, and when they
 #: touch the same words the narrower one is the one that knows more: a CTO at an AI agency reads
 #: a CTO's card. Ordering by `identity.kind` rather than by id keeps the merge deterministic
 #: without depending on what anybody named a file.
-_AXIS_SPECIFICITY: dict[str, int] = {"model": 0, "offering": 1, "vertical": 2, "persona": 3}
+_AXIS_SPECIFICITY: dict[str, int] = {"model": 0, "offering": 1, "vertical": 2, "role": 3}
 
 
 def _axis_rank(document) -> tuple[int, str]:
@@ -311,7 +311,7 @@ def variant_render_overlay(variants, base):
 
     DEEP MERGE, BRANCH WINS, MOST SPECIFIC LAST. A branch states only what DIFFERS — the same
     contract `vertical.yaml` already keeps for everything else, where resolution is
-    `persona -> vertical -> model -> canonical` and nothing is copied into a branch. So a vertical
+    `role -> vertical -> model -> canonical` and nothing is copied into a branch. So a vertical
     that rewords the headline and says nothing about `artifact_kind` keeps the canonical kind.
 
     A BRANCH WITH NO `render` BLOCK CHANGES NOTHING, and returns the base object unchanged rather

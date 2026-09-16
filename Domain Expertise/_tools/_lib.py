@@ -28,6 +28,12 @@ KIND_BY_FILENAME = {
     "domain.yaml": "domain",
     "model.yaml": "model",
     "vertical.yaml": "model",
+    # `role.yaml` and NOT `persona.yaml`: `objects/core/persona.yaml` already exists in the
+    # Sales corpus and means a BUYER persona, an ICP concept. One word with two meanings in one
+    # corpus is the collision `commitment` (pipeline node vs reading anchor) and `party.role`
+    # (the counterparty vs our own team) have each cost a day. Same schema as a model and a
+    # vertical: all three are a branch declaring only what differs from its parent.
+    "role.yaml": "model",
     "offering.yaml": "offering",
     "capability.yaml": "capability",
     "objects.yaml": "capability_objects",
