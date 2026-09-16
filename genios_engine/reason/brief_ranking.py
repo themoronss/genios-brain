@@ -49,16 +49,19 @@ from typing import Any
 
 from genios_engine.contracts.reasoning import BriefEntry, BriefRanking
 from genios_engine.platform.canonical import semantic_hash
+from genios_engine.platform.logging import get_logger
 from genios_engine.reason.authority import (
     AUTHORITATIVE_SIGNAL_JOINS,
     AUTHORITATIVE_SIGNAL_PREDICATE,
     authority_time,
 )
 
+logger = get_logger(__name__)
+
 #: The model's version, stored beside every ranking. The weights below are a judgement about a
 #: portfolio, not a law of arithmetic; when one changes, yesterday's brief must still say which
 #: model produced it or "the ranking moved" becomes unanswerable.
-BOOK_RANKING_VERSION = "book_ranking@1"
+BOOK_RANKING_VERSION = "book_ranking@2"   # @2: the role-mismatch subtraction
 
 #: One step per competing card on the same account, after the carrier. 1,000 bp is a tenth of the
 #: scale: enough to lose a near-tie to a different account, never enough to bury a genuinely urgent
@@ -78,6 +81,19 @@ STALENESS_CAP_BP = 2_500
 COVERAGE_STEP_BP = 400
 COVERAGE_CAP_BP = 2_000
 
+#: ONE STEP, NOT A LADDER, and it is a SUBTRACTION like the other three. A reader either is
+#: answerable for a domain or is not; there is no second card's worth of "less answerable". The
+#: module's own law is that the book pass may never RAISE a decision above what Layer 4 concluded
+#: — a bonus for a matching card would be a second scorer with opinions the Decision Maker never
+#: had — so a matching card is left exactly where Layer 4 put it and a mismatched one steps down.
+#:
+#: 1,500 bp is a seventh of the scale: below `coverage`'s 2,000 cap, so a decision built on
+#: absences is still the heavier objection, and well below `concentration`'s 3,000, so the day's
+#: portfolio shape still outranks whose desk it lands on. It is deliberately survivable — a
+#: genuinely urgent card outside your remit must still reach you, because the alternative is a
+#: system that hides an incident from a founder because a file said founders do not do incidents.
+ROLE_MISMATCH_BP = 1_500
+
 #: How many entries one brief carries. A ranking is a total order over the whole open set, but a
 #: stored artifact and a rendered surface are both bounded things; the cut is by rank, so the top of
 #: the order is never affected by where it falls.
@@ -89,6 +105,7 @@ BASE_COMPONENT = "base_utility_bp"
 CONCENTRATION_COMPONENT = "concentration_penalty_bp"
 STALENESS_COMPONENT = "staleness_penalty_bp"
 COVERAGE_COMPONENT = "coverage_penalty_bp"
+ROLE_COMPONENT = "role_mismatch_penalty_bp"
 BOOK_SCORE_COMPONENT = "book_score_bp"
 
 #: Why an open decision did not reach the brief. Recorded per drop, because a brief that silently
@@ -112,6 +129,11 @@ class OpenDecision:
     base_utility_bp: int
     surfaced_count: int = 0
     absence_count: int = 0
+    #: The card's own domain. ABOVE THE LINE because it enters the arithmetic — the role-mismatch
+    #: subtraction is defined over it — and `None` for a lane that has no domain, which takes no
+    #: penalty rather than a default one. Guessing a domain for a card that has none would push
+    #: down every legacy-lane card on a tenant that declared a persona.
+    domain: str | None = None
     # ── provenance; never arithmetic ────────────────────────────────────────────────────────
     card_id: str | None = None
     subject_node_id: str | None = None
@@ -189,7 +211,8 @@ def concentration_penalties(decisions: Sequence[OpenDecision]) -> dict[str, int]
 
 
 def book_rank(*, org_id: str, eval_time: datetime, decisions: Sequence[OpenDecision],
-              entry_cap: int = BRIEF_ENTRY_CAP) -> BookRanking:
+              entry_cap: int = BRIEF_ENTRY_CAP,
+              answerable_for: frozenset[str] | None = None) -> BookRanking:
     """The one deterministic executive pass. Pure: no clock, no database, no model.
 
     Ordering is `(-book_score_bp, decision_id)` and ranks are contiguous from one — enforced twice,
@@ -214,13 +237,21 @@ def book_rank(*, org_id: str, eval_time: datetime, decisions: Sequence[OpenDecis
         staleness_bp = _stepped(decision.surfaced_count - 1 if decision.surfaced_count else 0,
                                 STALENESS_STEP_BP, STALENESS_CAP_BP)
         coverage_bp = _stepped(decision.absence_count, COVERAGE_STEP_BP, COVERAGE_CAP_BP)
+        # A remit nobody declared applies no penalty to anything — see `ROLE_MISMATCH_BP`. The
+        # component is OMITTED rather than written as zero, on this file's own omit-when-empty
+        # rule: a tenant that has declared no persona stores byte-identically to the day before,
+        # and `rank_components` stays a record of what actually moved the entry.
+        role_bp = (ROLE_MISMATCH_BP
+                   if answerable_for and decision.domain
+                   and decision.domain not in answerable_for else 0)
         book_score = max(0, decision.base_utility_bp
-                         - concentration_bp - staleness_bp - coverage_bp)
+                         - concentration_bp - staleness_bp - coverage_bp - role_bp)
         components = {
             BASE_COMPONENT: decision.base_utility_bp,
             CONCENTRATION_COMPONENT: concentration_bp,
             STALENESS_COMPONENT: staleness_bp,
             COVERAGE_COMPONENT: coverage_bp,
+            **({ROLE_COMPONENT: role_bp} if role_bp else {}),
             BOOK_SCORE_COMPONENT: book_score,
         }
         receipt = {
@@ -265,7 +296,7 @@ _SURFACED_KIND = "card.surfaced"
 
 _OPEN_DECISIONS_SQL = (
     "select ro.decision_core->>'contract_decision_id' as decision_id, "
-    "rr.run_id as run_id, k.card_id, k.headline, s.subject_node_id, "
+    "rr.run_id as run_id, k.card_id, k.headline, s.subject_node_id, k.domain, "
     "selected_rc.final_utility_bp as base_utility_bp, "
     "coalesce(jsonb_array_length(ro.missing_data), 0) as absence_count, "
     "(select count(*) from card_events ce where ce.org_id=k.org_id and ce.card_id=k.card_id "
@@ -306,6 +337,7 @@ def open_decisions(engine, *, org_id: str, eval_time: datetime) -> tuple[OpenDec
         base_utility_bp=int(row["base_utility_bp"]),
         surfaced_count=int(row["surfaced_count"] or 0),
         absence_count=int(row["absence_count"] or 0),
+        domain=(str(row["domain"]) if row["domain"] else None),
         card_id=row["card_id"], subject_node_id=row["subject_node_id"],
         headline=row["headline"], run_id=row["run_id"],
     ) for row in rows)
@@ -380,16 +412,30 @@ def _json(value: Any) -> str:
 def daily_brief_ranking(engine, *, org_id: str, eval_time: datetime,
                         entry_cap: int = BRIEF_ENTRY_CAP) -> tuple[BookRanking, bool]:
     """Read → rank → store, in that order. The one entry point a request path calls."""
+    # WHOSE BRIEF THIS IS, read once. `read_profile` returns `{}` for every tenant that has
+    # declared nothing, `answerable_domains` returns an empty set for a persona that states no
+    # remit, and an empty set applies no penalty — so this whole seam is inert until somebody
+    # declares, and inert means byte-identical to the day before.
+    answerable: frozenset[str] = frozenset()
+    if engine is not None:
+        try:
+            from genios_engine.context.tenant_profile import (
+                PERSONA_FIELD, answerable_domains, read_profile)
+            with engine.connect() as conn:
+                persona = read_profile(conn, org_id).get(PERSONA_FIELD)
+            answerable = answerable_domains(persona)
+        except Exception:      # noqa: BLE001 — a brief must not fail because a profile would not
+            logger.exception("brief: could not read the tenant profile for org_id=%s", org_id)
     ranking = book_rank(org_id=org_id, eval_time=eval_time,
                         decisions=open_decisions(engine, org_id=org_id, eval_time=eval_time),
-                        entry_cap=entry_cap)
+                        entry_cap=entry_cap, answerable_for=answerable)
     return ranking, store_ranking(engine, ranking, computed_at=eval_time)
 
 
 __all__ = ["BASE_COMPONENT", "BOOK_RANKING_VERSION", "BOOK_SCORE_COMPONENT", "BRIEF_ENTRY_CAP",
            "CONCENTRATION_CAP_BP", "CONCENTRATION_COMPONENT", "CONCENTRATION_STEP_BP",
            "COVERAGE_CAP_BP", "COVERAGE_COMPONENT", "COVERAGE_STEP_BP", "DROPPED_BELOW_CAP",
-           "DROPPED_DUPLICATE", "STALENESS_CAP_BP", "STALENESS_COMPONENT", "STALENESS_STEP_BP",
+           "DROPPED_DUPLICATE", "ROLE_COMPONENT", "ROLE_MISMATCH_BP", "STALENESS_CAP_BP", "STALENESS_COMPONENT", "STALENESS_STEP_BP",
            "BookRanking", "OpenDecision", "book_rank", "brief_date_key",
            "concentration_penalties", "daily_brief_ranking", "open_decisions", "store_ranking",
            "stored_ranking"]

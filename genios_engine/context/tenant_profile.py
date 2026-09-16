@@ -225,6 +225,49 @@ def variant_ids_for(profile: dict[str, str]) -> tuple[str, ...]:
     return tuple(out)
 
 
+def answerable_domains(persona: str | None) -> frozenset[str]:
+    """Which corpus domains this persona is answerable for, from its own `answerable_for:` block.
+
+    THE ONE THING RANKING NEEDS AND THE ONLY THING IT ASKS FOR. A persona file could declare a
+    great deal about a reader; ranking reads exactly this, and reads it at the coarsest grain the
+    corpus has — a domain, of which there are three — because that is the grain a human can
+    actually author. There are 534 capabilities; nobody maintains a per-capability remit by hand,
+    and a list nobody maintains is a list that quietly stops being true.
+
+    EMPTY MEANS "NOT STATED", AND NOT STATED MEANS NO PENALTY. A persona that declares no remit
+    ranks exactly as this tenant ranks today. That is deliberate: a reader whose remit nobody
+    wrote down should not have cards pushed down the brief on the strength of an omission.
+
+    Read from every corpus that authors this persona and unioned. Admin's view of a CTO and
+    Sales's view of a CTO are separate documents by design, and a CTO answerable for `admin` in
+    one and `sales` in the other is answerable for both — the union is the reader, not either
+    file's opinion of them.
+    """
+    if not persona:
+        return frozenset()
+    directory = VARIANT_AXES["persona"]
+    remit: set[str] = set()
+    try:
+        root = corpus_root()
+        domains = sorted(d for d in root.iterdir()
+                         if d.is_dir() and not d.name.startswith("_"))
+    except OSError:
+        return frozenset()
+    for domain_root in domains:
+        document = domain_root / directory / persona / "persona.yaml"
+        if not document.is_file():
+            continue
+        try:
+            import yaml
+
+            data = yaml.safe_load(document.read_text()) or {}
+        except Exception:      # noqa: BLE001 — one unreadable branch, not the whole remit
+            continue
+        if isinstance(data, dict):
+            remit.update(str(value) for value in (data.get("answerable_for") or ()))
+    return frozenset(remit)
+
+
 class UndeclaredProfileValue(ValueError):
     """A category or persona no corpus authors. Refused at the declaration, never stored.
 
@@ -305,6 +348,6 @@ __all__ = [
     "BASIS_DECLARED", "BASIS_UNKNOWN",
     "CATEGORY_BASIS_FIELD", "CATEGORY_FIELD", "PERSONA_BASIS_FIELD", "PERSONA_FIELD",
     "VARIANT_AXES",
-    "categories", "declare", "declared", "personas", "profile_facts", "read_profile",
+    "answerable_domains", "categories", "declare", "declared", "personas", "profile_facts", "read_profile",
     "resolvable_slugs", "tenant_key", "undeclared", "unreachable_slugs", "variant_ids_for",
 ]
