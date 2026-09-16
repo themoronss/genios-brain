@@ -509,7 +509,7 @@ def detect_conflicts(claims: Iterable[NormalizedClaim], *, detected_at: datetime
     every ordering falls back to ``claim_id``. Groups are visited sorted by
     ``(subject_key, field)`` so which conflicts survive a cap is stable rather than dict-order.
 
-    Two admissibility rules run before anything is compared:
+    Three admissibility rules run before anything is compared:
 
     * **D3 — an unverified receipt is not a side of a disagreement.** ``is_admissible`` carries
       the reasoning; the effect here is that a claim ALG-08 could not locate in its source is
@@ -520,6 +520,11 @@ def detect_conflicts(claims: Iterable[NormalizedClaim], *, detected_at: datetime
       the founder loses twenty-four honest cards to one noisy vendor and is told, falsely, that
       the vendor is what all of them were about. Each subject now gets its own budget and its
       own tally, so a storm stays inside the subject that is storming.
+    * **D5 — a group that does not span two events is not a disagreement.** A subject key is
+      `{thread}:{field_family}`, so one email offering three meeting slots arrived as a three-way
+      conflict about "the" date. 77 of the pilot's 97 conflicts were this, they held 27 situations
+      at `conflict_open`, and they could never clear: claims from one event share an authority
+      rank and an `asserted_at`, so there is nothing for `_resolve` to choose between.
     """
     require_aware(detected_at, "detected_at")
     if max_conflicts < 1:
@@ -537,6 +542,32 @@ def detect_conflicts(claims: Iterable[NormalizedClaim], *, detected_at: datetime
         members = groups[(subject_key, field_name)]
         if len(members) < 2:
             continue                       # one claim is a fact, not a disagreement
+        # D5 — ONE SOURCE STATING SEVERAL THINGS IS NOT A SOURCE CONTRADICTING ITSELF.
+        #
+        # A subject key is `{thread}:{field_family}`, so every date in a thread shares one key by
+        # construction. An email offering three meeting slots — "Tue, Jul 7 · Wed, Jul 8 ·
+        # Thu, Jul 9" — therefore arrived here as a three-way disagreement about "the" date, and
+        # one whose sent-header timestamp competed with the time it proposed.
+        #
+        # MEASURED ON THE PILOT 2026-09-16: 77 of 97 stored conflicts had every claim from ONE
+        # event. They held 27 situations at `conflict_open` in Layer 3 — a gate that is right to
+        # refuse a situation built on a contradicted claim, refusing on contradictions that were
+        # never there.
+        #
+        # AND THEY COULD NEVER CLEAR. Claims from one event share an authority rank and an
+        # `asserted_at`, so `_resolve` has nothing to choose between them and every one of the 77
+        # resolved `unresolved_surface_both`. Not a slow path to a decision — no path at all.
+        #
+        # This is the rule the module already describes and did not enforce: `Claim.event_id`
+        # exists, in its own words, "so a conflict can be shown to span two events, which is the
+        # property the headline fixture exists to prove". The batch spans events by design; a
+        # GROUP that does not span them is not what ALG-12 was written to find.
+        #
+        # DISTINCT AND NON-EMPTY. A claim carrying no event id names no source, and two claims
+        # that both name none have not been shown to come from two — the same reading `is_
+        # admissible` takes of a receipt that cannot be located.
+        if len({claim.event_id for claim in members if (claim.event_id or "").strip()}) < 2:
+            continue
         clusters = _cluster(members)
         if len(clusters) < 2:
             continue                       # step 3: they agree after normalization
