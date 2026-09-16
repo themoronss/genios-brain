@@ -832,14 +832,22 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
             retention["screen_capture"] = "error"
         # P3 hot lane: realtime events after 7 days; expired moment cache rows; moments on their
         # org's capture retention clock. Same heartbeat, no Celery beat.
-        try:
-            from genios_engine.platform.realtime import purge_expired as purge_realtime
-            from genios_engine.reason.moments.store import purge_expired as purge_moments
-            retention["realtime_events"] = purge_realtime(_graph.engine, now=now)
-            retention["moments"] = purge_moments(_graph.engine, now=now)
-        except Exception:                                    # noqa: BLE001 — never kill the heartbeat
-            _log.exception("retention purge failed for moments / realtime_events")
-            retention["moments"] = "error"
+        # ONE GUARD EACH, BECAUSE ONE GUARD BLAMED THE WRONG PASS. Both purges shared a `try` and
+        # `realtime_events` ran first, so a failure there recorded `moments: "error"` and left
+        # `realtime_events` absent entirely — the heartbeat reported the wrong pass broken and
+        # said nothing about the one that was. An operator reading that would go looking in the
+        # moments store for a fault that was never there.
+        for _name, _load in (
+                ("realtime_events",
+                 lambda: __import__("genios_engine.platform.realtime", fromlist=["purge_expired"])),
+                ("moments",
+                 lambda: __import__("genios_engine.reason.moments.store",
+                                    fromlist=["purge_expired"]))):
+            try:
+                retention[_name] = _load().purge_expired(_graph.engine, now=now)
+            except Exception:                                # noqa: BLE001 — never kill the heartbeat
+                _log.exception("retention purge failed for %s", _name)
+                retention[_name] = "error"
         # expertise_packages, and this one is not theoretical: it reached 995 MB — 67% of the whole
         # database — and took the project over its disk quota into read-only, which stops every
         # write the product makes. Content-addressing (see contracts/domain_expertise.py) stops the
