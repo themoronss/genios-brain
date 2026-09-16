@@ -172,6 +172,24 @@ the other eight reads into one CTE would touch the visibility, verdict and mute 
 that tenth. The two pairs that WERE merged were duplicates of each other, which is a different
 thing. Revisit if the pooler RTT is ever measured above ~25 ms.
 
+## 3b · Wave 3 — what was worth adding, and what was not
+
+Checked before building, to avoid shipping decoration:
+
+| Candidate | Verdict |
+|---|---|
+| **"Already handled"** | **Built.** Closing a right-but-invisible card with Done let the product claim a save it did not cause (`nudged_then_closed`); closing it with Not useful muted the topic for a week and taught the model to stop writing that kind of note. It now has its own resolution and feedback action (migration 0165), counts toward asks answered / promises kept, never toward `nudged_then_closed`, and reports `handled_elsewhere` — the source-coverage gap. |
+| Weekly report screen | **Already built** — the panel's "This week" tab, with the "Closed after a nudge" tile. The reference architecture lists it as missing; it is not. |
+| Ask response priority (#3) | **Already built** — `buildRows` orders open items by due, undated last, and the panel splits urgent from later. |
+| Panel ordering (cards above items) | **Not changed.** Both halves are already split by urgency; re-ordering within it would be second-guessing a product decision from the code alone. |
+| Post-meeting follow-ups (#14) | **Not built.** Those items are already in the panel, due-ordered. Grouping them by meeting is decoration, not a new answer. |
+| Who owns X (#13), cross-app (#8), vendor comparison (#9), document decision (#5) | **Not built.** They need task ownership (Linear / Jira) or a policy registry. Built today they would render "(unknown)". These are a connector project, not a card project — with the connector, their logic is a join, not a model call. |
+| **"This is work" override** | **Not built, and it should be.** A site judged personal goes quiet for 24 h with no recourse and no sign it happened. The blocker is honest: the desktop panel has no settings surface (settings live on the website), so the button needs a brain endpoint that lists today's personal verdicts and flips one, plus the website's capture-settings page. Half of that — an endpoint with no UI — is exactly the hollow thing not to ship. |
+
+**No sixteenth card before the numbers.** Six local popup sources now compete for one 3/hour
+budget, and which of them earns its interruption is unmeasured. "This week" is the instrument;
+give it real days before adding another card.
+
 **Still open:** the other three zero-LLM cards (ask priority, who-owns-X, post-meeting
 follow-ups); who-owns-X needs task ownership in the slice, which needs Linear or Jira. WhatsApp
 Web's thread key (its URL carries no route and its tab title is `(3) WhatsApp` — it needs the
