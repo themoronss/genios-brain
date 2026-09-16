@@ -63,7 +63,8 @@ from genios_engine.context.derived_provenance import load_event_receipts, write_
 from genios_engine.context.correlation_membership import declare_finding_events
 from genios_engine.context.domain_spec import domains_declaring, spec_for
 from genios_engine.context.periodic import WINDOW_DAYS
-from genios_engine.context.situations import (
+from genios_engine.context.situations import (  # noqa: I001
+    unmet_source_families,
     SITUATION_STATUS_ON_CONFLICT,
     COVERAGE_UNKNOWN,
     RESOLVED_BY_FACT,
@@ -1555,6 +1556,11 @@ def refresh_support_situations(store, org_id: str, *, now: datetime | None = Non
     if not domains:
         return 0
     desk = gather(store, org_id, now=now, policy=policy or ResponsePolicy())
+    #: ONE `source_coverage` READ PER DOMAIN PER SWEEP, not one per situation. The table
+    #: holds four rows for a tenant and this loop runs over every finding of every
+    #: reading; a read inside it would be the per-situation shape
+    #: `docs/plans/PERFORMANCE_HARDENING.md` records taking a pass past thirty minutes.
+    _unmet: dict[str, tuple[str, ...]] = {}
     written = 0
 
     with store.engine.begin() as c:
@@ -1599,6 +1605,13 @@ def refresh_support_situations(store, org_id: str, *, now: datetime | None = Non
                     # here that was not already known.
                     declare_finding_events(c, org_id=org_id, finding=f, correlation_id=corr)
                     coverage, gaps = _coverage(domain, stype, present, f.coverage_cap_pct)
+                    # AND WHY IT IS HELD, when the reason is a source nobody connected.
+                    # `source_coverage_insufficient` is a correct refusal and was an
+                    # invisible one: 18 situations on the pilot were held on it and 0 of
+                    # 18 named the family. One read per domain per sweep, memoised below.
+                    for _family in _unmet.setdefault(
+                            domain, unmet_source_families(c, org_id, domain)):
+                        gaps = [*gaps, f"a {_family} source, which is not connected"]
                     fresh, fresh_known = freshness_score(last_seen_at=f.last_seen_at, now=now)
                     identity = identity_score(
                         open_merge_proposals=desk.merge_pressure.get(

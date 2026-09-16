@@ -42,7 +42,8 @@ from sqlalchemy import bindparam, text
 from genios_engine.context.derived_provenance import load_event_receipts
 from genios_engine.context.domain_spec import domains_declaring, spec_for
 from genios_engine.context.vocabulary import owner_basis
-from genios_engine.context.situations import (
+from genios_engine.context.situations import (  # noqa: I001
+    unmet_source_families,
     evidence_score,
     freshness_score,
     identity_score,
@@ -1720,6 +1721,11 @@ def refresh_state_situations(store, org_id: str, *, now: datetime | None = None,
     # The readings below all return `[]` on an empty `held`, so the loop costs one pass and the
     # `_reconcile` at the bottom does what it was written for.
 
+    #: ONE `source_coverage` READ PER DOMAIN PER SWEEP, not one per situation. The table
+    #: holds four rows for a tenant and this loop runs over every finding of every
+    #: reading; a read inside it would be the per-situation shape
+    #: `docs/plans/PERFORMANCE_HARDENING.md` records taking a pass past thirty minutes.
+    _unmet: dict[str, tuple[str, ...]] = {}
     written = 0
     with store.engine.begin() as c:
         for anchor, reader in READINGS:
@@ -1787,6 +1793,13 @@ def refresh_state_situations(store, org_id: str, *, now: datetime | None = None,
                     _declare_finding_events(
                         c, org_id=org_id, finding=finding, correlation_id=corr)
                     coverage, gaps = _coverage(domain, stype, present, 100)
+                    # AND WHY IT IS HELD, when the reason is a source nobody connected.
+                    # `source_coverage_insufficient` is a correct refusal and was an
+                    # invisible one: 18 situations on the pilot were held on it and 0 of
+                    # 18 named the family. One read per domain per sweep, memoised below.
+                    for _family in _unmet.setdefault(
+                            domain, unmet_source_families(c, org_id, domain)):
+                        gaps = [*gaps, f"a {_family} source, which is not connected"]
                     last_at = getattr(stats, "last_at", None)
                     fresh, fresh_known = freshness_score(last_seen_at=last_at, now=now)
                     _upsert(c, org_id=org_id, corr=corr, node_id=node_id, stype=stype,

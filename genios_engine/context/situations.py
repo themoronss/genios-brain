@@ -286,6 +286,58 @@ SITUATION_STATUS_ON_CONFLICT = (
 COVERAGE_UNKNOWN = -1
 
 
+def unmet_source_families(conn, org_id: str, domain: str | None) -> tuple[str, ...]:
+    """The source families this domain needs and the tenant has not connected.
+
+    WHY A CARD SHOULD SAY THIS. `source_coverage_insufficient` holds a candidate whose domain
+    requires complete coverage while a required family is missing, and that refusal is correct — a
+    card asserting completeness on a tenant with no system of record for the claim is exactly the
+    overclaim the gate stops. But the card never said WHICH system.
+
+    MEASURED ON THE PILOT 2026-09-16, a tenant with `gmail` and `gcal` connected and nothing else:
+
+        admin        required [finance, communication]  connected [calendar, communication]
+        sales        required [communication, crm]      connected [calendar, communication]
+        fundraising  required [communication]           connected [calendar, communication]  READY
+
+    So `admin` waits on a finance source and `sales` on a CRM. 18 situations were held on that and
+    **0 of 18** named a source family anywhere in `missing` — they listed fact-level gaps like
+    "condition.predicate" and "public holidays and coverage handovers", none of which is the
+    reason the card was actually held.
+
+    IT READS AND NEVER WRITES. Which sources a tenant connects is their decision with its own
+    route; a reader that could mark a domain covered would be asserting that a system exists.
+
+    `()` FOR A DOMAIN NOBODY MEASURED, deliberately. Never-assessed and under-connected are
+    different states and only the second is a statement about the tenant — the same distinction
+    `capture.pipeline.coverage_verdict` keeps when it answers `None` rather than False for an
+    event it could not classify.
+    """
+    if not domain:
+        return ()
+    try:
+        row = conn.execute(text(
+            "select required, connected from source_coverage "
+            "where org_id = :o and domain = :d limit 1"),
+            {"o": org_id, "d": str(domain)}).first()
+    except Exception:      # noqa: BLE001 — a sentence is never worth the sweep
+        return ()
+    if row is None:
+        return ()
+
+    def _families(value) -> set[str]:
+        if isinstance(value, str):
+            try:
+                value = json.loads(value)
+            except ValueError:
+                return set()
+        return {str(v) for v in value} if isinstance(value, (list, tuple)) else set()
+
+    # Ordered, because this reaches a card's `missing` list and that list is compared between
+    # sweeps — an unstable order makes an unchanged card look changed.
+    return tuple(sorted(_families(row[0]) - _families(row[1])))
+
+
 def coverage_is_known(score: int) -> bool:
     """Whether a coverage number means anything. Gates must consult this before trusting it."""
     return score != COVERAGE_UNKNOWN
