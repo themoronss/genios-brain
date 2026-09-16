@@ -1636,7 +1636,7 @@ def refresh_support_situations(store, org_id: str, *, now: datetime | None = Non
             for domain, live in minted.items():
                 written += _reconcile(c, org_id=org_id,
                                       stype=spec_for(domain).type_for(anchor),
-                                      live=live, now=now)
+                                      domain=domain, live=live, now=now)
     return written
 
 
@@ -1693,24 +1693,44 @@ def _upsert(conn, *, org_id: str, corr: str, node_id: str, stype: str, domain: s
          "first": first_seen or now, "last": last_seen or now})
 
 
-def _reconcile(conn, *, org_id: str, stype: str, live: set[str], now: datetime) -> int:
+def _reconcile(conn, *, org_id: str, stype: str, domain: str, live: set[str],
+               now: datetime) -> int:
     """Close the rows this sweep no longer finds, as RESOLVED BY FACT.
 
     By fact rather than by a human, so it un-resolves by itself if the finding returns — the
     system should not need somebody to undo a conclusion it drew from data that has since
     changed. This is what closes an aging item when its loop closes, an escalation when a new
     name appears on the thread, and a workaround when a fix email lands.
+
+    THE SELECT IS SCOPED BY DOMAIN, AND THAT IS NOT DEFENSIVE. The caller loops
+    `for domain, live in minted.items()`, so `live` holds only ids ending `_{domain}` — while a
+    `situation_type` is shared by every domain whose spec maps this anchor to the same name.
+    Without the domain in the WHERE, reconciling domain A reads B's rows too, finds none of them
+    in A's live set, and resolves them; B's pass then does the same to A's. Two domains claiming
+    one anchor would annihilate each other's situations every sweep, by fact, with no trace.
+
+    Not observed on the design-partner tenant — checked 2026-09-16, no `situation_type` there is
+    claimed by more than one domain, which is why it has never fired — and `domains_declaring`
+    exists precisely so that an anchor CAN be claimed by several. The first tenant to use it would
+    have found this with resolved cards.
     """
     rows = conn.execute(text(
         "select correlation_id from context_situations "
-        "where org_id=:o and situation_type=:st and status=:active"),
-        {"o": org_id, "st": stype, "active": STATUS_ACTIVE}).fetchall()
+        "where org_id=:o and situation_type=:st and domain=:dom and status=:active"),
+        {"o": org_id, "st": stype, "dom": domain,
+         "active": STATUS_ACTIVE}).fetchall()
     stale = [r.correlation_id for r in rows if r.correlation_id not in live]
     if not stale:
         return 0
+    # `in :ids` with an expanding bindparam, not `= any(:ids)`. The array form is Postgres-only,
+    # so this UPDATE could not run under the SQLite the unit tests use — the SELECT above was
+    # reachable and the write was not, which is how the cross-domain scoping defect sat here
+    # untested. `correlation_membership` already binds this way for the same reason. `stale` is
+    # non-empty by the guard above, so the expansion always has something to expand to.
     return conn.execute(text(
         "update context_situations set status=:resolved, resolved_by=:by, resolved_at=:now, "
-        "  computed_at=:now where org_id=:o and correlation_id = any(:ids)"),
+        "  computed_at=:now where org_id=:o and correlation_id in :ids"
+    ).bindparams(bindparam("ids", expanding=True)),
         {"o": org_id, "ids": stale, "resolved": STATUS_RESOLVED, "by": RESOLVED_BY_FACT,
          "now": now}).rowcount
 

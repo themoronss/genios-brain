@@ -1831,7 +1831,7 @@ def refresh_state_situations(store, org_id: str, *, now: datetime | None = None,
             for domain, live in minted.items():
                 written += _reconcile(c, org_id=org_id,
                                       stype=spec_for(domain).type_for(anchor),
-                                      live=live, now=now)
+                                      domain=domain, live=live, now=now)
     return written
 
 
