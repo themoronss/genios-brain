@@ -193,7 +193,7 @@ Checked before building, to avoid shipping decoration:
 
 | Candidate | Verdict |
 |---|---|
-| **"Already handled"** | **Built.** Closing a right-but-invisible card with Done let the product claim a save it did not cause (`nudged_then_closed`); closing it with Not useful muted the topic for a week and taught the model to stop writing that kind of note. It now has its own resolution and feedback action (migration 0165), counts toward asks answered / promises kept, never toward `nudged_then_closed`, and reports `handled_elsewhere` — the source-coverage gap. |
+| **"Already handled"** | **Built.** Closing a right-but-invisible card with Done let the product claim a save it did not cause (`nudged_then_closed`); closing it with Not useful muted the topic for a week and taught the model to stop writing that kind of note. It now has its own resolution and feedback action (migration 0174), counts toward asks answered / promises kept, never toward `nudged_then_closed`, and reports `handled_elsewhere` — the source-coverage gap. |
 | Weekly report screen | **Already built** — the panel's "This week" tab, with the "Closed after a nudge" tile. The reference architecture lists it as missing; it is not. |
 | Ask response priority (#3) | **Already built** — `buildRows` orders open items by due, undated last, and the panel splits urgent from later. |
 | Panel ordering (cards above items) | **Not changed.** Both halves are already split by urgency; re-ordering within it would be second-guessing a product decision from the code alone. |
