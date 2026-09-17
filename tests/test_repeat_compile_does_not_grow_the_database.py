@@ -94,10 +94,24 @@ def test_a_repeat_compile_does_not_mint_a_new_package(tmp_path):
     assert first.trace_id == "trace_sweep_1"
 
 
-def test_the_graph_moving_still_mints_a_new_package(tmp_path):
+def test_the_context_changing_still_mints_a_new_package(tmp_path):
     """The other half, and the one that makes the fix a fix rather than a mute button. Content
     changing MUST still produce a new package, or the compiled brain would serve stale knowledge
-    forever and this test file would be describing a worse bug than the one it closed."""
+    forever and this test file would be describing a worse bug than the one it closed.
+
+    THE FIXTURE USED TO MOVE `graph_version` AND CALL THAT CONTENT. It is not: `graph_version` is
+    the tenant's ORG-WIDE counter and it advances when any fact about any node anywhere in the
+    tenant is written, so the old fixture asserted that a package must re-address when somebody
+    else's email arrives. It passed by pinning the second clock the header describes — the same
+    churn as `trace_id` and `evaluation_time`, one field further out. Measured on the pilot
+    2026-09-16: 106 packages for 36 situations, four addresses for one of them, and the only keys
+    differing between the first and the last were `context_graph_version` (108 -> 110), the slice
+    hash it churned, and the id derived from it.
+
+    So the property is kept and the fixture is corrected: this changes what the slice actually
+    SAYS. `test_the_org_counter_alone_does_not_mint_a_new_package` below holds the other edge, so
+    neither direction can be lost.
+    """
     compiler = _compiler(tmp_path, InMemoryExpertisePublisher())
     baseline = _sweep(compiler, trace="trace_a", at=NOW)
 
@@ -105,11 +119,36 @@ def test_the_graph_moving_still_mints_a_new_package(tmp_path):
     object.__setattr__(situation, "trace_id", "trace_b")
     moved = _context()
     object.__setattr__(moved, "trace_id", "trace_b_ctx")
-    object.__setattr__(moved, "graph_version", 8)          # the graph advanced
+    object.__setattr__(moved, "facts",
+                       {**dict(moved.facts), "deal.stage": "the graph actually moved"})
+    object.__setattr__(moved, "graph_version", 8)          # as it would have, alongside
     after = compiler.compile(situation, context=moved)
 
-    assert after.id != baseline.id, "an advanced graph must mint a new package"
+    assert after.id != baseline.id, "changed context must mint a new package"
     assert after.semantic_hash != baseline.semantic_hash
+
+
+def test_the_org_counter_alone_does_not_mint_a_new_package(tmp_path):
+    """The edge the old fixture sat on, now pinned from the other side.
+
+    An unrelated tenant fact moving advances `graph_version` and nothing else. The situation's own
+    knowledge is byte-identical, so the package must be too — this is the third field, after
+    `trace_id` and `evaluation_time`, that was observation metadata being hashed as content.
+    """
+    compiler = _compiler(tmp_path, InMemoryExpertisePublisher())
+    baseline = _sweep(compiler, trace="trace_a", at=NOW)
+
+    situation = _situation()
+    object.__setattr__(situation, "trace_id", "trace_b")
+    elsewhere = _context()
+    object.__setattr__(elsewhere, "trace_id", "trace_b_ctx")
+    object.__setattr__(elsewhere, "graph_version", 8)      # somebody else's email arrived
+    after = compiler.compile(situation, context=elsewhere)
+
+    assert after.id == baseline.id, (
+        "an unrelated tenant fact re-addressed this package — the 995 MB shape, "
+        "one field further out than the clock")
+    assert after.semantic_hash == baseline.semantic_hash
 
 
 def test_two_sweeps_write_one_row_not_two(pg_store, tmp_path):

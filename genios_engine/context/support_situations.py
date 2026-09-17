@@ -60,9 +60,12 @@ from sqlalchemy import JSON, bindparam, text
 
 from genios_engine.context.derived_provenance import load_event_receipts, write_fact_source_refs
 
+from genios_engine.context.correlation_membership import declare_finding_events
 from genios_engine.context.domain_spec import domains_declaring, spec_for
 from genios_engine.context.periodic import WINDOW_DAYS
-from genios_engine.context.situations import (
+from genios_engine.context.situations import (  # noqa: I001
+    unmet_source_families,
+    SITUATION_STATUS_ON_CONFLICT,
     COVERAGE_UNKNOWN,
     RESOLVED_BY_FACT,
     STATUS_ACTIVE,
@@ -72,6 +75,7 @@ from genios_engine.context.situations import (
     freshness_score,
     identity_score,
 )
+from genios_engine.context.situations import merge_pressure as read_merge_pressure
 from genios_engine.platform.ids import new_id
 
 # ── anchors ──────────────────────────────────────────────────────────────────────────────────
@@ -578,7 +582,9 @@ class Desk:
     loops: tuple[Loop, ...] = ()
     mailboxes: dict[str, str] = field(default_factory=dict)
     account_rate: dict[str, float] = field(default_factory=dict)
-    merge_pressure: dict[str, int] = field(default_factory=dict)
+    #: `{node_id: (open_proposals, strong_proposals)}` — see `situations.merge_pressure`. The
+    #: pair, not a count, because a shared email and a shared first name are not the same doubt.
+    merge_pressure: dict[str, tuple[int, int]] = field(default_factory=dict)
     policy: ResponsePolicy = ResponsePolicy()
 
     @property
@@ -1470,12 +1476,11 @@ def gather(store, org_id: str, *, now: datetime, policy: ResponsePolicy) -> Desk
                 {"o": org_id}):
             account_rate[str(r.key).split(":", 1)[1]] = float(r.value)
 
-        merge_pressure: dict[str, int] = {}
-        for r in c.execute(text(
-                "select left_node_id, right_node_id from merge_proposals "
-                "where org_id=:o and status='open'"), {"o": org_id}):
-            for node in (r.left_node_id, r.right_node_id):
-                merge_pressure[node] = merge_pressure.get(node, 0) + 1
+        # One reader for this table across all three of its consumers — see
+        # `situations.merge_pressure` for why a third hand-written dialect is the defect and not
+        # the convenience. It also carries the STRENGTH, which this `count(*)` could not, and
+        # which decides whether a collision is a duplicate or a coincidence of spelling.
+        merge_pressure = read_merge_pressure(c, org_id)
 
     return Desk(org_id=org_id, now=now, internal=frozenset(addresses),
                 internal_domains=internal_domains, messages=tuple(messages),
@@ -1551,6 +1556,11 @@ def refresh_support_situations(store, org_id: str, *, now: datetime | None = Non
     if not domains:
         return 0
     desk = gather(store, org_id, now=now, policy=policy or ResponsePolicy())
+    #: ONE `source_coverage` READ PER DOMAIN PER SWEEP, not one per situation. The table
+    #: holds four rows for a tenant and this loop runs over every finding of every
+    #: reading; a read inside it would be the per-situation shape
+    #: `docs/plans/PERFORMANCE_HARDENING.md` records taking a pass past thirty minutes.
+    _unmet: dict[str, tuple[str, ...]] = {}
     written = 0
 
     with store.engine.begin() as c:
@@ -1583,10 +1593,31 @@ def refresh_support_situations(store, org_id: str, *, now: datetime | None = Non
                     stype = spec_for(domain).type_for(anchor)
                     corr = f"{f.correlation_id}_{domain}"
                     minted[domain].add(corr)
+                    # DECLARE WHICH EVENTS THIS SITUATION RESTS ON. `gather_l1_signals` reaches
+                    # Layer 1's qualified signals through `context_correlation_members`, and a
+                    # desk reading's correlation id had no rows there — so 31
+                    # `first_response_overdue` and 20 `commitment_overdue` situations on the
+                    # pilot fell back to `DEFAULT_IMPORTANCE_BP` and Layer 3 held every one of
+                    # them at QES_REQUIRED before reading their content.
+                    #
+                    # `f.event_ids` is already the exact scope this finding was built from — the
+                    # same list `load_event_receipts` is handed above — so nothing is derived
+                    # here that was not already known.
+                    declare_finding_events(c, org_id=org_id, finding=f, correlation_id=corr)
                     coverage, gaps = _coverage(domain, stype, present, f.coverage_cap_pct)
+                    # AND WHY IT IS HELD, when the reason is a source nobody connected.
+                    # `source_coverage_insufficient` is a correct refusal and was an
+                    # invisible one: 18 situations on the pilot were held on it and 0 of
+                    # 18 named the family. One read per domain per sweep, memoised below.
+                    for _family in _unmet.setdefault(
+                            domain, unmet_source_families(c, org_id, domain)):
+                        gaps = [*gaps, f"a {_family} source, which is not connected"]
                     fresh, fresh_known = freshness_score(last_seen_at=f.last_seen_at, now=now)
                     identity = identity_score(
-                        open_merge_proposals=desk.merge_pressure.get(f.identity_node or "", 0))
+                        open_merge_proposals=desk.merge_pressure.get(
+                            f.identity_node or "", (0, 0))[0],
+                        strong_proposals=desk.merge_pressure.get(
+                            f.identity_node or "", (0, 0))[1])
                     evidence = evidence_score(event_count=f.event_count,
                                               source_count=f.source_count)
                     _upsert(c, org_id=org_id, corr=corr, node_id=node_id, stype=stype,
@@ -1605,7 +1636,7 @@ def refresh_support_situations(store, org_id: str, *, now: datetime | None = Non
             for domain, live in minted.items():
                 written += _reconcile(c, org_id=org_id,
                                       stype=spec_for(domain).type_for(anchor),
-                                      live=live, now=now)
+                                      domain=domain, live=live, now=now)
     return written
 
 
@@ -1646,12 +1677,7 @@ def _upsert(conn, *, org_id: str, corr: str, node_id: str, stype: str, domain: s
         # The FACTS still refresh underneath it. Confidence, coverage, evidence and last_seen are
         # this sweep's, because they are observations and observations do not care what somebody
         # decided. Only the three columns that record the DECISION are preserved.
-        "  status = case when context_situations.resolved_by = 'human' "
-        "                then context_situations.status else 'active' end, "
-        "  resolved_by = case when context_situations.resolved_by = 'human' "
-        "                     then context_situations.resolved_by else null end, "
-        "  resolved_at = case when context_situations.resolved_by = 'human' "
-        "                     then context_situations.resolved_at else null end, "
+        + SITUATION_STATUS_ON_CONFLICT +
         "  confidence_overall = excluded.confidence_overall, "
         "  confidence_evidence = excluded.confidence_evidence, "
         "  confidence_freshness = excluded.confidence_freshness, "
@@ -1667,24 +1693,44 @@ def _upsert(conn, *, org_id: str, corr: str, node_id: str, stype: str, domain: s
          "first": first_seen or now, "last": last_seen or now})
 
 
-def _reconcile(conn, *, org_id: str, stype: str, live: set[str], now: datetime) -> int:
+def _reconcile(conn, *, org_id: str, stype: str, domain: str, live: set[str],
+               now: datetime) -> int:
     """Close the rows this sweep no longer finds, as RESOLVED BY FACT.
 
     By fact rather than by a human, so it un-resolves by itself if the finding returns — the
     system should not need somebody to undo a conclusion it drew from data that has since
     changed. This is what closes an aging item when its loop closes, an escalation when a new
     name appears on the thread, and a workaround when a fix email lands.
+
+    THE SELECT IS SCOPED BY DOMAIN, AND THAT IS NOT DEFENSIVE. The caller loops
+    `for domain, live in minted.items()`, so `live` holds only ids ending `_{domain}` — while a
+    `situation_type` is shared by every domain whose spec maps this anchor to the same name.
+    Without the domain in the WHERE, reconciling domain A reads B's rows too, finds none of them
+    in A's live set, and resolves them; B's pass then does the same to A's. Two domains claiming
+    one anchor would annihilate each other's situations every sweep, by fact, with no trace.
+
+    Not observed on the design-partner tenant — checked 2026-09-16, no `situation_type` there is
+    claimed by more than one domain, which is why it has never fired — and `domains_declaring`
+    exists precisely so that an anchor CAN be claimed by several. The first tenant to use it would
+    have found this with resolved cards.
     """
     rows = conn.execute(text(
         "select correlation_id from context_situations "
-        "where org_id=:o and situation_type=:st and status=:active"),
-        {"o": org_id, "st": stype, "active": STATUS_ACTIVE}).fetchall()
+        "where org_id=:o and situation_type=:st and domain=:dom and status=:active"),
+        {"o": org_id, "st": stype, "dom": domain,
+         "active": STATUS_ACTIVE}).fetchall()
     stale = [r.correlation_id for r in rows if r.correlation_id not in live]
     if not stale:
         return 0
+    # `in :ids` with an expanding bindparam, not `= any(:ids)`. The array form is Postgres-only,
+    # so this UPDATE could not run under the SQLite the unit tests use — the SELECT above was
+    # reachable and the write was not, which is how the cross-domain scoping defect sat here
+    # untested. `correlation_membership` already binds this way for the same reason. `stale` is
+    # non-empty by the guard above, so the expansion always has something to expand to.
     return conn.execute(text(
         "update context_situations set status=:resolved, resolved_by=:by, resolved_at=:now, "
-        "  computed_at=:now where org_id=:o and correlation_id = any(:ids)"),
+        "  computed_at=:now where org_id=:o and correlation_id in :ids"
+    ).bindparams(bindparam("ids", expanding=True)),
         {"o": org_id, "ids": stale, "resolved": STATUS_RESOLVED, "by": RESOLVED_BY_FACT,
          "now": now}).rowcount
 

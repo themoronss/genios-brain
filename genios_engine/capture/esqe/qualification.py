@@ -77,7 +77,7 @@ DROP_TABLE = "qualification_drops"
 #: the module docstring on why it is not the value every tenant gets.
 DEFAULT_FLOOR_BP = 2500
 
-#: Doc 06: "DROP, LOGGED, PAYLOAD RETAINED 90d". The same 90 days `pipeline._JUDGED_DROP_PAYLOAD_TTL_DAYS`
+#: Doc 06: "DROP, LOGGED, PAYLOAD RETAINED 90d". The same 90 days `pipeline.JUDGED_DROP_PAYLOAD_TTL_DAYS`
 #: already gives a judged gate drop, and for the same reason: the floor that refused this signal
 #: is not the floor we will be running next quarter, and re-adjudicating a refusal is only
 #: possible while the body it was made from still exists.
@@ -362,6 +362,69 @@ def _decide(candidate: ScoredSignal, floor_bp: int) -> tuple[bool, Qualification
 # ────────────────────────────────────────────────────────────────────────────────────────────
 # The floor STORE — the per-tenant setting, its owner and its changelog.
 # ────────────────────────────────────────────────────────────────────────────────────────────
+#: How many scored signals a profile needs before its percentiles mean anything. A tenant with
+#: three scored signals has a distribution of three points, and a "recommended floor" computed
+#: from it would be a number with a decimal place and no evidence. Measured 2026-09-17: two orgs
+#: carry 588 and 635, a third carries 3.
+MIN_PROFILE_SAMPLE = 30
+
+
+def floor_profile(values: Sequence[int], floor_bp: int) -> dict:
+    """What THIS tenant's floor actually does to THIS tenant's traffic.
+
+    `resolve_floor` answers what the number is and who owns it — "somebody chose 6000" against
+    "nobody ever set anything". It cannot answer the question an owner actually has, which is
+    what the number they are on is doing. Measured 2026-09-17: the one shipped default of
+    2500 bp keeps 45.4% of one tenant's scored signals and 35.7% of another's. Same number,
+    ten points of difference in how much of their own mail reaches them — which is the module
+    docstring's own complaint ("a startup's $8K renewal is its quarter; a bank's is noise") as a
+    measurement rather than an argument.
+
+    NO RECOMMENDED NUMBER, AND THAT IS DELIBERATE. This module is emphatic that a floor is a row
+    with an `owner` and an append-only changelog, because a threshold that moves without a person
+    behind it is how one gets changed by a deploy with no date attached. So this reports the
+    tenant's own distribution and what each decile of it would keep, and the human picks. A
+    "suggested" number would be the system quietly choosing and the owner rubber-stamping.
+
+    PURE, over values the caller read. Percentiles are computed here rather than in SQL because
+    `percentile_disc` is Postgres and the unit tests are not — the same reason `best_person_name`
+    sits beside its query instead of inside it.
+    """
+    ordered = sorted(int(v) for v in values)
+    total = len(ordered)
+    if not total:
+        return {"scored": 0, "kept": 0, "kept_bp": None, "deciles": [], "enough_to_read": False}
+    kept = sum(1 for v in ordered if v >= floor_bp)
+
+    def at(num: int, den: int) -> int:
+        # `percentile_disc`: a real value from the data, never an interpolation between two.
+        #
+        # INTEGER ONLY, and the module's own rule is why: "there is no float in this file and no
+        # arithmetic that could produce one". A decile written `d / 10` is a float, and
+        # `test_no_expression_in_the_module_can_produce_a_float` caught exactly that — which is
+        # the guard doing its job, because a percentile that lands on a different index on a
+        # different machine is a floor recommendation that is not reproducible.
+        return ordered[min(total - 1, max(0, (num * total) // den))]
+
+    return {
+        "scored": total,
+        "kept": kept,
+        "kept_bp": (kept * 10_000) // total,
+        "min": ordered[0],
+        "max": ordered[-1],
+        "distinct": len(set(ordered)),
+        # WHAT EACH OF THEIR OWN DECILES WOULD KEEP. Candidate floors taken from the tenant's
+        # distribution rather than from a list somebody wrote down, so the options are always in
+        # range and always mean something on this tenant's numbers.
+        "deciles": [{"decile": d, "floor_bp": at(d, 10),
+                     "would_keep": sum(1 for v in ordered if v >= at(d, 10))}
+                    for d in range(1, 10)],
+        # A distribution of three points has no percentiles worth reading, and saying so is the
+        # difference between "we measured" and "we produced a number".
+        "enough_to_read": total >= MIN_PROFILE_SAMPLE,
+    }
+
+
 class FloorStore(Protocol):
     """Three operations: read the tenant's floor, move it (with attribution), read why it moved."""
 

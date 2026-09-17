@@ -117,6 +117,24 @@ signals_of_decay:
   - escalation_requested
   - angry_language
 
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    Headline: that somebody new has appeared on the account and who they are.
+
+    Situation: that they arrive with the account's entire history in our records and none of it in
+    their head. That asymmetry is the whole point of the card — it is an opportunity to orient
+    somebody cheaply, not a problem to be solved.
+
+    Never assume they are a replacement for anyone, and never state their role unless it is on the
+    record: being copied in is not the same as taking over.
+
+    Artifact: a short welcome that offers the context they do not have.
+  fallback:
+    headline: "{entity} — new on the account"
+    situation: >-
+      {entity} has appeared on a supported account and has none of its history.
+
 metadata:
   owner: Customer Support
   created_by: ai

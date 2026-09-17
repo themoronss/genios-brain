@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import re
+from email.utils import parseaddr
 
 from genios_engine.capture.source_families import DELIBERATE_FAMILIES, DELIBERATE_SOURCES
+from genios_engine.platform.identity import norm_email
 
 from .context import GateContext
 
@@ -99,6 +101,108 @@ def is_automated_sender(email: str | None) -> bool:
 
 #: The pre-existing private name, kept so the gate's own call sites read unchanged.
 _automated_sender = is_automated_sender
+
+
+#: Headers that name a MAILING LIST rather than a set of recipients. The same four N-02 reads,
+#: named once so a caller outside this gate cannot answer the question with a shorter list.
+LIST_HEADERS = ("List-Unsubscribe", "List-Id", "List-Post", "Feedback-ID")
+
+#: "Sehan Sanjula via Boardy" — a RELAY naming its passenger. Google Groups, intro networks and
+#: notification relays all format the display name this way, and it is the one relay marker that
+#: survives on events already captured: `sender_name` comes from `source_events.actor->>'name'`,
+#: a typed column, while the payload that would carry `Reply-To` is encrypted and expires.
+#: Anchored at both ends so a name that merely CONTAINS the word (an address book entry like
+#: "Olivia via-Kent") does not match: the separator must be a free-standing word with real text
+#: on each side.
+_RELAY_DISPLAY_NAME = re.compile(r"^\s*(?P<party>\S.*?)\s+via\s+(?P<relay>\S.*?)\s*$", re.I)
+
+
+def relayed_party_name(sender_name: str | None) -> str | None:
+    """The passenger's name out of a relay's display name, or None if this is not a relay.
+
+    Names WHO the message is from without naming their ADDRESS, which is exactly as far as this
+    signal goes: `_person()` needs a deterministic email anchor to mint a node, so a caller
+    learns here that the From address is not the author and must decline to attribute the content
+    to it — not that it may invent a node for the author. `reply_to_party` below is the half that
+    can name an address, when the payload carries one.
+    """
+    match = _RELAY_DISPLAY_NAME.match(sender_name or "")
+    return match.group("party").strip() if match else None
+
+
+def reply_to_party(raw: dict | None, sender_email: str | None) -> str | None:
+    """The address a relay says to answer instead of itself, or None.
+
+    RFC 5322 §3.6.2: `Reply-To` names where replies go when that is not the author's own address.
+    A relay sets it to its passenger, which makes it the one signal that both PROVES the From
+    address is a transport and NAMES the party behind it.
+
+    Returns None when the header is absent, unparseable, or names the sender itself — the last
+    of those because plenty of ordinary mailers set `Reply-To` to the From address, and that
+    asserts nothing at all.
+    """
+    hdrs = (raw or {}).get("headers") if isinstance(raw, dict) else None
+    # `parseaddr` is the standard's own reader for `"Sehan" <sehan@x.com>`; `norm_email` is THE
+    # person-identity function, so the address this returns is the same key `_person()` would
+    # mint a node under and the comparison below cannot disagree with the graph about who is who.
+    candidate = norm_email(parseaddr(header(hdrs, "Reply-To"))[1])
+    if not candidate:
+        return None
+    return None if candidate == norm_email(sender_email) else candidate
+
+
+def sender_is_a_relay(raw: dict | None, *, sender_name: str | None = None,
+                      sender_email: str | None = None) -> bool:
+    """POSITIVE evidence that the From address carried this message rather than wrote it.
+
+    WHY THIS IS NOT `is_automated_sender`. That table is a deliberately conservative list of
+    machine LOCAL-PARTS, and `context/pipeline.py` already routes everything it matches through
+    `is_noise`: a node is minted so the content is not deleted, and it is kept out of the network
+    graph and out of correlation, so a newsletter can never become a relationship or a situation.
+    That treatment is right for a newsletter and WRONG for a relay — a relayed human reply is the
+    most valuable mail a founder gets, and only its attribution is wrong. An intro network's
+    `hello@` local-part matches no machine pattern and never will, so it arrived as a genuine
+    correspondent and anchored relationships and situations of its own.
+
+    POSITIVE ONLY. Both clauses are things the message states: a Reply-To pointing somewhere else,
+    or a display name that names its own passenger. A message with neither is an ordinary message
+    from its sender, which is what the overwhelming majority of mail is.
+    """
+    if reply_to_party(raw, sender_email):
+        return True
+    return relayed_party_name(sender_name) is not None
+
+
+def addressed_to_a_list(raw: dict | None, *, sender_email: str | None = None) -> bool:
+    """POSITIVE evidence that a message went to a list rather than to people.
+
+    WHO ASKS AND WHY IT IS NOT JUST N-02. This gate DROPS bulk mail, so a message that reaches
+    Layer 2 has already survived N-01/N-02/N-03/N-04 — but not unconditionally: those four are
+    written `if not att`, so an attachment-bearing campaign passes, and the S1 whitelist runs
+    ahead of every drop so a known counterparty's mailshot passes too. Layer 2 therefore still
+    meets the occasional blast and needs the same question answered, on the same evidence.
+
+    SHARED RATHER THAN COPIED, for the reason `availability_marker` above states in its own
+    docstring: L2 re-derives this from the stored payload, and a value re-derived from the
+    payload cannot drift from a copy. A second reader with three of these four header names is
+    exactly the failure `connectors/composio.py:71` records — three of this gate's four bulk
+    rules silently off, with nothing going red.
+
+    POSITIVE ONLY, AND THAT IS THE POINT. Every clause below is a thing the message SAYS about
+    itself: an unsubscribe link, a list id, a bulk precedence, a machine sender. None of them is
+    a count. How many people are on the To line is not evidence of anything — a fundraise update
+    to twelve investors and a newsletter to twelve thousand differ in kind, not in size — and a
+    reader with no headers at all (a calendar event, a CRM record) gets False, which keeps its
+    recipients rather than discarding them on an absence.
+    """
+    hdrs = (raw or {}).get("headers") if isinstance(raw, dict) else None
+    if header(hdrs, "Precedence").strip().lower() in ("bulk", "list", "junk"):
+        return True
+    if any(header(hdrs, name).strip() for name in LIST_HEADERS):
+        return True
+    if header(hdrs, "Auto-Submitted", "no").strip().lower() not in ("no", ""):
+        return True
+    return is_automated_sender(sender_email)
 
 
 def light_junk(labels, sender_email: str, has_attachment: bool) -> str | None:

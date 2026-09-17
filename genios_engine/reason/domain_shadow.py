@@ -38,6 +38,7 @@ from genios_engine.context.situation_bso import (
     gather_brain_subject_keys,
     gather_evidence_and_signals,
     gather_l1_signals_bulk,
+    l1_refusal,
     gather_members,
     gather_pattern_fires,
     gather_visibility,
@@ -143,7 +144,37 @@ def _tenant_pack(registry, store, org_id: str, pack_id: str) -> dict | None:
         return None
     return {"pack_id": pack_id, "version": str(effective["version"]),
             "revision": int(row.authority_revision), "snapshot_id": snapshot_id,
-            "rule_ids": {str(rule.get("id")) for rule in (effective.get("rules") or ())}}
+            "rule_ids": {str(rule.get("id")) for rule in (effective.get("rules") or ())},
+            # THE DAILY CAP, carried from the same effective config the legacy lane reads. The
+            # budget is ORG-WIDE and not per pack — `runner._budget_used` counts every signal the
+            # tenant published today whatever wrote it, and `packs/general_v1` says so in as many
+            # words: "the daily signal budget is shared org-wide, so matching numbers keeps the
+            # cap combined, not doubled". Whichever pack resolves first therefore sets it.
+            "budget_per_day": int((effective.get("scoring") or {}).get("budget_per_user_day", 7))}
+
+
+def _daily_allowance(store, org_id: str, eval_time, pack: Mapping[str, Any]) -> int:
+    """How many more signals this tenant may publish today, across every lane.
+
+    THE SAME SUBTRACTION THE OTHER THREE LANES MAKE, read from the same two helpers, so there is
+    one cap rather than a second one hidden behind it: `budget_per_day * active_seats` minus
+    everything already published today. `_budget_used` counts by DATE and by org, not by pack, so
+    a legacy signal written an hour ago is already subtracted here.
+
+    NEVER NEGATIVE, and never an exception. A tenant whose seats cannot be read, or whose used
+    count cannot be, gets the pack's own per-day figure rather than zero — refusing to publish
+    because a COUNT failed would turn a transient database hiccup into a silent day with no
+    advice, which is a worse failure than one card over a soft cap.
+    """
+    from genios_engine.reason.runner import _active_seats, _budget_used
+
+    per_day = int(pack.get("budget_per_day") or 7)
+    try:
+        cap = per_day * _active_seats(store, org_id)
+        return max(0, cap - _budget_used(store, org_id, eval_time))
+    except Exception:      # noqa: BLE001 — see NEVER NEGATIVE above
+        logger.exception("domain-compiler: could not read the daily budget for org=%s", org_id)
+        return per_day
 
 
 def _rejected_candidates(decision, selected) -> list[dict]:
@@ -359,6 +390,36 @@ def _persist_live(*, store: GraphStore, reasoning_store: ReasoningStore, org_id:
 #: "get some coverage" would put Admin doctrine on a fundraising situation.
 _L2_TO_L3_DOMAIN = {"admin": "admin", "sales": "sales", "support": "customer_support",
                     "customer_support": "customer_support"}
+
+
+def live_lane(*, forced: bool, domain: str | None, activated: frozenset[str] | Iterable[str]) -> bool:
+    """Is THIS situation on the live lane — publishing a package and emitting a signal?
+
+    THE UNACTIVATABLE DOMAIN LOSES TO EVERYTHING, and that is the property this function exists to
+    hold. `domain is None` means no corpus claims this situation's L2 domain, so there is no
+    doctrine to compile and nothing that could author a card. The comment beside the caller has
+    always said such a situation "publishes no package and emits no signal — on EVERY tenant
+    configuration"; the expression it described did not, because it read
+    ``live or (domain is not None and domain in activated)`` and the global flag is checked FIRST.
+    With `use_domain_compiler` on, an unactivatable situation was handed the live compiler — the
+    one configuration in which the stated safety property is false is the one a global flag
+    creates.
+
+    TWO SWITCHES, AND ONLY ONE OF THEM IS A WAY BACK. `activated` is
+    `platform/l3_activation.activated_domains` — per tenant, per corpus, and reversible by
+    deleting the row. `forced` is `platform/config.use_domain_compiler`, one boolean for every
+    tenant at once; it is set in no environment and has never been true anywhere. It only ever
+    turns lanes ON: switching it off does not take an activated tenant off the live lane, because
+    the second clause still answers yes. It is therefore not a kill switch for the activation
+    table, whatever it is called elsewhere — the way back is the erasure row.
+
+    Kept rather than deleted because deleting it is a separate, gated decision (the L3 plan's
+    "retired, not extended", after a pilot passes J5). What this removes is its ability to
+    contradict the fail-closed rule while it waits.
+    """
+    if domain is None:
+        return False
+    return bool(forced or domain in activated)
 
 
 def l3_domain_for(l2_domain: Any) -> str | None:
@@ -670,6 +731,11 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
         counts["l3_activated_domains"] = len(live_domains)
         # THE VARIANT DECLARATION, read once per sweep per live domain — the same shape and
         # source as `live_domains` itself. `()` for every domain that declared nothing.
+        # ONE-ELEMENT LIST AND NOT AN INT, because the loop below both reads and writes it and
+        # Python would otherwise need a `nonlocal` this function cannot give it. `None` means
+        # "not looked up yet" — the lookup costs two queries and a tenant with no live situation
+        # should not pay for them.
+        _remaining: list[int | None] = [None]
         from genios_engine.platform.l3_activation import declared_variants
         variants_by_domain = {d: declared_variants(store.engine, org_id, d) for d in live_domains}
         for row in situations:
@@ -681,7 +747,7 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
             # fail-closed direction: an unactivatable domain compiles and measures exactly as it
             # does today.
             row_domain = l3_domain_for(row["domain"])
-            live_row = bool(live or (row_domain is not None and row_domain in live_domains))
+            live_row = live_lane(forced=live, domain=row_domain, activated=live_domains)
             counts["live_situations" if live_row else "shadow_situations"] += 1
             if row_domain is None:
                 # UNACTIVATABLE, AND SILENT UNTIL NOW. A situation whose L2 domain no corpus
@@ -740,10 +806,19 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                 # pass published before BLG-18 and is still correct.
                 composed = stored_importance(row)
                 trace_id = new_id("trace")
+                # WHY THIS SITUATION HAS NO LAYER 1 SIGNAL, when the answer is a refusal.
+                # 63 of 159 live situations on the pilot are held before their content is read,
+                # and `qes_required` and `verified_evidence_required` are the SAME cards — both
+                # gates read what Layer 1 published and Layer 1 published nothing. The events
+                # behind them scored 528-1920 against a floor of 2500. The gate is right; the
+                # silence was not.
+                refusal = (None if l1 is not None
+                           else l1_refusal(conn, org_id, str(row["correlation_id"])))
                 candidate = build_business_situation(
                     org_id=org_id, situation=row,
                     signal_ids=signal_ids, evidence=evidence, trace_id=trace_id,
                     members=members, visibility=situation_visibility, l1=l1,
+                    refusal=refusal,
                     composed=composed, pattern=pattern_fires.get(str(anchor)),
                     # THE BRAIN ADDRESS, resolved on the same connection as every other gather
                     # above and for the same reason. This is the writer
@@ -755,10 +830,18 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                     # Empty for all but the contradicted few, which is the behaviour this pass had
                     # before the correlator existed.
                     contradicted_by=tuple(contradicted.get(str(row["situation_id"]), ())),
-                    # Which authored business-model overlay this situation's domain runs under.
+                    # Which authored overlay this situation's CORPUS runs under.
                     # Empty for every tenant that has declared nothing — the key is then absent
                     # from the situation's metadata and nothing re-mints.
-                    variant_ids=variants_by_domain.get(str(row.get("domain") or ""), ()))
+                    #
+                    # KEYED BY THE CORPUS DOMAIN, NOT LAYER 2'S. `variants_by_domain` is built
+                    # from `live_domains`, which are corpus ids (`customer_support`); `row["domain"]`
+                    # is Layer 2's (`support`). Looking one up with the other is the exact seam
+                    # `l3_domain_for` exists to bridge, and it silently returned `()` for every
+                    # support situation on the tenant — 33 of them — so that corpus could never
+                    # receive an overlay however it was declared. `admin` and `sales` spell the
+                    # same on both sides, which is why the miss was invisible.
+                    variant_ids=variants_by_domain.get(row_domain or "", ()))
                 current_absences = tuple(
                     absence.fact
                     for absence in absences_by_situation.get(str(row["situation_id"]), ())
@@ -867,11 +950,46 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                     counts["decided"] += 1
                     if not live_row:
                         continue
+                    # ── THE DAILY CAP, WHICH THIS LANE HAS NEVER OBEYED ────────────────
+                    #
+                    # Legacy, native and composite all check `budget_per_day * seats -
+                    # _budget_used` before publishing. This lane checked nothing, and it runs
+                    # LAST — so it spent past a cap the others had already respected. Measured on
+                    # the pilot 2026-09-15: 21 signals published on a day the cap said 15, the
+                    # surplus being this lane's 8. A user received six cards the budget existed
+                    # to prevent.
+                    #
+                    # SHARED POOL, NOT A SECOND ALLOWANCE. `_budget_used` counts every signal the
+                    # tenant published today whatever wrote it, so taking the same subtraction
+                    # keeps one cap rather than creating a second one behind it.
+                    #
+                    # RANKED BY THE ORDER THE PASS ALREADY WALKS, which is
+                    # `confidence_overall desc` (see `_ACTIVE_SITUATIONS`). Not final utility —
+                    # that is only known after the decision, and collecting every decision to
+                    # sort them would mean holding each audit bundle unwritten until the last
+                    # situation compiled. Confidence-descending is a principled order, and it is
+                    # named here rather than left to be inferred from a query two hundred lines
+                    # away.
+                    if live_row and pack is not None:
+                        if _remaining[0] is None:
+                            _remaining[0] = _daily_allowance(store, org_id, eval_time, pack)
+                            counts["budget_allowance"] = _remaining[0]
+                        if _remaining[0] <= 0:
+                            # Counted, never silent: a lane that stops publishing for a reason
+                            # nobody can see is indistinguishable from one that had nothing to say.
+                            counts["budget_exhausted"] += 1
+                            continue
                     try:
-                        counts[_persist_live(
+                        outcome = _persist_live(
                             store=store, reasoning_store=reasoning_store, org_id=org_id,
                             node_id=anchor, package=package, execution=execution,
-                            eval_time=eval_time, pack=pack)] += 1
+                            eval_time=eval_time, pack=pack)
+                        counts[outcome] += 1
+                        # Only a row that actually reached a human's queue spends the budget.
+                        # `standing` left yesterday's advice alone and `nothing_to_emit` concluded
+                        # no action — neither put a card in front of anybody.
+                        if outcome == "emitted" and _remaining[0] is not None:
+                            _remaining[0] -= 1
                     except Exception:
                         counts["persist_error"] += 1
                         logger.exception("domain-compiler live: persist %s failed",

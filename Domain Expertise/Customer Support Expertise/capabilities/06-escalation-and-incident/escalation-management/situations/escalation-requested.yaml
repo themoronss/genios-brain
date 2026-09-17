@@ -103,6 +103,24 @@ signals_of_decay:
   - refund_requested
   - champion_change
 
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    Headline: that somebody has asked for this to leave its current owner.
+
+    Situation: who asked and, where the record shows it, what they asked for — a manager, an
+    account team, a different owner. An escalation is a request about HANDLING; it is not by
+    itself evidence that the work was done badly.
+
+    Never assign blame and never assert the customer is angry unless that is separately in
+    evidence. Ask for a person, not a verdict.
+
+    Artifact: a reply that acknowledges the request and names who picks it up next.
+  fallback:
+    headline: "{entity} — an escalation has been asked for"
+    situation: >-
+      Someone has asked for {entity}'s issue to move to a different owner.
+
 metadata:
   owner: Customer Support
   created_by: ai

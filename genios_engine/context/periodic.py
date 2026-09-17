@@ -35,6 +35,7 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import bindparam, text
 
+from genios_engine.context.situations import SITUATION_STATUS_ON_CONFLICT
 from genios_engine.context.domain_spec import domains_declaring, spec_for
 from genios_engine.platform.ids import new_id
 
@@ -201,6 +202,14 @@ def refresh_period_situations(store, org_id: str, *, now: datetime | None = None
                  "provenance": json.dumps([f"org:{org_id}", f"window:{WINDOW_DAYS}d"])})
             written += 1
 
+        # NO MEMBERSHIP IS DECLARED FOR A PERIOD REVIEW, and that is deliberate rather than
+        # missed. Every other writer of `context_situations` declares which events its situation
+        # rests on, so `gather_l1_signals` can reach Layer 1 through the correlation. A period
+        # review is an AGGREGATE over a window anchored on the tenant node — its honest event set
+        # is every event in the period, and claiming that membership would put the whole tenant's
+        # history inside one correlation and hand this row the importance of whichever signal
+        # scored highest that month. Its importance comes from its own counts, which is what a
+        # window is for.
         for domain in period_domains():
             stype = spec_for(domain).type_for("tenant")
             corr_id = f"corr_period_{domain}_{org_id}_{key}"
@@ -215,7 +224,15 @@ def refresh_period_situations(store, org_id: str, *, now: datetime | None = None
                 "  computed_at) "
                 "values (:sid, :o, :c, :n, :st, :d, 'active', :conf, :conf, :conf, :conf, "
                 "  100, :cov, cast(:missing as jsonb), cast(:inputs as jsonb), :now, :now, :now) "
+                # A RE-MINTED SITUATION IS ALIVE AGAIN, and this clause was missing here.
+                # `age_uncorrelated_situations` can move any synthetic-correlation row to
+                # `dormant`, and every column below then refreshed on the next sweep while
+                # `status` stayed where the ageing pass left it — so the row carried a
+                # current timestamp, current confidence and current coverage, and both
+                # Layer 3 doors filter `status in ('active','partial')`. It looked
+                # perfectly alive and could never reach a card again.
                 "on conflict (org_id, correlation_id) do update set "
+                + SITUATION_STATUS_ON_CONFLICT +
                 "  confidence_overall = excluded.confidence_overall, "
                 "  confidence_freshness = excluded.confidence_freshness, "
                 "  coverage = excluded.coverage, inputs = excluded.inputs, "

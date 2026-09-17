@@ -23,7 +23,8 @@ from genios_engine.capture.esqe.importance import (ImportanceScore, OrgBaseline,
 from genios_engine.capture.esqe.normalize import (NormalizedSignal, ThreadContext,
                                                   normalize_signals)
 from genios_engine.capture.esqe.relevance import (MAX_ITEM_CHARS, RelevanceCandidate,
-                                                  RelevanceDecision, assess_relevance)
+                                                  RelevanceDecision, assess_relevance,
+                                                  refused_without_extraction)
 from genios_engine.capture.esqe.source_analyzer import SourceAttribution, analyze_source
 from genios_engine.capture.gate.context import GateContext, GateResult
 from genios_engine.capture.gate.gate import run_gate
@@ -182,10 +183,16 @@ _PARKED_PAYLOAD_TTL_DAYS = 365
 #: not the gate we will be running next month. Keeping the body long enough to re-adjudicate is
 #: what makes "we improved the filter" a statement anyone can act on rather than an assertion
 #: about mail that no longer exists.
-_JUDGED_DROP_PAYLOAD_TTL_DAYS = 90
+JUDGED_DROP_PAYLOAD_TTL_DAYS = 90
 
 #: Reason codes whose drop was a model's opinion rather than a provider's fact.
-_JUDGED_DROP_CODES = frozenset({"llm_junk", "low_relevance"})
+#:
+#: PUBLIC because `platform/receipts.py` asks whether every drop we might be WRONG about is
+#: still reviewable, and that question is only answerable against this set and the TTL above.
+#: A receipt that restated either would be a second opinion about which deletions are
+#: judgments — and the first time one moved, the readiness page would be answering about a
+#: policy the pipeline no longer has.
+JUDGED_DROP_CODES = frozenset({"llm_junk", "low_relevance"})
 
 
 def _linkage_hints(event: SourceEvent) -> list[dict]:
@@ -593,6 +600,12 @@ _SCREEN_SOURCE = "screen_session"
 #: Mail sources whose messages the seat may ALSO have read on screen (plan §3.3, §7.4).
 _SCREEN_TWIN_SOURCES = frozenset({"gmail", "outlook"})
 
+#: `SemanticVerdict.skipped` when L1.6.5 refused the event on its envelope alone, prefixed so
+#: the S2 trace says WHICH rule refused and stays greppable apart from the S4 row carrying the
+#: same rule id. The two rows are the same verdict reached twice; the prefix is what lets a
+#: query tell "we never spent" from "we spent and then refused".
+ENVELOPE_SKIP_PREFIX = "envelope_"
+
 #: `SemanticVerdict.skipped` for a mail message whose fingerprint the screen claimed first.
 SEEN_ON_SCREEN = "seen_on_screen"
 
@@ -672,7 +685,8 @@ def _seen_on_screen(event: SourceEvent, body: Mapping[str, Any],
 
 def run_semantic_lane(event: SourceEvent, prepared: PreparedContent | None,
                       raw: RawObject, *, lane: SemanticLane, is_structured: bool,
-                      mailbox_owner: str | None) -> SemanticVerdict:
+                      mailbox_owner: str | None,
+                      envelope: RelevanceCandidate | None = None) -> SemanticVerdict:
     """L1.4 for ONE event: profile -> tier -> envelope -> the one model call, or a stated skip.
 
     Every decision the model is NOT allowed to make is made before it is called: L1.4.1 picks the
@@ -693,6 +707,20 @@ def run_semantic_lane(event: SourceEvent, prepared: PreparedContent | None,
     # message, extracted once. The screen copy stays canonical; this one is linked, not read.
     if _seen_on_screen(event, body, lane) is not None:
         return SemanticVerdict(skipped=SEEN_ON_SCREEN)
+    # L1.6.5 asked EARLY, and only its envelope half. S4 runs after this lane, so an event a
+    # header rule will refuse has already bought its model call by the time the rule is reached
+    # — measured at 30% of extraction input tokens on the pilot org, and at 22 of 66 conflicts
+    # whose every side was a sender S4 went on to refuse. `envelope=None` means the caller did
+    # not build one and nothing is skipped: the parameter is a door, never a default.
+    #
+    # LAST among the short-circuits deliberately. Placed above, it would take attribution away
+    # from `no_prepared_text`, `direction_unknown` and `seen_on_screen` for events those reasons
+    # describe better; here it can only catch an event that would otherwise have reached the
+    # model, which is exactly the population it is meant to be about.
+    if envelope is not None:
+        refusal = refused_without_extraction(envelope)
+        if refusal is not None:
+            return SemanticVerdict(skipped=f"{ENVELOPE_SKIP_PREFIX}{refusal}")
     choice = select_profile(routing_input_for(
         event, mime=str(body.get("mime") or ""), filename=str(body.get("filename") or "")))
     position, depth = _thread_place(body)
@@ -1031,6 +1059,28 @@ class EsqeOutcome:
             if signal.signal_type is self.classification.primary:
                 return score
         return None
+
+
+def envelope_candidate(event: SourceEvent, raw: Mapping[str, Any], *,
+                       sender_known: bool, is_structured: bool) -> RelevanceCandidate:
+    """S4's relevance candidate MINUS everything the extraction would have supplied.
+
+    Built from the same four readers the S4 candidate uses — `_esqe_headers`, the actor's email,
+    the event's `internal_kind`, `availability_marker` — so the two candidates can never disagree
+    about the envelope. `subject` and `snippet` are left empty on purpose: they exist to be shown
+    to LLM-5, and nothing that reads this candidate is allowed to call a model. `typed_claim_count`
+    keeps its 0 default and `refused_without_extraction` is what makes that 0 harmless.
+    """
+    return RelevanceCandidate(
+        event_id=event.event_id,
+        page_key=getattr(event, "source_object_id", None) or None,
+        sender=getattr(event.actor, "email", "") or "",
+        sender_known=sender_known,
+        internal_kind=event.internal_kind,
+        is_structured=is_structured,
+        headers=_esqe_headers(raw),
+        availability_notice=availability_marker(raw) is not None,
+    )
 
 
 def _esqe_headers(raw: Mapping[str, Any]) -> Mapping[str, str]:
@@ -1470,7 +1520,7 @@ def capture_event(raw: RawObject, *, org_id: str, connection_id: str,
     # might be wrong about, and 657 dropped events with zero payloads made "did we lose anything
     # real?" permanently unanswerable. Absence of evidence became evidence of absence.
     judged_drop = (outcome == "dropped"
-                   and str(gate.reason_code or "") in _JUDGED_DROP_CODES)
+                   and str(gate.reason_code or "") in JUDGED_DROP_CODES)
     if (kept or judged_drop) and payload_store is not None:
         event.payload_ref = new_id("pay")
     repo.add(event, outcome=outcome, route=gate.route, triage_lane=lane,
@@ -1482,7 +1532,7 @@ def capture_event(raw: RawObject, *, org_id: str, connection_id: str,
         payload_store.put(payload_id=event.payload_ref, org_id=org_id,
                           event_id=event.event_id, content=json.dumps(raw.raw, default=str),
                           ttl_days=(_PARKED_PAYLOAD_TTL_DAYS if outcome == "parked"
-                                    else _JUDGED_DROP_PAYLOAD_TTL_DAYS if judged_drop
+                                    else JUDGED_DROP_PAYLOAD_TTL_DAYS if judged_drop
                                     else _EMITTED_PAYLOAD_TTL_DAYS))
     if kept and prepared is not None and prepared_store is not None:
         # the PII-masked, replayable form + offset map — retained longer than the raw payload
@@ -1570,7 +1620,10 @@ def capture_event(raw: RawObject, *, org_id: str, connection_id: str,
     extraction_ref: str | None = None
     if semantic is not None:
         verdict = run_semantic_lane(event, prepared, raw, lane=semantic,
-                                    is_structured=is_structured, mailbox_owner=mailbox_owner)
+                                    is_structured=is_structured, mailbox_owner=mailbox_owner,
+                                    envelope=envelope_candidate(
+                                        event, raw.raw or {}, sender_known=sender_known,
+                                        is_structured=is_structured))
         _record_semantic(trace, verdict)
         extraction, extraction_parked = verdict.result, verdict.parked
         if extraction is not None:

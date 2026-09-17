@@ -44,6 +44,13 @@ ENGINE = pathlib.Path("genios_engine")
 #: `correlation.py` is the anchor/tool/user join; the rest are their own modules.
 MUST_BE_CONSUMED: dict[str, str] = {
     "correlation": "context/pipeline.py and structured.py, via correlate_event",
+    # M-6 and M-7. Reached through `POST /api/org/{org}/patterns/evaluate`, which
+    # `test_pattern_path` drives end to end over BOTH framing sites, including the model branch
+    # with an injected asker. Listed because it looks unreachable and is not: it is per-reader, so
+    # a sweep can never call it, and a search that stops at `context/runner.py` concludes it is
+    # dead. It is reached from the route, where a viewer exists.
+    "headline": "api/pattern_routes.py, via _framing_for on the evaluate route",
+    "timeline": "api/pattern_routes.py, via _framing_for, and context/framing/headline.py",
     "correlation_resource": "context/runner.py, via refresh_contract_spend",
     "correlation_timeline": "context/runner.py and condition_situations.py",
     "correlation_dependency": "context/runner.py and importance.py",
@@ -132,6 +139,58 @@ KNOWN_UNREAD: dict[str, str] = {
         "now reaches a card through `condition_situations.py`; this one is the PARSED half, and "
         "surfacing it needs a situation that can say 'this becomes true when X', which nothing "
         "authors yet. MOVES WHEN: that situation is authored.",
+    "context/angles":
+        "NARROWED, AND THE RESIDUE HALF IS CLOSED. Four angles are registered and three of the "
+        "four now reach a card: `condition_now_true` and `blocker_absence` stamp facts onto "
+        "cards that already existed, and `reply_owed_triage` produces one that did not — "
+        "`attention_situations` turns an `important` verdict on ball-in-court residue into "
+        "`attention_unreported`, the coverage miss no deterministic reading surfaced. The fourth, "
+        "`same_situation_two_threads`, reaches `outreach_reworded` through `reworded_outreach`. "
+        "All four now end somewhere a person can see. Kept to record that reaching a card is not "
+        "the same as being USEFUL on live data, which no test can assert. "
+        "MOVES WHEN: a sweep on a real tenant shows what each of the four actually produces.",
+    "derived.conversation.campaign_candidate":
+        "CLOSED. The near-miss queue is read by the M-3 gate, adjudicated by "
+        "`same_situation_two_threads`, and a `one_campaign` verdict now reaches a card: "
+        "`reworded_outreach` mints `outreach_reworded`, its own type, which declares "
+        "`outreach.exact_sentence` absent because that absence is why the deterministic grouping "
+        "did not fire. `find_campaigns` is still the only thing that mints a `Campaign`. Kept as "
+        "an entry only to record that the verdict `same_topic_not_one_message` deliberately mints "
+        "nothing — five introductions answered personally in one morning are five relationships, "
+        "not one outreach. MOVES WHEN: nothing; this is the intended end state and the entry can "
+        "be deleted once a reviewer agrees.",
+    "context/angles":
+        "NARROWED, AND THE RESIDUE HALF IS CLOSED. Four angles are registered and three of the "
+        "four now reach a card: `condition_now_true` and `blocker_absence` stamp facts onto "
+        "cards that already existed, and `reply_owed_triage` produces one that did not — "
+        "`attention_situations` turns an `important` verdict on ball-in-court residue into "
+        "`attention_unreported`, the coverage miss no deterministic reading surfaced. The fourth, "
+        "`same_situation_two_threads`, reaches `outreach_reworded` through `reworded_outreach`. "
+        "All four now end somewhere a person can see. Kept to record that reaching a card is not "
+        "the same as being USEFUL on live data, which no test can assert. "
+        "MOVES WHEN: a sweep on a real tenant shows what each of the four actually produces.",
+    "derived.conversation.campaign_candidate":
+        "READ BY THE M-3 GATE, which is the half that is done. The near-miss queue is what "
+        "`find_campaigns` declined to group, and `same_situation_two_threads` adjudicates each "
+        "candidate; its answers are readable through `angles/queues.adjudicated_candidates`. "
+        "Nothing carries those answers to a person. Unlike the residue queue next door — which "
+        "now reaches a card as `attention_unreported` — a `one_campaign` verdict mints nothing "
+        "on purpose: `find_campaigns` is still the only thing that mints a campaign and it still "
+        "requires the exact sentence, so turning an adjudicated candidate into a card is a "
+        "separate decision nobody has made. MOVES WHEN: a reader carries an adjudicated "
+        "candidate somewhere a person sees it.",
+    "open_loops.closed_basis":
+        "Both closers record whether the closing message ANSWERED the ask (a kind in the "
+        "`discharges` table) or merely arrived on the thread, and no reading selects it yet. "
+        "Recorded now rather than when a consumer appears because it CANNOT BE RECOVERED LATER: "
+        "once a closure is a flat `closed`, which observations the closer saw — and which loops "
+        "it was closing at that instant — is gone, unlike a typed absence that any later reader "
+        "can recompute. The obvious consumer is `support_situations.read_backlog_items`, and it "
+        "is deliberately not wired today: that reading requires the loop OPEN and the ball ours, "
+        "so a loop closed on contact alone is hidden by two conditions rather than one, and "
+        "lifting either changes card VOLUME by an amount nobody has measured against a real "
+        "tenant. MOVES WHEN: the effect on live card counts is measured and the ball-in-court "
+        "half is decided with it.",
 }
 
 

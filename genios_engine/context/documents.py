@@ -45,6 +45,7 @@ from sqlalchemy import text
 
 from genios_engine.context.canon import canon_title_key
 from genios_engine.context.identity import ALIAS_EMAIL, resolve_alias
+from genios_engine.context.vocabulary import OWNER_DECLARED
 from genios_engine.platform.identity import norm_email
 
 #: The graph node type a file becomes. Named in `domain_spec.situation_types` by any domain that
@@ -236,7 +237,11 @@ def register_document_node(conn, store, *, org_id: str, source: str, meta: dict,
     owner_email = norm_email(meta.get("owner_email"))
     if owner_email:
         pairs.append(("document.owner_email", owner_email, "string"))
-        pairs.append(("document.owner_basis", "declared_by_source", "enum"))
+        # The file store states its own owner, so this is a DECLARATION rather than an
+        # attribution. `vocabulary.OWNER_*` is the one vocabulary for that question; this
+        # line used to spell it `declared_by_source`, which named the writer instead of
+        # the category and could not be compared with any other producer's answer.
+        pairs.append(("document.owner_basis", OWNER_DECLARED, "enum"))
     editor_email = norm_email(meta.get("last_modified_by"))
     if editor_email:
         pairs.append(("document.last_modified_by", editor_email, "string"))

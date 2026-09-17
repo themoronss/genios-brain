@@ -61,6 +61,7 @@ from sqlalchemy import text
 #: elsewhere: "two spellings of 'partial' would make this query quietly stop finding the rows this
 #: unit itself produced." Caught by `tests/test_nothing_is_written_and_never_read.py`, which found
 #: the field appearing in ONE module and asked how it could be both writer and reader.
+from genios_engine.context.angles.contract import fan_subject_ref
 from genios_engine.context.correlation_timeline import FIELD_REVIEW as REVIEW_FIELD
 
 _REVIEW_ROWS = (
@@ -70,6 +71,28 @@ _REVIEW_ROWS = (
     "and f.valid_to is null "
     "order by f.subject_node_id"
 )
+
+#: THE ANGLE THAT ORDERS THIS QUEUE, and the two fields its answer is carried in.
+#:
+#: WHY A SEPARATE FIELD NAME RATHER THAN `condition.predicate`. The predicate is what would let a
+#: condition be EVALUATED rather than reported, and its absence is the reason every row here
+#: exists — `missing=["condition.predicate"]` is declared on every finding below so the coverage
+#: score says "not evaluable" out loud. A model verdict is not a predicate and must never be
+#: mistaken for one: it cannot be re-evaluated on the next sweep, it carries no world key, and
+#: `SatisfiedCondition` would refuse it outright for having one evidence span where the contract
+#: demands two. So it is carried beside the reading under a name that says what it is.
+#:
+#: ONE CONDITION, ONE VERDICT — AND THE FIELD NAMES SAY SO. The first cut of this angle could not
+#: do that: one fact per node holds a LIST of conditions, so before `Angle.fan_out` existed the
+#: gate admitted one subject per counterparty and the verdict had to be about that person's whole
+#: queue. The fields were named `condition.queue_reading` / `condition.queue_confidence_bp` so the
+#: aggregation was at least honest about itself, and a reader still had to open every card on the
+#: node to find which sentence it meant. `fan_out=("review", "condition_id")` gives each condition
+#: its own subject, so these now mean exactly what they say — and keeping `queue` in the name
+#: would make them lie in the other direction.
+TRIAGE_ANGLE_ID = "condition_now_true"
+MODEL_READING_FIELD = "condition.model_reading"
+MODEL_CONFIDENCE_FIELD = "condition.model_confidence_bp"
 
 #: How many of one node's conditions become findings. A counterparty with a long history can
 #: accumulate them, and the newest are the ones still live; the bound stops one busy thread
@@ -83,8 +106,13 @@ MAX_PER_NODE = 6
 STALE_AFTER_DAYS = 120
 
 
-def _entries(value) -> tuple[Mapping, ...]:
-    """The conditions inside one stored review row, defensively.
+def _entries(value, key: str = "review") -> tuple[Mapping, ...]:
+    """The conditions inside one stored row, defensively.
+
+    `key` names the list inside the stored object — `review` for the queue of conditions nobody
+    could parse, `satisfied` for the ones that have since come true. One reader for both because
+    the two facts are written by the same publisher in the same shape, and a second copy of this
+    defensiveness is a second place for a malformed row to raise instead of yield nothing.
 
     The column is `jsonb` and arrives as a mapping from Postgres and as a string from a driver
     that has not decoded it; both are accepted because this reading must not be the reason a
@@ -98,10 +126,10 @@ def _entries(value) -> tuple[Mapping, ...]:
             return ()
     if not isinstance(value, Mapping):
         return ()
-    review = value.get("review")
-    if not isinstance(review, (list, tuple)):
+    entries = value.get(key)
+    if not isinstance(entries, (list, tuple)):
         return ()
-    return tuple(item for item in review if isinstance(item, Mapping))
+    return tuple(item for item in entries if isinstance(item, Mapping))
 
 
 def _stated_at(entry: Mapping) -> datetime | None:
@@ -167,12 +195,20 @@ def _is_owner(actor: str, owner: str) -> bool | None:
 
 
 def read_conditions_in_review(rows: Mapping[str, object], now: datetime,
-                              mailbox_owner: str | None = None) -> list:
+                              mailbox_owner: str | None = None,
+                              verdicts: Mapping[str, tuple[str, int]] | None = None) -> list:
     """One finding per unparsed condition. `rows` maps subject node id to the stored review value.
 
     A condition with no actor, no action and no quote yields nothing — there would be nothing for
     a card to say. Everything else is reported, including the ones whose actor is us: "you told
     them you would reply once it was booked" is as much an open loop as anything they said.
+
+    `verdicts` MAPS A FANNED SUBJECT REF TO WHAT THE ANGLE LAST SAID ABOUT THAT ONE CONDITION, and it is optional in the strong
+    sense: absent, empty, or missing this node, every finding above is produced byte-identically.
+    That is this branch's standing rule — no gate may refuse on absence, only on positive contrary
+    evidence — expressed where it is easiest to break it. A model that is unavailable, over
+    budget, or simply not wired up returns the queue to exactly the state it is in today: a flat
+    list, in no order, which is worse than an ordered one and is still a queue somebody can work.
     """
     from genios_engine.context.outreach_situations import _Finding
 
@@ -229,6 +265,25 @@ def read_conditions_in_review(rows: Mapping[str, object], now: datetime,
             if owned is not None:
                 facts.append(("condition.actor_is_us", owned, "bool"))
 
+            # THE TRIAGE READING, ADDED AND NEVER SUBTRACTED. It cannot remove a finding, reorder
+            # one, or change a single fact above it — the card is fully built by the time this
+            # runs, and this appends two fields to it.
+            #
+            # A REFUSAL IS NOT CARRIED. `unknowable` means the model could not tell from the
+            # relationship slice, which is a fact about the ANGLE rather than about this
+            # counterparty; `AngleRun.refused` counts it, and that counter is where an angle whose
+            # refusals dominate becomes visible. Stamping "we asked and could not say" onto a card
+            # adds a field to every row and orders nothing.
+            # KEYED THROUGH THE EVALUATOR'S OWN FUNCTION. `fan_subject_ref` is how the angle store
+            # named this subject when it asked; rebuilding that string by hand here is the
+            # two-spellings failure this module records against its own field name, and it fails
+            # silently — every card simply lacks a reading and nobody can tell why.
+            reading = (verdicts or {}).get(fan_subject_ref(str(node_id), condition_id))
+            if reading is not None:
+                verdict, confidence_bp = reading
+                facts.append((MODEL_READING_FIELD, verdict, "string"))
+                facts.append((MODEL_CONFIDENCE_FIELD, int(confidence_bp), "number"))
+
             display = f"{actor} — condition awaiting review" if actor else "condition awaiting review"
             findings.append(_Finding(
                 anchor=ANCHOR_CONDITION,
@@ -260,11 +315,201 @@ def gather_conditions_in_review(conn, org_id: str) -> dict[str, object]:
     return {str(row["node_id"]): row["value"] for row in rows}
 
 
+#: `refused = false` IS IN THE QUERY, NOT IN THE LOOP, so a refusal never crosses the seam at all
+#: and no reader downstream has to know that `unknowable` is the word that means "I could not
+#: tell" for this angle's version. `angle_version` is deliberately NOT filtered: a verdict written
+#: by 1.0.0 stays readable when 1.1.0 ships, because `evaluate_angle` overwrites in place on the
+#: sweep that follows and the alternative is a card that silently loses its ordering the moment
+#: an angle's version string changes.
+_QUEUE_VERDICTS = (
+    "select subject_ref, verdict, confidence_bp from context_angle_verdicts "
+    "where org_id = :o and angle_id = :a and refused = false"
+)
+
+
+def gather_condition_queue_verdicts(conn, org_id: str) -> dict[str, tuple[str, int]]:
+    """What the angle currently says about each unparsed condition, keyed by fanned subject ref.
+
+    GUARDED, AND THE GUARD IS THE POINT rather than defensive habit. `context_angle_verdicts`
+    arrived in migration 0171; a database that predates it, a fixture that builds only the tables
+    its own subject needs, or a driver that cannot run the query must all produce a FLAT review
+    queue — which is precisely today's behaviour — instead of failing a sweep that was working
+    yesterday. An angle may only ever ADD, and a gather that can take the layer down with it
+    would be that rule broken at the one place nobody looks.
+    """
+    # NO try/except HERE, DELIBERATELY. A guard that swallows a database error without
+    # owning the transaction is not a guard: Postgres aborts the whole transaction on a
+    # failed statement, so returning an empty default leaves every LATER query on the same
+    # connection failing with `InFailedSqlTransaction`. Measured on the live tenant — one
+    # missing table here silently emptied eleven other gathers and killed all twelve
+    # readings. The single guard is `outreach_situations._optional`, which wraps the call
+    # in a SAVEPOINT and therefore can actually undo it.
+    rows = conn.execute(text(_QUEUE_VERDICTS),
+                        {"o": org_id, "a": TRIAGE_ANGLE_ID}).mappings().all()
+    return {str(row["subject_ref"]): (str(row["verdict"]), int(row["confidence_bp"] or 0))
+            for row in rows}
+
+
+# ── the twin: the conditions that have COME TRUE ─────────────────────────────────────────────
+#
+# `read_conditions_in_review` above surfaces the conditions `parse_condition` could not turn into
+# a predicate — the ones the correlator refused to guess at. This is the other half, and the more
+# valuable one: the conditions it DID parse, and which the world has since satisfied.
+#
+# `correlation_timeline` has computed and published these all along. `_satisfied_json` writes both
+# evidence spans side by side, its constructor REFUSES to exist with only one of them, and the
+# module's own docstring names the case: "a partner said they'd revisit once you had two
+# enterprise references. You closed the second 11 days ago. Nothing else in this system connects
+# those two moments, because no human is holding both in mind and the two events share no thread,
+# no counterparty field and no window — they are four months apart, which is precisely why the
+# connection is worth anything."
+#
+# The fact was written and nothing read it. `condition-now-satisfied.yaml` is authored, reviewed
+# and approved, and bound to `admin_contact` — the nearest live type — because the type it wants
+# did not exist. Its own note says so: "`condition_satisfied` is not yet listed in
+# `_schema/vocabulary.yaml`".
+
+#: Where the satisfied conditions are stored, by the publisher that computes them.
+SATISFIED_FIELD = "derived.timeline.condition_satisfied"
+
+#: One condition that has come true. Its own anchor for the reason the review queue has one: a
+#: counterparty can leave several conditions across months, they come true separately, and
+#: `type_for` maps an anchor to exactly one name per domain.
+ANCHOR_CONDITION_MET = "condition_met"
+
+_SATISFIED_ROWS = (
+    "select subject_node_id as node_id, value from graph_facts "
+    "where org_id = :o and field = :field and status = 'active' and valid_to is null"
+)
+
+
+def gather_conditions_satisfied(conn, org_id: str) -> dict[str, object]:
+    """The stored satisfied-condition rows for one org, keyed by subject node."""
+    rows = conn.execute(text(_SATISFIED_ROWS),
+                        {"o": org_id, "field": SATISFIED_FIELD}).mappings().all()
+    return {str(row["node_id"]): row["value"] for row in rows}
+
+
+def read_conditions_satisfied(rows: Mapping[str, object], now: datetime,
+                              mailbox_owner: str | None = None) -> list:
+    """One finding per condition the world has satisfied.
+
+    BOTH SPANS OR NOTHING, and that rule is enforced upstream rather than restated here:
+    `SatisfiedCondition.__post_init__` refuses to construct without the original statement's
+    evidence, because "the card has to show the sentence from May, and a claim with no receipt is
+    a guess". A row that reached the graph therefore carries its quote, and this reading requires
+    one — a satisfaction it cannot quote is a row it does not understand, not a card.
+
+    STALENESS IS REPORTED, NEVER A GATE. `strength_bp` decays from the moment the world became
+    true and the correlator marks the row `stale` below its floor, because Globe's instruction is
+    to act while the evidence is fresh. A condition satisfied eight months ago is still satisfied;
+    it is simply worth less, and that is a ranking question for `importance.py` rather than a
+    reason for this layer to decide nobody should be told. The same discipline the review queue
+    keeps one function up.
+
+    THE ACTOR MAY BE US, and those are kept for the reason the sibling keeps them: "you told them
+    you would reply once it was booked" is as much an open loop as anything they said — and a
+    condition WE set that has now come true is a thing we said we would do and can.
+    """
+    from genios_engine.context.outreach_situations import _Finding
+
+    owner = (mailbox_owner or "").strip().lower()
+    findings: list = []
+    for node_id, value in rows.items():
+        for entry in _entries(value, "satisfied")[:MAX_PER_NODE]:
+            condition_id = str(entry.get("condition_id") or "").strip()
+            quote = _quote(entry)
+            if not condition_id or not quote:
+                continue
+            actor = str(entry.get("actor") or "").strip()
+            action = str(entry.get("action") or "").strip()
+
+            facts: list[tuple[str, object, str]] = [("condition.quote", quote, "string")]
+            if actor:
+                facts.append(("condition.actor", actor, "string"))
+            if action:
+                facts.append(("condition.action", action, "string"))
+            text_value = str(entry.get("condition_text") or "").strip()
+            if text_value:
+                facts.append(("condition.text", text_value, "string"))
+
+            stated = _stated_at(entry)
+            if stated is not None:
+                facts.append(("condition.stated_at", stated.isoformat(), "string"))
+            met = _satisfied_at(entry)
+            if met is not None:
+                facts.append(("condition.satisfied_at", met.isoformat(), "string"))
+                facts.append(("condition.days_since_satisfied",
+                              max(0, (now - met).days), "number"))
+                if stated is not None:
+                    # HOW LONG IT WAITED. The distance between the sentence and the world turning
+                    # is the whole reason this is worth saying: nobody remembers a condition set
+                    # four months ago, which is exactly why it is still unacted on.
+                    facts.append(("condition.waited_days",
+                                  max(0, (met - stated).days), "number"))
+
+            strength = entry.get("strength_bp")
+            if isinstance(strength, int):
+                facts.append(("condition.strength_bp", strength, "number"))
+            # Reported, never used to drop — see the docstring.
+            facts.append(("condition.stale", bool(entry.get("stale")), "bool"))
+
+            # WHAT MADE IT TRUE, carried so the card can say it rather than asserting the
+            # conclusion alone. "You closed the second enterprise reference" is the half that
+            # makes "their condition is met" checkable.
+            world_key = str(entry.get("world_key") or "").strip()
+            if world_key:
+                facts.append(("condition.satisfied_by", world_key, "string"))
+
+            owned = _is_owner(actor, owner)
+            if owned is not None:
+                facts.append(("condition.actor_is_us", owned, "bool"))
+
+            display = (f"{actor} — the condition they set is now met" if actor
+                       else "a condition set earlier is now met")
+            findings.append(_Finding(
+                anchor=ANCHOR_CONDITION_MET,
+                canonical_key=f"condition_met:{condition_id}",
+                display_name=display,
+                facts=facts,
+                concerns_node=node_id,
+                correlation_id=f"condition_met:{condition_id}",
+                # WHETHER THEY HAVE BEEN TOLD. Nothing in this system observes that we went back
+                # to somebody about a condition coming true, so the one thing a reader most wants
+                # — "did we already act on this?" — is not on the record. Declared rather than
+                # assumed, so the coverage score says "not known" instead of scoring the reading
+                # as complete.
+                missing=["condition.counterparty_informed"],
+                inputs={"reading": ANCHOR_CONDITION_MET,
+                        "derived_from": "correlation_timeline; both evidence spans required"},
+            ))
+    return findings
+
+
+def _satisfied_at(entry: Mapping) -> datetime | None:
+    raw = entry.get("satisfied_at")
+    if not isinstance(raw, str) or not raw:
+        return None
+    try:
+        moment = datetime.fromisoformat(raw)
+    except ValueError:
+        return None
+    return moment if moment.tzinfo else moment.replace(tzinfo=timezone.utc)
+
+
 __all__ = [
     "ANCHOR_CONDITION",
+    "ANCHOR_CONDITION_MET",
+    "SATISFIED_FIELD",
+    "gather_conditions_satisfied",
+    "read_conditions_satisfied",
     "MAX_PER_NODE",
     "REVIEW_FIELD",
     "STALE_AFTER_DAYS",
+    "MODEL_CONFIDENCE_FIELD",
+    "MODEL_READING_FIELD",
+    "TRIAGE_ANGLE_ID",
+    "gather_condition_queue_verdicts",
     "gather_conditions_in_review",
     "read_conditions_in_review",
 ]

@@ -77,6 +77,20 @@ _NOISE_HEADERS = ("Auto-Submitted", "Precedence", "List-Unsubscribe",
                   # vacation-responder markers → the N-05 availability marker (not a drop)
                   "X-Autoreply", "X-Autorespond")
 
+# Headers that say the From address CARRIED this message rather than wrote it. A separate tuple
+# from the one above because they are captured for the opposite purpose: those mark mail to be
+# dropped or scored down, these mark mail whose content is valuable and whose ATTRIBUTION is
+# wrong. RFC 5322 §3.6.2 — `Reply-To` names where answers go when that is not the author's own
+# address, which is exactly what an intro network or a group relay sets it to; `Sender` names the
+# agent that submitted a message on someone else's behalf.
+#
+# Read by `gate.rules.sender_is_a_relay`, which L2's `pipeline.py` consults before attributing
+# extracted content to a sender node. FORWARD-ONLY: the raw payload is encrypted and expires, so
+# messages captured before this shipped carry neither header and fall back to the relay
+# display-name signal ("Sehan via Boardy"), which reads `source_events.actor->>'name'` — a typed
+# column that survives.
+_ROUTING_HEADERS = ("Reply-To", "Sender")
+
 # L1.2.4-U1 — the first-connect backfill window is NO LONGER a constant here. It was
 # `_BACKFILL_WINDOW = "newer_than:60d"`, which handed every tenant the same two months of history
 # with no way to change it short of a deploy. It is now a per-connection setting resolved by
@@ -500,7 +514,8 @@ class ComposioGmailConnector:
         labels = pick("labelIds", "labels") or []
         # noise-relevant headers → without this dict the gate's N-01/N-02/N-04 rules never fired on
         # real Gmail, so bulk/automated mail wasted an L2 LLM call before being dropped as noise.
-        headers = {h: v for h in _NOISE_HEADERS if (v := (_header(src, h) or _header(m, h)))}
+        headers = {h: v for h in _NOISE_HEADERS + _ROUTING_HEADERS
+                   if (v := (_header(src, h) or _header(m, h)))}
 
         # walk MIME → full body text + attachment refs
         texts: list = []

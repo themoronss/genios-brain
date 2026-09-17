@@ -70,6 +70,8 @@ from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any
 
+from sqlalchemy import text
+
 from genios_engine.context.analytic.publish import close_derived_facts, publish_derived_fact
 from genios_engine.contracts.dependency import (MAX_DEPENDENCY_DEPTH, DependencyChain,
                                                 DependencyLink)
@@ -101,6 +103,26 @@ FIELD_BLOCKED_COUNT = f"{FACT_PREFIX}.blocked_count"
 FIELD_CHAINS = f"{FACT_PREFIX}.chains"
 FIELD_CIRCULAR_WAIT = f"{FACT_PREFIX}.circular_wait"
 FIELD_MISSING_PREREQUISITE = f"{FACT_PREFIX}.missing_prerequisite"
+
+#: A DEPENDENCY BOTH OF WHOSE ENDS ARE THINGS RATHER THAN PARTIES.
+#:
+#: MEASURED, AND IT IS NOT AN EDGE CASE. On the pilot, 95 of 95 dependency claims had NEITHER
+#: endpoint resolve: "Shortlisting and showcase participation", "interview slot offer for GeniOS",
+#: "Meeting between Sehan and Rohit". Layer 1 extracts dependencies between OUTCOMES; the
+#: traversal above needs parties, so every one of them was counted as `UNRESOLVED_BLOCKED` and
+#: thrown away. The correlator was behaving correctly and producing nothing.
+#:
+#: WHAT IS STILL TRUE ABOUT THEM, and it is most of what a reader wants. Somebody said, in a
+#: thread with a real counterparty, that one named thing waits on another — "the meeting with
+#: Sehan is waiting on Rohit's availability", "GeniOS advancement at Antler is waiting on Theresa
+#: Hoffmann's reconsideration". The STATEMENT is evidence even though neither noun is a node.
+#:
+#: NO CHAIN IS MINTED AND NO NODE IS INVENTED, which is what keeps this inside the module's own
+#: rule that a false chain is worse than a missing one. Nothing is resolved, nothing is joined,
+#: and no edge appears: the two ends travel as the TEXT they were written as, with the sentence
+#: that carried them, attached to the party whose thread they were said in. `chains`,
+#: `circular_wait` and `blocked_count` are unaffected — they still only ever see resolved edges.
+FIELD_STATED = f"{FACT_PREFIX}.stated"
 #: The `fact_version_id` prefix. `publish_derived_fact` keys the rest of the id on (node, field,
 #: PERIOD) and scopes both its open-row lookup and its close by this prefix, so the sweep can only
 #: ever supersede or retire a row THIS module wrote. Rows written under the old period-less shape
@@ -141,6 +163,7 @@ _FIELD_SCOPE: dict[str, str] = {
     FIELD_CHAINS: PARTICIPANTS,
     FIELD_CIRCULAR_WAIT: PARTICIPANTS,
     FIELD_MISSING_PREREQUISITE: PARTICIPANTS,
+    FIELD_STATED: PARTICIPANTS,
     FIELD_BLOCKED_COUNT: ORG,
 }
 
@@ -159,6 +182,11 @@ DEPENDENCY_WINDOW_DAYS = 180
 #: identity-resolution defect rather than a finding.
 MAX_CLAIMS_PER_SWEEP = 5000
 MAX_CHAINS_PER_ROOT = 8
+
+#: How many stated dependencies travel on one counterparty. Bounded like every list this module
+#: emits; the newest survive, because a dependency stated last week is likelier to still hold than
+#: one from a thread that has since moved on.
+MAX_STATED_PER_NODE = 6
 MAX_FACT_WRITES_PER_SWEEP = 2000
 
 
@@ -858,6 +886,68 @@ class DependencySweep:
     dropped: Mapping[str, int] = field(default_factory=dict)
 
 
+#: event -> a real party in that thread. The ONLY resolution this lane does, and it resolves
+#: neither endpoint: it answers "whose conversation was this said in", which the graph already
+#: knows because the message itself was written to somebody.
+_EVENT_PARTY = (
+    "select r.event_id as event_id, f.subject_node_id as node_id "
+    "from graph_source_refs r "
+    "join graph_facts f on f.fact_version_id = r.fact_version_id and f.org_id = r.org_id "
+    "join graph_nodes n on n.org_id = f.org_id and n.node_id = f.subject_node_id "
+    "     and n.node_type = 'person' and n.valid_to is null "
+    "where r.org_id = :o and f.status = 'active'"
+)
+
+
+def event_parties(conn, org_id: str) -> dict[str, str]:
+    """`{event_id: node_id}` — one counterparty per event, chosen deterministically.
+
+    SORTED AND FIRST, not "whichever the driver returned". Two sweeps at one instant must anchor a
+    statement on the same person, or the fact flaps between two nodes and each looks like it
+    stopped being true.
+    """
+    found: dict[str, set[str]] = {}
+    for row in conn.execute(text(_EVENT_PARTY), {"o": org_id}):
+        found.setdefault(str(row.event_id), set()).add(str(row.node_id))
+    return {event: sorted(nodes)[0] for event, nodes in found.items() if nodes}
+
+
+def _stated_rows(correlation: DependencyCorrelation, party_of: Mapping[str, str]
+                 ) -> list[tuple[str, str, dict[str, Any]]]:
+    """The dependencies whose BOTH ends were text, grouped by the party whose thread they were in.
+
+    ONLY `UNRESOLVED_BLOCKED`, deliberately. The other drop reasons are not this: `NO_EVIDENCE` is
+    a claim with no receipt and must stay refused; `SELF_LOOP` and `RESOLVED` are claims the
+    traversal understood and correctly declined; `UNRESOLVED_BLOCKER` already has its own typed
+    absence in `missing_prerequisite`, where the waiting party IS known. This lane is exactly the
+    case where nobody resolved and the statement is all there is.
+    """
+    by_node: dict[str, list[dict[str, Any]]] = {}
+    for dropped in correlation.material.dropped:
+        if dropped.reason is not DropReason.UNRESOLVED_BLOCKED:
+            continue
+        claim = dropped.claim
+        node = party_of.get(str(claim.event_id))
+        if not node:
+            # No party for the event is no anchor, and inventing one is the failure this whole
+            # module refuses. The claim stays counted in `dropped` and reaches no card.
+            continue
+        quote = next((span.quote for span in claim.evidence if getattr(span, "quote", "")), "")
+        by_node.setdefault(node, []).append({
+            "blocker_text": claim.blocker, "blocked_text": claim.blocked,
+            "dependency_type": claim.dependency_type, "quote": quote,
+            "stated_at": claim.occurred_at.isoformat() if claim.occurred_at else None,
+            "event_id": claim.event_id})
+    rows: list[tuple[str, str, dict[str, Any]]] = []
+    for node in sorted(by_node):
+        # Newest first, then capped — a statement from a thread that has since moved on is the one
+        # to lose. Sorted before the cut so two sweeps keep the same six.
+        ordered = sorted(by_node[node], key=lambda e: (e["stated_at"] or "", e["event_id"]),
+                         reverse=True)[:MAX_STATED_PER_NODE]
+        rows.append((node, FIELD_STATED, {"stated": ordered}))
+    return rows
+
+
 def _fact_rows(correlation: DependencyCorrelation, *,
                limit: int = MAX_FACT_WRITES_PER_SWEEP
                ) -> tuple[list[tuple[str, str, dict[str, Any]]], bool]:
@@ -1025,8 +1115,22 @@ def refresh_dependency_chains(store, org_id: str, *, eval_time: datetime,
             coverage_basis=(f"{EXTRACTION_TABLE}:{org_id}",), max_depth=max_depth)
 
     rows, exhausted = _fact_rows(correlation)
+    with store.engine.connect() as conn:
+        # Resolved here rather than inside `_fact_rows` so that function stays pure and the rule
+        # it encodes can be read without a database.
+        rows = list(rows) + _stated_rows(correlation, event_parties(conn, org_id))
     with store.engine.begin() as conn:
         written, unchanged, closed = _write_facts(conn, org_id=org_id, rows=rows, now=at)
+        # WHAT THIS SWEEP WAS GIVEN AND WHAT IT PRODUCED, published rather than returned and
+        # forgotten. `dropped_by_reason` is computed on every sweep and was handed to
+        # `runner.process_pending`, which reads `facts_written` from the same object and discards
+        # the rest — so "95 claims in, 0 edges out" was true for months with nothing able to say
+        # it. Written in the SAME transaction as the facts: a census that can disagree with the
+        # rows it counts is worse than none.
+        from genios_engine.context.conversion import record_conversion
+        record_conversion(conn, org_id, correlator="dependency", read=len(claims),
+                          emitted=len(correlation.edges), eval_time=at,
+                          dropped=correlation.material.dropped_by_reason)
 
     return DependencySweep(
         claims_read=len(claims), edges=len(correlation.edges),
@@ -1038,7 +1142,8 @@ def refresh_dependency_chains(store, org_id: str, *, eval_time: datetime,
 
 
 __all__ = ["DEPENDENCY_WINDOW_DAYS", "EXTRACTION_TABLE", "FACT_PREFIX", "FIELD_BLOCKED_COUNT",
-           "FIELD_CHAINS", "FIELD_CIRCULAR_WAIT", "FIELD_MISSING_PREREQUISITE",
+           "FIELD_CHAINS", "FIELD_CIRCULAR_WAIT", "FIELD_MISSING_PREREQUISITE", "FIELD_STATED",
+           "MAX_STATED_PER_NODE", "event_parties",
            "MAX_CHAINS_PER_ROOT", "MAX_CLAIMS_PER_SWEEP", "MAX_FACT_WRITES_PER_SWEEP",
            "MISSING_PREREQUISITE_FACT", "VALUE_TYPE", "VERSION_PREFIX", "ChainSet",
            "DependencyClaim", "DependencyCorrelation", "DependencySweep", "DroppedClaim",

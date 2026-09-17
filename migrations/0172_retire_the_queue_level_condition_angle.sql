@@ -1,0 +1,28 @@
+-- L2 · retire `condition_queue_triage`, superseded by `condition_now_true`.
+--
+-- WHY A MIGRATION AND NOT NOTHING. `evaluate_angle` deletes the verdicts of subjects that have
+-- left the gate, but it only ever looks at ITS OWN `angle_id` — `evaluate_org` iterates
+-- `registered()`, and an angle nobody registers is never evaluated, so nothing in the engine will
+-- ever visit these rows again. They would sit in `context_angle_verdicts` for the life of the
+-- tenant: counted by every "what is this angle costing" query, joined by nothing, and keyed on
+-- subject refs (`<node>`) that the replacement angle cannot produce, because it fans out and its
+-- refs carry an item digest (`<node>#<digest>`).
+--
+-- The same class of problem `0160_reading_anchors_are_their_own_node_type.sql` was written for:
+-- an identifier's MEANING changed, the writer resolves rows by that identifier alone and never
+-- rewrites it, so the existing rows have to be reconciled by hand exactly once.
+--
+-- WHY THE ANGLE WAS RENAMED. It shipped answering for a counterparty's WHOLE review queue —
+-- `something_is_met` / `nothing_yet` / `all_courtesies` — because `correlation_timeline` writes
+-- one fact per node whose value is a LIST and the gate had no way to address an item inside it.
+-- `Angle.fan_out` now does, so the question is per condition and the enum is the one it always
+-- wanted (`met` / `not_met` / `not_a_condition` / `unknowable`). A name with `queue` in it would
+-- now describe the opposite of what the angle does.
+--
+-- SAFE TO REPLAY, and safe to run before the new angle has ever been evaluated: it deletes rows
+-- of one retired id and touches nothing else. There is no data to preserve — a verdict is a
+-- current opinion, not a record, and `l2_model_runs` still holds the audit envelope and the
+-- returned artifact for every call that produced one. The history is not being thrown away; only
+-- the index into it that nothing can read any more.
+
+delete from context_angle_verdicts where angle_id = 'condition_queue_triage';

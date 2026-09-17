@@ -233,7 +233,13 @@ def _pull(store: GraphStore, org_id: str, limit: int):
             "rp.enc_content, "
             "pc.clean_text as prepared_text "
             "from source_events se "
-            "join raw_payloads rp on rp.event_id = se.event_id "
+            # SCOPED, like the `prepared_content` join on the very next line. This one was not, and the
+            # two are the same shape of lookup on the same event: a payload belongs to a tenant,
+            # and a join that does not say so relies on `new_id("evt")` never colliding across
+            # orgs to stay correct. It also cannot use `raw_payloads_org_event_idx`, which leads
+            # on `org_id` — measured 2026-09-17, the per-event lookup went 351ms -> 2.9ms with
+            # the org in hand and stays a sequential scan without it.
+            "join raw_payloads rp on rp.event_id = se.event_id and rp.org_id = se.org_id "
             "left join prepared_content pc on pc.event_id = se.event_id and pc.org_id = se.org_id "
             "join lateral ("
             "  select max(qs.confidence_bp)::int as qes_confidence_bp, "
@@ -773,6 +779,24 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
         from genios_engine.platform.logging import get_logger
         get_logger("genios.l2").exception("metric history prune failed for org=%s", org_id)
 
+    # RETENTION on `graph_change_outbox`, beside the one above and for the same reasons. It is the
+    # SECOND store in this layer that only ever appends — one row per committed event, both lanes,
+    # for the life of the tenant — and unlike `metric_history` it had no horizon anywhere in the
+    # engine. Its own reader already expected one: `graph_version_at` documents that it answers
+    # None for "an org whose outbox rows have aged out", so the honest null was written before the
+    # pruning that produces it.
+    #
+    # Same instant, same never-fatal contract, and BOUNDED for a reason this one needs more than
+    # the metric prune does: the first sweep on a tenant that has been draining for a year meets
+    # the whole backlog at once, and an unbounded DELETE there would be an unbounded transaction
+    # on the path that ingests mail. The drain repeats; a bounded batch clears it over a few.
+    outbox_rows_pruned = 0
+    try:
+        outbox_rows_pruned = store.prune_change_outbox(org_id, eval_time=sweep_at)
+    except Exception:      # noqa: BLE001 — retention must never break ingestion
+        from genios_engine.platform.logging import get_logger
+        get_logger("genios.l2").exception("change outbox prune failed for org=%s", org_id)
+
     # Attention refresh — L2 is the SOLE writer of context_attention. Full-org refresh:
     # recency decays even for untouched nodes, and it is a few bulk queries, not per-node
     # round-trips.
@@ -1300,6 +1324,181 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
     # without a model call; structured rows are deterministic too.  Charging either at this seam
     # billed the same L1 interpretation twice.  The two remaining L2 model sites write their own
     # token/cost receipts through `context.model_audit`.
+    # L2.1.9 · WHAT THIS SWEEP COULD NOT EXPLAIN.
+    #
+    # LAST OF THE MEASURING PASSES, after every pass that can produce a situation — including the
+    # pattern evaluation above it, because a pattern that fired is coverage like any other. Run
+    # any earlier and it would report as unexplained the very subjects the passes behind it were
+    # about to speak about.
+    #
+    # THE MEASUREMENT NOTHING TOOK. Every pass in this function reports what it PRODUCED; not one
+    # reported what it left behind, so a sweep that explained nothing and a sweep with nothing to
+    # explain read identically in the result. "What is happening in my mailbox that this never
+    # mentioned?" had no answer in the engine — the only way to find out was to read the graph by
+    # hand against the cards, which is how every defect on this branch was found.
+    #
+    # DETERMINISTIC AND BOUNDED: four bulk statements over tables this sweep has already written,
+    # no model and no clock of its own. It adds no judgement — it does not decide that a residue
+    # item MATTERS, only that nothing spoke about it. Never fatal, for the reason every pass here
+    # is: a missed measurement costs one cycle of visibility, and the next sweep takes it again.
+    residue: dict = {}
+    try:
+        from genios_engine.context.residue import detect_residue
+        residue = detect_residue(store, org_id, eval_time=sweep_at).as_record()
+    except Exception:      # noqa: BLE001 — a measurement must never break ingestion
+        from genios_engine.platform.logging import get_logger
+        get_logger("genios.l2").exception("residue detection failed for org=%s", org_id)
+
+    # L2 · THE NEAR-MISS CAMPAIGNS — sends the exact-sentence grouping DECLINED to merge.
+    #
+    # `correlation_conversation` groups outbound mail by the exact sentence and is right to: "a
+    # similarity threshold here would quietly merge two different pitches on a bad day". The cost
+    # is that a founder who paraphrases sends one raise to eighteen people and the system sees
+    # eighteen unrelated threads — the difference being a typing habit, not a fact about the raise.
+    #
+    # THIS PASS ASSERTS NOTHING. It mints no campaign and no card; it publishes a CANDIDATE with
+    # the distinctive words its members have in common, so the question can be adjudicated once by
+    # a model instead of guessed at by a threshold nobody can debug. Deterministic, bounded, no
+    # clock of its own, and before the angles pass because that is the queue an angle reads.
+    conversion: dict = {}
+    try:
+        from genios_engine.context.conversion import read_conversion
+        with store.engine.connect() as _c:
+            conversion = read_conversion(_c, org_id)
+    except Exception:      # noqa: BLE001 — a measurement must never break ingestion
+        from genios_engine.platform.logging import get_logger
+        get_logger("genios.l2").exception("conversion census unreadable for org=%s", org_id)
+
+    candidates: dict = {}
+    try:
+        from genios_engine.context.campaign_candidates import refresh_campaign_candidates
+        candidates = refresh_campaign_candidates(store, org_id, eval_time=sweep_at).as_record()
+    except Exception:      # noqa: BLE001 — a proposal must never break ingestion
+        from genios_engine.platform.logging import get_logger
+        get_logger("genios.l2").exception("campaign candidates failed for org=%s", org_id)
+
+    # L2 · THE ANGLES — the only place in this layer a model may be asked anything on a sweep.
+    #
+    # AFTER THE RESIDUE PASS, because one of the two queues an angle may read IS the residue, and
+    # an angle asked before it is measured would be asked about last sweep's blind spots.
+    #
+    # NO ASKER IS SUPPLIED HERE, AND THAT IS THE DEFAULT RATHER THAN AN OVERSIGHT.
+    # The cohort pass established the pattern and states the reason in its own drafter: "the
+    # sweep path cannot reach a model even by accident because it never receives one". So this
+    # pass costs one SELECT per registered angle and nothing else, and switching a tenant on is a
+    # deliberate act elsewhere rather than a constant nobody remembers setting.
+    #
+    # THE SYMBOL IS NOT NAMED HERE ON PURPOSE. `test_m9_never_fires_inside_a_sweep` scans this
+    # whole file for the names of the model-reaching helpers, prose included, and it is right to:
+    # a raw scan cannot be fooled by a call hidden behind an alias, and the cost of that strictness
+    # is that a citation has to describe rather than name. It caught this comment on the first
+    # full run.
+    #
+    # It still runs with no asker, because the gate query is also the RETIREMENT: a subject that
+    # has left a queue must lose its verdict whether or not anybody is asking new questions, or a
+    # tenant who turns the angles off keeps the last opinions they ever received.
+    #
+    # Never fatal, like every pass here. An angle only ever ADDS to what the deterministic layer
+    # produced — the contract has no field that could make one required — so losing this pass
+    # returns the tenant to exactly the state they were in before any of it existed.
+    angles: dict = {}
+    try:
+        from genios_engine.context.angles.store import evaluate_org as evaluate_angles
+        angles = evaluate_angles(store, org_id, eval_time=sweep_at).as_record()
+    except Exception:      # noqa: BLE001 — an addition must never break ingestion
+        from genios_engine.platform.logging import get_logger
+        get_logger("genios.l2").exception("angle evaluation failed for org=%s", org_id)
+
+    # L2.7 · THE SECOND READING PASS — the one that can see what the first could not.
+    #
+    # THE ORDER IN THIS FILE IS A CYCLE, AND IT IS NOT AN ACCIDENT OF LAYOUT. The state readings
+    # run near the top because `detect_residue` measures what they DID NOT explain, and the angles
+    # gate on that residue. So:
+    #
+    #     state situations -> residue (coverage) -> angles (gate on residue) -> readings again
+    #
+    # Four readings consume something written AFTER their first run:
+    # `stated_dependency` reads `derived.dependency.stated` from the dependency pass,
+    # `unreported` reads residue plus a verdict, `reworded_outreach` reads a campaign candidate
+    # plus a verdict, and `condition`/`condition_met` read the timeline correlator's facts. Run
+    # once, every one of them is a full sweep behind — and on a tenant's FIRST sweep they produce
+    # nothing at all, which is exactly what the live graph showed: sixty findings computable in
+    # memory and not one of the new types persisted.
+    #
+    # IDEMPOTENT BY DESIGN, WHICH IS WHY A SECOND CALL IS THE FIX RATHER THAN A REORDERING.
+    # `refresh_state_situations` says it: "every fact overwrites its own deterministic version id
+    # and every situation conflicts on `(org_id, correlation_id)`, so six sweeps a day produce one
+    # row per finding rather than six." The first pass is what residue is measured against; this
+    # one adds what the passes between them made knowable. Reordering instead would break the
+    # coverage measurement, because residue would then be measured against readings that had
+    # already consumed its own output.
+    #
+    # Never fatal, like every pass here: losing it costs one cycle of the model-gated cards and
+    # the correlator-fed ones, and the next sweep takes them again.
+    second_pass_rows = 0
+    try:
+        from genios_engine.context.outreach_situations import refresh_state_situations as _reread
+        second_pass_rows = _reread(store, org_id, now=sweep_at)
+        derived_rows += second_pass_rows
+    except Exception:      # noqa: BLE001 — a second look must never break ingestion
+        from genios_engine.platform.logging import get_logger
+        get_logger("genios.l2").exception("second reading pass failed for org=%s", org_id)
+
+    # AND RANK WHAT THAT PASS JUST CREATED. The composer runs far above this line, for a reason
+    # that is still right — every one of its six modifiers reads a `derived.*` fact written by the
+    # analytic block, so composing any earlier reads last sweep's stratum. But the second reading
+    # pass writes situations AFTER it, and a situation the composer never saw carries a null
+    # importance. Its own docstring names that outcome precisely: "a null is invisible to the gate
+    # rather than failing it — the situations nobody ranks would be exactly the ones nobody
+    # notices."
+    #
+    # MEASURED ON THE PILOT the sweep this was found in: 138 open situations and 19 of them
+    # unranked — 8 `analytic_movement`, 6 `condition_in_review`, 5 `commitment_overdue`, every one
+    # of them a card the second pass had just made knowable, and every one unrankable into a feed.
+    #
+    # A SECOND RUN IS SAFE AND CHEAP, and the composer says so itself: it is "IDEMPOTENT, and
+    # byte-stable — running this twice at two instants over an unchanged graph writes an identical
+    # body", which is load-bearing because that body reaches the expertise package's content hash.
+    # So the situations the first run already ranked are rewritten with the same bytes and mint no
+    # new package row; only the ones it could not see change.
+    if second_pass_rows:
+        try:
+            from genios_engine.context.situation_bso import refresh_situation_importance as _rank
+            situations_ranked = _rank(store, org_id, eval_time=sweep_at)
+        except Exception:  # noqa: BLE001 — a derived view, recomputed on the next drain
+            from genios_engine.platform.logging import get_logger
+            get_logger("genios.l2").exception("second importance pass failed for org=%s", org_id)
+
+    # ONE BUMP FOR EVERYTHING THE DERIVED PASSES DID.
+    #
+    # `bump_version` is taken per EVENT, inside `process_event`, and `bump_slice_versions`
+    # describes it as "the one step every graph write already takes". That was not true of
+    # anything above this line. Every pass between the drain and here writes to the graph —
+    # engagement, momentum, the waiting arithmetic, trends, cohort positions, situations and
+    # their lifecycle — and none of them bumped, so two things followed:
+    #
+    #   A SEAT HOLDING A LIVE DEVICE WAS NEVER TOLD. `bump_slice_versions` runs inside
+    #   `bump_version` and announces `slice.delta` to every live seat. The facts a card actually
+    #   shows are written in that block, and the seats watching them heard nothing until the next
+    #   event happened to arrive.
+    #
+    #   A MIXED READ PASSED THE GUARD THAT EXISTS TO CATCH IT.
+    #   `intelligence_routes._require_stable_query_inputs` rejects a query whose graph version
+    #   moved mid-read — "reject a mixed read if graph, signal authority, or config changed
+    #   mid-query" — and a query spanning this block saw the version stand still while the facts
+    #   under it moved.
+    #
+    # ONCE, not per fact: the version answers "did the graph change", not "how much", and a bump
+    # per derived row would announce thousands of slice deltas for one sweep. Placed after every
+    # writing pass and before the fixpoint hash for the same reason that hash is taken here.
+    # Never fatal — a missed bump costs one cycle of live freshness, and the next sweep bumps.
+    try:
+        with store.engine.begin() as _bump_conn:
+            store.bump_version(_bump_conn, org_id)
+    except Exception:      # noqa: BLE001 — a version bump must never break ingestion
+        from genios_engine.platform.logging import get_logger
+        get_logger("genios.l2").exception("post-derive version bump failed for org=%s", org_id)
+
     # L-4 · the fixpoint's "after", and the bookkeeping. LAST, after every pass that can move a
     # situation, a membership or a lifecycle state — a hash taken before the composer would call a
     # sweep converged that had not finished changing the graph.
@@ -1328,6 +1527,28 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
             "resolutions": resolutions,
             "resource_correlation": resource_correlation,
             "derived_rows": derived_rows, "history_points_pruned": history_points_pruned,
+            # REPORTED, not computed and dropped. A bounded prune that hit its batch limit
+            # looks identical to one with nothing to delete unless the number is returned,
+            # and the first is a backlog still draining while the second is steady state.
+            "outbox_rows_pruned": outbox_rows_pruned,
+            # The only number here that counts what the sweep did NOT do. A zero means
+            # this layer explained everything it holds; a zero because the pass failed is
+            # why it carries its own key rather than being folded into a total.
+            "residue": residue,
+            # WHAT THE CORRELATORS CONVERTED. Reported here because the number that mattered —
+            # claims in against facts out — existed in two separate fields of two separate sweep
+            # objects and was never put beside itself. `conversion.read_conversion` reads the
+            # census the correlators now publish.
+            "conversion": conversion,
+            "campaign_candidates": candidates,
+            # What the second reading pass added once the correlators, the residue
+            # and the angles had run — the cards the first pass could not see.
+            "second_pass_rows": second_pass_rows,
+            # What the model layer cost this tenant, including everything it declined to
+            # do. `no_asker` and `budget_exhausted` are reported for the reason the
+            # `budgets` ledger exists: a pass that made no calls because it COULD not must
+            # never read as a pass with nothing to do.
+            "angles": angles,
             "history_backfilled": history_backfilled,
             "metric_points": metric_points, "trend_facts": trend_facts,
             "anomaly_facts": anomaly_facts, "cohort_changes": cohort_changes,

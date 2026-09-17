@@ -1,0 +1,124 @@
+# The mirror of `outbound-awaiting-reply.yaml`, and a separate file for the same reason the
+# meeting pair are separate: that one starts "we wrote and nobody answered", this one starts "they
+# answered and we did not". The remedies are opposite — one is a nudge to send, the other is a
+# reply to write — and a card that confuses them tells a founder to chase somebody who is waiting
+# on him.
+#
+# Between the two sat the exchange that actually fills a mailbox. `awaiting_response` fires while
+# WE are waiting; Support's `first_response_overdue` fires when THEY opened a thread we never
+# answered — its predicate returns at the first internal message, so a conversation we started is
+# not its case. We wrote, they replied, and the reply is still sitting there: nothing named it.
+#
+# `context/outreach_situations.read_unanswered_replies` produces it.
+
+identity:
+  id: admin.sit.reply_owed
+  name: Reply Owed
+  domain: admin
+  owner_capability: admin.executive_support.inbox_and_correspondence
+  version: 1.0.0
+  status: stable
+
+description: >
+  Somebody outside the company answered us, and nothing has gone back to them since. It is the
+  quietest way a live conversation dies: nobody decided to stop, the reply arrived on a busy day,
+  and because the thread looks handled from the outside there is nothing in front of anybody to
+  say otherwise.
+
+  The evidence is the direction of the two most recent messages and nothing softer. `thread.
+  last_inbound` and `thread.last_outbound` are written by `context/pipeline.py` on the legs
+  themselves, so "they spoke last" is a comparison of two recorded instants rather than an
+  inference from a missing one. Requiring BOTH is what separates this from a stranger writing in
+  for the first time, which `first_response_overdue` already owns.
+
+  It must never say they are waiting on a DECISION, or that the relationship is at risk. What is
+  known is that a message of theirs is the most recent one; why it went unanswered, and whether
+  the answer matters, are not on the record. A reply drafted and not sent, an answer sent from an
+  address the tenant has not connected, or a colleague who replied from their own mailbox are all
+  invisible here, and the situation carries them as declared gaps rather than assuming silence.
+
+matches:
+  l2_situation_types:
+    - reply_owed
+  scope: person
+  when:
+    # They spoke, and we had written too — the second clause is what keeps a cold inbound out of
+    # this file and with the first-response clock where it belongs.
+    - exists: outreach.days_owed
+    - path: outreach.days_owed
+      op: ">="
+      value: 2
+
+also_serves:
+  - admin.executive_support.commitment_tracking
+  - admin.meeting_operations.agenda_preparation
+
+objects:
+  load:
+    - admin.obj.core.request
+  optional:
+    - admin.obj.core.commitment
+    - admin.obj.core.deadline
+  never_load:
+    - admin.obj.core.invoice
+    - admin.obj.core.employee_record
+    - admin.obj.core.asset
+
+priority_bp: 7200
+typical_duration_days: 5
+
+signals_of_progress:
+  - followup_sent
+  - next_step_agreed
+  - meeting_scheduled
+
+signals_of_decay:
+  - going_dark
+  - decision_deferred
+
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    Headline: who is waiting, and how long their message has been sitting.
+
+    Situation: that they replied, when, and that nothing has gone back since. State the elapsed
+    time plainly — a reply two days old and one six weeks old are different situations wearing
+    the same words, and the second is the one that costs a relationship.
+
+    Where `outreach.their_normal_reply_days` is present, it is CONTEXT and not an accusation:
+    "they usually come back within two days" tells the reader what kind of correspondent they are
+    keeping waiting. It is not a claim that we are slow by their standard — nothing here measures
+    our own reply speed.
+
+    Never assert what they are waiting FOR, and never that the relationship is cooling. The record
+    shows a message of theirs is the most recent one. Everything past that is invention.
+
+    Artifact: a reply that answers, not an acknowledgement. "Sorry for the delay, let me come back
+    to you" repeats the failure — it is another message that leaves the question open.
+  fallback:
+    # The finding, with its elapsed time. "No answer sent" and not "ignored": the first is a fact
+    # about a mailbox, the second is a verdict on a person.
+    headline: "{entity} — replied {days}d ago, no answer sent"
+    situation: >-
+      {entity} answered and nothing has gone back to them in the {days} days since.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: rohit
+  last_updated: '2026-09-14'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-09-14'
+  notes: >
+    Split from `outbound-awaiting-reply` rather than folded into it: the two fire on opposite
+    states of one conversation and cannot both be true of it — `waiting.WAITING_ONLY_FIELDS` is
+    retired the instant a reply lands, so the facts the sibling needs are gone exactly when these
+    arrive. The gate is three positive facts (`thread.last_inbound`, `thread.last_outbound`, and
+    the first being newer) rather than the shorter "the waiting facts are gone", because a reading
+    built on a missing field fires just as happily when the waiting pass failed or the node was
+    never swept. Two days matches `_WAITING_AFTER_DAYS` deliberately — the same clock pointed the
+    other way. No window bound: a reply left unanswered does not stop being owed, it gets worse.
+
+admission:
+  accepted_content_hash: c9405ac9681252d30440f54803e21dbf9bc402e387acbc2c66864ad2fe2a8268

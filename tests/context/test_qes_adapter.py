@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
+from genios_engine.context.vocabulary import OWNER_INFERRED
 from genios_engine.context.qes_adapter import adapt_qes_extraction
 from genios_engine.contracts.evidence import EvidenceSpan
 from genios_engine.contracts.extraction import (
@@ -56,6 +57,11 @@ def test_qes_projection_is_deterministic_and_model_free():
 def test_qes_projection_keeps_decision_fields_and_roles():
     projected = adapt_qes_extraction(extraction(), confidence_bp=7000)
     fields = {item["field"]: item["value"] for item in projected.fact_candidates}
+    # The SHARED vocabulary, not this producer's own spelling. `decision.owner_basis` read
+    # `inferred_from_qes` and `document.owner_basis` read `declared_by_source`, each naming its
+    # writer instead of the category, so no consumer could ask "is this owner stated or
+    # attributed?" without knowing every producer by name. Asserted through the constant so a
+    # future rename cannot leave this pinning a string nothing writes.
     assert fields == {"decision.status": "pending", "decision.owner": "Acme",
-                      "decision.owner_basis": "inferred_from_qes"}
+                      "decision.owner_basis": OWNER_INFERRED}
     assert projected.roles[0]["role"] == "counterparty"

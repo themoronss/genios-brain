@@ -513,7 +513,21 @@ PUSHABLE_CARDS_SQL = (
 def _co_recipients(conn, org_id: str, card_id: str, *, owner: str | None) -> tuple[dict, ...]:
     """The seats a card reaches by declared responsibility, with the owner named for each so
     the message can say what stays with someone else. `()` on a tenant that declared nothing
-    and on any read error — the owner's own delivery never waits on this table."""
+    and on any read error — the owner's own delivery never waits on this table.
+
+    DORMANT, AND MEASURED SO. 2026-09-17: every org on this deployment has exactly ONE active
+    seat, `card_recipients` and `seat_responsibilities` hold zero rows in every tenant, and all
+    126 cards ever built are assigned to `seat_owner`. So this function has returned `()` on
+    every call it has ever had, and the fan-out below it — the co-recipient list, the owner named
+    beside each, `card_recipients` — has never run on real data.
+
+    That is a statement about the tenants, not about the code: a one-person company has nobody to
+    fan out to, and inventing a second recipient would be worse than reaching one. Recorded here
+    rather than left to be rediscovered, because "wired but never exercised" and "wired wrong"
+    look identical from the outside, and the distinction is what somebody will need on the first
+    day it matters. MOVES WHEN a tenant adds a second seat and declares a responsibility — at
+    which point this is the first path to watch, precisely because no traffic has crossed it.
+    """
     try:
         rows = conn.execute(text(
             "select cr.seat_id, cr.accountability, cr.scope_kind, cr.scope_key, "
@@ -537,12 +551,19 @@ def enqueue_pending(engine, org_id: str, channel: str,
     judges the *same* delivery it queued, and so the drain needs no extra joins to know whose
     attention a row is about to spend.
 
-    Returns ``{"queued": n, "band_starved": n, "unrouted": n}``. The last two used to be silence.
-    Every live card sits at ``urgency_band='standard'`` (scores 42-60 against thresholds of
-    70/85), so the band filter below excludes ALL of them and this function returned 0 — which is
-    indistinguishable from "there was nothing to send". A tenant where no card has ever cleared
-    the push band is a broken scoring pipeline, not a quiet week, and the two have to be
-    tellable apart from the sweep's own output."""
+    Returns ``{"queued": n, "band_starved": n, "unrouted": n}``. The last two used to be silence,
+    and a 0 return was indistinguishable from "there was nothing to send". A tenant where no card
+    has ever cleared the push band is a broken scoring pipeline, not a quiet week, and the two
+    have to be tellable apart from the sweep's own output.
+
+    THE BAND IS NO LONGER THE BLOCKER, and this paragraph used to say it was. When these counters
+    were added every live card sat at ``standard`` — 42-60 against thresholds of 70/85 — so the
+    filter excluded all of them. Measured 2026-09-17 that is no longer true: 71 of 133 cards sit
+    at high or critical (60-75), and 21 pass the full eligibility filter including the authority
+    predicate. What is empty is ``deliverable_channels``: all three orgs register ``in_app`` and
+    nothing else, and ``in_app`` is the PULL surface, so there is nowhere to push. `band_starved`
+    and `unrouted` still earn their place — they are what will tell the two apart the next time —
+    but an operator reading a 0 here should check the channel first."""
     from genios_engine.deliver.routing import AGENT_TRANSPORTS
     if channel in AGENT_TRANSPORTS:
         # Routing law 1, as an executable statement at the write boundary rather than a sentence

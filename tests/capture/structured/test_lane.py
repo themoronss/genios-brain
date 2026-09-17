@@ -68,9 +68,32 @@ GCAL_EVENT: dict[str, Any] = {
 
 #: The object a registered mapping is applied to, per mapping id — so the S-1..S-9 sweep below
 #: runs over real payloads rather than over an empty dict that would conform vacuously.
+#: A Linear issue as `capture/connectors/linear.py` hands it over — already flattened, because
+#: that connector resolves Linear's nested `state`, `assignee`, `project` and `labels` before the
+#: mapping ever sees them. A payload carrying Linear's raw nesting would test a shape this lane
+#: is never given.
+#:
+#: `state_type` is the reliable done signal and `state_name` the human word, so both are present
+#: and they disagree in the ordinary way: "In Progress" is a `started` issue, not a `completed`
+#: one. `completed_at` is therefore absent rather than null — an issue that is not finished has
+#: no completion instant, and a null would be a recorded claim that it finished at no time.
+LINEAR_ISSUE: dict[str, Any] = {
+    "id": "iss_4417",
+    "identifier": "ENG-212",
+    "title": "Chat360 pilot: backfill the deal pipeline",
+    "state_name": "In Progress",
+    "state_type": "started",
+    "project": "Pilot onboarding",
+    "team": "Engineering",
+    "labels": "backend,pilot",
+    "assignee_email": "priya@chat360.io",
+    "due_date": "2026-09-12T17:00:00+00:00",
+}
+
 PAYLOADS: dict[str, dict[str, Any]] = {
     "hubspot.deal.v1": HUBSPOT_DEAL,
     "gcal.event.v1": GCAL_EVENT,
+    "linear.issue.v1": LINEAR_ISSUE,
     "stripe.subscription.v1": {"id": "sub_1", "status": "active",
                                "current_period_end": 1795046400},
     "postgres.public.customer_accounts.v1": {"account_id": "a1", "plan": "growth",

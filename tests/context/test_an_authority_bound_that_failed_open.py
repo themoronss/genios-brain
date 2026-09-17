@@ -121,8 +121,11 @@ def graph():
     with engine.begin() as c:
         c.execute(text("create table graph_nodes (org_id text, node_id text, node_type text, "
                        "canonical_key text, display_name text, valid_to timestamp)"))
+        # `origin` MATCHES migrations/0036: it is `not null default 'anchor'` in the real table,
+        # and `resolve_alias` reads it to refuse a key two live nodes both answer to. A fixture
+        # narrower than the schema turns a correct query into a fake failure.
         c.execute(text("create table graph_aliases (org_id text, alias_type text, "
-                       "alias_key text, node_id text)"))
+                       "alias_key text, node_id text, origin text not null default 'anchor')"))
         c.execute(text("create table org_seats (org_id text, email text, active boolean)"))
         c.execute(text("create table orgs (id text, email text)"))
         c.execute(text("create table connections (org_id text, external_account_id text)"))
@@ -137,7 +140,8 @@ def graph():
 
 def name_alias(conn, node_id, name="arjun"):
     conn.execute(text("delete from graph_aliases where org_id=:o"), {"o": ORG})
-    conn.execute(text("insert into graph_aliases values (:o, 'person_name', :k, :n)"),
+    conn.execute(text("insert into graph_aliases (org_id, alias_type, alias_key, node_id) "
+                      "values (:o, 'person_name', :k, :n)"),
                  {"o": ORG, "k": name, "n": node_id})
 
 

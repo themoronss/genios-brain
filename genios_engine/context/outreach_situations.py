@@ -28,13 +28,22 @@ it, and a situation is a claim about which facts, together, are worth a decision
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+#: LATENT UNTIL A COHORT ACTUALLY FORMS. `read_outreach_cohorts` calls `median(cadences)` and
+#: nothing in this module bound the name — `waiting.py` imports it, this file never did. The line
+#: sits behind `len(members) >= _MIN_COHORT` and `len(waiting) >= _MIN_COHORT_AWAITING`, which no
+#: group on the pilot has ever satisfied, so it has never run. The first tenant whose campaign
+#: reaches three people would have raised `NameError` INSIDE the readings' write transaction,
+#: which is not a gap in one lane — it takes the whole reading pass down with it.
+from statistics import median
 from types import SimpleNamespace
 
 from sqlalchemy import bindparam, text
 
 from genios_engine.context.derived_provenance import load_event_receipts
 from genios_engine.context.domain_spec import domains_declaring, spec_for
-from genios_engine.context.situations import (
+from genios_engine.context.vocabulary import owner_basis
+from genios_engine.context.situations import (  # noqa: I001
+    unmet_source_families,
     evidence_score,
     freshness_score,
     identity_score,
@@ -60,6 +69,61 @@ ANCHOR_OUTREACH = "outreach"
 #: is one unmet ask THEY made — opposite owner, opposite remedy, and a card that confuses them
 #: tells the user to chase somebody for something the user themselves owes.
 ANCHOR_COMMITMENT = "commitment"
+
+#: ONE MESSAGE OF THEIRS THAT WE HAVE NOT ANSWERED. The mirror of `outreach`, and the half this
+#: layer could not say.
+#:
+#: `read_awaiting_response` covers "we wrote and they went quiet". `support_situations.
+#: read_first_response` covers "they wrote FIRST and we never answered" — its predicate bails at
+#: `msgs[0].internal`, so a thread we opened is not its case. Between the two sits the exchange
+#: that actually happens: we wrote, THEY REPLIED, and we went quiet. Nothing named it.
+#:
+#: It is not a variant of waiting, it is its opposite, and the two cannot both be true of one
+#: conversation: `waiting.WAITING_ONLY_FIELDS` is retired the moment a reply lands, so the facts
+#: `read_awaiting_response` fires on are gone by the time this one can fire at all.
+ANCHOR_UNANSWERED = "unanswered"
+
+#: ANCHOR NAMES THAT ARE ALSO REAL GRAPH NODE TYPES, and the reason the two had to stop being one
+#: string. A reading mints a node per finding and the minting site passed the anchor name straight
+#: through as `node_type`, so "the thing a domain routes on" and "the kind of thing this is in the
+#: graph" were the same value — harmless for `outreach` or `cohort`, which nothing else mints, and
+#: quietly destructive for these two.
+#:
+#: `commitment` FAILED CLOSED. `_WAITING_ROWS` excludes this node type to stop the reading reading
+#: its own projected facts back (one promise became fifteen cards, doubling every sweep). The
+#: pipeline mints its genuine promises under the SAME type, so the exclusion took those with it:
+#: `_COMMITMENT_OWNERS` joins on a commitment node id, `_WAITING_ROWS` never returns one, and
+#: `_owner_name`/`_owner_key` were therefore ALWAYS None. The owner filter in
+#: `read_overdue_commitments` — the fix for "six of fifteen cards were somebody else's promise" —
+#: could not fire once. Verified by running both queries against a graph holding one of each.
+#:
+#: `meeting` FAILS OPEN, which is the same defect pointing the other way: the meeting reading's
+#: own anchors are NOT excluded, and today nothing goes wrong only because `_WAITING_ROWS` filters
+#: on a field allow-list that happens to contain no `meeting.*` name. That is the accident this
+#: module's own comment says `outreach` escaped by, and it lasts exactly until somebody adds a
+#: field.
+#:
+#: ONLY THESE TWO ARE NAMESPACED. Renaming the other four would cost something and buy nothing:
+#: `situation_bso` classifies an anchor as company-like by the literal string "organization", so a
+#: blanket prefix would silently drop that scope key. A reading may namespace an anchor type only
+#: where it collides with a type the graph already mints.
+_GRAPH_NODE_TYPE_ANCHORS = frozenset({"commitment", "meeting"})
+
+#: The prefix. Chosen over a suffix so an exclusion can be written `like 'reading:%'` the day a
+#: third collision appears, and consistent with the colons this layer already uses in identity
+#: keys (`commitment:`, `thread:`, `li:`).
+READING_ANCHOR_PREFIX = "reading:"
+
+
+def anchor_node_type(anchor: str) -> str:
+    """The `graph_nodes.node_type` a reading mints its anchor under.
+
+    Not the anchor name: `domains_declaring()` and `DomainSpec.type_for()` both take the anchor
+    name from the `READINGS` tuple and never read the graph, so corpus routing is untouched by
+    what this returns.
+    """
+    return (f"{READING_ANCHOR_PREFIX}{anchor}" if anchor in _GRAPH_NODE_TYPE_ANCHORS
+            else anchor)
 
 #: One CAMPAIGN — everyone contacted with the same stated objective. The first anchor in this
 #: system whose subject is a GROUP rather than a thing: every situation until now was about one
@@ -102,6 +166,13 @@ ANCHOR_ORGANIZATION = "organization"
 #: an objective-keyed cohort covering the same people rather than minting a second card about them.
 ANCHOR_CAMPAIGN = "campaign"
 
+#: One meeting, and whether it was finished. Imported rather than re-declared so the anchor this
+#: module dispatches on and the one the reading stamps on its findings can never drift apart.
+from genios_engine.context.condition_situations import (  # noqa: E402
+    ANCHOR_CONDITION_MET,
+)
+from genios_engine.context.meeting_situations import ANCHOR_MEETING  # noqa: E402
+
 #: How far back a campaign may have been sent and still be worth a card.
 #:
 #: A DEFAULT, NOT A LAW. `refresh_state_situations` takes it as an argument and `find_campaigns`
@@ -124,7 +195,7 @@ _WAITING_AFTER_DAYS = 2
 
 _WAITING_ROWS = (
     "select f.subject_node_id as node_id, f.field as field, f.value as value, "
-    "       n.display_name as name "
+    "       n.display_name as name, n.node_type as node_type "
     "from graph_facts f "
     "join graph_nodes n on n.org_id = f.org_id and n.node_id = f.subject_node_id "
     "     and n.valid_to is null "
@@ -146,14 +217,33 @@ _WAITING_ROWS = (
     # its own output back — and that is exactly the accident the comment above says `outreach`
     # escaped by. The exclusion is on node TYPE precisely so a future field rename cannot spring
     # the trap; leaving two anchors out of it leaves two doors open.
-    "and n.node_type not in ('outreach', 'commitment', 'cohort', 'condition', "
-    "                        'organization', 'campaign') "
+    #
+    # AND IT NAMES THE READING'S ANCHORS, NOT THE GRAPH'S SUBJECTS. Two of these names used to be
+    # both at once. `commitment` is the type the PIPELINE mints for a genuine promise, so excluding
+    # the string took the real promises out with the reading's own anchors: `_COMMITMENT_OWNERS`
+    # joins on a commitment node id, this query could never return one, and `_owner_name` /
+    # `_owner_key` were therefore always None — the owner filter in `read_overdue_commitments`
+    # never fired once. The reading still produced cards, through the weaker path only: the
+    # extractor may emit `commitment.due_at` as a plain fact candidate on a PERSON, and those do
+    # arrive here, without an owner, a status or a normalised action. See `anchor_node_type`.
+    "and n.node_type not in ('outreach', 'reading:commitment', 'reading:meeting', "
+    "                        'cohort', 'condition', 'organization', 'campaign') "
     "where f.org_id = :o and f.valid_to is null and f.status = 'active' "
     "and f.field in ('thread.days_waiting', 'thread.follow_up_count', 'thread.last_heard_days', "
     "                'thread.response_expected', 'party.reply_cadence_days', "
+    "                'party.reply_cadence_basis', "
     "                'relationship.nature', 'party.role', 'thread.ball_in_court', "
     "                'thread.objective', "
     "                'commitment.due_at', 'commitment.action', 'commitment.status', "
+    # HOW WE KNOW WHOSE PROMISE THIS IS, beside the promise itself. Safe to add here only
+    # because the exclusion above now names the reading's OWN anchors rather than the node
+    # type it shares with the pipeline — before that, adding a `commitment.*` field was how
+    # the self-eating trap got sprung.
+    "                'commitment.owner_basis', "
+    # THEIR side of the exchange. `thread.last_outbound` was here and its mirror was not, so the
+    # gather could say when WE last wrote and never when they did — and "who spoke last" is the
+    # whole question `read_unanswered_replies` asks.
+    "                'thread.last_inbound', "
     "                'thread.last_outbound')"
 )
 
@@ -231,20 +321,174 @@ _THREAD_COVERED_BY_PARTY = (
     "where e.org_id = :o and e.edge_type = 'corresponded_with' and e.valid_to is null"
 )
 
-_DIRECT_EVENT_COUNTS = (
-    "select o.subject_node_id as node_id, count(*) as events, "
-    "       count(distinct r.source) as sources, min(o.occurred_at) as first_at, "
-    "       max(o.occurred_at) as last_at "
-    "from graph_observations o "
-    "left join graph_source_refs r on r.observation_id = o.observation_id and r.org_id = :o "
-    "where o.org_id = :o and o.status = 'active' and o.subject_node_id is not null "
-    "group by o.subject_node_id"
+#: WHAT EACH PERSON'S CONVERSATIONS WERE FOR — the objective, fetched through the thread that
+#: owns it rather than off the person.
+#:
+#: AN OBJECTIVE IS A PROPERTY OF A CONVERSATION, NOT OF A PERSON. The live path writes it on both,
+#: and the person-level copy is last-write-wins across every thread they are in — `graph_facts`
+#: keys on (org, subject, field), and one counterparty spans 254 threads in the pilot's graph. So
+#: a campaign of six people, every one of them written to about the same thing, ends up with one
+#: person still carrying that objective and five whose copy was overwritten by whatever they were
+#: last written to about. Measured after the objective backfill: the four largest groups were 5
+#: threads + 1 person, 4 + 1, 4 + 1 and 3 + 2 — every one of them above `_MIN_COHORT` and none of
+#: them with the two WAITING people the reading needs, because `thread.days_waiting` is a person
+#: fact and a thread node has none.
+#:
+#: Joined `corresponded_with`, which is the edge the pipeline already writes from a person to the
+#: thread they were in — 84 of them on the pilot. Nothing is minted and nothing is inferred: this
+#: reads an edge and a fact that both already exist.
+#:
+#: AND IT IS STILL NOT ENOUGH TO MAKE `cohort_outreach_gap` FIRE, which is worth writing down here
+#: because the traversal makes the reading correct without making it productive, and the next
+#: reader will otherwise spend the same day finding out why.
+#:
+#: The objective the extractor supplies is a bespoke SENTENCE, and it names the participants:
+#: "introduction and meeting between Rohit and Shourya", "schedule a meeting between Hirdesh and
+#: Rohit", "Convene GAM 1 Group 2 Launchpad 30 session via Zoom". A sentence built that way is
+#: unique to its thread BY CONSTRUCTION, so no two people can ever share one. Measured across all
+#: 210 objectives on the pilot: every group has exactly ONE person in it, and `_MIN_COHORT` is 3.
+#:
+#: The lane needs a CATEGORICAL objective — the closed set `_OUTREACH_OBJECTIVES` describes
+#: (`fundraising`, `hiring`, `selling`) — and the extractor is not asked for one. That belongs to
+#: L1's prompt and contract, not here: deriving a category from the sentence by matching words in
+#: Layer 2 would be a keyword rule tuned on one tenant's vocabulary, which is the failure mode the
+#: whole layer is built to avoid. Until then the group question is answered by
+#: `campaign_awaiting_reply`, which groups on the sentence we actually SENT — observed, carrying a
+#: verbatim receipt, and shared across recipients by construction rather than unique by it.
+#:
+#: This query stays because it is the CORRECT way to read an objective, because it costs one join
+#: per sweep, and because the moment a categorical objective exists the lane works with no further
+#: change. It also fixed the thing it was written for: `outreach.objective` was declared missing on
+#: every per-person outreach card since the system shipped, and now carries a value for 234 nodes.
+_PARTY_THREAD_OBJECTIVES = (
+    "select distinct e.from_node_id as party, f.value as objective "
+    "from graph_edges e "
+    "join graph_nodes t on t.org_id = e.org_id and t.node_id = e.to_node_id "
+    "                  and t.node_type = 'thread' and t.valid_to is null "
+    "join graph_nodes p on p.org_id = e.org_id and p.node_id = e.from_node_id "
+    "                  and p.node_type = 'person' and p.valid_to is null "
+    "join graph_facts f on f.org_id = e.org_id and f.subject_node_id = e.to_node_id "
+    "                  and f.field = 'thread.objective' and f.status = 'active' "
+    "                  and f.valid_to is null "
+    "where e.org_id = :o and e.edge_type = 'corresponded_with' and e.valid_to is null"
 )
+
+#: PROMISES NOTHING TIES TO A MESSAGE. One row per commitment-carrying subject whose facts have
+#: NEITHER a `created_by_event_id` NOR a `graph_source_refs` row — not one of them, on any field.
+#:
+#: A `deterministic_derived` fact having no event is correct and expected: it was computed, not
+#: observed, and the pipeline writes its provenance as a source ref instead. A subject with
+#: neither is a promise that cannot be traced to anything anybody said. Measured on the pilot:
+#: 21 `commitment` nodes and 6 `company` nodes reach `read_overdue_commitments` in that state,
+#: and 10 prescriptive cards were minted on them.
+#:
+#: WHERE THEY CAME FROM, and why this is a guard and not a cleanup. Those 21 nodes carry four
+#: facts and nothing else — `action`, `due_at`, `days_overdue`, `owed_to`, every one of them
+#: `deterministic_derived` — and their display names carry this reading's own headline suffix
+#: TWICE: "confirm availability for a meeting — promise past due — promise past due". They are
+#: this reading's output, read back as its input. `anchor_node_type`'s `reading:` namespacing
+#: closed that loop, and the closure is measured: 37 doubled names exist, 0 tripled, across 418
+#: situation computations since the last write to one. The residue stays live, though, and
+#: nothing stopped a reading from anchoring on a promise with no origin — which is the property
+#: this guard states, so that a future loop cannot mint a card before anybody notices it opened.
+#:
+#: `sum(case when ...)` rather than `count(*) filter`, because this file's queries run against
+#: SQLite in tests and Postgres in production and FILTER is not portable to every SQLite this
+#: repo is built on.
+_UNTRACEABLE_COMMITMENTS = (
+    "select f.subject_node_id as node_id "
+    "  from graph_facts f "
+    " where f.org_id = :o and f.status = 'active' and f.valid_to is null "
+    "   and f.field like 'commitment.%' "
+    " group by f.subject_node_id "
+    "having sum(case when f.created_by_event_id is not null then 1 else 0 end) = 0 "
+    "   and sum(case when exists (select 1 from graph_source_refs g "
+    "                  where g.org_id = f.org_id "
+    "                    and g.fact_version_id = f.fact_version_id) "
+    "                then 1 else 0 end) = 0"
+)
+
+#: THREADS WHOSE COUNTERPARTY ALREADY CARRIES THE REPLY, for the reading that fires on a message
+#: of THEIRS.
+#:
+#: `_THREAD_COVERED_BY_PARTY` above solves the same twin-card problem for waiting and cannot be
+#: reused here: it joins on `thread.days_waiting`, and `waiting.WAITING_ONLY_FIELDS` retires that
+#: fact the moment a reply lands — which is the precise moment `read_unanswered_replies` becomes
+#: relevant. So every conversation this reading is about is one that query cannot see, and both
+#: the thread node and the person would mint an anchor: two cards, one of them addressed to
+#: "Thread with sehan@sanjula.io".
+#:
+#: A SECOND STAMP RATHER THAN A WIDER FIRST ONE. Adding `thread.last_inbound` to the existing
+#: query would change what `read_awaiting_response` skips, and its own comment records the case
+#: that must not vanish — three of the pilot's twenty-one waiting threads have no waiting party,
+#: "exactly the case that must keep its situation rather than vanish into a gap nobody sees".
+#: Two readings, two questions, two stamps.
+_THREAD_COVERED_BY_REPLIER = (
+    "select distinct e.to_node_id as thread, e.from_node_id as party "
+    "from graph_edges e "
+    "join graph_nodes t on t.org_id = e.org_id and t.node_id = e.to_node_id "
+    "                  and t.node_type = 'thread' and t.valid_to is null "
+    "join graph_nodes p on p.org_id = e.org_id and p.node_id = e.from_node_id "
+    "                  and p.valid_to is null "
+    "join graph_facts f on f.org_id = e.org_id and f.subject_node_id = e.from_node_id "
+    "                  and f.field = 'thread.last_inbound' and f.status = 'active' "
+    "                  and f.valid_to is null "
+    "where e.org_id = :o and e.edge_type = 'corresponded_with' and e.valid_to is null"
+)
+
+
+def _direct_event_counts(dialect: str) -> str:
+    """Per-node evidence counts, including HOW MANY PARTIES contributed.
+
+    `voices` is the count `evidence_score` asks for and this reading never supplied. The fix
+    that added the argument reached `situations.py` and stopped there, so the six readings
+    dispatched from `READINGS` — which produce most of the situations on a correspondence-only
+    tenant — went on scoring `voice_count=0`. That is not a rounding difference: with one
+    connected source, corroboration stops at 25 of its available 60, evidence caps at 65, and
+    `min()` makes 65 the ceiling on the whole situation. A founder whose raise is a hundred
+    emails between four people could never be spoken about confidently, which is the exact
+    failure `evidence_score`'s own docstring was rewritten to end.
+
+    The party is the EVENT'S ACTOR, not the observation's subject — "what we sent is our own act
+    and theirs is theirs". Since outbound mail became evidence, a two-way thread puts both on the
+    counterparty's node, and that is two independent accounts in the way twenty mails from one
+    of them are not.
+
+    One expression per dialect for the same reason `situations.py` carries one: `->>` is Postgres
+    and `json_extract` is the SQLite the tests run on, and comparing the whole actor blob instead
+    of the email inside it is what once produced a "gmail and calendar share nobody" reading.
+    """
+    email = ("se.actor ->> 'email'" if dialect == "postgresql"
+             else "json_extract(se.actor, '$.email')")
+    return (  # noqa: S608 — the only interpolation is the dialect expression above
+        "select o.subject_node_id as node_id, count(*) as events, "
+        "       count(distinct r.source) as sources, "
+        f"       count(distinct lower({email})) as voices, "
+        "       min(o.occurred_at) as first_at, max(o.occurred_at) as last_at "
+        "from graph_observations o "
+        "left join graph_source_refs r on r.observation_id = o.observation_id and r.org_id = :o "
+        "left join source_events se on se.org_id = o.org_id and se.event_id = r.event_id "
+        "where o.org_id = :o and o.status = 'active' and o.subject_node_id is not null "
+        "group by o.subject_node_id")
 
 # All 1001 measured observations lived on people; person -> thread alone accounts for
 # 64 live edges. Both directions are therefore necessary. UNION deduplicates event IDs
 # across observation copies and derived facts; six Gmail events still score 65, not 100.
-_EVENT_COUNTS = """
+def _event_counts_sql(dialect: str) -> str:
+    """The neighbourhood evidence read, now counting PARTIES as well as tools.
+
+    THE PRIMARY PATH, which is why the direct read above was not enough on its own:
+    `_refined_stats` tries this first and falls back to `_direct_event_counts` only when it
+    returns None. Fixing the fallback alone would have left the fix almost never firing.
+
+    `party` rides inside the `events` CTE rather than being joined again outside it, because the
+    CTE already has `source_events` open and the DISTINCT there is what deduplicates an event
+    reached through two neighbours. Same dialect split as everywhere else in this layer: `->>` is
+    Postgres, `json_extract` is the SQLite the tests run on.
+    """
+    email = ("e.actor ->> \'email\'" if dialect == "postgresql"
+             else "json_extract(e.actor, \'$.email\')")
+    return """
 with neighbors as (
     select node_id as anchor, node_id as subject from graph_nodes
     where org_id=:o and valid_to is null
@@ -267,15 +511,15 @@ with neighbors as (
     join graph_source_refs r on r.org_id=f.org_id and r.fact_version_id=f.fact_version_id
     where f.org_id=:o and f.status='active' and f.valid_to is null
 ), events as (
-    select distinct n.anchor, e.event_id, e.source, e.occurred_at
+    select distinct n.anchor, e.event_id, e.source, e.occurred_at, lower({email}) as party
     from neighbors n join origins r on r.subject=n.subject
     join source_events e on e.org_id=:o and e.event_id=r.event_id
     where e.occurred_at <= :now
 )
 select anchor as node_id, count(distinct event_id) as events,
-       count(distinct source) as sources, min(occurred_at) as first_at,
-       max(occurred_at) as last_at from events group by anchor
-"""
+       count(distinct source) as sources, count(distinct party) as voices,
+       min(occurred_at) as first_at,
+       max(occurred_at) as last_at from events group by anchor""".format(email=email)  # noqa: S608 — dialect expression only
 
 
 def _num(value):
@@ -363,12 +607,14 @@ def _visible_receipts(receipts, now):
 
 
 def _event_counts(conn, *, org_id: str, now: datetime, node_id: str | None = None):
-    statement = _EVENT_COUNTS + (" having anchor=:node" if node_id is not None else "")
+    statement = (_event_counts_sql(conn.dialect.name)
+                 + (" having anchor=:node" if node_id is not None else ""))
     try:
         with conn.begin_nested():
             rows = conn.execute(text(statement), {"o": org_id, "now": now, "node": node_id}).all()
         return {str(r.node_id): SimpleNamespace(events=r.events, sources=r.sources,
-                first_at=_ts(r.first_at), last_at=_ts(r.last_at)) for r in rows}
+                voices=r.voices, first_at=_ts(r.first_at), last_at=_ts(r.last_at))
+                for r in rows}
     except Exception:  # noqa: BLE001 — caller retains the original observation-only read
         return None
 
@@ -377,15 +623,31 @@ def _refined_stats(conn, *, org_id: str, node_id: str, finding: _Finding,
                    now: datetime, fallback, group_receipts):
     if group_receipts is not None:
         times = [r.occurred_at for r in group_receipts if r.occurred_at is not None]
+        # `voices=0` HERE AND SAID OUT LOUD. `load_event_receipts` selects no actor, and
+        # widening `EventReceipt` reaches consumers outside this module. It costs nothing
+        # arithmetically: this branch is the campaign/cohort scope, where the contributing party
+        # is us on every message, and `evidence_score` reads `max(0, voices - 1)` — so one voice
+        # and none score identically. A campaign that a counterparty replied into produces a
+        # per-person finding as well, and that one takes the path below, which does count.
         return SimpleNamespace(events=len({r.event_id for r in group_receipts}),
-            sources=len({r.source for r in group_receipts if r.source}),
+            sources=len({r.source for r in group_receipts if r.source}), voices=0,
             first_at=min(times, default=None), last_at=max(times, default=None))
     # Query the actual newly established anchor. Reading its representative's neighbourhood
     # would accidentally turn a one-hop allowance into two hops, borrowing unrelated history.
     counts = _event_counts(conn, org_id=org_id, now=now, node_id=node_id)
     if counts is None:
         return fallback
-    return counts.get(node_id, SimpleNamespace(events=0, sources=0, first_at=None, last_at=None))
+    return counts.get(node_id, SimpleNamespace(events=0, sources=0, voices=0,
+                                               first_at=None, last_at=None))
+
+
+#: THE MEMBERSHIP SEAM, imported rather than defined here. `support_situations` needs the
+#: same writer and this module already imports FROM it, so keeping the definition here would
+#: have forced a cycle. The private names are kept as aliases: every call site and test in
+#: this module addresses them, and a rename is churn that buys nothing.
+from genios_engine.context.correlation_membership import (  # noqa: E402
+    declare_finding_events as _declare_finding_events,
+    finding_events as _finding_events)
 
 
 def _finding_receipts(conn, *, org_id: str, finding: _Finding):
@@ -394,26 +656,16 @@ def _finding_receipts(conn, *, org_id: str, finding: _Finding):
     Campaign inputs previews stop at 20 events, while the measured member groups reach 40.
     The full event list travels separately. Other readings inherit the source refs of the
     actual facts they read; a synthetic state:<org> edge is never a source event.
+
+    The event set is derived by `_finding_events` rather than here; this loads the receipts for
+    it. Splitting them is what lets the membership writer ask the same question this asks,
+    and get the same answer.
     """
-    events = finding.event_ids
+    events = _finding_events(conn, org_id=org_id, finding=finding)
     if events is None:
-        events = (finding.inputs or {}).get("events")
-    if events is None:
-        nodes = tuple(finding.evidence_nodes or (finding.concerns_node,))
-        nodes = tuple(node for node in nodes if node)
-        if not nodes:
-            return ()
-        try:
-            with conn.begin_nested():
-                events = conn.execute(text(
-                    "select distinct r.event_id from graph_facts f join graph_source_refs r "
-                    "on r.org_id=f.org_id and r.fact_version_id=f.fact_version_id "
-                    "where f.org_id=:org and f.subject_node_id in :nodes "
-                    "and f.status='active' and f.valid_to is null"
-                ).bindparams(bindparam("nodes", expanding=True)),
-                    {"org": org_id, "nodes": nodes}).scalars().all()
-        except Exception:  # noqa: BLE001 — preserve the original writer on unavailable refinement
-            return None
+        return None
+    if not events:
+        return ()
     return load_event_receipts(conn, org_id=org_id, event_ids=events)
 
 
@@ -454,6 +706,14 @@ def read_awaiting_response(rows: dict, now: datetime, employers: dict) -> list[_
             value = _num(held.get(source))
             if value is not None:
                 facts.append((target, int(value), kind))
+        # WHOSE NORMAL IT IS, carried beside the number. "They usually reply in two days" and
+        # "people at this firm usually do" are different claims, and a card holding only the
+        # number will make the first on the evidence of the second. `waiting.cadence_for` widens
+        # the measurement person -> firm -> tenant precisely so there IS a number here; this is
+        # what stops the widening from becoming a quiet overclaim.
+        basis = held.get("party.reply_cadence_basis")
+        if basis:
+            facts.append(("outreach.their_normal_reply_basis", str(basis), "enum"))
         expected = held.get("thread.response_expected")
         if expected is not None:
             facts.append(("outreach.response_expected", bool(expected), "bool"))
@@ -489,6 +749,96 @@ def read_awaiting_response(rows: dict, now: datetime, employers: dict) -> list[_
     return findings
 
 
+#: How long a reply may sit before it is a finding. Mirrors `_WAITING_AFTER_DAYS` deliberately:
+#: the two readings are the same clock pointed in opposite directions, and a founder who gives a
+#: counterparty two days before chasing them should get the same two before being chased.
+_REPLY_OWED_AFTER_DAYS = 2
+
+
+def read_unanswered_replies(rows: dict, now: datetime, employers: dict) -> list[_Finding]:
+    """They answered us and we went quiet. One finding per counterparty owed a reply.
+
+    THE HALF OF THE EXCHANGE NOTHING NAMED. `read_awaiting_response` fires while WE are waiting;
+    `support_situations.read_first_response` fires when THEY opened a thread we never answered —
+    its predicate returns at `msgs[0].internal`, so a conversation we started is not its case.
+    The exchange that actually fills a founder's mailbox falls between them: we wrote, they
+    replied, and the reply is still sitting there. An intro network's whole output has this shape.
+
+    THREE POSITIVE FACTS, AND NO INFERENCE FROM AN ABSENCE. It would be shorter to fire on
+    `thread.days_waiting` being GONE — `waiting.py` retires it the moment a reply lands — but a
+    reading built on a missing field fires just as happily when the waiting pass failed, when the
+    field was renamed, or when the node was never swept. So the gate asks for things that are
+    there:
+
+        `thread.last_inbound`   they spoke
+        `thread.last_outbound`  we wrote too — which is what separates this from the cold inbound
+                                `read_first_response` already owns, and stops this reading
+                                claiming every stranger who has ever mailed the tenant
+        in > out                theirs is the most recent
+
+    NO INTERNAL FILTER HERE, and none is needed: `pipeline.py` writes `thread.last_inbound` only
+    when `sender_norm not in internal_set`, so a colleague's reply never reaches this fact at all.
+    Filtering again would be a second opinion about who "us" is, which is how two answers to that
+    question start to disagree.
+
+    IT CANNOT DOUBLE WITH ITS MIRROR. `waiting.WAITING_ONLY_FIELDS` is retired when a reply lands,
+    so the facts `read_awaiting_response` needs are gone exactly when these arrive: one
+    conversation can satisfy one of the two readings, never both, and neither has to know about
+    the other to make that true.
+    """
+    findings: list[_Finding] = []
+    for node_id, held in rows.items():
+        # Reserved keys carry the condition queue and the mailbox owner, not a node's facts.
+        if node_id.startswith("_") or not isinstance(held, dict):
+            continue
+        last_in = _ts(held.get("thread.last_inbound"))
+        last_out = _ts(held.get("thread.last_outbound"))
+        if last_in is None or last_out is None or last_in <= last_out:
+            continue
+        owed = (now - last_in).total_seconds() / 86400.0
+        if owed < _REPLY_OWED_AFTER_DAYS:
+            continue
+        if held.get("_covered_by_replier"):
+            # ONE SITUATION PER CONVERSATION, the same rule `read_awaiting_response` keeps. This
+            # node is a thread whose counterparty carries the same facts and will mint the anchor
+            # themselves; a card reading "Thread with sehan@sanjula.io has not been answered" is
+            # the same sentence said worse.
+            continue
+        name = held.get("_name") or "this contact"
+        facts: list[tuple[str, object, str]] = [
+            ("outreach.days_owed", int(owed), "number"),
+            ("outreach.counterparty", name, "string"),
+        ]
+        # THEIR HABIT, carried rather than compared. `party.reply_cadence_days` is the median gap
+        # between THEIR replies, which says how quickly they answer — not how quickly we do — so
+        # it belongs on the card as context and not in the gate above. Turning "we are four times
+        # slower than they are" into a threshold needs our own cadence, which nothing derives yet.
+        cadence = _num(held.get("party.reply_cadence_days"))
+        if cadence is not None:
+            facts.append(("outreach.their_normal_reply_days", int(cadence), "number"))
+        # WHAT THEY ARE TO US changes the advice — an investor waiting on an answer and a vendor
+        # waiting on one need different sentences — so it travels on the anchor.
+        role = held.get("relationship.nature") or held.get("party.role")
+        if role:
+            facts.append(("outreach.counterparty_role", str(role), "enum"))
+        findings.append(_Finding(
+            anchor=ANCHOR_UNANSWERED,
+            canonical_key=f"unanswered:{node_id}",
+            display_name=f"{name} — replied {int(owed)}d ago, no answer sent",
+            facts=facts,
+            concerns_node=node_id,
+            correlation_id=f"unanswered:{node_id}",
+            # WHAT THIS CANNOT SEE, declared rather than left for a reader to discover. A reply
+            # may have been drafted and not sent, sent from an address the tenant has not
+            # connected, or answered by a colleague from their own mailbox. None of those is
+            # visible here, and the card says so rather than asserting silence it cannot prove.
+            missing=["outreach.reply_drafted", "outreach.answered_elsewhere"],
+            inputs={"reading": ANCHOR_UNANSWERED,
+                    "derived_from": "their last inbound is newer than our last outbound"},
+        ))
+    return findings
+
+
 def read_overdue_commitments(rows: dict, now: datetime, employers: dict) -> list[_Finding]:
     """One finding per promise of ours whose own stated date has passed.
 
@@ -497,9 +847,39 @@ def read_overdue_commitments(rows: dict, now: datetime, employers: dict) -> list
     without a time is a different situation and needs a different card.
     """
     findings: list[_Finding] = []
+    # WHO WE ARE, so that "a promise of ours" can be checked rather than assumed. `None` covers
+    # both "no outbound observed" and "several sending seats"; neither is a basis for deciding
+    # somebody else owns a promise, so neither refuses anything below.
+    us = str(rows.get("_mailbox_owner") or "").strip().lower() or None
     for node_id, held in rows.items():
         # Reserved keys carry the condition queue and the mailbox owner, not a node's facts.
         if node_id.startswith("_") or not isinstance(held, dict):
+            continue
+        # A PROMISE SOMEBODY ELSE MADE IS NOT OUR OVERDUE COMMITMENT. This reading's own
+        # docstring says "one finding per promise of ours" and nothing checked it: it emitted for
+        # every commitment whose stated date had passed, whichever way the promise pointed.
+        # Measured on the pilot, SIX of fifteen cards were a counterparty's obligation rendered as
+        # the founder's — an incubator's marketing promise was the loudest card in the product, at
+        # critical urgency, in his voice. Naming the owner (`_COMMITMENT_OWNERS`) fixed the
+        # sentence and left the card standing.
+        #
+        # REFUSED ONLY ON POSITIVE EVIDENCE. Both halves must be known: an owner the graph can
+        # name, and an address of ours to compare it against. An unknown owner still produces a
+        # finding, because "we cannot tell whose this is" has never been evidence that it is not
+        # ours, and inferring an owner from silence is the move this module refuses everywhere.
+        owner = str(held.get("_owner_key") or "").strip().lower()
+        if us and owner and owner != us:
+            continue
+        # A PROMISE THE GRAPH CANNOT TRACE TO A MESSAGE IS NOT EVIDENCE THAT ONE WAS MADE.
+        # See `_UNTRACEABLE_COMMITMENTS`: every fact derived, none of them tied to anything
+        # anybody said. L3 was already refusing these downstream — all 21 sit at
+        # `verified_evidence_required` — but the situation was minted, ranked and in ten cases
+        # carded before that refusal, so the cost was paid and the founder saw promises nobody
+        # made. Refused HERE, where "we cannot show you why we believe this" is cheapest.
+        #
+        # Only on the stamp, never on its absence: an ungathered guard refuses nothing, which is
+        # the same discipline as the owner check directly above.
+        if held.get("_untraceable"):
             continue
         # A PROMISE THAT IS NO LONGER OUTSTANDING IS NOT OVERDUE, and this reading used to have
         # no way to know. `lifecycle/store.obligations_for` already filters on
@@ -526,13 +906,30 @@ def read_overdue_commitments(rows: dict, now: datetime, employers: dict) -> list
         overdue = (now - due).total_seconds() / 86400.0
         if overdue <= _OVERDUE_AFTER_DAYS:
             continue
-        name = held.get("_name") or "this contact"
-        action = held.get("commitment.action")
+        # TWO SHAPES OF SUBJECT REACH THIS READING, and until the commitment node type stopped
+        # being excluded only one of them ever did.
+        #
+        #   a PERSON carrying `commitment.*` facts — the extractor's plain fact-candidate path.
+        #   `_name` is the counterparty, which is what "promise to {name}" was written to mean.
+        #
+        #   a COMMITMENT node — the pipeline's dedicated path, which carries the owner, the
+        #   status and the normalised action. Its display name is the PROMISE'S OWN TEXT, so
+        #   reading `_name` as a counterparty here renders "promise to send the deck past due"
+        #   and files the action as `commitment.owed_to`, which is not a party at all.
+        #
+        # Nothing in the graph records who a pipeline-extracted promise was made TO, so that
+        # field is left ABSENT rather than filled with the nearest string — the same discipline
+        # this reading already keeps for an owner it cannot name.
+        on_commitment_node = str(held.get("_node_type") or "") == "commitment"
+        subject_name = held.get("_name")
+        counterparty = None if on_commitment_node else (subject_name or "this contact")
+        action = held.get("commitment.action") or (subject_name if on_commitment_node else None)
         facts: list[tuple[str, object, str]] = [
             ("commitment.days_overdue", int(overdue), "number"),
-            ("commitment.owed_to", name, "string"),
             ("commitment.due_at", due.isoformat(), "timestamp"),
         ]
+        if counterparty:
+            facts.append(("commitment.owed_to", counterparty, "string"))
         if action:
             facts.append(("commitment.action", str(action), "string"))
         # WHOSE PROMISE IT IS. Read from the `owns` edge the extractor has always written from the
@@ -541,15 +938,48 @@ def read_overdue_commitments(rows: dict, now: datetime, employers: dict) -> list
         # this" are different cards, and the second one was being shown for both.
         owner_name = held.get("_owner_name")
         owner_key = held.get("_owner_key")
+        # …AND HOW WE KNOW. The owner arrives from the `owns` edge, which records WHO and says
+        # nothing about WHERE IT CAME FROM; the pipeline writes the provenance beside it as a
+        # fact. Two live cases produce `unknown` rather than one:
+        #
+        #   a promise recorded before this fact had a writer, and
+        #   a promise whose owner node carries no address — the `owns` edge is written from
+        #   `subj` unconditionally, while `commitment.owner` is only written when that node
+        #   resolves to an email. The edge names somebody the facts do not.
+        #
+        # `vocabulary.owner_basis` maps both to `unknown`, which every consumer must read as no
+        # weaker than `inferred`, never as a statement somebody made.
+        basis = owner_basis(held.get("commitment.owner_basis")) if owner_name else None
         if owner_name:
             facts.append(("commitment.owner", str(owner_name), "string"))
+            facts.append(("commitment.owner_basis", basis, "enum"))
         if owner_key:
             facts.append(("commitment.owner_key", str(owner_key), "string"))
+        # Say only what is known, in that order. Naming the counterparty is the strongest
+        # sentence and it is available only on the fact-candidate shape; on a pipeline promise
+        # the owner and the promise's own words are what there is, and the card says that
+        # instead of inventing a recipient for it.
+        # THE OWNER IS NAMED WHATEVER THE BASIS SAYS, and the basis travels as a fact beside it.
+        # An earlier cut of this withheld the name on `unknown`, which was over-hedging twice
+        # over: `unknown` means we did not RECORD how we know, not that we invented it — the
+        # `owns` edge still came from the extractor resolving an actor — and withholding it drops
+        # the card back to naming the promise's own text as its subject, which is the exact
+        # confusion the two-shapes branch above exists to prevent. `test_the_display_name_says_
+        # who_owes_whom` states the property in one line: naming the owner is what stops the card
+        # being about the wrong person before anyone opens it. A reader that wants to weigh the
+        # provenance reads `commitment.owner_basis`; a reader that wants a sentence gets one.
+        if owner_name and counterparty:
+            headline = f"{owner_name} — promise to {counterparty} past due"
+        elif owner_name:
+            headline = f"{owner_name} — promise past due"
+        elif counterparty:
+            headline = f"{counterparty} — promise past due"
+        else:
+            headline = f"{action} — promise past due" if action else "Promise past due"
         findings.append(_Finding(
             anchor=ANCHOR_COMMITMENT,
             canonical_key=f"commitment:{node_id}",
-            display_name=(f"{owner_name} — promise to {name} past due" if owner_name
-                          else f"{name} — promise past due"),
+            display_name=headline,
             facts=facts,
             concerns_node=node_id,
             correlation_id=f"commitment:{node_id}",
@@ -588,9 +1018,18 @@ def read_outreach_cohorts(rows: dict, now: datetime, employers: dict) -> list[_F
         # Reserved keys carry the condition queue and the mailbox owner, not a node's facts.
         if node_id.startswith("_") or not isinstance(held, dict):
             continue
-        objective = held.get("thread.objective")
-        if objective:
-            by_objective.setdefault(str(objective), []).append((node_id, held))
+        # EVERY OBJECTIVE THIS PERSON'S CONVERSATIONS CARRY, not the one their own row happens to
+        # hold. The person-level copy is last-write-wins across all of their threads, so grouping
+        # on it alone fragmented every real campaign — see `_PARTY_THREAD_OBJECTIVES`. Their own
+        # copy is still included: a person whose objective was written before the thread node
+        # existed has it in no other place.
+        seen: set[str] = set()
+        for value in [held.get("thread.objective"), *(held.get("_thread_objectives") or ())]:
+            objective = str(value or "").strip()
+            if not objective or objective in seen:
+                continue
+            seen.add(objective)
+            by_objective.setdefault(objective, []).append((node_id, held))
 
     findings: list[_Finding] = []
     for objective, members in sorted(by_objective.items()):
@@ -882,20 +1321,155 @@ def read_conditions_for_dispatch(rows: dict, now: datetime, employers: dict) -> 
 
     queue = rows.get("_conditions") or {}
     owner = rows.get("_mailbox_owner")
-    return read_conditions_in_review(queue, now, owner)
+    # Stamped under its own reserved key by `_gather`, and `or {}` is the whole failure handling
+    # it needs: a build with no angle layer, a sweep that made no calls, and a tenant whose queue
+    # the model refused all arrive here as an empty map and produce exactly today's flat queue.
+    return read_conditions_in_review(queue, now, owner, rows.get("_condition_verdicts") or {})
+
+
+from genios_engine.context.attention_situations import ANCHOR_UNREPORTED
+from genios_engine.context.blocker_situations import ANCHOR_UNNAMED_BLOCKER
+from genios_engine.context.reworded_outreach import ANCHOR_REWORDED
+from genios_engine.context.analytic_situations import ANCHOR_ANALYTIC
+from genios_engine.context.stated_dependency import ANCHOR_STATED
+
+
+def read_stated_for_dispatch(rows: dict, now: datetime, employers: dict) -> list[_Finding]:
+    """The stated-dependency reading, in the shape the dispatch loop hands every reader."""
+    from genios_engine.context.stated_dependency import read_stated_dependencies
+
+    return read_stated_dependencies(rows.get("_stated") or {}, now, rows.get("_node_names") or {})
+
+
+def read_analytic_for_dispatch(rows: dict, now: datetime, employers: dict) -> list[_Finding]:
+    """The analytic stratum's reading, in the shape the dispatch loop hands every reader."""
+    from genios_engine.context.analytic_situations import read_analytic_movements
+
+    return read_analytic_movements(rows.get("_analytic") or {}, now,
+                                   rows.get("_node_names") or {})
+
+
+def read_reworded_for_dispatch(rows: dict, now: datetime, employers: dict) -> list[_Finding]:
+    """M-3's answer, in the shape the dispatch loop hands every reader.
+
+    YIELDS TO THE TWO GROUP READINGS THAT ALREADY EXIST, and computes their coverage the way
+    `read_campaign_silence` computes the cohort's — from their own `inputs["members"]`, so the
+    scope of a group is legible without re-deriving the grouping. A founder shown "your raise
+    outreach" and "one outreach, reworded" about the same eight people has been told one thing
+    twice.
+    """
+    from genios_engine.context.reworded_outreach import read_reworded_outreach
+
+    candidates = rows.get("_adjudicated") or ()
+    if not candidates:
+        return []
+    covered: set[str] = set()
+    for finding in (*read_outreach_cohorts(rows, now, employers),
+                    *read_campaign_silence(rows, now, employers)):
+        covered.update(finding.inputs.get("members") or ())
+    return read_reworded_outreach(candidates, now, rows.get("_node_names") or {}, covered)
+
+
+def read_attention_for_dispatch(rows: dict, now: datetime, employers: dict) -> list[_Finding]:
+    """The last-resort reading, in the shape the dispatch loop hands every reader.
+
+    `or ()` is the whole failure handling it needs, and it is the rule rather than caution: with
+    no angle layer, no budget, or a model that refused, this produces nothing and the sweep
+    returns exactly the cards it produced before. The card is an addition; its absence removes
+    nothing.
+    """
+    from genios_engine.context.attention_situations import read_unreported_attention
+
+    return read_unreported_attention(rows.get("_unreported") or (), now,
+                                     rows.get("_node_names") or {},
+                                     rows.get("_unreported_facts") or {})
+
+
+def read_blockers_for_dispatch(rows: dict, now: datetime, employers: dict) -> list[_Finding]:
+    """The unnamed-blocker reading, in the shape the dispatch loop hands every reader.
+
+    Stamped under a reserved key like the condition queues, and for the same reason: these rows
+    are keyed by SUBJECT NODE in their own store and do not belong in the `thread.*` map the
+    correspondence readings share.
+    """
+    from genios_engine.context.blocker_situations import read_unnamed_blockers
+
+    # `or {}` is the whole failure handling the classification needs: a build with no angle layer,
+    # a sweep that made no calls, and a tenant whose absences the model refused all arrive here as
+    # an empty map and produce exactly the cards U4.1 produced.
+    return read_unnamed_blockers(rows.get("_blockers") or {}, now, employers,
+                                 rows.get("_blocker_kinds") or {})
+
+
+def read_conditions_met_for_dispatch(rows: dict, now: datetime, employers: dict) -> list[_Finding]:
+    """The satisfied-condition reading, in the same shape and stamped the same way.
+
+    Its twin above reports the conditions nobody could parse; this one reports the parsed ones the
+    world has since made true. `correlation_timeline` has published both all along and only the
+    review half was ever read.
+    """
+    from genios_engine.context.condition_situations import read_conditions_satisfied
+
+    met = rows.get("_conditions_met") or {}
+    owner = rows.get("_mailbox_owner")
+    return read_conditions_satisfied(met, now, owner)
 
 
 #: The dormant-condition review queue, read from its own store rather than from `_gather`'s
 #: `thread.*` rows — see `_gather`, which stamps it on. Wired here so it travels the same
 #: `find_or_create_node` / `_write_fact` / `concerns`-edge path every other state reading takes,
 #: instead of a second persistence route that would drift from this one.
+def read_meetings_for_dispatch(rows: dict, now: datetime, employers: dict) -> list[_Finding]:
+    """The meeting follow-through reading, in the shape the dispatch loop hands every reader.
+
+    `_gather` stamps the meetings onto `rows` under `_meetings` — a list, not one entry per node —
+    because `meeting_touch._MEETINGS` returns its own row shape and these facts live on the
+    meeting node rather than in the `thread.*` map the outreach readings share. Same reserved-key
+    route `_conditions`, `_organizations` and `_campaigns` take.
+    """
+    from genios_engine.context.meeting_situations import read_meeting_follow_through
+
+    return read_meeting_follow_through(rows.get("_meetings") or (), now)
+
+
 READINGS = (
     (ANCHOR_OUTREACH, read_awaiting_response),
+    # Its mirror, dispatched beside it. The two are mutually exclusive by construction —
+    # `waiting.WAITING_ONLY_FIELDS` is retired the instant a reply lands — so a
+    # conversation reaches one of them and never both.
+    (ANCHOR_UNANSWERED, read_unanswered_replies),
     (ANCHOR_COMMITMENT, read_overdue_commitments),
     (ANCHOR_COHORT, read_outreach_cohorts),
     (ANCHOR_CONDITION, read_conditions_for_dispatch),
+    # Its twin. The review queue reports what could not be parsed; this reports what was
+    # parsed and has since become true — the half `correlation_timeline` was built for.
+    (ANCHOR_CONDITION_MET, read_conditions_met_for_dispatch),
     (ANCHOR_ORGANIZATION, read_organization_silence),
     (ANCHOR_CAMPAIGN, read_campaign_silence),
+    # Fifty calendar events on the pilot produced nodes, facts and edges and not one situation,
+    # because this line did not exist. Sales has had its own meeting reading for some time
+    # (`meeting_touch`, typed `channel_touch`); it answers which channels reached an account,
+    # which is a different question from whether a meeting was finished.
+    (ANCHOR_MEETING, read_meetings_for_dispatch),
+    # THE FOURTH FIELD `correlation_dependency` PUBLISHES, and the only one that reached no
+    # reader. "You are blocked on Finance and there is no Finance in your graph" was computed
+    # every sweep and said to nobody — most often because the blocker is real and simply was
+    # never a person in a mailbox, which is exactly when the graph is right to hold no node.
+    (ANCHOR_UNNAMED_BLOCKER, read_blockers_for_dispatch),
+    # LAST, AND LAST FOR A REASON. Every reading above it is a deterministic answer about a
+    # subject; this one reports the subjects none of them reached. Dispatched after them so the
+    # residue it reads was measured against a sweep that had already produced everything it could.
+    # BEFORE the last-resort reading and AFTER the two group readings it yields to: the dispatch
+    # order is the precedence, since each reading computes coverage from the ones it names.
+    (ANCHOR_STATED, read_stated_for_dispatch),
+    # THE ANALYTIC STRATUM, AS A SUBJECT RATHER THAN A MODIFIER. 566 verdicts on the pilot, read
+    # only by six importance modifiers — able to make another card rank higher and never to be
+    # one. Placed here rather than earlier because a measured movement is weaker evidence than
+    # anything a person actually wrote, and the readings above it are all sentences somebody
+    # sent.
+    (ANCHOR_ANALYTIC, read_analytic_for_dispatch),
+    (ANCHOR_REWORDED, read_reworded_for_dispatch),
+    (ANCHOR_UNREPORTED, read_attention_for_dispatch),
 )
 
 
@@ -943,6 +1517,37 @@ def _mailbox_owner(c, org_id: str) -> str | None:
     return next(iter(seats)) if len(seats) == 1 else None
 
 
+def _optional(conn, label: str, call, default):
+    """Run one gather that MAY fail, without taking the rest of the sweep down with it.
+
+    A `try/except` around a database call is not enough, and believing it was cost this layer
+    every reading it has. Postgres aborts the whole transaction on a failed statement: the Python
+    exception is caught, the handler returns its empty default, and then EVERY later statement on
+    the same connection fails with `InFailedSqlTransaction` — including the ones that would have
+    worked. Measured on the live tenant: `context_angle_verdicts` did not exist, its guarded
+    gather returned `{}` exactly as designed, and the eleven gathers after it silently returned
+    nothing. Twelve readings, all of them dead, and not one error in the log that named the cause.
+    Every guard in this file read as safe and together they were the failure.
+
+    A SAVEPOINT is what makes the guard true. `begin_nested()` rolls back only this gather, so a
+    tenant missing a table — a migration not yet applied, a driver without an operator, a column
+    added last week — loses exactly that one reading and keeps the other eleven. That is the
+    property the guards were written to have.
+
+    NOT A RULE ABOUT WHICH TABLES ARE OPTIONAL, deliberately. Any gather may be wrapped; nothing
+    here names a tenant, a table or a migration, so a customer whose graph is shaped differently
+    gets the same degradation rather than a special case somebody has to remember to add.
+    """
+    try:
+        with conn.begin_nested():
+            return call()
+    except Exception:      # noqa: BLE001 — one reading's absence is never the sweep's
+        from genios_engine.platform.logging import get_logger
+        get_logger("genios.l2").warning("gather %s unavailable; the reading it feeds is skipped",
+                                        label, exc_info=True)
+        return default
+
+
 def _gather(store, org_id: str, *, now: datetime | None = None,
             campaign_window_days: int = CAMPAIGN_WINDOW_DAYS) -> tuple[dict, dict, dict]:
     """Everything the readings share, read once. `now` is THE SWEEP CLOCK, not the wall clock.
@@ -959,8 +1564,15 @@ def _gather(store, org_id: str, *, now: datetime | None = None,
             entry = held.setdefault(str(row.node_id), {})
             entry[str(row.field)] = row.value
             entry["_name"] = row.name
+            # WHAT SHAPE OF SUBJECT THIS IS. A reading used to be handed one shape only — a
+            # person, carrying facts about them — so `_name` could be read as "the counterparty"
+            # everywhere. Genuine promises arrive on a `commitment` node whose display name is
+            # the promise's own text, and a reading that cannot tell the two apart renders the
+            # action where a person belongs.
+            entry["_node_type"] = row.node_type
         # Keep the exact previous snapshot for fail-open refinement failures below.
-        counts = {str(r.node_id): r for r in c.execute(text(_DIRECT_EVENT_COUNTS), {"o": org_id})}
+        counts = {str(r.node_id): r for r in
+                  c.execute(text(_direct_event_counts(c.dialect.name)), {"o": org_id})}
         # person -> employing company NAME. Read here rather than per finding: the cohort reading
         # needs it for every member at once, and one bulk read is the same discipline every other
         # pass in this layer keeps.
@@ -974,41 +1586,165 @@ def _gather(store, org_id: str, *, now: datetime | None = None,
             entry = held.get(str(row.thread))
             if entry is not None:
                 entry["_covered_by_party"] = str(row.party_name or "") or str(row.party)
+        # WHICH PROMISES NOTHING TIES TO A MESSAGE. Stamped NEGATIVE — the absence is what was
+        # positively determined — so that a gather which fails stamps nothing and refuses
+        # nothing. `_optional` is what makes that true rather than hopeful: a deployment without
+        # `graph_source_refs` loses this one guard and keeps every reading.
+        for node_id in _optional(c, "untraceable commitments",
+                                 lambda: [str(r.node_id) for r in
+                                          c.execute(text(_UNTRACEABLE_COMMITMENTS),
+                                                    {"o": org_id})], []):
+            entry = held.get(node_id)
+            if entry is not None:
+                entry["_untraceable"] = True
+        # …and the same for the reading that fires on a message of THEIRS. A separate stamp
+        # because the query above joins on `thread.days_waiting`, which is retired the instant a
+        # reply lands — see `_THREAD_COVERED_BY_REPLIER`.
+        for row in c.execute(text(_THREAD_COVERED_BY_REPLIER), {"o": org_id}):
+            entry = held.get(str(row.thread))
+            if entry is not None:
+                entry["_covered_by_replier"] = str(row.party)
         # The review queue and the mailbox owner, under reserved keys rather than node ids: the
         # readings iterate `rows` by node, and a leading underscore cannot collide with one.
-        from genios_engine.context.condition_situations import gather_conditions_in_review
-        held["_conditions"] = gather_conditions_in_review(c, org_id)
-        held["_mailbox_owner"] = _mailbox_owner(c, org_id)
+        from genios_engine.context.condition_situations import (
+            gather_condition_queue_verdicts, gather_conditions_in_review,
+            gather_conditions_satisfied)
+        held["_conditions"] = _optional(
+            c, "condition review queue", lambda: gather_conditions_in_review(c, org_id), {})
+        # …and what the triage angle last said about each of those queues, so the reading can be
+        # ORDERED. Read here rather than inside the reader because the readers take rows, not a
+        # connection, and this is the one place in the dispatch that holds both.
+        held["_condition_verdicts"] = _optional(
+            c, "condition verdicts", lambda: gather_condition_queue_verdicts(c, org_id), {})
+        # …and the conditions that have COME TRUE. Published by the same correlator, in the same
+        # shape, and read by nothing until now.
+        held["_conditions_met"] = _optional(
+            c, "satisfied conditions", lambda: gather_conditions_satisfied(c, org_id), {})
+        # THE FOURTH DEPENDENCY FIELD, read here for the first time. `correlation_dependency`
+        # has published `missing_prerequisite` on every sweep since it shipped and no query in
+        # the engine selected it — a typed absence, with the sentence that named it, computed and
+        # shown to nobody. Guarded like the readings above: a driver that cannot run the query is
+        # a gap in what this sweep can read, never a crash.
+        from genios_engine.context.angles.queues import blocker_absence_verdicts
+        from genios_engine.context.blocker_situations import gather_unnamed_blockers
+        held["_blockers"] = _optional(
+            c, "unnamed blockers", lambda: gather_unnamed_blockers(c, org_id), {})
+        # …and what the classifier last said about each of them. Read here rather than inside the
+        # reader because the readers take rows, not a connection, and this is the one place in the
+        # dispatch that holds both.
+        # THE 95 CLAIMS THE TRAVERSAL COULD NOT USE, now readable. Names are needed to say whose
+        # thread a statement was made in, and are fetched once for whichever reading asks.
+        from genios_engine.context.stated_dependency import gather_stated_dependencies
+        held["_stated"] = _optional(
+            c, "stated dependencies", lambda: gather_stated_dependencies(c, org_id), {})
+        if held["_stated"] and not held.get("_node_names"):
+            from genios_engine.context.attention_situations import gather_display_names as _n
+            held["_node_names"] = _optional(c, "node names", lambda: _n(c, org_id), {})
+        # THE 566 THE FEED COULD NOT SEE. L2.4 has published a verdict per node per metric since
+        # it was built, and six importance modifiers were the only thing that ever read one.
+        # Gathered beside the rest and guarded the same way: an unreadable stratum is a gap in
+        # what this sweep can see, never a crash.
+        # WHAT EACH PERSON'S THREADS WERE FOR. Attached to the PERSON so the cohort reading can
+        # group people by an objective their conversations carry, rather than by the single
+        # overwritten copy on the person themselves. See `_PARTY_THREAD_OBJECTIVES`.
+        def _objectives() -> dict:
+            found: dict[str, list[str]] = {}
+            for row in c.execute(text(_PARTY_THREAD_OBJECTIVES), {"o": org_id}).mappings():
+                value = str(row["objective"] or "").strip()
+                if value:
+                    found.setdefault(str(row["party"]), []).append(value)
+            return found
+
+        for party, objectives in _optional(c, "thread objectives", _objectives, {}).items():
+            if party in held and isinstance(held[party], dict):
+                held[party]["_thread_objectives"] = objectives
+        from genios_engine.context.analytic_situations import gather_analytic_movements
+        held["_analytic"] = _optional(
+            c, "analytic movements", lambda: gather_analytic_movements(c, org_id), {})
+        if held["_analytic"] and not held.get("_node_names"):
+            from genios_engine.context.attention_situations import gather_display_names as _n2
+            held["_node_names"] = _optional(c, "node names", lambda: _n2(c, org_id), {})
+        held["_blocker_kinds"] = _optional(
+            c, "blocker verdicts", lambda: blocker_absence_verdicts(c, org_id), {})
+        # THE COVERAGE MISS, AND THE ONLY GATHER HERE THAT CAN COME BACK EMPTY BY DESIGN. Residue
+        # triaged `important` is what nothing on the board mentioned; with no angle layer it is
+        # empty and the sweep is unchanged. Guarded like the rest: an unreadable queue is a gap in
+        # what this sweep can see, never a crash.
+        from genios_engine.context.attention_situations import (gather_display_names,
+                                                                gather_unreported_attention)
+        unreported = _optional(
+            c, "unexplained attention", lambda: gather_unreported_attention(c, org_id), ())
+        held["_unreported"] = unreported
+        # ONE SHARED MAP, FILLED ONCE AND NEVER CLOBBERED. Three readings want display names and
+        # each used to assign this key outright — so a reading with nothing to show wrote `{}`
+        # over names another reading had already fetched, and its cards printed "this thread"
+        # instead of the counterparty. Set only when it is still empty and there is something to
+        # name; `setdefault` semantics rather than assignment, because the last writer here was
+        # deciding for everybody.
+        if unreported and not held.get("_node_names"):
+            held["_node_names"] = _optional(
+                c, "node names", lambda: gather_display_names(c, org_id), {})
+        held.setdefault("_node_names", {})
+        held["_unreported_facts"] = {str(row["subject_ref"]): held.get(str(row["subject_ref"])) or {}
+                                     for row in unreported}
+        # M-3's ANSWERS. The near-misses a model called one message — empty with no angle layer,
+        # and the sweep is then exactly what it was. Names are needed to print who is in the
+        # group, so they are fetched once here whichever reading asked for them.
+        from genios_engine.context.angles.queues import adjudicated_candidates
+        from genios_engine.context.attention_situations import gather_display_names as _names_of
+        from genios_engine.context.reworded_outreach import ONE_CAMPAIGN
+        adjudicated = [entry for entry in _optional(
+            c, "adjudicated candidates", lambda: adjudicated_candidates(c, org_id), [])
+            if str(entry.get("verdict") or "") == ONE_CAMPAIGN]
+        held["_adjudicated"] = adjudicated
+        if adjudicated and not held.get("_node_names"):
+            held["_node_names"] = _optional(c, "node names", lambda: _names_of(c, org_id), {})
+        held.setdefault("_node_names", {})
+        held["_mailbox_owner"] = _optional(
+            c, "mailbox owner", lambda: _mailbox_owner(c, org_id), None)
+        # THE MEETINGS, through the query that already knows how to find them. `meeting_touch.
+        # _MEETINGS` joins the `attended` edge, excludes retired attendances, excludes our own
+        # seats and keeps EVERY external attendee rather than one picked by sort order — three
+        # corrections its comments record, each of which this reading would otherwise have had to
+        # learn again. Guarded like `_mailbox_owner`: the query uses `#>>` and `array_agg`, so a
+        # driver without them is a gap in what this sweep can read, never a crash.
+        # IMPORTED, not referenced from thin air. This read `_MEETINGS` as a bare name that no
+        # import in this module ever bound, so the lambda raised `NameError` on every sweep,
+        # `_optional` caught it, logged "gather meetings unavailable; the reading it feeds is
+        # skipped", and handed back `[]`. `read_meetings_for_dispatch` then had nothing to read
+        # and `meeting_follow_through` produced ZERO cards — not on this tenant, on every tenant,
+        # since the line was written. The guard made a crash survivable and made the outage quiet;
+        # the same shape as `correlation_dependency.event_parties` calling an un-imported `text`.
+        from genios_engine.context.meeting_touch import _MEETINGS as _MEETING_ROWS
+        held["_meetings"] = _optional(
+            c, "meetings", lambda: [dict(r._mapping)
+                                    for r in c.execute(text(_MEETING_ROWS), {"o": org_id})], [])
         # The counterparty organisations, under the same reserved-key route. Computed over the
         # WHOLE tenant rather than over `held`: `works_at` membership is what makes two people one
         # firm, and a firm's size — "two of the two partners we know are silent" — is only true if
         # the denominator counts everyone there, not only the ones who happen to be waiting.
         from genios_engine.context.correlation_organization import find_organizations
-        held["_organizations"] = find_organizations(c, org_id)
+        held["_organizations"] = _optional(
+            c, "organizations", lambda: find_organizations(c, org_id), ())
         # OPEN DUPLICATE PROPOSALS PER NODE, for the identity axis. Read here with every other
         # bulk gather; `support_situations` reads the same table for the same purpose and this
         # module was passing a hardcoded zero.
-        held["_merge_proposals"] = {
-            str(r[0]): int(r[1] or 0) for r in c.execute(text(
-                # left_node_id / right_node_id — the columns the table actually has. This read
-                # shipped as from_node_id/to_node_id, which exist on no table here, so
-                # `refresh_state_situations` raised UndefinedColumn on EVERY sweep and the
-                # boundary in runner.py swallowed it: the entire outreach state-readings pass
-                # never ran once. `support_situations.py:1449` reads the same table correctly.
-                "select node_id, count(*) from ("
-                "  select left_node_id as node_id from merge_proposals "
-                "  where org_id = :o and status = 'open' "
-                "  union all "
-                "  select right_node_id as node_id from merge_proposals "
-                "  where org_id = :o and status = 'open') x group by node_id"),
-                {"o": org_id}).all()}
+        # ONE READER NOW, in `situations.merge_pressure`. This module's own copy shipped naming
+        # from_node_id/to_node_id — columns this table has never had — so
+        # `refresh_state_situations` raised UndefinedColumn on EVERY sweep and the boundary in
+        # runner.py swallowed it: the entire outreach state-readings pass never ran once. A
+        # hand-written third dialect of one query is how that happens again, so there is no
+        # longer a third. It also returns the STRENGTH, which the old `count(*)` could not.
+        from genios_engine.context.situations import merge_pressure
+        held["_merge_proposals"] = _optional(
+            c, "merge pressure", lambda: merge_pressure(c, org_id), 0)
         # The campaigns, same route. `find_campaigns` requires an explicit window and has no
         # default: an unbounded read over a founder's whole mailbox is the query that makes a
         # sweep unpredictable.
         from genios_engine.context.correlation_conversation import find_campaigns
-        held["_campaigns"] = find_campaigns(
-            c, org_id, since=(now or datetime.now(timezone.utc))
-            - timedelta(days=CAMPAIGN_WINDOW_DAYS))
+        _since = (now or datetime.now(timezone.utc)) - timedelta(days=campaign_window_days)
+        held["_campaigns"] = _optional(
+            c, "campaigns", lambda: find_campaigns(c, org_id, since=_since), ())
         for row in c.execute(text(_COMMITMENT_OWNERS), {"o": org_id}):
             entry = held.get(str(row.commitment))
             if entry is None:
@@ -1042,6 +1778,11 @@ def refresh_state_situations(store, org_id: str, *, now: datetime | None = None,
     # The readings below all return `[]` on an empty `held`, so the loop costs one pass and the
     # `_reconcile` at the bottom does what it was written for.
 
+    #: ONE `source_coverage` READ PER DOMAIN PER SWEEP, not one per situation. The table
+    #: holds four rows for a tenant and this loop runs over every finding of every
+    #: reading; a read inside it would be the per-situation shape
+    #: `docs/plans/PERFORMANCE_HARDENING.md` records taking a pass past thirty minutes.
+    _unmet: dict[str, tuple[str, ...]] = {}
     written = 0
     with store.engine.begin() as c:
         for anchor, reader in READINGS:
@@ -1054,9 +1795,30 @@ def refresh_state_situations(store, org_id: str, *, now: datetime | None = None,
                 receipts = (group_receipts if group_receipts is not None else
                             _finding_receipts(c, org_id=org_id, finding=finding))
                 node_id = store.find_or_create_node(
-                    c, org_id=org_id, node_type=anchor,
+                    c, org_id=org_id, node_type=anchor_node_type(anchor),
                     canonical_key=finding.canonical_key,
                     display_name=finding.display_name, event_id=None)
+                # AND KEEP THAT LABEL CURRENT. `find_or_create_node` sets `display_name` when it
+                # CREATES a node and never touches it again — correct for a person or a company,
+                # whose name is a fact about them that a later sighting must not overwrite. It is
+                # wrong here: this node IS the reading's own output, minted under the reading's own
+                # canonical key, and its label is a sentence the reading composes fresh every
+                # sweep. So a headline written by an older version of the reading was frozen for
+                # ever, and nothing could repair it.
+                #
+                # MEASURED ON THE PILOT: six commitment anchors reading "makeportals.com — promise
+                # past due — promise past due", carrying a suffix twice from a build that composed
+                # it differently, on nodes still typed `commitment` from before migration 0166 gave
+                # reading anchors their own node type. `find_or_create_node` matches on the
+                # canonical key alone, so those nodes are still the anchors today, still wearing a
+                # sentence no current code path produces.
+                #
+                # SAFE BECAUSE THE KEY PROVES OWNERSHIP. Only a node found under the finding's own
+                # `canonical_key` is renamed — a namespace this reading mints and nothing else
+                # writes to — so no person, company or thread name can be reached from here.
+                store.rename_reading_anchor(c, org_id=org_id, node_id=node_id,
+                                            canonical_key=finding.canonical_key,
+                                            display_name=finding.display_name)
                 for field_name, value, value_type in finding.facts:
                     _write_fact(c, org_id=org_id, node_id=node_id, field_name=field_name,
                                 value=value, value_type=value_type, now=now,
@@ -1077,7 +1839,24 @@ def refresh_state_situations(store, org_id: str, *, now: datetime | None = None,
                     stype = spec_for(domain).type_for(anchor)
                     corr = f"{finding.correlation_id}_{domain}"
                     minted[domain].add(corr)
+                    # DECLARE WHICH EVENTS THIS SITUATION RESTS ON, under the id the SITUATION
+                    # carries. `gather_l1_signals` is asked about `corr`, not about the finding's
+                    # bare correlation id, and the two differ by this suffix. The first cut wrote
+                    # membership for the bare id: 307 rows landed on the pilot, every one under an
+                    # id no situation holds, and the measured reach did not move off 20 of 129.
+                    #
+                    # Inside the loop rather than above it, because a finding claimed by two
+                    # domains is TWO situations and each needs its own membership.
+                    _declare_finding_events(
+                        c, org_id=org_id, finding=finding, correlation_id=corr)
                     coverage, gaps = _coverage(domain, stype, present, 100)
+                    # AND WHY IT IS HELD, when the reason is a source nobody connected.
+                    # `source_coverage_insufficient` is a correct refusal and was an
+                    # invisible one: 18 situations on the pilot were held on it and 0 of
+                    # 18 named the family. One read per domain per sweep, memoised below.
+                    for _family in _unmet.setdefault(
+                            domain, unmet_source_families(c, org_id, domain)):
+                        gaps = [*gaps, f"a {_family} source, which is not connected"]
                     last_at = getattr(stats, "last_at", None)
                     fresh, fresh_known = freshness_score(last_seen_at=last_at, now=now)
                     _upsert(c, org_id=org_id, corr=corr, node_id=node_id, stype=stype,
@@ -1086,7 +1865,12 @@ def refresh_state_situations(store, org_id: str, *, now: datetime | None = None,
                             inputs=finding.inputs,
                             evidence=evidence_score(
                                 event_count=int(getattr(stats, "events", 0) or 0),
-                                source_count=int(getattr(stats, "sources", 0) or 0)),
+                                source_count=int(getattr(stats, "sources", 0) or 0),
+                                # THE PARTIES, which this call omitted. See
+                                # `_direct_event_counts`: without it every reading here caps
+                                # at 65 on a single-source tenant, and `min()` makes that the
+                                # ceiling on the situation.
+                                voice_count=int(getattr(stats, "voices", 0) or 0)),
                             freshness=fresh if fresh_known else None,
                             # OPEN DUPLICATES COUNT AGAINST IDENTITY, and this was hardcoded
                             # to zero — so all six readings dispatched from `READINGS` published
@@ -1096,15 +1880,19 @@ def refresh_state_situations(store, org_id: str, *, now: datetime | None = None,
                             # column, one of them asserting certainty it had not checked.
                             identity=identity_score(
                                 open_merge_proposals=merge_open.get(
-                                    finding.concerns_node, 0)),
+                                    finding.concerns_node, (0, 0))[0],
+                                strong_proposals=merge_open.get(
+                                    finding.concerns_node, (0, 0))[1]),
                             first_seen=getattr(stats, "first_at", None), last_seen=last_at)
                     written += 1
             for domain, live in minted.items():
                 written += _reconcile(c, org_id=org_id,
                                       stype=spec_for(domain).type_for(anchor),
-                                      live=live, now=now)
+                                      domain=domain, live=live, now=now)
     return written
 
 
 __all__ = ["refresh_state_situations", "state_domains",
-           "ANCHOR_OUTREACH", "ANCHOR_COMMITMENT"]
+           "ANCHOR_OUTREACH", "ANCHOR_COMMITMENT", "ANCHOR_UNANSWERED",
+           "read_unanswered_replies", "anchor_node_type",
+           "READING_ANCHOR_PREFIX"]

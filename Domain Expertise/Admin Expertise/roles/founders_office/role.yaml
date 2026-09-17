@@ -1,0 +1,84 @@
+# Founder's office — ROLE branch node, Admin's view of who is reading.
+#
+# INHERITANCE: this file declares only what DIFFERS. Capability and object files are NOT copied
+# into this branch; resolution is role -> vertical -> model -> canonical.
+#
+# AUTHORED FROM MEASURED EVIDENCE, not from an impression of the job. Read off the pilot tenant
+# 2026-09-16, after a full sweep:
+#
+#   164 active situations — admin 118, support 33, fundraising 12, sales 1
+#   72 delivered cards, every one assigned to a single seat (`seat_owner`)
+#   the open work, by type: commitment_overdue 35, first_response_overdue 31,
+#                           dependency_stated 20, awaiting_response 14
+#
+# One person is receiving all of it. That is not a staffing accident to be corrected by better
+# routing — it is what the job IS at this stage, and the parent model already says so: the scarce
+# resource being administered is one principal's attention rather than a process queue.
+
+identity:
+  id: admin.role.founders_office
+  name: Founder's Office
+  kind: role
+  domain: admin
+  # REQUIRED ON A ROLE, the same rule a vertical follows and for the same reason: a branch that
+  # inherits nothing is not a branch, it is a second corpus. `executive_office` is the right
+  # parent — "organised around one principal or a small leadership team, everything prioritised
+  # by proximity to that person". This branch differs from it on one point: an executive office
+  # administers a principal's attention on the principal's behalf, while the founder's office IS
+  # the principal, so there is nobody to escalate to and no delegated authority to fall back on.
+  parent: admin.model.executive_office
+  version: 0.1.0
+  status: draft
+  stub: false
+
+description: >
+  The reader is the person the company is about. They are simultaneously the salesperson, the
+  product manager and the person answering the inbox, and the administrative load reaching them
+  is not a queue somebody else triaged — it is everything, in one list, with no second reader to
+  hand any of it to.
+
+  That single fact decides how a card must read for them. A card that describes a process step is
+  useless: there is no process, and no colleague whose step it is. A card that names the
+  RELATIONSHIP at stake is actionable, because the only thing the reader can do about any of it
+  is decide whether this person, today, is worth the next twenty minutes.
+
+# WHAT THIS READER IS ANSWERABLE FOR — read by `reason/brief_ranking`, where a card outside the
+# remit steps down 1,500bp in the daily brief.
+#
+# ALL THREE, AND THAT IS A MEASUREMENT RATHER THAN A SHRUG. On the pilot the one seat receives
+# admin, support and fundraising work in the same list; there is no domain whose cards could
+# honestly be pushed down, because there is nobody else they would be pushed down in favour of.
+#
+# SO THIS ROLE CHANGES NOTHING ABOUT RANKING, AND THAT IS THE HONEST OUTCOME. Its whole effect is
+# in `render` below. A role file that narrowed the remit here would be inventing a division of
+# labour this company does not have, and the brief would start hiding real work from the only
+# person who can do it. The remit narrows when a second seat exists to narrow it against.
+answerable_for: [admin, sales, customer_support]
+
+# HOW A CARD MUST READ FOR THEM. Merged over the situation's own copy, most specific last.
+#
+# Only `fallback` is overridden and `artifact_kind` is left alone: what KIND of artifact a
+# situation produces is the situation's judgment, not the reader's. What changes is the sentence.
+render:
+  render_hint: >
+    Lead with the person and what they are owed, never with the process step. This reader has no
+    colleague whose step it is and no queue to route to — the only decision available to them is
+    whether this relationship is worth the next twenty minutes, so the card must give them what
+    they need to make exactly that decision and nothing else.
+  fallback:
+    headline: "{who} — you owe them a reply"
+    situation: >-
+      {who} is waiting on you. Nobody else can answer this one.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  last_updated: '2026-09-16'
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    Authored net-new as the first role branch. `answerable_for` lists every domain deliberately,
+    which makes this role inert for ranking and effective only for copy — see the block above.
+    The two `fallback` strings name only `{who}`, which `card_builder` computes for every card
+    that has a counterparty; a clause holding a slot the system cannot fill is dropped before the
+    line renders, so both sentences survive a card with no resolved person.

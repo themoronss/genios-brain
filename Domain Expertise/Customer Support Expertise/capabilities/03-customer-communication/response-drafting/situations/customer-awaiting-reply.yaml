@@ -92,6 +92,22 @@ signals_of_decay:
   - escalation_requested
   - cancellation_threat
 
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    Headline: name the customer and that the next move is ours. Nothing else is known — not
+    whether a clock is running, not whether the question is hard, not whether anyone has started
+    — so the headline must not imply urgency the record cannot support.
+
+    Situation: that they wrote and nothing has gone back. Say only that. No SLA, no severity, no
+    guess at what they need; a support source would supply those and none is connected.
+
+    Artifact: a reply that answers or says honestly when an answer will come.
+  fallback:
+    headline: "{entity} — waiting on a reply from us"
+    situation: >-
+      {entity} wrote in and the next move is ours. Nothing has gone back.
+
 metadata:
   owner: Customer Support
   created_by: ai

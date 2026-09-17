@@ -254,6 +254,38 @@ _EDGE_COLS = ("edge_version_id, edge_type, from_node_id, to_node_id, confidence,
               "interaction_count, valid_from, valid_to")
 
 
+#: The two shapes `_thread_node` generates when it has nothing better. Recognised so a label this
+#: module wrote can be improved later, and a label anybody ELSE wrote never is.
+_THREAD_FALLBACK_PREFIXES = ("thread with ", "thread ")
+
+
+def _is_generated_thread_label(label: str) -> bool:
+    low = str(label or "").strip().casefold()
+    return any(low.startswith(p) for p in _THREAD_FALLBACK_PREFIXES)
+
+
+def thread_label(*, objective: str | None = None, counterparty: str | None = None,
+                 thread_id: str | None = None) -> str:
+    """The name one conversation should carry, from the best of what is known about it.
+
+    NO RULE ABOUT WHAT A CONVERSATION IS. The objective is whatever L1 said this exchange was for,
+    in its own words, and the counterparty is whoever the graph already holds — a keyword table
+    mapping sentences to categories here would be tuned on one tenant's vocabulary and wrong for
+    the next, which is the failure the whole layer is built to avoid.
+    """
+    who = " ".join(str(counterparty or "").split())
+    what = " ".join(str(objective or "").split())
+    if what and who:
+        return f"{who} — {what}"
+    if what:
+        return what
+    if who:
+        return f"Thread with {who}"
+    if thread_id:
+        return f"Thread {str(thread_id)[:12]}"
+    return ""
+
+
 class GraphStore:
     def __init__(self, database_url: str | None = None, *, engine=None) -> None:
         if engine is None and database_url is None:
@@ -310,6 +342,62 @@ class GraphStore:
                                event_id=event_id)
         return node_id
 
+    def name_person_node(self, conn, *, org_id: str, node_id: str,
+                         name: str | None) -> bool:
+        """Give a person node a human name, but only while it is still called after their address.
+
+        THE THIRD TWIN, and it exists for the same reason as `name_company_node` and
+        `name_thread_node`: `find_or_create_node` writes `display_name` when it CREATES a node and
+        never again. It re-registers aliases on every later sighting and leaves the label exactly
+        as the first event wrote it.
+
+        For a person that first arrival is usually a To/Cc line, which carries a bare address —
+        recipients are not described, only senders are. So somebody who was cc'd in March and has
+        written to us every week since is still called `theresa.hoffmann@antler.co` on every card,
+        while the From header of their own mail has said "Theresa Hoffmann" a hundred times.
+
+        MEASURED ON THE PILOT 2026-09-16: 35 of 76 person nodes displayed a bare address, and for
+        8 of them a From-header display name was already sitting in their own `source_events`
+        rows, unused. The remaining 27 have never sent us anything — they are named by nobody, and
+        this correctly leaves them alone.
+
+        NOTHING IS INFERRED. The caller has already matched the address to THIS node by exact key
+        equality; the name comes from `parseaddr` on the From header, not from a model and not
+        from similarity.
+
+        Promotion happens only while the display name restates the anchor. A name from anywhere
+        else — a connector, a human, an earlier and better sighting — outranks a header line and
+        must never be overwritten by one. Returns True when the node was renamed.
+        """
+        cleaned = str(name or "").strip()
+        if not cleaned:
+            return False
+        row = conn.execute(text(
+            "select canonical_key, display_name from graph_nodes "
+            "where org_id=:o and node_id=:n and valid_to is null"),
+            {"o": org_id, "n": node_id}).first()
+        if row is None:
+            return False
+        current = str(row.display_name or "").strip()
+        anchor_key = str(row.canonical_key or "").strip()
+        # Compare the rendered strings rather than carry a flag, so this is also true of every
+        # node created before the promotion existed — which is all of them.
+        if current and current.casefold() != anchor_key.casefold():
+            return False
+        if cleaned.casefold() == current.casefold():
+            return False
+        # AND THE NAME MUST NOT BE THE ADDRESS AGAIN. A From header reading
+        # `"priya@chat360.io" <priya@chat360.io>` parses to a display name that is the address,
+        # and promoting it would rewrite the label with the thing it was supposed to replace —
+        # a no-op that reports True and tells a reader the node was named.
+        if "@" in cleaned and cleaned.casefold() == anchor_key.casefold():
+            return False
+        conn.execute(text(
+            "update graph_nodes set display_name=:dn "
+            "where org_id=:o and node_id=:n and valid_to is null"),
+            {"dn": cleaned, "o": org_id, "n": node_id})
+        return True
+
     def name_company_node(self, conn, *, org_id: str, node_id: str,
                           name: str | None) -> bool:
         """Give a company node a human name, but only while it is still called after its anchor.
@@ -351,6 +439,88 @@ class GraphStore:
             "update graph_nodes set display_name=:dn "
             "where org_id=:o and node_id=:n and valid_to is null"),
             {"dn": cleaned, "o": org_id, "n": node_id})
+        return True
+
+    def name_thread_node(self, conn, *, org_id: str, node_id: str,
+                         objective: str | None = None,
+                         counterparty: str | None = None) -> bool:
+        """Give a conversation a name a person can recognise. The thread twin of
+        `name_company_node`, and it exists for the same reason and follows the same rule.
+
+        WHAT A THREAD IS CALLED TODAY, and why both spellings fail a reader. `_thread_node` builds
+        its label as `"Thread with <counterparty>"` when it is handed one and `"Thread <id[:12]>"`
+        when it is not. Measured on the pilot: 236 threads, **151 of them named after a hex
+        fragment** — because two of the four callers pass `counterparty=None`. And the other 85 are
+        no better for the reader they are shown to: one counterparty is in FIFTEEN separate
+        conversations and all fifteen nodes are labelled `"Thread with boardy@boardy.ai"`. The node
+        identity is exactly right — fifteen key spaces, which is the whole point of the thread node
+        — and the name distinguishes none of them.
+
+        THE NAME COMES FROM WHAT THE CONVERSATION IS FOR. `thread.objective` is a one-line
+        statement of that, written by L1 and carried on 210 of the 236 threads, so the label
+        becomes "Boardy — intro call about the paid sales motion" instead of "Thread 1a07a6e0ca77".
+        The counterparty leads it because that is what a reader scans for first, and the objective
+        says which of their conversations this is.
+
+        A CASCADE, NOT A REQUIREMENT, because a lane that only names what it fully understands
+        leaves everything else unreadable. Objective and counterparty together, then either alone,
+        and the raw id survives as the last resort — it is a poor name and it is never a wrong one.
+
+        PROMOTED ONLY WHILE THE LABEL IS STILL ONE THIS FUNCTION GENERATED, exactly as
+        `name_company_node` promotes only while the display name restates the anchor. A name from
+        a connector, a human, or an earlier and better mention outranks anything derived here and
+        must never be overwritten by it. Returns True when the node was renamed.
+        """
+        label = thread_label(objective=objective, counterparty=counterparty)
+        if not label:
+            return False
+        row = conn.execute(text(
+            "select display_name from graph_nodes "
+            "where org_id=:o and node_id=:n and valid_to is null"),
+            {"o": org_id, "n": node_id}).first()
+        if row is None:
+            return False
+        current = str(row.display_name or "").strip()
+        # Compared against the SHAPES this module generates rather than carried as a flag, so it
+        # is also true of every thread created before this function existed — which is all of them.
+        if current and not _is_generated_thread_label(current):
+            return False
+        if label.casefold() == current.casefold():
+            return False
+        conn.execute(text(
+            "update graph_nodes set display_name=:dn "
+            "where org_id=:o and node_id=:n and valid_to is null"),
+            {"dn": label[:120], "o": org_id, "n": node_id})
+        return True
+
+    def rename_reading_anchor(self, conn, *, org_id: str, node_id: str,
+                              canonical_key: str, display_name: str | None) -> bool:
+        """Keep a reading's own anchor wearing the sentence that reading composes today.
+
+        `find_or_create_node` sets `display_name` at creation and never revisits it, which is right
+        for a person or a company — a name is a fact about them, and a later sighting must not
+        overwrite a better one. A reading anchor is the opposite kind of thing: the node exists
+        only to carry one reading's output, its key is minted by that reading, and its label is
+        recomposed from current facts on every sweep. Freezing that label means a headline written
+        by an older build of the reading survives every later correction.
+
+        THE KEY IS THE PERMISSION. The rename happens only when the node still answers to the
+        canonical key the finding was minted under, so this can reach nothing but the reading's own
+        namespace. Returns True when the label changed.
+        """
+        wanted = " ".join(str(display_name or "").split())
+        if not wanted or not canonical_key:
+            return False
+        row = conn.execute(text(
+            "select display_name from graph_nodes where org_id=:o and node_id=:n "
+            "and canonical_key=:k and valid_to is null"),
+            {"o": org_id, "n": node_id, "k": canonical_key}).first()
+        if row is None or str(row.display_name or "").strip() == wanted:
+            return False
+        conn.execute(text(
+            "update graph_nodes set display_name=:dn where org_id=:o and node_id=:n "
+            "and canonical_key=:k and valid_to is null"),
+            {"dn": wanted[:120], "o": org_id, "n": node_id, "k": canonical_key})
         return True
 
     def map_identity(self, conn, *, org_id: str, source: str, source_object_id: str,
@@ -672,6 +842,50 @@ class GraphStore:
                             source=source, evidence=evidence)
         return bool(inserted)
 
+    def write_received_observation(self, conn, *, org_id: str, subject_node_id: str,
+                                   kind: str, confidence: float, occurred_at: datetime | None,
+                                   event_id: str, evidence: dict, source: str | None) -> bool:
+        """What WE said, recorded as evidence about the person we said it to.
+
+        `write_event_presence` above establishes that an event touched a node. It deliberately
+        carries no substance, and for a while that was all an outbound recipient ever got — so a
+        founder who wrote to an investor twice left two content-free markers on that investor,
+        while every commitment, question and observation in those mails was filed against the
+        founder's OWN node. Measured on the pilot: 398 of 1001 observations on the mailbox owner,
+        and 30 of 60 people carrying zero — the exact people who never replied, which is the
+        subject of every "they have gone quiet" reading. `evidence_score` counts observations on
+        the anchor, so those anchors scored zero and the publisher held them. Our own work was not
+        counted as knowledge about the relationship it was done in.
+
+        THE KIND IS `received:` AND THAT PREFIX IS THE WHOLE SAFETY PROPERTY. A recipient must
+        never become the SPEAKER of words they did not write — `test_outbound_recipient_
+        observations.py` exists to protect exactly that and its intent is correct. "They were told
+        this" and "they said this" are different claims about a person, so they are different
+        rows: the prefix cannot be read as speech, and `speaker_node_id` in the evidence names who
+        actually wrote it. Any reader selecting on a bare kind sees only what somebody really said.
+
+        CONTENT-ADDRESSED, unlike `write_observation`. That one mints `new_id("obs")` and is
+        therefore not replay-safe; it is called once per extraction on one subject, where a
+        re-sync is guarded upstream. This fans one event out across every recipient, so a re-sync
+        would multiply the very number the evidence axis reads. The id is derived from the event,
+        the subject, the kind and the quoted text, which makes a second sweep a no-op.
+        """
+        digest = hashlib.sha256(json.dumps(
+            [org_id, event_id, subject_node_id, kind, str(evidence.get("text") or "")],
+        ).encode()).hexdigest()[:32]
+        obs_id = f"obs_received_{digest}"
+        inserted = conn.execute(text(
+            "insert into graph_observations (observation_id,org_id,subject_node_id,kind,"
+            "occurred_at,confidence,created_by_event_id) "
+            "values (:id,:org,:subject,:kind,:at,:conf,:event) "
+            "on conflict (observation_id) do nothing"),
+            {"id": obs_id, "org": org_id, "subject": subject_node_id, "kind": kind,
+             "at": occurred_at, "conf": confidence, "event": event_id}).rowcount
+        if inserted:
+            self._write_ref(conn, org_id=org_id, observation_id=obs_id, event_id=event_id,
+                            source=source, evidence=evidence)
+        return bool(inserted)
+
     # ── relationships (B7 edges) ──────────────────────────────────────────────
     def write_edge(self, conn, *, org_id: str, edge_type: str, from_node_id: str,
                    to_node_id: str, confidence: float, occurred_at: datetime | None,
@@ -742,6 +956,44 @@ class GraphStore:
             {"id": new_id("ref"), "o": org_id, "fv": fact_version_id, "ev2": edge_version_id,
              "obs": observation_id, "e": event_id, "src": source,
              "ex": json.loads(json.dumps(evidence, default=str)), "xv": "b3-haiku-1"})
+
+    #: How long the change outbox answers for. Matched to `analytic/history.RETENTION_MONTHS`
+    #: rather than chosen independently: `graph_version_at` exists so an audit can resolve the
+    #: version a stamped artifact was produced under, and a horizon shorter than the layer's
+    #: longest-lived store would leave a retained metric point pointing at a version nothing can
+    #: name. Imported lazily in `prune_change_outbox` — `analytic` imports this module.
+    OUTBOX_RETENTION_MONTHS = 24
+
+    def prune_change_outbox(self, org_id: str, *, eval_time: datetime,
+                            batch_limit: int = 20_000) -> int:
+        """Delete outbox rows past the horizon. Returns rows removed.
+
+        ON THE DRAIN, for the two reasons `analytic/history.prune_history_for_drain` gives and
+        which apply unchanged: the broker is a quota-limited instance and this layer prefers
+        in-process work on a path that already runs, and the drain is the only thing that knows an
+        org is active — an org that is not draining is not growing this table either.
+
+        SAFE BECAUSE THE READER SAYS SO. `graph_version_at` already documents that it returns None
+        for "an org whose outbox rows have aged out", and a null there is honest where a 0 would
+        read as a real version. Nothing else reads this table.
+
+        BOUNDED, because the first prune on a tenant that has been draining for a year is the
+        expensive one and it runs inside the sweep's own transaction budget. The drain repeats, so
+        a bounded batch drains the backlog over a few sweeps; an unbounded DELETE on a long
+        untouched table would be an unbounded transaction on the path that ingests mail.
+
+        IDEMPOTENT WITHIN A MONTH: `months_before` anchors on the month START, so two prunes in
+        the same month compute the same cutoff and the second deletes nothing.
+        """
+        from genios_engine.context.analytic.history import months_before
+
+        cutoff = months_before(eval_time, self.OUTBOX_RETENTION_MONTHS)
+        with self._engine.begin() as conn:
+            return int(conn.execute(text(
+                "delete from graph_change_outbox where change_id in ("
+                "  select change_id from graph_change_outbox "
+                "  where org_id = :o and created_at < :cut limit :lim)"),
+                {"o": org_id, "cut": cutoff, "lim": batch_limit}).rowcount or 0)
 
     def write_change(self, conn, *, org_id: str, graph_version: int,
                      cause_event_id: str, payload: dict) -> None:

@@ -26,11 +26,12 @@ not catch either one:
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import text
 
 from genios_engine.context.availability import WINDOWED_FIELDS
+from genios_engine.context.identity import strong_proposal_reasons
 from genios_engine.platform.ids import new_id
 
 _WINDOWED_SQL = ", ".join(f"'{f}'" for f in sorted(WINDOWED_FIELDS))
@@ -465,11 +466,36 @@ def reject_merge(conn, *, org_id: str, proposal_id: str) -> bool:
         "and status='open'"), {"o": org_id, "id": proposal_id}).rowcount > 0
 
 
-def open_proposals(conn, *, org_id: str, limit: int = 50) -> list[dict]:
-    """The review queue, with enough context to decide without opening the graph."""
+def open_proposals(conn, *, org_id: str, limit: int = 50,
+                   now: datetime | None = None) -> list[dict]:
+    """The review queue, with enough context to decide without opening the graph.
+
+    ORDERED TO BE CLEARED, which it was not. This read was `order by created_at desc` — newest
+    first — against a route whose default limit is 20. On the pilot's eighty open proposals the
+    sixty oldest could not be reached through the UI at all, and the twenty that could were the
+    twenty least likely to be stuck. A backlog ordered newest-first is a backlog that grows.
+
+    STRENGTH DECIDES THE ORDER, and the ledger has always known it. A shared email, domain or
+    LinkedIn url identifies one party on its own, so the collision IS a duplicate; a shared
+    company name is a coincidence of spelling. `identity.strong_proposal_reasons()` is the same
+    set `situations.identity_score` prices by, asked of the module that owns it rather than
+    restated here. Within a tier, OLDEST first: the point of the queue is to empty it.
+
+    A DEFERRED PROPOSAL IS OUT OF THE QUEUE AND STILL COUNTS. It is excluded here while its
+    deferral stands and returns by itself when the clock passes — no sweep and no second state to
+    keep consistent. It goes on costing the situation its identity confidence in
+    `situations.merge_pressure`, because choosing not to decide today is not a decision. The only
+    two decisions are `merged` and `rejected`.
+    """
+    strong = sorted(strong_proposal_reasons())
+    keys = [f"sr{i}" for i in range(len(strong))]
+    tier = (f"case when p.reason in ({', '.join(':' + k for k in keys)}) then 0 else 1 end"
+            if strong else "1")
+    params: dict = {"o": org_id, "lim": limit, "now": now or datetime.now(timezone.utc)}
+    params.update(dict(zip(keys, strong)))
     rows = conn.execute(text(
         "select p.id, p.left_node_id, p.right_node_id, p.node_type, p.reason, "
-        "       p.evidence, p.created_at, "
+        "       p.evidence, p.created_at, p.deferred_until, "
         "       l.display_name as left_name, l.canonical_key as left_key, "
         "       r.display_name as right_name, r.canonical_key as right_key "
         "from merge_proposals p "
@@ -478,5 +504,33 @@ def open_proposals(conn, *, org_id: str, limit: int = 50) -> list[dict]:
         "left join graph_nodes r on r.org_id=p.org_id and r.node_id=p.right_node_id "
         "     and r.valid_to is null "
         "where p.org_id=:o and p.status='open' "
-        "order by p.created_at desc limit :lim"), {"o": org_id, "lim": limit}).mappings().all()
+        "  and (p.deferred_until is null or p.deferred_until <= :now) "
+        f"order by {tier}, p.created_at asc limit :lim"), params).mappings().all()
     return [dict(r) for r in rows]
+
+
+#: How long "ask me later" lasts when the caller does not say. Long enough that a reviewer is not
+#: shown the same ambiguous pair twice in one sitting, short enough that a deferral is not a
+#: silent rejection — the two real decisions stay the only way to leave the queue for good.
+DEFAULT_DEFER_DAYS = 14
+
+
+def defer_proposal(conn, *, org_id: str, proposal_id: str, now: datetime | None = None,
+                   days: int = DEFAULT_DEFER_DAYS) -> datetime | None:
+    """Take one proposal out of the queue until a date. Returns that date, or None if untouched.
+
+    The route that offered this used to load the row, write nothing, and answer
+    `{"status": "deferred"}` — so the UI marked it handled and the next read returned it in the
+    same position. A control that reports success and changes nothing is worse than no control:
+    it teaches a reviewer that working the queue does not work.
+
+    Only an OPEN proposal can be deferred. Deferring one a human already decided would reopen a
+    settled question as a scheduling artefact.
+    """
+    at = now or datetime.now(timezone.utc)
+    until = at + timedelta(days=max(1, int(days)))
+    changed = conn.execute(text(
+        "update merge_proposals set deferred_until=:until "
+        "where org_id=:o and id=:id and status='open'"),
+        {"until": until, "o": org_id, "id": proposal_id}).rowcount
+    return until if changed else None

@@ -7,6 +7,7 @@ score. (It used to live in reason/signals_derived — which forced context to ei
 import upward or duplicate the sets.)"""
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -21,6 +22,11 @@ OBS_POSITIVE: frozenset[str] = frozenset({
     # opening diligence is not a customer's security team, and one card must never be written as
     # though it were the other.
     "approval_granted", "intro_made", "diligence_started", "payment_confirmed",
+    # LAYER 1'S OWN. `qes_adapter` turns each `classifier.PRECEDENCE` type straight into a kind,
+    # and these sets are the FALLBACK the engine uses when `kinds.yaml` cannot be read — so a
+    # type missing here goes weightless again on exactly the day the file breaks, which is the
+    # failure the file was written to end.
+    "opportunity_signal",
 })
 
 OBS_NEGATIVE: frozenset[str] = frozenset({
@@ -33,6 +39,8 @@ OBS_NEGATIVE: frozenset[str] = frozenset({
     # same accelerator invites a re-application to the next cohort — and filing it as a lost deal
     # is what produced "Save the deal now" on a fundraising rejection.
     "pass_received", "approval_blocked", "payment_overdue", "decision_deferred",
+    # LAYER 1'S OWN — see the note in `OBS_POSITIVE`. The two whose direction the type carries.
+    "escalation", "risk_flagged",
 })
 
 
@@ -50,6 +58,13 @@ OBS_NEUTRAL: frozenset[str] = frozenset({
     "approval_requested", "information_requested", "intro_requested",
     "document_sent", "investor_update_sent", "invoice_sent",
     "meeting_scheduled", "meeting_cancelled", "deadline_stated",
+    # LAYER 1'S OWN — see the note in `OBS_POSITIVE`. Neutral because the TYPE carries no
+    # direction: an anomaly can be a surprise order or a churn signal, a `relationship_change` can
+    # be a champion arriving or leaving, a `decision_made` can go either way. Guessing adds a bias
+    # to `derived.sentiment` that nobody can trace back.
+    "anomaly", "availability_change", "commitment_due", "commitment_made",
+    "contract_renewal", "decision_made", "decision_pending", "financial_obligation",
+    "information_conflict", "relationship_change",
 })
 
 #: Where the per-kind MEANING record lives. One row per kind, four answers each.
@@ -64,6 +79,16 @@ class ObservationMeaning:
     polarity: str = "neutral"
     is_ask: bool = False
     is_progress: bool = False
+    #: WHICH ASKS THIS KIND ANSWERS. Declared on the ANSWERING kind rather than on the ask,
+    #: because that is the direction the lookup runs: a message arrives, it carries kinds, and
+    #: the question is which open asks it discharges.
+    #:
+    #: EMPTY IS THE HONEST DEFAULT AND MOST KINDS KEEP IT. "What is your ARR?" is discharged by
+    #: a sentence, and no kind in this vocabulary means "answered the question" — so `question`
+    #: has no discharger and a reply to one is recorded as contact, not as an answer. Only pairs
+    #: that are true by definition are listed: an approval is granted or blocked, an intro is
+    #: made, a requested document is sent.
+    discharges: frozenset[str] = frozenset()
 
 
 def load_meanings(path: "Path | None" = None) -> dict[str, ObservationMeaning]:
@@ -96,7 +121,9 @@ def load_meanings(path: "Path | None" = None) -> dict[str, ObservationMeaning]:
             out[kind] = ObservationMeaning(
                 kind=kind,
                 polarity=polarity if polarity in ("positive", "negative", "neutral") else "neutral",
-                is_ask=bool(row.get("is_ask")), is_progress=bool(row.get("is_progress")))
+                is_ask=bool(row.get("is_ask")), is_progress=bool(row.get("is_progress")),
+                discharges=frozenset(str(k).strip() for k in (row.get("discharges") or ())
+                                     if str(k).strip()))
     except Exception:      # noqa: BLE001 — see FAILS SOFT above
         return {}
     return out
@@ -148,3 +175,106 @@ OBS_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("Meetings", ("meeting_request", "meeting_scheduled", "meeting_cancelled")),
     ("General", ("followup_sent", "introduction", "question")),
 )
+
+
+# ── HOW WE KNOW WHO OWNS SOMETHING ───────────────────────────────────────────────────────────
+#
+# ONE VOCABULARY, BECAUSE THERE WERE ALREADY TWO. `documents.py` writes `document.owner_basis` as
+# `declared_by_source`; `qes_adapter.py` writes `decision.owner_basis` as `inferred_from_qes`.
+# Each names the WRITER rather than the category, so no consumer could ask "is this owner stated
+# or attributed?" without knowing every producer by name — and a third producer would have
+# invented a third string. Neither value is read by anything today, which is exactly why the
+# vocabulary is cheap to unify now and would not have been later.
+#
+# The distinction is the one `quality/missing.py` says an Ownership surface is built out of: a
+# renewal with no owner recorded is not missing data, it IS the finding. A renewal whose owner we
+# GUESSED is a third state, and it was indistinguishable from a stated one.
+
+#: Somebody said so. The extractor named an actor and it resolved; a file store reports its own
+#: owner. The strongest thing this system can say about who holds an obligation.
+OWNER_DECLARED = "declared"
+
+#: We attributed it from context — almost always the speaker, because a person writing "I'll send
+#: it Friday" is usually the person who will. A good default and still not a statement: an email
+#: REPORTING somebody else's promise resolves the same way and names the wrong owner.
+OWNER_INFERRED = "inferred"
+
+#: An owner is recorded and its provenance is not. Reached by a reader, never by a writer — every
+#: writer knows which fork it took. It covers rows written before a basis had a writer at all, and
+#: it is treated as `inferred` wherever the two must be ranked, because a provenance we cannot
+#: establish must never be read as a stated one.
+OWNER_UNKNOWN = "unknown"
+
+OWNER_BASIS: frozenset[str] = frozenset({OWNER_DECLARED, OWNER_INFERRED, OWNER_UNKNOWN})
+
+#: The two strings already in the tables, mapped rather than migrated. Nothing reads them, so a
+#: migration would be motion without a beneficiary; a reader that understands them costs one dict
+#: and keeps every historical row classifiable.
+_LEGACY_OWNER_BASIS: dict[str, str] = {
+    "declared_by_source": OWNER_DECLARED,
+    "inferred_from_qes": OWNER_INFERRED,
+}
+
+
+def owner_basis(value: object) -> str:
+    """Normalise a stored `*.owner_basis` to this vocabulary. Unreadable input is UNKNOWN.
+
+    Conservative by construction: anything this function cannot place becomes `unknown`, which
+    every consumer must treat as weakly as `inferred`. The failure it refuses is the one that
+    matters — a value we cannot interpret being read as a statement somebody made.
+    """
+    text = str(value or "").strip().lower()
+    if text in OWNER_BASIS:
+        return text
+    return _LEGACY_OWNER_BASIS.get(text, OWNER_UNKNOWN)
+
+
+# ── WHAT A CLOSED LOOP RESTS ON ──────────────────────────────────────────────────────────────
+#
+# `close_loops_for_reply` closes every open loop this person has on the thread, whatever the
+# closing message said, and its call site claims otherwise in as many words: "the ledger says
+# WHICH requests this reply answered — one row each, never the whole person". It does not. They
+# ask "what is your ARR?", we write back "let me check and get back to you", and the ledger
+# records the question as answered.
+#
+# That is the failure `read_overdue_commitments` refuses by name one module over — "Sending
+# something afterwards is not sending THE thing, and claiming otherwise is the failure BS-04
+# names: received, complete, valid and accepted are four different facts."
+#
+# THE FIX IS NOT TO STOP CLOSING. Holding a loop open until an answer can be PROVEN would refuse
+# on an absence — every reply this vocabulary cannot classify would leave an obligation standing
+# for ever, and a founder would be chased about questions that were answered months ago. The loop
+# closes exactly when it closed before. What changes is that the ledger stops saying it knows
+# something it does not.
+#
+# CAPTURED AT WRITE TIME BECAUSE IT CANNOT BE RECOVERED LATER. Once a closure is recorded as a
+# flat `closed`, what the closing message carried is gone: the observations remain, but which of
+# them the closer saw, and which loops it was closing, does not. That is what separates this from
+# a value that can be derived on demand whenever somebody finally needs it.
+
+#: The closing message carried a kind that answers this loop's ask, by the `discharges` table in
+#: `kinds.yaml` — an approval granted or blocked, an intro made, a requested document sent.
+CLOSED_ANSWERED = "answered"
+
+#: A message arrived on the thread and nothing in it can be said to answer the ask. The honest
+#: description of every closure this system performed before the distinction existed, and still
+#: the great majority: "what is your ARR?" is discharged by a sentence, and no kind in this
+#: vocabulary means "answered the question".
+CLOSED_REPLIED = "replied"
+
+CLOSED_BASIS: frozenset[str] = frozenset({CLOSED_ANSWERED, CLOSED_REPLIED})
+
+
+def discharged_asks(kinds: "Iterable[str]") -> frozenset[str]:
+    """The ask kinds that the observations on one message answer.
+
+    Empty for almost every message, and that is the point: a reply is contact until something in
+    it is a stated discharge. Unknown kinds contribute nothing rather than defaulting either way.
+    """
+    meanings = OBSERVATION_MEANINGS
+    out: set[str] = set()
+    for kind in kinds or ():
+        meaning = meanings.get(str(kind).strip())
+        if meaning is not None:
+            out.update(meaning.discharges)
+    return frozenset(out)

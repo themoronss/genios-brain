@@ -879,3 +879,419 @@ milestones:
                       empty attachment. Live drain of supplied 767 count remains operator-only.
                     artifact: tests/capture/parked/test_business_attachment_recovery.py
                     depends_on: []
+
+# ═════════════════════════════════════════════════════════════════════════════════════════════
+# PERSONA BRAIN + LAYER 3 REPAIR — decomposed 2026-09-15.
+#
+# HISTORICAL WORK ABOVE IS UNTOUCHED. M1–M7 belong to earlier waves; this wave mints M8–M12 and
+# never reuses a retired id.
+#
+# Verify prelude every unit below assumes:
+#   cd "/Users/rohitswerashi/Downloads/Artifacts/Product/genios-brain (yc)/genios-brain"
+#   .venv/bin/python -m pytest <file> -q -p no:randomly
+#
+# MEASURED BASELINE this wave must not lower (taken 2026-09-15, after the Layer 2 wave):
+#   full suite                     35 failed   (all PRE-EXISTING; zero regressions is the bar)
+#   L2 active situations           143, all ranked, 18 types, every type corpus-bound
+#   lane audit                     10 producing, 4 declared dormant, 0 unexplained
+#   L3 funnel                      143 -> 94 reach -> 21 admitted -> 17 compiled -> 9 emitted
+#   cards saying "no expectations registered"   14 of 94
+#   learned_brain_entries / temporary_memories  0 rows each
+#   metrics sampled                10, every one a generic mail-activity count
+# ═════════════════════════════════════════════════════════════════════════════════════════════
+
+persona_brain_and_layer_repair:
+  status: planned_awaiting_confirmation
+  revision: 2
+  requested_order: [M8, M9, M10, M11, M12]
+
+  vision: >
+    On the pilot tenant, a card names what it lacks in the vocabulary of the business it is
+    about, ranks on a number Layer 1 measured rather than a default constant, and carries
+    doctrine about what good looks like for that kind of company and that person's role. A
+    tenant whose persona cannot be resolved behaves exactly as the engine does today, and says
+    so on the card.
+
+  # ═══════════════════════════════════════════════════════════════════════════════════════════
+  # REVISION 2 — what contact with the code changed, before a line was written.
+  #
+  # Revision 1 invented a parallel persona system: a new `_personas/` tree, two new schemas, a
+  # new registry. Three measurements retired it.
+  #
+  #   1. `Domain Expertise/_personas/` IS INVISIBLE TO EVERY CORPUS TOOL. `_lib.domains()` skips
+  #      any directory starting with `_` and requires a `domain.yaml`. `validate.py` would have
+  #      reported "0 errors — OK" while validating nothing, which is exactly the verify-that-
+  #      passes-on-empty-code this build loop forbids.
+  #
+  #   2. THE COMPANY-PERSONA MECHANISM ALREADY EXISTS, END TO END, AND IS EMPTY. The corpus has
+  #      a `verticals/` axis beside `models/`, with a schema, an inheritance rule
+  #      (vertical -> model -> canonical) and a loader that files them as `variant` documents.
+  #      Selection is `l3_activation.variant_ids`, read by `declared_variants`, passed through
+  #      `domain_shadow` -> `knowledge_retriever` -> `brain_resolver` -> `expertise_builder`.
+  #      Measured 2026-09-15: 88 models authored (20 admin, 33 sales, 35 support), ZERO
+  #      verticals, and `variant_ids = '[]'` on all three activation rows. Built, wired, unused —
+  #      the same shape as the three empty brains and the five dead L2 lanes.
+  #
+  #      So Group A is not new machinery. It is content for an axis that already resolves, plus
+  #      the one genuinely missing piece: deciding WHICH vertical a tenant is. That decision is
+  #      Layer 2's, exactly where it was argued it should be.
+  #
+  #   3. `org_seats.role` IS AN ACCESS ROLE, NOT A JOB PERSONA. All three seats read 'admin'.
+  #      And `seat_profiles` (migration 0164, 0 rows) is a BEHAVIOURAL profile — "usual work
+  #      hours, what to ignore". Neither is the job axis, so Group B is genuinely new; it extends
+  #      `seat_profiles` rather than minting a fourth table beside it.
+  #
+  # RETIRED, never reused:
+  #   M8.C1.L-contract.V0.U01  parallel company persona schema   -> the vertical schema exists
+  #   M8.C1.L-contract.V0.U02  parallel role persona schema      -> extends seat_profiles instead
+  #   M8.C1.L-contract.V1.U03  persona ids in the vocabulary     -> variants are already a kind
+  #   M8.C1.L-contract.V1.U04  seed documents under _personas/   -> invisible path
+  #   M8.C2.L-logic.V0.U01     parallel persona registry         -> authoring.py already loads variants
+  #   M10.C2.L-contract.V0.U01 parallel doctrine schema          -> model.schema.json is the doctrine schema
+  # ═══════════════════════════════════════════════════════════════════════════════════════════
+
+  laws:
+    - Persona shapes the QUESTION, never the ANSWER. It may add an expectation, a word, or a
+      metric to sample. It may never add a fact, close a gap, or move a confidence.
+    - Unknown persona is a first-class answer with a declared refusal, never a default persona.
+    - Ranking is Layer 4's. A role weight never reaches Layer 2.
+    - Every persona-derived expectation carries which level answered, the same discipline the
+      reply-cadence cascade already uses.
+    - Existing floors stay. `domain_spec.expected_fields`, `TRENDED_METRICS` and the canonical
+      corpus are the floor a persona adds to, never a thing a persona replaces.
+    - Ride the mechanism that exists. A second way to say what the corpus already says is how
+      88 authored models came to reach nobody.
+
+  milestones:
+
+    # ═══════════════════════════════════════════════════════════════════════════════════════
+    - id: M8
+      name: Company persona — author the vertical axis and resolve it (L2 + corpus)
+      ships: >
+        The tenant's vertical is resolved from its own evidence, selected through
+        `l3_activation.variant_ids`, and reaches the compiler through the path 88 authored
+        models already take. The 14 cards reading "coverage unknown" fall to zero, and no card
+        gains a fact it did not earn.
+      categories:
+
+        - id: M8.C1
+          name: Vertical content
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M8.C1.L-contract.V0.U05
+                      what: >
+                        one vertical authored and admitted for the category this tenant actually
+                        is, under the existing verticals/ axis and model.schema.json
+                      artifact: "Domain Expertise/Admin Expertise/verticals/"
+                      verify: .venv/bin/python "Domain Expertise/_tools/validate.py"
+                      depends_on: []
+                - level: 1
+                  units:
+                    - id: M8.C1.L-contract.V1.U06
+                      what: that vertical passes the admission ceremony every corpus document passes
+                      artifact: "Domain Expertise/Admin Expertise/verticals/"
+                      verify: .venv/bin/python "Domain Expertise/_tools/admit.py" --all
+                      depends_on: [M8.C1.L-contract.V0.U05]
+                    - id: M8.C1.L-contract.V1.U07
+                      what: >
+                        a test proving an authored vertical is LOADED as a variant by
+                        authoring.py — the step 88 models never had proven
+                      artifact: tests/packs/test_a_vertical_is_loaded.py
+                      verify: .venv/bin/python -m pytest tests/packs/test_a_vertical_is_loaded.py -q -p no:randomly
+                      depends_on: [M8.C1.L-contract.V0.U05]
+
+        - id: M8.C2
+          name: Vertical resolution
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M8.C2.L-logic.V0.U05
+                      what: >
+                        resolve the tenant's vertical from evidence already in the graph
+                        (company.industry, organization.relationship, the mailbox domain),
+                        returning UNKNOWN rather than a guess
+                      artifact: genios_engine/context/persona.py
+                      verify: .venv/bin/python -m pytest tests/context/test_vertical_resolution.py -q -p no:randomly
+                      depends_on: [M8.C1.L-contract.V1.U06]
+                - level: 1
+                  units:
+                    - id: M8.C2.L-logic.V1.U06
+                      what: >
+                        the resolved vertical is written as an ordinary fact with a receipt and a
+                        which-level-answered stamp, and nothing else reads it yet
+                      artifact: genios_engine/context/persona.py
+                      verify: .venv/bin/python -m pytest tests/context/test_vertical_fact.py -q -p no:randomly
+                      depends_on: [M8.C2.L-logic.V0.U05]
+            - layer: data
+              levels:
+                - level: 2
+                  units:
+                    - id: M8.C2.L-data.V2.U07
+                      what: >
+                        the resolved vertical proposes `l3_activation.variant_ids`; a human
+                        accepts it, the way every other admission in this system works
+                      artifact: genios_engine/platform/l3_activation.py
+                      verify: .venv/bin/python -m pytest tests/test_variant_ids_are_proposed_not_asserted.py -q -p no:randomly
+                      depends_on: [M8.C2.L-logic.V1.U06]
+
+        - id: M8.C3
+          name: Layer 2 consumption seams
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M8.C3.L-logic.V0.U06
+                      what: >
+                        the vertical's expectations overlay domain_spec.expected_fields at read
+                        time; the declared map stays the floor and the overlay only adds
+                      artifact: genios_engine/context/situations.py
+                      verify: .venv/bin/python -m pytest tests/context/test_vertical_expectations.py -q -p no:randomly
+                      depends_on: [M8.C2.L-logic.V1.U06]
+                    - id: M8.C3.L-logic.V0.U07
+                      what: >
+                        the vertical's terminology reaches the observation kinds and extraction
+                        hints, so an industry's own words are read as that industry's words
+                      artifact: genios_engine/context/vocabulary.py
+                      verify: .venv/bin/python -m pytest tests/context/test_vertical_vocabulary.py -q -p no:randomly
+                      depends_on: [M8.C2.L-logic.V1.U06]
+                    - id: M8.C3.L-logic.V0.U08
+                      what: >
+                        the vertical declares a BOUNDED extra metric set for the sampler; the ten
+                        existing metrics stay and the storage-budget cap is enforced and tested
+                      artifact: genios_engine/context/analytic/sampler.py
+                      verify: .venv/bin/python -m pytest tests/context/test_vertical_metrics.py -q -p no:randomly
+                      depends_on: [M8.C2.L-logic.V1.U06]
+            - layer: integration
+              levels:
+                - level: 1
+                  units:
+                    - id: M8.C3.L-integration.V1.U09
+                      what: >
+                        vertical resolution runs once per sweep, before the readings, and is
+                        reported on the sweep record like every other pass
+                      artifact: genios_engine/context/runner.py
+                      verify: .venv/bin/python -m pytest tests/context/test_vertical_runs_in_the_sweep.py -q -p no:randomly
+                      depends_on: [M8.C3.L-logic.V0.U06, M8.C3.L-logic.V0.U07, M8.C3.L-logic.V0.U08]
+                    - id: M8.C3.L-integration.V1.U10
+                      what: >
+                        a tenant with no resolvable vertical produces byte-identical output to
+                        today — the regression that proves this is additive
+                      artifact: tests/context/test_vertical_is_additive.py
+                      verify: .venv/bin/python -m pytest tests/context/test_vertical_is_additive.py -q -p no:randomly
+                      depends_on: [M8.C3.L-integration.V1.U09]
+
+    # ═══════════════════════════════════════════════════════════════════════════════════════
+    - id: M9
+      name: The correlation seam (unblocks Layer 3)
+      ships: >
+        Reading-based situations carry correlation membership, so Layer 1's qualified signals
+        reach them and their importance is measured rather than defaulted. Admission holds fall
+        from 73 toward the number genuinely missing evidence.
+      categories:
+
+        - id: M9.C1
+          name: Membership
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M9.C1.L-logic.V0.U01
+                      what: >
+                        derive the event set behind one finding from the created_by_event_id its
+                        facts already carry — a pure function over facts, no writes
+                      artifact: genios_engine/context/outreach_situations.py
+                      verify: .venv/bin/python -m pytest tests/context/test_a_readings_events.py -q -p no:randomly
+                      depends_on: []
+            - layer: data
+              levels:
+                - level: 1
+                  units:
+                    - id: M9.C1.L-data.V1.U02
+                      what: >
+                        readings write context_correlation_members for their own correlation id,
+                        idempotently, inside the transaction that writes their facts
+                      artifact: genios_engine/context/outreach_situations.py
+                      verify: .venv/bin/python -m pytest tests/context/test_a_reading_declares_its_events.py -q -p no:randomly
+                      depends_on: [M9.C1.L-logic.V0.U01]
+            - layer: integration
+              levels:
+                - level: 2
+                  units:
+                    - id: M9.C1.L-integration.V2.U03
+                      what: >
+                        gather_l1_signals is UNCHANGED and starts finding signals — the proof that
+                        the seam was the defect and not the join
+                      artifact: tests/context/test_l1_signals_reach_a_reading.py
+                      verify: .venv/bin/python -m pytest tests/context/test_l1_signals_reach_a_reading.py -q -p no:randomly
+                      depends_on: [M9.C1.L-data.V1.U02]
+                    - id: M9.C1.L-integration.V2.U04
+                      what: >
+                        the funnel is re-measured against the live tenant and asserted to have
+                        improved against the recorded baseline
+                      artifact: tests/reason/test_the_l3_funnel_improved.py
+                      verify: .venv/bin/python -m pytest tests/reason/test_the_l3_funnel_improved.py -q -p no:randomly
+                      depends_on: [M9.C1.L-integration.V2.U03]
+
+    # ═══════════════════════════════════════════════════════════════════════════════════════
+    - id: M10
+      name: Role persona (the genuinely new axis)
+      ships: >
+        A seat carries a job role distinct from its access role, and the card says which role
+        ordered it.
+      categories:
+
+        - id: M10.C1
+          name: Role declaration
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M10.C1.L-contract.V0.U02
+                      what: >
+                        the job-role axis extends `seat_profiles.profile` rather than minting a
+                        fourth table; `org_seats.role` stays the ACCESS role it already is
+                      artifact: genios_engine/reason/moments/seat_profile.py
+                      verify: .venv/bin/python -m pytest tests/reason/test_a_job_role_is_not_an_access_role.py -q -p no:randomly
+                      depends_on: [M9.C1.L-integration.V2.U03]
+                - level: 1
+                  units:
+                    - id: M10.C1.L-contract.V1.U03
+                      what: role doctrine authored and admitted for the roles this tenant holds
+                      artifact: "Domain Expertise/"
+                      verify: .venv/bin/python "Domain Expertise/_tools/admit.py" --all
+                      depends_on: [M10.C1.L-contract.V0.U02]
+
+        - id: M10.C2
+          name: Role resolution
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M10.C2.L-logic.V0.U04
+                      what: >
+                        resolve a seat's job role from person.title and party.role, refusing where
+                        the evidence says only 'admin'
+                      artifact: genios_engine/context/persona.py
+                      verify: .venv/bin/python -m pytest tests/context/test_role_resolution.py -q -p no:randomly
+                      depends_on: [M10.C1.L-contract.V1.U03]
+
+    # ═══════════════════════════════════════════════════════════════════════════════════════
+    - id: M11
+      name: The remaining Layer 3 losses
+      ships: >
+        Every situation that reaches the compiler either compiles, or its refusal is declared
+        with a measurement and a mover.
+      categories:
+
+        - id: M11.C1
+          name: Routing coverage
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M11.C1.L-logic.V0.U01
+                      what: >
+                        DECISION UNIT — what `general` domain means. Author a general corpus, or
+                        let activation govern the corpus that SERVES rather than the domain that
+                        produced. 12 situations and 36 of 52 delivered cards ride on this.
+                      artifact: docs/plans/GENERAL_DOMAIN.md
+                      verify: .venv/bin/python -m pytest tests/test_l3_route_vocabulary_contract.py -q -p no:randomly
+                      depends_on: [M9.C1.L-integration.V2.U04]
+                    - id: M11.C1.L-logic.V0.U02
+                      what: the four unrouted situation types get an authored capability
+                      artifact: "Domain Expertise/"
+                      verify: .venv/bin/python "Domain Expertise/_tools/validate.py"
+                      depends_on: [M9.C1.L-integration.V2.U04]
+
+        - id: M11.C2
+          name: Context completeness
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M11.C2.L-logic.V0.U01
+                      what: >
+                        a census of the 93 unknown projected fields by cause, the way the
+                        correlators publish their drop reasons
+                      artifact: genios_engine/reason/domain_shadow.py
+                      verify: .venv/bin/python -m pytest tests/reason/test_projection_says_what_it_could_not_fill.py -q -p no:randomly
+                      depends_on: [M9.C1.L-integration.V2.U04]
+                - level: 1
+                  units:
+                    - id: M11.C2.L-logic.V1.U02
+                      what: >
+                        the fillable half of that census is filled, vertical expectations
+                        included; the unfillable half is declared
+                      artifact: genios_engine/reason/domain_shadow.py
+                      verify: .venv/bin/python -m pytest tests/reason/test_projection_says_what_it_could_not_fill.py -q -p no:randomly
+                      depends_on: [M11.C2.L-logic.V0.U01, M8.C3.L-integration.V1.U09]
+
+        - id: M11.C3
+          name: Hygiene
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M11.C3.L-contract.V0.U01
+                      what: >
+                        use_domain_compiler retired — a global boolean no environment sets,
+                        already superseded by the l3_activation table
+                      artifact: genios_engine/platform/config.py
+                      verify: .venv/bin/python -m pytest tests/test_l3_activation_is_a_table.py -q -p no:randomly
+                      depends_on: [M11.C1.L-logic.V0.U01]
+
+    # ═══════════════════════════════════════════════════════════════════════════════════════
+    - id: M12
+      name: Role ranking (Layer 4)
+      ships: >
+        Two people on the same graph see the same cards in a different order, and the card says
+        which role ordered it.
+      categories:
+
+        - id: M12.C1
+          name: Role weights
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M12.C1.L-logic.V0.U01
+                      what: >
+                        role persona weights the utility function, and the weight used travels on
+                        the decision so a reader can see why this came first
+                      artifact: genios_engine/reason/runner.py
+                      verify: .venv/bin/python -m pytest tests/reason/test_role_weights_the_order.py -q -p no:randomly
+                      depends_on: [M10.C2.L-logic.V0.U04]
+                - level: 1
+                  units:
+                    - id: M12.C1.L-logic.V1.U02
+                      what: >
+                        a seat with no resolved role gets today's order exactly — the additive
+                        proof, one layer up
+                      artifact: tests/reason/test_role_weights_the_order.py
+                      verify: .venv/bin/python -m pytest tests/reason/test_role_weights_the_order.py -q -p no:randomly
+                      depends_on: [M12.C1.L-logic.V0.U01]
+
+  uncertain_verify:
+    - id: M11.C1.L-logic.V0.U01
+      why: >
+        This is a DECISION, not a build. Its verify only proves the vocabulary contract still
+        holds; it cannot prove the decision was the right one. Named here so it is not mistaken
+        for an engineering unit.
+    - id: M8.C2.L-data.V2.U07
+      why: >
+        "Proposes, a human accepts" needs an acceptance surface. If none exists for
+        `l3_activation.variant_ids`, this unit splits into a proposal store and an admin route,
+        which is two units and not one.

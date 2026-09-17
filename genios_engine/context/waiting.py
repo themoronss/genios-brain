@@ -24,6 +24,9 @@ from __future__ import annotations
 
 from genios_engine.context.vocabulary import kinds_where
 
+import json
+
+from collections.abc import Mapping
 from datetime import datetime, timedelta, timezone
 from statistics import median
 
@@ -93,6 +96,17 @@ _TIMELINE = (
 #: `in :kinds` with an expanding bindparam rather than `= any(:kinds)`: the array cast is
 #: Postgres-only, and a correctness argument that can only be demonstrated against production is
 #: one nobody can check.
+#: person -> their firm, the same `works_at` edge `outreach_situations._EMPLOYERS` reads. One
+#: spelling would be better still; this query is kept local because `waiting.py` runs before the
+#: readings and must not import from them (they import from it).
+_FIRMS = (
+    "select e.from_node_id as person, e.to_node_id as company "
+    "from graph_edges e "
+    "join graph_nodes n on n.org_id = e.org_id and n.node_id = e.to_node_id "
+    "     and n.valid_to is null and n.node_type = 'company' "
+    "where e.org_id = :o and e.edge_type = 'works_at' and e.valid_to is null"
+)
+
 _ASKS = (
     "select distinct f.subject_node_id as subject_node_id "
     "from graph_facts f "
@@ -141,6 +155,73 @@ WAITING_ONLY_FIELDS: tuple[str, ...] = (
     "thread.days_waiting", "thread.follow_up_count", "thread.response_expected")
 
 
+#: WHERE A REPLY CADENCE COMES FROM WHEN THE PERSON HAS NOT GIVEN US ONE, in order.
+#:
+#: THE GATE BELOW USED TO BE THE WHOLE ANSWER: two replies from the same person, or nothing. It is
+#: the right test and it is almost never satisfiable — measured on the pilot, `party.reply_cadence
+#: _days` was set on 0 of 453 nodes, because in a fundraise nobody replies twice. Every reading
+#: built on "later than THEIR normal" was therefore permanently false, and a card reporting
+#: "0 people past their usual reply time" reads as good news rather than as no measurement.
+#:
+#: SO THE MEASUREMENT WIDENS RATHER THAN WEAKENS. A person with two replies keeps their own
+#: median. Failing that, the people at their FIRM answer for them — two partners at one fund
+#: behave more like each other than like a stranger. Failing that, the tenant's own median across
+#: every counterparty who has ever replied twice. Only when none of those exists does a declared
+#: floor apply, and the floor is not a cadence: it is the admission that there is no evidence.
+#:
+#: WHICH LEVEL ANSWERED TRAVELS WITH THE NUMBER. `party.reply_cadence_basis` is what keeps this
+#: honest — "they usually reply in two days" and "people at this firm usually reply in two days"
+#: are different claims, and a card that cannot tell them apart will make the first on the
+#: evidence of the second. `condition_situations._is_owner` keeps the same discipline for names.
+#: One name per line, not tuple-unpacked. `tests/test_no_missing_module_deps` walks the AST for
+#: `Assign` nodes with a `Name` target, so a tuple assignment defines a symbol the scanner cannot
+#: see — and a module whose exports are invisible to that scan is one nobody can check imports
+#: against.
+CADENCE_PERSON = "person"
+CADENCE_FIRM = "firm"
+CADENCE_TENANT = "tenant"
+CADENCE_FLOOR = "floor"
+
+#: The minimum gaps that describe a HABIT rather than an anecdote. Unchanged, and applied at every
+#: level: a firm median built from one reply is the same invented normal as a person's.
+MIN_GAPS_FOR_CADENCE = 2
+
+#: Used only when nothing above it exists. Deliberately NOT a plausible reply time — it is the
+#: value that says "no evidence", and `party.reply_cadence_basis` says so out loud so a reading
+#: can refuse to compare against it.
+CADENCE_FLOOR_DAYS = 3.0
+
+
+def cadence_for(node_id: str, gaps_by_node: Mapping[str, list[float]],
+                firm_of: Mapping[str, str]) -> tuple[float, str]:
+    """`(days, basis)` for one counterparty — person, then firm, then tenant, then floor.
+
+    PURE, so the cascade can be read and tested without a database, and so the rule lives in one
+    place rather than in each caller's idea of a fallback.
+    """
+    own = gaps_by_node.get(node_id) or []
+    if len(own) >= MIN_GAPS_FOR_CADENCE:
+        return round(median(own), 2), CADENCE_PERSON
+
+    firm = firm_of.get(node_id)
+    if firm:
+        # EVERY COLLEAGUE'S GAPS, the person's own included — they are evidence about the firm
+        # even when there are too few to describe the person.
+        pooled = [g for other, gs in gaps_by_node.items() if firm_of.get(other) == firm for g in gs]
+        if len(pooled) >= MIN_GAPS_FOR_CADENCE:
+            return round(median(pooled), 2), CADENCE_FIRM
+
+    everyone = [g for gs in gaps_by_node.values() for g in gs]
+    if len(everyone) >= MIN_GAPS_FOR_CADENCE:
+        return round(median(everyone), 2), CADENCE_TENANT
+    return CADENCE_FLOOR_DAYS, CADENCE_FLOOR
+
+
+def reply_gaps_of(timeline: list[tuple[str, datetime]]) -> list[float]:
+    """This counterparty's reply latencies. Exposed so the cascade can pool them across a firm."""
+    return _reply_gaps(sorted(timeline, key=lambda pair: pair[1]))
+
+
 def _state(timeline: list[tuple[str, datetime]], now: datetime) -> dict:
     """One counterparty's waiting state from their directed message timeline."""
     outs = [at for direction, at in timeline if direction == "out"]
@@ -161,12 +242,37 @@ def _state(timeline: list[tuple[str, datetime]], now: datetime) -> dict:
         since = [at for at in outs if last_in is None or at > last_in]
         state["thread.follow_up_count"] = max(0, len(since) - 1)
 
-    gaps = _reply_gaps(sorted(timeline, key=lambda pair: pair[1]))
-    # Two gaps is the minimum that describes a HABIT.  One reply is an anecdote, and a threshold
-    # built on an anecdote is exactly the invented normal this field exists to replace.
-    if len(gaps) >= 2:
-        state["party.reply_cadence_days"] = round(median(gaps), 2)
+    # THE CADENCE IS NO LONGER DECIDED HERE. This function sees one counterparty's timeline and
+    # cannot know their colleagues' or the tenant's, which is exactly what the cascade needs —
+    # see `cadence_for`. `compute_waiting` pools the gaps and writes both the number and the
+    # basis it came from.
     return state
+
+
+def _firms(conn, org_id: str) -> Mapping[str, str]:
+    """person -> firm, and NEVER at the cost of the pass that needs it.
+
+    The firm level of the cascade is an enhancement: without it a counterparty falls to the
+    tenant's median, which is exactly what happened before firms existed. So a graph with no
+    `graph_nodes` — a fixture, a tenant mid-migration, a driver difference — must lose the firm
+    level and keep the rest.
+
+    A SAVEPOINT, NOT A try/except. Postgres aborts the whole transaction on a failed statement, so
+    catching the exception without rolling back leaves every later write in `compute_waiting`
+    failing silently. That is the defect `outreach_situations._optional` was written for after it
+    emptied eleven gathers on the live tenant; this is the same guard, kept local because
+    `waiting.py` runs before the readings and must not import from them.
+    """
+    try:
+        with conn.begin_nested():
+            return {str(r.person): str(r.company)
+                    for r in conn.execute(text(_FIRMS), {"o": org_id})}
+    except Exception:      # noqa: BLE001 — one level of the cascade, never the sweep
+        from genios_engine.platform.logging import get_logger
+        get_logger("genios.l2").warning(
+            "employer map unavailable for org=%s; reply cadence falls back to the tenant median",
+            org_id, exc_info=True)
+        return {}
 
 
 def compute_waiting(store, org_id: str, *, now: datetime | None = None) -> int:
@@ -199,8 +305,20 @@ def compute_waiting(store, org_id: str, *, now: datetime | None = None) -> int:
             per_node.setdefault(str(node_id), []).append((direction, moment))
 
         written = 0
+        # POOLED BEFORE ANYTHING IS WRITTEN, because the cascade needs every counterparty's gaps
+        # to answer for the one that has none of its own.
+        gaps_by_node = {node_id: reply_gaps_of(timeline) for node_id, timeline in per_node.items()}
+        firm_of = _firms(c, org_id)
+
         for node_id, timeline in per_node.items():
             state = _state(timeline, now)
+            days, basis = cadence_for(node_id, gaps_by_node, firm_of)
+            # THE FLOOR IS NOT A CADENCE and is not written as one. A number with no evidence
+            # behind it would be indistinguishable from a measured one the moment it left this
+            # function, and every reading downstream compares against it.
+            if basis != CADENCE_FLOOR:
+                state["party.reply_cadence_days"] = days
+                state["party.reply_cadence_basis"] = basis
             if "thread.days_waiting" not in state:
                 # THEY ANSWERED, or we never wrote to them. Either way the waiting facts are no
                 # longer true and must be retired rather than left standing — see
@@ -219,13 +337,24 @@ def compute_waiting(store, org_id: str, *, now: datetime | None = None) -> int:
                 # opposite advice.  Absent would collapse them into one.
                 state["thread.response_expected"] = node_id in asked
             for field, value in state.items():
+                # THE COLUMN IS `jsonb`, SO THE VALUE MUST BE JSON — and `repr` is not a JSON
+                # encoder. It happens to produce valid JSON for a number (`repr(2.5)` -> `2.5`)
+                # and invalid JSON for anything else: `repr("person")` is `'person'`, which
+                # Postgres rejects with "Token ' is invalid". Every value here was a number until
+                # `party.reply_cadence_basis` arrived, so the bug was latent in a line that had
+                # been correct for as long as the state was numeric — and it took down the whole
+                # waiting pass on the first sweep that carried a string.
                 if isinstance(value, bool):
                     _write_fact(c, org_id, node_id, field, "true" if value else "false",
                                 "bool", now)
+                elif isinstance(value, (int, float)):
+                    _write_fact(c, org_id, node_id, field, json.dumps(value), "number", now)
                 else:
-                    _write_fact(c, org_id, node_id, field, repr(value), "number", now)
+                    _write_fact(c, org_id, node_id, field, json.dumps(str(value)), "string", now)
                 written += 1
     return written
 
 
-__all__ = ["WAITING_ONLY_FIELDS", "compute_waiting"]
+__all__ = [
+    "CADENCE_FIRM", "CADENCE_FLOOR", "CADENCE_FLOOR_DAYS", "CADENCE_PERSON",
+    "CADENCE_TENANT", "MIN_GAPS_FOR_CADENCE", "cadence_for", "reply_gaps_of","WAITING_ONLY_FIELDS", "compute_waiting"]

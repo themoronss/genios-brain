@@ -54,6 +54,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import text
 
 from genios_engine.context.domain_spec import spec_for, spec_version
+from genios_engine.context.identity import strong_proposal_reasons
 from genios_engine.context.quality.lens import read_coverage_lens
 from genios_engine.context.quality.missing import AbsenceSubject, refresh_typed_absences
 from genios_engine.platform.ids import new_id
@@ -114,7 +115,7 @@ def normalize_stage(value) -> str:
 
 # ── the confidence dimensions ────────────────────────────────────────────────────
 
-def evidence_score(*, event_count: int, source_count: int) -> int:
+def evidence_score(*, event_count: int, source_count: int, voice_count: int = 0) -> int:
     """How much independent material backs this situation.
 
     Sources outweigh volume on purpose: twenty emails in one thread are one person's
@@ -126,9 +127,35 @@ def evidence_score(*, event_count: int, source_count: int) -> int:
     noisy single-source thread can never outscore genuine cross-tool agreement. An
     earlier split (60 volume / 40 sources) inverted it and made this docstring a lie;
     tests/test_situations.py now pins the ordering.
+
+    A TOOL WAS NEVER THE ONLY KIND OF INDEPENDENT SOURCE, and reading it that way put a
+    structural ceiling on every correspondence-only tenant. `source_count` is
+    `count(distinct se.source)`, so a fundraise that lives entirely in Gmail scores 1 — for
+    ever, however many people are in it — and corroboration stops at 25 of its 60. The whole
+    axis then caps that tenant at 65, the confidence ceiling takes it as a `min`, and a
+    founder whose raise is a hundred emails can never be spoken about confidently.
+
+    That conflated two different things. The docstring's own principle is INDEPENDENT
+    AGREEMENT, and two parties writing in a thread are two independent accounts of it in
+    exactly the way twenty mails from one of them are not. What we sent is our own act and
+    theirs is theirs; a system of record agreeing is a third. `voice_count` carries the number
+    of distinct parties who contributed an event, and each one past the first corroborates
+    like a further source would.
+
+    `voice_count=0` reproduces the old arithmetic exactly, so a caller that does not know the
+    party count scores precisely what it scored before this argument existed.
+
+    THIS CHANGES STORED SCORES, and that is not a side effect. `tree.yaml` froze this formula
+    (`protected: freshness_score and evidence_score formulas remain unchanged`) for the
+    three-problems build; the freeze is lifted here deliberately and on the record, at the
+    request of the person who owns the number. Every situation rescores on its next sweep and
+    replays taken against the old formula are no longer comparable — the `inputs` dict on
+    `score_situation` records `voice_count` so an old receipt is distinguishable from a new one
+    rather than silently reinterpreted.
     """
     volume = min(40, max(0, int(event_count)) * 8)
-    corroboration = min(60, max(0, int(source_count)) * 25)
+    voices = max(0, int(voice_count))
+    corroboration = min(60, (max(0, int(source_count)) + max(0, voices - 1)) * 25)
     return max(0, min(100, volume + corroboration))
 
 
@@ -165,16 +192,52 @@ def consistency_score(*, open_discrepancies: int) -> int:
     return max(0, 100 - min(100, max(0, int(open_discrepancies)) * 34))
 
 
-def identity_score(*, open_merge_proposals: int) -> int:
+def identity_score(*, open_merge_proposals: int, strong_proposals: int | None = None) -> int:
     """Are we sure WHO this is about?
 
     An unresolved duplicate means the evidence may be split across two nodes, so this
     situation is probably missing half its material — or is about the wrong entity
     entirely. Neither is a small doubt, which is why one open proposal costs so much.
+
+    WHY THE STRENGTH OF THE PROPOSAL DECIDES HOW MUCH IT COSTS. `compute_confidence` takes the
+    MINIMUM of the trust axes, not their average — "you are only as sure as your weakest link" —
+    so this number is a CAP on the whole situation and not one opinion among four. A situation
+    with perfect evidence, current freshness and no contradiction still publishes at 40 if one
+    proposal is open against its anchor, and `confidence_overall` is what orders the home feed
+    (`api/home_routes.py`: `order by confidence_overall desc`). One open proposal therefore does
+    not soften a situation; it buries it.
+
+    That is the right price for the collision `identity._STRONG` names — a shared email, a shared
+    domain, a shared LinkedIn url — because each of those identifies one party on its own, so the
+    collision IS a duplicate and the evidence IS split. `identity.py` says so where it defines the
+    set: "a collision on these is a real duplicate ... a high-signal one worth a human's
+    attention".
+
+    It is the wrong price for a WEAK collision, which is almost always two people sharing a first
+    name or two projects sharing a word. That is a hypothesis that two nodes might be one, not a
+    finding that they are, and charging it what a shared email costs buries a well-evidenced
+    situation behind a coincidence of spelling.
+
+    So: a strong proposal costs exactly what it always did, and a weak one costs less without
+    ever costing nothing — 70 keeps every unproposed situation (100) ranked above it, which is the
+    ordering the review queue exists to produce, while leaving the situation somewhere a reader
+    will actually see it.
+
+    `strong_proposals=None` means the CALLER DID NOT ASK, which is not the same as "none are
+    strong". Every reader that has not been taught to fetch the strength keeps today's answer
+    exactly, so this can be adopted one call site at a time and a reader that is never updated is
+    conservative rather than wrong.
     """
     if open_merge_proposals <= 0:
         return 100
-    return 40 if open_merge_proposals == 1 else 20
+    if strong_proposals is None:
+        return 40 if open_merge_proposals == 1 else 20
+    strong = max(0, int(strong_proposals))
+    if strong >= 2:
+        return 20
+    if strong == 1:
+        return 40
+    return 70 if open_merge_proposals == 1 else 55
 
 
 #: THE UNIT OF EVERY SCORE ON `context_situations`. All four confidence dimensions and `coverage`
@@ -190,10 +253,89 @@ def identity_score(*, open_merge_proposals: int) -> int:
 #: `>= 60` reads as a percent, so a stored 5000 clears every gate an author can write.
 SCORE_MAX = 100
 
+#: THE `on conflict` CLAUSE THAT DECIDES WHETHER A RE-MINTED SITUATION IS ALIVE, named once
+#: because four writers need it and two of them did not have it.
+#:
+#: Every producer of a SYNTHETIC correlation id upserts on `(org_id, correlation_id)`, and what
+#: each does with `status` there decides whether dormancy is a door or a trap:
+#:
+#:   `support_situations` and `document_register` carried this clause and were correct.
+#:   `meeting_touch` and `periodic` set every column EXCEPT status. So once
+#:   `age_uncorrelated_situations` moved one of their rows to `dormant`, re-minting it refreshed
+#:   `last_seen_at`, confidence and coverage and left the status alone — and both Layer 3 doors
+#:   filter `status in ('active','partial')`. The row then looked perfectly alive and was
+#:   invisible: current timestamps, current numbers, and no path to a card ever again.
+#:   `meeting_touch`'s id is `corr_touch_{domain}_{node}`, stable for the life of the meeting
+#:   node, so that trap is reachable rather than theoretical.
+#:
+#: A HUMAN CLOSE STILL SURVIVES, which is the whole reason the clause is a CASE and not
+#: `status = 'active'`. `POST /situations/{id}/resolve` records `resolved_by='human'`, and
+#: `decide_lifecycle`'s rule is that a human resolution sticks until new evidence. The facts
+#: underneath refresh either way — observations do not care what somebody decided.
+SITUATION_STATUS_ON_CONFLICT = (
+    "  status = case when context_situations.resolved_by = 'human' "
+    "                then context_situations.status else 'active' end, "
+    "  resolved_by = case when context_situations.resolved_by = 'human' "
+    "                     then context_situations.resolved_by else null end, "
+    "  resolved_at = case when context_situations.resolved_by = 'human' "
+    "                     then context_situations.resolved_at else null end, ")
+
 #: The score returned when a domain registers no expectations. Sentinel, not a percentage: it is
 #: outside 0..100 on purpose so no consumer can average it into a number and lose the distinction
 #: between "nothing is missing" and "we never said what complete means here".
 COVERAGE_UNKNOWN = -1
+
+
+def unmet_source_families(conn, org_id: str, domain: str | None) -> tuple[str, ...]:
+    """The source families this domain needs and the tenant has not connected.
+
+    WHY A CARD SHOULD SAY THIS. `source_coverage_insufficient` holds a candidate whose domain
+    requires complete coverage while a required family is missing, and that refusal is correct — a
+    card asserting completeness on a tenant with no system of record for the claim is exactly the
+    overclaim the gate stops. But the card never said WHICH system.
+
+    MEASURED ON THE PILOT 2026-09-16, a tenant with `gmail` and `gcal` connected and nothing else:
+
+        admin        required [finance, communication]  connected [calendar, communication]
+        sales        required [communication, crm]      connected [calendar, communication]
+        fundraising  required [communication]           connected [calendar, communication]  READY
+
+    So `admin` waits on a finance source and `sales` on a CRM. 18 situations were held on that and
+    **0 of 18** named a source family anywhere in `missing` — they listed fact-level gaps like
+    "condition.predicate" and "public holidays and coverage handovers", none of which is the
+    reason the card was actually held.
+
+    IT READS AND NEVER WRITES. Which sources a tenant connects is their decision with its own
+    route; a reader that could mark a domain covered would be asserting that a system exists.
+
+    `()` FOR A DOMAIN NOBODY MEASURED, deliberately. Never-assessed and under-connected are
+    different states and only the second is a statement about the tenant — the same distinction
+    `capture.pipeline.coverage_verdict` keeps when it answers `None` rather than False for an
+    event it could not classify.
+    """
+    if not domain:
+        return ()
+    try:
+        row = conn.execute(text(
+            "select required, connected from source_coverage "
+            "where org_id = :o and domain = :d limit 1"),
+            {"o": org_id, "d": str(domain)}).first()
+    except Exception:      # noqa: BLE001 — a sentence is never worth the sweep
+        return ()
+    if row is None:
+        return ()
+
+    def _families(value) -> set[str]:
+        if isinstance(value, str):
+            try:
+                value = json.loads(value)
+            except ValueError:
+                return set()
+        return {str(v) for v in value} if isinstance(value, (list, tuple)) else set()
+
+    # Ordered, because this reaches a card's `missing` list and that list is compared between
+    # sweeps — an unstable order makes an unchanged card look changed.
+    return tuple(sorted(_families(row[0]) - _families(row[1])))
 
 
 def coverage_is_known(score: int) -> bool:
@@ -415,10 +557,11 @@ class Confidence:
     inputs: dict = field(default_factory=dict)
 
 
-def score_situation(*, event_count: int, source_count: int,
+def score_situation(*, event_count: int, source_count: int, voice_count: int = 0,
                     last_seen_at: datetime | None, open_discrepancies: int,
                     open_merge_proposals: int, present_fields: set[str],
                     expected_fields: dict[str, str], now: datetime,
+                    strong_merge_proposals: int | None = None,
                     trends=(), cohort_positions=(), anomalies=()) -> Confidence:
     """The whole confidence vector. Pure — every input explicit, fully replayable.
 
@@ -427,10 +570,12 @@ def score_situation(*, event_count: int, source_count: int,
     most callers make no comparison at all, and that is a not-applicable axis rather than a bad
     one (see `analytic_score`).
     """
-    evidence = evidence_score(event_count=event_count, source_count=source_count)
+    evidence = evidence_score(event_count=event_count, source_count=source_count,
+                              voice_count=voice_count)
     freshness, freshness_known = freshness_score(last_seen_at=last_seen_at, now=now)
     consistency = consistency_score(open_discrepancies=open_discrepancies)
-    identity = identity_score(open_merge_proposals=open_merge_proposals)
+    identity = identity_score(open_merge_proposals=open_merge_proposals,
+                              strong_proposals=strong_merge_proposals)
     coverage, missing = coverage_score(present_fields=present_fields,
                                        expected=expected_fields)
     coverage_known = coverage_is_known(coverage)
@@ -455,6 +600,7 @@ def score_situation(*, event_count: int, source_count: int,
         consistency=consistency, identity=identity, coverage=coverage,
         analytic=analytic, missing=tuple(missing),
         inputs={"event_count": event_count, "source_count": source_count,
+                "voice_count": voice_count,
                 "freshness_known": freshness_known,
                 # Same shape as freshness: a dimension with no basis is REPORTED as having no
                 # basis rather than being scored, so "we never said what complete means for this
@@ -466,6 +612,11 @@ def score_situation(*, event_count: int, source_count: int,
                 **analytic_receipt_keys,
                 "open_discrepancies": open_discrepancies,
                 "open_merge_proposals": open_merge_proposals,
+                # Recorded beside the total because the SCORE now depends on it: a stored
+                # confidence that cannot be recomputed from its own inputs is not replayable.
+                # `None` is preserved as `None` — "the reader did not ask" is a third state,
+                # and writing it as 0 would claim we checked and found none strong.
+                "strong_merge_proposals": strong_merge_proposals,
                 "last_seen_at": last_seen_at.isoformat() if last_seen_at else None,
                 # Which domain registry typed this situation. A change here explains a
                 # re-typing that would otherwise look like the world changed.
@@ -605,6 +756,40 @@ def _bulk(conn, sql: str, params: dict) -> list:
     return conn.execute(text(sql), params).fetchall()
 
 
+def merge_pressure(conn, org_id: str) -> dict[str, tuple[int, int]]:
+    """`{node_id: (open_proposals, strong_proposals)}` for every node carrying one.
+
+    ONE READER, BECAUSE THREE OF THEM HAVE ALREADY COST A SWEEP. `merge_proposals` was being read
+    in three places for one purpose — here, in `outreach_situations._gather` and in
+    `support_situations`' desk — in three different dialects of the same query, and the outreach
+    copy shipped naming `from_node_id`/`to_node_id`, columns this table has never had. That raised
+    `UndefinedColumn` on EVERY sweep; `runner.py`'s per-pass boundary logged it and moved on, so
+    the entire outreach state-readings pass never ran once while the sweep reported a clean run.
+    A fourth divergent copy is how that happens again, so there is one.
+
+    AN UNREADABLE STRENGTH COUNTS AS STRONG. `reason` arrived in migration 0036, so a proposal
+    raised before it carries NULL, and a null is "we cannot tell how serious this is" — the same
+    thing `identity_score(strong_proposals=None)` means, and it is answered the same way. Being
+    lenient about a doubt we cannot size would make the one case we know least about the cheapest.
+
+    Both sides of a pair are charged: a duplicate splits the evidence in both directions, and a
+    situation anchored on either node is missing the half that lives on the other.
+    """
+    strong_reasons = strong_proposal_reasons()
+    pressure: dict[str, tuple[int, int]] = {}
+    for row in _bulk(conn,
+            "select left_node_id, right_node_id, reason from merge_proposals "
+            "where org_id = :o and status = 'open'", {"o": org_id}):
+        reason = str(row.reason or "").strip()
+        is_strong = (not reason) or reason in strong_reasons
+        for node in (row.left_node_id, row.right_node_id):
+            if not node:
+                continue
+            total, strong = pressure.get(str(node), (0, 0))
+            pressure[str(node)] = (total + 1, strong + (1 if is_strong else 0))
+    return pressure
+
+
 #: Situations whose correlation id no `context_correlations` row backs. Five of the six writers
 #: of `context_situations` mint one — the state readings, the period sweep, meeting touch and the
 #: document register all synthesise an id, and `situation_bso.py:1634` says so explicitly.
@@ -713,6 +898,21 @@ def refresh_situations(store, org_id: str, *, eval_time: datetime | None = None)
             "join source_events se on se.org_id = m.org_id and se.event_id = m.event_id "
             "where m.org_id = :o group by m.correlation_id", {"o": org_id})}
 
+        # distinct VOICES per correlation — how many parties actually contributed to it, which
+        # is the other kind of independent agreement `evidence_score` takes. `actor` is jsonb and
+        # the email inside it is the identity; comparing the whole blob is the mistake that once
+        # produced a "gmail and calendar share nobody" reading, because two records of the same
+        # person differ in every other key. One expression per dialect, because `->>` is Postgres
+        # and `json_extract` is the SQLite the tests run on.
+        _email = ("se.actor ->> 'email'" if conn.dialect.name == "postgresql"
+                  else "json_extract(se.actor, '$.email')")
+        voices: dict[str, int] = {r.correlation_id: int(r.n) for r in _bulk(conn,
+            f"select m.correlation_id, count(distinct lower({_email})) as n "  # noqa: S608
+            "from context_correlation_members m "
+            "join source_events se on se.org_id = m.org_id and se.event_id = m.event_id "
+            f"where m.org_id = :o and {_email} is not null "
+            "group by m.correlation_id", {"o": org_id})}
+
         facts_by_node: dict[str, dict[str, str]] = {}
         for row in _bulk(conn,
                 "select subject_node_id, field, value from graph_facts "
@@ -740,13 +940,9 @@ def refresh_situations(store, org_id: str, *, eval_time: datetime | None = None)
             "select subject_node_id, count(*) as n from discrepancies "
             "where org_id = :o and status = 'open' group by subject_node_id", {"o": org_id})}
 
-        # An open duplicate on EITHER side means we are unsure who this is about.
-        proposals: dict[str, int] = {}
-        for row in _bulk(conn,
-                "select left_node_id, right_node_id from merge_proposals "
-                "where org_id = :o and status = 'open'", {"o": org_id}):
-            for node in (row.left_node_id, row.right_node_id):
-                proposals[node] = proposals.get(node, 0) + 1
+        # An open duplicate on EITHER side means we are unsure who this is about, and HOW unsure
+        # depends on what collided — see `merge_pressure` and `identity_score`.
+        proposals = merge_pressure(conn, org_id)
 
         existing = {r.correlation_id: r for r in _bulk(conn,
             "select correlation_id, situation_id, status, resolved_by, resolved_at "
@@ -780,9 +976,11 @@ def refresh_situations(store, org_id: str, *, eval_time: datetime | None = None)
             confidence = score_situation(
                 event_count=int(corr.event_count),
                 source_count=sources.get(corr.correlation_id, 0),
+                voice_count=voices.get(corr.correlation_id, 0),
                 last_seen_at=corr.last_event_at,
                 open_discrepancies=discrepancies.get(corr.anchor_node_id, 0),
-                open_merge_proposals=proposals.get(corr.anchor_node_id, 0),
+                open_merge_proposals=proposals.get(corr.anchor_node_id, (0, 0))[0],
+                strong_merge_proposals=proposals.get(corr.anchor_node_id, (0, 0))[1],
                 # The anchor's own facts PLUS whatever this situation's evidence
                 # established elsewhere — a deal's stage sits on the deal, but whose turn
                 # it is sits on a person.

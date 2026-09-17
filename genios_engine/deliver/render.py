@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import unicodedata
 from datetime import datetime
 
 from .slots import SENTINELS, grounded_slots
@@ -70,6 +71,13 @@ _GRAMMAR_WORDS = frozenset({
     # looked necessary — but position cannot tell "Reach" from "Initech", so the word does.
     "reach", "send", "ask", "book", "share", "follow", "reply", "confirm", "check", "give",
     "take", "move", "set", "draft", "note", "consider", "keep", "make", "offer", "propose",
+    # Measured 2026-09-17 on live cards, each one a V-02 rejection of a real draft. `insert` is
+    # NOT here on purpose: `V-02:name:INSERT` was a template placeholder leaking into a draft
+    # body, which is the guard doing its job, and exempting the word would ship "[INSERT NAME]"
+    # to a customer. `three` is not here either — `test_a_spelled_number_is_still_a_claim` pins
+    # that deliberately, so the guard cannot depend on whether the model wrote "3" or "Three".
+    "address", "reschedule", "clarify", "specifically", "repeating", "differentiation",
+    "measured", "vcs",
     "suggest", "remind", "wait", "hold", "close", "open", "start", "stop", "try", "use", "add",
     "update", "review", "schedule", "forward", "introduce", "loop", "push", "bring", "get", "go",
     "come", "do", "does", "did", "have", "has", "had", "need", "want", "know", "think", "see",
@@ -153,7 +161,17 @@ def _proper_nouns(s: str) -> list[str]:
     # punctuation mark. Judging the parts separately is what makes the question answerable:
     # "guided" is lowercase and never reaches the check, and "AI" is judged against the corpus
     # on its own, which is the right question about it.
-    for w in re.split(r"[\s‐-―/]+|(?<=[A-Za-z0-9])-(?=[A-Za-z0-9])", s):
+    # THE SEPARATORS, AND WHY THE LIST GREW TWICE. Splitting only on whitespace, dashes and the
+    # slash left every OTHER interior mark to be deleted by `core` — which does not separate two
+    # words, it WELDS them. `Swerashi:GeniOS` became `SwerashiGeniOS`, `Centre(ITC)` became
+    # `CentreITC`, `Ben&Jerry` became `BenJerry`: tokens in no language and therefore in no
+    # corpus, so each threw its card away. Identical to the `AI-guided` -> `AIguided` failure the
+    # hyphen rule below already documents, reached through a different mark.
+    #
+    # `.` AND `@` ARE DELIBERATELY ABSENT. `nikhil@addis.im` and `titancapital.vc` are single
+    # tokens the corpus holds whole, and splitting them would ask the guard about `im` and `vc`
+    # instead of about the address — the opposite mistake, made for the same reason.
+    for w in re.split(r"[\s‐-―/:;,()\[\]{}&|]+|(?<=[A-Za-z0-9])-(?=[A-Za-z0-9])", s):
         # THE APOSTROPHE IS PART OF THE WORD. Stripping every non-alphanumeric turned "We've"
         # into "Weve", "What's" into "Whats" and "They're" into "Theyre" — capitalised tokens
         # in no dictionary, so the guard read each as an invented company and threw the draft
@@ -161,7 +179,8 @@ def _proper_nouns(s: str) -> list[str]:
         # exactly this. A contraction is graded on its BASE word: "We've" is "we", which is
         # grammar. An entity's possessive ("Initech's") reduces to "Initech" and is still judged.
         bare = w.strip("\"'\u2018\u2019\u201c\u201d(),.;:!?[]{}")   # quotes AROUND a word are not part of it
-        core = re.sub(r"[^A-Za-z0-9]", "", re.split(r"[\u2019']", bare, maxsplit=1)[0])
+        core = re.sub(r"[^A-Za-z0-9]", "",
+                      _fold(re.split(r"[\u2019']", bare, maxsplit=1)[0]))
         if len(core) < 2 or not core.isalpha():
             continue
         low = core.lower()
@@ -271,12 +290,56 @@ def _corpus(facts: dict, slots: dict,
     return text.lower(), nums
 
 
+def _fold(s: str) -> str:
+    """Accents off, letters kept. `Sofía` -> `Sofia`, `TÜV` -> `TUV`, `Padrón` -> `Padron`.
+
+    THE LETTER SURVIVES, which is the whole point. `_proper_nouns` strips every character outside
+    `[A-Za-z0-9]` to build its token, so before this a diacritic was DELETED rather than folded:
+    `Sofía` became `Sofa` and `TÜV` became `TV`. Neither string can appear in any corpus, so the
+    guard judged every non-ASCII name an invention unconditionally — including the account's own
+    counterparties. Measured on the pilot: `V-02:name:Sofa` twice against a graph that holds
+    "Sofía Padrón" verbatim, and `V-02:name:TV` twice on cards about TÜV Austria.
+
+    Applied to BOTH sides in `invention_ok`, because folding one and not the other just moves
+    which spelling can never match.
+    """
+    return "".join(ch for ch in unicodedata.normalize("NFKD", s)
+                   if not unicodedata.combining(ch))
+
+
+def _haystack(corpus_text: str) -> str:
+    """The corpus, plus a punctuation-free alias for every token that has punctuation INSIDE it.
+
+    `_proper_nouns` deletes the marks it does not split on — `.` and `@` deliberately, so that an
+    address stays one token — and then asks whether the result is in the corpus, which keeps them.
+    `Nikhil@Addis.im` therefore becomes `NikhilAddisim` and is compared against a corpus holding
+    `nikhil@addis.im`: two strings that can never match. `_corpus` adds the quote author's address
+    for exactly this case and its comment says so; adding it did not help, because the two sides
+    were never normalised the same way.
+
+    ONLY TOKENS THAT CHANGE GET AN ALIAS, and the aliases are joined by spaces. Collapsing the
+    WHOLE corpus would weld its words together — "acme scope" becoming "acmescope" grounds the
+    invented name "Mesco" as a substring — which is the guard quietly getting weaker in exchange
+    for getting kinder. A token with no interior punctuation is already its own alias and adds
+    nothing.
+    """
+    aliases = []
+    for token in corpus_text.split():
+        collapsed = re.sub(r"[^a-z0-9]", "", token.lower())
+        if collapsed and collapsed != token.lower():
+            aliases.append(collapsed)
+    return corpus_text if not aliases else corpus_text + " " + " ".join(aliases)
+
+
 def invention_ok(text: str, corpus_text: str, corpus_nums: set[str]) -> tuple[bool, str | None]:
     for num in _digit_runs(text):
         if num not in corpus_nums and num not in corpus_text:
             return False, f"number:{num}"
+    # Folded HERE rather than in `_corpus` so every caller gets it — this function is public and
+    # the tests build corpora by hand.
+    folded_corpus = _haystack(_fold(corpus_text))
     for pn in _proper_nouns(text):
-        if pn.lower() not in corpus_text:
+        if pn.lower() not in folded_corpus:
             return False, f"name:{pn}"
     return True, None
 

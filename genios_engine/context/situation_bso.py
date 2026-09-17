@@ -527,6 +527,81 @@ _L1_SELECT = (
     "order by qs.importance_bp desc, qs.signal_id")
 
 
+#: WHAT LAYER 1 REFUSED, for a correlation it published nothing for.
+#:
+#: Only rows for events this correlation actually holds, and only where NO qualified signal exists
+#: for the same event — one signal that cleared the bar means the card has evidence, and the rest
+#: simply did not make it.
+_L1_REFUSAL = (
+    "select d.signal_type, d.importance_bp, d.floor_bp "
+    "from qualification_drops d "
+    "join context_correlation_members m "
+    "  on m.org_id = d.org_id and m.event_id = d.event_id "
+    "where d.org_id = :o and m.correlation_id = :c "
+    "  and not exists (select 1 from qualified_signals q "
+    "                   where q.org_id = d.org_id and q.event_id = d.event_id)")
+
+
+def l1_refusal(conn, org_id: str, correlation_id: str | None) -> dict | None:
+    """Why this situation has no Layer 1 signal — when the answer is that Layer 1 REFUSED one.
+
+    MEASURED ON THE PILOT 2026-09-16, after the correlation seam landed: 159 active situations, 96
+    reaching a live scored signal, and 63 reaching none. Layer 3 holds every one of those 63, and
+    `qes_required` and `verified_evidence_required` are the SAME cards rather than two gaps — both
+    read what Layer 1 published, and Layer 1 published nothing. Layer 2's grading is not
+    implicated: of the 96 that do reach a signal, all 96 carry verified spans.
+
+    THE REFUSAL IS CORRECT. The 71 events behind those cards scored 528-1920 basis points against
+    a floor of 2500, and a card whose only evidence Layer 1 declined to publish should not carry
+    authority. That is what the floor is for.
+
+    THE SILENCE IS NOT. Such a card today simply exists, ranks, and quietly never becomes
+    anything, while no surface says "its best evidence scored 1360 against a floor of 2500". That
+    is the fifth time this codebase has carried a refusal that was right and invisible, and the
+    other four were each found by accident.
+
+    IT REPORTS AND NEVER TUNES. `org_qualification_floors` holds zero rows for this tenant and
+    `qualification_floor_changes` zero, so the floor is the untuned global default. Whether that
+    default is right for a tenant whose work is founder correspondence is a real question and a
+    SEPARATE decision, with its own attributed route. A floor moved to make cards appear is a
+    threshold tuned on one customer, which is the failure this layer exists to avoid — so this
+    function reads, and a test fails the build if it ever learns to write.
+
+    `None` when there is nothing to report: a live signal exists, or the events were never scored
+    at all. Never assessed and assessed-then-refused are different facts, and only the second is a
+    judgement Layer 1 made.
+    """
+    if not correlation_id:
+        return None
+    try:
+        # ONE SIGNAL THAT CLEARED THE BAR ENDS THE QUESTION. A correlation resting on four events
+        # where one qualified is not a refused correlation — the card HAS evidence, and the other
+        # three simply did not make it. Reporting a refusal there would be a false explanation
+        # attached to a card that was never refused, which is worse than saying nothing.
+        if conn.execute(text(
+                "select 1 from context_correlation_members m join qualified_signals q "
+                "  on q.org_id = m.org_id and q.event_id = m.event_id "
+                "where m.org_id = :o and m.correlation_id = :c limit 1"),
+                {"o": org_id, "c": correlation_id}).first():
+            return None
+        rows = conn.execute(text(_L1_REFUSAL),
+                            {"o": org_id, "c": correlation_id}).mappings().all()
+    except Exception:      # noqa: BLE001 — an explanation must never cost the sweep
+        return None
+    if not rows:
+        return None
+    scores = [int(r["importance_bp"] or 0) for r in rows]
+    floors = [int(r["floor_bp"] or 0) for r in rows if r["floor_bp"]]
+    return {
+        "dropped": len(rows),
+        # THE CLOSEST IT CAME, not the average. "Its best evidence scored 1920 against a floor of
+        # 2500" is a sentence a reader can act on; a mean over four signals is not.
+        "highest_bp": max(scores) if scores else None,
+        "floor_bp": min(floors) if floors else None,
+        "signal_types": sorted({str(r["signal_type"]) for r in rows if r["signal_type"]}),
+    }
+
+
 def gather_l1_signals(conn, org_id: str, correlation_id: str | None) -> L1Signals | None:
     """THE READ THIS MODULE EXISTED WITHOUT. Layer 1's published verdicts for this situation.
 
@@ -1371,6 +1446,10 @@ def build_business_situation(
     members: tuple[Mapping[str, Any], ...] = (),
     visibility: Visibility | None = None,
     l1: L1Signals | None = None,
+    #: WHY THERE IS NO `l1`, when the answer is that Layer 1 refused one. Computed by
+    #: the caller (`l1_refusal`) because this builder holds no connection, and passed
+    #: in beside `l1` for the same reason `l1` itself is.
+    refusal: Mapping[str, Any] | None = None,
     composed: ComposedImportance | None = None,
     pattern: PatternFire | None = None,
     brain_subject_keys: tuple[str, ...] = (),
@@ -1486,6 +1565,13 @@ def build_business_situation(
             **({"model_ids": list(variant_ids)} if variant_ids else {}),
             "coverage_bp": _bp(situation.get("coverage")),
             "importance_source": importance_source,
+            # WHY LAYER 1 PUBLISHED NOTHING, when it refused rather than never assessed. A card
+            # held at `qes_required` / `verified_evidence_required` today says only that it lacks
+            # a signal; this says its best evidence scored 1360 against a floor of 2500, which is
+            # the difference between "no data" and "a judgement somebody can disagree with".
+            # Absent entirely when there is nothing to report — a refusal notice on a card that
+            # was never refused is a false explanation.
+            **({"l1_refusal": dict(refusal)} if refusal else {}),
             # THE FALLBACK, DECLARED. Doc 07's acceptance row reads "importance_bp is not 5000
             # unless the fallback path fired AND logged", and a reader cannot check that from the
             # number: a composed 5000 and a defaulted one are the same integer. This says which,

@@ -597,11 +597,30 @@ class SituationContextSlice:
     def to_semantic_dict(self) -> dict[str, Any]:
         """The slice's CONTENT — what `semantic_hash` addresses.
 
-        Two fields the dataclass carries are deliberately absent, and both are observation
-        metadata rather than content: `trace_id` (which sweep looked) and `evaluation_time`
-        (when it looked). What the slice IS — the facts, observations, neighbours and edges of one
-        anchor — is pinned exactly by `graph_version` and `selector_version`, which are here. Two
-        sweeps over an unchanged graph see the same slice, and should hash to the same slice.
+        THREE fields the dataclass carries are deliberately absent, and all three are observation
+        metadata rather than content: `trace_id` (which sweep looked), `evaluation_time` (when it
+        looked) and `graph_version` (what the ORG's graph was up to when it looked). What the
+        slice IS — the facts, observations, neighbours, edges and evidence of one anchor — is
+        listed below in full, and it pins itself. Two sweeps over an unchanged slice see the same
+        slice, and hash to the same slice.
+
+        `graph_version` WAS HERE, AND IT IS THE SAME BUG AS THE CLOCK ONE LAYER OUT. It is an
+        ORG-WIDE monotonic counter: it moves when any fact about any node anywhere in the tenant
+        is written. So a situation whose own facts had not changed by a single byte still minted a
+        new slice hash, a new package content address and a new ~238 kB row, because somebody
+        else's email arrived. The earlier fix removed the wall clock and left this, which is a
+        clock with a different face — and it is why the pilot carried 106 expertise packages for
+        36 situations, up to FOUR addresses for one situation, with `law2_one_address_per_situation`
+        failing in the J5 gate. Measured 2026-09-16: the only keys differing between the first and
+        last package for `sit_00cae4087f72431d810a68db` were `context_graph_version` (108 -> 110),
+        the slice hash it churned, and the package id derived from that hash. Every byte of
+        knowledge was identical.
+
+        NOTHING BECOMES TIME-BLIND OR VERSION-BLIND. `graph_version` stays on the dataclass and in
+        the package's metadata for anyone reading provenance, and the reasoner is handed the graph
+        version in its own right — `reason/runner` binds every reasoning snapshot to the exact
+        persisted graph version it observed, and rejects a sweep that crossed a graph commit. It
+        just does not decide whether this is the same slice.
 
         This is not a cosmetic distinction. `context_slice_hash` is carried in the expertise
         package's metadata, so it feeds the PACKAGE's content address: while these two fields were
@@ -621,7 +640,6 @@ class SituationContextSlice:
             "schema_version": self.schema_version,
             "visibility": self.visibility,
             "id": self.id,
-            "graph_version": self.graph_version,
             "selector_version": self.selector_version,
             "root_entity_ids": self.root_entity_ids,
             "facts": self.facts,
@@ -683,6 +701,36 @@ class ExpertiseEvidence:
 #: the three is exactly the kind of half-landed addition this tuple makes impossible.
 _V2_ONLY_FIELDS = ("compiled_constraints", "citations", "framing_blocks", "weld_receipt",
                    "pattern_id", "matched_conditions")
+
+
+#: Metadata keys that describe the OBSERVATION, not the package — excluded from the content
+#: address for exactly the reason `trace_id` is, one field out.
+#:
+#: `context_graph_version` is the tenant's ORG-WIDE graph counter. It moves when any fact about
+#: any node anywhere in the tenant is written, so a package whose knowledge had not changed by a
+#: byte re-addressed because somebody else's email arrived. Measured on the pilot 2026-09-16: 106
+#: packages for 36 situations, up to FOUR addresses for one situation, and
+#: `law2_one_address_per_situation` failing in the J5 gate — with every byte of knowledge in the
+#: first and last package identical.
+#:
+#: The key is still WRITTEN. It stays in `metadata` on the stored payload, because which graph
+#: version a package was compiled against is real provenance a reader wants. It just does not
+#: decide which package this is.
+#:
+#: `context_slice_hash` is deliberately NOT here: once `SituationContextSlice.to_semantic_dict`
+#: stopped hashing `graph_version`, that hash addresses the slice's actual content, and content
+#: is exactly what a content address is for.
+OBSERVATION_METADATA_KEYS: frozenset[str] = frozenset({"context_graph_version"})
+
+
+def addressable_metadata(metadata: Mapping[str, Any]) -> dict[str, Any]:
+    """`metadata` minus the keys that describe the observation rather than the package.
+
+    Used by BOTH `ExpertisePackage.to_semantic_dict` and `expertise_id`, which must agree: if the
+    id and the hash disagree about what the package is, the publisher's immutability check rejects
+    a package identical to the one it already holds.
+    """
+    return {k: v for k, v in metadata.items() if k not in OBSERVATION_METADATA_KEYS}
 
 
 @dataclass(frozen=True, slots=True)
@@ -833,7 +881,7 @@ class ExpertisePackage:
             "adaptive_preferences": self.adaptive_preferences,
             "confidence_bp": self.confidence_bp,
             "evidence": self.evidence,
-            "metadata": self.metadata,
+            "metadata": addressable_metadata(self.metadata),
         }
         # PRESENT-WHEN-CARRIED, not always.  Invariant #10 is package-churn suppression, and a
         # schema addition that unconditionally widened this dict would re-address every package in
@@ -865,7 +913,10 @@ def expertise_id(body: Mapping[str, Any]) -> str:
     sweep, `on conflict (org_id, expertise_id) do nothing` never fired, and unchanged knowledge
     was rewritten at ~238 kB a situation until the database went read-only.
     """
-    return stable_id("expertise", {k: v for k, v in body.items() if k != "trace_id"})
+    addressed = {k: v for k, v in body.items() if k != "trace_id"}
+    if isinstance(addressed.get("metadata"), Mapping):
+        addressed["metadata"] = addressable_metadata(addressed["metadata"])
+    return stable_id("expertise", addressed)
 
 
 __all__ = [
@@ -882,7 +933,9 @@ __all__ = [
     "MAX_PREDICATE_DEPTH",
     "MAX_PREDICATE_TERMS",
     "PREDICATE_GRAMMAR",
+    "OBSERVATION_METADATA_KEYS",
     "WELD_RECEIPT_COUNTERS",
+    "addressable_metadata",
     "BrainKind",
     "BusinessSituationObject",
     "ExpertiseEvidence",

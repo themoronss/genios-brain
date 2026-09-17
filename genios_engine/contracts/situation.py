@@ -93,7 +93,7 @@ from genios_engine.contracts.analytic import (DIRECTIONAL, MAX_TREND_CONFIDENCE_
                                               MIN_TREND_POINTS, Anomaly, CohortPosition,
                                               MetricCorrelation, MetricPoint, Trend,
                                               require_measure)
-from genios_engine.contracts.conflict import Conflict, require_no_float
+from genios_engine.contracts.conflict import ConflictSummary, require_no_float
 from genios_engine.contracts.dependency import DependencyChain
 from genios_engine.contracts.evidence import EvidenceSpan
 from genios_engine.contracts.quality import MissingFact
@@ -616,9 +616,29 @@ class BusinessSituationObject(BaseModel):
     #: owner is recorded"? `None` is unhinted and is NOT False. Required with no default: a
     #: defaulted licence is one nobody granted.
     coverage_ready: bool | None
-    #: The disagreements this situation is built across, BOTH sides retained (C-10 keeps no
-    #: winner). A situation built on a contradicted claim must not reach Layer 3 looking settled.
-    conflicts: tuple[Conflict, ...] = ()
+    #: The disagreements this situation is built across. A situation built on a contradicted
+    #: claim must not reach Layer 3 looking settled.
+    #:
+    #: `ConflictSummary`, NOT ALG-12's frozen `Conflict` RECORD, and the difference is what a BSO
+    #: can honestly carry. The record embeds both claim bodies and a detection clock; the reader
+    #: behind this field (`situation_bso`, via `situation_publisher._TYPED_LANES`) projects
+    #: `signal_conflicts` into counted claims with no clock. Validating that projection against
+    #: the record required two fields it must not carry and forbade five it does, so EVERY row was
+    #: dropped — `carried["conflicts"]` was always empty and `conflict_open` held all 52
+    #: situations that had a disagreement at all.
+    #:
+    #: Fixing only the lane's declared type moved the failure rather than closing it: the rows
+    #: then reached this field and pydantic rejected the whole object, turning 23 recoverable
+    #: HOLDS into `contract_invalid` REJECTS, which is strictly worse — a hold retries, a reject
+    #: does not. Measured on the pilot 2026-09-16. The lane and the field have to agree, and the
+    #: summary is what both ends can produce.
+    #:
+    #: THE PROPERTY SURVIVES THE PROJECTION. "C-10 keeps no winner" is preserved by
+    #: `claim_count` and `event_ids`: a reader can still tell that more than one claim existed
+    #: and which events they came from, which is what stops this reaching Layer 3 looking
+    #: settled. What is lost is the verbatim text of the losing claim, which lives in
+    #: `signal_conflicts` and is reachable through `conflict_ids` below.
+    conflicts: tuple[ConflictSummary, ...] = ()
     #: POINTERS to the `signal_conflicts` rows, the same discipline `qualified_signals.
     #: conflict_ids` keeps one layer down. A separate field and not derived from `conflicts`
     #: because C-10 carries no id of its own (the id is a column, not a contract field), so a

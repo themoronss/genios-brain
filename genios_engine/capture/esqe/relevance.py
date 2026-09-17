@@ -426,6 +426,35 @@ def _rule_verdict(candidate: RelevanceCandidate) -> tuple[bool, str] | None:
     return None
 
 
+def refused_without_extraction(candidate: RelevanceCandidate) -> str | None:
+    """The rule that refuses this event on its ENVELOPE ALONE, or `None` — asked BEFORE S2.
+
+    S4 runs after the semantic lane, so every event routed `needs_extraction` buys a model call
+    and only then meets the cascade that may refuse it on a header. Measured on the pilot org:
+    102 events refused by `bulk_headers` had already cost 522,143 input and 231,725 output
+    tokens — 30% of all extraction input spend — for a verdict `_has_bulk_headers` reaches with
+    no model and no body. Worse than the spend: their claims still entered the conflict lane, and
+    22 of 66 detected conflicts had a `bulk_headers` sender on EVERY side, which is a newsletter
+    disagreeing with a newsletter holding a real situation shut.
+
+    ONLY THE ENVELOPE HALF IS ASKED, and that is what makes this safe to run early. The probe
+    sets `typed_claim_count` to at least 1 — the same reading `_page_ambiguous` takes, and for
+    the same reason — so `RULE_SERVICE_ACCOUNT_NO_CLAIMS`, the one rule whose answer S2 has not
+    produced yet, cannot fire. The only refusal reachable from an envelope is therefore
+    `RULE_BULK_HEADERS`, and the cascade's order is untouched: a known counterparty is still
+    asked first, so a customer who happens to mail through a broadcast platform keeps their
+    extraction exactly as before.
+
+    A `True` verdict is deliberately NOT returned. This answers one question — may S2 be skipped
+    — and "relevant" is not that question: S4 decides relevance, once, on the full candidate.
+    """
+    probe = replace(candidate, typed_claim_count=max(candidate.typed_claim_count, 1))
+    verdict = _rule_verdict(probe)
+    if verdict is None or verdict[0]:
+        return None
+    return verdict[1]
+
+
 def _decide(event_id: str, relevant: bool, rule: str, decided_by: str,
             description: str | None = None,
             intent: MessageIntent = UNREAD) -> RelevanceDecision:
@@ -930,4 +959,4 @@ __all__ = ["AMBIGUOUS_BUDGET_BP", "DECIDED_BY_BUDGET_GUARD", "DECIDED_BY_LLM", "
            "RULE_LLM_UNAVAILABLE", "RULE_NO_MODEL_WIRED", "RULE_ORDER", "RULE_OVER_BUDGET",
            "RULE_SERVICE_ACCOUNT_NO_CLAIMS", "RULE_STRUCTURED_SOURCE", "STAGE", "LLMClient",
            "LLMResponse", "RelevanceCandidate", "RelevanceDecision", "RelevanceOutcome",
-           "assess_relevance", "is_service_account"]
+           "assess_relevance", "is_service_account", "refused_without_extraction"]

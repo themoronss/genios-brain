@@ -34,7 +34,7 @@ from genios_engine.contracts.situation import (
     BusinessSituationObject,
     CohortPosition,
     ConfidenceVector,
-    Conflict,
+    ConflictSummary,
     ImportanceAttribution,
     ImportanceBasis,
     MatchedCondition,
@@ -250,7 +250,12 @@ def _with_split_doubt(old: LegacySituation, meta: Mapping[str, Any],
 #: `pattern_matched_conditions` would be a third spelling of a thing already called
 #: `matched_conditions` in both the metadata and the contract.
 _TYPED_LANES: tuple[tuple[str, str, Any], ...] = (
-    ("conflicts", "conflicts", Conflict),
+    # THE SUMMARY, NOT THE RECORD. A BSO carries a projection of a disagreement —
+    # counted claims, no clock — and validating it against ALG-12's frozen `Conflict`
+    # dropped every row for two required fields it must not carry and five extras the
+    # record forbids. `carried["conflicts"]` was therefore always empty and
+    # `conflict_open` held all 52 situations that had a conflict at all.
+    ("conflicts", "conflicts", ConflictSummary),
     ("trends", "trends", Trend),
     ("cohort_positions", "cohort_positions", CohortPosition),
     ("anomalies", "anomalies", Anomaly),

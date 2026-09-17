@@ -388,3 +388,445 @@ def backfill_layer2(store, org_id: str, *, limit: int | None = None,
         store, org_id, limit=limit, rebuild=rebuild or bool(deals["deal_nodes_created"]))
     situations = refresh_situations(store, org_id)
     return {**aliases, **deals, **correlations, "situations_written": situations}
+
+
+# =================================================================================================
+# THE NINE BUSINESS NOUNS, ON A GRAPH BUILT BEFORE THEY COULD BE WRITTEN
+# =================================================================================================
+
+#: Extractions re-graded per transaction. Same argument as `_BATCH` above; smaller because each
+#: one carries a whole message's clean text.
+_FACT_BATCH = 100
+
+
+def _event_parties(conn, *, org_id: str, row) -> tuple[str, ...]:
+    """The people this event was between, as graph nodes — by EMAIL and nothing else.
+
+    The only alias that identifies one human on its own. A name is deliberately not tried here:
+    `resolve_person_name` answers None where two live people share a name, and a backfill is
+    exactly the place where quietly awarding a shared name to the first claimant would write a
+    whole tenant's history onto the wrong person at once.
+    """
+    from genios_engine.context.identity import ALIAS_EMAIL, resolve_alias
+    from genios_engine.platform.identity import norm_email
+
+    raw = row["recipients"]
+    if isinstance(raw, str):
+        try:
+            raw = json.loads(raw)
+        except ValueError:
+            raw = [raw]
+    addresses = list(raw) if isinstance(raw, list) else []
+    if row["actor"]:
+        addresses.append(row["actor"])
+
+    found: list[str] = []
+    for address in addresses:
+        email = norm_email(str(address)) if address and "@" in str(address) else None
+        if not email:
+            continue
+        node = resolve_alias(conn, org_id=org_id, alias_type=ALIAS_EMAIL, alias_key=email)
+        if node and node not in found:
+            found.append(node)
+    return tuple(found)
+
+
+def backfill_business_facts(store, org_id: str, *, limit: int | None = None) -> dict:
+    """Re-grade stored L1 extractions and write the business facts today's code would produce.
+
+    WHY THIS HAS TO EXIST, and it is the module's own argument applied to a later fix. L1 files
+    the extractor's UNVERIFIED output in the permanent cache on purpose — an audit and a replay
+    need the original — and grades spans on the way OUT of the lane. Layer 2 is a reader too and
+    read `l1_extraction_results.output` raw, so every span arrived `verified: false` and
+    `_business_claim`, which keeps a fact only with a verified receipt, dropped EVERY business
+    fact from every source. `runner.graded_extraction` closed that, and it closed it only for
+    events that arrive AFTERWARDS. An event already processed is never processed again, so a
+    tenant onboarded before the fix keeps a graph with none of these nouns in it, for ever.
+
+    MEASURED ON THE PILOT, 2026-09-15. The extractor had emitted 1,211 business facts across all
+    nine fields; the graph held five. Re-grading the stored extractions against their own
+    prepared text verifies 811 of them — 256 of 267 `thread.objective`, 251 of 264 `party.role` —
+    with no model call, because the grader is integer work over a string. `thread.objective` in
+    particular is what `cohort_outreach_gap` groups on, and the approved corpus card bound to it
+    could not fire on a tenant whose graph had zero of them.
+
+    NOTHING IS RE-EXTRACTED AND NOTHING IS GUESSED. The claim, its value and its receipt are the
+    ones L1 already published; this re-runs the grading and the resolution, both of which are
+    deterministic. A claim whose span still does not resolve is dropped exactly as the live path
+    drops it, and a subject that does not resolve to a node of the right type is dropped exactly
+    as `_business_subject` drops it — this is the live path, replayed, not a looser one.
+
+    SAFE TO RE-RUN. `write_fact` supersedes on change and no-ops on an unchanged value, so a
+    second pass over a backfilled org writes nothing. Returns a census: what was read, what was
+    written, and why each of the rest was not.
+    """
+    from genios_engine.context.pipeline import (FACT_CONF_BY_RANK, _business_claim,
+                                                _business_subject, _thread_node)
+    from genios_engine.context.runner import graded_extraction
+
+    read = written = 0
+    dropped: dict[str, int] = {}
+    by_field: dict[str, int] = {}
+
+    def refuse(reason: str) -> None:
+        dropped[reason] = dropped.get(reason, 0) + 1
+
+    with store.engine.connect() as conn:
+        rows = conn.execute(text(
+            # `source_events.parent_object_id` IS the thread, spelled as `runner._process_one`
+            # spells it — it hands exactly this column to `process_event(thread_id=...)`, and a
+            # backfill that resolved the conversation differently from the live path would write
+            # a fact on a subject the live path would never have chosen.
+            "select x.event_id as event_id, x.output as output, x.created_at as created_at, "
+            "       p.clean_text as clean_text, se.parent_object_id as thread_id, "
+            "       se.occurred_at as occurred_at, se.source as source, "
+            "       se.recipients as recipients, se.actor as actor "
+            "  from l1_extraction_results x "
+            "  join prepared_content p on p.event_id = x.event_id and p.org_id = x.org_id "
+            "  left join source_events se on se.event_id = x.event_id and se.org_id = x.org_id "
+            " where x.org_id = :o order by x.created_at"
+            + (" limit :limit" if limit else "")),
+            {"o": org_id, **({"limit": int(limit)} if limit else {})}).mappings().all()
+
+    for start in range(0, len(rows), _FACT_BATCH):
+        with store.engine.begin() as conn:
+            for row in rows[start:start + _FACT_BATCH]:
+                raw = row["output"]
+                payload = json.loads(raw) if isinstance(raw, (str, bytes)) else raw
+                if not isinstance(payload, dict) or not payload.get("business_facts"):
+                    continue
+                graded = graded_extraction(payload, row["clean_text"], row["event_id"])
+                claims = getattr(graded, "business_facts", None)
+                if not claims:
+                    # The whole extraction failed to re-validate. One event's nouns, never the
+                    # tenant's — the same asymmetry every reading in this layer holds to.
+                    refuse("extraction_unreadable")
+                    continue
+                occurred = row["occurred_at"] or row["created_at"]
+                for claim_in in claims:
+                    read += 1
+                    candidate = {
+                        "field": str(getattr(claim_in, "field", "")),
+                        "subject": getattr(claim_in, "subject", None),
+                        "value": getattr(claim_in, "value", None),
+                        "standing": getattr(claim_in, "standing", None),
+                        "evidence_spans": [s.model_dump()
+                                           for s in (getattr(claim_in, "evidence", None) or ())],
+                    }
+                    claim = _business_claim(candidate, row["clean_text"] or "")
+                    if claim is None:
+                        # No receipt that resolves against the message's own text. The live path
+                        # refuses here and so does this: an unverifiable business noun is the one
+                        # thing the seam exists to keep out of the graph.
+                        refuse("no_verified_span")
+                        continue
+                    if claim.field == "thread.objective":
+                        if claim.subject not in {"thread", row["thread_id"],
+                                                 f"thread:{row['thread_id']}"}:
+                            refuse("objective_not_about_the_thread")
+                            continue
+                        subject = _thread_node(store, conn, org_id=org_id,
+                                               thread_id=row["thread_id"],
+                                               event_id=row["event_id"], counterparty=None)
+                        if subject is None:
+                            # No thread id on the event: nothing to hang a conversation's
+                            # objective on, and the person is the wrong subject for it — that is
+                            # the collision `_thread_node` was built to end.
+                            refuse("no_thread_node")
+                            continue
+                        value_text = claim.value if isinstance(claim.value, str) else ""
+                    else:
+                        subject = _business_subject(conn, org_id=org_id, name=claim.subject,
+                                                    field=claim.field)
+                        if subject is None:
+                            refuse("subject_unresolved")
+                            continue
+                        # AND ON THE COUNTERPARTY, for `thread.objective` only. The thread node
+                        # is the right subject for a conversation's objective — one person spans
+                        # 254 threads in the pilot's graph, so writing it on them means whichever
+                        # message landed last decides what every conversation was for. But
+                        # `read_outreach_cohorts` groups people by objective and compares each
+                        # against `thread.days_waiting`, which is a PERSON fact, so an objective
+                        # that exists only on threads gives it groups with no waiting state and
+                        # it reports nothing. The live path writes both — `pipeline` writes the
+                        # objective on the recipient node beside `thread.last_outbound` — and a
+                        # backfill that wrote only one of the two would leave the cohort lane
+                        # exactly as dead as it found it.
+                        for party in _event_parties(conn, org_id=org_id, row=row):
+                            store.write_fact(
+                                conn, org_id=org_id, subject_node_id=party,
+                                field="thread.objective", value=value_text,
+                                value_type="string", confidence=FACT_CONF_BY_RANK[1],
+                                relevance=1.0, occurred_at=occurred,
+                                event_id=row["event_id"], source=row["source"] or "backfill",
+                                authority_rank=1,
+                                evidence={"text": claim.evidence[0].quote,
+                                          "standing": claim.standing,
+                                          "spans": [s.model_dump(mode="json")
+                                                    for s in claim.evidence]})
+                    rank = 2 if claim.standing == "observed" else 1
+                    value = (claim.value if isinstance(claim.value, str)
+                             else claim.value.model_dump())
+                    if store.write_fact(
+                            conn, org_id=org_id, subject_node_id=subject, field=claim.field,
+                            value=value,
+                            value_type="money" if claim.field == "deal.value" else "string",
+                            confidence=FACT_CONF_BY_RANK[rank], relevance=1.0,
+                            occurred_at=occurred, event_id=row["event_id"],
+                            source=row["source"] or "backfill", authority_rank=rank,
+                            evidence={"text": claim.evidence[0].quote,
+                                      "standing": claim.standing,
+                                      "spans": [s.model_dump(mode="json")
+                                                for s in claim.evidence]}):
+                        written += 1
+                        by_field[claim.field] = by_field.get(claim.field, 0) + 1
+                    else:
+                        # The open version already held exactly this value. Not a loss, and
+                        # counted apart from the refusals so it does not read as one.
+                        refuse("already_current")
+
+    return {"extractions": len(rows), "claims_read": read, "facts_written": written,
+            "by_field": dict(sorted(by_field.items(), key=lambda kv: -kv[1])),
+            "dropped": dict(sorted(dropped.items(), key=lambda kv: -kv[1]))}
+
+
+# =================================================================================================
+# CONVERSATIONS NOBODY COULD TELL APART
+# =================================================================================================
+
+#: Threads renamed per pass. Bounded for the reason every sweep in this file is.
+_NAME_BATCH = 500
+
+
+def name_thread_nodes(store, org_id: str | None = None, *, limit: int = _NAME_BATCH) -> int:
+    """Give every conversation a name a reader can recognise, from what the graph already holds.
+
+    WHY A SWEEP AND NOT ONLY THE WRITE PATH. `name_thread_node` runs where `thread.objective` is
+    written, which repairs a conversation the next time anything is extracted from it. The threads
+    that most need a name are the ones nobody has written in for months — a card that says "nobody
+    answered this in 185 hours" is about a conversation that by definition went quiet — so the lazy
+    path reaches precisely the wrong set.
+
+    MEASURED ON THE PILOT, 2026-09-15: 236 threads, 151 named after a hex fragment
+    (`Thread 1a07a6e0ca77`) and the remaining 85 sharing labels — all fifteen of one counterparty's
+    conversations read `Thread with boardy@boardy.ai`. 31 live cards are anchored on a thread, so
+    this is what a third of the deck's headlines say.
+
+    THE COUNTERPARTY IS RESOLVED, NOT GUESSED. It comes from the `corresponded_with` edge the
+    pipeline already writes from a person to the thread they were in, and it uses that person's
+    DISPLAY NAME — which is a human name rather than an address for the first time, because
+    `index_person_names` now registers it. A thread with several correspondents takes the one whose
+    edge is oldest: the conversation is named after who it started with, which is stable, rather
+    than after whoever wrote most recently, which would rename the card every sweep.
+
+    Safe to re-run: `name_thread_node` promotes only over a label this module generated, so a
+    thread named by anything better is left alone and a second pass writes nothing.
+    """
+    scope = "" if org_id is None else " and t.org_id = :org"
+    rows = store.engine.connect().execute(text(
+        "select t.org_id as org_id, t.node_id as node_id, t.canonical_key as canonical_key, "
+        "       t.display_name as display_name, "
+        "       (select f.value from graph_facts f "
+        "         where f.org_id = t.org_id and f.subject_node_id = t.node_id "
+        "           and f.field = 'thread.objective' and f.status = 'active' "
+        "           and f.valid_to is null limit 1) as objective, "
+        # OLDEST EDGE WINS — see the docstring. `min(created_at)` rather than any row, so the
+        # answer does not depend on which correspondent the planner happened to return first.
+        "       (select p.display_name from graph_edges e "
+        "          join graph_nodes p on p.org_id = e.org_id and p.node_id = e.from_node_id "
+        "                            and p.node_type = 'person' and p.valid_to is null "
+        "         where e.org_id = t.org_id and e.to_node_id = t.node_id "
+        "           and e.edge_type = 'corresponded_with' and e.valid_to is null "
+        "         order by e.created_at, p.node_id limit 1) as party "
+        "  from graph_nodes t "
+        " where t.node_type = 'thread' and t.valid_to is null"
+        f"{scope} order by t.node_id limit :limit"),
+        {"limit": int(limit), **({} if org_id is None else {"org": org_id})}).mappings().all()
+
+    renamed = 0
+    with store.engine.begin() as conn:
+        for row in rows:
+            objective = str(row["objective"] or "").strip().strip('"')
+            party = str(row["party"] or "").strip()
+            # An address is not a name. It is still better than a hex fragment, so it is kept as
+            # the counterparty rather than dropped — `index_person_names` will improve it the day
+            # the graph learns what this person is called.
+            if store.name_thread_node(conn, org_id=row["org_id"], node_id=row["node_id"],
+                                      objective=objective or None, counterparty=party or None):
+                renamed += 1
+    return renamed
+
+
+def best_person_name(rows) -> dict[tuple[str, str], tuple[int, str]]:
+    """One name per person, chosen the same way on every machine.
+
+    MOST FREQUENT, THEN LONGEST, THEN ALPHABETICAL — and the last two are not decoration. One
+    person is signed several ways across their messages ("Ritu KUMARI", "Ritu Kumari"); taking
+    them in whatever order the rows arrived would let a re-run over a different slice produce a
+    different name, and a name that changes between passes is worse than an address that does
+    not. Frequency picks the form they habitually use; length breaks a tie towards the fuller
+    spelling; the surface itself breaks the rest, so there is no tie left to luck.
+
+    Separate from the query because the query cannot be run on SQLite — `actor->>'name'` is
+    Postgres — and this is the half worth testing.
+    """
+    best: dict[tuple[str, str], tuple[int, str]] = {}
+    for row in rows:
+        key = (row["org_id"], row["node_id"])
+        surface = " ".join(str(row["surface"] or "").split())
+        if not surface:
+            continue
+        rank = (int(row["seen"]), len(surface), surface)
+        if key not in best:
+            best[key] = (int(row["seen"]), surface)
+            continue
+        held = best[key]
+        if rank > (held[0], len(held[1]), held[1]):
+            best[key] = (int(row["seen"]), surface)
+    return best
+
+
+def name_person_nodes(store, org_id: str | None = None, *, limit: int = 2000) -> dict:
+    """Give people the name their own mail already signs them with.
+
+    THE THIRD TWIN'S MISSING HALF. `name_person_node` landed with a write-path caller in
+    `context/pipeline._person`, and `find_or_create_node` writes `display_name` when it CREATES a
+    node and never again — so every person captured before that fix keeps their address for ever,
+    and the people who most need a name are exactly the ones nobody has written to since. That is
+    the argument `name_thread_nodes` and `name_company_nodes` already make; this is the lane that
+    had the fix and not the sweep. Measured 2026-09-17 across three orgs: 88 person nodes still
+    displaying an email, 30 of them with a From-header name sitting in `source_events`.
+
+    THE NAME IS THE SENDER'S OWN, UNCHANGED. "Singh, Alok" and "Surender KUMAR KUMAR" are how
+    those two people's mail clients introduce them, and tidying either would be inventing a name
+    for somebody — the write path passes `sender_name` through verbatim and this must agree with
+    it, or the same person is called two things depending on which pass reached them first.
+
+    MOST FREQUENT WINS, THEN LONGEST, THEN ALPHABETICAL. One person is signed several ways across
+    their messages; taking them in order would let the last row read decide, and a re-run over a
+    different slice would produce a different name. Frequency picks the form they habitually use
+    rather than the longest accident of a provider's formatting, and the two tie-breaks make the
+    answer the same on every machine.
+
+    NOTHING IS CREATED AND NOTHING IS OVERWRITTEN. The candidate is matched to a node by the
+    address the node is still displaying, and `name_person_node` promotes only while the display
+    name restates that address — so a person already carrying a human name is left alone.
+    """
+    from genios_engine.context.identity import observe_person_name
+
+    read = named = 0
+    dropped: dict[str, int] = {}
+
+    def refuse(reason: str) -> None:
+        dropped[reason] = dropped.get(reason, 0) + 1
+
+    scope = "" if org_id is None else " and n.org_id = :org"
+    params: dict = {"limit": int(limit)}
+    if org_id is not None:
+        params["org"] = org_id
+    with store.engine.connect() as conn:
+        rows = conn.execute(text(
+            "select n.org_id as org_id, n.node_id as node_id, n.display_name as addr, "
+            "       se.actor->>'name' as surface, count(*) as seen "
+            "  from graph_nodes n "
+            "  join source_events se on se.org_id = n.org_id "
+            "   and lower(se.actor->>'email') = lower(n.display_name) "
+            " where n.node_type = 'person' and n.valid_to is null "
+            "   and n.display_name like '%@%' "
+            "   and coalesce(se.actor->>'name', '') <> '' "
+            "   and lower(se.actor->>'name') <> lower(n.display_name)"
+            + scope +
+            " group by 1, 2, 3, 4 order by 1, 2, 5 desc, 4 "
+            " limit :limit"), params).mappings().all()
+
+    read = len(rows)
+    best = best_person_name(rows)
+
+    with store.engine.begin() as conn:
+        for (org, node), (_seen, surface) in sorted(best.items()):
+            observe_person_name(conn, org_id=org, node_id=node, name=surface)
+            if store.name_person_node(conn, org_id=org, node_id=node, name=surface):
+                named += 1
+            else:
+                refuse("already_carries_a_better_name")
+
+    return {"names_read": read, "people_named": named,
+            "dropped": dict(sorted(dropped.items(), key=lambda kv: -kv[1]))}
+
+
+def name_company_nodes(store, org_id: str, *, limit: int | None = None) -> dict:
+    """Give companies the human name L1 already extracted for them.
+
+    THE DEFECT WAS ONE WORD. L1's entity vocabulary calls a company an `organization`; every branch
+    in `pipeline` was written against `company`, and `qes_adapter` copies the type through verbatim
+    because it is "intentionally not a semantic translation". So the company branch — the only
+    caller of `name_company_node`, which is the only thing that gives a company a human name —
+    never fired once. Measured on the pilot 2026-09-15: 337 organization mentions across 147
+    distinct names, **48 of 48 company nodes displaying a hostname**, and 19 cards in the deck
+    opening on "peakxv.com" rather than "PeakXV".
+
+    `_company_type` closes it for events that arrive afterwards. This is the same argument
+    `backfill_business_facts` makes for the nouns: an event already processed is never processed
+    again, so a graph built before the fix keeps hostnames for ever while the code that would
+    name them is correct.
+
+    NOTHING IS INVENTED AND NO NODE IS CREATED. Each surface form is resolved through
+    `resolve_company_mention` — exact key equality against the company's own anchor, refusing where
+    two companies contend — and `name_company_node` promotes only while the display name still
+    restates that anchor. A company already carrying a human name is left alone.
+    """
+    from genios_engine.context.identity import observe_company_name, resolve_company_mention
+
+    read = named = 0
+    dropped: dict[str, int] = {}
+
+    def refuse(reason: str) -> None:
+        dropped[reason] = dropped.get(reason, 0) + 1
+
+    with store.engine.connect() as conn:
+        rows = conn.execute(text(
+            "select event_id, output from l1_extraction_results where org_id = :o "
+            "order by created_at" + (" limit :limit" if limit else "")),
+            {"o": org_id, **({"limit": int(limit)} if limit else {})}).mappings().all()
+
+    # ONE NAME PER NODE, DECIDED BEFORE ANYTHING IS WRITTEN. The same company is named in many
+    # messages and the spellings differ; taking them in order would let the last message seen
+    # decide, and re-running the pass on a different slice would produce a different name. The
+    # LONGEST surface form wins — "Titan Capital" over "Titan" — because it is the one that
+    # survives `company_slug` with the most of the company's actual name intact.
+    best: dict[str, str] = {}
+    with store.engine.connect() as conn:
+        for row in rows:
+            payload = row["output"]
+            payload = json.loads(payload) if isinstance(payload, (str, bytes)) else payload
+            if not isinstance(payload, dict):
+                continue
+            for mention in (payload.get("entity_mentions") or ()):
+                if not isinstance(mention, dict):
+                    continue
+                if str(mention.get("entity_type") or "").strip().lower() not in {
+                        "organization", "organisation", "company"}:
+                    continue
+                surface = " ".join(str(mention.get("surface_form") or "").split())
+                if not surface:
+                    continue
+                read += 1
+                node = resolve_company_mention(conn, org_id=org_id, name=surface)
+                if not node:
+                    # No company anchored under that name. The commonest answer by far, and the
+                    # correct one: a name nothing is anchored under must not mint a company.
+                    refuse("no_company_anchored_under_that_name")
+                    continue
+                if len(surface) > len(best.get(node, "")):
+                    best[node] = surface
+
+    with store.engine.begin() as conn:
+        for node, surface in sorted(best.items()):
+            observe_company_name(conn, org_id=org_id, node_id=node, name=surface)
+            if store.name_company_node(conn, org_id=org_id, node_id=node, name=surface):
+                named += 1
+            else:
+                refuse("already_carries_a_better_name")
+
+    return {"mentions_read": read, "companies_named": named,
+            "dropped": dict(sorted(dropped.items(), key=lambda kv: -kv[1]))}

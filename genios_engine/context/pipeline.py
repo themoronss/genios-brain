@@ -11,9 +11,14 @@ from sqlalchemy import text
 # Load-bearing at RUNTIME only (the ask/reply branches) — exactly how their absence shipped:
 # module imported cleanly, suite green, and the first real extraction with an ask observation
 # would have raised NameError and zeroed the whole L2 processing phase.
-from genios_engine.context.open_loops import close_loops_for_reply, record_ask
+from genios_engine.context.open_loops import (
+    close_loops_awaited_from,
+    close_loops_for_reply,
+    record_ask,
+)
 from genios_engine.contracts.open_loop import is_ask, open_loop_id
-from genios_engine.capture.gate.rules import AUTO_REPLY
+from genios_engine.capture.gate.rules import (AUTO_REPLY, addressed_to_a_list,
+                                              reply_to_party, sender_is_a_relay)
 from genios_engine.capture.internal_knowledge import authority_rank_for
 from genios_engine.capture.structured.apply import _PERSONAL_DOMAINS
 from genios_engine.context.availability import write_availability_window
@@ -31,6 +36,8 @@ from genios_engine.context.documents import register_document_node, resolve_owne
 from genios_engine.context.identity import (observe_company_name, observe_person_name,
                                             resolve_company_mention, resolve_person_name)
 from genios_engine.context.llm.client import LLMClient
+from genios_engine.context.vocabulary import (OWNER_DECLARED, OWNER_INFERRED,
+                                              discharged_asks)
 
 _WEEKDAYS = {"monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3,
              "friday": 4, "saturday": 5, "sunday": 6}
@@ -186,8 +193,22 @@ _GROUNDING_PENALTY = 0.4      # ungrounded (paraphrased) claim → kept but scor
 # subscription/product_account, anchored by source-id) is NOT gated here.
 _NODE_TYPES = {"person", "company", "deal", "meeting", "commitment", "thread", "document", "agent"}
 _MAX_RECIPIENTS = 25          # cap fan-out from a mass To/Cc so one email can't explode the graph
-_BULK_RECIPIENTS = 10         # P2 — above this many recipients an email is a bulk blast: skip
-                              # per-recipient nodes/edges (not 1:1 relationships). HYP, tune in shadow.
+# `_BULK_RECIPIENTS = 10` stood here and it was a HEADCOUNT standing in for a judgement. Above ten
+# addresses EVERY recipient was discarded — not the eleventh onward, all of them — so an email to
+# eleven people produced no person nodes, no presence receipts, no `corresponded_with` edges, and
+# nothing for the outbound-evidence mirror further down to write against. A fundraise update to
+# twelve investors and a newsletter to twelve thousand were the same thing to it.
+#
+# The question it was trying to answer is answered properly by `gate.rules.addressed_to_a_list`,
+# on what the message SAYS about itself — an unsubscribe link, a list id, a bulk precedence, a
+# machine sender — and never on how many people are on the To line. That predicate lives in the
+# gate beside the N-02/N-04 header table for the reason `availability_marker` gives: L2 re-derives
+# it from the stored payload, and a value re-derived cannot drift from a copy.
+#
+# NOT MIRRORED ONTO `structured._BULK_ATTENDEES`, deliberately. A calendar event carries no mail
+# headers, so there is no positive evidence to read there and the count is the only signal — and
+# that path already keeps the whole attendee list as an `attendees` fact on the meeting node, so
+# it caps the fan-out without losing the data. This one lost the data.
 
 
 def _company_domain(email: str | None) -> str | None:
@@ -283,21 +304,58 @@ _OBS_CANON = {
 
 
 def objective_of(extraction) -> str | None:
-    """The exchange's objective, or None when the model could not place it.
+    """The exchange's objective, or None when nothing in the extraction states one.
 
-    `unknown` returns None on purpose. `relationship.nature` already distinguishes an investor
-    from a vendor; this distinguishes an investor we are RAISING FROM (`fundraising`) from one we
-    merely OWE A REPORT (`investor_update`) — same person, same nature, opposite follow-ups. A
-    label that carries neither of those readings is not worth storing, and storing it would empty
-    `outreach.objective` out of the situation's `missing` list while telling a card nothing.
+    WHY WE WROTE. The field that separates a follow-up from a reminder: `relationship.nature`
+    already distinguishes an investor from a vendor, and this distinguishes an investor we are
+    RAISING FROM from one we merely OWE A REPORT — same person, same nature, opposite follow-ups.
+    Every `awaiting_response` situation declared it missing on every row.
+
+    TWO PLACES, BECAUSE THE VALUE ARRIVES IN TWO SHAPES AND ONLY ONE OF THEM IS EVER FILLED.
+    `Extraction.objective` is a declared field holding a `type` from the closed set
+    `_OUTREACH_OBJECTIVES`, and it is what this function read. Measured on the pilot: the write
+    beside this one put `thread.last_outbound` on 45 nodes and this put `thread.objective` on
+    ZERO, because nothing on the QES path populates that dict — the extractor is asked for the
+    objective as a BUSINESS FACT (the prompt says so in as many words: "for thread.objective use
+    subject 'thread'"), and it supplied one 316 times, into `fact_candidates`.
+
+    SO THE DECLARED FIELD IS STILL TRIED FIRST and still screened against the enum, because a
+    caller that fills it is making a categorical claim and that is the stronger one. The
+    fallback reads the business fact, which is FREE TEXT — "Pitch GeniOS to Afore Capital and
+    establish founder credibility", not `fundraising` — and is therefore NOT screened against the
+    enum, because screening a sentence against a closed set of categories discards every real
+    answer. A sentence the model wrote and can point at in the source is worth more to a card
+    than a category it was never asked for.
+
+    THE RECEIPT STILL DECIDES, on both paths. The fallback returns a claim only where a span
+    survived grading against the message's own text — the same seam `_business_claim` enforces.
+    An objective nobody can point at in the source is exactly the invented label the enum screen
+    was there to keep out, and that part of the rule is unchanged.
     """
     block = getattr(extraction, "objective", None)
-    if not isinstance(block, dict):
-        return None
-    value = str(block.get("type") or "").strip().lower()
-    if value not in _OUTREACH_OBJECTIVES or value == "unknown":
-        return None
-    return value
+    if isinstance(block, dict):
+        value = str(block.get("type") or "").strip().lower()
+        if value in _OUTREACH_OBJECTIVES and value != "unknown":
+            return value
+
+    for candidate in (getattr(extraction, "fact_candidates", None) or ()):
+        if not isinstance(candidate, dict) or candidate.get("business_fact") is not True:
+            continue
+        if str(candidate.get("field") or "") != "thread.objective":
+            continue
+        if str(candidate.get("subject") or "").strip().lower() != "thread":
+            continue
+        stated = candidate.get("value")
+        if not isinstance(stated, str):
+            continue
+        text_value = " ".join(stated.split())
+        if not text_value or text_value.casefold() in {"unknown", "none", "n/a", "not known"}:
+            continue
+        if not any(isinstance(span, dict) and span.get("verified")
+                   for span in (candidate.get("evidence_spans") or ())):
+            continue
+        return text_value
+    return None
 
 
 def norm_obs_kind(kind) -> str:
@@ -382,6 +440,27 @@ def _merge_domain_hints(l1_hints: list | None, model_domains: list | None) -> li
             out.append({"domain": name, "source": "model"})
             seen.add(name)
     return out
+
+
+#: WHAT L1 CALLS A COMPANY. The extractor's closed entity vocabulary says `organization`; every
+#: branch here was written against `company`, and the two never met. Measured on the pilot: 337
+#: organization mentions across 147 distinct names, and the `etype == "company"` branch — the only
+#: caller of `name_company_node`, which is the only thing that gives a company a human name — did
+#: not fire once. That is why ALL 48 company nodes display a hostname, and why 19 of the deck's
+#: cards open on "peakxv.com" instead of "PeakXV".
+#:
+#: NORMALISED HERE RATHER THAN IN THE ADAPTER, which states in its own docstring that it is
+#: "intentionally not a semantic translation" — it copies L1's typed claims through verbatim, and
+#: a rename inside it would hide which word L1 actually used from every other reader.
+#:
+#: SAFE BECAUSE THE BRANCH MINTS NOTHING. The company path resolves an EXISTING node by exact key
+#: equality and refuses otherwise, so widening what reaches it can attach a name to a company we
+#: already hold and can never invent one. The anchor rule is untouched.
+_COMPANY_TYPES = frozenset({"company", "organization", "organisation"})
+
+
+def _company_type(etype: str) -> str:
+    return "company" if etype in _COMPANY_TYPES else etype
 
 
 def _thread_node(store, conn, *, org_id: str, thread_id: str | None, event_id: str,
@@ -733,6 +812,32 @@ def _normalise_meeting_status(value):
     return "cancelled" if raw.lower() in CANCELLED else raw
 
 
+def _mirror_to_recipients(store, conn, *, org_id: str, recipients: list[str], kind: str,
+                          confidence: float, occurred_at: datetime | None, event_id: str,
+                          quoted: str | None, speaker_node_id: str | None,
+                          source: str | None) -> int:
+    """File one thing we said against every person we said it to. Returns rows written.
+
+    The kind is prefixed, never bare. `received:question` is a fact about somebody we asked;
+    `question` is a fact about somebody who asked. Every existing reader selects on the bare
+    kinds, so none of them can mistake our words for theirs, and a reader that wants "what have
+    we put to this person" now has a row to select.
+
+    The speaker is skipped: writing our own mail back onto ourselves would double-count the
+    398 observations already sitting on the mailbox owner's node.
+    """
+    written = 0
+    for rnode in recipients:
+        if not rnode or rnode == speaker_node_id:
+            continue
+        written += int(store.write_received_observation(
+            conn, org_id=org_id, subject_node_id=rnode, kind=f"received:{kind}",
+            confidence=confidence, occurred_at=occurred_at, event_id=event_id,
+            evidence={"text": quoted, "speaker_node_id": speaker_node_id},
+            source=source))
+    return written
+
+
 def process_event(*, org_id: str, event_id: str, source: str, content: str,
                   sender_email: str | None, occurred_at: datetime | None,
                   sender_name: str | None = None,
@@ -845,6 +950,16 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         nodes = 0
         edge_n = 0
         obs_n = 0
+        #: The people WE wrote to on this event, resolved to nodes. Filled by the recipient loop
+        #: below and read by the observation loops far further down, which is why it is declared
+        #: here rather than beside either: what we said has to reach the person we said it to, and
+        #: the two halves of that sentence are 400 lines apart. Empty on an inbound mail — a
+        #: message they sent is already evidence about them, on the ordinary sender path.
+        outbound_recipient_nodes: list[str] = []
+        #: The external half of the same list. An ask needs exactly one answerer to be closable
+        #: (see `migrations/0165_open_loop_awaited_from.sql`), and a colleague on Cc is not the
+        #: person we are waiting on.
+        outbound_external_nodes: list[str] = []
 
         # Which nodes this event was ABOUT, and which of them are US. Correlation anchors
         # a situation on the COUNTERPARTY: anchoring on our own company would file every
@@ -871,6 +986,21 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             node = store.find_or_create_node(
                 conn, org_id=org_id, node_type=ntype,
                 canonical_key=key, display_name=label, event_id=event_id)
+            # AND KEEP IT CURRENT. `find_or_create_node` writes `display_name` when it CREATES a
+            # node and never again, so a person first seen on a To/Cc line — a bare address,
+            # because recipients are not described — stayed called by that address for ever, even
+            # after they had written to us a hundred times with their name in the From header.
+            #
+            # Measured on the pilot 2026-09-16: 35 of 76 person nodes displayed an address, and
+            # for 8 of them the name was already sitting in their own `source_events` rows,
+            # unused. The other 27 have never sent us anything and are correctly left alone.
+            #
+            # Promotion only while the label still restates the address, which is the rule
+            # `name_company_node` and `name_thread_node` already keep — a name from a better
+            # source must never be overwritten by a header line. Skipped when the label IS the
+            # address, so this costs a lookup only where a real name arrived.
+            if label != email and label == sender_name:
+                store.name_person_node(conn, org_id=org_id, node_id=node, name=label)
             touched[node] = ntype
             if key in internal_set:
                 internal_nodes.add(node)
@@ -914,6 +1044,13 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
 
         sender_norm = _norm_email(sender_email) or (sender_email or "").strip().lower()
         internal_set = internal_emails or frozenset()
+        # WHICH ASKS THIS MESSAGE ACTUALLY ANSWERS, computed once and handed to both closers.
+        # Normalised through `norm_obs_kind` exactly as the observation loop below does, so the
+        # kind this consults and the kind that reaches the graph cannot be different strings.
+        # Empty for almost every message, which is the honest answer: "what is your ARR?" is
+        # discharged by a sentence, and no kind in the vocabulary means "answered the question".
+        discharged_here = discharged_asks(
+            norm_obs_kind(o.get("kind")) for o in (ex.observations or ()))
         sender_node = None
         # A machine sender is noise for the NETWORK too: it gets a `service` node (facts attach) but
         # never anchors a relationship edge or a situation — same treatment as a newsletter.
@@ -942,6 +1079,33 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         if sender_email:
             sender_node = _person(sender_email)
             nodes += 1
+
+        # WHO SPOKE, as distinct from WHICH ADDRESS CARRIED IT — and until now those were one
+        # variable. "Sehan Sanjula via Boardy" is not Boardy speaking, and every sentence Sehan
+        # wrote was filed as Boardy's: their questions, their commitments, and — worse, because
+        # it is what the follow-up readings are built on — `thread.last_inbound` and
+        # `thread.ball_in_court`, so a reply from a person reached through an intro network made
+        # it OUR TURN WITH THE NETWORK and left the person looking like somebody who never wrote.
+        #
+        # NOT WHAT `is_noise` COVERS. That routes everything `_is_automated_sender` matches out of
+        # the network graph and out of correlation, which is right for a newsletter and wrong
+        # here: a relayed human reply is the most valuable mail in the mailbox and only its
+        # attribution is wrong. An intro network's `hello@` matches no machine pattern.
+        #
+        # `None` WHEN THE RELAY NAMES NOBODY, and that is a real answer rather than a gap. A
+        # display name proves the From address did not write this without saying who did; with no
+        # `Reply-To` to name them there is no honest subject, and the sites below skip rather than
+        # attribute. A missing card beats a card addressed to the wrong party — the same trade
+        # `correlation_resource` makes when it files an ambiguous item UNATTRIBUTED rather than
+        # allocating it to the likelier of two vendors.
+        relayed = sender_is_a_relay(canon_meta, sender_name=sender_name,
+                                    sender_email=sender_email)
+        relay_party = reply_to_party(canon_meta, sender_email) if relayed else None
+        if relay_party:
+            speaker_node = _person(relay_party)
+            nodes += 1
+        else:
+            speaker_node = None if relayed else sender_node
 
         # P5 · SEED THE SPEAKERS. Each §3 speaker label (and its first name, where no other
         # speaker shares it) maps to the person the ingest door matched against the meeting's
@@ -1020,11 +1184,12 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             if sender_node:
                 _works_at(sender_email, sender_node)
             # recipients (To + Cc) → person nodes + sender↔recipient correspondence + affiliation.
-            # P2 — skip per-recipient nodes on a mass fan-out (a large To/Cc blast is not a set of
-            # 1:1 relationships); small/direct threads still link everyone. Bulk lists stay in the
-            # L1 ledger, out of the graph.
+            # A genuine mailing list is skipped — its subscribers are not this tenant's
+            # relationships — and everything else keeps its recipients however many there are.
+            # See the `_MAX_RECIPIENTS` block above for the headcount this replaced.
             recips = recipient_emails or []
-            for rcpt in ([] if len(recips) > _BULK_RECIPIENTS else recips[:_MAX_RECIPIENTS]):
+            to_a_list = addressed_to_a_list(canon_meta, sender_email=sender_email)
+            for rcpt in ([] if to_a_list else recips[:_MAX_RECIPIENTS]):
                 rn_email = _norm_email(rcpt) or rcpt.strip().lower()
                 if not rn_email or rn_email == sender_norm:
                     continue
@@ -1040,6 +1205,12 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                         occurred_at=occurred_at, event_id=event_id, source=source,
                         evidence={"presence": "outbound_recipient",
                                   "speaker_node_id": sender_node, "recipient": rn_email}))
+                    # …and the SUBSTANCE of what we sent follows, further down. Presence alone
+                    # said an event touched them; it did not say what we asked or promised, so
+                    # an anchor about somebody we have only ever written to still scored zero.
+                    outbound_recipient_nodes.append(rnode)
+                    if rn_email not in internal_set:
+                        outbound_external_nodes.append(rnode)
                 _works_at(rn_email, rnode)
                 if sender_node:
                     # canonicalise pair direction (lexically smaller email = from) → ONE edge per
@@ -1062,11 +1233,18 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                 if (not is_inbound and not is_noise and occurred_at is not None
                         and rn_email not in internal_set):
                     # …and the reply CLOSES this thread's open loops for this person. The
-                    # ball_in_court flip below says whose turn it is; the ledger says WHICH
-                    # requests this reply answered — one row each, never the whole person.
+                    # ball_in_court flip below says whose turn it is; the ledger says which
+                    # requests this reply REACHED — one row each, never the whole person.
+                    #
+                    # It used to say "answered", and that was a claim the code could not support:
+                    # every open loop on the thread closes whatever the message said, so "what is
+                    # your ARR?" met by "let me check and get back to you" was recorded as
+                    # answered. The closure is unchanged — holding loops open until an answer can
+                    # be proven would refuse on an absence — but `closed_basis` now records which
+                    # of the two actually happened.
                     close_loops_for_reply(conn, org_id=org_id, subject_node_id=rnode,
                                           thread_id=thread_id, event_id=event_id,
-                                          at=occurred_at)
+                                          at=occurred_at, discharged=discharged_here)
                     store.write_fact(conn, org_id=org_id, subject_node_id=rnode,
                                      field="thread.last_outbound", value=occurred_at.isoformat(),
                                      value_type="timestamp", confidence=FACT_CONF_BY_RANK[2],
@@ -1079,9 +1257,13 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                     # restating it. Skipped when the model returned `unknown` — see
                     # `objective_of`.
                     if (_objective := objective_of(ex)) is not None:
+                        # `string`, NOT `enum`. The value is the model's own sentence about why
+                        # this exchange exists, and typing a sentence as an enum tells every
+                        # reader downstream it may be compared against a closed set that does
+                        # not exist.
                         store.write_fact(conn, org_id=org_id, subject_node_id=rnode,
                                          field="thread.objective", value=_objective,
-                                         value_type="enum", confidence=FACT_CONF_BY_RANK[1],
+                                         value_type="string", confidence=FACT_CONF_BY_RANK[1],
                                          relevance=ex.relevance, occurred_at=occurred_at,
                                          event_id=event_id,
                                          evidence={"text": (ex.objective or {}).get(
@@ -1125,7 +1307,7 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         # them attaches to an anchored node (fallback is already sender). Kills the orphan
         # SAP/OpenClaw/Product/System nodes without losing a single extracted fact.
         for e in ents:
-            etype = str(e.get("type") or "person").strip().lower()
+            etype = _company_type(str(e.get("type") or "person").strip().lower())
             email = _norm_email(e.get("email"))
             name = e.get("name")
             if transcript_mode and name and _norm(str(name)) in speaker_keys:
@@ -1199,9 +1381,9 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                 name_to_node[_norm(str(name))] = canon_id
                 touched.setdefault(canon_id, canon_type)
                 nodes += 1
-            elif name and sender_node:                       # anchorless mention → context on sender
+            elif name and speaker_node:                      # anchorless mention → context on speaker
                 store.write_observation(
-                    conn, org_id=org_id, subject_node_id=sender_node,
+                    conn, org_id=org_id, subject_node_id=speaker_node,
                     kind="mention:" + (etype if etype in _NODE_TYPES else "entity"),
                     confidence=ex.relevance, occurred_at=occurred_at, event_id=event_id,
                     evidence={"name": name, "type": etype, "text": e.get("evidence_text")},
@@ -1220,7 +1402,11 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         # facts-about-the-wrong-subject bug this seam already exists to fix.
         # A linked transcript's un-subjected content (a decision the room took) is about the
         # MEETING, not about whoever uploaded the transcript.
-        content_subject = canon_node or document_node or meeting_node or sender_node
+        # The fourth term is `speaker_node`, not `sender_node`: a relay carried the message and
+        # did not write it, so its own address is never the subject of what it delivered. See the
+        # block where `speaker_node` is derived for why that is a separate question from
+        # `is_noise`, and why it is None rather than a guess when the relay names nobody.
+        content_subject = canon_node or document_node or meeting_node or speaker_node
         fact_n = 0
 
         # DEAL NODES. `deal.*` facts used to land on whichever person happened to be the subject,
@@ -1305,6 +1491,14 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                                         event_id=event_id, counterparty=None)
                     if subj:
                         touched[subj] = "thread"
+                        # AND NAME IT, now that we know what it is for. This is the one moment the
+                        # objective and the conversation are both in hand; before this line a
+                        # thread was called after a hex fragment for the rest of its life, and 31
+                        # live cards on the pilot are anchored on one.
+                        if isinstance(claim.value, str):
+                            store.name_thread_node(conn, org_id=org_id, node_id=subj,
+                                                   objective=claim.value,
+                                                   counterparty=sender_name or sender_email)
                 else:
                     subj = _business_subject(conn, org_id=org_id, name=claim.subject, field=claim.field)
                 if not subj:
@@ -1421,6 +1615,11 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         # observation hygiene: one email quoting the same moment twice must not commit the
         # same (kind, evidence) twice — duplicates double-count in derived sentiment.
         seen_obs: set[tuple[str, str]] = set()
+        #: Who owes us an answer for anything we ask on this event. One external recipient is a
+        #: question put to a person; seven is a broadcast, and naming one of the seven as THE
+        #: answerer would close the loop the moment any one of them replied.
+        sole_answerer = (outbound_external_nodes[0]
+                         if len(outbound_external_nodes) == 1 else None)
         for o in obs:
             kind = norm_obs_kind(o.get("kind"))
             key = (kind, str(o.get("evidence_text") or ""))
@@ -1438,7 +1637,7 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             if is_ask(kind) and content_subject:
                 obs_evidence["open_loop_id"] = record_ask(
                     conn, org_id=org_id, subject_node_id=content_subject, kind=kind,
-                    thread_id=thread_id, event_id=event_id,
+                    thread_id=thread_id, event_id=event_id, awaited_from=sole_answerer,
                     at=occurred_at) if occurred_at else open_loop_id(
                     org_id=org_id, subject_node_id=content_subject, kind=kind,
                     thread_id=thread_id)
@@ -1447,6 +1646,10 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                                     occurred_at=occurred_at, event_id=event_id,
                                     evidence=obs_evidence, source=source)
             obs_n += 1
+            obs_n += _mirror_to_recipients(
+                store, conn, org_id=org_id, recipients=outbound_recipient_nodes, kind=kind,
+                confidence=obs_conf, occurred_at=occurred_at, event_id=event_id,
+                quoted=o.get("evidence_text"), speaker_node_id=speaker_node, source=source)
         # INTENT, finally committed: the LLM already extracts open questions — the pipeline
         # parsed and DROPPED them for months. A question directed at us is the strongest
         # "they expect an answer" signal the twin can hold.
@@ -1455,27 +1658,39 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             if key in seen_obs or content_subject is None:
                 continue
             seen_obs.add(key)
-            store.write_observation(conn, org_id=org_id, subject_node_id=sender_node,
+            store.write_observation(conn, org_id=org_id, subject_node_id=speaker_node,
                                     kind="question", confidence=ex.relevance,
                                     occurred_at=occurred_at, event_id=event_id,
                                     evidence={"text": q.get("evidence_text"),
                                               "directed_at": q.get("directed_at"),
                                               "open_loop_id": (record_ask(
                                                   conn, org_id=org_id,
-                                                  subject_node_id=sender_node,
+                                                  subject_node_id=speaker_node,
                                                   kind="question", thread_id=thread_id,
-                                                  event_id=event_id, at=occurred_at)
+                                                  event_id=event_id, at=occurred_at,
+                                                  awaited_from=sole_answerer)
                                                   if occurred_at else open_loop_id(
                                                       org_id=org_id,
-                                                      subject_node_id=sender_node,
+                                                      subject_node_id=speaker_node,
                                                       kind="question", thread_id=thread_id))},
                                     source=source)
             obs_n += 1
+            # A question WE put to somebody is the strongest evidence there is that we are owed
+            # an answer by them — and it was landing on us, because we sent it.
+            obs_n += _mirror_to_recipients(
+                store, conn, org_id=org_id, recipients=outbound_recipient_nodes, kind="question",
+                confidence=ex.relevance, occurred_at=occurred_at, event_id=event_id,
+                quoted=q.get("evidence_text"), speaker_node_id=speaker_node, source=source)
 
         # per-email relevance recorded as an append-only signal so L3/queries can RANK — the
         # "score, don't delete" record: even a low-relevance email leaves its score, never a gap.
         # domains (which business areas the email touches) ride along — extracted since day
         # one, dropped until now.
+        # THE ONE PLACE THAT STAYS ON `sender_node`, and deliberately. Everything else this
+        # function attributes is a claim about a PERSON and follows `speaker_node`; this is a
+        # claim about the MESSAGE — how relevant it scored, which noise class it fell in — and
+        # the address that delivered it is the honest subject of that. A relay's own delivery
+        # record belongs to the relay.
         if sender_node:
             store.write_observation(
                 conn, org_id=org_id, subject_node_id=sender_node,
@@ -1494,16 +1709,30 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         # Confidence is deterministic rank-2 (the mailbox is certain the message arrived);
         # the email's LLM relevance is stored on the fact's relevance column for RANKING —
         # it no longer decides whether the signal clears the c_min gate (D3).
-        if (is_inbound and sender_node and occurred_at is not None and not is_noise
+        # `speaker_node`, NOT `sender_node`, and this is the write that makes it matter. These two
+        # facts are what every follow-up reading is built on — `waiting.py` derives
+        # `thread.last_heard_days` from `thread.last_inbound`, and `ball_in_court` decides whose
+        # turn it is — so a reply relayed through an intro network put the ball in our court WITH
+        # THE NETWORK and left the person who actually wrote looking like somebody who never had.
+        # A relay that names nobody writes neither fact rather than writing them against itself:
+        # no card beats a card telling a founder to answer a mailing service.
+        if (is_inbound and speaker_node and occurred_at is not None and not is_noise
                 and sender_norm not in internal_set):
-            store.write_fact(conn, org_id=org_id, subject_node_id=sender_node,
+            # THEIR REPLY CLOSES WHAT WE ASKED THEM. The mirror of the outbound leg's
+            # `close_loops_for_reply`, and until now the ledger had no such verb: a question we
+            # put to somebody opened a loop on our own node that nothing could ever shut, so
+            # every ask the founder ever sent was still open, answered ones included.
+            close_loops_awaited_from(conn, org_id=org_id, node_id=speaker_node,
+                                     thread_id=thread_id, event_id=event_id, at=occurred_at,
+                                     discharged=discharged_here)
+            store.write_fact(conn, org_id=org_id, subject_node_id=speaker_node,
                              field="thread.last_inbound", value=occurred_at.isoformat(),
                              value_type="timestamp", confidence=FACT_CONF_BY_RANK[2],
                              relevance=ex.relevance,
                              occurred_at=occurred_at, event_id=event_id,
                              evidence={"derived": "inbound event"},
                              source=source, authority_rank=2)
-            store.write_fact(conn, org_id=org_id, subject_node_id=sender_node,
+            store.write_fact(conn, org_id=org_id, subject_node_id=speaker_node,
                              field="thread.ball_in_court", value="us", value_type="enum",
                              confidence=FACT_CONF_BY_RANK[2], relevance=ex.relevance,
                              occurred_at=occurred_at,
@@ -1516,7 +1745,7 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                                  event_id=event_id, counterparty=sender_norm)
             if tnode:
                 if store.write_edge(conn, org_id=org_id, edge_type="corresponded_with",
-                                    from_node_id=sender_node, to_node_id=tnode, confidence=0.95,
+                                    from_node_id=speaker_node, to_node_id=tnode, confidence=0.95,
                                     occurred_at=occurred_at, event_id=event_id,
                                     evidence={"derived": "thread participant"},
                                     source=source, authority_rank=2):
@@ -1669,8 +1898,25 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             # speaker gets no owner (fallback None, never the uploader), and an undated promise is
             # kept as a commitment without `due_at` rather than dropped. Other sources are
             # unchanged (their undated promises still drop — flagged, an owner decision).
-            subj = _resolve_subject(cm.get("actor"), name_to_node,
-                                    None if transcript_mode else sender_node)
+            # WHO PROMISED, AND HOW WE KNOW — two answers, and only the first was kept.
+            #
+            # `_resolve_subject` returns the named actor when the extractor named one and it
+            # resolved to a node, and the fallback otherwise. That fork IS the provenance of the
+            # owner, and it was computed and thrown away on every promise: "Sunil said he would
+            # send it Friday" and an email from Sunil that says "I'll send it Friday" produced
+            # byte-identical rows, though the first states an owner and the second assumes one.
+            # Downstream could not tell a stated obligation from an attributed one, which is the
+            # distinction an ownership surface is built out of.
+            #
+            # `speaker_node`, not `sender_node`: a promise carried by a relay is not the relay's.
+            # U1.2 moved every other content write and missed this one because the fallback is
+            # POSITIONAL here rather than a `subject_node_id=` keyword.
+            named_actor = _resolve_subject(cm.get("actor"), name_to_node, None)
+            subj = named_actor or (None if transcript_mode else speaker_node)
+            # `unknown` is never written here — this site always knows which fork it took. It
+            # exists for the READER, which resolves an owner from the `owns` edge and may find a
+            # promise recorded before this fact had a writer.
+            owner_basis = OWNER_DECLARED if named_actor else OWNER_INFERRED
             due = parse_due(cm.get("due_text"), occurred_at) if occurred_at else None
             if subj and (due or transcript_mode):
                 cm_text = str(cm.get("evidence_text") or "").strip()
@@ -1720,7 +1966,14 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                 # a seat id or an EMAIL, and handing it a node id would resolve to nobody —
                 # silently, which is how this gap survived in the first place.
                 owner_email = node_email.get(subj)
-                extra_facts = ((("commitment.owner", owner_email, "string"),)
+                # THE BASIS RIDES WITH THE OWNER AND NEVER WITHOUT IT. A basis on its own would
+                # describe how confident we are about a name we did not record, which is the
+                # shape of every "well-typed value nobody can use" this layer has had to delete.
+                # `subj` is set by the time this runs — the branch above returns when it is not —
+                # so an owner that resolves to no address is a node we know without an address,
+                # not an owner we failed to establish.
+                extra_facts = ((("commitment.owner", owner_email, "string"),
+                                ("commitment.owner_basis", owner_basis, "enum"))
                                if owner_email else ())
                 dated = ((("commitment.due_at", due.isoformat(), "timestamp"),) if due else ())
                 for fld, val, vt in (*dated,

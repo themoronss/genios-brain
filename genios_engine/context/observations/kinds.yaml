@@ -26,10 +26,34 @@
 # extractor may emit, and a free-text kind is the 268-distinct-values failure `extract/vocab.py`
 # already paid for. The point is that the row is one place instead of three.
 
+# LAYER 1'S OWN SIGNAL TYPES ARE ROWS HERE TOO, and their absence was this file's own failure
+# happening again. `capture/esqe/classifier.PRECEDENCE` publishes fifteen types and
+# `context/qes_adapter` turns each straight into an observation `kind` — so thirteen of them
+# reached the graph and scored ZERO everywhere: neutral sentiment, not an ask, not progress.
+# `risk_flagged`, `escalation`, `decision_pending`, `contract_renewal` and `commitment_made` were
+# all being recorded and all being ignored. Exactly the sentence at the top of this file, about
+# the system's own upstream instead of a tenant's custom kind.
+#
+# NONE OF THE THIRTEEN IS AN ASK, and that is a decision rather than an omission. `is_ask` means
+# WE put a question to them and are owed an answer; L1's types are DIRECTION-AGNOSTIC —
+# `approval_requested` is the one exception and it was already here. `waiting.py` records what
+# marking a direction-agnostic kind as an ask costs: outbound mail produced 425 observations
+# across two subject nodes, "so when Rohit pitched eleven VCs, the ask landed on Rohit's own node
+# and never on theirs", and every investor read as `response_expected = false`. Marking these
+# would buy that back.
+#
+# NEUTRAL IS DOING REAL WORK IN THIS BLOCK. Seven of the thirteen name an EVENT whose direction
+# the type itself does not carry — an anomaly can be a surprise order or a churn signal, a
+# `relationship_change` can be a champion arriving or leaving, a `decision_made` can go either
+# way. Guessing a polarity there does not add signal, it adds a bias to `derived.sentiment` that
+# nobody can trace back. The ones with a direction get one.
+
 kinds:
-  - {kind: approval_blocked, polarity: negative}
-  - {kind: approval_granted, polarity: positive, is_progress: true}
+  - {kind: anomaly, polarity: neutral}                    # L1 · direction unknown by construction
+  - {kind: approval_blocked, polarity: negative, discharges: [approval_requested]}
+  - {kind: approval_granted, polarity: positive, is_progress: true, discharges: [approval_requested]}
   - {kind: approval_requested, polarity: neutral, is_ask: true}
+  - {kind: availability_change, polarity: neutral}         # L1 · away, back, or gone — the type does not say
   - {kind: budget_approved, polarity: positive}
   - {kind: budget_freeze, polarity: negative}
   - {kind: buying_intent, polarity: positive}
@@ -37,26 +61,34 @@ kinds:
   - {kind: champion_engaged, polarity: positive}
   - {kind: churn_risk, polarity: negative}
   - {kind: closed_lost_mention, polarity: negative}
+  - {kind: commitment_due, polarity: neutral}              # L1 · a date arrived; nothing moved
+  - {kind: commitment_made, polarity: neutral, is_progress: true}   # L1 · the relationship moved; whose promise is not said
   - {kind: competitor, polarity: negative}
+  - {kind: contract_renewal, polarity: neutral}            # L1 · a renewal moment exists; not a request
   - {kind: contract_requested, polarity: positive, is_ask: true}
   - {kind: deadline_stated, polarity: neutral}
   - {kind: decision_deferred, polarity: negative}
+  - {kind: decision_made, polarity: neutral, is_progress: true}     # L1 · resolved — `decision_deferred` is the negative twin
+  - {kind: decision_pending, polarity: neutral}            # L1 · outstanding, not yet deferred
   - {kind: demo_requested, polarity: positive, is_ask: true, is_progress: true}
   - {kind: diligence_started, polarity: positive, is_progress: true}
   - {kind: discount_pressure, polarity: negative}
-  - {kind: document_sent, polarity: neutral, is_progress: true}
+  - {kind: document_sent, polarity: neutral, is_progress: true, discharges: [information_requested]}
+  - {kind: escalation, polarity: negative}                 # L1 · unambiguous
+  - {kind: financial_obligation, polarity: neutral}        # L1 · owed money stated; `payment_overdue` is the negative one
   - {kind: followup_sent, polarity: neutral, is_progress: true}
   - {kind: going_dark, polarity: negative}
+  - {kind: information_conflict, polarity: neutral}        # L1 · a fact about OUR records, not about them
   - {kind: information_requested, polarity: neutral, is_ask: true}
-  - {kind: intro_made, polarity: positive, is_progress: true}
+  - {kind: intro_made, polarity: positive, is_progress: true, discharges: [intro_requested]}
   - {kind: intro_requested, polarity: neutral, is_ask: true}
   - {kind: introduction, polarity: neutral}
   - {kind: investor_update_sent, polarity: neutral, is_ask: true, is_progress: true}
   - {kind: invoice_sent, polarity: neutral}
   - {kind: legal_review, polarity: neutral}
-  - {kind: meeting_cancelled, polarity: neutral}
+  - {kind: meeting_cancelled, polarity: neutral, discharges: [meeting_request]}
   - {kind: meeting_request, polarity: neutral, is_ask: true, is_progress: true}
-  - {kind: meeting_scheduled, polarity: neutral, is_progress: true}
+  - {kind: meeting_scheduled, polarity: neutral, is_progress: true, discharges: [meeting_request, demo_requested]}
   - {kind: negative_reply, polarity: negative}
   - {kind: next_step_agreed, polarity: positive, is_ask: true, is_progress: true}
   - {kind: objection, polarity: negative}
@@ -65,6 +97,7 @@ kinds:
   - {kind: objection_price, polarity: negative}
   - {kind: objection_security, polarity: negative}
   - {kind: objection_timing, polarity: negative}
+  - {kind: opportunity_signal, polarity: positive}         # L1 · the `buying_intent` family
   - {kind: pass_received, polarity: negative}
   - {kind: payment_confirmed, polarity: positive}
   - {kind: payment_overdue, polarity: negative}
@@ -73,6 +106,8 @@ kinds:
   - {kind: pricing_discussed, polarity: positive}
   - {kind: proposal_sent, polarity: neutral, is_ask: true, is_progress: true}
   - {kind: question, polarity: neutral, is_ask: true}
+  - {kind: relationship_change, polarity: neutral}         # L1 · `champion_change` and `stakeholder_added` are both this
+  - {kind: risk_flagged, polarity: negative}               # L1 · unambiguous; the `churn_risk` family
   - {kind: security_review_started, polarity: positive}
   - {kind: stakeholder_added, polarity: positive}
   - {kind: stakeholder_left, polarity: negative}

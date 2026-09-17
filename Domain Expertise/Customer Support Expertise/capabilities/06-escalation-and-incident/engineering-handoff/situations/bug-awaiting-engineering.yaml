@@ -186,6 +186,24 @@ signals_of_decay:
   - angry_language
   - ticket_reopened
 
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    Headline: that the customer is waiting on somebody outside support.
+
+    Situation: support has done its part — reproduced, written up, handed over — and now owns a
+    relationship whose progress it does not control. Name the wait honestly; the card exists
+    because that is the state support is worst at holding.
+
+    Never state an ETA, a fix version or an engineering status unless it is on the record here.
+    Passing along a date nobody committed to is how a support promise becomes an engineering one.
+
+    Artifact: an honest holding note that says what is known and when we will next check.
+  fallback:
+    headline: "{entity} — waiting on a fix we do not control"
+    situation: >-
+      {entity} is waiting on a filed defect owned outside support, with no update sent.
+
 metadata:
   owner: Customer Support
   created_by: ai

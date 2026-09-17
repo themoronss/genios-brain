@@ -576,6 +576,14 @@ substrate:
                                 #   `<domain>_<anchor>` default (`admin_person`) and no situation
                                 #   file could claim it.
     - condition_in_review       # admin, anchored on a CONDITION — one conditional statement
+    # ITS TWIN, and the more valuable half. The review queue above is what `parse_condition`
+    # could NOT turn into a predicate; this is what it could, and what the world has since made
+    # true. `correlation_timeline` has published it all along — `_satisfied_json` carries BOTH
+    # evidence spans and its constructor refuses to exist with only one, because "the card has
+    # to show the sentence from May, and a claim with no receipt is a guess" — and nothing read
+    # it. `condition-now-satisfied.yaml` was authored, approved, and bound to `admin_contact`
+    # for want of this entry; its own note said so.
+    - condition_satisfied      # admin, anchored on the `condition_met` node
                                 #   `correlation_timeline` could not turn into a checkable
                                 #   predicate. It has written them to
                                 #   `derived.timeline.condition_review` since it shipped and its
@@ -583,6 +591,67 @@ substrate:
                                 #   silence"; that half did not exist and the pilot's queue held
                                 #   24 unread. Its own anchor because a counterparty can leave
                                 #   several across months and they close separately.
+    # THE FOURTH FIELD `correlation_dependency` PUBLISHES, and the only one no reader selected.
+    # When a dependency's BLOCKED end resolves and its BLOCKER end does not, the traversal
+    # refuses to invent a node — "a false chain is worse than a missing one" — and files a typed
+    # absence carrying the name and the sentence that named it. `MissingPrerequisite` gives its
+    # own examples: "Finance", "legal", "the security review". Those are usually not resolver
+    # failures at all: they are real blockers that were never people in a mailbox, and the graph
+    # is correct to hold no node for them. Computed on every sweep since the correlator shipped,
+    # and shown to nobody.
+    - blocked_on_unnamed        # admin, anchored on an UNNAMED BLOCKER — one thing a subject is
+                                # waiting on that the identity cascade could not resolve. Its own
+                                # anchor because a subject can be blocked on several at once and
+                                # they end one at a time. The card may only say "not in your
+                                # records" when the absence is typed GENUINELY_ABSENT; otherwise
+                                # it says "we could not find it", which is the claim that is
+                                # always safe.
+    # THE COVERAGE MISS, RECOVERED — and the only type here whose existence depends on a model.
+    # `context_residue` records the subjects no reading explained; `reply_owed_triage` says which
+    # matter; an `important` verdict becomes this. It cannot collide with `reply_owed`: residue
+    # exists only where no live situation covers the subject, so the deterministic reading having
+    # fired is precisely what keeps this one silent. Its facts are all measured — the model
+    # decides whether the card exists, never what it says.
+    - attention_unreported      # admin, anchored on an UNREPORTED subject — one counterparty the
+                                # layer holds evidence about and never mentioned. Excluded from
+                                # the residue coverage predicate by `residue.SELF_REPORTED_TYPE`:
+                                # a card reporting that nothing explains a subject does not
+                                # itself explain it, and without that it would appear and vanish
+                                # on alternate sweeps for ever.
+    # M-3's ANSWER ON A CARD, and the third grouping key in this layer. `cohort_outreach_gap`
+    # groups by stated objective and `campaign_awaiting_reply` by an exact shared sentence; this
+    # groups sends whose wording a model judged to be one message retyped. It is NOT a campaign
+    # and never says it is — `outreach.exact_sentence` is declared absent, because that absence is
+    # precisely why the deterministic grouping did not fire. `find_campaigns` remains the only
+    # thing that mints a `Campaign`.
+    - outreach_reworded         # admin, anchored on a REWORDED OUTREACH — sends in one window, to
+                                # enough distinct counterparties, sharing wording this tenant does
+                                # not use everywhere. Only the `one_campaign` verdict mints;
+                                # `same_topic_not_one_message` — five intros answered personally
+                                # in one morning — is the commoner answer and mints nothing.
+    # THE DEPENDENCY LANE'S ONLY LIVE OUTPUT ON A MAIL-ONLY TENANT. `correlation_dependency`
+    # refuses to invent a node for an endpoint it cannot resolve, and on the pilot NEITHER end
+    # resolved for 95 of 95 claims — Layer 1 extracts dependencies between outcomes, the traversal
+    # needs parties. What survives is the STATEMENT: one named thing waits on another, said in a
+    # thread with a real counterparty. Both ends travel as text, nothing is joined, and no chain
+    # or edge is minted, so the module's rule that a false chain is worse than a missing one is
+    # untouched.
+    - dependency_stated         # admin, anchored on a STATED DEPENDENCY — one sentence in which
+                                # something was said to wait on something else, neither of them a
+                                # node. `dependency.blocker_identity` and `blocked_identity` are
+                                # declared missing, because their absence is the whole reason this
+                                # is a quoted statement instead of an edge.
+    # THE ANALYTIC STRATUM, GIVEN A SUBJECT. L2.4 publishes a verdict per node per metric — 566
+    # live facts on the pilot — and the only reader any of them ever had was BLG-18's importance
+    # modifiers, which can raise another card's rank and can never be a card. "This relationship
+    # has been going quiet" was computed every sweep and stated to nobody.
+    - analytic_movement         # admin, anchored on ONE MEASURED MOVEMENT — a trend the detector
+                                # gave a DIRECTION, a flagged anomaly, or a cohort position it did
+                                # not refuse. Its FLAT verdict and its two insufficiency verdicts
+                                # are a measurement and two refusals, and none of the three is a
+                                # thing that happened. `analytic.cause` is declared missing: the
+                                # stratum reads shape and never reads a sentence, so it knows the
+                                # number moved and has no access to any reason for it.
     - organization_gone_quiet   # admin, anchored on an ORGANIZATION — one counterparty FIRM
                                 # where more than one person has gone quiet. Not `cohort`
                                 # re-keyed: that groups by objective and spans funds, this
@@ -617,6 +686,16 @@ substrate:
                                 #   are one raise, while a fundraising thread and a vendor
                                 #   thread with the same firm are two different things.
     - awaiting_response         # admin, anchored on the `outreach` node
+    # THE OTHER HALF OF THE SAME EXCHANGE, and the one nothing named. `awaiting_response`
+    # above fires while WE are waiting; support's `first_response_overdue` fires when THEY
+    # opened a thread we never answered — its predicate returns at the first internal message,
+    # so a conversation we started is not its case. Between them sits what actually fills a
+    # founder's mailbox: we wrote, they REPLIED, and the reply is still sitting there. An intro
+    # network's entire output has this shape.
+    #
+    # It cannot double with its sibling: `waiting.WAITING_ONLY_FIELDS` is retired the instant a
+    # reply lands, so the facts `awaiting_response` needs are gone exactly when these arrive.
+    - reply_owed                # admin, anchored on the `unanswered` node
                                 #   `context/outreach_situations.py` mints per waiting
                                 #   counterparty
     - commitment_overdue        # admin, anchored on the `commitment` node — a promise of OURS
@@ -681,8 +760,21 @@ substrate:
     # `pending_l2_situation_types` — a wish list for types nobody writes — when the type is
     # live, minted every sweep, and already routing. The corpus was refusing the one lane that
     # was open.
+    #
+    # ONE OF THE SIX HAS SINCE BEEN CORRECTED RATHER THAN LISTED. The `condition_now_satisfied`
+    # PATTERN emitted a situation type of the same name while `domain_spec` maps the
+    # `condition_met` anchor to `condition_satisfied`, and the authored document
+    # `admin.sit.condition_now_satisfied` binds THAT. Two names for one concept — and by the
+    # precedence stated above, an activated pattern's type REPLACES the anchor-derived one, so
+    # activating the only seed pattern whose inputs exist on a mail-only tenant would have
+    # overwritten a routable type with an unroutable one. The pattern now emits
+    # `condition_satisfied`, which is already in this census above, and the name below is gone
+    # because nothing emits it.
+    #
+    # The five that remain are unbound and DECLARED as such, with a reason and a mover each, in
+    # `context/patterns/routing.UNROUTED_PATTERN_TYPES`. A test fails if a seed pattern's type is
+    # neither bound nor declared there, and fails again if a declared one is quietly bound later.
     - commitment_unresolved
-    - condition_now_satisfied
     - founder_bottleneck
     - meeting_preparation_gap
     - relationship_going_cold
@@ -722,7 +814,13 @@ planned_substrate:
     # `market_period_review` on external market data no SaaS in the stack contains. Listing them
     # is the point: the census records what is asked for, and an ask nobody records is an ask
     # nobody is tracking.
-    - channel_touch
+    #
+    # `channel_touch` WAS HERE AND HAS GRADUATED. This section's own rule is that "a name moves
+    # from here into `substrate` in the same commit that ships the pack emitting it" — the move
+    # happened (`context/meeting_touch.py` mints it, and `domain_spec` binds the `meeting` anchor
+    # to it) and the removal did not, so the name sat in both censuses at once. That is the exact
+    # state validate.py ERRORS on for a situation, described here as "silently routing nothing",
+    # and it survived because nothing counted the two lists against each other. A test does now.
     - market_period_review
     - sla_breach_imminent
     - sla_breached
@@ -737,6 +835,11 @@ planned_substrate:
     - churn_risk_from_support
     - coverage_gap
     - quality_review_failed
+    # DEFERRED BY AN AUTHORED SITUATION AND UNCOUNTED. `issue-under-diagnosis.yaml` names it in
+    # `pending_l2_situation_types`; validate.py could only WARN, and a warning among 296 is not a
+    # signal. The census records what is ASKED FOR — "an ask nobody records is an ask nobody is
+    # tracking" — and `backlog.py` counts demand from exactly this list.
+    - issue_under_diagnosis
 
 
   # ── Added by Admin ────────────────────────────────────────────────────────────────────
@@ -770,6 +873,17 @@ planned_substrate:
     - admin_request_aging
     - admin_sla_breach_imminent
     - meeting_prep_due
+    # THE FIVE ADMIN SITUATIONS WHOSE ASK WAS NEVER COUNTED. Each is deferred by an authored
+    # document with a full note on what would emit it and why binding to the nearest live type
+    # would be wrong — and none of the five appeared here, so `backlog.py` reported no demand for
+    # any of them. The names above are fine-grained TRIGGERS (`asset_unreturned`,
+    # `onboarding_task_overdue`); these are the SITUATION types the authored files actually defer,
+    # which is why listing one did not cover the other.
+    - asset_in_custody
+    - employee_lifecycle_event
+    - goal_behind_pace
+    - obligation_falls_due
+    - spend_against_a_commitment
 
   # Would be shipped by a support_v1 pack's L2 extraction whitelist.
   obs_kinds:

@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -66,10 +67,17 @@ def main() -> int:
 
     from sqlalchemy import text
 
+    from genios_engine.capture.journey import TRACE_STOPPING, unclassified_actions
     from genios_engine.platform.db import get_engine
 
     org = args.org
-    with get_engine(url).connect() as c:
+    engine = get_engine(url)
+    # The loss vocabulary, as a SQL literal list. `_rows` builds its own `text()` so an expanding
+    # bindparam cannot reach it, and these are module constants matched against `[a-z_]+` below —
+    # never anything a caller supplies.
+    assert all(re.fullmatch(r"[a-z_]+", a) for a in TRACE_STOPPING), TRACE_STOPPING
+    loss_actions = ", ".join(f"'{a}'" for a in sorted(TRACE_STOPPING | {"emit"}))
+    with engine.connect() as c:
         c.execute(text("set transaction read only"))
 
         # ───────────────────────────────────────────────────────────── LAYER 1
@@ -86,12 +94,27 @@ def main() -> int:
                         "order by 4 desc", org),
                ("stage", "action", "reason", "events"), total=landed)
 
+        # The action list was written out by hand here as ('drop','park','emit') and
+        # `short_circuit` was not in it, so every ESQE and S1.5 refusal — 245 events on the
+        # pilot org — was missing from the one table that answers "which tool loses what".
+        # It now comes from `journey.TRACE_STOPPING`, the same set the per-event walk uses, so
+        # the two surfaces cannot disagree about what counts as a loss.
         print("\n  1c · the same decisions, GROUPED BY SOURCE — which tool loses what")
         _table(_rows(c, "select e.source, t.action, coalesce(t.reason_code,'—') reason, count(*) "
                         "from event_trace t join source_events e on e.event_id=t.event_id "
-                        "and e.org_id=t.org_id where t.org_id=:o and t.action in "
-                        "('drop','park','emit') group by 1,2,3 order by 1, 4 desc", org),
+                        "and e.org_id=t.org_id where t.org_id=:o "
+                        f"and t.action in ({loss_actions}) "
+                        "group by 1,2,3 order by 1, 4 desc", org),
                ("source", "action", "reason", "events"))
+
+        # THE DECLARATION'S MEASUREMENT. `journey.TRACE_ADVANCING | TRACE_STOPPING` claims to
+        # partition `event_trace.action` exactly. If it ever stops doing so, 1b keeps counting
+        # (it groups by whatever it finds) but 1c above silently stops — a loss nobody sees is
+        # the failure this whole report exists to end, so the claim is checked, not trusted.
+        stray = unclassified_actions(engine, org_id=org)
+        print("\n  1c-check · trace actions the loss partition does not name")
+        print("      none — `drop`, `park`, `short_circuit` cover every loss" if not stray
+              else f"      *** {', '.join(stray)} — 1c is UNDERCOUNTING; widen TRACE_STOPPING")
 
         print("\n  1d · parked — held for review, not lost")
         _table(_rows(c, "select reason_code, status, count(*) from parked_events "

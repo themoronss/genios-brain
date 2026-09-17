@@ -184,17 +184,26 @@ def check_kill_switch() -> None:
         raise HTTPException(503, {"error": "SERVICE_UNAVAILABLE", "message": "GeniOS is temporarily offline."})
     if cached == "1":
         return
+    # THE DECISION IS MADE INSIDE THE GUARD; THE REFUSAL IS RAISED OUTSIDE IT.
+    #
+    # This used to raise the 503 inside the `try`, which forced an `except HTTPException: raise`
+    # to let it past the fail-open arm — and that clause also let past the 503 `_engine()` itself
+    # raises when no database is configured. So the one failure this function documents itself as
+    # failing OPEN on was the one failure it re-raised: a config or connectivity problem returned
+    # "GeniOS is temporarily offline" to every request instead of waving them through.
+    #
+    # Now the only `raise` is below the guard, on a `live` flag that stays True unless the flag
+    # row actually said otherwise. An unreadable table cannot reach it.
+    live = True
     try:
         with _engine().connect() as c:
             row = c.execute(text("select enabled from feature_flags where key='kill_switch_all'")).first()
         live = row is None or bool(row.enabled)
         cache.setex("ff:kill_switch_all", _KILL_TTL, "1" if live else "0")
-        if not live:
-            raise HTTPException(503, {"error": "SERVICE_UNAVAILABLE", "message": "GeniOS is temporarily offline."})
-    except HTTPException:
-        raise
     except Exception:
         return                       # infra hiccup → fail open, never block on the flag lookup
+    if not live:
+        raise HTTPException(503, {"error": "SERVICE_UNAVAILABLE", "message": "GeniOS is temporarily offline."})
 
 
 # ── the resolver ───────────────────────────────────────────────────────────────────────
@@ -340,18 +349,21 @@ def check_org_kill(org_id: str) -> None:
         return
     if cached == "0":
         raise HTTPException(503, {"error": "TENANT_PAUSED", "message": "This workspace is paused."})
+    # Same shape as `check_kill_switch` above, and the same defect: the refusal is raised OUTSIDE
+    # the guard so that `_engine()`'s own "no database configured" 503 is caught by the fail-open
+    # arm rather than re-raised as "This workspace is paused". A tenant whose database blinked is
+    # not a tenant somebody paused, and telling them so is both wrong and unactionable.
+    live = True
     try:
         with _engine().connect() as c:
             row = c.execute(text("select enabled from feature_flags where key=:k"),
                             {"k": f"kill_switch:{org_id}"}).first()
         live = row is None or bool(row.enabled)
         cache.setex(ckey, _ORG_KILL_TTL, "1" if live else "0")
-        if not live:
-            raise HTTPException(503, {"error": "TENANT_PAUSED", "message": "This workspace is paused."})
-    except HTTPException:
-        raise
     except Exception:
         return                       # infra hiccup → fail open
+    if not live:
+        raise HTTPException(503, {"error": "TENANT_PAUSED", "message": "This workspace is paused."})
 
 
 def get_current_org(ctx: AuthCtx = Depends(get_auth_ctx)) -> str:

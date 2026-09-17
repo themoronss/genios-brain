@@ -1,0 +1,114 @@
+# The card of last resort, and the only situation in this library whose existence depends on a
+# model. `context/residue.py` measures what Layer 2 looked at and could not explain;
+# `reply_owed_triage` asks which of those matter; an `important` verdict becomes this.
+#
+# IT CANNOT COLLIDE WITH `reply_owed`. Residue exists only where NO live situation covers the
+# subject, so the deterministic reading having fired is exactly what keeps this one silent. What
+# is left is the population that reading missed — a counterparty whose `thread.ball_in_court` says
+# the turn is ours while the timestamps that reading needs are absent or contradictory.
+#
+# `context/attention_situations.read_unreported_attention` produces it.
+
+identity:
+  id: admin.sit.attention_unreported
+  name: Unreported And Waiting
+  domain: admin
+  owner_capability: admin.executive_support.inbox_and_correspondence
+  version: 1.0.0
+  status: stable
+
+description: >
+  This system holds evidence about somebody, the record says the next move is ours, and nothing on
+  the board has ever mentioned them. It is the quietest failure a working inbox produces: not a
+  relationship going wrong, but one that never reached anybody's attention in the first place.
+
+  The evidence is an absence with a date on it. `context_residue` records the subject the first
+  sweep that could not explain it and never rewrites that timestamp, so "unreported for eleven
+  days" is a measured duration rather than an estimate. The card exists because a model was asked
+  whether this particular silence mattered and said it did; every number on the card was measured
+  before that question was put.
+
+  It must never state how long a reply has been owed. That number belongs to
+  `admin.sit.reply_owed`, which compares two recorded instants — and the facts that would produce
+  it are the very facts whose absence put this subject here. It also cannot say why nothing
+  covered them; that is the question the card raises, not one it answers. Both are carried as
+  declared gaps.
+
+matches:
+  l2_situation_types:
+    - attention_unreported
+  scope: person
+  when:
+    # The measured duration is the gate. A subject unexplained since this morning is a sweep that
+    # has not finished, not a card.
+    - exists: attention.days_unexplained
+    - path: attention.days_unexplained
+      op: ">="
+      value: 2
+
+also_serves:
+  - admin.executive_support.commitment_tracking
+
+objects:
+  load:
+    - admin.obj.core.request
+  optional:
+    - admin.obj.core.commitment
+  never_load:
+    - admin.obj.core.invoice
+    - admin.obj.core.employee_record
+    - admin.obj.core.asset
+
+priority_bp: 6400
+typical_duration_days: 7
+
+signals_of_progress:
+  - followup_sent
+  - next_step_agreed
+  - meeting_scheduled
+
+signals_of_decay:
+  - going_dark
+
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    Headline: who it is, and that nothing has surfaced them. The elapsed time is how long this
+    system has been unable to explain the subject — say that, and do not dress it as how long the
+    person has been waiting, which is a different number nobody here has.
+
+    Situation: that the record shows the next move is ours and no card has ever said so. Be plain
+    that this is a gap in coverage rather than a diagnosis of the relationship: the reader is being
+    told where to look, not what is wrong.
+
+    Never state days owed, never assert what they are waiting for, and never imply the
+    relationship is at risk. If the reader needs the exchange itself, the counterparty's own
+    thread is the place to find it.
+
+    Artifact: a reply that opens the conversation, not an apology for a silence whose length this
+    card cannot measure.
+  fallback:
+    headline: "{entity} — waiting on us, and nothing has said so"
+    situation: >-
+      The record shows the next move is ours with {entity}, and no card has mentioned them.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: rohit
+  last_updated: '2026-09-15'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-09-15'
+  notes: >
+    The only situation here gated on a model verdict, and the gate is additive in the strict
+    sense: with no angle layer, no budget or a refusal there is no card, which is the state every
+    tenant is in today — nothing is withheld or downgraded. The agreed law allows exactly this
+    shape ("a model may propose a situation; it may never rank one, and never produces a number a
+    card asserts"), and every fact above is measured. `residue.SELF_REPORTED_TYPE` excludes this
+    type from the residue coverage predicate: a card reporting that nothing explains a subject
+    does not itself explain it, and without that exclusion it would cover its own subject, delete
+    its own residue row and flap on alternate sweeps for ever.
+
+admission:
+  accepted_content_hash: 9b9b31ae8354f4b6912ae16419e42b519f13032db9ee04b133e6ac2bebea2ce3

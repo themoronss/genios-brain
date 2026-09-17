@@ -43,6 +43,14 @@ NEW_CAPABILITIES = (
     "admin.admin_operations.goal_and_progress",
 )
 
+#: …and the ones whose pending trigger Layer 2 has since BUILT. `opportunity_tracking` waited on
+#: `condition_satisfied`: `correlation_timeline` had computed the satisfaction every sweep since
+#: it shipped — both evidence spans, refusing to exist with only one — and nothing read it. The
+#: reading (`condition_situations.read_conditions_satisfied`), the anchor and the `domain_spec`
+#: entry now exist, so the situation binds the real type and the declaration of the gap is gone.
+#: A capability here must have NO pending situation; one reappearing means a new requirement.
+GRADUATED_CAPABILITIES = frozenset({"admin.executive_support.opportunity_tracking"})
+
 #: The two subdomains deferred wholesale for V1 (L3.4-U5). Ten capabilities.
 DEFERRED_SUBDOMAINS = ("facilities_and_assets", "travel_and_events")
 
@@ -261,7 +269,27 @@ def test_new_capability_has_a_live_door_and_a_declared_gap(corpus, capability_id
     pending = [s for s in owned
                if ((s.get("matches") or {}).get("pending_l2_situation_types") or [])]
     assert live, f"{capability_id} owns no situation bound to a type Layer 2 emits"
-    assert pending, f"{capability_id} owns no situation declaring what Layer 2 still owes it"
+    # A PENDING GAP IS EXPECTED UNTIL IT IS FILLED, AND THEN IT MUST NOT BE.
+    #
+    # This read `assert pending` for both capabilities, which was right on the day it was written
+    # and becomes wrong the moment Layer 2 delivers. `opportunity_tracking`'s pending trigger was
+    # `condition_satisfied` — `condition-now-satisfied.yaml` was authored against an emitter that
+    # did not exist and bound to `admin_contact` as "the nearest live type", with its own header
+    # explaining that binding it properly "would produce a card asserting that something became
+    # true, the one claim this capability is forbidden to make on evidence it does not have".
+    #
+    # `correlation_timeline` had in fact published the satisfaction all along — both evidence
+    # spans, refusing to exist with only one — and nothing read it.
+    # `condition_situations.read_conditions_satisfied` is the reading that does. The requirement
+    # is met, so the declaration of it is gone, and holding this capability to an unmet
+    # requirement for ever would be the corpus lying about its coverage in the other direction.
+    if capability_id in GRADUATED_CAPABILITIES:
+        assert not pending, (
+            f"{capability_id} graduated when Layer 2 built its trigger; a new pending situation "
+            "here means a new requirement, which belongs in GRADUATED_CAPABILITIES' note or out "
+            "of that set entirely")
+    else:
+        assert pending, f"{capability_id} owns no situation declaring what Layer 2 still owes it"
 
 
 def test_the_admission_hash_invalidates_on_content_change(corpus):

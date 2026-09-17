@@ -1,0 +1,325 @@
+"""The angles this build ships with — declarations, and nothing else.
+
+Registered at import the way `domain_spec._SPECS` is, so a build that includes this package
+includes its questions and a test may register its own beside them. Every angle here reads a queue
+the deterministic layer BUILT BY REFUSING, which is the only kind of queue this layer is allowed
+to ask a model about: `angles/contract.py` states the rule and the gate enforces it.
+"""
+from genios_engine.context.angles.contract import Angle, CostTier, GateSource, register
+
+#: IS THIS CONDITION MET RIGHT NOW?
+#:
+#: THE QUEUE IS A REFUSAL, AND THAT IS WHY A MODEL MAY SEE IT. `correlation_timeline.
+#: parse_condition` returns None for anything it cannot match to a date, a count or a named event,
+#: and its docstring names the danger in the same breath: *"A parser that reached for the nearest
+#: plausible reading would turn every rhetorical aside — 'let's talk once things settle down' —
+#: into a predicate that eventually evaluates true and nags somebody about a throwaway line."*
+#: Those refusals are published to `derived.timeline.condition_review` with the counterparty's own
+#: sentence attached, and `condition_situations` turns them into a flat queue somebody is supposed
+#: to read. Twenty-four of them sat on the pilot, in no order, with no way to tell which mattered.
+#:
+#: THIS ANGLE MUST NOT DO WHAT THE PARSER REFUSED TO DO. It is not asked to produce a predicate —
+#: that is the failure above, and a model is better at it than the parser only in the sense that
+#: it will always produce one. `condition.predicate` stays absent, `missing=["condition.predicate"]`
+#: stays on every card, and the coverage score keeps saying "not evaluable". The question asked
+#: here is the one the parser was never asked and does not answer: given this sentence and what
+#: has happened with this person since, is it true TODAY.
+#:
+#: IT SHIPPED AT THE WRONG GRANULARITY AND THIS IS THE CORRECTION. `_fact_rows` writes ONE fact per
+#: node whose value is a LIST, so before `fan_out` existed the gate could only admit one subject
+#: per counterparty. The first cut answered for the whole list — `something_is_met` / `nothing_yet`
+#: / `all_courtesies`, under fields named `queue` so the aggregation was at least honest about
+#: itself — and a reader still had to open every card on the node to find which sentence the
+#: verdict meant. `fan_out=("review", "condition_id")` makes each condition its own subject, and
+#: the enum below is the per-condition one the question always wanted.
+#:
+#: `not_a_condition` IS THE POINT, NOT A SPARE OPTION. It is how the model AGREES with the parser
+#: — "always happy to take a look and reconsider" is a courtesy, not a trigger — and without it
+#: every rhetorical aside is forced into `met` or `not_met`, which is precisely the nagging the
+#: parser exists to prevent. If most of the pilot's queue comes back `not_a_condition`, the finding
+#: is that a 24-item review queue does not need a human afternoon, and nobody can currently know
+#: that.
+#:
+#: `unknowable` IS THE OTHER HONEST EXIT, and it is load-bearing because of what `sees` cannot
+#: reach. A condition about the TENANT'S OWN business — "once you have two enterprise references"
+#: — is not answerable from a relationship slice, and `correlation_timeline.build_world` says why
+#: the graph is not the place to go looking: *"`graph_source_refs.evidence` stores `{"text": ...}`
+#: with no offsets, so a fact read back from the graph cannot produce an `EvidenceSpan` that
+#: anybody can check."* Refusing costs one call and closes the question; widening `sees` until a
+#: model is reading the tenant's whole graph would cost the property that makes this reviewable.
+#:
+#: WHAT LEAVES THE TENANT IS FIVE NAMED FIELDS. After the fan-out the gate value is ONE condition —
+#: its sentence, its actor, its action, when it was said — and the other four say what has happened
+#: between the two parties since. Each is written to the COUNTERPARTY node: `DormantCondition.
+#: subject_node_id` is "the resolved counterparty, never a raw name", and `derived.py` writes
+#: `thread.last_*` onto exactly those person nodes, so `store._seen` — which resolves the node half
+#: of a fanned ref and selects `subject_node_id = :s` — actually finds them.
+CONDITION_NOW_TRUE = register(Angle(
+    angle_id="condition_now_true",
+    question=("A counterparty attached a condition to something. Given the sentence they wrote "
+              "and what has happened between the two parties since, is that condition true "
+              "TODAY? Answer `not_a_condition` if the sentence is a courtesy rather than a "
+              "real trigger, and `unknowable` if it depends on something not shown."),
+    version="1.0.0",
+    gate=("derived.timeline.condition_review",),
+    gate_source=GateSource.FACTS,
+    fan_out=("review", "condition_id"),
+    sees=(
+        # ONE refusal after the fan-out: this sentence, its actor, its action, when it was said.
+        # Already in hand from the gate, so `_seen` reuses it and it costs no second read.
+        "derived.timeline.condition_review",
+        # …and what has happened between the two parties since. A relationship slice, not a graph:
+        # four fields, each already written to this same node by a pass that runs every sweep.
+        "thread.last_inbound",
+        "thread.last_outbound",
+        "party.role",
+        "relationship.nature",
+    ),
+    returns=("met", "not_met", "not_a_condition", "unknowable"),
+    refusal="unknowable",
+    # Banded where `llm_interpretation` bands its own readings. A verdict here is an opinion about
+    # a sentence the parser declined to formalise; it must never outrank the satisfaction
+    # `correlation_timeline` computes deterministically, which carries two evidence spans and
+    # refuses to exist without them.
+    confidence_band=(2_000, 8_000),
+    # Counted in CONDITIONS now, not counterparties — the fan-out makes each its own subject. The
+    # pilot's whole queue is twenty-four. Not a truncation: `evaluate_angle` charges budget only
+    # for subjects it actually asks about and an unchanged slice is free for ever.
+    max_per_sweep=60,
+    cost_tier=CostTier.CHEAP,
+    note=("Reads one condition; it does not resolve it. A `met` verdict adds a reading to that "
+          "condition's own card and never mints a satisfaction — `condition_satisfied` requires "
+          "BOTH evidence spans, and a model judging from facts can quote the promise but not the "
+          "event that met it."),
+))
+
+#: WE OWE THIS PERSON A REPLY AND NOTHING ON THE BOARD SAYS SO — DOES IT MATTER?
+#:
+#: THE CASE THE FOUNDER NAMED, IN THEIR OWN WORDS. Boardy made many introductions, many of those
+#: people REPLIED, and the replies went unanswered. `migrations/0164` records the shape as the
+#: reason `ball_in_court_unreported` exists at all: *"a node whose `thread.ball_in_court` fact says
+#: the turn is OURS, with no live situation. This is the shape the founder named directly: they
+#: replied, we went quiet, and nothing said so."* A deterministic reading for it now exists —
+#: `outreach_situations.read_unanswered_replies`, anchor `unanswered` — so what remains in this
+#: residue kind is precisely what that reading MISSED. This angle triages the miss.
+#:
+#: WHICH MAKES IT A COVERAGE QUEUE, NOT A CARD QUEUE, and the distinction is the whole licence for
+#: this angle to exist. A residue row means no live situation covers the subject, so there is no
+#: card here to rank and none is minted: the verdict orders the work queue `read_residue` returns.
+#: The agreed law is *"a model may propose a situation; it may never rank one, and never produces
+#: a number a card asserts"* — deciding which unexplained subjects a HUMAN or a later unit should
+#: look at first is neither. Whether any of these becomes a card is `is_this_worth_a_card`'s
+#: question in Step 5, and this is the input it will read.
+#:
+#: `noise` IS HOW THE MODEL DISAGREES WITH THE FACT, and it is allowed to. `thread.ball_in_court`
+#: is derived from a thread reconstruction that cannot tell a personal note from a no-reply blast,
+#: so "the turn is ours" is sometimes true of a newsletter. Saying so removes nothing — an angle
+#: cannot delete a residue row, retire a fact or suppress a reading — it only sinks that subject in
+#: the queue. Without the option, every blast is forced to `important` or `ambient` and the queue
+#: keeps the exact noise it was built to expose.
+#:
+#: WHAT IT SEES IS EVERYTHING THAT SURVIVES A REPLY, AND THAT WORD IS LOAD-BEARING.
+#: `thread.days_waiting` is the field a reader reaches for first and it is the one field that is
+#: guaranteed ABSENT here: `waiting.py` lists it in `WAITING_ONLY_FIELDS`, retired through
+#: `retire_facts` the moment a counterparty answers — and `ball_in_court = us` MEANS they answered
+#: last. Naming it would not error; it would put a permanent blank in front of the model and bill
+#: for it. `thread.last_heard_days` and `party.reply_cadence_days` are the two the same module
+#: marks as staying true after a reply ("they stay true after a reply and are rewritten every
+#: sweep"), which is exactly what this queue needs: how long they have been waiting on US, and
+#: what their own rhythm looks like.
+#:
+#: THE GATE VALUE IS NOT IN `sees` BECAUSE IT IS EMPTY. `residue.detect_residue` writes this kind
+#: with `detail = "{}"` — the row's meaning is entirely in its existence. Naming it would add a
+#: constant to every slice and to `saw_hash` and tell the model nothing.
+REPLY_OWED_TRIAGE = register(Angle(
+    angle_id="reply_owed_triage",
+    question=("The record says the next move is ours with this person and nothing on the board "
+              "mentions them. Given how the two sides have corresponded, does this deserve "
+              "attention now? `important` means act, `developing` means watch, `ambient` "
+              "means no action needed, `noise` means no reply is genuinely owed."),
+    version="1.0.0",
+    gate=("ball_in_court_unreported",),
+    gate_source=GateSource.RESIDUE,
+    sees=(
+        # Whose turn it is, from the fact the residue query itself selected on — so the gate
+        # cannot admit a subject that lacks it.
+        "thread.ball_in_court",
+        # When each side last spoke. Written by `derived.py` onto person nodes under the same
+        # `if row.subject_node_id in people` guard that writes `thread.ball_in_court`, so they
+        # co-locate on the node the gate returns.
+        "thread.last_inbound",
+        "thread.last_outbound",
+        # …and the two waiting-derived fields that OUTLIVE a reply. See the note above: the
+        # obvious third one is retired for exactly this population.
+        "thread.last_heard_days",
+        "party.reply_cadence_days",
+        # Who they are to this business. `relationship.nature` is what the counterparty IS;
+        # `party.role` is often the structural default — `correlation_organization` prefers the
+        # first over the second for that reason and both are cheap.
+        "party.role",
+        "relationship.nature",
+    ),
+    returns=("important", "developing", "ambient", "noise", "unknowable"),
+    refusal="unknowable",
+    # The same walls as every other angle. A verdict here orders a coverage queue and must never
+    # read as a measurement — `confidence_bp` reaches no card, by construction: nothing in the
+    # card path reads `context_angle_verdicts` for this angle.
+    confidence_band=(2_000, 8_000),
+    # HIGHER THAN THE CONDITION QUEUE BECAUSE THIS ONE IS UNBOUNDED BY NATURE — every counterparty
+    # who ever replied without an answer is a candidate, where conditions are only the sentences a
+    # parser refused. It does not need to cover the queue in one sweep: `store.evaluate_angle`
+    # charges budget only for subjects it actually ASKS about, and an unchanged slice is free
+    # forever, so a backlog drains over a few sweeps and then costs one SELECT.
+    max_per_sweep=60,
+    cost_tier=CostTier.CHEAP,
+    note=("Orders the residue work queue; it mints nothing and ranks no card. `noise` is the "
+          "model disagreeing that a reply is owed, which sinks a subject in the queue and "
+          "removes nothing — an angle cannot delete a residue row or retire a fact."),
+))
+
+#: WHAT KIND OF THING IS THIS BLOCKER NOBODY COULD RESOLVE?
+#:
+#: THE QUEUE IS A REFUSAL, WHICH IS WHY A MODEL MAY SEE IT. `correlation_dependency` resolves both
+#: ends of every dependency claim. When the BLOCKED end resolves and the BLOCKER end does not, it
+#: refuses to invent a node — *"a false chain is worse than a missing one"* — and files a typed
+#: absence carrying the name and the sentence. U4.1 gave those a card; this says which ones are
+#: worth a founder's attention and which are an identity gap wearing the same shape.
+#:
+#: THE SPLIT THAT IS WORTH A CALL. `MissingPrerequisite` names its own examples — "Finance",
+#: "legal", "the security review" — and those are NOT resolver failures: they were never people in
+#: a mailbox, the graph is correct to hold no node, and the dependency is real. A blocker named as
+#: a PERSON or a FIRM is the opposite: either identity resolution failed to match somebody we do
+#: hold, or we have no record of them at all, and both are coverage questions rather than work.
+#: Today the two are indistinguishable — every card says "we could not find it" in the same voice.
+#:
+#: IT IS ASKED WHAT IT CAN ACTUALLY SEE, and that bounded the enum rather than the other way
+#: round. An earlier cut offered `unmatched_known_party` — "somebody we know, that identity missed"
+#: — and it had to go: `sees` carries the blocked subject's own facts and NOT the tenant's roster,
+#: so nothing in the slice could distinguish a contact we hold from a stranger. A model answering
+#: it would be guessing at the one word that decides whether an engineer goes looking for a
+#: resolver bug. `named_party` claims only what the sentence itself shows — that the blocker is
+#: named as a person or a company — and leaves whether we hold them to a reader who can check.
+#:
+#: FANNED OUT, BECAUSE A CLASSIFICATION CANNOT BE SHARED. The gate row is one fact per node whose
+#: value is a LIST of absences. `condition_queue_triage` next door answers at node level and names
+#: its fields `queue` to say so; that works for "is anything here worth opening" and fails
+#: completely here — "Finance" and "Ankit's team" on one node are different kinds, and one verdict
+#: covering both is not approximate, it is wrong. `fan_out` makes each absence its own subject, so
+#: a verdict lands on exactly the card it is about.
+#:
+#: `not_a_dependency` IS HOW THE MODEL DISAGREES WITH LAYER 1, and it is allowed to. The claim came
+#: from an extractor that cannot always tell a blocking relation from a turn of phrase. Saying so
+#: removes nothing — an angle cannot delete a fact, retire an absence or suppress a card — it only
+#: marks the card for a reader who can. Without the option, every over-extraction is forced into
+#: `named_party` or `named_function` and the queue keeps exactly the noise this would expose.
+BLOCKER_ABSENCE = register(Angle(
+    angle_id="blocker_absence",
+    question=("Something is recorded as blocked on a thing this system could not identify. From "
+              "the name and the sentence alone, what KIND of thing is the blocker? "
+              "`named_party` if it names a person or company, `named_function` if it names a "
+              "team, role, process or body, `not_a_dependency` if the sentence is not really "
+              "a blocking relation. Do not guess who it is."),
+    version="1.0.0",
+    gate=("derived.dependency.missing_prerequisite",),
+    gate_source=GateSource.FACTS,
+    fan_out=("absences", "blocker_named"),
+    sees=(
+        # The absence itself, and after the fan-out this is ONE of them rather than the list:
+        # the name exactly as the source wrote it, the typed absence, and the sentence that named
+        # it. Already in hand from the gate, so it costs no second read — and it is very nearly
+        # the whole question, because what a blocker IS is mostly legible in what it was called.
+        "derived.dependency.missing_prerequisite",
+        # Who is waiting, which changes how the same words read: "legal" from an investor and
+        # "legal" from a vendor are different blockers. Both are written to the resolved
+        # counterparty node, which is exactly the node `subject_node_id` names here.
+        "party.role",
+        "relationship.nature",
+    ),
+    returns=("named_party", "named_function", "not_a_dependency", "unknowable"),
+    refusal="unknowable",
+    # The same walls as every other angle. This verdict classifies a card that already exists and
+    # must never outrank the typed absence beside it — `blocker.we_searched` remains the only
+    # warrant for saying nobody is there, and it is computed, not answered.
+    confidence_band=(2_000, 8_000),
+    # Counted in ABSENCES, not nodes, because the fan-out makes each its own subject. Not a
+    # truncation: `evaluate_angle` charges budget only for subjects it actually asks about and an
+    # unchanged slice is free for ever, so a backlog drains over a few sweeps and then costs one
+    # SELECT. `derived.dependency.blocked_count` is deliberately NOT in `sees` for the reason
+    # `reply_owed_triage` excludes `thread.days_waiting`: it is built from resolved CHAINS, and a
+    # node whose only dependency claim went unresolved has no edge, so no chain and no count. It
+    # would be blank in exactly the common case and billed for on every sweep.
+    max_per_sweep=80,
+    cost_tier=CostTier.CHEAP,
+    note=("Classifies an absence; it resolves none. Identity stays deterministic — this says "
+          "what the blocker was CALLED, never who it is, and mints no node, edge or merge."),
+))
+
+#: ARE THESE SENDS ONE MESSAGE, ONE TOPIC, OR A COINCIDENCE OF VOCABULARY?
+#:
+#: M-3, THE SITE THE SPEC NAMED AND NOTHING FILLED. `correlation_dependency`'s header states the
+#: census: *"Correlation's two model sites are M-3 (ambiguous conversation matching) and M-5
+#: (condition parsing)"*. M-5 is `condition_now_true`. This is M-3, and it could not be declared
+#: until U4.3 built it a queue, because `find_campaigns` persists nothing.
+#:
+#: THE QUEUE IS A REFUSAL. `correlation_conversation` groups outbound mail by the EXACT sentence
+#: and will not soften it: *"a similarity threshold here would quietly merge two different pitches
+#: on a bad day … the one nobody can debug from a stored score."* That is right, and the cost is a
+#: blind spot with a strange shape — copy-paste your raise to eighteen people and it is one
+#: campaign; retype each email and it is eighteen unrelated threads. `campaign_candidates`
+#: publishes what that rule declined to merge, with the distinctive words the sends have in common,
+#: and this adjudicates one bounded instance instead of a threshold guessing at all of them.
+#:
+#: `same_topic_not_one_message` IS THE ANSWER THE BINARY WOULD HAVE LOST, and it is the case this
+#: tenant actually has. An introducer makes five introductions; the founder answers each one
+#: personally the same morning; every reply mentions the raise. Those share distinctive wording,
+#: land in one window, and go to enough people — they will reach this queue every time — and they
+#: are NOT a campaign. They are five separate relationships that happen to be about one thing.
+#: Forced into `one_campaign` they produce a card telling a founder to follow up on an outreach
+#: they never sent, and forced into `unrelated` they lose the one true thing about them. A model
+#: can tell the difference from the sentences: one message reworded reads as one message reworded.
+#:
+#: WHAT IT SEES IS THE CANDIDATE AND NOTHING ELSE, and that is a deliberate ceiling rather than an
+#: oversight. After the fan-out the gate value IS the question — the sentences, the shared words,
+#: how many went out and over what span. `store._seen` can only fetch facts of the SUBJECT node,
+#: and the subject here is the TENANT node (`campaign_candidates` anchors the queue there because
+#: a candidate is about the org's own outbound, not any one counterparty), so naming
+#: `party.role` or `relationship.nature` would fetch the tenant's facts and tell the model nothing
+#: about the recipients. The recipients' own facts are unreachable from a subject-scoped slice.
+#: That is a real limit on what this angle can know and it is the right side of the trade: M-3 is
+#: a question about SENTENCES, and a model given the sentences can answer it.
+#:
+#: `CAPABLE`, NOT `CHEAP`. Every other angle here classifies a short field; this one reads up to
+#: six sentences of real prose and decides whether they are one voice. That is the judgement
+#: `CostTier` reserves a better model for, and the budget below is small enough to afford it:
+#: `MAX_CANDIDATES` caps a tenant's queue at forty, and an unchanged slice is never re-asked.
+SAME_SITUATION_TWO_THREADS = register(Angle(
+    angle_id="same_situation_two_threads",
+    question=("These messages went out close together to different people and share unusual "
+              "wording. Are they ONE message reworded and sent out (`one_campaign`), separate "
+              "conversations that happen to be about one subject "
+              "(`same_topic_not_one_message`), or unrelated (`unrelated`)?"),
+    version="1.0.0",
+    gate=("derived.conversation.campaign_candidate",),
+    gate_source=GateSource.FACTS,
+    fan_out=("candidates", "candidate_id"),
+    # ONE FIELD, AND IT IS THE WHOLE QUESTION. Reused from the gate, so this angle costs exactly
+    # one SELECT per tenant however many candidates it adjudicates.
+    sees=("derived.conversation.campaign_candidate",),
+    returns=("one_campaign", "same_topic_not_one_message", "unrelated", "unknowable"),
+    refusal="unknowable",
+    # An opinion about mail the deterministic rule declined to group. It must never outrank a
+    # campaign `find_campaigns` actually found — those are an exact-sentence match with the
+    # sentence on the card, and nothing here can reach that standard.
+    confidence_band=(2_000, 8_000),
+    # `campaign_candidates.MAX_CANDIDATES` caps a tenant's queue at forty, so this is the whole
+    # queue rather than a slice of it — and a candidate whose membership is unchanged is free for
+    # ever, so the steady-state cost is the rate at which a founder starts new outreach.
+    max_per_sweep=40,
+    cost_tier=CostTier.CAPABLE,
+    note=("Adjudicates a proposal; it merges nothing. No campaign, group or card is minted from a "
+          "verdict — `find_campaigns` remains the only thing that mints a campaign, and it still "
+          "requires the exact sentence."),
+))
+
+__all__ = ["BLOCKER_ABSENCE", "CONDITION_NOW_TRUE", "REPLY_OWED_TRIAGE",
+           "SAME_SITUATION_TWO_THREADS"]

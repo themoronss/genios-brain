@@ -124,8 +124,12 @@ class KnowledgeRetriever:
         return RetrievedKnowledge(
             capabilities=tuple(sorted(capabilities, key=lambda item: item.id)),
             artifacts=tuple(sorted(artifacts, key=lambda item: item.id)),
-            variants=(variants := self._resolve_variants(plan, situation)),
-            unresolved_variants=tuple(getattr(self, "_unresolved", ())),
+            # READ FROM THE PLAN, NOT RESOLVED AGAIN. `CapabilityResolver` resolves them now,
+            # because a branch has to be able to shape `never_object_ids` and the plan is sealed
+            # before this runs. Resolving twice would also mean two places could disagree about
+            # which branch a tenant is on.
+            variants=tuple(plan.variants),
+            unresolved_variants=tuple(plan.unresolved_variant_ids),
             source_manifests=tuple(sorted(
                 manifests, key=lambda item: (item.id, item.kind))),
             missing_artifacts=tuple(sorted(missing)),

@@ -832,14 +832,32 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
             retention["screen_capture"] = "error"
         # P3 hot lane: realtime events after 7 days; expired moment cache rows; moments on their
         # org's capture retention clock. Same heartbeat, no Celery beat.
+        # ONE GUARD EACH, BECAUSE ONE GUARD BLAMED THE WRONG PASS. Both purges shared a `try` and
+        # `realtime_events` ran first, so a failure there recorded `moments: "error"` and left
+        # `realtime_events` absent entirely — the heartbeat reported the wrong pass broken and
+        # said nothing about the one that was. An operator reading that would go looking in the
+        # moments store for a fault that was never there.
+        for _name, _load in (
+                ("realtime_events",
+                 lambda: __import__("genios_engine.platform.realtime", fromlist=["purge_expired"])),
+                ("moments",
+                 lambda: __import__("genios_engine.reason.moments.store",
+                                    fromlist=["purge_expired"]))):
+            try:
+                retention[_name] = _load().purge_expired(_graph.engine, now=now)
+            except Exception:                                # noqa: BLE001 — never kill the heartbeat
+                _log.exception("retention purge failed for %s", _name)
+                retention[_name] = "error"
+        # THE REASONING TRAIL, which had no retention at all until it filled the disk. 442 MB
+        # across ~96,000 rows in one month, 97% of it belonging to runs no signal points at. The
+        # `signals` foreign keys make it impossible for this pass to remove evidence under a live
+        # card — Postgres refuses — so the failure mode here is an error, never a vanished card.
         try:
-            from genios_engine.platform.realtime import purge_expired as purge_realtime
-            from genios_engine.reason.moments.store import purge_expired as purge_moments
-            retention["realtime_events"] = purge_realtime(_graph.engine, now=now)
-            retention["moments"] = purge_moments(_graph.engine, now=now)
+            from genios_engine.reason.retention import purge_expired_reasoning
+            retention["reasoning"] = purge_expired_reasoning(_graph.engine, now=now)
         except Exception:                                    # noqa: BLE001 — never kill the heartbeat
-            _log.exception("retention purge failed for moments / realtime_events")
-            retention["moments"] = "error"
+            _log.exception("retention purge failed for reasoning")
+            retention["reasoning"] = "error"
         # expertise_packages, and this one is not theoretical: it reached 995 MB — 67% of the whole
         # database — and took the project over its disk quota into read-only, which stops every
         # write the product makes. Content-addressing (see contracts/domain_expertise.py) stops the
@@ -868,6 +886,68 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
         except Exception:                                    # noqa: BLE001 — never kill the beat
             _log.exception("alias prune failed")
             alias_prune = {"error": True}
+    # NAME INDEX: the other half of the same defect. The prune above removes keys pointing at
+    # nodes that are gone; this adds the keys for people who are HERE and unreachable — a person
+    # node the graph displays a human name for, with nothing in the index that answers to it.
+    # Measured on the pilot: 41 named people, 4 findable, and 49 conditional promises dropped
+    # because "once Keshav confirms" resolved to nobody. Runs after the prune on purpose, so a
+    # name freed by the prune can be claimed in the same tick.
+    name_index = None
+    if _graph is not None:
+        try:
+            from genios_engine.context.identity import index_person_names
+            with _graph.engine.begin() as c:
+                name_index = index_person_names(c)
+        except Exception:                                    # noqa: BLE001 — never kill the beat
+            _log.exception("person name index failed")
+            name_index = {"error": True}
+    # THREAD NAMES: the third lane of the same defect the two passes above fix. A conversation is
+    # created called "Thread 1a07a6e0ca77" and never revisited, and the threads that most need a
+    # readable name are the ones nobody has written in for months — which is exactly the set a
+    # write-path fix cannot reach. 236 threads on the pilot, 151 of them named after a hex
+    # fragment, and 31 live cards anchored on one.
+    thread_names = None
+    if _graph is not None:
+        try:
+            from genios_engine.context.backfill import name_thread_nodes
+            thread_names = name_thread_nodes(_graph)
+        except Exception:                                    # noqa: BLE001 — never kill the beat
+            _log.exception("thread naming failed")
+            thread_names = {"error": True}
+    # PERSON AND COMPANY NAMES: the two lanes of the same defect `name_thread_nodes` above fixes,
+    # and the reason both are here is the reason that one is. `find_or_create_node` writes
+    # `display_name` when it CREATES a node and never again, so a write-path fix reaches only the
+    # people and companies somebody mails NEXT — and the ones that most need a name are exactly
+    # the ones nobody has written to since.
+    #
+    # `name_company_nodes` had NO caller at all. It landed with its own measurement in its
+    # docstring — "48 of 48 company nodes displaying a hostname, and 19 cards in the deck opening
+    # on peakxv.com rather than PeakXV" — and then nothing ran it, so the number never moved:
+    # 29 of 48 were still hostnames on 2026-09-17, two days after the pass that fixes them was
+    # written. `name_person_nodes` did not exist; 30 of 88 people have a From-header name sitting
+    # in `source_events` and are displayed as an address anyway.
+    #
+    # Per org for the company pass because it resolves mentions against that tenant's own
+    # anchors; the person pass takes the fleet in one bounded batch, exactly as the thread pass
+    # above does.
+    node_names = None
+    if _graph is not None:
+        try:
+            from genios_engine.context.backfill import name_company_nodes, name_person_nodes
+            people = name_person_nodes(_graph)
+            companies = {"companies_named": 0, "mentions_read": 0}
+            # ENUMERATED HERE, not borrowed. `run_sync_sweep` has an `orgs` of its own and this is
+            # a different function; reading that one would have been a NameError on every tick,
+            # caught by the `except` below and reported as a generic naming failure for ever —
+            # which is the shape `_drain_recapture`'s neighbour already has a comment about.
+            for org in {c.org_id for c in _connections.list_active()}:
+                one = name_company_nodes(_graph, org)
+                companies["companies_named"] += one["companies_named"]
+                companies["mentions_read"] += one["mentions_read"]
+            node_names = {"people": people, "companies": companies}
+        except Exception:                                    # noqa: BLE001 — never kill the beat
+            _log.exception("person/company naming failed")
+            node_names = {"error": True}
     # L1 PARKED DRAIN: a park is "look at this again", so something has to look. Riding the
     # existing heartbeat on purpose — a new Celery periodic task would spend the quota-limited
     # Upstash broker on a pass that is cheap and idempotent here.
@@ -1061,6 +1141,12 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
                          len(unhealthy), unhealthy)
     return {"sync": sync, "lifecycle": lifecycle, "retention": retention,
             "billing": billing_tick,
+            # REPORTED, because a maintenance pass nobody can see is indistinguishable from one
+            # that is not running. `alias_prune` has been computed and dropped on the floor since
+            # it was written.
+            "alias_prune": alias_prune,
+            "name_index": name_index,
+            "thread_names": thread_names,
             "parked_drain": parked_drain,
             "attachment_refetch": attachment_refetch,
             "recapture_drain": recapture_drain,
@@ -1458,10 +1544,36 @@ def _drop_json(row) -> dict:
 
 @router.get("/qualification/floor")
 def get_qualification_floor(org_id: str = Depends(get_current_org)) -> dict:
-    """This tenant's cut-off and WHO answers for it. `origin` separates "somebody chose 6000"
-    from "nobody ever set anything" — opposite remedies for the same 92% drop rate."""
-    from genios_engine.capture.esqe.qualification import resolve_floor
-    return _floor_json(resolve_floor(org_id, _floor_store))
+    """This tenant's cut-off, WHO answers for it, and WHAT IT IS DOING.
+
+    `origin` separates "somebody chose 6000" from "nobody ever set anything" — opposite remedies
+    for the same 92% drop rate. It still could not answer the question an owner actually has,
+    which is what the number they are on does to their own traffic. Measured 2026-09-17: zero
+    tenants have ever set a floor, and the one shipped default keeps 45.4% of one tenant's scored
+    signals and 35.7% of another's. Same number, ten points of difference in how much of their
+    own mail reaches them.
+
+    `profile` is that, from the tenant's own distribution — both halves of it, because
+    `qualified_signals` alone measures the floor rather than the traffic. No recommended number:
+    this module is emphatic that a floor is a row with an owner and an append-only changelog, so
+    the deciles are the options and the human picks one through `PUT`.
+    """
+    from genios_engine.capture.esqe.qualification import floor_profile, resolve_floor
+    floor = resolve_floor(org_id, _floor_store)
+    body = _floor_json(floor)
+    if _graph is not None:
+        try:
+            with _graph.engine.connect() as c:
+                values = [int(r[0]) for r in c.execute(text(
+                    "select importance_bp from qualified_signals where org_id=:o "
+                    "union all "
+                    "select importance_bp from qualification_drops where org_id=:o"),
+                    {"o": org_id})]
+            body["profile"] = floor_profile(values, floor.floor_bp)
+        except Exception:      # noqa: BLE001 — the floor itself must still answer
+            _log.exception("floor profile failed org=%s", org_id)
+            body["profile"] = {"error": True}
+    return body
 
 
 @router.put("/qualification/floor")
@@ -1702,6 +1814,26 @@ def get_qualification_drop(drop_id: str, org_id: str = Depends(get_current_org))
     return {**_drop_json(row), "explanation": explain_drop(row)}
 
 
+@router.get("/events/{event_id}/journey")
+def event_journey_report(event_id: str, org_id: str = Depends(get_current_org)) -> dict:
+    """*"Why did I never see X?"* — for one X, across every table that could hold the answer.
+
+    The ledgers beside this route each answer a PART: `/qualification/drops` knows about the
+    floor, `/parked` knows about the review queue. Neither knows about `event_trace`, which had
+    no read surface at all and is where most refusals actually land — on the pilot org, 103 of
+    138 events behind one support question stopped at `s4_esqe short_circuit bulk_headers`, a
+    row `/qualification/drops` would have reported as simply absent.
+
+    `found: false` is an answer, not a 404: "this org never captured that id" and "captured it
+    and refused it" are different support tickets, and returning 404 for the first would make
+    them look the same from outside exactly as they used to look the same from inside.
+    """
+    from genios_engine.capture.journey import event_journey
+    if _graph is None:
+        raise HTTPException(503, "no graph store configured")
+    return event_journey(_graph.engine, org_id=org_id, event_id=event_id)
+
+
 # ── conflicts ────────────────────────────────────────────────────────────────────
 def _card_json(card) -> dict:
     """L1.5.5-U3's card as JSON. `verdict` is carried as an explicit null rather than omitted:
@@ -1878,13 +2010,39 @@ def _attachment_refetch_queue():
 def _attachment_connector_for(candidate):
     """Resolve the tenant connector that can hand back one parked attachment's bytes.
 
-    Returns None — never raises, and never a connector of the wrong shape — for a connection that
-    has been removed or for a source with no attachment fetch. The drain treats None as a
-    transient miss, so a tenant who reconnects tomorrow gets their backlog drained tomorrow
-    instead of finding it dead-lettered.
+    Returns None — never raises, and never a connector of the wrong shape — for an org with no
+    live connection to that source, or for a source with no attachment fetch. The drain treats
+    None as a transient miss, so a tenant who connects tomorrow gets their backlog drained
+    tomorrow instead of finding it dead-lettered.
+
+    A RECONNECT USED TO ORPHAN THE WHOLE BACKLOG. The id is read from the event as captured, and
+    reconnecting Gmail writes a NEW connection row and drops the old one — so every attachment
+    parked before that day pointed at an id `get` could no longer find. Measured 2026-09-17: 160
+    parked rows across two orgs carried `no live connector for source 'gmail'`, every one of them
+    naming a `connection_id` absent from `connections`, while BOTH orgs held a `connected`,
+    unexpired gmail row the whole time. 2,170 attempts went into dead-lettering a backlog nothing
+    was wrong with, and the promise in the paragraph above — "reconnects tomorrow, drained
+    tomorrow" — was the exact thing that could not happen.
+
+    So a missing id falls back to a LIVE connection for the same org and the same source. Three
+    things make that safe rather than convenient:
+
+      * the org check is kept, and kept STRICT — a recorded connection belonging to someone else
+        is a data-integrity fault and still returns None rather than falling back, because the
+        fallback is for an id that is GONE, not for one that is wrong;
+      * a provider attachment id is scoped to its mailbox, so if the tenant connected a different
+        account the fetch returns not-found and is classified as a failure. It cannot return
+        another mailbox's bytes;
+      * and `list_active` only ever yields this tenant's own connections, so the widest possible
+        reach is from one of the org's mailboxes to another of the same org's mailboxes.
     """
     conn = _connections.get(candidate.connection_id)
-    if conn is None or conn.org_id != candidate.org_id:
+    if conn is not None and conn.org_id != candidate.org_id:
+        return None
+    if conn is None:
+        conn = next((c for c in _connections.list_active(candidate.source)
+                     if c.org_id == candidate.org_id), None)
+    if conn is None:
         return None
     connector = make_connector_for(conn)
     return connector if hasattr(connector, "fetch_attachment") else None
@@ -1928,7 +2086,8 @@ def _drain_attachment_refetch(now) -> dict:
     from datetime import timedelta as _dt_timedelta
 
     from genios_engine.capture.documents.enablement import parse_org_allowlist
-    from genios_engine.capture.parked.refetch import refetch_parked_attachments
+    from genios_engine.capture.parked.refetch import (NO_LIVE_CONNECTOR,
+                                                       refetch_parked_attachments)
     from genios_engine.platform.wiring import make_ocr
 
     settings = get_settings()
@@ -1947,6 +2106,25 @@ def _drain_attachment_refetch(now) -> dict:
         if requeued:
             _log.info("requeued %d capability dead letter(s) — an OCR engine is available now",
                       requeued)
+    # A CONNECTION DEAD LETTER IS A CAPABILITY DEAD LETTER, and it was the one nobody automated.
+    # The requeue above is gated on an OCR engine existing, which is the right trigger for a row
+    # that could not be READ and the wrong one for a row that could not be FETCHED. Measured
+    # 2026-09-17: 110 rows across two orgs sat dead-lettered carrying `no live connector`, both
+    # orgs holding a `connected` gmail row the whole time — they would never have moved, because
+    # the only thing that requeues is an engine arriving for an unrelated reason.
+    #
+    # Ungated, and safe for the reason the paragraph above gives for the first pass: the window
+    # bounds it to one ladder per row per week, so a tenant who has genuinely not connected costs
+    # five attempts a week and a tenant who has just connected gets their backlog back. Selected
+    # on the ERROR rather than the code, so a provider's "this attachment no longer exists" is
+    # not put back to re-learn itself — `NO_LIVE_CONNECTOR` is the writer's own spelling.
+    reconnected = queue.requeue_dead_letters(
+        eval_time=now, not_attempted_since=now - _dt_timedelta(days=_CAPABILITY_REQUEUE_WINDOW_DAYS),
+        last_error_prefix=NO_LIVE_CONNECTOR)
+    if reconnected:
+        _log.info("requeued %d dead letter(s) that had no connector — one is resolvable now",
+                  reconnected)
+    requeued += reconnected
 
     totals = {"claimed": 0, "recovered": 0, "dead_lettered": 0, "retry_scheduled": 0,
               "text_chars_recovered": 0}

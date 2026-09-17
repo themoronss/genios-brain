@@ -82,6 +82,15 @@ class RoutePlan:
     never_object_ids: tuple[str, ...]
     unresolved_predicates: tuple[str, ...] = ()
     skipped_capability_ids: tuple[str, ...] = ()
+    #: The authored branches this tenant declared, resolved. On the PLAN rather than retrieved
+    #: later because a branch has to be able to shape the plan — `never_object_ids` below is
+    #: computed from situations, object manifests AND these, and a variant resolved after the
+    #: plan was built could not contribute to it.
+    variants: tuple[Any, ...] = ()
+    #: Declared ids that resolved to nothing or to several documents. Carried so the package can
+    #: NAME them; never raised, because a tenant's typo used to land in `domain_shadow`'s
+    #: catch-all as `counts["error"]` on every situation.
+    unresolved_variant_ids: tuple[str, ...] = ()
     #: True only when EVERY routed capability passed the admission gate (stable + approved by a
     #: named reviewer + accepted hash matching the routed bytes). A shadow compile may carry
     #: unadmitted content; this flag is what keeps that content forever non-prescriptive

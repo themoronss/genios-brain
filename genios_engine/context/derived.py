@@ -62,6 +62,11 @@ _PROGRESS_KINDS_FALLBACK = frozenset({
     # left momentum reading zero on the inboxes that have them.
     "approval_granted", "intro_made", "diligence_started", "document_sent",
     "investor_update_sent", "meeting_scheduled",
+    # LAYER 1'S OWN, and this literal is the FALLBACK for exactly the sweep where `kinds.yaml`
+    # cannot be read — a kind missing here goes weightless on that sweep, which is the failure
+    # the file was written to end. A promise made and a decision reached both moved the
+    # relationship; `decision_deferred` next door is the negative twin of the second.
+    "commitment_made", "decision_made",
 })
 
 _PROGRESS_KINDS = kinds_where(is_progress=True) or _PROGRESS_KINDS_FALLBACK

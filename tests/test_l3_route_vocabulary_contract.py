@@ -202,6 +202,78 @@ def test_producible_vocabulary_is_small_and_closed():
         # people, so the day the extractor starts placing objectives the approved sibling takes
         # over and this one goes quiet on its own.
         "campaign_awaiting_reply",
+        # The mirror of `awaiting_response`, and the half of an exchange nothing named. That
+        # one fires while WE are waiting; Support's `first_response_overdue` fires when THEY
+        # opened a thread we never answered — its predicate returns at the first internal
+        # message, so a conversation we started is not its case. Between them sits what
+        # actually fills a mailbox: we wrote, they REPLIED, and the reply is still sitting
+        # there. `admin.sit.reply_owed` routes it.
+        "reply_owed",
+        # The twin of `condition_in_review`, and the half `correlation_timeline` was built for.
+        # That one carries the conditions `parse_condition` REFUSED to parse; this carries the
+        # ones it parsed and the world has since made true. The fact was published every sweep
+        # — both evidence spans, refusing to exist with only one — and nothing read it.
+        "condition_satisfied",
+        # THE FOURTH FIELD `correlation_dependency` PUBLISHES, and the only one that reached no
+        # reader at all. The traversal resolves both ends of a dependency claim; when the BLOCKED
+        # end resolves and the BLOCKER end does not it refuses to invent a node — "a false chain
+        # is worse than a missing one" — and files a typed absence carrying the name and the
+        # sentence. `MissingPrerequisite` names its own examples: "Finance", "legal", "the
+        # security review". Those are usually not resolver failures: they are real blockers that
+        # were never people in a mailbox, and the graph is correct to hold no node for them.
+        # Computed on every sweep since the correlator shipped, selected by no query in the
+        # engine. `admin.sit.blocked_on_unnamed` routes it, and the card may say "not in your
+        # records" ONLY where the absence is typed GENUINELY_ABSENT — otherwise "we could not
+        # find it", because only the first licenses telling somebody to stop waiting.
+        "blocked_on_unnamed",
+        # THE ONLY TYPE IN THIS SET WHOSE EXISTENCE DEPENDS ON A MODEL, and the reason it is
+        # allowed is that its ABSENCE removes nothing. `context_residue` measures the subjects no
+        # reading explained; `reply_owed_triage` says which matter; an `important` verdict becomes
+        # this card. With no angle layer, no budget, or a refusal there is no card and the tenant
+        # has exactly what they have today — nothing is withheld or downgraded. The agreed law
+        # permits this shape ("a model may propose a situation; it may never rank one, and never
+        # produces a number a card asserts") and every fact on the card is measured: the model
+        # decides only whether the card exists.
+        #
+        # It cannot collide with `reply_owed`. Residue exists only where NO live situation covers
+        # the subject, so the deterministic reading having fired is what keeps this one silent,
+        # and `residue.SELF_REPORTED_TYPE` excludes this type from that coverage predicate —
+        # otherwise the card would explain its own subject and flap on alternate sweeps.
+        "attention_unreported",
+        # M-3's ANSWER, and the third way this layer groups people — `cohort_outreach_gap` by
+        # stated objective, `campaign_awaiting_reply` by an exact shared sentence, this by wording
+        # a model judged to be one message retyped. It exists because the exact-sentence rule
+        # leaves a blind spot with a strange shape: copy-paste your raise to eighteen people and
+        # it is one campaign, retype each one and it is eighteen unrelated threads.
+        #
+        # It is NOT a campaign and never claims to be: `outreach.exact_sentence` is declared
+        # ABSENT, because that absence is exactly why the deterministic grouping did not fire, and
+        # `find_campaigns` remains the only thing that mints a `Campaign`. Gated on the
+        # `one_campaign` verdict alone — `same_topic_not_one_message`, five introductions answered
+        # personally in one morning, mints nothing and is the commoner answer. Yields to both
+        # older group readings on shared membership: one group of people gets one group card.
+        "outreach_reworded",
+        # THE DEPENDENCY LANE'S ONLY LIVE OUTPUT ON A MAIL-ONLY TENANT. `correlation_dependency`
+        # refuses to invent a node for an endpoint it cannot resolve, and on the pilot NEITHER end
+        # resolved for 95 of 95 claims, so the lane produced nothing at all. This is the statement
+        # that survives the refusal: one named thing said to be waiting on another, both quoted,
+        # neither resolved, anchored on the party whose thread carried the sentence. No chain, no
+        # edge, no minted node — `chains`, `circular_wait` and `blocked_count` never see it.
+        "dependency_stated",
+        # THE ANALYTIC STRATUM, GIVEN A SUBJECT — and the re-check this tripwire exists to force
+        # was done: `_tools/validate.py` is green with the type declared in `_schema/vocabulary`,
+        # `admin.sit.analytic_movement` is bound and content-hashed, and `index.py` regenerated
+        # the map. L2.4 has published a verdict per node per metric since it was built — 566 live
+        # facts on the pilot — and the only reader any of them ever had was BLG-18's importance
+        # modifiers, which can raise another card's rank and can never be a card. So "this
+        # relationship has been going quiet" was computed every sweep and stated to nobody.
+        #
+        # ADMITS ONLY WHAT THE DETECTOR CALLED A MOVEMENT: a trend with a DIRECTION, a flagged
+        # anomaly, a cohort position that was not refused. Its FLAT verdict and its two
+        # insufficiency verdicts are a measurement and two refusals, and none of the three is a
+        # thing that happened. No threshold is declared in the reading — a second opinion about
+        # how steep a slope must be would be a number tuned on one tenant.
+        "analytic_movement",
     }, "the L2 situation vocabulary changed — re-check every corpus route against it"
 
 

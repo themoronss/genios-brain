@@ -404,6 +404,13 @@ register(DomainSpec(
                      "tenant": "admin_period_review",
                      "document": "document_under_control",
                      "outreach": "awaiting_response",
+                     # ITS MIRROR. `awaiting_response` is "we wrote and they went quiet";
+                     # `first_response_overdue` next door in Support is "they wrote FIRST and we
+                     # never answered". Between them sits the exchange that actually fills a
+                     # founder's mailbox — we wrote, they REPLIED, and the reply is still sitting
+                     # there — and nothing named it. Admin for the reason the block above gives:
+                     # answering somebody is follow-through work whoever they are.
+                     "unanswered": "reply_owed",
                      "commitment": "commitment_overdue",
                      "meeting": "meeting_follow_through",
                      # The first situation type whose subject is a GROUP. Everything else in this
@@ -419,6 +426,60 @@ register(DomainSpec(
                      # look and reconsider". Its own anchor because a counterparty can leave
                      # several conditions across months and they close separately.
                      "condition": "condition_in_review",
+                     # ITS TWIN, and the half `correlation_timeline` was actually built for. The
+                     # review queue above carries the conditions `parse_condition` REFUSED to
+                     # guess at; this carries the ones it parsed and the world has since made
+                     # true — "a partner said they'd revisit once you had two enterprise
+                     # references. You closed the second 11 days ago." The correlator published
+                     # both all along, `_satisfied_json` writes BOTH evidence spans and its
+                     # constructor refuses to exist with only one, and nothing read this half.
+                     # `condition-now-satisfied.yaml` is authored and approved and had been bound
+                     # to `admin_contact` — the nearest live type — for want of this line.
+                     "condition_met": "condition_satisfied",
+                     # THE FOURTH FIELD THE DEPENDENCY CORRELATOR PUBLISHES, and the one that
+                     # reached no reader at all. When a dependency's BLOCKED end resolves and its
+                     # BLOCKER end does not, the traversal refuses to invent a node — "a false
+                     # chain is worse than a missing one" — and files a typed absence carrying
+                     # the name and the sentence. `MissingPrerequisite` names its own examples:
+                     # "Finance", "legal", "the security review". Those are not resolver failures;
+                     # they are real blockers that were never people in a mailbox, and the graph
+                     # is right to hold no node for them. Admin for the reason the block above
+                     # gives: being stuck on somebody else's step is follow-through work whoever
+                     # the counterparty is.
+                     "unnamed_blocker": "blocked_on_unnamed",
+                     # THE CARD OF LAST RESORT, and the only one in this file whose existence
+                     # depends on a model. `residue.py` measures what no reading explained;
+                     # `reply_owed_triage` says which of those matter; this is where an
+                     # `important` verdict becomes something a person sees. It fires ONLY where
+                     # the deterministic reading did not — residue exists exactly where no live
+                     # situation covers the subject — so it and `reply_owed` can never both speak
+                     # about one counterparty. Admin for the same reason as the block above:
+                     # answering somebody is follow-through work whoever they are.
+                     "unreported": "attention_unreported",
+                     # M-3's ANSWER, and the third way this layer groups people. `cohort` groups
+                     # by stated objective, `campaign` by an exact shared sentence, and this by
+                     # wording a model judged to be one message reworded — the blind spot the
+                     # exact-sentence rule leaves, where a founder who retypes each email sends
+                     # one raise to eighteen people and the system sees eighteen threads. It
+                     # yields to both of the other two: one group of people gets one group card.
+                     "reworded_outreach": "outreach_reworded",
+                     # THE 95 CLAIMS THE TRAVERSAL COULD NOT USE. L1 extracts dependencies
+                     # between OUTCOMES — "Shortlisting and showcase participation", "Meeting
+                     # between Sehan and Rohit" — and `correlation_dependency` needs parties at
+                     # both ends, so every one was dropped. The statement survives the refusal:
+                     # somebody said, in a thread with a real counterparty, that one named thing
+                     # waits on another. Anchored on that counterparty, with both ends quoted and
+                     # neither resolved. Admin, like the rest of the follow-through lane.
+                     "stated_dependency": "dependency_stated",
+                     # THE ANALYTIC STRATUM, GIVEN A SUBJECT. L2.4 publishes a verdict per node
+                     # per metric — 566 of them on the pilot — and until this line the only thing
+                     # that ever read one was BLG-18's importance modifiers: able to make another
+                     # card rank higher, never able to be one. The reading admits exactly what
+                     # the detector called a movement (a trend with a DIRECTION, a flagged
+                     # anomaly, a cohort position that was not refused) and adds no second
+                     # opinion of its own. Admin, because "this relationship is going quiet" is
+                     # follow-through work whoever the counterparty is.
+                     "analytic_movement": "analytic_movement",
                      # THE SECOND GROUP-SHAPED SUBJECT, and it is not the first one re-keyed.
                      # `cohort` groups by OBJECTIVE — "of everyone I contacted about the raise,
                      # who has gone quiet?" — which spans funds on purpose. This groups by FIRM.

@@ -33,10 +33,13 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 
+from types import SimpleNamespace
+
 from sqlalchemy import bindparam, text
 
+from genios_engine.context.correlation_membership import declare_finding_events
 from genios_engine.context.domain_spec import domains_declaring, spec_for
-from genios_engine.context.situations import SCORE_MAX, freshness_score
+from genios_engine.context.situations import SITUATION_STATUS_ON_CONFLICT, SCORE_MAX, freshness_score
 from genios_engine.platform.ids import new_id
 
 #: The anchor this module mints. WHICH DOMAIN CLAIMS IT IS NOT NAMED HERE — it is asked of the
@@ -102,9 +105,23 @@ _MEETINGS = (
     # the alphabetically-last name among the people who were there — so four unrelated meetings,
     # including one titled "Intro: Hirdesh & Rohit", all reported the same counterparty. A single
     # name is a claim about who the meeting was with; picking it by sort order is a wrong one.
-    "join graph_facts xf "
-    "  on xf.org_id = n.org_id and xf.subject_node_id = att.node_id "
-    "  and xf.field = 'meeting.external_counterparty' and xf.status = 'active' "
+    #
+    # THE `meeting.external_counterparty` JOIN IS GONE, AND THE FACT IT WAITED ON NEVER EXISTED.
+    # This query required that fact on the attendee's node. Measured across EVERY org in the
+    # database, at every version, live and closed: **zero rows have ever carried that field**. Its
+    # only producer is `meeting_lifecycle.reduce_meeting`, whose sole caller is `reason/runner` —
+    # Layer 4, which computes the boolean in memory for its own reasoning and never persists it.
+    # So the join could not match, `read_meetings_for_dispatch` received nothing, and
+    # `meeting_follow_through` produced zero cards for every customer since the day it shipped.
+    # The module docstring's "48 of them carrying `meeting.external_counterparty`" describes a
+    # state no table in this database has ever been in.
+    #
+    # NOTHING IS LOOSENED BY REMOVING IT, because the predicate below already answers the same
+    # question from data that does exist: an attendee is external when they are NOT one of our
+    # seats, the account owner, or a connected mailbox — the identical rule
+    # `reduce_meeting` applies, evaluated here against the `attended` edges the calendar
+    # connector really writes. The fact was a second, weaker statement of a test this query was
+    # already performing, and it was the only half that could fail.
     "where n.org_id = :o and n.node_type = 'meeting' and n.valid_to is null "
     # US IS NOT A COUNTERPARTY. `meeting.external_counterparty` is written on the owner's own
     # person node too, so every meeting listed the founder as someone it reached — and one
@@ -199,6 +216,14 @@ def refresh_channel_touch_situations(store, org_id: str, *,
                 # node alone would make the second domain's upsert overwrite the first's — the
                 # same collision the escalation reading hit on (account, date).
                 corr_id = f"corr_touch_{domain}_{r.node_id}"
+                # DECLARE THE MEETING'S OWN EVENTS. `gather_l1_signals` reaches Layer 1 through
+                # `context_correlation_members`, and this correlation id had no rows there, so a
+                # meeting situation could never carry a measured importance. The events are the
+                # meeting node's own source refs — nothing is derived that the graph did not
+                # already record.
+                declare_finding_events(
+                    c, org_id=org_id, correlation_id=corr_id,
+                    finding=SimpleNamespace(concerns_node=r.node_id, correlation_id=corr_id))
                 held = c.execute(text(
                     "select situation_id from context_situations "
                     "where org_id = :o and correlation_id = :c"),
@@ -211,7 +236,15 @@ def refresh_channel_touch_situations(store, org_id: str, *,
                     "  computed_at) "
                     "values (:sid, :o, :c, :n, :st, :d, 'active', :conf, :conf, :fresh, :conf, "
                     "  :ident, :cov, cast(:missing as jsonb), cast(:inputs as jsonb), :seen, :seen, :now) "
+                    # A RE-MINTED SITUATION IS ALIVE AGAIN, and this clause was missing here.
+                    # `age_uncorrelated_situations` can move any synthetic-correlation row to
+                    # `dormant`, and every column below then refreshed on the next sweep while
+                    # `status` stayed where the ageing pass left it — so the row carried a
+                    # current timestamp, current confidence and current coverage, and both
+                    # Layer 3 doors filter `status in ('active','partial')`. It looked
+                    # perfectly alive and could never reach a card again.
                     "on conflict (org_id, correlation_id) do update set "
+                    + SITUATION_STATUS_ON_CONFLICT +
                     "  confidence_overall = excluded.confidence_overall, "
                     "  confidence_freshness = excluded.confidence_freshness, "
                     "  coverage = excluded.coverage, inputs = excluded.inputs, "

@@ -1,0 +1,110 @@
+# `correlation_dependency` refuses to invent a node for an endpoint it cannot resolve — "a false
+# chain is worse than a missing one" — and on the pilot NEITHER end resolved for 95 of 95 claims.
+# Layer 1 extracts dependencies between OUTCOMES ("Shortlisting and showcase participation",
+# "Meeting between Sehan and Rohit"); the traversal needs parties. Every claim was dropped.
+#
+# The STATEMENT survives the refusal. Somebody said, in a thread with a real counterparty, that
+# one named thing waits on another. That is a card, and it needs neither end resolved.
+#
+# `context/stated_dependency.read_stated_dependencies` produces it.
+
+identity:
+  id: admin.sit.dependency_stated
+  name: Waiting On Something Named
+  domain: admin
+  owner_capability: admin.executive_support.commitment_tracking
+  version: 1.0.0
+  status: stable
+
+description: >
+  Something in this conversation was said to be waiting on something else, and both of them are
+  described rather than identified. A meeting waiting on somebody's availability; an application
+  waiting on a shortlist; a decision waiting on a reconsideration. The sentence is on the record
+  and the two things it names are not people or companies this system holds.
+
+  The evidence is the sentence itself, quoted. Both ends travel exactly as they were written,
+  because neither was resolved — no node was matched, no relationship was inferred, and nothing
+  was joined. What anchors the card is the counterparty whose thread carried the statement, which
+  the graph already knew because the message was addressed to somebody.
+
+  It must never claim to know what either end IS. "Finance" in one thread and "Finance" in another
+  are the same word and not knowably the same thing, and a card that treated them as one would be
+  asserting the resolution the correlator deliberately refused. Both identities are carried as
+  declared gaps, and the card's value is the sentence, not an inference from it.
+
+matches:
+  l2_situation_types:
+    - dependency_stated
+  scope: person
+  when:
+    # Both ends, or it is not a statement anybody can act on.
+    - exists: dependency.blocked_text
+    - exists: dependency.blocker_text
+
+also_serves:
+  - admin.executive_support.inbox_and_correspondence
+
+objects:
+  load:
+    - admin.obj.core.request
+  optional:
+    - admin.obj.core.commitment
+    - admin.obj.core.deadline
+  never_load:
+    - admin.obj.core.invoice
+    - admin.obj.core.employee_record
+    - admin.obj.core.asset
+
+priority_bp: 6000
+typical_duration_days: 14
+
+signals_of_progress:
+  - next_step_agreed
+  - meeting_scheduled
+  - followup_sent
+
+signals_of_decay:
+  - going_dark
+  - decision_deferred
+
+render:
+  artifact_kind: draft_reply
+  render_hint: >
+    Headline: what is waiting, and what it is waiting on — in the words the record used. Both
+    halves are quotes; paraphrasing either is how a described thing turns into a claimed one.
+
+    Situation: the sentence it came from, and which conversation it was said in. Name the
+    counterparty as the person whose thread this is, not as a party to the dependency — they may
+    be neither end of it.
+
+    Never state who owns either end, never say a thing "is" a person or a company, and never
+    connect this statement to another that uses the same word. Neither end was resolved; that is
+    the reason this is a quoted sentence rather than a chain, and the same noun in two threads is
+    not knowably the same thing.
+
+    Artifact: a message that asks the one question the sentence leaves open — who moves this, and
+    by when.
+  fallback:
+    headline: "{entity} — something is waiting on something named"
+    situation: >-
+      In the thread with {entity}, one named thing was said to be waiting on another. Neither is
+      something this system can identify.
+
+metadata:
+  owner: Admin
+  created_by: ai
+  reviewed_by: rohit
+  last_updated: '2026-09-15'
+  review_status: approved
+  confidence: experimental
+  reviewed_at: '2026-09-15'
+  notes: >
+    Authored because the alternative was 95 dropped claims a sweep and a dependency lane that
+    produced nothing on a mail-only tenant. Deliberately NOT an edge and deliberately not bound to
+    `blocked_on_unnamed`: that one fires when the WAITING party is known and only the blocker is
+    not, and it states an absence against a subject. This one has no resolved end at all, so it
+    states only what was said. The anchor is the thread's counterparty — a party the graph already
+    held — which is the one resolution this lane performs, and it resolves neither endpoint.
+
+admission:
+  accepted_content_hash: 99a61ca573df16ba8b3edba66f7749dbf1c98b8e788330678d9a540432ee9761

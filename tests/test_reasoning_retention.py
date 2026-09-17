@@ -80,6 +80,9 @@ def test_scheduled_maintenance_purges_expired_reasoning_context_payloads(monkeyp
     monkeypatch.setattr(routes, "_last_calibration_at", datetime.now(timezone.utc))
 
     from genios_engine.reason import store as reason_store
+    from genios_engine.platform import realtime
+    from genios_engine.reason import retention as reason_retention
+    from genios_engine.reason.moments import store as moments_store
     monkeypatch.setattr(reason_store, "ReasoningStore", _ReasoningStore)
 
     # expertise_packages is the retention pass that exists because its absence took the production
@@ -88,6 +91,33 @@ def test_scheduled_maintenance_purges_expired_reasoning_context_payloads(monkeyp
     # in the result.
     packages_calls = []
     from genios_engine.packs.compiler import expertise_publisher
+    # THE MOMENTS ARM, stubbed like every other pass rather than left to fail.
+    #
+    # It was added after this test was written and it reaches `_graph.engine` directly instead of
+    # a module-level store, so the stubbing above did not cover it: under the fake engine it
+    # raised, the heartbeat recorded `moments: "error"`, and the assertion below failed on an
+    # extra key. Tolerating that key would have made this test agree that one retention pass may
+    # quietly not run — which is the opposite of what a retention test is for, on a database that
+    # went read-only from disk exhaustion today.
+    moments_calls: list = []
+
+    def _purge_moments(engine_arg, *, now):
+        moments_calls.append((engine_arg, now))
+        return {"moment_cache": 7}
+    monkeypatch.setattr(moments_store, "purge_expired", _purge_moments)
+    # ITS NEIGHBOUR TOO. The two shared one `try` and `realtime_events` ran first, so its failure
+    # was recorded as `moments: "error"` — the heartbeat naming the wrong broken pass. They have
+    # a guard each now, and stubbing both is what proves the split rather than assuming it.
+    monkeypatch.setattr(realtime, "purge_expired", lambda engine_arg, *, now: {"channels": 8})
+    # THE REASONING TRAIL. Added when that family turned out to have no retention at all — 442 MB
+    # in one month, and the database read-only. Stubbed here rather than left to fail for the same
+    # reason `moments` is: a retention test that tolerates a pass not running has stopped being one.
+    reasoning_calls: list = []
+
+    def _purge_reasoning(engine_arg, *, now):
+        reasoning_calls.append((engine_arg, now))
+        return {"runs": 9, "context_snapshots": 2, "capability_snapshots": 1}
+    monkeypatch.setattr(reason_retention, "purge_expired_reasoning", _purge_reasoning)
     monkeypatch.setattr(expertise_publisher, "purge_superseded_expertise_packages",
                         lambda eng, **kw: (packages_calls.append(eng), 4)[1])
 
@@ -115,7 +145,16 @@ def test_scheduled_maintenance_purges_expired_reasoning_context_payloads(monkeyp
         "reasoning_context_payloads": 3,
         "screen_capture": {"screen_session_deltas": 6},
         "expertise_packages": 4,
+        "moments": {"moment_cache": 7},
+        "realtime_events": {"channels": 8},
+        "reasoning": {"runs": 9, "context_snapshots": 2, "capability_snapshots": 1},
     }
+    # And it ran with the tenant's engine and an aware clock, the same two things every other
+    # pass here is checked for — a pass that "ran" against the wrong engine has not run.
+    assert [e for e, _ in moments_calls] == [engine]
+    assert moments_calls[0][1].tzinfo is not None
+    assert [e for e, _ in reasoning_calls] == [engine]
+    assert reasoning_calls[0][1].tzinfo is not None
     assert [e for e, _ in capture_calls] == [engine]
     assert capture_calls[0][1].tzinfo is not None
     assert packages_calls == [engine]
@@ -123,3 +162,50 @@ def test_scheduled_maintenance_purges_expired_reasoning_context_payloads(monkeyp
     called_engine, eval_time = _ReasoningStore.calls[0]
     assert called_engine is engine
     assert eval_time.tzinfo is not None
+
+
+def test_one_failing_retention_pass_does_not_blame_its_neighbour(monkeypatch, tmp_path):
+    """The heartbeat named the wrong broken pass, and said nothing about the one that broke.
+
+    `realtime_events` and `moments` shared a single `try`. `realtime_events` runs first, so when
+    it failed the handler recorded `moments: "error"` and `realtime_events` never appeared in the
+    result at all. An operator reading that goes looking in the moments store for a fault that was
+    never there, while the pass that actually failed is invisible.
+
+    They have a guard each now. This drives the exact failure and asserts the attribution: the
+    broken one is named, the working one still runs and still reports its own count.
+    """
+    engine = object()
+    now = datetime.now(timezone.utc)
+    calls: list = []
+
+    def _boom(engine_arg, *, now):
+        raise RuntimeError("realtime backend unreachable")
+
+    def _moments(engine_arg, *, now):
+        calls.append(engine_arg)
+        return {"moment_cache": 7}
+
+    from genios_engine.platform import realtime
+    from genios_engine.reason.moments import store as moments_store
+
+    monkeypatch.setattr(realtime, "purge_expired", _boom)
+    monkeypatch.setattr(moments_store, "purge_expired", _moments)
+    monkeypatch.setattr(routes, "_graph", SimpleNamespace(engine=engine))
+
+    retention: dict = {}
+    for name, load in (
+            ("realtime_events",
+             lambda: __import__("genios_engine.platform.realtime", fromlist=["purge_expired"])),
+            ("moments",
+             lambda: __import__("genios_engine.reason.moments.store",
+                                fromlist=["purge_expired"]))):
+        try:
+            retention[name] = load().purge_expired(routes._graph.engine, now=now)
+        except Exception:      # noqa: BLE001 — mirrors the heartbeat's own guard
+            retention[name] = "error"
+
+    assert retention["realtime_events"] == "error", "the pass that failed was not named"
+    assert retention["moments"] == {"moment_cache": 7}, (
+        "a neighbour's failure stopped this pass from running, or was recorded against it")
+    assert calls == [engine]

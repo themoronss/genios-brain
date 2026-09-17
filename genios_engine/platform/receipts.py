@@ -29,6 +29,13 @@ class Receipt:
     sql: str
     expect: Callable[[object], bool]
     detail: str = ""
+    #: This claim is about the DEPLOYMENT, not the tenant, and its query is therefore not
+    #: org-filtered. Declared rather than inferred: a receipt that simply forgot `:org` answers
+    #: about every tenant at once while appearing on one tenant's readiness page — their parked
+    #: queue reported as this one's — so "no filter" has to be a statement somebody made. The
+    #: only members are questions whose answer cannot differ per tenant because the thing asked
+    #: about is shared: the schema itself.
+    fleet_wide: bool = False
 
 
 def _org_filter(org: str | None, alias: str = "") -> str:
@@ -37,6 +44,25 @@ def _org_filter(org: str | None, alias: str = "") -> str:
 
 
 def receipts(org: str | None) -> list[Receipt]:
+    # THE DORMANCY WINDOW IS THE THRESHOLD, and it is imported rather than restated. L2 decides a
+    # situation has ended after `DORMANT_AFTER_DAYS` of silence, so a tenant that has been fed
+    # nothing for that long has, provably, no working set left — whatever the other receipts say.
+    # Picking any other number here would invent a second opinion about when quiet becomes empty.
+    # Imported inside the function, the way `platform/wiring.py` already reaches into `context`.
+    from genios_engine.capture.pipeline import (JUDGED_DROP_CODES,
+                                                JUDGED_DROP_PAYLOAD_TTL_DAYS)
+    from genios_engine.api.account_routes import RETAINED_AFTER_ERASURE
+    from genios_engine.context.runner import MAX_PASSES
+    from genios_engine.context.situations import DORMANT_AFTER_DAYS
+    from genios_engine.deliver.routing import AGENT_TRANSPORTS
+    from genios_engine.deliver.units import _implemented_channels
+
+    # The same intersection `deliver.outbox.deliverable_channels` computes in Python:
+    # registered AND implemented AND not an agent transport. Inlined as a literal list so
+    # one SQL scalar can answer it, derived from the two sources so it cannot drift from
+    # what the drain will actually accept.
+    pushable = sorted(_implemented_channels() - set(AGENT_TRANSPORTS))
+
     o = _org_filter(org)
     return [
         # ── L1 capture ────────────────────────────────────────────────────────────────
@@ -49,17 +75,87 @@ def receipts(org: str | None) -> list[Receipt]:
                 f"select count(*) from parked_events where status='pending'{o}",
                 lambda n: n == 0,
                 "pending forever means a park is a slower delete"),
-        Receipt("L1", "dropped events are recoverable",
+        Receipt("L1", "every drop we might be wrong about can still be reviewed",
+                # SCOPED TO THE JUDGED DROPS, and that is a correction rather than a narrowing.
+                # Asked of EVERY drop this counted 2,818 deterministic refusals that by documented
+                # policy retain nothing — "L1 stays a filter, not a warehouse" — so it could never
+                # pass, on any tenant, in any state. A receipt that cannot pass is exactly the
+                # "a skip read as a pass" failure this module exists to end, wearing the other
+                # colour: permanent red teaches an operator to stop reading the page.
+                #
+                # The window is the retention policy's own, so a judged drop past its TTL is
+                # EXPECTED to have no payload and does not count against the tenant. That also
+                # means the receipt self-clears: 26 events judged in August, before this retention
+                # landed, fail it today and stop counting when they age past 90 days.
                 "select count(*) from source_events se where se.outcome='dropped' "
-                "and not exists (select 1 from raw_payloads rp where rp.event_id=se.event_id)"
+                f"and se.captured_at > now() - interval '{JUDGED_DROP_PAYLOAD_TTL_DAYS} days' "
+                "and exists (select 1 from event_trace t where t.org_id=se.org_id "
+                "            and t.event_id=se.event_id and t.action='drop' "
+                f"            and t.reason_code in ({', '.join(repr(c) for c in sorted(JUDGED_DROP_CODES))})) "
+                "and not exists (select 1 from raw_payloads rp where rp.event_id=se.event_id "
+                "                and rp.org_id=se.org_id)"
                 + _org_filter(org, "se"),
                 lambda n: n == 0,
-                "a drop with no retained payload cannot be re-adjudicated when the gate improves"),
+                "a provider's SPAM label is a fact and needs no second look; a model saying "
+                "\"this looks like junk\" is a JUDGMENT, and judgments improve. Without the body "
+                "\"we improved the filter\" is an assertion about mail that no longer exists"),
+        Receipt("L1", "the tenant is still being fed",
+                # `captured_at`, not `occurred_at`: this asks whether OUR pipeline is receiving,
+                # and a backfill of last quarter's mail is healthy ingestion of old messages.
+                # `coalesce` makes an org with no events at all FAIL rather than return NULL —
+                # a tenant nothing has ever arrived for is the loudest version of this failure,
+                # and a NULL that slipped through `expect` as falsey would report it as a pass.
+                "select coalesce(extract(day from (now() - max(captured_at)))::int, "
+                f"{DORMANT_AFTER_DAYS}) from source_events where true{o}",
+                lambda days: int(days) < DORMANT_AFTER_DAYS,
+                "every other receipt can pass while a tenant's feed is dead: the graph, the packs "
+                "and the cards are all still there. What empties is the WORKING SET — L2 marks a "
+                f"situation dormant after {DORMANT_AFTER_DAYS} days of silence, so a feed quiet "
+                "that long leaves nothing active to reason about, and nothing else says so"),
         Receipt("L1", "attachments carry readable text",
                 "select count(*) from document_jobs where status in ('unsupported','fetch_failed')"
                 + _org_filter(org),
                 lambda n: n == 0,
                 "in a fundraising inbox the deck and the rubric ARE the content"),
+
+        Receipt("L1", "a deleted tenant leaves nothing behind",
+                # ASKED OF THE DEPLOYED SCHEMA, because that is where the answer lives. Erasure
+                # deletes the `orgs` row and migration 0033's foreign keys take everything that
+                # hangs off it — directly, or through a parent that does, which is how the four
+                # `reasoning_*` children go without any of them being named. So the question is
+                # not "is this table in a list" but "is it reachable from `orgs` by CASCADE", and
+                # a recursive walk of the constraint graph is the only honest way to ask it.
+                #
+                # `_ORG_SCOPED_TABLES`'s own comment names the failure this catches: "a name
+                # missing here leaks silently". A table added next month with an `org_id` and no
+                # foreign key is a deletion request that quietly stops being complete, and
+                # nothing anywhere would have said so. Measured 2026-09-17: 178 org-scoped
+                # tables, 0 unreachable.
+                "with recursive fk(child, parent) as ("
+                "  select tc.table_name, ccu.table_name"
+                "    from information_schema.table_constraints tc"
+                "    join information_schema.referential_constraints rc"
+                "      on rc.constraint_name = tc.constraint_name"
+                "    join information_schema.constraint_column_usage ccu"
+                "      on ccu.constraint_name = tc.constraint_name"
+                "   where tc.constraint_type = 'FOREIGN KEY' and rc.delete_rule = 'CASCADE'), "
+                "reachable(tbl) as ("
+                "  select child from fk where parent = 'orgs' "
+                "  union select f.child from fk f join reachable r on r.tbl = f.parent) "
+                "select count(*) from information_schema.columns c "
+                "  join information_schema.tables t"
+                "    on t.table_name = c.table_name and t.table_schema = c.table_schema "
+                " where c.table_schema = 'public' and c.column_name = 'org_id' "
+                "   and t.table_type = 'BASE TABLE' "
+                f"   and c.table_name not in ({', '.join(repr(x) for x in sorted(RETAINED_AFTER_ERASURE))}) "
+                "   and c.table_name not in (select tbl from reachable)",
+                lambda n: n == 0,
+                "every table left over holds a deleted customer's data under an org_id that "
+                "resolves to nobody — the three retained financial ledgers are named in "
+                "`RETAINED_AFTER_ERASURE` and are the only rows permitted to outlive a tenant",
+                # THE SCHEMA IS SHARED, so this answer cannot differ per tenant. Declared, not
+                # inferred from the absent filter — see `Receipt.fleet_wide`.
+                fleet_wide=True),
 
         # ── L2 context ────────────────────────────────────────────────────────────────
         Receipt("L2", "the tenant's own identities are known",
@@ -74,6 +170,23 @@ def receipts(org: str | None) -> list[Receipt]:
                 " group by f.subject_node_id having count(*) > 1) t",
                 lambda n: n == 0,
                 "one last-write-wins row per person collapses every conversation into the newest"),
+
+        Receipt("L2", "the sweep settles instead of chasing itself",
+                # `_record_convergence` re-hashes the graph after a pass and counts how many it
+                # took to stop moving; at `MAX_PASSES` it stamps `exceeded_at` and raises
+                # `l2_convergence_exceeded` with the situation ids still changing. That alert is
+                # a LOG LINE — greppable by an operator already looking, invisible to one who is
+                # not. The stamp is in a table, so it can be asked instead.
+                #
+                # Measured 2026-09-17: three orgs, `exceeded_at` null on all three and `passes`
+                # zero — the hash settles on the first pass every time. Two clean sweeps were
+                # called evidence rather than proof, which was right; this is what turns "we
+                # watched it twice" into something that stays watched.
+                f"select count(*) from l2_convergence where exceeded_at is not null{o}",
+                lambda n: n == 0,
+                f"a sweep that never settles re-derives the same situations up to {MAX_PASSES} "
+                "times and then gives up mid-pass, so the tenant's picture is whatever the last "
+                "partial pass left — and `detail` names the situations that were still moving"),
 
         # ── L3 domain expertise ───────────────────────────────────────────────────────
         Receipt("L3", "compiled expertise packages exist",
@@ -121,11 +234,29 @@ def receipts(org: str | None) -> list[Receipt]:
                 "select count(*) from cards where render_mode <> 'llm'" + _org_filter(org),
                 lambda n: n == 0,
                 "raw_slot with an empty artifact body is a card with no content"),
+        Receipt("L6", "there is a channel this tenant can be reached on",
+                # THE PRECONDITION, ASKED FIRST. Measured 2026-09-17: all three orgs register
+                # `in_app` and nothing else, and `in_app` is the PULL surface — the card is
+                # already sitting on it, there is nothing to send. So the intersection is empty,
+                # `deliverable_channels` correctly returns [], and every push receipt below it
+                # fails for a reason that has nothing to do with the pipeline.
+                "select count(*) from org_channels where active "
+                f"and channel in ({', '.join(repr(c) for c in pushable)})" + o,
+                lambda n: n > 0,
+                "a tenant with no push channel is not a broken pipeline and must not read as "
+                "one: nothing is wrong upstream, there is simply nowhere to send"),
         Receipt("L6", "the delivery control plane has run",
                 f"select count(*) from delivery_outbox where 1=1{o}",
                 lambda n: n > 0,
-                "push is gated on a band the scoring formula cannot reach, so Atlas 5.2 has "
-                "never executed"),
+                # The old detail here read "push is gated on a band the scoring formula cannot
+                # reach". That was true when it was written and is now false, and a receipt whose
+                # detail names the wrong cause sends an operator to rewrite a scoring formula
+                # when the answer is "connect a channel". Measured 2026-09-17: 71 of 133 cards
+                # sit at high or critical, and 21 pass PUSHABLE_CARDS_SQL — the authority
+                # predicate included — at this instant.
+                "cards clear the push band and pass the authority predicate; check the channel "
+                "receipt above first, because an empty outbox on a tenant with no channel is "
+                "the expected state and not a failure of this layer"),
 
         # ── L7 learning ───────────────────────────────────────────────────────────────
         Receipt("L7", "the learning engine has executed",

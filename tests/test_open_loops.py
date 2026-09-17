@@ -12,6 +12,7 @@ pytest.importorskip("sqlalchemy")
 from sqlalchemy import create_engine, text  # noqa: E402
 
 from genios_engine.context.open_loops import (  # noqa: E402
+    close_loops_awaited_from,
     close_loops_for_reply,
     open_loop_counts,
     record_ask,
@@ -32,6 +33,11 @@ def conn():
                 opened_at timestamp not null, last_seen_at timestamp not null,
                 ask_count int not null default 1, opened_by_event text not null,
                 closed_at timestamp, closed_by_event text,
+                awaited_from_node_id text,
+                -- migration 0167. Nullable and never defaulted: a closure recorded before the
+                -- column existed is one whose basis was not observed, which is a third thing
+                -- from either answer.
+                closed_basis text,
                 primary key (org_id, loop_id))"""))
     with engine.begin() as c:
         yield c
@@ -456,3 +462,79 @@ def test_the_app_queue_filters_on_the_surface():
     from genios_engine.deliver.store import CardStore
 
     assert "'app' = any(k.surfaces)" in inspect.getsource(CardStore.queue)
+
+
+# ── the other direction: an ask WE sent, closed by THEIR reply ────────────────────────────────
+#
+# The ledger had one closing verb and it only ever ran on the outbound leg, keyed on the subject.
+# So a question we put to somebody opened a loop on our own node that nothing could shut: their
+# answer arrived as an inbound event, named us nowhere, and touched no row. Every ask the founder
+# ever sent stayed open, the answered ones included.
+
+
+def test_our_ask_closes_when_the_person_we_asked_replies(conn):
+    loop = record_ask(conn, org_id="o", subject_node_id="us", kind="question",
+                      thread_id="t1", event_id="e1", at=NOW, awaited_from="them")
+    closed = close_loops_awaited_from(conn, org_id="o", node_id="them", thread_id="t1",
+                                      event_id="e2", at=NOW + timedelta(hours=2))
+    assert closed == 1
+    row = conn.execute(text("select status, closed_by_event from open_loops where loop_id=:l"),
+                       {"l": loop}).mappings().one()
+    assert row["status"] == "closed"
+    assert row["closed_by_event"] == "e2"
+
+
+def test_a_reply_from_somebody_else_does_not_close_it(conn):
+    """Only the person we were waiting on can answer us."""
+    record_ask(conn, org_id="o", subject_node_id="us", kind="question",
+               thread_id="t1", event_id="e1", at=NOW, awaited_from="them")
+    assert close_loops_awaited_from(conn, org_id="o", node_id="someone_else", thread_id="t1",
+                                    event_id="e2", at=NOW + timedelta(hours=2)) == 0
+
+
+def test_their_reply_on_another_thread_leaves_it_open(conn):
+    """Answering one conversation must not mark every other one answered — the same rule the
+    outbound verb follows."""
+    record_ask(conn, org_id="o", subject_node_id="us", kind="question",
+               thread_id="t1", event_id="e1", at=NOW, awaited_from="them")
+    assert close_loops_awaited_from(conn, org_id="o", node_id="them", thread_id="t2",
+                                    event_id="e2", at=NOW + timedelta(hours=2)) == 0
+
+
+def test_a_reply_cannot_answer_an_ask_that_came_after_it(conn):
+    record_ask(conn, org_id="o", subject_node_id="us", kind="question",
+               thread_id="t1", event_id="e1", at=NOW + timedelta(days=1), awaited_from="them")
+    assert close_loops_awaited_from(conn, org_id="o", node_id="them", thread_id="t1",
+                                    event_id="e2", at=NOW) == 0
+
+
+def test_an_ask_with_no_named_answerer_is_untouched_by_this_verb(conn):
+    """Every loop written before this column existed, and every broadcast, has a null answerer.
+    They keep closing the way they always did — by subject — and never on this path."""
+    record_ask(conn, org_id="o", subject_node_id="them", kind="question",
+               thread_id="t1", event_id="e1", at=NOW)
+    assert close_loops_awaited_from(conn, org_id="o", node_id="them", thread_id="t1",
+                                    event_id="e2", at=NOW + timedelta(hours=2)) == 0
+    assert open_loop_counts(conn, "o") == {"them": 1}
+
+
+def test_our_reply_does_not_close_our_own_ask(conn):
+    """Writing again is not answering ourselves. `close_loops_for_reply` keys on the subject, and
+    our ask is subjected on us, so the two verbs cannot collide."""
+    record_ask(conn, org_id="o", subject_node_id="us", kind="question",
+               thread_id="t1", event_id="e1", at=NOW, awaited_from="them")
+    assert close_loops_for_reply(conn, org_id="o", subject_node_id="them", thread_id="t1",
+                                 event_id="e2", at=NOW + timedelta(hours=2)) == 0
+    assert open_loop_counts(conn, "o") == {"us": 1}
+
+
+def test_a_follow_up_naming_nobody_keeps_the_answerer_we_already_had(conn):
+    loop = record_ask(conn, org_id="o", subject_node_id="us", kind="question",
+                      thread_id="t1", event_id="e1", at=NOW, awaited_from="them")
+    record_ask(conn, org_id="o", subject_node_id="us", kind="question",
+               thread_id="t1", event_id="e2", at=NOW + timedelta(days=3))
+    row = conn.execute(text(
+        "select awaited_from_node_id, ask_count from open_loops where loop_id=:l"),
+        {"l": loop}).mappings().one()
+    assert row["awaited_from_node_id"] == "them"
+    assert row["ask_count"] == 2

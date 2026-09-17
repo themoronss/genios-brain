@@ -118,6 +118,25 @@ signals_of_decay:
   - cancellation_threat
   - entitlement_expired
 
+render:
+  artifact_kind: draft_reengage
+  render_hint: >
+    Headline: who has gone quiet and that it is long by THEIR standard, not an absolute one. The
+    gate is a multiple of their own prior cadence with a floor, which is why this is not simply
+    "we have not heard from them lately".
+
+    Situation: how long the gap is and what their normal rhythm was. Nothing is broken and no
+    ticket is open — say so plainly, because that is exactly why no other instrument sees this.
+
+    Never imply churn, dissatisfaction or risk. Silence from a contact is silence; reading a
+    verdict into it is the invention this card must not make.
+
+    Artifact: a light check-in that gives them an easy reason to reply.
+  fallback:
+    headline: "{entity} — quiet far longer than usual"
+    situation: >-
+      {entity} used to write in regularly and has not for a long stretch by their own pace.
+
 metadata:
   owner: Customer Support
   created_by: ai
