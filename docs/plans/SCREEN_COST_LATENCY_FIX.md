@@ -60,7 +60,7 @@ shadow/DND/quiet/rate guards, duplicate TTL) — only the decision itself is the
 |---|---|---|---|
 | 1 | Thread key carries the SPA route | desktop `capture/session.rs` | correctness; fewer wasted calls (verdicts stop being wrong) |
 | 2 | Deterministic triage before the paid call | brain `_screen_insight` + `screen_triage.py` | −30–40 % calls [estimate] |
-| 3 | Cached rulebook (≥ 4,096 tok) + 50 Hinglish/English few-shots | brain `screen_insight.py` | −11 % to −22 % input [derived]; the few-shots come almost free |
+| 3 | Cached rulebook (6,538 tok measured) + 50 few-shots | brain `screen_insight.py` | cost unchanged (−1.5 %); the 50 few-shots ride along free [measured] |
 | 4 | Deterministic interrupt gate + per-item confidence | brain `screen_insight.py`, `moment_routes.py` | popups only when code can verify them |
 
 **Invariants this plan does not touch:** device timers (dwell 5 s / 2 s, gaps 20 s / 10 s, focus
@@ -115,40 +115,34 @@ tokens. Here the fixed half is ~1,200 of ~2,400, so caching it is worth much les
 with `R` the rulebook, `D` the dynamic half and `h` the hit rate — effective input =
 `(0.1h + 1.25(1−h))·R + D`:
 
-| | per check | vs today |
+**MEASURED 2026-09-17** with `count_tokens` (`scripts/measure_insight_cache.py`), once the
+workspace's own spend cap was lifted. Every estimate before this line was wrong:
+
+| | tokens | ₹/check |
 |---|---:|---:|
-| today (1,200 fixed + 1,200 dynamic, uncached) | 2,400 | — |
-| rulebook 4,600 tok, 90 % hit | 2,239 | −7 % |
-| rulebook 4,600 tok, 95 % hit | 1,975 | −18 % |
-| rulebook 4,600 tok, **cache miss** | 7,000 | **+170 %** |
+| rulebook (frozen, cached) | **6,538** | — |
+| dynamic half, a realistic screen | **1,876** | — |
+| the pre-change fixed half | ~1,371 | — |
+| **before caching** | 3,247 | **0.301** |
+| **1-hour TTL, 8 cold starts in 150 checks** | — | **0.297** |
+| 5-minute TTL, 30 cold starts | — | 0.368 |
 
-**And that last row is the one that decides the TTL.** A screen is read in BURSTS with quiet
-between them, and the five-minute default expires in every gap — each expiry rewriting the whole
-rulebook. The break-even hit rate at a 1.25× write is **87 %**, which a bursty day does not reach:
+Two things follow, and neither is what the estimates said.
 
-| a day of 150 checks | ₹/day |
-|---|---:|
-| before caching existed | 34.42 |
-| **5-minute TTL, 30 cold starts** | **39.12** ← dearer than not caching |
-| 1-hour TTL, 8 cold starts | 31.57 |
+**Caching saves nothing here. It makes the few-shots free.** At the hour the day costs ₹44.53
+against ₹45.22 before caching existed — 1.5%, which is noise. What it buys is 6,538 tokens of
+rulebook, 50 worked examples included, for the price of the 1,371-token prompt that used to ship.
+That is an accuracy win, not a cost win, and the plan should never have claimed otherwise
+(−37% from the reference architecture, then −11–22%, then −7–18%: all wrong).
 
-So the screen lane asks for `cache_ttl="1h"` (`screen_insight.CACHE_TTL`): the write costs 2× and
-happens a handful of times a day instead of thirty. `LLMClient` prices that write at 2× so
-`llm_costs` and the daily budget do not understate a cached check. The extraction lane keeps the
-five-minute default — its traffic is continuous, where the default is strictly cheaper.
+**The five-minute default was a 22% cost REGRESSION** (₹55.25 a day). The TTL fix is what makes
+this break even instead of hurting.
 
-So the honest case for this change is **accuracy**: 50 worked examples — Hinglish asks and
-promises, the manager's own job search and pay as personal, buttons and missing-info lines that
-are not items, an ask addressed to someone else, and one worked example per popup reason — for
-about a tenth of their size on every call after the first. The cost win is real but modest, and a
-seat that checks once in a long while pays MORE for a big rulebook than a small one: the hit rate
-is the whole argument, which is why `llm_insight` logs `cache read=… write=…` on every call.
+Hinglish and JSON tokenize at **3.14 chars/token**, denser than the 4.0–4.5 English prose
+assumption — which is why the rulebook is 6,538 tokens rather than the ~4,600 estimated, and why
+a char-based guess was never good enough.
 
-**The token count is not measured yet.** Haiku 4.5 caches nothing under 4,096 tokens and a short
-prefix fails silently. The rulebook is 20,499 characters, which is ≥ 4,096 tokens even at a
-pessimistic 4.5 chars/token, and a test guards that floor — but characters are not tokens.
-`scripts/measure_insight_cache.py` settles it with `count_tokens`; it could not be run here
-because the workspace's Anthropic key is **over its usage limit until 2026-10-01**.
+**It caches.** 6,538 tokens against Haiku 4.5's 4,096-token minimum, measured, not assumed.
 
 ### 4 · The gate
 
