@@ -118,8 +118,24 @@ with `R` the rulebook, `D` the dynamic half and `h` the hit rate — effective i
 | | per check | vs today |
 |---|---:|---:|
 | today (1,200 fixed + 1,200 dynamic, uncached) | 2,400 | — |
-| rulebook 4,300 tok, 90 % hit | 2,124 | **−11 %** |
-| rulebook 4,300 tok, 95 % hit | 1,877 | **−22 %** |
+| rulebook 4,600 tok, 90 % hit | 2,239 | −7 % |
+| rulebook 4,600 tok, 95 % hit | 1,975 | −18 % |
+| rulebook 4,600 tok, **cache miss** | 7,000 | **+170 %** |
+
+**And that last row is the one that decides the TTL.** A screen is read in BURSTS with quiet
+between them, and the five-minute default expires in every gap — each expiry rewriting the whole
+rulebook. The break-even hit rate at a 1.25× write is **87 %**, which a bursty day does not reach:
+
+| a day of 150 checks | ₹/day |
+|---|---:|
+| before caching existed | 34.42 |
+| **5-minute TTL, 30 cold starts** | **39.12** ← dearer than not caching |
+| 1-hour TTL, 8 cold starts | 31.57 |
+
+So the screen lane asks for `cache_ttl="1h"` (`screen_insight.CACHE_TTL`): the write costs 2× and
+happens a handful of times a day instead of thirty. `LLMClient` prices that write at 2× so
+`llm_costs` and the daily budget do not understate a cached check. The extraction lane keeps the
+five-minute default — its traffic is continuous, where the default is strictly cheaper.
 
 So the honest case for this change is **accuracy**: 50 worked examples — Hinglish asks and
 promises, the manager's own job search and pay as personal, buttons and missing-info lines that

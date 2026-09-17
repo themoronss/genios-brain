@@ -379,6 +379,13 @@ Return JSON only, in the shape and style of the rulebook above.
 _PROMPT = _RULEBOOK + _TASK
 RULEBOOK_CHARS = len(_RULEBOOK)
 RULEBOOK_TOKENS_MIN = 4096
+#: A screen is read in BURSTS with quiet between them, and the five-minute default expires in
+#: every one of those gaps. Each expiry rewrites the WHOLE rulebook, and at 1.25x a rulebook this
+#: size needs an 87% hit rate merely to break even against not caching at all — a day of 150
+#: checks with 30 quiet gaps misses that and ends up DEARER than before caching existed
+#: (₹39 against ₹34 a day, arithmetic in SCREEN_COST_LATENCY_FIX.md). The hour costs 2x to write
+#: and is written a handful of times a day instead of thirty.
+CACHE_TTL = "1h"
 
 
 def visible_text(visible) -> str:
@@ -969,7 +976,7 @@ def llm_insight(engine, *, org_id: str, app: str | None, screen: str, facts: lis
                           summary=summary, profile=profile)
     res = _client(settings.anthropic_api_key, model).call(
         prompt, max_tokens=MAX_OUTPUT_TOKENS, cache_prefix_chars=RULEBOOK_CHARS,
-        timeout_s=max(0.5, remaining), max_retries=0)
+        cache_ttl=CACHE_TTL, timeout_s=max(0.5, remaining), max_retries=0)
     try:
         from genios_engine.context.graph_store import GraphStore
         GraphStore(engine=engine).record_cost(

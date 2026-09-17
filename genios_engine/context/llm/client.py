@@ -6,8 +6,10 @@ from typing import Any
 
 from .parse import parse_json_lenient, strip_code_fence
 
-#: Anthropic prices a cache WRITE at 1.25x and a cache READ at 0.1x the base input rate.
+#: Anthropic prices a cache WRITE at 1.25x (the 5-minute default) or 2x (the 1-hour TTL), and a
+#: cache READ at 0.1x, of the base input rate.
 CACHE_WRITE_MULTIPLIER = 1.25
+CACHE_WRITE_MULTIPLIER_1H = 2.0
 CACHE_READ_MULTIPLIER = 0.1
 
 
@@ -58,19 +60,28 @@ class LLMClient:
         return hashlib.sha256(prompt.encode("utf-8")).hexdigest()
 
     def call(self, prompt: str, *, max_tokens: int = 4096, cache_prefix_chars: int = 0,
+             cache_ttl: str | None = None,
              timeout_s: float | None = None, max_retries: int | None = None) -> LLMResult:
         """`cache_prefix_chars` > 0 marks `prompt[:n]` as a cacheable prefix (the fixed
         instructions). The model sees the identical text either way; only the price changes.
         A prefix under the model's minimum cacheable length is simply not cached.
+
+        `cache_ttl="1h"` keeps the entry alive for an hour instead of five minutes. The write
+        costs 2x rather than 1.25x, so it is right only where the SAME prefix is re-read across
+        gaps longer than five minutes — a person's screen, which is read in bursts with quiet
+        between them. On continuous traffic the five-minute default is strictly cheaper.
 
         `timeout_s` / `max_retries` override the client's own for ONE call, without building a
         second client (a new client is a new connection pool, and an interactive lane cannot
         afford a TLS handshake): the screen lane answers a person who is looking at the screen
         and has ~3 s, where a drain has a minute and wants the retries."""
         if 0 < cache_prefix_chars < len(prompt):
+            control: Any = {"type": "ephemeral"}
+            if cache_ttl:
+                control["ttl"] = cache_ttl
             content: Any = [
                 {"type": "text", "text": prompt[:cache_prefix_chars],
-                 "cache_control": {"type": "ephemeral"}},
+                 "cache_control": control},
                 {"type": "text", "text": prompt[cache_prefix_chars:]},
             ]
         else:
@@ -94,8 +105,9 @@ class LLMClient:
         usage = resp.usage
         cw = int(getattr(usage, "cache_creation_input_tokens", 0) or 0)
         cr = int(getattr(usage, "cache_read_input_tokens", 0) or 0)
+        writes = CACHE_WRITE_MULTIPLIER_1H if cache_ttl == "1h" else CACHE_WRITE_MULTIPLIER
         it = (int(getattr(usage, "input_tokens", 0) or 0)
-              + round(cw * CACHE_WRITE_MULTIPLIER) + round(cr * CACHE_READ_MULTIPLIER))
+              + round(cw * writes) + round(cr * CACHE_READ_MULTIPLIER))
         ot = getattr(usage, "output_tokens", 0)
         parsed = parse_json_lenient(raw)
         if parsed is None:

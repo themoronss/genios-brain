@@ -371,6 +371,31 @@ def test_the_call_marks_the_rulebook_as_the_cacheable_prefix(monkeypatch):
     assert out == {"work": True}
     assert seen["cache_prefix_chars"] == SI.RULEBOOK_CHARS
     assert seen["max_retries"] == 0 and 0.5 <= seen["timeout_s"] <= 3.0
+    # The HOUR, not the five-minute default. A screen is read in bursts with quiet between them,
+    # and at 1.25x a rulebook this size needs an 87% hit rate merely to break even against not
+    # caching at all — a bursty day misses that and ends up dearer than before caching existed.
+    assert seen["cache_ttl"] == "1h" == SI.CACHE_TTL
+
+
+def test_a_one_hour_cache_write_is_priced_as_one(monkeypatch):
+    # The write costs 2x on this TTL, not 1.25x. `llm_costs` and the daily budget read
+    # `input_tokens`, so mispricing it here would understate every cached screen check.
+    from genios_engine.context.llm.client import LLMClient
+
+    class Resp:
+        content = [type("B", (), {"type": "text", "text": '{"work": true}'})()]
+        usage = type("U", (), {"input_tokens": 100, "output_tokens": 10,
+                               "cache_creation_input_tokens": 1000,
+                               "cache_read_input_tokens": 0})()
+
+    c = LLMClient(api_key="k", model="m")
+    monkeypatch.setattr(c, "_c", lambda: type("C", (), {
+        "messages": type("M", (), {"create": staticmethod(lambda **kw: Resp())})(),
+        "with_options": staticmethod(lambda **kw: type("C2", (), {
+            "messages": type("M2", (), {"create": staticmethod(lambda **kw: Resp())})()})())})())
+    hour = c.call("a" * 100, cache_prefix_chars=50, cache_ttl="1h")
+    five = c.call("a" * 100, cache_prefix_chars=50)
+    assert hour.input_tokens == 100 + 2000 and five.input_tokens == 100 + 1250
 
 
 def test_the_rulebook_stays_long_enough_to_be_worth_caching():
