@@ -493,3 +493,19 @@ def test_a_reminder_addressed_to_a_job_title_is_addressed_to_nobody():
     # An item that names nobody at all is still fine — plenty of deadlines name no one.
     assert SI.reject({"kind": "deadline", "text": "AWS invoice due Friday", "who": None,
                       "quote": "invoice is due on Friday"}) is None
+
+
+def test_a_notice_on_a_page_is_not_a_task():
+    # "With HR Hai: Fraud agents impersonate HR Hai on WhatsApp/calls to scam job seekers" became
+    # a work item four times on 17 Sep. It is on the page for every visitor; nobody asked the
+    # manager for anything.
+    assert keep("Fraud agents impersonate HR Hai to scam job seekers",
+                "fraud agents impersonate HR Hai on calls", who=None) == "advisory"
+    assert keep("Never share your OTP", "we will never ask for your OTP", who=None) == "advisory"
+    assert keep("Terms apply", "terms and conditions apply to this offer", who=None) == "advisory"
+    # A clock or an amount means somebody is on the hook, whatever the words are.
+    assert keep("Vendor flagged a fraudulent invoice of 4.2 lakh",
+                "fraudulent invoice of 4.2 lakh, please check") is None
+    assert SI.reject({"kind": "risk", "text": "Phishing mail from our domain",
+                      "who": "Priya Shah", "due": "2026-09-18T18:00",
+                      "quote": "phishing mail from your domain, fix by Friday"}) is None

@@ -494,6 +494,24 @@ _OWN_JOB = re.compile(
     r"|\b(?:job|role|position|opening|vacancy)\b.{0,30}\b(?:apply|applied|applying)\b"
     r"|\b(?:your|my)\s+(?:application|candidature|resume|cv)\b"
     r"|\b(?:naukri|indeed|glassdoor|internshala|cutshort|instahyre|hirist)\b", re.I)
+#: A STANDING NOTICE IS NOT A TASK. A job site warning every visitor about impersonators, a
+#: disclaimer, a privacy policy: it is on the page for everybody, nobody asked the manager for
+#: anything, and there is nothing to do. On 17 Sep one such line — "Fraud agents impersonate HR Hai
+#: on WhatsApp/calls to scam job seekers" — became a work item four times over.
+#:
+#: Narrow on purpose. It fires only on the unmistakable boilerplate AND only when the item carries
+#: no clock and no money, so a client actually reporting a fraudulent invoice due Friday still
+#: reaches the manager.
+#: An amount on the line — somebody is on the hook for money, whatever else the words say.
+_MONEY = re.compile(r"[₹$€£]\s?\d|\b\d[\d,]*\s?(?:k|lakh|lakhs|cr|crore|million|rs\.?|inr|usd)\b"
+                    r"|\b(?:invoice|payment|paid|due\s+amount)\b", re.I)
+_ADVISORY = re.compile(
+    r"\b(?:beware|be\s+aware|caution|advisory|disclaimer)\b"
+    r"|\b(?:fraud|fraudulent|scam|scams|phishing|impersonat\w*)\b.{0,60}"
+    r"\b(?:beware|aware|report|never|do\s+not|don't|victim|seekers?|users?|candidates?)\b"
+    r"|\b(?:we|they)\s+(?:will\s+)?never\s+ask\b"
+    r"|\bdo\s+not\s+share\s+(?:your\s+)?(?:otp|password|pin|bank|card)\b"
+    r"|\b(?:terms\s+(?:and|&)\s+conditions|privacy\s+policy|cookie\s+policy)\b", re.I)
 #: A `who` has to be a PERSON. These are roles, companies-as-roles and desks — "Investor",
 #: "HR", "Support". A reminder addressed to a job title is a reminder addressed to nobody.
 _NOT_A_PERSON = frozenset({
@@ -525,7 +543,9 @@ def reject(item: dict, *, said: list[str] | None = None) -> str | None:
       own_job    the manager BEING HIRED — an application, a recruiter, a job board. Hiring
                  somebody else is work; being hired is not;
       no_person  a `who` that is a role or a desk ("Investor", "HR", "Support"). A reminder
-                 addressed to a job title is a reminder addressed to nobody.
+                 addressed to a job title is a reminder addressed to nobody;
+      advisory   a standing notice — a fraud warning, a disclaimer, a policy. It is on the page
+                 for everybody; nobody asked the manager for anything.
 
     The last three are in the prompt too, and the prompt was not enough: a real screen produced
     "Investor will provide funds enabling salary payments" and an HR's payroll chase as work.
@@ -543,6 +563,10 @@ def reject(item: dict, *, said: list[str] | None = None) -> str | None:
         return "own_job"
     if item.get("who") is not None and not is_a_person(item.get("who")):
         return "no_person"
+    # A clock or an amount means somebody is on the hook for something; without either, warning
+    # boilerplate is just warning boilerplate.
+    if not item.get("due") and not _MONEY.search(blob) and _ADVISORY.search(blob):
+        return "advisory"
     return None
 
 
