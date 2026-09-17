@@ -914,6 +914,40 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
         except Exception:                                    # noqa: BLE001 — never kill the beat
             _log.exception("thread naming failed")
             thread_names = {"error": True}
+    # PERSON AND COMPANY NAMES: the two lanes of the same defect `name_thread_nodes` above fixes,
+    # and the reason both are here is the reason that one is. `find_or_create_node` writes
+    # `display_name` when it CREATES a node and never again, so a write-path fix reaches only the
+    # people and companies somebody mails NEXT — and the ones that most need a name are exactly
+    # the ones nobody has written to since.
+    #
+    # `name_company_nodes` had NO caller at all. It landed with its own measurement in its
+    # docstring — "48 of 48 company nodes displaying a hostname, and 19 cards in the deck opening
+    # on peakxv.com rather than PeakXV" — and then nothing ran it, so the number never moved:
+    # 29 of 48 were still hostnames on 2026-09-17, two days after the pass that fixes them was
+    # written. `name_person_nodes` did not exist; 30 of 88 people have a From-header name sitting
+    # in `source_events` and are displayed as an address anyway.
+    #
+    # Per org for the company pass because it resolves mentions against that tenant's own
+    # anchors; the person pass takes the fleet in one bounded batch, exactly as the thread pass
+    # above does.
+    node_names = None
+    if _graph is not None:
+        try:
+            from genios_engine.context.backfill import name_company_nodes, name_person_nodes
+            people = name_person_nodes(_graph)
+            companies = {"companies_named": 0, "mentions_read": 0}
+            # ENUMERATED HERE, not borrowed. `run_sync_sweep` has an `orgs` of its own and this is
+            # a different function; reading that one would have been a NameError on every tick,
+            # caught by the `except` below and reported as a generic naming failure for ever —
+            # which is the shape `_drain_recapture`'s neighbour already has a comment about.
+            for org in {c.org_id for c in _connections.list_active()}:
+                one = name_company_nodes(_graph, org)
+                companies["companies_named"] += one["companies_named"]
+                companies["mentions_read"] += one["mentions_read"]
+            node_names = {"people": people, "companies": companies}
+        except Exception:                                    # noqa: BLE001 — never kill the beat
+            _log.exception("person/company naming failed")
+            node_names = {"error": True}
     # L1 PARKED DRAIN: a park is "look at this again", so something has to look. Riding the
     # existing heartbeat on purpose — a new Celery periodic task would spend the quota-limited
     # Upstash broker on a pass that is cheap and idempotent here.
@@ -1510,10 +1544,36 @@ def _drop_json(row) -> dict:
 
 @router.get("/qualification/floor")
 def get_qualification_floor(org_id: str = Depends(get_current_org)) -> dict:
-    """This tenant's cut-off and WHO answers for it. `origin` separates "somebody chose 6000"
-    from "nobody ever set anything" — opposite remedies for the same 92% drop rate."""
-    from genios_engine.capture.esqe.qualification import resolve_floor
-    return _floor_json(resolve_floor(org_id, _floor_store))
+    """This tenant's cut-off, WHO answers for it, and WHAT IT IS DOING.
+
+    `origin` separates "somebody chose 6000" from "nobody ever set anything" — opposite remedies
+    for the same 92% drop rate. It still could not answer the question an owner actually has,
+    which is what the number they are on does to their own traffic. Measured 2026-09-17: zero
+    tenants have ever set a floor, and the one shipped default keeps 45.4% of one tenant's scored
+    signals and 35.7% of another's. Same number, ten points of difference in how much of their
+    own mail reaches them.
+
+    `profile` is that, from the tenant's own distribution — both halves of it, because
+    `qualified_signals` alone measures the floor rather than the traffic. No recommended number:
+    this module is emphatic that a floor is a row with an owner and an append-only changelog, so
+    the deciles are the options and the human picks one through `PUT`.
+    """
+    from genios_engine.capture.esqe.qualification import floor_profile, resolve_floor
+    floor = resolve_floor(org_id, _floor_store)
+    body = _floor_json(floor)
+    if _graph is not None:
+        try:
+            with _graph.engine.connect() as c:
+                values = [int(r[0]) for r in c.execute(text(
+                    "select importance_bp from qualified_signals where org_id=:o "
+                    "union all "
+                    "select importance_bp from qualification_drops where org_id=:o"),
+                    {"o": org_id})]
+            body["profile"] = floor_profile(values, floor.floor_bp)
+        except Exception:      # noqa: BLE001 — the floor itself must still answer
+            _log.exception("floor profile failed org=%s", org_id)
+            body["profile"] = {"error": True}
+    return body
 
 
 @router.put("/qualification/floor")

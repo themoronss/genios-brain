@@ -657,6 +657,103 @@ def name_thread_nodes(store, org_id: str | None = None, *, limit: int = _NAME_BA
     return renamed
 
 
+def best_person_name(rows) -> dict[tuple[str, str], tuple[int, str]]:
+    """One name per person, chosen the same way on every machine.
+
+    MOST FREQUENT, THEN LONGEST, THEN ALPHABETICAL — and the last two are not decoration. One
+    person is signed several ways across their messages ("Ritu KUMARI", "Ritu Kumari"); taking
+    them in whatever order the rows arrived would let a re-run over a different slice produce a
+    different name, and a name that changes between passes is worse than an address that does
+    not. Frequency picks the form they habitually use; length breaks a tie towards the fuller
+    spelling; the surface itself breaks the rest, so there is no tie left to luck.
+
+    Separate from the query because the query cannot be run on SQLite — `actor->>'name'` is
+    Postgres — and this is the half worth testing.
+    """
+    best: dict[tuple[str, str], tuple[int, str]] = {}
+    for row in rows:
+        key = (row["org_id"], row["node_id"])
+        surface = " ".join(str(row["surface"] or "").split())
+        if not surface:
+            continue
+        rank = (int(row["seen"]), len(surface), surface)
+        if key not in best:
+            best[key] = (int(row["seen"]), surface)
+            continue
+        held = best[key]
+        if rank > (held[0], len(held[1]), held[1]):
+            best[key] = (int(row["seen"]), surface)
+    return best
+
+
+def name_person_nodes(store, org_id: str | None = None, *, limit: int = 2000) -> dict:
+    """Give people the name their own mail already signs them with.
+
+    THE THIRD TWIN'S MISSING HALF. `name_person_node` landed with a write-path caller in
+    `context/pipeline._person`, and `find_or_create_node` writes `display_name` when it CREATES a
+    node and never again — so every person captured before that fix keeps their address for ever,
+    and the people who most need a name are exactly the ones nobody has written to since. That is
+    the argument `name_thread_nodes` and `name_company_nodes` already make; this is the lane that
+    had the fix and not the sweep. Measured 2026-09-17 across three orgs: 88 person nodes still
+    displaying an email, 30 of them with a From-header name sitting in `source_events`.
+
+    THE NAME IS THE SENDER'S OWN, UNCHANGED. "Singh, Alok" and "Surender KUMAR KUMAR" are how
+    those two people's mail clients introduce them, and tidying either would be inventing a name
+    for somebody — the write path passes `sender_name` through verbatim and this must agree with
+    it, or the same person is called two things depending on which pass reached them first.
+
+    MOST FREQUENT WINS, THEN LONGEST, THEN ALPHABETICAL. One person is signed several ways across
+    their messages; taking them in order would let the last row read decide, and a re-run over a
+    different slice would produce a different name. Frequency picks the form they habitually use
+    rather than the longest accident of a provider's formatting, and the two tie-breaks make the
+    answer the same on every machine.
+
+    NOTHING IS CREATED AND NOTHING IS OVERWRITTEN. The candidate is matched to a node by the
+    address the node is still displaying, and `name_person_node` promotes only while the display
+    name restates that address — so a person already carrying a human name is left alone.
+    """
+    from genios_engine.context.identity import observe_person_name
+
+    read = named = 0
+    dropped: dict[str, int] = {}
+
+    def refuse(reason: str) -> None:
+        dropped[reason] = dropped.get(reason, 0) + 1
+
+    scope = "" if org_id is None else " and n.org_id = :org"
+    params: dict = {"limit": int(limit)}
+    if org_id is not None:
+        params["org"] = org_id
+    with store.engine.connect() as conn:
+        rows = conn.execute(text(
+            "select n.org_id as org_id, n.node_id as node_id, n.display_name as addr, "
+            "       se.actor->>'name' as surface, count(*) as seen "
+            "  from graph_nodes n "
+            "  join source_events se on se.org_id = n.org_id "
+            "   and lower(se.actor->>'email') = lower(n.display_name) "
+            " where n.node_type = 'person' and n.valid_to is null "
+            "   and n.display_name like '%@%' "
+            "   and coalesce(se.actor->>'name', '') <> '' "
+            "   and lower(se.actor->>'name') <> lower(n.display_name)"
+            + scope +
+            " group by 1, 2, 3, 4 order by 1, 2, 5 desc, 4 "
+            " limit :limit"), params).mappings().all()
+
+    read = len(rows)
+    best = best_person_name(rows)
+
+    with store.engine.begin() as conn:
+        for (org, node), (_seen, surface) in sorted(best.items()):
+            observe_person_name(conn, org_id=org, node_id=node, name=surface)
+            if store.name_person_node(conn, org_id=org, node_id=node, name=surface):
+                named += 1
+            else:
+                refuse("already_carries_a_better_name")
+
+    return {"names_read": read, "people_named": named,
+            "dropped": dict(sorted(dropped.items(), key=lambda kv: -kv[1]))}
+
+
 def name_company_nodes(store, org_id: str, *, limit: int | None = None) -> dict:
     """Give companies the human name L1 already extracted for them.
 
