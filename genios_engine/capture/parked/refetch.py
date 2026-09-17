@@ -87,7 +87,7 @@ __all__ = [
     "AttachmentFetcher", "DeadLetter", "InMemoryRefetchQueue", "PostgresRefetchQueue",
     "ReasonAging", "RecoveredDocument", "RefetchAging", "RefetchQueue", "RefetchReport",
     "read_aging",
-    "recovered_payload_ttl_days", "refetch_parked_attachments",
+    "NO_LIVE_CONNECTOR", "recovered_payload_ttl_days", "refetch_parked_attachments",
 ]
 
 #: A recovered attachment is no longer a review item — it is an emitted event with real content,
@@ -245,7 +245,8 @@ class RefetchQueue(Protocol):
 
     def requeue_dead_letters(self, *, eval_time: datetime, org_id: str | None = None,
                              reason_codes: frozenset[str] | None = None,
-                             not_attempted_since: datetime | None = None) -> int: ...
+                             not_attempted_since: datetime | None = None,
+                             last_error_prefix: str | None = None) -> int: ...
 
 
 # ── the orchestrator (the public callable of L1.3.8-U1) ──────────────────────────────────────
@@ -344,6 +345,16 @@ def _as_str(value: Any) -> str | None:
     return value if isinstance(value, str) and value else None
 
 
+#: The one spelling of "this tenant has no connector for that source right now", owned here
+#: because two places read it: `_attempt` writes it onto the row and the heartbeat's second
+#: requeue selects on it. A dead letter carrying this error is waiting on a CONNECTION — a
+#: condition that changes without anybody touching this system — so it is recoverable in exactly
+#: the way a capability dead letter is, and for the same reason it must not need an operator to
+#: remember. Restating the sentence at the reader would be a second copy of one the writer is
+#: free to change.
+NO_LIVE_CONNECTOR = "no live connector for source"
+
+
 def _attempt(plan: RefetchPlan, *, payload: dict[str, Any], connector_for: ConnectorFactory,
              extract: DocumentExtractor, ocr: Any,
              mask_phone: bool) -> tuple[AttemptResult, RecoveredDocument | None]:
@@ -368,7 +379,7 @@ def _attempt(plan: RefetchPlan, *, payload: dict[str, Any], connector_for: Conne
     if fetcher is None:
         # Not terminal: a disconnected source is usually reconnected. The ladder bounds it.
         return AttemptResult(ok=False, failure=AttemptFailure.TRANSIENT,
-                             error=f"no live connector for source {candidate.source!r}"), None
+                             error=f"{NO_LIVE_CONNECTOR} {candidate.source!r}"), None
 
     try:
         data = fetcher.fetch_attachment(ref.message_id, ref.attachment_id or "")
@@ -559,7 +570,8 @@ class InMemoryRefetchQueue:
 
     def requeue_dead_letters(self, *, eval_time: datetime, org_id: str | None = None,
                              reason_codes: frozenset[str] | None = None,
-                             not_attempted_since: datetime | None = None) -> int:
+                             not_attempted_since: datetime | None = None,
+                             last_error_prefix: str | None = None) -> int:
         reasons = reason_codes if reason_codes is not None else NEEDS_REFETCH
         n = 0
         for event_id, candidate in list(self.candidates.items()):
@@ -572,6 +584,10 @@ class InMemoryRefetchQueue:
             if not_attempted_since is not None:
                 last = self.last_attempt_at.get(event_id)
                 if last is not None and last >= not_attempted_since:
+                    continue
+            if last_error_prefix is not None:
+                errors = [x.last_error for x in self.settlements if x.event_id == event_id]
+                if not (errors and str(errors[-1] or "").startswith(last_error_prefix)):
                     continue
             self.candidates[event_id] = replace(candidate, status=ParkStatus.PENDING.value,
                                                 attempts=0, next_attempt_at=None)
@@ -882,7 +898,8 @@ class PostgresRefetchQueue:
 
     def requeue_dead_letters(self, *, eval_time: datetime, org_id: str | None = None,
                              reason_codes: frozenset[str] | None = None,
-                             not_attempted_since: datetime | None = None) -> int:
+                             not_attempted_since: datetime | None = None,
+                             last_error_prefix: str | None = None) -> int:
         """Put dead letters back on the ladder — the action that makes a CAPABILITY dead letter
         honest. `ocr_unavailable` is not "we lost it", it is "we could not read it yet", and the
         day an OCR engine is wired somebody has to be able to say so to 369 documents at once.
@@ -898,16 +915,23 @@ class PostgresRefetchQueue:
         where_org = "and org_id = :org" if org_id else ""
         where_age = ("and (refetch_last_attempt_at is null or refetch_last_attempt_at < :since)"
                      if not_attempted_since is not None else "")
+        # WHICH FAILURE, not just which code. A capability requeue is right for every row of a
+        # code; a CONNECTION requeue is right only for the rows that failed on the connection,
+        # and putting a provider's "this attachment no longer exists" back on the ladder would
+        # spend five more attempts re-learning it.
+        where_error = "and refetch_last_error like :errlike" if last_error_prefix else ""
         params: dict[str, Any] = {"reasons": reasons, "now": eval_time}
         if org_id:
             params["org"] = org_id
         if not_attempted_since is not None:
             params["since"] = not_attempted_since
+        if last_error_prefix:
+            params["errlike"] = f"{last_error_prefix}%"
         with self._engine.begin() as c:
             return c.execute(text(
                 "update parked_events set status='pending', refetch_attempts=0, "
                 "refetch_next_attempt_at=null, refetch_last_error=null, "
                 "refetch_failure_kind=null "
                 f"where status='dead_letter' and reason_code = any(:reasons) {where_org} "
-                f"{where_age}"),
+                f"{where_age} {where_error}"),
                 params).rowcount

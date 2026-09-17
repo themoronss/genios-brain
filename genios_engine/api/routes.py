@@ -2026,7 +2026,8 @@ def _drain_attachment_refetch(now) -> dict:
     from datetime import timedelta as _dt_timedelta
 
     from genios_engine.capture.documents.enablement import parse_org_allowlist
-    from genios_engine.capture.parked.refetch import refetch_parked_attachments
+    from genios_engine.capture.parked.refetch import (NO_LIVE_CONNECTOR,
+                                                       refetch_parked_attachments)
     from genios_engine.platform.wiring import make_ocr
 
     settings = get_settings()
@@ -2045,6 +2046,25 @@ def _drain_attachment_refetch(now) -> dict:
         if requeued:
             _log.info("requeued %d capability dead letter(s) — an OCR engine is available now",
                       requeued)
+    # A CONNECTION DEAD LETTER IS A CAPABILITY DEAD LETTER, and it was the one nobody automated.
+    # The requeue above is gated on an OCR engine existing, which is the right trigger for a row
+    # that could not be READ and the wrong one for a row that could not be FETCHED. Measured
+    # 2026-09-17: 110 rows across two orgs sat dead-lettered carrying `no live connector`, both
+    # orgs holding a `connected` gmail row the whole time — they would never have moved, because
+    # the only thing that requeues is an engine arriving for an unrelated reason.
+    #
+    # Ungated, and safe for the reason the paragraph above gives for the first pass: the window
+    # bounds it to one ladder per row per week, so a tenant who has genuinely not connected costs
+    # five attempts a week and a tenant who has just connected gets their backlog back. Selected
+    # on the ERROR rather than the code, so a provider's "this attachment no longer exists" is
+    # not put back to re-learn itself — `NO_LIVE_CONNECTOR` is the writer's own spelling.
+    reconnected = queue.requeue_dead_letters(
+        eval_time=now, not_attempted_since=now - _dt_timedelta(days=_CAPABILITY_REQUEUE_WINDOW_DAYS),
+        last_error_prefix=NO_LIVE_CONNECTOR)
+    if reconnected:
+        _log.info("requeued %d dead letter(s) that had no connector — one is resolvable now",
+                  reconnected)
+    requeued += reconnected
 
     totals = {"claimed": 0, "recovered": 0, "dead_lettered": 0, "retry_scheduled": 0,
               "text_chars_recovered": 0}
