@@ -708,3 +708,38 @@ def test_the_same_sentence_twice_in_a_day_is_one_interruption(client, monkeypatc
     assert again.status_code == 204, again.text
     shown = _q("select headline from moments where org_id=:o and display", o=org)
     assert [r.headline for r in shown] == [headline], "told once"
+
+
+@pytest.mark.pg
+@pytest.mark.skipif(not URL, reason="GENIOS_TEST_DATABASE_URL not set")
+def test_a_chat_judged_personal_speaks_up_when_somebody_asks_for_something(client, monkeypatch):  # noqa: F811
+    """On the founder's own tenant on 17 Sep, 39 threads were judged personal against 8 judged
+    work — among them his colleague's chat and his whole Gmail. A real request landed in one and
+    nothing came, because nothing was read. Personal lasts 24 h; it must not be a sentence."""
+    ws = _workspace(client)
+    _enable_display(client, ws)
+    dev, org = ws["member_dev"], ws["org"]
+
+    # A weekend chat: judged personal, and it stays quiet through more of the same.
+    _model(monkeypatch, {"work": False, "remember": False, "items": [], "adds": "none",
+                         "note": None})
+    chat = ["Rohit: khana kha liya bhai, main abhi ghar pahuncha hoon"]
+    assert _look(client, dev, chat, thread="wa:rohit", new=chat).status_code == 204
+    (v,) = _q("select work from screen_thread_verdicts where org_id=:o", o=org)
+    assert v.work is False
+
+    def never(*a, **kw):
+        raise AssertionError("a personal chat was judged again over small talk")
+
+    monkeypatch.setattr(SI, "llm_insight", never)
+    more = ["Rohit: bas nikal raha hoon, thodi der me milte hain yaar"]
+    assert _look(client, dev, chat + more, thread="wa:rohit", new=more).status_code == 204
+    assert _q("select count(*) c from screen_followups where org_id=:o", o=org)[0].c == 0
+
+    # …and the moment a real request lands, it is read again.
+    ask = ["Rohit: audit report kal tak bhej dena please, client ko chahiye"]
+    assert _look(client, dev, chat + ask, thread="wa:rohit", new=ask).status_code == 204
+    rows = _q("select kind, who, text from screen_followups where org_id=:o", o=org)
+    assert [(r.kind, r.who) for r in rows] == [("ask", "Rohit")], rows
+    # …and `never` never fired: the rules read it, so re-opening the chat cost no model call.
+    assert rows[0].text == "audit report kal tak bhej dena please, client ko chahiye"

@@ -364,8 +364,23 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
         # work, a rule may answer every later screen on it without a model.
         verdict = (F.thread_verdict(c, org_id=p.org_id, seat_id=p.seat_id, thread_key=thread,
                                     now=now) if thread else None)
+        # PERSONAL IS A JUDGEMENT ABOUT A SCREEN, NOT A SENTENCE ON A CHAT.
+        #
+        # It lasts 24 hours and, until now, silenced everything on that thread for all of them.
+        # Measured on the founder's own tenant on 17 Sep: 39 threads judged personal against 8
+        # judged work, and among the 39 were his colleague's chat and his entire Gmail. He wrote a
+        # real request in one of them, waited, and nothing came — because nothing was ever read.
+        # Worse, it ratchets: the more he used it, the more threads locked, the quieter it got.
+        #
+        # So a personal verdict now silences only what looks personal. If the lines that ARRIVED
+        # SINCE carry a plain request or a promise — the deterministic extractor's own reading,
+        # not a guess — the screen is judged again and the verdict is re-earned.
         personal_site = ((site is not None and site["work"] is False)
                          or (verdict is not None and verdict["work"] is False))
+        if personal_site and _looks_like_work(body, tz, me=None, now=now):
+            personal_site = False
+            _log.info("screen insight: personal thread spoke up org=%s seat=%s", p.org_id,
+                      p.seat_id)
         # P13: an AI assistant's own chat page is the manager thinking out loud — never judged.
         assistant = F.is_assistant_page(thread)
         skip = judged or muted or personal_site or assistant
@@ -515,6 +530,20 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
               p.org_id, p.seat_id, out["display"], out["reason"], verified, len(topics),
               (time.perf_counter() - started) * 1000)
     return out
+
+
+def _looks_like_work(body: EvaluateRequest, tz: str | None, *, me, now: datetime) -> bool:
+    """Did somebody just ask for something, or promise something, on this screen?
+
+    The rules only, and only over the lines that are NEW: a chat judged personal yesterday stays
+    quiet through small talk, and speaks the moment a real request lands in it.
+    """
+    from genios_engine.reason.moments import screen_rules as RU
+    fresh = body.new_messages if body.new_messages is not None else body.visible_messages
+    if not fresh:
+        return False
+    return any(it["kind"] in ("ask", "my_promise", "their_promise")
+               for it in RU.extract(fresh, dates=body.features.dates, tz_name=tz, me=me, now=now))
 
 
 def _rule_items(items: list[dict], body: EvaluateRequest, p: Principal, engine, thread, app, tz,
