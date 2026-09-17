@@ -1,0 +1,113 @@
+"""Every other receipt can pass while a tenant's feed is dead.
+
+L2 marks a situation dormant after `DORMANT_AFTER_DAYS` of silence — measured on the pilot, the
+boundary is exact: every dormant situation is at least 44 days stale and every active one is at
+most 44. So a tenant nothing has arrived for in that long has, provably, no working set left to
+reason about. The graph is still there, the packs are still compiled, the cards are still in the
+table, and seventeen receipts still say PASS. Nothing said the feed had stopped.
+
+WHY THE THRESHOLD IS IMPORTED AND NOT CHOSEN. Any other number here would be a second opinion
+about when quiet becomes empty, and the two would drift the first time one was tuned. The receipt
+asks exactly the question L2's own lifecycle already answers.
+
+WHY `captured_at` AND NOT `occurred_at`. This asks whether OUR pipeline is receiving. A backfill
+of last quarter's mail is healthy ingestion of old messages, and judging it on the message dates
+would report a working connector as a dead one.
+
+`platform/receipts.py` had no test at all before this file — twenty structural claims, each one a
+SQL string and a lambda, none of them exercised. The last two tests here are about the module
+rather than the new receipt, for that reason.
+"""
+from __future__ import annotations
+
+import re
+
+import pytest
+
+from genios_engine.context.situations import DORMANT_AFTER_DAYS
+from genios_engine.platform.receipts import Receipt, receipts
+
+CLAIM = "the tenant is still being fed"
+
+
+def _fed() -> Receipt:
+    return next(r for r in receipts("org_x") if r.claim == CLAIM)
+
+
+# =============================================================================================
+# the boundary, and the empty tenant
+# =============================================================================================
+@pytest.mark.parametrize("days", [0, 1, DORMANT_AFTER_DAYS - 1])
+def test_a_tenant_that_is_being_fed_passes(days):
+    assert _fed().expect(days) is True
+
+
+@pytest.mark.parametrize("days", [DORMANT_AFTER_DAYS, DORMANT_AFTER_DAYS + 1, 10_000])
+def test_a_feed_quiet_past_the_dormancy_window_fails(days):
+    """At exactly the window the working set is empty, so the boundary is `<`, not `<=`."""
+    assert _fed().expect(days) is False
+
+
+def test_a_tenant_nothing_has_ever_arrived_for_fails():
+    """`max(captured_at)` over no rows is NULL, and `expect` would have read that as falsey —
+    reporting the loudest possible version of this failure as a pass. The `coalesce` sentinel is
+    what makes an empty tenant fail for the right reason, so the sentinel and the predicate are
+    tested TOGETHER: reading the constant out of the SQL and asking `expect` about it is the only
+    way this catches someone lowering one without the other."""
+    sql = _fed().sql
+    match = re.search(r"coalesce\([^,]+,\s*(\d+)\s*\)", sql)
+
+    assert match, f"the receipt no longer coalesces its NULL: {sql}"
+    assert _fed().expect(int(match.group(1))) is False, (
+        f"an org with no events at all returns {match.group(1)} and that value PASSES — a tenant "
+        "nothing has ever been captured for is being reported as ready")
+
+
+def test_the_threshold_is_layer_twos_and_not_a_second_copy():
+    """A duplicated constant is the failure this codebase names everywhere. If the dormancy window
+    moves, this receipt must move with it."""
+    assert _fed().expect(DORMANT_AFTER_DAYS - 1) is True
+    assert _fed().expect(DORMANT_AFTER_DAYS) is False
+    assert str(DORMANT_AFTER_DAYS) in _fed().sql, (
+        "the receipt's own sentinel no longer derives from DORMANT_AFTER_DAYS")
+
+
+def test_the_receipt_is_layer_one_and_reads_the_capture_table():
+    """Its layer is where an operator looks when ingestion is the suspect, and `occurred_at`
+    would make a healthy backfill look like a dead connector."""
+    fed = _fed()
+
+    assert fed.layer == "L1"
+    assert "source_events" in fed.sql and "captured_at" in fed.sql
+    assert "occurred_at" not in fed.sql
+    assert fed.detail, "a receipt with no detail is a number nobody can act on"
+
+
+# =============================================================================================
+# the module — twenty claims that had no test
+# =============================================================================================
+def test_every_receipt_is_one_scalar_select_with_a_predicate():
+    """`evaluate` calls `.scalar()` on the result and hands it to `expect`. A receipt returning
+    two columns, or none, reads as ERROR at runtime and nowhere else."""
+    for r in receipts("org_x"):
+        assert r.sql.lower().lstrip().startswith("select"), r.claim
+        assert callable(r.expect), r.claim
+        assert r.layer.startswith("L"), r.claim
+
+
+def test_every_org_scoped_receipt_binds_the_org_it_was_asked_about():
+    """`evaluate` passes `:org` only when the SQL mentions it. A receipt that forgot the filter
+    answers about the WHOLE DEPLOYMENT while appearing on one tenant's readiness page — every
+    other tenant's parked queue reported as this one's."""
+    scoped = [r for r in receipts("org_x") if "org_id" in r.sql]
+
+    assert scoped, "no receipt is org-scoped any more"
+    for r in scoped:
+        assert ":org" in r.sql, (
+            f"{r.claim!r} filters on org_id without binding :org — it reads a literal or nothing")
+
+
+def test_claims_are_unique_so_a_reader_can_name_the_one_that_failed():
+    claims = [r.claim for r in receipts(None)]
+
+    assert len(claims) == len(set(claims)), "two receipts share a claim"

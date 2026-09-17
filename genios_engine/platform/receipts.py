@@ -37,6 +37,13 @@ def _org_filter(org: str | None, alias: str = "") -> str:
 
 
 def receipts(org: str | None) -> list[Receipt]:
+    # THE DORMANCY WINDOW IS THE THRESHOLD, and it is imported rather than restated. L2 decides a
+    # situation has ended after `DORMANT_AFTER_DAYS` of silence, so a tenant that has been fed
+    # nothing for that long has, provably, no working set left — whatever the other receipts say.
+    # Picking any other number here would invent a second opinion about when quiet becomes empty.
+    # Imported inside the function, the way `platform/wiring.py` already reaches into `context`.
+    from genios_engine.context.situations import DORMANT_AFTER_DAYS
+
     o = _org_filter(org)
     return [
         # ── L1 capture ────────────────────────────────────────────────────────────────
@@ -55,6 +62,19 @@ def receipts(org: str | None) -> list[Receipt]:
                 + _org_filter(org, "se"),
                 lambda n: n == 0,
                 "a drop with no retained payload cannot be re-adjudicated when the gate improves"),
+        Receipt("L1", "the tenant is still being fed",
+                # `captured_at`, not `occurred_at`: this asks whether OUR pipeline is receiving,
+                # and a backfill of last quarter's mail is healthy ingestion of old messages.
+                # `coalesce` makes an org with no events at all FAIL rather than return NULL —
+                # a tenant nothing has ever arrived for is the loudest version of this failure,
+                # and a NULL that slipped through `expect` as falsey would report it as a pass.
+                "select coalesce(extract(day from (now() - max(captured_at)))::int, "
+                f"{DORMANT_AFTER_DAYS}) from source_events where true{o}",
+                lambda days: int(days) < DORMANT_AFTER_DAYS,
+                "every other receipt can pass while a tenant's feed is dead: the graph, the packs "
+                "and the cards are all still there. What empties is the WORKING SET — L2 marks a "
+                f"situation dormant after {DORMANT_AFTER_DAYS} days of silence, so a feed quiet "
+                "that long leaves nothing active to reason about, and nothing else says so"),
         Receipt("L1", "attachments carry readable text",
                 "select count(*) from document_jobs where status in ('unsupported','fetch_failed')"
                 + _org_filter(org),
