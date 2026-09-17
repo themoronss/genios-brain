@@ -1,0 +1,43 @@
+-- `raw_payloads` had ONE index — its primary key on `id` — and nothing looks a payload up by it.
+--
+-- Every reader filters on the event, and most of them on the tenant as well:
+--
+--   capture/landing/unread.py:43   join rp on rp.event_id = se.event_id and rp.org_id = se.org_id
+--   capture/parked/refetch.py:771  where org_id = :o and event_id = :e
+--   capture/parked/drain.py:108    left join rp on rp.event_id = pe.event_id
+--   context/runner.py:236          join rp on rp.event_id = se.event_id      -- the L2 drain
+--   platform/receipts.py:95        not exists (... where rp.event_id = se.event_id ...)
+--   api/routes.py:2239             where org_id = :o and event_id = :e
+--
+-- So every one of them is a sequential scan. Measured on production 2026-09-17 with 3,594 rows:
+--
+--   Seq Scan on raw_payloads  (actual time=0.021..351.475 rows=1)
+--     Rows Removed by Filter: 3593
+--     Execution Time: 351.534 ms
+--
+-- 351 milliseconds to fetch ONE payload, and the L2 drain joins this once per event. The table
+-- is 25 MB at 3,594 rows; a tenant with 50,000 events carries roughly 350 MB of it and pays the
+-- scan on every lookup. This is the first thing that falls over under load, and it falls over
+-- quietly — as latency, not as an error.
+--
+-- `(org_id, event_id)` in that order because it serves both shapes: the per-tenant lookups match
+-- on the full key, and the event-only joins still use the index through the leading column once
+-- the planner has an org in hand from `source_events`. It is also the erasure and retention
+-- filter, so those stop scanning too.
+--
+-- NOT UNIQUE, deliberately. The pair is unique today (3,594 of 3,594 distinct) but the writer
+-- does not promise it: `capture/pipeline` mints a fresh `payload_ref` per capture, and a
+-- re-captured object could legitimately carry a second row before the first expires. A unique
+-- index would turn that into a failed sync, which is a much worse outcome than a second row.
+--
+-- NOT `CONCURRENTLY`, and that is a fact about the runner rather than a preference.
+-- `platform/migrate.apply_migrations` wraps each file and its ledger row in ONE transaction —
+-- "file + its ledger row: one tx" — and `CREATE INDEX CONCURRENTLY` cannot run inside a
+-- transaction block. A concurrent build here would not be safer, it would raise and take the
+-- boot down with it, because `main.lifespan` applies migrations before the API serves.
+--
+-- A plain build takes a SHARE lock: reads continue, writes wait. On 3,594 rows and 25 MB that is
+-- milliseconds, and it is the reason to land this now rather than at 50,000 events — the same
+-- index on a 350 MB table is a pause every capture would feel.
+create index if not exists raw_payloads_org_event_idx
+    on raw_payloads (org_id, event_id);

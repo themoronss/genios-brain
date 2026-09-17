@@ -233,7 +233,13 @@ def _pull(store: GraphStore, org_id: str, limit: int):
             "rp.enc_content, "
             "pc.clean_text as prepared_text "
             "from source_events se "
-            "join raw_payloads rp on rp.event_id = se.event_id "
+            # SCOPED, like the `prepared_content` join on the very next line. This one was not, and the
+            # two are the same shape of lookup on the same event: a payload belongs to a tenant,
+            # and a join that does not say so relies on `new_id("evt")` never colliding across
+            # orgs to stay correct. It also cannot use `raw_payloads_org_event_idx`, which leads
+            # on `org_id` — measured 2026-09-17, the per-event lookup went 351ms -> 2.9ms with
+            # the org in hand and stays a sequential scan without it.
+            "join raw_payloads rp on rp.event_id = se.event_id and rp.org_id = se.org_id "
             "left join prepared_content pc on pc.event_id = se.event_id and pc.org_id = se.org_id "
             "join lateral ("
             "  select max(qs.confidence_bp)::int as qes_confidence_bp, "
