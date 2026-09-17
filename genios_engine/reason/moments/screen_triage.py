@@ -1,13 +1,17 @@
 """Screen triage — the free question asked before the paid one (SCREEN_COST_LATENCY_FIX.md §2.2).
 
 `_screen_insight` used to send EVERY unjudged screen with ≥ 30 characters to the model, including
-the ones a rule could have refused for nothing: a news site, a settings pane, a shopping cart, a
-family chat. The 24 h thread verdict only helps AFTER that first call has been paid for. Measured
-on one seat, 3.7 h, 14 Sep: 224 calls, ₹30.
+the ones a rule could have refused for nothing: a news site, a settings pane, a shopping cart. The
+24 h thread verdict only helps AFTER that first call has been paid for. Measured on one seat,
+3.7 h, 14 Sep: 224 calls, ₹30 — one Naukri page alone bought 29 of them.
 
 The rules here are not new. They are the promoter lane's own (`capture/screen/relevance.py`), so
 the product has ONE spelling of "this screen is work":
 
+    conversation someone is writing to the manager — ALWAYS judged, whoever they are. A new
+                 client's first message names nobody in the graph yet, and instant intelligence
+                 on any screen rather than only on known people is the product decision of
+                 2026-09-14. Only a PAGE can be refused;
     entities     the device's matcher already found a person or company from the seat's slice in
                  the visible text — the strongest signal there is, and it costs nothing;
     participant  a counterparty with an email or a LinkedIn URL (a dedicated reader's output) —
@@ -30,13 +34,22 @@ from genios_engine.capture.screen.relevance import WORK_BUNDLES, WORK_EXES, WORK
 
 #: Why a screen was not judged. Counted per seat per day and reported in the capture policy.
 NO_WORK_SIGNAL = "no_work_signal"
-PERSONAL_CHAT = "personal_chat_no_known_contact"
 
-#: Messengers a manager's private life lives on too. A chat here with nobody this org knows is
-#: most likely family or friends: the promoter parks it, so the instant lane must not pay for it.
-#: (`capture/screen/relevance` held this list until the per-thread verdict replaced its use there.)
-PERSONAL_CHAT_APPS: frozenset[str] = frozenset({"whatsapp", "imessage", "messages", "telegram",
-                                                "signal", "instagram", "messenger"})
+#: Readers that hand us a CONVERSATION rather than a page. A conversation is always judged, even
+#: with nobody we know in it — that is the product decision of 2026-09-14 ("instant intelligence
+#: on ANY screen, not only known people"), and it is the wedge: a new client's first WhatsApp
+#: message names nobody in the graph yet. Only a PAGE can be refused for nothing.
+CONVERSATION_APPS: frozenset[str] = frozenset({
+    "whatsapp", "imessage", "messages", "telegram", "signal", "instagram", "messenger",
+    "gmail", "mail", "outlook", "slack", "teams", "linkedin", "discord",
+})
+#: The same, on the web: the generic reader calls itself "generic" whatever it is looking at.
+CONVERSATION_HOSTS: tuple[str, ...] = (
+    "web.whatsapp.com", "web.telegram.org", "messenger.com", "discord.com",
+    "www.linkedin.com/messaging", "linkedin.com/messaging",
+)
+#: What the generic reader calls itself.
+GENERIC_APPS: frozenset[str] = frozenset({"generic", "web", ""})
 
 #: Apps that ARE a work surface, whoever is on the other side: a company mailbox or a company
 #: chat. Kept here and not in `relevance.WORK_BUNDLES` on purpose — that constant also routes the
@@ -116,23 +129,39 @@ def has_known_counterparty(entities, participants, seat_email: str | None = None
     return False
 
 
+def is_conversation(app: str | None, thread_key: str | None, url_domain: str | None) -> bool:
+    """Is a person writing to the manager here, or is this a page? A dedicated reader names its
+    app; the generic reader calls everything "generic", so a web conversation is recognised by
+    its host. `doc:` keys with no host (a native window read generically) are pages."""
+    a = (app or "").strip().lower()
+    if a and a not in GENERIC_APPS:
+        return True          # a dedicated reader exists only for conversations
+    host = _host_of(url_domain, thread_key)
+    path = ""
+    key = (thread_key or "").strip()
+    if key.startswith("doc:") and ":title:" not in key and key.count(":") >= 2:
+        path = key.split(":", 2)[2]
+    return bool(host) and any(host == h or host.endswith("." + h) or path.startswith(h)
+                              for h in CONVERSATION_HOSTS)
+
+
 def skip_reason(*, app: str | None, bundle_id: str | None, url_domain: str | None,
                 thread_key: str | None, entities=None, participants=None,
                 seat_email: str | None = None) -> str | None:
-    """Why this screen must not cost a model call, or None when it is worth judging."""
-    known = has_known_counterparty(entities, participants, seat_email)
-    if known:
+    """Why this screen must not cost a model call, or None when it is worth judging.
+
+    ONLY A PAGE IS EVER REFUSED. A conversation is judged whoever is in it — a news site, a
+    settings pane or a shopping cart is not. The waste this removes is the 29 model calls one
+    Naukri page bought on 14 Sep, not the first message from a client nobody has met yet."""
+    if has_known_counterparty(entities, participants, seat_email):
         return None
-    a = (app or "").strip().lower()
-    if a in PERSONAL_CHAT_APPS:
-        # The promoter already parks a personal-messenger chat with no known contact; the instant
-        # lane must not pay for what the memory lane refuses.
-        return PERSONAL_CHAT
-    if is_work_app(a, bundle_id) or is_work_host(_host_of(url_domain, thread_key)):
+    if is_conversation(app, thread_key, url_domain):
+        return None
+    if is_work_app(app, bundle_id) or is_work_host(_host_of(url_domain, thread_key)):
         return None
     return NO_WORK_SIGNAL
 
 
-__all__ = ["NO_WORK_SIGNAL", "PERSONAL_CHAT", "PERSONAL_CHAT_APPS", "WORK_SURFACE_APPS", "WORK_SURFACE_BUNDLES",
+__all__ = ["CONVERSATION_APPS", "CONVERSATION_HOSTS", "NO_WORK_SIGNAL", "WORK_SURFACE_APPS", "WORK_SURFACE_BUNDLES",
            "WORK_SURFACE_EXES", "WORK_SURFACE_HOSTS", "has_known_counterparty", "is_work_app", "is_work_host",
-           "skip_reason"]
+           "is_conversation", "skip_reason"]

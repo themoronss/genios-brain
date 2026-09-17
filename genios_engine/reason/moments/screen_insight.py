@@ -717,14 +717,16 @@ def _clashes(items: list[dict], meetings: list[dict] | None, tz_name: str | None
 
 def _soon(items: list[dict], open_items: list[dict] | None, tz_name: str | None,
           now: datetime, within: timedelta = timedelta(hours=24)) -> bool:
+    """Something with a clock on it lands inside the window — or has already passed it. An
+    overdue thing is not less urgent than one due in an hour."""
     from genios_engine.reason.moments.common import parse_ts
     for it in items:
         due = _local_due(it, tz_name)
-        if due is not None and now <= due <= now + within:
+        if due is not None and due <= now + within:
             return True
     for it in open_items or []:
         due = parse_ts(it.get("due_at"))
-        if due is not None and now <= due <= now + within:
+        if due is not None and due <= now + within:
             return True
     return False
 

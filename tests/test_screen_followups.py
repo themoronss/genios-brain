@@ -220,7 +220,17 @@ ASK = "Priya Shah: Can you send the revised pricing by Friday? We need it for th
 ASK_ITEM = {"kind": "ask", "text": "Priya is waiting on revised pricing by Friday",
             "who": "Priya Shah", "due": None, "quote": "send the revised pricing by Friday"}
 SILENT = {"work": True, "remember": True, "items": [ASK_ITEM], "adds": "none", "note": None}
-ASK_V4 = {**SILENT, "adds": "repeat_ask", "note": "Priya asked for this pricing on Monday too"}
+#: An `adds` the gate can verify from the item alone (a clock), so the tests that are about
+#: muting, teaching and budgets do not have to build a history first.
+def _in_3h() -> str:
+    return (datetime.now(timezone.utc) + timedelta(hours=3)).astimezone(IST).strftime("%Y-%m-%dT%H:%M")
+
+
+#: The quote names no weekday on purpose: `fix_weekday` moves a due onto the day its quote names,
+#: which would push this one out of the window the gate checks.
+ASK_V4 = {**SILENT, "adds": "urgent_risk",
+          "items": [{**ASK_ITEM, "due": _in_3h(), "quote": "send the revised pricing"}],
+          "note": "Priya asked for this pricing on Monday too"}
 NOTHING = {"work": True, "remember": True, "items": [], "adds": "none", "note": None}
 
 
@@ -261,12 +271,19 @@ def test_an_ask_is_saved_silently_answered_by_its_quote_and_in_the_slice(  # noq
                      headers=H(dev["access_token"])).json()
     assert sl2["followups"] == [] and sl2["removed_followups"] == [fu.id]
 
-    # a note that ADDS something → the popup; the same topic again → 204, still one popup
+    # a note that ADDS something → the popup, but only when CODE can show it. The model calling
+    # something a repeat is a proposal; the open items are the evidence.
     ravi = ["Ravi Menon: Again, please send the MSA today, legal is waiting"]
     ravi_item = {"kind": "ask", "text": "Ravi needs the MSA today", "who": "Ravi Menon",
                  "due": None, "quote": "please send the MSA today"}
     _model(monkeypatch, {**NOTHING, "items": [ravi_item], "adds": "repeat_ask",
                          "note": "Ravi asked for the MSA on Monday too"})
+    unverified = _look(client, dev, ["Ravi Menon: please send the MSA today, legal is waiting"],
+                       thread="slack:ravi", app="slack")
+    assert unverified.status_code == 204, "nothing on the books says he asked before"
+    assert _q("select 1 from screen_followups where org_id=:o and who='Ravi Menon'",
+              o=org) != [], "the item is still saved — only the interruption is refused"
+    # now the books DO show it, and the same claim earns its popup
     r = _look(client, dev, ravi, thread="slack:ravi", app="slack")
     assert r.status_code == 200, r.text
     m = r.json()
@@ -274,7 +291,7 @@ def test_an_ask_is_saved_silently_answered_by_its_quote_and_in_the_slice(  # noq
         True, None, "Ravi asked for the MSA on Monday too")
     assert m["body"] == "“please send the MSA today”" and m["evidence"][0]["adds"] == "repeat_ask"
     assert [a["id"] for a in m["actions"]] == ["useful", "not_useful", "mute_chat",
-                                               "remind_tomorrow", "draft_reply"]
+                                               "remind_tomorrow", "already_handled", "draft_reply"]
     assert m["actions"][2]["payload"] == {"thread_key": "slack:ravi"}
     (ravi_fu,) = _q("select id from screen_followups where org_id=:o and thread_key='slack:ravi'",
                     o=org)
@@ -374,14 +391,15 @@ def test_budget_promises_personal_resolve_expiry_and_week(client, monkeypatch): 
         c.execute(text("update orgs set timezone='Asia/Kolkata' where id=:o"), {"o": org})
     monkeypatch.setattr(get_settings(), "screen_insight_max_per_hour", 1)
     now = datetime.now(timezone.utc)
-    due_local = (now.astimezone(IST) + timedelta(days=3)).replace(hour=17, minute=0, second=0,
-                                                                  microsecond=0)
+    # Near enough that the gate can verify the note from the item's own clock (a `conflict` would
+    # need a meeting in the graph; this test is about budgets, nudges and expiry).
+    due_local = (now.astimezone(IST) + timedelta(hours=3)).replace(second=0, microsecond=0)
 
     # my promise, dated → shown; nudge 60 min before the due (read in the seat's zone)
     _model(monkeypatch, {"work": True, "remember": True, "items": [
         {"kind": "my_promise", "text": "You promised Ravi the deck", "who": "Ravi",
          "due": due_local.strftime("%Y-%m-%dT%H:%M"), "quote": "I'll send the deck"}],
-        "adds": "conflict", "note": "The deck is due during your Voltex review"})
+        "adds": "urgent_risk", "note": "The deck is due before your Voltex review"})
     first = _look(client, dev, ["Ravi: can we see the deck?", "You: I'll send the deck by then"],
                   thread="slack:ravi", app="slack").json()
     assert first["display"] is True
@@ -390,16 +408,22 @@ def test_budget_promises_personal_resolve_expiry_and_week(client, monkeypatch): 
     assert mine.nudge_at == mine.due_at - timedelta(minutes=60)
 
     # C3: over the hourly budget → stored hidden (queued_for_brief); the follow-up still recorded
+    # A dated promise, so the gate can verify the note from the item's own clock (this test is
+    # about the budget, not about which reason). The undated rule is asserted below, on the
+    # same pure function the row is written from.
     _model(monkeypatch, {"work": True, "remember": True, "items": [
         {"kind": "their_promise", "text": "Anita will share the signed PO", "who": "Anita",
-         "due": None, "quote": "I will share the signed PO"}],
-        "adds": "same_ask_elsewhere", "note": "Anita promised the same PO on email yesterday"})
+         "due": due_local.strftime("%Y-%m-%dT%H:%M"), "quote": "I will share the signed PO"}],
+        "adds": "urgent_risk", "note": "Anita's PO is due before your Voltex review"})
     second = _look(client, dev, ["Anita: I will share the signed PO soon", "You: thanks"],
                    thread="wa:anita").json()
     assert (second["display"], second["reason"]) == (False, "queued_for_brief")
     (theirs,) = _q("select * from screen_followups where org_id=:o and kind='their_promise'",
                    o=org)
-    assert theirs.nudge_at == F.add_working_days(theirs.created_at, 2, "Asia/Kolkata")
+    assert theirs.nudge_at == theirs.due_at + F.THEIR_PROMISE_GRACE
+    assert F.nudge_at("their_promise", created_at=theirs.created_at, due_at=None,
+                      tz_name="Asia/Kolkata") == F.add_working_days(theirs.created_at, 2,
+                                                                    "Asia/Kolkata")
 
     # work:false → no popup, no follow-up, the thread's verdict is personal → memory parked
     _model(monkeypatch, {"work": False, "remember": False, "items": [], "adds": "none",
@@ -451,7 +475,8 @@ def test_budget_promises_personal_resolve_expiry_and_week(client, monkeypatch): 
                    "week_end": (monday + timedelta(days=6)).isoformat(),
                    "promises_caught": 3, "promises_kept": 1, "asks_flagged": 0,
                    "asks_answered": 0, "deadlines_flagged": 0, "risks_flagged": 0,
-                   "popups_shown": 1, "useful": 1, "not_useful": 1, "nudged_then_closed": 0}
+                   "popups_shown": 1, "useful": 1, "not_useful": 1, "nudged_then_closed": 0,
+                   "handled_elsewhere": 0}
     last = client.get(f"/v1/seats/me/weekly-report?week_start={monday - timedelta(days=7)}",
                       headers=dev_h).json()
     assert last["promises_caught"] == 0 and last["popups_shown"] == 0
@@ -492,7 +517,7 @@ def test_not_useful_mutes_the_thread_and_teaches_the_prompt(client, monkeypatch)
 
     # another thread: the model is told what the manager found not useful
     model({"work": True, "remember": True, "items": [
-        {"kind": "ask", "text": "Ravi wants the MSA today", "who": "Ravi", "due": None,
+        {"kind": "ask", "text": "Ravi wants the MSA today", "who": "Ravi", "due": _in_3h(),
          "quote": "send the MSA today"}], "adds": "urgent_risk",
         "note": "Ravi needs the MSA today, his deal closes tonight"})
     r = _look(client, dev, ["Ravi: please send the MSA today"], thread="slack:ravi", app="slack")

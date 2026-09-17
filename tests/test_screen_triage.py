@@ -33,10 +33,17 @@ def test_an_unknown_website_costs_nothing():
     assert reason(app="generic", url_domain="amazon.in") == T.NO_WORK_SIGNAL
 
 
-def test_a_personal_chat_with_nobody_we_know_costs_nothing():
-    # Mirrors what the promoter lane already does (`relevance.personal_chat_verdict`).
-    assert reason(app="whatsapp", thread_key="wa:chat:family",
-                  participants=[Participant(name="Mummy")]) == T.PERSONAL_CHAT
+def test_a_conversation_is_judged_whoever_is_in_it():
+    # The product decision of 2026-09-14: instant intelligence on ANY screen, not only on known
+    # people. A new client's first message names nobody in the graph yet — refusing it would
+    # refuse the wedge. Only a PAGE is ever refused; a family chat is answered `work:false` by
+    # the judge itself, once, and the 24 h verdict keeps it quiet after that.
+    assert reason(app="whatsapp", thread_key="wa:chat:someone-new",
+                  participants=[Participant(name="Karan")]) is None
+    assert reason(app="generic", url_domain="web.whatsapp.com") is None
+    assert reason(app="generic",
+                  thread_key="doc:com.google.Chrome:www.linkedin.com/messaging/thread/9") is None
+    assert T.is_conversation("slack", None, None) and not T.is_conversation("generic", None, None)
 
 
 def test_a_work_surface_is_judged_even_with_nobody_known_on_it():

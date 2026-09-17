@@ -209,7 +209,15 @@ def _look(client, dev, lines, *, thread="wa:chat:priya", app="whatsapp"):
 ASK = "Priya Shah: Can you send the revised pricing by Friday? We need it for the board."
 ASK_ITEM = {"kind": "ask", "text": "Priya is waiting on revised pricing by Friday",
             "who": "Priya Shah", "due": None, "quote": "send the revised pricing by Friday"}
-POPUP = {"work": True, "remember": True, "items": [ASK_ITEM], "adds": "repeat_ask",
+#: A popup the GATE can verify without a history: the item carries its own clock. (`repeat_ask`
+#: would need a prior open ask on the books, and the quote must name no weekday — `fix_weekday`
+#: moves a due onto the day its quote names, which would push it out of the window.)
+def _in_3h() -> str:
+    return (datetime.now(timezone.utc) + timedelta(hours=3)).strftime("%Y-%m-%dT%H:%M")
+
+
+POPUP = {"work": True, "remember": True, "adds": "urgent_risk",
+         "items": [{**ASK_ITEM, "due": _in_3h(), "quote": "send the revised pricing"}],
          "note": "Priya asked for this pricing on Monday too"}
 
 
@@ -225,7 +233,7 @@ def test_policy_shows_the_seats_insight_budget_and_the_cap_still_answers_204(
         assert SI.reserve(_engine(), org_id=org, seat_id=seat, cap=300, now=now)
     doc = client.get("/v1/capture/policy", headers=H(ws["member"]["token"])).json()
     tomorrow = (now.date() + timedelta(days=1)).isoformat()
-    assert doc["insight_budget"] == {"used": 2, "cap": 300,
+    assert doc["insight_budget"] == {"used": 2, "cap": 300, "skipped": 0, "unverified": 0,
                                      "resets_at": f"{tomorrow}T00:00:00Z"}
     owner = client.get("/v1/capture/policy", headers=H(ws["owner"]["token"])).json()
     assert owner["insight_budget"]["used"] == 0                     # per seat
@@ -263,7 +271,8 @@ def test_popup_actions_snooze_and_draft(client, monkeypatch):  # noqa: F811
 
     m = _look(client, dev, [ASK]).json()
     (fu,) = _q("select * from screen_followups where org_id=:o", o=org)
-    assert [a["id"] for a in m["actions"]][-2:] == ["remind_tomorrow", "draft_reply"]
+    assert [a["id"] for a in m["actions"]][-3:] == ["remind_tomorrow", "already_handled",
+                                                    "draft_reply"]
     assert m["actions"][-1]["payload"] == {"followup_id": fu.id}
 
     # snooze: Tomorrow → the next working day 09:30 in the seat's zone; slice bumped
@@ -327,7 +336,7 @@ def test_popup_actions_snooze_and_draft(client, monkeypatch):  # noqa: F811
     assert r.json() == {"text": "Hi Priya, sending the revised pricing by Friday evening."}
     assert seen["client"]["timeout"] == RD.TIMEOUT_S and seen["client"]["max_retries"] == 0
     prompt = seen["call"]["messages"][0]["content"]
-    assert ASK_ITEM["quote"] in prompt and "Priya Shah" in prompt
+    assert POPUP["items"][0]["quote"] in prompt and "Priya Shah" in prompt
     (cost,) = _q("select purpose, input_tokens, output_tokens from llm_costs where org_id=:o "
                  "and purpose='followup_draft'", o=org)
     assert (cost.input_tokens, cost.output_tokens) == (120, 18)

@@ -295,6 +295,9 @@ def test_urgency_needs_a_clock_not_a_tone():
     soon = [{**PRIYA_ASK[0], "due": "2026-09-17T20:00"}]        # 14:30 UTC, same day
     assert verify("urgent_risk", items=soon) == "urgent_risk"
     assert verify("urgent_risk", open_items=[{"due_at": "2026-09-17T18:00:00+00:00"}]) == "urgent_risk"
+    # already past due is not less urgent than due in an hour
+    assert verify("urgent_risk", items=[{**PRIYA_ASK[0], "due": "2026-09-16T09:00"}]) == "urgent_risk"
+    assert verify("urgent_risk", items=[{**PRIYA_ASK[0], "due": "2026-09-25T09:00"}]) is None
 
 
 def test_nothing_the_gate_does_not_know_can_reach_the_screen():
