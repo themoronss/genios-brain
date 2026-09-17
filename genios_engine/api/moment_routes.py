@@ -236,7 +236,8 @@ def _draft_review(body: EvaluateRequest, p: Principal, engine, now: datetime, st
     if prior is not None:
         return prior
     res = DR.review(engine, org_id=p.org_id, email=p.email, participants=body.participants,
-                    entities=body.features.entities, draft=body.draft_text or "", now=now)
+                    entities=body.features.entities, draft=body.draft_text or "", now=now,
+                    seat_id=p.seat_id)
     if res is None:
         return Response(status_code=_NO_CONTENT)
     key = M.cache_key(seat_id=p.seat_id, capability_id=DR.CAPABILITY_ID,

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
 from genios_engine.context.graph_store import challenger_digest
@@ -171,6 +171,67 @@ def test_moment_has_no_rewrite_field_and_carries_only_the_draft_hash():
     assert m["capability_id"] == "moment.draft_review" and m["body"] == "• The stage changed."
     assert {"kind": "draft", "sha256": digest} in m["evidence"]
     assert draft not in repr(m)
+
+
+class _Rows:
+    """Just enough of a connection for owed_notes: it runs exactly one statement."""
+
+    def __init__(self, rows):
+        self.rows, self.params = rows, None
+
+    def execute(self, _stmt, params):
+        self.params = params
+        return self
+
+    def fetchall(self):
+        return self.rows
+
+
+def _fu(**kw):
+    base = {"kind": "ask", "text": "the revised quote", "who": "Priya Shah (Acme)",
+            "due_at": None, "created_at": datetime(2026, 9, 15, 6, 30, tzinfo=timezone.utc)}
+    return SimpleNamespace(**{**base, **kw})
+
+
+def test_the_draft_is_told_what_this_person_is_still_waiting_on():
+    # The manager knows what they meant to write. What they forget is the thing from Monday.
+    c = _Rows([_fu(), _fu(kind="my_promise", text="the signed MSA", who="Priya Shah",
+                   due_at=datetime(2026, 9, 16, 12, 30, tzinfo=timezone.utc))])
+    notes = DR.owed_notes(c, org_id="o", seat_id="seat_1", names=["Priya"],
+                          draft="Hi Priya, good to catch up today.", now=NOW)
+    assert [n["source"] for n in notes] == ["owed", "owed"]
+    assert notes[0]["text"] == ("Not in the draft: the revised quote — Priya asked for this and "
+                                "it is still open (since 2026-09-15).")
+    assert notes[1]["text"] == ("Not in the draft: the signed MSA — you promised Priya this "
+                                "(due 2026-09-16).")
+    assert notes[0]["evidence"][0]["kind"] == "followup"
+    # Only OPEN items, only this seat, only the recent ones — the statement says so itself.
+    assert c.params["s"] == "seat_1" and c.params["since"] == NOW - timedelta(days=DR.OWED_DAYS)
+
+
+def test_nothing_is_said_about_what_the_draft_already_covers():
+    c = _Rows([_fu()])
+    assert DR.owed_notes(c, org_id="o", seat_id="s", names=["Priya"],
+                         draft="Priya, sending the revised quote now.", now=NOW) == []
+    # A different Priya-shaped name is a different person, and no seat means no items at all.
+    assert DR.owed_notes(c, org_id="o", seat_id="s", names=["Priyanka Rao"], draft="hi",
+                         now=NOW) == []
+    assert DR.owed_notes(c, org_id="o", seat_id=None, names=["Priya"], draft="hi", now=NOW) == []
+
+
+def test_what_counts_as_already_covered():
+    assert DR.covered("sending the revised quote now", "the revised quote")
+    assert DR.covered("quote attached", "the revised quote"), "half the words is enough"
+    assert not DR.covered("will call you tomorrow", "the revised quote")
+    # Words everybody uses prove nothing.
+    assert not DR.covered("please send this", "please send the onboarding checklist")
+
+
+def test_names_are_matched_the_way_people_write_them():
+    assert DR.name_key("Priya Shah (Acme)") == "priya shah"
+    assert DR.name_key("Shah, Priya") == "shah" and DR.name_key(None) == ""
+    assert DR.same_person("priya", "priya shah") and DR.same_person("priya shah", "priya")
+    assert not DR.same_person("priyanka rao", "priya") and not DR.same_person("p", "priya")
 
 
 def test_review_answers_none_when_the_budget_runs_out(monkeypatch):

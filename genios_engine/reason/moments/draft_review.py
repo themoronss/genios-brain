@@ -6,6 +6,11 @@ whose `evidence[]` says what each note rests on. It never proposes wording: ther
 replacement-text field in the response, notes that copy the draft are dropped, and the draft text
 itself is NEVER stored — only its sha256 travels (evidence + dedupe key).
 
+    still open         (deterministic) what this person is STILL waiting on — the seat's own open
+                       screen follow-ups with them, ≤ 14 days old, that the draft does not
+                       already cover. This is the one check that works for somebody GeniOS only
+                       knows from the screen, so it runs with no graph subject and, when it is
+                       alone, with no model call at all;
     stale-value check  (deterministic) the draft states a value the graph has since replaced
                        (`slice.recent_changes`, seat-visible, 90 d);
     critique           (only when a reasoned run exists for the subject; the seam's refusal —
@@ -23,7 +28,7 @@ import re
 import time
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FutureTimeout
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import text
 
@@ -40,6 +45,15 @@ TTL_SECONDS = 600
 MAX_NOTES = 2
 NOTE_MAX_CHARS = 240
 STALE_DAYS = 90
+#: An open item older than this is not what they are writing about any more.
+OWED_DAYS = 14
+OWED_MAX = 2
+#: Words too common to prove the draft covers an item.
+_THIN = frozenset({"about", "after", "again", "been", "before", "being", "could", "from", "have",
+                   "into", "just", "like", "more", "much", "need", "needs", "only", "over",
+                   "please", "same", "send", "sent", "some", "soon", "that", "their", "them",
+                   "then", "there", "these", "they", "this", "time", "very", "want", "wants",
+                   "well", "were", "what", "when", "which", "will", "with", "would", "your"})
 #: A note that repeats this many consecutive characters of the draft is rewriting it — dropped.
 COPY_WINDOW = 40
 _POOL = ThreadPoolExecutor(max_workers=4, thread_name_prefix="draft-review")
@@ -144,6 +158,65 @@ def stale_notes(changes: list[dict], draft: str) -> list[dict]:
                       "evidence": [{"kind": "fact_change", **{k: ch.get(k) for k in (
                           "node_id", "field", "old", "new", "changed_at")}}],
                       "source": "stale"})
+    return notes
+
+
+def name_key(s: str | None) -> str:
+    """"Priya Shah (Acme)" / "Shah, Priya" → "priya shah" / "shah" — the name part, lower case."""
+    return " ".join((s or "").split("(")[0].split(",")[0].split()).casefold()
+
+
+def same_person(a: str, b: str) -> bool:
+    """Same name, or one is the other's leading word(s) ("priya" ~ "priya shah")."""
+    if len(a) < 2 or len(b) < 2:
+        return False
+    lead = lambda long, short: long.startswith(short + " ")      # noqa: E731
+    return a == b or lead(a, b) or lead(b, a)
+
+
+def covered(draft: str, *parts: str | None) -> bool:
+    """Does the draft already say this? Half of an item's own words being in the draft is enough
+    — the manager writing "quote bhej raha hoon" has covered "send the revised quote"."""
+    low = (draft or "").casefold()
+    words = {w for part in parts for w in re.findall(r"[a-z0-9]{4,}", (part or "").casefold())
+             if w not in _THIN}
+    if not words:
+        return False
+    hit = sum(1 for w in words if w in low)
+    return hit * 2 >= len(words)
+
+
+def owed_notes(conn, *, org_id: str, seat_id: str | None, names: list[str], draft: str,
+               now: datetime) -> list[dict]:
+    """What the person being written to is still waiting on. The manager knows what they meant to
+    write; what they forget is the thing from three days ago — so this is the note worth making."""
+    keys = [k for k in (name_key(n) for n in names) if len(k) >= 2]
+    if not seat_id or not keys:
+        return []
+    rows = conn.execute(text(
+        "select kind, text, who, due_at, created_at from screen_followups "
+        "where org_id = :o and seat_id = :s and resolved_at is null and who is not null "
+        "and kind in ('ask', 'my_promise', 'their_promise') "
+        "and created_at > :since order by created_at desc limit 20"),
+        {"o": org_id, "s": seat_id, "since": now - timedelta(days=OWED_DAYS)}).fetchall()
+    notes = []
+    for r in rows:
+        who = name_key(r.who)
+        if not any(same_person(who, k) for k in keys) or covered(draft, r.text):
+            continue
+        first = (r.who or "").split("(")[0].split(",")[0].strip().split(" ")[0]
+        asked = iso(r.created_at)[:10] if r.created_at else None
+        due = iso(r.due_at)[:10] if r.due_at else None
+        lead = {"ask": f"{first} asked for this and it is still open",
+                "my_promise": f"you promised {first} this",
+                "their_promise": f"{first} promised you this"}[r.kind]
+        when = f" (due {due})" if due else (f" (since {asked})" if asked else "")
+        notes.append({"text": f"Not in the draft: {r.text} — {lead}{when}.",
+                      "source": "owed",
+                      "evidence": [{"kind": "followup", "followup_kind": r.kind, "who": r.who,
+                                    "text": r.text, "created_at": asked, "due_at": due}]})
+        if len(notes) >= OWED_MAX:
+            break
     return notes
 
 
@@ -289,44 +362,56 @@ def moment_content(notes: list[dict], *, digest: str) -> dict:
 
 
 def _compute(engine, *, org_id: str, email: str | None, participants, entities, draft: str,
-             now: datetime, deadline: float) -> dict | None:
+             now: datetime, deadline: float, seat_id: str | None = None) -> dict | None:
     from genios_engine.reason.moments import recall as R
     from genios_engine.reason.moments.slice import recent_changes
     digest = draft_digest(draft)
     viewer = viewer_key(email)
+    names = [n for n in ([getattr(pp, "name", None) for pp in (participants or [])]
+                         + list(entities or [])) if isinstance(n, str) and n.strip()]
+    stale: list[dict] = []
+    facts: list[dict] = []
     with engine.connect() as c:
         subjects, _me = R.resolve(c, org_id=org_id, participants=participants,
                                   entities=entities, seat_email=email)
-        if not subjects:
-            return None
         sids = [s.node_id for s in subjects[:3]]
-        nodes = related_nodes(c, org_id=org_id, subject_ids=sids)
-        stale = stale_notes(recent_changes(c, org_id=org_id, node_ids=nodes, viewer=viewer,
-                                           now=now, days=STALE_DAYS), draft)
-        facts = current_facts(c, org_id=org_id, node_ids=nodes, viewer=viewer)
+        # The person may be known only from the screen, so this one does not need the graph.
+        owed = owed_notes(c, org_id=org_id, seat_id=seat_id, names=names, draft=draft, now=now)
+        if not sids and not owed:
+            return None
+        if sids:
+            nodes = related_nodes(c, org_id=org_id, subject_ids=sids)
+            stale = stale_notes(recent_changes(c, org_id=org_id, node_ids=nodes, viewer=viewer,
+                                               now=now, days=STALE_DAYS), draft)
+            facts = current_facts(c, org_id=org_id, node_ids=nodes, viewer=viewer)
     crit = []
-    if time.monotonic() < deadline - 1.0:
+    if sids and time.monotonic() < deadline - 1.0:
         try:
             crit = critique_notes(engine, org_id=org_id, subject_ids=sids, draft=draft,
                                   digest=digest)
         except Exception:      # noqa: BLE001 — a critique failure costs a note, never the review
             _log.exception("draft review: critique sub-check failed org=%s", org_id)
-    deterministic = stale + crit
-    model = llm_notes(engine, org_id=org_id, facts=facts, findings=deterministic, draft=draft,
-                      digest=digest, deadline=deadline)
-    notes = finalize((model or []) or deterministic, draft)
+    graph = stale + crit
+    # ROUTER CHECK 5, HERE TOO: with nothing but open items and no facts to weigh them against,
+    # the sentence is already written and a model call would only rephrase it. Pay for nothing.
+    model = (llm_notes(engine, org_id=org_id, facts=facts, findings=owed + graph, draft=draft,
+                       digest=digest, deadline=deadline) if facts or graph else None)
+    # An open item is a fact about this person, not an opinion — the model never drops it.
+    notes = finalize(owed + ((model or []) or graph), draft)
     if not notes:
         return None
     return {"subject_ids": sids, "content": moment_content(notes, digest=digest)}
 
 
 def review(engine, *, org_id: str, email: str | None, participants, entities, draft: str,
-           now: datetime | None = None, timeout_s: float = TIMEOUT_S) -> dict | None:
+           now: datetime | None = None, timeout_s: float = TIMEOUT_S,
+           seat_id: str | None = None) -> dict | None:
     """`{"subject_ids", "content"}` or None (nothing to say, or the 2.8 s budget ran out)."""
     now = now or datetime.now(timezone.utc)
     deadline = time.monotonic() + timeout_s
     fut = _POOL.submit(_compute, engine, org_id=org_id, email=email, participants=participants,
-                       entities=entities, draft=draft, now=now, deadline=deadline)
+                       entities=entities, draft=draft, now=now, deadline=deadline,
+                       seat_id=seat_id)
     try:
         return fut.result(timeout=max(0.0, deadline - time.monotonic()))
     except FutureTimeout:
@@ -337,5 +422,5 @@ def review(engine, *, org_id: str, email: str | None, participants, entities, dr
         return None
 
 
-__all__ = ["CAPABILITY_ID", "CAPABILITY_VERSION", "TIMEOUT_S", "copies_draft", "draft_digest",
-           "finalize", "moment_content", "review", "stale_notes"]
+__all__ = ["CAPABILITY_ID", "CAPABILITY_VERSION", "TIMEOUT_S", "copies_draft", "covered",
+           "draft_digest", "finalize", "moment_content", "owed_notes", "review", "stale_notes"]

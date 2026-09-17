@@ -398,3 +398,44 @@ def test_draft_review_returns_notes_without_rewrite_and_never_stores_the_draft(c
         cached = c.execute(text("select coalesce(string_agg(moment::text, ''), '') from "
                                 "moment_cache where org_id=:o"), {"o": org}).scalar()
     assert "order form" not in stored and "order form" not in cached
+
+
+def test_the_draft_hears_about_somebody_geni_os_only_knows_from_the_screen(client, store):
+    """Nothing in the graph, one open item from a chat, and the manager writing to that person:
+    the note is the one thing they were about to leave out, and it costs no model call."""
+    ws = _workspace(client)
+    org, seat = ws["org"], ws["member"]["seat_id"]
+    for token, body in ((ws["owner"]["token"], {"draft_assist_allowed": True}),
+                        (ws["member"]["token"], {"draft_assist": True})):
+        path = "/v1/capture/policy" if "draft_assist_allowed" in body else "/v1/capture/settings"
+        assert client.put(path, json=body, headers=H(token)).status_code == 200
+    with _engine().begin() as c:
+        c.execute(text(
+            "insert into screen_followups (id, org_id, seat_id, thread_key, app, kind, text, "
+            "who, topic_key, created_at) values (:i, :o, :s, 'wa:chat:meera', 'whatsapp', 'ask', "
+            ":t, 'Meera Iyer', :k, :at)"),
+            {"i": "fu_" + uuid.uuid4().hex[:8], "o": org, "s": seat,
+             "t": "the churn deck for the board", "k": "churn-deck", "at": NOW - timedelta(days=3)})
+
+    def never(*a, **kw):
+        raise AssertionError("an open item is already a sentence — no model call belongs here")
+
+    import genios_engine.reason.moments.draft_review as _DR
+    old, _DR.llm_notes = _DR.llm_notes, never
+    try:
+        res = _evaluate(client, ws["member_dev"],
+                        participants=[{"name": "Meera Iyer", "email": None}],
+                        draft_text="Hi Meera, sorry for the slow reply — busy week here.")
+    finally:
+        _DR.llm_notes = old
+    assert res.status_code == 200, res.text
+    out = res.json()
+    assert out["capability_id"] == "moment.draft_review"
+    assert out["body"] == ("• Not in the draft: the churn deck for the board — Meera asked for "
+                           f"this and it is still open (since {(NOW - timedelta(days=3)).date()}).")
+    assert out["evidence"][0]["kind"] == "followup"
+    # Say the same thing in the draft and there is nothing left to add.
+    quiet = _evaluate(client, ws["member_dev"],
+                      participants=[{"name": "Meera Iyer", "email": None}],
+                      draft_text="Hi Meera, the churn deck for the board is attached.")
+    assert quiet.status_code == 204, quiet.text
