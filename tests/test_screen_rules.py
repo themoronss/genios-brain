@@ -105,3 +105,30 @@ def test_a_long_line_is_quoted_short():
     long = "Priya Shah: " + " ".join(f"word{i}" for i in range(40)) + " bhej dena"
     q = R.extract([long])[0]["quote"]
     assert len(q.split()) == R.QUOTE_WORDS
+
+
+def test_the_managers_own_mail_is_never_someone_asking_them():
+    # The generic reader often does not know direction, so on a mailbox the manager's own sent
+    # mail arrives with their NAME as the sender. Without this it reads as an incoming ask.
+    me = ["harsh@genios.ai", "Harsh Tripathi"]
+    assert R.extract(["Harsh Tripathi: please send the signed MSA"], me=me) == []
+    assert kinds(R.extract(["Harsh Tripathi: I'll send the deck tonight"], me=me)) == [
+        ("my_promise", None, None)]
+    # …and somebody else asking on the same screen still is one
+    got = kinds(R.extract(["Harsh Tripathi: I'll send the deck tonight",
+                           "Priya Shah: MSA bhi bhej dena"], me=me))
+    assert ("ask", "Priya Shah", None) in got
+
+
+def test_router_check_6_refuses_a_screen_with_nothing_in_it():
+    # Not ambiguous — empty. The model would read these and answer nothing.
+    for quiet in ["Priya Shah: got it, thanks!", "Priya Shah: ok", "Ankit: staging deploy ho gaya",
+                  "SaaS Weekly: 5 pricing experiments that worked"]:
+        assert not R.worth_asking([quiet]), quiet
+    # One question, one amount, one clock, one request word — any of them is enough.
+    for worth in ["Priya Shah: quote?", "Priya: invoice 4.2 lakh",
+                  "Meera: churn deck EOD tak chahiye", "Rahul: jo pending hai wo bhej dena",
+                  "Vendor: if we don't hear by tomorrow we go elsewhere"]:
+        assert R.worth_asking([worth]), worth
+    # A date the DEVICE resolved settles it whatever the words are.
+    assert R.worth_asking(["Priya: theek hai"], dates=KAL)

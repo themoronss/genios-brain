@@ -85,7 +85,16 @@ class Line:
         return f"Line({'You' if self.outgoing else self.who!r}, {self.text!r})"
 
 
-def lines(visible) -> list[Line]:
+def _is_me(who: str, me: list[str] | None) -> bool:
+    """Is this line the manager's own? The device writes "You:" when its reader knows the
+    direction — but the GENERIC reader often does not, and on a mailbox that would turn the
+    manager's own sent mail into somebody asking them for something. Their own name or address
+    on the line settles it."""
+    from genios_engine.reason.moments.screen_insight import is_me
+    return who.casefold() in _SELF or is_me(who, me)
+
+
+def lines(visible, me: list[str] | None = None) -> list[Line]:
     """`visible_messages` → the lines a PERSON wrote, in order.
 
     Two shapes arrive: `{sender, text}` from a dedicated reader, and `"Priya Shah: …"` strings
@@ -100,8 +109,8 @@ def lines(visible) -> list[Line]:
             text = " ".join(str(item.get("text") or "").split())
             if not who or not text:
                 continue
-            out.append(Line(None if who.casefold() in _SELF else who, text,
-                            who.casefold() in _SELF))
+            mine = _is_me(who, me)
+            out.append(Line(None if mine else who, text, mine))
             continue
         m = _LINE.match(" ".join(str(item or "").split()))
         if m is None:
@@ -109,14 +118,15 @@ def lines(visible) -> list[Line]:
         who, text = m.group("who").strip(), m.group("text").strip()
         if not who or not text:
             continue
-        out.append(Line(None if who.casefold() in _SELF else who, text,
-                        who.casefold() in _SELF))
+        mine = _is_me(who, me)
+        out.append(Line(None if mine else who, text, mine))
     return out
 
 
-def said(visible) -> list[str]:
+def said(visible, me: list[str] | None = None) -> list[str]:
     """The normalised text of every line a person wrote — the grounding check's "was this said?"."""
-    return [" ".join(re.sub(r"[^\w\s]", " ", ln.text).split()).casefold() for ln in lines(visible)]
+    return [" ".join(re.sub(r"[^\w\s]", " ", ln.text).split()).casefold()
+            for ln in lines(visible, me)]
 
 
 def _quote(text: str) -> str:
@@ -155,7 +165,7 @@ def _kind(ln: Line) -> str | None:
     return "their_promise" if commit else None
 
 
-def extract(visible, *, dates=None, tz_name: str | None = None,
+def extract(visible, *, dates=None, tz_name: str | None = None, me: list[str] | None = None,
             now: datetime | None = None) -> list[dict]:
     """Items this screen states outright, newest last — or [] when it needs reading rather than
     matching. Same shape `screen_insight.judge` produces, so the caller cannot tell them apart.
@@ -164,7 +174,7 @@ def extract(visible, *, dates=None, tz_name: str | None = None,
     newest wording is the one worth quoting back.
     """
     found: dict[tuple[str, str], dict] = {}
-    for ln in lines(visible):
+    for ln in lines(visible, me):
         kind = _kind(ln)
         if kind is None:
             continue
@@ -187,14 +197,14 @@ def extract(visible, *, dates=None, tz_name: str | None = None,
     return items[:MAX_ITEMS]
 
 
-def answered_after(visible, quote: str) -> bool:
+def answered_after(visible, quote: str, me: list[str] | None = None) -> bool:
     """Did the manager write anything BELOW the line this quote came from? Then the ask on that
     line is already answered on this very screen, and nothing should be raised for it."""
     q = " ".join(re.sub(r"[^\w\s]", " ", quote or "").split()).casefold()
     if not q:
         return False
     seen = False
-    for ln in lines(visible):
+    for ln in lines(visible, me):
         norm = " ".join(re.sub(r"[^\w\s]", " ", ln.text).split()).casefold()
         if not seen and q in norm:
             seen = True
@@ -273,6 +283,39 @@ def _hours_to_due(items, tz_name, now: datetime) -> int | None:
     return best
 
 
+#: Router check 6. A screen with none of these is not ambiguous — it is empty. "got it, thanks",
+#: "ok", a status line, a forwarded article: there is no request, no promise, no clock and no
+#: number in it, so the model would read it and answer nothing. That answer is free here.
+_WORTH_ASKING = re.compile(
+    r"[?？]"                                        # somebody asked something
+    r"|\b(?:need|want|send|share|sign|approve|confirm|review|pay|invoice|quote|contract|deadline"
+    r"|urgent|asap|pending|chahiye|bhej|karo|kar\s*d|dena|jaldi|kab|kyu|kaise)\b"
+    r"|[₹$€£]\s?\d|\b\d+\s?(?:%|k|lakh|cr|crore|million)\b"   # money or a quantity
+    r"|\b(?:today|tomorrow|tonight|monday|tuesday|wednesday|thursday|friday|saturday|sunday"
+    r"|eod|cob|kal|aaj|parso|subah|shaam)\b",       # a clock
+    re.I)
+
+
+def worth_asking(visible, dates=None) -> bool:
+    """ROUTER CHECK 6: is there anything here a model could even find?
+
+    Rules could not read this screen — but that does not make it ambiguous. Most screens that
+    reach here carry no request, no commitment, no date and no amount, and the model returns
+    nothing for them. Asking anyway is the purest waste in the lane, so it is not asked.
+
+    Deliberately generous: one question mark, one date the device resolved, one amount, one
+    request word in either language is enough. The point is to refuse the plainly empty, not to
+    judge the borderline — that judgement is exactly what the model is for.
+    """
+    if dates:
+        return True
+    # Every line, not only the ones with a sender: a PAGE has no senders at all, and a page is
+    # exactly where an invoice amount or a due date sits without anybody saying it.
+    return any(_WORTH_ASKING.search(str(item.get("text") or "") if isinstance(item, dict)
+                                    else str(item or ""))
+               for item in visible or [])
+
+
 def enough(items: list[dict], *, verdict_known: bool) -> bool:
     """May the model be skipped entirely for this screen?
 
@@ -285,4 +328,4 @@ def enough(items: list[dict], *, verdict_known: bool) -> bool:
 
 
 __all__ = ["Line", "MAX_ITEMS", "QUOTE_WORDS", "RULE_CONFIDENCE", "answered_after", "enough",
-           "extract", "lines", "propose_adds", "said"]
+           "extract", "lines", "propose_adds", "said", "worth_asking"]

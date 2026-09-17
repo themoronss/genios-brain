@@ -408,11 +408,24 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
     ruled: list[dict] = []
     if getattr(settings, "screen_rules_enabled", True):
         ruled = [it for it in RU.extract(body.visible_messages, dates=body.features.dates,
-                                         tz_name=tz, now=now)
+                                         tz_name=tz, me=me, now=now)
                  if not (it["kind"] == "ask"
-                         and RU.answered_after(body.visible_messages, it["quote"]))]
-        if RU.enough(ruled, verdict_known=site is not None or verdict is not None):
+                         and RU.answered_after(body.visible_messages, it["quote"], me))]
+        judged_before = site is not None or verdict is not None
+        if RU.enough(ruled, verdict_known=judged_before):
             return _rule_items(ruled, body, p, engine, thread, app, tz, now, started)
+        # ROUTER CHECK 6: no rule could read it — but is there anything here to read? A screen
+        # with no question, no request word, no date and no amount is not ambiguous, it is empty,
+        # and the model answers nothing for it. That answer is free here.
+        #
+        # Never on a thread nobody has judged yet, though: that FIRST sighting is what produces
+        # the work/personal verdict the rest of the product runs on, and a quiet screen is as
+        # good a place to earn it as a loud one.
+        if judged_before and not ruled and not RU.worth_asking(body.visible_messages,
+                                                               body.features.dates):
+            SI.note_skipped(engine, org_id=p.org_id, seat_id=p.seat_id, now=now)
+            _log.info("screen rules: nothing to ask about org=%s seat=%s", p.org_id, p.seat_id)
+            return Response(status_code=_NO_CONTENT)
     cap = int(getattr(settings, "screen_insight_daily_cap", SI.DEFAULT_DAILY_CAP) or 0)
     if not SI.reserve(engine, org_id=p.org_id, seat_id=p.seat_id, cap=cap, now=now):
         _log.info("screen insight capped org=%s seat=%s", p.org_id, p.seat_id)
@@ -423,7 +436,7 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
                      participants=body.participants, entities=body.features.entities,
                      screen=screen, now_local=SI.local_label(now, tz),
                      dates=body.features.dates, not_useful=notes,
-                     useful=kept, said=RU.said(body.visible_messages), me=me,
+                     useful=kept, said=RU.said(body.visible_messages, me), me=me,
                      open_items=context, meetings=meetings,
                      thread_key=thread, tz_name=tz, today=now.astimezone(F.zone(tz)).date(),
                      summary=summary, profile=profile)
