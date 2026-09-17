@@ -324,6 +324,7 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
                    (`queued_for_brief`)."""
     from genios_engine.reason.moments import followups as F
     from genios_engine.reason.moments import screen_insight as SI
+    from genios_engine.reason.moments import screen_rules as RU
     from genios_engine.reason.moments import screen_triage as T
     screen = SI.visible_text(body.visible_messages)
     if len(screen) < SI.MIN_TEXT_CHARS:
@@ -358,7 +359,12 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
                             thread_keys=[thread, vkey], now=now)
         site = (F.thread_verdict(c, org_id=p.org_id, seat_id=p.seat_id, thread_key=vkey, now=now)
                 if vkey and vkey != thread else None)
-        personal_site = site is not None and site["work"] is False
+        # This THREAD's own verdict (router check 5 reads it): once somebody has judged the chat
+        # work, a rule may answer every later screen on it without a model.
+        verdict = (F.thread_verdict(c, org_id=p.org_id, seat_id=p.seat_id, thread_key=thread,
+                                    now=now) if thread else None)
+        personal_site = ((site is not None and site["work"] is False)
+                         or (verdict is not None and verdict["work"] is False))
         # P13: an AI assistant's own chat page is the manager thinking out loud — never judged.
         assistant = F.is_assistant_page(thread)
         skip = judged or muted or personal_site or assistant
@@ -393,6 +399,20 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
         _log.info("screen insight: assistant page org=%s seat=%s", p.org_id, p.seat_id)
         return Response(status_code=_NO_CONTENT)
     settings = get_settings()
+    # ROUTER CHECK 5 (plan Fig 10.1): what a RULE can answer, the model is not asked. A message
+    # line carries its own sender and its own words, and the device already resolved its dates —
+    # so "Priya Shah: kal tak revised quote bhej dena" is an ask, a who and a due without anyone
+    # reading it. The quote IS the item, so no paraphrase and no model. The one judgement no rule
+    # makes is work-vs-personal, which is why this only applies once the thread has a verdict:
+    # the first sighting costs a call, every one for the next 24 h can be free.
+    ruled: list[dict] = []
+    if getattr(settings, "screen_rules_enabled", True):
+        ruled = [it for it in RU.extract(body.visible_messages, dates=body.features.dates,
+                                         tz_name=tz, now=now)
+                 if not (it["kind"] == "ask"
+                         and RU.answered_after(body.visible_messages, it["quote"]))]
+        if RU.enough(ruled, verdict_known=site is not None or verdict is not None):
+            return _rule_items(ruled, body, p, engine, thread, app, tz, now, started)
     cap = int(getattr(settings, "screen_insight_daily_cap", SI.DEFAULT_DAILY_CAP) or 0)
     if not SI.reserve(engine, org_id=p.org_id, seat_id=p.seat_id, cap=cap, now=now):
         _log.info("screen insight capped org=%s seat=%s", p.org_id, p.seat_id)
@@ -403,7 +423,7 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
                      participants=body.participants, entities=body.features.entities,
                      screen=screen, now_local=SI.local_label(now, tz),
                      dates=body.features.dates, not_useful=notes,
-                     useful=kept, said=SI.said_lines(body.visible_messages), me=me,
+                     useful=kept, said=RU.said(body.visible_messages), me=me,
                      open_items=context, meetings=meetings,
                      thread_key=thread, tz_name=tz, today=now.astimezone(F.zone(tz)).date(),
                      summary=summary, profile=profile)
@@ -465,6 +485,66 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
     _log.info("screen insight org=%s seat=%s display=%s reason=%s adds=%s items=%d ms=%.0f",
               p.org_id, p.seat_id, out["display"], out["reason"], verified, len(topics),
               (time.perf_counter() - started) * 1000)
+    return out
+
+
+def _rule_items(items: list[dict], body: EvaluateRequest, p: Principal, engine, thread, app, tz,
+                now: datetime, started: float):
+    """Router check 5's answer: the screen said it outright, so nothing was asked and nothing was
+    paid for. From here on it is the ordinary path — the same follow-up rows, the same topic
+    keys, the same nudge ladder, and a popup only through the same gate the model's answers pass.
+    The manager cannot tell which lane produced a card, and should not be able to."""
+    from genios_engine.reason.moments import followups as F
+    from genios_engine.reason.moments import screen_insight as SI
+    from genios_engine.reason.moments import screen_rules as RU
+    local_date = now.astimezone(F.zone(tz)).date()
+    meetings = _meetings_soon(engine, p, now)
+    with engine.connect() as c:
+        context = F.open_context(c, org_id=p.org_id, seat_id=p.seat_id, thread_key=thread,
+                                 screen=SI.visible_text(body.visible_messages))
+    topics: list[str] = []
+    first_followup: str | None = None
+    for it in items:
+        topic = F.topic_key(seat_id=p.seat_id, thread_key=thread, app=app, kind=it["kind"],
+                            who=it["who"], local_date=local_date)
+        saved = F.upsert(engine, org_id=p.org_id, seat_id=p.seat_id, kind=it["kind"],
+                         note=it["text"], who=it["who"],
+                         due_at=F.parse_due(it["due"], tz_name=tz, now=now), thread_key=thread,
+                         app=app, topic=topic, tz_name=tz, now=now, quote=it["quote"])
+        if not topics and saved is not None:
+            first_followup = F.followup_id(p.org_id, p.seat_id, topic)
+        topics.append(topic)
+    proposed = RU.propose_adds(items, open_items=context, meetings=meetings, thread_key=thread,
+                               tz_name=tz, now=now)
+    if proposed is None:                               # the product rule: it adds nothing → silent
+        _log.info("screen rules: saved silently org=%s seat=%s items=%d ms=%.0f", p.org_id,
+                  p.seat_id, len(topics), (time.perf_counter() - started) * 1000)
+        return Response(status_code=_NO_CONTENT)
+    adds, note = proposed
+    topic = topics[0]
+    with engine.connect() as c:
+        repeat = F.topic_shown(c, org_id=p.org_id, seat_id=p.seat_id,
+                               capability_id=SI.CAPABILITY_ID, topic=topic, now=now)
+        shown = 0 if repeat else F.shown_last_hour(c, org_id=p.org_id, seat_id=p.seat_id,
+                                                   capability_id=SI.CAPABILITY_ID, now=now)
+    if repeat:
+        return Response(status_code=_NO_CONTENT)
+    budget = int(getattr(get_settings(), "screen_insight_max_per_hour", 3) or 0)
+    digest = SI.text_digest(SI.visible_text(body.visible_messages))
+    content = SI.moment_content({"items": items}, digest=digest, adds=adds, note=note,
+                                topic_key=topic, thread_key=thread, followup_id=first_followup)
+    moment_id = M.server_moment_id(p.seat_id, body.moment_request_id)
+    key = M.cache_key(seat_id=p.seat_id, capability_id=SI.CAPABILITY_ID, subject_ids=[],
+                      trigger=M.trigger_digest(SI.CAPABILITY_ID, digest), subject_version="screen")
+    try:
+        out = M.persist(engine, org_id=p.org_id, seat_id=p.seat_id, device_id=p.device_id,
+                        origin="server", moment={"moment_id": moment_id, **content},
+                        subject_ids=[], now=now, key=key,
+                        hidden_reason=QUEUED_FOR_BRIEF if shown >= budget else None)
+    except M.MomentConflict:
+        return _err(409, "MOMENT_ID_CONFLICT", "That moment id belongs to another seat.")
+    _log.info("screen rules org=%s seat=%s display=%s adds=%s items=%d ms=%.0f", p.org_id,
+              p.seat_id, out["display"], adds, len(topics), (time.perf_counter() - started) * 1000)
     return out
 
 

@@ -269,7 +269,12 @@ def test_an_ask_is_saved_silently_answered_by_its_quote_and_in_the_slice(  # noq
         "answered"
     sl2 = client.get(f"/v1/seats/me/slice?since={sl['version']}",
                      headers=H(dev["access_token"])).json()
-    assert sl2["followups"] == [] and sl2["removed_followups"] == [fu.id]
+    assert sl2["removed_followups"] == [fu.id]
+    # Router check 5 read the manager's own line off the screen — "sending it in 10 minutes" is a
+    # promise, and the thread already had a verdict, so it was caught with NO model call. The
+    # mocked model returned nothing; the rule found what it missed.
+    assert [(f["kind"], f["who"]) for f in sl2["followups"]] == [("my_promise", None)]
+    assert sl2["followups"][0]["quote"] == "sending it in 10 minutes"
 
     # a note that ADDS something → the popup, but only when CODE can show it. The model calling
     # something a repeat is a proposal; the open items are the evidence.
@@ -283,13 +288,17 @@ def test_an_ask_is_saved_silently_answered_by_its_quote_and_in_the_slice(  # noq
     assert unverified.status_code == 204, "nothing on the books says he asked before"
     assert _q("select 1 from screen_followups where org_id=:o and who='Ravi Menon'",
               o=org) != [], "the item is still saved — only the interruption is refused"
-    # now the books DO show it, and the same claim earns its popup
+    # Now the books DO show it — and by now the thread has a verdict, so ROUTER CHECK 5 answers
+    # the repeat with no model at all: the rule reads the ask off the line, proposes `repeat_ask`
+    # from the open item, and the same gate verifies it. The note is templated rather than
+    # written, which is the trade: a free popup says a little less.
     r = _look(client, dev, ravi, thread="slack:ravi", app="slack")
     assert r.status_code == 200, r.text
     m = r.json()
     assert (m["display"], m["reason"], m["headline"]) == (
-        True, None, "Ravi asked for the MSA on Monday too")
-    assert m["body"] == "“please send the MSA today”" and m["evidence"][0]["adds"] == "repeat_ask"
+        True, None, "Ravi Menon asked for this before — it is still open")
+    assert m["evidence"][0]["adds"] == "repeat_ask"
+    assert m["body"].startswith("“Again, please send the MSA today"), m["body"]
     assert [a["id"] for a in m["actions"]] == ["useful", "not_useful", "mute_chat",
                                                "remind_tomorrow", "already_handled", "draft_reply"]
     assert m["actions"][2]["payload"] == {"thread_key": "slack:ravi"}
@@ -587,3 +596,37 @@ def test_followups_expire_by_kind(client):  # noqa: F811
     got = {r.topic_key: r.resolution for r in _q(
         "select topic_key, resolution from screen_followups where org_id=:o", o=org)}
     assert got == {fid: ("expired" if exp else None) for fid, (*_, exp) in rows.items()}
+
+
+@pytest.mark.pg
+def test_router_check_5_answers_a_known_thread_with_no_model_at_all(client, monkeypatch):  # noqa: F811
+    """The screen said it outright and somebody had already judged the thread work, so nothing
+    was asked and nothing was paid for. The manager cannot tell which lane produced the item."""
+    ws = _workspace(client)
+    _enable_display(client, ws)
+    dev, org, seat = ws["member_dev"], ws["org"], ws["member"]["seat_id"]
+
+    # First sighting: work-vs-personal is the one judgement no rule makes, so this one costs a call.
+    _model(monkeypatch, {**NOTHING, "items": []})
+    assert _look(client, dev, ["Priya Shah: hi, good to connect earlier today about Acme"],
+                 thread="wa:priya").status_code == 204
+    (v,) = _q("select work from screen_thread_verdicts where org_id=:o", o=org)
+    assert v.work is True
+
+    # From here the model must never run again on this thread.
+    def never(*a, **kw):
+        raise AssertionError("router check 5 let a screen a rule could read reach the model")
+
+    monkeypatch.setattr(SI, "llm_insight", never)
+    assert _look(client, dev, ["Priya Shah: kal tak revised quote bhej dena"],
+                 thread="wa:priya").status_code == 204          # saved, nothing to add
+    (fu,) = _q("select kind, who, text, quote, due_at from screen_followups "
+               "where org_id=:o and kind='ask'", o=org)
+    assert (fu.kind, fu.who) == ("ask", "Priya Shah")
+    assert fu.quote == "kal tak revised quote bhej dena"
+    assert fu.text == fu.quote, "the quote IS the item — nothing was paraphrased"
+
+    # The daily AI budget did not move: this screen cost nothing.
+    used = _q("select count from rate_counters where scope_key=:k and kind='screen_insight'",
+              k=f"{org}:{seat}")
+    assert used and used[0].count == 1, "one call for the first sighting, none after"

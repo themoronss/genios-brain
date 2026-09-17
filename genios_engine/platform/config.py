@@ -163,6 +163,10 @@ class Settings(BaseSettings):
     # (the promoter and the hourly memory batch still see it, so nothing is lost — it arrives late
     # and at half price). Off → every screen with enough text is judged, as before.
     screen_insight_triage_enabled: bool = True
+    # reason/moments/screen_rules.py — router check 5: when a rule can read the item off the
+    # screen outright AND the thread already has a work verdict, no model is asked at all. Off →
+    # every screen that survives the other checks goes to the model, as before.
+    screen_rules_enabled: bool = True
     # The model's own per-item confidence (0..1). RECORDED and counted from the start; the floor
     # ships at 0 — off — because a floor set before it is measured against a labelled set silences
     # good items as readily as bad ones. Raise it once there is an eval to raise it against.
