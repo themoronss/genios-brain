@@ -513,7 +513,21 @@ PUSHABLE_CARDS_SQL = (
 def _co_recipients(conn, org_id: str, card_id: str, *, owner: str | None) -> tuple[dict, ...]:
     """The seats a card reaches by declared responsibility, with the owner named for each so
     the message can say what stays with someone else. `()` on a tenant that declared nothing
-    and on any read error — the owner's own delivery never waits on this table."""
+    and on any read error — the owner's own delivery never waits on this table.
+
+    DORMANT, AND MEASURED SO. 2026-09-17: every org on this deployment has exactly ONE active
+    seat, `card_recipients` and `seat_responsibilities` hold zero rows in every tenant, and all
+    126 cards ever built are assigned to `seat_owner`. So this function has returned `()` on
+    every call it has ever had, and the fan-out below it — the co-recipient list, the owner named
+    beside each, `card_recipients` — has never run on real data.
+
+    That is a statement about the tenants, not about the code: a one-person company has nobody to
+    fan out to, and inventing a second recipient would be worse than reaching one. Recorded here
+    rather than left to be rediscovered, because "wired but never exercised" and "wired wrong"
+    look identical from the outside, and the distinction is what somebody will need on the first
+    day it matters. MOVES WHEN a tenant adds a second seat and declares a responsibility — at
+    which point this is the first path to watch, precisely because no traffic has crossed it.
+    """
     try:
         rows = conn.execute(text(
             "select cr.seat_id, cr.accountability, cr.scope_kind, cr.scope_key, "
