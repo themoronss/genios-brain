@@ -45,6 +45,14 @@ def receipts(org: str | None) -> list[Receipt]:
     from genios_engine.capture.pipeline import (JUDGED_DROP_CODES,
                                                 JUDGED_DROP_PAYLOAD_TTL_DAYS)
     from genios_engine.context.situations import DORMANT_AFTER_DAYS
+    from genios_engine.deliver.routing import AGENT_TRANSPORTS
+    from genios_engine.deliver.units import _implemented_channels
+
+    # The same intersection `deliver.outbox.deliverable_channels` computes in Python:
+    # registered AND implemented AND not an agent transport. Inlined as a literal list so
+    # one SQL scalar can answer it, derived from the two sources so it cannot drift from
+    # what the drain will actually accept.
+    pushable = sorted(_implemented_channels() - set(AGENT_TRANSPORTS))
 
     o = _org_filter(org)
     return [
@@ -161,11 +169,29 @@ def receipts(org: str | None) -> list[Receipt]:
                 "select count(*) from cards where render_mode <> 'llm'" + _org_filter(org),
                 lambda n: n == 0,
                 "raw_slot with an empty artifact body is a card with no content"),
+        Receipt("L6", "there is a channel this tenant can be reached on",
+                # THE PRECONDITION, ASKED FIRST. Measured 2026-09-17: all three orgs register
+                # `in_app` and nothing else, and `in_app` is the PULL surface — the card is
+                # already sitting on it, there is nothing to send. So the intersection is empty,
+                # `deliverable_channels` correctly returns [], and every push receipt below it
+                # fails for a reason that has nothing to do with the pipeline.
+                "select count(*) from org_channels where active "
+                f"and channel in ({', '.join(repr(c) for c in pushable)})" + o,
+                lambda n: n > 0,
+                "a tenant with no push channel is not a broken pipeline and must not read as "
+                "one: nothing is wrong upstream, there is simply nowhere to send"),
         Receipt("L6", "the delivery control plane has run",
                 f"select count(*) from delivery_outbox where 1=1{o}",
                 lambda n: n > 0,
-                "push is gated on a band the scoring formula cannot reach, so Atlas 5.2 has "
-                "never executed"),
+                # The old detail here read "push is gated on a band the scoring formula cannot
+                # reach". That was true when it was written and is now false, and a receipt whose
+                # detail names the wrong cause sends an operator to rewrite a scoring formula
+                # when the answer is "connect a channel". Measured 2026-09-17: 71 of 133 cards
+                # sit at high or critical, and 21 pass PUSHABLE_CARDS_SQL — the authority
+                # predicate included — at this instant.
+                "cards clear the push band and pass the authority predicate; check the channel "
+                "receipt above first, because an empty outbox on a tenant with no channel is "
+                "the expected state and not a failure of this layer"),
 
         # ── L7 learning ───────────────────────────────────────────────────────────────
         Receipt("L7", "the learning engine has executed",

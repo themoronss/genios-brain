@@ -160,3 +160,64 @@ def test_one_unreviewable_judgment_is_enough_to_fail():
     assert _reviewable().expect(0) is True
     assert _reviewable().expect(1) is False
     assert _reviewable().expect(26) is False
+
+
+# =============================================================================================
+# the receipt whose detail named the wrong cause
+# =============================================================================================
+CHANNEL = "there is a channel this tenant can be reached on"
+RAN = "the delivery control plane has run"
+
+
+def _claims() -> list[str]:
+    return [r.claim for r in receipts("org_x")]
+
+
+def test_the_pull_surface_is_not_a_channel_anything_can_be_pushed_to():
+    """All three orgs register `in_app` and nothing else. The card is already sitting on that
+    surface — there is nothing to send — so counting it would report a tenant that can be reached
+    when nobody can be reached, which is the most expensive possible false PASS on this page."""
+    from genios_engine.deliver.routing import PULL_SURFACE
+
+    sql = next(r for r in receipts("org_x") if r.claim == CHANNEL).sql
+
+    assert f"'{PULL_SURFACE}'" not in sql, (
+        f"{PULL_SURFACE!r} counts as a push channel; a tenant with only the pull surface would "
+        "read as reachable")
+
+
+def test_the_channel_set_is_the_drains_and_not_a_literal():
+    """`deliverable_channels` computes registered AND implemented AND not-an-agent-transport in
+    Python. A receipt that hard-coded 'slack' would keep saying so the day a second transport
+    lands, and report a reachable tenant as unreachable."""
+    from genios_engine.deliver.routing import AGENT_TRANSPORTS
+    from genios_engine.deliver.units import _implemented_channels
+
+    sql = next(r for r in receipts("org_x") if r.claim == CHANNEL).sql
+    expected = set(_implemented_channels()) - set(AGENT_TRANSPORTS)
+
+    assert expected, "no channel is deliverable at all — the intersection is empty in code"
+    for channel in expected:
+        assert f"'{channel}'" in sql, f"{channel} is deliverable but the receipt does not count it"
+    for excluded in set(AGENT_TRANSPORTS):
+        assert f"'{excluded}'" not in sql, (
+            f"{excluded!r} is an agent transport and routing law 1 forbids a human delivery on it")
+
+
+def test_the_precondition_is_asked_before_the_thing_it_gates():
+    """An operator reads this page top to bottom. "Nothing was delivered" above "there is nowhere
+    to deliver" is the same page in the wrong order, and the wrong half gets investigated."""
+    claims = _claims()
+
+    assert claims.index(CHANNEL) < claims.index(RAN)
+
+
+def test_the_empty_outbox_no_longer_blames_the_scoring_formula():
+    """The old detail read "push is gated on a band the scoring formula cannot reach". True when
+    written; measured 2026-09-17 it is false — 71 of 133 cards sit at high or critical and 21
+    pass the full eligibility filter. A detail naming the wrong cause sends someone to rewrite a
+    formula that is working."""
+    detail = next(r for r in receipts("org_x") if r.claim == RAN).detail
+
+    assert "cannot reach" not in detail, "the stale diagnosis is back"
+    assert "channel" in detail, "the detail does not point at the precondition receipt"

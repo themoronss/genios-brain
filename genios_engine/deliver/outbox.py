@@ -537,12 +537,19 @@ def enqueue_pending(engine, org_id: str, channel: str,
     judges the *same* delivery it queued, and so the drain needs no extra joins to know whose
     attention a row is about to spend.
 
-    Returns ``{"queued": n, "band_starved": n, "unrouted": n}``. The last two used to be silence.
-    Every live card sits at ``urgency_band='standard'`` (scores 42-60 against thresholds of
-    70/85), so the band filter below excludes ALL of them and this function returned 0 — which is
-    indistinguishable from "there was nothing to send". A tenant where no card has ever cleared
-    the push band is a broken scoring pipeline, not a quiet week, and the two have to be
-    tellable apart from the sweep's own output."""
+    Returns ``{"queued": n, "band_starved": n, "unrouted": n}``. The last two used to be silence,
+    and a 0 return was indistinguishable from "there was nothing to send". A tenant where no card
+    has ever cleared the push band is a broken scoring pipeline, not a quiet week, and the two
+    have to be tellable apart from the sweep's own output.
+
+    THE BAND IS NO LONGER THE BLOCKER, and this paragraph used to say it was. When these counters
+    were added every live card sat at ``standard`` — 42-60 against thresholds of 70/85 — so the
+    filter excluded all of them. Measured 2026-09-17 that is no longer true: 71 of 133 cards sit
+    at high or critical (60-75), and 21 pass the full eligibility filter including the authority
+    predicate. What is empty is ``deliverable_channels``: all three orgs register ``in_app`` and
+    nothing else, and ``in_app`` is the PULL surface, so there is nowhere to push. `band_starved`
+    and `unrouted` still earn their place — they are what will tell the two apart the next time —
+    but an operator reading a 0 here should check the channel first."""
     from genios_engine.deliver.routing import AGENT_TRANSPORTS
     if channel in AGENT_TRANSPORTS:
         # Routing law 1, as an executable statement at the write boundary rather than a sentence
