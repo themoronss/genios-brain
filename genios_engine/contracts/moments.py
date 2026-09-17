@@ -69,6 +69,11 @@ class EvaluateRequest(BaseModel):
     features: Features = Field(default_factory=Features)
     draft_text: str | None = Field(default=None, max_length=20000)
     visible_messages: list | None = Field(default=None, max_length=200)
+    #: G1: the lines of `visible_messages` the device had never seen before this read. The rest is
+    #: context — there so a request can be read in its thread — but only these actually happened
+    #: since the last look, and only they may become something the manager is asked to do. Absent
+    #: (an older device) means the whole screen is treated as new, as it was before.
+    new_messages: list | None = Field(default=None, max_length=200)
     # P-20 screen insight: judge what is on screen (`visible_messages`) for one short note.
     insight: bool = False
     #: The device account's full name (the Mac / PC user) — who "you" are on screen, so the

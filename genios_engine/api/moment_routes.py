@@ -406,10 +406,21 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
     # reading it. The quote IS the item, so no paraphrase and no model. The one judgement no rule
     # makes is work-vs-personal, which is why this only applies once the thread has a verdict:
     # the first sighting costs a call, every one for the next 24 h can be free.
+    # G1. AN ITEM IS BORN FROM SOMETHING THAT HAPPENED, NOT FROM SOMETHING ON SCREEN.
+    #
+    # A screen holds every line still visible; re-opening last week's chat puts the same words in
+    # front of the judge, which — being shown only a screen — read them as though they had just
+    # arrived: "asked 1 min ago" on a message from Monday, and a model call to produce it. The
+    # device now says which lines it had never seen. Everything else stays on the screen the model
+    # reads (a request makes no sense without its thread) but cannot become an item: `said` is what
+    # `reject` checks every quote against.
+    fresh = body.new_messages if body.new_messages is not None else body.visible_messages
     ruled: list[dict] = []
     if getattr(settings, "screen_rules_enabled", True):
-        ruled = [it for it in RU.extract(body.visible_messages, dates=body.features.dates,
+        ruled = [it for it in RU.extract(fresh, dates=body.features.dates,
                                          tz_name=tz, me=me, now=now)
+                 # …answered on the WHOLE screen, though: the reply that settles it is often a
+                 # line the device saw on an earlier read.
                  if not (it["kind"] == "ask"
                          and RU.answered_after(body.visible_messages, it["quote"], me))]
         judged_before = site is not None or verdict is not None
@@ -422,8 +433,7 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
         # Never on a thread nobody has judged yet, though: that FIRST sighting is what produces
         # the work/personal verdict the rest of the product runs on, and a quiet screen is as
         # good a place to earn it as a loud one.
-        if judged_before and not ruled and not RU.worth_asking(body.visible_messages,
-                                                               body.features.dates):
+        if judged_before and not ruled and not RU.worth_asking(fresh, body.features.dates):
             SI.note_skipped(engine, org_id=p.org_id, seat_id=p.seat_id, now=now)
             _log.info("screen rules: nothing to ask about org=%s seat=%s", p.org_id, p.seat_id)
             return Response(status_code=_NO_CONTENT)
@@ -437,7 +447,7 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
                      participants=body.participants, entities=body.features.entities,
                      screen=screen, now_local=SI.local_label(now, tz),
                      dates=body.features.dates, not_useful=notes,
-                     useful=kept, said=RU.said(body.visible_messages, me), me=me,
+                     useful=kept, said=RU.said(fresh, me), me=me,
                      open_items=context, meetings=meetings,
                      thread_key=thread, tz_name=tz, today=now.astimezone(F.zone(tz)).date(),
                      summary=summary, profile=profile)

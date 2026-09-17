@@ -208,9 +208,13 @@ def _model(monkeypatch, answer: dict) -> None:
     monkeypatch.setattr(SI, "llm_insight", lambda *a, **kw: dict(answer))
 
 
-def _look(client, dev, lines, *, thread="wa:chat:priya", app="whatsapp", viewer=None):
+def _look(client, dev, lines, *, thread="wa:chat:priya", app="whatsapp", viewer=None, new=None):
+    """`new`: the lines the device had never seen (G1). Omitted = an older device, which means the
+    whole screen counts as new — exactly what those clients used to get."""
     body = {"moment_request_id": uuid.uuid4().hex, "insight": True,
             "surface": {"app": app, "thread_key": thread}, "visible_messages": lines}
+    if new is not None:
+        body["new_messages"] = new
     if viewer:
         body["viewer_name"] = viewer
     return client.post("/v1/moments/evaluate", json=body, headers=H(dev["access_token"]))
@@ -631,3 +635,48 @@ def test_router_check_5_answers_a_known_thread_with_no_model_at_all(client, monk
     used = _q("select count from rate_counters where scope_key=:k and kind='screen_insight'",
               k=f"{org}:{seat}")
     assert used and used[0].count == 1, "one call for the first sighting, none after"
+
+
+@pytest.mark.pg
+@pytest.mark.skipif(not URL, reason="GENIOS_TEST_DATABASE_URL not set")
+def test_an_old_chat_reopened_is_not_news(client, monkeypatch):  # noqa: F811
+    """17 Sep: a week-old chat was opened and its oldest line came back as "asked 1 min ago".
+    The words were on screen. Nothing had been said."""
+    ws = _workspace(client)
+    _enable_display(client, ws)
+    dev, org = ws["member_dev"], ws["org"]
+    screen = ["Vidhi: Humanize the PPT so AI content doesn't show",
+              "You: haan dekhta hoon"]
+
+    # It really was said once, and it really did become an item.
+    _model(monkeypatch, {"work": True, "remember": True, "adds": "none", "note": None,
+                         "items": [{"kind": "ask", "text": "Humanize the PPT",
+                                    "who": "Vidhi", "due": None,
+                                    "quote": "Humanize the PPT so AI content doesn't show"}]})
+    assert _look(client, dev, screen, thread="wa:vidhi", new=screen).status_code == 204
+    assert _q("select count(*) c from screen_followups where org_id=:o", o=org)[0].c == 1
+
+    # Opening it again days later says nothing new — so nothing is judged, and nothing is paid for.
+    def never(*a, **kw):
+        raise AssertionError("a screen with nothing new on it reached the model")
+
+    monkeypatch.setattr(SI, "llm_insight", never)
+    assert _look(client, dev, screen, thread="wa:vidhi", new=[]).status_code == 204
+    assert _q("select count(*) c from screen_followups where org_id=:o", o=org)[0].c == 1
+
+    # And when the model IS asked — somebody new spoke — it still cannot reach back for the old
+    # line and hand it over a second time.
+    _model(monkeypatch, {"work": True, "remember": True, "adds": "none", "note": None,
+                         "items": [{"kind": "ask", "text": "Vidhi is waiting on the PPT",
+                                    "who": "Vidhi", "due": None,
+                                    "quote": "Humanize the PPT so AI content doesn't show"},
+                                   {"kind": "ask", "text": "Share the final deck", "who": "Rahul",
+                                    "due": None, "quote": "final deck bhi bhej dena"}]})
+    fresh = ["Rahul: final deck bhi bhej dena"]
+    assert _look(client, dev, screen + fresh, thread="wa:vidhi", new=fresh).status_code == 204
+    rows = {(r.who, r.text) for r in _q(
+        "select who, text from screen_followups where org_id=:o", o=org)}
+    # Rahul's line is a plain ask on a thread already judged, so router check 5 answered it and
+    # the model was never asked — the quote IS the item. Either way, Vidhi's old line stayed put.
+    assert rows == {("Vidhi", "Humanize the PPT"),
+                    ("Rahul", "final deck bhi bhej dena")}, rows
