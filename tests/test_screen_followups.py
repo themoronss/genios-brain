@@ -599,6 +599,7 @@ def test_followups_expire_by_kind(client):  # noqa: F811
 
 
 @pytest.mark.pg
+@pytest.mark.skipif(not URL, reason="GENIOS_TEST_DATABASE_URL not set")
 def test_router_check_5_answers_a_known_thread_with_no_model_at_all(client, monkeypatch):  # noqa: F811
     """The screen said it outright and somebody had already judged the thread work, so nothing
     was asked and nothing was paid for. The manager cannot tell which lane produced the item."""

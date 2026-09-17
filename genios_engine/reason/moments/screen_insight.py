@@ -476,6 +476,42 @@ _KIND_RANK = {"ask": 0, "my_promise": 1, "their_promise": 2, "deadline": 3, "nex
               "risk": 5}
 
 
+#: THE MANAGER'S OWN MONEY AND THE MANAGER'S OWN JOB HUNT ARE PERSONAL. The prompt says so in
+#: two paragraphs and the model still produced "Investor will provide funds enabling salary
+#: payments" and an HR's payroll chase as work items on a real screen. A rule does not drift.
+#: This is about the manager BEING PAID or BEING HIRED — a customer's invoice, a vendor's bill
+#: and a candidate the manager is hiring are the business's money and stay.
+_OWN_MONEY = re.compile(
+    r"\b(?:my|our|the)\s+(?:salary|salaries|payroll|wages?|stipend|reimbursement|appraisal)\b"
+    r"|\bsalary\s+(?:payment|credit|delay|pending|due|slip)\b"
+    r"|\b(?:salary|payroll|reimbursement)\b.{0,24}\b(?:pending|delay|credited|not\s+received)\b"
+    r"|\b(?:pf|provident\s+fund|gratuity|payslip|pay\s?slip|form\s?16)\b", re.I)
+#: Only the unmistakably self-referential ones. "Notice period", "shortlisted", "interview
+#: scheduled" and "offer letter" all read the same whether the manager is being hired or is doing
+#: the hiring — and a manager hiring is work. Those stay for the model, which has the thread.
+_OWN_JOB = re.compile(
+    r"\b(?:apply|applied|applying)\b.{0,40}\b(?:role|position|job|opening|vacancy)\b"
+    r"|\b(?:job|role|position|opening|vacancy)\b.{0,30}\b(?:apply|applied|applying)\b"
+    r"|\b(?:your|my)\s+(?:application|candidature|resume|cv)\b"
+    r"|\b(?:naukri|indeed|glassdoor|internshala|cutshort|instahyre|hirist)\b", re.I)
+#: A `who` has to be a PERSON. These are roles, companies-as-roles and desks — "Investor",
+#: "HR", "Support". A reminder addressed to a job title is a reminder addressed to nobody.
+_NOT_A_PERSON = frozenset({
+    "investor", "investors", "hr", "human resources", "recruiter", "recruiters", "team", "support",
+    "customer", "client", "vendor", "supplier", "admin", "finance", "accounts", "payroll",
+    "management", "manager", "founder", "founders", "board", "legal", "sales", "marketing",
+    "everyone", "all", "someone", "somebody", "they", "them", "the team", "the client",
+    "the vendor", "the customer", "the company", "company", "staffing", "agency", "no one",
+})
+
+
+def is_a_person(who: str | None) -> bool:
+    """Does `who` name somebody a reminder can be addressed to? A role, a desk or a department
+    does not — "chase Investor about the funds" is a reminder nobody can act on."""
+    w = _norm(who or "")
+    return bool(w) and w not in _NOT_A_PERSON
+
+
 def reject(item: dict, *, said: list[str] | None = None) -> str | None:
     """P15: why this item must NOT be saved, or None when it is worth keeping.
 
@@ -483,12 +519,30 @@ def reject(item: dict, *, said: list[str] | None = None) -> str | None:
     for):
       said       on a chat screen every real line has a sender; a quote that is not in one of
                  them came from a button, a menu or a status bar, and is not a request;
+      own_money  the manager BEING PAID — salary, payroll, reimbursement, PF. Their own money is
+                 their own life. A customer's invoice and a vendor's bill are the business's and
+                 stay;
+      own_job    the manager BEING HIRED — an application, a recruiter, a job board. Hiring
+                 somebody else is work; being hired is not;
+      no_person  a `who` that is a role or a desk ("Investor", "HR", "Support"). A reminder
+                 addressed to a job title is a reminder addressed to nobody.
+
+    The last three are in the prompt too, and the prompt was not enough: a real screen produced
+    "Investor will provide funds enabling salary payments" and an HR's payroll chase as work.
+    A rule does not drift.
     """
     quote = " ".join(str(item.get("quote") or "").split())
     if len(quote.split()) < MIN_QUOTE_WORDS:
         return "no_quote"
     if said and not any(quote and _norm(quote) in line for line in said):
         return "not_said"                          # screen furniture, not a message
+    blob = f"{item.get('text') or ''} {quote}"
+    if _OWN_MONEY.search(blob):
+        return "own_money"
+    if _OWN_JOB.search(blob):
+        return "own_job"
+    if item.get("who") is not None and not is_a_person(item.get("who")):
+        return "no_person"
     return None
 
 

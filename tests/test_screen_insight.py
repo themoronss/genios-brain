@@ -127,10 +127,12 @@ def test_the_manager_is_never_who():
         assert SI.is_me(who, me), who
     for who in ("Priya Shah", "Rohit", None, ""):
         assert not SI.is_me(who, me), who
-    screen = "Harsh Tripathi's application requires your action. Your application is required"
-    j = SI.judge({"work": True, "items": [{"kind": "ask", "text": "Application needs action",
+    # A mailbox often hands the manager's OWN name back as the sender, so "who" has to be cleared
+    # — otherwise GeniOS reminds them to chase themselves.
+    screen = "Harsh Tripathi: I'll send the signed MSA by Friday"
+    j = SI.judge({"work": True, "items": [{"kind": "next_step", "text": "Send the signed MSA",
                                            "who": "Harsh Tripathi",
-                                           "quote": "Your application is required"}]},
+                                           "quote": "send the signed MSA by Friday"}]},
                  screen, me=["tripathihk2014@gmail.com", "Harsh Tripathi"])
     assert j["items"][0]["who"] is None
 
@@ -449,3 +451,45 @@ def test_the_manager_s_own_address_is_not_a_counterparty():
     assert T_.skip_reason(app="generic", bundle_id=None, url_domain="unknown.example",
                           thread_key=None, participants=mine,
                           seat_email="harsh@genios.ai") == T_.NO_WORK_SIGNAL
+
+
+# ── what a real screen produced, and must not again (History, 17 Sep) ─────────────────────────
+def keep(text, quote, who="Priya Shah"):
+    return SI.reject({"kind": "ask", "text": text, "who": who, "quote": quote})
+
+
+def test_the_managers_own_pay_is_their_own_life():
+    # The prompt says this in a paragraph, and a real screen still produced an HR's payroll chase
+    # as a work item. A rule does not drift.
+    assert keep("Salary payment is pending", "my salary is pending since") == "own_money"
+    assert keep("Reimbursement not credited", "reimbursement pending this cycle") == "own_money"
+    assert keep("Payslip for August", "share the payslip") == "own_money"
+    # …but the BUSINESS's money is the business's
+    assert keep("AWS invoice 18,400 due Friday", "invoice is due on Friday") is None
+    assert keep("Vendor payment of 4.2 lakh cleared", "payment was cleared today") is None
+
+
+def test_being_hired_is_personal_and_hiring_is_not():
+    assert keep("Apply for software engineer role", "Apply now") == "own_job"
+    assert keep("Naukri: your application was viewed", "your application for SPM") == "own_job"
+    # The manager DOING the hiring is work, and reads almost the same — so those stay for the
+    # model, which has the thread and can tell.
+    assert keep("Shreya shared her notice period", "notice period is 45 days") is None
+    assert keep("Feedback on 4 backend profiles by Thursday", "feedback by Thursday") is None
+
+
+def test_a_reminder_addressed_to_a_job_title_is_addressed_to_nobody():
+    # The screen that prompted this said "Investor will provide funds enabling salary payments".
+    # Nobody can act on "chase Investor".
+    assert keep("Send the updated deck", "share the deck by evening", who="Investor") == "no_person"
+    # …and the screenshot's own line is refused twice over — nobody to chase, and the manager's
+    # own pay. Either reason alone is enough; "no person" is simply checked first.
+    assert keep("Investor will provide funds for salary payments",
+                "funds enabling salary payments", who="Investor") == "no_person"
+    for role in ("HR", "Support", "the team", "finance", "Someone"):
+        assert not SI.is_a_person(role), role
+    for person in ("Swati Sharma", "Priya", "Quik Hire Staffing", "Rahul Mehta"):
+        assert SI.is_a_person(person), person
+    # An item that names nobody at all is still fine — plenty of deadlines name no one.
+    assert SI.reject({"kind": "deadline", "text": "AWS invoice due Friday", "who": None,
+                      "quote": "invoice is due on Friday"}) is None
