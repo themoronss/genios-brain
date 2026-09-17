@@ -489,16 +489,21 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
                   (time.perf_counter() - started) * 1000)
         return Response(status_code=_NO_CONTENT)
     topic = topics[0]
+    content = SI.moment_content(j, digest=digest, adds=verified, note=j["note_candidate"],
+                                topic_key=topic, thread_key=thread, followup_id=first_followup)
     with engine.connect() as c:
         repeat = F.topic_shown(c, org_id=p.org_id, seat_id=p.seat_id,
                                capability_id=SI.CAPABILITY_ID, topic=topic, now=now)
+        # …and the same sentence is the same interruption even when the topic differs: one site's
+        # standing notice lived on four pages, so it was four topics and four popups.
+        repeat = repeat or F.words_shown(c, org_id=p.org_id, seat_id=p.seat_id,
+                                         capability_id=SI.CAPABILITY_ID,
+                                         headline=content["headline"], now=now)
         shown = 0 if repeat else F.shown_last_hour(c, org_id=p.org_id, seat_id=p.seat_id,
                                                    capability_id=SI.CAPABILITY_ID, now=now)
     if repeat:                                         # C2: the follow-up is refreshed, no popup
         return Response(status_code=_NO_CONTENT)
     budget = int(getattr(settings, "screen_insight_max_per_hour", 3) or 0)
-    content = SI.moment_content(j, digest=digest, adds=verified, note=j["note_candidate"],
-                                topic_key=topic, thread_key=thread, followup_id=first_followup)
     try:
         out = M.persist(engine, org_id=p.org_id, seat_id=p.seat_id, device_id=p.device_id,
                         origin="server", moment={"moment_id": moment_id, **content},

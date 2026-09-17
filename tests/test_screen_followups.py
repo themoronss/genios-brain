@@ -680,3 +680,31 @@ def test_an_old_chat_reopened_is_not_news(client, monkeypatch):  # noqa: F811
     # the model was never asked — the quote IS the item. Either way, Vidhi's old line stayed put.
     assert rows == {("Vidhi", "Humanize the PPT"),
                     ("Rahul", "final deck bhi bhej dena")}, rows
+
+
+@pytest.mark.pg
+@pytest.mark.skipif(not URL, reason="GENIOS_TEST_DATABASE_URL not set")
+def test_the_same_sentence_twice_in_a_day_is_one_interruption(client, monkeypatch):  # noqa: F811
+    """`topic_shown` keys on the thread, and one site's standing notice sat on four pages — four
+    topics, and the manager was interrupted four times with the same sentence."""
+    ws = _workspace(client)
+    _enable_display(client, ws)
+    dev, org = ws["member_dev"], ws["org"]
+    line = "Sunita Rao: the signed MSA is still pending from your side"
+    said = {"work": True, "remember": True, "adds": "urgent_risk",
+            "note": "Sunita has been waiting on this since Monday",
+            "items": [{"kind": "ask", "text": "Sunita is waiting on the signed MSA",
+                       "who": "Sunita Rao", "due": _in_3h(),
+                       "quote": "the signed MSA is still pending from your side"}]}
+    _model(monkeypatch, said)
+    first = _look(client, dev, [line], thread="wa:sunita:a", new=[line])
+    assert first.status_code == 200 and first.json()["display"] is True, first.text
+    headline = first.json()["headline"]
+
+    # The very same words, reached through another page of the same site: a different thread, a
+    # different topic — and nothing the manager has not already read.
+    _model(monkeypatch, said)
+    again = _look(client, dev, [line], thread="wa:sunita:b", new=[line])
+    assert again.status_code == 204, again.text
+    shown = _q("select headline from moments where org_id=:o and display", o=org)
+    assert [r.headline for r in shown] == [headline], "told once"

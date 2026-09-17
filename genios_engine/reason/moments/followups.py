@@ -356,6 +356,25 @@ def topic_shown(conn, *, org_id: str, seat_id: str, capability_id: str, topic: s
          "ev": json.dumps([{"topic_key": topic}])}).first() is not None
 
 
+def words_shown(conn, *, org_id: str, seat_id: str, capability_id: str, headline: str,
+                now: datetime) -> bool:
+    """Has the seat already been TOLD this today, in these words?
+
+    `topic_shown` keys on the thread, and a page's thread is its URL: one job site's standing
+    fraud warning sat on four different pages, so it was four topics and the manager was
+    interrupted four times with the same sentence. Whatever the topic says, the same words twice
+    in a day are the same interruption.
+    """
+    h = " ".join((headline or "").split())
+    if not h:
+        return False
+    return conn.execute(text(
+        "select 1 from moments m where m.org_id = :o and m.seat_id = :s and m.display "
+        "and m.capability_id = :cap and m.created_at > :now - interval '1 day' "
+        "and m.headline = :h limit 1"),
+        {"o": org_id, "s": seat_id, "cap": capability_id, "now": now, "h": h}).first() is not None
+
+
 def shown_last_hour(conn, *, org_id: str, seat_id: str, capability_id: str,
                     now: datetime) -> int:
     """C3: screen insights shown to the seat in the rolling hour."""
