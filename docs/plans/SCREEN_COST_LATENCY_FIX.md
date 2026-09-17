@@ -87,6 +87,11 @@ A new `genios_engine/reason/moments/screen_triage.py` answers one question befor
 *does this screen carry a work signal a rule can see?* It reuses the promoter lane's own rules so
 there is one spelling of "work" in the product:
 
+* **a conversation is always judged, whoever is in it** — the product decision of 2026-09-14
+  ("instant intelligence on ANY screen, not only known people"). Only a PAGE may be refused. The
+  first draft of this refused a WhatsApp chat with an unknown contact, which is the wedge itself;
+  the real-Postgres end-to-end tests caught it, and they had been skipping until the database URL
+  was set;
 * the device matcher already resolved slice entities → `body.features.entities` non-empty ⇒ judge;
 * a participant that resolves in the graph ⇒ judge;
 * `WORK_HOSTS` / `WORK_BUNDLES` / `WORK_EXES` hit ⇒ judge;
@@ -204,4 +209,8 @@ it yet.
 * the rulebook prefix measures ≥ 4,096 tokens and the dynamic half carries the screen (test on
   the built prompt, no API key needed);
 * an `adds_candidate` with no verifiable evidence never renders a popup and its items still save;
-* every existing screen test stays green.
+* every existing screen test stays green — hermetically AND with
+  `GENIOS_TEST_DATABASE_URL` set, which is the only way the `-m pg` end-to-end tests run at all.
+  Baseline `b534fed3`: 29 hermetic failures, 28 real-Postgres. Diff the FAILED list, never the
+  count (`tests/platform/test_warm_lane_pg.py::test_a_burst_coalesces_into_one_chain_run` is
+  flaky on both).
