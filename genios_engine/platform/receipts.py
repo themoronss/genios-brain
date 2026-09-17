@@ -29,6 +29,13 @@ class Receipt:
     sql: str
     expect: Callable[[object], bool]
     detail: str = ""
+    #: This claim is about the DEPLOYMENT, not the tenant, and its query is therefore not
+    #: org-filtered. Declared rather than inferred: a receipt that simply forgot `:org` answers
+    #: about every tenant at once while appearing on one tenant's readiness page — their parked
+    #: queue reported as this one's — so "no filter" has to be a statement somebody made. The
+    #: only members are questions whose answer cannot differ per tenant because the thing asked
+    #: about is shared: the schema itself.
+    fleet_wide: bool = False
 
 
 def _org_filter(org: str | None, alias: str = "") -> str:
@@ -44,6 +51,8 @@ def receipts(org: str | None) -> list[Receipt]:
     # Imported inside the function, the way `platform/wiring.py` already reaches into `context`.
     from genios_engine.capture.pipeline import (JUDGED_DROP_CODES,
                                                 JUDGED_DROP_PAYLOAD_TTL_DAYS)
+    from genios_engine.api.account_routes import RETAINED_AFTER_ERASURE
+    from genios_engine.context.runner import MAX_PASSES
     from genios_engine.context.situations import DORMANT_AFTER_DAYS
     from genios_engine.deliver.routing import AGENT_TRANSPORTS
     from genios_engine.deliver.units import _implemented_channels
@@ -109,6 +118,45 @@ def receipts(org: str | None) -> list[Receipt]:
                 lambda n: n == 0,
                 "in a fundraising inbox the deck and the rubric ARE the content"),
 
+        Receipt("L1", "a deleted tenant leaves nothing behind",
+                # ASKED OF THE DEPLOYED SCHEMA, because that is where the answer lives. Erasure
+                # deletes the `orgs` row and migration 0033's foreign keys take everything that
+                # hangs off it — directly, or through a parent that does, which is how the four
+                # `reasoning_*` children go without any of them being named. So the question is
+                # not "is this table in a list" but "is it reachable from `orgs` by CASCADE", and
+                # a recursive walk of the constraint graph is the only honest way to ask it.
+                #
+                # `_ORG_SCOPED_TABLES`'s own comment names the failure this catches: "a name
+                # missing here leaks silently". A table added next month with an `org_id` and no
+                # foreign key is a deletion request that quietly stops being complete, and
+                # nothing anywhere would have said so. Measured 2026-09-17: 178 org-scoped
+                # tables, 0 unreachable.
+                "with recursive fk(child, parent) as ("
+                "  select tc.table_name, ccu.table_name"
+                "    from information_schema.table_constraints tc"
+                "    join information_schema.referential_constraints rc"
+                "      on rc.constraint_name = tc.constraint_name"
+                "    join information_schema.constraint_column_usage ccu"
+                "      on ccu.constraint_name = tc.constraint_name"
+                "   where tc.constraint_type = 'FOREIGN KEY' and rc.delete_rule = 'CASCADE'), "
+                "reachable(tbl) as ("
+                "  select child from fk where parent = 'orgs' "
+                "  union select f.child from fk f join reachable r on r.tbl = f.parent) "
+                "select count(*) from information_schema.columns c "
+                "  join information_schema.tables t"
+                "    on t.table_name = c.table_name and t.table_schema = c.table_schema "
+                " where c.table_schema = 'public' and c.column_name = 'org_id' "
+                "   and t.table_type = 'BASE TABLE' "
+                f"   and c.table_name not in ({', '.join(repr(x) for x in sorted(RETAINED_AFTER_ERASURE))}) "
+                "   and c.table_name not in (select tbl from reachable)",
+                lambda n: n == 0,
+                "every table left over holds a deleted customer's data under an org_id that "
+                "resolves to nobody — the three retained financial ledgers are named in "
+                "`RETAINED_AFTER_ERASURE` and are the only rows permitted to outlive a tenant",
+                # THE SCHEMA IS SHARED, so this answer cannot differ per tenant. Declared, not
+                # inferred from the absent filter — see `Receipt.fleet_wide`.
+                fleet_wide=True),
+
         # ── L2 context ────────────────────────────────────────────────────────────────
         Receipt("L2", "the tenant's own identities are known",
                 f"select count(*) from org_seats where active{o}",
@@ -122,6 +170,23 @@ def receipts(org: str | None) -> list[Receipt]:
                 " group by f.subject_node_id having count(*) > 1) t",
                 lambda n: n == 0,
                 "one last-write-wins row per person collapses every conversation into the newest"),
+
+        Receipt("L2", "the sweep settles instead of chasing itself",
+                # `_record_convergence` re-hashes the graph after a pass and counts how many it
+                # took to stop moving; at `MAX_PASSES` it stamps `exceeded_at` and raises
+                # `l2_convergence_exceeded` with the situation ids still changing. That alert is
+                # a LOG LINE — greppable by an operator already looking, invisible to one who is
+                # not. The stamp is in a table, so it can be asked instead.
+                #
+                # Measured 2026-09-17: three orgs, `exceeded_at` null on all three and `passes`
+                # zero — the hash settles on the first pass every time. Two clean sweeps were
+                # called evidence rather than proof, which was right; this is what turns "we
+                # watched it twice" into something that stays watched.
+                f"select count(*) from l2_convergence where exceeded_at is not null{o}",
+                lambda n: n == 0,
+                f"a sweep that never settles re-derives the same situations up to {MAX_PASSES} "
+                "times and then gives up mid-pass, so the tenant's picture is whatever the last "
+                "partial pass left — and `detail` names the situations that were still moving"),
 
         # ── L3 domain expertise ───────────────────────────────────────────────────────
         Receipt("L3", "compiled expertise packages exist",

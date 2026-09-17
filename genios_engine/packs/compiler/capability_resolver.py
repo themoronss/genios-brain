@@ -325,6 +325,13 @@ def variant_render_overlay(variants, base):
     none. Building the producer for a consumer that does not exist is how `models/` came to hold
     18 files that changed nothing for a year, and this function exists because of that. When a
     metric slot is authored into `render.fallback`, it merges through this function already.
+
+    MEASUREMENT, 2026-09-17: **zero** documents in the whole corpus carry a `metrics:` block, in a
+    `render` block or anywhere else. So building the reader today would be the same defect facing
+    the other way — a consumer with nothing to consume — and the deferral is not a preference
+    about ordering, it is the state of the corpus. MOVES WHEN that count is not zero: one authored
+    `render.fallback` metric makes the reader worth writing, and this function needs no change to
+    carry it.
     """
     blocks = [document.content.get("render") for document in sorted(variants, key=_axis_rank)]
     blocks = [b for b in blocks if isinstance(b, Mapping) and b]

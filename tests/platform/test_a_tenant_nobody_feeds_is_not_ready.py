@@ -96,7 +96,10 @@ def test_every_receipt_is_one_scalar_select_with_a_predicate():
     """`evaluate` calls `.scalar()` on the result and hands it to `expect`. A receipt returning
     two columns, or none, reads as ERROR at runtime and nowhere else."""
     for r in receipts("org_x"):
-        assert r.sql.lower().lstrip().startswith("select"), r.claim
+        # A CTE is still one scalar select; `with recursive` is how the erasure walk asks a
+        # transitive question. What must hold is that `.scalar()` gets one value, not that the
+        # statement opens with a particular keyword.
+        assert r.sql.lower().lstrip().startswith(("select", "with ")), r.claim
         assert callable(r.expect), r.claim
         assert r.layer.startswith("L"), r.claim
 
@@ -105,12 +108,27 @@ def test_every_org_scoped_receipt_binds_the_org_it_was_asked_about():
     """`evaluate` passes `:org` only when the SQL mentions it. A receipt that forgot the filter
     answers about the WHOLE DEPLOYMENT while appearing on one tenant's readiness page — every
     other tenant's parked queue reported as this one's."""
-    scoped = [r for r in receipts("org_x") if "org_id" in r.sql]
+    scoped = [r for r in receipts("org_x") if "org_id" in r.sql and not r.fleet_wide]
 
     assert scoped, "no receipt is org-scoped any more"
     for r in scoped:
         assert ":org" in r.sql, (
             f"{r.claim!r} filters on org_id without binding :org — it reads a literal or nothing")
+
+
+def test_a_fleet_wide_receipt_has_to_say_so():
+    """The exemption above is what stops the next receipt that simply FORGOT `:org` from sailing
+    through. So it may only be claimed, never inferred, and only for a question whose answer
+    cannot differ per tenant — which today means the shared schema and nothing else."""
+    fleet = [r for r in receipts("org_x") if r.fleet_wide]
+
+    assert fleet, "nothing declares itself fleet-wide; the exemption is dead and should go"
+    for r in fleet:
+        assert ":org" not in r.sql, (
+            f"{r.claim!r} is declared fleet-wide and also filters by org — one of the two is wrong")
+        assert "information_schema" in r.sql, (
+            f"{r.claim!r} claims a deployment-wide answer from tenant data, which is every "
+            "tenant's rows reported as this one's")
 
 
 def test_claims_are_unique_so_a_reader_can_name_the_one_that_failed():
@@ -221,3 +239,90 @@ def test_the_empty_outbox_no_longer_blames_the_scoring_formula():
 
     assert "cannot reach" not in detail, "the stale diagnosis is back"
     assert "channel" in detail, "the detail does not point at the precondition receipt"
+
+
+# =============================================================================================
+# the watch that was a log line
+# =============================================================================================
+SETTLES = "the sweep settles instead of chasing itself"
+
+
+def test_a_sweep_that_never_settles_is_a_named_condition():
+    """`l2_convergence_exceeded` is raised with `logger.error` — greppable by an operator who is
+    already looking, invisible to one who is not. The stamp is in a table, so it can be asked.
+    Measured 2026-09-17: three orgs, `exceeded_at` null on all three, `passes` zero."""
+    settles = next(r for r in receipts("org_x") if r.claim == SETTLES)
+
+    assert settles.layer == "L2"
+    assert settles.expect(0) is True
+    assert settles.expect(1) is False, "one unsettled sweep is one tenant's picture left partial"
+
+
+def test_it_asks_the_stamp_and_not_the_pass_count():
+    """`passes` is how many a settling sweep took and is 0 on a healthy org; `exceeded_at` is the
+    breach. Counting passes would fail every tenant that had a busy day."""
+    sql = next(r for r in receipts("org_x") if r.claim == SETTLES).sql
+
+    assert "exceeded_at is not null" in sql
+    assert "passes" not in sql, "the receipt counts work done, not the ceiling being hit"
+
+
+def test_the_ceiling_in_the_detail_is_the_runners_own():
+    """A restated `3` here would keep saying 3 the day the runner allows four passes."""
+    from genios_engine.context.runner import MAX_PASSES
+
+    assert str(MAX_PASSES) in next(r for r in receipts("org_x") if r.claim == SETTLES).detail
+
+
+# =============================================================================================
+# the deletion that has to stay complete
+# =============================================================================================
+ERASED = "a deleted tenant leaves nothing behind"
+
+
+def _erased() -> Receipt:
+    return next(r for r in receipts("org_x") if r.claim == ERASED)
+
+
+def test_erasure_is_asked_of_the_deployed_schema_not_a_list():
+    """A table is erasable because a foreign key takes it, not because somebody remembered to
+    name it. The four `reasoning_*` children are named nowhere and go anyway — through
+    `reasoning_runs`, which cascades from `orgs` — so a list-membership check would report four
+    false gaps and miss the real one it exists for."""
+    sql = _erased().sql
+
+    assert "with recursive" in sql
+    assert "delete_rule = 'CASCADE'" in sql
+    assert "parent = 'orgs'" in sql
+    # THE RECURSIVE ARM, not just the keyword. `with recursive` whose CTE never joins itself is
+    # a one-level walk wearing the word: the four `reasoning_*` children would read as leaks and
+    # the page would go permanently red for a deletion that is complete.
+    assert "join reachable" in sql, (
+        "the CTE never references itself — the walk stops at orgs' direct children")
+
+
+def test_the_retained_ledgers_are_the_modules_own_set():
+    """Restating them here would let the two drift, and the drift is silent in the safe-looking
+    direction: a table quietly added to the receipt's literal stops being reported."""
+    from genios_engine.api.account_routes import RETAINED_AFTER_ERASURE
+
+    sql = _erased().sql
+    assert RETAINED_AFTER_ERASURE, "nothing is declared retained any more"
+    for table in RETAINED_AFTER_ERASURE:
+        assert f"'{table}'" in sql, f"{table} is declared retained and the receipt does not exempt it"
+
+
+def test_one_unreachable_table_is_enough_to_fail():
+    """Not a rate. One table holding a deleted customer's rows under an org_id that resolves to
+    nobody is the whole failure."""
+    assert _erased().expect(0) is True
+    assert _erased().expect(1) is False
+
+
+def test_it_only_asks_about_tables_that_hold_tenant_data():
+    """A table with no `org_id` is not this receipt's business, and counting one would make the
+    page permanently red for schema that was never tenant-scoped."""
+    sql = _erased().sql
+
+    assert "column_name = 'org_id'" in sql
+    assert "table_type = 'BASE TABLE'" in sql, "a view has no rows of its own to leak"

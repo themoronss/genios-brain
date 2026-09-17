@@ -624,6 +624,22 @@ def cancel_invite(org_id: str, invite_id: str, ctx: AuthCtx = Depends(_admin_org
 # too: retaining an ``indexed`` file after deleting every derived event/fact would be a false and
 # unrecoverable UI state (the upload API has no re-index-existing-file operation).
 # Full account deletion is guaranteed separately by org FKs in migration 0033.
+#: The tables that deliberately OUTLIVE a deleted tenant, and the only ones permitted to.
+#:
+#: `erase_account` deletes the `orgs` row and migration 0033's foreign keys take everything that
+#: hangs off it — directly or through a parent that does, which is how the four `reasoning_*`
+#: children go without naming any of them. These three are un-cascaded on purpose: they are OUR
+#: accounting, not the tenant's content, and `orgs_archive` keeps identity-only fields so a
+#: retained cost row still resolves to somebody. No graph, content or message data is carried.
+#:
+#: NAMED, because `platform/receipts` asks the deployed schema whether anything ELSE survives —
+#: and a comment cannot be asked. A new org-scoped table that nobody wires to `orgs` is a
+#: deletion request that quietly stops being complete, and the loop below has the same shape of
+#: gap written next to it: "a name missing here leaks silently".
+RETAINED_AFTER_ERASURE: frozenset[str] = frozenset({
+    "llm_costs", "credit_ledger", "subscriptions", "orgs_archive", "orgs",
+})
+
 _ORG_SCOPED_TABLES = [
     # migrations 0147-0149 (P3 hot lane): moments name the tenant's counterparties; feedback
     # before moments (FK). The slice versions go too, so every device re-pulls in full.
