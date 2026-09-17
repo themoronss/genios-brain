@@ -509,3 +509,31 @@ def test_a_notice_on_a_page_is_not_a_task():
     assert SI.reject({"kind": "risk", "text": "Phishing mail from our domain",
                       "who": "Priya Shah", "due": "2026-09-18T18:00",
                       "quote": "phishing mail from your domain, fix by Friday"}) is None
+
+
+def test_a_post_to_the_world_is_not_a_request_to_me():
+    # 17 Sep, all five reading "Waiting on your reply": a recruiter's feed post, somebody looking
+    # for a freelancer, and an organiser telling a whole cohort to fill in a form.
+    assert keep("Clarify requirements with Eric regarding Senior React.js & Node.js Developers",
+                "Senior React.js & Node.js Developers needed") == "broadcast"
+    assert keep("Recommend freelancer for startup compliance filing",
+                "looking for a freelancer for filing startup pvt ltd compliances") == "broadcast"
+    assert keep("Fill out 1:1 mentoring request form if needed",
+                "If you have any 1:1 mentoring requests please fill out the form") == "broadcast"
+    # A real request from a real person is untouched, and so is anything with a clock or money —
+    # "we are hiring, invoice 4.2 lakh due Friday" is somebody's problem, and it is his.
+    assert keep("Neha wants feedback on 4 backend profiles",
+                "feedback on these 4 backend profiles") is None
+    assert SI.reject({"kind": "ask", "text": "Close the developer role by Friday",
+                      "who": "Neha", "due": "2026-09-18T18:00",
+                      "quote": "developers needed by Friday"}) is None
+
+
+def test_a_remark_is_not_a_commitment():
+    assert keep("Rohit will get food and return, waiting 5 min before leaving",
+                "getting food, back in 5 min", who="Rohit") == "small_talk"
+    assert keep("Ankit is on his way", "on my way, reaching in 10", who="Ankit") == "small_talk"
+    # …but a lunch with a time on it is a meeting, and that is not small talk.
+    assert SI.reject({"kind": "deadline", "text": "Client lunch at the Taj",
+                      "who": "Priya Shah", "due": "2026-09-18T13:00",
+                      "quote": "lunch with the client on Friday 1 pm"}) is None

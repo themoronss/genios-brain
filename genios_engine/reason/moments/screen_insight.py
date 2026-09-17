@@ -512,6 +512,28 @@ _ADVISORY = re.compile(
     r"|\b(?:we|they)\s+(?:will\s+)?never\s+ask\b"
     r"|\bdo\s+not\s+share\s+(?:your\s+)?(?:otp|password|pin|bank|card)\b"
     r"|\b(?:terms\s+(?:and|&)\s+conditions|privacy\s+policy|cookie\s+policy)\b", re.I)
+#: A POST IS NOT A REQUEST TO ME. A recruiter posting "Senior React.js & Node.js Developers
+#: needed" to a feed, or somebody posting "looking for a freelancer for compliance filing", has
+#: asked the world, not the manager. On 17 Sep both became "Waiting on your reply", and so did an
+#: organiser telling a whole cohort to fill in a form.
+#:
+#: The tell is that nothing names him: no "you", no "your", no his-name. A real request to him
+#: almost always addresses him, and when it does not, the thread does — which is why this only
+#: fires on a line that reads as a broadcast: a vacancy, a "looking for", a form for anyone who
+#: wants one.
+_BROADCAST = re.compile(
+    r"\b(?:hiring|we\s+are\s+hiring|now\s+hiring|urgently\s+(?:required|needed)|walk[- ]?in)\b"
+    r"|\b(?:developers?|engineers?|designers?|interns?|candidates?|freelancers?)\s+"
+    r"(?:needed|required|wanted)\b"
+    r"|\blooking\s+for\s+(?:a\s+)?(?:freelancer|developer|designer|intern|vendor|consultant)\b"
+    r"|\bif\s+you\s+(?:have|need|want)\b.{0,40}\b(?:fill|form|register|apply)\b"
+    r"|\b(?:anyone|everyone|all)\s+(?:who|interested|please)\b", re.I)
+#: A remark is not a commitment. "Rohit will get food and return, waiting 5 min before leaving"
+#: became a promise the product intends to chase him about.
+_SMALL_TALK = re.compile(
+    r"\b(?:lunch|dinner|breakfast|tea|coffee|chai|khana|food|washroom|loo|smoke|break)\b"
+    r"|\b(?:on\s+my\s+way|omw|reaching|leaving|brb|back\s+in\s+\d+)\b"
+    r"|\b(?:good\s+(?:morning|night)|happy\s+birthday|congrats|congratulations)\b", re.I)
 #: A `who` has to be a PERSON. These are roles, companies-as-roles and desks — "Investor",
 #: "HR", "Support". A reminder addressed to a job title is a reminder addressed to nobody.
 _NOT_A_PERSON = frozenset({
@@ -545,7 +567,11 @@ def reject(item: dict, *, said: list[str] | None = None) -> str | None:
       no_person  a `who` that is a role or a desk ("Investor", "HR", "Support"). A reminder
                  addressed to a job title is a reminder addressed to nobody;
       advisory   a standing notice — a fraud warning, a disclaimer, a policy. It is on the page
-                 for everybody; nobody asked the manager for anything.
+                 for everybody; nobody asked the manager for anything;
+      broadcast  a post to the world — a vacancy, a "looking for a freelancer", a form for anyone
+                 who wants one. Addressed to everybody is addressed to nobody;
+      small_talk a remark, not a commitment. "Rohit will get food and return" is not something to
+                 chase him about.
 
     The last three are in the prompt too, and the prompt was not enough: a real screen produced
     "Investor will provide funds enabling salary payments" and an HR's payroll chase as work.
@@ -567,6 +593,11 @@ def reject(item: dict, *, said: list[str] | None = None) -> str | None:
     # boilerplate is just warning boilerplate.
     if not item.get("due") and not _MONEY.search(blob) and _ADVISORY.search(blob):
         return "advisory"
+    if not item.get("due") and not _MONEY.search(blob):
+        if _BROADCAST.search(blob):
+            return "broadcast"
+        if _SMALL_TALK.search(blob):
+            return "small_talk"
     return None
 
 
