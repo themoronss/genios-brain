@@ -183,10 +183,16 @@ _PARKED_PAYLOAD_TTL_DAYS = 365
 #: not the gate we will be running next month. Keeping the body long enough to re-adjudicate is
 #: what makes "we improved the filter" a statement anyone can act on rather than an assertion
 #: about mail that no longer exists.
-_JUDGED_DROP_PAYLOAD_TTL_DAYS = 90
+JUDGED_DROP_PAYLOAD_TTL_DAYS = 90
 
 #: Reason codes whose drop was a model's opinion rather than a provider's fact.
-_JUDGED_DROP_CODES = frozenset({"llm_junk", "low_relevance"})
+#:
+#: PUBLIC because `platform/receipts.py` asks whether every drop we might be WRONG about is
+#: still reviewable, and that question is only answerable against this set and the TTL above.
+#: A receipt that restated either would be a second opinion about which deletions are
+#: judgments — and the first time one moved, the readiness page would be answering about a
+#: policy the pipeline no longer has.
+JUDGED_DROP_CODES = frozenset({"llm_junk", "low_relevance"})
 
 
 def _linkage_hints(event: SourceEvent) -> list[dict]:
@@ -1514,7 +1520,7 @@ def capture_event(raw: RawObject, *, org_id: str, connection_id: str,
     # might be wrong about, and 657 dropped events with zero payloads made "did we lose anything
     # real?" permanently unanswerable. Absence of evidence became evidence of absence.
     judged_drop = (outcome == "dropped"
-                   and str(gate.reason_code or "") in _JUDGED_DROP_CODES)
+                   and str(gate.reason_code or "") in JUDGED_DROP_CODES)
     if (kept or judged_drop) and payload_store is not None:
         event.payload_ref = new_id("pay")
     repo.add(event, outcome=outcome, route=gate.route, triage_lane=lane,
@@ -1526,7 +1532,7 @@ def capture_event(raw: RawObject, *, org_id: str, connection_id: str,
         payload_store.put(payload_id=event.payload_ref, org_id=org_id,
                           event_id=event.event_id, content=json.dumps(raw.raw, default=str),
                           ttl_days=(_PARKED_PAYLOAD_TTL_DAYS if outcome == "parked"
-                                    else _JUDGED_DROP_PAYLOAD_TTL_DAYS if judged_drop
+                                    else JUDGED_DROP_PAYLOAD_TTL_DAYS if judged_drop
                                     else _EMITTED_PAYLOAD_TTL_DAYS))
     if kept and prepared is not None and prepared_store is not None:
         # the PII-masked, replayable form + offset map — retained longer than the raw payload

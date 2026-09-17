@@ -42,6 +42,8 @@ def receipts(org: str | None) -> list[Receipt]:
     # nothing for that long has, provably, no working set left — whatever the other receipts say.
     # Picking any other number here would invent a second opinion about when quiet becomes empty.
     # Imported inside the function, the way `platform/wiring.py` already reaches into `context`.
+    from genios_engine.capture.pipeline import (JUDGED_DROP_CODES,
+                                                JUDGED_DROP_PAYLOAD_TTL_DAYS)
     from genios_engine.context.situations import DORMANT_AFTER_DAYS
 
     o = _org_filter(org)
@@ -56,12 +58,30 @@ def receipts(org: str | None) -> list[Receipt]:
                 f"select count(*) from parked_events where status='pending'{o}",
                 lambda n: n == 0,
                 "pending forever means a park is a slower delete"),
-        Receipt("L1", "dropped events are recoverable",
+        Receipt("L1", "every drop we might be wrong about can still be reviewed",
+                # SCOPED TO THE JUDGED DROPS, and that is a correction rather than a narrowing.
+                # Asked of EVERY drop this counted 2,818 deterministic refusals that by documented
+                # policy retain nothing — "L1 stays a filter, not a warehouse" — so it could never
+                # pass, on any tenant, in any state. A receipt that cannot pass is exactly the
+                # "a skip read as a pass" failure this module exists to end, wearing the other
+                # colour: permanent red teaches an operator to stop reading the page.
+                #
+                # The window is the retention policy's own, so a judged drop past its TTL is
+                # EXPECTED to have no payload and does not count against the tenant. That also
+                # means the receipt self-clears: 26 events judged in August, before this retention
+                # landed, fail it today and stop counting when they age past 90 days.
                 "select count(*) from source_events se where se.outcome='dropped' "
-                "and not exists (select 1 from raw_payloads rp where rp.event_id=se.event_id)"
+                f"and se.captured_at > now() - interval '{JUDGED_DROP_PAYLOAD_TTL_DAYS} days' "
+                "and exists (select 1 from event_trace t where t.org_id=se.org_id "
+                "            and t.event_id=se.event_id and t.action='drop' "
+                f"            and t.reason_code in ({', '.join(repr(c) for c in sorted(JUDGED_DROP_CODES))})) "
+                "and not exists (select 1 from raw_payloads rp where rp.event_id=se.event_id "
+                "                and rp.org_id=se.org_id)"
                 + _org_filter(org, "se"),
                 lambda n: n == 0,
-                "a drop with no retained payload cannot be re-adjudicated when the gate improves"),
+                "a provider's SPAM label is a fact and needs no second look; a model saying "
+                "\"this looks like junk\" is a JUDGMENT, and judgments improve. Without the body "
+                "\"we improved the filter\" is an assertion about mail that no longer exists"),
         Receipt("L1", "the tenant is still being fed",
                 # `captured_at`, not `occurred_at`: this asks whether OUR pipeline is receiving,
                 # and a backfill of last quarter's mail is healthy ingestion of old messages.

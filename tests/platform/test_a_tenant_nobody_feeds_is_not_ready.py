@@ -24,14 +24,20 @@ import re
 
 import pytest
 
+from genios_engine.capture.pipeline import JUDGED_DROP_CODES, JUDGED_DROP_PAYLOAD_TTL_DAYS
 from genios_engine.context.situations import DORMANT_AFTER_DAYS
 from genios_engine.platform.receipts import Receipt, receipts
 
 CLAIM = "the tenant is still being fed"
+REVIEWABLE = "every drop we might be wrong about can still be reviewed"
 
 
 def _fed() -> Receipt:
     return next(r for r in receipts("org_x") if r.claim == CLAIM)
+
+
+def _reviewable() -> Receipt:
+    return next(r for r in receipts("org_x") if r.claim == REVIEWABLE)
 
 
 # =============================================================================================
@@ -111,3 +117,46 @@ def test_claims_are_unique_so_a_reader_can_name_the_one_that_failed():
     claims = [r.claim for r in receipts(None)]
 
     assert len(claims) == len(set(claims)), "two receipts share a claim"
+
+
+# =============================================================================================
+# the receipt that could never pass
+# =============================================================================================
+def test_a_deterministic_drop_is_not_counted_against_the_tenant():
+    """Asked of EVERY drop, this counted 2,818 deterministic refusals that by documented policy
+    retain nothing — "L1 stays a filter, not a warehouse" — so it could not pass on any tenant in
+    any state. Permanent red teaches an operator to stop reading the page, which is the same
+    failure as a skip reading as a pass, wearing the other colour."""
+    sql = _reviewable().sql
+
+    assert "reason_code in (" in sql, (
+        "the receipt counts every drop again, including the deterministic ones that are "
+        "DESIGNED to retain nothing — it can never pass")
+    for code in JUDGED_DROP_CODES:
+        assert repr(code) in sql or f"'{code}'" in sql, f"{code} is no longer asked about"
+
+
+def test_the_judged_set_is_the_pipelines_and_not_a_second_opinion():
+    """Which deletions are judgments is the pipeline's call — it is the module that decides which
+    ones keep a body. A restated set here would answer about a policy the pipeline no longer has
+    the first time one of them moved."""
+    sql = _reviewable().sql
+    quoted = {c for c in ("llm_junk", "low_relevance", "N-02", "N-03", "N-06")
+              if f"'{c}'" in sql}
+
+    assert quoted == set(JUDGED_DROP_CODES), (
+        f"the receipt asks about {quoted}, the pipeline retains for {set(JUDGED_DROP_CODES)}")
+
+
+def test_the_window_is_the_retention_policys_own():
+    """A judged drop past its TTL is EXPECTED to have no payload. Counting it would make the
+    receipt fail for a tenant doing everything right, forever."""
+    assert f"'{JUDGED_DROP_PAYLOAD_TTL_DAYS} days'" in _reviewable().sql
+    assert "captured_at" in _reviewable().sql
+
+
+def test_one_unreviewable_judgment_is_enough_to_fail():
+    """Not a rate. One model deletion nobody can look at is one the tenant cannot be told about."""
+    assert _reviewable().expect(0) is True
+    assert _reviewable().expect(1) is False
+    assert _reviewable().expect(26) is False

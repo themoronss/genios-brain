@@ -77,7 +77,7 @@ DROP_TABLE = "qualification_drops"
 #: the module docstring on why it is not the value every tenant gets.
 DEFAULT_FLOOR_BP = 2500
 
-#: Doc 06: "DROP, LOGGED, PAYLOAD RETAINED 90d". The same 90 days `pipeline._JUDGED_DROP_PAYLOAD_TTL_DAYS`
+#: Doc 06: "DROP, LOGGED, PAYLOAD RETAINED 90d". The same 90 days `pipeline.JUDGED_DROP_PAYLOAD_TTL_DAYS`
 #: already gives a judged gate drop, and for the same reason: the floor that refused this signal
 #: is not the floor we will be running next quarter, and re-adjudicating a refusal is only
 #: possible while the body it was made from still exists.
