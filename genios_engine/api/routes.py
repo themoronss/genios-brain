@@ -1950,13 +1950,39 @@ def _attachment_refetch_queue():
 def _attachment_connector_for(candidate):
     """Resolve the tenant connector that can hand back one parked attachment's bytes.
 
-    Returns None — never raises, and never a connector of the wrong shape — for a connection that
-    has been removed or for a source with no attachment fetch. The drain treats None as a
-    transient miss, so a tenant who reconnects tomorrow gets their backlog drained tomorrow
-    instead of finding it dead-lettered.
+    Returns None — never raises, and never a connector of the wrong shape — for an org with no
+    live connection to that source, or for a source with no attachment fetch. The drain treats
+    None as a transient miss, so a tenant who connects tomorrow gets their backlog drained
+    tomorrow instead of finding it dead-lettered.
+
+    A RECONNECT USED TO ORPHAN THE WHOLE BACKLOG. The id is read from the event as captured, and
+    reconnecting Gmail writes a NEW connection row and drops the old one — so every attachment
+    parked before that day pointed at an id `get` could no longer find. Measured 2026-09-17: 160
+    parked rows across two orgs carried `no live connector for source 'gmail'`, every one of them
+    naming a `connection_id` absent from `connections`, while BOTH orgs held a `connected`,
+    unexpired gmail row the whole time. 2,170 attempts went into dead-lettering a backlog nothing
+    was wrong with, and the promise in the paragraph above — "reconnects tomorrow, drained
+    tomorrow" — was the exact thing that could not happen.
+
+    So a missing id falls back to a LIVE connection for the same org and the same source. Three
+    things make that safe rather than convenient:
+
+      * the org check is kept, and kept STRICT — a recorded connection belonging to someone else
+        is a data-integrity fault and still returns None rather than falling back, because the
+        fallback is for an id that is GONE, not for one that is wrong;
+      * a provider attachment id is scoped to its mailbox, so if the tenant connected a different
+        account the fetch returns not-found and is classified as a failure. It cannot return
+        another mailbox's bytes;
+      * and `list_active` only ever yields this tenant's own connections, so the widest possible
+        reach is from one of the org's mailboxes to another of the same org's mailboxes.
     """
     conn = _connections.get(candidate.connection_id)
-    if conn is None or conn.org_id != candidate.org_id:
+    if conn is not None and conn.org_id != candidate.org_id:
+        return None
+    if conn is None:
+        conn = next((c for c in _connections.list_active(candidate.source)
+                     if c.org_id == candidate.org_id), None)
+    if conn is None:
         return None
     connector = make_connector_for(conn)
     return connector if hasattr(connector, "fetch_attachment") else None
