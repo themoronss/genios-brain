@@ -44,7 +44,10 @@ from genios_engine.platform.config import get_settings
 #: `allowed_apps` says which of these dedicated readers are enabled, and everything else — or a
 #: dedicated app whose reader is off — is the generic reader's, which runs when `generic_web` is
 #: on for both the org and the seat.
-APP_IDS: tuple[str, ...] = ("gmail", "whatsapp", "linkedin", "slack", "outlook", "gcal")
+#: `teams` was missing, so a manager whose work chat is Teams was read nowhere — not the desktop
+#: app, not teams.microsoft.com, on either platform. A workspace that already chose its apps keeps
+#: what it chose; this only changes what a NEW one starts with.
+APP_IDS: tuple[str, ...] = ("gmail", "whatsapp", "linkedin", "slack", "outlook", "gcal", "teams")
 #: All six by default. Also the column default in 0141.
 DEFAULT_ALLOWED_APPS: tuple[str, ...] = APP_IDS
 #: A session from the generic reader (`screen_doc` blocks, native or web). `web` is an alias.

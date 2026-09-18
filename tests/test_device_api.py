@@ -661,7 +661,7 @@ def test_the_default_policy_is_off_and_carries_the_sensitive_defaults(client, wo
     # whole still waits for the org switch and the seat's own opt-in.
     assert doc["org"] == {"enabled": False,
                           "allowed_apps": ["gmail", "whatsapp", "linkedin", "slack", "outlook",
-                                           "gcal"],
+                                           "gcal", "teams"],
                           "blocked_domains": [], "generic_web_allowed": True,
                           "draft_assist_allowed": False, "retention_days": 90,
                           # P3 (pinned 2026-09-13): shadow mode by default; per-seat caps
@@ -728,7 +728,7 @@ def test_a_seat_opts_in_pauses_and_resumes(client, world):
     assert on.status_code == 200 and set(on.json()) == _DOC_KEYS
     doc = on.json()
     assert doc["effective"]["capture_on"] is True
-    assert doc["effective"]["apps"] == ["gcal", "gmail", "linkedin", "outlook",
+    assert doc["effective"]["apps"] == ["gcal", "gmail", "linkedin", "outlook", "teams",
                                         "whatsapp"]                    # the seat narrowed it
     assert [a[1] for a in world.audit][-1] == "seat_capture_enabled"
     version = doc["policy_version"]
