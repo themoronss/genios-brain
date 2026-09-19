@@ -178,10 +178,15 @@ def _resolved_concurrency() -> dict:
     from genios_engine.capture.acquire.sync_runner import _CAPTURE_WORKERS
     from genios_engine.capture.connectors.composio import _FETCH_WORKERS
     from genios_engine.context.runner import _BATCH, _MAX_WORKERS
+    from genios_engine.platform.memory import rss_mb
     url = (getattr(get_settings(), "database_url", "") or "")
+    # Memory belongs next to the worker counts because it is downstream of them: a box reading
+    # high is a question about how many chains were allowed to run at once, and answering it from
+    # a dashboard gauge alone has meant guessing which setting produced the number.
     return {"l1_capture_workers": _CAPTURE_WORKERS, "l1_fetch_workers": _FETCH_WORKERS,
             "l2_workers": _MAX_WORKERS, "l2_batch": _BATCH,
-            "pooler": "transaction" if ":6543/" in url else "session"}
+            "pooler": "transaction" if ":6543/" in url else "session",
+            "rss_mb": rss_mb()}
 
 
 @router.get("/config")

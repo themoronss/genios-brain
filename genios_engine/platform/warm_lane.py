@@ -567,8 +567,11 @@ def _resolve_engine():
 
 
 def _loop(worker_id: str, initial_delay: float) -> None:
+    from genios_engine.platform.memory import release_free_memory
+
     if _stop.wait(initial_delay):
         return
+    worked = False
     while not _stop.is_set():
         ran = False
         try:
@@ -581,6 +584,13 @@ def _loop(worker_id: str, initial_delay: float) -> None:
             housekeep(engine)
         except Exception:                  # noqa: BLE001 — a crash must never kill the loop
             _log.exception("warm lane tick crashed")
+        worked = worked or ran
+        # The lane's chains hold message bodies and model payloads; the allocator keeps that peak
+        # once the chain ends. Trim when the queue goes quiet, so a busy lane is never paying for
+        # it between two runs that both need the memory.
+        if not ran and worked:
+            worked = False
+            release_free_memory("warm lane")
         if not ran:
             _wake.wait(POLL_SECONDS)
 

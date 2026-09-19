@@ -27,14 +27,24 @@ def _loop(initial_delay: float) -> None:
     # lazy import — routes.py wires the stores at import time; import here avoids a cycle
     from genios_engine.api.routes import run_one_sync_job
 
+    from genios_engine.platform.memory import release_free_memory
+
     if _stop.wait(initial_delay):
         return
+    worked = False
     while not _stop.is_set():
         ran = False
         try:
             ran = run_one_sync_job(_WORKER_ID)     # claim + run one job (or no-op if queue empty)
         except Exception:                          # noqa: BLE001 — a crash must never kill the loop
             _log.exception("sync worker tick crashed")
+        worked = worked or ran
+        # A sync is this process's memory high-water mark, and the allocator keeps the peak until
+        # it is told otherwise. Trim on the DRAIN, not per job: back-to-back jobs would only be
+        # trimming memory the next one is about to take again.
+        if not ran and worked:
+            worked = False
+            release_free_memory("sync")
         # If we just ran a job, loop again immediately (drain the queue); else sleep before polling.
         if not ran and _stop.wait(_POLL_SECONDS):
             return
