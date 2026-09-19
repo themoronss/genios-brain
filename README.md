@@ -93,3 +93,19 @@ Dev runs with **no live DB or Composio** — in-memory repos and a fake Gmail co
 - **Traceability first-class** — every stage records `pass/drop/park + reason_code` per event (`event_trace`), so debugging is a query, not a guess.
 - **Fresh DB** (Supabase/Postgres); in-memory repos default so dev/tests run instantly.
 - **No LLM in L1** — deterministic gate + triage; the single relevance+extraction call lives in L2.
+- **Every model call is metered** — model spend is the only per-unit cost we have, and it is
+  knowable per account and per person only if every call site files a `llm_costs` row. So a new
+  LLM call anywhere in the engine must:
+  1. record it — `GraphStore.record_cost(org_id=…, model=…, purpose='<new>', input_tokens=…,
+     output_tokens=…, success=…, error=…)`, or take a `cost_sink` / `cost_recorder` the wiring
+     binds. Record FAILED calls too: a refused answer was still bought;
+  2. name the person with `seat_id=` whenever the lane knows one (screen lanes, authenticated
+     API calls, a seat's own mailbox). Background sweeps serve no single seat — NULL is the
+     correct answer there, never an invented owner;
+  3. pass `cache_read_tokens` / `cache_write_tokens` if the call uses a cacheable prefix.
+     Recorded, never priced: `input_tokens` is already cost-equivalent;
+  4. register the module in `tests/test_every_llm_call_site_is_metered.py`.
+
+  That test is a GATE, not a convention: it scans the engine for model invocations and fails on
+  any it does not recognise, with the procedure above in its failure message. Two lanes have
+  already spent real money invisibly for months because nothing checked.

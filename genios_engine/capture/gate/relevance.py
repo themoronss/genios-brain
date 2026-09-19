@@ -146,10 +146,17 @@ class LLMRelevanceClassifier:
         # Anthropic bill. Optional so the classifier stays usable without a store (tests, dev).
         self._cost_sink = cost_sink
         self._org_id = org_id
+        self._seat_id: str | None = None
 
-    def bind_costs(self, cost_sink, org_id: str) -> "LLMRelevanceClassifier":
-        """Attach cost recording once the org is known (the classifier is built before the sync)."""
+    def bind_costs(self, cost_sink, org_id: str,
+                   seat_id: str | None = None) -> "LLMRelevanceClassifier":
+        """Attach cost recording once the org is known (the classifier is built before the sync).
+
+        `seat_id` is the CONNECTION's seat, re-bound with the org for the same reason the org is:
+        one classifier is reused across a cross-org sweep, so a seat left over from the previous
+        connection would bill this mailbox's gate calls to the last person synced."""
         self._cost_sink, self._org_id = cost_sink, org_id
+        self._seat_id = (str(seat_id) if seat_id else None)
         return self
 
     def _record(self, res) -> None:
@@ -161,7 +168,10 @@ class LLMRelevanceClassifier:
                             input_tokens=getattr(res, "input_tokens", 0) or 0,
                             output_tokens=getattr(res, "output_tokens", 0) or 0,
                             success=bool(getattr(res, "ok", True)),
-                            error=getattr(res, "error", None))
+                            error=getattr(res, "error", None),
+                            seat_id=self._seat_id,
+                            cache_read_tokens=getattr(res, "cache_read_tokens", 0) or 0,
+                            cache_write_tokens=getattr(res, "cache_write_tokens", 0) or 0)
         except Exception:      # noqa: BLE001 — accounting must never break capture
             pass
 

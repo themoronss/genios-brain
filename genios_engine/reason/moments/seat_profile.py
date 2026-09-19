@@ -157,9 +157,13 @@ def model_available() -> bool:
 
 
 def t1_text(engine, *, org_id: str, prompt: str, max_tokens: int, timeout_s: float,
-            purpose: str, temperature: float = 0.0) -> str | None:
+            purpose: str, seat_id: str | None = None, temperature: float = 0.0) -> str | None:
     """One Haiku (`tier_model("T1")`) call → its text, or None (no model, failure, timeout). The
-    cost is recorded in `llm_costs` under `purpose`; never credit-charged."""
+    cost is recorded in `llm_costs` under `purpose` and against `seat_id`; never credit-charged.
+
+    Both callers are per-seat work — a seat's own profile, a seat's own reply draft — so the
+    person who spent it is always knowable here. It is a keyword with a None default only so a
+    future org-wide T1 caller does not have to invent a seat to satisfy the signature."""
     if not model_available():
         return None
     from anthropic import Anthropic
@@ -180,9 +184,11 @@ def t1_text(engine, *, org_id: str, prompt: str, max_tokens: int, timeout_s: flo
     try:
         from genios_engine.context.graph_store import GraphStore
         GraphStore(engine=engine).record_cost(
-            org_id=org_id, model=model, purpose=purpose,
+            org_id=org_id, model=model, purpose=purpose, seat_id=seat_id,
             input_tokens=getattr(usage, "input_tokens", 0),
-            output_tokens=getattr(usage, "output_tokens", 0))
+            output_tokens=getattr(usage, "output_tokens", 0),
+            cache_read_tokens=getattr(usage, "cache_read_input_tokens", 0) or 0,
+            cache_write_tokens=getattr(usage, "cache_creation_input_tokens", 0) or 0)
     except Exception:      # noqa: BLE001 — cost bookkeeping never fails the call
         _log.exception("%s: cost record failed", purpose)
     return "".join(getattr(b, "text", "") for b in resp.content
@@ -206,7 +212,8 @@ def build_if_stale(engine, *, org_id: str, seat_id: str, email: str | None,
     if signals(facts) < MIN_SIGNALS:
         return None
     profile = clean(t1_text(engine, org_id=org_id, prompt=build_prompt(facts, email=email),
-                            max_tokens=MAX_OUTPUT_TOKENS, timeout_s=TIMEOUT_S, purpose=PURPOSE))
+                            max_tokens=MAX_OUTPUT_TOKENS, timeout_s=TIMEOUT_S, purpose=PURPOSE,
+                            seat_id=seat_id))
     if profile is None:
         return None
     with engine.begin() as c:

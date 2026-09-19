@@ -82,17 +82,64 @@ HARD RULES — a candidate that breaks any of them is discarded by a validator, 
 """
 
 
+#: `llm_costs.purpose` for the T2 document read. A whole policy document at 4096 output tokens is
+#: the most expensive single call in the product, and until 0175 it was the one call that never
+#: reached the ledger — reported spend sat below the Anthropic bill by exactly this lane.
+COST_PURPOSE = "org_rule_extract"
+
+
 class LLMOrgRuleExtractor:
     """The production extractor. Wraps the shared `LLMClient` (temp 0, lenient JSON parse)."""
 
-    def __init__(self, client: Any) -> None:
+    def __init__(self, client: Any, *, cost_sink: Any | None = None,
+                 org_id: str | None = None) -> None:
         self._client = client
+        #: `GraphStore.record_cost`-shaped, and optional: without it the extractor still reads
+        #: documents, its spend is simply invisible — which is the bug 0175 closed, so the
+        #: wiring seam below always supplies one in production.
+        self._cost_sink = cost_sink
+        self._org_id = org_id
+        self._event_id: str | None = None
+
+    def _record(self, result: Any) -> None:
+        """Never raises: accounting must not cost us a document we already paid to read."""
+        if self._cost_sink is None or not self._org_id:
+            return
+        try:
+            self._cost_sink(
+                org_id=self._org_id,
+                model=str(getattr(result, "model", "")
+                          or getattr(self._client, "model", "") or "unknown"),
+                purpose=COST_PURPOSE,
+                input_tokens=int(getattr(result, "input_tokens", 0) or 0),
+                output_tokens=int(getattr(result, "output_tokens", 0) or 0),
+                success=bool(getattr(result, "ok", False)),
+                error=(str(getattr(result, "error", "") or "")[:400] or None),
+                event_id=self._event_id,
+                subject_ref=(f"event:{self._event_id}" if self._event_id else None),
+                cache_read_tokens=int(getattr(result, "cache_read_tokens", 0) or 0),
+                cache_write_tokens=int(getattr(result, "cache_write_tokens", 0) or 0))
+        except Exception:      # noqa: BLE001
+            pass
+
+    def bind_event(self, event_id: str | None) -> None:
+        """Name the document the NEXT `propose` is for, so its spend is attributable.
+
+        Deliberately NOT a `propose` parameter: `propose(text, kind, title)` is the
+        `OrgRuleExtractor` protocol every caller and test fake implements, and widening a
+        protocol to carry a ledger key would make every fake a cost-aware object. The sweep calls
+        this when the extractor offers it and skips it when it does not.
+        """
+        self._event_id = (str(event_id) if event_id else None)
 
     def propose(self, *, text: str, kind: str, title: str) -> Sequence[Mapping[str, Any]]:
         prompt = PROMPT.format(kind=kind, title=title, text=text[:MAX_DOCUMENT_CHARS],
                                categories=json.dumps(sorted(ORG_RULE_CATEGORIES)),
                                max_rules=MAX_RULES)
         result = self._client.call(prompt, max_tokens=4096)
+        # BEFORE the failure branch: a refused or unparseable answer was still bought and still
+        # appears on the bill. Recording only successes is how a lane looks cheap while failing.
+        self._record(result)
         if not getattr(result, "ok", False):
             # Surfaced as an empty proposal set, never as a partial one. The caller records
             # `extractor_failed` on the run receipt and the document stays UNREAD, so the next
@@ -104,7 +151,8 @@ class LLMOrgRuleExtractor:
         return [r for r in rules[:MAX_RULES] if isinstance(r, dict)]
 
 
-def make_org_rule_extractor(client: Any | None = None) -> LLMOrgRuleExtractor | None:
+def make_org_rule_extractor(client: Any | None = None, *, org_id: str | None = None,
+                            engine: Any | None = None) -> LLMOrgRuleExtractor | None:
     """The wiring seam. Returns None when no model is configured — a skipped run, not a crash.
 
     None is a real answer: on a deployment with no Anthropic key (CI, and every hermetic test
@@ -114,7 +162,13 @@ def make_org_rule_extractor(client: Any | None = None) -> LLMOrgRuleExtractor | 
     if client is None:
         from genios_engine.platform.wiring import make_llm_client
         client = make_llm_client()
-    return None if client is None else LLMOrgRuleExtractor(client)
+    if client is None:
+        return None
+    sink = None
+    if org_id and engine is not None:
+        from genios_engine.context.graph_store import GraphStore
+        sink = GraphStore(engine=engine).record_cost
+    return LLMOrgRuleExtractor(client, cost_sink=sink, org_id=org_id)
 
 
 def rule_bearing_kinds() -> tuple[str, ...]:
@@ -122,5 +176,5 @@ def rule_bearing_kinds() -> tuple[str, ...]:
     return tuple(sorted(RULE_BEARING_CANON_KINDS))
 
 
-__all__ = ["LLMOrgRuleExtractor", "MAX_DOCUMENT_CHARS", "MAX_RULES", "PROMPT",
-           "make_org_rule_extractor", "rule_bearing_kinds"]
+__all__ = ["COST_PURPOSE", "LLMOrgRuleExtractor", "MAX_DOCUMENT_CHARS", "MAX_RULES",
+           "PROMPT", "make_org_rule_extractor", "rule_bearing_kinds"]

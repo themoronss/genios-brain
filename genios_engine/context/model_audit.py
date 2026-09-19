@@ -75,14 +75,17 @@ def record_model_run(
             conn.execute(text(
                 "insert into llm_costs "
                 "(org_id, model, purpose, input_tokens, output_tokens, success, error, "
-                " subject_ref, created_at) values "
-                "(:o,:model,:purpose,:it,:ot,:ok,:error,:subject,:at)"), {
+                " subject_ref, cache_read_tokens, cache_write_tokens, created_at) values "
+                "(:o,:model,:purpose,:it,:ot,:ok,:error,:subject,:crt,:cwt,:at)"), {
                     "o": org_id, "model": model_snapshot, "purpose": f"l2:{site}",
                     "it": int(getattr(result, "input_tokens", 0) or 0),
                     "ot": int(getattr(result, "output_tokens", 0) or 0),
                     "ok": bool(getattr(result, "ok", False)),
                     "error": str(getattr(result, "error", "") or "")[:400] or None,
                     "subject": subject_ref, "at": called_at,
+                    # Recorded, never priced: `input_tokens` above is already cost-equivalent.
+                    "crt": int(getattr(result, "cache_read_tokens", 0) or 0),
+                    "cwt": int(getattr(result, "cache_write_tokens", 0) or 0),
                 })
     return run_id
 

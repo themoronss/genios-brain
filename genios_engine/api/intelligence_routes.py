@@ -293,6 +293,16 @@ def _stamp_activation(org_id: str) -> None:
         return False
 
 
+def _seat_of(ctx) -> str | None:
+    """The seat to bill this call's model spend to, or None.
+
+    None is the honest answer for an API-key principal or an agent: those are the ORG asking, and
+    naming a human would put one person's name on spend they did not cause. `llm_costs.seat_id`
+    is nullable for exactly this case.
+    """
+    return (str(ctx.seat_id) if isinstance(ctx, AuthCtx) and ctx.seat_id else None)
+
+
 def _viewer_answer_key(base_ckey: str, viewer: str) -> str:
     return hashlib.sha256(f"{base_ckey}|viewer|{viewer}".encode()).hexdigest()
 
@@ -395,7 +405,10 @@ def intelligence_query(body: QueryBody, org_id: str = Depends(get_current_org),
         try:
             _graph.record_cost(org_id=org_id, model=res.model, purpose="intelligence_query",
                                input_tokens=res.input_tokens, output_tokens=res.output_tokens,
-                               success=res.ok, error=getattr(res, "error", None))
+                               success=res.ok, error=getattr(res, "error", None),
+                               seat_id=_seat_of(ctx),
+                               cache_read_tokens=getattr(res, "cache_read_tokens", 0),
+                               cache_write_tokens=getattr(res, "cache_write_tokens", 0))
         except Exception:      # noqa: BLE001 — never let cost logging break the answer
             _log.warning("intelligence cost log failed for %s", org_id)
         # charge 1 credit for the LLM synthesis (idempotent on the cache key → a retry never
@@ -1299,7 +1312,8 @@ def _deep_llm():
 
 @router.get("/v1/intelligence/analyze")
 def analyze_contact(contact: str, deep: bool = False, situation: str = "",
-                    org_id: str = Depends(get_current_org)) -> dict:
+                    org_id: str = Depends(get_current_org),
+                    ctx: AuthCtx = Depends(get_auth_ctx)) -> dict:
     """Extension on-demand: for the contact the user is looking at, the next-best-action — returned
     in the insight shape the extension card renders. `deep=true` uses a stronger model (Sonnet)."""
     if _graph is None:
@@ -1338,7 +1352,10 @@ def analyze_contact(contact: str, deep: bool = False, situation: str = "",
         try:
             _graph.record_cost(org_id=org_id, model=res.model, purpose="intelligence_analyze",
                                input_tokens=res.input_tokens, output_tokens=res.output_tokens,
-                               success=res.ok, error=getattr(res, "error", None))
+                               success=res.ok, error=getattr(res, "error", None),
+                               seat_id=_seat_of(ctx),
+                               cache_read_tokens=getattr(res, "cache_read_tokens", 0),
+                               cache_write_tokens=getattr(res, "cache_write_tokens", 0))
         except Exception:      # noqa: BLE001
             pass
         # THE CHARGE. This endpoint is the extension's main surface and ran free: it recorded the
@@ -1399,7 +1416,9 @@ def analyze_contact(contact: str, deep: bool = False, situation: str = "",
 
 
 @router.get("/v1/intelligence/draft")
-def draft_reply(contact: str, instruction: str = "", org_id: str = Depends(get_current_org)) -> dict:
+def draft_reply(contact: str, instruction: str = "",
+                org_id: str = Depends(get_current_org),
+                ctx: AuthCtx = Depends(get_auth_ctx)) -> dict:
     """Extension 'Draft reply' — a send-ready reply for the contact, grounded in their facts. LLM
     runs ONLY here (on the explicit click), never speculatively. GeniOS never auto-sends."""
     if _graph is None:
@@ -1429,7 +1448,10 @@ def draft_reply(contact: str, instruction: str = "", org_id: str = Depends(get_c
     try:
         _graph.record_cost(org_id=org_id, model=res.model, purpose="intelligence_draft",
                            input_tokens=res.input_tokens, output_tokens=res.output_tokens,
-                           success=res.ok, error=getattr(res, "error", None))
+                           success=res.ok, error=getattr(res, "error", None),
+                           seat_id=_seat_of(ctx),
+                           cache_read_tokens=getattr(res, "cache_read_tokens", 0),
+                           cache_write_tokens=getattr(res, "cache_write_tokens", 0))
     except Exception:      # noqa: BLE001
         pass
     draft = (res.parsed or {}).get("draft") if res.ok else None

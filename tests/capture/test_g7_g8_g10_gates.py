@@ -455,7 +455,7 @@ def _sweep(monkeypatch, *, objects=CORPUS, esqe_override=None) -> _CorpusLLM:
     # `qualified_signals.extraction_ref` would point at a row nothing ever wrote, which is a
     # property of the test rather than of the build.
     monkeypatch.setattr(routes, "_semantic_lane_for",
-                        lambda org, activated=None: replace(
+                        lambda org, activated=None, **_kw: replace(
                             make_semantic_lane(org, engine=getattr(routes._graph, "engine", None),
                                                llm=llm, activated=frozenset({ORG})),
                             eval_time=GATE_NOW))
@@ -718,7 +718,8 @@ def test_g7_doc_06s_headline_row_lands_in_its_band_on_the_production_path(gate_o
     monkeypatch.setattr(routes, "make_connector_for",
                         lambda conn, **kw: _CorpusConnector([headline]))
     monkeypatch.setattr(routes, "_semantic_lane_for",
-                        lambda org, activated=None: P.SemanticLane(llm=llm, eval_time=GATE_NOW))
+                        lambda org, activated=None, **_kw: P.SemanticLane(llm=llm,
+                                                                        eval_time=GATE_NOW))
     monkeypatch.setattr(routes, "_mailbox_owner_for", lambda org: OWNER)
     monkeypatch.setattr(routes, "_run_l2", lambda org: None)
     monkeypatch.setattr(routes, "_esqe_stage_for",
@@ -851,7 +852,8 @@ def test_g7_the_two_lanes_score_one_amount_one_date_one_authority_identically(ga
 
     llm = _ParityLLM()
     monkeypatch.setattr(routes, "_semantic_lane_for",
-                        lambda org, activated=None: P.SemanticLane(llm=llm, eval_time=GATE_NOW))
+                        lambda org, activated=None, **_kw: P.SemanticLane(llm=llm,
+                                                                        eval_time=GATE_NOW))
     monkeypatch.setattr(routes, "_mailbox_owner_for", lambda org: OWNER)
     monkeypatch.setattr(routes, "_run_l2", lambda org: None)
     wired = routes._esqe_stage_for(ORG)

@@ -538,15 +538,40 @@ def label_pattern(pattern: BehaviorPattern, *, labeler: Labeler | None = None
     return rendered, "model", ""
 
 
-def llm_labeler(client: Any, *, max_tokens: int = 300) -> Labeler:
+#: `llm_costs.purpose` for N-4's labelling call, if a caller ever wires one.
+COST_PURPOSE = "brains.behavior_distill"
+
+
+def llm_labeler(client: Any, *, max_tokens: int = 300, cost_sink: Any | None = None,
+                org_id: str | None = None) -> Labeler:
     """Adapt an `LLMClient` into a `Labeler`. The adapter reads ONE key and trusts nothing else.
 
     Kept here rather than inside `label_pattern` so the unit is fully exercisable — and fully
     runnable in production — with no model at all: N-4 is a T1 site whose deterministic default
-    is a complete answer, not a stub.
+    is a complete answer, not a stub. NOTHING wires this adapter today: `brain_pipeline_proposals`
+    is called with `labeler=None`, so N-4 is deterministic in production and this site spends
+    nothing. `cost_sink` is here so that the day someone does wire it, its spend arrives in
+    `llm_costs` like every other call rather than as a gap in the bill — which is exactly how the
+    T2 document reader went unmetered until 0175.
     """
+    def _record(result: Any) -> None:
+        if cost_sink is None or not org_id:
+            return
+        try:
+            cost_sink(org_id=org_id,
+                      model=str(getattr(result, "model", "")
+                                or getattr(client, "model", "") or "unknown"),
+                      purpose=COST_PURPOSE,
+                      input_tokens=int(getattr(result, "input_tokens", 0) or 0),
+                      output_tokens=int(getattr(result, "output_tokens", 0) or 0),
+                      success=bool(getattr(result, "ok", False)),
+                      error=(str(getattr(result, "error", "") or "")[:400] or None))
+        except Exception:      # noqa: BLE001 — accounting never fails a label
+            pass
+
     def _label(request: LabelRequest) -> str | None:
         result = client.call(build_label_prompt(request), max_tokens=max_tokens)
+        _record(result)
         if not getattr(result, "ok", False):
             return None
         value = (getattr(result, "parsed", None) or {}).get("template")
@@ -742,6 +767,7 @@ def distill(conn, *, org_id: str, policy: LearningPolicy,
 
 
 __all__ = ["BEHAVIOR_ELIGIBLE_METRICS", "BEHAVIOR_MIN_WINDOW_DAYS", "BEHAVIOR_SUBJECT_PREFIX",
+           "COST_PURPOSE",
            "BEHAVIOR_UNIT", "DEFAULT_TEMPLATES", "JUDGMENT_LEXICON", "LAPSE_TEMPLATE",
            "MAX_BEHAVIOR_ENTRIES_PER_RUN", "MAX_TEMPLATE_LENGTH", "TEMPLATE_FIELDS",
            "BehaviorPattern", "GateRefusal", "LabelRequest", "Labeler", "TrendReading",

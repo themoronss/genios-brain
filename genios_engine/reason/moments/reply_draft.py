@@ -55,11 +55,12 @@ def clean(raw: str | None) -> str | None:
     return s
 
 
-def draft(engine, *, org_id: str, item: dict, due_local: str | None = None) -> str | None:
+def draft(engine, *, org_id: str, item: dict, due_local: str | None = None,
+          seat_id: str | None = None) -> str | None:
     """The reply text, or None (no model, failure, time ran out)."""
     return clean(SP.t1_text(engine, org_id=org_id, prompt=build_prompt(item, due_local=due_local),
                             max_tokens=MAX_OUTPUT_TOKENS, timeout_s=TIMEOUT_S, purpose=PURPOSE,
-                            temperature=0.3))
+                            seat_id=seat_id, temperature=0.3))
 
 
 __all__ = ["PURPOSE", "build_prompt", "clean", "draft"]

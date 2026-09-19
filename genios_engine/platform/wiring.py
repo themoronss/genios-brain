@@ -308,7 +308,7 @@ def make_pack_registry():
     return make_registry(s.database_url)
 
 
-def make_relevance_classifier(org_id: str | None = None):
+def make_relevance_classifier(org_id: str | None = None, *, seat_id: str | None = None):
     """The L1 S2 relevance gate. Prefers the LLM junk-gate whenever an Anthropic key is present
     (production) — it is the one reliable filter that keeps noise OUT of the graph, replacing the
     over-aggressive regex drops. Falls back to the deterministic classifier only when explicitly
@@ -326,7 +326,7 @@ def make_relevance_classifier(org_id: str | None = None):
         if org_id:
             store = make_graph_store()
             if store is not None:
-                gate.bind_costs(store.record_cost, org_id)
+                gate.bind_costs(store.record_cost, org_id, seat_id)
         return gate
     if s.enable_l1_relevance:
         from genios_engine.capture.gate.relevance import DeterministicRelevanceClassifier
@@ -660,13 +660,24 @@ def tier_prices_for_model(model: str) -> dict:
             for tier in TIERS}
 
 
-def _llm_cost_sink(engine):
+def _llm_cost_sink(engine, *, seat_id: str | None = None):
     """`record_cost` bound to `engine`, or None without one — the `llm_costs` writer the capture
-    lane files its model calls through."""
+    lane files its model calls through.
+
+    `seat_id` is bound HERE rather than passed at each call site because ingestion spend belongs
+    to a CONNECTION, not to a message: a seat connection (0138) is one person's mailbox, so every
+    call the lane makes while draining it is that person's, and the lane's many call sites should
+    not each have to remember to say so. A workspace connection has no seat and binds nothing —
+    the ledger keeps NULL, which is the truth.
+    """
     if engine is None:
         return None
     from genios_engine.context.graph_store import GraphStore
-    return GraphStore(engine=engine).record_cost
+    sink = GraphStore(engine=engine).record_cost
+    if not seat_id:
+        return sink
+    from functools import partial
+    return partial(sink, seat_id=str(seat_id))
 
 
 def make_cost_governor(org_id: str, *, engine=None, prices: dict | None = None):
@@ -733,7 +744,7 @@ def make_structured_lane(org_id: str, *, engine=_UNSET):
 
 
 def make_semantic_lane(org_id: str, *, now: datetime | None = None, engine=_UNSET, llm=_UNSET,
-                       activated: frozenset[str] | None = None):
+                       activated: frozenset[str] | None = None, seat_id: str | None = None):
     """The S2 lane for ONE org, or `None` when it must not run — the strangler fig's gate.
 
     THREE conditions, all required, and the order is cheapest-first:
@@ -782,7 +793,7 @@ def make_semantic_lane(org_id: str, *, now: datetime | None = None, engine=_UNSE
     # own comment below warns about.
     governor = make_cost_governor(org_id, engine=engine,
                                   prices=tier_prices_for_model(getattr(llm, "model", "")))
-    cost_sink = _llm_cost_sink(engine)
+    cost_sink = _llm_cost_sink(engine, seat_id=seat_id)
     return SemanticLane(llm=llm, eval_time=now or datetime.now(timezone.utc),
                         cost_sink=cost_sink,
                         cache=make_extraction_cache(),

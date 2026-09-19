@@ -443,7 +443,10 @@ def parity_env(monkeypatch):
     # wiring and, because the recorder counts calls, also proves the webhook door consults the
     # gate AT ALL — which is defect #2's "no relevance classifier".
     gate = _RecordingRelevance()
-    monkeypatch.setattr(R, "make_relevance_classifier", lambda org_id=None: gate)
+    monkeypatch.setattr(R, "make_relevance_classifier",
+                        # **_kw swallows `seat_id` (0175): this double stands in for the
+                        # factory, and the gate under test is the same object either way.
+                        lambda org_id=None, **_kw: gate)
     yield R, engine, poll_org, hook_org, hook_conn, gate
     _purge(engine, (poll_org, hook_org))
 

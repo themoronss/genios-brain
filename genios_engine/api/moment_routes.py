@@ -460,7 +460,7 @@ def _screen_insight(body: EvaluateRequest, p: Principal, engine, now: datetime, 
     meetings = _meetings_soon(engine, p, now)
     res = SI.insight(engine, org_id=p.org_id, email=p.email, app=body.surface.app,
                      participants=body.participants, entities=body.features.entities,
-                     screen=screen, now_local=SI.local_label(now, tz),
+                     screen=screen, seat_id=p.seat_id, now_local=SI.local_label(now, tz),
                      dates=body.features.dates, not_useful=notes,
                      useful=kept, said=RU.said(fresh, me), me=me,
                      open_items=context, meetings=meetings,
@@ -693,7 +693,7 @@ def draft_followup(followup_id: str, request: Request):
     from genios_engine.reason.moments.common import parse_ts
     due = parse_ts(item["due_at"]) if item.get("due_at") else None
     due_local = f"{due.astimezone(F.zone(tz)):%a %d %b %H:%M}" if due else None
-    out = RD.draft(engine, org_id=p.org_id, item=item, due_local=due_local)
+    out = RD.draft(engine, org_id=p.org_id, item=item, due_local=due_local, seat_id=p.seat_id)
     if not out:
         return Response(status_code=_NO_CONTENT)
     return {"text": out}

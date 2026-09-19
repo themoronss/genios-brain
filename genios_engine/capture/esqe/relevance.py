@@ -893,7 +893,12 @@ class RelevancePage:
                  input_tokens=int(getattr(response, "input_tokens", 0) or 0),
                  output_tokens=int(getattr(response, "output_tokens", 0) or 0),
                  success=bool(getattr(response, "ok", False)),
-                 error=getattr(response, "error", None))
+                 error=getattr(response, "error", None),
+                 # `seat_id` is NOT passed here on purpose: `wiring._llm_cost_sink` binds the
+                 # connection's seat to the sink itself, and one LLM-5 prompt can carry
+                 # candidates from a whole page, so a seat chosen per response would be a guess.
+                 cache_read_tokens=getattr(response, "cache_read_tokens", 0) or 0,
+                 cache_write_tokens=getattr(response, "cache_write_tokens", 0) or 0)
         except Exception:      # noqa: BLE001
             pass
 

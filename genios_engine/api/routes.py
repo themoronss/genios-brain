@@ -118,12 +118,12 @@ def _l1_stores() -> L1Stores:
 
 
 # ── health / config ──────────────────────────────────────────────────────────────
-def _bind_gate_costs(gate, org_id: str) -> None:
-    """Point a shared relevance gate's cost recording at the tenant currently being synced.
-    Cross-org sweeps reuse one classifier; without this every gate call would be billed to the
-    first org in the loop."""
+def _bind_gate_costs(gate, org_id: str, seat_id: str | None = None) -> None:
+    """Point a shared relevance gate's cost recording at the tenant — and the SEAT — currently
+    being synced. Cross-org sweeps reuse one classifier; without this every gate call would be
+    billed to the first org in the loop, and (since 0175) to the first person in it."""
     if gate is not None and _graph is not None and hasattr(gate, "bind_costs"):
-        gate.bind_costs(_graph.record_cost, org_id)
+        gate.bind_costs(_graph.record_cost, org_id, seat_id)
 
 
 @router.get("/health")
@@ -582,7 +582,9 @@ def _sync_connection(connection, mode: str, limit: int) -> None:
     try:
         run_sync(make_connector_for(connection), org_id=connection.org_id,
                  connection_id=connection.connection_id, repo=_repo, mode=mode, limit=limit,
-                 parked_store=_parked, relevance=make_relevance_classifier(connection.org_id),
+                 parked_store=_parked,
+                 relevance=make_relevance_classifier(
+                     connection.org_id, seat_id=getattr(connection, "seat_id", None)),
                  trace_repo=_trace_repo, payload_store=_payload_store,
                  prepared_store=_prepared_store,
                  mailbox_owner=_mailbox_owner_for_connection(connection),
@@ -592,7 +594,8 @@ def _sync_connection(connection, mode: str, limit: int) -> None:
                  run_ledger=_run_ledger,
                  coverage_fn=_coverage_fn_for(connection.org_id),
                  esqe=_esqe_stage_for(connection.org_id),
-                 semantic=_semantic_lane_for(connection.org_id),
+                 semantic=_semantic_lane_for(connection.org_id,
+                                             seat_id=getattr(connection, "seat_id", None)),
                  structured=_structured_lane_for(connection.org_id))
     except Exception as e:
         _log.exception("L1 sync failed for org_id=%s connection_id=%s",
@@ -735,7 +738,7 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None, *,
         # the remainder is still there when they upgrade — so the page budget is cut to what the
         # plan still allows instead of the whole connection being skipped.
         pages = max(1, min(20, -(-headroom // max(1, limit))))
-        _bind_gate_costs(rc, conn.org_id)
+        _bind_gate_costs(rc, conn.org_id, getattr(conn, "seat_id", None))
         try:
             summary = run_sync(
                      make_connector_for(conn), org_id=conn.org_id, connection_id=conn.connection_id,
@@ -749,7 +752,8 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None, *,
                      run_ledger=_run_ledger,
                      coverage_fn=_coverage_fn_for(conn.org_id, connections=conns),
                      esqe=_esqe_stage_for(conn.org_id),
-                     semantic=_semantic_lane_for(conn.org_id, activated=activated),
+                     semantic=_semantic_lane_for(conn.org_id, activated=activated,
+                                                 seat_id=getattr(conn, "seat_id", None)),
                      # The tenant's own `cadence_minutes`, off the row this loop already holds,
                      # so `run_sync` does not reopen a connection store per connection per tick
                      # to re-read it. `None` outside an incremental sweep, where it is unused.
@@ -1233,7 +1237,7 @@ def ingest_all(background_tasks: BackgroundTasks, mode: str = "incremental",
     totals = {"scanned": 0, "emitted": 0, "dropped": 0, "parked": 0, "duplicate": 0}
     per = []
     for conn in conns:
-        _bind_gate_costs(rc, conn.org_id)
+        _bind_gate_costs(rc, conn.org_id, getattr(conn, "seat_id", None))
         try:
             summary = run_sync(make_connector_for(conn), org_id=conn.org_id,
                                connection_id=conn.connection_id, repo=_repo, mode=mode,
@@ -1247,7 +1251,9 @@ def ingest_all(background_tasks: BackgroundTasks, mode: str = "incremental",
                                run_ledger=_run_ledger,
                                coverage_fn=_coverage_fn_for(conn.org_id, connections=conns),
                                esqe=_esqe_stage_for(conn.org_id),
-                               semantic=_semantic_lane_for(conn.org_id, activated=activated),
+                               semantic=_semantic_lane_for(
+                                   conn.org_id, activated=activated,
+                                   seat_id=getattr(conn, "seat_id", None)),
                                structured=_structured_lane_for(conn.org_id))
         except Exception as e:                   # one bad source never kills the rest
             per.append({"org_id": conn.org_id, "source": conn.source_type, "error": str(e)[:120]})
@@ -1271,7 +1277,7 @@ def _semantic_activated_orgs() -> frozenset[str]:
     return semantic_activated_orgs(getattr(_graph, "engine", None))
 
 
-def _semantic_lane_for(org_id: str, activated=None):
+def _semantic_lane_for(org_id: str, activated=None, *, seat_id: str | None = None):
     """The S2 lane for one org, or None when this tenant is not on it.
 
     A separate helper from `_coverage_fn_for` because the two answer different questions and only
@@ -1287,7 +1293,8 @@ def _semantic_lane_for(org_id: str, activated=None):
     _ensure_tenant_live(org_id)
     if activated is not None and org_id not in activated:
         activated = None
-    return make_semantic_lane(org_id, engine=getattr(_graph, "engine", None), activated=activated)
+    return make_semantic_lane(org_id, engine=getattr(_graph, "engine", None),
+                              activated=activated, seat_id=seat_id)
 
 
 #: Orgs switched on by this process. `make_tenant_live` is idempotent; this only saves its reads
@@ -1314,14 +1321,16 @@ def _push_wiring_for(conn) -> PushIngestWiring:
     return PushIngestWiring(
         repo=_repo, trace_repo=_trace_repo, payload_store=_payload_store,
         prepared_store=_prepared_store, document_job_store=_documents,
-        parked_store=_parked, relevance=make_relevance_classifier(conn.org_id),
+        parked_store=_parked,
+        relevance=make_relevance_classifier(conn.org_id,
+                                            seat_id=getattr(conn, "seat_id", None)),
         sender_resolver=_sender_resolver_for(conn.org_id),
         mailbox_owner=_mailbox_owner_for_connection(conn),
         coverage_fn=_coverage_fn_for(conn.org_id),
         esqe=_esqe_stage_for(conn.org_id),
         # No floor_store / drop_ledger here: the floor runs in `finalize_l1`, exactly once, as
         # on the sweep door. Filing it in the push wiring too filed every refusal twice.
-        semantic=_semantic_lane_for(conn.org_id),
+        semantic=_semantic_lane_for(conn.org_id, seat_id=getattr(conn, "seat_id", None)),
         structured=_structured_lane_for(conn.org_id))
 
 
@@ -1494,7 +1503,9 @@ def backfill_connection(connection_id: str, background_tasks: BackgroundTasks,
             summary = backfill_drain(
                 make_connector_for(conn), org_id=conn.org_id, connection_id=conn.connection_id,
                 repo=_repo, source=conn.source_type, limit=limit,
-                relevance=make_relevance_classifier(conn.org_id), parked_store=_parked,
+                relevance=make_relevance_classifier(
+                    conn.org_id, seat_id=getattr(conn, "seat_id", None)),
+                parked_store=_parked,
                 sender_resolver=_sender_resolver_for(conn.org_id), trace_repo=_trace_repo,
                 payload_store=_payload_store, prepared_store=_prepared_store,
                 document_job_store=_documents, run_ledger=_run_ledger,
@@ -1505,7 +1516,8 @@ def backfill_connection(connection_id: str, background_tasks: BackgroundTasks,
                 mailbox_owner=_mailbox_owner_for_connection(conn),
                 coverage_fn=_coverage_fn_for(conn.org_id),
                 esqe=_esqe_stage_for(conn.org_id),
-                semantic=_semantic_lane_for(conn.org_id),
+                semantic=_semantic_lane_for(conn.org_id,
+                                            seat_id=getattr(conn, "seat_id", None)),
                 structured=_structured_lane_for(conn.org_id))
             _log.info("backfill drain done org=%s conn=%s scanned=%s emitted=%s",
                       conn.org_id, connection_id, summary.scanned, summary.emitted)

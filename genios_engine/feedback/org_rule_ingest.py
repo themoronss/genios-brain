@@ -280,6 +280,9 @@ def run_org_discovery(conn, *, org_id: str, event_id: str, extractor: OrgRuleExt
         return {"event_id": event_id, "skipped": "already_discovered"}
 
     try:
+        bind = getattr(extractor, "bind_event", None)   # the real extractor bills per document
+        if callable(bind):
+            bind(event_id)
         candidates = list(extractor.propose(text=doc.text, kind=doc.kind, title=doc.title))
     except Exception as exc:                       # noqa: BLE001 — a model failure is not a run
         _record_run(conn, doc, counters={"candidates": 0, "extractor_error": 1}, at=now,
@@ -486,7 +489,7 @@ def sweep_org_rule_discovery(org_id: str, *, limit: int = 25, engine=None,
         if store is None:
             return {"org_id": org_id, "skipped": "no_database"}
         engine = store.engine
-    extractor = extractor or make_org_rule_extractor()
+    extractor = extractor or make_org_rule_extractor(org_id=org_id, engine=engine)
     if extractor is None:
         return {"org_id": org_id, "skipped": "no_extractor"}
     # THE CLOCK IS READ AT THE PROCESS BOUNDARY, once, and passed down as a parameter everywhere

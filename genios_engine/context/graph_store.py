@@ -1034,7 +1034,8 @@ class GraphStore:
 
     def record_cost(self, *, org_id, model, purpose, input_tokens, output_tokens,
                     success=True, error=None, event_id=None,
-                    subject_ref=None, client_context_id=None) -> None:
+                    subject_ref=None, client_context_id=None, seat_id=None,
+                    cache_read_tokens=0, cache_write_tokens=0) -> None:
         # Defaults so BOTH callers work: L2 passes all kwargs; L5 render passes only the core set.
         # (Was a bug: L5's call omitted success/error/event_id → TypeError swallowed → l5_render
         #  spend NEVER recorded, reproducing the old 'V2 LLM cost not tracked' gap.)
@@ -1043,14 +1044,27 @@ class GraphStore:
         # useful accepted decision" computable at all: org+purpose was enough for a monthly bill
         # and useless for margin — no way to say WHICH decision a call was spent on. Optional,
         # because background work is genuinely unattributed and forcing a value would invent one.
+        #
+        # `seat_id` (0175) is the same argument one level down: org+purpose cannot say which
+        # PERSON a month's spend belongs to, and per-seat lanes — screen capture, a seat's own
+        # mailbox, an authenticated query — all know the answer at the call site. NULL keeps its
+        # honest meaning: background work that serves no single seat.
+        #
+        # `cache_*_tokens` are RECORDED, NEVER PRICED. `input_tokens` is already the
+        # cost-equivalent count (uncached + 1.25x/2x writes + 0.1x reads); adding these to it
+        # would double-charge the cache. They exist so "is the prompt cache working" is a ledger
+        # query rather than a log-grep.
         with self._engine.begin() as c:
             c.execute(text(
                 "insert into llm_costs (org_id, model, purpose, input_tokens, output_tokens, "
-                "success, error, event_id, subject_ref, client_context_id) "
-                "values (:o, :m, :p, :it, :ot, :s, :e, :ev, :sr, :cc)"),
+                "success, error, event_id, subject_ref, client_context_id, seat_id, "
+                "cache_read_tokens, cache_write_tokens) "
+                "values (:o, :m, :p, :it, :ot, :s, :e, :ev, :sr, :cc, :seat, :crt, :cwt)"),
                 {"o": org_id, "m": model, "p": purpose, "it": input_tokens, "ot": output_tokens,
                  "s": success, "e": (error or None), "ev": event_id,
-                 "sr": subject_ref, "cc": client_context_id})
+                 "sr": subject_ref, "cc": client_context_id,
+                 "seat": (seat_id or None),
+                 "crt": int(cache_read_tokens or 0), "cwt": int(cache_write_tokens or 0)})
         # Every LLM call in the engine lands here, so this is the one place that can report spend
         # to PostHog without a per-call-site instrumentation that later drifts. Priced with the same
         # function the admin console uses, so both surfaces quote one dollar figure.
@@ -1062,6 +1076,9 @@ class GraphStore:
                 "tokens": int(input_tokens or 0) + int(output_tokens or 0),
                 "cost_usd": metrics.cost_usd(model, input_tokens or 0, output_tokens or 0),
                 "success": bool(success),
+                "seat_id": (seat_id or None),
+                "cache_read_tokens": int(cache_read_tokens or 0),
+                "cache_write_tokens": int(cache_write_tokens or 0),
             })
         except Exception:      # noqa: BLE001 — accounting is recorded; telemetry is best-effort
             pass

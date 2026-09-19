@@ -282,6 +282,11 @@ def apply_result(engine, job, message, *, crypto_key: str, now: datetime,
     usage = _get(message, "usage")
     tokens = {"input_tokens": int(_get(usage, "input_tokens", 0) or 0),
               "output_tokens": int(_get(usage, "output_tokens", 0) or 0)}
+    # Kept OUT of `tokens`: that dict is also the job's stored result, and the batch lane's
+    # receipts are read by tests that count its keys. The ledger gets the split, the receipt
+    # keeps its shape.
+    cache = {"cache_read_tokens": int(_get(usage, "cache_read_input_tokens", 0) or 0),
+             "cache_write_tokens": int(_get(usage, "cache_creation_input_tokens", 0) or 0)}
     model = str(_get(message, "model") or "") or None
     email, me, tz = seats.get(job.org_id, job.seat_id)
     seen_at = aware(job.created_at)                   # the job's clock: a re-run is the same day
@@ -336,7 +341,8 @@ def apply_result(engine, job, message, *, crypto_key: str, now: datetime,
     if _finish(engine, job, status=status, result=result, now=now) and model:
         try:
             GraphStore(engine=engine).record_cost(org_id=job.org_id, model=model,
-                                                  purpose=PURPOSE, **tokens)
+                                                  purpose=PURPOSE, seat_id=job.seat_id,
+                                                  **tokens, **cache)
         except Exception:      # noqa: BLE001 — cost bookkeeping never fails the memory update
             _log.exception("screen memory batch: cost record failed")
     return status

@@ -318,7 +318,7 @@ def swept(two_tenants, monkeypatch):
                   CONN_CRM: _Connector([DEAL], "hubspot")}
     llm = _LLM()
 
-    def _lane(org, activated=None):
+    def _lane(org, activated=None, **_kw):      # **_kw: the seat the sweep now binds
         # The PRODUCTION bundle from the production factory, with only the transport injected.
         # Built by hand it would arrive with no extraction cache and no discovery store, and then
         # `qualified_signals.extraction_ref` would point at a row nothing ever wrote — a property

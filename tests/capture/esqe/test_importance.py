@@ -1201,7 +1201,7 @@ def _sweep_the_headline_event(monkeypatch, fake_llm, org_id: str):
     monkeypatch.setattr(routes, "make_connector_for",
                         lambda conn, **kw: _OnePageConnector(_headline_raw()))
     monkeypatch.setattr(routes, "_semantic_lane_for",
-                        lambda org, activated=None: P.SemanticLane(
+                        lambda org, activated=None, **_kw: P.SemanticLane(
                             llm=fake_llm(_headline_payload()), eval_time=NOW))
     monkeypatch.setattr(routes, "_run_l2", lambda org: None)
 

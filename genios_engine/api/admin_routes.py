@@ -427,6 +427,178 @@ def account_detail(target_org: str, days: int = Query(90, ge=7, le=365),
 
 
 # ════════════════════════════════════════════════════════════════════════════════════════
+# 3b ── WHO SPENT IT (per-seat LLM usage)
+# ════════════════════════════════════════════════════════════════════════════════════════
+#
+# `/accounts/{id}` answers "what did this ACCOUNT cost". These two answer "which PERSON cost it"
+# — the question a runaway seat, a shared login and a monthly per-user bill all reduce to, and
+# the one org-level spend cannot answer however it is sliced.
+#
+# Both read `llm_costs.seat_id` (migration 0175). Rows written before it, and every background
+# lane that genuinely serves no one seat, carry NULL and are reported as a named `unattributed`
+# bucket rather than being dropped or spread across seats — a total that silently omits a third
+# of the bill is worse than one that admits what it cannot attribute.
+
+#: One seat's row is keyed by seat id; NULL becomes this, in the payload only. Never written.
+UNATTRIBUTED = "unattributed"
+
+
+def _seat_emails(c, org_id: str) -> dict[str, str]:
+    return {r.seat_id: (r.email or "") for r in c.execute(text(
+        "select seat_id, email from org_seats where org_id = :o"), {"o": org_id})}
+
+
+@router.get("/accounts/{target_org}/llm-usage")
+def account_llm_usage(target_org: str, days: int = Query(30, ge=1, le=400),
+                      _ctx: AuthCtx = Depends(require_admin)) -> dict:
+    """One account's model spend, broken down by the person who caused it.
+
+    `by_seat` ranks the account's people by cost over the window; `by_seat_month` is the same
+    number per calendar month, which is what a monthly per-user bill is computed from; `by_day`
+    and `by_purpose_seat` are for reading a spike — WHEN it happened and WHICH lane it came
+    through — without exporting the ledger.
+    """
+    since = _now() - timedelta(days=int(days))
+    cost_sql = M.cost_usd_sql("lc")
+    seat_expr = f"coalesce(lc.seat_id, '{UNATTRIBUTED}')"
+
+    with _engine().connect() as c:
+        emails = _seat_emails(c, target_org)
+
+        by_seat = [{"seat_id": r.seat, "email": emails.get(r.seat) or None,
+                    "calls": int(r.n), "failures": int(r.failed or 0),
+                    "input_tokens": int(r.it or 0), "output_tokens": int(r.ot or 0),
+                    "cache_read_tokens": int(r.crt or 0),
+                    "cache_write_tokens": int(r.cwt or 0),
+                    "cost_usd": round(float(r.usd or 0), 4),
+                    "cost_inr": round(float(r.usd or 0) * M.INR_PER_USD, 2),
+                    "first_at": _iso(r.first_at), "last_at": _iso(r.last_at)}
+                   for r in c.execute(text(f"""
+            select {seat_expr} as seat, count(*) n,
+                   count(*) filter (where not lc.success) failed,
+                   sum(lc.input_tokens) it, sum(lc.output_tokens) ot,
+                   sum(lc.cache_read_tokens) crt, sum(lc.cache_write_tokens) cwt,
+                   min(lc.created_at) first_at, max(lc.created_at) last_at, {cost_sql} usd
+            from llm_costs lc
+            where lc.org_id = :o and lc.created_at >= :since
+            group by 1 order by usd desc nulls last"""), {"o": target_org, "since": since})]
+
+        by_seat_month = [{"month": str(r.month), "seat_id": r.seat,
+                          "email": emails.get(r.seat) or None, "calls": int(r.n),
+                          "cost_usd": round(float(r.usd or 0), 4),
+                          "cost_inr": round(float(r.usd or 0) * M.INR_PER_USD, 2)}
+                         for r in c.execute(text(f"""
+            select date_trunc('month', lc.created_at)::date as month, {seat_expr} as seat,
+                   count(*) n, {cost_sql} usd
+            from llm_costs lc
+            where lc.org_id = :o and lc.created_at >= :since
+            group by 1, 2 order by 1 desc, usd desc nulls last"""),
+            {"o": target_org, "since": since})]
+
+        by_day = [{"date": str(r.day), "seat_id": r.seat, "calls": int(r.n),
+                   "cost_usd": round(float(r.usd or 0), 4)} for r in c.execute(text(f"""
+            select date_trunc('day', lc.created_at)::date as day, {seat_expr} as seat,
+                   count(*) n, {cost_sql} usd
+            from llm_costs lc
+            where lc.org_id = :o and lc.created_at >= :since
+            group by 1, 2 order by 1"""), {"o": target_org, "since": since})]
+
+        by_purpose_seat = [{"purpose": r.purpose, "seat_id": r.seat, "model": r.model,
+                            "calls": int(r.n), "cost_usd": round(float(r.usd or 0), 4)}
+                           for r in c.execute(text(f"""
+            select lc.purpose, {seat_expr} as seat, lc.model, count(*) n, {cost_sql} usd
+            from llm_costs lc
+            where lc.org_id = :o and lc.created_at >= :since
+            group by 1, 2, 3 order by usd desc nulls last limit 200"""),
+            {"o": target_org, "since": since})]
+
+    total_usd = sum(r["cost_usd"] for r in by_seat)
+    attributed = sum(r["cost_usd"] for r in by_seat if r["seat_id"] != UNATTRIBUTED)
+    return {
+        "org_id": target_org,
+        "window_days": int(days),
+        "since": _iso(since),
+        "totals": {
+            "calls": sum(r["calls"] for r in by_seat),
+            "failures": sum(r["failures"] for r in by_seat),
+            "input_tokens": sum(r["input_tokens"] for r in by_seat),
+            "output_tokens": sum(r["output_tokens"] for r in by_seat),
+            "cache_read_tokens": sum(r["cache_read_tokens"] for r in by_seat),
+            "cache_write_tokens": sum(r["cache_write_tokens"] for r in by_seat),
+            "cost_usd": round(total_usd, 4),
+            "cost_inr": round(total_usd * M.INR_PER_USD, 2),
+            # How much of this window's bill can be put on a named person at all. A low number is
+            # not an error — background sweeps are genuinely org-wide — but it IS the honest
+            # ceiling on any per-user claim made from these rows.
+            "attributed_usd": round(attributed, 4),
+            "attributed_pct": round(attributed / total_usd * 100.0, 1) if total_usd else None,
+        },
+        "seats": by_seat,
+        "by_seat_month": by_seat_month,
+        "by_day": by_day,
+        "by_purpose_seat": by_purpose_seat,
+    }
+
+
+@router.get("/llm-usage/seats")
+def top_spending_seats(days: int = Query(30, ge=1, le=400), limit: int = Query(50, ge=1, le=200),
+                       include_internal: bool = False,
+                       _ctx: AuthCtx = Depends(require_admin)) -> dict:
+    """The heaviest individual users across every account — the abuse and runaway view.
+
+    `avg_daily_usd` and `peak_day_usd` sit next to each other on purpose: a seat whose peak day is
+    many times its own average is the shape of a compromised or scripted account, and it is not
+    visible in a monthly total. Internal tenants are excluded by default like every other metric.
+    """
+    since = _now() - timedelta(days=int(days))
+    cost_sql = M.cost_usd_sql("lc")
+    where = "lc.seat_id is not null and lc.created_at >= :since"
+    if not include_internal:
+        where += f" and {M.REAL_ORGS}"
+
+    with _engine().connect() as c:
+        rows = c.execute(text(f"""
+            with per_day as (
+                select lc.org_id, lc.seat_id,
+                       date_trunc('day', lc.created_at)::date as day,
+                       count(*) n, {cost_sql} usd
+                from llm_costs lc join orgs o on o.id = lc.org_id
+                where {where}
+                group by 1, 2, 3)
+            select d.org_id, d.seat_id, o.name as org_name, s.email,
+                   sum(d.n) calls, sum(d.usd) usd, max(d.usd) peak_usd,
+                   count(*) active_days, max(d.day) last_day
+            from per_day d
+            join orgs o on o.id = d.org_id
+            left join org_seats s on s.org_id = d.org_id and s.seat_id = d.seat_id
+            group by 1, 2, 3, 4
+            order by usd desc nulls last
+            limit :lim"""), {"since": since, "lim": int(limit)}).fetchall()
+
+    out = []
+    for r in rows:
+        usd = float(r.usd or 0)
+        active = max(1, int(r.active_days or 1))
+        avg = usd / active
+        peak = float(r.peak_usd or 0)
+        out.append({
+            "org_id": r.org_id, "org_name": r.org_name,
+            "seat_id": r.seat_id, "email": r.email,
+            "calls": int(r.calls or 0),
+            "cost_usd": round(usd, 4),
+            "cost_inr": round(usd * M.INR_PER_USD, 2),
+            "active_days": active,
+            "avg_daily_usd": round(avg, 4),
+            "peak_day_usd": round(peak, 4),
+            # None rather than a fabricated ratio when there is no average to compare against.
+            "peak_over_avg": round(peak / avg, 1) if avg else None,
+            "last_active_day": str(r.last_day) if r.last_day else None,
+        })
+    return {"window_days": int(days), "since": _iso(since),
+            "include_internal": bool(include_internal), "seats": out}
+
+
+# ════════════════════════════════════════════════════════════════════════════════════════
 # 4 ── MONEY & UNIT ECONOMICS
 # ════════════════════════════════════════════════════════════════════════════════════════
 @router.get("/money")

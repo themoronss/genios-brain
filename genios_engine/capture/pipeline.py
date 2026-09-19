@@ -394,7 +394,9 @@ def _record_extraction_cost(lane: SemanticLane, event: SourceEvent, outcome: Any
                        success=bool(outcome.ok),
                        error=(None if outcome.ok
                               else getattr(outcome.parked, "reason_code", None)),
-                       subject_ref=f"event:{event.event_id}")
+                       subject_ref=f"event:{event.event_id}",
+                       cache_read_tokens=int(getattr(outcome, "cache_read_tokens", 0) or 0),
+                       cache_write_tokens=int(getattr(outcome, "cache_write_tokens", 0) or 0))
     except Exception:      # noqa: BLE001
         pass
 

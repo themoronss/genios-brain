@@ -276,7 +276,7 @@ no quoting the draft back; if nothing is wrong return {{"notes": []}}."""
 
 
 def llm_notes(engine, *, org_id: str, facts: list[dict], findings: list[dict], draft: str,
-              digest: str, deadline: float) -> list[dict] | None:
+              digest: str, deadline: float, seat_id: str | None = None) -> list[dict] | None:
     """One Haiku call. None when no model is configured, time is short, or the call failed."""
     from genios_engine.platform.config import get_settings
     settings = get_settings()
@@ -305,9 +305,11 @@ def llm_notes(engine, *, org_id: str, facts: list[dict], findings: list[dict], d
     try:
         from genios_engine.context.graph_store import GraphStore
         GraphStore(engine=engine).record_cost(
-            org_id=org_id, model=model, purpose="moment.draft_review",
+            org_id=org_id, model=model, purpose="moment.draft_review", seat_id=seat_id,
             input_tokens=getattr(usage, "input_tokens", 0),
-            output_tokens=getattr(usage, "output_tokens", 0))
+            output_tokens=getattr(usage, "output_tokens", 0),
+            cache_read_tokens=getattr(usage, "cache_read_input_tokens", 0) or 0,
+            cache_write_tokens=getattr(usage, "cache_creation_input_tokens", 0) or 0)
     except Exception:      # noqa: BLE001 — cost bookkeeping never fails the review
         _log.exception("draft review: cost record failed")
     raw = "".join(getattr(b, "text", "") for b in resp.content
@@ -395,7 +397,8 @@ def _compute(engine, *, org_id: str, email: str | None, participants, entities, 
     # ROUTER CHECK 5, HERE TOO: with nothing but open items and no facts to weigh them against,
     # the sentence is already written and a model call would only rephrase it. Pay for nothing.
     model = (llm_notes(engine, org_id=org_id, facts=facts, findings=owed + graph, draft=draft,
-                       digest=digest, deadline=deadline) if facts or graph else None)
+                       digest=digest, deadline=deadline, seat_id=seat_id)
+             if facts or graph else None)
     # An open item is a fact about this person, not an opinion — the model never drops it.
     notes = finalize(owed + ((model or []) or graph), draft)
     if not notes:

@@ -641,6 +641,12 @@ class ExtractionOutcome:
     tier: str
     diagnostics: ExtractionDiagnostics
     report: SchemaReport | None = None
+    #: RAW prompt-cache counts, for measurement only — `input_tokens` is already the
+    #: cost-equivalent number the bill is computed from, so these are never added to it. S2 marks
+    #: the fixed instruction block as a cacheable prefix, and without these the ledger cannot say
+    #: whether that prefix is actually being hit on a given build.
+    cache_read_tokens: int = 0
+    cache_write_tokens: int = 0
 
     def __post_init__(self) -> None:
         if (self.result is None) == (self.parked is None):
@@ -1680,6 +1686,8 @@ class _CallLedger:
     calls: int = 0
     input_tokens: int = 0
     output_tokens: int = 0
+    cache_read_tokens: int = 0
+    cache_write_tokens: int = 0
     parsed: ParsedExtraction | None = None
     findings: tuple[str, ...] = ()
 
@@ -1766,6 +1774,8 @@ def _run_calls(request: ExtractionRequest, call: AssembledCall, llm: LLMClient,
         ledger.calls += 1
         ledger.input_tokens += max(int(response.input_tokens), 0)
         ledger.output_tokens += max(int(response.output_tokens), 0)
+        ledger.cache_read_tokens += max(int(getattr(response, "cache_read_tokens", 0) or 0), 0)
+        ledger.cache_write_tokens += max(int(getattr(response, "cache_write_tokens", 0) or 0), 0)
         raw = response.raw or ""
 
         if not response.ok and not raw.strip():
@@ -1888,7 +1898,9 @@ def extract(request: ExtractionRequest, *, llm: LLMClient,
             input_tokens=ledger.input_tokens, output_tokens=ledger.output_tokens, tier=call.tier,
             diagnostics=_with_findings(parsed.diagnostics if parsed else ExtractionDiagnostics(),
                                        ledger.findings),
-            report=parsed.report if parsed is not None else None)
+            report=parsed.report if parsed is not None else None,
+            cache_read_tokens=ledger.cache_read_tokens,
+            cache_write_tokens=ledger.cache_write_tokens)
 
     diagnostics = (ExtractionDiagnostics() if hit or ledger.parsed is None
                    else _with_findings(ledger.parsed.diagnostics, ledger.findings))
@@ -1896,7 +1908,9 @@ def extract(request: ExtractionRequest, *, llm: LLMClient,
         event_id=request.event_id, result=result, parked=None, cache_key=key, cache_hit=hit,
         model_calls=ledger.calls, input_tokens=ledger.input_tokens,
         output_tokens=ledger.output_tokens, tier=call.tier, diagnostics=diagnostics,
-        report=None if hit or ledger.parsed is None else ledger.parsed.report)
+        report=None if hit or ledger.parsed is None else ledger.parsed.report,
+        cache_read_tokens=ledger.cache_read_tokens,
+        cache_write_tokens=ledger.cache_write_tokens)
 
 
 def _with_findings(diagnostics: ExtractionDiagnostics,

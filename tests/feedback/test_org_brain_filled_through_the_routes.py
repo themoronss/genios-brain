@@ -320,7 +320,10 @@ def client(seeded, monkeypatch):
     """
     model = _Model()
     monkeypatch.setattr(org_rule_extract, "make_org_rule_extractor",
-                        lambda client=None: org_rule_extract.LLMOrgRuleExtractor(model))
+                        # **_kw swallows org_id/engine: the real factory uses them to build a
+                        # `llm_costs` sink, and this double is standing in for exactly that.
+                        lambda client=None, **_kw:
+                            org_rule_extract.LLMOrgRuleExtractor(model))
     app = FastAPI()
     app.include_router(upload_routes.router)
     app.include_router(learning_routes.router)

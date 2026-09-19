@@ -86,10 +86,13 @@ def test_an_extraction_call_is_written_to_llm_costs():
     _record_extraction_cost(_lane(rows), SimpleNamespace(org_id="org_1", event_id="evt_1"),
                             _outcome())
 
+    # The cache split rides along at 0 for a fake outcome that never saw a real response: it is
+    # RECORDED, never priced — `input_tokens` is already the cost-equivalent number (0175).
     assert rows == [{"org_id": "org_1", "model": "claude-haiku-4-5",
                      "purpose": L1_EXTRACT_COST_PURPOSE, "input_tokens": 1_200,
                      "output_tokens": 300, "success": True, "error": None,
-                     "subject_ref": "event:evt_1"}]
+                     "subject_ref": "event:evt_1",
+                     "cache_read_tokens": 0, "cache_write_tokens": 0}]
 
 
 def test_a_parked_extraction_still_records_what_it_spent():
@@ -151,8 +154,12 @@ def test_a_relevance_call_is_written_to_llm_costs():
     _judge_batch([], llm, page._record)
 
     assert llm.calls == 1
+    # No `seat_id` key: the page never names one. Ingestion's seat is bound to the SINK by
+    # `wiring._llm_cost_sink` (the connection is the person), because one LLM-5 prompt can carry a
+    # whole page of candidates and a seat picked per response would be a guess.
     assert rows == [{"org_id": "org_1", "model": "claude-haiku-4-5", "purpose": COST_PURPOSE,
-                     "input_tokens": 640, "output_tokens": 40, "success": True, "error": None}]
+                     "input_tokens": 640, "output_tokens": 40, "success": True, "error": None,
+                     "cache_read_tokens": 0, "cache_write_tokens": 0}]
 
 
 def test_a_page_with_no_sink_or_no_org_records_nothing_and_does_not_raise():
