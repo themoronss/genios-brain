@@ -95,3 +95,47 @@ def rss_mb() -> float | None:
         return round(peak / (1024 * 1024), 1)
     import os
     return round(pages * os.sysconf("SC_PAGE_SIZE") / (1024 * 1024), 1)
+
+
+def container_memory() -> dict:
+    """What the PLATFORM thinks this container is using, and out of how much.
+
+    The dashboard shows one percentage and nothing else, which has meant reasoning about a number
+    whose denominator nobody in this conversation could name — a fresh boot measured at 132 MB is
+    either fine or a crisis depending on whether the limit is 512 MB or 1 GB, and guessing between
+    them produced two wrong diagnoses. The cgroup knows both figures exactly; read them.
+
+    cgroup v2 first (`memory.max` / `memory.current`, which is the pair App Platform's gauge is
+    computed from), then v1, then nothing — a developer's laptop is in no cgroup and says so
+    rather than inventing a limit.
+    """
+    def _read(path: str) -> int | None:
+        try:
+            with open(path, encoding="ascii") as fh:
+                raw = fh.read().strip()
+        except OSError:
+            return None
+        if raw == "max":
+            return None
+        try:
+            return int(raw)
+        except ValueError:
+            return None
+
+    limit = _read("/sys/fs/cgroup/memory.max")
+    used = _read("/sys/fs/cgroup/memory.current")
+    version = "v2"
+    if limit is None and used is None:
+        limit = _read("/sys/fs/cgroup/memory/memory.limit_in_bytes")
+        used = _read("/sys/fs/cgroup/memory/memory.usage_in_bytes")
+        version = "v1"
+    # v1 reports "no limit" as a number near 2^63, not as "max".
+    if limit is not None and limit > (1 << 50):
+        limit = None
+    if limit is None and used is None:
+        return {"cgroup": None}
+    mb = lambda b: None if b is None else round(b / (1024 * 1024), 1)  # noqa: E731
+    out = {"cgroup": version, "limit_mb": mb(limit), "used_mb": mb(used)}
+    if limit and used:
+        out["used_pct"] = round(100 * used / limit, 1)
+    return out

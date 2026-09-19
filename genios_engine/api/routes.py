@@ -189,6 +189,48 @@ def _resolved_concurrency() -> dict:
             "rss_mb": rss_mb()}
 
 
+@router.get("/health/memory")
+def health_memory(_internal: None = Depends(require_internal)) -> dict:
+    """Everything needed to explain a memory reading, in one call.
+
+    This exists because the question "why is the box at 93%" has now been answered twice from
+    inference and been wrong twice. A percentage with no denominator, no per-process figure, and
+    no queue depth is not evidence — it is a prompt to guess, and the guesses cost a deploy each.
+
+    Four things, because the four together are decisive: the cgroup's own limit and usage (the
+    exact numbers the platform's gauge divides), this process's RSS (how much of that is the app
+    rather than the sidecars and the page cache), the pool's checked-out count (whether anything
+    is holding connections), and the queue depths (whether the lanes are idle or grinding). Behind
+    the internal token: it names deployment internals, which is operator material.
+    """
+    from genios_engine.platform.memory import container_memory, rss_mb
+    out: dict = {"rss_mb": rss_mb(), "container": container_memory(),
+                 "concurrency": _resolved_concurrency()}
+    try:
+        engine = _graph.engine if _graph is not None else None
+        pool = engine.pool if engine is not None else None
+        if pool is not None:
+            out["pool"] = {"size": pool.size(), "checked_out": pool.checkedout(),
+                           "overflow": pool.overflow()}
+    except Exception as exc:  # noqa: BLE001 — a diagnostic must not fail on its own instrumentation
+        out["pool"] = {"error": str(exc)[:200]}
+    try:
+        from sqlalchemy import text as _text
+        with _graph.engine.connect() as c:
+            out["queues"] = {
+                "sync_jobs_open": c.execute(_text(
+                    "select count(*) from sync_jobs where status in ('queued','running')")).scalar(),
+                "l2_queue_open": c.execute(_text(
+                    "select count(*) from l2_work_queue "
+                    "where done_at is null and parked_at is null")).scalar(),
+                "org_leases_held": c.execute(_text(
+                    "select count(*) from org_run_leases where lease_until > now()")).scalar(),
+            }
+    except Exception as exc:  # noqa: BLE001
+        out["queues"] = {"error": str(exc)[:200]}
+    return out
+
+
 @router.get("/config")
 def config() -> dict:
     s = get_settings()
