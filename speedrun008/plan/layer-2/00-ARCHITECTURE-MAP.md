@@ -138,39 +138,101 @@ is exactly the `18 threads of 18` mistake Layer 1 spent three steps learning to 
 
 **→ a measurement, and it needs Harsh item 1.**
 
-### 6.2 · Two `BusinessSituationObject`s, and they were never reconciled
+### 6.2 · Two `BusinessSituationObject`s — ⛔ **and my first reading of them was WRONG**
 
-* `domain_expertise.py:405` — a **dataclass**, imported by the producer, `reasoning.py` and **five**
-  `packs/compiler` modules. **This is the live one.**
-* `situation.py:551` — a **frozen Pydantic model** calling itself *"D-01 v2 · Layer 2's complete,
-  immutable output to Layer 3"*, reached only through `context/situation_publisher` ←
-  `reason/domain_shadow`.
+The first pass of this document said *"both claim to be Layer 2's complete output; they cannot both
+be"* and *"`upgrade_situation` has **zero callers**"*. **Both statements are false, and the check
+that found it is the one this project runs on everything else: follow the call, do not read the
+name.**
 
-Both docstrings claim to be *"Layer 2's complete, immutable output"*. **They cannot both be.**
-`upgrade_situation`, the function that would migrate v1 → v2, has **zero callers.**
+They are **not duplicates. They are two stages of one pipeline**, and the pipeline is live:
 
-Given the new architecture names Business Situation as L2's product, **deciding which of these two
-IS it is the first contract question of Layer 2** — not a cleanup.
+```
+build_business_situation()   →  v1  contracts/domain_expertise.BusinessSituationObject
+                                    16 fields · flat confidence_bp / importance_bp
+                                    imported INTO situation_publisher AS `LegacySituation`
+        ↓ decide_publication()
+upgrade_situation()          →  v2  contracts/situation.BusinessSituationObject
+                                    28 fields · structured confidence + importance
+        ↓ validate_situation()       the L2 GATE — eight laws
+PublicationResult.situation  →  v2, and ONLY when admitted
+```
+
+`situation_publisher.py:464` calls `upgrade_situation`; `upgrade_situation`'s own docstring says what
+it is for — *"losslessly move the live v1 assembly onto typed v2 homes"*; and `publish_situation`'s
+says the rest — *"expose only an admitted strict object."*
+
+**v1 is the CANDIDATE. v2 is the ADMITTED object.** v2 is a superset in substance, not only in
+count — it adds `conflicts`, `correlations`, `matched_conditions`, `missing_facts`, `trends`,
+`anomalies`, `cohort_positions`, `pattern_id`, `domain_ids`, `provenance_refs` and
+`coverage_ready`, and replaces two flat basis-point integers with structured attributions.
+
+### 6.3 · So what IS the "Business Situation" the new L2 produces?
+
+**v2** — `contracts/situation.BusinessSituationObject`. That is the object the eight admission laws
+gate, and the one a Business Situation should mean.
+
+**The real defect here is the NAME, not the design.** Two classes share one name in one codebase, so
+every `BusinessSituationObject` in a diff, a traceback or a review is ambiguous — and it cost this
+document a wrong paragraph before a single line of Layer 2 was planned. `LegacySituation` is already
+the alias `situation_publisher` gives v1 **at the import line**, which is the fix applied in exactly
+one file and nowhere else.
+
+**→ a Layer 2 unit: name v1 what it is at its definition, not at one import site.**
+
+## 7. Parked work — ⛔ **the stash is REDUNDANT, not pending**
+
+The note carried into this session said *"six finished L2 units sit in `stash@{0}`, unapplied"*.
+**They are not unapplied. They all landed.**
+
+`stash@{0}`'s base is **224 commits behind HEAD**, and every unit it holds resolves in the tree
+today — `write_received_observation`, `close_loops_awaited_from`, `read_meetings_for_dispatch`,
+`_mirror_to_recipients`, `voice_count` — and **all 13 of its tests exist and pass** in
+`tests/test_open_loops.py` and `tests/test_situations.py` (85 passed).
+
+**Applying it would have been the disaster the old warning was about.** Its 429 insertions were
+written against files that have since moved 440–863 lines each:
+
+| file | moved since the stash base |
+|---|---|
+| `context/outreach_situations.py` | +863 / −75 |
+| `context/pipeline.py` | +567 / −57 |
+| `context/graph_store.py` | +440 / −14 |
+
+**Do not apply it. Do not treat it as outstanding Layer 2 work.** `git stash show -p stash@{0}`
+reads it; `pop` is what corrupted five files last time. Dropping it is safe and is Rohit's call.
 
 ---
 
-## 7. Parked work that must be dealt with first
+## 8. Where the L2/L3 line falls inside `context/` — **mostly already drawn**
 
-`stash@{0}` — *"outbound-is-evidence + meeting situations (parked before YC-W27 switch)"*, six
-finished L2 units, on branch `rohit/outbound-is-evidence`.
+111 modules. The boundary is cleaner than the package name suggests:
 
-⛔ **Recover by inspection, never by `git stash pop`.** A previous pop corrupted five files. The
-safe read is `git stash show -p stash@{0}`, then apply deliberately.
+| | |
+|---|---|
+| **L2 side** | 10 `*situation*.py` producers, plus `situation_bso.py` and `situation_publisher.py` |
+| **L3 side** | `graph_store.py` and its 9 importers |
+| **overlap** | ⛔ **ZERO.** No situation producer imports `graph_store`, and `situation_bso.py` — the boundary builder itself — does not touch the graph. Its docstring says why: *"Layer 3 never reads the graph itself."* |
+
+### 8.1 · Five modules straddle, and they are all orchestrators
+
+`runner.py` (94 mentions of *situation*), `importance.py` (88), `correlation.py` (32),
+`pipeline.py` (22), `structured.py` (6) touch both sides.
+
+**That is the same shape as §5's non-inversion, and it takes the same answer.** These are
+orchestrators: they pull from both halves, the way `reason/domain_shadow` pulls from `context` and
+`packs`. **The L2/L3 line is a narrative boundary, not a package split.** Splitting `context` into
+two importable packages would force these five to be split too, and buy nothing the numbering does
+not already give.
 
 ---
 
-## 8. What this map does NOT settle
+## 9. What this map still does NOT settle
 
-* **where the L2/L3 line falls inside `context/`** — 10 situation producers on one side, the graph
-  and correlators on the other, and several modules read both;
 * **whether `DecisionCandidate` is the Decision Object** the new L3 should emit, or whether L4
   expects something else today;
 * **what Layer 6 (Learning) consumes** under the new numbering — `feedback/` imports `context` in
-  **zero** files today, which is worth a second look;
-* **the cutover gate** — what parity the shadow pass must show before `live=True`. That is a
-  measurement, and measurements in this project have needed the corpus.
+  **zero** files, which is worth a second look;
+* **the cutover gate** — what parity the shadow pass must show before `live=True`. A measurement,
+  and measurements in this project have needed the corpus;
+* **the Layer D corpus size** — §6.1, and the denominator of every coverage claim L2 will make.
