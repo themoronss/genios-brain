@@ -6,16 +6,27 @@ Import direction is enforced by tests/test_layer_topology.py: a package may impo
 same-or-lower layers only. That test is the mechanism that keeps domain knowledge
 out of the engine and context out of expertise — a build failure, not a review nit.
 
-Translation across the three vocabularies (docs/LAYER_MAP.md has the full table):
+Translation across the vocabularies (docs/LAYER_MAP.md has the full table):
 
-    package     layer   new-vision name              old dossier      Atlas
-    capture       1     Enterprise Sources           L1 Capture       1
-    context       2     Context Intelligence         L2 Context graph 2
-    packs         3     Domain Expertise             L4 Domain packs  3
-    reason        4     Reasoning Engine             L3 Reasoning     4
-    executive     5     Executive Intelligence       —                5
-    deliver       6     Intelligence Distribution    L5 Delivery      5.2
-    feedback      7     Learning Engine              L6 Feedback      6
+    package     layer   name                             old dossier      Atlas
+    capture       1     Enterprise Signals               L1 Capture       1
+    context       2     Situation Intelligence           L2 Context graph 2
+    packs         -     Plane D · Domain Expertise       L4 Domain packs  3
+    reason        -     Plane R · Reasoning              L3 Reasoning     4
+    executive     5     Executive Intelligence           -                5
+    deliver       6     Intelligence Distribution        L5 Delivery      5.2
+    feedback      7     Learning Engine                  L6 Feedback      6
+
+⛔ `packs` AND `reason` ARE PLANES, NOT STAGES, and the dashes above are deliberate. A digit
+implies a position in a pipeline; these two are what `context` reasons WITH, consulted rather than
+passed through. The `LAYERS` dict below still gives them 3 and 4 because the topology test reads
+it and the IMPORT ordering it enforces is correct and unchanged — a plane may still only import
+same-or-lower. The number is an import rule, not a claim about sequence.
+
+`context` is **Situation Intelligence**, not "Context Intelligence": the old name says where the
+layer sits, and this layer's output is a SITUATION — assembled, judged by eight admission laws,
+and exposed only if admitted. Describing it as a graph builder is how a card came to be wired to
+a signal while the situation layer was bypassed.
 
 The `executive` split HAS happened: the package exists with 23 modules and `LAYERS`
 below has carried `"executive": 5` since. Note the two collisions that make an
@@ -25,10 +36,11 @@ our `feedback` (7) — so always name the package, never the digit alone.
 from __future__ import annotations
 
 LAYERS: dict[str, int] = {
-    "capture": 1,      # Enterprise Sources — read + normalize, zero reasoning
-    "context": 2,      # Context Intelligence — the live digital twin
-    "packs": 3,        # Domain Expertise — packs are one mechanism inside it
-    "reason": 4,       # Reasoning Engine — deterministic cognition
+    "capture": 1,      # Enterprise Signals — read + normalize, zero reasoning
+    "context": 2,      # Situation Intelligence — assembles, judges, admits
+    "packs": 3,        # Plane D · Domain Expertise — a plane, not a stage; 3 is an
+                       # IMPORT rule, not a pipeline position (see the docstring)
+    "reason": 4,       # Plane R · Reasoning — a plane, not a stage; deterministic
     # These two labels stayed pre-split after the split (see docs/LAYER_MAP.md, the table this
     # module names as authoritative): deliver/router.py:9-12 documents that assignment moved TO
     # executive/assignment.py, and deliver/{audience,orchestrator,gate,outbox}.py all import it —

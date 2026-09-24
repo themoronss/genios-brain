@@ -2,6 +2,19 @@
 
 **Needs Harsh:** no · **Migration:** none · **Model calls:** none · **Risk:** lowest in the plan
 
+> ## ✅ COMPLETE — 2026-09-24 · [findings](findings/step-01-names.md)
+>
+> 13 tests · 12,927 passed · 0 regressions · `vocabulary_fingerprint` **`a3d5496aa0d3`** unchanged.
+>
+> ⛔ **U0's MEASUREMENT FOUND SOMETHING THIS PLAN DID NOT KNOW.** The shared name had left
+> **fifteen parameters across the entire Domain Expertise compiler annotated with the CANDIDATE
+> while every production sweep hands them the ADMITTED object** — 16 declared fields against 28
+> real ones. Invisible because the two spelled the same and the admitted object carries seven
+> v1-named compatibility properties. `upgrade_situation` had already written the consequence down:
+> *"every consumer read the v1 compatibility views, so the typed contract was decorative."*
+>
+> **This was not a rename. It was a rename that exposed a wrong seam.**
+
 ---
 
 ## 1. Premise
@@ -93,7 +106,20 @@ The second and last file carrying digits. Update it, and nothing else.
 
 ## 5. Completion criteria
 
-1. `SituationCandidate` is the name at the definition, and the alias is marked deprecated with a date.
-2. `LAYERS.py` and `docs/LAYER_MAP.md` read Situation Intelligence / Plane D / Plane R.
-3. A guard refuses a third ambiguously-named situation type.
-4. **Full suite green with zero new failures**, and `vocabulary_fingerprint` unchanged.
+| # | criterion | verdict |
+|---|---|---|
+| 1 | `SituationCandidate` at the definition, alias deprecated **with a date** | ✅ `2026-12-24`, held once in `situation_stages.ALIAS_REMOVAL` and read by a test — a date written twice is a date that disagrees |
+| 2 | `LAYERS.py` and `docs/LAYER_MAP.md` read Situation Intelligence / Plane D / Plane R | ✅ The `LAYERS` dict is **untouched**; the docstring now says the digits are an **import rule**, not a pipeline position |
+| 3 | a guard refuses a third ambiguously-named situation type | ✅ — **and it refused two on its first run**: `SituationDecision` and `SituationOutcome`, now in `NOT_A_STAGE` with a reason each |
+| 4 | full suite green, `vocabulary_fingerprint` unchanged | ✅ 12,927 passed · 14 pre-existing · **`a3d5496aa0d3`** measured before and after |
+| — | ⛔ **unplanned, and the reason the step mattered:** 15 compiler annotations named the wrong stage | ✅ corrected — one import line per module, eight modules, **zero runtime change** — and guarded by `test_the_compiler_names_what_it_receives.py` |
+
+**All four closed. Nothing deferred. Nothing owed to Harsh.**
+
+### 5.1 · Premise correction
+
+⛔ **U4's "the second and LAST file carrying digits" is wrong.** Three architecture docs carry the
+old names too. Two declare themselves *frozen target vision* records of 2026-08-07, so they are
+**declared in `_FROZEN_BY_DESIGN` with their reason** rather than rewritten — editing a document
+that records a date is the opposite of what L2-0 did to `_hollow`'s stale count. The third,
+`docs/architecture/README.md`, already points at `LAYER_MAP.md` as *"the current code today"*.

@@ -35,6 +35,7 @@
 | **20** | ⛔ **Item 1 again, and now it BLOCKS a done criterion.** Step 17's adversarial suite cannot run: **991 of 995 skips are one missing URL** | access | **618 tests · step 17's last criterion** | see #1 |
 | **21** | ⛔ **Run the L2 refusal report on the pilot** — `python scripts/l2_refusal_report.py --org <pilot> --database-url <url>`. Read-only, every statement a `select`. It is the **denominator every Layer 2 step is measured against** | measure | **L2-0's last open half · every later L2 number** | 5 min |
 | **22** | ⛔ **DECIDE: flip the 24 `draft` situations?** 16 of Customer Support's 20. Every card built from one is downgraded to an OBSERVATION — it describes and does not instruct. **One word per file, no code** | decision | **the cheapest quality win in L2** | 20 min |
+| **23** | 📅 **Diary note only — nothing to do now.** `contracts.domain_expertise.BusinessSituationObject` is a deprecated alias and may be deleted **after 2026-12-24**. The date lives in `contracts/situation_stages.ALIAS_REMOVAL` and a test reads it from there | dated | nothing | 0 min |
 
 **Migrations 2, 3 and 4 must all be applied BEFORE the code that uses them ships.** All three are
 idempotent and safe to re-run. Apply in number order.

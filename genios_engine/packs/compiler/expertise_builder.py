@@ -7,12 +7,17 @@ from typing import Any
 
 from genios_engine.contracts.domain_expertise import (
     BrainKind,
-    BusinessSituationObject,
     ExpertiseEvidence,
     ExpertisePackage,
     SituationContextSlice,
     expertise_id,
 )
+# ⛔ THE ADMITTED OBJECT, NOT THE CANDIDATE. `domain_shadow.py:881` passes
+# `publication.situation`, which `PublicationResult` types as this class — the compiler
+# never sees an unadmitted one. This import said `contracts.domain_expertise` until L2-1,
+# naming a 16-field candidate while receiving a 28-field admitted object; it survived
+# because the two spelled the same and v2 carries v1-named compatibility properties.
+from genios_engine.contracts.situation import BusinessSituationObject
 # The package's OWN normaliser, imported rather than restated. It is underscore-private to
 # `contracts.domain_expertise` and this is the one importer: `ExpertisePackage.__post_init__`
 # runs it on `visibility` a moment after `expertise_id` hashes the same field, so a second

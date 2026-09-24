@@ -4,18 +4,46 @@ Three specs number the layers three different ways. **Nobody says "L5" without a
 name attached.** The layer index lives in code at `genios_engine/LAYERS.py`; import
 direction (same-or-lower only) is enforced by `tests/test_layer_topology.py`.
 
-| Package (code) | Layer # | New vision name | Old dossier name | What it owns |
+| Package (code) | Layer # | Name | Old dossier name | What it owns |
 |---|---|---|---|---|
-| `capture/` | 1 | Enterprise Sources | L1 Capture | Read + normalize reality. Connectors, envelope, dedup, preprocess, gate, triage, parked, payloads, traces. Zero reasoning. |
-| `context/` | 2 | Context Intelligence | L2 Context graph | The live digital twin: entities, relationships, facts, observations, timeline, attention. The ONE extraction LLM call lives here. |
-| `packs/` | 3 | Domain Expertise | L4 Domain packs | The four brains + capability content, shipped as data. Universal = pack manifests; Organization = org settings/knowledge; Behavioral = user_models; Adaptive = calibration + outcomes. |
-| `reason/` | 4 | Reasoning Engine | L3 Reasoning | Deterministic cognition: rule eval, integer-bp scoring, baselines, derived signals, foresight. Zero model calls. |
+| `capture/` | 1 | **Enterprise Signals** | L1 Capture | Read + normalize reality. Connectors, envelope, dedup, preprocess, gate, triage, parked, payloads, traces. Zero reasoning. |
+| `context/` | 2 | **Situation Intelligence** | L2 Context graph | Assembles a **situation**, judges it against eight admission laws, and exposes only an admitted one. The live digital twin underneath it: entities, relationships, facts, observations, timeline, attention. The ONE extraction LLM call lives here. |
+| `packs/` | **Plane D** (import rule: 3) | **Plane D · Domain Expertise** | L4 Domain packs | The four brains + capability content, shipped as data. Universal = pack manifests; Organization = org settings/knowledge; Behavioral = user_models; Adaptive = calibration + outcomes. |
+| `reason/` | **Plane R** (import rule: 4) | **Plane R · Reasoning** | L3 Reasoning | Deterministic cognition: rule eval, integer-bp scoring, baselines, derived signals, foresight. Zero model calls. |
 | `executive/` | 5 | Executive Engine | — | **Two halves.** *Decision intelligence:* Decision Briefs (brief.v1), verb taxonomy, four modes incl. **preventive** (distance-to-flip), summary ladder, executive memory, why-not receipts, the invention validator's canonical home. *Executive engine:* the Execution Object (execution.v1) — interpret → plan actions → resolve owner → choose channel → validate → track → remind → escalate → monitor → emit outcome. **Owns who and where** (`assignment.py`, `communication.py`); deliver executes the plan it authors. No model decides anything. Surface: `/v1/executive/*`. |
 | `deliver/` | 6 | Intelligence Distribution | L5 Delivery | Cards, channels, digest, outbox, agent gateway, rendering. *Executes* Layer 5's communication plan — adapters, retries, budget, copy. `router.py` delegates ownership to `executive/assignment.py`. |
 | `feedback/` | 7 | Learning Engine | L6 Feedback | Precision windows, nudges, mutes, MACV. Writes learned state DOWN as data (rule_mutes, lvl3_config) — never imported upward. |
 
 Cross-cutting (outside the ordering): `contracts/` (boundary types; imports platform only),
 `platform/` (config/db/crypto/wiring — the composition root), `api/` (transport surface).
+
+## ⛔ `packs` and `reason` are PLANES, not stages — L2-1, 2026-09-24
+
+A digit implies a position in a pipeline. These two are what `context` reasons **with**: consulted
+during situation assembly and interpretation, not passed through in sequence. The numbers 3 and 4
+survive in `LAYERS.py` because the topology test reads them and **the import ordering they encode
+is correct** — a plane may still import same-or-lower only. **The number is an import rule, not a
+claim about sequence**, and `LAYERS.py` now says so in its docstring.
+
+`context` is **Situation Intelligence** rather than "Context Intelligence" for the same reason the
+two `BusinessSituationObject`s were renamed: the old name says *where the layer sits*, not *what it
+produces*. Describing L2 as a graph builder is how a card came to be wired to a signal while the
+situation layer was bypassed entirely.
+
+## The two situation stages, and the name that used to be shared
+
+`contracts/situation_stages.py` is the table, checked in both directions at import time.
+
+| stage | class | produced by | fields |
+|---|---|---|---|
+| **candidate** | `contracts.domain_expertise.SituationCandidate` | `situation_bso.build_business_situation` | 16 |
+| **admitted** | `contracts.situation.BusinessSituationObject` | `situation_publisher.upgrade_situation` | 28 |
+
+Both were called `BusinessSituationObject` until 2026-09-24. The old name survives as a deprecated
+alias until **2026-12-24** (`situation_stages.ALIAS_REMOVAL`). ⛔ The shared name had left **fifteen
+parameters across the whole Domain Expertise compiler annotated with the candidate while every
+production sweep handed them the admitted object** — invisible because the two spelled the same and
+the admitted object carries seven v1-named compatibility properties.
 
 **The rule that matters:** a lower layer never imports a higher one. Cross-layer needs are
 met by *injection* (platform/wiring resolves and passes values down) or by *data* (a table
