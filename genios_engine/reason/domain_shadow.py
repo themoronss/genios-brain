@@ -205,7 +205,7 @@ def _rejected_candidates(decision, selected) -> list[dict]:
 
 
 def _emit_capability_signal(conn, *, org_id: str, node_id: str, package, execution, bundle,
-                            eval_time, pack: dict) -> str:
+                            eval_time, pack: dict, situation_id: str | None = None) -> str:
     """Write the compiled brain's decision as signal.v1, tagged with the capability that made it.
 
     The delivery side has always been able to render this — card_builder reads
@@ -304,10 +304,13 @@ def _emit_capability_signal(conn, *, org_id: str, node_id: str, package, executi
         "authority_expires_at, authority_binding_version, authority_pack_revision, "
         "do_nothing_consequence, uncertainty, outcome_window_days, "
         "capability_id, capability_version, capability_review_state, rejected_candidates, "
-        "citations) "
+        # ⛔ L2-7 · migration 0182. NULLABLE, and the NULL is an answer: a signal whose situation
+        # never formed still reaches the founder, labelled UNINTERPRETED by
+        # `deliver/card_source.classify`. Fewer cards must come from merging, never from dropping.
+        "citations, situation_id) "
         "values (:id,:o,:pack,:packv,:r,:rv,:lv,:n,:s,cast(:si as jsonb),:rc,cast(:ev as jsonb),"
         ":play,:et,:cfg,:run,:cand,:dhash,:exp,1,:rev,:dnc,cast(:unc as jsonb),:owd,"
-        ":cap,:capv,:caprev,cast(:rej as jsonb),cast(:cit as jsonb)) "
+        ":cap,:capv,:caprev,cast(:rej as jsonb),cast(:cit as jsonb),:sit) "
         "on conflict (org_id,pack_id,pack_version,rule_id,subject_node_id) "
         "where status='open' do nothing returning signal_id"), {
             "id": new_id("sig"), "o": org_id,
@@ -361,12 +364,17 @@ def _emit_capability_signal(conn, *, org_id: str, node_id: str, package, executi
             # "this lane does not quote" stay different answers in the column.
             "cit": (json.dumps([dict(c) for c in decision.citations])
                     if decision.citations else None),
+            # NULL rather than "" for the same reason `cit` is: "no situation formed" and "this
+            # caller did not say" must not become the same row. `classify` reads both as
+            # UNINTERPRETED today, and a later reader that wants to tell them apart still can.
+            "sit": (str(situation_id).strip() or None) if situation_id else None,
         }).first()
     return "emitted" if row is not None else "race_lost"
 
 
 def _persist_live(*, store: GraphStore, reasoning_store: ReasoningStore, org_id: str,
-                  node_id: str, package, execution, eval_time, pack: dict) -> str:
+                  node_id: str, package, execution, eval_time, pack: dict,
+                  situation_id: str | None = None) -> str:
     """Commit the audit bundle, then the signal built from it. Two transactions, in that order.
 
     The audit bundle FIRST and through ``persist_execution``, never by hand: ``signals`` carries six
@@ -378,17 +386,25 @@ def _persist_live(*, store: GraphStore, reasoning_store: ReasoningStore, org_id:
     with store.engine.begin() as conn:
         return _emit_capability_signal(
             conn, org_id=org_id, node_id=node_id, package=package, execution=execution,
-            bundle=bundle, eval_time=eval_time, pack=pack)
+            bundle=bundle, eval_time=eval_time, pack=pack, situation_id=situation_id)
 
 
-#: Layer 2 names a situation's domain in its OWN vocabulary (`context/domain_spec.py`), and
-#: `platform/l3_activation.L3_DOMAINS` names the three authored corpora. They agree on two words
-#: out of five and disagree on the third, so the translation is written down once, here, rather
-#: than being a string comparison that silently never matches.
-#:
-#: `fundraising` and `general` map to NOTHING and that is not an oversight: no corpus was authored
-#: for them, so there is no domain an operator could activate, and mapping them onto `admin` to
-#: "get some coverage" would put Admin doctrine on a fundraising situation.
+# =================================================================================================
+# THE L2 → L3 DOMAIN TRANSLATION
+#
+# Layer 2 names a situation's domain in its OWN vocabulary (`context/domain_spec.py`), and
+# `platform/l3_activation.L3_DOMAINS` names the three authored corpora. They agree on two words
+# out of five and disagree on the third, so the translation is written down once, below, rather
+# than being a string comparison that silently never matches.
+#
+# ⛔ THE SENTENCE THAT USED TO CLOSE THIS BLOCK — "no corpus was authored for them" — WAS WRONG,
+# and L2-4 corrected it in `CANDIDATE_ROUTES` and in `DARK_DOMAINS` while leaving this copy
+# behind. It is deleted rather than edited: two paragraphs stating one fact is how the fact goes
+# stale in the one nobody reads. `fundraising` and `general` are dark for two DIFFERENT reasons
+# and each states its own, immediately below.
+# =================================================================================================
+
+
 @dataclass(frozen=True, slots=True)
 class CandidateRoute:
     """A corpus that COULD serve a dark domain, with the evidence, and not armed.
@@ -1069,10 +1085,16 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                             counts["budget_exhausted"] += 1
                             continue
                     try:
+                        # ⛔ L2-7 · CARRY THE SITUATION. `row["situation_id"]` is read four times
+                        # within twenty lines above and was dropped here, at the one seam where a
+                        # card needs it — `not_carried`, the class of defect L1 step 18 named.
+                        # Without it `deliver/pipeline` loops over signals and one situation that
+                        # fires three rules becomes three cards that can never merge.
                         outcome = _persist_live(
                             store=store, reasoning_store=reasoning_store, org_id=org_id,
                             node_id=anchor, package=package, execution=execution,
-                            eval_time=eval_time, pack=pack)
+                            eval_time=eval_time, pack=pack,
+                            situation_id=str(row["situation_id"]))
                         counts[outcome] += 1
                         # Only a row that actually reached a human's queue spends the budget.
                         # `standing` left yesterday's advice alone and `nothing_to_emit` concluded

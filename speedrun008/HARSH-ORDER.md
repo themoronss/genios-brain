@@ -39,6 +39,8 @@
 | **24** | ⛔ **Run the L2 refusal report again AFTER item 21 and read `BY LAW`.** L2-2 added two laws — V-9 (an interpretation citing nothing) and V-10 (an empty `missing_facts` under low coverage) — both declared **OBSERVE**, so they report and do not block. **Arming either is one line, after somebody knows the count** | measure + decision | **whether L2 starts refusing unreceipted interpretations** | 10 min |
 | **25** | **Run `python scripts/slice_weight.py --org <pilot> --sample 20`** — read-only. It prints what a real context slice costs in tokens, p50/p90/max. **L2-5's entire cost check rests on this number** | measure | **L2-5's cost check** | 5 min |
 | **26** | ⛔⛔ **DECIDE: point `fundraising` at the `sales` corpus.** The investor doctrine is **already authored, stable and approved** and the pilot's dominant domain cannot reach it. One line, reversible, and `live_lane` still requires the corpus to be activated. Run `python scripts/unroutable_report.py --org <pilot>` for the count first | **decision** | **whether the pilot tenant sees anything at all** | 15 min |
+| **4e** | Apply `0182_signal_situation.sql` | migration | **step L2-7 code** | 2 min |
+| **27** | **Run `python scripts/card_collapse_report.py --org <pilot>`** AFTER 4e — it prints how many cards the founder sees and how many situations they are about. **The headline number of the whole Layer 2 plan** | measure | **the 38→N claim** | 5 min |
 
 **Migrations 2, 3 and 4 must all be applied BEFORE the code that uses them ships.** All three are
 idempotent and safe to re-run. Apply in number order.
@@ -99,6 +101,52 @@ purely because nothing printed it.
 > authored corpus**, so Layer 2 mints `investor_relationship` and `investor_contact` situations that
 > nothing can read. That is **authoring work, not code** — and it is the largest non-code item in
 > the Layer 2 plan.
+
+---
+
+## 27 · What the founder actually sees — 5 minutes, read-only, AFTER 0182
+
+⛔ **This is the headline number of the whole Layer 2 plan.** *"38 cards becoming N"* has been a
+claim since the plan was written, and nothing has ever printed the ratio.
+
+```bash
+python scripts/card_collapse_report.py --org <pilot-org-id> \
+       --database-url "$GENIOS_TARGET_DATABASE_URL"
+```
+
+It refuses to report at all if 0182 is missing, rather than printing a collapse of 1.00 and
+letting somebody conclude there is nothing to merge.
+
+### What it tells you
+
+```
+open signals without a card       ← cards today
+situations they belong to
+signals with no situation         ← surfaced, LABELLED, never dropped
+cards after the collapse
+collapse                          N.NN×
+```
+
+plus the widest fan-outs — one situation, many rules, many cards.
+
+### Why the fan-out happens
+
+Signals are emitted **per (pack, rule, node)**. One situation compiles a package, the package
+fires several rules, and each rule becomes a card:
+
+```
+"Nitesh's inbound messages dropping over 28 days"        rule 1 → card 1
+"Nitesh Pant's touch frequency declining over 28 days"   rule 2 → card 2
+"Check in with Nitesh Pant on engagement"                rule 3 → card 3
+```
+
+They could never merge, because **the builder had no way to see they were one situation** — the
+`situation_id` was in scope at emit time and thrown away. 0182 gives it somewhere to go.
+
+> **Nothing changes for a founder until a tenant is activated.** The loop is still the old one;
+> what 0182 buys today is the *measurement*, and the measurement is what the cutover decision
+> needs. A signal whose situation never formed is **surfaced with a label**, never dropped —
+> fewer cards must come from merging.
 
 ---
 
@@ -314,6 +362,7 @@ psql "<url>" -f migrations/0181_signal_conversation.sql
 | **0178** | four completeness columns on `l1_sync_runs` | **every sync-ledger write fails silently.** It is wrapped in a `try/except` that never raises, so syncs keep working and simply stop being recorded — which is worse than crashing |
 | **0179** | four world instants on `qualified_signals` (`due_at`, `effective_at`, `resolved_at`, `superseded_at`) + a partial index on `due_at` | **every signal INSERT fails** — the store now names these columns. Without them a signal still cannot say *"8 days overdue"*, which is the question P2 asks |
 | **0181** | five conversation columns on `qualified_signals` (`thread_key`, `direction`, `turn_index`, `thread_depth`, `ball_in_court`) + two partial indexes | **every signal INSERT fails** (same reason). And Layer 2 keeps recomputing *whose turn it is* from Gmail labels because L1's real answer never arrives — it moved the benchmark 20 → 24 |
+| **0182** | `signals.situation_id` text + a partial index | **every compiled signal INSERT fails** — `domain_shadow` now names the column. And without it the card loop stays one-card-per-SIGNAL: one situation that fires three rules keeps producing three cards that can never merge, which is the *"Nitesh Pant × 3"* symptom exactly. **Nullable and no FK, deliberately**: a situation archives on its own lifecycle while its signals stay open |
 | **0180** | `qualified_signals.coverage` jsonb — the window and per-source completeness a negative claim rests on | **every signal INSERT fails** (same reason). And without it **a signal in state `broken` cannot publish at all** — the contract refuses a negative claim with no proof behind it, which is deliberate |
 
 Full detail: [step 2](plan/layer-1/STEP-02-PENDING-HARSH.md) ·

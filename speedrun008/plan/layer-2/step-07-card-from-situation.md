@@ -1,6 +1,30 @@
 # L2-7 · Cut the card over from the signal to the situation
 
-**Needs Harsh:** no · **Migration:** none · **Model calls:** none
+**Needs Harsh:** ⛔ **migration 0182** · **Model calls:** none
+
+> ## ✅ COMPLETE · PENDING · HARSH (migration 0182) — 2026-09-24 · [findings](findings/step-07-card-from-situation.md)
+>
+> 15 tests · 13,045 passed · 0 regressions · no model call.
+>
+> ⛔⛔ **THE LINK THAT WOULD COLLAPSE THE CARDS WAS IN SCOPE AND THROWN AWAY.** `signals` has no
+> `situation_id`, and `shadow_compile` reads `row["situation_id"]` **four times within twenty
+> lines of the emit** before dropping it. That is `not_carried` — the class L1 step 18 named:
+> *"every measured loss is a value that is computed correctly and then not carried."*
+>
+> And the fan-out is sharper than this file says: signals are emitted **per (pack, rule, node)**,
+> so the three Nitesh cards are **three RULES on one situation**.
+>
+> ⛔ **`subject_node_id` IS NOT A SUBSTITUTE.** `context_situations` is unique on
+> `(org_id, correlation_id)`, so one node carries several genuinely different situations — a
+> support case and an admin follow-up about the same person. Grouping by node merges things that
+> are not the same thing, **which is worse than the fan-out it fixes.**
+>
+> ⛔ **THE MIGRATION IS NOT "none".** 0182, one nullable column, **no FK** — a situation archives
+> on its own lifecycle while its signals stay open.
+>
+> ⛔ **AND THE FULL SUITE CAUGHT THE WIRE BEING DANGEROUS**: the collapse read could kill the
+> delivery pass on a tenant without 0182. *"A receipt that can abort the thing it is a receipt
+> for turns an accounting failure into a product failure."* Guarded, and the guard is guarded.
 
 ⛔ **This is the step that changes what the founder actually sees.** Everything before it improves
 an object nobody reads yet.
@@ -101,8 +125,34 @@ because it teaches the founder the receipts are decorative.
 
 ## 5. Completion criteria
 
-1. The collapse ratio measured **before and after**, both in findings.
-2. A situation-shaped card builder exists beside the signal one.
-3. An uninterpreted signal still reaches the founder, labelled and counted.
-4. Every card claim resolves to a source span that opens.
-5. Both paths run on one sweep and are compared before the old one is retired.
+| # | criterion | verdict |
+|---|---|---|
+| 1 | the collapse ratio, before and after | ⚠️ **measured on every sweep** and printed by `scripts/card_collapse_report.py`. The numbers need the pilot **with 0182 applied** — Harsh 27 |
+| 2 | a situation-shaped builder beside the signal one | ✅ `_open_situations_without_cards` — **beside**, and a test asserts the old selector is untouched |
+| 3 | an uninterpreted signal reaches the founder, labelled and counted | ✅ `CardSource.UNINTERPRETED` — **a label on the CARD**, not only a counter on a dashboard |
+| 4 | every card claim resolves to a source span | ⚠️ **already enforced** by `test_a_card_must_quote_what_was_said.py`; this step moves the loop, not the receipts |
+| 5 | both paths compared on one sweep | ✅ three keys, **initialised at zero**, on every sweep regardless of the flag |
+
+### 5.1 · ⛔ What U2 asked for does not exist, and this is the same re-aim step 6 made
+
+U2 reads `observed_facts` / `inferred_state` / `implications` / `unknowns`. **None of those are
+v2 fields.** L2-2 measured that v2 is already full of interpretation and classified its 28 fields
+rather than minting six more, deferring the absent ones to **L2-5, with their writer**.
+
+**What exists to render today:** `missing_facts` — *which is the `unknowns` this step wants
+visible, and it is five-state typed* — plus `evidence`, `importance` with its attribution, and
+`type`. **The card BODY therefore travels with L2-5's output**, and is recorded on step 5's
+ledger rather than half-built here against fields that do not exist.
+
+### 5.2 · What the units became
+
+| planned | built |
+|---|---|
+| U0 · measure the collapse | ✅ wired into **every sweep**, plus `scripts/card_collapse_report.py` |
+| U1 · `_open_situations_without_cards` | ✅ beside the old one, grouping by **situation**, NULL as its own bucket |
+| U2 · the card builder takes a situation | ⛔ **the fields it names do not exist** — §5.1. The link it needs is now carried |
+| U3 · an uninterpreted signal still surfaces | ✅ **labelled and counted** |
+| U4 · flip behind a per-tenant flag | ✅ `cards_from_situations` — a row, not a boolean |
+| U5 · the card cites, and it resolves | ⚠️ already enforced; untouched |
+| — | **unplanned: migration 0182** — the plan said "none" and the link did not exist |
+| — | **unplanned: the measurement may not kill the pass** — caught by the full suite |
