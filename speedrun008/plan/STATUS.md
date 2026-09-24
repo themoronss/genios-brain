@@ -285,6 +285,48 @@ may call a model directly."*
 fired on the pilot tenant."* 63% of the corpus is authored and inadmissible. **This engine's problem
 is not absence — it is things built correctly and never switched on.**
 
+### ⛔ RE-ANALYSIS — the premise was wrong
+
+[`layer-2/04-RE-ANALYSIS.md`](layer-2/04-RE-ANALYSIS.md). **Layer 2 is not half-built. It is built
+and unswitched.**
+
+⛔ **All five benchmark prompts already have a situation type**, each declaring the fields it is
+expected to know:
+
+| | type | and it declares |
+|---|---|---|
+| P1 | `awaiting_response` | ⛔ **`their_normal_reply_days`** — the column Gemini AND Claude both skipped |
+| P2 | `commitment_overdue` | `delivered_at` |
+| P3 | `organization_gone_quiet` | `longest_wait_days` |
+| P4 | `meeting_follow_through` | `recap_sent` |
+| P5 | `condition_in_review` | `quote` |
+
+⛔ **`fundraising` IS a registered L2 domain** — `investor_relationship`, `investor_contact`. L2
+mints them; **no corpus was ever authored to read them.** Authoring, not code.
+
+⛔ **Typed absence already exists with five states** — `PRESENT · STALE · NOT_EXPECTED · UNKNOWABLE
+· GENUINELY_ABSENT` — consulting `coverage_ready` before concluding absence, wired producer to
+consumer. **Step 2 was going to rebuild it binary.**
+
+### ⛔ Eight things built and never switched on
+
+```
+domain_shadow compile      live=False for every caller
+R-1 interpreter            "has never fired on the pilot tenant"
+534 capabilities           200 admissible
+typed absence              consulted by the compiler, shown to no human
+63 held situations         l1_refusal() has the score; nothing renders it
+33 support situations      "which is why the miss was invisible"
+fundraising situations     minted, no corpus
+L1 conversation fields     landed step 18; attention.py still recomputes its own
+```
+
+`quality/inference.py` names the shape: *"a well-typed value **nobody consults, which is
+indistinguishable from not having built it**."*
+
+**Genuinely missing: `observed_facts` (0 files) · `inferred_state` (0 files) · an L2 reasoner site ·
+Persona Brain · card-from-situation · goals · the fundraising corpus.** Ten items; four are code.
+
 ### LAYER 2 — STEPS
 
 | # | step | status | headline | date |

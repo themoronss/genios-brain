@@ -1,4 +1,37 @@
-# L2-2 · The six interpretation fields, with write authority enforced
+# L2-2 · The interpretation fields — **two are missing, not six**
+
+⛔ **CORRECTED by the re-analysis.** This step used to add six fields and four validators. Measured
+against the tree, only **two names appear nowhere in `genios_engine`**:
+
+```
+observed_facts    0 files   ⛔ genuinely missing
+inferred_state    0 files   ⛔ genuinely missing
+valid_until       8 files   exists — but never on a situation
+reasoning_trace   1 file
+hypotheses        4 files   in prose, not as a contract field
+unknowns          ⛔ ALREADY EXISTS, and better — see below
+```
+
+### ⛔ `unknowns` is `missing_facts`, and it is typed five ways
+
+`context/quality/missing.py` — BLG-15, TYPED ABSENCE:
+
+```
+PRESENT · STALE · NOT_EXPECTED · UNKNOWABLE · GENUINELY_ABSENT
+```
+
+> *"`coverage_ready` is consulted **BEFORE** absence is ever concluded... `UNKNOWABLE` read as
+> `GENUINELY_ABSENT` is **the worst output the quality group can emit**."*
+
+**`L2-2-U3` proposed exactly this as new. It exists, it is five-state rather than binary, and it
+already reads L1's `coverage_ready`.** Building it again would be building it worse.
+
+**→ U3 becomes: carry `missing_facts` onto the situation as `unknowns`, and SURFACE it.** Today it
+is consulted by the compiler and shown to no human.
+
+---
+
+# The original step follows, with U1–U3 corrected
 
 **Needs Harsh:** migration only · **Model calls:** none · **This is the doctrine step**
 

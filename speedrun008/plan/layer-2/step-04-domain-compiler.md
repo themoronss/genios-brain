@@ -7,7 +7,27 @@ perfectly kaam kare".*** It is also where the sharpest measured defect in Layer 
 
 ---
 
-## 1. ⛔ Premise — fundraising is structurally dark
+## 1. ⛔ Premise — **Layer 2 mints investor situations; nothing was authored to read them**
+
+**CORRECTED by the re-analysis.** `fundraising` **is** a registered Layer 2 domain:
+
+```python
+'fundraising': {'company': 'investor_relationship',
+                'person':  'investor_contact',
+                'deal':    'investor_relationship'}
+```
+
+declaring `funding.round`, `application_status`, `thread.ball_in_court`, `party.role`.
+
+⛔ **So Layer 2 is not the problem. The situations are minted today.** They die one layer later
+because no fundraising corpus exists — `Domain Expertise/` holds Admin, Sales and Customer Support
+and nothing else — so `l3_domain_for` answers `None` and `live_lane()` refuses.
+
+**The fix is authoring, not code.** Everything else in this step remains: the silence must end.
+
+---
+
+## 1b. The original premise — the mapping and its silence
 
 `reason/domain_shadow.py:391`:
 

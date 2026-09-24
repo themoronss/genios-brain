@@ -4,6 +4,21 @@
 
 ---
 
+## 0. ⛔ CORRECTED — the slice builder exists and already carries typed absences
+
+`situation_bso.build_context_slice` fills the slice, and at lines 2089–2090 it already puts
+**`unknowable` and `absent`** into it, computed by `quality/missing.py` and read by
+`packs/compiler/context_adapter.py:227` through the negative-inference licence.
+
+> *"An org with no mailbox connected therefore satisfies `absent: thread.last_inbound` on every
+> situation it has, and the authored rules that read it fire on a blind spot."*
+
+**That loop is wired end to end.** This step therefore **extends the existing builder for a new
+consumer**, and does not write a second one. A second slice builder would be a second answer to
+"what may this reader see", which is the visibility defect waiting to happen.
+
+---
+
 ## 1. Premise
 
 The reasoner needs context. There are two ways to give it context, and **only one of them can be
