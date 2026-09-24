@@ -219,10 +219,63 @@ why, and what was deliberately not done.*
 
 ## LAYER 2 — START
 
-*Not opened. Layer 2's known headline before any work: the admission gate holds **114 situations**
-of type `awaiting_response` and `first_response_overdue` at **0% admission**, because their
-evidence is a silence and `verified_evidence_required` holds anything with no quoted span. This is
-the largest single loss in the whole system and it is not Layer 1's.*
+**Opened 2026-09-24.** Plan: [`layer-2/`](layer-2/) — [overview](layer-2/00-OVERVIEW.md) ·
+[architecture](layer-2/ARCHITECTURE.md) · nine step files.
+
+### What Layer 2 is, at the moment work began
+
+```
+genios_engine/context/   111 files   48,322 LOC      ← LARGER than L1's 42,311
+                         57 root modules · 8 code subpackages · 5 content (YAML) subpackages
+7 groups · 44 components · 46 planned units
+```
+
+### ⛔ The diagnosis
+
+**Layer 2's dominant failure is a refusal that is right and invisible.**
+
+| | measured | status |
+|---|---|---|
+| situations held, L1 published nothing | **63 of 159** — scored 528–1920 vs a floor of 2500 | refusal correct, **silence is not** |
+| support situations unrouted | **33** — `support` vs `customer_support` | *"why the miss was invisible"* |
+| fundraising domain | **no corpus** — `domain = None` → no package, no signal | the pilot is a fundraising founder |
+| untraceable promises | **21**, ten carded before refusal | *"the founder saw promises nobody made"* |
+
+Plus two structural findings:
+
+* ⛔ **The card is built from a SIGNAL, not a situation** — `deliver/pipeline.py:269` loops over
+  `_open_signals_without_cards`. Three measurements about one person become three cards and can
+  never merge.
+* ⛔ **Six interpretation fields are missing from the contract** — `observed_facts`,
+  `inferred_state`, `hypotheses`, `implications`, `reasoning_trace`, `valid_until`. Every field
+  present is an observation field. Every field missing is an interpretation field.
+
+### LAYER 2 — STEPS
+
+| # | step | status | headline | date |
+|---|---|---|---|---|
+| 0 | [Make every refusal visible](layer-2/step-00-visible-refusals.md) | **NOT STARTED** | the denominator for every later number | — |
+| 1 | [Name it](layer-2/step-01-names.md) | **NOT STARTED** | two classes share one name and it cost this plan a wrong paragraph | — |
+| 2 | [Six interpretation fields](layer-2/step-02-six-fields.md) | **NOT STARTED** | observation ≠ inference ≠ hypothesis, with write authority | — |
+| 3 | [The evidence slice](layer-2/step-03-evidence-slice.md) | **NOT STARTED** | handed, never fetched — a fetched slice cannot be replayed | — |
+| 4 | [Domain Compiler](layer-2/step-04-domain-compiler.md) | **NOT STARTED** | ⛔ fundraising is structurally dark | — |
+| 5 | [Context Reasoner](layer-2/step-05-context-reasoner.md) | **NOT STARTED** | the one new model site · **per situation, not per event** | — |
+| 6 | [The validation gate](layer-2/step-06-validation-gate.md) | **NOT STARTED** | deterministic, free — **and what makes Haiku safe** | — |
+| 7 | [Card from the situation](layer-2/step-07-card-from-situation.md) | **NOT STARTED** | the step the founder actually sees | — |
+| 8 | [Turn it on](layer-2/step-08-turn-it-on.md) | **NOT STARTED** | three flips together · adversarial pass | — |
+
+**Order:** 0 → 1 → 2 → 3 → 4 → 6 → 7 → 5 → 8. Steps 0–4, 6 and 7 need nothing from Harsh; 5 needs a
+situation count for its cost check and 8 needs the shadow pass tallies.
+
+### What is missing entirely
+
+| | |
+|---|---|
+| **Persona Brain** | the fifth brain — not in `BrainKind`, not an `ExpertisePackage` lane. Holds *how this kind of company and this role works*, which is what makes a tenant legible before Behavior has history |
+| **Context Reasoner** | the interpretation site. Does not exist |
+| **Validation gate** | what checks a proposal. Does not exist |
+| **Goals** | `org_goals` → 0 files. Belongs in **Organization Brain** as a category row beside `approval`/`policy`/`process`/`criticality` — the extraction machinery already verifies a quote byte-for-byte |
+| **`fundraising` corpus** | authored doctrine, not code. The largest non-code item in the plan |
 
 ---
 
