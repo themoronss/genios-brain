@@ -28,22 +28,33 @@ already drifted once while being written.
 
 ---
 
-## ⛔ OPEN — the one thing still wrong
+## ⛔ OPEN — the one thing still wrong, **re-scoped by step 18**
 
 | id | class | What | Owner |
 |---|---|---|---|
-| **S01b** | **F05** | `pipeline.py` hands `reconstruct_thread` a list of **ONE** message, so ALG-03's full RFC 5322 parent resolution **has still never run on real data** | 16 |
+| **S01b** | **F05** | `last_inbound_at` cannot be known from one message, so `who_sent_last` and `p3_who_sent_last` stay stranded | 18 |
 
-§1 of step 17 says `assemble_chain` *"always falls back to chronology"*. **It never gets that far.**
-The unit is correct — `S01`'s branch test passes on its first run and proves it — and it is handed a
-single-element list, so there is no chain to build, branched or straight.
+⛔ **THE ORIGINAL VERDICT OVERSTATED THIS, AND STEP 18'S PREMISE CHECK CAUGHT IT.**
 
-Step 16 captured `In-Reply-To`/`References` and **carried them onto that `ThreadMessage`**, so
-closing this is now **one caller change rather than two**. Feeding it the sibling messages needs an
-API call or a store read, which is a different unit.
+It read: *"`pipeline.py` hands `reconstruct_thread` a list of ONE message, so ALG-03's parent
+resolution has never run on real data."* Both halves are true. **The conclusion was not.**
 
-Recorded as a **test that fails the day someone changes the call** — a defect with an address, not a
-TODO in a document.
+`reconstruct_thread`'s own docstring settles it:
+
+> *"`ball_in_court` is derived from the most recent message BY TIME, not from the last link of the
+> walk."*
+
+At capture the event **is** the newest message of its thread — so a one-message list and the full
+thread give **the identical answer**. Verified by execution, not by reading: a four-message thread
+and its newest message alone both return `us`; a three-message thread and its newest both return
+`them`.
+
+**So the one-message call is correct for the value its caller reads.** What genuinely needs the
+siblings is `last_inbound_at`: you cannot know the previous inbound time from a single message.
+That is two benchmark objects, and it is the honest remainder.
+
+**Step 18 carried the four that did not need siblings** — `direction`, `ball_in_court`,
+`turn_index`, `thread_depth` — taking the benchmark from **20 to 24 of 38**.
 
 ---
 

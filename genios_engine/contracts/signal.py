@@ -569,6 +569,43 @@ class QualifiedEnterpriseSignal(BaseModel):
     # as it does for the per-type state vocabulary above.
     coverage: Any | None = None
 
+    # --- the conversation this signal was qualified inside ---------------------------------
+    #
+    # ⛔ FIVE VALUES L1 COMPUTED CORRECTLY AND THEN DID NOT CARRY. `ThreadContext`'s own docstring
+    # says it in as many words — *"NONE of it reached S4"* — and once that was fixed the value
+    # still stopped one seam later: `NormalizedSignal.thread` sits in `build_signal` and the
+    # builder never read it. The same leak step 14 found in `domain_hints`, which was rebuilt by
+    # hand and lost `confidence_bp`.
+    #
+    # Four benchmark objects turn on these, all classed `not_carried`: `message_direction`,
+    # `ball_in_court`, `turn_index` and `activity_count`. Eleven of the benchmark's eighteen
+    # misses are that class, which is the plan's whole diagnosis: *"every measured loss is a value
+    # that is computed correctly and then not carried."*
+    #
+    # `last_inbound_at` is NOT here. It needs messages other than this one, and inventing it from
+    # a single message would be a guess wearing a timestamp.
+
+    #: ALG-22 rung 4, in its `"thread:{id}"` form — WHICH CONVERSATION, which `subject_key` does
+    #: not answer: subject_key resolves to an entity or a record at rungs 1–3 and only falls to
+    #: the thread at rung 4, so the two are not derivable from each other.
+    thread_key: str | None = None
+    #: `inbound` | `outbound` | `internal`. **`None` IS A REFUSAL, NOT A GAP** — with no identity
+    #: for "us" every message looks inbound, which is how a product's own onboarding mail got
+    #: modelled as a prospect asking for a demo.
+    direction: str | None = None
+    #: 0-based position of THIS message in its thread; turn 0 is a first contact. Correct only
+    #: since step 16 — before it, no connector stated a position and every event read 0.
+    turn_index: int = 0
+    #: Messages of this thread we can show exist. 1 for a message that starts one.
+    thread_depth: int = 1
+    #: `us` | `them` | `unknown` — ALG-03's answer, carried as the string `BallInCourt` uses so a
+    #: trace row and a stored signal read the same word.
+    #:
+    #: Derived from the newest message BY TIME, which at capture is this event — so the
+    #: one-message reconstruction `pipeline.py` performs gives the same answer the full thread
+    #: would, proven by execution rather than assumed.
+    ball_in_court: str = "unknown"
+
     # --- provenance ---
 
     #: Company-canon authority class (`capture.internal_knowledge.INTERNAL_KINDS`) — the

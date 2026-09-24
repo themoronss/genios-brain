@@ -16,6 +16,7 @@
 | **4** | Apply `0178_sync_completeness.sql` | migration | step 5 code | 2 min |
 | **4b** | Apply `0179_signal_world_instants.sql` | migration | step 14 code | 2 min |
 | **4c** | Apply `0180_signal_coverage.sql` | migration | step 15 code | 2 min |
+| **4d** | Apply `0181_signal_conversation.sql` | migration | step 18 code | 2 min |
 | **5** | Deploy an image built from `Dockerfile` | deploy | step 1 (OCR) | 1 hr |
 | **6** | **DECIDE: legacy receipts — keep or drop?** | decision | step 4 merge | 10 min |
 | **7** | **DECIDE: raise the 60-day backfill window?** | decision | **the benchmark** | 15 min |
@@ -64,6 +65,7 @@ psql "<url>" -f migrations/0177_qualified_signals_subject_key.sql
 psql "<url>" -f migrations/0178_sync_completeness.sql
 psql "<url>" -f migrations/0179_signal_world_instants.sql
 psql "<url>" -f migrations/0180_signal_coverage.sql
+psql "<url>" -f migrations/0181_signal_conversation.sql
 ```
 
 | Migration | What it does | If you skip it |
@@ -72,6 +74,7 @@ psql "<url>" -f migrations/0180_signal_coverage.sql
 | **0177** | `qualified_signals.subject_key` + index | **every situation read fails** — the widened projection SELECTs a column that is not there |
 | **0178** | four completeness columns on `l1_sync_runs` | **every sync-ledger write fails silently.** It is wrapped in a `try/except` that never raises, so syncs keep working and simply stop being recorded — which is worse than crashing |
 | **0179** | four world instants on `qualified_signals` (`due_at`, `effective_at`, `resolved_at`, `superseded_at`) + a partial index on `due_at` | **every signal INSERT fails** — the store now names these columns. Without them a signal still cannot say *"8 days overdue"*, which is the question P2 asks |
+| **0181** | five conversation columns on `qualified_signals` (`thread_key`, `direction`, `turn_index`, `thread_depth`, `ball_in_court`) + two partial indexes | **every signal INSERT fails** (same reason). And Layer 2 keeps recomputing *whose turn it is* from Gmail labels because L1's real answer never arrives — it moved the benchmark 20 → 24 |
 | **0180** | `qualified_signals.coverage` jsonb — the window and per-source completeness a negative claim rests on | **every signal INSERT fails** (same reason). And without it **a signal in state `broken` cannot publish at all** — the contract refuses a negative claim with no proof behind it, which is deliberate |
 
 Full detail: [step 2](plan/layer-1/STEP-02-PENDING-HARSH.md) ·
@@ -558,7 +561,7 @@ learned to flatter itself.
 | # | Item | Your answer |
 |---|---|---|
 | 1 | scratch Postgres URL | |
-| 2–4 | migrations 0176 / 0177 / 0178 applied? | |
+| 2–4 | migrations 0176 / 0177 / 0178 / **0179 / 0180 / 0181** applied? | |
 | 5 | Dockerfile image deployed? | |
 | 6 | legacy receipts: **A** or **B**? | |
 | 7 | backfill window: **A**, **B** or **C**? | |

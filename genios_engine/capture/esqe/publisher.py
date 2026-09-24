@@ -382,6 +382,20 @@ class SignalInputs:
     qualification_reason: str | None = None
 
 
+def _conversation(thread: Any) -> dict[str, Any]:
+    """The five conversation facts for C-12, or nothing at all.
+
+    An EMPTY dict when there is no thread, deliberately: the contract's own defaults then apply,
+    and there is exactly one place those defaults are written. Returning `{"direction": None, ...}`
+    here would be a second copy of them, and the two drift the first time one changes.
+    """
+    if thread is None:
+        return {}
+    return {"thread_key": thread.thread_key, "direction": thread.direction,
+            "turn_index": thread.turn_index, "thread_depth": thread.thread_depth,
+            "ball_in_court": thread.ball_in_court}
+
+
 def build_signal(signal: NormalizedSignal, inputs: SignalInputs, *, eval_time: datetime,
                  lifecycle: LifecycleStamper | None = None
                  ) -> tuple[QualifiedEnterpriseSignal, ComposedConfidence | None, str | None]:
@@ -447,6 +461,18 @@ def build_signal(signal: NormalizedSignal, inputs: SignalInputs, *, eval_time: d
         # stamps the supersession when the replacement arrives, which is `lifecycle.record_of`'s
         # job and a different write. The field exists on C-12 so that write has somewhere to put
         # it; filling it here would mean guessing at publish time when a future event will occur.
+        # ⛔ THE CONVERSATION, LIFTED FROM THE THREAD CONTEXT THE CALLER ALREADY BUILT.
+        #
+        # `signal.thread` has sat in this function unread. The values were computed correctly by
+        # `pipeline._thread_context` and reached the trace and nothing else — which is the exact
+        # leak step 14 found in `domain_hints`, where this builder rebuilt a value by hand and
+        # dropped a field on the way.
+        #
+        # Read through one helper rather than five `getattr`s so a signal with no thread — a
+        # calendar event, an uploaded document — takes the CONTRACT's refusing defaults instead of
+        # five separate chances to invent one. `direction=None` and `ball_in_court="unknown"` are
+        # refusals and must survive as refusals.
+        **_conversation(signal.thread),
         internal_kind=signal.internal_kind,
         recipients=tuple(signal.recipients or ()),
         versions=dict(getattr(gated, "versions", None) or {}),

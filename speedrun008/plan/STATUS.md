@@ -57,7 +57,7 @@ sitting in a table that looks measured.
 | 3ʹ | Claim lanes that can carry a receipt | 8 of 15 | **11 of 15** | ✅ **target met.** `RoleAssertion`, `AvailabilityWindow`, `OpenQuestion` promoted in step 4, and ALG-08 now walks them |
 | 4 | Events with a non-fallback domain | 8% (74 of 889) | **⛔ unmeasurable** | the tagger, the proposer and the indiscriminate guard are built; the share is Harsh item 10 |
 | 5 | Events never judged for relevance | 69 of 225 (31%) | **⛔ unmeasurable** | the all-or-nothing guard is gone and `allocate_budget` defers instead of refusing — the new rate is Harsh item 13 |
-| 6 | Benchmark semantic objects present | ~~16~~ **15 of 38** | **20 of 38** | ⚠️ **+5, and short of the 30+ target.** 11 of the 18 misses are `not_carried` — a seam question, not a capability one |
+| 6 | Benchmark semantic objects present | ~~16~~ **15 of 38** | **24 of 38** | ⚠️ **+9, still short of 30+.** Step 18 carried the conversation and closed 4 `not_carried` misses; **7 of the remaining 14 are still that class** — a seam question, not a capability one |
 
 > ⛔ **METRIC 6's START WAS WRONG AND STEP 11 FOUND IT.** The audit's summary said *"16 built"*
 > while its own tables showed **15**. `L1_P1_P5_AUDIT.md` now carries a SUPERSEDED banner.
@@ -99,6 +99,7 @@ needs the corpus"* — Harsh items 1, 5, 10 and 13.
 | 14 | Temporal field set + reply pairing | **CODE COMPLETE · PENDING · HARSH** (migration 0179) ([findings](layer-1/findings/step-14-temporal.md)) | **2 → 6 world instants** · a signal can now say "8 days overdue" | 2026-09-24 |
 | 15 | Coverage on the signal | **✅ ALL 5 CRITERIA CLOSED · PENDING · HARSH** (migration 0180) ([findings](layer-1/findings/step-15-coverage-on-signal.md)) | a `broken` signal **cannot publish** without its coverage | 2026-09-24 |
 | 16 | Source field coverage | **✅ ALL CRITERIA CLOSED** ([findings](layer-1/findings/step-16-source-field-coverage.md)) · no migration · one **bounded** re-extraction | ⛔ **every prompt in production said "message 1 of 1"** — a 12-message thread was described to the model as the first and only message | 2026-09-24 |
+| 18 | The conversation crosses the seam | **✅ COMPLETE · PENDING · HARSH** (migration 0181) ([findings](layer-1/findings/step-18-conversation-crosses-the-seam.md)) | **benchmark 20 → 24** · ⛔ S01b's diagnosis was wrong and the real defect was one seam later | 2026-09-24 |
 | 17 | Adversarial validation | **✅ 6 of 7 CRITERIA CLOSED · 17-U6 BLOCKED ON HARSH** ([findings](layer-1/findings/step-17-adversarial-validation.md) · [failure log](layer-1/FAILURE-LOG.md)) | **40 rows typed by failure class · 28 mutation rows · 1 still OPEN** · ⛔ 991 of 995 skips are one missing env var | 2026-09-24 |
 
 > **✅ STEP 6 IS BUILT — and its cost check PREVENTED a defect instead of documenting one.** Before

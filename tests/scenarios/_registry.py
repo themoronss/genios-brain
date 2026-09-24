@@ -81,11 +81,17 @@ SCENARIOS: dict[str, Scenario] = {s.id: s for s in (
        "Headers captured by step 16. The BRANCH claim is proven at `assemble_chain`; the PIPELINE "
        "still hands it a one-message list, which step 16 recorded rather than papered over — see "
        "S01b."),
-    _s("S01b", "F05", "the pipeline feeds assemble_chain a whole thread", OPEN, "16",
-       "**STILL OPEN, and deliberately.** `pipeline.py` constructs a list of ONE message, so full "
-       "RFC 5322 parent resolution has never run on real data. Closing it needs the sibling "
-       "messages — an API call or a store read, and a different unit. Step 16 carried the headers "
-       "to the seam so the fix is one caller change, not two."),
+    _s("S01b", "F05", "the pipeline feeds assemble_chain a whole thread", OPEN, "18",
+       "⛔ **RE-SCOPED — THE ORIGINAL VERDICT OVERSTATED IT.** `pipeline.py` does construct a list "
+       "of ONE message, and full RFC 5322 parent resolution has never run on real data. But the "
+       "only value the caller READS is `ball_in_court`, and `reconstruct_thread` derives that "
+       "**from the most recent message BY TIME** — which at capture IS this event. Verified by "
+       "execution: a four-message thread and its newest message alone both answer `us`; a "
+       "three-message thread and its newest both answer `them`. **So the one-message call is "
+       "correct for its purpose.** What genuinely still needs siblings is `last_inbound_at` — you "
+       "cannot know the previous inbound time from one message — which strands exactly two "
+       "benchmark objects, `who_sent_last` and `p3_who_sent_last`. Step 18 carried the four that "
+       "did NOT need it."),
     _s("S02", "F04/F17", "a bcc'd recipient is captured and governed", IMPOSSIBLE, "16",
        "**Gmail's API does not supply bcc**, and on a message we RECEIVED it is invisible by "
        "definition — that is what bcc means. Step 13 added `bcc_recipients` so the contract can "

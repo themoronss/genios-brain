@@ -68,7 +68,11 @@ _COLUMNS = ("signal_id, org_id, subject_key, event_id, trace_id, signal_type, se
             "due_at, effective_at, resolved_at, superseded_at, "
             # Step 15 · the proof behind a negative claim. Named here and not only in migration
             # 0180, for the reason step 14 records two lines up.
-            "coverage")
+            "coverage, "
+            # The conversation. Named here for the same reason again — these five were computed
+            # correctly by `pipeline._thread_context` and stopped at `build_signal`, and a column
+            # no writer names is null forever whatever the migration says.
+            "thread_key, direction, turn_index, thread_depth, ball_in_court")
 
 
 def _jsonable(value: Any) -> Any:
@@ -151,6 +155,14 @@ class QualifiedSignalRow:
     #: Step 15 · the window and per-source completeness this signal's claim rests on, frozen at
     #: capture. `None` is UNKNOWN and is the honest default — never "complete".
     coverage: Mapping[str, Any] | None = None
+    #: The conversation this signal was qualified inside. `None`/defaults read as "we do not
+    #: know" — `direction` in particular, because with no identity for "us" every message looks
+    #: inbound and a default would state that falsehood.
+    thread_key: str | None = None
+    direction: str | None = None
+    turn_index: int | None = None
+    thread_depth: int | None = None
+    ball_in_court: str | None = None
     importance_components: Mapping[str, Any] = field(default_factory=dict)
     confidence_vector: Mapping[str, int] = field(default_factory=dict)
     domain_hints: tuple[Mapping[str, Any], ...] = ()
@@ -237,6 +249,8 @@ class QualifiedSignalRow:
             # `None` stays None rather than becoming "null" jsonb: a SQL NULL reads as "unknown"
             # to every query, and a jsonb null would read as a block that exists and says nothing.
             "cvg": _dumps(dict(self.coverage)) if self.coverage else None,
+            "tkey": self.thread_key, "dir": self.direction, "turn": self.turn_index,
+            "tdepth": self.thread_depth, "ball": self.ball_in_court,
         }
 
 
@@ -402,7 +416,8 @@ class PostgresSignalStore:
                         " cast(:dom as jsonb), cast(:vis as jsonb), :cov, :xref,"
                         " cast(:ev_refs as jsonb), cast(:cids as jsonb), :state, :sup, :exp,"
                         " :kind, :occ, cast(:env as jsonb), :arank, :ing, :chash, :qreason,"
-                        " :supby, :due, :eff, :res, :supat, cast(:cvg as jsonb)) "
+                        " :supby, :due, :eff, :res, :supat, cast(:cvg as jsonb),"
+                        " :tkey, :dir, :turn, :tdepth, :ball) "
                         "on conflict (signal_id) do update set "
                         # Step 14 · a re-published signal must carry its CURRENT deadline. A
                         # commitment re-promised with a new date lands as the same signal_id, and
@@ -411,6 +426,14 @@ class PostgresSignalStore:
                         # re-published it — which is correct: it is a NEW observation moment, and
                         # E4 freezes a block to its own capture, not to the signal id forever.
                         "coverage=excluded.coverage, "
+                        # Whose turn it is CHANGES — that is the whole point of the field. A
+                        # re-published signal whose ball_in_court stayed at its first value would
+                        # keep reporting a conversation as owed after it was answered.
+                        "thread_key=excluded.thread_key, "
+                        "direction=excluded.direction, "
+                        "turn_index=excluded.turn_index, "
+                        "thread_depth=excluded.thread_depth, "
+                        "ball_in_court=excluded.ball_in_court, "
                         "due_at=excluded.due_at, "
                         "effective_at=excluded.effective_at, "
                         "resolved_at=excluded.resolved_at, "
