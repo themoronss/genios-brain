@@ -37,6 +37,7 @@
 | **22** | ⛔ **DECIDE: flip the 24 `draft` situations?** 16 of Customer Support's 20. Every card built from one is downgraded to an OBSERVATION — it describes and does not instruct. **One word per file, no code** | decision | **the cheapest quality win in L2** | 20 min |
 | **23** | 📅 **Diary note only — nothing to do now.** `contracts.domain_expertise.BusinessSituationObject` is a deprecated alias and may be deleted **after 2026-12-24**. The date lives in `contracts/situation_stages.ALIAS_REMOVAL` and a test reads it from there | dated | nothing | 0 min |
 | **24** | ⛔ **Run the L2 refusal report again AFTER item 21 and read `BY LAW`.** L2-2 added two laws — V-9 (an interpretation citing nothing) and V-10 (an empty `missing_facts` under low coverage) — both declared **OBSERVE**, so they report and do not block. **Arming either is one line, after somebody knows the count** | measure + decision | **whether L2 starts refusing unreceipted interpretations** | 10 min |
+| **25** | **Run `python scripts/slice_weight.py --org <pilot> --sample 20`** — read-only. It prints what a real context slice costs in tokens, p50/p90/max. **L2-5's entire cost check rests on this number** | measure | **L2-5's cost check** | 5 min |
 
 **Migrations 2, 3 and 4 must all be applied BEFORE the code that uses them ships.** All three are
 idempotent and safe to re-run. Apply in number order.
@@ -97,6 +98,44 @@ purely because nothing printed it.
 > authored corpus**, so Layer 2 mints `investor_relationship` and `investor_contact` situations that
 > nothing can read. That is **authoring work, not code** — and it is the largest non-code item in
 > the Layer 2 plan.
+
+---
+
+## 25 · What a context slice actually costs — 5 minutes, read-only
+
+L2-5 puts a model on Layer 2. **What it costs is decided by how many tokens a slice weighs**, and
+the step file is blunt about guessing: *"the cost check for L2-5 depends on this number, and
+guessing it would make that check theatre."*
+
+```bash
+python scripts/slice_weight.py --org <pilot-org-id> --sample 20 \
+       --database-url "$GENIOS_TARGET_DATABASE_URL"
+```
+
+Read-only through `scripts/_db.py`, every statement a `select`, and it builds each slice **exactly
+the way the sweep does** — so what it weighs is what the reasoner would be handed.
+
+### What we already know, and where the plan was wrong
+
+Measured through the real builder on constructed shapes:
+
+| facts / obs / neighbours | tokens |
+|---|---|
+| 8 / 6 / 4 | **714** ← the plan's *"900-token slice"* |
+| 30 / 25 / 20 | 2,509 |
+| 100 / 80 / 60 | **8,049** ← the plan's *"10,000-token thread"* |
+
+⛔ **The plan says a slice is cheap because it is a slice. It is cheap because the node is small.**
+A busy account — the kind a founder most wants reasoned about — produces a slice that costs as
+much as the raw thread it replaced.
+
+`SLICE_TOKEN_BUDGET` is set to **2,000** and **reports rather than truncates**: dropping facts to
+hit a number is how a reasoner concludes from evidence nobody chose to remove. The run above says
+how many of the pilot's situations break it.
+
+> **What this changes if the tail is fat:** L2-5 either narrows what goes in a slice, or reasons
+> over fewer situations, or costs more than planned. All three are decisions — and none can be
+> made without this number.
 
 ---
 
