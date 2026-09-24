@@ -242,8 +242,15 @@ def test_the_tiers_are_the_ones_doc_11_budgeted():
     assert S.tier_for(S.SITE_ALTERNATIVES) == S.TIER_T1, (
         "narration of already-decided alternatives is T1 — doc 11 guard 8")
     assert S.tier_for(S.SITE_EFFECT) == S.TIER_T1
+    # ⛔ L2-5 REGISTERED R-6 — the Context Reasoner — so the old probe now names a real site.
+    # T1, because the deterministic validator (`context/proposal_gate`) is what makes a cheap
+    # model safe; Sonnet is the ESCALATION on two numbers, not the tier.
+    assert S.tier_for(S.SITE_SITUATION) == S.TIER_T1
+    # The claim this test actually makes — an UNBUDGETED site is refused — pointed at a name
+    # nobody has budgeted for. "A typo must be a refusal rather than a ledger row that reads as
+    # an activated site right up until the month's bill."
     with pytest.raises(ValueError):
-        S.tier_for("R-6")
+        S.tier_for("R-99")
 
 
 def test_cost_is_integer_micro_dollars_and_rounds_up():

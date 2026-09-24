@@ -72,6 +72,10 @@ FEATURE_BUNDLE = "bundle"
 FEATURE_CRITIQUE = "critique"
 #: Z6 — the book-level daily re-rank that carries `rank_components` on every entry.
 FEATURE_BRIEF = "brief"
+#: ⛔ L2-5 · the Context Reasoner (R-6). A site with no activation is a site no tenant can reach,
+#: which is the ninth "built and never switched on" L2-0 spent a step counting — so the feature
+#: lands WITH the site rather than after it.
+FEATURE_SITUATION_REASONER = "situation_reasoner"
 
 #: The five features doc 07 names, in WAVE order rather than alphabetical order — the order is the
 #: only safe order to switch them on in, and a list that read `bundle, brief, critique, ranking_v2,
@@ -80,12 +84,13 @@ FEATURE_BRIEF = "brief"
 #: mode a free-text column invites and which looks exactly like an activated tenant right up until
 #: nothing happens.
 L4_FEATURES = (FEATURE_ROSTER_V2, FEATURE_RANKING_V2, FEATURE_BUNDLE, FEATURE_CRITIQUE,
-               FEATURE_BRIEF)
+               FEATURE_BRIEF, FEATURE_SITUATION_REASONER)
 
 #: Which wave builds each feature. Carried in code rather than in a doc because it is what makes
 #: `PRECONDITIONS` checkable by eye: a feature is safe to switch on when the features its wave
 #: depends on are already on for that tenant.
 FEATURE_WAVES = {
+    FEATURE_SITUATION_REASONER: "L2-5",
     FEATURE_ROSTER_V2: "Z1",
     FEATURE_RANKING_V2: "Z3",
     FEATURE_BUNDLE: "Z4",
@@ -104,6 +109,12 @@ PRECONDITIONS = {
     FEATURE_BUNDLE: (FEATURE_RANKING_V2,),
     FEATURE_CRITIQUE: (FEATURE_RANKING_V2,),
     FEATURE_BRIEF: (FEATURE_RANKING_V2,),
+    # ⛔ NONE, DELIBERATELY. R-6 reads a SITUATION and proposes an interpretation of it; it needs
+    # nothing Layer 4's other switches provide, and making it wait on `ranking_v2` would tie a
+    # Layer 2 reading to a Layer 4 formula it never consults. Its real precondition — an admitted
+    # situation with a slice — is a precondition of the CALL (step 2 of `consult`), not of the
+    # switch.
+    FEATURE_SITUATION_REASONER: (),
 }
 
 #: THE PRECONDITIONS THAT ARE NOT LAYER 4's. `PRECONDITIONS` above orders the five switches against
@@ -152,6 +163,15 @@ CROSS_LAYER_EFFECTS = {
 #: console reads this table. An operator who can see a switch is on and cannot see what it turned on
 #: will assume it turned on everything.
 EFFECTS = {
+    FEATURE_SITUATION_REASONER: (
+        "Layer 2 asks a model to INTERPRET each admitted situation — one call per situation, "
+        "never per event — and the reading is validated by `context/proposal_gate` before it is "
+        "recorded. It can propose only the fourteen fields `claim_state.model_writable_fields()` "
+        "names, it may LOWER a confidence and never raise one, and a situation whose own numbers "
+        "are low on both confidence and importance is answered `unknown` WITHOUT a call. "
+        "Nothing it proposes is committed to the graph: the reading lands in "
+        "`situation_interpretations` with the slice it was made from, so it can be replayed. "
+        "Off, the sweep runs exactly as it does today"),
     FEATURE_ROSTER_V2: (
         "the reasoning orchestrator plans the STAGED UNIT ROSTER through the Unit Selector for this "
         "tenant instead of the six units the compiled lane hardcodes; it changes which units run "

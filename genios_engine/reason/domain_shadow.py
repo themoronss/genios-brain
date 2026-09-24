@@ -29,7 +29,33 @@ from typing import Any
 from sqlalchemy import text
 
 from genios_engine.context.graph_store import GraphStore
+from genios_engine.context.expected_facts import expected_facts_for
+from genios_engine.context.interpretation_store import record_interpretation
+from genios_engine.reason.situation_reasoner import Step as ReasonerStep
+from genios_engine.reason.situation_reasoner import slice_digest as reasoner_slice_digest
+from genios_engine.reason.situation_reasoner import reason_over_situation
 from genios_engine.reason.unroutable import tally_unroutable
+
+
+def _resolve_evidence_refs(conn, org_id: str, refs) -> frozenset[str]:
+    """L2-6's `resolve_refs`, HANDED IN. One read with every ref, never one per claim.
+
+    A citation the Evidence Graph has never heard of is worse than no citation — it looks like
+    proof — so this asks the graph itself rather than trusting the model's spelling.
+    """
+    wanted = [str(r) for r in refs]
+    if not wanted:
+        return frozenset()
+    from sqlalchemy import text
+
+    rows = conn.execute(text(
+        "select fact_version_id as id from graph_facts "
+        " where org_id = :o and fact_version_id = any(:ids) "
+        "union all "
+        "select source_ref_id as id from graph_source_refs "
+        " where org_id = :o and source_ref_id = any(:ids)"),
+        {"o": org_id, "ids": wanted})
+    return frozenset(str(r.id) for r in rows)
 from genios_engine.context.importance import read_l1_scoring_live
 from genios_engine.context.quality.lens import read_coverage_lens
 from genios_engine.context.quality.missing import read_absences
@@ -585,6 +611,26 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
 
     catalog = expert_catalog()
     graph_version = _graph_version(store, org_id)
+
+    # ⛔ L2-5 · ONE GATE PER SWEEP, built the way R-1 builds its own — `make_gate` exists so the
+    # sites "cannot each invent a different way of constructing it". RSiteGate's own docstring
+    # requires it: "constructed ONCE per sweep and reused across every consult in it… so a
+    # connection blip cannot leave one decision narrated and the next not, and `NarrativeBudget`
+    # advances in process so the ceiling binds WITHIN a sweep."
+    #
+    # A NULL CLIENT IS A FIRST-CLASS ANSWER: "every site falls back to its template, which is
+    # exactly what a deployment without a key should do — plainer cards, never missing ones."
+    try:
+        from genios_engine.reason.bundle.sites import SITE_SITUATION
+        from genios_engine.reason.llm_sites import (
+            PostgresSiteCache, make_gate, make_site_client, tier_for,
+        )
+
+        r_site_gate = make_gate(org_id=org_id, engine=store.engine,
+                                client=make_site_client(tier_for(SITE_SITUATION)))
+        r_site_cache = PostgresSiteCache(engine=store.engine)
+    except Exception:      # noqa: BLE001 — an unbuildable gate means no reading, never no sweep
+        r_site_gate, r_site_cache = None, None
     adj, _node_types, obs_idx, fact_idx = _neighbor_index(store, org_id)
     # Every anchor's facts and observations in TWO org-wide reads instead of two per situation
     # (up to 400 round trips per sweep). The bulk loaders use the per-node load's filters and
@@ -986,6 +1032,52 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                 package = compiler.compile(bso, context_slice)
                 counts["compiled"] += 1
                 counts["capabilities_total"] += len(package.capabilities)
+
+                # ⛔ L2-5 · THE CONTEXT REASONER, R-6. Here and nowhere else, because this is the
+                # only point where a situation AND its slice are both in hand — and the cost law
+                # is that the call goes on the SITUATION, never the event: 159 situations against
+                # 465 events on the pilot.
+                #
+                # THE QUADRANT RUNS FIRST AND MAY SPEND NOTHING. Low confidence with low
+                # importance answers `unknown` without a call — not to save money (it is about $3
+                # a month) but because a low-confidence reading of a low-importance situation is a
+                # wrong answer nobody needed.
+                #
+                # IT PROPOSES; IT DOES NOT COMMIT. The payload is validated by
+                # `context/proposal_gate` inside the site and is NOT written to the graph here.
+                # And it cannot kill the compile: a reading is worth less than the sweep, so a
+                # consult that raises costs the reading.
+                try:
+                    _step, _reading = reason_over_situation(
+                        org_id=org_id, situation_id=str(row["situation_id"]),
+                        situation_type=str(row.get("situation_type") or ""),
+                        context_slice=context_slice,
+                        slice_json=json.dumps(context_slice.to_semantic_dict(), default=str),
+                        confidence_bp=bso.confidence_bp, importance_bp=bso.importance_bp,
+                        resolve_refs=lambda refs: _resolve_evidence_refs(conn, org_id, refs),
+                        coverage_ready=bso.coverage_ready,
+                        expected_facts=expected_facts_for(str(row.get("situation_type") or "")),
+                        gate=r_site_gate, cache=r_site_cache)
+                    counts["reasoner_unknown" if _step is ReasonerStep.UNKNOWN
+                           else "reasoner_consulted"] += 1
+                    # ⛔ RECORDED EITHER WAY, INCLUDING THE ONE THAT COST NOTHING. `unknown` is a
+                    # RESULT — a sweep that asked nothing must not look like a sweep that was
+                    # never run, which is the distinction L2-0 spent a step drawing between a
+                    # refusal that scored nothing and one that was never scored. And the row
+                    # carries the SLICE, not its hash: L2-3's debt, paid where its only reader is.
+                    record_interpretation(
+                        store.engine, org_id=org_id, situation_id=str(row["situation_id"]),
+                        slice_digest=reasoner_slice_digest(context_slice),
+                        context_slice=context_slice,
+                        proposal=dict(getattr(_reading, "payload", None) or {}),
+                        outcome=_step.value,
+                        reasoning_trace=getattr(
+                            getattr(_reading, "receipt", None), "cache_key", None),
+                        valid_until=None,
+                        reason_codes=getattr(
+                            getattr(_reading, "receipt", None), "reason_codes", ()) or ())
+                except Exception:      # noqa: BLE001 — a reading may never cost the compile
+                    counts["reasoner_failed"] = counts.get("reasoner_failed", 0) + 1
                 # L3 -> L4 weld: adapt the package into a CapabilityManifest and reason over it.
                 # SHADOW mode + live_delivery_enabled=False on the manifest -> a decision is
                 # produced and measured but never delivered or persisted as a signal.

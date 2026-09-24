@@ -31,8 +31,15 @@ SITE_ALTERNATIVES = "R-3"
 SITE_EFFECT = "R-4"
 #: R-5 · the low-confidence consult, after DEFER is chosen. Recorded non-authoritative.
 SITE_CONSULT = "R-5"
+#: ⛔ R-6 · L2-5's Context Reasoner. **One call per SITUATION, never per event** — the pilot
+#: carries 159 active situations against 465 events. T1 because the deterministic validator
+#: (`context/proposal_gate`) is what makes a cheap model safe: without it you need Sonnet
+#: everywhere, because nothing would catch the error. Sonnet is the ESCALATION, on two numbers,
+#: not the tier.
+SITE_SITUATION = "R-6"
 
-R_SITES = (SITE_INTERPRET, SITE_NARRATE, SITE_ALTERNATIVES, SITE_EFFECT, SITE_CONSULT)
+R_SITES = (SITE_INTERPRET, SITE_NARRATE, SITE_ALTERNATIVES, SITE_EFFECT, SITE_CONSULT,
+           SITE_SITUATION)
 
 #: Tier per site, exactly as doc 11 §1 prints it. T1 = Haiku-class, T2 = Sonnet-class, the same
 #: two names `capture.semantic.batch.DEFAULT_TIER_PRICES` prices — reused rather than re-declared,
@@ -45,6 +52,7 @@ SITE_TIERS = {
     SITE_ALTERNATIVES: TIER_T1,
     SITE_EFFECT: TIER_T1,
     SITE_CONSULT: TIER_T2,
+    SITE_SITUATION: TIER_T1,
 }
 
 #: The output ceiling per site, in tokens. A cap rather than a hope: doc 11 sizes R-2 at ~450
@@ -56,6 +64,9 @@ SITE_MAX_OUTPUT_TOKENS = {
     SITE_ALTERNATIVES: 600,
     SITE_EFFECT: 400,
     SITE_CONSULT: 600,
+    # Structured output, not prose: a proposal is a mapping of at most fourteen fields, and a
+    # model that decides to explain itself is a cost incident and a V-8 failure at once.
+    SITE_SITUATION: 500,
 }
 
 # ── what a consult may END as ────────────────────────────────────────────────────────────────
@@ -120,5 +131,6 @@ __all__ = ["FALLBACK_OUTCOMES", "OUTCOMES", "OUTCOME_CACHED", "OUTCOME_FAILED_GE
            "OUTCOME_FAILED_VALIDATION", "OUTCOME_FORCE_FAILED", "OUTCOME_NOT_ACTIVATED",
            "OUTCOME_NO_BUDGET", "OUTCOME_NO_CLIENT", "OUTCOME_NO_PRECONDITION", "OUTCOME_RAN",
            "R_SITES", "SITE_ALTERNATIVES", "SITE_CONSULT", "SITE_EFFECT", "SITE_INTERPRET",
+           "SITE_SITUATION",
            "SITE_MAX_OUTPUT_TOKENS", "SITE_NARRATE", "SITE_TIERS", "TIER_T1", "TIER_T2",
            "max_output_tokens", "require_outcome", "require_site", "tier_for"]

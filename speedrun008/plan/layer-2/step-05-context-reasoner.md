@@ -1,5 +1,28 @@
 # L2-5 · The Context Reasoner — a new R-SITE, not a new gate
 
+> ## ✅ COMPLETE · PENDING · HARSH (migration 0183) — 2026-09-24 · [findings](findings/step-05-context-reasoner.md)
+>
+> 35 tests · 13,080 passed · 0 regressions · **all three criteria closed, plus both deferred debts**.
+>
+> ⛔ **THE COST CHECK WAS NOT BLOCKED, AND IT CORRECTED THIS FILE TWICE.** §2 claims *"~40 calls"*
+> and a **10×** saving. The pilot carries **159 active situations** — already recorded in
+> `l1_refusal` — so it is **2.9×**. And §2 calls low+low → `unknown` *"the largest saving in the
+> plan"*: it is **about $3 a month**. The rule is still right, for a **quality** reason — a
+> low-confidence reading of a low-importance situation is a wrong answer nobody needed.
+>
+> ⛔ **THE TOPOLOGY TEST MOVED THE MODULE.** The first draft put it in `context/` and Layer 2 may
+> not import Layer 4. **An R-site lives where R-sites live** — the pre-flight had already said so.
+>
+> ⛔ **FOUR GUARDS CAUGHT THIS BUILD**: the import ratchet, the account-erasure cascade, the
+> activation vocabulary (a feature with a wave and no effect is a switch with no meaning), and the
+> tier table — which asserted `tier_for("R-6")` **raises**, R-6 having been its own example of an
+> unbudgeted site.
+>
+> ⛔ **THE TWO DEFERRED DEBTS ARE PAID, AND THE SHAPE CHANGED.** L2-2 assumed four columns on
+> `context_situations`; measured, **v2 is never persisted as a row**, and an interpretation
+> **expires** while a situation does not. So `situation_interpretations` (0183) — which also
+> carries the SLICE, paying L2-3's debt in the same place.
+
 > ## ⛔ WHAT STEPS 2, 3 AND 6 HAVE DEFERRED ONTO THIS STEP
 >
 > **Three completed steps deferred work to L2-5 and nothing was collecting it.** Written here

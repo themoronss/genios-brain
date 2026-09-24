@@ -107,8 +107,15 @@ def test_a_scoped_key_is_refused_before_any_database_lookup():
 
 def test_the_five_features_are_the_plans_five_in_wave_order():
     """Doc 07 names five. Wave order rather than alphabetical, because alphabetical would put
-    `bundle` — the narrative — before `ranking_v2`, the formula it narrates."""
-    assert ACT.L4_FEATURES == ("roster_v2", "ranking_v2", "bundle", "critique", "brief")
+    `bundle` — the narrative — before `ranking_v2`, the formula it narrates.
+
+    ⛔ **L2-5 ADDED A SIXTH, AND THE CLOSED VOCABULARY IS WHY THAT WAS SAFE.** This test refused
+    `situation_reasoner` until it also had a wave, an effect and a precondition row — which is
+    exactly what the table is for: a feature an operator can switch on and nobody can describe is
+    a switch with no meaning. Doc 07's five are still asserted, in order, as their own claim.
+    """
+    assert ACT.L4_FEATURES[:5] == ("roster_v2", "ranking_v2", "bundle", "critique", "brief")
+    assert ACT.L4_FEATURES[5:] == ("situation_reasoner",)
     assert set(ACT.EFFECTS) == set(ACT.L4_FEATURES) == set(ACT.FEATURE_WAVES)
     assert set(ACT.PRECONDITIONS) == set(ACT.L4_FEATURES)
     assert ACT.FEATURE_WAVES["bundle"] == "Z4"

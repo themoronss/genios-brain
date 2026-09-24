@@ -679,6 +679,24 @@ class BusinessSituationObject(BaseModel):
 
     # --- the open lane -----------------------------------------------------------------------
 
+    # --- L2-5 · the interpretation, and it is the LEAST certain thing this object carries -------
+    #: ⛔ **WHAT THE THIRD CLAIM STATE IS FOR.** L2-2 created `ClaimState.HYPOTHESISED` and nothing
+    #: held one, which made it decorative. A hypothesis is PROPOSED, never concluded: it carries
+    #: its own confidence, it is never rendered as fact, and V-9 requires it to cite what it rests
+    #: on — most of all, because it is the least certain claim in the object.
+    hypotheses: tuple[Mapping[str, Any], ...] = ()
+    #: Why this matters, in this tenant's terms. An inference that follows from another inference,
+    #: which is why it is `INFERRED` rather than `HYPOTHESISED` and why it owes a receipt.
+    implications: tuple[Mapping[str, Any], ...] = ()
+    #: ⛔ AN ID, NEVER PROSE. The trace is stored once in `situation_interpretations` and
+    #: referenced, so a situation does not carry a paragraph — and **the gate mints it, not the
+    #: model**, for the reason `EvidenceSpan.verified` may not be self-set: the moment a caller
+    #: can write its own receipt, the receipt stops meaning "checked".
+    reasoning_trace: str | None = None
+    #: ⛔ **AN INTERPRETATION EXPIRES; A FACT DOES NOT.** `None` means nothing was interpreted,
+    #: which is a different answer from an interpretation that has not expired yet.
+    valid_until: datetime | None = None
+
     #: Everything that is genuinely tenant- or sweep-specific and has no field of its own. Walked
     #: for floats at construction, because this is the one lane wide enough to smuggle one and it
     #: reaches a jsonb column where a ratio comes back out as a number nobody can trace.
@@ -942,6 +960,10 @@ LAW_ACTIONS: Mapping[L2Law, LawAction] = {
 #: produced "this anomalie cites nothing" on the first run, and a detail line is the sentence a
 #: reviewer reads months later with no stack to check it against.
 RECEIPT_REQUIRED: Mapping[str, str] = {
+    # ⛔ L2-5's two, and they owe a citation MOST of all: a hypothesis is the least certain thing
+    # this object carries, and an implication is an inference drawn from another inference.
+    "hypotheses": "hypothesis",
+    "implications": "implication",
     "anomalies": "anomaly",
     "correlations": "correlation",
     "cohort_positions": "cohort position",

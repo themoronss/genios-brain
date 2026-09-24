@@ -126,15 +126,27 @@ def test_an_interpretation_that_does_cite_evidence_is_not_flagged():
 
 
 def test_an_observation_field_is_never_asked_for_a_receipt_it_already_is():
-    """`evidence` IS the receipt. A law demanding evidence for evidence is a loop."""
-    from genios_engine.contracts.claim_state import ClaimState
+    """`evidence` IS the receipt. A law demanding evidence for evidence is a loop.
+
+    ⛔ **WIDENED BY L2-5, AND THE WIDER RULE IS THE TRUE ONE.** This asserted `is INFERRED`,
+    which was right only while `HYPOTHESISED` had no members. L2-5 added `hypotheses` — and a
+    hypothesis owes a citation MOST of all, being the least certain thing the object carries.
+
+    The claim this test actually makes is that a receipt is owed by an INTERPRETATION and never
+    demanded of an OBSERVATION or of the envelope. Asserted that way, it now covers both
+    interpreting states and still refuses the loop.
+    """
+    from genios_engine.contracts.claim_state import CLAIM_STATES, FIELD_CLAIMS, ClaimState
     from genios_engine.contracts.situation import RECEIPT_REQUIRED
 
-    from genios_engine.contracts.claim_state import FIELD_CLAIMS
+    interpreting = {ClaimState.INFERRED, ClaimState.HYPOTHESISED}
+    assert interpreting < CLAIM_STATES, "OBSERVED is a claim state and is not an interpretation"
 
     for field in RECEIPT_REQUIRED:
-        assert FIELD_CLAIMS[field].state is ClaimState.INFERRED, (
-            f"{field} is required to carry a receipt and is not classified as an inference")
+        state = FIELD_CLAIMS[field].state
+        assert state in interpreting, (
+            f"{field} is required to carry a receipt and is classified {state.value} — an "
+            f"observation IS the receipt, and asking it for one is a loop")
 
 
 # =================================================================================================

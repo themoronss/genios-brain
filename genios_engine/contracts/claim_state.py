@@ -121,6 +121,23 @@ FIELD_CLAIMS: dict[str, FieldClaim] = {
     "pattern_id": _i("which authored pattern fired — the match is the inference"),
     "matched_conditions": _i("the per-condition record of that match, WITH its evidence. It is "
                              "the receipt FOR an inference, which makes it one"),
+
+    # --- L2-5 · the interpretation ------------------------------------------------------------
+    "hypotheses": FieldClaim(
+        ClaimState.HYPOTHESISED,
+        "⛔ THE ONLY FIELD IN THIS STATE, AND WHAT MAKES IT REAL. Proposed, never concluded: it "
+        "carries its own confidence and is never rendered as fact. Until L2-5 there was a third "
+        "claim state and nothing held one, which made it decorative"),
+    "implications": _i("why this matters — an inference drawn from another inference, which is "
+                       "why it owes a receipt like every other one"),
+    "reasoning_trace": _e(
+        "the id of the consult that produced the reading, minted by the GATE and not by the "
+        "model — for the reason `EvidenceSpan.verified` may not be self-set: the moment a caller "
+        "can write its own receipt, the receipt stops meaning 'checked'"),
+    "valid_until": _e(
+        "when this interpretation stops being current. L2-2's own table put it under the GATE: "
+        "'an interpretation expires; a fact does not'. A model that could set it could make its "
+        "own reading immortal"),
 }
 
 

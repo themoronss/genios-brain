@@ -40,6 +40,8 @@
 | **25** | **Run `python scripts/slice_weight.py --org <pilot> --sample 20`** — read-only. It prints what a real context slice costs in tokens, p50/p90/max. **L2-5's entire cost check rests on this number** | measure | **L2-5's cost check** | 5 min |
 | **26** | ⛔⛔ **DECIDE: point `fundraising` at the `sales` corpus.** The investor doctrine is **already authored, stable and approved** and the pilot's dominant domain cannot reach it. One line, reversible, and `live_lane` still requires the corpus to be activated. Run `python scripts/unroutable_report.py --org <pilot>` for the count first | **decision** | **whether the pilot tenant sees anything at all** | 15 min |
 | **4e** | Apply `0182_signal_situation.sql` | migration | **step L2-7 code** | 2 min |
+| **4f** | Apply `0183_situation_interpretations.sql` | migration | **step L2-5 code** | 2 min |
+| **28** | ⛔ **DECIDE: activate `situation_reasoner` on the pilot.** It is the first model Layer 2 has ever run — **one call per SITUATION**, ~$15.64/month at Haiku on the measured shape. Off by default; the sweep runs exactly as today without it | decision | **whether Layer 2 interprets at all** | 15 min |
 | **27** | **Run `python scripts/card_collapse_report.py --org <pilot>`** AFTER 4e — it prints how many cards the founder sees and how many situations they are about. **The headline number of the whole Layer 2 plan** | measure | **the 38→N claim** | 5 min |
 
 **Migrations 2, 3 and 4 must all be applied BEFORE the code that uses them ships.** All three are
@@ -101,6 +103,53 @@ purely because nothing printed it.
 > authored corpus**, so Layer 2 mints `investor_relationship` and `investor_contact` situations that
 > nothing can read. That is **authoring work, not code** — and it is the largest non-code item in
 > the Layer 2 plan.
+
+---
+
+## 28 · ⛔ The first model Layer 2 has ever run — and what it costs
+
+L2-5 registers **R-6, the Context Reasoner**: one call per SITUATION, reading the slice and
+proposing an interpretation. It is **off** on every tenant. The sweep today runs exactly as it did
+yesterday.
+
+### What it costs, measured rather than guessed
+
+The pilot carries **159 active situations** (recorded in `situation_bso.l1_refusal`) and a p50
+slice of **1,279 tokens** (measured in L2-3 through the real builder):
+
+| | per sweep | per month, daily |
+|---|---|---|
+| **all Haiku** | **$0.52** | **~$15.64** |
+| all Sonnet | $1.04 | ~$31.28 |
+| 25% escalating to Sonnet | $0.78 | ~$23.31 |
+
+⛔ **Two corrections to the plan, both from this arithmetic.** It claimed *"~40 calls"* and a
+**10×** saving from attaching the call to the situation rather than the event. It is **159** and
+**2.9×**. And it called *"low confidence + low importance → don't spend"* **the largest saving in
+the plan**: that saves about **$3 a month**. The rule survives — because a low-confidence reading
+of a low-importance situation is a **wrong answer nobody needed**, and a wrong card costs more
+than no card.
+
+### What protects you
+
+| | |
+|---|---|
+| the gate | activation, budget, cache, retry, deterministic fallback, one ledger — **nothing new was built** |
+| the validator | six deterministic checks before anything is recorded (L2-6) |
+| the law | ⛔ **it cannot raise a confidence**, only lower one — R-1's rule, copied verbatim |
+| authority | it may propose **14** fields and **may never** write an observation, a receipt, or who may see a situation |
+| the fallback | **silence.** No key, no budget, no answer → the sweep proceeds exactly as without it |
+| replay | every reading is stored **with the slice it was made from** |
+
+### To switch it on
+
+```sql
+-- after 0183
+insert into l4_activations (org_id, feature, activated_by) values ('<pilot>', 'situation_reasoner', 'harsh');
+```
+
+Reversible by deleting the row. **Nothing it proposes is committed to the graph** — the reading is
+recorded, and what to do with it is L2-8's decision.
 
 ---
 
@@ -362,6 +411,7 @@ psql "<url>" -f migrations/0181_signal_conversation.sql
 | **0178** | four completeness columns on `l1_sync_runs` | **every sync-ledger write fails silently.** It is wrapped in a `try/except` that never raises, so syncs keep working and simply stop being recorded — which is worse than crashing |
 | **0179** | four world instants on `qualified_signals` (`due_at`, `effective_at`, `resolved_at`, `superseded_at`) + a partial index on `due_at` | **every signal INSERT fails** — the store now names these columns. Without them a signal still cannot say *"8 days overdue"*, which is the question P2 asks |
 | **0181** | five conversation columns on `qualified_signals` (`thread_key`, `direction`, `turn_index`, `thread_depth`, `ball_in_court`) + two partial indexes | **every signal INSERT fails** (same reason). And Layer 2 keeps recomputing *whose turn it is* from Gmail labels because L1's real answer never arrives — it moved the benchmark 20 → 24 |
+| **0183** | `situation_interpretations` — a new table | **every Context Reasoner reading is lost.** The code records one per (situation, slice) and swallows the failure, so a sweep still succeeds and simply remembers nothing — which is worse than crashing, because the reading looks like it happened. It carries the SLICE the reading was made from, so a conclusion can be replayed against its own premises |
 | **0182** | `signals.situation_id` text + a partial index | **every compiled signal INSERT fails** — `domain_shadow` now names the column. And without it the card loop stays one-card-per-SIGNAL: one situation that fires three rules keeps producing three cards that can never merge, which is the *"Nitesh Pant × 3"* symptom exactly. **Nullable and no FK, deliberately**: a situation archives on its own lifecycle while its signals stay open |
 | **0180** | `qualified_signals.coverage` jsonb — the window and per-source completeness a negative claim rests on | **every signal INSERT fails** (same reason). And without it **a signal in state `broken` cannot publish at all** — the contract refuses a negative claim with no proof behind it, which is deliberate |
 
