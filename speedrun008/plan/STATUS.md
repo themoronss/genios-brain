@@ -254,18 +254,26 @@ Plus two structural findings:
 
 [`layer-2/03-PRE-FLIGHT.md`](layer-2/03-PRE-FLIGHT.md) · **it corrected the plan in three places.**
 
-**Layer D is not thin — it is inadmissible.** `Domain Expertise/` holds **1,425 YAML files, 534
-capabilities**: Admin 211, Sales 156, Customer Support 167, plus 228 playbooks and 283 heuristics.
+**Layer D is not thin, and it is not inadmissible either.** ⛔ **THIS PARAGRAPH WAS WRONG AND L2-0
+CORRECTED IT** — [findings](layer-2/findings/step-00-visible-refusals.md) §2.
 
-| | authored | **admissible** | |
-|---|---|---|---|
-| Admin | 211 | **85** | 40% |
-| Sales | 156 | **62** | 39% |
-| Customer Support | 167 | **53** | 31% |
-| | **534** | **200** | **37%** |
+`211 / 156 / 167` counted **FILES**. A capability is a *directory* of `capability.yaml` +
+`objects.yaml` + `knowledge.yaml`, with situation files nested beside them — three kinds, two
+rules, one denominator, one ceremony applied to all of it.
 
-⛔ **L2-8 flips `require_admission=True` and 334 capabilities go dark.** The largest un-owned risk in
-the plan; nothing in the nine steps had addressed it. Now `L2-4-U5`.
+| | capabilities | **admissible** | situations | **`draft`** |
+|---|---|---|---|---|
+| Admin | 59 | **59** | 34 | **8** |
+| Sales | 47 | **47** | 15 | 0 |
+| Customer Support | 49 | **49** | 20 | **16** |
+| | **155** | **155 — 100%** | **69** | **24** |
+
+✅ **`require_admission=True` at L2-8 takes ZERO capabilities dark.** Every content hash was
+recomputed and verifies.
+
+⛔ **The real gap is 24 `draft` situations**, and their cost is stated in the rule itself: the
+package goes `review_state='draft'`, `_apply_abstention` downgrades the card to an **OBSERVATION**
+— *"the intelligence still ships; it stops instructing."* **One word per file, by an author.**
 
 Both circulating numbers were wrong: `domain_shadow`'s *"152"* is stale; *"211"* was Admin alone.
 
@@ -313,7 +321,8 @@ consumer. **Step 2 was going to rebuild it binary.**
 ```
 domain_shadow compile      live=False for every caller
 R-1 interpreter            "has never fired on the pilot tenant"
-534 capabilities           200 admissible
+155 capabilities           155 admissible ✅ — the 534 was a file count (L2-0)
+69 situations              24 still `draft` — their cards cannot instruct
 typed absence              consulted by the compiler, shown to no human
 63 held situations         l1_refusal() has the score; nothing renders it
 33 support situations      "which is why the miss was invisible"
@@ -331,7 +340,7 @@ Persona Brain · card-from-situation · goals · the fundraising corpus.** Ten i
 
 | # | step | status | headline | date |
 |---|---|---|---|---|
-| 0 | [Make every refusal visible](layer-2/step-00-visible-refusals.md) | **NOT STARTED** | the denominator for every later number | — |
+| 0 | [Make every refusal visible](layer-2/step-00-visible-refusals.md) | **✅ COMPLETE** ([findings](layer-2/findings/step-00-visible-refusals.md)) | **77 situations producing nothing** — a number that did not exist before. ⛔ **AND THE PLAN'S OWN CORPUS NUMBER WAS WRONG BY 3.4×:** *"534 capabilities, 200 admissible, 334 dark at cutover"* counted **FILES** — a capability is a directory of three. Measured **155 capabilities, 155 admissible, 0 hollow**, with all 155 content-hashes recomputed and verified. `require_admission=True` costs **zero**, which re-shapes steps 4 and 8. Three quarters of the step was **already built and unassembled** — `l1_refusal()` already returns the score, `situation_admission_decisions` already IS the ledger, the declared-silence idiom already existed twice — so the build **extended it to domains** rather than rebuilding it. ⛔ **AND THE REAL GAP UNDERNEATH IT: 24 of 69 authored situations are `draft`** — 16 of Customer Support's 20 — each downgrading its card to an OBSERVATION: *"the intelligence still ships; it stops instructing."* One word per file → **Harsh 22**. 29 tests, no migration, no model call, 0 regressions | 2026-09-24 |
 | 1 | [Name it](layer-2/step-01-names.md) | **NOT STARTED** | two classes share one name and it cost this plan a wrong paragraph | — |
 | 2 | [Six interpretation fields](layer-2/step-02-six-fields.md) | **NOT STARTED** | observation ≠ inference ≠ hypothesis, with write authority | — |
 | 3 | [The evidence slice](layer-2/step-03-evidence-slice.md) | **NOT STARTED** | handed, never fetched — a fetched slice cannot be replayed | — |
@@ -343,6 +352,13 @@ Persona Brain · card-from-situation · goals · the fundraising corpus.** Ten i
 
 **Order:** 0 → 1 → 2 → 3 → 4 → 6 → 7 → 5 → 8. Steps 0–4, 6 and 7 need nothing from Harsh; 5 needs a
 situation count for its cost check and 8 needs the shadow pass tallies.
+
+> ⛔ **STEP 0 CHANGED TWO LATER STEPS.** The capability corpus is healthy — 155 of 155 admissible,
+> 0 hollow — so **step 8's cutover flag is free**, not a 334-capability cliff. And **step 4's
+> diagnosis moves**: the neck is not an inadmissible corpus, it is Layer 1 publishing nothing
+> (63 held), fundraising having **no corpus at all**, and **24 authored situations sitting at
+> `draft`** so their cards cannot instruct. `L2-4-U5` was struck and replaced accordingly.
+> **Step 4's largest item is authoring, and it always was.**
 
 ### What is missing entirely
 

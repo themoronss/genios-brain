@@ -5,7 +5,27 @@
 
 ---
 
-## ⛔ The headline: Layer D is not thin. It is 63% inadmissible.
+## ⛔ The headline: Layer D is not thin — and it is not 63% inadmissible either
+
+> ## ⛔ CORRECTED BY L2-0 — 2026-09-24
+>
+> **This section's corpus numbers are wrong and are kept so the correction is legible.**
+> [findings](findings/step-00-visible-refusals.md) §2.
+>
+> `211 / 156 / 167` count **FILES**, not capabilities. Each capability is a directory of
+> `capability.yaml` + `objects.yaml` + `knowledge.yaml`, and the situation files sit nested beside
+> them — three document kinds with two different rules, summed into one denominator and judged by
+> one ceremony. The 118 Admin companions are subject to no ceremony at all, so they can only ever
+> land in the failing column.
+>
+> **Measured: 155 capabilities (59 / 47 / 49), 155 admissible, 0 hollow.** Every content hash was
+> recomputed with `semantic_hash(content − admission)` and verifies. `require_admission=True`
+> costs **nothing**.
+>
+> **The real gap, found by measuring the situations with their OWN rule: 24 of 69 are `draft`** —
+> 8 Admin, **16 of Customer Support's 20**, 0 Sales. Each downgrades its card to an OBSERVATION:
+> it describes, and it does not instruct. The repair is one word per file, by an author.
+
 
 The corpus is **in this repository** — `Domain Expertise/` at the root, **1,425 YAML files**:
 
@@ -47,7 +67,8 @@ YAML header rather than in any code this plan touches.
 
 ## Q5 · Is the Domain Expertise plane working?
 
-**Loaded: yes. Wired: yes. Admitted: 37%. Complete: no.**
+**Loaded: yes. Wired: yes. Capabilities admitted: 100%. Situations admitted: 45 of 69.**
+**Complete: no** — and the incompleteness is 24 `draft` situations, not an inadmissible corpus.
 
 ```
 Domain Expertise/*.yaml
@@ -77,7 +98,8 @@ table down over a typo in one situation file."*
 
 ## Q6 · How perfectly is Admin working?
 
-**211 authored · 85 admissible · 40%.**
+~~**211 authored · 85 admissible · 40%.**~~ **CORRECTED: 59 capabilities, 59 admissible,
+34 situations of which 8 are `draft`.** See the banner at the top of this file.
 
 Also authored for Admin: 9 rules, 58 playbooks, 20 models, 25 objects, 15 offerings, 60 heuristics,
 1 role, 1 vertical, plus `deferrals.yaml` and a `registry/situation-capability-map.yaml`.
@@ -111,7 +133,7 @@ genios_engine/reason/     114 files   39,012 LOC
 | `narration.py` | 546 | |
 | `plan.py` · `brief_ranking.py` · `foresight.py` · `evidence.py` · `guards.py` · `authority.py` | | |
 
-### Plane D — authored, wired, 37% admitted
+### Plane D — authored, wired, capabilities 100% admitted, 24 situations `draft`
 
 Covered above.
 
@@ -270,7 +292,7 @@ working example of one. **What L2 owes is the validator, not the gate.**
 | | |
 |---|---|
 | **L2-0-U5** | report the three admission sets per domain and their differences |
-| **L2-4-U5** | ⛔ **the admission gap** — 334 of 534 capabilities inadmissible. Owner and date, or the cutover is a downgrade |
+| **L2-4-U5** | ~~the admission gap — 334 of 534 capabilities~~ **STRUCK BY L2-0: the capability corpus is whole.** Replaced by: ⛔ **24 of 69 authored situations are `draft`** and their cards cannot instruct. Owner and date — it is authoring, one word per file |
 | **L2-5** | rewritten: **register an R-site**, do not build a gate |
 | **L2-6** | rewritten: **write the validator**, the gate calls it |
 | **L2-7-U6** | ask the recipient graph the Radhesh question — L1 closed S39 and L2 never asks it |

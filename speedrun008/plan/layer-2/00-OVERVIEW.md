@@ -72,14 +72,25 @@ Four defects, one shape — each quoted from the code that carries it:
 **L1 solved this for signals and wrote the rule down — `DROP ≠ DELETE`. L2 has the refusals and not
 the ledger.**
 
-### 4. ⛔ Layer D is authored, wired — and 63% inadmissible
+### 4. ⛔ Layer D is authored, wired — and its capabilities are healthy
 
-`Domain Expertise/` sits in this repository: **1,425 YAML files, 534 capabilities** across Admin
-(211), Sales (156) and Customer Support (167), plus 228 playbooks, 283 heuristics, 88 models.
+> ⛔ **CORRECTED BY L2-0, 2026-09-24** — [findings](findings/step-00-visible-refusals.md) §2.
+> The corpus is **155 capabilities, 155 admissible, 0 hollow.** `534` counted FILES: a
+> capability is a directory of `capability.yaml` + `objects.yaml` + `knowledge.yaml`, and the
+> ceremony was run over all three kinds plus the situation files nested beside them. **The
+> cutover flag is free.** The real corpus gap is **24 of 69 authored situations still
+> `draft`** — 16 of them Customer Support's — each of which downgrades its card to an
+> observation. One word per file, by an author.
 
-**Only 200 of the 534 satisfy the admission ceremony** — stable **and** approved **and** hash-
-stamped. ⛔ **L2-8 flips `require_admission=True`, and at that instant 334 capabilities stop
-carrying authority.** Turning the layer on would look like breaking it.
+`Domain Expertise/` sits in this repository: **1,425 YAML files**, holding **155 capabilities**
+across Admin (59), Sales (47) and Customer Support (49), plus 228 playbooks, 283 heuristics,
+88 models and **69 authored situations**.
+
+**All 155 capabilities satisfy the admission ceremony** — stable, approved, and every content hash
+recomputed and verified. `require_admission=True` at L2-8 takes **zero** capabilities dark.
+
+⛔ **The corpus gap is elsewhere: 24 of the 69 situations are still `draft`**, and a card built
+from one is downgraded to an OBSERVATION — it describes and does not instruct.
 
 **And `fundraising` is not one of the three domains.**
 

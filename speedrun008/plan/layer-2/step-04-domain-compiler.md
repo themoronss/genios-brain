@@ -136,7 +136,33 @@ verify:  pytest tests/reason/test_miss_proposes_never_routes.py -q
 
 ---
 
-### L2-4-U5 · ⛔ The admission gap — 334 of 534 capabilities cannot carry authority
+### L2-4-U5 · ⛔ ~~The admission gap — 334 of 534 capabilities~~ — **STRUCK AND REPLACED BY L2-0**
+
+> ## ⛔ CORRECTED BY L2-0 — 2026-09-24
+>
+> **This section's corpus numbers are wrong and are kept so the correction is legible.**
+> [findings](findings/step-00-visible-refusals.md) §2.
+>
+> `211 / 156 / 167` count **FILES**, not capabilities. Each capability is a directory of
+> `capability.yaml` + `objects.yaml` + `knowledge.yaml`, and the situation files sit nested beside
+> them — three document kinds with two different rules, summed into one denominator and judged by
+> one ceremony. The 118 Admin companions are subject to no ceremony at all, so they can only ever
+> land in the failing column.
+>
+> **Measured: 155 capabilities (59 / 47 / 49), 155 admissible, 0 hollow.** Every content hash was
+> recomputed with `semantic_hash(content − admission)` and verifies. `require_admission=True`
+> costs **nothing**.
+>
+> **The real gap, found by measuring the situations with their OWN rule: 24 of 69 are `draft`** —
+> 8 Admin, **16 of Customer Support's 20**, 0 Sales. Each downgrades its card to an OBSERVATION:
+> it describes, and it does not instruct. The repair is one word per file, by an author.
+
+
+**The unit becomes:** name the 24 `draft` situations, per domain, with an owner — and decide
+for each whether it is genuinely unfinished or merely un-flipped. **Authoring, not code.**
+
+<details><summary>the original unit, kept for the record</summary>
+
 
 Measured in the pre-flight pass:
 
@@ -147,10 +173,12 @@ Measured in the pre-flight pass:
 | Customer Support | 167 | **53** | 31% |
 | | **534** | **200** | **37%** |
 
+</details>
+
 The ceremony is all three or nothing — `status: stable` **and** `review_status: approved` with a
 reviewer **and** a matching `accepted_content_hash`.
 
-⛔ **L2-8 flips `require_admission=True`. At that instant 334 capabilities go dark, and the cutover
+~~⛔ **L2-8 flips `require_admission=True`. At that instant 334 capabilities go dark, and the cutover
 looks like a regression caused by a YAML header.**
 
 Worse, **the three counts disagree inside a single domain** — Admin has 85 stable, 90 approved, 87

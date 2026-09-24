@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from dataclasses import dataclass
 
 from genios_engine.contracts.domain_expertise import (
     BusinessSituationObject,
@@ -17,7 +18,7 @@ from .errors import (
     SituationContextIncomplete,
     UnsupportedCoverage,
 )
-from .models import RoutePlan
+from .models import RoutePlan, SourceDocument
 
 #: Corpus domain folder names that differ from the Layer 2 domain id for the same thing.
 #:
@@ -123,10 +124,18 @@ def _hollow(capability) -> bool:
     """Admitted, hash-pinned, and saying nothing.
 
     The ceremony asks whether a named human approved these exact bytes. It never asked whether
-    there were any bytes worth approving, so 136 of the corpus's capabilities are `stable`,
-    `approved` and hash-pinned over a file whose own notes read "Phase 1 stub — identity, purpose
-    and object load-set only". Three of them were reached by every routed situation on the design
-    partner's org, which is a large part of why eighteen compiled cards read alike.
+    there were any bytes worth approving — so at the time this rule was written, 136 of the
+    corpus's capabilities were `stable`, `approved` and hash-pinned over a file whose own notes
+    read "Phase 1 stub — identity, purpose and object load-set only". Three of them were reached
+    by every routed situation on the design partner's org, which is a large part of why eighteen
+    compiled cards read alike.
+
+    ⛔ **THAT COUNT IS HISTORY, NOT A FACT ABOUT TODAY'S CORPUS, AND LEAVING IT UNMARKED COST A
+    PLAN.** Measured 2026-09-24 by `corpus_health` below: **0 hollow of 155.** The corpus was
+    authored out from under this paragraph and nothing said so, because nothing printed the
+    number. The rule still stands — a corpus is authored continuously and the next stub is one
+    commit away — but the COUNT now lives in a function a test can run, and this prose keeps only
+    the shape.
 
     RECORDED, NOT SKIPPED. A hollow capability still routes: refusing it today would un-route
     `account_admin` entirely — all three Admin capabilities behind it are hollow — and take live
@@ -203,6 +212,120 @@ def _admission_reason(capability) -> str | None:
     if accepted_hash != semantic_hash(reviewed):
         return "content_changed_since_acceptance"
     return None
+
+# =================================================================================================
+# L2-0-U4/U5 · THE CORPUS STATES ITS OWN HEALTH
+#
+# ⛔ THE NUMBER THIS EXISTS FOR WAS WRONG FOR WEEKS AND A PLAN WAS BUILT ON IT. The Layer 2 plan
+# recorded "534 capabilities, 200 admissible (37%)", so step 8 budgeted for 334 going dark at
+# `require_admission=True`. Measured 2026-09-24: 155 capabilities, 155 admissible, 0 hollow. The
+# 534 counted FILES — `capability.yaml`, `objects.yaml` and `knowledge.yaml` are three files of
+# ONE capability — and the cutover is free, not expensive.
+#
+# `_hollow`'s docstring above still says "136 of the corpus's capabilities are ... hash-pinned
+# over a file whose own notes read 'Phase 1 stub'". True when written. A COUNT IN PROSE IS A
+# COUNT THAT GOES STALE, which is the drift this repository has caught five times — so the count
+# moves into a function a test can run, and the prose keeps only the shape.
+#
+# Every number here comes from `_admission_reason` and `_hollow` THEMSELVES. A second copy of an
+# admission rule is a second answer to one question.
+# =================================================================================================
+
+#: Every reason `_admission_reason` can give, as a table with a row per member — the same
+#: totality idiom as `PRECEDENCE`, `ANCHOR_FAMILIES` and `UNROUTED_PATTERN_TYPES`. A reason that
+#: appears in a report only when it fires is a reason nobody knows exists.
+#:
+#: `identity_status_*` is generated from the file's own value and cannot be enumerated, so it
+#: folds into one canonical bucket rather than being dropped.
+ADMISSION_REASONS: tuple[str, ...] = (
+    "stub",
+    "identity_status_not_stable",
+    "review_not_approved",
+    "no_named_reviewer",
+    "no_accepted_hash",
+    "content_changed_since_acceptance",
+)
+
+_STATUS_PREFIX = "identity_status_"
+
+
+def canonical_admission_reason(reason: str) -> str:
+    """Fold a generated reason onto its declared bucket. Unknown reasons are NOT swallowed."""
+    if reason.startswith(_STATUS_PREFIX):
+        return "identity_status_not_stable"
+    if reason not in ADMISSION_REASONS:
+        raise AssertionError(
+            f"`_admission_reason` returned {reason!r}, which `ADMISSION_REASONS` does not "
+            f"declare. Add the row — a reason no surface reports is the defect this table exists "
+            f"to prevent.")
+    return reason
+
+
+@dataclass(frozen=True, slots=True)
+class DomainHealth:
+    """One authored domain, and what its corpus can and cannot carry.
+
+    `hollow` is a SUBSET of `admitted`, never a third bucket: a hollow capability passed the
+    ceremony and says nothing, which is precisely why it is worth counting separately. Adding it
+    to `inadmissible` would make the totals stop closing and hide the distinction that matters —
+    an inadmissible capability needs a reviewer, a hollow one needs an author.
+    """
+
+    domain: str
+    total: int
+    admitted: int
+    inadmissible: int
+    hollow: int
+    by_reason: Mapping[str, int]
+    #: THE OTHER HALF OF THE CEREMONY, and it is a different rule with a different consequence.
+    #: An unadmitted CAPABILITY is dropped. An unreviewed SITUATION is flagged: `admission_gaps`
+    #: -> `plan.admitted=False` -> `review_state='draft'` -> `_apply_abstention` downgrades the
+    #: card to an OBSERVATION. **The finding still ships; it stops instructing.**
+    situations: int = 0
+    situations_unreviewed: int = 0
+
+
+def domain_health(domain: str,
+                  capabilities: Mapping[str, SourceDocument],
+                  situations: Mapping[str, SourceDocument] | None = None) -> DomainHealth:
+    """Count one domain's authored documents by the rules the compiler actually admits with.
+
+    ⛔ **TWO KINDS, TWO RULES, AND APPLYING ONE TO THE OTHER IS HOW A HEADLINE WENT WRONG.** The
+    Layer 2 pre-flight counted every YAML under `capabilities/` — capabilities, their `objects`
+    and `knowledge` companions, and the situation files nested beside them — and ran the
+    CAPABILITY ceremony over all of it. That produced *"534 authored, 200 admissible, 63%
+    inadmissible"*, a number in which the denominator and the rule disagreed about what was being
+    counted.
+    """
+    by_reason = dict.fromkeys(ADMISSION_REASONS, 0)
+    inadmissible = hollow = 0
+    for capability in capabilities.values():
+        reason = _admission_reason(capability)
+        if reason is not None:
+            inadmissible += 1
+            by_reason[canonical_admission_reason(reason)] += 1
+        elif _hollow(capability):
+            hollow += 1
+
+    authored = situations or {}
+    # `.content`, NOT the document — `situation_admission_reason` takes the mapping, and handed a
+    # `SourceDocument` it reads `{}` and answers `identity_status_absent` for everything. That is
+    # a caller error that looks exactly like a data verdict, and it caught the author of this
+    # function within a minute of writing it. Recorded in step 0's findings; hardening the guard
+    # is its own unit, not a silent fix here.
+    unreviewed = sum(1 for s in authored.values() if situation_admission_reason(s.content))
+
+    return DomainHealth(domain=domain, total=len(capabilities),
+                        admitted=len(capabilities) - inadmissible,
+                        inadmissible=inadmissible, hollow=hollow, by_reason=by_reason,
+                        situations=len(authored), situations_unreviewed=unreviewed)
+
+
+def corpus_health(catalog: ExpertBrainCatalog) -> dict[str, DomainHealth]:
+    """Every authored domain the catalog loaded. A domain omitted here is a domain gone silent."""
+    return {domain_id: domain_health(domain_id, record.capabilities, record.situations)
+            for domain_id, record in sorted(catalog.domains.items())}
+
 
 def _declared_values(raw) -> tuple[str, ...]:
     if not raw:

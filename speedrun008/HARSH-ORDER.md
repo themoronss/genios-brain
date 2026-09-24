@@ -33,9 +33,105 @@
 | **18** | **The joinability figure** — what share of calendar attendees have an email-side counterpart | measure | step 13's last criterion · **P4's falsifiability** | 10 min |
 | **19** | **DECIDE: re-sync the mailbox?** Every prompt we have ever sent said *"message 1 of 1"*. The fix is live for new mail; old mail needs a re-fetch | decision | **the quality of every threaded extraction** | 15 min |
 | **20** | ⛔ **Item 1 again, and now it BLOCKS a done criterion.** Step 17's adversarial suite cannot run: **991 of 995 skips are one missing URL** | access | **618 tests · step 17's last criterion** | see #1 |
+| **21** | ⛔ **Run the L2 refusal report on the pilot** — `python scripts/l2_refusal_report.py --org <pilot> --database-url <url>`. Read-only, every statement a `select`. It is the **denominator every Layer 2 step is measured against** | measure | **L2-0's last open half · every later L2 number** | 5 min |
+| **22** | ⛔ **DECIDE: flip the 24 `draft` situations?** 16 of Customer Support's 20. Every card built from one is downgraded to an OBSERVATION — it describes and does not instruct. **One word per file, no code** | decision | **the cheapest quality win in L2** | 20 min |
 
 **Migrations 2, 3 and 4 must all be applied BEFORE the code that uses them ships.** All three are
 idempotent and safe to re-run. Apply in number order.
+
+
+---
+
+## 21 · Run the Layer 2 refusal report — 5 minutes, read-only
+
+⛔ **Layer 2's dominant failure is a refusal that is RIGHT and INVISIBLE**, and L2-0 built the
+surface that tells a refusal apart from nothing having happened. Its own code says so:
+
+> *"Such a card today simply exists, ranks, and quietly never becomes anything, while **no surface
+> says 'its best evidence scored 1360 against a floor of 2500'**. That is the fifth time this
+> codebase has carried a refusal that was right and invisible."*
+
+```bash
+python scripts/l2_refusal_report.py --org <pilot-org-id> \
+       --database-url "$GENIOS_TARGET_DATABASE_URL"
+```
+
+**Read-only and structurally so.** The URL resolves through `scripts/_db.py`, which has no fallback
+to `Settings`, and every statement in the script is a `select`.
+
+### What comes back
+
+```
+admitted / held / rejected            the three outcomes
+BY REASON                             all 7 HoldReasons, zeros included
+REFUSED BY LAYER 1, WITH THE NUMBER   "scored 1360 against a floor of 2500", per situation
+DOMAINS NO AUTHORED CORPUS CAN READ   fundraising — the pilot's OWN domain
+THE AUTHORED CORPUS                   155 capabilities, per domain
+TOTAL SITUATIONS PRODUCING NOTHING
+```
+
+### Why it matters more than it looks
+
+Every later Layer 2 step claims a number — *situations reasoned*, *cards collapsed*, *domains
+routed*. **Without this run none of them has a denominator.**
+
+### One part already ran, and it found something
+
+The corpus section needs **no database** and was run today:
+
+```bash
+python scripts/l2_refusal_report.py --corpus-only
+```
+
+⛔ **It contradicted the plan.** We had recorded *"534 capabilities, 200 admissible (37%), so
+`require_admission=True` takes 334 dark"*. Measured: **155 capabilities, 155 admissible, 0 hollow.**
+The 534 counted **files** — a capability is a directory of `capability.yaml` + `objects.yaml` +
+`knowledge.yaml`. All 155 content-hashes were recomputed and verify.
+
+**So the Layer 2 cutover flag is free, not a cliff** — and the number had been wrong for weeks
+purely because nothing printed it.
+
+> **The one decision this may raise for you:** `fundraising` is the pilot's own domain and has **no
+> authored corpus**, so Layer 2 mints `investor_relationship` and `investor_contact` situations that
+> nothing can read. That is **authoring work, not code** — and it is the largest non-code item in
+> the Layer 2 plan.
+
+---
+
+## 22 · ⛔ DECIDE — 24 authored situations are `draft`, and their cards cannot instruct
+
+The corpus's **capabilities** are whole: 155 of 155 admissible, every hash verified. The gap is on
+the other half of the ceremony.
+
+| domain | situations | **`draft`** |
+|---|---|---|
+| Admin | 34 | **8** |
+| Sales | 15 | 0 |
+| **Customer Support** | 20 | **16** |
+| | **69** | **24** |
+
+### What a `draft` situation costs — from the rule's own docstring
+
+> *"the gap lands in `admission_gaps` → `plan.admitted=False` → the package's
+> `review_state='draft'` → **`deliver/pipeline._apply_abstention` downgrades the card to an
+> OBSERVATION.** The intelligence still ships; **it stops instructing.** Removing the situation
+> would delete the finding to punish its prose."*
+
+So a support situation routing through one of those sixteen produces a card that says *what is
+happening* and cannot say *what to do*. **That is the complaint, precisely.**
+
+### The decision
+
+Each of the 24 is either **genuinely unfinished** (leave it `draft`) or **finished and never
+flipped** (`identity.status: draft` → `stable`, one word). Nobody has looked, because until today
+nothing printed the list.
+
+```bash
+python scripts/l2_refusal_report.py --corpus-only     # no database needed
+```
+
+**No code, no migration, no model call.** If a meaningful share of the 24 are merely un-flipped,
+this is the largest quality gain in Layer 2 for the least work — and it is reversible.
 
 ---
 

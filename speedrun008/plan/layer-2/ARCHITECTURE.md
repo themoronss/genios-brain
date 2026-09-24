@@ -161,7 +161,7 @@ interpretation.
 | L2.5.1 Capability routing | 4 | `packs/compiler/capability_resolver.py` | ✅ live |
 | L2.5.2 Domain mapping | 3 | `_L2_TO_L3_DOMAIN` | ⛔ **incomplete — L2-4** |
 | L2.5.3 Five brains | 5 | `packs/brains/` | ⚠️ **four exist; Persona is missing** |
-| L2.5.5 **Admission** | 4 | `Domain Expertise/` · `_tools/admit.py` | ⛔ **200 of 534 admissible — 37%** |
+| L2.5.5 **Admission** | 4 | `Domain Expertise/` · `_tools/admit.py` | ✅ **155 of 155 capabilities admissible** · ⛔ **24 of 69 situations `draft`** — L2-0 |
 | L2.5.4 Package assembly | 4 | `ExpertisePackage` — 22 fields | ✅ live |
 
 ⛔ **The measured defect:**

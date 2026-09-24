@@ -4,6 +4,18 @@
 **Build this first.** It is the cheapest step in the plan and it is what makes every later step
 measurable.
 
+> ## ✅ COMPLETE — 2026-09-24 · [findings](findings/step-00-visible-refusals.md)
+>
+> 29 tests · 12,914 passed · 0 regressions · no migration · no model call.
+>
+> ⛔ **AND IT FOUND THAT THIS PLAN'S CORPUS NUMBER WAS WRONG BY 3.4×.** "534 capabilities, 200
+> admissible, 334 dark at cutover" was a FILE count. Measured: **155 capabilities, 155 admissible,
+> 0 hollow.** `require_admission=True` costs **nothing**, which re-shapes steps 4 and 8.
+>
+> ⛔ **AND THE REAL CORPUS GAP WAS UNDERNEATH IT: 24 of 69 authored situations are `draft`** —
+> **16 of Customer Support's 20** — and each downgrades its card to an OBSERVATION. It describes,
+> and it does not instruct. **One word per file, by an author. Harsh item 22.**
+
 ---
 
 ## 1. ⛔ Premise — Layer 2's dominant failure is a refusal that is right and invisible
@@ -140,12 +152,26 @@ verify:  pytest tests/context/test_every_hold_reason_is_reported.py -q
 
 ## 6. Completion criteria
 
-1. One report naming every refusal path with counts, run against the pilot and **written into
-   findings**.
-2. A held situation can state its score against its floor.
-3. `UNROUTED` counted with its domain.
-4. The ledger is durable and survives the sweep.
-5. A totality test refuses a new `HoldReason` that no surface reports.
+| # | criterion | verdict |
+|---|---|---|
+| 1 | One report naming every refusal path with counts, run against the pilot and **written into findings** | ⚠️ **HALF.** The report is built and the **corpus section runs today** (§2 of findings). The three database sections replay the pilot's *measured shape* through the real code — a live read is **Harsh item 1** |
+| 2 | A held situation can state its score against its floor | ✅ `ScoredRefusal.sentence` — *"its best evidence scored 1360 against a floor of 2500"*, and an unscored one **says it was never scored** rather than rendering `None` as zero |
+| 3 | `UNROUTED` counted with its domain | ✅ `context/domain_silence.DARK_DOMAINS` — declared, with a reason and an **ENDS WHEN**, checked in both directions |
+| 4 | The ledger is durable and survives the sweep | ✅ **already true before this step.** `situation_admission_decisions` carries `outcome`, `reasons`, the candidate's bytes and `reevaluate_after`. Nothing was built; the premise check found it |
+| 5 | A totality test refuses a new `HoldReason` that no surface reports | ✅ `_reason_table()` is built **from the enum**. The same guard was added for the corpus: `canonical_admission_reason()` **raises** on an undeclared reason rather than bucketing it as "other" |
+
+**Four closed, one half-closed, and the open half is a database rather than a design.**
+
+### 6.1 · What the units actually became
+
+| planned | built |
+|---|---|
+| U0 · one report | `context/quality/refusals.py` + `scripts/l2_refusal_report.py` |
+| U1 · a held situation states its number | `ScoredRefusal` — **the number already existed**, `l1_refusal()` returns it |
+| U2 · `UNROUTED` in the tallies | `domain_silence.DARK_DOMAINS` |
+| U3 · a durable ledger | **struck — already built.** `situation_admission_decisions` |
+| U4 · a sixth-time guard | `_reason_table()` from `HoldReason`, **and** `ADMISSION_REASONS` from the compiler's rule |
+| — | **U5, unplanned: `corpus_health()`.** The refusal path nobody was counting, the one whose number was wrong, and the one that found the 24 `draft` situations |
 
 ---
 

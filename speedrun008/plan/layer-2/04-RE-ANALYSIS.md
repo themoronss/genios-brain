@@ -111,7 +111,7 @@ That is the eighth time this shape appears, and they are all the same shape:
 |---|---|---|
 | `domain_shadow` compile | ✅ wired into the live sweep | ⛔ `live=False` for every caller |
 | **R-1** ambiguity interpreter | ✅ contract stronger than this plan's | ⛔ *"has never fired on the pilot tenant"* |
-| the authored corpus | ✅ 534 capabilities | ⛔ 200 admissible — 37% |
+| the authored corpus | ✅ **155 capabilities, all admissible** *(L2-0 corrected this row)* | ⛔ **24 of 69 situations `draft`** — the card cannot instruct |
 | typed absence | ✅ five states, wired | ⚠️ consulted by the compiler, **never surfaced to a human** |
 | the 63 held situations | ✅ `l1_refusal()` fetches the score | ⛔ nothing renders it |
 | 33 support situations | ✅ correct refusal | ⛔ *"which is why the miss was invisible"* |
@@ -156,7 +156,7 @@ Measured by whether the name appears anywhere in `genios_engine`:
 | **L2-5** reasoner | new metered site | register an R-site behind `RSiteGate` |
 | **L2-6** gate | new gate | write the validator; the gate calls it |
 | **L2-7** card | unchanged — ⛔ **this one is genuinely missing and is the step the founder sees** | |
-| **L2-8** turn it on | cutover | ⛔ **the admission gap moves here**: 334 capabilities go dark on the flip |
+| **L2-8** turn it on | cutover | ✅ **CHEAPER THAN PLANNED.** L2-0 measured the corpus: **zero** capabilities go dark on the flip. The 334 was a file count |
 
 ---
 
