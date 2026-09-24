@@ -1,11 +1,11 @@
-"""L1.4.5-U0 · THE SINK GUARD — the three untyped lanes, closed.
+"""L1.4.5-U0 · THE SINK GUARD — the untyped lanes, closed.
 
     pytest tests/capture/semantic/test_sink_guard.py -q
 
 Two defects are pinned here, and they are the same defect seen from its two ends.
 
-**D3 — the sink was bypassable.** `ExtractionResult` declares three fields whose own contract
-docstring calls them "the three untyped lanes": `roles`, `relationships` and
+**D3 — the sink was bypassable.** `ExtractionResult` declared three fields whose own contract
+docstring called them "the three untyped lanes": `roles`, `relationships` and
 `scheduling_proposals`, each `list[dict[str, Any]]`. Between the model and storage NOTHING asked
 what the keys of those dicts were:
 
@@ -19,7 +19,14 @@ what the keys of those dicts were:
 
 So `roles: [{"deal_stage": "negotiation"}]` was a conforming extraction, cached permanently in
 `l1_extraction_results`, with a field name no consumer reads and nothing anywhere recording that
-it was seen. That is `context/extract/vocab.py`'s 268-invented-names failure restored intact,
+it was seen.
+
+**`roles` LEFT THIS FILE ON 2026-09-23** (step 4) — it is `list[RoleAssertion]` now, so pydantic
+refuses an unknown key before the guard is reached and a key set would be a second, weaker
+description of a shape the type already states. Every probe that used `roles` as its example of
+an open lane moved to `relationships`, which is still genuinely open. The guard is narrower by
+one lane and is not weaker: typing closes a lane harder than a key set does, and the two lanes
+that remain are the two where the VALUES are genuinely free text. That is `context/extract/vocab.py`'s 268-invented-names failure restored intact,
 one layer inside the unit built to prevent it.
 
 **D6a — the discovery lane had no producer.** `capture_unclassified` was written, tested and
@@ -106,20 +113,20 @@ def test_an_unknown_field_lands_in_the_open_lane_and_nowhere_else(store, eval_ti
     observation list — and NOT any dict on the result, which is the only place it used to go.
 
     Asserted over the serialised result rather than over the three fields by name, because the
-    claim being made is about the whole object: the name is not in `roles`, and it is also not in
-    a fourth lane somebody adds next year.
+    claim being made is about the whole object: the name is not in `relationships`, and it is
+    also not in a third lane somebody adds next year.
     """
-    result = _result(roles=[{"party": "priya@fund.com", "role": "introducer",
+    result = _result(relationships=[{"party": "priya@fund.com", "nature": "introducer",
                              "deal_stage": "negotiation",
                              "evidence_text": "Priya introduced us to the fund"}])
 
     guarded = _guard(result, store, eval_time)
 
-    kept = guarded.result.roles
-    assert kept == [{"party": "priya@fund.com", "role": "introducer",
+    kept = guarded.result.relationships
+    assert kept == [{"party": "priya@fund.com", "nature": "introducer",
                      "evidence_text": "Priya introduced us to the fund"}], kept
 
-    lane_json = json.dumps([guarded.result.roles, guarded.result.relationships,
+    lane_json = json.dumps([guarded.result.relationships,
                             guarded.result.scheduling_proposals, guarded.result.field_confidence])
     assert "deal_stage" not in lane_json, lane_json
 
@@ -130,16 +137,15 @@ def test_an_unknown_field_lands_in_the_open_lane_and_nowhere_else(store, eval_ti
 
 
 @pytest.mark.parametrize("lane, entry, unknown", [
-    ("roles", {"party": "priya@fund.com", "role": "introducer", "deal_stage": "negotiation"},
-     "deal_stage"),
     ("relationships", {"party": "priya@fund.com", "nature": "investor",
                        "check_size": "they evaluate us this quarter"}, "check_size"),
     ("scheduling_proposals", {"proposer": "us", "text": "Any time next week works",
                               "urgency": "Any time next week works"}, "urgency"),
 ])
 def test_every_untyped_lane_is_sifted_not_just_the_first(store, eval_time, lane, entry, unknown):
-    """All THREE lanes, one row each. A guard that closed `roles` and left the other two would
-    pass any test written about the lane the author happened to think of first."""
+    """EVERY lane, one row each — and the list is `UNTYPED_LANES` itself, asserted below, so a
+    lane added or promoted cannot leave this parametrize behind. A guard that closed one lane and
+    left the rest would pass any test written about the lane the author thought of first."""
     guarded = _guard(_result(**{lane: [entry]}), store, eval_time)
 
     assert unknown not in json.dumps(getattr(guarded.result, lane))
@@ -166,11 +172,12 @@ def test_an_entry_made_entirely_of_refused_keys_leaves_no_empty_object_behind(st
     """Every key refused means the entry said nothing the lane declares. The keys go to the open
     lane; what must NOT be left is `{}` — an empty object is a row every consumer iterates over
     and none can read, and it would make the lane look populated while carrying nothing."""
-    guarded = _guard(_result(roles=[{"deal_stage": "negotiation"},
-                                    {"party": "priya@fund.com", "role": "introducer"}]),
+    guarded = _guard(_result(relationships=[{"deal_stage": "negotiation"},
+                                            {"party": "priya@fund.com",
+                                             "nature": "introducer"}]),
                      store, eval_time)
 
-    assert guarded.result.roles == [{"party": "priya@fund.com", "role": "introducer"}]
+    assert guarded.result.relationships == [{"party": "priya@fund.com", "nature": "introducer"}]
     assert [refused.key for refused in guarded.refused] == ["deal_stage"]
 
 
@@ -178,7 +185,7 @@ def test_the_guarded_result_still_conforms_to_the_schema_validator(store, eval_t
     """The thing that reaches storage is a typed `ExtractionResult` that passes S-1..S-9, not a
     dict the guard assembled. A sift that produced a conforming-looking object which the
     validator then refused would move the bypass rather than close it."""
-    guarded = _guard(_result(roles=[{"party": "priya@fund.com", "role": "introducer",
+    guarded = _guard(_result(relationships=[{"party": "priya@fund.com", "nature": "introducer",
                                      "deal_stage": "negotiation",
                                      "evidence_text": "Priya introduced us to the fund"}]),
                      store, eval_time)
@@ -193,10 +200,10 @@ def test_a_refused_key_carrying_no_quotable_text_is_still_taken_out_and_named(st
     """`UnclassifiedObservation` refuses a receiptless observation — "the one thing this lane
     must not accumulate". So a key whose entry holds no text at all cannot become a row, and the
     guard must still REMOVE it and NAME it rather than pass it through for want of a receipt."""
-    guarded = _guard(_result(roles=[{"party": "priya@fund.com", "role": "introducer",
+    guarded = _guard(_result(relationships=[{"party": "priya@fund.com", "nature": "introducer",
                                      "priority_rank": 3}]), store, eval_time)
 
-    assert guarded.result.roles == [{"party": "priya@fund.com", "role": "introducer"}]
+    assert guarded.result.relationships == [{"party": "priya@fund.com", "nature": "introducer"}]
     assert [r.key for r in guarded.unreceiptable] == ["priority_rank"]
     assert guarded.result.unclassified_observations == []
     assert store.observations_for(org_id=ORG, event_id=EVENT) == ()
@@ -207,9 +214,9 @@ def test_the_probe_quote_is_regraded_against_the_source_never_trusted(store, eva
     does for a model that quoted well and counted badly. `capture_unclassified` re-grades it, so
     a real sentence stores RELOCATED and a fabricated one stores flagged — the guard never gets
     to assert that its own salvage was checked."""
-    real = _guard(_result(roles=[{"party": "us", "role": "owner",
-                                  "deal_stage": "Procurement froze the budget"}]), store,
-                 eval_time)
+    real = _guard(_result(relationships=[{"party": "us", "nature": "owner",
+                                         "deal_stage": "Procurement froze the budget"}]), store,
+                  eval_time)
     row = store.observations_for(org_id=ORG, event_id=EVENT)[0]
     assert row.verified is True
     assert row.span_verdict == "verified_relocated"
@@ -217,8 +224,8 @@ def test_the_probe_quote_is_regraded_against_the_source_never_trusted(store, eva
     assert real.result.unclassified_observations[0].evidence[0].verified is False
 
     invented = InMemoryOpenLaneStore()
-    guard_typed_sink(_result(roles=[{"party": "us", "role": "owner",
-                                     "deal_stage": "a sentence nobody wrote"}]),
+    guard_typed_sink(_result(relationships=[{"party": "us", "nature": "owner",
+                                             "deal_stage": "a sentence nobody wrote"}]),
                      org_id=ORG, event_id=EVENT, source_ref=SOURCE_REF, source_text=SOURCE,
                      eval_time=eval_time, store=invented)
     flagged = invented.observations_for(org_id=ORG, event_id=EVENT)[0]
@@ -245,7 +252,8 @@ def test_the_model_s_own_observations_survive_the_merge(store, eval_time):
     first so the cap's tie-break keeps it."""
     guarded = _guard(_result(unclassified_observations=[_observation("budget_freeze",
                                                                     "Procurement froze")],
-                             roles=[{"party": "us", "role": "owner", "deal_stage": "Priya"}]),
+                             relationships=[{"party": "us", "nature": "owner",
+                                             "deal_stage": "Priya"}]),
                      store, eval_time)
 
     assert [o.proposed_kind for o in guarded.result.unclassified_observations] \
@@ -264,7 +272,8 @@ def test_a_salvaged_key_never_evicts_the_model_s_own_noticing_at_the_cap(store, 
                     for i, quote in enumerate(quotes)]
 
     guarded = _guard(_result(unclassified_observations=observations,
-                             roles=[{"party": "us", "role": "owner", "deal_stage": "Priya"}]),
+                             relationships=[{"party": "us", "nature": "owner",
+                                             "deal_stage": "Priya"}]),
                      store, eval_time)
 
     stored = {row.proposed_kind for row in store.observations_for(org_id=ORG, event_id=EVENT)}
@@ -276,12 +285,13 @@ def test_the_sift_is_pure_and_idempotent(store, eval_time):
     """`sift_untyped_lanes` reads no clock, touches no store and calls no model, so a second pass
     over its own output must be a no-op. Idempotence is what makes the guard safe to place at a
     seam that may run twice — a replay, a repair retry, a re-drain."""
-    once = sift_untyped_lanes(_result(roles=[{"party": "us", "role": "owner",
-                                              "deal_stage": "Priya"}]), source_ref=SOURCE_REF)
+    once = sift_untyped_lanes(_result(relationships=[{"party": "us", "nature": "owner",
+                                                     "deal_stage": "Priya"}]),
+                              source_ref=SOURCE_REF)
     twice = sift_untyped_lanes(once.result, source_ref=SOURCE_REF)
 
     assert twice.refused == ()
-    assert twice.result.roles == once.result.roles
+    assert twice.result.relationships == once.result.relationships
     assert twice.result.unclassified_observations == once.result.unclassified_observations
 
 
@@ -292,13 +302,13 @@ def test_a_non_object_entry_is_refused_whole_rather_than_indexed_into(store, eva
     the object it is defending against."""
     unchecked = ExtractionResult.model_construct(
         **{**{name: getattr(_result(), name) for name in ExtractionResult.model_fields},
-           "roles": ["not an object", {"party": "us", "role": "owner"}]})
+           "relationships": ["not an object", {"party": "us", "nature": "owner"}]})
 
     guarded = _guard(unchecked, store, eval_time)
 
-    assert guarded.result.roles == [{"party": "us", "role": "owner"}]
+    assert guarded.result.relationships == [{"party": "us", "nature": "owner"}]
     assert [r.key for r in guarded.unreceiptable] == [WHOLE_ENTRY]
-    assert [r.path for r in guarded.unreceiptable] == ["roles[0].<entry>"]
+    assert [r.path for r in guarded.unreceiptable] == ["relationships[0].<entry>"]
 
 
 def test_a_lane_that_is_not_a_list_at_all_is_named_rather_than_silently_emptied(store, eval_time):
@@ -325,7 +335,8 @@ def test_a_non_string_key_is_refused_under_the_name_it_is_probed_under(store, ev
     a name that entry does not have would lose the receipt for every such key."""
     unchecked = ExtractionResult.model_construct(
         **{**{name: getattr(_result(), name) for name in ExtractionResult.model_fields},
-           "roles": [{"party": "us", "role": "owner", 5: "Procurement froze the budget"}]})
+           "relationships": [{"party": "us", "nature": "owner",
+                              5: "Procurement froze the budget"}]})
 
     guarded = _guard(unchecked, store, eval_time)
 
@@ -352,7 +363,6 @@ def test_the_lane_key_sets_cover_exactly_the_three_untyped_lanes():
 
 
 @pytest.mark.parametrize("lane, key", [
-    ("roles", "party"), ("roles", "role"), ("roles", "evidence_text"),
     ("relationships", "party"), ("relationships", "nature"), ("relationships", "direction"),
     ("relationships", "evidence_text"),
     ("scheduling_proposals", "proposer"), ("scheduling_proposals", "text"),
@@ -433,6 +443,6 @@ def test_the_extractor_has_actually_taken_the_wiring_seam():
 def test_a_refused_key_record_names_where_it_came_from():
     """`RefusedKey` is a typed record, not a string. The lane, the entry index and the key are
     the three things a reviewer needs to find the prompt that produced it."""
-    refused = RefusedKey(lane="roles", entry_index=2, key="deal_stage",
-                         reason="not in the closed key set for roles")
-    assert (refused.lane, refused.entry_index, refused.key) == ("roles", 2, "deal_stage")
+    refused = RefusedKey(lane="relationships", entry_index=2, key="deal_stage",
+                         reason="not in the closed key set for relationships")
+    assert (refused.lane, refused.entry_index, refused.key) == ("relationships", 2, "deal_stage")

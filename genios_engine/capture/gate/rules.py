@@ -43,6 +43,17 @@ def availability_marker(raw: dict | None) -> str | None:
     raw = raw or {}
     subject = str(raw.get("subject") or "")
     hdrs = raw.get("headers") or {}
+    # A DELIVERY REPORT IS NOT AN AVAILABILITY NOTICE. Gmail sends a DSN with
+    # `Auto-Submitted: auto-replied`, so every one of the pilot org's five bounces was filed as
+    # `auto_reply` — measured 2026-09-23. That exemption did save them from the N-03 drop, so it
+    # was doing useful work by accident, but "the message you sent did not arrive" is not a
+    # statement about anyone's availability and it should not be ranked as one. `capture/
+    # delivery_status.py` now admits them on their own rung in the relevance cascade.
+    #
+    # Subject only, which keeps this function's stated contract intact: no sender, no body prose.
+    from genios_engine.capture.delivery_status import names_a_delivery_report
+    if names_a_delivery_report(subject):
+        return None
     auto_sub = header(hdrs, "Auto-Submitted").strip().lower()
     if (auto_sub.startswith("auto-replied") or header(hdrs, "X-Autoreply")
             or header(hdrs, "X-Autorespond")):

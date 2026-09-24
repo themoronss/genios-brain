@@ -179,7 +179,8 @@ def qes():
         n = next(counter)
         base: dict[str, Any] = dict(
             org_id=ORG, trace_id=f"trace_l2_{n}", visibility=Visibility(),
-            signal_id=f"sig_l2_{n}", event_id=f"evt_l2_{n}", source="gmail",
+            signal_id=f"sig_l2_{n}", subject_key=f"subject:l2_{n}", event_id=f"evt_l2_{n}",
+            source="gmail",
             object_type="email_message",
             occurred_at=EVAL_TIME - timedelta(days=1) if occurred_at is None else occurred_at,
             signal_type=signal_type, importance_bp=importance_bp, triage_lane="P1",

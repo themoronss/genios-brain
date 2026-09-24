@@ -26,7 +26,12 @@ T = SignalType
 #: with `classifier.py` if either is edited alone. Importing the constant and asserting it equals
 #: itself would be a test that cannot fail.
 DOC_ORDER = [
-    "information_conflict", "escalation", "approval_requested", "contract_renewal",
+    # `delivery_failure` is not in doc 06 — member SIXTEEN, placed SECOND. It sits above every
+    # claim-derived type because a delivery failure invalidates whatever the message contained:
+    # Gmail returns the original inside the bounce, so its claims are visible to the extractor,
+    # and ranked lower the primary type of an undelivered pitch would be "a commitment was made".
+    "information_conflict", "delivery_failure", "escalation", "approval_requested",
+    "contract_renewal",
     "commitment_due", "decision_pending", "financial_obligation", "deadline_stated",
     "risk_flagged", "commitment_made", "decision_made", "opportunity_signal",
     # `availability_change` is not in doc 06 — member fifteen, placed last among the real types.
@@ -39,9 +44,9 @@ def test_the_precedence_order_is_doc_06s_order():
 
 
 def test_the_precedence_order_is_total_over_the_taxonomy():
-    """Every one of the 15 members has a position, and no member has two."""
+    """Every one of the 16 members has a position, and no member has two."""
     assert set(PRECEDENCE) == set(SignalType)
-    assert len(PRECEDENCE) == len(set(PRECEDENCE)) == len(SignalType) == 15
+    assert len(PRECEDENCE) == len(set(PRECEDENCE)) == len(SignalType) == 16
 
 
 def test_nothing_detected_is_not_classified_as_anything():

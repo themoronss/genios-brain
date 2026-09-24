@@ -11,8 +11,8 @@ Two units ship in this module set:
 * `detector.py`   — ALG-15, L1.6.1-U1: a deterministic predicate table over the validated
   `ExtractionResult`. Answers *is there a signal here, and which kinds*. One event may legitimately
   produce several.
-* `classifier.py` — ALG-16, L1.6.3-U1: a constant precedence order over the closed 14-member
-  taxonomy. Answers *which of those kinds is the primary one*.
+* `classifier.py` — ALG-16, L1.6.3-U1: a constant precedence order over the closed
+  `SignalType` taxonomy. Answers *which of those kinds is the primary one*.
 * `importance.py` — ALG-17, L1.6.7: five weighted integer terms over the VALIDATED facts.
   Answers *how big is this thing*, which is the number Layer 4's utility formula was missing
   and the reason `priority_override` replaced that formula outright.

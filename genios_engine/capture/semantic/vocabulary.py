@@ -120,8 +120,12 @@ _SETS: Mapping[str, frozenset[str]] = MappingProxyType({
 #: `contracts/extraction.py::_open_lane_dicts` calls them "the three untyped lanes" verbatim.
 #: The order is declaration order on the contract, which is what `UNTYPED_LANE_KEYS` below is
 #: keyed by and what the guard iterates.
-UNTYPED_LANES: tuple[str, ...] = ("roles", "relationships", "scheduling_proposals",
-                                  "availability")
+#: `roles` and `availability` LEFT this tuple on 2026-09-23 when they became `RoleAssertion` and
+#: `AvailabilityWindow`. A closed key set describes a list of OBJECTS to the model; once a lane is
+#: a typed model, `schema_gen` derives its shape from the type itself and the key list would be a
+#: second, weaker description of the same thing. `schema_gen`'s own guard refuses the overlap
+#: rather than letting the two drift — which is how this edit was found.
+UNTYPED_LANES: tuple[str, ...] = ("relationships", "scheduling_proposals")
 
 #: Lane -> the keys an entry in that lane may carry. **This is a closed vocabulary of FIELD
 #: NAMES, and it is the missing half of this module.**
@@ -157,15 +161,8 @@ UNTYPED_LANES: tuple[str, ...] = ("roles", "relationships", "scheduling_proposal
 #: genuinely open — a `text` is free text). Only the NAMES are closed, which is the half that
 #: decides whether a rule can ever be written.
 UNTYPED_LANE_KEYS: Mapping[str, frozenset[str]] = MappingProxyType({
-    "roles": frozenset({"party", "role", "evidence_text"}),
     "relationships": frozenset({"party", "nature", "direction", "evidence_text"}),
     "scheduling_proposals": frozenset({"proposer", "text", "evidence_text"}),
-    # Read off its consumer like the three above: `context/extract/availability.py` reads
-    # person / kind / from / to / coverage_person / evidence_text and nothing else. `from` and
-    # `to` are the message's OWN WORDS ("from 15th", "kal se", "back on Monday") — Layer 2 turns
-    # them into dates against the message date, so no model ever does the arithmetic.
-    "availability": frozenset({"person", "kind", "from", "to", "coverage_person",
-                               "evidence_text"}),
 })
 
 #: Contract field/attribute name -> set name. `state` on `DecisionState` and `entity_type` on

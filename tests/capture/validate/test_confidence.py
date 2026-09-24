@@ -791,6 +791,7 @@ def _signal(composed: ComposedConfidence, span: Any) -> QualifiedEnterpriseSigna
     """
     return QualifiedEnterpriseSignal(
         org_id="org_7173",
+        subject_key="contract:alg13",
         trace_id="trace_alg13",
         visibility=Visibility(),
         signal_id="sig_alg13",

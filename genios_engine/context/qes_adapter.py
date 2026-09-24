@@ -133,8 +133,30 @@ def adapt_qes_extraction(
                              "evidence_text": _span_quote(item.evidence),
                              "description": item.description})
 
-    questions = [{"text": question, "directed_at": "us", "evidence_text": question}
-                 for question in result.questions]
+    # TYPED AT THE L1 SEAM 2026-09-23 (step 4). `questions`, `roles` and `availability` were
+    # `list[str]` / `list[dict]` and this adapter passed them through as data — `dict(value)`,
+    # and a question whose "receipt" was a copy of its own text, which is a citation of itself.
+    # They are claims now, so each one is projected field by field and cites the span ALG-08
+    # graded. The dict SHAPE the L2 consumers read is unchanged (`context/pipeline.py` and
+    # `extract/availability.py` key off `party`/`role`/`person`/`kind`/`from`/`to`/
+    # `evidence_text`), so this is a change of where the words come from, not of the wire.
+    questions = [{"text": item.text, "directed_at": item.asked_of or "us",
+                  # Falls back to the question's own text ONLY when the claim carries no span —
+                  # which after the binder means the words were nowhere in the message. L2's
+                  # `evidence_ok` then refuses it, which is the correct outcome and the reason
+                  # the fallback is not a fabrication.
+                  "evidence_text": _span_quote(item.evidence) or item.text}
+                 for item in result.questions]
+
+    roles = [{"party": item.party, "role": item.role,
+              "evidence_text": _span_quote(item.evidence)}
+             for item in result.roles]
+
+    availability = [{"person": item.person, "kind": item.kind,
+                     "from": item.from_text, "to": item.to_text,
+                     "coverage_person": item.coverage_person,
+                     "evidence_text": _span_quote(item.evidence)}
+                    for item in result.availability]
 
     return Extraction(
         relevance=_relevance(confidence_bp),
@@ -147,11 +169,11 @@ def adapt_qes_extraction(
         commitments=commitments,
         questions=questions,
         observations=observations,
-        roles=[dict(value) for value in result.roles],
+        roles=roles,
         relationships=[dict(value) for value in result.relationships],
         scheduling_proposals=[dict(value) for value in result.scheduling_proposals],
         # Raw quoted-word claims; `process_event` validates them and resolves their dates.
-        availability=[dict(value) for value in result.availability],
+        availability=availability,
         objective={},
         # L1's own reading of the message, carried as data (the decline rule reads it).
         intent=result.intent, stance=result.stance,

@@ -107,6 +107,7 @@ __all__ = [
     "IMPORTANCE_WEIGHTS_V1",
     "RATIO_LADDER",
     "SIGNAL_TYPE_WEIGHT_BP",
+    "achievable_ceiling_bp",
     "audience_multiplier_bp",
     "BaselineBasis",
     "BaselineObservation",
@@ -249,6 +250,15 @@ SIGNAL_TYPE_WEIGHT_BP: Mapping[SignalType, int] = MappingProxyType({
     # (test_the_signal_type_nudge_cannot_outvote_the_other_four_terms), and a new member may not
     # widen it. It publishes through the ladder's AVAILABILITY_OVERRIDE, not through score.
     SignalType.AVAILABILITY_CHANGE: 3000,
+    # Member sixteen. Tied at the top with INFORMATION_CONFLICT and ESCALATION, and for the same
+    # reason the other two are there: it is a CERTAINTY that no other term can see. A bounce
+    # carries no amount, states no deadline, and its sender is a mail daemon — so money,
+    # deadline, authority and criticality all contribute ~0, and the type nudge is the only term
+    # with anything to say. Below the top it would be a type that never reaches anybody.
+    #
+    # It does not widen the table's 3000..9000 span, so the "small nudge" property that
+    # `test_the_signal_type_nudge_cannot_outvote_the_other_four_terms` pins is untouched.
+    SignalType.DELIVERY_FAILURE: 9000,
 })
 
 #: Import-time totality, on the same terms as `classifier.PRECEDENCE`. A fifteenth member with
@@ -721,6 +731,60 @@ class ImportanceComponents:
         }
 
 
+#: Which flags mean a TERM WAS UNEARNABLE BY THIS TENANT, and which weight each one costs.
+#:
+#: THE DISTINCTION THIS TABLE EXISTS TO DRAW, and getting it backwards makes the ceiling a lie:
+#:
+#:   NO_MONEY            this SIGNAL named no amount. The scale was available and this one did
+#:                       not use it — `ImportanceFlag` says so itself: *"term 1 is 0 and that is
+#:                       the right answer."* **NOT here.**
+#:   NO_MONEY_BASELINE   the ORG has no priced history, so NO signal in this tenant could earn
+#:                       term 1 however much money it named. **Here.**
+#:
+#: Same shape for the rest: a flag belongs in this table only when the tenant's own state, not the
+#: message's content, closed the term off. Adding `NO_MONEY` would raise the ceiling of every
+#: unpriced message and make a tenant with no amounts look like one scoring perfectly.
+#:
+#: `CURRENCY_MISMATCH` and `UNKNOWN_CURRENCY` are deliberately ABSENT: those are gaps in THIS
+#: MODULE (no FX table, an assumed exponent), not properties of the tenant, and excusing our own
+#: gap by lowering the bar is how a missing-data bug stops being visible.
+_UNEARNABLE_TERM: "Mapping[ImportanceFlag, str]" = MappingProxyType({
+    ImportanceFlag.NO_MONEY_BASELINE: "money",
+    ImportanceFlag.BASELINE_ESTIMATED: "money",
+    ImportanceFlag.NO_ENTITY: "authority",
+})
+
+
+def achievable_ceiling_bp(flags: "Iterable[ImportanceFlag]",
+                          weights: "ImportanceWeights" = IMPORTANCE_WEIGHTS_V1) -> int:
+    """The highest score THIS tenant could have earned on this signal, in basis points.
+
+    L1.6.7-U2 (step 8, 2026-09-24). **The formula is untouched** — this reads the flags ALG-17
+    already produces and subtracts the weight of every term the tenant's own state closed off.
+
+    WHY IT MATTERS MORE THAN IT LOOKS. The pilot tenant topped out at **4,640 of 10,000** across
+    395 signals and read as mediocre. It carries almost no amounts and its graph is three weeks
+    old, so the money term (3000 bp, 30% of the scale) was unearnable on nearly every signal.
+    **4,640 against an achievable 7,000 is a high score.** Same integer, opposite conclusion, and
+    Layer 4 ranks on it.
+
+    IT IS THE FIRST READER THESE FLAGS HAVE EVER HAD. `ImportanceFlag` has ten members, they are
+    set on every score, and a grep for `.flags` outside this module returned **zero**. The
+    docstring that justified them says exactly why that is a defect: *"a zero term has several
+    causes and they are not equivalent... which is how a missing-data bug hides inside a plausible
+    score for a year."* It hid for a year.
+
+    Deduplicated by TERM, not by flag: `NO_MONEY_BASELINE` and `BASELINE_ESTIMATED` both close the
+    money term and both appear together on a cold-start score, so counting each would subtract
+    6000 for one 3000-bp term and could drive a ceiling below zero.
+
+    Pure and integer. No clock, no model, no I/O.
+    """
+    closed = {_UNEARNABLE_TERM[flag] for flag in flags if flag in _UNEARNABLE_TERM}
+    lost = sum(getattr(weights, term) for term in closed)
+    return max(BP_MAX - lost, 0)
+
+
 @dataclass(frozen=True, slots=True)
 class ImportanceScore:
     """What ALG-17 concluded about one signal: the number, its arithmetic, and its version."""
@@ -729,6 +793,14 @@ class ImportanceScore:
     #: takes, whose own validator enforces the range a second time at the seam.
     importance_bp: int
     components: ImportanceComponents
+    #: The highest score this tenant could have earned here — `BP_MAX` minus the weight of every
+    #: term its own state closed off. Added 2026-09-24 (step 8).
+    #:
+    #: CARRIED, NOT RE-DERIVED. A consumer computing it from `components.flags` would be a second
+    #: answer to a question this object has already answered, and the two drift the day the
+    #: unearnable table changes. `importance_bp / achievable_ceiling_bp` is the ratio Layer 4
+    #: should rank on; the raw integer alone made a cold-start tenant look like a failing one.
+    achievable_ceiling_bp: int = BP_MAX
     #: :data:`IMPORTANCE_VERSION` at the time of scoring. Doc 06's mitigation for score drift:
     #: two scores from two weight versions are not comparable and must not be silently sorted
     #: against each other.
@@ -929,8 +1001,14 @@ def score_importance(signal: NormalizedSignal, baseline: OrgBaseline, *,
     importance_bp = min(BP_MAX, max(0, weighted_bp * multiplier_bp // BP_MAX))
     importance_bp = min(BP_MAX, max(0, importance_bp * audience_bp // BP_MAX))
 
+    # L1.6.7-U2 · the ceiling this tenant could actually have reached, computed from the flags
+    # this function just produced. It reads them and changes NOTHING about `importance_bp` above —
+    # §9 of step 8 forbids touching the formula, and a reviewer can see that this sits entirely
+    # after the score is final.
+    all_flags = tuple(money_flags + date_flags + entity_flags)
     return ImportanceScore(
         importance_bp=importance_bp,
+        achievable_ceiling_bp=achievable_ceiling_bp(all_flags, weights),
         components=ImportanceComponents(
             monetary_exposure_bp=money_bp,
             deadline_proximity_bp=deadline_bp,
@@ -944,7 +1022,7 @@ def score_importance(signal: NormalizedSignal, baseline: OrgBaseline, *,
             baseline_basis=baseline.basis,
             entity_standing=standing,
             eval_time=eval_time,
-            flags=tuple(money_flags + date_flags + entity_flags),
+            flags=all_flags,
             audience_size=audience_size,
             audience_multiplier_bp=audience_bp))
 

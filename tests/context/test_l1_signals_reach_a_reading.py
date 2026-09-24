@@ -38,19 +38,27 @@ def conn():
                        "joined_at timestamp, primary key (org_id, correlation_id, event_id))"))
         c.execute(text("create table context_correlations (org_id text, correlation_id text, "
                        "event_count integer)"))
+        # The columns `_L1_SELECT` reads. Kept in step with the projection deliberately: this
+        # schema is hand-written, so it drifts from `migrations/0089`+`0177` unless a change to
+        # the projection is made here at the same time. The insert below names its columns for
+        # the same reason — a positional insert breaks silently the next time one is added.
         c.execute(text("""create table qualified_signals (
             org_id text, signal_id text, event_id text, state text,
             importance_bp integer, importance_version text, importance_components text,
-            evidence_refs text, conflict_ids text, signal_type text, coverage_ready boolean)"""))
+            evidence_refs text, conflict_ids text, signal_type text, coverage_ready boolean,
+            subject_key text, domain_hints text, confidence_bp integer, occurred_at timestamp, expires_at timestamp, secondary_types text, extraction_ref text, internal_kind text)"""))
         yield c
 
 
 def signal(conn, event_id, signal_id, *, state="active", importance=3080,
            version="alg17-v1"):
-    conn.execute(text("insert into qualified_signals values (:o,:s,:e,:st,:i,:v,'{}','[]','[]',"
-                      "'deadline_stated',0)"),
-                 {"o": ORG, "s": signal_id, "e": event_id, "st": state, "i": importance,
-                  "v": version})
+    conn.execute(text(
+        "insert into qualified_signals (org_id, signal_id, event_id, state, importance_bp, "
+        "  importance_version, importance_components, evidence_refs, conflict_ids, signal_type, "
+        "  coverage_ready, subject_key) "
+        "values (:o,:s,:e,:st,:i,:v,'{}','[]','[]','deadline_stated',0,:subj)"),
+        {"o": ORG, "s": signal_id, "e": event_id, "st": state, "i": importance,
+         "v": version, "subj": f"subject:{event_id}"})
 
 
 def test_before_the_seam_a_reading_reaches_no_signal(conn) -> None:

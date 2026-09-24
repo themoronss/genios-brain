@@ -3,14 +3,21 @@
 ALG-15 reads different parts of an extraction for different types — commitments for
 ``COMMITMENT_DUE``, decision states for ``DECISION_PENDING``, a money plus a recurrence for
 ``CONTRACT_RENEWAL`` — and what it hands on is deliberately thin: a type, the predicate that
-fired, and whatever spans that predicate happened to collect. Nine of its fourteen rows carry
-no span at all (`roles` is a `list[dict]` by contract; `intent == escalate` is a field, not a
-sentence), so a consumer holding a `DetectedSignal` still cannot say what the signal is ABOUT.
+fired, and whatever spans that predicate happened to collect. MOST of its rows carry no span at
+all (`intent == escalate` is a field, not a sentence), so a consumer holding a `DetectedSignal`
+still cannot say what the signal is ABOUT.
+
+COUNTS ARE DELIBERATELY NOT WRITTEN HERE ANY MORE. This paragraph said "nine of its fourteen
+rows" and both numbers were wrong by 2026-09-24: the taxonomy gained `availability_change`
+(migration 0139) and `delivery_failure` (step 2), and step 4 typed `roles` so it carries spans
+now. A prose count over a closed set is a comment with an expiry date, and a reader auditing the
+set against it concludes the CODE is wrong. `len(SignalType)` is the number; the tables below are
+the rows.
 
 Without this unit, every downstream unit would answer that question its own way. The importance
 scorer would ask "is there a commitment?" before it could find a date; ALG-19 would branch on
-type to find the date it expires against; the publisher would learn all fourteen shapes. Each
-of those is a place the fifteenth signal type silently produces `None` instead of an answer.
+type to find the date it expires against; the publisher would learn every shape. Each of those is
+a place the NEXT signal type added silently produces `None` instead of an answer.
 
 So a normalized signal has ONE field set, populated by tables keyed on `SignalType` rather than
 by a cascade of `if`. Adding a signal type is adding three rows — an anchor preference, a date
@@ -174,7 +181,7 @@ class AmountPolicy(str, Enum):
 #:
 #: This is the only place the meaning of a type is written down in this unit, and it is a table
 #: so that "what is an ESCALATION about?" is answered by reading a row rather than by tracing
-#: branches. TOTAL over the 14 members — the totality test fails on a member added to the
+#: branches. TOTAL over every `SignalType` member — the totality test fails on a member added to the
 #: contract without a row, instead of a `KeyError` reaching a customer's sync.
 #:
 #: `ANOMALY` prefers the open lane on purpose: it is the row that fires when nothing else did,
@@ -196,9 +203,15 @@ ANCHOR_FAMILIES: Mapping[SignalType, tuple[type, ...]] = MappingProxyType({
     SignalType.ANOMALY: (UnclassifiedObservation, DecisionState, Commitment, Money),
     # About a PERSON, like RELATIONSHIP_CHANGE; the window itself lives in the untyped lane.
     SignalType.AVAILABILITY_CHANGE: (EntityMention,),
+    # Member sixteen. About the PERSON the message failed to reach — the one entity a delivery
+    # report actually names. It is the only type in this table whose subject comes from the
+    # ENVELOPE rather than from a claim: a bounce is a machine notice, so the extractor finds no
+    # commitment, no amount and no date in it, and a row listing any of those would describe a
+    # signal that can never be anchored.
+    SignalType.DELIVERY_FAILURE: (EntityMention,),
 })
 
-#: SignalType -> which date this type carries. TOTAL over the 14 members.
+#: SignalType -> which date this type carries. TOTAL over every member.
 DATE_POLICY: Mapping[SignalType, DatePolicy] = MappingProxyType({
     SignalType.COMMITMENT_MADE: DatePolicy.COMMITMENT_DUE,
     SignalType.COMMITMENT_DUE: DatePolicy.COMMITMENT_DUE,
@@ -220,9 +233,13 @@ DATE_POLICY: Mapping[SignalType, DatePolicy] = MappingProxyType({
     # The window's dates are resolved in Layer 2 from the quoted words; borrowing some other
     # stated date here would give an absence a deadline.
     SignalType.AVAILABILITY_CHANGE: DatePolicy.NONE,
+    # NONE. A delivery report states when it gave up, but that instant is the event's own
+    # `occurred_at`, not a date the signal is ABOUT. Carrying it as a stated date would put a
+    # deadline on a card that has none.
+    SignalType.DELIVERY_FAILURE: DatePolicy.NONE,
 })
 
-#: SignalType -> where money may come from. TOTAL over the 14 members.
+#: SignalType -> where money may come from. TOTAL over every member.
 AMOUNT_POLICY: Mapping[SignalType, AmountPolicy] = MappingProxyType({
     SignalType.CONTRACT_RENEWAL: AmountPolicy.STATED,
     SignalType.FINANCIAL_OBLIGATION: AmountPolicy.STATED,
@@ -239,6 +256,11 @@ AMOUNT_POLICY: Mapping[SignalType, AmountPolicy] = MappingProxyType({
     SignalType.ESCALATION: AmountPolicy.CLAIMS_ONLY,
     SignalType.ANOMALY: AmountPolicy.CLAIMS_ONLY,
     SignalType.AVAILABILITY_CHANGE: AmountPolicy.CLAIMS_ONLY,
+    # CLAIMS_ONLY. Gmail returns the original message inside the bounce, so an amount from the
+    # undelivered mail can appear in the extraction. It may travel as a claim, but it is NOT what
+    # this signal is about — the signal is "it did not arrive", and a stated amount would read as
+    # a sum somebody now owes.
+    SignalType.DELIVERY_FAILURE: AmountPolicy.CLAIMS_ONLY,
 })
 
 #: Certainties a date may be carried on when it was not itself the anchor. A `RELATIVE` or
@@ -560,8 +582,12 @@ def _normalize_one(detection: DetectedSignal, *, event: SourceEvent,
     claims = _triggered_claims(detection, extraction)
     anchor = _anchor_claim(detection, claims, extraction)
     thread_key = thread.thread_key if thread is not None else None
-    key = (subject_key(anchor, extraction, event, thread_key=thread_key)
-           if anchor is not None else f"event:{event.event_id}")
+    # A predicate that knows its own subject wins over ALG-22's claim-derived one. Only
+    # DELIVERY_FAILURE sets it today: its subject is the address that could not be reached, and
+    # ALG-22 cannot find that because a bounce carries no claim to anchor on.
+    key = (detection.subject_key
+           or (subject_key(anchor, extraction, event, thread_key=thread_key)
+               if anchor is not None else f"event:{event.event_id}"))
     spans = _ordered_spans(detection.evidence)
     if not spans and anchor is not None:
         spans = _ordered_spans(_spans_of(anchor, extraction))

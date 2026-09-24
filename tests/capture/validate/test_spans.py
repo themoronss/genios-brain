@@ -545,16 +545,23 @@ def test_summary_judgements_are_never_touched(worked_example_text):
     They cite nothing, so there is nothing for a span to substantiate and nothing for the policy
     to downgrade. A validator that halved a stance because a neighbouring commitment was
     unverified would be punishing a judgement for the sins of a quote.
+
+    `questions` LEFT this test on 2026-09-23 (step 4). It sat here because it was `list[str]`,
+    which made it look like a judgement; it is `list[OpenQuestion]` now, it carries a span, and
+    ALG-08 grades it like any other claim. The list that stays is the list the contract defends
+    as judgements — `topics` is "free text by design" and `implied_actions` is "the model's words
+    about what should happen". Neither states a fact about the world, so neither has a receipt to
+    check. That `questions` moved and these did not is the distinction step 4 was drawing.
     """
     verified, _ = apply_verdicts(
         _result(intent="negotiate", stance="cautious", topics=["renewal", "pricing"],
-                questions=["can we absorb the increase?"],
+                implied_actions=["ask Finance about the increase"],
                 commitments=[_commitment([_span("invented entirely", 0)])]),
         worked_example_text)
 
     assert (verified.intent, verified.stance) == ("negotiate", "cautious")
     assert verified.topics == ["renewal", "pricing"]
-    assert verified.questions == ["can we absorb the increase?"]
+    assert verified.implied_actions == ["ask Finance about the increase"]
 
 
 @pytest.mark.gate

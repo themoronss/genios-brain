@@ -18,9 +18,17 @@
 # buildpack the moment one exists at the component root, so the FIRST deploy after this file lands
 # switches the build strategy. That is the intended change and it is not reversible by accident:
 # the runtime command below is the same one `Procfile` declares, the Python version is pinned to
-# the one the lock file was resolved against, and nothing else about the app moves. Enabling OCR
-# itself is still two deliberate acts after that — `GENIOS_ENABLE_OCR=true` plus the org allowlist
-# `GENIOS_OCR_ENABLED_ORGS`, per `capture/documents/enablement.py`.
+# the one the lock file was resolved against, and nothing else about the app moves.
+#
+# ENABLING OCR NEEDS NO ENV VAR ANY MORE — corrected 2026-09-23, the paragraph here said it did.
+# `enable_ocr` has defaulted to `True` since `fb1d5c0b`, and `resolve_ocr_availability`'s rule 4
+# gives an org the engine on the fleet default alone; the allowlist exists to turn OCR on for one
+# org *while the fleet default is off*, which is no longer the case. So the only act left is
+# **deploying this image** — `tesseract_available()` is what still answers `False` in production.
+#
+# Measured on the pilot tenant, 2026-09-23: every `document_jobs` row carries `ocr_engine=None`
+# and `ocr_pages=0`, and 28 images sit at `ocr_unavailable` — captured 19–23 September, nine days
+# after the default flipped. The flags are already right. **The image has never reached the host.**
 
 FROM python:3.11-slim-bookworm
 

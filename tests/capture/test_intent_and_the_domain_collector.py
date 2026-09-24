@@ -282,7 +282,8 @@ def test_intent_is_not_a_member_of_the_event_taxonomy():
 
     for category in IntentCategory:
         assert category.value not in names, category
-    assert len(names) == 15            # 14 from doc 08 + availability_change (migration 0139)
+    # 14 from doc 08 + availability_change (migration 0139) + delivery_failure (2026-09-23)
+    assert len(names) == 16
 
 
 def test_a_judgement_is_banded_not_scored():

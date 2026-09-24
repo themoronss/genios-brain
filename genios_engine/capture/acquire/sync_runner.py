@@ -235,6 +235,107 @@ class SyncSummary:
     #: `capture_event` for the reason `claim_groups` is: a conflict lives BETWEEN two events, and
     #: the covering mail's $84,000 only meets the signed PDF's $74,000 once both have landed.
     conflicts: ConflictOutcome | None = None
+    # ------------------------------------------------------------------------------------------
+    # L1.2.x · COMPLETENESS — "did this sweep finish", added 2026-09-23 (step 5)
+    #
+    # The fact was computed and thrown away. `run_sync` breaks its page loop on `not page_cursor`
+    # — that break IS the answer — and `next_cursor` stored it under a name that reads as "where
+    # to resume" rather than as "whether we finished", which is why nothing downstream ever read
+    # it as the latter. Two backfill doors disagreed about whether it mattered: the onboarding one
+    # computes `capped = cursor is not None` and logs it, the manual `/backfill` one printed the
+    # word "done" either way.
+    #
+    # It matters because it is the benchmark's own headline failure. Gemini reported "18 threads
+    # read of 18 that exist" against a mailbox of ~465 — the size of what it read as the size of
+    # what exists. A sweep that stops at the runaway guard and files `scanned=50000` with no
+    # completeness flag is making exactly that claim, and every negative answer built on it
+    # ("you have no follow-up from Acme") inherits it.
+    # ------------------------------------------------------------------------------------------
+    #: THREE-VALUED, and the third value is the point.
+    #:
+    #:   True   the provider said there is no more. Complete FOR THIS WINDOW — never for "all
+    #:          history", because the window itself is a `backfill_days` setting (60 by default).
+    #:   False  there is more and we stopped. Read `page_budget_spent` for who stopped it.
+    #:   None   NOT APPLICABLE. A webhook or push source has no pagination to exhaust, and a
+    #:          sweep that has not run has not finished either. `True` here would be the
+    #:          fabricated 100% this whole unit exists to prevent, so the DEFAULT is None: a
+    #:          caller that forgets to set it gets "unknown", which is a real answer, and never
+    #:          "complete", which would be a lie with no author.
+    cursor_exhausted: bool | None = None
+    #: WHO stopped it, when `cursor_exhausted` is False — and the two are different operational
+    #: situations, only one of which a re-run fixes:
+    #:
+    #:   True   WE stopped: `backfill_drain`'s `max_rounds` page budget ran out. The cursor is
+    #:          live, `next_cursor` carries it, and running `/backfill` again resumes from there.
+    #:   False  the PROVIDER stopped, or an error did. Re-running alone does not fix it.
+    #:
+    #: One undifferentiated "incomplete" flag makes an operator re-run the sweep that cannot get
+    #: further and leave the one that could.
+    page_budget_spent: bool = False
+    #: How many objects the provider says exist in this window, or None when it offers no count.
+    #: THE DENOMINATOR — the number whose absence is this step's whole subject.
+    claimed_total: int | None = None
+    #: Whether `claimed_total` is an ESTIMATE. Gmail's `resultSizeEstimate` is, and the label has
+    #: to travel with the number: an estimate stored without it becomes a fact at the first
+    #: reader, and "465" then reads as a count somebody could be held to.
+    #:
+    #: It also makes the fetched > claimed case legible rather than alarming. That is LEGAL when
+    #: the estimate is low, and a checker that treated the excess as an error would raise on a
+    #: perfectly correct sweep.
+    claimed_is_estimate: bool = False
+    # ------------------------------------------------------------------------------------------
+    # L1.6.6-U5 · DOMAIN COVERAGE (step 6, 2026-09-24) — metric 4, per sweep.
+    #
+    # It lands HERE, beside step 5's completeness fields, rather than in a table of its own:
+    # "how many of this sweep's events got a real domain" is the same kind of per-sweep fact as
+    # "did this sweep finish", it has the same writer, and a second table is a second thing that
+    # can drift from the first.
+    #
+    # `domain_fallback_only` IS COUNTED APART FROM `domain_tagged` and that is the whole point.
+    # `FALLBACK_DOMAIN` exists so unmatched business mail is not invisible; counting it as
+    # coverage restates the problem as a solution, which is the easiest way to make metric 4 lie.
+    # ------------------------------------------------------------------------------------------
+    #: Events that got at least one NON-fallback domain. Metric 4's numerator.
+    domain_tagged: int = 0
+    #: Events whose only domain was the placeholder. Not a gap being hidden — a gap being counted.
+    domain_fallback_only: int = 0
+    # ------------------------------------------------------------------------------------------
+    # L1.4.x-U3 · THE `unknown` INTENT RATE (step 7, 2026-09-24) — E2.
+    #
+    # A source returning `unknown` for 80% of its mail is a prompt defect, and nothing counted it.
+    # That failure mode does not raise, does not log and does not fail a test: it produces
+    # slightly emptier readings, for everybody, until somebody happens to notice — and "slightly
+    # emptier" looks exactly like "a quiet week".
+    #
+    # COUNTED PER SWEEP, which is per connection and therefore per source: a calendar feed and a
+    # mailbox have genuinely different readable rates, and one number over both hides a broken
+    # connector behind a healthy one.
+    #
+    # `observed_anything` is the test, NOT `category is UNKNOWN`. A reading that answered the tone
+    # but not the category told us something; one where every axis is unknown is the model saying
+    # "I could not read this". `contracts/intent.py` draws that line and this honours it.
+    # ------------------------------------------------------------------------------------------
+    #: Events whose intent reading learned NOTHING at all.
+    intent_unread: int = 0
+    #: Events that reached the intent stage at all — the denominator. Distinct from `emitted`,
+    #: because an event can emit without an extraction ever running (a structured bypass).
+    intent_read_attempts: int = 0
+    #: 7-U2 · events where the gate and the extractor disagreed on at least one observed axis.
+    #: A rising count here and a flat `intent_unread` is a prompt that changed its mind, not one
+    #: that went quiet — and the two need different fixes.
+    intent_disagreements: int = 0
+
+    @property
+    def intent_unknown_rate_bp(self) -> int:
+        """The share of readings that learned nothing, in integer basis points.
+
+        Truncated, so never overstated. **Zero attempts reports 0**, which is why a reader must
+        take it beside `intent_read_attempts`: a sweep that read nothing because it extracted
+        nothing is not a sweep with a perfect reader, and only the two together say which.
+        """
+        if self.intent_read_attempts <= 0:
+            return 0
+        return self.intent_unread * 10_000 // self.intent_read_attempts
     #: WHEN THIS RUN BEGAN — wall time, at the edge, for the ledger and for nothing else.
     #: `l1_sync_runs.started_at` is a column the writer never filled, so every row in production
     #: reports a finish with no start and "this sync took eleven minutes" was a question the
@@ -566,6 +667,14 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
                     since=since, retries=fetch_retries, backoff=fetch_backoff, sleep=_sleep)
             summary.next_cursor = batch.next_cursor
             summary.scanned += len(batch.objects)
+            # THE DENOMINATOR, when the provider offers one. `getattr` rather than a field on
+            # `SourceBatch` because nine connectors implement that type and most providers give no
+            # total at all — None is the honest answer for them and must not become a zero, which
+            # would read as "the window is empty" instead of "we were not told".
+            claimed = getattr(batch, "claimed_total", None)
+            if claimed is not None and summary.claimed_total is None:
+                summary.claimed_total = int(claimed)
+                summary.claimed_is_estimate = bool(getattr(batch, "claimed_is_estimate", True))
 
             def _cap(raw: RawObject):
                 # P5 · a Meet transcript Doc never takes the generic door (knowledge family → ORG
@@ -657,6 +766,37 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
                     setattr(summary, res.outcome, getattr(summary, res.outcome) + 1)
                     if res.gated is not None:
                         summary.gated.append(res.gated)
+                        # L1.6.6-U5 · metric 4, counted where the gated event actually is.
+                        #
+                        # COUNTED HERE AND NOT DERIVED LATER. `summary.gated` is a list a caller
+                        # could walk, and the first version of step 5 put a field on this object
+                        # that nothing ever filled — so the number existed, the test passed, and
+                        # the value was None on every row forever. A counter on the real loop is
+                        # the difference between a metric and a place to put one.
+                        #
+                        # A hint stamped `fallback` is NOT coverage: `FALLBACK_DOMAIN` exists so
+                        # unmatched business mail is not invisible, and counting the placeholder
+                        # as a tagged event restates the problem as a solution. `admin` is both
+                        # the fallback AND a real domain, so the test is on the SOURCE and never
+                        # on the name.
+                        # 7-U3 · the intent reading, counted where the outcome actually is.
+                        # `esqe` is None for an event that never reached S4 (a structured bypass,
+                        # a parked extraction) — that is not an unreadable message, it is a
+                        # message nobody tried to read, so it is absent from BOTH counters rather
+                        # than counted as a success or a failure.
+                        esqe_outcome = getattr(res, "esqe", None)
+                        if esqe_outcome is not None:
+                            summary.intent_read_attempts += 1
+                            if not esqe_outcome.intent.observed_anything:
+                                summary.intent_unread += 1
+                            if esqe_outcome.intent_disagreements:
+                                summary.intent_disagreements += 1
+                        hints = res.gated.domain_hints or []
+                        if hints:
+                            if any(h.source != "fallback" for h in hints):
+                                summary.domain_tagged += 1
+                            else:
+                                summary.domain_fallback_only += 1
                     if res.extraction_parked is not None and parked_store is not None:
                         # S2 parks are separate from GATE parks: the event itself emitted, and
                         # this row exists so a transport failure can be retried and a schema
@@ -673,6 +813,13 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
                     watermark = raw.watermark_at
             page_cursor = batch.next_cursor
             if not page_cursor or not batch.objects:      # provider exhausted → stop
+                # THE ANSWER, recorded where it is already known. This break has always been the
+                # statement "there is no more"; until 2026-09-23 it was made and discarded, so a
+                # sweep that ran out of budget and one that ran out of mail produced identical
+                # rows. Set INSIDE the break rather than after the loop: falling out of `for
+                # _page in range(max_pages)` means the page budget ran out with a live cursor,
+                # which is the opposite conclusion.
+                summary.cursor_exhausted = True
                 break
     finally:
         # A pending fetch after an early break is a read we no longer need; never let it hold the
@@ -752,8 +899,17 @@ def backfill_drain(connector: SourceConnector, *, org_id: str, connection_id: st
         summary = run_sync(connector, org_id=org_id, connection_id=connection_id, repo=repo,
                            mode="backfill", cursor=cursor, limit=limit, source=source,
                            cursor_store=None, max_pages=take, **kw)
-        for f in ("scanned", "emitted", "dropped", "parked", "duplicate", "quarantined"):
+        for f in ("scanned", "emitted", "dropped", "parked", "duplicate", "quarantined",
+                  "domain_tagged", "domain_fallback_only",
+                  "intent_unread", "intent_read_attempts", "intent_disagreements"):
             setattr(total, f, getattr(total, f) + getattr(summary, f))
+        # The drain's completeness is the LAST round's, not a sum: each round is a slice of one
+        # sweep, and only the final one can say whether the provider ran out. Carried rather than
+        # recomputed because `run_sync` is where the break that knows it lives.
+        total.cursor_exhausted = summary.cursor_exhausted
+        if summary.claimed_total is not None and total.claimed_total is None:
+            total.claimed_total = summary.claimed_total
+            total.claimed_is_estimate = summary.claimed_is_estimate
         # The FIRST round's start is the backfill's start; later rounds would report the last
         # page's, which is the one number a duration cannot be computed from.
         total.started_at = total.started_at or summary.started_at
@@ -763,6 +919,19 @@ def backfill_drain(connector: SourceConnector, *, org_id: str, connection_id: st
         if not cursor:
             break
     total.next_cursor = cursor
+    # WHO STOPPED IT. Falling out of the `while budget > 0` loop with a live cursor means the
+    # runaway guard ran out first — we stopped, not the provider — and that is recoverable by
+    # running `/backfill` again from `next_cursor`. An exhausted cursor is never "budget spent"
+    # even when the budget happens to have hit zero on the same round: THE BOUNDARY CASE, and the
+    # one that decides whether a correct sweep gets reported as a failure. A drain of exactly N
+    # pages with a budget of exactly N finishes ON its last permitted page, and reading
+    # `budget == 0` as truncation would send an operator chasing mail that is already here.
+    if cursor is not None:
+        total.cursor_exhausted = False
+        total.page_budget_spent = budget <= 0
+    else:
+        total.cursor_exhausted = True
+        total.page_budget_spent = False
     # Re-assembled over EVERY page, not merged per page: a reply on page two and the signed
     # attachment on page one are one claim group, and concatenating two per-page groupings would
     # leave them apart — the same across-events defect one level up.

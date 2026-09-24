@@ -49,8 +49,8 @@ from genios_engine.contracts.conflict import (MAX_AUTHORITY_RANK, Authority, Con
                                               require_no_float)
 from genios_engine.contracts.evidence import MAX_QUOTE_CHARS, EvidenceSpan
 from genios_engine.contracts.extraction import (Commitment, DecisionState, Dependency,
-                                                EntityMention, ExtractionResult,
-                                                UnclassifiedObservation)
+                                                EntityMention, ExtractionResult, OpenQuestion,
+                                                RoleAssertion, UnclassifiedObservation)
 from genios_engine.contracts.gated_event import DomainHint
 from genios_engine.contracts.publication import (UNVERIFIED_EVIDENCE_FLAG, VISIBILITY_UNKNOWN,
                                                  PublicationOutcome, PublicationRule,
@@ -83,6 +83,11 @@ DOC_SIGNAL_TYPES: frozenset[str] = frozenset({
     "opportunity_signal", "relationship_change", "information_conflict", "escalation", "anomaly",
     # Member fifteen, added deliberately with migration 0139 (see SignalType.AVAILABILITY_CHANGE).
     "availability_change",
+    # Member SIXTEEN, added deliberately 2026-09-23 (see SignalType.DELIVERY_FAILURE). The only
+    # member that is a fact about the tenant's OWN action rather than about something that
+    # happened to them. Measured cause: three pitches to Afore and Surge on 11 August never
+    # arrived, the bounce notices were captured and emitted, and no signal of any kind came out.
+    "delivery_failure",
 })
 
 #: The three inputs that must never be accepted by a `*_bp` field, with the reason each is its
@@ -179,11 +184,13 @@ def unclassified_observation() -> UnclassifiedObservation:
 
 
 def extraction_result() -> ExtractionResult:
-    """A fully-populated C-09 — every list non-empty, including all three untyped lanes.
+    """A fully-populated C-09 — every list non-empty, including both remaining untyped lanes.
 
     Fully populated on purpose: the no-float walk below is only worth running over an object
-    that actually exercises `roles`, `relationships` and `scheduling_proposals`, since those are
-    the lanes where an annotation proves nothing and a ratio would otherwise reach jsonb.
+    that actually exercises `relationships` and `scheduling_proposals`, since those are the lanes
+    where an annotation proves nothing and a ratio would otherwise reach jsonb. `roles` was the
+    third of them until 2026-09-23; typing it narrowed the hole rather than closing it, which is
+    why the walk still runs.
     """
     return ExtractionResult(
         intent="commit",
@@ -196,8 +203,14 @@ def extraction_result() -> ExtractionResult:
         decision_states=[decision_state()],
         dependencies=[dependency()],
         implied_actions=["confirm which contract value is current"],
-        questions=["Is the $84K figure the amended number?"],
-        roles=[{"person": "Deepthi", "role_hint": "signer", "seen_count": 3}],
+        # TYPED since 2026-09-23. The old fixture read
+        #   roles=[{"person": ..., "role_hint": ..., "seen_count": 3}]
+        # whose keys were not even in `vocabulary.UNTYPED_LANE_KEYS`' closed set
+        # ({party, role, evidence_text}) — the lane was already being filled with names no
+        # consumer read, and typing it is what surfaced that.
+        questions=[OpenQuestion(text="Is the $84K figure the amended number?",
+                                evidence=[], confidence_bp=7000)],
+        roles=[RoleAssertion(party="Deepthi", role="signer", evidence=[], confidence_bp=6000)],
         relationships=[{"from": "Deepthi", "to": "Globe Worked", "kind": "works_at"}],
         scheduling_proposals=[{"when": "2026-03-09", "where": "Zoom", "attendees": 2}],
         unclassified_observations=[unclassified_observation()],
@@ -247,6 +260,7 @@ def signal_kwargs(**overrides: Any) -> dict[str, Any]:
     """
     base: dict[str, Any] = dict(
         org_id="org_7173",
+        subject_key="contract:c12",
         schema_version=1,
         trace_id="trace_9c2a1f",
         visibility=Visibility(scope="participants",
@@ -604,13 +618,21 @@ def test_c09_field_confidence_is_basis_points_inside_the_dict(label, bad, raises
             {**extraction_result().model_dump(), "field_confidence": {"amounts": bad}})
 
 
-@pytest.mark.parametrize("lane", ["roles", "relationships", "scheduling_proposals"])
+#: Derived, never listed. `roles` was in this parametrize as a literal until 2026-09-23, when it
+#: became `list[RoleAssertion]` — and a hand-written list would have gone on feeding it dicts a
+#: typed lane now refuses, which reads as a broken guard rather than as a promoted lane. Reading
+#: the annotation means the day a lane is typed, this parametrize shrinks by itself.
+UNTYPED_LANES = sorted(
+    name for name, field in ExtractionResult.model_fields.items()
+    if getattr(field.annotation, "__args__", None) and field.annotation.__args__[0] is dict)
+
+
+@pytest.mark.parametrize("lane", UNTYPED_LANES)
 def test_c09_untyped_lanes_refuse_a_fractional_number(lane):
-    """The three lanes are untyped by design, and an untyped lane is exactly where a 0.85 gets
-    in. It matters because these dicts are embedded verbatim in the QES: a ratio here survives
-    to the seam where V-7 scans the serialized object and rejects the ENTIRE signal, so catching
-    it while the extraction is being built names the offending key instead of condemning the
-    message."""
+    """An untyped lane is exactly where a 0.85 gets in. It matters because these dicts are
+    embedded verbatim in the QES: a ratio here survives to the seam where V-7 scans the
+    serialized object and rejects the ENTIRE signal, so catching it while the extraction is being
+    built names the offending key instead of condemning the message."""
     with pytest.raises(TypeError, match="fractional number"):
         ExtractionResult.model_validate(
             {**extraction_result().model_dump(), lane: [{"nested": {"score": 0.85}}]})
@@ -792,7 +814,7 @@ def test_c11_has_exactly_the_documented_member_set():
     the nearest neighbour.
     """
     assert {member.value for member in SignalType} == DOC_SIGNAL_TYPES
-    assert len(SignalType) == 15
+    assert len(SignalType) == 16
     assert all(isinstance(member.value, str) for member in SignalType)
     assert SignalType("information_conflict") is SignalType.INFORMATION_CONFLICT
 
@@ -972,7 +994,11 @@ def test_no_float_anywhere_in_a_fully_populated_serialized_signal():
     # as loudly over an object whose every interesting lane was empty.
     paths = {path for path, _ in leaves}
     for required in ("$.versions.prompt", "$.conflicts[0].claims[0].value.minor_units",
-                     "$.extraction.roles[0].seen_count",
+                     # An `Any`-wide lane, nested one key down — the shape a ratio hides in.
+                     # This was `$.extraction.roles[0].seen_count` until 2026-09-23; `roles` is a
+                     # typed claim now and pydantic refuses a float in it before the walk ever
+                     # runs, so the path moved to a lane that is still genuinely open.
+                     "$.extraction.relationships[0].kind",
                      "$.extraction.scheduling_proposals[0].attendees",
                      "$.extraction.field_confidence.amounts", "$.confidence_vector.coverage",
                      "$.importance_bp", "$.evidence_refs[0].start_offset"):

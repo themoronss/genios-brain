@@ -43,7 +43,7 @@ from decimal import Decimal
 from numbers import Real
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from genios_engine.contracts.evidence import EvidenceSpan
 from genios_engine.contracts.intent import MessageIntent
@@ -134,6 +134,43 @@ def _open_lane_dicts(values: Any, label: str) -> list[dict[str, Any]]:
             raise TypeError(f"{label}[{index}] must be an object")
         cleaned.append(_reject_fractional(entry, f"{label}[{index}]"))
     return cleaned
+
+
+#: What a legacy lane entry's confidence becomes when the stored row carried none. 5000 bp is
+#: "somebody said it and nothing corroborates it" — the neutral standing an unscored claim takes
+#: everywhere else in this layer, and deliberately BELOW anything the extractor states for itself
+#: so a rehydrated legacy claim never outranks a graded one.
+LEGACY_LANE_CONFIDENCE_BP = 5000
+
+
+def _legacy_claim(entry: Any, lane: str) -> Any:
+    """One entry of a promoted lane, in whichever shape it was stored. See
+    `ExtractionResult._rehydrate_legacy_lanes` for why this exists and what it refuses to do.
+
+    Returns the entry UNCHANGED unless it is recognisably the pre-2026-09-23 shape, so the new
+    shape pays one `isinstance` and nothing else.
+    """
+    if isinstance(entry, str):
+        # `questions` was `list[str]`. A bare string is the whole question and no receipt.
+        return {"text": entry, "evidence": [], "confidence_bp": LEGACY_LANE_CONFIDENCE_BP}
+    if not isinstance(entry, Mapping):
+        return entry
+    if "evidence" in entry and "confidence_bp" in entry:
+        return entry                       # already the new shape; nothing to migrate
+    data = {str(key): value for key, value in entry.items()}
+    quote = data.pop("evidence_text", None)
+    if "evidence" not in data:
+        if isinstance(quote, str) and quote.strip():
+            # A PROBE, not a positioned citation: the words are the model's own and the offsets
+            # say "somewhere". ALG-08 relocates it; `verified` stays False, because the one thing
+            # this may never do is stamp a receipt the validator has not checked.
+            data["evidence"] = [{"source_ref": f"legacy_lane:{lane}", "quote": quote,
+                                 "start_offset": 0, "end_offset": len(quote),
+                                 "verified": False}]
+        else:
+            data["evidence"] = []
+    data.setdefault("confidence_bp", LEGACY_LANE_CONFIDENCE_BP)
+    return data
 
 
 def _required_strings(values: Any, label: str) -> list[str]:
@@ -441,6 +478,123 @@ class BusinessFact(BaseModel):
         return self
 
 
+class RoleAssertion(BaseModel):
+    """Who somebody IS, as this message asserts it. *"Maya is now the CFO."*
+
+    PROMOTED FROM `list[dict[str, Any]]` on 2026-09-23. The lane's own field note said it was
+    *"untyped at W0 by design: typing roles is doc 04's work"* — a dated deferral, not a refusal,
+    and this is that work coming due. `esqe/detector.py` fires RELATIONSHIP_CHANGE off it and
+    said so in a comment: *"it carries no EvidenceSpan (the lane is `list[dict]` by contract),
+    hence no receipt on that detection."* Doctrine 3 of this layer is *no claim without a
+    receipt*, and a lane with nowhere to put one cannot obey it however carefully it is filled.
+
+    THE KEYS ARE NOT NEW. `capture/semantic/vocabulary.UNTYPED_LANE_KEYS` already closed this
+    lane to `party` / `role` / `evidence_text`, read off the shipping consumer rather than
+    invented. What changes is that `evidence_text` — a free string nobody could resolve — becomes
+    a real `EvidenceSpan` that ALG-08 grades against the source characters.
+
+    **This does not change any score.** `normalize.DATE_POLICY[RELATIONSHIP_CHANGE]` is `none`
+    and `AMOUNT_POLICY` is `claims_only` by design, so ALG-17 reads no date and no amount here
+    either way. What it buys is a claim a reader can check.
+    """
+
+    #: Who the message is talking about.
+    party: str
+    #: What it says they are. Free text: a role vocabulary that closed here would cap discovery
+    #: at the titles somebody already wrote down, which is `context/extract/vocab.py`'s recorded
+    #: failure pointing the other way.
+    role: str
+    evidence: list[EvidenceSpan]
+    confidence_bp: int
+
+    @field_validator("party", "role")
+    @classmethod
+    def _parties(cls, value: str) -> str:
+        return require_text(value, "role assertion field")
+
+
+class AvailabilityWindow(BaseModel):
+    """When somebody CANNOT act, as they stated it. *"On leave 15–22, Anisha covers."*
+
+    PROMOTED on the same terms as `RoleAssertion`, and this is the lane with the most readers in
+    the tree — `esqe/detector.py` fires AVAILABILITY_CHANGE off it, `esqe/lifecycle.py` and
+    `esqe/qualification.py` both branch on that type, and Layer 2 writes `person.availability`
+    from it.
+
+    `from_text` AND `to_text` ARE THE MESSAGE'S OWN WORDS, verbatim — *"from 15th"*, *"kal se"*,
+    *"back on Monday"*. Layer 2 (`context/extract/availability.py`) resolves them into dates
+    against the message date. **No model ever does the arithmetic**, which is why they are strings
+    here and not a `ResolvedDate`: a model that returned a date would be guessing at a timezone
+    and a reference point it was never given.
+    """
+
+    #: Whose absence this is — **`None` means the message's own author**, which is by far the
+    #: commonest case (an out-of-office auto-reply says "I am away" and names nobody). Optional
+    #: because its one consumer already reads it that way: `context/extract/availability._person`
+    #: returns `None` for a missing value and for a self-word, with the comment *"None when it
+    #: names the author"*. Requiring a name here would refuse the ordinary OOO and force the
+    #: extractor to invent an identity the message never stated.
+    person: str | None = None
+    #: leave · out_of_office · sick · travel · busy — the shape `vocabulary.py` closes.
+    kind: str
+    #: The start, in the message's own words. `None` when it stated only an end.
+    from_text: str | None = Field(default=None, alias="from")
+    #: The end, in the message's own words. `None` when it stated only a start — an open-ended
+    #: absence is a real answer and must not be filled in with a guessed return date.
+    to_text: str | None = Field(default=None, alias="to")
+    #: Who is covering, when the message names somebody. This is the field that makes an absence
+    #: actionable rather than merely known.
+    coverage_person: str | None = None
+    evidence: list[EvidenceSpan]
+    confidence_bp: int
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    @field_validator("kind")
+    @classmethod
+    def _stated(cls, value: str) -> str:
+        return require_text(value, "availability field")
+
+    @field_validator("person", "coverage_person")
+    @classmethod
+    def _named_or_absent(cls, value: str | None) -> str | None:
+        """Absent is a real answer; BLANK is not. `""` and `"   "` both mean the extractor
+        emitted a field it had nothing to put in, and they render as an empty name beside a real
+        one. `None` says "the author" and is unambiguous."""
+        if value is None:
+            return None
+        return require_text(value, "availability field")
+
+
+class OpenQuestion(BaseModel):
+    """Something the message ASKED and nobody has answered.
+
+    PROMOTED FROM `list[str]`. Its field note already argued for it: *"an unanswered question is
+    an open loop even when nobody promised anything, which is why they are captured separately
+    from commitments."* A loop the product cannot quote is a loop it cannot show, and benchmark
+    P3 — *"the final unresolved question"* — is exactly this lane.
+
+    A bare string could not say WHO asked, or point at the sentence. Both are needed before Layer
+    2 can decide whose court the question sits in.
+    """
+
+    #: The question as asked.
+    text: str
+    #: Who asked, when the message makes it plain. `None` rather than the sender by default:
+    #: a forwarded thread routinely carries somebody else's question, and attributing it to the
+    #: forwarder puts the open loop on the wrong person's node.
+    asked_by: str | None = None
+    #: Who it was put to, when stated.
+    asked_of: str | None = None
+    evidence: list[EvidenceSpan]
+    confidence_bp: int
+
+    @field_validator("text")
+    @classmethod
+    def _asked(cls, value: str) -> str:
+        return require_text(value, "open question text")
+
+
 class ExtractionResult(BaseModel):
     """C-09 · the complete S2 (L1.4) output for one message. INTERNAL TO L1.
 
@@ -515,13 +669,13 @@ class ExtractionResult(BaseModel):
     implied_actions: list[str] = Field(default_factory=list)
     #: Questions asked in the message. An unanswered question is an open loop even when nobody
     #: promised anything, which is why they are captured separately from commitments.
-    questions: list[str] = Field(default_factory=list)
+    questions: list[OpenQuestion] = Field(default_factory=list)
     #: Role candidates. Untyped at W0 by design: typing roles is doc 04's work and needs the
     #: extraction this envelope feeds, so freezing a shape here would pin a boundary type to a
     #: design that has not been made yet. DIVERGENCE FROM DOC 08: written `list[dict]` in the
     #: doc and `list[dict[str, Any]]` here — the contents stay untyped, the keys are pinned to
     #: `str` so the JSON round-trip and any content address over the result are stable.
-    roles: list[dict[str, Any]] = Field(default_factory=list)
+    roles: list[RoleAssertion] = Field(default_factory=list)
     #: Where `GatedEvent.linkage_hints` lands. It was computed, persisted and then read by
     #: nothing — the hint reached the boundary and stopped there. Same untyped-by-design terms
     #: as `roles`.
@@ -533,7 +687,7 @@ class ExtractionResult(BaseModel):
     #: key names are closed by `capture/semantic/vocabulary.UNTYPED_LANE_KEYS`, and Layer 2
     #: (`context/extract/availability.py`) resolves the quoted words into dates against the
     #: message date. The model never does date arithmetic.
-    availability: list[dict[str, Any]] = Field(default_factory=list)
+    availability: list[AvailabilityWindow] = Field(default_factory=list)
 
     # --- the discovery lane ---
     #: C-08. Capped at MAX_UNCLASSIFIED_PER_EXTRACTION by prompt instruction, not by this
@@ -594,16 +748,68 @@ class ExtractionResult(BaseModel):
         at the extractor seam or a provenance string a replay cannot proceed without."""
         return require_text(value, "extraction field")
 
-    @field_validator("topics", "implied_actions", "questions", mode="before")
+    #: `questions` LEFT this validator on 2026-09-23 when it became `list[OpenQuestion]`; a
+    #: string-list guard on a model list would refuse every valid entry.
+    @field_validator("topics", "implied_actions", mode="before")
     @classmethod
     def _text_lists(cls, value: Any) -> list[str]:
         return _required_strings(value, "list entry")
 
-    @field_validator("roles", "relationships", "scheduling_proposals", "availability",
-                     mode="before")
+    #: `roles` and `availability` left this one for the same reason — they are `RoleAssertion`
+    #: and `AvailabilityWindow` now, and pydantic validates their shape from the model. The two
+    #: lanes still here are the ones step 4 has not promoted yet.
+    @field_validator("relationships", "scheduling_proposals", mode="before")
     @classmethod
     def _open_lanes(cls, value: Any) -> list[dict[str, Any]]:
         return _open_lane_dicts(value, "open lane")
+
+    @model_validator(mode="before")
+    @classmethod
+    def _rehydrate_legacy_lanes(cls, data: Any) -> Any:
+        """READ-SIDE MIGRATION, added 2026-09-23 with step 4. Not a leniency.
+
+        `questions`, `roles` and `availability` were `list[str]` / `list[dict]` until this date.
+        Every row already in `l1_extraction_results` carries the old shape, and
+        `context/qes_adapter.adapt_qes_extraction` rehydrates those rows with
+        `ExtractionResult.model_validate(...)` on the live L2 path. Without this the promotion
+        would not merely change the wire — **it would make every cached extraction in every
+        tenant unreadable**, and Layer 2 would stop receiving anything from the cache on the day
+        it shipped. The cache is keyed on content version and only turns over when a message
+        changes, so "it will age out" is not an answer for a corpus nobody re-sends.
+
+        WHAT IT DOES, and the one thing it refuses to do:
+
+        * a bare string in `questions` becomes `{"text": <the string>}` — that lane genuinely
+          was a list of strings;
+        * `evidence_text`, the free receipt string the old shape carried, becomes a PROBE span:
+          the model's own words at offsets `0..len`, `verified=False`. That is the same
+          convention `extractor._spans_from_payload` already uses for a model that quoted
+          correctly and counted in the wrong frame, and ALG-08 relocates it against the source.
+          The alternative — dropping it — would silently delete the only receipt a legacy claim
+          ever had;
+        * a missing `confidence_bp` becomes `LEGACY_LANE_CONFIDENCE_BP`.
+
+        IT NEVER INVENTS A QUOTE. An entry with no `evidence_text` gets `evidence=[]`, which is
+        the honest "this claim was stored without a receipt" — and V-5 downgrades it, exactly as
+        it downgrades a claim whose quote failed to resolve.
+
+        A payload already in the NEW shape is untouched: every branch is keyed on a field the new
+        shape does not have (a bare string, `evidence_text`, an absent `evidence`).
+        """
+        if not isinstance(data, Mapping):
+            return data
+        upgraded: dict[str, Any] | None = None
+        for lane in ("questions", "roles", "availability"):
+            entries = data.get(lane)
+            if not isinstance(entries, (list, tuple)) or not entries:
+                continue
+            rebuilt = [_legacy_claim(entry, lane) for entry in entries]
+            if rebuilt == list(entries):
+                continue
+            if upgraded is None:
+                upgraded = dict(data)
+            upgraded[lane] = rebuilt
+        return upgraded if upgraded is not None else data
 
     @field_validator("field_confidence", mode="before")
     @classmethod
@@ -642,6 +848,13 @@ class ExtractionResult(BaseModel):
             self.entity_mentions, self.dates_mentioned, self.commitments,
             self.decision_states, self.dependencies, self.business_facts,
             self.unclassified_observations,
+            # PROMOTED 2026-09-23 (step 4). These three were `list[dict]`/`list[str]` and could
+            # not appear here — a lane with no `evidence` field has no span to contribute. They
+            # are not an afterthought on this list: `esqe/detector.py` fires RELATIONSHIP_CHANGE,
+            # AVAILABILITY_CHANGE and a decision predicate off exactly these three, so until
+            # today the only three signal types derived from unverifiable claims were also the
+            # only three whose receipts ALG-08 never saw.
+            self.questions, self.roles, self.availability,
         )
         for claims in claim_lists:
             for claim in claims:
@@ -666,6 +879,7 @@ class ExtractionResult(BaseModel):
 
 
 __all__ = ["FORBIDDEN_RESULT_FIELDS", "MAX_UNCLASSIFIED_PER_EXTRACTION", "Commitment",
+           "RoleAssertion", "AvailabilityWindow", "OpenQuestion",
            "MessageIntent",
            "BusinessFact", "BusinessField", "DecisionState", "Dependency", "EntityMention", "ExtractionResult",
            "UnclassifiedObservation"]

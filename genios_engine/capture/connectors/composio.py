@@ -30,6 +30,7 @@ from genios_engine.capture.documents.router import has_pages
 from genios_engine.capture.gate.relevance import DROP_BELOW_RELEVANCE
 
 from .backfill import DEFAULT_BACKFILL_DAYS, BackfillWindow
+from .thread_position import thread_place_from_references
 from .base import RawObject, SourceBatch
 
 # Composio sits BEHIND this interface — auth + Gmail data delivery only. Our contract,
@@ -90,6 +91,21 @@ _NOISE_HEADERS = ("Auto-Submitted", "Precedence", "List-Unsubscribe",
 # display-name signal ("Sehan via Boardy"), which reads `source_events.actor->>'name'` — a typed
 # column that survives.
 _ROUTING_HEADERS = ("Reply-To", "Sender")
+
+# Step 16 · RFC 5322 threading. A THIRD tuple, because this file's own convention is one tuple per
+# purpose — the two above mark mail to be dropped and mail whose ATTRIBUTION is wrong; these say
+# what a message is a reply TO.
+#
+# `ThreadMessage` has declared `in_reply_to` and `references` since it was written, with the reason
+# they are optional stated in as many words: *"the Gmail path does not carry them yet"*. It still
+# did not, so `assemble_chain` — a full RFC 5322 parent resolution, ALG-03 — has never once run on
+# real data. Worse, `pipeline._thread_place` reads a `thread_position` NO connector ever set, so
+# every prompt in production says "message 1 of 1" on threads twelve messages deep.
+#
+# FORWARD-ONLY, like the routing headers above and for the same reason: the raw payload is
+# encrypted and expires, so messages captured before this carry neither header and keep the (1, 1)
+# default, which stays the honest answer for a message whose thread we cannot see.
+_THREAD_HEADERS = ("In-Reply-To", "References")
 
 # L1.2.4-U1 — the first-connect backfill window is NO LONGER a constant here. It was
 # `_BACKFILL_WINDOW = "newer_than:60d"`, which handed every tenant the same two months of history
@@ -316,6 +332,10 @@ class ComposioGmailConnector:
             # An attachment belongs to the same conversation as its message, so it carries the
             # same participant set — otherwise a deck arrives with no idea who it was sent to.
             recipients=tuple(to_emails) + tuple(cc_emails),
+            # Step 13 · KEEP WHAT WE JUST READ. Both lists were parsed from the headers a few
+            # lines up and then thrown away by the line above; `recipients` still means everyone
+            # on the message and these two travel beside it.
+            to_recipients=tuple(to_emails), cc_recipients=tuple(cc_emails),
             raw={
                 "subject": att.get("filename") or "attachment",
                 "body": "",
@@ -351,8 +371,23 @@ class ComposioGmailConnector:
         messages = [m for m in (data.get("messages") or data.get("emails")
                     or data.get("response_data") or []) if isinstance(m, dict)]
         cursor = data.get("nextPageToken") or data.get("next_page_token")
+        # THE DENOMINATOR (step 5). Gmail returns `resultSizeEstimate` on every list call — the
+        # number of messages matching the QUERY, not the page. It is the only provider-side count
+        # we get, it is an ESTIMATE by Google's own naming, and until 2026-09-23 it was thrown
+        # away with the rest of the envelope. Read under both spellings because the Composio
+        # passthrough and the raw API disagree about case, and clamped at >= 0 so a provider
+        # returning a negative or a non-integer cannot put a nonsense denominator into a ratio.
+        claimed = data.get("resultSizeEstimate")
+        if claimed is None:
+            claimed = data.get("result_size_estimate")
+        try:
+            claimed = int(claimed) if claimed is not None else None
+        except (TypeError, ValueError):
+            claimed = None
+        if claimed is not None and claimed < 0:
+            claimed = None
         if not messages:
-            return SourceBatch(objects=[], next_cursor=cursor)
+            return SourceBatch(objects=[], next_cursor=cursor, claimed_total=claimed)
 
         # FAST PATH: gate on the cheap LIST snippet first, then full-fetch ONLY the keepers. On a
         # newsletter-heavy inbox this skips ~95% of the slow per-message calls. Needs a classifier
@@ -436,14 +471,14 @@ class ComposioGmailConnector:
             objs: list[RawObject] = []
             for m, light_objs in light:
                 objs.extend(light_objs if id(m) in drops else fetched.get(id(m), light_objs))
-            return SourceBatch(objects=objs, next_cursor=cursor)
+            return SourceBatch(objects=objs, next_cursor=cursor, claimed_total=claimed)
 
         # LEGACY PATH (no priming classifier): full-fetch every message concurrently.
         workers = min(_FETCH_WORKERS, len(messages))
         with ThreadPoolExecutor(max_workers=workers) as ex:
             per_message = list(ex.map(self._to_objects, messages))
         objs = [o for sub in per_message for o in sub]
-        return SourceBatch(objects=objs, next_cursor=cursor)
+        return SourceBatch(objects=objs, next_cursor=cursor, claimed_total=claimed)
 
     def webhook_objects(self, payload: Mapping[str, Any]) -> tuple[RawObject, ...]:
         """L1.2.5-U1 — one pushed Gmail trigger → exactly what a poll of that message emits.
@@ -514,8 +549,13 @@ class ComposioGmailConnector:
         labels = pick("labelIds", "labels") or []
         # noise-relevant headers → without this dict the gate's N-01/N-02/N-04 rules never fired on
         # real Gmail, so bulk/automated mail wasted an L2 LLM call before being dropped as noise.
-        headers = {h: v for h in _NOISE_HEADERS + _ROUTING_HEADERS
+        headers = {h: v for h in _NOISE_HEADERS + _ROUTING_HEADERS + _THREAD_HEADERS
                    if (v := (_header(src, h) or _header(m, h)))}
+        # Step 16 · the position falls out of the header we just read, at no extra API cost.
+        # `threads.get` would give an exact thread size and costs a request per thread against a
+        # shared rate limit; that trade is recorded in `manifest.py` rather than paid for.
+        position, depth = thread_place_from_references(
+            references=headers.get("References"), in_reply_to=headers.get("In-Reply-To"))
 
         # walk MIME → full body text + attachment refs
         texts: list = []
@@ -537,12 +577,20 @@ class ComposioGmailConnector:
             # Typed, so the participant set survives past the payload TTL — the raw dict
             # is encrypted and expires; this column does not.
             recipients=tuple(to_emails) + tuple(cc_emails),
+            # Step 13 · KEEP WHAT WE JUST READ. Both lists were parsed from the headers a few
+            # lines up and then thrown away by the line above; `recipients` still means everyone
+            # on the message and these two travel beside it.
+            to_recipients=tuple(to_emails), cc_recipients=tuple(cc_emails),
             raw={
                 "subject": subject,
                 "body": body,                 # FULL text now → preprocess → L2
                 "snippet": snippet,
                 "labelIds": labels,
                 "headers": headers,            # revives the header-based noise rules (N-01/02/04)
+                # Step 16 · the two keys `pipeline._thread_place` has read since it was written and
+                # that NO connector ever wrote. Without them every prompt says "message 1 of 1" and
+                # `ThreadContext.turn_index` is 0 for the whole corpus.
+                "thread_position": position, "thread_depth": depth,
                 "to": to_emails, "cc": cc_emails,
                 "has_attachment": bool(atts),  # keeps attachment-only emails out of the N-10 drop
                 # W-04, WIRED. `gate/rules.whitelist` has read `raw["important_attachment"]` since
@@ -614,6 +662,10 @@ class ComposioGmailConnector:
                 occurred_at=occurred, actor_email=sender_email, actor_type="external_contact",
                 parent_object_id=mid,          # links the file back to its email
                 recipients=tuple(to_emails) + tuple(cc_emails),
+            # Step 13 · KEEP WHAT WE JUST READ. Both lists were parsed from the headers a few
+            # lines up and then thrown away by the line above; `recipients` still means everyone
+            # on the message and these two travel beside it.
+            to_recipients=tuple(to_emails), cc_recipients=tuple(cc_emails),
                 raw={
                     "subject": a.get("filename") or "attachment",
                     "body": r.text,            # extracted document text → L2 facts

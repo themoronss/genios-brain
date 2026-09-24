@@ -52,9 +52,14 @@ def db():
             "create table graph_source_refs (org_id text, event_id text, fact_version_id text, "
             "source text, source_object_id text, evidence text)"))
         c.execute(text(
+            # See the note in `test_l1_signals_reach_a_reading.py`: hand-written, so it must be
+            # widened whenever `_L1_SELECT` is.
             "create table qualified_signals (org_id text, event_id text, signal_id text, "
             "state text, importance_bp int, importance_version text, importance_components text, "
-            "evidence_refs text, conflict_ids text, signal_type text, coverage_ready int)"))
+            "evidence_refs text, conflict_ids text, signal_type text, coverage_ready int, "
+            "subject_key text, domain_hints text, confidence_bp integer, "
+            "occurred_at timestamp, expires_at timestamp, secondary_types text, "
+            "extraction_ref text, internal_kind text)"))
         c.execute(text(
             "create table graph_edges (org_id text, edge_type text, from_node_id text, "
             "to_node_id text, valid_to timestamp)"))
@@ -101,11 +106,16 @@ def _signal(c, event: str, *, signal_id: str = "sig1", quote: str = "Sending the
     wrote. `verified` is False here exactly as an extractor leaves it — only L1.5.1 may set it."""
     span = {"source_ref": f"chunk:doc_{event}:0", "quote": quote,
             "start_offset": 0, "end_offset": len(quote), "verified": False}
+    # Columns NAMED, not positional. The table grew eight columns when `_L1_SELECT` was widened
+    # (2026-09-23) and a positional insert breaks on every such change — silently in the sense
+    # that the failure is a column count, not the thing the test is about.
     c.execute(text(
-        "insert into qualified_signals values (:o, :e, :sid, :st, :bp, 'v1', '{}', :ev, '[]', "
-        "'commitment', 1)"),
+        "insert into qualified_signals (org_id, event_id, signal_id, state, importance_bp, "
+        "  importance_version, importance_components, evidence_refs, conflict_ids, signal_type, "
+        "  coverage_ready, subject_key) "
+        "values (:o, :e, :sid, :st, :bp, 'v1', '{}', :ev, '[]', 'commitment', 1, :subj)"),
         {"o": ORG, "e": event, "sid": signal_id, "st": state, "bp": importance_bp,
-         "ev": json.dumps([span])})
+         "ev": json.dumps([span]), "subj": f"subject:{event}"})
 
 
 class _Subject:

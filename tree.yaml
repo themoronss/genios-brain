@@ -1295,3 +1295,280 @@ persona_brain_and_layer_repair:
         "Proposes, a human accepts" needs an acceptance surface. If none exists for
         `l3_activation.variant_ids`, this unit splits into a proposal store and an admin route,
         which is two units and not one.
+
+# ═════════════════════════════════════════════════════════════════════════════════════════════
+l1_signal_quality_seam:
+  status: proposed_awaiting_confirmation
+  created: 2026-09-23
+  branch: speedrun008
+  specs: [speedrun008/docs/L1_ANATOMY.md, docs/plans/L1_V2_BUILD_RECORD.md]
+  vision: >
+    A signal that reaches Layer 2 carries what Layer 1 concluded about it — its subject, its
+    domains, its confidence, when it happened, when it expires, and its own extraction — instead
+    of nine columns. Two signals on one event each carry their own extraction, not just the
+    loudest. Every one of the ten named groups of the Signal Qualification Engine resolves to the
+    module that implements it, and a new module without a group fails the build.
+  why: >
+    Enterprise Signals were thin, and the cause is not that Layer 1 under-produces. L1 computes 26
+    ExtractionResult fields and 29 QES fields and persists 28 columns. `context/situation_bso.py`
+    `_L1_SELECT` (:516) and `_L1_BY_EVENT_SELECT` (:802) read NINE. `subject_key` — the half of
+    ALG-19's supersession key that answers "which signals are about the same thing" — has a column
+    on `qualification_drops` (0088) and on `signal_lifecycle` (0093) and NO column on
+    `qualified_signals` (0089): a REFUSED signal records its subject and a PUBLISHED one does not.
+    `context/runner.py:249` resolves `extraction_ref` through `array_agg(...)[1]`, so only the
+    highest-importance signal on an event ever reaches L2 with an extraction behind it.
+  not_this: >
+    This is NOT a rewrite of `capture/esqe/`. Seven of the ten named groups already ship there,
+    mutation-checked. No working module is renamed; M14 adds a naming layer over the modules that
+    exist. A rename that moved `importance.py` would put ALG-17's measured distribution at risk
+    for no gain.
+  protected:
+    - ALG-17's formula and its five weights are unchanged
+    - importance_bp distribution properties hold — >50 distinct values, p90 - p50 > 1500
+    - integer basis points only; no float crosses any boundary
+    - no LLM on any scoring call path
+    - no clock read inside `capture/validate/`
+    - the closed taxonomy stays closed — M14.C2 corrects its COUNT in prose, never adds a member
+  verification:
+    prelude: |
+      export PATH="/Users/rohitswerashi/MacBook Air Professional/VS Code/VS Code Setup/toolchains/bin:$PATH"
+      export UV_PROJECT_ENVIRONMENT="<scratchpad>/venv"
+    unit_command: uv run --no-sync pytest <path> -q -p no:randomly
+    constraints: >
+      Every unit's regression test must fail for the intended reason BEFORE its production change.
+      Fixed timestamps, local fixtures, SQLite or scratch Postgres, fake model responses. The
+      seam units (M13.C2, M13.C3) touch Postgres-only SQL and carry `pytestmark = pytest.mark.pg`;
+      a skipped pg test is NOT a pass and the unit stays red until it runs with
+      GENIOS_TEST_DATABASE_URL set.
+
+  milestones:
+    # ─────────────────────────────────────────────────────────────────────────────────────────
+    - id: M13
+      name: The seam carries what Layer 1 concluded
+      ships: >
+        L2 reads a signal's subject, domains, confidence, timing and extraction instead of nine
+        columns, and can group signals by what they are about.
+      categories:
+        - id: M13.C1
+          name: Subject identity crosses the seam
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M13.C1.L-contract.V0.U01
+                      what: >
+                        `subject_key text` on `qualified_signals`, plus the index
+                        (org_id, subject_key, signal_type) that ALG-19's supersession key implies.
+                        Nullable on arrival — 0089 rows predate it and a NOT NULL would refuse the
+                        migration on any live tenant.
+                      artifact: migrations/0176_qualified_signals_subject_key.sql
+                      verify: uv run --no-sync pytest tests/capture/esqe/test_subject_key_seam.py -q -p no:randomly
+                      depends_on: []
+                    - id: M13.C1.L-contract.V0.U02
+                      what: >
+                        `subject_key: str` on C-12, SUPPLIED and never derived — the field note
+                        must say so, because `signal.py` currently argues the opposite and
+                        `record_of` takes it as a parameter for exactly that reason.
+                      artifact: genios_engine/contracts/signal.py
+                      verify: uv run --no-sync pytest tests/contracts/test_l1_contracts.py -q -p no:randomly
+                      depends_on: []
+            - layer: logic
+              levels:
+                - level: 1
+                  units:
+                    - id: M13.C1.L-logic.V1.U03
+                      what: >
+                        `build_signal` passes `NormalizedSignal.subject_key` into the QES it
+                        constructs at publisher.py:430. It already holds the normalized signal;
+                        this is one kwarg, and re-deriving would be ALG-22's second answer.
+                      artifact: genios_engine/capture/esqe/publisher.py::build_signal
+                      verify: uv run --no-sync pytest tests/capture/esqe/test_publisher.py -q -p no:randomly
+                      depends_on: [M13.C1.L-contract.V0.U02]
+                    - id: M13.C1.L-logic.V1.U04
+                      what: >
+                        `_COLUMNS` and the row params carry `subject_key` into the INSERT, and the
+                        upsert takes it from `excluded` like every other computed column.
+                      artifact: genios_engine/capture/esqe/signal_store.py
+                      verify: uv run --no-sync pytest tests/capture/esqe/test_qes_provenance.py tests/capture/esqe/test_subject_key_seam.py -q -p no:randomly
+                      depends_on: [M13.C1.L-contract.V0.U01, M13.C1.L-logic.V1.U03]
+            - layer: integration
+              levels:
+                - level: 2
+                  units:
+                    - id: M13.C1.L-integration.V2.U05
+                      what: >
+                        One event, one published signal and one refused sibling: both rows carry
+                        the SAME `subject_key`. This is the asymmetry the milestone exists to
+                        close — today only the refusal records it.
+                      artifact: tests/capture/esqe/test_subject_key_seam.py
+                      verify: uv run --no-sync pytest tests/capture/esqe/test_subject_key_seam.py -q -p no:randomly
+                      depends_on: [M13.C1.L-logic.V1.U04]
+
+        - id: M13.C2
+          name: The projection widens
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M13.C2.L-contract.V0.U06
+                      what: >
+                        The L2-side row shape `_l1_from_rows` builds gains the fields the wider
+                        select returns. Shape first, so the two selects below have something to
+                        fill and a partial landing cannot half-populate a situation.
+                      artifact: genios_engine/context/situation_bso.py::_l1_from_rows
+                      verify: uv run --no-sync pytest tests/test_l2_reads_what_l1_publishes.py -q -p no:randomly
+                      depends_on: []
+            - layer: logic
+              levels:
+                - level: 1
+                  units:
+                    - id: M13.C2.L-logic.V1.U07
+                      what: >
+                        `_L1_SELECT` carries subject_key, domain_hints, confidence_bp,
+                        confidence_vector, secondary_types, occurred_at, expires_at, supersedes,
+                        internal_kind and extraction_ref.
+                      artifact: genios_engine/context/situation_bso.py::_L1_SELECT
+                      verify: uv run --no-sync pytest tests/test_l2_reads_what_l1_publishes.py -q -p no:randomly
+                      depends_on: [M13.C2.L-contract.V0.U06, M13.C1.L-logic.V1.U04]
+                    - id: M13.C2.L-logic.V1.U08
+                      what: >
+                        `_L1_BY_EVENT_SELECT` carries the identical column set, and a test asserts
+                        the two projections select the SAME columns. The module's own comment says
+                        two hand-written copies is how the paths disagree; today nothing enforces
+                        it.
+                      artifact: genios_engine/context/situation_bso.py::_L1_BY_EVENT_SELECT
+                      verify: uv run --no-sync pytest tests/test_l2_reads_what_l1_publishes.py -q -p no:randomly
+                      depends_on: [M13.C2.L-logic.V1.U07]
+            - layer: integration
+              levels:
+                - level: 2
+                  units:
+                    - id: M13.C2.L-integration.V2.U09
+                      what: >
+                        Capture → publish → compose, on scratch Postgres: the situation's L1 rows
+                        carry the domains and confidence the stored signal has, not None.
+                      artifact: tests/test_l2_reads_what_l1_publishes.py
+                      verify: uv run --no-sync pytest tests/test_l2_reads_what_l1_publishes.py tests/test_l1_seam_activation.py -q -p no:randomly
+                      depends_on: [M13.C2.L-logic.V1.U08]
+
+        - id: M13.C3
+          name: Every signal's extraction, not only the loudest
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M13.C3.L-logic.V0.U10
+                      what: >
+                        Replace `array_agg(qs.extraction_ref ...)[1]` with a per-signal join, so an
+                        event carrying two qualified signals resolves two extractions. The [1] was
+                        an event-level answer to a signal-level question.
+                      artifact: genios_engine/context/runner.py
+                      verify: uv run --no-sync pytest tests/context/test_runner_extraction_join.py -q -p no:randomly
+                      depends_on: [M13.C2.L-logic.V1.U07]
+            - layer: integration
+              levels:
+                - level: 1
+                  units:
+                    - id: M13.C3.L-integration.V1.U11
+                      what: >
+                        Two qualified signals on one event with DIFFERENT extraction refs; both
+                        reach L2 with their own. Must fail on today's code for the right reason.
+                      artifact: tests/context/test_runner_extraction_join.py
+                      verify: uv run --no-sync pytest tests/context/test_runner_extraction_join.py -q -p no:randomly
+                      depends_on: [M13.C3.L-logic.V0.U10]
+
+    # ─────────────────────────────────────────────────────────────────────────────────────────
+    - id: M14
+      name: The ten groups are addressable
+      ships: >
+        Every named group of the Signal Qualification Engine resolves to the module that
+        implements it, and prose no longer contradicts code.
+      categories:
+        - id: M14.C1
+          name: The group map
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M14.C1.L-contract.V0.U12
+                      what: >
+                        `GROUPS` — the ten group names mapped to the modules that implement them,
+                        as data in one module. A naming layer over working code; nothing is
+                        renamed or moved.
+                      artifact: genios_engine/capture/esqe/groups.py
+                      verify: uv run --no-sync pytest tests/capture/esqe/test_groups.py -q -p no:randomly
+                      depends_on: []
+            - layer: logic
+              levels:
+                - level: 1
+                  units:
+                    - id: M14.C1.L-logic.V1.U13
+                      what: >
+                        An AST test — every group resolves to an importable module, and a new
+                        module under `capture/esqe/` that belongs to no group fails by file and
+                        line. Same ratchet shape as the coverage door test.
+                      artifact: tests/capture/esqe/test_groups.py
+                      verify: uv run --no-sync pytest tests/capture/esqe/test_groups.py -q -p no:randomly
+                      depends_on: [M14.C1.L-contract.V0.U12]
+        - id: M14.C2
+          name: Prose matches code
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M14.C2.L-logic.V0.U14
+                      what: >
+                        The taxonomy is FIFTEEN members — AVAILABILITY_CHANGE joined and the
+                        docstrings still say fourteen. Correct `esqe/__init__.py`, the build
+                        record, and add a test that reads `len(SignalType)` so the number cannot
+                        drift again.
+                      artifact: genios_engine/capture/esqe/__init__.py
+                      verify: uv run --no-sync pytest tests/contracts/test_l1_contracts.py -q -p no:randomly
+                      depends_on: []
+                    - id: M14.C2.L-logic.V0.U15
+                      what: >
+                        Tag ALG-02 (dedup key), ALG-06 (cache key), ALG-07 (batch packing) and
+                        ALG-20 (coverage) in the modules that implement them. All four are built;
+                        none is named in code, so 4 of 23 algorithms are untraceable.
+                      artifact: genios_engine/capture/landing/repository.py
+                      verify: uv run --no-sync python -m scripts.unit_ledger --check
+                      depends_on: []
+
+    # ─────────────────────────────────────────────────────────────────────────────────────────
+    - id: M15
+      name: The quality is measured, not asserted
+      ships: >
+        A number that says how much of what Layer 1 concluded actually reaches Layer 2 — before
+        and after M13 — so "signals got better" is a measurement rather than a claim.
+      categories:
+        - id: M15.C1
+          name: The detail report
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M15.C1.L-logic.V0.U16
+                      what: >
+                        Per tenant, the fraction of published signals whose subject, domains,
+                        confidence vector and resolvable extraction reach a composed situation.
+                        Reads an explicit --database-url, never settings, like every gate report.
+                      artifact: scripts/l1_signal_detail_report.py
+                      verify: uv run --no-sync pytest tests/test_scripts_db_guard.py -q -p no:randomly
+                      depends_on: [M13.C2.L-integration.V2.U09]
+            - layer: integration
+              levels:
+                - level: 1
+                  units:
+                    - id: M15.C1.L-integration.V1.U17
+                      what: >
+                        The report over the golden corpus prints the before/after table. The BEFORE
+                        column is measured on a checkout without M13, not recalled from this file.
+                      artifact: speedrun008/docs/L1_SEAM_MEASUREMENT.md
+                      verify: uv run --no-sync python -m scripts.l1_signal_detail_report --help
+                      depends_on: [M15.C1.L-logic.V0.U16, M13.C3.L-integration.V1.U11]

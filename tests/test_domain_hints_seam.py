@@ -24,10 +24,24 @@ def _roundtrip(hints):
 
 
 def test_source_prior_survives_roundtrip():
+    """`confidence_bp` JOINED the seam on 2026-09-24 (step 6), and this row is where that is
+    PROVED rather than assumed.
+
+    The exact-equality assertion is deliberate and stays exact. This file exists because
+    `_dump_list` once stored each hint as its `str()` repr, so every event fell back to `general`
+    on Postgres and no in-memory test could see it. A loose assertion here would have missed that,
+    and a field added to `DomainHint` but lost in serialization is the same defect wearing new
+    clothes — an integer confidence that reaches jsonb as `"6000"` or vanishes entirely is exactly
+    the kind of thing this seam has already done once.
+    """
     hints = domain_hints("hubspot", None)          # HubSpot -> sales prior
     assert hints and hints[0].domain == "sales"
     parsed = _roundtrip(hints)
-    assert parsed == [{"domain": "sales", "source": "scope"}]   # objects, not repr strings
+    assert parsed == [{"domain": "sales", "source": "scope",
+                       "confidence_bp": 9000}]     # objects, not repr strings
+    assert isinstance(parsed[0]["confidence_bp"], int), (
+        "the confidence crossed the jsonb boundary as a string — V-7 forbids a float and a "
+        "quoted integer is no more readable to a consumer doing arithmetic")
     assert resolve_domain(parsed) == "sales"       # NOT the general fallback
 
 

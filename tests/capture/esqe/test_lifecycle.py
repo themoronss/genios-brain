@@ -97,6 +97,9 @@ def _qes(signal_id: str = "sig_1", *, state: str = L.ACTIVE, supersedes: str | N
          signal_type: SignalType = SignalType.CONTRACT_RENEWAL) -> QualifiedEnterpriseSignal:
     return QualifiedEnterpriseSignal(
         org_id=ORG, trace_id="trace_alg19", visibility=Visibility(), signal_id=signal_id,
+        # ALG-19 supersedes on `(subject_key, signal_type)` — a lifecycle fixture with no
+        # subject could not supersede anything, so these tests need a real one.
+        subject_key="contract:northwind",
         event_id="evt_alg19", source="gmail", object_type="email_message",
         occurred_at=NOW - timedelta(days=1), signal_type=signal_type, importance_bp=7800,
         triage_lane="P1",

@@ -183,6 +183,69 @@ class MessageIntent(BaseModel):
                 or self.human_authored is not None
                 or self.asks_for_reply is not None)
 
+    #: The seven OBSERVED axes, in declaration order. `engagement` is deliberately absent: it is
+    #: the JUDGED half, derived from these, and counting it would let one reading of the message
+    #: vote twice on how much of the message was read.
+    _OBSERVED = ("category", "tone", "formality", "motive",
+                 "addressed_personally", "human_authored", "asks_for_reply")
+
+    @property
+    def confidence_bp(self) -> int:
+        """How much of this message the reader actually managed to read, in integer basis points.
+
+        **DERIVED, NEVER ASKED FOR — and two separate rules force that.**
+
+        DOCTRINE 1: a model may DESCRIBE, never SCORE. A model's self-reported certainty becoming a
+        stored confidence is that line being crossed, and this layer refuses it everywhere else.
+
+        THE COST CHECK (step 7, 2026-09-24): `"intent"` is a closed set inside
+        `capture/semantic/vocabulary._SETS`, which feeds `vocabulary_fingerprint()`, which is a
+        component of the `l1_extraction_results` cache key. **Asking the model for a confidence
+        changes the prompt, which moves the key, which re-extracts the entire corpus** — a third
+        full model bill after step 4's. Counting the axes it already answered costs nothing.
+
+        It is the completeness of the reading and NOT a probability that the reading is right. A
+        message where every axis was answered scores 10000 whether or not the answers are good;
+        what it buys is attribution — "intent read nothing here" is then distinguishable from "the
+        whole extraction failed", which is the question this step exists to make answerable.
+
+        Integer division, so it truncates and is never overstated. An empty reading scores 0,
+        which is exactly `observed_anything` being False said as a number.
+        """
+        answered = sum(1 for name in self._OBSERVED
+                       if getattr(self, name) not in (None, IntentCategory.UNKNOWN, Tone.UNKNOWN,
+                                                      Formality.UNKNOWN))
+        return answered * 10_000 // len(self._OBSERVED)
+
+    def disagreements_with(self, other: "MessageIntent | None") -> tuple[str, ...]:
+        """Which OBSERVED axes the two readings answered DIFFERENTLY. Reported, never resolved.
+
+        `merged_with` is field-by-field and the richer reading wins wherever it answered, so when
+        the gate says AUTOMATED and the extractor says WORKING the merge keeps WORKING and **the
+        fact that two readers disagreed disappears.** That disagreement is the most useful
+        debugging signal available here: it is the difference between "the prompt is wrong" and
+        "this message is genuinely ambiguous", and neither was visible before.
+
+        AN ABSENCE IS NOT A DISAGREEMENT, and getting that wrong would make the report useless.
+        `merged_with` already says why: *"a `None` or an `unknown` from the fuller read is an
+        ABSENCE, not a correction: it means that reader did not answer."* Counting silence as
+        disagreement would flag most of the corpus and train every reader to ignore the number.
+
+        This changes no behaviour. The merge rule stays exactly as it is; this only stops the
+        disagreement being unobservable.
+        """
+        if other is None:
+            return ()
+        absent = (None, IntentCategory.UNKNOWN, Tone.UNKNOWN, Formality.UNKNOWN)
+        differing: list[str] = []
+        for name in self._OBSERVED:
+            mine, theirs = getattr(self, name), getattr(other, name)
+            if mine in absent or theirs in absent:
+                continue                      # one of them did not answer — not a disagreement
+            if mine != theirs:
+                differing.append(name)
+        return tuple(differing)
+
     @property
     def is_noise(self) -> bool:
         """May the gate treat this as junk ON THIS EVIDENCE ALONE?

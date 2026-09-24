@@ -41,6 +41,10 @@ DIGEST = content_digest("Northwind renewal: $84,000 due 28 March.")
 def _row(signal_id: str, **over) -> QualifiedSignalRow:
     base = dict(
         signal_id=signal_id, org_id=ORG, event_id=f"evt_{signal_id}", trace_id=f"evt_{signal_id}",
+        # ALG-22's subject. Shared across the fixtures on purpose: these tests are about
+        # supersession, and ALG-19 supersedes on `(subject_key, signal_type)` — rows with
+        # different subjects could not replace one another at all.
+        subject_key="contract:northwind",
         signal_type="contract_renewal", importance_bp=7800, importance_version="alg17-v1",
         confidence_bp=8000, extraction_ref="l1x_9f2c", state="active", occurred_at=SENT,
         evidence_refs=({"quote": "the $84,000 fee", "start_offset": 0, "end_offset": 15,

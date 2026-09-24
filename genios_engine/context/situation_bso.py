@@ -274,6 +274,12 @@ class L1Signals:
     #: sorted. L2.7.8's `type` row: *"QES signal_type + pattern match"*. Provenance, so all-state —
     #: what a situation IS about does not change when one of its signals ages out.
     signal_types: tuple[str, ...] = ()
+    #: ALG-22's subjects, deduplicated, ALL states — *what* this situation's signals are about.
+    #: Provenance like `signal_ids`, not a live reading: a superseded renewal was still about the
+    #: renewal. Added 2026-09-23; before that the subject reached `qualification_drops` and
+    #: `signal_lifecycle` and never reached Layer 2, so a situation could name its signals and not
+    #: what any of them was about.
+    subject_keys: tuple[str, ...] = ()
     #: The `signal_conflicts` rows behind `conflict_ids`, projected to the stable fields (doc
     #: L2.7.8: *"conflicts from L1 v2 arrive in metadata"*). A POINTER was never enough on its own:
     #: Layer 3 cannot decide whether a situation is contested without knowing WHAT was contested,
@@ -519,7 +525,21 @@ _L1_SELECT = (
     "qs.importance_version, qs.importance_components, qs.evidence_refs, qs.conflict_ids, "
     # L2.7.8's `type` row. Layer 1 already named what KIND of thing each signal is; Layer 2 spent
     # every sweep re-deriving a type from the anchor's node type and never once read this.
-    "qs.signal_type, qs.coverage_ready "
+"qs.signal_type, qs.coverage_ready, "
+    # WIDENED 2026-09-23. L1 writes 28 columns here and this projection read NINE — every
+    # one below is a value Layer 1 computed and Layer 2 could not re-derive:
+    #   subject_key      ALG-22's subject. The other half of ALG-19's supersession key,
+    #                    and the only way to ask "every signal about this thing".
+    #   domain_hints     which corpus Layer 3 should select. Read from the TOP signal only
+    #                    (`runner.py`'s array_agg[1]), so a second signal contributed none.
+    #   confidence_bp    how sure L1 was. L2 could not tell a 9000 from a 1000.
+    #   occurred_at      the SIGNAL's world time; L2 had only the event's.
+    #   expires_at       ALG-19 already decided it; L2 was re-guessing.
+    #   secondary_types  a signal is often several kinds; only the primary crossed.
+    #   extraction_ref   the claims behind THIS signal — see `runner.py`.
+    #   internal_kind    company canon, which outranks observed traffic and was invisible.
+    "qs.subject_key, qs.domain_hints, qs.confidence_bp, qs.occurred_at, "
+    "qs.expires_at, qs.secondary_types, qs.extraction_ref, qs.internal_kind "
     "from qualified_signals qs "
     "join context_correlation_members m "
     "  on m.event_id = qs.event_id and m.org_id = qs.org_id "
@@ -704,6 +724,10 @@ def _l1_from_rows(rows) -> L1Signals | None:
         signal_ids=tuple(str(r["signal_id"]) for r in rows),
         scored_signal_ids=tuple(str(r["signal_id"]) for r in scored),
         signal_types=tuple(sorted({str(r["signal_type"]) for r in rows if r["signal_type"]})),
+        # Deduplicated and sorted, like `signal_types` beside it: three signals about one renewal
+        # are one subject, and a stable order keeps the situation content-addressable. Rows that
+        # predate migration 0177 carry NULL and are skipped rather than folded into a `"None"`.
+        subject_keys=tuple(sorted({str(r["subject_key"]) for r in rows if r["subject_key"]})),
         importance_bp=(int(top["importance_bp"]) if top is not None else None),
         importance_version=(str(top["importance_version"]) if top is not None
                             else UNSCORED_VERSION),
@@ -800,7 +824,12 @@ _OUTBOUND_EVENTS_SQL = (
 _L1_BY_EVENT_SELECT = (
     "select qs.signal_id, qs.state, qs.importance_bp, "
     "qs.importance_version, qs.importance_components, qs.evidence_refs, qs.conflict_ids, "
-    "qs.signal_type, qs.coverage_ready "
+    "qs.signal_type, qs.coverage_ready, "
+    # IDENTICAL to `_L1_SELECT`'s column set, and `test_the_two_projections_select_exactly_the_
+    # same_columns` is what keeps it that way. This file already warned that two hand-written
+    # copies is how the paths disagree; nothing asserted it until now.
+    "qs.subject_key, qs.domain_hints, qs.confidence_bp, qs.occurred_at, "
+    "qs.expires_at, qs.secondary_types, qs.extraction_ref, qs.internal_kind "
     "from qualified_signals qs "
     "where qs.org_id = :o and qs.event_id in :ev "
     "order by qs.importance_bp desc, qs.signal_id"

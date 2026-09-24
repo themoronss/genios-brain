@@ -46,7 +46,7 @@ from genios_engine.capture.validate.conflict import (ConflictLane, ExtractionCla
 from genios_engine.contracts.conflict import ConflictResolution
 from genios_engine.contracts.evidence import EvidenceSpan
 from genios_engine.contracts.extraction import (Commitment, DecisionState, Dependency,
-                                                EntityMention, ExtractionResult)
+                                                EntityMention, ExtractionResult, OpenQuestion)
 from genios_engine.contracts.signal import SignalType
 from genios_engine.contracts.units import DateCertainty, Money, ResolvedDate
 
@@ -423,12 +423,13 @@ def test_g6_the_primary_type_and_the_secondaries_partition_the_same_three():
 
 
 @pytest.mark.gate
-def test_g6_every_type_the_detector_can_emit_is_a_member_of_the_closed_fourteen():
+def test_g6_every_type_the_detector_can_emit_is_a_member_of_the_closed_taxonomy():
     """Driven over every predicate the table has, not only the worked example's three: a
     detector that returned a bare string would still satisfy a `set(...) ==` check written
     against types it happened to produce."""
-    assert len(SignalType) == 15, ("the taxonomy is closed at fifteen: doc 08's fourteen plus "
-                                   "availability_change (migration 0139)")
+    assert len(SignalType) == 16, ("the taxonomy is closed at sixteen: doc 08's fourteen, plus "
+                                   "availability_change (migration 0139) and delivery_failure "
+                                   "(2026-09-23)")
     emitted: set = set()
     for conflicts in ((), ):
         for extraction in (_worked_extraction(), _minimal_for_anomaly()):
@@ -444,9 +445,13 @@ def test_g6_every_type_the_detector_can_emit_is_a_member_of_the_closed_fourteen(
 
 def _minimal_for_anomaly() -> ExtractionResult:
     """An extraction with structure and no predicate — the ANOMALY catch-all's own case."""
+    # `questions` became `list[OpenQuestion]` on 2026-09-23 (step 4), so the catch-all's own
+    # input now carries a receipt like every other claim — `evidence=[]` here because this probe
+    # has no source text to quote against, which the contract accepts as "found no quote".
     return ExtractionResult(
         intent="inform", stance="neutral",
-        questions=["can you confirm the seat count?"],
+        questions=[OpenQuestion(text="can you confirm the seat count?",
+                                evidence=[], confidence_bp=6000)],
         model_snapshot="m", prompt_version="p", schema_version="s",
         extraction_profile="general", input_tokens=1, output_tokens=1)
 

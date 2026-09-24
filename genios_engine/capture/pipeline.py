@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from typing import Any, Mapping, Sequence
 
 from genios_engine.capture.connectors.base import RawObject
+from genios_engine.capture.connectors.thread_position import reference_ids
 from genios_engine.capture.documents.native import extract_native_text
 from genios_engine.capture.documents.pages import from_record as page_map_from_record
 from genios_engine.capture.domain.hints import FALLBACK_DOMAIN, domain_hints
@@ -582,11 +583,22 @@ def _thread_context(event: SourceEvent, raw: Mapping[str, Any],
     ball = BallInCourt.unknown
     if direction in ("inbound", "outbound"):
         owner = (mailbox_owner or "").strip()
+        # Step 16 · the RFC 5322 identity the connector now captures, carried onto the one
+        # `ThreadMessage` this engine builds from real data. `assemble_chain` implements full
+        # parent resolution and has never once received these — it cannot use them over a
+        # one-message list either, and that is the honest limit: capturing the headers was
+        # NECESSARY and is not SUFFICIENT. Passing them costs nothing and means the seam is
+        # already correct the day a caller supplies the sibling messages, instead of being a
+        # second change nobody remembers to make.
+        headers = raw.get("headers") if isinstance(raw.get("headers"), Mapping) else {}
         ball = reconstruct_thread(
             [ThreadMessage(message_id=event.event_id, occurred_at=event.occurred_at,
                            thread_id=(event.parent_object_id or None),
                            actor_email=event.actor.email,
-                           subject=str(raw.get("subject") or "") or None)],
+                           subject=str(raw.get("subject") or "") or None,
+                           in_reply_to=(headers.get("In-Reply-To") or None),
+                           references=reference_ids(headers.get("References") if isinstance(
+                               headers.get("References"), str) else None))],
             org_identities=(owner,) if owner else ()).ball_in_court
     parent = (event.parent_object_id or "").strip()
     thread_key = (f"thread:{parent}"
@@ -1020,6 +1032,17 @@ class EsqeOutcome:
     #: choose. `UNREAD` when neither spoke — a rule that matched a header read an envelope, not
     #: a message.
     intent: MessageIntent = field(default_factory=MessageIntent)
+    #: 7-U2 · the OBSERVED axes on which the gate's cheap reading and the extractor's fuller one
+    #: gave DIFFERENT answers. Recorded 2026-09-24, because `merged_with` resolves the conflict
+    #: field by field and the disagreement then vanishes with it.
+    #:
+    #: It is the most useful debugging signal this stage produces: a disagreement is the
+    #: difference between *"the prompt is wrong"* and *"this message is genuinely ambiguous"*, and
+    #: neither was visible before. An ABSENCE is never a disagreement — one reader not answering
+    #: is silence, which `merged_with` already treats as such.
+    #:
+    #: REPORTED, NEVER RESOLVED. The merge rule is untouched; the fuller reading still wins.
+    intent_disagreements: tuple[str, ...] = ()
     detection: DetectionOutcome | None = None
     classification: SignalClassification | None = None
     #: L1.6.2's canonical records — one per kept detected signal, in the detector's precedence
@@ -1063,6 +1086,29 @@ class EsqeOutcome:
         return None
 
 
+def _delivery_status(event: SourceEvent, raw: Mapping[str, Any]):
+    """`capture/delivery_status`'s answer for this event, or `None`.
+
+    ONE reader, called from both candidate builders and from the S4 detector, because the
+    envelope path and the full path must never disagree about whether a message bounced. Reads
+    the body here rather than on the candidate: `envelope_candidate` keeps `subject`/`snippet`
+    empty by design, so a rung that went looking for the prose would answer correctly in a test
+    and wrongly in production.
+    """
+    from genios_engine.capture.delivery_status import read_delivery_status
+
+    return read_delivery_status(
+        sender=getattr(getattr(event, "actor", None), "email", "") or "",
+        subject=str(raw.get("subject") or ""),
+        text=str(raw.get("body") or raw.get("snippet") or ""))
+
+
+def _delivery_failed(event: SourceEvent, raw: Mapping[str, Any]) -> bool:
+    """Permanently undelivered. A delay is False — it is still being delivered."""
+    status = _delivery_status(event, raw)
+    return status is not None and status.failed
+
+
 def envelope_candidate(event: SourceEvent, raw: Mapping[str, Any], *,
                        sender_known: bool, is_structured: bool) -> RelevanceCandidate:
     """S4's relevance candidate MINUS everything the extraction would have supplied.
@@ -1082,6 +1128,7 @@ def envelope_candidate(event: SourceEvent, raw: Mapping[str, Any], *,
         is_structured=is_structured,
         headers=_esqe_headers(raw),
         availability_notice=availability_marker(raw) is not None,
+        delivery_failure=_delivery_failed(event, raw),
     )
 
 
@@ -1187,6 +1234,7 @@ def run_esqe_stage(event: SourceEvent, prepared: PreparedContent | None, raw: Ma
         subject=str(raw.get("subject") or ""),
         snippet=text or "",
         availability_notice=availability_marker(raw) is not None,
+        delivery_failure=_delivery_failed(event, raw),
     )
     # D6 · one call per PAGE, not one per ambiguous event. `RelevancePage.decide` runs the same
     # five-rule cascade first and reaches its cache only for the remainder no rule could decide,
@@ -1226,10 +1274,18 @@ def run_esqe_stage(event: SourceEvent, prepared: PreparedContent | None, raw: Ma
         # `None` unless the caller knew the thread's history. ALG-15's own rule: that is not
         # the same as "the thread had no participants", and RELATIONSHIP_CHANGE must not fire
         # on everyone because we captured one message in isolation.
-        thread_parties=thread.parties))
+        thread_parties=thread.parties,
+        # Step 2 · read off the ENVELOPE, not out of the extraction. A bounce is a machine notice
+        # with no commitment, amount or date in it, so a predicate waiting for a claim would never
+        # fire on one.
+        delivery_status=_delivery_status(event, raw)))
     # The richer reading refines the cheap one, field by field, and only where it actually
     # answered — see `MessageIntent.merged_with`. A silent extractor never erases the gate.
-    folded = decision.intent.merged_with(getattr(extraction, "exchange_intent", None))
+    richer = getattr(extraction, "exchange_intent", None)
+    folded = decision.intent.merged_with(richer)
+    # 7-U2 · compute the disagreement BEFORE the fold, because the fold is what destroys it. One
+    # tuple, no branching, and nothing downstream changes behaviour on it.
+    disagreements = decision.intent.disagreements_with(richer)
     classification = classify_signals(detection.types)
     normalized = _normalize_detected(detection.signals, extraction, event, attribution, thread)
     # L1.6.7 (ALG-17) — the score Layer 4's utility formula has never had. Runs with NO wiring
@@ -1250,7 +1306,7 @@ def run_esqe_stage(event: SourceEvent, prepared: PreparedContent | None, raw: Ma
     return EsqeOutcome(relevance=decision, domains=domains, attribution=attribution,
                        detection=detection, classification=classification,
                        normalized=normalized, thread=thread, importance=importance,
-                       intent=folded)
+                       intent=folded, intent_disagreements=disagreements)
 
 
 def page_relevance_candidate(raw, *, sender_known: bool) -> RelevanceCandidate:
@@ -1654,7 +1710,7 @@ def capture_event(raw: RawObject, *, org_id: str, connection_id: str,
                      escalations=len(conflicts.escalations))
 
     # S4 (L1.6) — the ESQE stage, in one call. AFTER conflict detection, because
-    # INFORMATION_CONFLICT is one of the fourteen predicates and a detector that ran first would
+    # INFORMATION_CONFLICT is one of the predicates and a detector that ran first would
     # never fire it; BEFORE the emit so the trace records what KIND of thing this event was
     # rather than only where it came from.
     #

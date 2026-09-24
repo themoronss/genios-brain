@@ -83,6 +83,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 
 from genios_engine.capture.validate.authority import (Authority, multiplier_bp_of, rank_of)
+from genios_engine.capture.validate.directness import (Directness, directness_multiplier_bp)
 from genios_engine.capture.validate.spans import BP_FULL
 from genios_engine.contracts.signal import CONFIDENCE_COMPONENTS
 from genios_engine.contracts.validators import (require_aware, require_bp, require_enum,
@@ -157,6 +158,21 @@ class ConfidenceSource:
     #: Age of this source at evaluation time, in whole days. A parameter and never a clock
     #: read — see ``age_in_days``. Zero means "as fresh as the evaluation instant".
     days_old: int = 0
+    #: DID THE WRITER WITNESS THIS, or are they relaying it? Added 2026-09-24 (step 9).
+    #:
+    #: A SEPARATE AXIS FROM ``authority``, and the reason both are needed. ``authority`` is
+    #: ALG-14's ladder over the ARTIFACT — an email is an email — so *"I heard Acme is leaving"*
+    #: and *"Acme is leaving, I spoke to their CFO"* from the same CEO took the same rank, and
+    #: hearsay from a senior actor outranked a witnessed account from a junior one.
+    #:
+    #: It can only ever LOWER a value (``directness.DIRECTNESS_MULTIPLIER_BP`` tops out at 10000
+    #: for ``FIRSTHAND``), because Rule 11 permits a raise only by adding independent evidence and
+    #: naming it — and this names none. It reads words that were already there.
+    #:
+    #: Defaults to ``UNKNOWN`` on the same argument as ``authority``'s ``INFERRED`` floor: an
+    #: unstated directness must take the reading that cannot inflate. Every extraction already in
+    #: storage reports this value.
+    directness: Directness = Directness.UNKNOWN
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "name", require_text(self.name, "source name"))
@@ -168,6 +184,8 @@ class ConfidenceSource:
             object.__setattr__(self, "independence_key",
                                require_text(self.independence_key, "independence key"))
         object.__setattr__(self, "days_old", require_non_negative(self.days_old, "days_old"))
+        object.__setattr__(self, "directness",
+                           require_enum(self.directness, Directness, "source directness"))
 
     @property
     def rank(self) -> int:
@@ -455,9 +473,22 @@ class _Group:
 def _fold_group(key: str, members: Sequence[ConfidenceSource]) -> _Group:
     """COMBINE every source in one origin, strongest first."""
     ordered = sorted(members, key=lambda s: (-s.rank, -s.confidence_bp, s.name))
-    value = ordered[0].confidence_bp
+
+    def discounted(source: ConfidenceSource) -> int:
+        """One source's confidence after its directness discount.
+
+        APPLIED PER SOURCE AND BEFORE THE FOLD, which is the only placement that is correct. A
+        discount applied to the folded group would let a witnessed claim and a rumour in the same
+        origin average out — and the rumour is exactly the member whose weight must fall. Applied
+        after the group's authority was chosen, it would be invisible to the ordering above.
+
+        Integer arithmetic, truncated: a discount is never understated by rounding.
+        """
+        return source.confidence_bp * directness_multiplier_bp(source.directness) // 10_000
+
+    value = discounted(ordered[0])
     for source in ordered[1:]:
-        value = combine(value, source.confidence_bp)
+        value = combine(value, discounted(source))
     return _Group(key=key, confidence_bp=value, authority=ordered[0].authority,
                   names=tuple(sorted({source.name for source in ordered})))
 

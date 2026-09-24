@@ -3,14 +3,48 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from genios_engine.contracts.visibility import Visibility
 
 
 class DomainHint(BaseModel):
+    """One domain this message could belong to, and how sure the thing that said so was.
+
+    `source` is WHO said it and `confidence_bp` is HOW SURE — and they are not the same question,
+    which is why both are carried. A `scope` prior is a claim about whose account this is; a
+    `keyword` is a claim about the words in this message; a `fallback` is the caller saying "this
+    is business and nothing matched". Flattening those to one number is how the failure
+    `hints.py` records happened: the generic sales vocabulary claimed investor threads, and
+    *"six VCs and three accelerator programmes became sales opportunities. Not one of its sixteen
+    sales situations was a customer."*
+    """
+
     domain: str
-    source: str                              # scope | keyword | history
+    source: str                              # scope | keyword | history | fallback | proposed
+    #: How sure, in INTEGER BASIS POINTS (0..10000). Added 2026-09-24 (step 6).
+    #:
+    #: `ge`/`le` rather than a plain `int`, because this is the field a model will write into
+    #: and an untyped one is exactly where a `0.85` gets in — V-7 then rejects the ENTIRE signal
+    #: at the seam for a fault that belongs to one hint. Pydantic refuses a float outright:
+    #: `strict` is not needed, the band is, and 1.0 would otherwise coerce to 1 bp and look like
+    #: near-total doubt instead of near-total certainty.
+    #:
+    #: DEFAULTED, not required. Every existing caller built this object with two fields, and a
+    #: required third would refuse every cached `GatedEvent` ever written. The default is the
+    #: KEYWORD confidence because that is what every historical hint actually was.
+    confidence_bp: int = Field(default=6000, ge=0, le=10_000)
+
+    @field_validator("confidence_bp", mode="before")
+    @classmethod
+    def _integer_basis_points(cls, value: Any) -> Any:
+        """A float is REFUSED, never rounded. Rounding would accept 0.85 as 1 bp — a confident
+        hint stored as an almost-certainly-wrong one, with nothing anywhere saying so."""
+        if isinstance(value, bool) or isinstance(value, float):
+            raise TypeError(
+                f"domain confidence must be integer basis points, got {value!r} — a ratio here "
+                "reaches jsonb and V-7 rejects the whole signal for one hint's sake")
+        return value
 
 
 class GatedEvent(BaseModel):

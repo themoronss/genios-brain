@@ -63,6 +63,16 @@ _SITES: dict[str, dict[str, object]] = {
     "capture/esqe/relevance.py": {"records": True, "purpose": ("l1_relevance",)},
     "capture/semantic/extractor.py": {
         "recorded_by": "capture/pipeline.py", "purpose": ("l1_extract",)},
+    # L1.6.6-U6 · the domain proposer (step 6, 2026-09-24). A SEPARATE SITE from `l1_extract`,
+    # and deliberately so: folding domains into LLM-2's prompt would have added a closed set to
+    # `semantic/vocabulary._SETS`, moved `vocabulary_fingerprint()`, and re-extracted the entire
+    # corpus. Its own site is what keeps the extraction cache untouched — and it is what lets the
+    # call be SKIPPED for a message under 80 characters, which is most of the saving.
+    #
+    # `recorded_by` the pipeline, like the extractor: this module is pure enough to run with no
+    # database, so it hands its token counts up rather than writing a row it has no org for.
+    "capture/domain/proposer.py": {
+        "recorded_by": "capture/pipeline.py", "purpose": ("domain_proposal",)},
 
     # ── L2 context ───────────────────────────────────────────────────────────────────────
     "context/llm/client.py": {

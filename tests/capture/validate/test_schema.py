@@ -37,7 +37,8 @@ from genios_engine.capture.validate.schema import (ARRIVAL_ONLY_RULES, Extractio
                                                    SchemaRule, ValidationStage,
                                                    validate_extraction_schema)
 from genios_engine.capture.validate.spans import apply_verdicts
-from genios_engine.contracts.extraction import (Commitment, DecisionState, Dependency,
+from genios_engine.contracts.extraction import (RoleAssertion,  # noqa: F401
+    Commitment, DecisionState, Dependency,
                                                 EntityMention, ExtractionResult,
                                                 UnclassifiedObservation)
 from genios_engine.contracts.units import DateCertainty, Money, ResolvedDate
@@ -122,7 +123,14 @@ def conformant_data(span_of, eval_time: datetime) -> dict[str, Any]:
         ],
         "implied_actions": ["ask Finance whether the increase can be absorbed"],
         "questions": [],
-        "roles": [{"party": "Finance", "role": "approver"}],
+        # TYPED 2026-09-23 (`RoleAssertion`). `evidence=[]` is the extractor SAYING it found no
+        # quote, which is the honest answer for a role read off prose it could not anchor.
+        # TYPED 2026-09-23 (`RoleAssertion`), and it carries a real span — because now that the
+        # lane is a claim lane, schema rule S-4 applies to it: *"a claim with no receipt is a
+        # guess, and it would render in the same typography as a checked fact."* That rule firing
+        # on `roles` for the first time IS what step 4 was for.
+        "roles": [RoleAssertion(party="Finance", role="approver", evidence=[finance_span],
+                                confidence_bp=6000)],
         "relationships": [{"from": "the sender", "to": "Rohit", "kind": "corresponded_with"}],
         "scheduling_proposals": [],
         "unclassified_observations": [
@@ -551,8 +559,10 @@ def test_exactly_at_the_cap_is_not_reported(conformant_data, vocabulary):
     ({"topics": "annual contract"}, "topics", "a bare string is not a list of strings"),
     ({"field_confidence": [("intent", 9000)]}, "field_confidence",
      "a list of pairs is not a mapping"),
-    ({"roles": [{"party": "Finance"}, "approver"]}, "roles[1]",
-     "the untyped lanes are still lists of objects"),
+    # `roles` is typed now, so the shape guard is pydantic's rather than `_open_lane_dicts`'.
+    # `relationships` is the lane step 4 has NOT promoted yet, and it still carries the old rule.
+    ({"relationships": [{"party": "Finance"}, "approver"]}, "relationships[1]",
+     "the remaining untyped lanes are still lists of objects"),
     ({"intent": ""}, "intent", "empty text is not a vocabulary value"),
     ({"extraction_profile": 3}, "extraction_profile", "a profile id is text"),
 ], ids=["claim-list-is-text", "blank-topic", "topics-is-text", "confidence-is-pairs",

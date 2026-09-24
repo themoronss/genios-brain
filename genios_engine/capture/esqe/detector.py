@@ -53,6 +53,7 @@ import re
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from typing import Any
 
 from genios_engine.capture.esqe.classifier import precedence_rank
 from genios_engine.capture.validate.conflict import is_material_field
@@ -142,6 +143,15 @@ class DetectionInput:
     thread_parties: frozenset[str] | None = None
     #: ALG-14-style ranks for the recipient set: what it was, and what it is now. Both required
     #: for the authority half of ESCALATION; one alone says nothing about a change.
+    #: Step 2 · `capture/delivery_status.read_delivery_status`'s answer for this event, when the
+    #: caller has one. A delivery failure is the one signal in the table that is NOT read out of
+    #: the extraction: it is a fact about the ENVELOPE, decided deterministically from the report
+    #: the receiving side sent back, and the model never sees it. Passed in for the same reason
+    #: `thread_parties` is — the pipeline holds the raw object and this module does not.
+    #:
+    #: `None` means "no delivery report here", which is every ordinary event, so every existing
+    #: caller keeps its behaviour with no change.
+    delivery_status: Any | None = None
     prior_recipient_authority_rank: int | None = None
     recipient_authority_rank: int | None = None
 
@@ -165,6 +175,14 @@ class DetectedSignal:
     signal_type: SignalType
     predicate: str
     evidence: tuple[EvidenceSpan, ...] = ()
+    #: Step 2 · ALG-22's subject, when the PREDICATE knows it better than the anchor claim does.
+    #: `None` everywhere except DELIVERY_FAILURE, so ALG-22 keeps deciding for every other type.
+    #:
+    #: It exists because ALG-22 derives a subject from the anchor CLAIM and a bounce has none —
+    #: its last rung is the event itself, so three failures to one address would be three
+    #: unrelated subjects. Nothing could group them, and ALG-19's `(subject_key, signal_type)`
+    #: supersession could never fire. The failed address is what the signal is about.
+    subject_key: str | None = None
 
 
 @dataclass(frozen=True)
@@ -389,22 +407,49 @@ def _detect_all(request: DetectionInput) -> list[DetectedSignal]:
 
     # RELATIONSHIP_CHANGE — a roles[] assertion, OR a new party on a thread we already know.
     #
-    # `roles` is the lane whose closed keys are `party`/`role`/`evidence_text`; an entry in it is
-    # this message asserting who somebody is. It carries no EvidenceSpan (the lane is
-    # `list[dict]` by contract), hence no receipt on that detection.
+    # `roles` is this message asserting who somebody is. RECEIPTS SINCE 2026-09-23: the lane was
+    # `list[dict]` until that date and this detection carried none — the comment here used to say
+    # so, which is a defect documented rather than fixed. It is `list[RoleAssertion]` now, ALG-08
+    # grades its spans like any other claim's, and `_spans` reads them the same way it reads a
+    # commitment's. A role the model could not quote still fires, carrying an EMPTY span tuple:
+    # that is the honest reading of `evidence=[]`, and V-5 downgrades what has no receipt rather
+    # than this predicate pretending there was none to have.
     newcomers = _new_parties(ex, request.thread_parties)
     if newcomers:
         out.append(DetectedSignal(SignalType.RELATIONSHIP_CHANGE, "new_party_on_known_thread",
                                   _spans(newcomers)))
     elif ex.roles:
-        out.append(DetectedSignal(SignalType.RELATIONSHIP_CHANGE, "role_asserted"))
+        out.append(DetectedSignal(SignalType.RELATIONSHIP_CHANGE, "role_asserted",
+                                  _spans(ex.roles)))
 
     # AVAILABILITY_CHANGE — somebody states a window in which they cannot act (the `availability`
-    # lane: leave / OOO / sick / travel / busy, start and end as quoted words). Like `roles`, the
-    # lane is `list[dict]` by contract and carries no EvidenceSpan of its own, so the detection
-    # carries no receipt; Layer 2 re-grounds every claim against the message before writing it.
+    # lane: leave / OOO / sick / travel / busy, start and end as quoted words). Typed and graded
+    # since 2026-09-23 on the same day and for the same reason as `roles`, so the detection now
+    # carries the quote the window was read from. Layer 2 still re-grounds every claim against
+    # the message before writing it — a receipt at this seam is what makes that check possible,
+    # not a reason to skip it.
     if ex.availability:
-        out.append(DetectedSignal(SignalType.AVAILABILITY_CHANGE, "availability_stated"))
+        out.append(DetectedSignal(SignalType.AVAILABILITY_CHANGE, "availability_stated",
+                                  _spans(ex.availability)))
+
+    # DELIVERY_FAILURE — a message the tenant SENT did not arrive. Sits beside AVAILABILITY_CHANGE
+    # because both are read off the envelope rather than out of the extraction, but the two differ
+    # in the way that matters: an availability window is something a person wrote, and a delivery
+    # failure is something a mail server did. It therefore needs no model, no prose and no claim.
+    #
+    # ONLY A PERMANENT FAILURE. `status.failed` is False for a delay and for a report we could not
+    # classify, and both must stay silent: telling a founder their pitch bounced while Gmail is
+    # still delivering it is worse than telling them nothing.
+    status = request.delivery_status
+    if status is not None and getattr(status, "failed", False):
+        # The subject is the address the message failed to reach — when the report stated one.
+        # `None` when it did not: ALG-22's event rung is then the honest answer, because a
+        # guessed address in a "your message never arrived" card is a credibility loss, and a
+        # group of one is better than a wrong group.
+        recipient = getattr(status, "recipient", None)
+        out.append(DetectedSignal(
+            SignalType.DELIVERY_FAILURE, "delivery_permanently_failed",
+            subject_key=f"delivery:{recipient}" if recipient else None))
 
     # INFORMATION_CONFLICT — ALG-12 found a disagreement on a field that matters.
     material = _material_conflicts(request.conflicts)
@@ -428,9 +473,18 @@ def _detect_all(request: DetectionInput) -> list[DetectedSignal]:
     # `unclassified_observations` — the open lane may be read by no rule, and a detector that
     # fired on a label the model invented would be a rule whose behaviour changes with the
     # model's phrasing.
+    #
+    # RECEIPTS SINCE 2026-09-23. Four of the five lanes it reads always carried spans and this
+    # rung threw them away; the fifth, `questions`, could not carry one until that date. So the
+    # catch-all — the type most likely to reach a human with no explanation of why — was also the
+    # one type that cited nothing. `Money` is the one input with no `evidence` list by contract
+    # (its receipt is its own literal, checked by ALG-08 against the source), so it contributes
+    # no span and is deliberately not in the tuple below.
     if not out and (ex.amounts or ex.dependencies or ex.decision_states or ex.commitments
                     or ex.questions):
-        out.append(DetectedSignal(SignalType.ANOMALY, "non_routine_structure"))
+        out.append(DetectedSignal(
+            SignalType.ANOMALY, "non_routine_structure",
+            _spans((*ex.dependencies, *ex.decision_states, *ex.commitments, *ex.questions))))
 
     return out
 

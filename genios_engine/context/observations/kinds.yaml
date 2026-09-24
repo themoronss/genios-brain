@@ -70,6 +70,14 @@ kinds:
   - {kind: decision_deferred, polarity: negative}
   - {kind: decision_made, polarity: neutral, is_progress: true}     # L1 · resolved — `decision_deferred` is the negative twin
   - {kind: decision_pending, polarity: neutral}            # L1 · outstanding, not yet deferred
+  # L1 · member sixteen (2026-09-23). NEUTRAL, and that is the considered answer rather than the
+  # lazy one. A bounce is a MECHANICAL fact about our own outbound — a bad address, a
+  # misconfigured server — and it says nothing about how the counterparty feels, because there
+  # was no exchange at all. Marking it negative would push `derived.sentiment` down on a
+  # relationship that never happened, which is exactly the untraceable bias this file's header
+  # warns about. `is_progress` is false for the obvious reason and there is no `is_regress`;
+  # `is_ask` is false because we put no question to them — a mail server told us something.
+  - {kind: delivery_failure, polarity: neutral}
   - {kind: demo_requested, polarity: positive, is_ask: true, is_progress: true}
   - {kind: diligence_started, polarity: positive, is_progress: true}
   - {kind: discount_pressure, polarity: negative}

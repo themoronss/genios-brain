@@ -81,6 +81,8 @@ from genios_engine.capture.esqe.qualification import (DROP_PAYLOAD_RETENTION_DAY
 from genios_engine.capture.validate.confidence import (ComposedConfidence, ConfidenceSource,
                                                        age_in_days, compose_confidence)
 from genios_engine.capture.validate.authority import to_legacy_rank
+from genios_engine.capture.esqe.instants import due_at_of
+from genios_engine.capture.validate.directness import read_directness
 from genios_engine.capture.validate.conflict_store import rows_for as conflict_rows_for
 from genios_engine.capture.esqe.signal_store import ENVELOPE_KEYS, QualifiedSignalRow
 from genios_engine.contracts.conflict import Authority
@@ -278,9 +280,13 @@ def confidence_sources(signal: NormalizedSignal, extraction: Any, *,
             # it twice would COMBINE the same belief with itself and quietly halve it.
             continue
         seen.add(name)
+        # L1.5.x-U1 (step 9) · DIRECTNESS, read off the anchor span's own words. The marker is
+        # INSIDE the quote the claim already carries, so the evidence for "this is hearsay" is the
+        # receipt itself — no model, no prompt change, no second span to justify the first.
         sources.append(ConfidenceSource(
             name=name, confidence_bp=int(claim.confidence_bp),
-            independence_key=str(anchor.source_ref), authority=authority, days_old=days_old))
+            independence_key=str(anchor.source_ref), authority=authority, days_old=days_old,
+            directness=read_directness(anchor.quote)))
 
     if sources:
         return tuple(sources)
@@ -295,7 +301,8 @@ def confidence_sources(signal: NormalizedSignal, extraction: Any, *,
         seen.add(name)
         sources.append(ConfidenceSource(
             name=name, confidence_bp=int(multiplier),
-            independence_key=str(span.source_ref), authority=authority, days_old=days_old))
+            independence_key=str(span.source_ref), authority=authority, days_old=days_old,
+            directness=read_directness(span.quote)))
     return tuple(sources)
 
 
@@ -340,6 +347,9 @@ class SignalInputs:
     #: The whole S2 output. Embedded on the C-12 (the seam stays one object wide) and POINTED at
     #: by the row (`extraction_ref`), so the extraction still lives exactly once.
     extraction: Any = None
+    #: Step 15 · the window and per-source completeness this sweep had read, frozen at capture.
+    #: `None` is UNKNOWN and is the honest default — never "complete".
+    coverage: Any = None
     #: `l1_extraction_results.processing_key`, or `struct:<event_id>` for the structured lane.
     extraction_ref: str = ""
     #: `prepared_content:<id>` or `raw_payload:<event_id>` — the reference a REFUSAL row stores
@@ -399,6 +409,9 @@ def build_signal(signal: NormalizedSignal, inputs: SignalInputs, *, eval_time: d
         trace_id=signal.event_id,
         visibility=signal.visibility,
         signal_id=signal_ref(signal),
+        # ALG-22's answer, LIFTED not recomputed — `record_of` takes it as a parameter for the
+        # same reason, so there is exactly one derivation of a subject in the layer.
+        subject_key=signal.subject_key,
         event_id=signal.event_id,
         source=signal.source,
         object_type=signal.object_type,
@@ -416,6 +429,24 @@ def build_signal(signal: NormalizedSignal, inputs: SignalInputs, *, eval_time: d
         state=stamp.state,
         supersedes=stamp.supersedes,
         expires_at=stamp.expires_at,
+        # Step 14 · the deadline, LIFTED from the typed claim that already holds it rather than
+        # re-derived. Without this a signal cannot say "8 days overdue": `Commitment.due` is a
+        # claim nested in the extraction, and nothing can sort or sweep by a value that deep.
+        #
+        due_at=due_at_of(getattr(inputs.extraction, "commitments", ()) or ()),
+        # Step 15 · the proof a negative claim rests on. `None` is unknown, never complete.
+        coverage=inputs.coverage,
+        # `superseded_at` IS DELIBERATELY NOT SET HERE, and the reason is worth recording.
+        #
+        # The first version read `getattr(stamp, "superseded_at", None)` — and `LifecycleStamp`
+        # has three fields (`state`, `supersedes`, `expires_at`), so that was **dead code that
+        # could never fire**: precisely the `getattr`-against-your-own-contract smell step 5
+        # named. It cannot fail, so it cannot tell you the field is missing.
+        #
+        # A signal is superseded by a LATER sweep, not at the moment it is published — ALG-19
+        # stamps the supersession when the replacement arrives, which is `lifecycle.record_of`'s
+        # job and a different write. The field exists on C-12 so that write has somewhere to put
+        # it; filling it here would mean guessing at publish time when a future event will occur.
         internal_kind=signal.internal_kind,
         recipients=tuple(signal.recipients or ()),
         versions=dict(getattr(gated, "versions", None) or {}),
@@ -529,6 +560,7 @@ def _row_for(published: QualifiedEnterpriseSignal, inputs: SignalInputs, *,
     return QualifiedSignalRow(
         signal_id=published.signal_id,
         org_id=published.org_id,
+        subject_key=published.subject_key,
         event_id=published.event_id,
         trace_id=published.trace_id,
         signal_type=published.signal_type.value,
@@ -538,8 +570,14 @@ def _row_for(published: QualifiedEnterpriseSignal, inputs: SignalInputs, *,
         importance_version=inputs.importance_version,
         confidence_bp=published.confidence_bp,
         confidence_vector=dict(published.confidence_vector),
+        # STEP 6 LEAK, FOUND WHILE WIRING STEP 14 AND FIXED HERE. This dict was built by hand with
+        # two keys, so `DomainHint.confidence_bp` — added in step 6 and carried correctly by
+        # `DomainTagging.as_dicts` — **never reached storage**. The seam had two hand-written
+        # copies of one projection and only one of them learned the new field: exactly the drift
+        # `situation_bso.py` warns about at the other end of this pipe.
         domain_hints=tuple({"domain": getattr(h, "domain", ""),
-                            "source": getattr(h, "source", "")}
+                            "source": getattr(h, "source", ""),
+                            "confidence_bp": getattr(h, "confidence_bp", 0)}
                            for h in published.domain_hints),
         visibility=published.visibility.model_dump(mode="json"),
         coverage_ready=published.coverage_ready,
@@ -560,6 +598,17 @@ def _row_for(published: QualifiedEnterpriseSignal, inputs: SignalInputs, *,
         ingested_at=published.ingested_at,
         content_hash=published.content_hash,
         qualification_reason=published.qualification_reason,
+        # Step 14 · the world instants, carried from the published signal on the same terms as
+        # `expires_at` above: read off what the gate returned, never re-derived here.
+        due_at=published.due_at,
+        effective_at=published.effective_at,
+        resolved_at=published.resolved_at,
+        superseded_at=published.superseded_at,
+        # Step 15 · the proof behind a negative claim, carried as a frozen value. `as_dict()`
+        # rather than the object, because what reaches storage is jsonb and a block that arrived
+        # as anything else would be a shape the reader has to guess at.
+        coverage=(published.coverage.as_dict()
+                  if hasattr(published.coverage, "as_dict") else published.coverage),
     )
 
 
@@ -979,6 +1028,26 @@ def prepared_content_hash(result: Any) -> str | None:
     return content_digest(str(text))
 
 
+def _coverage_of(summary: Any) -> Any:
+    """Step 5's completeness for this sweep, as the frozen block step 15 carries.
+
+    `None` when the sweep cannot say — no window, or no source name. **Never a block claiming
+    complete coverage**, which is the one value §9 forbids inventing.
+
+    The window is the sweep's own: `started_at` to the newest thing it landed. A sweep with no
+    start has no window, and a completeness with no window is a ratio over an unstated set.
+    """
+    started = getattr(summary, "started_at", None)
+    source = str(getattr(summary, "source", "") or "").strip()
+    if started is None or not source:
+        return None
+    from genios_engine.capture.coverage.signal_coverage import coverage_from_sweep
+
+    finished = getattr(summary, "finished_at", None) or started
+    block = coverage_from_sweep(window_from=started, window_to=finished, sweeps=(summary,))
+    return None if block.is_unknown else block
+
+
 def _inputs_for(result: Any, signal: NormalizedSignal, verdict: Any, summary: Any, *,
                 conflict_rows: Sequence[Any] = ()) -> SignalInputs:
     """Everything about one signal that the normalized record does not carry, read off the
@@ -1002,7 +1071,10 @@ def _inputs_for(result: Any, signal: NormalizedSignal, verdict: Any, summary: An
         conflict_ids=_conflict_ids_for(conflict_rows, signal.event_id),
         ingested_at=getattr(event, "captured_at", None),
         content_hash=prepared_content_hash(result),
-        qualification_reason=getattr(reason, "value", reason))
+        qualification_reason=getattr(reason, "value", reason),
+        # Step 15 · read off the SWEEP, once, at capture. A later backfill produces a new sweep and
+        # a new signal; it cannot reach back into one already published (E4).
+        coverage=_coverage_of(summary))
 
 
 def publish_sweep(summary: Any, outcome: QualificationOutcome, *, org_id: str,

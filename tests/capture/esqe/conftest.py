@@ -15,8 +15,9 @@ from datetime import timezone
 
 import pytest
 
-from genios_engine.contracts.extraction import (Commitment, DecisionState, Dependency,
-                                                EntityMention, ExtractionResult)
+from genios_engine.contracts.extraction import (AvailabilityWindow, Commitment, DecisionState,
+                                                Dependency, EntityMention, ExtractionResult,
+                                                OpenQuestion, RoleAssertion)
 from genios_engine.contracts.units import DateCertainty, Money, ResolvedDate
 
 #: Provenance every built result carries. Required by the contract for replay; irrelevant to
@@ -69,6 +70,40 @@ def dependency(a_span):
         return Dependency(blocker="Finance", blocked="Rohit", dependency_type=dependency_type,
                           evidence=[a_span], confidence_bp=7900)
     return _dependency
+
+
+@pytest.fixture
+def role(a_span):
+    """A `RoleAssertion`, carrying a real receipt.
+
+    TYPED 2026-09-23. The rows that used this lane passed raw dicts —
+    `{"party": ..., "role": ..., "evidence_text": ...}` — because the lane was `list[dict]`, so a
+    detector test could assert RELATIONSHIP_CHANGE fired without any span existing anywhere. It
+    is a factory now, exactly like `commitment` and `entity`, so a role claim in a test is built
+    the same way every other claim is and cannot quietly be receipt-free.
+    """
+    def _role(party: str = "Priya", role: str = "new AWS owner") -> RoleAssertion:
+        return RoleAssertion(party=party, role=role, evidence=[a_span], confidence_bp=8000)
+    return _role
+
+
+@pytest.fixture
+def availability(a_span):
+    """An `AvailabilityWindow` — quoted words, never resolved dates. Layer 2 resolves them."""
+    def _availability(person: str = "Finance", kind: str = "leave", *,
+                      from_text: str | None = "Monday",
+                      to_text: str | None = "Friday") -> AvailabilityWindow:
+        return AvailabilityWindow(person=person, kind=kind, from_text=from_text, to_text=to_text,
+                                  evidence=[a_span], confidence_bp=7500)
+    return _availability
+
+
+@pytest.fixture
+def question(a_span):
+    """An `OpenQuestion` — something asked and not yet answered."""
+    def _question(text: str = "Can Finance absorb the increase?") -> OpenQuestion:
+        return OpenQuestion(text=text, evidence=[a_span], confidence_bp=7000)
+    return _question
 
 
 @pytest.fixture

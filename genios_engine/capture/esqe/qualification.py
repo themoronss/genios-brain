@@ -102,6 +102,18 @@ class QualificationReason(str, Enum):
     #: ALG-17 (it is context, not work), and the floor would otherwise drop the only route by
     #: which "who is away" reaches Layer 2's `person.availability`.
     AVAILABILITY_OVERRIDE = "availability_override"
+    #: A DELIVERY_FAILURE below the floor, and it is below the floor *structurally* rather than
+    #: for this tenant. ALG-17's five terms are money, deadline, actor authority, entity
+    #: criticality and a type nudge; a bounce states no amount and no deadline, its actor is a
+    #: mail daemon, and the one entity it names is by definition one we could not reach. Four of
+    #: the five are zero by construction, so the type nudge alone decides — and measured on a
+    #: cold-start tenant that is **1080 against a floor of 2500**, whatever the type weight.
+    #:
+    #: Same mechanism as `AVAILABILITY_OVERRIDE` and the opposite reason: that type is the LOWEST
+    #: weight in ALG-17 because it is context rather than work, this one is tied for the HIGHEST
+    #: and still cannot reach the floor. The score is not adjusted to make it pass — it is
+    #: reported as 1080 and the exception is named here, where the ledger can read it back.
+    DELIVERY_FAILURE_OVERRIDE = "delivery_failure_override"
     UNSCORED = "unscored"
     BELOW_FLOOR = "below_floor"
 
@@ -353,9 +365,11 @@ def _decide(candidate: ScoredSignal, floor_bp: int) -> tuple[bool, Qualification
         return True, QualificationReason.CONFLICT_OVERRIDE
     if candidate.signal.internal_kind:
         return True, QualificationReason.INTERNAL_KIND_OVERRIDE
-    if str(getattr(candidate.signal.signal_type, "value", candidate.signal.signal_type)) \
-            == "availability_change":
+    kind = str(getattr(candidate.signal.signal_type, "value", candidate.signal.signal_type))
+    if kind == "availability_change":
         return True, QualificationReason.AVAILABILITY_OVERRIDE
+    if kind == "delivery_failure":
+        return True, QualificationReason.DELIVERY_FAILURE_OVERRIDE
     return False, QualificationReason.BELOW_FLOOR
 
 

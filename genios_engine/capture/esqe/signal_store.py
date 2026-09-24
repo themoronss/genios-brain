@@ -55,12 +55,20 @@ SIGNAL_TABLE = "qualified_signals"
 ENVELOPE_KEYS: tuple[str, ...] = ("source", "object_type", "triage_lane", "recipients",
                                   "versions", "schema_version")
 
-_COLUMNS = ("signal_id, org_id, event_id, trace_id, signal_type, secondary_types, "
+_COLUMNS = ("signal_id, org_id, subject_key, event_id, trace_id, signal_type, secondary_types, "
             "importance_bp, importance_components, importance_version, confidence_bp, "
             "confidence_vector, domain_hints, visibility, coverage_ready, extraction_ref, "
             "evidence_refs, conflict_ids, state, supersedes, expires_at, internal_kind, "
             "occurred_at, envelope, authority_rank, ingested_at, content_hash, "
-            "qualification_reason, superseded_by")
+            "qualification_reason, superseded_by, "
+            # Step 14 · the world instants. Named in the INSERT and not only in migration 0179,
+            # because `started_at` on `l1_sync_runs` is the cautionary tale: the column existed
+            # from the day the table did, the insert never mentioned it, and every row in
+            # production recorded a finish with no start. A column no writer names is null forever.
+            "due_at, effective_at, resolved_at, superseded_at, "
+            # Step 15 · the proof behind a negative claim. Named here and not only in migration
+            # 0180, for the reason step 14 records two lines up.
+            "coverage")
 
 
 def _jsonable(value: Any) -> Any:
@@ -120,6 +128,10 @@ class QualifiedSignalRow:
 
     signal_id: str
     org_id: str
+    #: ALG-22's subject, lifted from C-12. The half of ALG-19's `(subject_key, signal_type)` key
+    #: that `qualification_drops` and `signal_lifecycle` have always stored and this table did
+    #: not — so a REFUSED signal recorded what it was about and a PUBLISHED one did not.
+    subject_key: str
     event_id: str
     trace_id: str
     signal_type: str
@@ -130,6 +142,15 @@ class QualifiedSignalRow:
     state: str
     occurred_at: datetime
     secondary_types: tuple[str, ...] = ()
+    #: Step 14 · the four world instants. All optional — most signals have no deadline and were
+    #: never resolved, and a required field would force every writer to invent one.
+    due_at: datetime | None = None
+    effective_at: datetime | None = None
+    resolved_at: datetime | None = None
+    superseded_at: datetime | None = None
+    #: Step 15 · the window and per-source completeness this signal's claim rests on, frozen at
+    #: capture. `None` is UNKNOWN and is the honest default — never "complete".
+    coverage: Mapping[str, Any] | None = None
     importance_components: Mapping[str, Any] = field(default_factory=dict)
     confidence_vector: Mapping[str, int] = field(default_factory=dict)
     domain_hints: tuple[Mapping[str, Any], ...] = ()
@@ -211,6 +232,11 @@ class QualifiedSignalRow:
             "occ": self.occurred_at, "env": _dumps(dict(self.envelope)),
             "arank": self.authority_rank, "ing": self.ingested_at, "chash": self.content_hash,
             "qreason": self.qualification_reason, "supby": self.superseded_by,
+            "due": self.due_at, "eff": self.effective_at,
+            "res": self.resolved_at, "supat": self.superseded_at,
+            # `None` stays None rather than becoming "null" jsonb: a SQL NULL reads as "unknown"
+            # to every query, and a jsonb null would read as a block that exists and says nothing.
+            "cvg": _dumps(dict(self.coverage)) if self.coverage else None,
         }
 
 
@@ -376,8 +402,19 @@ class PostgresSignalStore:
                         " cast(:dom as jsonb), cast(:vis as jsonb), :cov, :xref,"
                         " cast(:ev_refs as jsonb), cast(:cids as jsonb), :state, :sup, :exp,"
                         " :kind, :occ, cast(:env as jsonb), :arank, :ing, :chash, :qreason,"
-                        " :supby) "
+                        " :supby, :due, :eff, :res, :supat, cast(:cvg as jsonb)) "
                         "on conflict (signal_id) do update set "
+                        # Step 14 · a re-published signal must carry its CURRENT deadline. A
+                        # commitment re-promised with a new date lands as the same signal_id, and
+                        # leaving `due_at` at its first value would keep chasing the old one.
+                        # A re-published signal carries the coverage of the sweep that
+                        # re-published it — which is correct: it is a NEW observation moment, and
+                        # E4 freezes a block to its own capture, not to the signal id forever.
+                        "coverage=excluded.coverage, "
+                        "due_at=excluded.due_at, "
+                        "effective_at=excluded.effective_at, "
+                        "resolved_at=excluded.resolved_at, "
+                        "superseded_at=excluded.superseded_at, "
                         "secondary_types=excluded.secondary_types, "
                         "importance_bp=excluded.importance_bp, "
                         "importance_components=excluded.importance_components, "

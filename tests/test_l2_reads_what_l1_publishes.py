@@ -412,6 +412,10 @@ def _stored_row(**over: Any):
     base: dict[str, Any] = dict(
         signal_id="sig_" + "0" * 32, org_id="seam_select", event_id="evt_select",
         trace_id="evt_select", signal_type="decision_pending", importance_bp=5000,
+        # ALG-22's subject — the half of ALG-19's supersession key this table did not carry
+        # until 0177. Named rather than defaulted so a test that supersedes has something to
+        # supersede ON.
+        subject_key="decision:move_forward",
         importance_version="alg17-v1", confidence_bp=7000, extraction_ref="l1x_select",
         state="active", occurred_at=NOW,
         evidence_refs=({"quote": "we can move forward", "source_ref": "prepared_content:x",

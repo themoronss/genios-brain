@@ -466,7 +466,8 @@ def _qualified(*, confidence_bp: int):
     span = EvidenceSpan(source_ref="prepared_content:pc_v6", quote=quote, start_offset=0,
                         end_offset=len(quote), verified=True)
     return QualifiedEnterpriseSignal(
-        signal_id="sig_v6", org_id="org_v6", event_id="evt_v6", trace_id="trace_v6",
+        signal_id="sig_v6", org_id="org_v6", subject_key="contract:v6", event_id="evt_v6",
+        trace_id="trace_v6",
         source="gmail", object_type="email_message", occurred_at=NOW,
         signal_type=SignalType.CONTRACT_RENEWAL, importance_bp=7800,
         triage_lane="P1",

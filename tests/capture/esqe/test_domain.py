@@ -194,7 +194,15 @@ def test_duplicate_domains_collapse_without_reordering():
 
 
 def test_the_wire_shape_keeps_the_order_and_the_origin():
+    """`confidence_bp` JOINED the wire on 2026-09-24 (step 6).
+
+    The key set is asserted exactly rather than loosely, and that is the point of the row: a
+    field added to `DomainHint` and forgotten in `as_dicts` is a field Layer 2 never sees, which
+    is the precise loss step 3 spent its whole length closing at the other end of this seam. This
+    test failing on a widening is correct — it is asking to be told.
+    """
     tagging = D.tag_domains("hubspot", INVESTOR_THREAD, coverage_fn=covered())
 
-    assert tagging.as_dicts == [{"domain": h.domain, "source": h.source} for h in tagging.hints]
-    assert all(set(d) == {"domain", "source"} for d in tagging.as_dicts)
+    assert tagging.as_dicts == [{"domain": h.domain, "source": h.source,
+                                 "confidence_bp": h.confidence_bp} for h in tagging.hints]
+    assert all(set(d) == {"domain", "source", "confidence_bp"} for d in tagging.as_dicts)

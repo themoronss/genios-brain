@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from typing import Any, Mapping
 
 from .backfill import DEFAULT_BACKFILL_DAYS, BackfillWindow
+from .attendees import attendee_emails, read_attendees, read_meeting_kind
 from .base import RawObject, SourceBatch
 from .composio_base import ComposioExec
 
@@ -115,7 +116,16 @@ class ComposioCalendarConnector:
         if not eid:
             return None
         organizer = (ev.get("organizer") or {}).get("email")
-        attendees = [a.get("email") for a in (ev.get("attendees") or []) if a.get("email")]
+        # Step 13 · READ THEM AS PEOPLE, not as address strings. This line used to be the whole
+        # of it, and it dropped two things: an attendee with a display name and no address (a room,
+        # or a guest invited by name) vanished entirely, and `responseStatus` — the difference
+        # between "we invited them" and "they came" — went with it. P4 asks about meetings that
+        # HAPPENED.
+        #
+        # `attendees` keeps its exact old meaning (a tuple of addresses) so `recipients` and the
+        # `raw` mapping are byte-identical; the richer list travels beside it.
+        attendee_people = read_attendees(ev.get("attendees") or [])
+        attendees = list(attendee_emails(attendee_people))
         internal = getattr(self, "_internal_emails", None)
         actor_type = ("internal_user" if internal is None or
                       str(organizer or "").strip().lower() in internal else "external_contact")
@@ -147,6 +157,19 @@ class ComposioCalendarConnector:
                 "end": (ev.get("end") or {}).get("dateTime") or (ev.get("end") or {}).get("date"),
                 "status": ev.get("status"),
                 "attendees": attendees,
+                # The people, with everything the address list cannot carry. Additive: every
+                # existing reader of `attendees` sees the same strings it always saw.
+                "attendee_people": [
+                    {"email": p.email, "display_name": p.display_name, "response": p.response}
+                    for p in attendee_people],
+                # 13-U3 · whose meeting is this, and is a follow-up even expected? On the pilot's
+                # 7 events FIVE were cohort sessions, so "0 of 7 followed up" was a true number and
+                # a misleading finding. `unknown` when it cannot be told — never guessed.
+                "meeting_kind": read_meeting_kind(
+                    attendee_count=len(attendee_people),
+                    organiser_domain=(organizer or "").rsplit("@", 1)[-1] or None,
+                    owner_domain=(owner or "").rsplit("@", 1)[-1] or None,
+                    is_recurring=bool(ev.get("recurringEventId"))).value,
                 "hangoutLink": ev.get("hangoutLink"),
                 # agenda/notes + where — real relevant info that was being dropped (only summary was kept)
                 "description": ev.get("description"),

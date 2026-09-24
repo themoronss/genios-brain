@@ -65,6 +65,12 @@ OBS_NEUTRAL: frozenset[str] = frozenset({
     "anomaly", "availability_change", "commitment_due", "commitment_made",
     "contract_renewal", "decision_made", "decision_pending", "financial_obligation",
     "information_conflict", "relationship_change",
+    # Member sixteen (2026-09-23). Neutral for a reason the others do not share: a delivery
+    # failure has a perfectly clear direction as an OUTCOME — the message did not arrive — but it
+    # is a MECHANICAL fact about our own outbound and says nothing about the counterparty. There
+    # was no exchange to feel anything about. Scoring it negative would push `derived.sentiment`
+    # down on a relationship that never happened.
+    "delivery_failure",
 })
 
 #: Where the per-kind MEANING record lives. One row per kind, four answers each.

@@ -80,8 +80,9 @@ from typing import Any
 
 from genios_engine.capture.validate.money import parse_money
 from genios_engine.contracts.evidence import MAX_QUOTE_CHARS, EvidenceSpan
-from genios_engine.contracts.extraction import (BusinessFact, Commitment, DecisionState, Dependency,
-                                                EntityMention, ExtractionResult,
+from genios_engine.contracts.extraction import (AvailabilityWindow, BusinessFact, Commitment,
+                                                DecisionState, Dependency, EntityMention,
+                                                ExtractionResult, OpenQuestion, RoleAssertion,
                                                 UnclassifiedObservation)
 from genios_engine.contracts.units import Money, ResolvedDate
 
@@ -582,6 +583,24 @@ _POLICY: dict[type, bool] = {
     # with the keep-and-flag family: an invented surface form at half confidence is reviewable,
     # while dropping the mention would silently delete an entity L2 is the layer that resolves.
     EntityMention: False,
+    # PROMOTED 2026-09-23 (step 4). All three were `list[dict]`/`list[str]` until this date, so
+    # ALG-08 never graded them and this table never needed a row. Now that they carry spans, a
+    # missing row would raise at the seam — which is `_policy_drops` working, and the reason the
+    # rows are written deliberately rather than defaulted:
+    #
+    #   RoleAssertion       KEEP. Filed with `EntityMention` for the same reason: a role is a
+    #                       fact about a PERSON that Layer 2 resolves, and deleting it silently
+    #                       removes somebody from the graph. Halved and flagged is reviewable.
+    #   AvailabilityWindow  DROP. Filed with `ResolvedDate`, because it is the same kind of
+    #                       value and is acted on the same way: an invented "back on Monday"
+    #                       suppresses a chase that should have happened, and the human reading
+    #                       the card has no way to know the window was never stated.
+    #   OpenQuestion        KEEP. An unanswered question is an open loop; dropping it deletes
+    #                       the awaited item rather than doubting it, and a question whose quote
+    #                       failed is still visibly a question in the thread.
+    RoleAssertion: False,
+    AvailabilityWindow: True,
+    OpenQuestion: False,
 }
 
 def _policy_drops(claim_type: type) -> bool:
@@ -891,6 +910,16 @@ def apply_verdicts(result: ExtractionResult, source_text: str, *,
         "dependencies": _kept(result.dependencies, resolve),
         "business_facts": business_facts,
         "unclassified_observations": _kept(result.unclassified_observations, resolve),
+        # PROMOTED 2026-09-23 (step 4). Before that date these were untyped bags with nowhere to
+        # put a receipt, so they were not graded and could not be — which meant `detector.py`
+        # fired three real signal types off claims ALG-08 had never checked. They go through the
+        # same `resolve` as every other citation-bearing claim, so the spans they carry come out
+        # of this function carrying the SAME verdict as their copies in `all_evidence`. That
+        # agreement is what S-7 checks; a lane rebuilt here and not walked by
+        # `evidence_from_claims` would fail it, which is exactly how this defect was found.
+        "questions": _kept(result.questions, resolve),
+        "roles": _kept(result.roles, resolve),
+        "availability": _kept(result.availability, resolve),
         "all_evidence": [graded[span][1] for span in result.all_evidence],
     })
     counters = SpanCounters.from_verdicts((verdict for verdict, _ in graded.values()),

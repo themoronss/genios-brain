@@ -234,10 +234,50 @@ def test_a_decision_that_settles_a_conditional_promise_is_an_opportunity(
     assert T.OPPORTUNITY_SIGNAL in _types(outcome)
 
 
-def test_a_role_assertion_is_a_relationship_change(result, eval_time):
-    outcome = _detect(result(roles=[{"party": "Priya", "role": "new AWS owner",
-                                     "evidence_text": "Priya is taking this over"}]), eval_time)
+def test_a_role_assertion_is_a_relationship_change(result, role, eval_time):
+    outcome = _detect(result(roles=[role()]), eval_time)
     assert T.RELATIONSHIP_CHANGE in _types(outcome)
+
+
+def test_a_relationship_change_read_off_a_role_now_cites_the_role(result, role, eval_time):
+    """STEP 4, 2026-09-23 — the reason the lane was typed.
+
+    `roles` was `list[dict]` and this detection carried no `EvidenceSpan`; `detector.py` said so
+    in its own comment, which is a defect documented rather than fixed. A RELATIONSHIP_CHANGE
+    that cites nothing reaches V-5 with an empty `evidence_refs`, is downgraded for having no
+    receipt, and there is no way to tell that from a claim whose quote genuinely failed.
+    """
+    outcome = _detect(result(roles=[role()]), eval_time)
+
+    change = next(d for d in outcome.signals if d.signal_type is T.RELATIONSHIP_CHANGE)
+    assert change.evidence, "the role claim carries a span and the detection dropped it"
+
+
+def test_an_availability_change_cites_the_window_it_was_read_from(result, availability,
+                                                                  eval_time):
+    """The same promotion, same date, same argument — `availability` was the second lane."""
+    outcome = _detect(result(availability=[availability()]), eval_time)
+
+    window = next(d for d in outcome.signals if d.signal_type is T.AVAILABILITY_CHANGE)
+    assert window.evidence
+
+
+def test_a_role_the_model_could_not_quote_still_fires_and_cites_nothing(result, eval_time):
+    """`evidence=[]` is the extractor SAYING it found no quote, and the claim travels anyway.
+
+    Forcing a span would make the model invent one, which is the failure this architecture exists
+    to prevent. So the predicate fires on an unquotable role and the detection carries an empty
+    tuple — honestly empty, which V-5 reads and downgrades, rather than the predicate pretending
+    there was no receipt to be had.
+    """
+    from genios_engine.contracts.extraction import RoleAssertion
+
+    unquotable = RoleAssertion(party="the enterprise team", role="approver",
+                               evidence=[], confidence_bp=4000)
+    outcome = _detect(result(roles=[unquotable]), eval_time)
+
+    change = next(d for d in outcome.signals if d.signal_type is T.RELATIONSHIP_CHANGE)
+    assert change.evidence == ()
 
 
 def test_a_new_party_on_a_known_thread_is_a_relationship_change(result, entity, eval_time):

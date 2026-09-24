@@ -796,7 +796,9 @@ def _result_with(lane: str, entry: dict):
 
 @pytest.mark.parametrize("lane", list(UNTYPED_LANES))
 def test_probe_an_invented_key_in_each_lane_lands_in_the_open_lane_and_nowhere_else(lane):
-    """D3, once per lane the review named — `roles`, `relationships`, `scheduling_proposals`.
+    """D3, once per lane that is still open. The review named three; `roles` was typed on
+    2026-09-23 (step 4) and left `UNTYPED_LANES`, which this parametrize reads rather than
+    lists, so the row disappeared by itself.
 
     Three claims, and the third is the one a lenient implementation loses: the key must be GONE
     from the lane, PRESENT in the open lane, and the declared keys beside it must be untouched.
@@ -841,10 +843,11 @@ def test_probe_the_sift_is_sensitive_to_the_key_vocabulary_being_opened(monkeypa
                                for lane in UNTYPED_LANES})
     monkeypatch.setattr(guard_mod, "untyped_lane_sets", lambda: opened)
 
+    lane = UNTYPED_LANES[0]
     entry = {"party": "Finance", INVENTED_KEY: "negotiation"}
-    sifted = sift_untyped_lanes(_result_with("roles", entry), source_ref="prepared_content:evt_g9")
+    sifted = sift_untyped_lanes(_result_with(lane, entry), source_ref="prepared_content:evt_g9")
     assert sifted.refused == ()
-    assert getattr(sifted.result, "roles") == [entry], (
+    assert getattr(sifted.result, lane) == [entry], (
         "the sift refused the key even with the vocabulary opened, so it is not the vocabulary "
         "doing the work and the probe above measured something else")
 
@@ -861,10 +864,16 @@ def test_probe_the_sift_is_sensitive_to_the_key_vocabulary_being_opened(monkeypa
 
 
 def _answer_with_an_invented_role_key() -> dict:
-    """A model answer that fills `roles` with a key outside the closed set for that lane."""
+    """A model answer that fills an open lane with a key outside the closed set for that lane.
+
+    It named `roles` until 2026-09-23, when that lane became `list[RoleAssertion]`; the probe
+    moved to `relationships`, which is still `list[dict[str, Any]]` and therefore still the shape
+    this defect lives in. The function keeps its name because what it probes is unchanged: a name
+    the model invented, reaching the cache.
+    """
     return {"intent": "inform", "stance": "neutral",
-            "roles": [{"party": "Finance", INVENTED_KEY: "negotiation",
-                       "evidence_text": "I still need Finance to confirm"}]}
+            "relationships": [{"party": "Finance", INVENTED_KEY: "negotiation",
+                               "evidence_text": "I still need Finance to confirm"}]}
 
 
 def test_probe_a_row_reaches_the_discovery_lane_through_the_shipping_extract_path(run):
@@ -882,8 +891,8 @@ def test_probe_a_row_reaches_the_discovery_lane_through_the_shipping_extract_pat
 
     assert outcome.parked is None, outcome.parked
     assert outcome.result is not None
-    assert outcome.result.roles == [{"party": "Finance",
-                                     "evidence_text": "I still need Finance to confirm"}]
+    assert outcome.result.relationships == [
+        {"party": "Finance", "evidence_text": "I still need Finance to confirm"}]
 
     rows = lane_store.observations_for(org_id="org_g9_probe", event_id=PREPARED_ID)
     assert [row.proposed_kind for row in rows] == [INVENTED_KEY], rows
@@ -891,7 +900,7 @@ def test_probe_a_row_reaches_the_discovery_lane_through_the_shipping_extract_pat
     replayed, llm = run(_answer_with_an_invented_role_key(), store=cache,
                         open_lane=lane_store)
     assert replayed.cache_hit is True and llm.call_count == 0
-    assert INVENTED_KEY not in json.dumps(replayed.result.roles), (
+    assert INVENTED_KEY not in json.dumps(replayed.result.relationships), (
         "the cache kept the UNSIFTED dicts, so every replay restores the invented name")
 
 
@@ -1093,7 +1102,8 @@ def test_probe_a_row_reaches_the_lane_through_capture_event_itself():
                                              cache=InMemoryExtractionCache()))
 
     assert result.extraction is not None, result.extraction_parked
-    assert INVENTED_KEY not in json.dumps(result.extraction.roles), result.extraction.roles
+    assert INVENTED_KEY not in json.dumps(result.extraction.relationships), \
+        result.extraction.relationships
 
     rows = lane_store.observations_for(org_id="org_d6b", event_id=result.event.event_id)
     assert [row.proposed_kind for row in rows] == [INVENTED_KEY], rows

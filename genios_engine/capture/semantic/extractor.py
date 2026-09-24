@@ -168,8 +168,8 @@ from genios_engine.capture.validate.schema import (
 from genios_engine.contracts.evidence import EvidenceSpan
 from genios_engine.contracts.intent import MessageIntent
 from genios_engine.contracts.extraction import (
-    BusinessFact, Commitment, DecisionState, Dependency, EntityMention, ExtractionResult,
-    UnclassifiedObservation)
+    AvailabilityWindow, BusinessFact, Commitment, DecisionState, Dependency, EntityMention,
+    ExtractionResult, OpenQuestion, RoleAssertion, UnclassifiedObservation)
 from genios_engine.contracts.parked import ParkedEvent
 from genios_engine.contracts.prepared_content import PreparedContent
 from genios_engine.contracts.units import Money, ResolvedDate
@@ -250,10 +250,19 @@ _DATE_DRAFT_CONFIDENCE_BP = 10_000
 #: The claim lanes, in `ExtractionResult` declaration order. Order is not cosmetic: it is the
 #: order claims are bound in, which is the order `all_evidence` ends up in, which is what a
 #: content address over the result would hash.
+#:
+#: `questions`, `roles` and `availability` JOINED this tuple on 2026-09-23 (step 4). They were
+#: parsed by a separate lenient reader that defaulted `evidence=[]` — which built claims schema
+#: rule S-4 then refused ("a claim with no receipt is a guess"), turning one unquotable question
+#: into a repair retry and a parked extraction that lost every commitment in the same message.
+#: Going through the binder instead is the whole point of the promotion: a claim that cited
+#: nothing but whose words ARE in the text gets a synthesized span at `bp * 7 // 10`, and one
+#: whose words are nowhere is dropped and counted. S-4 then holds by construction.
 CLAIM_FIELDS = ("entity_mentions", "dates_mentioned", "commitments", "decision_states",
-                "dependencies", "business_facts", "unclassified_observations")
+                "dependencies", "business_facts", "unclassified_observations",
+                "questions", "roles", "availability")
 
-#: Every lane a claim can arrive in: the six above, which carry receipts, plus `amounts`, whose
+#: Every lane a claim can arrive in: the ten above, which carry receipts, plus `amounts`, whose
 #: receipt is its own `as_written`. Spelled as an extension of `CLAIM_FIELDS` rather than as a
 #: second list, so a lane added there is counted here the same day. This is the set the
 #: total-loss test is taken over — an answer that kept one amount and lost six commitments still
@@ -1141,6 +1150,22 @@ _NEEDLE_KEY = {
     # not acquire a receipt merely because its label appears somewhere in the message.
     "business_facts": "__no_synthesized_business_receipt__",
     "unclassified_observations": "description",
+    # PROMOTED 2026-09-23. Each needle is the field whose value is most likely to be the source's
+    # own words, which is what makes a synthesized receipt honest rather than manufactured:
+    #   roles         `party` — "Priya is taking this over" puts the NAME in the text; the role
+    #                 itself ("new AWS owner") is usually the model's paraphrase.
+    #   availability  `person` — the claim's subject, consistent with every other lane. It is
+    #                 optional (None = the author), so an UNNAMED window that also cited nothing
+    #                 produces an empty needle and the binder drops it. That is the right answer
+    #                 and not a gap: `_POLICY[AvailabilityWindow]` is DROP, so an ungrounded
+    #                 window would be deleted one stage later anyway. `from_text`/`to_text` are
+    #                 verbatim by contract and look like better needles, but both are optional
+    #                 too and are usually short enough to match the wrong sentence.
+    #   questions     `text` — a question is nearly always asked verbatim, so this is the one
+    #                 promoted lane where the needle is usually the literal sentence.
+    "roles": "party",
+    "availability": "person",
+    "questions": "text",
 }
 
 
@@ -1319,6 +1344,37 @@ def _build_claim(field: str, payload: Mapping[str, Any], evidence: Sequence[Evid
             return UnclassifiedObservation(proposed_kind=kind, description=description,
                                            evidence=list(evidence),
                                            confidence_bp=confidence_bp)
+        if field == "roles":
+            party = _text(payload.get("party"))
+            role = _text(payload.get("role"))
+            if party is None or role is None:
+                return None
+            return RoleAssertion(party=party, role=role, evidence=list(evidence),
+                                 confidence_bp=confidence_bp)
+        if field == "availability":
+            # `person` is OPTIONAL and `None` means the author — an out-of-office auto-reply says
+            # "I am away" and names nobody, which is the commonest availability claim there is.
+            # Only `kind` is required, because a window with no kind says nothing.
+            person = _text(payload.get("person"))
+            kind = _text(payload.get("kind"))
+            if kind is None:
+                return None
+            # `from` / `to` are the wire names — `AvailabilityWindow` declares them as aliases so
+            # the prompt can ask in the words a person would use. Read under BOTH here: a model
+            # answering `from_text` is answering the same question.
+            return AvailabilityWindow(
+                person=person, kind=kind,
+                from_text=_text(payload.get("from")) or _text(payload.get("from_text")),
+                to_text=_text(payload.get("to")) or _text(payload.get("to_text")),
+                coverage_person=_text(payload.get("coverage_person")),
+                evidence=list(evidence), confidence_bp=confidence_bp)
+        if field == "questions":
+            text = _text(payload.get("text"))
+            if text is None:
+                return None
+            return OpenQuestion(text=text, asked_by=_text(payload.get("asked_by")),
+                                asked_of=_text(payload.get("asked_of")),
+                                evidence=list(evidence), confidence_bp=confidence_bp)
         if field == "dates_mentioned":
             return _resolved_date(payload, evidence, request, tally)
     except (TypeError, ValueError) as exc:
@@ -1543,11 +1599,11 @@ def parse_response(payload: Any, *, request: ExtractionRequest, call: AssembledC
         "business_facts": claims["business_facts"],
         "exchange_intent": _intent(payload.get("exchange_intent")),
         "implied_actions": _string_list(payload.get("implied_actions")),
-        "questions": _string_list(payload.get("questions")),
-        "roles": _open_lane_entries(payload.get("roles"), tally),
+        "questions": claims["questions"],
+        "roles": claims["roles"],
         "relationships": _open_lane_entries(payload.get("relationships"), tally),
         "scheduling_proposals": _open_lane_entries(payload.get("scheduling_proposals"), tally),
-        "availability": _open_lane_entries(payload.get("availability"), tally),
+        "availability": claims["availability"],
         "unclassified_observations": claims["unclassified_observations"],
         "field_confidence": _field_confidence(payload.get("field_confidence"), tally),
         "model_snapshot": model_snapshot,

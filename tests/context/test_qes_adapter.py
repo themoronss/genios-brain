@@ -10,6 +10,8 @@ from genios_engine.contracts.extraction import (
     DecisionState,
     EntityMention,
     ExtractionResult,
+    OpenQuestion,
+    RoleAssertion,
 )
 from genios_engine.contracts.units import DateCertainty, ResolvedDate
 
@@ -32,8 +34,17 @@ def extraction() -> ExtractionResult:
                                 is_conditional=False, evidence=[SPAN], confidence_bp=8500)],
         decision_states=[DecisionState(subject="renewal", state="pending", owner="Acme",
                                        evidence=[SPAN], confidence_bp=8200)],
-        questions=["Can we sign Friday?"], all_evidence=[SPAN],
-        roles=[{"party": "Acme", "role": "counterparty", "evidence_text": QUOTE}],
+        # TYPED 2026-09-23 (step 4). The old fixture read
+        #   questions=["Can we sign Friday?"]
+        #   roles=[{"party": ..., "role": ..., "evidence_text": QUOTE}]
+        # — a question whose only receipt was a copy of itself, and a role whose `evidence_text`
+        # was a free string nothing graded. Both carry the real span now, and the adapter's job
+        # changed from `dict(value)` to projecting a claim onto the wire shape L2 reads.
+        questions=[OpenQuestion(text="Can we sign Friday?", asked_of="us",
+                                evidence=[SPAN], confidence_bp=7000)],
+        all_evidence=[SPAN],
+        roles=[RoleAssertion(party="Acme", role="counterparty",
+                             evidence=[SPAN], confidence_bp=8000)],
         model_snapshot="model-2026", prompt_version="l1.email.v1", schema_version="3",
         extraction_profile="email", input_tokens=100, output_tokens=20)
 
@@ -65,3 +76,7 @@ def test_qes_projection_keeps_decision_fields_and_roles():
     assert fields == {"decision.status": "pending", "decision.owner": "Acme",
                       "decision.owner_basis": OWNER_INFERRED}
     assert projected.roles[0]["role"] == "counterparty"
+    # The receipt is the SPAN ALG-08 graded, not a free string beside it. Before step 4 this was
+    # whatever the model wrote under `evidence_text` and nothing checked it against the message.
+    assert projected.roles[0]["evidence_text"] == QUOTE
+    assert projected.questions[0]["evidence_text"] == QUOTE

@@ -44,6 +44,18 @@ from genios_engine.contracts.signal import SignalType
 #: ALG-16's order, highest precedence first, verbatim from doc 06 L1.6.3-U1.
 PRECEDENCE: tuple[SignalType, ...] = (
     SignalType.INFORMATION_CONFLICT,
+    # Member sixteen (2026-09-23), and its position is an argument, not a default.
+    #
+    # SECOND, above every claim-derived type, because a delivery failure INVALIDATES whatever the
+    # message contained. Gmail returns the original message inside the bounce, so its claims are
+    # visible to the extractor: a pitch that quoted a deadline can fire DEADLINE_STATED, and a
+    # promise inside it can fire COMMITMENT_MADE. Ranked below those, the primary type of an
+    # undelivered pitch would be "a commitment was made" — for a commitment nobody ever received.
+    # That is worse than silence, because it reads as progress.
+    #
+    # Below INFORMATION_CONFLICT only, which is first for the opposite reason: a disagreement is
+    # the one thing no score can rank, so it outranks even a certainty.
+    SignalType.DELIVERY_FAILURE,
     SignalType.ESCALATION,
     SignalType.APPROVAL_REQUESTED,
     SignalType.CONTRACT_RENEWAL,

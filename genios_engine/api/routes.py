@@ -363,12 +363,28 @@ def _run_ledger(*, org_id: str, connection_id: str, source: str, mode: str, summ
         with _graph.engine.begin() as c:
             c.execute(text(
                 "insert into l1_sync_runs (run_id, org_id, connection_id, source, mode, "
-                "scanned, emitted, dropped, parked, duplicate, quarantined, error, started_at) "
-                "values (:r,:o,:c,:s,:m,:sc,:em,:dr,:pa,:du,:qu,:err,:start)"),
+                "scanned, emitted, dropped, parked, duplicate, quarantined, error, started_at, "
+                # L1.2.x · COMPLETENESS (step 5, migration 0178). Named in the INSERT and not
+                # only in the migration, because `started_at` is the cautionary tale: the column
+                # existed from the day the table did, the insert never mentioned it, and every
+                # row in production recorded a finish with no start. A column no writer names is
+                # a column that is null in every row.
+                "cursor_exhausted, page_budget_spent, claimed_total, claimed_is_estimate) "
+                "values (:r,:o,:c,:s,:m,:sc,:em,:dr,:pa,:du,:qu,:err,:start,"
+                ":cx,:pbs,:ct,:cie)"),
                 {"r": new_id("run"), "o": org_id, "c": connection_id, "s": source, "m": mode,
                  "sc": getattr(summary, "scanned", 0), "em": getattr(summary, "emitted", 0),
                  "dr": getattr(summary, "dropped", 0), "pa": getattr(summary, "parked", 0),
                  "du": getattr(summary, "duplicate", 0), "qu": getattr(summary, "quarantined", 0),
+                 # `getattr` with a None default throughout, matching every other field here: a
+                 # caller reporting a TOTAL failure passes `summary=None`, and "we do not know
+                 # whether it finished" is the truthful row for a sync that never returned a
+                 # batch. Defaulting to False would file it as "truncated", which asserts we got
+                 # partway when we got nowhere.
+                 "cx": getattr(summary, "cursor_exhausted", None),
+                 "pbs": getattr(summary, "page_budget_spent", None),
+                 "ct": getattr(summary, "claimed_total", None),
+                 "cie": getattr(summary, "claimed_is_estimate", None),
                  # The column has existed since the table did and the insert never named it, so
                  # every row in production says when a sync finished and not when it began — and
                  # "how long did this tenant's sync take" is the first question asked of a slow
@@ -1519,8 +1535,16 @@ def backfill_connection(connection_id: str, background_tasks: BackgroundTasks,
                 semantic=_semantic_lane_for(conn.org_id,
                                             seat_id=getattr(conn, "seat_id", None)),
                 structured=_structured_lane_for(conn.org_id))
-            _log.info("backfill drain done org=%s conn=%s scanned=%s emitted=%s",
-                      conn.org_id, connection_id, summary.scanned, summary.emitted)
+            # TRUNCATED vs done, 2026-09-23 (step 5). This line said "done" either way, while
+            # the ONBOARDING backfill twenty-odd screens down already computed the same fact and
+            # logged "CAPPED". One file, two doors, two answers to "did we get the whole
+            # mailbox" — and the door that lands a tenant's entire history was the one that
+            # could not say.
+            capped = summary.cursor_exhausted is False
+            _log.info("backfill drain %s org=%s conn=%s scanned=%s emitted=%s%s",
+                      "TRUNCATED" if capped else "done",
+                      conn.org_id, connection_id, summary.scanned, summary.emitted,
+                      " — older tail remains; re-run /backfill to resume" if capped else "")
             if _graph is not None:
                 _run_l2(conn.org_id)                     # extract everything the backfill landed
         except Exception:                                # a drain failure must not crash the worker

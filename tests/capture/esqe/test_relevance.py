@@ -553,19 +553,60 @@ def test_the_page_consults_the_semantic_cost_governor_rather_than_a_second_budge
     assert batcher.stats.budget_alert and "governor" in batcher.stats.budget_alert
 
 
-def test_an_over_budget_page_alerts_instead_of_spending():
-    """The plan's own guard, now computed over the page: above 10% ambiguous it is a
-    graph-coverage problem, and the answer is an alert, not a bill."""
-    llm = RaisingLLM()
+def test_an_over_budget_page_ALLOCATES_its_budget_instead_of_refusing_to_spend():
+    """REWRITTEN 2026-09-24 (step 8-U4). This asserted `llm.calls == 0` — the guard judging
+    NOTHING — and that behaviour is the defect step 8 exists to close.
+
+    The ALERT was always right: above 10% ambiguous it IS a graph-coverage problem, too few known
+    counterparties, not a relevance problem. What was wrong is the consequence. On a young tenant
+    almost every sender is unknown, so the guard always tripped and LLM-5 never ran on a single
+    event — 69 of 225, 31% of everything reaching Layer 2, never assessed.
+
+    §9 of the step: *"Do not raise the budget to make the problem go away — ALLOCATE it."* Same
+    budget, same alert; the head is judged and the tail is NAMED rather than silently kept.
+    """
+    llm = ScriptedLLM()
     page = _mixed_page(100, ambiguous=40)
     batcher = R.RelevancePage(llm=llm)
 
     batcher.prime(page)
     decisions = [batcher.decide(c) for c in page[:40]]
 
-    assert llm.calls == 0
-    assert all(d.rule == R.RULE_OVER_BUDGET and d.relevant for d in decisions)
+    rules = {d.rule for d in decisions}
+    assert R.UNJUDGED_FOR_BUDGET in rules, "the deferred tail is unnamed again"
+    assert R.RULE_LLM_BUSINESS in rules, "the budget was not spent at all — the old defect is back"
+
+    judged = [d for d in decisions if d.rule != R.UNJUDGED_FOR_BUDGET]
+    assert len(judged) == 10, f"the allocator spent the wrong budget: {len(judged)}"
+
+    # EVERY event is still kept. Not judging is a statement about OUR budget, never about the
+    # message, so it fails open exactly as a transport failure does.
+    assert all(d.relevant for d in decisions)
     assert batcher.stats.budget_alert and "4000 bp" in batcher.stats.budget_alert
+
+
+def test_an_unjudged_event_is_distinguishable_from_one_judged_relevant():
+    """8-U5 / E3, and the reason `UNJUDGED_FOR_BUDGET` is its own value rather than a reuse of
+    `RULE_OVER_BUDGET`.
+
+    Before this, an event nobody assessed and an event LLM-5 judged business both arrived as
+    "kept" — so a third of the corpus was indistinguishable from the part we actually looked at.
+    That is the drop ledger's founding argument one layer up: **an absence with no record is
+    indistinguishable from a decision.**
+    """
+    llm = ScriptedLLM()
+    page = _mixed_page(100, ambiguous=40)
+    batcher = R.RelevancePage(llm=llm)
+    batcher.prime(page)
+
+    decisions = [batcher.decide(c) for c in page[:40]]
+    unjudged = [d for d in decisions if d.rule == R.UNJUDGED_FOR_BUDGET]
+
+    assert unjudged, "fixture problem: nothing was deferred"
+    assert all(R.is_kept(d.rule) for d in unjudged), "an unjudged event was refused"
+    assert all(d.relevance_bp == 3000 for d in unjudged), (
+        "an unjudged event must rank at UNKNOWN authority — the same 3000 every other fail-open "
+        "path takes, because the same thing happened: nobody decided")
 
 
 def test_an_unprimed_event_still_gets_a_correct_answer_and_is_counted_honestly():

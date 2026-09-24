@@ -307,7 +307,14 @@ def test_eval_harness_builds_the_screen_request_and_diffs_claims(fake_llm):
     assert request.envelope.direction == "outbound"
     assert "context — do not extract" in request.prepared.clean_text
 
-    answer = dict(MINIMAL_ANSWER, questions=["can we talk?"])
+    # OBJECT SHAPE SINCE 2026-09-23 (step 4). `questions` was `list[str]`; it is
+    # `list[OpenQuestion]` now, goes through the same binder as every other claim, and is dropped
+    # if its words are nowhere in the live text — so the fixture quotes the message rather than
+    # inventing a sentence. That is the guard working, not the harness breaking.
+    answer = dict(MINIMAL_ANSWER,
+                  questions=[{"text": "I'll send the proposal by Friday",
+                              "asked_of": "Rohit", "confidence_bp": 7000,
+                              "evidence": [{"quote": "I'll send the proposal by Friday"}]}])
     _, keys_a = ev._run(request, fake_llm(answer))
     _, keys_b = ev._run(request, fake_llm(MINIMAL_ANSWER))
     assert keys_a.get("questions") and not keys_b.get("questions")

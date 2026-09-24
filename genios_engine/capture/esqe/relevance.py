@@ -85,11 +85,32 @@ RULE_SERVICE_ACCOUNT_NO_CLAIMS = "service_account_no_claims"
 #: `Auto-Submitted: auto-replied`, which the bulk rule below reads as a broadcast — and that one
 #: automated message is the only place "who is away, until when, who covers" is ever written.
 RULE_AVAILABILITY_NOTICE = "availability_notice"
+#: Step 2 · a message the tenant SENT did not arrive. Asked above `RULE_BULK_HEADERS` because a
+#: delivery report carries bulk headers by construction — Gmail sends it as an automated message —
+#: and the bulk rung was therefore refusing the one class of automated mail that is a fact about
+#: the tenant's own action. Measured 2026-09-23: five bounce events for the pilot org, all
+#: `emitted`, all short-circuited at `envelope_bulk_headers`, **zero signals**; three of them are
+#: pitches to Afore and Surge that the founder believes were sent.
+RULE_DELIVERY_FAILURE = "delivery_failure"
 RULE_LLM_BUSINESS = "llm5_business"
 RULE_LLM_NOT_BUSINESS = "llm5_not_business"
 RULE_LLM_UNAVAILABLE = "llm5_unavailable"
 RULE_NO_MODEL_WIRED = "no_model_wired"
 RULE_OVER_BUDGET = "ambiguous_over_budget"
+#: 8-U5 · THIS EVENT WAS NEVER JUDGED, because the budget ran out before it. Added 2026-09-24.
+#:
+#: Distinct from `RULE_OVER_BUDGET`, which says *the page as a whole was over budget*. This says
+#: *we judged the head of the page and this one was in the tail*, and the two are different facts
+#: about different things. Before the allocator only the first existed, so an event nobody
+#: assessed and an event judged RELEVANT both arrived as "kept" — 31% of the corpus
+#: indistinguishable from the part we actually looked at.
+#:
+#: That is the drop ledger's founding argument one layer over: **an absence with no record is
+#: indistinguishable from a decision.**
+#:
+#: IT KEEPS THE EVENT. Not judging is a statement about OUR budget and never about the message, so
+#: it fails open exactly as a transport failure does.
+UNJUDGED_FOR_BUDGET = "unjudged_for_budget"
 #: D6 · the page seam asked L1.4.8's cost governor and was refused. A fail-open path like
 #: the three above: nobody decided, so the event is KEPT at unknown authority.
 RULE_COST_REFUSED = "cost_governor_refused"
@@ -103,9 +124,57 @@ RULE_ORDER: tuple[str, ...] = (
     RULE_INTERNAL_KIND,
     RULE_STRUCTURED_SOURCE,
     RULE_AVAILABILITY_NOTICE,
+    RULE_DELIVERY_FAILURE,
     RULE_BULK_HEADERS,
     RULE_SERVICE_ACCOUNT_NO_CLAIMS,
 )
+
+def allocate_budget(ranked: "Sequence[Any]", *, budget: int) -> "tuple[tuple[Any, ...], tuple[Any, ...]]":
+    """L1.6.x-U4 · split a ranked queue into what the budget can judge and what it cannot.
+
+    **THE POINT OF THE UNIT, in §9's words: *"Do not raise the budget to make the problem go away
+    — ALLOCATE it."*** The guard above is all-or-nothing: over the ambiguous share it alerts and
+    judges NOTHING, so on a young tenant — where almost every sender is unknown, so the guard
+    always trips — the component that could have said *"this is a mass programme announcement"*
+    never ran on a single event. 69 of 225 events, 31%, never assessed.
+
+    An allocator with the SAME budget judges the head and marks the tail. Strictly more information
+    for identical spend, and the part we did not reach is named rather than silent.
+
+    **IT NEVER REORDERS.** E2: importance is computed AFTER relevance, so this cannot sort by the
+    thing it would most like to sort by. It takes the caller's order and says nothing about
+    quality — the caller owns the proxy and must name it. An allocator that sorted by a proxy of
+    its own would bury that choice where no report could see it.
+
+    A non-positive budget judges nothing and defers everything. Written as an explicit branch and
+    not as `ranked[:budget]`, because a negative budget would slice from the END — judging
+    everything except the last item, silently inverting the unit while looking like it worked.
+
+    Pure: no clock, no I/O, no model.
+    """
+    items = tuple(ranked)
+    if budget <= 0:
+        return (), items
+    return items[:budget], items[budget:]
+
+
+def is_kept(rule: str) -> bool:
+    """Does this rule keep the event? Every fail-open path answers True.
+
+    `UNJUDGED_FOR_BUDGET` is here for the same reason `RULE_LLM_UNAVAILABLE` and
+    `RULE_COST_REFUSED` are: nobody decided, and an undecided event is kept at unknown authority.
+    The never-filter principle — an absence of judgement is never a judgement of absence.
+    """
+    return rule not in _REFUSING_RULES
+
+
+#: The rules that REFUSE an event. Everything else keeps it, including every fail-open path, so a
+#: rule added without a row here keeps its events — which is the safe direction to be wrong in.
+_REFUSING_RULES: frozenset[str] = frozenset({
+    RULE_BULK_HEADERS,
+    RULE_SERVICE_ACCOUNT_NO_CLAIMS,
+    RULE_LLM_NOT_BUSINESS,
+})
 
 DECIDED_BY_RULES = "rules"
 DECIDED_BY_LLM = "llm"
@@ -139,6 +208,15 @@ _RULE_RELEVANCE_BP: dict[str, int] = {
     # so it ranks with a known sender's broadcast, below any message a person wrote to us.
     RULE_AVAILABILITY_NOTICE: 3500,
     RULE_STRUCTURED_SOURCE: 8000,
+    # A delivery failure is a CERTAIN fact about the tenant's own action, reached without a model
+    # and without reading anyone's prose for meaning: a message they sent did not arrive. It ranks
+    # with a known counterparty rather than above it because `internal_kind` (the company stating
+    # something deliberately) is the only thing that should sit at the top of this table.
+    #
+    # Note this is RELEVANCE, not importance. "Is this material to the business at all" is always
+    # yes for an undelivered message; *how much it matters* is ALG-17's question, and a bounced
+    # newsletter unsubscribe will score low there on its own terms.
+    RULE_DELIVERY_FAILURE: 9000,
     RULE_LLM_BUSINESS: 6000,
     # The three fail-open paths share `unknown` authority (3000, the same value L1.6.4's cascade
     # gives an unknown actor) because that is exactly what they mean: nobody decided.
@@ -146,6 +224,14 @@ _RULE_RELEVANCE_BP: dict[str, int] = {
     RULE_NO_MODEL_WIRED: 3000,
     RULE_OVER_BUDGET: 3000,
     RULE_COST_REFUSED: 3000,
+    # 8-U5 · THE FIFTH FAIL-OPEN PATH, and it takes the same 3000 as the other four for the same
+    # reason: nobody decided. An event the allocator did not reach is at UNKNOWN authority, which
+    # is the honest reading and the one L1.6.4's cascade gives an unknown actor.
+    #
+    # NOT LOWER, deliberately. Ranking it below the others would make "we ran out of budget" a
+    # statement about the MESSAGE, and it is a statement about us. Not higher either: we did not
+    # look at it, so it cannot outrank an event somebody actually judged.
+    UNJUDGED_FOR_BUDGET: 3000,
     RULE_LLM_NOT_BUSINESS: 1000,
     RULE_SERVICE_ACCOUNT_NO_CLAIMS: 800,
     RULE_BULK_HEADERS: 500,
@@ -277,6 +363,15 @@ class RelevanceCandidate:
     #: The gate's N-05 marker was set (out-of-office / leave / auto-reply). Computed by the
     #: caller from `gate.rules.availability_marker`, the one definition both layers share.
     availability_notice: bool = False
+    #: Step 2 · *a message this tenant SENT did not arrive.* An explicit boolean rather than
+    #: something the rung reads out of `subject`/`snippet`, because those two are deliberately
+    #: EMPTY on the pipeline's envelope path — `pipeline.envelope_candidate` leaves them so, since
+    #: they exist to be shown to LLM-5 and nothing on that path may call a model. A rung reading
+    #: them would therefore work in every unit test and refuse every real bounce.
+    #:
+    #: Computed once by the caller from `capture/delivery_status.read_delivery_status`, so the
+    #: envelope candidate and the S4 candidate cannot disagree about whether a message bounced.
+    delivery_failure: bool = False
 
     @property
     def key(self) -> str:
@@ -419,6 +514,16 @@ def _rule_verdict(candidate: RelevanceCandidate) -> tuple[bool, str] | None:
         return True, RULE_STRUCTURED_SOURCE
     if candidate.availability_notice and not is_service_account(candidate.sender):
         return True, RULE_AVAILABILITY_NOTICE
+    # ABOVE the bulk rung, and that position is the whole fix. A delivery report is an automated
+    # message, so it carries bulk headers by construction; asking the bulk question first refused
+    # it on its envelope, before S2, which is why no extraction ran and no predicate could fire.
+    #
+    # Only a PERMANENT failure is admitted. A delay notice ("Gmail will retry for 47 more hours")
+    # is still being delivered, and reporting it as a bounce would tell a founder their pitch did
+    # not arrive while it is arriving — the manufactured certainty this layer exists to prevent.
+    # A delay that ends in failure produces its own failure notice, which this rung then admits.
+    if candidate.delivery_failure:
+        return True, RULE_DELIVERY_FAILURE
     if _has_bulk_headers(candidate.headers):
         return False, RULE_BULK_HEADERS
     if is_service_account(candidate.sender) and candidate.typed_claim_count == 0:
@@ -819,15 +924,34 @@ class RelevancePage:
         if self._llm is None:
             return self.stats                       # `decide` fails open at `no_model_wired`
         if len(items) >= MIN_BUDGET_SAMPLE and share_bp > AMBIGUOUS_BUDGET_BP:
-            # The plan's own guard, now computed over the population it was written about.
+            # 8-U4 · ALLOCATE THE BUDGET, DO NOT SWITCH IT OFF. Added 2026-09-24.
+            #
+            # This branch used to `return self.stats` and judge NOTHING. On a young tenant almost
+            # every sender is unknown, so the guard always trips — and the component that could
+            # have said "this is a mass programme announcement" never ran on a single event.
+            # 69 of 225, 31% of everything reaching Layer 2, never assessed.
+            #
+            # The alert is RIGHT and stays: a high ambiguous share IS a graph-coverage problem,
+            # not a relevance one. What was wrong is the consequence — all-or-nothing, when the
+            # correct behaviour on a constrained budget is to spend it where it changes the
+            # outcome. Same budget, same alert, strictly more information.
+            #
+            # THE ORDER IS `pending`'s, and that is deliberate rather than lazy. Importance is
+            # computed AFTER relevance (E2), so the only proxy available here is the order the
+            # caller built the page in — arrival order. `allocate_budget` never reorders and this
+            # comment is where that proxy is NAMED, as E2 requires.
+            budget = max(len(items) * AMBIGUOUS_BUDGET_BP // 10000, 1)
+            judged_head, deferred = allocate_budget(pending, budget=budget)
             with self._lock:
                 self._alert = (
                     f"{unknown} of {len(items)} events on this page were ambiguous "
                     f"({share_bp} bp, budget {AMBIGUOUS_BUDGET_BP} bp). That is a graph-coverage "
                     f"problem — too few known counterparties — not a relevance problem, so LLM-5 "
-                    f"was not called and those events are kept at unknown authority.")
-                self._closed_rule = RULE_OVER_BUDGET
-            return self.stats
+                    f"judged the first {len(judged_head)} in arrival order and the remaining "
+                    f"{len(deferred)} are kept at unknown authority, marked "
+                    f"{UNJUDGED_FOR_BUDGET!r}.")
+                self._closed_rule = UNJUDGED_FOR_BUDGET
+            pending = list(judged_head)
         for start in range(0, len(pending), self._max_batch):
             batch = pending[start:start + self._max_batch]
             if not self._admit(batch):
@@ -958,6 +1082,7 @@ class RelevancePage:
 
 
 __all__ = ["AMBIGUOUS_BUDGET_BP", "DECIDED_BY_BUDGET_GUARD", "DECIDED_BY_LLM", "DECIDED_BY_RULES",
+           "UNJUDGED_FOR_BUDGET", "allocate_budget", "is_kept",
            "PageStats", "RelevancePage", "RULE_COST_REFUSED",
            "MAX_BATCH", "MAX_ITEM_CHARS", "MIN_BUDGET_SAMPLE", "RULE_BULK_HEADERS", "RULE_INTERNAL_KIND",
            "RULE_KNOWN_COUNTERPARTY", "RULE_LLM_BUSINESS", "RULE_LLM_NOT_BUSINESS",

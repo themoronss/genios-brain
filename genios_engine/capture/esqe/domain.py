@@ -96,6 +96,17 @@ class DomainTagging:
     #: signal so L3 compiles it in degraded mode instead of pretending full expertise.
     degraded_compile: bool
     observations: tuple[DomainObservation, ...]
+    #: 6-U3 · domain names the proposer put forward that this deployment does not run.
+    #:
+    #: CARRIED, NEVER DROPPED. A proposer saying `procurement` for a tenant with no procurement
+    #: corpus has told us two true things — something about this message, and something about a
+    #: gap in our own coverage. `context/extract/vocab.py` records what dropping these costs:
+    #: *268 distinct field names in one org, 192 of them used exactly once*, a vocabulary that
+    #: grew unwatched because every unrecognised name went somewhere nobody counted.
+    #:
+    #: It is NOT in `hints` and must never be: these are names the ontology refused, and putting
+    #: them in the tag list would make an unknown proposal indistinguishable from a real domain.
+    proposed_unknown: tuple[str, ...] = ()
 
     @property
     def domains(self) -> tuple[str, ...]:
@@ -108,9 +119,16 @@ class DomainTagging:
         return tuple(seen)
 
     @property
-    def as_dicts(self) -> list[dict[str, str]]:
-        """The `GatedEvent.domain_hints` wire shape, order preserved."""
-        return [{"domain": h.domain, "source": h.source} for h in self.hints]
+    def as_dicts(self) -> list[dict[str, Any]]:
+        """The `GatedEvent.domain_hints` wire shape, order preserved.
+
+        `confidence_bp` joined it on 2026-09-24. A field on the contract that this property drops
+        is a field Layer 2 never sees — which is the exact loss step 3 spent its whole length
+        closing at the other end of this same seam, so it is asserted rather than assumed
+        (`test_the_wire_shape_carries_the_confidence_to_layer_two`).
+        """
+        return [{"domain": h.domain, "source": h.source, "confidence_bp": h.confidence_bp}
+                for h in self.hints]
 
 
 def _coverage_for(domain: str, coverage_fn: Callable[[str], Any] | None) -> tuple[bool, str,
@@ -136,15 +154,36 @@ def _coverage_for(domain: str, coverage_fn: Callable[[str], Any] | None) -> tupl
 
 def tag_domains(source: str, text: str | None, *,
                 coverage_fn: Callable[[str], Any] | None = None,
-                fallback: str | None = None) -> DomainTagging:
+                fallback: str | None = None,
+                proposer: Any | None = None) -> DomainTagging:
     """L1.6.6-U1 · tag a signal with every business domain it belongs to.
 
     `coverage_fn` maps a domain name to `capture/coverage/model.compute_coverage`'s dict, or is
     `None` for a caller that cannot assess coverage. Either way the tag list that comes back is
     complete: coverage decides whether a card is raised and whether the degraded flag is set, and
     it decides nothing else. There is no argument to this function that removes a tag.
+
+    `proposer` is L1.6.6-U6's model client, added 2026-09-24 (step 6), and it is OPTIONAL in the
+    strong sense: `None` is the shipping default and every caller that does not pass one gets
+    exactly the deterministic behaviour it had before. A proposer that fails, times out or
+    returns nonsense also lands here as "no proposals" — `propose_domains` never raises — so
+    domain enrichment can never fail a capture (E7).
+
+    THE PROPOSALS ARE MERGED, NEVER SUBSTITUTED. `merge_proposals` keeps every deterministic hint
+    and its source; a keyword and a proposal that disagree BOTH survive, because resolving that
+    disagreement silently is how *"six VCs and three accelerator programmes became sales
+    opportunities"* (E8).
     """
-    hints = tuple(domain_hints(source, text, fallback=fallback))
+    hints = list(domain_hints(source, text, fallback=fallback))
+    proposal_outcome = None
+    if proposer is not None:
+        from genios_engine.capture.domain.hints import merge_proposals
+        from genios_engine.capture.domain.proposer import propose_domains
+
+        proposal_outcome = propose_domains(text, llm=proposer)
+        if proposal_outcome.accepted:
+            hints = merge_proposals(hints, proposal_outcome.accepted)
+    hints = tuple(hints)
 
     covered: list[str] = []
     uncovered: list[str] = []
@@ -161,7 +200,9 @@ def tag_domains(source: str, text: str | None, *,
                                               missing_required=missing))
 
     return DomainTagging(hints=hints, covered=tuple(covered), uncovered=tuple(uncovered),
-                         degraded_compile=bool(uncovered), observations=tuple(observations))
+                         degraded_compile=bool(uncovered), observations=tuple(observations),
+                         proposed_unknown=tuple(proposal_outcome.unknown) if proposal_outcome
+                         else ())
 
 
 __all__ = ["REASON_UNASSESSABLE", "REASON_UNCOVERED", "STAGE", "STATE_UNASSESSED",

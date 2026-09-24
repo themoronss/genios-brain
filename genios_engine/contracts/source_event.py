@@ -75,6 +75,14 @@ class SourceEvent(BaseModel):
     # sent TO one person from one that copied nine — which is the difference between a
     # conversation and a broadcast, and neither L2 nor any rule could previously see it.
     recipients: tuple[str, ...] = ()
+    #: L1.2.x-U1 (step 13) · the to/cc split, ADDITIVE to `recipients` above, which keeps meaning
+    #: everyone on the message. P4's join needs to know who was written TO rather than copied, and
+    #: the connector had both lists in hand before flattening them. Empty for every source that
+    #: does not distinguish them — a calendar event has attendees, not a To: line.
+    to_recipients: tuple[str, ...] = ()
+    cc_recipients: tuple[str, ...] = ()
+    #: Empty everywhere today: no connected source supplies bcc. See `RawObject.bcc_recipients`.
+    bcc_recipients: tuple[str, ...] = ()
     # WHO could see the original — the source's own ACL, derived per source family at the
     # normalize seam (capture/visibility_rules.py). None means "no derivation rule covered this
     # source", and the gate PARKS such an event as `visibility_unknown` rather than publishing:

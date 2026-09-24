@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 
 from genios_engine.contracts.gated_event import DomainHint
 
@@ -75,6 +76,33 @@ _KEYWORDS: dict[str, re.Pattern[str]] = {
 #: stamped `source="fallback"` so no reader can mistake it for evidence. `tag_domains` records
 #: it exactly like any other hint; what it must never do is look like a keyword match.
 FALLBACK_DOMAIN = "admin"
+
+#: HOW SURE EACH KIND OF EVIDENCE IS, in integer basis points. Added 2026-09-24 (step 6).
+#:
+#: Three different claims, and flattening them to one number is how the failure this module
+#: already records stayed invisible until somebody read a card:
+#:
+#:   scope     9000  the CONNECTION is that domain. The strongest thing L1 knows without reading
+#:                   a word — an object in a Zendesk account is support because of where it came
+#:                   from, not because of what it says. Not 10000: a source prior is a claim
+#:                   about whose account this is, and `hints.py` already records a tenant shape
+#:                   for which the shipped `stripe -> admin` prior is exactly backwards.
+#:   keyword   6000  this message USED that vocabulary. Real evidence and weaker than the
+#:                   account: "deck" appears in investor threads and in design threads.
+#:   fallback  1000  nothing matched and the caller said "this is business". The weakest possible
+#:                   statement — deliberately far below keyword so no ranking, filter or report
+#:                   can ever let a placeholder sit beside evidence. It is NOT zero, because zero
+#:                   reads as "we are certain this is wrong" and the honest reading is "we have
+#:                   no idea, and this is where unmatched business mail is parked".
+#:
+#: THE ORDER IS THE CONTRACT, not the literals. `test_the_three_deterministic_sources_are_not_
+#: equally_sure` asserts the ordering so a recalibration is free and an inversion is loud.
+CONFIDENCE_BP: dict[str, int] = {
+    "scope": 9000,
+    "keyword": 6000,
+    "history": 5000,
+    "fallback": 1000,
+}
 
 
 #: WHAT AN AUTHORED CORPUS MAY ADD TO THE TWO TABLES ABOVE.
@@ -184,11 +212,49 @@ def domain_hints(source: str, text: str | None,
     # is all of them today.
     prior = authored_priors.get((source or "").strip().lower()) or _SOURCE_PRIOR.get(source)
     if prior:
-        hints.append(DomainHint(domain=prior, source="scope"))
+        hints.append(DomainHint(domain=prior, source="scope",
+                                confidence_bp=CONFIDENCE_BP["scope"]))
     if text:
         for domain, pat in _ordered_keywords():
             if pat.search(text) and not any(h.domain == domain for h in hints):
-                hints.append(DomainHint(domain=domain, source="keyword"))
+                hints.append(DomainHint(domain=domain, source="keyword",
+                                        confidence_bp=CONFIDENCE_BP["keyword"]))
     if not hints and fallback:
-        hints.append(DomainHint(domain=str(fallback), source="fallback"))
+        hints.append(DomainHint(domain=str(fallback), source="fallback",
+                                confidence_bp=CONFIDENCE_BP["fallback"]))
     return hints
+
+
+def merge_proposals(hints: list[DomainHint], accepted: "Sequence[str]") -> list[DomainHint]:
+    """L1.6.6-U7 · fold the proposer's accepted domains into the deterministic hints.
+
+    **BOTH SIDES SURVIVE (E8), and that is the whole design.** When the keyword table says `sales`
+    and the proposer says `fundraising`, the answer is BOTH — with their sources intact — not a
+    winner. This module already records what picking a winner silently costs: the generic sales
+    vocabulary claimed investor threads and *"six VCs and three accelerator programmes became
+    sales opportunities. Not one of its sixteen sales situations was a customer."* A merge that
+    resolved the disagreement would recreate that failure with a model's authority behind it.
+
+    **A DOMAIN ALREADY DETERMINISTICALLY TAGGED IS NOT DOWNGRADED (E9).** If a keyword already
+    produced `sales` at 6000 bp, a proposal agreeing costs nothing and must not replace it with
+    the proposer's lower 4500 — agreement is corroboration, never doubt. The existing hint stands
+    exactly as it was.
+
+    **THE FALLBACK IS REPLACED, NOT JOINED.** A `fallback` hint means *"nothing matched and the
+    caller says this is business"*. The moment anything real matches, the placeholder is no longer
+    true and leaving it beside a genuine domain would count the event in both columns of metric 4.
+
+    Pure: no clock, no I/O, no model. It is handed the names the proposer already had validated.
+    """
+    names = [n for n in (str(a).strip().lower() for a in accepted) if n]
+    if not names:
+        return hints
+    from genios_engine.capture.domain.proposer import PROPOSAL_CONFIDENCE_BP
+
+    merged = [h for h in hints if h.source != "fallback"]
+    for name in names:
+        if any(h.domain == name for h in merged):
+            continue                           # already tagged by evidence — leave it alone
+        merged.append(DomainHint(domain=name, source="proposed",
+                                 confidence_bp=PROPOSAL_CONFIDENCE_BP))
+    return merged

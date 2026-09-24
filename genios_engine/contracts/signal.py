@@ -71,6 +71,9 @@ that crosses the seam carries the payload, the row that records it carries the c
 
 from __future__ import annotations
 
+from types import MappingProxyType
+from typing import Any, ClassVar, Mapping
+
 from collections.abc import Mapping
 from datetime import datetime
 from enum import Enum
@@ -99,6 +102,93 @@ from genios_engine.contracts.visibility import Visibility
 #: and the contract identical while still refusing a value outside it. `SignalType` IS an enum
 #: because the doc writes it as one.
 SIGNAL_STATES: frozenset[str] = frozenset({"active", "superseded", "expired", "resolved"})
+
+#: PER-TYPE STATE VOCABULARIES (step 12, 2026-09-24). The four above are ALG-19's generic set and
+#: they describe a signal's LIFECYCLE — has it been replaced, has it aged out. Three types need to
+#: say something the lifecycle cannot: **did the promise get kept?**
+#:
+#: THE DATA LIVES HERE AND THE LOGIC DOES NOT. `capture/esqe/signal_states.py` resolves WHICH state
+#: a given commitment is in; this table says which words are legal at all, because that is a
+#: property of the contract and `tests/test_layer_topology.py` refuses an import from `contracts`
+#: up into `capture`. Same split as `SIGNAL_STATES` itself has always had.
+#:
+#: A type absent from this map uses the generic four — §9 of step 12: *"the four generic states are
+#: unchanged for every other type"*, and the fallback is the point rather than a gap.
+#:
+#: ⛔ **EACH ENTRY IS A UNION WITH THE GENERIC FOUR, NEVER A REPLACEMENT — and that was a
+#: CORRECTION.** The first version listed only the fulfilment words, and **six Layer 2 tests went
+#: red immediately**, including `test_every_lifecycle_state_the_contract_allows_can_be_built
+#: [active]`. They were right: every commitment signal ever stored carries `state="active"`, so a
+#: vocabulary that excluded it would have refused the entire existing corpus at the contract on
+#: the day this shipped.
+#:
+#: THE REASON IS NOT BACKWARD COMPATIBILITY — IT IS THAT THESE ARE TWO AXES.
+#:
+#:     lifecycle    active · superseded · expired · resolved     has this signal been REPLACED?
+#:     fulfilment   open · fulfilled · broken · unknown          was the PROMISE kept?
+#:
+#: A commitment is legitimately `active` (nothing has superseded it) and legitimately `fulfilled`
+#: (the promise was kept). The step's §3 table reads as though the four were swapped out; §9 is
+#: the binding half — *"do not build a second state machine"* — and a union is what honours it.
+#:
+#: That both axes share one `state` column is a compression this step inherits rather than causes.
+#: Splitting them is a migration and a seam change, and it belongs with step 14's temporal work,
+#: not smuggled into a vocabulary table.
+STATES_FOR_TYPE: "Mapping[str, frozenset[str]]" = MappingProxyType({
+    # Did the promise get kept? `unknown` is expected to be the COMMONEST value on a young tenant,
+    # and that is deliberate: `broken` requires a coverage figure high enough to make an absence
+    # mean something. See `signal_states.BROKEN_REQUIRES_COVERAGE_BP`.
+    "commitment_made": SIGNAL_STATES | {"open", "fulfilled", "broken", "unknown"},
+    "commitment_due": SIGNAL_STATES | {"open", "fulfilled", "broken", "unknown"},
+    # Is the stated absence still in force?
+    "availability_change": SIGNAL_STATES | {"ended", "unknown"},
+})
+
+
+def instants_are_ordered(*, occurred_at: datetime, due_at: datetime | None = None,
+                         effective_at: datetime | None = None,
+                         resolved_at: datetime | None = None,
+                         superseded_at: datetime | None = None) -> bool:
+    """Step 14's ordering and timezone rules for the world instants. Raises, never returns False.
+
+    **TIMEZONE FIRST (E2).** A naive instant is a claim about a moment with no moment in it, and
+    the damage is that it compares WRONGLY against every tz-aware value in the system rather than
+    failing. `eval_time` already refuses one; these must too.
+
+    **ORDERING (E4).** A signal resolved or superseded before it happened is not a late row, it is
+    a wrong one — the same reasoning as the existing self-supersede check.
+
+    **`due_at` IS EXEMPT FROM ORDERING, DELIBERATELY (E3).** A deadline in the past at capture time
+    is legal: a stale promise is still a promise, and refusing it would delete exactly the overdue
+    commitments P2 asks about. `effective_at` is exempt for the mirror reason — a price change can
+    be announced after it took effect.
+    """
+    named = {"occurred_at": occurred_at, "due_at": due_at, "effective_at": effective_at,
+             "resolved_at": resolved_at, "superseded_at": superseded_at}
+    for name, value in named.items():
+        if value is None:
+            continue
+        if value.tzinfo is None or value.tzinfo.utcoffset(value) is None:
+            raise ValueError(
+                f"{name} must be timezone-aware; a naive instant compares wrongly against every "
+                f"other timestamp in the system instead of failing")
+    for name in ("resolved_at", "superseded_at"):
+        value = named[name]
+        if value is not None and value < occurred_at:
+            raise ValueError(
+                f"{name} {value.isoformat()} precedes occurred_at {occurred_at.isoformat()} — a "
+                f"signal cannot be {name.split('_')[0]} before it happened")
+    return True
+
+
+def states_for_type(signal_type: str) -> frozenset[str]:
+    """The legal states for one signal type — its own vocabulary, or the generic four."""
+    return STATES_FOR_TYPE.get(str(signal_type), SIGNAL_STATES)
+
+
+#: Every word legal for ANY type. The cheap first rung of the state check — see `_known_state`.
+_ALL_STATES: frozenset[str] = frozenset(SIGNAL_STATES).union(
+    *STATES_FOR_TYPE.values()) if STATES_FOR_TYPE else frozenset(SIGNAL_STATES)
 
 #: PROCESSING ORDER, and nothing else. `capture/triage/triage.py` scores an event on cheap
 #: deterministic signals (urgency words, a deadline word, a known sender, a question mark) and
@@ -191,6 +281,22 @@ class SignalType(str, Enum):
     #: absence is not a departure or a handover, and folding it in would feed that type's
     #: readers a stream of vacation responders.
     AVAILABILITY_CHANGE = "availability_change"
+    #: A message the tenant SENT did not arrive, and will not — a permanent delivery failure
+    #: reported by the receiving side. **The only type in this enum that is a fact about the
+    #: tenant's own action rather than about something that happened to them**, which is why none
+    #: of the fourteen above it fits. `ANOMALY` is the nearest and it is wrong: an anomaly is a
+    #: recognised kind with no recognised cause, while an undelivered message has a stated cause
+    #: printed in the report.
+    #:
+    #: Member SIXTEEN, added deliberately (2026-09-23). Measured on the pilot org: three pitches
+    #: to Afore and Surge on 11 August never arrived, the bounce notices were captured, emitted
+    #: and short-circuited at `envelope_bulk_headers`, and **no signal of any kind came out** —
+    #: so a founder who believes they pitched two funds did not, and nothing could say so.
+    #:
+    #: A DELAY is not this. A message Gmail is still retrying has not failed, and reporting one
+    #: as a failure is the manufactured certainty this layer exists to prevent. Only a permanent
+    #: failure produces this type; `capture/delivery_status.py` draws that line.
+    DELIVERY_FAILURE = "delivery_failure"
 
 
 class QualifiedEnterpriseSignal(BaseModel):
@@ -277,6 +383,21 @@ class QualifiedEnterpriseSignal(BaseModel):
     #: signals — a single email can state a renewal, a pending decision and an approval request
     #: — and they expire, supersede and resolve independently, so they cannot share a key.
     signal_id: str
+    #: ALG-22's subject — WHAT this signal is about, as a stable derived string.
+    #:
+    #: **SUPPLIED, NEVER DERIVED HERE.** It is lifted from `NormalizedSignal.subject_key`, which
+    #: L1.6.2 already computed from the anchor claim. Re-deriving it inside this contract would be
+    #: a second answer to a settled question, and the two would eventually disagree — which is the
+    #: exact failure `esqe/lifecycle.record_of` avoids by taking it as a parameter rather than
+    #: recomputing it from the embedded extraction.
+    #:
+    #: WHY IT IS ON THE SEAM AT ALL, added 2026-09-23. ALG-19 supersedes on
+    #: `(subject_key, signal_type)`. The type crossed and the subject did not, so the seam carried
+    #: half a key: Layer 2 could walk a supersession chain by pointer and could not ask *"give me
+    #: every signal about the AWS renewal."* Worse, the column existed on `qualification_drops`
+    #: (0088) and on `signal_lifecycle` (0093) and **not here** — a REFUSED signal recorded what it
+    #: was about and a PUBLISHED one did not.
+    subject_key: str
     #: The event this was qualified from. From `GatedEvent`, unchanged. Many signals to one
     #: event; this is the many-side pointer.
     event_id: str
@@ -389,6 +510,64 @@ class QualifiedEnterpriseSignal(BaseModel):
     #: signal's OWN date fields, never from ingest time. Required with no default; None is legal
     #: and means nothing expires this signal on a clock.
     expires_at: datetime | None
+    # ------------------------------------------------------------------------------------------
+    # L1.6.x · THE FOUR MISSING WORLD INSTANTS (step 14, 2026-09-24).
+    #
+    # Before these, the signal carried `occurred_at`, `expires_at` and `ingested_at` — and the
+    # last is a PROCESSING fact, not a world one. So a signal could not say **"8 days overdue"**:
+    # the deadline lived inside `Commitment.due`, a claim nested in the extraction, and nothing
+    # can sort or sweep by a value that deep. P2 asks exactly that question.
+    #
+    # ALL OPTIONAL, and that is not laxity. Most signals have no deadline and were never resolved;
+    # a required field would force every caller to invent one, and an invented instant is worse
+    # than an absent one — the argument this layer makes about `unknown` everywhere else.
+    #
+    # LIFTED, NEVER RE-DERIVED (§9 of step 14). `due_at` comes from `Commitment.due`, which ALG-09
+    # already resolved with a certainty and a window. `esqe/instants.due_at_of` does the lifting
+    # and takes the FAR end of a range, because a promise is overdue when the range the speaker
+    # committed to has passed — taking the near end invents a deadline, which is the failure
+    # `Commitment`'s own contract names.
+    # ------------------------------------------------------------------------------------------
+    #: When the thing this signal is about is DUE. Lifted from the typed claim. A date in the past
+    #: is legal (E3): a stale promise is still a promise, and refusing it here would delete exactly
+    #: the overdue commitments P2 asks about.
+    due_at: datetime | None = None
+    #: When what this signal asserts STARTS being true — a price change effective next quarter, an
+    #: availability window opening. Distinct from `occurred_at`, which is when it was SAID.
+    effective_at: datetime | None = None
+    #: When this signal stopped being open. Must not precede `occurred_at` (E4).
+    resolved_at: datetime | None = None
+    #: When something replaced this. `supersedes` is a POINTER, so until now *"when did this stop
+    #: being current"* was implied by another row's existence rather than stored — and a sweep
+    #: cannot filter on an implication.
+    superseded_at: datetime | None = None
+    # ------------------------------------------------------------------------------------------
+    # L1.x · COVERAGE ON THE SIGNAL (step 15, 2026-09-24) — a negative claim carrying its proof.
+    #
+    # `coverage_ready` above answers *"could a source have carried this?"* — a real question and a
+    # narrower one than *"how much of what that source holds did we actually read?"* This answers
+    # the second, and it is what makes a NEGATIVE claim defensible: **"no follow-up email found"
+    # means nothing until you know whether the search covered 100% of the mail or 8% of it.**
+    #
+    # ⛔ `None` IS UNKNOWN AND IS THE DEFAULT. Every signal published before this step has no
+    # coverage block, and the honest reading of that is *"we do not know"*. Defaulting to complete
+    # would retroactively license every historical negative claim in the corpus — which is
+    # precisely Gemini's "18 threads of 18 that exist", written into our own contract.
+    #
+    # ⛔ FROZEN AT CAPTURE. Coverage is a property of the OBSERVATION MOMENT, not of the tenant: a
+    # signal that said "8% of the window indexed" must keep saying 8% after a backfill takes the
+    # tenant to 100%. The claim was made with 8% of the evidence and its strength has not changed —
+    # only our ability to make a NEW and better claim has. `SignalCoverage` is a frozen value with
+    # no org id, no query and no run id, so there is nothing in it that could resolve against
+    # today's numbers when it is read tomorrow.
+    #
+    # PER SOURCE, NEVER BLENDED. A tenant with complete calendar coverage and 8% email coverage has
+    # two different licences, and one number would grant the stronger to both.
+    #
+    # Typed `Any` here rather than importing `capture.coverage.signal_coverage`:
+    # `tests/test_layer_topology.py` refuses an import from `contracts` up into `capture`, exactly
+    # as it does for the per-type state vocabulary above.
+    coverage: Any | None = None
 
     # --- provenance ---
 
@@ -573,13 +752,75 @@ class QualifiedEnterpriseSignal(BaseModel):
     @field_validator("state")
     @classmethod
     def _known_state(cls, value: str) -> str:
-        """A state outside the four is a signal L2's `state = 'active'` filters neither include
-        nor exclude on purpose — it just disappears from every query that was written against
-        the vocabulary ALG-19 documents."""
-        if value not in SIGNAL_STATES:
+        """A state outside the vocabulary is a signal L2's `state = 'active'` filters neither
+        include nor exclude on purpose — it just disappears from every query that was written
+        against the vocabulary ALG-19 documents.
+
+        WIDENED 2026-09-24 (step 12) to the UNION of every type's vocabulary. A `field_validator`
+        on `state` alone cannot see `signal_type`, so the per-type check runs in
+        `_state_belongs_to_this_type` below — this rung catches a word that is legal for NO type,
+        which is the one a typo produces.
+        """
+        if value not in _ALL_STATES:
             raise ValueError(
-                f"state must be one of {sorted(SIGNAL_STATES)}, got {value!r}")
+                f"state must be one of {sorted(_ALL_STATES)}, got {value!r}")
         return value
+
+    #: 15-U5 · states that ARE a negative claim — an assertion that something did not happen.
+    #:
+    #: `broken` is the only one today, and step 12 is why: it means *"the deadline passed and we
+    #: found no fulfilment."* That is a claim about an ABSENCE, and an absence is evidence only
+    #: when you can show you looked.
+    #:
+    #: `unknown` is deliberately NOT here. It is the honest state for "we could not tell", it
+    #: asserts nothing, and requiring proof of a non-claim would make the conservative answer the
+    #: expensive one — which is how a system learns to say `broken` instead.
+    _NEGATIVE_STATES: ClassVar[frozenset[str]] = frozenset({"broken"})
+
+    @model_validator(mode="after")
+    def _a_negative_claim_carries_its_proof(self) -> "QualifiedEnterpriseSignal":
+        """15-U5 · a signal asserting that something did NOT happen must carry its coverage.
+
+        **"No follow-up email found" means nothing until you know whether the search covered 100%
+        of the mail or 8% of it.** Publishing `broken` with no coverage block is Gemini's "18
+        threads of 18 that exist" — a finding whose denominator nobody checked — and it is the one
+        thing this step exists to make impossible.
+
+        Step 12 already refuses to RESOLVE to `broken` below 9000 bp of coverage. This is the
+        second lock, at the contract: that gate can only act on the figure it is handed, and a
+        caller that constructs a signal directly bypasses it entirely. Two locks because the cost
+        of being wrong here is telling a founder they broke a promise they actually kept.
+        """
+        if self.state in self._NEGATIVE_STATES and self.coverage is None:
+            raise ValueError(
+                f"state {self.state!r} asserts that something did not happen, and this signal "
+                f"carries no coverage — an absence is evidence only when you can show you looked")
+        return self
+
+    @model_validator(mode="after")
+    def _instants_are_ordered(self) -> "QualifiedEnterpriseSignal":
+        """Step 14's world instants, checked together — ordering needs more than one field."""
+        instants_are_ordered(occurred_at=self.occurred_at, due_at=self.due_at,
+                             effective_at=self.effective_at, resolved_at=self.resolved_at,
+                             superseded_at=self.superseded_at)
+        return self
+
+    @model_validator(mode="after")
+    def _state_belongs_to_this_type(self) -> "QualifiedEnterpriseSignal":
+        """A commitment may be `fulfilled`; an escalation may not.
+
+        THE PER-TYPE HALF OF THE CHECK, and it needs both fields so it cannot be a field validator.
+        Without it, widening `_known_state` to the union would have let `availability_change` carry
+        `broken` — a word from another type's vocabulary, legal-looking and meaningless, which is
+        exactly the drift the closed set exists to prevent.
+        """
+        legal = states_for_type(str(self.signal_type.value if hasattr(self.signal_type, "value")
+                                    else self.signal_type))
+        if self.state not in legal:
+            raise ValueError(
+                f"state {self.state!r} is not legal for {self.signal_type}; "
+                f"expected one of {sorted(legal)}")
+        return self
 
     @field_validator("supersedes", mode="before")
     @classmethod

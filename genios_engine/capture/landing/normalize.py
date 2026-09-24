@@ -46,6 +46,12 @@ def to_source_event(
         # never enough to say who a conversation is WITH — it is the root of targeting an
         # introducer as though they were the counterparty.
         recipients=tuple(raw.recipients or ()),
+        # Step 13 · the to/cc split, carried the same way and for the same reason as `recipients`
+        # above. A field the connector keeps and this function drops is a field nothing downstream
+        # can use — which is precisely how the split died three times before.
+        to_recipients=tuple(getattr(raw, "to_recipients", ()) or ()),
+        cc_recipients=tuple(getattr(raw, "cc_recipients", ()) or ()),
+        bcc_recipients=tuple(getattr(raw, "bcc_recipients", ()) or ()),
         occurred_at=raw.occurred_at,
         captured_at=datetime.now(timezone.utc),
         sync_mode=sync_mode,
