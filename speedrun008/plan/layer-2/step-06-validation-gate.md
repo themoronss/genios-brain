@@ -4,7 +4,19 @@
 
 ---
 
-## 1. Premise — the gate is what makes a cheap model safe
+## 0. ⛔ CORRECTED — L2 owes the validator, not the gate
+
+The gate exists. `RSiteGate.consult` step 6 is **"validate the output — the caller's validator (the
+V-gauntlet, for R-2)"**, and step 7 is **"on any failure: deterministic fallback, recorded — never a
+retry storm, never silence."**
+
+**So this step writes L2's validator and hands it to the existing gate.** The four checks below are
+that validator's contents. Everything about *when* a model may be consulted, what it costs and what
+happens when it fails is already solved and property-tested.
+
+---
+
+## 1. Premise — the validator is what makes a cheap model safe
 
 The reasoner is Haiku. Haiku makes mistakes. **Haiku is affordable precisely because a deterministic
 gate catches them:**
@@ -108,4 +120,5 @@ to its own check.
 2. Four outcomes, **not two**.
 3. Every refusal has a durable row naming its check.
 4. Four mutation probes, each proven to go red when its check is neutralised.
-5. Zero model calls in the gate — proven by the metering test.
+5. Zero model calls in the validator — proven by the metering test.
+6. ⛔ Handed to `RSiteGate` as the caller's validator — **not a second gate**.

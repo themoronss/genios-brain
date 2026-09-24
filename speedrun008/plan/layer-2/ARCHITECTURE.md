@@ -161,6 +161,7 @@ interpretation.
 | L2.5.1 Capability routing | 4 | `packs/compiler/capability_resolver.py` | ✅ live |
 | L2.5.2 Domain mapping | 3 | `_L2_TO_L3_DOMAIN` | ⛔ **incomplete — L2-4** |
 | L2.5.3 Five brains | 5 | `packs/brains/` | ⚠️ **four exist; Persona is missing** |
+| L2.5.5 **Admission** | 4 | `Domain Expertise/` · `_tools/admit.py` | ⛔ **200 of 534 admissible — 37%** |
 | L2.5.4 Package assembly | 4 | `ExpertisePackage` — 22 fields | ✅ live |
 
 ⛔ **The measured defect:**
@@ -186,10 +187,26 @@ verifies the quote byte-for-byte — a goal needs a category row, not a subsyste
 |---|---|---|---|
 | L2.6.1 Angles | 4 | `angles/` (1,495 LOC, 4 angles) | ✅ live doctrine |
 | L2.6.2 Asker | 2 | `llm/` (197 LOC) | ✅ live |
-| L2.6.3 **Context Reasoner** | 6 | — | ⛔ **DOES NOT EXIST · L2-5** |
+| L2.6.3 **Context Reasoner** | 6 | — | ⛔ **no L2 site — but the PATTERN exists · L2-5** |
 
 > *"An ANGLE is a question asked of one of those queues, and nothing else. **It is not a licence to
 > read the graph.**"*
+
+⛔ **Corrected by the pre-flight pass.** Saying the reasoner "does not exist" was too strong. Plane R
+already runs `interpretation.py` — **R-1, the ambiguity interpreter** — whose contract is stronger
+than anything this plan wrote:
+
+> *"The model returns `{classification, confidence_bp}` **as evidence**; a unit reads it like any
+> other input; **the formula decides**."* · *"**IT CANNOT RAISE CONFIDENCE.**"*
+
+And every model consult in Plane R passes **one door**:
+
+> **"THERE IS EXACTLY ONE C5 GATE, AND IT IS `reason/bundle/gate.RSiteGate`... no R-site may call a
+> model directly."** — activation · precondition · budget · cache · tier+timeout · **the caller's
+> validator** · deterministic fallback, all recorded.
+
+**So L2 does not build a gate. It registers a site and writes a validator.** See
+[`03-PRE-FLIGHT.md`](03-PRE-FLIGHT.md) §9.
 
 Four angles exist, each asked only of a queue the deterministic layer itself refused. The reasoner is
 a **different site with a different contract** — not a fifth angle.

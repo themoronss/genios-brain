@@ -1,4 +1,41 @@
-# L2-5 · The Context Reasoner — the one new model site
+# L2-5 · The Context Reasoner — a new R-SITE, not a new gate
+
+⛔ **CORRECTED by the pre-flight pass.** This step used to say *"the one new model site, metered,
+its own prompt version, its own cache key."* **That would have built a second gate.**
+
+`reason/llm_sites.py`:
+
+> **"THERE IS EXACTLY ONE C5 GATE, AND IT IS `reason/bundle/gate.RSiteGate`. This module does not
+> re-implement activation, budget, retry or receipting; it delegates all four, so a tenant's spend
+> is one number measured against one ledger."**
+
+`reason/bundle/gate.py`: **"no R-site may call a model directly."** `consult` runs seven steps —
+activation · precondition · budget (else a deterministic template) · cache · tier and timeout ·
+**the caller's validator** · deterministic fallback, every one recorded.
+
+**So the Context Reasoner registers as an R-site. It does not build metering, caching, budget or
+fallback — all four exist, behind one door, with a property test.**
+
+### And R-1 already holds the contract this site needs
+
+`reason/interpretation.py`:
+
+> *"The model returns `{classification, confidence_bp}` **as evidence**; a unit reads it like any
+> other input; **the formula decides**. The model never says 'this is urgent.'"*
+>
+> *"IT RUNS BEFORE THE UNITS, NOT INSIDE THEM... the model's output is an input to a deterministic
+> computation, **which is the only shape in which a model may participate in a decision at all**."*
+>
+> ⛔ *"**IT CANNOT RAISE CONFIDENCE.**"*
+
+**"Cannot raise confidence" is stronger than anything this plan wrote. Copy it verbatim.**
+
+And R-1 *"has never fired on the pilot tenant"* — the third thing in this engine built correctly and
+never switched on.
+
+---
+
+# The original step follows, with its units corrected
 
 **Needs Harsh:** cost check needs the pilot's situation count · **Migration:** none
 
@@ -88,10 +125,13 @@ event call gets shipped by accident.
 Its own `prompt_version`, its own `schema_version`, its own cache key. **Not folded into L1's
 extraction key** — a change here must not invalidate every extraction in the corpus.
 
-### L2-5-U2 · The call site, metered
-A new `purpose` beside `extract`, `relevance_gate`, `l4_bundle`, `l5_render`. **Metered from the
-first line** — `tests/test_every_llm_call_site_is_metered.py` fails in both directions, and it
-should.
+### L2-5-U2 · ⛔ Register the site — do not build a gate
+Declare the reasoner as an R-site with **its precondition** (step 2 of `consult`: *"the SITE's own,
+never 'just in case'"*) and **its validator** (step 6). Activation, budget, cache, tier, timeout and
+deterministic fallback come from the gate.
+
+**A parallel gate would split the tenant's spend across two ledgers — the one thing `llm_sites.py`
+says it exists to prevent.**
 
 ```
 verify:  pytest tests/test_every_llm_call_site_is_metered.py -q
@@ -105,9 +145,9 @@ and stops.
 verify:  pytest tests/reason/test_escalation_spends_only_where_it_should.py -q
 ```
 
-### L2-5-U4 · The replay cache
-Same slice + same prompt version + same model = same answer, no second call. The key must include
-the **slice hash**, because a slice that moved is a different question.
+### L2-5-U4 · The cache key — supplied to the gate, not implemented
+The gate caches on *"decision hash / fact digest"*. **The reasoner supplies a slice digest** and the
+gate does the rest. R-1 is keyed on a fact digest for the same reason and has no decision at all.
 
 ### L2-5-U5 · Refusal is a valid answer
 A reasoner that cannot conclude must be able to say so and have that recorded. **`unknown` is a
@@ -128,7 +168,8 @@ result, not a failure**, and the gate must accept it.
 ## 6. Completion criteria
 
 1. Cost check done **before** the prompt, with real situation counts, written into findings.
-2. One metered call site, its own version, its own cache key including the slice hash.
+2. ⛔ **Registered as an R-site behind `RSiteGate`** — zero new metering, caching or budget code.
 3. Haiku default, one escalation path, and low+low producing `unknown` without a call.
 4. Structured output only — the parser refuses prose.
 5. The reasoner **cannot** write `observed_facts` or `evidence`, proven by a test that tries.
+6. ⛔ **It cannot raise a confidence** — R-1's rule, carried over and tested the same way.

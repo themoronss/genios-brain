@@ -250,6 +250,41 @@ Plus two structural findings:
   `inferred_state`, `hypotheses`, `implications`, `reasoning_trace`, `valid_until`. Every field
   present is an observation field. Every field missing is an interpretation field.
 
+### ⛔ PRE-FLIGHT — measured 2026-09-24, before step 0
+
+[`layer-2/03-PRE-FLIGHT.md`](layer-2/03-PRE-FLIGHT.md) · **it corrected the plan in three places.**
+
+**Layer D is not thin — it is inadmissible.** `Domain Expertise/` holds **1,425 YAML files, 534
+capabilities**: Admin 211, Sales 156, Customer Support 167, plus 228 playbooks and 283 heuristics.
+
+| | authored | **admissible** | |
+|---|---|---|---|
+| Admin | 211 | **85** | 40% |
+| Sales | 156 | **62** | 39% |
+| Customer Support | 167 | **53** | 31% |
+| | **534** | **200** | **37%** |
+
+⛔ **L2-8 flips `require_admission=True` and 334 capabilities go dark.** The largest un-owned risk in
+the plan; nothing in the nine steps had addressed it. Now `L2-4-U5`.
+
+Both circulating numbers were wrong: `domain_shadow`'s *"152"* is stale; *"211"* was Admin alone.
+
+**And Plane R is far more complete than the plan assumed.** 114 files, 39,012 LOC, already holding
+`decision_maker.py`, `llm_decision_maker.py`, `critique.py` and **`interpretation.py` — R-1, whose
+contract is stronger than anything this plan wrote**: *"the model's output is an input to a
+deterministic computation"* and ⛔ *"**it cannot raise confidence**."*
+
+⛔ **One gate already exists for every model consult** — `RSiteGate`, seven steps: activation,
+precondition, budget, cache, tier, **the caller's validator**, deterministic fallback. *"No R-site
+may call a model directly."*
+
+**Three corrections:** the Context Reasoner is not absent, its *pattern* exists · L2-5 registers an
+**R-site**, it does not build a gate · L2-6 writes the **validator**, the gate calls it.
+
+⛔ **And the third repetition of one sentence.** `domain_shadow` compiles and drops. R-1 *"has never
+fired on the pilot tenant."* 63% of the corpus is authored and inadmissible. **This engine's problem
+is not absence — it is things built correctly and never switched on.**
+
 ### LAYER 2 — STEPS
 
 | # | step | status | headline | date |

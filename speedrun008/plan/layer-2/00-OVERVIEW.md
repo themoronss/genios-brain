@@ -72,7 +72,18 @@ Four defects, one shape — each quoted from the code that carries it:
 **L1 solved this for signals and wrote the rule down — `DROP ≠ DELETE`. L2 has the refusals and not
 the ledger.**
 
-### 4. The contract itself proves the diagnosis
+### 4. ⛔ Layer D is authored, wired — and 63% inadmissible
+
+`Domain Expertise/` sits in this repository: **1,425 YAML files, 534 capabilities** across Admin
+(211), Sales (156) and Customer Support (167), plus 228 playbooks, 283 heuristics, 88 models.
+
+**Only 200 of the 534 satisfy the admission ceremony** — stable **and** approved **and** hash-
+stamped. ⛔ **L2-8 flips `require_admission=True`, and at that instant 334 capabilities stop
+carrying authority.** Turning the layer on would look like breaking it.
+
+**And `fundraising` is not one of the three domains.**
+
+### 5. The contract itself proves the diagnosis
 
 `BusinessSituationObject` v2 holds 28 fields. Against the 19 the new architecture names, six are
 missing:

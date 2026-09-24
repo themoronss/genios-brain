@@ -116,6 +116,37 @@ verify:  pytest tests/reason/test_miss_proposes_never_routes.py -q
 
 ---
 
+### L2-4-U5 · ⛔ The admission gap — 334 of 534 capabilities cannot carry authority
+
+Measured in the pre-flight pass:
+
+| domain | authored | **admissible** | |
+|---|---|---|---|
+| Admin | 211 | **85** | 40% |
+| Sales | 156 | **62** | 39% |
+| Customer Support | 167 | **53** | 31% |
+| | **534** | **200** | **37%** |
+
+The ceremony is all three or nothing — `status: stable` **and** `review_status: approved` with a
+reviewer **and** a matching `accepted_content_hash`.
+
+⛔ **L2-8 flips `require_admission=True`. At that instant 334 capabilities go dark, and the cutover
+looks like a regression caused by a YAML header.**
+
+Worse, **the three counts disagree inside a single domain** — Admin has 85 stable, 90 approved, 87
+hashed. Those should name one set. **Something is approved but not stable, or hashed but not
+approved**, and nothing surfaces it until a compile refuses doctrine a human believes is live.
+
+**This unit does not admit anything.** It reports the three sets and their differences per domain,
+and names an owner for the gap. Admission is a human ceremony with a named reviewer — that is the
+point of it.
+
+```
+verify:  "Domain Expertise/_tools/index.py"   # the three sets, and their differences
+```
+
+---
+
 ## 4. Cost check
 
 | | |
@@ -144,5 +175,6 @@ verify:  pytest tests/reason/test_miss_proposes_never_routes.py -q
 2. `UNROUTED` appears in the pass tallies — **a silent miss is now impossible**.
 3. `_L2_TO_L3_DOMAIN` is total over `domain_spec`, with a reason on every `None`.
 4. A miss produces a reviewable proposal, not a route.
-5. The `fundraising` corpus has a named author, or the STATUS row says plainly that it does not and
+5. The admission gap is reported per domain, with an owner named.
+6. The `fundraising` corpus has a named author, or the STATUS row says plainly that it does not and
    that fundraising stays dark until it does.
