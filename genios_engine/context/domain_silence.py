@@ -46,18 +46,31 @@ DARK_DOMAINS: dict[str, str] = {
         "nothing else, so `l3_domain_for('fundraising')` answers None and every investor "
         "situation on the tenant publishes no package and emits no signal. The benchmark mailbox "
         "is investors end to end — 3one4, Titan, Neon, Antler, PeakXV, Surge, IIMA, Suvan — and "
-        "not one of them can reach a card. ENDS WHEN: a fundraising corpus is authored and "
-        "admitted, and `_L2_TO_L3_DOMAIN` gains its row. Authoring, not code.",
+        "not one of them can reach a card. "
+        "⛔ CORRECTED BY L2-4, 2026-09-24 — THE SENTENCE ABOVE SAID THE DOCTRINE DOES NOT EXIST, "
+        "AND IT DOES. `sales.sit.live_investor_relationship` and `sales.sit.live_investor_contact` "
+        "are authored, stable and approved, and behind them sits "
+        "`sales.investor_relations.investor_relations` — 'reading and running the relationships "
+        "with the people who might fund the company: funds, accelerators, angels'. The Sales "
+        "registry routes BOTH of fundraising's types to them, and to nothing generic. Nothing was "
+        "missing; one `None` makes it unreachable. See `domain_shadow.CANDIDATE_ROUTES`. "
+        "ENDS WHEN: the pilot's fundraising situation count is measured (Harsh 26) and "
+        "`_L2_TO_L3_DOMAIN['fundraising']` points at `sales` — ONE LINE, with `live_lane` still "
+        "requiring the tenant to have activated that corpus. NOT authoring.",
     "general":
         "The deliberate catch-all. `domain_spec` gives it `relationship` and `deal` so a signal "
         "whose domain nothing recognised still mints a situation rather than vanishing — the "
         "same refusal-to-drop `capture`'s domain mapping makes one layer down, where an "
         "uncovered domain degrades rather than disappears. Authoring a `general` corpus would "
         "mean writing doctrine for 'business, unspecified', which is the shape of advice that "
-        "reads as true and helps nobody. ENDS WHEN: a real domain is authored that claims what "
-        "is currently landing in `general` — so the mover is a CENSUS of what actually lands "
-        "here, not a corpus. Until that census exists this row is a known unknown, and saying so "
-        "is the point.",
+        "reads as true and helps nobody. "
+        "⛔ AND IT IS DARK FOR A DIFFERENT REASON FROM `fundraising`, WHICH ONE SENTENCE USED TO "
+        "COVER FOR BOTH. `general:relationship` is claimed by ALL THREE authored corpora — admin, "
+        "sales and customer_support — so a route here is AMBIGUOUS: a choice nobody has made, "
+        "not a corpus nobody wrote. Picking one by hand is how Admin doctrine lands on a support "
+        "thread. ENDS WHEN: a CENSUS says what actually lands in `general` and a real domain "
+        "claims it — the mover is the census, not a corpus. Until then this row is a known "
+        "unknown, and saying so is the point.",
 }
 
 

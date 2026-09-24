@@ -116,13 +116,31 @@ def test_the_index_counts_blocked_situations_not_blocked_types():
 def test_an_unactivatable_situation_is_counted_separately():
     """A situation whose L2 domain no corpus claims compiles in measurement mode and emits
     nothing on EVERY tenant configuration — including one with every corpus switched on. That is
-    a different fact from "not switched on yet", and `shadow_situations` was absorbing both."""
+    a different fact from "not switched on yet", and `shadow_situations` was absorbing both.
+
+    ⛔ **REDRAWN BY L2-4, AND STRICTLY STRONGER.** This asserted the literal string
+    `counts["unactivatable_domain"]` in the sweep's source. L2-4 moved the increment into
+    `reason/unroutable.tally_unroutable` so the domain and the situation type are named too, and
+    the spelling legitimately moved with it — the count did not.
+
+    Source inspection asserts a SPELLING at one call site. It is the same weakness L1's step 18
+    recorded: *"no test in this repository called `build_signal`… they assert by reading the
+    function's source, which passes on a builder nobody calls."* So this now drives the real
+    tally and asserts the fact, and separately proves the sweep still reaches it.
+    """
+    import inspect as _inspect
+
     from genios_engine.reason import domain_shadow
+    from genios_engine.reason.unroutable import tally_unroutable
 
-    source = inspect.getsource(domain_shadow.shadow_compile)
+    counts: dict = {}
+    tally_unroutable(counts, l2_domain="fundraising", situation_type="investor_relationship")
+    assert counts["unactivatable_domain"] == 1, "the separate count is gone"
+    assert counts["unroutable:fundraising"] == 1, "the domain is no longer named"
 
-    assert 'counts["unactivatable_domain"]' in source
+    source = _inspect.getsource(domain_shadow.shadow_compile)
     assert "if row_domain is None:" in source
+    assert "tally_unroutable(" in source, "the sweep no longer counts an unroutable situation"
 
 
 def test_the_map_still_refuses_to_invent_a_corpus():

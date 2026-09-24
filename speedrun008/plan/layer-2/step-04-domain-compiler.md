@@ -2,6 +2,32 @@
 
 **Needs Harsh:** no · **Migration:** none · **Model calls:** one, and only on a miss**
 
+> ## ✅ COMPLETE — 2026-09-24 · [findings](findings/step-04-domain-compiler.md)
+>
+> 17 tests · 12,993 passed · 0 regressions · no migration · **no model call**.
+>
+> ## ⛔⛔ §1 BELOW IS WRONG, AND THIS IS THE STEP'S FINDING
+>
+> *"No fundraising corpus exists… the fix is authoring, not code."* **The doctrine exists.**
+> `sales.sit.live_investor_relationship` and `sales.sit.live_investor_contact` are authored,
+> **stable and approved**, and behind them sits `sales.investor_relations.investor_relations` —
+> *"reading and running the relationships with the people who might fund the company: funds,
+> accelerators, angels."* The Sales registry routes **both** of fundraising's types to them.
+>
+> **One `None` in `_L2_TO_L3_DOMAIN` makes it unreachable from the pilot's dominant domain.** The
+> plan's largest non-code item is a one-line code change — **declared and evidenced in
+> `CANDIDATE_ROUTES`, and deliberately NOT armed** until the pilot count exists (Harsh 26).
+>
+> And the objection does not apply: routing is **per situation type**, so every type `fundraising`
+> mints lands on investor-named doctrine and **nothing generic**. Proven, and kept proven.
+>
+> ⛔ **`general` is dark for a different reason** — its `relationship` is claimed by **all three**
+> corpora, so a route is a CHOICE nobody made. One sentence used to cover both.
+>
+> ⛔ **U4's model call was NOT built**, with five measured reasons — §5 of the findings. The rate
+> is 34% not 5%, the answer has four values not sixty-nine, and the answer it would give is the
+> one §5 of this file forbids.
+
 ⛔ **This is the step Rohit named as most important: *"most important jo domain compiler, wo
 perfectly kaam kare".*** It is also where the sharpest measured defect in Layer 2 sits.
 
@@ -219,10 +245,35 @@ verify:  "Domain Expertise/_tools/index.py"   # the three sets, and their differ
 
 ## 6. Completion criteria
 
-1. Unroutable count measured and written into the findings file, by domain.
-2. `UNROUTED` appears in the pass tallies — **a silent miss is now impossible**.
-3. `_L2_TO_L3_DOMAIN` is total over `domain_spec`, with a reason on every `None`.
-4. A miss produces a reviewable proposal, not a route.
-5. The admission gap is reported per domain, with an owner named.
-6. The `fundraising` corpus has a named author, or the STATUS row says plainly that it does not and
-   that fundraising stays dark until it does.
+| # | criterion | verdict |
+|---|---|---|
+| 1 | unroutable count measured, by domain | ⚠️ `scripts/unroutable_report.py` — **its corpus half runs today**; the per-domain counts need the pilot (**Harsh 26**) |
+| 2 | `UNROUTED` in the pass tallies | ✅ **and per situation type**, because a corpus is authored per type. Plus `unroutable_undeclared` — the `support` defect returning |
+| 3 | `_L2_TO_L3_DOMAIN` total, reason on every `None` | ✅ total over the registry, **bound to `DARK_DOMAINS`**, aliases declared, and a row pointing at an unauthored corpus fails the build |
+| 4 | a miss produces a reviewable proposal, not a route | ⛔ **NOT a model call** — §5 of the findings, five measured reasons. The proposal exists and is **deterministic**: `CANDIDATE_ROUTES`, with its evidence |
+| 5 | the admission gap reported per domain, with an owner | ⚠️ **reported** — 24 `draft` situations listed by id, per domain. **The owner is Rohit's to name** (Harsh 22) |
+| 6 | `fundraising` has a named author, or STATUS says it stays dark | ✅ **and the answer is neither** — the doctrine exists. It needs a count and one line, not an author |
+
+### 6.1 · ⛔ Three places said one fact and agreed by coincidence
+
+```
+domain_spec.registered_domains()   admin · fundraising · general · sales · support
+_L2_TO_L3_DOMAIN                   admin · sales · support · customer_support
+domain_silence.DARK_DOMAINS        fundraising · general           (added by L2-0)
+```
+
+`fundraising` and `general` were **absent** from the map, not **declared** — and `.get()` answers
+`None` for a domain somebody decided about and one somebody forgot. **`support` was forgotten once
+and 33 situations died for it.** The map is now total and a test binds all three.
+
+### 6.2 · What the units became
+
+| planned | built |
+|---|---|
+| U0 · count the unroutable | ✅ `scripts/unroutable_report.py`, and it **found §1 was wrong** |
+| U1 · `UNROUTED` counted, not a `None` | ✅ `reason/unroutable.py` — the scalar existed; **the domain and the type did not** |
+| U2 · totality guard on the mapping | ✅ and it binds the registry, the map and `DARK_DOMAINS` to each other |
+| U3 · the fundraising corpus | ⛔ **STRUCK — it exists.** §1 |
+| U4 · model on the miss | ⛔ **NOT BUILT**, five measured reasons |
+| U5 · the admission gap, per domain | ✅ the 24 `draft` situations, listed by id |
+| — | **unplanned: `CANDIDATE_ROUTES`** — the route that exists, with evidence, not armed |

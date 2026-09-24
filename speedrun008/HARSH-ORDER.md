@@ -38,6 +38,7 @@
 | **23** | 📅 **Diary note only — nothing to do now.** `contracts.domain_expertise.BusinessSituationObject` is a deprecated alias and may be deleted **after 2026-12-24**. The date lives in `contracts/situation_stages.ALIAS_REMOVAL` and a test reads it from there | dated | nothing | 0 min |
 | **24** | ⛔ **Run the L2 refusal report again AFTER item 21 and read `BY LAW`.** L2-2 added two laws — V-9 (an interpretation citing nothing) and V-10 (an empty `missing_facts` under low coverage) — both declared **OBSERVE**, so they report and do not block. **Arming either is one line, after somebody knows the count** | measure + decision | **whether L2 starts refusing unreceipted interpretations** | 10 min |
 | **25** | **Run `python scripts/slice_weight.py --org <pilot> --sample 20`** — read-only. It prints what a real context slice costs in tokens, p50/p90/max. **L2-5's entire cost check rests on this number** | measure | **L2-5's cost check** | 5 min |
+| **26** | ⛔⛔ **DECIDE: point `fundraising` at the `sales` corpus.** The investor doctrine is **already authored, stable and approved** and the pilot's dominant domain cannot reach it. One line, reversible, and `live_lane` still requires the corpus to be activated. Run `python scripts/unroutable_report.py --org <pilot>` for the count first | **decision** | **whether the pilot tenant sees anything at all** | 15 min |
 
 **Migrations 2, 3 and 4 must all be applied BEFORE the code that uses them ships.** All three are
 idempotent and safe to re-run. Apply in number order.
@@ -98,6 +99,69 @@ purely because nothing printed it.
 > authored corpus**, so Layer 2 mints `investor_relationship` and `investor_contact` situations that
 > nothing can read. That is **authoring work, not code** — and it is the largest non-code item in
 > the Layer 2 plan.
+
+---
+
+## 26 · ⛔⛔ The fundraising doctrine exists. One `None` hides it.
+
+**This is the largest single thing in Layer 2, and it is one line.**
+
+The Layer 2 plan said the pilot's dominant domain was dark because *"no fundraising corpus
+exists — the fix is authoring, not code."* Measured against the catalog on 2026-09-24:
+
+```
+sales.sit.live_investor_relationship      stable · approved
+   "An ongoing relationship with a party that might fund us, read at the ACCOUNT level:
+    the fund, the accelerator, the syndicate"
+
+sales.sit.live_investor_contact           stable · approved
+   "A named individual at an investor, accelerator or programme, read at the PERSON level"
+
+sales.investor_relations.investor_relations
+   "Reading and running the relationships with the people who might fund the company:
+    funds, accelerators, angels and the operators who introduce them."
+```
+
+**It was authored inside the Sales corpus.** `_L2_TO_L3_DOMAIN["fundraising"]` answers `None`, so
+every investor situation on the tenant publishes no package and emits no signal.
+
+### Why this is safe, and how we know
+
+The old objection was *"mapping fundraising onto admin would put Admin doctrine on a fundraising
+situation."* True — and **routing is per situation type, not a domain blanket:**
+
+| fundraising mints | routes to |
+|---|---|
+| `investor_relationship` | `sales.sit.live_investor_relationship` |
+| `investor_contact` | `sales.sit.live_investor_contact` |
+
+**Those are the only two types fundraising can mint, and both land on investor doctrine.** No
+generic deal doctrine is reachable. A test proves it and will keep proving it.
+
+### Why it is not already done
+
+Arming it makes every fundraising situation activatable **at once**, and nobody has counted them
+on the pilot. Same discipline as the two new laws: measure, then arm.
+
+```bash
+python scripts/unroutable_report.py --org <pilot-org-id> \
+       --database-url "$GENIOS_TARGET_DATABASE_URL"
+```
+
+Read the per-type counts. Then the change is:
+
+```python
+# genios_engine/reason/domain_shadow.py
+"fundraising": "sales",     # was None — see CANDIDATE_ROUTES
+```
+
+**Two switches, not one.** `live_lane` still requires the tenant to have activated the `sales`
+corpus, so this makes fundraising *activatable*, not live. Reversible by putting the `None` back.
+
+> **`general` is NOT the same decision and must not be bundled with it.** Its `relationship` type
+> is claimed by **all three** corpora, so routing it means picking one by hand — which is how
+> Admin doctrine lands on a support thread. It stays dark until a census says what actually lands
+> there.
 
 ---
 

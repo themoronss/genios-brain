@@ -22,13 +22,14 @@ import json
 import logging
 from collections import Counter
 from collections.abc import Iterable
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from typing import Any
 
 from sqlalchemy import text
 
 from genios_engine.context.graph_store import GraphStore
+from genios_engine.reason.unroutable import tally_unroutable
 from genios_engine.context.importance import read_l1_scoring_live
 from genios_engine.context.quality.lens import read_coverage_lens
 from genios_engine.context.quality.missing import read_absences
@@ -388,8 +389,89 @@ def _persist_live(*, store: GraphStore, reasoning_store: ReasoningStore, org_id:
 #: `fundraising` and `general` map to NOTHING and that is not an oversight: no corpus was authored
 #: for them, so there is no domain an operator could activate, and mapping them onto `admin` to
 #: "get some coverage" would put Admin doctrine on a fundraising situation.
-_L2_TO_L3_DOMAIN = {"admin": "admin", "sales": "sales", "support": "customer_support",
-                    "customer_support": "customer_support"}
+@dataclass(frozen=True, slots=True)
+class CandidateRoute:
+    """A corpus that COULD serve a dark domain, with the evidence, and not armed.
+
+    ⛔ Same shape as L2-2's `OBSERVE` laws and for the same reason: the claim is believed, the
+    blast radius is not measured, and arming it before somebody has the number is how a cutover
+    looks like a breakage.
+    """
+
+    corpus: str
+    evidence: str
+
+
+#: ⛔ **THE FUNDRAISING DOCTRINE EXISTS, AND THE COMMENT BELOW SAYING IT DOES NOT IS STALE.**
+#:
+#: Measured 2026-09-24 against the authored catalog:
+#:
+#:     sales.sit.live_investor_relationship      stable · approved
+#:         "An ongoing relationship with a party that might fund us, read at the ACCOUNT level:
+#:          the fund, the accelerator, the syndicate"
+#:     sales.sit.live_investor_contact           stable · approved
+#:     sales.investor_relations.investor_relations
+#:         "Reading and running the relationships with the people who might fund the company:
+#:          funds, accelerators, angels and the operators who introduce them."
+#:
+#: **The pilot tenant is a fundraising founder and this doctrine is unreachable from their
+#: dominant domain**, behind one `None` in the table below.
+#:
+#: AND THE OBJECTION DOES NOT APPLY. The table's comment says borrowing a corpus "would put Admin
+#: doctrine on a fundraising situation". True of `admin`, and routing is **per situation type**:
+#: every type `fundraising` can mint — `investor_relationship` and `investor_contact` — lands on
+#: investor-named doctrine and on nothing else.
+#: `test_every_fundraising_type_would_land_on_investor_doctrine_only` proves that and keeps
+#: proving it.
+#:
+#: NOT ARMED, DELIBERATELY. Arming it makes every fundraising situation activatable at once, and
+#: nobody has counted them on the pilot.
+CANDIDATE_ROUTES: dict[str, CandidateRoute] = {
+    "fundraising": CandidateRoute(
+        corpus="sales",
+        evidence="`sales.sit.live_investor_relationship` and `sales.sit.live_investor_contact` "
+                 "are authored, stable and approved, and the Sales registry routes "
+                 "`investor_relationship` and `investor_contact` to them — the only two types "
+                 "`fundraising` mints. Behind them sits "
+                 "`sales.investor_relations.investor_relations`, which is fundraising doctrine by "
+                 "its own description. ENDS WHEN: the pilot's fundraising situation count is "
+                 "known (Harsh 26) and this row moves into `_L2_TO_L3_DOMAIN` — one line. "
+                 "`live_lane` still requires the tenant to have activated the `sales` corpus, so "
+                 "arming this is the second of two switches, not the first."),
+}
+
+#: ⛔ **KEYS THAT ARE NOT LAYER 2 DOMAINS.** Accepted defensively so a caller that already
+#: translated is not punished for it. Declared rather than noticed, because a key nobody can
+#: account for is how a map stops being checkable.
+CORPUS_ID_ALIASES: dict[str, str] = {
+    "customer_support": "the CORPUS id, not an L2 domain. `support` is the Layer 2 domain and "
+                        "maps here; this row accepts a caller that already translated.",
+}
+
+#: ⛔ **TOTAL OVER `domain_spec.registered_domains()`, AND THE `None`s ARE `DARK_DOMAINS`.**
+#:
+#: Written out in full — including the two that map to nothing — because `.get()` answers `None`
+#: for a domain somebody DECIDED about and for one somebody FORGOT, and those are different facts.
+#: `support` was forgotten once and 33 situations died silently for it.
+#:
+#: `tests/reason/test_domain_mapping_is_total.py` binds this table to the registry in one
+#: direction and to `context/domain_silence.DARK_DOMAINS` in the other, so the three places that
+#: state this one fact can no longer agree by coincidence.
+_L2_TO_L3_DOMAIN: dict[str, str | None] = {
+    "admin": "admin",
+    "sales": "sales",
+    "support": "customer_support",
+    "customer_support": "customer_support",   # see CORPUS_ID_ALIASES
+    # ⛔ THESE TWO ARE DARK FOR TWO DIFFERENT REASONS, AND ONE SENTENCE USED TO COVER BOTH.
+    #   `fundraising` — the doctrine EXISTS, in the Sales corpus, and is unreachable from here.
+    #                   See CANDIDATE_ROUTES above: declared, evidenced, one line from live,
+    #                   waiting on the pilot count rather than on an author.
+    #   `general`     — genuinely unrouted: `relationship` is claimed by ALL THREE corpora, so a
+    #                   route is a CHOICE nobody has made. Not a missing corpus. Not this one.
+    # `DARK_DOMAINS` carries the reason and the ENDS WHEN for each.
+    "fundraising": None,
+    "general": None,
+}
 
 
 def live_lane(*, forced: bool, domain: str | None, activated: frozenset[str] | Iterable[str]) -> bool:
@@ -767,7 +849,14 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                 # activation should govern the corpus that SERVES a situation rather than the
                 # domain that produced it — a cutover decision, not a bug fix. This counts the
                 # cost so the decision can be made against a number.
-                counts["unactivatable_domain"] = counts.get("unactivatable_domain", 0) + 1
+                # ⛔ L2-4 · WITH ITS NAME. The scalar above answered "how many" and never
+                # "which", so it could not say whether to author `fundraising` first or `general`
+                # first — and `general:relationship` alone is 55 of the pilot's 159 situations.
+                # `tally_unroutable` keeps the scalar and adds the domain and the situation type,
+                # because a corpus is authored per TYPE. It also flags a domain that routes
+                # nowhere and is not in `DARK_DOMAINS`, which is the `support` defect returning.
+                tally_unroutable(counts, l2_domain=row["domain"],
+                                 situation_type=row.get("situation_type"))
             compiler = compiler_live if (live_row and compiler_live is not None) \
                 else compiler_measure
             anchor = row["anchor_node_id"]
