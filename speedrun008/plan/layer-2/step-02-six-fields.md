@@ -1,5 +1,25 @@
 # L2-2 · The interpretation fields — **two are missing, not six**
 
+> ## ✅ COMPLETE — 2026-09-24 · [findings](findings/step-02-interpretation-fields.md)
+>
+> 30 tests · 12,957 passed · 0 regressions · no migration · no model call ·
+> `vocabulary_fingerprint` **`a3d5496aa0d3`** unchanged.
+>
+> ⛔ **THE PREMISE PARAGRAPH BELOW IS WRONG AND THAT IS WHAT MADE THE STEP BUILDABLE TODAY.**
+> *"Every field that exists is an observation field"* — v2 is **full** of interpretation and says
+> so itself: `visibility` *"a DERIVED claim"*, `coverage_ready` *"may a NEGATIVE inference be
+> made"*, `missing_facts` *"the entries are FINDINGS"*, and V-4…V-7 exist **because** trends and
+> correlations can be wrong. Layer 2 lacks the **label**, not the interpretation — so the step
+> classified the 28 existing fields instead of minting six new ones, and needed **no migration**.
+>
+> ⛔ **AND V-9 HAD FOUR SUBJECTS THE DAY IT WAS WRITTEN.** `Anomaly`, `MetricCorrelation`,
+> `CohortPosition` and `ImportanceAttribution` carry **no evidence reference at all**, while
+> `MatchedCondition` states the doctrine for the family: *"'this fired because of these facts' is
+> what makes a situation defensible."* All four are built on live paths.
+>
+> **The four genuinely-absent fields and migration 0182 are DEFERRED to L2-5, with their writer** —
+> §5 of this file demanded that choice be made and stated. See §10 of the findings.
+
 ⛔ **CORRECTED by the re-analysis.** This step used to add six fields and four validators. Measured
 against the tree, only **two names appear nowhere in `genios_engine`**:
 
@@ -155,9 +175,36 @@ It belongs beside the others, not in a separate validator nobody runs.
 
 ## 6. Completion criteria
 
-1. `ClaimState` exists, closed, guarded.
-2. All six fields on v2, with basis-point integers and no floats.
-3. **Four validators**: observed needs a receipt · inference must point at an observation · a
-   hypothesis needs confidence · empty `unknowns` under low coverage is refused.
-4. Migration 0182 written, and the store **names every column in its INSERT and its upsert**.
-5. Full suite green; `vocabulary_fingerprint` unchanged.
+| # | criterion | verdict |
+|---|---|---|
+| 1 | `ClaimState` exists, closed, guarded | ✅ Four members — three claims plus `envelope` for the fields that are not claims — with totality **both ways** over all 28 v2 fields |
+| 2 | all six fields on v2, integer basis points | ⛔ **DEFERRED to L2-5, with their writer.** §6.2 |
+| 3 | four validators | ⚠️ **two built AND wired into the gate.** V-9 · an interpretation cites nothing. V-10 · empty `missing_facts` under low coverage. The other two need the fields and travel with them |
+| 4 | migration 0182 + the store names every column | ⛔ **DEFERRED with #2** |
+| 5 | full suite green, fingerprint unchanged | ✅ 12,957 passed · 14 pre-existing · `a3d5496aa0d3` |
+
+### 6.1 · What the units actually became
+
+| planned | built |
+|---|---|
+| U0 · `ClaimState` | ✅ `contracts/claim_state.py` |
+| U1 · `observed_facts` + its validator | ⛔ **struck.** `evidence` + `signal_ids` + `entities` + `timeline` **are** the observed facts and are now labelled. A fifth name for them is the defect L2-1 just removed |
+| U2 · `inferred_state` · `hypotheses` · `implications` | ⛔ deferred to L2-5 |
+| U3 · `unknowns` + the low-coverage refusal | ✅ as **V-10**, and **narrowed by measurement**: 11 of 37 situation types declare no `expected_fields`, and the plan's unconditional rule would have accused all eleven |
+| U4 · `reasoning_trace` · `valid_until` | ⛔ deferred to L2-5 |
+| U5 · migration 0182 + the store | ⛔ deferred to L2-5 |
+| U6 · a ninth law | ✅ **and a tenth** — and V-9 has four subjects today |
+| — | **unplanned: the write-authority table.** `model_may_write` / `model_writable_fields()` — the list L2-5's gate reads instead of keeping its own |
+| — | **unplanned: the observation machinery.** `test_h0_gate` refused a non-rejecting action until one existed, and it was right to |
+
+### 6.2 · ⛔ The choice §5 demanded, made and stated
+
+> *"A field with no writer is the `started_at` mistake, so L2-2 and L2-5 ship together or L2-2
+> ships knowingly empty — and the STATUS row must say which."*
+
+Build order is `0 → 1 → 2 → 3 → 4 → 6 → 7 → 5 → 8`. **L2-5 is five steps away.** Shipping the
+columns now means Harsh applies a migration for fields that stay null through five steps — and
+**L2-0's entire finding was eight things built and never switched on.**
+
+**The doctrine ships now; the storage ships with its writer.** Nothing deferred here needs a
+column, and everything L2-5 needs in order to be born correct exists before it.

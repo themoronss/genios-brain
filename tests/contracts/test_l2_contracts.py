@@ -1150,24 +1150,53 @@ def test_the_populated_situation_actually_exercises_every_lane():
 
 # ================================================================== V-1..V-8 · the gate
 
+#: ⛔ **L2-2 CHANGED WHAT "NO FAILURES" MEANS, AND THESE ASSERTIONS GOT STRONGER RATHER THAN
+#: WEAKER.** Two laws were added — V-9 (an interpretation citing nothing) and V-10 (an empty
+#: `missing_facts` under low coverage) — and both are declared `OBSERVE`, so they are CARRIED on
+#: an admitted decision instead of rejecting it.
+#:
+#: The fixtures below build analytic objects with no `evidence_refs`, which is not an oversight in
+#: the fixtures: it is what `context/analytic/` actually produces today, and it is the whole reason
+#: V-9 exists. Giving the fixtures receipts to keep `failures == ()` would hide the finding inside
+#: the test that would otherwise reveal it.
+#:
+#: So the tests now assert on the REJECTING failures specifically, which distinguishes "this law
+#: fired" from "some law fired" — a distinction that did not exist when every law rejected.
+def _rejecting(decision):
+    return [failure.law for failure in decision.failures
+            if failure.action is LawAction.REJECT]
+
+
 def test_a_clean_situation_is_admitted_and_carried():
     decision = validate_situation(situation())
     assert decision.outcome is SituationOutcome.ADMIT
     assert decision.admitted is True
-    assert decision.failures == ()
+    assert _rejecting(decision) == [], "a clean situation broke a law that rejects"
     assert decision.situation is not None
     assert decision.situation.id == "sit_0f21ab"
+    # ⛔ And V-9 observes on it, because this fixture's analytic objects cite nothing — exactly
+    # like the four production producers measured in L2-2. Admitted, and not silent about it.
+    assert all(f.law in (L2Law.V9, L2Law.V10) for f in decision.failures)
 
 
 def test_every_law_has_an_explicit_action_and_all_eight_reject():
-    """Unlike L1, where V-1 PARKS and V-5 DOWNGRADES. Doc 08's L2 table gives all eight the same
-    action, and getting a failure action backwards does not fail loudly — it silently changes
-    what reaches the layer above."""
-    assert len(list(L2Law)) == 8
+    """Doc 08's eight laws all REJECT, unlike L1 where V-1 parks and V-5 downgrades. Getting a
+    failure action backwards does not fail loudly — it silently changes what reaches the layer
+    above.
+
+    ⛔ **L2-2 added V-9 and V-10 as `OBSERVE`**, which is the shape `LawAction`'s own docstring
+    asked for: *"a law that later downgrades or parks is a one-line change here plus a branch in
+    `validate_situation`."* They observe because nobody has yet counted how many live situations
+    arming them would refuse — L1's step 10 set that precedent by gating itself on a measurement.
+    **The eight originals are unchanged, and this test still proves that one at a time.**
+    """
+    assert len(list(L2Law)) == 10
     assert set(LAW_ACTIONS) == set(L2Law)
-    assert set(LAW_ACTIONS.values()) == {LawAction.REJECT}
-    assert LAW_ACTIONS[L2Law.V1] is LawAction.REJECT      # L1's V-1 parks; L2's does not
-    assert LAW_ACTIONS[L2Law.V5] is LawAction.REJECT      # L1's V-5 downgrades; L2's does not
+    eight = (L2Law.V1, L2Law.V2, L2Law.V3, L2Law.V4, L2Law.V5, L2Law.V6, L2Law.V7, L2Law.V8)
+    for law in eight:
+        assert LAW_ACTIONS[law] is LawAction.REJECT, f"{law.value} stopped rejecting"
+    assert LAW_ACTIONS[L2Law.V9] is LawAction.OBSERVE
+    assert LAW_ACTIONS[L2Law.V10] is LawAction.OBSERVE
 
 
 def _bypassed_cohort(**overrides: Any) -> CohortPosition:
@@ -1234,7 +1263,7 @@ def test_each_law_rejects_its_own_object(law, subject, build):
     decision = validate_situation(build())
     assert decision.outcome is SituationOutcome.REJECT
     assert decision.situation is None, "a rejected situation must not be reachable"
-    assert [failure.law for failure in decision.failures] == [law]
+    assert _rejecting(decision) == [law], "a second REJECTING law fired on this fixture"
     assert decision.failures[0].subject == subject
     assert decision.failures[0].action is LawAction.REJECT
     assert decision.failures[0].detail
@@ -1271,7 +1300,7 @@ def test_a_situation_failing_two_laws_reports_both_in_v_order():
     decision = validate_situation(bypassed(
         cohort_positions=(_bypassed_cohort(population_size=2),),
         correlations=(_bypassed_correlation(n=5, is_causal=True),)))
-    assert [failure.law for failure in decision.failures] == [L2Law.V2, L2Law.V6, L2Law.V7]
+    assert _rejecting(decision) == [L2Law.V2, L2Law.V6, L2Law.V7]
 
 
 def test_v1_reports_both_halves_of_law_two_independently():
@@ -1279,7 +1308,7 @@ def test_v1_reports_both_halves_of_law_two_independently():
     and a reviewer fixing one must be told about the other."""
     decision = validate_situation(bypassed(
         cohort_positions=(_bypassed_cohort(cohort_id="", population_size=None),)))
-    assert [failure.law for failure in decision.failures] == [L2Law.V1, L2Law.V1]
+    assert _rejecting(decision) == [L2Law.V1, L2Law.V1]
 
 
 def test_the_gate_names_which_object_tripped_the_law():

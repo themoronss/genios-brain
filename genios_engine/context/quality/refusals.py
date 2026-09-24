@@ -106,6 +106,10 @@ class RefusalReport:
     admitted: int = 0
     rejected: int = 0
     by_reason: dict[str, int] = field(default_factory=dict)
+    #: ⛔ Every `L2Law`, zeros included. The OBSERVE laws (V-9, V-10) land here on situations that
+    #: were ADMITTED — noticed, not suppressed — which is why they are counted apart from
+    #: `by_reason` rather than summed into it.
+    by_law: dict[str, int] = field(default_factory=dict)
     scored_refusals: tuple[ScoredRefusal, ...] = ()
     dark_domains: tuple[DarkDomain, ...] = ()
     corpus: tuple[CorpusDomain, ...] = ()
@@ -147,6 +151,19 @@ def _reason_table() -> dict[str, int]:
     return {reason.value: 0 for reason in HoldReason}
 
 
+def _law_table() -> dict[str, int]:
+    """⛔ Every `L2Law` at zero, for the same reason and from the same kind of enum.
+
+    L2-2 added V-9 and V-10 as `OBSERVE` laws: they do not block, and they write
+    `observed:<law>:<subject>` into the SAME `reasons` column a hold uses. Without this table
+    `refusal_report` would drop them — `by_reason` only counts keys it already knows — and two
+    laws written specifically to end an invisible refusal would themselves be invisible.
+    """
+    from genios_engine.contracts.situation import L2Law
+
+    return {law.value: 0 for law in L2Law}
+
+
 def refusal_report(*,
                    decisions: Iterable[Mapping[str, Any]],
                    refusals: Iterable[Mapping[str, Any]],
@@ -165,6 +182,7 @@ def refusal_report(*,
     from genios_engine.context.domain_silence import reason_for
 
     by_reason = _reason_table()
+    by_law = _law_table()
     held = admitted = rejected = 0
 
     for row in decisions:
@@ -176,10 +194,19 @@ def refusal_report(*,
         elif outcome == "reject":
             rejected += 1
         for reason in (row.get("reasons") or ()):
-            # A reason arrives as `law:subject` from the admission laws, or bare from a hold.
-            key = str(reason).split(":", 1)[0].strip()
-            if key in by_reason:
-                by_reason[key] += 1
+            # Three shapes share this column: a bare hold reason, `<law>:<subject>` from a
+            # rejection, and `observed:<law>:<subject>` from L2-2's non-blocking laws.
+            text = str(reason).strip()
+            head, _, rest = text.partition(":")
+            if head == "observed":
+                law = rest.split(":", 1)[0].strip()
+                if law in by_law:
+                    by_law[law] += 1
+                continue
+            if head in by_law:
+                by_law[head] += 1
+            if head in by_reason:
+                by_reason[head] += 1
 
     scored = tuple(
         ScoredRefusal(situation_id=str(r.get("situation_id") or ""),
@@ -205,8 +232,8 @@ def refusal_report(*,
         for c in corpus)
 
     return RefusalReport(held=held, admitted=admitted, rejected=rejected,
-                         by_reason=by_reason, scored_refusals=scored, dark_domains=darks,
-                         corpus=corpora)
+                         by_reason=by_reason, by_law=by_law, scored_refusals=scored,
+                         dark_domains=darks, corpus=corpora)
 
 
 def render(report: RefusalReport) -> Sequence[str]:
@@ -223,6 +250,15 @@ def render(report: RefusalReport) -> Sequence[str]:
         "-" * 52,
     ]
     out += [f"  {name:<34}{count:>6}" for name, count in sorted(report.by_reason.items())]
+
+    if report.by_law:
+        # ⛔ PRINTED EVEN AT ZERO, like BY REASON above. V-9 and V-10 fire on situations that were
+        # ADMITTED — noticed rather than suppressed — so this table is the ONLY place they appear.
+        # A law waiting for its number is still a law, and its zero is information.
+        out += ["", "BY LAW  (V-9 and V-10 OBSERVE: the situation published, and this is what",
+                "         the gate noticed about it. The rest reject.)", "-" * 52]
+        out += [f"  {law:<34}{count:>6}" for law, count in
+                sorted(report.by_law.items(), key=lambda kv: int(kv[0].split("-")[1]))]
 
     if report.scored_refusals:
         out += ["", "REFUSED BY LAYER 1, WITH THE NUMBER IT MISSED BY", "-" * 52]

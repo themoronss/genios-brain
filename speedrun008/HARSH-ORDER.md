@@ -36,6 +36,7 @@
 | **21** | ⛔ **Run the L2 refusal report on the pilot** — `python scripts/l2_refusal_report.py --org <pilot> --database-url <url>`. Read-only, every statement a `select`. It is the **denominator every Layer 2 step is measured against** | measure | **L2-0's last open half · every later L2 number** | 5 min |
 | **22** | ⛔ **DECIDE: flip the 24 `draft` situations?** 16 of Customer Support's 20. Every card built from one is downgraded to an OBSERVATION — it describes and does not instruct. **One word per file, no code** | decision | **the cheapest quality win in L2** | 20 min |
 | **23** | 📅 **Diary note only — nothing to do now.** `contracts.domain_expertise.BusinessSituationObject` is a deprecated alias and may be deleted **after 2026-12-24**. The date lives in `contracts/situation_stages.ALIAS_REMOVAL` and a test reads it from there | dated | nothing | 0 min |
+| **24** | ⛔ **Run the L2 refusal report again AFTER item 21 and read `BY LAW`.** L2-2 added two laws — V-9 (an interpretation citing nothing) and V-10 (an empty `missing_facts` under low coverage) — both declared **OBSERVE**, so they report and do not block. **Arming either is one line, after somebody knows the count** | measure + decision | **whether L2 starts refusing unreceipted interpretations** | 10 min |
 
 **Migrations 2, 3 and 4 must all be applied BEFORE the code that uses them ships.** All three are
 idempotent and safe to re-run. Apply in number order.
@@ -96,6 +97,44 @@ purely because nothing printed it.
 > authored corpus**, so Layer 2 mints `investor_relationship` and `investor_contact` situations that
 > nothing can read. That is **authoring work, not code** — and it is the largest non-code item in
 > the Layer 2 plan.
+
+---
+
+## 24 · ⛔ Two new laws are watching, and neither blocks yet
+
+L2-2 added **V-9** and **V-10** to the Layer 2 gate. Both are declared `OBSERVE`: they are
+recorded on the decision and **the situation still publishes.** Nothing that shipped yesterday
+stopped shipping.
+
+| law | what it sees |
+|---|---|
+| **V-9** | an interpretation that cites nothing. `Anomaly`, `MetricCorrelation`, `CohortPosition` and `ImportanceAttribution` carried **no evidence reference at all** — `MatchedCondition` has enforced the same rule on itself for months: *"'this fired because of these facts' is what makes a situation defensible"* |
+| **V-10** | an empty `missing_facts` on a situation whose coverage was never good enough to conclude that nothing was missing |
+
+### Why they are not armed
+
+Arming them means refusing live situations, and **nobody has counted how many.** L1's step 10 set
+the precedent by gating itself on a measurement rather than guessing. `LawAction`'s own docstring
+had already designed for this: *"a law that later downgrades or parks is a one-line change here
+plus a branch in `validate_situation`."*
+
+### What to do, after item 21
+
+```bash
+python scripts/l2_refusal_report.py --org <pilot> --database-url "$GENIOS_TARGET_DATABASE_URL"
+```
+
+Read the **`BY LAW`** block. It prints every law including zeros.
+
+| V-9 count | what it means |
+|---|---|
+| **low** | arm it — `LAW_ACTIONS[V9] = REJECT`, one line, and L2 stops publishing interpretations nobody can check |
+| **high** | the producers owe receipts first. The report names which |
+
+Same reading for V-10.
+
+> **This is the cheapest possible way to make a decision like this**: the law is written, it is
+> running, it is recording, and it costs nothing until you decide it should.
 
 ---
 

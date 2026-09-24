@@ -253,3 +253,38 @@ def test_situation_counts_default_to_zero_for_a_caller_that_omits_them():
         {"domain": "admin", "total": 59, "admitted": 59, "inadmissible": 0, "hollow": 0},
     ])
     assert report.situations_cannot_instruct == 0
+
+
+def test_an_observed_law_is_printed_and_not_merely_counted():
+    """⛔ Counting without printing is the defect this whole report exists to end. L2-2's V-9 and
+    V-10 fire on situations that were ADMITTED, so they appear nowhere else at all."""
+    from genios_engine.context.quality.refusals import refusal_report, render
+
+    report = refusal_report(decisions=[
+        {"situation_id": "s1", "outcome": "admit", "reasons": ["observed:V-9:anomalies[0]"]},
+        {"situation_id": "s2", "outcome": "admit", "reasons": ["observed:V-9:trends[0]"]},
+    ], refusals=(), dark=())
+    body = "\n".join(render(report))
+    assert "V-9" in body
+    assert "2" in body
+
+
+def test_a_law_that_never_fired_still_gets_its_row():
+    """The same declared-silence rule as `BY REASON`. A law that appears only when it fires is a
+    law nobody knows exists — and V-9 and V-10 are precisely laws waiting for their number."""
+    from genios_engine.context.quality.refusals import refusal_report, render
+
+    body = "\n".join(render(refusal_report(decisions=(), refusals=(), dark=())))
+    assert "V-1" in body and "V-10" in body
+
+
+def test_an_observation_is_not_added_to_the_silent_total():
+    """⛔ An observed situation PUBLISHED. Counting it as producing nothing would overstate the
+    silence by exactly the number of situations that worked."""
+    from genios_engine.context.quality.refusals import refusal_report
+
+    report = refusal_report(decisions=[
+        {"situation_id": "s1", "outcome": "admit", "reasons": ["observed:V-9:anomalies[0]"]},
+    ], refusals=(), dark=())
+    assert report.admitted == 1
+    assert report.silent_total == 0
