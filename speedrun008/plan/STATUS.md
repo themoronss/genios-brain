@@ -372,6 +372,22 @@ Turn it on** remains, and it is the one that needs the shadow-pass tallies.
 > `draft`** so their cards cannot instruct. `L2-4-U5` was struck and replaced accordingly.
 > **Step 4's largest item is authoring, and it always was.**
 
+### ⛔ THE 0→8 SWEEP — [`layer-2/09-SWEEP-0-TO-8.md`](layer-2/09-SWEEP-0-TO-8.md)
+
+Run after L2-8. **Not "are the tests green" — is anything built and reached by nothing.** Every
+module the nine steps added was audited for a real caller. **Three things the steps themselves
+missed, all now closed:**
+
+| | |
+|---|---|
+| ⛔ **L2-3 built a token budget for L2-5, and L2-5 never read it** | The defect this layer has been chasing since L2-0, committed by the sequence itself two steps apart. Now measured on every consult, counted as `slice_over_budget`, and **nothing truncated** |
+| ⛔ **S07 was OPEN, and closing it found a fixture that would have crashed the compiler** | The shared fixture built `confidence=None`, which `confidence_bp` dereferences — `expertise_builder:76` would have raised. **A fixture production would never produce proves nothing about production** |
+| ⛔ **A guard that answered plausibly when called wrong** | Recorded in L2-0 *and* L2-5, never hardened. `None`/`{}` still **refuse** (a malformed file must fail closed); a `SourceDocument` now **raises** |
+
+**Registry after the sweep: 40 scenarios · closed 29 · guard 3 · OPEN 0 · harsh 7 · impossible 1.**
+⛔ Zero OPEN is the claim that matters: everything left is a number somebody must read or a
+decision somebody must make — **no row is open because nobody got to it.**
+
 ### What is missing entirely
 
 | | |

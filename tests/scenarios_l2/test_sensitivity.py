@@ -26,18 +26,21 @@ pytestmark = pytest.mark.unit
 
 def test_the_totals_are_what_the_registry_holds():
     """⛔ Counted, not read. This is the assertion L1 wished it had had."""
-    assert len(SCENARIOS) == 37
-    assert len(by_verdict(CLOSED)) == 25
+    assert len(SCENARIOS) == 40
+    assert len(by_verdict(CLOSED)) == 29
     assert len(by_verdict(GUARD)) == 3
-    assert len(by_verdict(OPEN)) == 1
+    # ⛔ ZERO OPEN, AND THAT IS A CLAIM RATHER THAN A RELIEF. S07 was the one, and the 0→8 sweep
+    # closed it. Everything still outstanding is either a database read (HARSH) or a decision
+    # somebody has to make (IMPOSSIBLE) — no row is open because nobody got to it.
+    assert len(by_verdict(OPEN)) == 0
     assert len(by_verdict(HARSH)) == 7
     assert len(by_verdict(IMPOSSIBLE)) == 1
-    assert sum(len(by_verdict(v)) for v in (CLOSED, GUARD, OPEN, HARSH, IMPOSSIBLE)) == 37
+    assert sum(len(by_verdict(v)) for v in (CLOSED, GUARD, OPEN, HARSH, IMPOSSIBLE)) == 40
 
 
 def test_every_step_that_shipped_owns_at_least_one_row():
     """A step with no scenario is a step nobody can contradict."""
-    for step in ("0", "1", "2", "3", "4", "5", "6", "7", "8"):
+    for step in ("0", "1", "2", "3", "4", "5", "6", "7", "8", "sweep"):
         assert by_owner(step), f"L2-{step} shipped and has no scenario"
 
 

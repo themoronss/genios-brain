@@ -154,6 +154,6 @@ def test_the_sweep_records_every_reading_including_the_ones_it_did_not_pay_for()
 
     src = inspect.getsource(domain_shadow.shadow_compile)
     assert "record_interpretation(" in src, "the reading is never made durable"
-    window = src[src.index("reason_over_situation("):][:1800]
+    window = src[src.index("reason_over_situation("):][:3000]
     assert "record_interpretation(" in window, (
         "the reading is recorded somewhere other than beside the consult that produced it")

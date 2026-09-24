@@ -14,6 +14,11 @@ the writing-down, in the idiom this repository already uses three times:
 `patterns/routing.UNROUTED_PATTERN_TYPES`, `lane_health.SILENT_LANES` and
 `context/domain_silence.DARK_DOMAINS` — *declared, with a reason and a mover*, checked in both
 directions.
+
+**IT IS DATA, NOT BEHAVIOUR.** Nothing at runtime consults it; the tests do, and the build does —
+the same shape as `LAYERS.py`, `contracts/situation_stages.py` and `reason/cutover.py`. Saying so
+matters, because "no engine caller" is otherwise indistinguishable from the unwired-unit defect
+this layer has been closing since L2-0.
 """
 from __future__ import annotations
 

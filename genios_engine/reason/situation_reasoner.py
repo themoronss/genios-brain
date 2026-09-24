@@ -53,6 +53,7 @@ only what to ask and whether to ask at all.
 from __future__ import annotations
 
 import hashlib
+from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Mapping
 
@@ -146,6 +147,34 @@ def FALLBACK() -> dict:                                       # noqa: N802 — a
     return {}
 
 
+@dataclass(frozen=True, slots=True)
+class WeighedSlice:
+    """What is about to be sent, and whether anybody should be told how big it is."""
+
+    payload: str
+    tokens: int
+    #: `None` when it fits. Otherwise the sentence, WITH BOTH NUMBERS.
+    over: str | None
+
+
+def weigh_before_sending(slice_json: str) -> WeighedSlice:
+    """⛔ **L2-3 MEASURED THIS BUDGET FOR THIS CALLER AND THIS CALLER NEVER READ IT.**
+
+    L2-3: *"`SLICE_TOKEN_BUDGET` is a LINE TO NOTICE, not a cap: nothing truncates, nothing
+    refuses. A slice over it is reported so L2-5's cost check argues about a number instead of a
+    feeling."* L2-5 shipped sending a slice to a model without ever asking what it weighed — the
+    same "built and never switched on" shape this layer has been closing since L2-0, committed by
+    the sequence itself.
+
+    ⛔ **IT REPORTS AND RETURNS THE PAYLOAD UNCHANGED.** *"Dropping facts to hit a number is how a
+    reasoner concludes from evidence nobody chose to remove."*
+    """
+    from genios_engine.context.slice_weight import CHARS_PER_TOKEN, SliceWeight, over_budget
+
+    weight = SliceWeight(chars=len(slice_json), tokens=len(slice_json) // CHARS_PER_TOKEN)
+    return WeighedSlice(payload=slice_json, tokens=weight.tokens, over=over_budget(weight))
+
+
 def build_prompt(*, situation_type: str, slice_json: str, feedback: str | None = None) -> str:
     """One situation, the fields it may propose, and nothing else.
 
@@ -177,12 +206,17 @@ def reason_over_situation(*, org_id: str, situation_id: str, situation_type: str
                           context_slice: Any, slice_json: str,
                           confidence_bp: int | None, importance_bp: int | None,
                           resolve_refs, held_facts=None, coverage_ready: bool | None = True,
-                          expected_facts=(), gate=None, cache=None) -> tuple[Step, Any]:
+                          expected_facts=(), gate=None, cache=None,
+                          on_over_budget=None) -> tuple[Step, Any]:
     """Decide, then — only if it is worth deciding with a model — consult one.
 
     Returns `(step, payload)`. `payload` is `None` when nothing was asked, which is different from
     an empty payload: *nothing was asked* and *the model declined* are different facts, and only
     the second cost anything.
+
+    `on_over_budget` is called with the sentence when the slice exceeds `SLICE_TOKEN_BUDGET` —
+    **handed in**, so the caller decides what to do with it and this module still holds no I/O.
+    Nothing is truncated either way.
     """
     from genios_engine.context.proposal_gate import as_gate_validator
     from genios_engine.platform.l4_activation import FEATURE_SITUATION_REASONER
@@ -195,6 +229,7 @@ def reason_over_situation(*, org_id: str, situation_id: str, situation_type: str
         # know, and finding out is not worth it". Recorded by the caller; nothing is spent.
         return step, None
 
+    weighed = weigh_before_sending(slice_json)
     validate = as_gate_validator(resolve_refs=resolve_refs, held_facts=held_facts,
                                  coverage_ready=coverage_ready, expected_facts=expected_facts)
 
@@ -205,6 +240,9 @@ def reason_over_situation(*, org_id: str, situation_id: str, situation_type: str
 
             raise SiteRejection(codes[0] if codes else "l2_refused", detail=", ".join(codes))
         return dict(value)
+
+    if weighed.over is not None and on_over_budget is not None:
+        on_over_budget(weighed.over)
 
     result = run_site(
         site=SITE_SITUATION, org_id=org_id,
@@ -218,6 +256,7 @@ def reason_over_situation(*, org_id: str, situation_id: str, situation_type: str
     return step, result
 
 
-__all__ = ["CONFIDENCE_FLOOR_BP", "FALLBACK", "IMPORTANCE_FLOOR_BP", "PROMPT_VERSION", "Step",
+__all__ = ["CONFIDENCE_FLOOR_BP", "FALLBACK", "IMPORTANCE_FLOOR_BP", "PROMPT_VERSION",
+           "Step", "WeighedSlice", "weigh_before_sending",
            "build_prompt", "clamp_confidence", "consult_seed", "next_step",
            "reason_over_situation", "should_consult", "slice_digest"]

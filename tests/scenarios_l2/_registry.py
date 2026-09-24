@@ -74,11 +74,11 @@ SCENARIOS: dict[str, Scenario] = {s.id: s for s in (
     _s("S05", "L03", "one situation type per stage, and a third cannot arrive undeclared",
        CLOSED, "1"),
     _s("S06", "L03", "the compiler names the stage it actually receives", CLOSED, "1"),
-    _s("S07", "L04", "the compiler is exercised with what production sends it", OPEN, "1",
-       "⛔ `l3_inputs.py` and `test_domain_expertise_compiler.py` build a SituationCandidate and "
-       "hand it to the compiler; production builds one in two files, neither of which feeds it. "
-       "The annotations now say the truth and NO test drives the compiler with what "
-       "`publish_situation` returns. Recorded in STATUS as its own unit."),
+    _s("S07", "L04", "the compiler is exercised with what production sends it", CLOSED, "1",
+       "⛔ CLOSED BY THE 0→8 SWEEP. And driving it found that the shared fixture built a situation "
+       "with `confidence=None` — which the compatibility property `confidence_bp` dereferences, so "
+       "`expertise_builder:76` would have CRASHED on it. A fixture production would never produce "
+       "proves nothing about production. Now representative."),
     # --- L2-2 · the claim states -----------------------------------------------------------------
     _s("S08", "L05", "every v2 field is classified, both directions", CLOSED, "2"),
     _s("S09", "F20", "a model may never write an observation", CLOSED, "2"),
@@ -131,6 +131,12 @@ SCENARIOS: dict[str, Scenario] = {s.id: s for s in (
     # --- L2-8 · the cutover ----------------------------------------------------------------------
     _s("S35", "L04", "every cutover switch is enumerated with its mover", CLOSED, "8"),
     _s("S36", "L09", "the parity gate is a number fixed before the run", CLOSED, "8"),
+    # --- the 0→8 sweep ---------------------------------------------------------------------------
+    _s("S38", "L04", "the reasoner reads the budget L2-3 measured for it", CLOSED, "sweep",
+       ""),
+    _s("S39", "L05", "a rule refuses a wrong caller instead of answering plausibly", CLOSED,
+       "sweep", ""),
+    _s("S40", "L04", "a data-only module says it is data-only", CLOSED, "sweep", ""),
     _s("S37", "L09", "the shadow pass's tallies are read", HARSH, "8",
        "⛔ The pass has been counting for months and nobody has read it. The parity gate is "
        "written and cannot be evaluated — Harsh 29."),

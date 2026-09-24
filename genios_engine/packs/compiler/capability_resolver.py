@@ -181,8 +181,32 @@ def situation_admission_reason(authored) -> str | None:
     turned on at all. Status plus an approved review plus a named reviewer is what every one of
     these files already declares, and it is the part a human actually performs.
     """
-    identity = (authored.get("identity") or {}) if hasattr(authored, "get") else {}
-    metadata = (authored.get("metadata") or {}) if hasattr(authored, "get") else {}
+    # ⛔ RAISE, DO NOT ANSWER. This took a mapping and answered `{}` for anything else — so a
+    # `SourceDocument` handed in by mistake read `identity_status_absent` FOR EVERY DOCUMENT IN
+    # THE CORPUS, which is a caller error wearing the costume of a data verdict. L2-0 hit it and
+    # reported "all 69 situations inadmissible"; L2-5 hit the same class of trap with
+    # `domains_declaring`. A guard that turns a type error into a plausible wrong answer is worse
+    # than no guard, and both times the cost was a debugging pass against a number that was never
+    # real.
+    # ⛔ TWO DIFFERENT INPUTS THAT USED TO LOOK THE SAME, AND ONLY ONE OF THEM IS A DATA FACT.
+    #
+    #   None / {}          a file that parsed to nothing. A REAL case — "an empty or malformed
+    #                      one must fail closed, not raise into a compile that would then have no
+    #                      route at all" — so it keeps refusing, unchanged.
+    #   a SourceDocument   a CALLER ERROR. The old `hasattr(authored, "get") else {}` answered
+    #                      `identity_status_absent` for it, so a mistyped call reported EVERY
+    #                      DOCUMENT IN THE CORPUS as inadmissible and looked exactly like a data
+    #                      verdict. L2-0 hit it and reported "all 69 situations inadmissible";
+    #                      L2-5 hit the same class of trap with `domains_declaring`. Both cost a
+    #                      debugging pass against a number that was never real.
+    if authored is not None and not hasattr(authored, "get"):
+        raise TypeError(
+            f"situation_admission_reason takes the document's CONTENT mapping, not "
+            f"{type(authored).__name__}. Pass `document.content`, as `capability_resolver` "
+            f"itself does at its one call site. (`None` and `{{}}` are accepted and refuse, "
+            f"because a malformed file must fail closed.)")
+    identity = (authored.get("identity") or {}) if authored is not None else {}
+    metadata = (authored.get("metadata") or {}) if authored is not None else {}
     if str(identity.get("status") or "") != "stable":
         return f"identity_status_{identity.get('status') or 'absent'}"
     if str(metadata.get("review_status") or "") != "approved":

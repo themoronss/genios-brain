@@ -1057,7 +1057,15 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                         resolve_refs=lambda refs: _resolve_evidence_refs(conn, org_id, refs),
                         coverage_ready=bso.coverage_ready,
                         expected_facts=expected_facts_for(str(row.get("situation_type") or "")),
-                        gate=r_site_gate, cache=r_site_cache)
+                        gate=r_site_gate, cache=r_site_cache,
+                        # ⛔ REPORTED, NEVER TRUNCATED. L2-3 set the line at 2,000 tokens and
+                        # measured that a 100-fact anchor produces a slice as expensive as the
+                        # thread it replaced. A slice over it is counted so the cost conversation
+                        # has a number; nothing is dropped to fit, because "dropping facts to hit
+                        # a number is how a reasoner concludes from evidence nobody chose to
+                        # remove".
+                        on_over_budget=lambda sentence: counts.__setitem__(
+                            "slice_over_budget", counts.get("slice_over_budget", 0) + 1))
                     counts["reasoner_unknown" if _step is ReasonerStep.UNKNOWN
                            else "reasoner_consulted"] += 1
                     # ⛔ RECORDED EITHER WAY, INCLUDING THE ONE THAT COST NOTHING. `unknown` is a
