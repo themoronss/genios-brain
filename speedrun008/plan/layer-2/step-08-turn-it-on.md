@@ -1,6 +1,23 @@
 # L2-8 · Turn it on, then prove it adversarially
 
-**Needs Harsh:** parity needs the corpus · **Migration:** none · **This step ships nothing new**
+**Needs Harsh:** the shadow tallies · **Migration:** none · **This step ships nothing new**
+
+> ## ✅ COMPLETE · PENDING · HARSH (the shadow tallies) — 2026-09-24 · [findings](findings/step-08-turn-it-on.md)
+>
+> 36 tests · 13,116 passed · 0 regressions · **nothing armed, and a test asserts each switch is off**.
+>
+> ⛔ **§2 SAYS THREE FLIPS. IT IS SEVEN.** This file was written before L2-0…L2-7 ran, and four of
+> those steps each left a switch behind deliberately — declared, evidenced, not armed. **Nothing
+> enumerated them.** `reason/cutover.py` is the table, and a test reads the CODE and refuses a row
+> that disagrees, so a flip that forgets to update it fails the build.
+>
+> ⛔ **AND THE SCARIEST PRECONDITION IN THE PLAN HAS NONE.** L2-0 measured `require_admission`
+> free: **155 of 155 capabilities admissible.** The 334 this plan budgeted for counted FILES.
+>
+> ⛔ **THE ADVERSARIAL PASS FOUND A LIVE HOLE IN L2-6.** `_refs_in` read citations with `getattr`
+> alone — a proposal arrives as parsed JSON, so every cited claim read as citing nothing and **the
+> resolver was never called at all.** The unresolvable-citation half of check 3 was dead on the one
+> path that matters. The defence was correct and aimed at an object shape the model never sends.
 
 ---
 
@@ -82,9 +99,23 @@ not by reading.
 
 ## 5. Completion criteria
 
-1. The shadow pass's existing tallies **read and written down**.
-2. A parity number fixed **before** the flip.
-3. Three flips together, one tenant, reversible.
-4. A scenario registry with typed classes and an import-time totality check.
-5. Mutation probes for every fix in L2-1…L2-7, each proven sensitive.
-6. A failure log whose counts a test verifies.
+| # | criterion | verdict |
+|---|---|---|
+| 1 | the shadow pass's tallies read and written down | ⛔ **HARSH 29** — it has been counting for months and nobody has read it |
+| 2 | a parity number fixed **before** the flip | ✅ five rules · every reading proven to be a tally the sweep emits · an **absent** tally FAILS · `PARITY_MEASURED_AT is None` asserted |
+| 3 | three flips together, one tenant, reversible | ✅ **and there are seven**, ordered, each with its precondition and what it breaks alone. **None armed** |
+| 4 | a scenario registry, typed, import-time totality | ✅ 37 scenarios · 12 failure classes · both directions |
+| 5 | mutation probes for every fix in L2-1…L2-7 | ✅ **nine**, each neutralising the **RULE** rather than the code — and one **found a live hole** |
+| 6 | a failure log whose counts a test verifies | ✅ counted, not read — L1's drifted and were caught by counting |
+
+**Five closed. One is a database read.**
+
+### 5.1 · The registry, at a glance
+
+```
+closed      25      a step fixed it, and a probe proves the check is sensitive to THAT fix
+guard        3      already true — evidence progress cost nothing, not that progress happened
+open         1      ⛔ S07 · no test drives the compiler with what production sends it
+harsh        7      the logic is proven; the distribution needs the pilot
+impossible   1      S20 · `general` is claimed by all three corpora — routing it is a CHOICE
+```

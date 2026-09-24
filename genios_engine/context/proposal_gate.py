@@ -99,10 +99,23 @@ class ProposalVerdict:
 
 
 def _refs_in(value: Any) -> tuple[str, ...]:
-    """A claim's citations. `Trend` spells it `evidence_points`, the rest `evidence_refs`; both are
-    read, because renaming a shipped field to make one rule simpler is churn the rule does not
-    need."""
-    cited = getattr(value, "evidence_refs", None) or getattr(value, "evidence_points", None) or ()
+    """A claim's citations, from an OBJECT or from a MAPPING.
+
+    `Trend` spells it `evidence_points`, the rest `evidence_refs`; both are read, because renaming
+    a shipped field to make one rule simpler is churn the rule does not need.
+
+    ⛔ **AND MAPPINGS, BECAUSE THAT IS WHAT A MODEL ACTUALLY RETURNS.** The first draft used
+    `getattr` alone. A proposal arrives as parsed JSON — its entries are dicts — so every cited
+    claim read as *citing nothing*: it was refused under `l2_receipt` and **the resolver was never
+    called at all**, which made the unresolvable-citation half of check 3 dead on the one path
+    that matters. Found by L2-8's adversarial pass, which is what that pass is for: the defence
+    was correct, and it was pointed at an object shape the model never sends.
+    """
+    if isinstance(value, Mapping):
+        cited = value.get("evidence_refs") or value.get("evidence_points") or ()
+    else:
+        cited = (getattr(value, "evidence_refs", None)
+                 or getattr(value, "evidence_points", None) or ())
     return tuple(str(ref) for ref in cited)
 
 

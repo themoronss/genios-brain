@@ -42,6 +42,7 @@
 | **4e** | Apply `0182_signal_situation.sql` | migration | **step L2-7 code** | 2 min |
 | **4f** | Apply `0183_situation_interpretations.sql` | migration | **step L2-5 code** | 2 min |
 | **28** | ⛔ **DECIDE: activate `situation_reasoner` on the pilot.** It is the first model Layer 2 has ever run — **one call per SITUATION**, ~$15.64/month at Haiku on the measured shape. Off by default; the sweep runs exactly as today without it | decision | **whether Layer 2 interprets at all** | 15 min |
+| **29** | ⛔ **Read the shadow pass's tallies — they exist and nobody has ever looked.** `shadow_compile` has been counting on every sweep for months. The parity gate is already written (`reason/cutover.PARITY_GATE`) and **cannot be evaluated without them** | measure | **the entire Layer 2 cutover** | 10 min |
 | **27** | **Run `python scripts/card_collapse_report.py --org <pilot>`** AFTER 4e — it prints how many cards the founder sees and how many situations they are about. **The headline number of the whole Layer 2 plan** | measure | **the 38→N claim** | 5 min |
 
 **Migrations 2, 3 and 4 must all be applied BEFORE the code that uses them ships.** All three are
@@ -103,6 +104,45 @@ purely because nothing printed it.
 > authored corpus**, so Layer 2 mints `investor_relationship` and `investor_contact` situations that
 > nothing can read. That is **authoring work, not code** — and it is the largest non-code item in
 > the Layer 2 plan.
+
+---
+
+## 29 · ⛔ The cutover gate — five numbers, already written, waiting on one read
+
+`reason/domain_shadow.shadow_compile` has been running on every sweep, counting, **and reporting
+to nobody.** The number that earns `live=True` exists today.
+
+⛔ **The gate was written BEFORE anyone read them, deliberately** — *"a threshold picked post-hoc
+is not a gate"* — and `PARITY_MEASURED_AT` is `None` with a test asserting it, so the thresholds
+are provably older than the numbers they judge.
+
+| rule | reads | needs |
+|---|---|---|
+| no unroutable errors | `error` | ≤ 0 |
+| nothing fails to persist | `persist_error` | ≤ 0 |
+| most situations compile | `compiled` | ≥ 100 |
+| reasoning reaches the same rows | `reasoned` | ≥ 100 |
+| no reading crashed | `reasoner_failed` | ≤ 0 |
+
+An **absent** tally fails the gate — *"`None` is not a low number, it is nobody having
+measured"* — so a gate cannot pass on a pass that never happened.
+
+### ⛔ And the cutover is seven switches, not three
+
+The plan says three. Four completed steps each left one more behind, and nothing enumerated them
+until now. All seven are **off**, each with its own precondition:
+
+| switch | waits on |
+|---|---|
+| `require_admission` | ⛔ **nothing — it is free.** 155 of 155 capabilities admissible |
+| `publisher` · `execution_mode` | this item, #29 |
+| `fundraising_route` | #26 |
+| `observing_laws` (V-9, V-10) | #24 |
+| `cards_from_situations` | 0182, then #27 |
+| `situation_reasoner` | 0183, then #28 |
+
+> **A test reads the code and refuses a switch whose row says it is off.** Flipping one without
+> recording it fails the build — which is the opposite of how the last global flag behaved.
 
 ---
 
