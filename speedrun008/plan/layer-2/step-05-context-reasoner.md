@@ -1,5 +1,33 @@
 # L2-5 · The Context Reasoner — a new R-SITE, not a new gate
 
+> ## ⛔ WHAT STEPS 2, 3 AND 6 HAVE DEFERRED ONTO THIS STEP
+>
+> **Three completed steps deferred work to L2-5 and nothing was collecting it.** Written here
+> because a deferral scattered across three findings files is a deferral somebody will rediscover
+> as a surprise — the *"prose stale, code right"* drift this repository has caught five times.
+>
+> | from | what L2-5 now owes | why it waited |
+> |---|---|---|
+> | **L2-2** | `hypotheses` · `implications` · `reasoning_trace` · `valid_until` on v2, **plus migration 0182 and the store naming every column in its INSERT and upsert** | *"A field with no writer is the `started_at` mistake."* L2-5 is the writer |
+> | **L2-2** | the two validators that need those fields: *an inference must point at an observation*, *a hypothesis needs confidence* | they validate fields that do not exist yet |
+> | **L2-3** | **persisting the slice itself**, not only `context_slice_hash`. A hash proves sameness and cannot reproduce the input — *"a fingerprint, not a record"* | its only reader is a reasoner trace |
+>
+> ### ⛔ And what is already built FOR this step, which must be used rather than rebuilt
+>
+> | already exists | from | the rule |
+> |---|---|---|
+> | `claim_state.model_writable_fields()` — the 14 fields a model may propose | **L2-2** | *"deriving it by hand at the call site is how the list and the rule stop agreeing"* |
+> | `context/proposal_gate.py` — six checks, four outcomes, `as_gate_validator` | **L2-6** | hand it to `RSiteGate.consult` as `validate=`. **Not a second gate** |
+> | `context/slice_weight.SLICE_TOKEN_BUDGET` — 2,000 tokens, reports and never truncates | **L2-3** | the cost check rests on it; **the real p50/p90 is Harsh 25** |
+> | `RSiteGate` itself — activation, budget, cache, retry, recording | pre-existing | *"no R-site may call a model directly"* |
+>
+> ### ⛔ And one constraint this step must not break
+>
+> `R_SITES` is a **closed vocabulary**. A new model site needs an id, a tier, an output ceiling
+> **and an activation feature** — and L2-4 declined to add one for exactly that reason: an
+> unactivated site is a ninth thing built and never switched on. **If L2-5 registers one, the
+> activation must land with it.**
+
 ⛔ **CORRECTED by the pre-flight pass.** This step used to say *"the one new model site, metered,
 its own prompt version, its own cache key."* **That would have built a second gate.**
 
