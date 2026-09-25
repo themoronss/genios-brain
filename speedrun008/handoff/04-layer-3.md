@@ -1,13 +1,13 @@
 # Layer 3 — handoff for Harsh
 
-**Written:** 2026-09-25 · branch `speedrun008` · **steps L3-0A through L3-11 complete — Waves 1, 2 and 3 done**
-**Suite at handoff:** 13,254 passed · 1,061 skipped · 152 xfailed · **14 failed, all pre-existing**
+**Written:** 2026-09-25 · branch `speedrun008` · **steps L3-0A through L3-12 complete — Waves 1, 2 and 3 done**
+**Suite at handoff:** 13,265 passed · 1,061 skipped · 152 xfailed · **14 failed, all pre-existing**
 
 ---
 
 ## 0. Read this first — what changed, in one paragraph
 
-Twelve steps landed. **Two need something from you, and one needs a decision** (one migration, one operator call). **Five need
+Thirteen steps landed. **Two need something from you, and one needs a decision** (one migration, one operator call). **Five need
 nothing** — they are code and tests already on the branch. Nothing in here changes a computed score,
 a prompt, or `vocabulary_fingerprint`; there is **no model call in any of the seven**, and **one
 migration**.
@@ -180,6 +180,7 @@ either direction — so whichever option is chosen, it cannot happen by accident
 | **L3-09** | the graph's edge vocabulary closed; `causes`/`blocks`/`related_to` refused | — (see §4.5) |
 | **L3-10** | the residue kinds closed; correlation's stated limitation pinned | — |
 | **L3-11** | the fail-open absence default made **countable** | ⛔ **a number to read, §5.1** |
+| **L3-12** | the node vocabulary closed; the read-model map named | — (see §4.6) |
 
 ---
 
@@ -260,6 +261,21 @@ select edge_type, count(*) from graph_edges
 
 Anything outside `works_at · attended · owns · concerns · raised_in · corresponded_with` is an edge
 nothing reads. **Finding them is a query, not a code change** — the fix stops new ones.
+
+**4.6 · Three free-string vocabularies are now closed, and the same query applies to each.**
+
+`edge_type` (L3-09), `residue_kind` (L3-10) and `node_type` (L3-12) were all `text not null` with a
+migration comment ending `| ...` and nothing enforcing it. All three now have a Python closed set
+with a totality guard both ways. ⛔ **Historic rows were never audited for any of them**, so the
+same one-line check is worth running once per table:
+
+```sql
+select node_type, count(*) from graph_nodes where org_id = :org group by 1 order by 2 desc;
+select edge_type, count(*) from graph_edges where org_id = :org group by 1 order by 2 desc;
+```
+
+Anything outside the declared sets is a row nothing reads. **The fix stops new ones; finding the
+old ones is a query.**
 
 **4.4 · The 14 pre-existing failures are genuinely pre-existing.** Verified by stashing the branch's
 production changes and re-running: they fail either way. They are not this layer's.

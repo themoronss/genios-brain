@@ -106,6 +106,47 @@ def fact_write_action(*, held_value_json: str | None, held_rank: int | None,
 # `context/` for `delete from graph_*` and fails on one.
 
 
+#: ⛔ L3-12 · THE NODE VOCABULARY — the sibling of `EDGE_TYPES`, and it had the same hole.
+#:
+#: `graph_nodes.node_type` is `text not null` with no check constraint, and its comment in
+#: migration 0004 ends `-- person | company | deal | meeting | ...`. The `| ...` is the tell: an
+#: open-ended list in prose with nothing enforcing it. Ten types are written across the engine, and
+#: a typo of any of them mints a node no reader ever asks for.
+#:
+#: ⛔ `pipeline._NODE_TYPES` IS NOT THIS SET AND MUST NOT BE CONFUSED WITH IT. Its own comment says
+#: so: "this whitelist governs ONLY the L2 mention loop below; the structured lane
+#: (deal/meeting/subscription/product_account, anchored by source-id) is NOT gated here." It is a
+#: narrower rule about which LLM entity mentions may become nodes at all. Two sets of node-type
+#: names doing different jobs is exactly how a drift starts, so a test holds this one as the
+#: superset.
+#:
+#: Each entry says what ANCHORS the node, because that is what decides whether two sightings are
+#: one node — and getting it wrong is how a company is fragmented or two people are merged.
+NODE_TYPES: dict[str, str] = {
+    "person":           "anchored by email address. The only type an LLM mention may mint, and "
+                        "only with a deterministic address behind it.",
+    "company":          "anchored by email domain.",
+    "deal":             "anchored by the source system's id, or 'deal:'+company when derived.",
+    "meeting":          "anchored by the calendar event's own id — so each OCCURRENCE of a "
+                        "recurring series is its own node, and cancelling one cancels one.",
+    "thread":           "anchored by the provider's thread id.",
+    "commitment":       "anchored by (subject, promise) — the thing somebody said they would do.",
+    "task":             "anchored by the source system's id.",
+    "subscription":     "anchored by the source system's id.",
+    "product_account":  "anchored by the source system's id.",
+    "tenant":           "one per org. ⛔ Deliberately NOT in ANCHOR_PRIORITY: a tenant node "
+                        "reachable from correspondence would swallow every conversation in the "
+                        "org into one situation.",
+    # ⛔ THE TWO MINTED THROUGH A NAMED CONSTANT RATHER THAN A LITERAL, which is why the first
+    # totality scan missed them: `context.documents.DOCUMENT_NODE_TYPE` and
+    # `capture.structured.product_usage.PRODUCT_USAGE_NODE_TYPE`. A guard that only reads
+    # `node_type="..."` sees ten of twelve and calls it total.
+    "document":           "anchored by content address. See `context.documents.DOCUMENT_NODE_TYPE`.",
+    "product_usage_event": "anchored by the source system's event id — the EVENT, not the account; "
+                           "its facts describe the usage. See `PRODUCT_USAGE_NODE_TYPE`.",
+}
+
+
 # =================================================================================================
 # L3-09 · THE EDGE VOCABULARY — closed, because it was a free string
 # =================================================================================================
