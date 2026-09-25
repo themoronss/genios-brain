@@ -181,7 +181,11 @@ def test_the_gate_reads_the_wire_form_of_every_flag_it_branches_on(build, expect
     — and crashed V-5 instead of returning a decision.
     """
     decision = validate_situation(build())
-    assert [failure.law for failure in decision.failures] == expected
+    # REJECTING failures only, since L2-2: these fixtures carry analytic objects with no
+    # `evidence_refs`, so V-9 observes on them — which is the finding, not a defect in the probe.
+    # The claim this test makes is about which law REJECTS on a bypassed object, and that is
+    # unchanged.
+    assert [f.law for f in decision.failures if f.action is LawAction.REJECT] == expected
     if expected:
         assert decision.outcome is SituationOutcome.REJECT
         assert decision.situation is None, "a rejected situation must not be reachable"
@@ -235,18 +239,59 @@ def test_layer_one_and_layer_two_give_the_same_rule_ids_opposite_actions():
     assert NON_BLOCKING_RULES == frozenset({PublicationRule.V5})
     assert LAW_ACTIONS[L2Law.V1] is LawAction.REJECT
     assert LAW_ACTIONS[L2Law.V5] is LawAction.REJECT
-    assert set(LAW_ACTIONS) == set(L2Law) and len(L2Law) == 8
-    assert set(LAW_ACTIONS.values()) == {LawAction.REJECT}
+    assert set(LAW_ACTIONS) == set(L2Law)
+    # ⛔ THE CLAIM IS ABOUT THE SHARED IDS, AND V-1 AND V-5 ARE THE SHARED IDS. L2-2 added V-9 and
+    # V-10, which L1 has no namesake for, so "every L2 law rejects" is no longer the way to say
+    # "L2's V-1 does not park". The eight that doc 08 tabulates are asserted one at a time, which
+    # is what this test was always about.
+    for law in (L2Law.V1, L2Law.V2, L2Law.V3, L2Law.V4, L2Law.V5, L2Law.V6, L2Law.V7, L2Law.V8):
+        assert LAW_ACTIONS[law] is LawAction.REJECT, f"{law.value} stopped rejecting"
+    assert {L2Law.V9, L2Law.V10} == {law for law in L2Law
+                                     if LAW_ACTIONS[law] is not LawAction.REJECT}, (
+        "a law outside L2-2's two stopped rejecting — doc 08's table is uniform")
 
 
 def test_the_layer_two_gate_has_no_park_and_no_downgrade_to_drift_into():
     """The structural half. L1's `PublicationOutcome` has three members and its decision carries
     a `parked` record and a `confidence_downgrade_bp`; L2's has two and carries neither, so a
-    later edit cannot quietly turn a reject into a park without adding the machinery first."""
-    assert {member.value for member in LawAction} == {"reject"}
-    assert {member.value for member in SituationOutcome} == {"admit", "reject"}
+    later edit cannot quietly turn a reject into a park **without adding the machinery first**.
+
+    ⛔ **THIS GUARD FIRED ON L2-2 AND IT WAS RIGHT TO.** That step added `LawAction.OBSERVE` for
+    V-9 and V-10, and the first draft had nowhere for an observation to go — which would have made
+    two laws written to end an invisible refusal invisible themselves.
+
+    **So the demand is now stated rather than approximated.** The gate's OUTCOMES are still
+    exactly two: `OBSERVE` adds no third answer, it only lets an ADMIT carry what it noticed. And
+    the machinery this guard exists to require is asserted directly: an admitted publication
+    records those observations in the durable ledger, which is what
+    `scripts/l2_refusal_report.py` reads. A non-rejecting action with no path to that ledger fails
+    here, exactly as before.
+    """
+    from genios_engine.context.situation_publisher import observed_reasons
+
+    assert {member.value for member in SituationOutcome} == {"admit", "reject"}, (
+        "a third outcome is the drift this guard was written for")
     assert "park" in {member.value for member in PublicationOutcome}
     assert set(SituationDecision.model_fields) == {"outcome", "failures", "situation"}
+
+    # Every non-rejecting action must have somewhere to be recorded. Proven by driving it.
+    non_rejecting = {m for m in LawAction if m is not LawAction.REJECT}
+    assert non_rejecting == {LawAction.OBSERVE}, (
+        f"a new non-rejecting LawAction {non_rejecting - {LawAction.OBSERVE}} arrived — prove it "
+        f"reaches the admission ledger before this guard will pass")
+    observing = validate_situation(bypassed(anomalies=(_anomaly_without_receipt(),)))
+    assert observing.outcome is SituationOutcome.ADMIT
+    assert observed_reasons(observing), (
+        "an observing law noticed something and the publication result would drop it")
+
+
+def _anomaly_without_receipt():
+    """What `context/analytic/anomaly.py` builds today: no `evidence_refs`. V-9's subject."""
+    from genios_engine.contracts.situation import Anomaly
+
+    return Anomaly.model_construct(
+        metric="account.reply_latency", current_bp=9000, baseline_bp=1000, mad_bp=200,
+        deviation_bp=8000, z_like_bp=4000, direction="above", periods_used=8, evidence_refs=())
 
 
 @pytest.mark.parametrize("law,build", [
@@ -254,13 +299,18 @@ def test_the_layer_two_gate_has_no_park_and_no_downgrade_to_drift_into():
     (L2Law.V5, lambda: bypassed(trends=(_trend(point_count=2),))),
 ], ids=["V-1-does-not-park", "V-5-does-not-downgrade"])
 def test_the_two_laws_whose_l1_namesakes_do_something_else_still_reject(law, build):
-    """The behavioural half: the object is DROPPED, not parked and not emitted-with-a-caveat."""
+    """The behavioural half: the object is DROPPED, not parked and not emitted-with-a-caveat.
+
+    Asserted over the REJECTING failures specifically since L2-2, because a fixture may now also
+    trip an observing law — and "exactly this law rejected" is a stronger claim than "exactly one
+    failure exists", not a weaker one.
+    """
     decision = validate_situation(build())
     assert decision.outcome is SituationOutcome.REJECT
     assert decision.admitted is False
     assert decision.situation is None
-    assert [failure.action for failure in decision.failures] == [LawAction.REJECT]
-    assert [failure.law for failure in decision.failures] == [law]
+    rejecting = [f for f in decision.failures if f.action is LawAction.REJECT]
+    assert [f.law for f in rejecting] == [law]
 
 
 # ============================================== 3 · contracts/ imports nothing above itself

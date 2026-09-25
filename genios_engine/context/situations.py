@@ -286,6 +286,68 @@ SITUATION_STATUS_ON_CONFLICT = (
 COVERAGE_UNKNOWN = -1
 
 
+def window_coverage_gaps(conn, org_id: str, *, since: datetime, until: datetime) -> tuple[str, ...]:
+    """L3-02b · one sentence per source whose window cannot bear the weight of an absence claim.
+
+    THE SIBLING OF `unmet_source_families`, and the other half of the same honesty.
+    That function answers *which system of record is not connected at all*. This one answers the
+    question a connected source still leaves open: **of the window this situation reasons over, how
+    much did we actually read — and can we prove it?**
+
+    WHY IT BELONGS BESIDE THE OTHER ONE. `source_coverage_insufficient` held 18 pilot situations
+    and 0 of 18 named the family, which is why `unmet_source_families` exists. The quantitative
+    version of that invisibility is worse, because it does not hold anything: a sweep that read 8%
+    of a mailbox and exhausted nothing produces situations that look exactly like a sweep that read
+    all of it. On 23 Sept two assistants were asked the same question over one mailbox; one read
+    about 18 threads of roughly 465 and reported *"18 of 18"*. **An empty result over an unmeasured
+    slice, reported as a fact about the business.**
+
+    ⛔ NO THRESHOLD, DELIBERATELY. A percentage floor would be a number nobody could defend, and
+    the first argument about it would be won by whoever wanted more cards. The rule is
+    `WindowCoverage.can_support_absence` — the sweep exhausted its cursor AND a denominator exists
+    — which is the same rule `capture/coverage/window` already applies and the same one L3-03's
+    gate will consume. One rule, three readers.
+
+    IT READS AND NEVER WRITES, exactly like `unmet_source_families`: what was synced is a fact
+    about a sweep that already happened, and a reader that could mark a window complete would be
+    asserting a sweep that did not occur.
+
+    `()` WHEN THERE IS NOTHING TO SAY — a source that can support an absence claim contributes no
+    sentence. It is also `()` when the read itself fails, because a sentence is never worth the
+    sweep.
+    """
+    from genios_engine.capture.coverage.window import SyncHealth, coverage_for_window
+
+    try:
+        sources = [r.source for r in conn.execute(text(
+            "select distinct source from l1_sync_runs "
+            " where org_id = :o and source is not null "
+            "   and finished_at >= :since and finished_at < :until"),
+            {"o": org_id, "since": since, "until": until}).fetchall()]
+    except Exception:          # noqa: BLE001 — absent table, unmigrated tenant, no rows
+        return ()
+
+    out: list[str] = []
+    for source in sorted(s for s in sources if s):
+        cov = coverage_for_window(conn, org_id=org_id, source=source, since=since, until=until)
+        if cov.can_support_absence:
+            continue
+        # The WHY is the sentence. "Coverage is low" sends nobody anywhere; "the sync failed" and
+        # "the provider gave no total" are different problems with different owners, and the
+        # distinction is the one thing this module was built to stop collapsing.
+        if cov.health is SyncHealth.FAILED:
+            out.append(f"a {source} sync failed in this window, so nothing here rules anything out")
+        elif cov.health is SyncHealth.PARTIAL:
+            out.append(f"the {source} sweep did not finish, so a tail of this window was never read")
+        elif cov.health is SyncHealth.SUCCESS_EMPTY:
+            out.append(f"no {source} activity was read in this window, which is not the same as none existing")
+        elif cov.health is SyncHealth.UNKNOWN:
+            out.append(f"no {source} sync covers this window")
+        else:                  # HEALTHY without a denominator — read all we were OFFERED
+            out.append(f"{source} gave no total, so we read {cov.indexed} of an unknown number")
+    return tuple(out)
+
+
 def unmet_source_families(conn, org_id: str, domain: str | None) -> tuple[str, ...]:
     """The source families this domain needs and the tenant has not connected.
 
@@ -1077,7 +1139,34 @@ def refresh_situations(store, org_id: str, *, eval_time: datetime | None = None)
     if absence_subjects:
         with store.engine.begin() as conn:
             lens = read_coverage_lens(conn, org_id)
-            refresh_typed_absences(conn, org_id, absence_subjects, lens=lens, eval_time=now)
+            # L3-03 · CONNECTED IS NOT READ. The lens answers "could a source have carried this";
+            # this answers "did the sweep over this situation's own span actually finish, and did
+            # it know how much there was to finish". Without it a tenant with Gmail connected and
+            # a sweep that read 37 of about 465 threads reaches `GENUINELY_ABSENT` — a licensed
+            # negative inference over 8% of a mailbox, which is the failure the 23 Sept benchmark
+            # caught in public.
+            #
+            # ⛔ THE SAME FUNCTION AS THE CARD'S SENTENCE, NOT A SECOND RULE. `()` means every
+            # source covering the span exhausted its cursor and had a denominator, which is
+            # exactly `can_support_absence` for all of them. One rule, three readers — the card
+            # line, this gate, and `capture/coverage/window` underneath both.
+            _span_ok: dict[object, bool] = {}
+
+            def _window_ok(subject) -> bool | None:
+                # The span is the earliest fact this situation actually holds. Undated evidence
+                # cannot be asked the question, so it returns None and the cascade is unchanged —
+                # a guessed window would refuse absences over days nobody observed.
+                times = [t for t in subject.observed_at.values() if t is not None]
+                if not times:
+                    return None
+                first = min(times)
+                if first not in _span_ok:
+                    _span_ok[first] = not window_coverage_gaps(
+                        conn, org_id, since=first, until=now)
+                return _span_ok[first]
+
+            refresh_typed_absences(conn, org_id, absence_subjects, lens=lens, eval_time=now,
+                                   window_ok_for=_window_ok)
     return written
 
 

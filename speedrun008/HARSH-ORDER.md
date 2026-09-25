@@ -1,5 +1,20 @@
 # Harsh — everything blocked on you, in the order to do it
 
+> # 👉 START AT [`DO-THIS-NOW.md`](DO-THIS-NOW.md)
+> One file, the whole open list, in the order to do it, with the commands.
+> Come back here for the reasoning behind any single item.
+
+
+> ## 📌 THE SHORT VERSION IS [`handoff/`](handoff/)
+>
+> Written 2026-09-25, after Layer 1 and Layer 2 both closed. **Four files, sorted by what kind of
+> thing each item is** — eight migrations, six measurements, five decisions, one access item —
+> each with the exact command and what breaks if it is skipped.
+>
+> **This file is the long form**: the same items with the full reasoning behind each. Work from
+> `handoff/`; come here when you want to know *why*.
+
+
 > **Branch:** `speedrun008` · **Updated:** 2026-09-24 · **Steps covered:** 1 – 15
 > **This file replaces `HANDOFF-CTO.md`**, which only covered steps 1–3 and is now stale.
 > **Read time:** 6 minutes. Each row links to its full runbook.
@@ -33,9 +48,385 @@
 | **18** | **The joinability figure** — what share of calendar attendees have an email-side counterpart | measure | step 13's last criterion · **P4's falsifiability** | 10 min |
 | **19** | **DECIDE: re-sync the mailbox?** Every prompt we have ever sent said *"message 1 of 1"*. The fix is live for new mail; old mail needs a re-fetch | decision | **the quality of every threaded extraction** | 15 min |
 | **20** | ⛔ **Item 1 again, and now it BLOCKS a done criterion.** Step 17's adversarial suite cannot run: **991 of 995 skips are one missing URL** | access | **618 tests · step 17's last criterion** | see #1 |
+| **21** | ⛔ **Run the L2 refusal report on the pilot** — `python scripts/l2_refusal_report.py --org <pilot> --database-url <url>`. Read-only, every statement a `select`. It is the **denominator every Layer 2 step is measured against** | measure | **L2-0's last open half · every later L2 number** | 5 min |
+| **22** | ⛔ **DECIDE: flip the 24 `draft` situations?** 16 of Customer Support's 20. Every card built from one is downgraded to an OBSERVATION — it describes and does not instruct. **One word per file, no code** | decision | **the cheapest quality win in L2** | 20 min |
+| **23** | 📅 **Diary note only — nothing to do now.** `contracts.domain_expertise.BusinessSituationObject` is a deprecated alias and may be deleted **after 2026-12-24**. The date lives in `contracts/situation_stages.ALIAS_REMOVAL` and a test reads it from there | dated | nothing | 0 min |
+| **24** | ⛔ **Run the L2 refusal report again AFTER item 21 and read `BY LAW`.** L2-2 added two laws — V-9 (an interpretation citing nothing) and V-10 (an empty `missing_facts` under low coverage) — both declared **OBSERVE**, so they report and do not block. **Arming either is one line, after somebody knows the count** | measure + decision | **whether L2 starts refusing unreceipted interpretations** | 10 min |
+| **25** | **Run `python scripts/slice_weight.py --org <pilot> --sample 20`** — read-only. It prints what a real context slice costs in tokens, p50/p90/max. **L2-5's entire cost check rests on this number** | measure | **L2-5's cost check** | 5 min |
+| **26** | ⛔⛔ **DECIDE: point `fundraising` at the `sales` corpus.** The investor doctrine is **already authored, stable and approved** and the pilot's dominant domain cannot reach it. One line, reversible, and `live_lane` still requires the corpus to be activated. Run `python scripts/unroutable_report.py --org <pilot>` for the count first | **decision** | **whether the pilot tenant sees anything at all** | 15 min |
+| **4e** | Apply `0182_signal_situation.sql` | migration | **step L2-7 code** | 2 min |
+| **4f** | Apply `0183_situation_interpretations.sql` | migration | **step L2-5 code** | 2 min |
+| **28** | ⛔ **DECIDE: activate `situation_reasoner` on the pilot.** It is the first model Layer 2 has ever run — **one call per SITUATION**, ~$15.64/month at Haiku on the measured shape. Off by default; the sweep runs exactly as today without it | decision | **whether Layer 2 interprets at all** | 15 min |
+| **29** | ⛔ **Read the shadow pass's tallies — they exist and nobody has ever looked.** `shadow_compile` has been counting on every sweep for months. The parity gate is already written (`reason/cutover.PARITY_GATE`) and **cannot be evaluated without them** | measure | **the entire Layer 2 cutover** | 10 min |
+| **27** | **Run `python scripts/card_collapse_report.py --org <pilot>`** AFTER 4e — it prints how many cards the founder sees and how many situations they are about. **The headline number of the whole Layer 2 plan** | measure | **the 38→N claim** | 5 min |
 
 **Migrations 2, 3 and 4 must all be applied BEFORE the code that uses them ships.** All three are
 idempotent and safe to re-run. Apply in number order.
+
+
+---
+
+## 21 · Run the Layer 2 refusal report — 5 minutes, read-only
+
+⛔ **Layer 2's dominant failure is a refusal that is RIGHT and INVISIBLE**, and L2-0 built the
+surface that tells a refusal apart from nothing having happened. Its own code says so:
+
+> *"Such a card today simply exists, ranks, and quietly never becomes anything, while **no surface
+> says 'its best evidence scored 1360 against a floor of 2500'**. That is the fifth time this
+> codebase has carried a refusal that was right and invisible."*
+
+```bash
+python scripts/l2_refusal_report.py --org <pilot-org-id> \
+       --database-url "$GENIOS_TARGET_DATABASE_URL"
+```
+
+**Read-only and structurally so.** The URL resolves through `scripts/_db.py`, which has no fallback
+to `Settings`, and every statement in the script is a `select`.
+
+### What comes back
+
+```
+admitted / held / rejected            the three outcomes
+BY REASON                             all 7 HoldReasons, zeros included
+REFUSED BY LAYER 1, WITH THE NUMBER   "scored 1360 against a floor of 2500", per situation
+DOMAINS NO AUTHORED CORPUS CAN READ   fundraising — the pilot's OWN domain
+THE AUTHORED CORPUS                   155 capabilities, per domain
+TOTAL SITUATIONS PRODUCING NOTHING
+```
+
+### Why it matters more than it looks
+
+Every later Layer 2 step claims a number — *situations reasoned*, *cards collapsed*, *domains
+routed*. **Without this run none of them has a denominator.**
+
+### One part already ran, and it found something
+
+The corpus section needs **no database** and was run today:
+
+```bash
+python scripts/l2_refusal_report.py --corpus-only
+```
+
+⛔ **It contradicted the plan.** We had recorded *"534 capabilities, 200 admissible (37%), so
+`require_admission=True` takes 334 dark"*. Measured: **155 capabilities, 155 admissible, 0 hollow.**
+The 534 counted **files** — a capability is a directory of `capability.yaml` + `objects.yaml` +
+`knowledge.yaml`. All 155 content-hashes were recomputed and verify.
+
+**So the Layer 2 cutover flag is free, not a cliff** — and the number had been wrong for weeks
+purely because nothing printed it.
+
+> **The one decision this may raise for you:** `fundraising` is the pilot's own domain and has **no
+> authored corpus**, so Layer 2 mints `investor_relationship` and `investor_contact` situations that
+> nothing can read. That is **authoring work, not code** — and it is the largest non-code item in
+> the Layer 2 plan.
+
+---
+
+## 29 · ⛔ The cutover gate — five numbers, already written, waiting on one read
+
+`reason/domain_shadow.shadow_compile` has been running on every sweep, counting, **and reporting
+to nobody.** The number that earns `live=True` exists today.
+
+⛔ **The gate was written BEFORE anyone read them, deliberately** — *"a threshold picked post-hoc
+is not a gate"* — and `PARITY_MEASURED_AT` is `None` with a test asserting it, so the thresholds
+are provably older than the numbers they judge.
+
+| rule | reads | needs |
+|---|---|---|
+| no unroutable errors | `error` | ≤ 0 |
+| nothing fails to persist | `persist_error` | ≤ 0 |
+| most situations compile | `compiled` | ≥ 100 |
+| reasoning reaches the same rows | `reasoned` | ≥ 100 |
+| no reading crashed | `reasoner_failed` | ≤ 0 |
+
+An **absent** tally fails the gate — *"`None` is not a low number, it is nobody having
+measured"* — so a gate cannot pass on a pass that never happened.
+
+### ⛔ And the cutover is seven switches, not three
+
+The plan says three. Four completed steps each left one more behind, and nothing enumerated them
+until now. All seven are **off**, each with its own precondition:
+
+| switch | waits on |
+|---|---|
+| `require_admission` | ⛔ **nothing — it is free.** 155 of 155 capabilities admissible |
+| `publisher` · `execution_mode` | this item, #29 |
+| `fundraising_route` | #26 |
+| `observing_laws` (V-9, V-10) | #24 |
+| `cards_from_situations` | 0182, then #27 |
+| `situation_reasoner` | 0183, then #28 |
+
+> **A test reads the code and refuses a switch whose row says it is off.** Flipping one without
+> recording it fails the build — which is the opposite of how the last global flag behaved.
+
+---
+
+## 28 · ⛔ The first model Layer 2 has ever run — and what it costs
+
+L2-5 registers **R-6, the Context Reasoner**: one call per SITUATION, reading the slice and
+proposing an interpretation. It is **off** on every tenant. The sweep today runs exactly as it did
+yesterday.
+
+### What it costs, measured rather than guessed
+
+The pilot carries **159 active situations** (recorded in `situation_bso.l1_refusal`) and a p50
+slice of **1,279 tokens** (measured in L2-3 through the real builder):
+
+| | per sweep | per month, daily |
+|---|---|---|
+| **all Haiku** | **$0.52** | **~$15.64** |
+| all Sonnet | $1.04 | ~$31.28 |
+| 25% escalating to Sonnet | $0.78 | ~$23.31 |
+
+⛔ **Two corrections to the plan, both from this arithmetic.** It claimed *"~40 calls"* and a
+**10×** saving from attaching the call to the situation rather than the event. It is **159** and
+**2.9×**. And it called *"low confidence + low importance → don't spend"* **the largest saving in
+the plan**: that saves about **$3 a month**. The rule survives — because a low-confidence reading
+of a low-importance situation is a **wrong answer nobody needed**, and a wrong card costs more
+than no card.
+
+### What protects you
+
+| | |
+|---|---|
+| the gate | activation, budget, cache, retry, deterministic fallback, one ledger — **nothing new was built** |
+| the validator | six deterministic checks before anything is recorded (L2-6) |
+| the law | ⛔ **it cannot raise a confidence**, only lower one — R-1's rule, copied verbatim |
+| authority | it may propose **14** fields and **may never** write an observation, a receipt, or who may see a situation |
+| the fallback | **silence.** No key, no budget, no answer → the sweep proceeds exactly as without it |
+| replay | every reading is stored **with the slice it was made from** |
+
+### To switch it on
+
+```sql
+-- after 0183
+insert into l4_activations (org_id, feature, activated_by) values ('<pilot>', 'situation_reasoner', 'harsh');
+```
+
+Reversible by deleting the row. **Nothing it proposes is committed to the graph** — the reading is
+recorded, and what to do with it is L2-8's decision.
+
+---
+
+## 27 · What the founder actually sees — 5 minutes, read-only, AFTER 0182
+
+⛔ **This is the headline number of the whole Layer 2 plan.** *"38 cards becoming N"* has been a
+claim since the plan was written, and nothing has ever printed the ratio.
+
+```bash
+python scripts/card_collapse_report.py --org <pilot-org-id> \
+       --database-url "$GENIOS_TARGET_DATABASE_URL"
+```
+
+It refuses to report at all if 0182 is missing, rather than printing a collapse of 1.00 and
+letting somebody conclude there is nothing to merge.
+
+### What it tells you
+
+```
+open signals without a card       ← cards today
+situations they belong to
+signals with no situation         ← surfaced, LABELLED, never dropped
+cards after the collapse
+collapse                          N.NN×
+```
+
+plus the widest fan-outs — one situation, many rules, many cards.
+
+### Why the fan-out happens
+
+Signals are emitted **per (pack, rule, node)**. One situation compiles a package, the package
+fires several rules, and each rule becomes a card:
+
+```
+"Nitesh's inbound messages dropping over 28 days"        rule 1 → card 1
+"Nitesh Pant's touch frequency declining over 28 days"   rule 2 → card 2
+"Check in with Nitesh Pant on engagement"                rule 3 → card 3
+```
+
+They could never merge, because **the builder had no way to see they were one situation** — the
+`situation_id` was in scope at emit time and thrown away. 0182 gives it somewhere to go.
+
+> **Nothing changes for a founder until a tenant is activated.** The loop is still the old one;
+> what 0182 buys today is the *measurement*, and the measurement is what the cutover decision
+> needs. A signal whose situation never formed is **surfaced with a label**, never dropped —
+> fewer cards must come from merging.
+
+---
+
+## 26 · ⛔⛔ The fundraising doctrine exists. One `None` hides it.
+
+**This is the largest single thing in Layer 2, and it is one line.**
+
+The Layer 2 plan said the pilot's dominant domain was dark because *"no fundraising corpus
+exists — the fix is authoring, not code."* Measured against the catalog on 2026-09-24:
+
+```
+sales.sit.live_investor_relationship      stable · approved
+   "An ongoing relationship with a party that might fund us, read at the ACCOUNT level:
+    the fund, the accelerator, the syndicate"
+
+sales.sit.live_investor_contact           stable · approved
+   "A named individual at an investor, accelerator or programme, read at the PERSON level"
+
+sales.investor_relations.investor_relations
+   "Reading and running the relationships with the people who might fund the company:
+    funds, accelerators, angels and the operators who introduce them."
+```
+
+**It was authored inside the Sales corpus.** `_L2_TO_L3_DOMAIN["fundraising"]` answers `None`, so
+every investor situation on the tenant publishes no package and emits no signal.
+
+### Why this is safe, and how we know
+
+The old objection was *"mapping fundraising onto admin would put Admin doctrine on a fundraising
+situation."* True — and **routing is per situation type, not a domain blanket:**
+
+| fundraising mints | routes to |
+|---|---|
+| `investor_relationship` | `sales.sit.live_investor_relationship` |
+| `investor_contact` | `sales.sit.live_investor_contact` |
+
+**Those are the only two types fundraising can mint, and both land on investor doctrine.** No
+generic deal doctrine is reachable. A test proves it and will keep proving it.
+
+### Why it is not already done
+
+Arming it makes every fundraising situation activatable **at once**, and nobody has counted them
+on the pilot. Same discipline as the two new laws: measure, then arm.
+
+```bash
+python scripts/unroutable_report.py --org <pilot-org-id> \
+       --database-url "$GENIOS_TARGET_DATABASE_URL"
+```
+
+Read the per-type counts. Then the change is:
+
+```python
+# genios_engine/reason/domain_shadow.py
+"fundraising": "sales",     # was None — see CANDIDATE_ROUTES
+```
+
+**Two switches, not one.** `live_lane` still requires the tenant to have activated the `sales`
+corpus, so this makes fundraising *activatable*, not live. Reversible by putting the `None` back.
+
+> **`general` is NOT the same decision and must not be bundled with it.** Its `relationship` type
+> is claimed by **all three** corpora, so routing it means picking one by hand — which is how
+> Admin doctrine lands on a support thread. It stays dark until a census says what actually lands
+> there.
+
+---
+
+## 25 · What a context slice actually costs — 5 minutes, read-only
+
+L2-5 puts a model on Layer 2. **What it costs is decided by how many tokens a slice weighs**, and
+the step file is blunt about guessing: *"the cost check for L2-5 depends on this number, and
+guessing it would make that check theatre."*
+
+```bash
+python scripts/slice_weight.py --org <pilot-org-id> --sample 20 \
+       --database-url "$GENIOS_TARGET_DATABASE_URL"
+```
+
+Read-only through `scripts/_db.py`, every statement a `select`, and it builds each slice **exactly
+the way the sweep does** — so what it weighs is what the reasoner would be handed.
+
+### What we already know, and where the plan was wrong
+
+Measured through the real builder on constructed shapes:
+
+| facts / obs / neighbours | tokens |
+|---|---|
+| 8 / 6 / 4 | **714** ← the plan's *"900-token slice"* |
+| 30 / 25 / 20 | 2,509 |
+| 100 / 80 / 60 | **8,049** ← the plan's *"10,000-token thread"* |
+
+⛔ **The plan says a slice is cheap because it is a slice. It is cheap because the node is small.**
+A busy account — the kind a founder most wants reasoned about — produces a slice that costs as
+much as the raw thread it replaced.
+
+`SLICE_TOKEN_BUDGET` is set to **2,000** and **reports rather than truncates**: dropping facts to
+hit a number is how a reasoner concludes from evidence nobody chose to remove. The run above says
+how many of the pilot's situations break it.
+
+> **What this changes if the tail is fat:** L2-5 either narrows what goes in a slice, or reasons
+> over fewer situations, or costs more than planned. All three are decisions — and none can be
+> made without this number.
+
+---
+
+## 24 · ⛔ Two new laws are watching, and neither blocks yet
+
+L2-2 added **V-9** and **V-10** to the Layer 2 gate. Both are declared `OBSERVE`: they are
+recorded on the decision and **the situation still publishes.** Nothing that shipped yesterday
+stopped shipping.
+
+| law | what it sees |
+|---|---|
+| **V-9** | an interpretation that cites nothing. `Anomaly`, `MetricCorrelation`, `CohortPosition` and `ImportanceAttribution` carried **no evidence reference at all** — `MatchedCondition` has enforced the same rule on itself for months: *"'this fired because of these facts' is what makes a situation defensible"* |
+| **V-10** | an empty `missing_facts` on a situation whose coverage was never good enough to conclude that nothing was missing |
+
+### Why they are not armed
+
+Arming them means refusing live situations, and **nobody has counted how many.** L1's step 10 set
+the precedent by gating itself on a measurement rather than guessing. `LawAction`'s own docstring
+had already designed for this: *"a law that later downgrades or parks is a one-line change here
+plus a branch in `validate_situation`."*
+
+### What to do, after item 21
+
+```bash
+python scripts/l2_refusal_report.py --org <pilot> --database-url "$GENIOS_TARGET_DATABASE_URL"
+```
+
+Read the **`BY LAW`** block. It prints every law including zeros.
+
+| V-9 count | what it means |
+|---|---|
+| **low** | arm it — `LAW_ACTIONS[V9] = REJECT`, one line, and L2 stops publishing interpretations nobody can check |
+| **high** | the producers owe receipts first. The report names which |
+
+Same reading for V-10.
+
+> **This is the cheapest possible way to make a decision like this**: the law is written, it is
+> running, it is recording, and it costs nothing until you decide it should.
+
+---
+
+## 22 · ⛔ DECIDE — 24 authored situations are `draft`, and their cards cannot instruct
+
+The corpus's **capabilities** are whole: 155 of 155 admissible, every hash verified. The gap is on
+the other half of the ceremony.
+
+| domain | situations | **`draft`** |
+|---|---|---|
+| Admin | 34 | **8** |
+| Sales | 15 | 0 |
+| **Customer Support** | 20 | **16** |
+| | **69** | **24** |
+
+### What a `draft` situation costs — from the rule's own docstring
+
+> *"the gap lands in `admission_gaps` → `plan.admitted=False` → the package's
+> `review_state='draft'` → **`deliver/pipeline._apply_abstention` downgrades the card to an
+> OBSERVATION.** The intelligence still ships; **it stops instructing.** Removing the situation
+> would delete the finding to punish its prose."*
+
+So a support situation routing through one of those sixteen produces a card that says *what is
+happening* and cannot say *what to do*. **That is the complaint, precisely.**
+
+### The decision
+
+Each of the 24 is either **genuinely unfinished** (leave it `draft`) or **finished and never
+flipped** (`identity.status: draft` → `stable`, one word). Nobody has looked, because until today
+nothing printed the list.
+
+```bash
+python scripts/l2_refusal_report.py --corpus-only     # no database needed
+```
+
+**No code, no migration, no model call.** If a meaningful share of the 24 are merely un-flipped,
+this is the largest quality gain in Layer 2 for the least work — and it is reversible.
 
 ---
 
@@ -75,6 +466,8 @@ psql "<url>" -f migrations/0181_signal_conversation.sql
 | **0178** | four completeness columns on `l1_sync_runs` | **every sync-ledger write fails silently.** It is wrapped in a `try/except` that never raises, so syncs keep working and simply stop being recorded — which is worse than crashing |
 | **0179** | four world instants on `qualified_signals` (`due_at`, `effective_at`, `resolved_at`, `superseded_at`) + a partial index on `due_at` | **every signal INSERT fails** — the store now names these columns. Without them a signal still cannot say *"8 days overdue"*, which is the question P2 asks |
 | **0181** | five conversation columns on `qualified_signals` (`thread_key`, `direction`, `turn_index`, `thread_depth`, `ball_in_court`) + two partial indexes | **every signal INSERT fails** (same reason). And Layer 2 keeps recomputing *whose turn it is* from Gmail labels because L1's real answer never arrives — it moved the benchmark 20 → 24 |
+| **0183** | `situation_interpretations` — a new table | **every Context Reasoner reading is lost.** The code records one per (situation, slice) and swallows the failure, so a sweep still succeeds and simply remembers nothing — which is worse than crashing, because the reading looks like it happened. It carries the SLICE the reading was made from, so a conclusion can be replayed against its own premises |
+| **0182** | `signals.situation_id` text + a partial index | **every compiled signal INSERT fails** — `domain_shadow` now names the column. And without it the card loop stays one-card-per-SIGNAL: one situation that fires three rules keeps producing three cards that can never merge, which is the *"Nitesh Pant × 3"* symptom exactly. **Nullable and no FK, deliberately**: a situation archives on its own lifecycle while its signals stay open |
 | **0180** | `qualified_signals.coverage` jsonb — the window and per-source completeness a negative claim rests on | **every signal INSERT fails** (same reason). And without it **a signal in state `broken` cannot publish at all** — the contract refuses a negative claim with no proof behind it, which is deliberate |
 
 Full detail: [step 2](plan/layer-1/STEP-02-PENDING-HARSH.md) ·
@@ -579,3 +972,82 @@ learned to flatter itself.
 | 18 | joinability: what share of attendees have an email-side key? | |
 | 19 | replies-vs-total query, and **A (re-sync)** or **B (forward-only)**? | |
 | 20 | scratch Postgres URL — **same as #1**, and it now blocks step 17 | |
+| **21** | ⛔ **L3-0A · the backfill window on the pilot connection** — see below | |
+| **22** | ⛔ **migration 0184** applied? — `recorded_at` on the three graph tables | |
+
+---
+
+## 21 · L3-0A · The backfill window (operator action, no deploy)
+
+**Why:** tested against the 23 Sept benchmark mailbox, **5 of 8 waiting relationships and 3 of 4
+broken-promise source messages sit outside the current 60-day window.** They are not badly
+answered — they are invisible.
+
+**The code is already built and now chains correctly** (this step). What is left is one call.
+
+### Step 1 — set the window
+
+```
+PATCH /connections/{connection_id}/backfill-window
+{ "days": 365 }
+```
+
+| days | buys |
+|---|---|
+| 180 | all 8 waiting rows · all 4 broken promises · benchmark **P3** (6 months) |
+| **365** ✅ recommended | **＋ P4** (12-month calendar × email) |
+
+Cost is **one-time and bounded** — the extraction cache means a document is extracted once, ever.
+Range is enforced at 1–3650; an out-of-range value is refused at the edit, not at the next sync.
+
+### Step 2 — drain
+
+```
+POST /connections/{connection_id}/backfill
+```
+
+Background. ⛔ **It now chains into the Layer 2 rebuild by itself** — that chain is what L3-0A
+built. Before this step it did not, so a widened window landed a year of mail and derived no
+situations from it.
+
+### Step 3 — verify
+
+Look for both lines in the log, in this order:
+
+```
+backfill drain done|TRUNCATED org=... scanned=... emitted=...
+l2 history replay org=... moved=True {...}
+```
+
+⛔ **`moved=False` after a first widened drain is the signal to investigate** — it means the
+rebuild ran and found nothing to do, which on freshly landed history should not happen.
+
+**`TRUNCATED` is not a failure.** It means the older tail remains; re-run `POST /backfill` to
+resume. The rebuild runs either way, deliberately.
+
+### What this does NOT do
+
+It does not re-examine facts that were **held** for lack of coverage. Widening history improves
+coverage for those, and nothing revisits them yet — that is Wave 4's held-candidate recovery step,
+and L3-0A's findings are why it exists.
+
+---
+
+## 22 · Migration 0184 · `recorded_at` (knowledge time)
+
+**Apply before, or at the same time as, widening the backfill window (item 21).**
+
+`GET /graph/as-of` answers *"what did GeniOS know when it made that decision?"* with one predicate
+over three tables, and `graph_edges` stamped `valid_from` with **the event's own time** while nodes
+and facts stamped it with the write time. So a backfilled six-month-old email produced an edge
+dated six months ago, and an as-of read of five months ago saw a relationship we learned about that
+morning.
+
+⛔ **Item 21 makes this worse by design** — a year of backfilled mail is a year of backdated edges.
+
+Three nullable columns, three partial indexes, **no backfill of existing rows** (we do not know when
+we learned them, and a value that cannot be reconstructed is not fabricated). Idempotent.
+
+**After applying:** nothing to verify by hand. New rows carry the column; old rows fall through
+`coalesce(recorded_at, valid_from)` to exactly today's behaviour.
+

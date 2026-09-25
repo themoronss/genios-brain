@@ -402,8 +402,27 @@ class BrainKind(str, Enum):
 
 
 @dataclass(frozen=True, slots=True)
-class BusinessSituationObject:
-    """Layer 2's complete, immutable output to the Domain Expertise compiler."""
+class SituationCandidate:
+    """v1 · what Layer 2's assembly produces, BEFORE the admission gate has judged it.
+
+    ⛔ **THIS CLASS WAS CALLED `BusinessSituationObject`, AND SO IS
+    `contracts.situation.BusinessSituationObject`. THE SHARED NAME HAS COST TWICE.**
+
+    1. It cost this plan's first draft a wrong paragraph: the two were recorded as rival
+       duplicates with *"zero callers"*. They are **stages**, joined at
+       `situation_publisher.py:464` — `upgrade_situation(old: SituationCandidate) ->
+       BusinessSituationObject` says so in its own signature.
+    2. It left **fifteen parameters across the whole Domain Expertise compiler** annotated with
+       this class while production hands them the ADMITTED one. Measured by
+       `tests/packs/compiler/test_the_compiler_names_what_it_receives.py`, and corrected by L2-1.
+
+    So: **this is the candidate.** `situation_bso.build_business_situation()` returns it,
+    `validate_situation()` judges it, and only then does `upgrade_situation()` move it onto the
+    typed v2 homes of the admitted object. Sixteen fields here, twenty-eight there.
+
+    The stages are declared in `contracts/situation_stages.py`, with a guard that refuses a third
+    situation type arriving without a row.
+    """
 
     org_id: str
     trace_id: str
@@ -536,6 +555,16 @@ class BusinessSituationObject:
     def brain_subject_keys(self) -> tuple[str, ...]:
         raw = self.metadata.get("brain_subject_keys") or ()
         return require_sorted_unique(raw, "brain subject key")
+
+
+#: ⛔ **DEPRECATED — REMOVE AFTER 2026-12-24.** The date is in
+#: `contracts/situation_stages.ALIAS_REMOVAL`, which is the one place it lives, and a test reads
+#: it from there. An alias with no removal date is not deprecated, it is a permanent second name.
+#:
+#: Kept for one release so twenty importers do not break in a step whose whole point is that the
+#: NAME was the defect. New code names the stage: `SituationCandidate` before admission,
+#: `contracts.situation.BusinessSituationObject` after it.
+BusinessSituationObject = SituationCandidate
 
 
 @dataclass(frozen=True, slots=True)
@@ -937,7 +966,8 @@ __all__ = [
     "WELD_RECEIPT_COUNTERS",
     "addressable_metadata",
     "BrainKind",
-    "BusinessSituationObject",
+    "BusinessSituationObject",  # deprecated alias — see situation_stages.ALIAS_REMOVAL
+    "SituationCandidate",
     "ExpertiseEvidence",
     "ExpertisePackage",
     "SituationContextSlice",

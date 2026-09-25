@@ -5,7 +5,12 @@ from __future__ import annotations
 from collections.abc import Iterable
 from dataclasses import dataclass
 
-from genios_engine.contracts.domain_expertise import BusinessSituationObject
+# ⛔ THE ADMITTED OBJECT, NOT THE CANDIDATE. `domain_shadow.py:881` passes
+# `publication.situation`, which `PublicationResult` types as this class — the compiler
+# never sees an unadmitted one. This import said `contracts.domain_expertise` until L2-1,
+# naming a 16-field candidate while receiving a 28-field admitted object; it survived
+# because the two spelled the same and v2 carries v1-named compatibility properties.
+from genios_engine.contracts.situation import BusinessSituationObject
 
 from .authoring import ExpertBrainCatalog
 from .errors import AuthoringIntegrityError

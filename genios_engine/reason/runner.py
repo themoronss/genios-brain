@@ -69,6 +69,53 @@ def _rules_need_neighbors(rules) -> bool:
 # config, and every emitted signal is stamped with the config_snapshot_id it was scored under.
 
 
+#: ⛔ L3-05 · DECLARED SILENCE — the corroboration hole that is real and not reachable yet.
+#:
+#: `count(distinct sr.source)` collapses copies WITHIN one channel: ten forwards of one email are
+#: one system. It does NOT collapse one original assertion quoted ACROSS channels. CC-27's case —
+#: "a Slack discussion quotes the original email and a meeting summary quotes the Slack discussion"
+#: — is three distinct sources and one lineage, and it would reach the top rung.
+#:
+#: `graph_source_refs.independence_group` is the column for exactly that, and today it is populated
+#: only for the narrow screen/email same-message case in `capture/screen/fingerprint`, never for
+#: general quoting.
+#:
+#: NOT BUILT, ON PURPOSE. A two-connector tenant cannot produce the case, and building a lineage
+#: system for an unreachable failure is the over-scaffolding this plan refuses — the same reason
+#: L3-01 declined to add a second decision identity. Declared with a reason and a mover, the
+#: `DARK_DOMAINS` / `SILENT_LANES` / `EMPTY_BY_DESIGN` idiom.
+LINEAGE_UNPROTECTED: dict[str, tuple[str, str]] = {
+    "cross_channel_quote": (
+        "one original assertion quoted across two or more channels counts as that many distinct "
+        "sources; graph_source_refs.independence_group exists for it and is written only for the "
+        "screen/email same-message case",
+        "the third connector — until then the case cannot occur on a live tenant",
+    ),
+}
+
+#: ⛔ L3-05 · THE CORROBORATION DENOMINATOR, in one place because it was in two.
+#:
+#: `reason/engine` turns this number into the corroboration rung — one:60 / two:85 / three+:100 —
+#: so the difference between `count(distinct sr.source)` and `count(sr.source)` is the difference
+#: between "two systems agree" and "somebody forwarded an email twice". THE `distinct` IS THE WHOLE
+#: PROTECTION, and until this constant existed it was a keyword sitting in two copies of a
+#: hand-written subquery that no test drove: every test in the suite supplies `src_count` as a
+#: literal, so deleting the word would have inflated every fact's confidence to the top rung with
+#: nothing failing anywhere.
+#:
+#: That is exactly the shape L3-04 found between `graph_store._WINDOW_AT` and
+#: `importance.FACT_WINDOW_AT` — a predicate duplicated across two readers — except that one had a
+#: pin holding the copies together and this one had neither a pin nor a single home.
+#:
+#: COUNTED OVER `fact_id`, NOT `fact_version_id`: corroboration accumulates across the versions of
+#: one fact, so a value re-asserted by a second system after the first version was superseded still
+#: counts as two systems agreeing.
+_SRC_COUNT_SUBQUERY = (
+    "  (select count(distinct sr.source) from graph_source_refs sr "
+    "   join graph_facts fv on fv.fact_version_id=sr.fact_version_id and fv.org_id=f.org_id "
+    "   where fv.fact_id=f.fact_id) as src_count "
+)
+
 def _org_visible_clause(conn, alias: str) -> str:
     """ORG-LEVEL RULE AND SIGNAL EVALUATION NEVER READS A SEAT'S PRIVATE FACT (§3.4). A stance
     learned from seat 1's screen may inform seat 1's own query and entity 360 — never a team rule,
@@ -102,9 +149,7 @@ def _load_context(store, org_id, node_id, node_type, *,
                 "  (select min(sr.source) from graph_source_refs sr "
                 "   where sr.org_id=f.org_id and sr.fact_version_id=f.fact_version_id) "
                 "   as source_group, "
-                "  (select count(distinct sr.source) from graph_source_refs sr "
-                "   join graph_facts fv on fv.fact_version_id=sr.fact_version_id and fv.org_id=f.org_id "
-                "   where fv.fact_id=f.fact_id) as src_count "
+                + _SRC_COUNT_SUBQUERY +
                 "from graph_facts f "
                 "where f.org_id=:o and f.subject_node_id=:n and f.valid_to is null "
                 "and f.status='active' " + org_only +
@@ -154,9 +199,7 @@ def _bulk_load_facts(store, org_id) -> dict:
                 "  (select min(sr.source) from graph_source_refs sr "
                 "   where sr.org_id=f.org_id and sr.fact_version_id=f.fact_version_id) "
                 "   as source_group, "
-                "  (select count(distinct sr.source) from graph_source_refs sr "
-                "   join graph_facts fv on fv.fact_version_id=sr.fact_version_id and fv.org_id=f.org_id "
-                "   where fv.fact_id=f.fact_id) as src_count "
+                + _SRC_COUNT_SUBQUERY +
                 "from graph_facts f "
                 "where f.org_id=:o and f.valid_to is null and f.status='active' " + org_only +
                 "order by f.subject_node_id, f.field, f.authority_rank desc nulls last, "

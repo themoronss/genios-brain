@@ -46,6 +46,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from genios_engine.platform.l4_activation import (FEATURE_CARDS_FROM_SITUATIONS,
+                                                  FEATURE_SITUATION_REASONER, L4_FEATURES)
 from genios_engine.platform.logging import get_logger
 
 logger = get_logger(__name__)
@@ -149,9 +151,30 @@ def provision_intelligence(engine, org_id: str, *, by: str = PROVISIONED_BY) -> 
     return result
 
 
-#: Layer 4's features in wave order (`l4_activation.PRECONDITIONS`): each one's prerequisites are
-#: switched on before it.
-L4_DEFAULT_FEATURES = ("roster_v2", "ranking_v2", "bundle", "critique", "brief")
+#: ⛔ WHAT A NEW TENANT IS *NOT* SWITCHED ON, WITH THE REASON. Everything else in `L4_FEATURES` is.
+#:
+#: This block replaces a hand-written tuple of five literal strings that claimed in its own comment
+#: to be "Layer 4's features in wave order (`l4_activation.PRECONDITIONS`)" and was not derived
+#: from either. It had ALREADY DRIFTED: `situation_reasoner` joined `L4_FEATURES` and `PRECONDITIONS`
+#: and never joined this list, so `make_tenant_live` silently never switched on the Context
+#: Reasoner — and nothing said so, because a second copy of a vocabulary does not announce that it
+#: has fallen behind. Deriving it means a feature added to `L4_FEATURES` is switched on by default
+#: unless somebody writes down here why it should not be.
+NOT_DEFAULT_ON = {
+    FEATURE_SITUATION_REASONER:
+        "it spends a MODEL CALL per admitted situation. A default-on switch that costs money per "
+        "row is a bill a tenant never agreed to; this is armed deliberately, per tenant, once "
+        "somebody has looked at the volume.",
+    FEATURE_CARDS_FROM_SITUATIONS:
+        "it is a CUTOVER, not a feature. `deliver/card_source.COMPARISON_KEYS` exists so the old "
+        "per-signal path and the new per-situation path are counted on the SAME sweep before "
+        "either is retired, and switching it on at provisioning would mean no tenant ever ran the "
+        "comparison. ⛔ It also needs an L3 domain live or every card reads UNINTERPRETED "
+        "(`l4_activation.CROSS_LAYER_PRECONDITIONS`).",
+}
+
+#: Layer 4's default features in wave order — `L4_FEATURES` minus the declared exclusions above.
+L4_DEFAULT_FEATURES = tuple(f for f in L4_FEATURES if f not in NOT_DEFAULT_ON)
 
 
 @dataclass(frozen=True, slots=True)

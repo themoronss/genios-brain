@@ -30,6 +30,17 @@ from .store import CardStore
 # the model runs at most budget_per_day times per org — cheap by construction.
 
 
+def _activated_features(graph, org_id: str) -> frozenset[str]:
+    """The tenant's activation rows. Never raises: a delivery pass that dies because it could not
+    read a feature flag is a pass that lost every card to an accounting question."""
+    try:
+        from genios_engine.platform.l4_activation import activated_features
+
+        return frozenset(activated_features(graph.engine, org_id))
+    except Exception:      # noqa: BLE001 — an unreadable flag means the OLD path, which is safe
+        return frozenset()
+
+
 def _open_signals_without_cards(graph, org_id: str,
                                 evaluation_time: datetime | None = None) -> list[dict]:
     as_of = authority_time(evaluation_time)
@@ -109,6 +120,54 @@ def _open_signals_without_cards(graph, org_id: str,
                     d[jf] = {} if jf in ("score_inputs", "capability_render") else []
         out.append(d)
     return out
+
+
+def _open_situations_without_cards(graph, org_id: str,
+                                   evaluation_time: datetime | None = None) -> list[dict]:
+    """L2-7 · the sibling of the selector above. **One row per SITUATION, not per signal.**
+
+    ⛔ **THE FAN-OUT IS AT THE RULE, NOT THE SIGNAL.** `domain_shadow._emit_capability_signal`
+    writes one open signal per `(pack, rule, node)`, so one situation that fires three rules
+    becomes three cards — *"Nitesh's inbound messages dropping"*, *"Nitesh Pant's touch frequency
+    declining"*, *"Check in with Nitesh Pant"*. They can never merge while the builder loops over
+    signals.
+
+    ⛔ **AND `subject_node_id` IS NOT A SUBSTITUTE FOR `situation_id`.** `context_situations` is
+    unique on `(org_id, correlation_id)`, so one node carries several genuinely different
+    situations — a support case and an admin follow-up about the same person. Grouping cards by
+    node would merge things that are not the same thing, which is worse than the fan-out it fixes.
+
+    ⛔ **AND A NULL `situation_id` IS NOT EXCLUDED HERE.** It is grouped as its own bucket, so the
+    caller can surface it labelled rather than never seeing it — see `deliver/card_source`. *"If
+    every signal must belong to a situation to be seen, a correlator gap becomes a silent
+    disappearance."*
+
+    BUILT BESIDE THE OLD ONE, NOT OVER IT. `_open_signals_without_cards` is untouched and stays
+    runnable for one release, because §4 of the step says the two paths are compared on one sweep
+    before either is retired.
+    """
+    as_of = authority_time(evaluation_time)
+    with graph.engine.connect() as c:
+        rows = c.execute(text(
+            "select s.situation_id, "
+            # The signals this situation produced, oldest first — the card builder needs every
+            # one of them, and their ORDER is what makes two sweeps render the same card.
+            "array_agg(s.signal_id order by s.eval_time, s.signal_id) as signal_ids, "
+            "count(*) as signal_count, "
+            "min(s.subject_node_id) as subject_node_id, "
+            "max(s.eval_time) as eval_time "
+            "from signals s "
+            "left join cards k on k.org_id=s.org_id and k.signal_id=s.signal_id "
+            "  and k.state not in ('expired','dismissed') "
+            "where s.org_id=:o and s.status='open' and k.card_id is null "
+            "  and (s.authority_expires_at is null or s.authority_expires_at > :as_of) "
+            # NULL groups as its own row. `group by` treats every NULL as equal in Postgres, so
+            # the uninterpreted signals arrive as ONE bucket the caller can count and label —
+            # never as rows that quietly fail the join.
+            "group by s.situation_id "
+            "order by max(s.eval_time) desc"),
+            {"o": org_id, "as_of": as_of}).mappings().all()
+    return [dict(r) for r in rows]
 
 
 def _apply_abstention(signal: dict, effective: dict) -> dict:
@@ -259,14 +318,51 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
            "absorbed_by_cohort": 0,
            "over_budget_no_push": 0,
            "not_pushed_abstained": 0, "not_pushed_reason_saturated": 0,
-           "pushed": 0, "agent_pushed": 0}
+           "pushed": 0, "agent_pushed": 0,
+           # ⛔ L2-7 · THE COLLAPSE, MEASURED ON EVERY SWEEP WHETHER THE FLAG IS ON OR OFF.
+           # "Both paths measured side by side on the same sweep before the old one is removed" —
+           # and a comparison that only exists AFTER the cutover cannot inform the cutover.
+           # Initialised at zero for the same reason `BY REASON` prints its zeros: a key that
+           # appears only when it fires is a key nobody knows exists.
+           "cards_from_signal": 0, "cards_from_situation": 0, "cards_uninterpreted": 0}
     from .bands import band
+    from .card_source import cards_from_situations, tally_source
     # How many of one situation type may interrupt in a single pass. Counted per pass rather than
     # per day: the point is that a finding which fires across ten accounts is one thing to tell
     # somebody, and the tenth copy carries no information the first did not.
     surfaced_by_reason: dict[str, int] = {}
     identities = _tenant_identities(graph, org_id)   # once per org, not per card
     signals = _open_signals_without_cards(graph, org_id, eval_time)
+
+    # ⛔ L2-7 · THE COLLAPSE RATIO, READ ON EVERY SWEEP. One extra grouped SELECT, no writes, and
+    # it is the number the whole Layer 2 plan is measured by: 38 cards becoming N is a CLAIM until
+    # somebody prints the ratio. `situation_id` is NULL for every signal written before migration
+    # 0182 and for every signal whose situation never formed, and those group as their own bucket
+    # rather than vanishing from the join — because "fewer cards must come from merging, never
+    # from dropping".
+    try:
+        for group in _open_situations_without_cards(graph, org_id, eval_time):
+            tally_source(out, situation_id=group.get("situation_id"))
+    except Exception as exc:      # noqa: BLE001 — a MEASUREMENT may never kill what it measures
+        # The rule this obeys is already written down for `BundleStore.record_call`: "a receipt
+        # that can abort the thing it is a receipt for turns an accounting failure into a product
+        # failure." A missing `situation_id` column before migration 0182, or a graph object that
+        # cannot open a connection, must cost a number on a dashboard and never a card.
+        import logging
+
+        logging.getLogger(__name__).warning(
+            "could not measure the card collapse for org=%s: %s", org_id, exc)
+        # ⛔ RECORDED, NEVER SILENT. A pass that could not measure itself must not look identical
+        # to one that measured zero — that is the invisible refusal L2-0 spent a whole step on.
+        out["collapse_unmeasured"] = 1
+    out["cards_from_signal"] = len(signals)
+
+    # THE FLIP, PER TENANT AND OFF UNTIL A ROW SAYS OTHERWISE. `live_lane` recorded what a global
+    # boolean costs: "one boolean for every tenant at once… it only ever turns lanes ON". The way
+    # back is deleting the activation row, and until one exists the loop below is unchanged.
+    _situation_lane = cards_from_situations(activated=_activated_features(graph, org_id))
+    out["cards_lane"] = "situation" if _situation_lane else "signal"
+
     absorbed = _cohort_absorbed(graph, org_id, signals)
     for sig in signals:
         if sig["signal_id"] in absorbed:

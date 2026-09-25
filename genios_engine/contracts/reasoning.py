@@ -1312,8 +1312,54 @@ class ReasoningBundle:
         return MappingProxyType(out)
 
 
+#: ⛔ L3-01 · THE DECISION OBJECT'S FIVE PROJECTIONS, and the one writer each has.
+#:
+#: "The DecisionObject" appears in six comments across `reason/` and `deliver/` with no type behind
+#: it, and the plan that led here assumed that meant five competing definitions to choose between.
+#: It does not. There is ONE object — `ReasoningDecision` below — and five places it is projected
+#: to. Naming them as projections is what stops the next reader treating a row as a rival
+#: definition, and what makes "where does the card's recommendation come from" answerable.
+#:
+#: `decision_hash` is the identity that ties all five together. It is the semantic hash of the
+#: object, not of any row, which is why a projection can be rebuilt and still be recognised.
+DECISION_PROJECTIONS: tuple[tuple[str, str, str], ...] = (
+    ("ReasoningDecision", "contracts.reasoning",
+     "⛔ THE object. In memory, frozen, hashed by `to_semantic_dict`. Everything else is a view."),
+    ("reasoning_run_outputs", "reason.store",
+     "The persisted row — decision_hash, outcome_kind, confidence_bp, selected_candidate_id. "
+     "The engine's ONLY decision writer, and migration 0031 FKs `signals` to it."),
+    ("l4_reasoning_bundles", "reason.store",
+     "The trace: reasoner results, candidate checks, context snapshot. Keyed on decision_hash."),
+    ("signals (decision columns)", "reason.domain_shadow",
+     "⛔ The SHREDDED projection the card reads — do_nothing_consequence, uncertainty, "
+     "outcome_window_days, rejected_candidates, candidate_steps, citations. runner.py calls its "
+     "assembly point 'the last point it exists in memory', and deliver/pipeline reads the pieces "
+     "back off `signals`. Flat on purpose: the card layer must not re-derive a recommendation."),
+    ("decisions", "api.intelligence_routes",
+     "⛔ The QUERY API's CACHE, and nothing else writes it. Not an engine table."),
+)
+
+
 @dataclass(frozen=True, slots=True)
 class ReasoningDecision:
+    """⛔ THE DECISION OBJECT. One choice, with everything needed to defend and replay it.
+
+    L3-01 named this. Six comments in `reason/` and `deliver/` say "the DecisionObject" and this
+    class is what they mean — it had no docstring, so the concept was named everywhere except on
+    the type that is it. See `DECISION_PROJECTIONS` above for the five places it is projected to
+    and the one writer each has; `decision_hash` (from `to_semantic_dict`) is the identity that
+    ties them together.
+
+    WHAT MAKES IT THE OBJECT rather than one row among several: it carries the losing candidates
+    and why they lost, the uncertainty, the do-nothing consequence, the authored claims QUOTED
+    (not paraphrased), and the corpus rules that fired — so "why not X?" is answerable from the
+    record instead of from a re-run. A row that holds a subset of that is a view of this.
+
+    ⛔ IT IS NOT A DECISION TO ACT. `outcome` may be `no_action`, `defer`, `insufficient_context`,
+    `blocked` or `failed`, and each of those is a real decision that must survive to the surface.
+    A projection that only carries `decision` loses five sixths of the vocabulary.
+    """
+
     outcome: DecisionOutcome
     capability_id: str
     capability_version: str

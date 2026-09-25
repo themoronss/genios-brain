@@ -202,6 +202,13 @@ class ImportanceAttribution(BaseModel):
     #: the real L1 record inexpressible at this seam and break the cutover. `context/situations.
     #: Confidence` already draws exactly this line with its own `inputs` field.
     inputs: Mapping[str, Any] = {}
+    #: ⛔ L2-2 · **the receipt for this interpretation.** Event or evidence ids the claim rests
+    #: on. Optional and empty by default, so nothing that constructs one today breaks — and
+    #: **V-9 names every entry that leaves it empty**, because `MatchedCondition` already states
+    #: the doctrine for the whole family: *"'this fired because of these facts' is what makes a
+    #: situation defensible."* V-9 OBSERVES rather than rejects until somebody has counted how
+    #: many live situations arming it would refuse.
+    evidence_refs: tuple[str, ...] = ()
 
     @field_validator("basis", mode="before")
     @classmethod
@@ -672,6 +679,24 @@ class BusinessSituationObject(BaseModel):
 
     # --- the open lane -----------------------------------------------------------------------
 
+    # --- L2-5 · the interpretation, and it is the LEAST certain thing this object carries -------
+    #: ⛔ **WHAT THE THIRD CLAIM STATE IS FOR.** L2-2 created `ClaimState.HYPOTHESISED` and nothing
+    #: held one, which made it decorative. A hypothesis is PROPOSED, never concluded: it carries
+    #: its own confidence, it is never rendered as fact, and V-9 requires it to cite what it rests
+    #: on — most of all, because it is the least certain claim in the object.
+    hypotheses: tuple[Mapping[str, Any], ...] = ()
+    #: Why this matters, in this tenant's terms. An inference that follows from another inference,
+    #: which is why it is `INFERRED` rather than `HYPOTHESISED` and why it owes a receipt.
+    implications: tuple[Mapping[str, Any], ...] = ()
+    #: ⛔ AN ID, NEVER PROSE. The trace is stored once in `situation_interpretations` and
+    #: referenced, so a situation does not carry a paragraph — and **the gate mints it, not the
+    #: model**, for the reason `EvidenceSpan.verified` may not be self-set: the moment a caller
+    #: can write its own receipt, the receipt stops meaning "checked".
+    reasoning_trace: str | None = None
+    #: ⛔ **AN INTERPRETATION EXPIRES; A FACT DOES NOT.** `None` means nothing was interpreted,
+    #: which is a different answer from an interpretation that has not expired yet.
+    valid_until: datetime | None = None
+
     #: Everything that is genuinely tenant- or sweep-specific and has no field of its own. Walked
     #: for floats at construction, because this is the one lane wide enough to smuggle one and it
     #: reaches a jsonb column where a ratio comes back out as a number nobody can trace.
@@ -884,6 +909,19 @@ class L2Law(str, Enum):
     V7 = "V-7"
     #: A float anywhere in the serialized object. Integer basis points, everywhere.
     V8 = "V-8"
+    #: ⛔ **L2-2 · NO INTERPRETATION WITHOUT A RECEIPT.** An entry in an inference field that
+    #: cites nothing. `MatchedCondition` already enforced this for itself — *"'this fired because
+    #: of these facts' is what makes a situation defensible"* — while `Anomaly`,
+    #: `MetricCorrelation`, `CohortPosition` and `ImportanceAttribution` carried **no evidence
+    #: reference at all**, and all four are constructed on live paths.
+    V9 = "V-9"
+    #: ⛔ **L2-2 · NO CLAIM OF COMPLETENESS WITHOUT COVERAGE.** An empty `missing_facts` on a
+    #: situation whose `coverage_ready` is not true says *"nothing is missing"* about data that
+    #: was never complete enough to conclude that. `quality/missing.py` guards the opposite
+    #: direction already: *"`GENUINELY_ABSENT` is unconstructible without `coverage_ready=True`"*.
+    #: **Narrowed by measurement:** 11 of 37 registered situation types declare no
+    #: `expected_fields`, and for those an empty list is the right answer rather than a claim.
+    V10 = "V-10"
 
 
 class LawAction(str, Enum):
@@ -897,16 +935,49 @@ class LawAction(str, Enum):
     """
 
     REJECT = "reject"
+    #: ⛔ **L2-2.** Carried on the decision, and the situation still publishes. For a law that is
+    #: believed right and whose blast radius nobody has measured — arming it first is how a
+    #: cutover looks like a breakage. L1's step 10 set the precedent by gating itself on a count.
+    #: **An OBSERVE law is not a soft law.** It is a law waiting for its number.
+    OBSERVE = "observe"
 
 
-#: Every law's action, explicitly. Uniform today (see `LawAction`); a law that later downgrades or
-#: parks is a one-line change here plus a branch in `validate_situation`, rather than a condition
-#: somebody has to notice.
-LAW_ACTIONS: Mapping[L2Law, LawAction] = {law: LawAction.REJECT for law in L2Law}
+#: Every law's action, explicitly. The eight original laws REJECT; L2-2's two OBSERVE until the
+#: pilot count is known (Harsh). Written as data rather than assumed, because — in this table's
+#: own earlier words — *"getting a failure action backwards does not fail loudly: it silently
+#: changes what reaches the layer above."*
+LAW_ACTIONS: Mapping[L2Law, LawAction] = {
+    **{law: LawAction.REJECT for law in L2Law},
+    L2Law.V9: LawAction.OBSERVE,
+    L2Law.V10: LawAction.OBSERVE,
+}
+
+#: ⛔ V-9's subjects: the inference fields whose entries must cite what they rest on. Every one is
+#: classified `INFERRED` in `contracts/claim_state.FIELD_CLAIMS`, and a test holds the two tables
+#: to each other — a receipt demanded of an OBSERVATION would be a loop, since evidence IS the
+#: receipt.
+#: field -> the singular a failure detail should print. Spelled out rather than sliced: `field[:-1]`
+#: produced "this anomalie cites nothing" on the first run, and a detail line is the sentence a
+#: reviewer reads months later with no stack to check it against.
+RECEIPT_REQUIRED: Mapping[str, str] = {
+    # ⛔ L2-5's two, and they owe a citation MOST of all: a hypothesis is the least certain thing
+    # this object carries, and an implication is an inference drawn from another inference.
+    "hypotheses": "hypothesis",
+    "implications": "implication",
+    "anomalies": "anomaly",
+    "correlations": "correlation",
+    "cohort_positions": "cohort position",
+    "trends": "trend",
+}
 
 
 class SituationOutcome(str, Enum):
-    """What the gate decided. Two outcomes, because all eight laws reject."""
+    """What the gate decided.
+
+    Two outcomes, and there are now TEN laws rather than eight: L2-2's V-9 and V-10 are declared
+    `OBSERVE`, so they are carried in `failures` on an **ADMIT**. A decision can therefore be
+    admitted and still say what it noticed, which is the shape `LawAction` was built for.
+    """
 
     #: Every law held. `situation` on the decision is the object to hand upward.
     ADMIT = "admit"
@@ -1084,7 +1155,71 @@ def _correlation_failures(correlation: Any, subject: str) -> list[LawFailure]:
     return failures
 
 
-def validate_situation(situation: BusinessSituationObject) -> SituationDecision:
+def _receipt_failures(situation: Any) -> list[LawFailure]:
+    """V-9 · every interpretation entry that cites nothing.
+
+    Read defensively with `getattr`, for the same reason `_cohort_failures` is: this runs after
+    construction precisely because the object may not have been through one.
+    """
+    failures: list[LawFailure] = []
+    for field, singular in RECEIPT_REQUIRED.items():
+        for index, entry in enumerate(getattr(situation, field, None) or ()):
+            # `Trend` spells its receipt `evidence_points`; the other three spell it
+            # `evidence_refs`. Both are read, because renaming a shipped field to make one rule
+            # simpler is churn the rule does not need.
+            cited = (getattr(entry, "evidence_refs", None)
+                     or getattr(entry, "evidence_points", None) or ())
+            if not cited:
+                failures.append(LawFailure(
+                    law=L2Law.V9, subject=f"{field}[{index}]",
+                    detail=f"this {singular} cites nothing — 'this fired because of these "
+                           f"facts' is what makes a situation defensible, and a reader cannot "
+                           f"check a conclusion whose inputs are not named"))
+    return failures
+
+
+def _completeness_failures(situation: Any, expected_facts: tuple[str, ...] | None) -> list[LawFailure]:
+    """V-10 · an empty `missing_facts` on a situation whose coverage never allowed that claim.
+
+    ⛔ **`expected_facts` IS HANDED IN, NEVER FETCHED, AND THE RATCHET IS WHY.** The first draft of
+    this rule imported `context.domain_spec` inside the function and claimed the deferral kept
+    `contracts`' import rule intact. It did not: `test_the_import_direction_ratchet_still_holds`
+    failed with *"situation.py imports genios_engine.context"* on the next run. **A contract may
+    import platform and stdlib only** — which is exactly the shape
+    `build_business_situation(refusal=...)` already uses: *"computed by the caller because this
+    builder holds no connection, and passed in."*
+
+    ⛔ **`None` MEANS THE CALLER DID NOT COMPUTE IT, AND THE LAW IS THEN NOT EVALUATED** — it does
+    not mean "nothing is expected". Those are different facts and only the second is a judgement.
+    `situation_publisher` passes the real value; a test proves it does, because a law nobody
+    supplies the input for is the invisible refusal L2-0 spent a whole step on.
+
+    ⛔ **NARROWED BY MEASUREMENT.** The registry declares `expected_fields` for 26 of its 37
+    situation types. For the other 11 nothing could be missing, so an empty list is the right
+    answer — and the plan's unconditional rule would have accused every one of them.
+
+    `None` coverage lands with `False`, the reading `quality/missing.py` already uses: *"consulted
+    BEFORE absence is ever concluded, and `None` lands with `False`."*
+    """
+    if expected_facts is None:
+        return []
+    if getattr(situation, "missing_facts", None):
+        return []
+    if _claims(getattr(situation, "coverage_ready", None)):
+        return []
+    if not expected_facts:
+        return []
+    situation_type = _word(getattr(situation, "type", "") or "")
+    return [LawFailure(
+        law=L2Law.V10, subject="missing_facts",
+        detail=f"empty on a `{situation_type}` whose coverage is not ready, while its domain "
+               f"declares {len(expected_facts)} field(s) that could be absent — 'nothing is "
+               f"missing' is a claim about data nobody had enough of to make it")]
+
+
+def validate_situation(situation: BusinessSituationObject, *,
+                       expected_facts: tuple[str, ...] | None = None,
+                       ) -> SituationDecision:
     """THE L2 GATE · run all eight laws over an assembled situation and return a typed decision.
 
     Every rule here is also enforced at construction by the type that owns the field, and the
@@ -1092,6 +1227,10 @@ def validate_situation(situation: BusinessSituationObject) -> SituationDecision:
     that did not go through a constructor (`model_construct`, a row rehydrated by hand, a builder
     that assembled a sub-object before a later edit tightened its rules) and for the caller whose
     next move is a ledger row rather than a stack unwind.
+
+    `expected_facts` is V-10's input and is HANDED IN rather than fetched — the field names this
+    situation's domain says could be absent. `None` means the caller did not compute it and V-10
+    is not evaluated; it does NOT mean nothing is expected. See `_completeness_failures`.
 
     Failures are returned in V-order and ALL of them are returned, because a situation that fails
     V-2 and V-6 has two different upstream defects and fixing one would otherwise reveal the other
@@ -1112,14 +1251,22 @@ def validate_situation(situation: BusinessSituationObject) -> SituationDecision:
             law=L2Law.V8, subject="situation",
             detail=f"{exc} — every score is integer basis points and a ratio stored as jsonb "
                    "comes back out as a number nobody can trace to a source"))
+    failures.extend(_receipt_failures(situation))
+    failures.extend(_completeness_failures(situation, expected_facts))
     order = {law: rank for rank, law in enumerate(L2Law)}
     ranked = tuple(sorted(failures, key=lambda failure: (order[failure.law], failure.subject)))
-    if ranked:
+    # ⛔ THE BRANCH `LawAction` ASKED FOR IN ITS OWN DOCSTRING — *"a law that later downgrades or
+    # parks is a one-line change here plus a branch in `validate_situation`"*. The OUTCOME turns
+    # on the ACTION, never on whether any failure exists, so arming V-9 or V-10 is a change to
+    # `LAW_ACTIONS` and to nothing else. ALL failures are carried either way: an observed
+    # violation that is not reported is the invisible refusal L2-0 spent a step on.
+    if any(failure.action is LawAction.REJECT for failure in ranked):
         return SituationDecision(outcome=SituationOutcome.REJECT, failures=ranked)
-    return SituationDecision(outcome=SituationOutcome.ADMIT, situation=situation)
+    return SituationDecision(outcome=SituationOutcome.ADMIT, failures=ranked, situation=situation)
 
 
-__all__ = ["BUSINESS_SITUATION_V2_VERSION", "CONFIDENCE_AXES", "LAW_ACTIONS", "SITUATION_STATES",
+__all__ = ["BUSINESS_SITUATION_V2_VERSION", "CONFIDENCE_AXES", "LAW_ACTIONS",
+           "RECEIPT_REQUIRED", "SITUATION_STATES",
            "BusinessSituationObject", "ConfidenceVector", "ImportanceAttribution",
            "ImportanceBasis", "L2Law", "LawAction", "LawFailure", "MatchedCondition",
            "SituationDecision", "SituationEntity", "SituationOutcome", "SituationRelationship",

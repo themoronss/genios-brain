@@ -107,8 +107,23 @@ def test_a_scoped_key_is_refused_before_any_database_lookup():
 
 def test_the_five_features_are_the_plans_five_in_wave_order():
     """Doc 07 names five. Wave order rather than alphabetical, because alphabetical would put
-    `bundle` — the narrative — before `ranking_v2`, the formula it narrates."""
-    assert ACT.L4_FEATURES == ("roster_v2", "ranking_v2", "bundle", "critique", "brief")
+    `bundle` — the narrative — before `ranking_v2`, the formula it narrates.
+
+    ⛔ **L2-5 ADDED A SIXTH, AND THE CLOSED VOCABULARY IS WHY THAT WAS SAFE.** This test refused
+    `situation_reasoner` until it also had a wave, an effect and a precondition row — which is
+    exactly what the table is for: a feature an operator can switch on and nobody can describe is
+    a switch with no meaning. Doc 07's five are still asserted, in order, as their own claim.
+
+    ⛔ **L3-19 ADDED A SEVENTH, AND THIS TEST CAUGHT IT — WHICH IS THE POINT.**
+    `cards_from_situations` had existed as a literal in `deliver/card_source.FEATURE` since L2-7,
+    gating the whole per-situation delivery lane, and was NOT in this vocabulary. So
+    `require_feature` refused the name, no tenant could be switched on, and `_situation_lane` was
+    False on every production pass while every one of the lane's own tests passed. Registering it
+    turned this assertion red on the same run, exactly as it did for L2-5, and it was extended
+    deliberately rather than loosened — the tail stays EXACT so an eighth cannot arrive quietly.
+    """
+    assert ACT.L4_FEATURES[:5] == ("roster_v2", "ranking_v2", "bundle", "critique", "brief")
+    assert ACT.L4_FEATURES[5:] == ("situation_reasoner", "cards_from_situations")
     assert set(ACT.EFFECTS) == set(ACT.L4_FEATURES) == set(ACT.FEATURE_WAVES)
     assert set(ACT.PRECONDITIONS) == set(ACT.L4_FEATURES)
     assert ACT.FEATURE_WAVES["bundle"] == "Z4"

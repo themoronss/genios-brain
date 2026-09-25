@@ -1094,7 +1094,23 @@ CONFLICT_TABLE = "signal_conflicts"
 #: a reader that took the LATEST row would answer March's question with September's cohort. Pinned
 #: against `graph_store` by a test so the two cannot drift — doc 02's acceptance row, "replaying a
 #: March decision against as_of=March reproduces its inputs", is one predicate wide.
-FACT_WINDOW_AT = "valid_from <= :t and (valid_to is null or valid_to > :t)"
+#:
+#: ⛔ L3-04 · `coalesce(recorded_at, valid_from)`, AND THE PIN IS WHY THIS LINE MOVED AT ALL.
+#: `graph_store` was changed because its three tables disagreed about what `valid_from` means:
+#: nodes and facts take the column's write-time default (knowledge time) while edges bind it to
+#: the event's own time. This module holds a SECOND COPY of the same predicate over `graph_facts`,
+#: and the only reason it is not still the old one is that
+#: `test_the_point_in_time_window_matches_the_graph_store` failed the moment the first copy moved.
+#: A duplicated predicate with a pin is a duplication that announces itself; without the pin this
+#: reader would have quietly kept answering a different question from the store it mirrors.
+#:
+#: ⛔ THE WORDING ABOVE AVOIDS THE LITERAL CLOCK CALL ON PURPOSE. `test_doctrine_four_no_clock_in_
+#: this_module` scans this whole file for the SQL and Python clock calls, comments included, and
+#: it is right to: a module whose whole job is replayability should not contain those tokens at
+#: all, because a reader skimming for one must not have to decide which occurrences are real and
+#: which are prose. The guard was not loosened to let this comment through.
+FACT_WINDOW_AT = ("coalesce(recorded_at, valid_from) <= :t "
+                  "and (valid_to is null or valid_to > :t)")
 
 #: A candidate fact is a PROPOSAL, not a reading — never a modifier input. Superseded rows are NOT
 #: excluded, and that is the point of the window: at an `eval_time` inside its stint, a since-

@@ -211,24 +211,290 @@ a decision, a migration or an access I cannot do from this machine.**
 
 ## LAYER 1 — COMPLETE
 
-*Not written yet. This section is filled only when every step above has passed its proof, and it
-must contain: what was built, the START-vs-END number for all six metrics, what is still open and
-why, and what was deliberately not done.*
+**Closed 2026-09-25.** Eighteen steps, all code-complete. **Nothing is open because nobody got to
+it** — every remaining item is a number somebody must read, a migration somebody must apply, or a
+decision somebody must make, and each is named with its owner below.
+
+### What was built
+
+| | |
+|---|---|
+| steps | **18**, each with a findings file, a cost check run BEFORE the build, and four artifacts on completion |
+| scenarios | **39** — closed 29 · guard 5 · open 1 · corpus 4 · impossible 1 |
+| migrations | **six** (0176–0181), **none applied** |
+| model calls added | **zero.** Every step that could have added one derived the value instead — steps 6, 7, 9 and 14 each changed their own design at the cost check |
+| `vocabulary_fingerprint` | `a3d5496aa0d3`, unchanged across steps 9–18 |
+
+### The six numbers, at END
+
+Already stated above, and the honest part is what is NOT given a number: **three of six are
+`⛔ unmeasurable`** because the pilot corpus no longer exists. **Writing a figure there would be
+the failure this whole round was built to end** — a number nobody measured, sitting in a table
+that looks measured.
+
+| moved | blocked |
+|---|---|
+| **2** · seam columns 9 → **17 declared** | **1** · attachments — the corpus is gone |
+| **3ʹ** · claim lanes 8 → **11 of 15** | **4** · domain coverage — needs the corpus |
+| **6** · benchmark **15 → 24 of 38** | **5** · relevance — needs the corpus |
+
+⛔ **Metric 6 is +9 and still short of 30+.** `calibrate()` reports **0 unexplained and 0
+regressed**, so the movement is real and not a harness flattering itself.
+
+### What is still open, and why
+
+| | owner | why |
+|---|---|---|
+| **S01b** · `last_inbound_at` | **Rohit — priced** | Three routes; only one is correct, and it needs a migration, a connection plumbed into `_thread_context`, and **one read per threaded event on a module that issues one `.execute(` in its entirety.** It buys **2 benchmark objects**. The seam is already correct — this is a supplier decision, not a code gap |
+| **S15 · S17 · S29 · S33** | Harsh | the LOGIC is proven against synthetic data; the DISTRIBUTION needs the pilot |
+| **six migrations** | Harsh | 0176–0181. Three are **hard ordering constraints** — the signal store names those columns |
+| **17-U6** | Harsh | **991 of 995 skips are one environment variable.** A skip is not a pass |
+| **step 10** | Harsh | it **gated itself on a measurement** rather than guessing whether a fourth outcome should exist |
+
+### What was deliberately NOT done
+
+* **No LLM was added anywhere.** Four steps looked at one and derived the value instead.
+* **The prompt was never moved.** `vocabulary_fingerprint` is the same string it was at step 9, so
+  no step re-extracted the corpus.
+* **S02 · bcc** — **impossible**, not deferred. Gmail does not supply it, and on a message we
+  RECEIVED it is invisible by definition.
+* **The 60-day backfill window was not raised.** Until it is, benchmark P3 and P4 are
+  **impossible, not unproven** — and the STATUS says so rather than citing them.
+
+---
+
+## LAYER 2 — COMPLETE
+
+**Closed 2026-09-24, swept 2026-09-24.** Nine steps, all code-complete, and a 0→8 sweep after
+them — see [`layer-2/09-SWEEP-0-TO-8.md`](layer-2/09-SWEEP-0-TO-8.md).
+
+| | |
+|---|---|
+| steps | **9**, each with a findings file and the same four artifacts |
+| scenarios | **40** — closed 29 · guard 3 · **OPEN 0** · harsh 7 · impossible 1 |
+| migrations | **two** (0182, 0183), **neither applied** |
+| model calls added | **one site** — R-6, registered behind the existing gate, **off on every tenant** |
+| cutover switches | **seven**, all off, each with its number named |
+
+### ⛔ What this layer turned out to be
+
+**Almost none of it was a build.** Every step's premise check changed its own step, and four
+changed a later one:
+
+| the plan said | measured |
+|---|---|
+| build the refusal accounting | three quarters already existed |
+| author a fundraising corpus | **it was authored, inside Sales** — one `None` hid it |
+| add six interpretation fields | v2 was already full of interpretation; the **label** was missing |
+| build a reasoner slice | four of five criteria were already true, and nothing watched them |
+| build a gate | the gate existed; Layer 2 owed the validator |
+| 534 capabilities · 37% admissible | **155 · 100%** |
+| ~40 situations · 10× saving | **159 · 2.9×** |
+| "the largest saving in the plan" | **about $3 a month** |
+
+### What is still open, and why
+
+**Zero OPEN scenarios.** Seven wait on the pilot database, one is a decision between three
+corpora that nobody should make by hand. All ten remaining items are in
+[`../HARSH-ORDER.md`](../HARSH-ORDER.md) — **two migrations, five measurements, three decisions,
+and no code.**
+
+⛔ **Two of them are the whole product:** pointing `fundraising` at `sales` (the pilot is a
+fundraising founder and the doctrine already exists), and reading the shadow tallies (the only
+thing between a layer that is built and a layer that is on).
 
 ---
 
 ## LAYER 2 — START
 
-*Not opened. Layer 2's known headline before any work: the admission gate holds **114 situations**
-of type `awaiting_response` and `first_response_overdue` at **0% admission**, because their
-evidence is a silence and `verified_evidence_required` holds anything with no quoted span. This is
-the largest single loss in the whole system and it is not Layer 1's.*
+**Opened 2026-09-24.** Plan: [`layer-2/`](layer-2/) — [overview](layer-2/00-OVERVIEW.md) ·
+[architecture](layer-2/ARCHITECTURE.md) · nine step files.
+
+### What Layer 2 is, at the moment work began
+
+```
+genios_engine/context/   111 files   48,322 LOC      ← LARGER than L1's 42,311
+                         57 root modules · 8 code subpackages · 5 content (YAML) subpackages
+7 groups · 44 components · 46 planned units
+```
+
+### ⛔ The diagnosis
+
+**Layer 2's dominant failure is a refusal that is right and invisible.**
+
+| | measured | status |
+|---|---|---|
+| situations held, L1 published nothing | **63 of 159** — scored 528–1920 vs a floor of 2500 | refusal correct, **silence is not** |
+| support situations unrouted | **33** — `support` vs `customer_support` | *"why the miss was invisible"* |
+| fundraising domain | **no corpus** — `domain = None` → no package, no signal | the pilot is a fundraising founder |
+| untraceable promises | **21**, ten carded before refusal | *"the founder saw promises nobody made"* |
+
+Plus two structural findings:
+
+* ⛔ **The card is built from a SIGNAL, not a situation** — `deliver/pipeline.py:269` loops over
+  `_open_signals_without_cards`. Three measurements about one person become three cards and can
+  never merge.
+* ⛔ **Six interpretation fields are missing from the contract** — `observed_facts`,
+  `inferred_state`, `hypotheses`, `implications`, `reasoning_trace`, `valid_until`. Every field
+  present is an observation field. Every field missing is an interpretation field.
+
+### ⛔ PRE-FLIGHT — measured 2026-09-24, before step 0
+
+[`layer-2/03-PRE-FLIGHT.md`](layer-2/03-PRE-FLIGHT.md) · **it corrected the plan in three places.**
+
+**Layer D is not thin, and it is not inadmissible either.** ⛔ **THIS PARAGRAPH WAS WRONG AND L2-0
+CORRECTED IT** — [findings](layer-2/findings/step-00-visible-refusals.md) §2.
+
+`211 / 156 / 167` counted **FILES**. A capability is a *directory* of `capability.yaml` +
+`objects.yaml` + `knowledge.yaml`, with situation files nested beside them — three kinds, two
+rules, one denominator, one ceremony applied to all of it.
+
+| | capabilities | **admissible** | situations | **`draft`** |
+|---|---|---|---|---|
+| Admin | 59 | **59** | 34 | **8** |
+| Sales | 47 | **47** | 15 | 0 |
+| Customer Support | 49 | **49** | 20 | **16** |
+| | **155** | **155 — 100%** | **69** | **24** |
+
+✅ **`require_admission=True` at L2-8 takes ZERO capabilities dark.** Every content hash was
+recomputed and verifies.
+
+⛔ **The real gap is 24 `draft` situations**, and their cost is stated in the rule itself: the
+package goes `review_state='draft'`, `_apply_abstention` downgrades the card to an **OBSERVATION**
+— *"the intelligence still ships; it stops instructing."* **One word per file, by an author.**
+
+Both circulating numbers were wrong: `domain_shadow`'s *"152"* is stale; *"211"* was Admin alone.
+
+**And Plane R is far more complete than the plan assumed.** 114 files, 39,012 LOC, already holding
+`decision_maker.py`, `llm_decision_maker.py`, `critique.py` and **`interpretation.py` — R-1, whose
+contract is stronger than anything this plan wrote**: *"the model's output is an input to a
+deterministic computation"* and ⛔ *"**it cannot raise confidence**."*
+
+⛔ **One gate already exists for every model consult** — `RSiteGate`, seven steps: activation,
+precondition, budget, cache, tier, **the caller's validator**, deterministic fallback. *"No R-site
+may call a model directly."*
+
+**Three corrections:** the Context Reasoner is not absent, its *pattern* exists · L2-5 registers an
+**R-site**, it does not build a gate · L2-6 writes the **validator**, the gate calls it.
+
+⛔ **And the third repetition of one sentence.** `domain_shadow` compiles and drops. R-1 *"has never
+fired on the pilot tenant."* 63% of the corpus is authored and inadmissible. **This engine's problem
+is not absence — it is things built correctly and never switched on.**
+
+### ⛔ RE-ANALYSIS — the premise was wrong
+
+[`layer-2/04-RE-ANALYSIS.md`](layer-2/04-RE-ANALYSIS.md). **Layer 2 is not half-built. It is built
+and unswitched.**
+
+⛔ **All five benchmark prompts already have a situation type**, each declaring the fields it is
+expected to know:
+
+| | type | and it declares |
+|---|---|---|
+| P1 | `awaiting_response` | ⛔ **`their_normal_reply_days`** — the column Gemini AND Claude both skipped |
+| P2 | `commitment_overdue` | `delivered_at` |
+| P3 | `organization_gone_quiet` | `longest_wait_days` |
+| P4 | `meeting_follow_through` | `recap_sent` |
+| P5 | `condition_in_review` | `quote` |
+
+⛔ **`fundraising` IS a registered L2 domain** — `investor_relationship`, `investor_contact`. L2
+mints them; **no corpus was ever authored to read them.** Authoring, not code.
+
+⛔ **Typed absence already exists with five states** — `PRESENT · STALE · NOT_EXPECTED · UNKNOWABLE
+· GENUINELY_ABSENT` — consulting `coverage_ready` before concluding absence, wired producer to
+consumer. **Step 2 was going to rebuild it binary.**
+
+### ⛔ Eight things built and never switched on
+
+```
+domain_shadow compile      live=False for every caller
+R-1 interpreter            "has never fired on the pilot tenant"
+155 capabilities           155 admissible ✅ — the 534 was a file count (L2-0)
+69 situations              24 still `draft` — their cards cannot instruct
+typed absence              consulted by the compiler, shown to no human
+63 held situations         l1_refusal() has the score; nothing renders it
+33 support situations      "which is why the miss was invisible"
+fundraising situations     minted, no corpus
+L1 conversation fields     landed step 18; attention.py still recomputes its own
+```
+
+`quality/inference.py` names the shape: *"a well-typed value **nobody consults, which is
+indistinguishable from not having built it**."*
+
+**Genuinely missing: `observed_facts` (0 files) · `inferred_state` (0 files) · an L2 reasoner site ·
+Persona Brain · card-from-situation · goals · the fundraising corpus.** Ten items; four are code.
+
+### LAYER 2 — STEPS
+
+| # | step | status | headline | date |
+|---|---|---|---|---|
+| 0 | [Make every refusal visible](layer-2/step-00-visible-refusals.md) | **✅ COMPLETE** ([findings](layer-2/findings/step-00-visible-refusals.md)) | **77 situations producing nothing** — a number that did not exist before. ⛔ **AND THE PLAN'S OWN CORPUS NUMBER WAS WRONG BY 3.4×:** *"534 capabilities, 200 admissible, 334 dark at cutover"* counted **FILES** — a capability is a directory of three. Measured **155 capabilities, 155 admissible, 0 hollow**, with all 155 content-hashes recomputed and verified. `require_admission=True` costs **zero**, which re-shapes steps 4 and 8. Three quarters of the step was **already built and unassembled** — `l1_refusal()` already returns the score, `situation_admission_decisions` already IS the ledger, the declared-silence idiom already existed twice — so the build **extended it to domains** rather than rebuilding it. ⛔ **AND THE REAL GAP UNDERNEATH IT: 24 of 69 authored situations are `draft`** — 16 of Customer Support's 20 — each downgrading its card to an OBSERVATION: *"the intelligence still ships; it stops instructing."* One word per file → **Harsh 22**. 29 tests, no migration, no model call, 0 regressions | 2026-09-24 |
+| 1 | [Name it](layer-2/step-01-names.md) | **✅ COMPLETE** ([findings](layer-2/findings/step-01-names.md)) | ⛔ **THE SHARED NAME HAD COST FAR MORE THAN A PARAGRAPH: 15 parameters across the ENTIRE Domain Expertise compiler were annotated with the CANDIDATE (16 fields) while every production sweep hands them the ADMITTED object (28).** Invisible because the two spelled the same and v2 carries seven v1-named compatibility properties — `expertise_builder:76` reads `situation.confidence_bp`, a field v2 does not have, and it works only through that shim. `upgrade_situation` had already written the diagnosis: *"every consumer read the v1 compatibility views, so the typed contract was decorative."* And the compiler's own tests construct v1 — **the shape production never sends it.** Fixed with one import line per module, **zero runtime change**. The new totality guard refused two more types on its first run. 13 tests, `vocabulary_fingerprint` **`a3d5496aa0d3`** unchanged, 0 regressions | 2026-09-24 |
+| 2 | [Six interpretation fields](layer-2/step-02-six-fields.md) | **✅ COMPLETE · fields DEFERRED to L2-5** ([findings](layer-2/findings/step-02-interpretation-fields.md)) | ⛔ **THE PREMISE WAS BACKWARDS.** *"Every field that exists is an observation field"* — v2 is **full** of interpretation and says so itself (`visibility` *"a DERIVED claim"*, `missing_facts` *"the entries are FINDINGS"*, V-4…V-7 exist **because** trends can be wrong). L2 lacks the **label**, not the interpretation — so the step classified the 28 existing fields and needed **no migration**. ⛔ **And V-9 had four subjects the day it was written:** `Anomaly`, `MetricCorrelation`, `CohortPosition`, `ImportanceAttribution` carry **no evidence reference at all**, all built on live paths. Two laws added (V-9, V-10), both **OBSERVE not REJECT** — the count that arms them is Harsh 24. **Two guards caught this build and both were right**: the import ratchet (a contract may not read the registry — fixed by handing the input in) and `test_h0_gate` (a non-rejecting action must bring its machinery — built, and the observations now land in the durable ledger and L2-0's report). ⛔ **The four absent fields + migration 0182 ship WITH L2-5**, because *"a field with no writer is the `started_at` mistake"* and L2-5 is five steps away. 30 tests, `a3d5496aa0d3` unchanged, 0 regressions | 2026-09-24 |
+| 3 | [The evidence slice](layer-2/step-03-evidence-slice.md) | **✅ COMPLETE · persistence DEFERRED to L2-5** ([findings](layer-2/findings/step-03-evidence-slice.md)) | ⛔ **FOUR OF FIVE CRITERIA WERE ALREADY TRUE AND UNWATCHED** — L2-0's finding again. The builder does **zero I/O** (it cannot N+1 because it cannot query), the loaders are one org-wide query each, and `_org_visible_clause` **names *"a situation slice"* in its own docstring**. All four now guarded. ⛔ **The measurement contradicted the plan:** §2's *"10,000-token thread vs 900-token slice"* holds at 8 facts (714 tok) and **fails at 100 (8,049 tok)** — the saving is the node being small, not the slice being a slice. Became `SLICE_TOKEN_BUDGET`, which **reports and never truncates**. ⛔ **`slice.evidence` is written by nothing, read by nothing, and sits INSIDE the content address** — filling it moves every package address, the churn that once took the database to 995 MB and read-only. Declared with an ENDS WHEN. **Criterion 5 is half true**: the hash is stored, the slice is not — a fingerprint is not a record. 19 tests, 0 regressions | 2026-09-24 |
+| 4 | [Domain Compiler](layer-2/step-04-domain-compiler.md) | **✅ COMPLETE · route DECLARED, not armed** ([findings](layer-2/findings/step-04-domain-compiler.md)) | ⛔⛔ **THE FUNDRAISING DOCTRINE EXISTS AND ONE `None` MAKES IT UNREACHABLE.** The plan said *"no fundraising corpus exists — the fix is authoring, not code"*. Measured: `sales.sit.live_investor_relationship` and `sales.sit.live_investor_contact` are authored, **stable and approved**, behind `sales.investor_relations.investor_relations` — *"the people who might fund the company: funds, accelerators, angels"* — and the Sales registry routes **both** of fundraising's types to them. **The largest non-code item in the plan is a one-line code change.** Declared in `CANDIDATE_ROUTES` with its evidence, **NOT armed** until the pilot count exists (Harsh 26); routing is per situation TYPE so there is **zero generic-sales exposure**, proven and kept proven. ⛔ **`general` is dark for a different reason** — `relationship` is claimed by all three corpora, so a route is a CHOICE nobody made; one sentence covered both. ⛔ **Three places stated one fact and agreed by coincidence** — the map is now total over the registry and bound to `DARK_DOMAINS`; `support` was forgotten once and 33 situations died for it. ⛔ **U4's model call NOT built**: the rate is **34% not 5%**, the answer has **four** values not sixty-nine, and what it would propose is what the step forbids. 17 tests, 0 regressions | 2026-09-24 |
+| 5 | [Context Reasoner](layer-2/step-05-context-reasoner.md) | **✅ COMPLETE · PENDING · HARSH** (migration 0183) ([findings](layer-2/findings/step-05-context-reasoner.md)) | ⛔ **THE COST CHECK WAS NOT BLOCKED AND IT CORRECTED THE PLAN TWICE.** *"~40 calls, a 10× saving"* — the pilot carries **159 situations** (already recorded in `l1_refusal`), so it is **2.9×**. And *"the largest saving in the plan"* is **~$3/month**; the rule survives as a **quality** rule, not a cost one. Registered as **R-6** behind the one gate — zero new metering, proven by AST — **with its activation feature, wave, effect and precondition**. R-1's law copied verbatim: **it cannot raise confidence**, and silence is the fallback. ⛔ **The topology test moved the module out of `context/`** — Layer 2 may not import Layer 4; an R-site lives where R-sites live. ⛔ **Both deferred debts paid, and the shape changed**: v2 is **never persisted as a row**, and an interpretation **expires** while a situation does not — so `situation_interpretations` (0183), which also stores **the slice**, closing L2-3's *"a fingerprint is not a record"*. Four guards caught this build; every one was right. 35 tests, 0 regressions | 2026-09-24 |
+| 6 | [The validation gate](layer-2/step-06-validation-gate.md) | **✅ COMPLETE** ([findings](layer-2/findings/step-06-validation-gate.md)) | ⛔ **THE FOUR CHECKS NAMED FIELDS L2-2 DID NOT BUILD.** Check 2 reads *"`inferred_state` must cite an `observed_fact`"* and **neither exists** — L2-2 classified v2's 28 fields instead of minting six. So a PROPOSAL is `{field: value}` over `model_writable_fields()`, **the list L2-2 built for this exact caller**: this is where that classification stops being a table and becomes a gate. ⛔ **The unplanned check is the one §1 argues for and could not write** — authority: 14 fields a model may propose, 14 it may never, `visibility` refused because *a model that may set it may widen an audience*. ⛔ **The gate's BINARY protocol nearly swallowed `UNKNOWN`** — returned as `None` it is retried and filed as a failed generation, a correct refusal made to look like a broken model. ⛔ **Six mutation probes neutralise the RULE, not this module** — proving each check reads `model_may_write` / `RECEIPT_REQUIRED` / `fact_write_action` rather than owning a copy. ⛔ **Blunt-grep mistake, third time**: the zero-model-calls probe matched its own docstring; it now parses the AST. **Driven through the real `RSiteGate`** — all six criteria closed, nothing deferred. 37 tests, 0 regressions | 2026-09-24 |
+| 7 | [Card from the situation](layer-2/step-07-card-from-situation.md) | **✅ COMPLETE · PENDING · HARSH** (migration 0182) ([findings](layer-2/findings/step-07-card-from-situation.md)) | ⛔⛔ **THE COLLAPSE LINK WAS IN SCOPE AND THROWN AWAY.** `signals` has no `situation_id`, and `shadow_compile` reads `row["situation_id"]` **four times within twenty lines of the emit** before dropping it — `not_carried`, the class L1 step 18 named. And the fan-out is **per (pack, rule, node)**, so the three Nitesh cards are three RULES on one situation. ⛔ **`subject_node_id` is not a substitute** — `context_situations` is unique on `(org_id, correlation_id)`, so one node carries several different situations and grouping by node merges what is not the same thing. ⛔ **The plan said "Migration: none"**; it is 0182, nullable, **no FK**. ⛔ **The recall guard is the unit that matters**: a NULL is UNINTERPRETED and reaches the founder **with a label on the card**, not only a counter — *fewer cards must come from merging, never from dropping*. ⛔ **The full suite caught the wire being dangerous** — the collapse read could kill the delivery pass on a tenant without 0182; *"a receipt that can abort the thing it is a receipt for turns an accounting failure into a product failure."* Both paths counted on every sweep, flag off by default, per tenant. 15 tests, 0 regressions | 2026-09-24 |
+| 8 | [Turn it on](layer-2/step-08-turn-it-on.md) | **✅ COMPLETE · PENDING · HARSH** (the shadow tallies) ([findings](layer-2/findings/step-08-turn-it-on.md)) | ⛔ **THE STEP SAYS THREE FLIPS. IT IS SEVEN** — four steps each left one behind and nothing enumerated them. `reason/cutover.py` is the table, and **a test reads the CODE and refuses a row that disagrees**, so a flip that forgets to update it fails the build. ⛔ **The scariest precondition in the plan has none**: `require_admission` is free — 155 of 155 admissible. ⛔ **The parity gate is five numbers fixed BEFORE the run**, every reading proven to be a tally the sweep emits, and an **absent** tally FAILS. ⛔ **The adversarial pass found a LIVE hole in L2-6**: `_refs_in` used `getattr` alone, so a model's JSON proposal read as citing nothing and **the resolver never ran** — check 3's second half was dead on the real path. **37 scenarios · 12 failure classes · counts asserted by a test** (L1's drifted and were caught by counting). **Nine mutation probes, each aimed at the RULE.** Nothing armed. 36 tests, 0 regressions | 2026-09-24 |
+
+**Order:** 0 → 1 → 2 → 3 → 4 → 6 → 7 → 5 → 8. ✅ **Steps 0 through 7 are COMPLETE.** Only **L2-8 ·
+Turn it on** remains, and it is the one that needs the shadow-pass tallies.
+
+> ⛔ **WHAT L2-8 INHERITS, AND EVERY ITEM IS A SWITCH RATHER THAN A BUILD.**
+>
+> | flip | from | state today |
+> |---|---|---|
+> | `_L2_TO_L3_DOMAIN["fundraising"] = "sales"` | **L2-4** | declared in `CANDIDATE_ROUTES`, evidenced, **not armed** — Harsh 26 |
+> | `LAW_ACTIONS[V9]`/`[V10]` → `REJECT` | **L2-2** | both `OBSERVE`, reporting — Harsh 24 |
+> | `cards_from_situations` activation row | **L2-7** | per tenant, off; both paths counted every sweep |
+> | `situation_reasoner` activation row | **L2-5** | per tenant, off; the sweep runs as today without it |
+> | `require_admission=True` | **L2-0** | **free** — 155 of 155 capabilities admissible |
+>
+> And four migrations wait: **0182** (L2-7) and **0183** (L2-5), beside 0176–0181 from Layer 1.
+
+> ⛔ **STEP 0 CHANGED TWO LATER STEPS.** The capability corpus is healthy — 155 of 155 admissible,
+> 0 hollow — so **step 8's cutover flag is free**, not a 334-capability cliff. And **step 4's
+> diagnosis moves**: the neck is not an inadmissible corpus, it is Layer 1 publishing nothing
+> (63 held), fundraising having **no corpus at all**, and **24 authored situations sitting at
+> `draft`** so their cards cannot instruct. `L2-4-U5` was struck and replaced accordingly.
+> **Step 4's largest item is authoring, and it always was.**
+
+### ⛔ THE 0→8 SWEEP — [`layer-2/09-SWEEP-0-TO-8.md`](layer-2/09-SWEEP-0-TO-8.md)
+
+Run after L2-8. **Not "are the tests green" — is anything built and reached by nothing.** Every
+module the nine steps added was audited for a real caller. **Three things the steps themselves
+missed, all now closed:**
+
+| | |
+|---|---|
+| ⛔ **L2-3 built a token budget for L2-5, and L2-5 never read it** | The defect this layer has been chasing since L2-0, committed by the sequence itself two steps apart. Now measured on every consult, counted as `slice_over_budget`, and **nothing truncated** |
+| ⛔ **S07 was OPEN, and closing it found a fixture that would have crashed the compiler** | The shared fixture built `confidence=None`, which `confidence_bp` dereferences — `expertise_builder:76` would have raised. **A fixture production would never produce proves nothing about production** |
+| ⛔ **A guard that answered plausibly when called wrong** | Recorded in L2-0 *and* L2-5, never hardened. `None`/`{}` still **refuse** (a malformed file must fail closed); a `SourceDocument` now **raises** |
+
+**Registry after the sweep: 40 scenarios · closed 29 · guard 3 · OPEN 0 · harsh 7 · impossible 1.**
+⛔ Zero OPEN is the claim that matters: everything left is a number somebody must read or a
+decision somebody must make — **no row is open because nobody got to it.**
+
+### What is missing entirely
+
+| | |
+|---|---|
+| **Persona Brain** | the fifth brain — not in `BrainKind`, not an `ExpertisePackage` lane. Holds *how this kind of company and this role works*, which is what makes a tenant legible before Behavior has history |
+| **Context Reasoner** | the interpretation site. ⛔ **Its VALIDATOR now exists** (`context/proposal_gate.py`, L2-6) and its **field list** exists (`claim_state.model_writable_fields()`, L2-2). What is missing is the site itself — and `R_SITES` is a closed vocabulary, so it needs an id, a tier, a ceiling **and an activation feature**, or it is a ninth thing built and never switched on |
+| **Validation gate** | what checks a proposal. Does not exist |
+| **Goals** | `org_goals` → 0 files. Belongs in **Organization Brain** as a category row beside `approval`/`policy`/`process`/`criticality` — the extraction machinery already verifies a quote byte-for-byte |
+| **`fundraising` corpus** | authored doctrine, not code. The largest non-code item in the plan |
+| **compiler test realism** | ⛔ **found by L2-1, deliberately not folded in.** `tests/packs/compiler/l3_inputs.py` and `test_domain_expertise_compiler.py` build a **`SituationCandidate`** and hand it to the compiler. Production builds a candidate in exactly two files, **neither of which feeds the compiler** — it always receives the admitted object. So the compiler's tests exercise a shape production never sends. The annotations now say the truth; **no test yet drives the compiler with what `publish_situation` actually returns.** A new unit, not a silent fix |
 
 ---
 
 ## HARSH — THE CONSOLIDATED ORDER
 
-Everything blocked on the CTO, across steps 1–5, in the order to do it:
+📌 **The short version, sorted by kind of work: [`../handoff/`](../handoff/)** — eight migrations,
+six measurements, five decisions, one access item, each with its command and its consequence.
+
+The long form, with the reasoning behind each:
 **[`../HARSH-ORDER.md`](../HARSH-ORDER.md)** — 9 items: 1 access, 3 migrations, 1 deploy,
 2 decisions, 1 measurement, 1 question.
 
@@ -272,3 +538,62 @@ so this file is still readable at step 17.
 
 `PENDING · HARSH` is **not** `NOT STARTED`. It is owned, specified and handed off — skip it. The
 next actionable step is the lowest-numbered row that is `NOT STARTED` or `NEXT`.
+
+---
+
+## LAYER 3 — THE CONTEXT GRAPH
+
+**Plan:** [`layer-3/10-OVERVIEW.md`](layer-3/10-OVERVIEW.md) · analysis in `layer-3/00`–`09`
+**Cost:** ⛔ **no model calls in any step** · `vocabulary_fingerprint` unchanged · 2 migrations
+
+Two premise checks ran before the plan was written and both shrank it:
+**the Decision Object is one thing on the live path** (`reasoning_run_outputs`, FK'd from `signals`
+since migration 0031), and **the `decision → situation` edge already exists as data** — L2-7 put
+`situation_id` beside `reasoning_decision_hash` in the same `signals` row. Five of seven edges
+exist. The work is one edge, two writers, and a read.
+
+| Step | What | State |
+|---|---|---|
+| ⛔ **L3-0A** | [The window](layer-3/step-0A-the-window.md) · [findings](layer-3/findings/step-0A-the-window.md) | ✅ **COMPLETE** · 10 tests · 0 regressions. All 3 planned units were already built; the gap was the **chain**, and it is wired. ⛔ **PENDING HARSH item 21** — the window itself is an operator call |
+| **L3-00** | [Carry the product vocabulary into `LAYERS.py`](layer-3/step-00-layer-vocabulary.md) · [findings](layer-3/findings/step-00-layer-vocabulary.md) | ✅ **COMPLETE** · +3 tests · 0 regressions. ⛔ Found a live hole: `mcp/` was unmapped, and an unmapped package escapes the import ratchet **in both directions** |
+| **L3-01** | [Name the Decision Object](layer-3/step-01-name-the-decision.md) · [findings](layer-3/findings/step-01-name-the-decision.md) | ✅ **COMPLETE** · +8 tests · 0 regressions. ⛔ **Premise wrong: it is ONE object with five projections, not five shapes.** `ReasoningDecision` already was it — and that **removes a Wave 6 blocker** |
+| **L3-02** | [The coverage record](layer-3/step-02-the-coverage-record.md) · [findings](layer-3/findings/step-02-coverage-record.md) | ✅ **COMPLETE** · +21 tests · 0 regressions · ⛔ **no migration — 0178 already had the columns**. The defect was **one writer, zero readers** |
+| **L3-02b** | [Carry the coverage sentence](layer-3/step-02b-carry-the-coverage.md) · [findings](layer-3/findings/step-02b-carry-the-coverage.md) | ✅ **COMPLETE** · +12 tests · 0 regressions. ⛔ **One seam, not three** — the window belongs to the claim, so it never crosses the QES |
+| **L3-03** | [Connected is not read](layer-3/step-03-scoped-absence.md) · [findings](layer-3/findings/step-03-scoped-absence.md) | ✅ **COMPLETE** · +10 tests · 0 regressions. ⛔ **The gate already existed and was stronger** — the missing half was the sweep, not the tenant. `scoped_absence()` deliberately NOT built |
+| **L3-04** | [Knowledge time](layer-3/step-04-knowledge-time.md) · [findings](layer-3/findings/step-04-knowledge-time.md) | ✅ **COMPLETE** · +11 tests · 0 regressions · ⛔ **migration 0184, Harsh item 22**. `graph_edges.valid_from` carried EVENT time while one predicate read all three tables |
+| **L3-05** | [Copies do not corroborate](layer-3/step-05-evidence-lineage.md) · [findings](layer-3/findings/step-05-evidence-lineage.md) | ✅ **COMPLETE** · +6 tests · 0 regressions. ⛔ **The plan's headline claim was FALSE** — `src_count` already counts distinct sources. The real defect was one untested word in two copies. **Wave 1 complete** |
+| **L3-06** | [The heartbeat](layer-3/step-06-the-timer.md) · [findings](layer-3/findings/step-06-the-timer.md) | ✅ **COMPLETE** · +4 tests · 0 regressions · **no migration**. ⛔ **The loudest claim in the plan was FALSE** — elapsed time is evaluated at four live levels and the main one was already pinned |
+| **L3-07** | [One answer per decay question](layer-3/step-07-freshness.md) · [findings](layer-3/findings/step-07-freshness.md) | ✅ **COMPLETE** · +8 tests · 0 regressions. ⛔ **A behavioural test found `half_life_days` is an e-folding constant — 0.368 at the configured value, not 0.5.** Nothing changed; decision routed to Harsh §1.3 |
+| **L3-08** | [Cross Tool — a draft is not a reply](layer-3/step-08-cross-tool.md) · [findings](layer-3/findings/step-08-cross-tool.md) | ✅ **COMPLETE** · +8 tests · 0 regressions. ⛔ **The join is entity resolution, not a correlator** — but CT-10 was live: **an unsent draft counted as a sent reply** |
+| **L3-09** | [The edge vocabulary is closed](layer-3/step-09-edge-vocabulary.md) · [findings](layer-3/findings/step-09-edge-vocabulary.md) | ✅ **COMPLETE** · +13 tests · 0 regressions · ⛔ **no migration**. The 7 'missing' relations all exist elsewhere; **`edge_type` was free text with no vocabulary** |
+| **L3-10** | [The residue kinds are closed](layer-3/step-10-correlation-record.md) · [findings](layer-3/findings/step-10-correlation-record.md) | ✅ **COMPLETE** · +7 tests · 0 regressions · ⛔ **no migration**. `residue.py` **is** the record, with better growth properties than the spec's design. ⛔ **Wave 3 complete** |
+| **L3-11** | [`unknown` never becomes `false`](layer-3/step-11-three-valued.md) · [findings](layer-3/findings/step-11-three-valued.md) | ✅ **COMPLETE** · +10 tests · 0 regressions. It is all built; **the open gap is a fail-OPEN default the code declares itself**, deferred on the unmeasured word "most" — now countable |
+| **L3-12** | [The node vocabulary is closed](layer-3/step-12-graph-views.md) · [findings](layer-3/findings/step-12-graph-views.md) | ✅ **COMPLETE** · +11 tests · 0 regressions. The "missing views" grep measured **prose, not capability**; the real gap was the **third free-string vocabulary** |
+| **L3-13** | [The Intelligence Graph is already foreign keys](layer-3/step-13-the-graph-already-exists.md) · [findings](layer-3/findings/step-13-the-graph-already-exists.md) | ✅ **COMPLETE** · +12 tests · 0 regressions · ⛔ **no migration, no tables — all three premises behind `intel_nodes`/`intel_edges` are false.** `signals` already holds situation + decision (0182 + 0031, both added by `alter table`, so a `create table` scan was blind to them); **0 `delete from signals`** exist so the join cannot die; and `executions`→`execution_outcomes` make **situation → decision → delivery → outcome already foreign keys**, and `situation_interpretations` (0183) is the fifth — **all five existed**. ⛔ The real defect: **5 signal writers, 1 names `situation_id`** — so every main-path card reads **UNINTERPRETED**. Wiring it is free but would assert co-location as provenance and corrupt the cutover measurement → ✅ **DECIDED 2026-09-25: HOLD** (handoff §1.4). Moves when `CardSource` gains a third value |
+| **L3-14** | [Half the substrate is never asked for](layer-3/step-14-the-corpus-does-not-ask.md) · [findings](layer-3/findings/step-14-premise-the-corpus-does-not-ask.md) | ✅ **COMPLETE** · +13 tests · 0 regressions · **no migration**. ⛔ The step as written was void — its only argument was L3-13's falsified archive claim. What replaced it: **70 of 141 declared substrate fields are used by NONE of the 1,425 authored capabilities.** `context/correlation_history` computes *"we already told them this and they dismissed it"* every sweep and **zero** capabilities read it. ⛔ **The engine is not the constraint; the corpus is.** → **needs an AUTHOR, not an engineer** |
+| **L3-15** | Delivery and feedback write back | ✅ **CLOSED by measurement** ([findings](layer-3/findings/steps-15-to-18-closed-by-measurement.md)) · no code. The premise (*0 graph writes*) is true and the conclusion does not follow — the loop is **already closed through FKs**: `execution_outcomes.decision_hash` → `feedback/store` → `correlation_history`. Graph edges would duplicate it, and `graph_edges.authority_rank` would put a delivery record on a CRM's ladder |
+| **L3-16** | Revision + `supersedes` | ✅ **CLOSED by measurement** ([findings](layer-3/findings/steps-15-to-18-closed-by-measurement.md)) · no code. ⛔ **The table is migration 0183** (`situation_interpretations`, L2-5) — `unique (org_id, situation_id, slice_digest)` is the plan's key character for character, plus `valid_until` and the slice itself. It is also the **fifth Intelligence-Graph node kind**. The five-word revision action is **deferred with a mover: no reader exists** |
+| **L3-17** | ⛔ The history reaches the situation | ✅ **CLOSED by measurement** ([findings](layer-3/findings/steps-15-to-18-closed-by-measurement.md)) · no code. ⛔ **The reader exists and runs live** — `context/correlation_history.py` at `context/runner.py:752` publishes `times_seen · days_since_prior · prior_outcome · prior_card_verdict`. The plan's evidence (`prior_decision 0…`) was **a grep on words nobody uses** — tenth blunt-grep, first one in the PLAN rather than a test. The real gap is consumption → **L3-14** |
+| **L3-18** | The surface | ✅ **CLOSED by measurement** ([findings](layer-3/findings/steps-15-to-18-closed-by-measurement.md)) · no code. Read side is built (`_open_situations_without_cards`, `tally_source`, `/situations/{id}`); card **routing** is deliberately still per-signal until L2-7's criterion-5 comparison runs — and until L3-19 that comparison **could not be started** |
+| **L3-19** | [Turn it on — the switch nobody could flip](layer-3/step-19-the-switch-nobody-could-flip.md) · [findings](layer-3/findings/step-19-the-switch-nobody-could-flip.md) | ✅ **COMPLETE** · +11 tests · 0 regressions · **no migration**. ⛔ **`cards_from_situations` was a literal in `deliver/card_source` and was NOT in `L4_FEATURES`** — so `require_feature` **raised**, no tenant could be activated, and `_situation_lane` was False on every production pass. The mirror image of the typo that function guards against: a **reader** gating on a name the **writer** refuses, invisible because **False is a legal answer**. ⛔ Also found: `L4_DEFAULT_FEATURES` was a drifted second copy that **silently never switched on the Context Reasoner** |
+| **L3-X1** | Situation identity / episode (cross-check 2.1) | ✅ **CLOSED by measurement** ([findings](layer-3/findings/crosscheck-extras-2-1-to-2-4.md)) · no code. ⛔ **Partly solved already** — correlation ids are CONSTRUCTED and the recurring case carries its period (`corr_period_%_{org}_{key}`), so the failure described does not occur for periodic situations. A general `situation_key` is absent and **nothing asks for one** |
+| **L3-X2** | Parent/child situations (cross-check 2.2) | ✅ **CLOSED by measurement** ([findings](layer-3/findings/crosscheck-extras-2-1-to-2-4.md)) · no code. Absent entirely — **0 files**, and no mention of a parent, hierarchy or rollup in the situation modules. **No writer and no reader** |
+| **L3-X3** | Held-candidate recovery (cross-check 2.3) | ✅ **ALREADY EXISTS** ([findings](layer-3/findings/crosscheck-extras-2-1-to-2-4.md)). ⛔ `situation_admission_decisions` (**0122**) — `outcome in ('admit','hold','reject')`, `reevaluate_after`, and a **check constraint** making a hold without a retry instant unwritable, plus the sweep's index. The cross-check's premise was wrong here |
+| **L3-X4** | Typed change records (cross-check 2.4) | ✅ **CLOSED by measurement** ([findings](layer-3/findings/crosscheck-extras-2-1-to-2-4.md)) · no code. `graph_change_outbox` exists and has no `change_kind` — ⛔ **but it is a version CLOCK, not a change feed**: its only reader is `select max(graph_version)` and `published_at` is never read. Typing it adds a column nothing selects; the bitemporal history it would duplicate is `valid_to` (95 files) + `supersedes` (28) |
+
+⛔ **L3-5 is the payload.** L3-0 → L3-4 are plumbing; nothing a founder sees changes until then.
+
+**The measurement that justifies the layer:** `prior_decision`, `previous_decision`,
+`last_decision`, `past_decisions` — **0 occurrences each** in the entire engine. Every sweep
+decides from scratch.
+
+**All 18 components the Globe named exist in the code** — see
+[`layer-3/11-THE-ENGINES.md`](layer-3/11-THE-ENGINES.md). Nothing from the previous architecture is
+dropped; an engine is a component and a layer is a stage, so every engine gets a home. Layer 3
+gains one the Globe never had: the **Intelligence Graph**.
+
+⛔ **But mapping them surfaced a numbering collision that blocks the first line of code.** There are
+now four vocabularies. `LAYERS.py` predicted exactly this — *"the numbers have already changed twice
+across specs while the code did not"* — and already carries a translation table for three of them.
+`executive`/`deliver`/`feedback` are **5/6/7** in the code and **4/5/6** in the new list, and
+*"Layer 3"* means Domain Expertise in **115 files**. Hence **L3-00**, before L3-0.

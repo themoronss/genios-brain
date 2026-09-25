@@ -9,6 +9,24 @@ from genios_engine.context.graph_store import GraphStore
 # B9 — read models. Compact projection per entity for L3/dashboard/cards. Rebuilt from the
 # graph (facts + observations + edges) for the affected node; stored in context_read_models.
 
+#: ⛔ L3-12 · WHICH NODE TYPES GET A SPECIALISED PROJECTION. This was an inline dict literal inside
+#: `build_entity_360`, so "which entities have a tailored view" was a question you could only
+#: answer by reading a function body — and `context_read_models.model_type` is free text whose
+#: migration comment ends `-- company_360 | person_360 | deal_360 | ...`.
+#:
+#: The default is deliberate and is not a gap: an entity with no tailored projection still gets
+#: `entity_360`, which carries its facts, observations and edges. What was missing is that ADDING A
+#: NODE TYPE ASKED NOBODY whether it needed a view — it just silently became generic.
+READ_MODELS: dict[str, str] = {
+    "person": "person_360",
+    "company": "company_360",
+    "deal": "deal_360",
+    "meeting": "meeting_360",
+}
+
+#: Every other node type. A real answer, not a fallback for an error.
+DEFAULT_READ_MODEL = "entity_360"
+
 
 def build_entity_360(store: GraphStore, *, org_id: str, node_id: str) -> dict | None:
     with store.engine.connect() as c:
@@ -34,8 +52,7 @@ def build_entity_360(store: GraphStore, *, org_id: str, node_id: str) -> dict | 
         gv = c.execute(text("select graph_version from graph_versions where org_id=:o"),
                        {"o": org_id}).scalar()
 
-    model_type = {"person": "person_360", "company": "company_360",
-                  "deal": "deal_360", "meeting": "meeting_360"}.get(node.node_type, "entity_360")
+    model_type = READ_MODELS.get(node.node_type, DEFAULT_READ_MODEL)
     payload = {
         "node_id": node_id, "node_type": node.node_type, "display_name": node.display_name,
         "canonical_key": node.canonical_key, "identity_strength": node.identity_strength,

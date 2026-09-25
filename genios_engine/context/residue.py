@@ -73,6 +73,23 @@ RESIDUE_BALL_IN_COURT = "ball_in_court_unreported"
 RESIDUE_OPEN_LOOP = "open_loop_unreported"
 RESIDUE_SIGNAL = "signal_unreached"
 
+#: ⛔ L3-10 · THE CLOSED SET, because four bare constants are not a vocabulary.
+#:
+#: This table is the layer's own account of what it could not explain, and its failure direction is
+#: one-way: a kind that silently stops being recorded makes the sweep look MORE COMPLETE THAN IT
+#: IS. Nothing goes red, no row appears, and "what is happening in my mailbox that this thing never
+#: mentioned" quietly starts answering "nothing".
+#:
+#: Guarded in both directions by `tests/context/test_the_residue_kinds_are_closed.py`: a kind
+#: declared here must actually be recorded, and a kind recorded must be declared. Same idiom as
+#: `EDGE_TYPES`, `LAYERS`, `PRECEDENCE`, `SYNC_HEALTHS`.
+RESIDUE_KINDS: dict[str, str] = {
+    RESIDUE_NODE_EVIDENCE: "evidence held about a node that no reading has ever spoken about",
+    RESIDUE_BALL_IN_COURT: "the founder's own case — they replied, we went quiet, nothing said so",
+    RESIDUE_OPEN_LOOP: "an ask still open and attached to no situation",
+    RESIDUE_SIGNAL: "a Layer 1 verdict that no Layer 2 reading consumes",
+}
+
 #: One sweep's ceiling per kind. The first run on a tenant whose coverage is poor meets the whole
 #: graph at once, and this runs inside the transaction budget of the path that ingests mail. The
 #: count is reported so a truncated pass cannot look like a clean one — the same discipline

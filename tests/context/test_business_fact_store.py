@@ -17,7 +17,7 @@ def fact_schema(c):
         authority_rank integer, confidence real, relevance real, occurred_at timestamp,
         created_by_event_id text, derivation_type text, trace_id text, schema_version text,
         source_authority text, provenance_refs text, valid_from text default '2026-09-10',
-        valid_to text)"""))
+        valid_to text, recorded_at text)"""))
     c.execute(text("""create table discrepancies (id text, org_id text, subject_node_id text,
         field text, held text, challenger text, status text default 'open')"""))
 

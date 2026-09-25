@@ -72,6 +72,23 @@ FEATURE_BUNDLE = "bundle"
 FEATURE_CRITIQUE = "critique"
 #: Z6 — the book-level daily re-rank that carries `rank_components` on every entry.
 FEATURE_BRIEF = "brief"
+#: ⛔ L2-5 · the Context Reasoner (R-6). A site with no activation is a site no tenant can reach,
+#: which is the ninth "built and never switched on" L2-0 spent a step counting — so the feature
+#: lands WITH the site rather than after it.
+FEATURE_SITUATION_REASONER = "situation_reasoner"
+#: ⛔ L2-7 · the delivery cutover — one card per SITUATION instead of one per signal.
+#: ⛔ IT WAS BUILT WITHOUT THIS LINE AND COULD THEREFORE NEVER BE SWITCHED ON.
+#: `deliver/card_source.FEATURE` named it as a LITERAL, `deliver/pipeline` gates the lane on it —
+#: and `require_feature` REFUSED the name, so no tenant could hold an activation row and
+#: `_situation_lane` was False on every pass in production. A reader looking for a name the writer
+#: rejects: the mirror image of the typo this function was written to catch, and invisible in
+#: exactly the same way, because False is a legal answer.
+#:
+#: ⛔ THE BLAST RADIUS TODAY IS THE LANE LABEL, NOT LOST CARDS. `tally_source` counts the collapse
+#: ratio on every sweep regardless of this flag, and card routing is deliberately still per-signal
+#: until L2-7's criterion 5 comparison has been run. What was unreachable was the SWITCH, which the
+#: routing step would have discovered under deadline rather than now.
+FEATURE_CARDS_FROM_SITUATIONS = "cards_from_situations"
 
 #: The five features doc 07 names, in WAVE order rather than alphabetical order — the order is the
 #: only safe order to switch them on in, and a list that read `bundle, brief, critique, ranking_v2,
@@ -80,17 +97,19 @@ FEATURE_BRIEF = "brief"
 #: mode a free-text column invites and which looks exactly like an activated tenant right up until
 #: nothing happens.
 L4_FEATURES = (FEATURE_ROSTER_V2, FEATURE_RANKING_V2, FEATURE_BUNDLE, FEATURE_CRITIQUE,
-               FEATURE_BRIEF)
+               FEATURE_BRIEF, FEATURE_SITUATION_REASONER, FEATURE_CARDS_FROM_SITUATIONS)
 
 #: Which wave builds each feature. Carried in code rather than in a doc because it is what makes
 #: `PRECONDITIONS` checkable by eye: a feature is safe to switch on when the features its wave
 #: depends on are already on for that tenant.
 FEATURE_WAVES = {
+    FEATURE_SITUATION_REASONER: "L2-5",
     FEATURE_ROSTER_V2: "Z1",
     FEATURE_RANKING_V2: "Z3",
     FEATURE_BUNDLE: "Z4",
     FEATURE_CRITIQUE: "Z6",
     FEATURE_BRIEF: "Z6",
+    FEATURE_CARDS_FROM_SITUATIONS: "L2-7",
 }
 
 #: The features that should already be live on a tenant before this one is switched on. NOT
@@ -104,6 +123,18 @@ PRECONDITIONS = {
     FEATURE_BUNDLE: (FEATURE_RANKING_V2,),
     FEATURE_CRITIQUE: (FEATURE_RANKING_V2,),
     FEATURE_BRIEF: (FEATURE_RANKING_V2,),
+    # ⛔ NONE, DELIBERATELY. R-6 reads a SITUATION and proposes an interpretation of it; it needs
+    # nothing Layer 4's other switches provide, and making it wait on `ranking_v2` would tie a
+    # Layer 2 reading to a Layer 4 formula it never consults. Its real precondition — an admitted
+    # situation with a slice — is a precondition of the CALL (step 2 of `consult`), not of the
+    # switch.
+    FEATURE_SITUATION_REASONER: (),
+    # ⛔ NONE, for the same reason R-6 has none. The situation lane regroups cards the EXISTING
+    # decision path already produced; it consults no Layer 4 formula and changes no score. Making
+    # it wait on `ranking_v2` would tie a delivery regrouping to a ranking model it never reads.
+    # Its real precondition is cross-layer and is declared below: something has to be writing
+    # `signals.situation_id`, and only the compiled lane does.
+    FEATURE_CARDS_FROM_SITUATIONS: (),
 }
 
 #: THE PRECONDITIONS THAT ARE NOT LAYER 4's. `PRECONDITIONS` above orders the five switches against
@@ -132,6 +163,13 @@ CROSS_LAYER_PRECONDITIONS = {
     FEATURE_BUNDLE: ("l1_semantic",),
     FEATURE_CRITIQUE: ("l1_semantic",),
     FEATURE_BRIEF: ("l1_semantic",),
+    # ⛔ MEASURED IN L3-13. Five functions insert into `signals` and exactly ONE writes
+    # `situation_id` — `reason/domain_shadow._emit_capability_signal`, the compiled lane, which
+    # only runs where an L3 domain is live. Switch this on for a tenant with no domain activated
+    # and every signal groups into the NULL bucket: the lane is ON, every card reads
+    # UNINTERPRETED, and the console says `live`. That is the same "both statements true and
+    # together misleading" shape `ranking_v2` is annotated with above.
+    FEATURE_CARDS_FROM_SITUATIONS: ("l3_domain",),
 }
 
 #: What each cross-layer precondition MEANS, and what an operator has to do to satisfy it. A
@@ -152,6 +190,15 @@ CROSS_LAYER_EFFECTS = {
 #: console reads this table. An operator who can see a switch is on and cannot see what it turned on
 #: will assume it turned on everything.
 EFFECTS = {
+    FEATURE_SITUATION_REASONER: (
+        "Layer 2 asks a model to INTERPRET each admitted situation — one call per situation, "
+        "never per event — and the reading is validated by `context/proposal_gate` before it is "
+        "recorded. It can propose only the fourteen fields `claim_state.model_writable_fields()` "
+        "names, it may LOWER a confidence and never raise one, and a situation whose own numbers "
+        "are low on both confidence and importance is answered `unknown` WITHOUT a call. "
+        "Nothing it proposes is committed to the graph: the reading lands in "
+        "`situation_interpretations` with the slice it was made from, so it can be replayed. "
+        "Off, the sweep runs exactly as it does today"),
     FEATURE_ROSTER_V2: (
         "the reasoning orchestrator plans the STAGED UNIT ROSTER through the Unit Selector for this "
         "tenant instead of the six units the compiled lane hardcodes; it changes which units run "
@@ -173,6 +220,15 @@ EFFECTS = {
     FEATURE_BRIEF: (
         "this tenant's daily brief is re-ranked at book level with rank_components recorded on "
         "every entry, so 'why #1 today' is answerable from the record rather than from a re-run"),
+    FEATURE_CARDS_FROM_SITUATIONS: (
+        "delivery builds ONE card per situation instead of one per signal, so a situation that "
+        "fired three rules stops arriving as three cards about the same thing. Signals whose "
+        "situation never formed are NOT dropped — they group as a single NULL bucket and are "
+        "surfaced labelled UNINTERPRETED (deliver/card_source.classify), because fewer cards must "
+        "come from merging and never from dropping. The old per-signal path stays runnable beside "
+        "it and both are counted on the same sweep (COMPARISON_KEYS) before either is retired. "
+        "\u26d4 On a tenant with no L3 domain live, nothing writes signals.situation_id and EVERY "
+        "card lands in the uninterpreted bucket — see CROSS_LAYER_PRECONDITIONS"),
 }
 
 #: Every column the record carries, in one place, so the reads below cannot select different shapes

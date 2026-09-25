@@ -165,7 +165,24 @@ def _activation_threshold_hours(rule: Rule) -> float:
 
 def _freshness(occurred_at, eval_time, *, half_life_days: float = 30.0) -> float:
     """Data-age decay of the trigger fact: today ≈ 1.0, an old fact decays toward 0. Feeds the
-    30%-freshness slot of the confidence term (was hardcoded 1.0 — stale data scored as if fresh)."""
+    30%-freshness slot of the confidence term (was hardcoded 1.0 — stale data scored as if fresh).
+
+    ⛔ THE PARAMETER IS MISNAMED AND THE NAME IS THE WRONG HALF TO TRUST. The formula is
+    `exp(-age / half_life)`, which is an E-FOLDING time constant: at `half_life_days` the weight is
+    `1/e` ≈ **0.368**, not 0.5. The curve's true half-life is `half_life_days * ln2` — about **20.8
+    days** when a pack configures 30.
+
+    A pack author reading `freshness_half_life_days: 30` reasonably expects half the weight after a
+    month and gets 37%, so every value they tune is roughly 30% out from their intent.
+
+    ⛔ NEITHER HALF IS CHANGED HERE. Fixing the formula would move the confidence term of every
+    decision this product has ever made — a behaviour change with no measurement behind it. Fixing
+    the name breaks authored pack configs. Both are product decisions with a blast radius; the
+    actual behaviour is pinned by `tests/test_one_answer_per_decay_question.py` and the choice is
+    routed in `speedrun008/handoff/04-layer-3.md`. See also `DECAY_OWNERS` there: this is one of
+    exactly two staleness curves in the product, and the other (L1's) is linear in basis points per
+    day and answers a different question.
+    """
     if occurred_at is None:
         # Preserve the v0.3 treatment for derived/legacy facts that have no separate observation
         # timestamp. Explicitly malformed or future timestamps below fail closed instead.

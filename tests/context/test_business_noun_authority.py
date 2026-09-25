@@ -19,7 +19,7 @@ def business_store(fact_store, monkeypatch):
     with fact_store.engine.begin() as c:
         c.execute(text("""create table graph_nodes (node_id text primary key, version integer,
             org_id text, node_type text, canonical_key text, display_name text,
-            identity_strength text, created_by_event_id text, valid_to text)"""))
+            identity_strength text, created_by_event_id text, valid_to text, recorded_at text)"""))
         c.execute(text("""create table graph_aliases (org_id text, alias_type text, alias_key text,
             node_id text, origin text, created_by_event_id text, unique(org_id,alias_type,alias_key))"""))
         for node, kind, key, label in [("jane", "person", "jane@example.com", "Jane"),

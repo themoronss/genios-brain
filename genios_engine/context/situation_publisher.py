@@ -27,6 +27,7 @@ from typing import Any, Mapping
 from sqlalchemy import text
 
 from genios_engine.contracts.domain_expertise import BusinessSituationObject as LegacySituation
+from genios_engine.context.expected_facts import expected_facts_for
 from genios_engine.contracts.evidence import EvidenceSpan
 from genios_engine.contracts.quality import AbsenceType, MissingFact
 from genios_engine.contracts.situation import (
@@ -81,6 +82,26 @@ class PublicationResult:
     @property
     def admitted(self) -> bool:
         return self.outcome is PublicationOutcome.ADMIT
+
+
+#: The prefix that keeps an observation apart from a refusal in one shared column. They mean
+#: different things — `qes_required` is why a situation did NOT publish, `observed:V-9:…` is
+#: something true about one that DID — and a reader who cannot tell them apart will count a
+#: published situation as a suppressed one.
+OBSERVED_PREFIX = "observed"
+
+
+def observed_reasons(decision) -> tuple[str, ...]:
+    """What the non-rejecting laws saw, as durable ledger reasons.
+
+    Empty when nothing was observed, deliberately: a marker meaning "nothing to report" is
+    indistinguishable from a marker nobody wrote.
+    """
+    from genios_engine.contracts.situation import LawAction
+
+    return tuple(f"{OBSERVED_PREFIX}:{failure.law.value}:{failure.subject}"
+                 for failure in decision.failures
+                 if failure.action is not LawAction.REJECT)
 
 
 def _receipt(item: Mapping[str, Any]) -> EvidenceSpan | None:
@@ -462,15 +483,25 @@ def decide_publication(
         return PublicationResult(PublicationOutcome.HOLD, decision_id, old.id, holds)
     try:
         upgraded = upgrade_situation(old, missing_facts=missing_facts)
-        decision = validate_situation(upgraded)
+        # ⛔ V-10's INPUT, COMPUTED HERE BECAUSE A CONTRACT MAY NOT READ THE REGISTRY. Same shape
+        # as `build_business_situation(refusal=...)`: the layer that owns the lookup does it and
+        # hands the answer down. Omitting it does not fail — V-10 simply never evaluates — which
+        # is precisely why a test reads this call site and asserts the argument is named.
+        decision = validate_situation(
+            upgraded, expected_facts=expected_facts_for(str(upgraded.type or "")))
     except (TypeError, ValueError) as exc:
         return PublicationResult(PublicationOutcome.REJECT, decision_id, old.id,
                                  (f"contract_invalid:{str(exc)[:240]}",))
     if not decision.admitted:
         reasons = tuple(f"{failure.law.value}:{failure.subject}" for failure in decision.failures)
         return PublicationResult(PublicationOutcome.REJECT, decision_id, old.id, reasons)
+    # ⛔ AN ADMIT CAN NOW SAY WHAT IT NOTICED. L2-2's V-9 and V-10 are declared `OBSERVE`, so they
+    # do not block — and an observation nobody records is the invisible refusal L2-0 spent a step
+    # on. `test_h0_gate` demanded this machinery by name before a non-rejecting action was allowed
+    # to exist: these land in `situation_admission_decisions.reasons`, which
+    # `scripts/l2_refusal_report.py` reads.
     return PublicationResult(PublicationOutcome.ADMIT, decision_id, old.id,
-                             situation=upgraded)
+                             observed_reasons(decision), situation=upgraded)
 
 
 def _record(

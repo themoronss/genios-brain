@@ -44,6 +44,7 @@ from genios_engine.context.domain_spec import domains_declaring, spec_for
 from genios_engine.context.vocabulary import owner_basis
 from genios_engine.context.situations import (  # noqa: I001
     unmet_source_families,
+    window_coverage_gaps,
     evidence_score,
     freshness_score,
     identity_score,
@@ -1783,6 +1784,7 @@ def refresh_state_situations(store, org_id: str, *, now: datetime | None = None,
     #: reading; a read inside it would be the per-situation shape
     #: `docs/plans/PERFORMANCE_HARDENING.md` records taking a pass past thirty minutes.
     _unmet: dict[str, tuple[str, ...]] = {}
+    _cov_gaps: dict[object, tuple[str, ...]] = {}
     written = 0
     with store.engine.begin() as c:
         for anchor, reader in READINGS:
@@ -1857,6 +1859,22 @@ def refresh_state_situations(store, org_id: str, *, now: datetime | None = None,
                     for _family in _unmet.setdefault(
                             domain, unmet_source_families(c, org_id, domain)):
                         gaps = [*gaps, f"a {_family} source, which is not connected"]
+                    # L3-02b · AND HOW MUCH OF THE WINDOW WE ACTUALLY READ. The line above says a
+                    # system of record is missing entirely; this one says a connected one was only
+                    # partly seen, which produces situations indistinguishable from complete ones.
+                    #
+                    # ⛔ THE WINDOW IS THE SITUATION'S OWN EVIDENCE SPAN, not a constant. If this
+                    # reading rests on events from `first_at` onwards, the coverage question is
+                    # exactly "did we read the sources across that span" — and a fixed lookback
+                    # would attach a sentence about the wrong days. `first_at is None` means the
+                    # evidence carries no times, so the question cannot be asked and is not
+                    # guessed at.
+                    _first = getattr(stats, "first_at", None)
+                    if _first is not None:
+                        # Memoised on the SPAN, not the domain: two domains over one span share
+                        # the read, and one domain over two spans must not.
+                        gaps = [*gaps, *_cov_gaps.setdefault(
+                            _first, window_coverage_gaps(c, org_id, since=_first, until=now))]
                     last_at = getattr(stats, "last_at", None)
                     fresh, fresh_known = freshness_score(last_seen_at=last_at, now=now)
                     _upsert(c, org_id=org_id, corr=corr, node_id=node_id, stype=stype,

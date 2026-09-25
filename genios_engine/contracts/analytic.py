@@ -669,6 +669,13 @@ class CohortPosition(Measurement):
     #: When the comparison was computed. tz-aware UTC. A cohort moves, so a position is a
     #: statement about a moment and must say which.
     computed_at: datetime
+    #: ⛔ L2-2 · **the receipt for this interpretation.** Event or evidence ids the claim rests
+    #: on. Optional and empty by default, so nothing that constructs one today breaks — and
+    #: **V-9 names every entry that leaves it empty**, because `MatchedCondition` already states
+    #: the doctrine for the whole family: *"'this fired because of these facts' is what makes a
+    #: situation defensible."* V-9 OBSERVES rather than rejects until somebody has counted how
+    #: many live situations arming it would refuse.
+    evidence_refs: tuple[str, ...] = ()
 
     @field_validator("metric", "cohort_id", mode="before")
     @classmethod
@@ -793,6 +800,13 @@ class MetricCorrelation(Measurement):
     n: int
     #: ALWAYS False (V-7). See the class docstring.
     is_causal: bool = False
+    #: ⛔ L2-2 · **the receipt for this interpretation.** Event or evidence ids the claim rests
+    #: on. Optional and empty by default, so nothing that constructs one today breaks — and
+    #: **V-9 names every entry that leaves it empty**, because `MatchedCondition` already states
+    #: the doctrine for the whole family: *"'this fired because of these facts' is what makes a
+    #: situation defensible."* V-9 OBSERVES rather than rejects until somebody has counted how
+    #: many live situations arming it would refuse.
+    evidence_refs: tuple[str, ...] = ()
 
     @field_validator("metric_a", "metric_b", "cohort_id", mode="before")
     @classmethod
@@ -881,6 +895,13 @@ class Anomaly(Measurement):
     direction: AnomalyDirection
     #: Known periods in the baseline. >= `MIN_ANOMALY_PERIODS`.
     periods_used: int
+    #: ⛔ L2-2 · **the receipt for this interpretation.** Event or evidence ids the claim rests
+    #: on. Optional and empty by default, so nothing that constructs one today breaks — and
+    #: **V-9 names every entry that leaves it empty**, because `MatchedCondition` already states
+    #: the doctrine for the whole family: *"'this fired because of these facts' is what makes a
+    #: situation defensible."* V-9 OBSERVES rather than rejects until somebody has counted how
+    #: many live situations arming it would refuse.
+    evidence_refs: tuple[str, ...] = ()
 
     @field_validator("metric", mode="before")
     @classmethod

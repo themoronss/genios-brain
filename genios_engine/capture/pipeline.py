@@ -552,6 +552,23 @@ def _thread_place(raw: Mapping[str, Any]) -> tuple[int, int]:
 _THREAD_PARENT_SUFFIX = "message"
 
 
+
+def _draft_flag(raw: Mapping[str, Any]) -> bool | None:
+    """⛔ L3-08 · is this message still sitting unsent? Gmail says so with a `DRAFT` label.
+
+    TRI-STATE, and the third state is the point. `True` and `False` are claims about the message;
+    `None` means THE CONNECTOR CARRIED NO LABELS AT ALL, and a source that cannot speak about
+    drafts must not be read as denying one. `direction_of` treats only `True` as a refusal, so a
+    connector that says nothing behaves exactly as it did before this existed.
+
+    Read here rather than in the connector because `labelIds` is already on the raw payload every
+    door hands over, and a second extraction point would be a second answer to the same question.
+    """
+    labels = raw.get("labelIds") if isinstance(raw, Mapping) else None
+    if not isinstance(labels, (list, tuple, set, frozenset)):
+        return None
+    return "DRAFT" in {str(label).strip().upper() for label in labels}
+
 def _thread_context(event: SourceEvent, raw: Mapping[str, Any],
                     mailbox_owner: str | None) -> ThreadContext:
     """The conversation S4 qualifies this event inside — derived, never guessed.
@@ -598,7 +615,17 @@ def _thread_context(event: SourceEvent, raw: Mapping[str, Any],
                            subject=str(raw.get("subject") or "") or None,
                            in_reply_to=(headers.get("In-Reply-To") or None),
                            references=reference_ids(headers.get("References") if isinstance(
-                               headers.get("References"), str) else None))],
+                               headers.get("References"), str) else None),
+                           # ⛔ L3-08 · Gmail's own label, read at the one place that can. Without
+                           # it `direction_of` sees a message authored by us and returns
+                           # `outbound`, so AN UNSENT DRAFT COUNTS AS A REPLY — `ball_in_court`
+                           # flips to `them`, a waiting relationship reads as answered, and "you
+                           # have sent nothing in 28 days" becomes "you sent two".
+                           #
+                           # `None` when the connector carried no labels at all, which is a
+                           # different fact from "labels were present and DRAFT was not among
+                           # them" — the first cannot rule a draft out and must not pretend to.
+                           is_draft=_draft_flag(raw))],
             org_identities=(owner,) if owner else ()).ball_in_court
     parent = (event.parent_object_id or "").strip()
     thread_key = (f"thread:{parent}"
