@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Layer 1 status for speedrun008: what is built, what broke, and the four things blocked on Harsh.">
+<title>Speedrun 008 Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Public+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+  :root {
+    /* paper ground, neutral pulled a half-step toward the burgundy so it reads chosen */
+    --paper:      #F8F6F5;
+    --card:       #FFFFFF;
+    --sunk:       #F1EDEC;
+    --ink:        #1B1719;
+    --ink-2:      #574E51;
+    --ink-3:      #857A7D;
+    --rule:       #E4DCDD;
+    --rule-firm:  #CFC3C5;
+    /* the one rationed accent */
+    --burgundy:   #7A2231;
+    --burgundy-w: #F3E6E8;
+    /* semantic state, deliberately not the accent */
+    --done:       #2C6149;
+    --done-w:     #E4EFE9;
+    --hold:       #8A5A12;
+    --hold-w:     #F6EDDC;
+    --broke:      #A6342A;
+    --broke-w:    #F7E4E2;
+    --shadow:     0 1px 2px rgba(27,23,25,.05), 0 6px 18px -12px rgba(27,23,25,.22);
+
+    --step: clamp(1rem, .93rem + .35vw, 1.0625rem);
+    color-scheme: light dark;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:      #161315;
+      --card:       #1E191B;
+      --sunk:       #241E21;
+      --ink:        #F2ECED;
+      --ink-2:      #B8ACAF;
+      --ink-3:      #877C7F;
+      --rule:       #30282B;
+      --rule-firm:  #463A3E;
+      --burgundy:   #E0899A;
+      --burgundy-w: #3A1F26;
+      --done:       #7FC4A4;
+      --done-w:     #1E2E27;
+      --hold:       #D9AE63;
+      --hold-w:     #322716;
+      --broke:      #E89489;
+      --broke-w:    #33201D;
+      --shadow:     0 1px 2px rgba(0,0,0,.4), 0 6px 18px -12px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:      #161315;
+    --card:       #1E191B;
+    --sunk:       #241E21;
+    --ink:        #F2ECED;
+    --ink-2:      #B8ACAF;
+    --ink-3:      #877C7F;
+    --rule:       #30282B;
+    --rule-firm:  #463A3E;
+    --burgundy:   #E0899A;
+    --burgundy-w: #3A1F26;
+    --done:       #7FC4A4;
+    --done-w:     #1E2E27;
+    --hold:       #D9AE63;
+    --hold-w:     #322716;
+    --broke:      #E89489;
+    --broke-w:    #33201D;
+    --shadow:     0 1px 2px rgba(0,0,0,.4), 0 6px 18px -12px rgba(0,0,0,.7);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Public Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: var(--step);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 66rem;
+    margin-inline: auto;
+    padding-inline: 20px;
+    padding-block: 40px 72px;
+    display: flex;
+    flex-direction: column;
+    gap: 44px;
+  }
+
+  h1, h2, h3 { font-family: Archivo, ui-sans-serif, system-ui, sans-serif; text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(1.75rem, 1.4rem + 1.6vw, 2.5rem); font-weight: 700; letter-spacing: -.022em; line-height: 1.1; }
+  h2 { font-size: 1.1875rem; font-weight: 650; letter-spacing: -.012em; }
+  h3 { font-size: 1rem; font-weight: 600; letter-spacing: -.008em; }
+  p  { margin: 0; }
+
+  code, .mono { font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; }
+  code {
+    font-size: .855em;
+    background: var(--sunk);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: .06em .32em;
+    word-break: break-word;
+  }
+
+  .eyebrow {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .6875rem;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  /* ── masthead ─────────────────────────────────────────────── */
+  .masthead { display: flex; flex-direction: column; gap: 14px; }
+  .masthead .branchline {
+    display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: baseline;
+  }
+  .branch {
+    font-family: "IBM Plex Mono", monospace; font-size: .8125rem; font-weight: 500;
+    color: var(--burgundy); background: var(--burgundy-w);
+    border-radius: 3px; padding: .15em .45em;
+  }
+  .standfirst { color: var(--ink-2); max-width: 62ch; }
+
+  /* ── stat row ─────────────────────────────────────────────── */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--rule);
+           border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
+  .stat { background: var(--card); padding: 16px 18px; display: flex; flex-direction: column; gap: 3px; }
+  .stat .k { font-family: Archivo, sans-serif; font-size: 1.6rem; font-weight: 700; letter-spacing: -.03em;
+             font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .stat .lbl { font-size: .8125rem; color: var(--ink-2); }
+  .stat .was { font-family: "IBM Plex Mono", monospace; font-size: .6875rem; color: var(--ink-3); }
+  .stat.good .k { color: var(--done); }
+
+  /* ── section shell ────────────────────────────────────────── */
+  section { display: flex; flex-direction: column; gap: 16px; }
+  .sechead { display: flex; flex-direction: column; gap: 5px;
+             border-top: 2px solid var(--ink); padding-top: 12px; }
+  .sechead .note { color: var(--ink-2); font-size: .9375rem; max-width: 64ch; }
+
+  /* ── the stuck list: a real sequence, so it is numbered ───── */
+  ol.todo { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; counter-reset: t; }
+  ol.todo > li {
+    counter-increment: t;
+    background: var(--card); border: 1px solid var(--rule); border-radius: 6px;
+    box-shadow: var(--shadow);
+    padding: 16px 18px 16px 16px;
+    display: grid; grid-template-columns: 30px 1fr; gap: 4px 14px; align-items: start;
+  }
+  ol.todo > li::before {
+    content: counter(t);
+    font-family: Archivo, sans-serif; font-weight: 700; font-size: 1rem;
+    color: var(--burgundy); background: var(--burgundy-w);
+    width: 30px; height: 30px; border-radius: 50%;
+    display: grid; place-items: center; font-variant-numeric: tabular-nums;
+  }
+  ol.todo .body { grid-column: 2; display: flex; flex-direction: column; gap: 8px; }
+  ol.todo .why { color: var(--ink-2); font-size: .9375rem; }
+  ol.todo .meta { font-size: .8125rem; color: var(--ink-3); }
+  .cmd {
+    font-family: "IBM Plex Mono", monospace; font-size: .8125rem;
+    background: var(--sunk); border: 1px solid var(--rule); border-left: 3px solid var(--burgundy);
+    border-radius: 4px; padding: 9px 11px; overflow-x: auto; white-space: pre; color: var(--ink);
+  }
+
+  /* ── tables ───────────────────────────────────────────────── */
+  .twrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 6px; background: var(--card); }
+  table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+  th, td { text-align: left; padding: 9px 13px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  thead th {
+    font-family: "IBM Plex Mono", monospace; font-weight: 500;
+    font-size: .6875rem; letter-spacing: .09em; text-transform: uppercase;
+    color: var(--ink-3); background: var(--sunk); white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.num, th.num { font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.step { font-family: "IBM Plex Mono", monospace; color: var(--ink-3); width: 2.5rem; }
+
+  .chip {
+    display: inline-block; font-family: "IBM Plex Mono", monospace;
+    font-size: .6875rem; font-weight: 500; letter-spacing: .04em;
+    padding: .18em .5em; border-radius: 3px; white-space: nowrap;
+  }
+  .chip.done  { color: var(--done);  background: var(--done-w); }
+  .chip.hold  { color: var(--hold);  background: var(--hold-w); }
+  .chip.broke { color: var(--broke); background: var(--broke-w); }
+  .chip.held  { color: var(--ink-2); background: var(--sunk); }
+
+  /* ── bug list, severity stripe instead of another card ────── */
+  ul.bugs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+  ul.bugs li {
+    background: var(--card); border: 1px solid var(--rule);
+    border-left: 4px solid var(--broke); border-radius: 5px;
+    padding: 13px 16px; display: flex; flex-direction: column; gap: 5px;
+  }
+  ul.bugs li.moderate { border-left-color: var(--hold); }
+  ul.bugs .hd { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; }
+  ul.bugs .what { color: var(--ink-2); font-size: .9375rem; }
+  ul.bugs .where { font-family: "IBM Plex Mono", monospace; font-size: .75rem; color: var(--ink-3); }
+
+  /* ── two-up ───────────────────────────────────────────────── */
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .panel { background: var(--card); border: 1px solid var(--rule); border-radius: 6px; padding: 16px 18px;
+           display: flex; flex-direction: column; gap: 10px; }
+  .panel ul { margin: 0; padding-left: 1.1em; display: flex; flex-direction: column; gap: 6px;
+              font-size: .9375rem; color: var(--ink-2); }
+
+  .footnote { color: var(--ink-3); font-size: .875rem; border-top: 1px solid var(--rule); padding-top: 16px; }
+
+  @media (max-width: 860px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .duo { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 460px) {
+    .stats { grid-template-columns: 1fr; }
+    ol.todo > li { grid-template-columns: 26px 1fr; }
+    ol.todo > li::before { width: 26px; height: 26px; font-size: .875rem; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="branchline">
+      <span class="eyebrow">Layer 1 · status as of 25 Sep 2026</span>
+      <span class="branch">speedrun008 → harsh/mvp</span>
+    </div>
+    <h1>Speedrun 008 Ledger</h1>
+    <p class="standfirst">
+      Rohit ne Layer&nbsp;1 ke 18 steps kiye aur 20 cheezein aap pe chhodi. Ye board batata hai:
+      code ka kya bana, is session mein kya toota hua mila aur theek hua, aur ab exactly kya karna hai.
+    </p>
+  </header>
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <div class="stats">
+    <div class="stat good">
+      <span class="k">0</span>
+      <span class="lbl">Hermetic failures</span>
+      <span class="was">12,903 pass · pehle 14 fail</span>
+    </div>
+    <div class="stat">
+      <span class="k">611<span style="color:var(--ink-3);font-size:.6em"> / 618</span></span>
+      <span class="lbl">Real-Postgres tests pass</span>
+      <span class="was">pehle: kabhi chale hi nahi</span>
+    </div>
+    <div class="stat">
+      <span class="k" style="color:var(--broke)">5</span>
+      <span class="lbl">Production bugs mile</span>
+      <span class="was">2 deploy pe prod todte</span>
+    </div>
+    <div class="stat">
+      <span class="k">16<span style="color:var(--ink-3);font-size:.6em"> / 18</span></span>
+      <span class="lbl">Steps ka code ban chuka</span>
+      <span class="was">bacha hua = deploy + decisions</span>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <section>
+    <div class="sechead">
+      <h2>Ab kya karna hai — 4 cheez, isi order mein</h2>
+      <p class="note">
+        Order maayne rakhta hai: extraction cache ka fingerprint pehle hi move ho chuka hai
+        (<code>151b9dabf235</code> → <code>a3d5496aa0d3</code>), to <strong>deploy karte hi pura corpus
+        dobara extract hoga</strong>. Bill pehle dekho, deploy baad mein.
+      </p>
+    </div>
+
+    <ol class="todo">
+      <li>
+        <div class="body">
+          <h3>Re-extraction ka bill nikalo — deploy se pehle</h3>
+          <p class="why">
+            Step 4 ne prompt badla, isliye har cached extraction miss karegi. Ye kharcha kisi ne
+            ab tak price nahi kiya. Jawab aane ke baad teen raste: accept karo, ek tenant pe stage
+            karo, ya billing window tak defer.
+          </p>
+          <div class="cmd">.venv/bin/python scripts/speedrun008_measurements.py</div>
+          <p class="meta">Yahi ek command neeche wale saare 8 measurements bhi de deti hai.</p>
+        </div>
+      </li>
+
+      <li>
+        <div class="body">
+          <h3>Us script ka output dekho — 8 items aur 3 decisions isi se close honge</h3>
+          <p class="why">
+            Domain coverage, relevance rate, commitment states, joinability, thread shape, OCR state,
+            corpus ki tareekhein, aur kaunsi migrations lagi hain. Read-only transaction ke andar
+            chalti hai — galti se kuch likh nahi sakti.
+          </p>
+          <p class="meta">
+            Maine chalate waqt paya ki Rohit ki <strong>4 queries hi tooti hui thi</strong> — galat
+            column naam. Script mein sahi kar diye.
+          </p>
+        </div>
+      </li>
+
+      <li>
+        <div class="body">
+          <h3>Dockerfile se deploy karo</h3>
+          <p class="why">
+            OCR prod mein <strong>kabhi ek baar nahi chala</strong> — har <code>document_jobs</code> row
+            pe <code>ocr_engine = NULL</code>. Shak ye hai ki DO component <code>main</code> se build
+            karta hai, jahan Dockerfile hai hi nahi. Deploy ke saath <strong>saari 7 migrations
+            (0176–0182) khud lag jaayengi</strong> — app boot pe apply karta hai.
+          </p>
+          <p class="meta">
+            Console mein 3 cheez dekho: source branch, source directory, aur last build Dockerfile se
+            hua ya buildpack se. Deploy ke baad boot log mein <code>migrations applied at boot:</code>
+            dhoondho — wo line na dikhe to migrations nahi lagi.
+          </p>
+        </div>
+      </li>
+
+      <li>
+        <div class="body">
+          <h3>Golden corpus — 425 items aur ek doosra mailbox</h3>
+          <p class="why">
+            Abhi corpus mein <strong>8 files</strong> hain. Spec 425 annotated items maangti hai
+            (300 email · 50 calendar · 50 docs · 25 transcripts) plus ek aur high-volume mailbox.
+            Harness ne jaanbujh kar number print karne se mana kar diya jab tak dono na ho — sahi
+            call hai, 8 files se nikla number repo ka sabse convincing galat number hota.
+          </p>
+          <p class="meta">Aapse chahiye: customer data clearance + 2 annotators. Ye hafte-bhar ka kaam hai.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <section>
+    <div class="sechead">
+      <h2>Is session mein kya toota hua mila</h2>
+      <p class="note">
+        618 real-Postgres tests aaj pehli baar chale. Yahi un bugs ko bahar laya jo hermetic suite
+        kabhi nahi pakad sakti thi — kyunki SQL ko refuse karne ke liye ek asli database chahiye.
+      </p>
+    </div>
+
+    <ul class="bugs">
+      <li>
+        <div class="hd"><h3>Har <code>qualified_signals</code> INSERT fail ho raha tha</h3></div>
+        <p class="what">
+          <code>subject_key</code> column list mein tha, par VALUES aur params dono mein nahi —
+          Postgres statement hi reject karta hai. <code>put()</code> har exception nigal jaata hai
+          ("a signal store never kills a sweep"), to sweep <em>success</em> report karta aur kuch
+          store nahi hota. Ek test run mein <strong>321 signals chup-chaap gayab</strong>.
+        </p>
+        <p class="where">genios_engine/capture/esqe/signal_store.py · fix + drift guard test</p>
+      </li>
+      <li>
+        <div class="hd"><h3><code>teams</code> reader har org pe band tha</h3></div>
+        <p class="what">
+          P15 ne Teams ko <code>APP_IDS</code> mein daala, par DB column default aur policy upsert ka
+          inline SQL — dono mein 6 apps hi rahe. Effective policy inko intersect karti hai, to Teams
+          kabhi read nahi hua — <strong>jabki API use "allowed" bata raha tha</strong>.
+        </p>
+        <p class="where">platform/capture_policy.py + nayi migration 0182 · backfill sirf untouched rows pe</p>
+      </li>
+      <li>
+        <div class="hd"><h3>Global compile flag no-op tha</h3></div>
+        <p class="what">
+          <code>live=True</code> ke saath koi L3 domain activated na ho to resolver ko <em>khaali</em>
+          set milta tha, jise "kuch activate nahi hai" padha jaata tha — har situation refuse.
+          Yaani "har tenant" wala flag kisi tenant pe kuch compile nahi karta tha.
+        </p>
+        <p class="where">reason/domain_shadow.py · production path badla nahi</p>
+      </li>
+      <li>
+        <div class="hd"><h3>Signal read-back crash</h3></div>
+        <p class="what">Wahi <code>subject_key</code>, padhne wale raste pe — har read <code>TypeError</code>.</p>
+        <p class="where">signal_store._to_row</p>
+      </li>
+      <li class="moderate">
+        <div class="hd"><h3>Aadmi ka naam DB collation pe depend karta tha</h3></div>
+        <p class="what">
+          Ek Postgres pe "Priya Shah", doosre pe "priya shah" — nudge mein dikhne wala naam server
+          ke locale pe nahi hona chahiye.
+        </p>
+        <p class="where">reason/moments/seat_profile.py</p>
+      </li>
+    </ul>
+
+    <div class="duo">
+      <div class="panel">
+        <h3>7 test-harness bugs bhi theek kiye</h3>
+        <ul>
+          <li><strong>11 failures</strong> — 5 files apni <code>llm_costs</code> DDL copy rakhte the, migration 0175 ke 3 columns kisi ne nahi seekhe. Ab ek shared copy.</li>
+          <li><strong>16 errors</strong> — pilot seeder <code>live=True</code> deta tha par L3 domain activate nahi karta tha.</li>
+          <li><strong>Time bomb</strong> — roster audit ka frozen clock 20 Aug, payload TTL 720h. 19 Sep ke baad ye file har run pe marti thi.</li>
+          <li>Missing skip guard · env-skips ko placeholder ginna · <code>.env</code> ki key test mein leak · hardcoded app list.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>7 pg failures abhi bhi bache hain</h3>
+        <ul>
+          <li><strong>4</strong> ek hi gate file mein — doosra sweep 0 events ingest karta hai. Cursor aur sync-ledger dono wajah nahi hain (test kiya).</li>
+          <li><strong>resolution</strong> — lane ne candidate dekha hi nahi; test "refuse kiya" aur "dekha hi nahi" mein farak nahi kar paata.</li>
+          <li><strong>shadow diff</strong> — expected set mein <code>analytic_movement</code> extra.</li>
+          <li><strong>publisher</strong> — <code>coverage</code> axis legitimately unknown hota hai jab domain ke expectations registered na ho; test use assert karta hai.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <section>
+    <div class="sechead">
+      <h2>Rohit ke 18 steps — kahan khade hain</h2>
+      <p class="note">Code ka kaam 16/18 ho chuka. Jo "pending" hai wo code nahi — deploy, decision ya measurement hai.</p>
+    </div>
+
+    <div class="twrap">
+      <table>
+        <thead>
+          <tr><th class="num">#</th><th>Step</th><th>Status</th><th>Kya badla</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="step">9</td><td>Claim directness</td><td><span class="chip done">COMPLETE</span></td><td>Hearsay ab gawaah ke neeche compose hoti hai</td></tr>
+          <tr><td class="step">12</td><td>Signal states + commitment</td><td><span class="chip done">CODE DONE</span></td><td><code>BROKEN</code> ke liye coverage ≥ 9000&nbsp;bp lazmi</td></tr>
+          <tr><td class="step">13</td><td>Cross-source identity keys</td><td><span class="chip done">CODE DONE</span></td><td><code>to</code>/<code>cc</code> flatten hona band; attendees ke naam bache</td></tr>
+          <tr><td class="step">15</td><td>Coverage on the signal</td><td><span class="chip done">CODE DONE</span></td><td>Negative claim bina proof publish nahi ho sakta</td></tr>
+          <tr><td class="step">16</td><td>Source field coverage</td><td><span class="chip done">CODE DONE</span></td><td>⛔ Har prompt bolta tha "message 1 of 1"</td></tr>
+          <tr><td class="step">17</td><td>Adversarial validation</td><td><span class="chip done">6 / 7</span></td><td>40 rows failure-class se typed; 1 row abhi khuli</td></tr>
+          <tr><td class="step">18</td><td>Conversation crosses the seam</td><td><span class="chip done">CODE DONE</span></td><td>Benchmark 20 → 24</td></tr>
+          <tr><td class="step">1</td><td>OCR — drain the parked</td><td><span class="chip hold">DEPLOY</span></td><td>28 attachments OCR-addressable, ek bhi padha nahi gaya</td></tr>
+          <tr><td class="step">2</td><td>Bounce / DSN path</td><td><span class="chip hold">MIGRATION</span></td><td>0 → 3 delivery-failure signals (0176 chahiye)</td></tr>
+          <tr><td class="step">3</td><td>Widen the seam</td><td><span class="chip hold">MIGRATION</span></td><td>9 → 17 columns (0177 chahiye)</td></tr>
+          <tr><td class="step">4</td><td>Typed claims</td><td><span class="chip hold">BILL</span></td><td>8 → 11 of 15 lanes; pura corpus re-extract hoga</td></tr>
+          <tr><td class="step">5</td><td>Coverage denominator</td><td><span class="chip hold">DECISION</span></td><td>⛔ 60-day window — P3/P4 abhi <em>impossible</em> hain</td></tr>
+          <tr><td class="step">6</td><td>Domain mapping</td><td><span class="chip hold">QUERY</span></td><td>Proposer bana, default off; target set nahi ho sakta</td></tr>
+          <tr><td class="step">7</td><td>Intent + dead predicates</td><td><span class="chip hold">DECISION</span></td><td>Saare 16 types provably fireable; zero cost</td></tr>
+          <tr><td class="step">8</td><td>Ceiling + relevance allocator</td><td><span class="chip hold">QUERY</span></td><td>Over-budget page ab head judge karta, tail naam leta</td></tr>
+          <tr><td class="step">14</td><td>Temporal fields + reply pairing</td><td><span class="chip hold">MIGRATION</span></td><td>2 → 6 world instants; "8 days overdue" ab keh sakta</td></tr>
+          <tr><td class="step">10</td><td><code>REVIEW</code> as a 4th outcome</td><td><span class="chip held">KHUD ROKA</span></td><td>Step ne khud ko gate kiya — measurement use cancel kar sakti hai</td></tr>
+          <tr><td class="step">11</td><td>P1–P5 replay harness</td><td><span class="chip held">CORPUS</span></td><td>Baseline 16 → 15 correct; measured 20 of 38</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <section>
+    <div class="sechead">
+      <h2>Chhe numbers — jo hile aur jo hil hi nahi sakte</h2>
+      <p class="note">
+        Teen "unmeasurable" isliye hain ki <strong>19 September ke re-sync ne pilot corpus uda diya</strong>.
+        Code bana hua hai; number nahi nikal sakta. Isi liye item 9 ka sawaal — wo re-sync jaanbujh ke tha?
+      </p>
+    </div>
+
+    <div class="twrap">
+      <table>
+        <thead>
+          <tr><th class="num">#</th><th>Metric</th><th class="num">Start</th><th class="num">Ab</th><th>Haal</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="step">2</td><td>Seam columns crossing L1→L2</td><td class="num">9</td><td class="num">17</td><td><span class="chip done">TARGET MET</span></td></tr>
+          <tr><td class="step">3ʹ</td><td>Claim lanes that carry a receipt</td><td class="num">8 / 15</td><td class="num">11 / 15</td><td><span class="chip done">TARGET MET</span></td></tr>
+          <tr><td class="step">6</td><td>Benchmark semantic objects</td><td class="num">15 / 38</td><td class="num">24 / 38</td><td><span class="chip hold">+9, target 30+</span></td></tr>
+          <tr><td class="step">1</td><td>Attachments never read</td><td class="num">120 parked</td><td class="num">—</td><td><span class="chip broke">UNMEASURABLE</span></td></tr>
+          <tr><td class="step">4</td><td>Events with a real domain</td><td class="num">8%</td><td class="num">—</td><td><span class="chip broke">UNMEASURABLE</span></td></tr>
+          <tr><td class="step">5</td><td>Events never judged</td><td class="num">31%</td><td class="num">—</td><td><span class="chip broke">UNMEASURABLE</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <section>
+    <div class="sechead">
+      <h2>Teen findings jo sabse zyada maayne rakhte hain</h2>
+    </div>
+    <div class="duo" style="grid-template-columns: 1fr 1fr 1fr;">
+      <div class="panel">
+        <span class="eyebrow">Prompt</span>
+        <h3>"message 1 of 1"</h3>
+        <p class="what" style="color:var(--ink-2);font-size:.9375rem">
+          Har prompt jo Layer 1 ne kabhi bheja, model ko batata tha ki ye thread ka pehla aur akela
+          message hai — 12-message renewal negotiation pe bhi. Envelope likhe jaane ke din se.
+          Theek ho gaya, par sirf aage ke mail ke liye.
+        </p>
+      </div>
+      <div class="panel">
+        <span class="eyebrow">Deploy</span>
+        <h3>OCR kabhi chala hi nahi</h3>
+        <p class="what" style="color:var(--ink-2);font-size:.9375rem">
+          Flag 10 Sept se sahi hai. Phir bhi har row pe <code>ocr_engine = NULL</code>,
+          <code>ocr_pages = 0</code>. Ye flag ka masla nahi — tesseract wali image host tak
+          pahunchi hi nahi.
+        </p>
+      </div>
+      <div class="panel">
+        <span class="eyebrow">Benchmark</span>
+        <h3>60-day window</h3>
+        <p class="what" style="color:var(--ink-2);font-size:.9375rem">
+          P3 6 mahine poochta hai, P4 12. Default connection 60 din laati hai. To ye
+          <em>unproven</em> nahi — <strong>structurally impossible</strong> hain: wo mail kabhi
+          fetch hi nahi hui. Ek admin write se theek ho jaata hai.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <section>
+    <div class="sechead">
+      <h2>Code ka scope — kuch commit nahi kiya</h2>
+    </div>
+    <div class="twrap">
+      <table>
+        <thead><tr><th>Kya</th><th>Files</th></tr></thead>
+        <tbody>
+          <tr><td>Production code fix</td><td class="mono" style="font-size:.8125rem">signal_store.py · domain_shadow.py · capture_policy.py · seat_profile.py</td></tr>
+          <tr><td>Nayi migration</td><td class="mono" style="font-size:.8125rem">0182_capture_policy_teams_default.sql</td></tr>
+          <tr><td>Naye tests / helpers</td><td class="mono" style="font-size:.8125rem">test_the_insert_names_every_column_it_lists.py · _model_audit_schema.py</td></tr>
+          <tr><td>Nayi script</td><td class="mono" style="font-size:.8125rem">scripts/speedrun008_measurements.py</td></tr>
+          <tr><td>Test fixes</td><td class="mono" style="font-size:.8125rem">10 files</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="footnote">
+      Ek speculative edit revert bhi kiya — <code>sync_cursors</code> wala — kyunki usse kuch fix nahi
+      hua, aur bina proof ke change chhodna is repo ki apni doctrine ke khilaf hai.
+      Branch <code>speedrun008</code> local <code>harsh/mvp</code> mein merge hai; <code>origin</code> abhi 3 commits peeche hai.
+    </p>
+  </section>
+
+</div>
+</body>
+</html>
