@@ -243,7 +243,25 @@ class GraphView:
 
 #: The window predicate, written once. Both reads below interpolate one of these two so the
 #: live read and the as-of read cannot drift apart in one table and not the others.
-_WINDOW_AT = "valid_from <= :t and (valid_to is null or valid_to > :t)"
+#: ⛔ L3-04 · `coalesce(recorded_at, valid_from)`, NOT `valid_from`.
+#:
+#: The three tables this predicate spans did not agree about what `valid_from` means.
+#: `graph_nodes` and `graph_facts` take the column's `now()` default, so theirs is the instant we
+#: LEARNED the version. `graph_edges` binds it to `coalesce(occurred_at, now())` — the event's own
+#: time — so a six-month-old email backfilled today produced an edge stamped six months ago, and an
+#: as-of read of five months ago saw a relationship we learned about this morning. That is LCX-02
+#: exactly: history rewritten to make the system appear to have known something earlier than it
+#: did. `write_fact`'s empty-window trick protects facts from it; nothing protected edges.
+#:
+#: The edge column is NOT redefined, because `reason/moments/recall` and `.../slice` read it as
+#: event time and are right to — changing the write would move their answers silently. Migration
+#: 0184 adds `recorded_at` instead, and the coalesce keeps ONE predicate over three tables, which
+#: is the property `_view` is built on.
+#:
+#: Pre-0184 rows carry NULL and fall back to exactly today's behaviour. We do not know when we
+#: learned them, and a value that cannot be reconstructed is not fabricated.
+_WINDOW_AT = ("coalesce(recorded_at, valid_from) <= :t "
+              "and (valid_to is null or valid_to > :t)")
 _WINDOW_OPEN = "valid_to is null"
 
 _NODE_COLS = ("node_id, version, node_type, canonical_key, display_name, identity_strength, "
@@ -330,8 +348,11 @@ class GraphStore:
         node_id = new_id("node")
         conn.execute(text(
             "insert into graph_nodes (node_id, version, org_id, node_type, canonical_key, "
-            "display_name, identity_strength, created_by_event_id) "
-            "values (:id, 1, :o, :nt, :k, :dn, :st, :ev)"),
+            # L3-04 · `recorded_at` is stamped by the DATABASE, never handed in. A caller that
+            # could supply it could backdate what we knew, which is the one thing an audit read
+            # must be unable to express.
+            "display_name, identity_strength, created_by_event_id, recorded_at) "
+            "values (:id, 1, :o, :nt, :k, :dn, :st, :ev, now())"),
             {"id": node_id, "o": org_id, "nt": node_type, "k": canonical_key,
              "dn": display_name, "st": "strong" if canonical_key else "weak", "ev": event_id})
         # Claim the keys this node can be found by. A key already held by ANOTHER node
@@ -683,10 +704,12 @@ class GraphStore:
             "insert into graph_facts (fact_version_id, fact_id, org_id, subject_node_id, field, "
             "value, value_type, status, authority_rank, confidence, relevance, occurred_at, "
             "created_by_event_id, derivation_type, trace_id, schema_version, source_authority, "
-            "provenance_refs"
+            # L3-04 · knowledge time, stamped by the database. Distinct from `occurred_at`
+            # two columns up, which is when the world moved.
+            "provenance_refs, recorded_at"
             + (", valid_to" if status == "historical" else "") + ") "
             "values (:fv, :fid, :o, :s, :f, :val, :vt, :st, :ar, :c, :rel, :oc, :ev, "
-            "'source_event', :ev, 'graph-fact.v2', :authority, :provenance"
+            "'source_event', :ev, 'graph-fact.v2', :authority, :provenance, now()"
             + (", now()" if status == "historical" else "") + ")").bindparams(
                 bindparam("val", type_=JSON), bindparam("provenance", type_=JSON)),
             {"fv": fv, "fid": new_id("fact"), "o": org_id, "s": subject_node_id, "f": field,
@@ -922,9 +945,16 @@ class GraphStore:
         edge_version_id = new_id("edgev")
         conn.execute(text(
             "insert into graph_edges (edge_version_id, edge_id, org_id, edge_type, from_node_id, "
-            "to_node_id, authority_rank, confidence, valid_from, last_seen_at, created_by_event_id) "
+            # ⛔ L3-04 · `valid_from` KEEPS THE EVENT TIME and `recorded_at` carries the
+            # knowledge time. The two are genuinely different on this table and both have
+            # readers: reason/moments reads valid_from as "when did we last relate to this
+            # node", and the as-of read needs "when did we learn of this relationship". Taking
+            # the first meaning away to give the second would have moved every moments answer
+            # with nothing failing.
+            "to_node_id, authority_rank, confidence, valid_from, last_seen_at, "
+            "created_by_event_id, recorded_at) "
             "values (:ev, :eid, :o, :t, :f, :tn, :ar, :c, coalesce(:vf, now()), "
-            "coalesce(:vf, now()), :e)"),
+            "coalesce(:vf, now()), :e, now())"),
             {"ev": edge_version_id, "eid": new_id("edge"), "o": org_id, "t": edge_type,
              "f": from_node_id, "tn": to_node_id, "ar": authority_rank, "c": confidence,
              "vf": occurred_at, "e": event_id})

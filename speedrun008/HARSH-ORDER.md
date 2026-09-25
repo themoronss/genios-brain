@@ -968,6 +968,7 @@ learned to flatter itself.
 | 19 | replies-vs-total query, and **A (re-sync)** or **B (forward-only)**? | |
 | 20 | scratch Postgres URL — **same as #1**, and it now blocks step 17 | |
 | **21** | ⛔ **L3-0A · the backfill window on the pilot connection** — see below | |
+| **22** | ⛔ **migration 0184** applied? — `recorded_at` on the three graph tables | |
 
 ---
 
@@ -1024,4 +1025,24 @@ resume. The rebuild runs either way, deliberately.
 It does not re-examine facts that were **held** for lack of coverage. Widening history improves
 coverage for those, and nothing revisits them yet — that is Wave 4's held-candidate recovery step,
 and L3-0A's findings are why it exists.
+
+---
+
+## 22 · Migration 0184 · `recorded_at` (knowledge time)
+
+**Apply before, or at the same time as, widening the backfill window (item 21).**
+
+`GET /graph/as-of` answers *"what did GeniOS know when it made that decision?"* with one predicate
+over three tables, and `graph_edges` stamped `valid_from` with **the event's own time** while nodes
+and facts stamped it with the write time. So a backfilled six-month-old email produced an edge
+dated six months ago, and an as-of read of five months ago saw a relationship we learned about that
+morning.
+
+⛔ **Item 21 makes this worse by design** — a year of backfilled mail is a year of backdated edges.
+
+Three nullable columns, three partial indexes, **no backfill of existing rows** (we do not know when
+we learned them, and a value that cannot be reconstructed is not fabricated). Idempotent.
+
+**After applying:** nothing to verify by hand. New rows carry the column; old rows fall through
+`coalesce(recorded_at, valid_from)` to exactly today's behaviour.
 
