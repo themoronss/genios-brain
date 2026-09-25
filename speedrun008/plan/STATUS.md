@@ -554,7 +554,8 @@ exist. The work is one edge, two writers, and a read.
 
 | Step | What | State |
 |---|---|---|
-| **L3-0** | [Name the Decision Object](layer-3/step-00-name-the-decision.md) | **NEXT** |
+| ⛔ **L3-00** | [Carry the new vocabulary into `LAYERS.py`](layer-3/11-THE-ENGINES.md) | **NEXT** |
+| **L3-0** | [Name the Decision Object](layer-3/step-00-name-the-decision.md) | NOT STARTED |
 | **L3-1** | `intel_nodes` + `intel_edges`, landed with their first writer | NOT STARTED · ⛔ migration |
 | **L3-2** | Lift `about` out of `signals` into an addressable edge | NOT STARTED |
 | **L3-3** | Delivery and feedback write back — `delivered_as`, `resulted_in` | NOT STARTED |
@@ -568,3 +569,15 @@ exist. The work is one edge, two writers, and a read.
 **The measurement that justifies the layer:** `prior_decision`, `previous_decision`,
 `last_decision`, `past_decisions` — **0 occurrences each** in the entire engine. Every sweep
 decides from scratch.
+
+**All 18 components the Globe named exist in the code** — see
+[`layer-3/11-THE-ENGINES.md`](layer-3/11-THE-ENGINES.md). Nothing from the previous architecture is
+dropped; an engine is a component and a layer is a stage, so every engine gets a home. Layer 3
+gains one the Globe never had: the **Intelligence Graph**.
+
+⛔ **But mapping them surfaced a numbering collision that blocks the first line of code.** There are
+now four vocabularies. `LAYERS.py` predicted exactly this — *"the numbers have already changed twice
+across specs while the code did not"* — and already carries a translation table for three of them.
+`executive`/`deliver`/`feedback` are **5/6/7** in the code and **4/5/6** in the new list, and
+*"Layer 3"* means Domain Expertise in **115 files**. Hence **L3-00**, before L3-0.
+

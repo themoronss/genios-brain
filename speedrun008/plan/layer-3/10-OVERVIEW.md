@@ -128,6 +128,7 @@ derived content address churned every sweep.
 
 | | step | needs Harsh | why it is here |
 |---|---|---|---|
+| ⛔ **L3-00** | [Carry the new vocabulary into `LAYERS.py`](11-THE-ENGINES.md) | — | ⛔ **"Layer 3" means Domain Expertise in 115 files and Context Graph in this plan.** Four vocabularies now; `LAYERS.py` predicted it |
 | **L3-0** | [Name the Decision Object](step-00-name-the-decision.md) | — | a graph of decisions needs decisions to be one thing. The FK already voted |
 | **L3-1** | The Intelligence Graph's two tables | ⛔ **migration** | `intel_nodes` + `intel_edges`, closed vocabularies, totality guards, cascade to `orgs` — **landed with their first writer**, never empty |
 | **L3-2** | Lift `about` out of `signals` | — | the edge exists in a delivery table; make it addressable and survive archival |
