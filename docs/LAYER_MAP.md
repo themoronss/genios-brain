@@ -1,6 +1,6 @@
 # GeniOS Layer Map — the one translation table
 
-Three specs number the layers three different ways. **Nobody says "L5" without a package
+**Four** specs number the layers four different ways. **Nobody says "L5" without a package
 name attached.** The layer index lives in code at `genios_engine/LAYERS.py`; import
 direction (same-or-lower only) is enforced by `tests/test_layer_topology.py`.
 
@@ -59,3 +59,55 @@ the layer that decided the work was worth doing. Layer 5 now authors the communi
 executes it — adapters, retries, budget, copy, the outbox. Deliver imports executive; executive
 never imports deliver, and `executive/validate.py` documents the same downward-import pattern
 for the render validators.
+
+---
+
+## ⛔ The fourth vocabulary — how the product is described, 2026-09-25 (L3-00)
+
+The product is described to a founder as six layers, and **that numbering is not this file's
+numbering**:
+
+```
+L1 Enterprise Signals
+L2 Signals Qualification   (Signals + Domain Expertise = Reasoning)
+L3 Context Graph
+L4 Executive
+L5 Delivery
+L6 Learning
+```
+
+| package | `LAYERS.py` | old dossier | Atlas | **product** |
+|---|---|---|---|---|
+| `capture/` | 1 | L1 Capture | 1 | **L1** |
+| `context/` | 2 | L2 Context graph | 2 | ⛔ **L2 *and* L3** |
+| `packs/` | – (import rule 3) | L4 Domain packs | 3 | ⛔ **folded into L2** |
+| `reason/` | – (import rule 4) | L3 Reasoning | 4 | ⚠️ **L2 *and* L4** |
+| `executive/` | **5** | – | 5 | ⛔ **L4** |
+| `deliver/` | **6** | L5 Delivery | 5.2 | ⛔ **L5** |
+| `feedback/` | **7** | L6 Feedback | 6 | ⛔ **L6** |
+
+### Two collisions, stated plainly
+
+**⛔ "Layer 3" means Domain Expertise in this repo and Context Graph in the product.**
+115 files say *"Layer 3"* or *"L3"*; `reason/domain_shadow.py`'s first line is literally
+*"Layer 3 Domain Expertise compiler"*, and under the product vocabulary that module is **L2**.
+
+**⛔ The tail is off by one.** `executive`/`deliver`/`feedback` are **5/6/7** here and **4/5/6**
+there. 241 files mention L5 or L6.
+
+### Two packages are not one-to-one, and that is a fact about the packages
+
+`context` spans product **L2 and L3** — it assembles situations *and* holds the graph they are
+derived from. `reason` spans product **L2 and L4** — `domain_shadow` is expertise reasoning,
+`runner`/`composer`/`store` choose an action. Their own docstrings say so **in the old numbering**,
+in the same package.
+
+**Neither is a bug and neither is urgent.** `LAYERS.py` already declares `packs` and `reason` to be
+**planes, not stages** — *"consulted rather than passed through"* — and the import rule it enforces
+is correct under every vocabulary. This is recorded so nobody later reads a package boundary as a
+layer boundary.
+
+### The rule that survives all four
+
+> ⛔ **Always name the package, never the digit alone.**
+

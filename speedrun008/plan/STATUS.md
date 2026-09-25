@@ -555,8 +555,8 @@ exist. The work is one edge, two writers, and a read.
 | Step | What | State |
 |---|---|---|
 | ⛔ **L3-0A** | [The window](layer-3/step-0A-the-window.md) · [findings](layer-3/findings/step-0A-the-window.md) | ✅ **COMPLETE** · 10 tests · 0 regressions. All 3 planned units were already built; the gap was the **chain**, and it is wired. ⛔ **PENDING HARSH item 21** — the window itself is an operator call |
-| ⛔ **L3-00** | [Carry the new vocabulary into `LAYERS.py`](layer-3/11-THE-ENGINES.md) | NEXT |
-| **L3-0** | [Name the Decision Object](layer-3/step-00-name-the-decision.md) | NOT STARTED |
+| **L3-00** | [Carry the product vocabulary into `LAYERS.py`](layer-3/step-00-layer-vocabulary.md) · [findings](layer-3/findings/step-00-layer-vocabulary.md) | ✅ **COMPLETE** · +3 tests · 0 regressions. ⛔ Found a live hole: `mcp/` was unmapped, and an unmapped package escapes the import ratchet **in both directions** |
+| **L3-01** | [Name the Decision Object](layer-3/step-00-name-the-decision.md) | **NEXT** |
 | **L3-1** | `intel_nodes` + `intel_edges`, landed with their first writer | NOT STARTED · ⛔ migration |
 | **L3-2** | Lift `about` out of `signals` into an addressable edge | NOT STARTED |
 | **L3-3** | Delivery and feedback write back — `delivered_as`, `resulted_in` | NOT STARTED |
