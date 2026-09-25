@@ -56,6 +56,22 @@ Its own comments, unprompted:
 
 ### 2.2 · ⛔ And `context/` reads it ZERO times
 
+> ## ⛔ CORRECTION — 2026-09-25, during L3-02
+>
+> **This section was wrong as written, and the correction matters.** The grep behind it asked for
+> `signal_coverage|completeness_bp|claimed_total|cursor_exhausted` — the **per-sweep quantitative**
+> symbols. Those are indeed not read outside `capture/`. But it was presented as *"`context/` reads
+> L1's coverage zero times"*, and that is false: **`context/` reads `source_coverage` in five
+> places** (`correlation_resource`, `situations` ×2, `importance`, `support_situations`) and
+> `coverage_ready` appears in **forty-odd modules** across `capture`, `context`, `contracts`,
+> `packs`, `reason` and `api`.
+>
+> **Two different things were conflated.** *Domain readiness* — can we see this domain for this org
+> — is built, persisted and read everywhere. *Quantitative sweep coverage* — how much of this
+> window did we land — is measured and persisted (migration **0178**, on `l1_sync_runs`) and
+> **had one writer and zero readers**. The second is what the benchmark needs, and L3-02 built the
+> read. The conclusion of this section survives; its evidence did not.
+
 | package | reads L1's coverage |
 |---|---|
 | `context/` **(the situation builder)** | ⛔ **ZERO** |
