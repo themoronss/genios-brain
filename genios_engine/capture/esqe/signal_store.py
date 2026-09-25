@@ -230,7 +230,8 @@ class QualifiedSignalRow:
         """The bind parameters for one insert. Built here rather than at the SQL so the column
         list and the values cannot drift out of step at a call site."""
         return {
-            "sig": self.signal_id, "o": self.org_id, "ev": self.event_id,
+            "sig": self.signal_id, "o": self.org_id, "skey": self.subject_key,
+            "ev": self.event_id,
             "tr": self.trace_id, "st": self.signal_type,
             "sec": _dumps(list(self.secondary_types)),
             "imp": self.importance_bp, "comp": _dumps(dict(self.importance_components)),
@@ -257,7 +258,13 @@ class QualifiedSignalRow:
 def _to_row(row: Any) -> QualifiedSignalRow:
     """One database row as the dataclass. Every jsonb column decoded, nothing revalidated."""
     return QualifiedSignalRow(
-        signal_id=row.signal_id, org_id=row.org_id, event_id=row.event_id,
+        signal_id=row.signal_id, org_id=row.org_id,
+        # `getattr` and not `row.subject_key`: this rebuilds whatever a SELECT handed back, and
+        # not every caller selects the full column list. A row read before migration 0177 landed
+        # carries no attribute at all, and refusing to rebuild it would turn a widened column
+        # into a read outage on exactly the rows the widening was for.
+        subject_key=getattr(row, "subject_key", None),
+        event_id=row.event_id,
         trace_id=row.trace_id, signal_type=row.signal_type,
         secondary_types=tuple(_loads(row.secondary_types, [])),
         importance_bp=row.importance_bp,
@@ -411,7 +418,7 @@ class PostgresSignalStore:
                 for row in rows:
                     conn.execute(text(
                         f"insert into {SIGNAL_TABLE} ({_COLUMNS}) values ("
-                        " :sig, :o, :ev, :tr, :st, cast(:sec as jsonb), :imp,"
+                        " :sig, :o, :skey, :ev, :tr, :st, cast(:sec as jsonb), :imp,"
                         " cast(:comp as jsonb), :iver, :conf, cast(:cvec as jsonb),"
                         " cast(:dom as jsonb), cast(:vis as jsonb), :cov, :xref,"
                         " cast(:ev_refs as jsonb), cast(:cids as jsonb), :state, :sup, :exp,"
