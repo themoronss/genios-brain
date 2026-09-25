@@ -554,7 +554,8 @@ exist. The work is one edge, two writers, and a read.
 
 | Step | What | State |
 |---|---|---|
-| ⛔ **L3-00** | [Carry the new vocabulary into `LAYERS.py`](layer-3/11-THE-ENGINES.md) | **NEXT** |
+| ⛔ **L3-0A** | [The window](layer-3/step-0A-the-window.md) · [findings](layer-3/findings/step-0A-the-window.md) | ⛔ **PREMISE CHECKED — all 3 units already built; only the CHAIN is missing. Awaiting the window number (365?)** |
+| ⛔ **L3-00** | [Carry the new vocabulary into `LAYERS.py`](layer-3/11-THE-ENGINES.md) | NEXT |
 | **L3-0** | [Name the Decision Object](layer-3/step-00-name-the-decision.md) | NOT STARTED |
 | **L3-1** | `intel_nodes` + `intel_edges`, landed with their first writer | NOT STARTED · ⛔ migration |
 | **L3-2** | Lift `about` out of `signals` into an addressable edge | NOT STARTED |
@@ -580,4 +581,3 @@ now four vocabularies. `LAYERS.py` predicted exactly this — *"the numbers have
 across specs while the code did not"* — and already carries a translation table for three of them.
 `executive`/`deliver`/`feedback` are **5/6/7** in the code and **4/5/6** in the new list, and
 *"Layer 3"* means Domain Expertise in **115 files**. Hence **L3-00**, before L3-0.
-
