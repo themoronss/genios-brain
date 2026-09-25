@@ -14,6 +14,32 @@
 
 ---
 
+# ⛔ THE ORDER MATTERS — do these in this sequence, not in any other
+
+```
+1. seat_responsibilities   (H5)   ← ⛔ BEFORE any channel
+2. org_seats               (H2)
+3. reporting line          (H3)   ← or the day-7 rung does nothing
+4. Admin activation               ← Layer 3's P3; now there is something to plan
+5. read SweepReport.reasons (H1)  ← the first honest number
+6. org_channels / slack    (H4)   ← ⛔ LAST
+```
+
+⛔ **Why `seat_responsibilities` comes before the channel.** An empty
+`seat_responsibilities` is read as **"the tenant"**, not as "this person owns nothing" —
+
+> *"Reading empty as 'this person owns nothing' would **hide every card from everybody** on the day
+> the table shipped."*
+
+**So an empty table plus a registered Slack channel means EVERY CARD GOES TO EVERYBODY.** It fails
+loud-and-wide, not silent. Survivable with two people; **not survivable with five.**
+
+⛔ **Why the channel is last.** Everything before step 6 is reversible and invisible. **Step 6 is the
+one that makes messages leave the building.** See
+[`03-PRODUCTION-READINESS.md`](03-PRODUCTION-READINESS.md).
+
+---
+
 # H1 · Read `SweepReport.reasons` — ⛔ do this FIRST, right after Admin goes live
 
 **Why first:** everything else on this page is guesswork until you know whether Layer 4 is seeing

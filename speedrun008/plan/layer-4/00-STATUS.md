@@ -11,6 +11,12 @@
 >
 > **Nothing here is a rewrite. Every item is small and most are blocked on a decision, not on code.**
 
+**Folder:** [`01-WHAT-HARSH-DOES.md`](01-WHAT-HARSH-DOES.md) — Harsh's list ·
+[`02-THE-REMAINING-STEPS.md`](02-THE-REMAINING-STEPS.md) — the seven steps, step by step ·
+⛔ [`03-PRODUCTION-READINESS.md`](03-PRODUCTION-READINESS.md) — **safe vs useful, and the one real risk** ·
+[`PENDING-layer-4-executive-analysis.md`](PENDING-layer-4-executive-analysis.md) — the analysis ·
+[`findings/`](findings/) — per-step findings
+
 ---
 
 ## The step table
@@ -21,7 +27,7 @@
 | **L4-01** | ⛔ `explain.py` has **0% coverage** | **NOT STARTED** · no decision needed |
 | **L4-02** | `assignment.py` coverage — **49%**, and it is the largest module (496 lines) | **NOT STARTED** · no decision needed |
 | **L4-03** | `planning.py` coverage — **58%** | **NOT STARTED** · no decision needed |
-| **L4-04** | ⛔ **Escalation names the step it is stuck on** (`monitor.blocking_action`) | **BLOCKED** · needs a rung field · **REAL GAP** |
+| **L4-04** | ⛔ **Escalation names the step it is stuck on** (`monitor.blocking_action`) | ⛔ **PREMISE CORRECTED — buildable today, NOT blocked.** First planned as *"needs a rung field + a migration"*. Measured: `target_seat` is already resolved at FIRE time, and `record_reminder` already carries a `facts` payload. **The fix is ONE KEY in `reminder_facts`** — which today says `next_action: first_action.label`, the wrong step on a partly-done commitment. **REAL GAP, small fix** |
 | **L4-05** | ⛔ **An approval routes to an approver** (`assignment.resolve_approver_seat`) | **BLOCKED** on org authority rules · **REAL GAP** |
 | **L4-06** | ⛔ **Preventive warning → card** | **BLOCKED** on Rohit's threshold decision (C1) |
 | **L4-07** | **Brief → pushed or pull-only** | **BLOCKED** on Rohit's decision (C2) |

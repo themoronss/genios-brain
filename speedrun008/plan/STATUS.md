@@ -598,6 +598,7 @@ the gate working, not a fault.
 **Plan:** [`layer-4/00-STATUS.md`](layer-4/00-STATUS.md) ·
 [`layer-4/01-WHAT-HARSH-DOES.md`](layer-4/01-WHAT-HARSH-DOES.md) ·
 [`layer-4/02-THE-REMAINING-STEPS.md`](layer-4/02-THE-REMAINING-STEPS.md) ·
+[`layer-4/03-PRODUCTION-READINESS.md`](layer-4/03-PRODUCTION-READINESS.md) ·
 [`layer-4/PENDING-layer-4-executive-analysis.md`](layer-4/PENDING-layer-4-executive-analysis.md)
 
 | step | what | state |
@@ -606,7 +607,7 @@ the gate working, not a fault.
 | **L4-01** | ⛔ `explain.py` has **0% coverage** (0 of 47 lines) | **NOT STARTED** · no decision needed |
 | **L4-02** | `assignment.py` — **49%**, the largest module (496 lines) | **NOT STARTED** · no decision needed |
 | **L4-03** | `planning.py` — **58%** | **NOT STARTED** · no decision needed |
-| **L4-04** | ⛔ **Escalation names the step it is stuck on** — today every stalled escalation says *"stalled"* and never *"stuck on getting it approved"* | **BLOCKED** on a rung field · ⛔ **REAL GAP** |
+| **L4-04** | ⛔ **Escalation names the step it is stuck on** — today every stalled escalation says *"stalled"* and never *"stuck on getting it approved"* | ⛔ **PREMISE CORRECTED: buildable today, not blocked.** `target_seat` is already resolved at fire time and `record_reminder` already carries a `facts` payload, so the fix is **one key in `reminder_facts`** — which says `next_action: first_action.label`, the wrong step on a partly-done commitment · **REAL GAP, small fix** |
 | **L4-05** | ⛔ **An approval routes to an approver** — `requires_approval` is read, but nothing resolves who signs | **BLOCKED** on org authority rules, not on code · ⛔ **REAL GAP** |
 | **L4-06** | ⛔ **Preventive warning → card.** `modes.py` calls it *"the vision's USP"*; `deliver/` has **zero** references, so no preventive finding has ever become a card | **BLOCKED** on Rohit — the threshold IS the decision |
 | **L4-07** | **Brief → pushed or pull-only.** `brief.py` calls it *"the executive unit of output"* and nothing composes one on a tick | **BLOCKED** on Rohit |
