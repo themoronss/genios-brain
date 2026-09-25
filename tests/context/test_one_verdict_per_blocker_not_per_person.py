@@ -29,6 +29,7 @@ from genios_engine.context.angles.queues import BLOCKER_KIND_FIELD, blocker_abse
 from genios_engine.context.angles.store import evaluate_angle
 from genios_engine.context.blocker_situations import BLOCKER_FIELD, read_unnamed_blockers
 from genios_engine.context.graph_store import GraphStore
+from tests.context._model_audit_schema import MODEL_AUDIT_SCHEMA
 
 NOW = datetime(2026, 9, 20, 12, 0, tzinfo=timezone.utc)
 ORG = "o"
@@ -41,13 +42,9 @@ _SCHEMA = (
     "subject_ref text, verdict text, confidence_bp integer, refused boolean, saw_hash text, "
     "model_run_id text, first_seen_at timestamp, last_seen_at timestamp, "
     "primary key (org_id, angle_id, subject_ref))",
-    "create table l2_model_runs (run_id text primary key, org_id text, site text, "
-    "subject_ref text, prompt_version text, prompt_hash text, model_snapshot text, "
-    "max_tokens integer, input_tokens integer, output_tokens integer, success boolean, "
-    "error text, parsed_output text, raw_output text, response_hash text, latency_ms integer, "
-    "called_at timestamp)",
-    "create table llm_costs (org_id text, model text, purpose text, input_tokens integer, "
-    "output_tokens integer, success boolean, error text, subject_ref text, created_at timestamp)",
+    # Both tables `model_audit.record_model_run` writes, shared rather than copied — see
+    # `_model_audit_schema` for the migration this file's own copy had not heard of.
+    *MODEL_AUDIT_SCHEMA,
 )
 
 

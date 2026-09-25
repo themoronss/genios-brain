@@ -299,6 +299,10 @@ def test_contracts_pull_in_no_upper_package_at_runtime():
 #: the wave (X0-X8) and the gate (H0-H8), or "17 skipped" is a number nobody can act on.
 _SKIP_REASON = re.compile(r"(H[0-8]) pending — (X[0-8]) has not landed \((.+)\)")
 
+#: The reason `tests/conftest.py` skips a real-Postgres test with. Not a placeholder reason, and
+#: the only other class of skip this tree produces.
+_ENV_SKIP = "GENIOS_TEST_DATABASE_URL not set"
+
 
 def test_every_layer_two_placeholder_skips_with_its_wave_and_gate_named():
     result = subprocess.run(
@@ -307,8 +311,14 @@ def test_every_layer_two_placeholder_skips_with_its_wave_and_gate_named():
         cwd=_ROOT, capture_output=True, text=True, timeout=600,
         env={**os.environ, "PYTEST_ADDOPTS": ""})
     assert result.returncode == 0, f"the placeholder tree is not green:\n{result.stdout[-4000:]}"
+    #: An ENVIRONMENT skip is not a placeholder. `GENIOS_TEST_DATABASE_URL not set` says the
+    #: scratch Postgres is absent — orthogonal to whether a wave has landed — so counting those
+    #: lines as placeholder skips made this gate go red for a reason it was never written to
+    #: catch, and made it do so on exactly the machines that have no scratch DB. Filtered by the
+    #: env reason rather than by `_SKIP_REASON` itself: matching on the pattern would make the
+    #: assertion below vacuous, which is the failure mode a gate must never acquire quietly.
     reasons = [_SKIP_REASON.search(line) for line in result.stdout.splitlines()
-               if line.startswith("SKIPPED")]
+               if line.startswith("SKIPPED") and _ENV_SKIP not in line]
     #: `all(reasons)` and NOT `reasons and all(reasons)`. An empty list is the state this tree
     #: reaches when the LAST placeholder is retired, and the original conjunction turned that
     #: into a failure — so the final wave of a layer would have had to weaken this assertion to

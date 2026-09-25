@@ -1240,6 +1240,8 @@ def test_probe_deleting_an_org_still_works_after_the_extraction_table_rename(liv
 
     Rolled back at the end: this probe writes, it does not keep.
     """
+    if not live_db_url:
+        pytest.skip("GENIOS_TEST_DATABASE_URL not set — real-Postgres erasure probe skipped")
     from sqlalchemy import text as sql
 
     from genios_engine.platform.db import get_engine

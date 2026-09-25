@@ -70,6 +70,7 @@ from sqlalchemy import text
 
 from genios_engine.context import situations
 from genios_engine.context.pipeline import process_event
+from genios_engine.platform import l3_activation
 
 from ...l1_supply import attach_l1_signals
 
@@ -90,6 +91,12 @@ DORMANT_DAYS = 45
 #: asserts against the corpus's own ids rather than against "some rule fired".
 BLOCKING_RULE = "admin.rule.opportunity_tracking.no_reopening_on_an_inferred_satisfaction"
 ELIMINATED_PLAY = "admin.pb.opportunity_tracking.reopen_with_the_evidence_named"
+
+#: The Layer 3 corpus BOTH seeded situations route to — they are written `domain: admin` and
+#: `_L2_TO_L3_DOMAIN` maps that straight through. Named rather than inlined so the day a third
+#: situation is seeded on another corpus, the activation below is the thing that has to change
+#: and is visibly the thing that has to change.
+_PILOT_L3_DOMAIN = "admin"
 
 # =================================================================================================
 # THE TWO EMAILS. Every fact, commitment and observation below is SUBSTRING-BACKED against its own
@@ -353,9 +360,26 @@ def seed_admin_pilot(store, org: str, *, eval_time=EVAL_TIME, build_cards: bool 
     if with_brains:
         out["brains"] = seed_runtime_brains(store, org, eval_time=eval_time)
 
+    # LAYER 3'S HALF, and it is the same omission as Layer 1's above: the seed drove the compile
+    # with `live=True` and no `live_domains`, so `CapabilityResolver` was handed an EMPTY
+    # activated set — which is not "no filter", it is "this tenant has activated nothing". Every
+    # situation then raised `NoExpertiseRoute` naming that empty set, the pass counted `no_route`
+    # for all of them, and `counts["compile"]` came back with no `emitted` key at all. A caller
+    # reading `counts["compile"]["emitted"]` got a KeyError rather than a number, so the seam
+    # tests never reported the number they were written to assert — they died before it.
+    #
+    # `live=True` alone does NOT cover this. It forces the live LANE per situation, but the
+    # resolver's filter is a separate parameter with a separate meaning, which is exactly the
+    # split `live_lane` documents. A customer has both: an operator switches the corpus on
+    # (`platform/l3_activation`) and the sweep reads it back. The seed now does the same.
+    l3_activation.activate(store.engine, org, domain=_PILOT_L3_DOMAIN, by="l3_pilot_seed",
+                           notes="seeded pilot tenant: the corpus its situations route to")
+    live_domains = l3_activation.activated_domains(store.engine, org)
+
     from genios_engine.reason.domain_shadow import shadow_compile
     out["compile"] = dict(shadow_compile(store=store, org_id=org, eval_time=eval_time,
-                                         live=True, registry=registry))
+                                         live=True, registry=registry,
+                                         live_domains=live_domains))
     if build_cards:
         from genios_engine.deliver.pipeline import build_cards_for_org
         from genios_engine.deliver.store import CardStore

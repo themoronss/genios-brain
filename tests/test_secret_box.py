@@ -46,7 +46,11 @@ def test_a_changed_key_gives_empty_not_garbage(key, monkeypatch):
 
 
 def test_without_a_key_the_value_is_stored_as_given(monkeypatch):
-    monkeypatch.delenv("GENIOS_CRYPTO_KEY", raising=False)
+    # SET EMPTY, do not DELETE. `Settings` reads `env_file=".env"`, so deleting the variable
+    # leaves the developer's own `.env` supplying a real key and this test asserts the opposite
+    # of what it says on any machine that has one. An empty environment variable outranks the
+    # file and reproduces the deployment this test is about: `crypto_key` at its "" default.
+    monkeypatch.setenv("GENIOS_CRYPTO_KEY", "")
     C.get_settings.cache_clear()
     try:
         assert S.seal("gnwh_dev") == "gnwh_dev"

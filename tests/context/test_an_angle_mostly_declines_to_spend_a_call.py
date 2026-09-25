@@ -18,6 +18,7 @@ from genios_engine.context.angles.contract import Angle, GateSource, register
 from genios_engine.context.angles.store import (AUDIT_SITE, evaluate_angle, evaluate_org,
                                                 read_verdicts)
 from genios_engine.context.graph_store import GraphStore
+from tests.context._model_audit_schema import MODEL_AUDIT_SCHEMA
 
 NOW = datetime(2026, 9, 20, 12, 0, tzinfo=timezone.utc)
 ORG = "o"
@@ -31,16 +32,11 @@ _SCHEMA = (
     "subject_ref text, verdict text, confidence_bp integer, refused boolean, saw_hash text, "
     "model_run_id text, first_seen_at timestamp, last_seen_at timestamp, "
     "primary key (org_id, angle_id, subject_ref))",
-    "create table l2_model_runs (run_id text primary key, org_id text, site text, "
-    "subject_ref text, prompt_version text, prompt_hash text, model_snapshot text, "
-    "max_tokens integer, input_tokens integer, output_tokens integer, success boolean, "
-    "error text, parsed_output text, raw_output text, response_hash text, latency_ms integer, "
-    "called_at timestamp)",
     # `model_audit.record_model_run` files the cost row beside the audit envelope. Present here
     # because a fixture missing it does not fail the audit — it fails the CALL, which would let
-    # this file pass while proving the opposite of what it claims.
-    "create table llm_costs (org_id text, model text, purpose text, input_tokens integer, "
-    "output_tokens integer, success boolean, error text, subject_ref text, created_at timestamp)",
+    # this file pass while proving the opposite of what it claims. Shared rather than copied:
+    # the copies did not learn about migration 0175 and every one of them went red.
+    *MODEL_AUDIT_SCHEMA,
 )
 
 

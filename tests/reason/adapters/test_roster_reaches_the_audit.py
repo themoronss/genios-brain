@@ -14,6 +14,7 @@ rather than copied so the two cannot drift about what an admin tenant looks like
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 
 import pytest
 from sqlalchemy import text
@@ -21,9 +22,25 @@ from sqlalchemy import text
 from genios_engine.context import situations
 
 from ...l1_supply import attach_l1_signals
-from ...test_admin_support_packs import NOW, _run_admin, _seed_org
+from ...test_admin_support_packs import _run_admin, _seed_org
 
 pytestmark = pytest.mark.pg
+
+#: THE WALL CLOCK, not `test_admin_support_packs.NOW`, and the reason is the whole of this file.
+#:
+#: The audit below REPLAYS the run this test produces, and `reason/audit.py` writes the context
+#: payload with `expires_at = evaluation_time + 720h` while `store.py` tests expiry against
+#: `datetime.now()`. A run evaluated at a frozen past date is therefore born with a payload that
+#: has ALREADY expired once that date is more than thirty days old — and `NOW` is 2026-08-20, so
+#: from 2026-09-19 onwards every run of this file died on `ContextPayloadExpired` before it
+#: reached a single assertion. Nothing caught it because the file is `pg`-marked and the pg lane
+#: had never been run.
+#:
+#: This is the same decision `tests/test_l4_seams_out.py` already made and wrote down — *"a
+#: tenant seeded at a frozen 2026-08-08 has an empty card queue and an unreplayable run by the
+#: time anybody runs this"*. Every assertion here is about structure and arithmetic, never about
+#: a date or a hash, so a moving instant costs the file nothing.
+_AT = datetime.now(timezone.utc)
 
 _UNITS_WITH_FINDINGS = (
     "select r.reasoner_id, r.status, r.output from reasoning_reasoner_results r "
@@ -44,18 +61,18 @@ def _run(pg_store, org: str, *, roster_v2: bool) -> None:
     # only the FIRST org seeded on a database ever gets a `source_events` row, and every later
     # tenant silently scores `source_count = 0` in `situations.evidence_score`.
     _run_admin(pg_store, org, event_id=f"adm_evt_{org}")
-    situations.refresh_situations(pg_store, org, eval_time=NOW)
+    situations.refresh_situations(pg_store, org, eval_time=_AT)
     # LAYER 1's OWN SUPPLY, which this tenant never had. L2's admission gate refuses a situation
     # carrying no verified evidence span, and a verified span is only ever published on a
     # `qualified_signals` row — so before this line every situation here was HELD and the roster
     # under test reasoned about nothing. Scored, because this file's subject is the ACTIVATED
     # tenant; the unscored supply is exercised in `tests/reason/test_ranking_activation.py`.
-    assert attach_l1_signals(pg_store, org, eval_time=NOW) > 0
+    assert attach_l1_signals(pg_store, org, eval_time=_AT) > 0
     if roster_v2:
         activate(pg_store.engine, org, feature="roster_v2", by="test")
     registry = make_registry(pg_store.engine.url.render_as_string(hide_password=False))
     ensure_defaults(registry, org)
-    counts = shadow_compile(store=pg_store, org_id=org, eval_time=NOW, live=True,
+    counts = shadow_compile(store=pg_store, org_id=org, eval_time=_AT, live=True,
                             registry=registry)
     assert counts.get("reasoned", 0) > 0, dict(counts)
     assert counts.get("roster_v2", 0) == int(roster_v2), dict(counts)

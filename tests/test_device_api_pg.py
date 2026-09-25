@@ -19,6 +19,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import text
 
 from genios_engine.platform.auth import hash_key, jwt_decode
+from genios_engine.platform.capture_policy import DEFAULT_ALLOWED_APPS
 from genios_engine.platform.config import get_settings
 
 URL = os.environ.get("GENIOS_TEST_DATABASE_URL")
@@ -428,8 +429,11 @@ def test_every_app_is_read_by_default_and_each_reader_can_be_switched_off(client
     owner = _register(client)
     org = owner["org_id"]
     doc = client.get("/v1/capture/policy", headers=H(owner["token"])).json()
-    assert doc["org"]["allowed_apps"] == ["gmail", "whatsapp", "linkedin", "slack", "outlook",
-                                          "gcal"]
+    # READ OFF THE CONSTANT, never re-typed. This literal said six apps and `DEFAULT_ALLOWED_APPS`
+    # had said seven since `teams` landed, so the assertion failed on a real database for a reason
+    # that is not a defect — a wave adding a surface would otherwise have to edit this line, and a
+    # wave that forgot would look like a policy regression.
+    assert doc["org"]["allowed_apps"] == list(DEFAULT_ALLOWED_APPS)
     assert doc["org"]["generic_web_allowed"] is True and doc["seat"]["generic_web"] is True
     # the column defaults agree with the in-code defaults once a row exists
     client.put("/v1/capture/policy", json={"enabled": True}, headers=H(owner["token"]))
@@ -439,7 +443,7 @@ def test_every_app_is_read_by_default_and_each_reader_can_be_switched_off(client
                            "where org_id=:o"), {"o": org}).first()
         s = c.execute(text("select generic_web from seat_capture_settings where org_id=:o"),
                       {"o": org}).first()
-    assert list(p.allowed_apps) == ["gmail", "whatsapp", "linkedin", "slack", "outlook", "gcal"]
+    assert list(p.allowed_apps) == list(DEFAULT_ALLOWED_APPS)
     assert p.generic_web_allowed is True and s.generic_web is True
 
     dev = _sign_in(client, owner)
