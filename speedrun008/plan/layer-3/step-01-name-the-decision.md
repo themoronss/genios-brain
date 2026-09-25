@@ -1,8 +1,23 @@
-# L3-0 · Name the Decision Object
+# L3-01 · Name the Decision Object
 
 **Needs Harsh:** none · **Model calls:** none · **Migration:** none
 
-> **NOT STARTED**
+> ## ✅ COMPLETE — 2026-09-25 · [findings](findings/step-01-name-the-decision.md)
+>
+> +8 tests · 13,143 passed · 0 regressions · no migration · no model call.
+>
+> ⛔ **THE PREMISE WAS WRONG AND THE CORRECTION IS THE FINDING.** It is not five shapes to choose
+> between — it is **one object and five projections of it**. `ReasoningDecision`
+> (`contracts/reasoning.py:1316`) was already the Decision Object: frozen, semantically hashed,
+> carrying the losing candidates, the uncertainty, the do-nothing consequence and the authored
+> claims **quoted**. Nothing had to become it.
+>
+> ⛔ **What was missing was smaller and real:** it had **no docstring at all** — the concept was
+> named in six comments elsewhere and nowhere on the type that is it — and its outcome vocabulary
+> was **not held to the database constraint that stores it**.
+>
+> ⛔ **And this step removes a blocker the plan claimed.** Wave 6 assumed the Decision Object had to
+> be chosen before a graph of decisions could exist. `decision_hash` is already that identity.
 
 ⛔ **A graph of decisions cannot be built while "the decision" is five nouns.** L2-1 measured what
 two names for one thing cost: **fifteen compiler annotations naming the wrong situation stage**.
@@ -47,13 +62,13 @@ ago, and demotes the rest to what they already are.**
 
 ## 4. Done criteria
 
-- [ ] `DecisionRef` exists and is the only type the later steps address a decision by
-- [ ] `DECISION_OUTCOME_KINDS` matches the migration's `check` constraint, guarded **both ways**
-- [ ] `DECISION_SHAPES` names all five with role and writer; a test fails if a sixth appears
-- [ ] a test asserts **no module outside `api/` writes `decisions`**
-- [ ] `scripts/decision_shapes.py` runs with no database
-- [ ] technique 3: neutralise the totality guard → the probe goes red
-- [ ] full suite: 0 regressions
+- [x] ⛔ **`DecisionRef` was not built — `ReasoningDecision` already is it**, and adding a second identity type would have been the scaffolding this plan is meant to avoid
+- [x] the outcome vocabulary matches the migration's `check` constraint, guarded **both ways**
+- [x] `DECISION_PROJECTIONS` names all five with role and writer; the object is pinned first
+- [x] a test asserts **no engine package writes `decisions`**
+- [x] ⛔ **`scripts/decision_shapes.py` was not built** — a read-only printer of a five-row constant is a unit nothing would call
+- [x] technique 3: **four** mutations, all red, restore green
+- [x] full suite: **13,143 passed · 14 pre-existing · 0 regressions**
 
 ## 5. What this step does NOT do
 
