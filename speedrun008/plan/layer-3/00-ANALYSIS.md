@@ -1,161 +1,191 @@
 # Layer 3 — the analysis, before any plan
 
-**Read from the code, 2026-09-25** · against `speedrun008` @ `d5328538`
-**Purpose:** what Layer 3 *is*, before a single step is written. Layer 2's plan was built on eight
-premises and the premise checks corrected six of them — this file exists so that does not repeat.
+**Read from the code, 2026-09-25** · against `speedrun008` @ `868208b3`
+**Corrected by Rohit**, and the correction dissolves the contradiction the first draft raised.
 
 ---
 
-## 1. ⛔ THE ONE QUESTION, AND IT HAS TO BE ANSWERED BEFORE ANYTHING ELSE
+## 0. ⛔ THE CORRECTION, AND IT IS THE WHOLE ANALYSIS
 
-You said: *"Layer 3 — context graph usmein kya-kya aayega, correlation aayega, business situation
-aayega."*
+The first draft of this file said Layer 3 could not be *"the context graph"* because the graph is
+**upstream** of the business situation — `graph_facts` feeds the correlators, which feed the
+producers. That is true and it was answering the wrong question.
 
-The architecture you gave earlier says: **L3 = Decision Intelligence.**
+> **"Layer 2 ka outcome hai Decision Object. Layer 3 toh un objects ki madad se graph hi banana
+> hua na."**
 
-**These are two different layers, and the code can only be one of them.**
+**There are two graphs, and only one of them is upstream.**
 
-`01-CURRENT-STATE.md` §9 asked this in September and never got an answer:
-
-> *"Does the Context Graph come before or after the Business Situation? — it decides whether the 9
-> correlators stay in L2 or move to L3."*
-
-### 1.1 · Why it cannot be deferred again
-
-**Because the graph, correlation and the business situation are not three things. They are one
-pipeline, and it is already built — in `context/`.**
-
-```
-graph_facts · graph_edges · graph_observations        ← 10 tables, WRITTEN BY capture (L1→L2 seam)
-   ↓
-9 correlators                                          ← context/correlation_*.py, deterministic
-   ↓
-context_correlations · context_correlation_members     ← 8 context_ tables
-   ↓
-7 situation producers                                  ← context/*_situations.py
-   ↓
-SituationCandidate → the eight laws → BusinessSituationObject
-   ↓
-situation_admission_decisions · situation_interpretations   ← 4 situation_ tables
-```
-
-**Every box in that diagram is `context/`** — 118 modules, and Layer 2's nine steps just spent
-their entire budget making it accountable.
-
-⛔ **So "L3 = context graph + correlation + business situation" means moving 118 modules and 22
-tables out of Layer 2 and calling them Layer 3 — and Layer 2 becomes empty.**
-
----
-
-## 2. What is actually unclaimed today
-
-Here is every package, what it holds, and which layer claims it:
-
-| package | modules | claimed by | holds |
+| | built from | direction | where |
 |---|---|---|---|
-| `capture` | 153 | **L1**, closed | sources, extraction, qualification, the QES |
-| `context` | 118 | **L2**, closed | the graph, 9 correlators, 7 producers, admission, the slice |
-| `packs` | 33 | **Plane D** | the authored corpus, the compiler, the brains |
-| **`reason`** | **117** | ⛔ **nothing** | ranking, candidates, utility, plays, the decision maker, foresight, baselines, the R-sites |
-| `executive` | 25 | L4 | assignment, channel, execution objects, escalation, reminders |
-| `deliver` | 36 | L5 | cards, digest, outbox, rendering |
-| `feedback` | 12 | L6 | precision windows, nudges, mutes |
+| **Evidence Graph** | what sources said | ⬆ **feeds** situation assembly | `graph_nodes` · `graph_facts` · `graph_observations` · `graph_edges` — 10 tables, written by L1→L2 |
+| **Intelligence Graph** | **what was concluded** | ⬇ **accumulates after** the decision | ⛔ **does not exist** |
 
-⛔ **`reason/` is 117 modules — as large as `context/` — and no layer in the new architecture owns
-it.** `decision_maker`, `brief_ranking`, `foresight`, `simulation`, `plan`, `orchestrator`,
-`critique`, `authority`, `actionability`, plus seven subpackages.
+**Layer 3 is the second one.** It is not the graph that produces a decision; it is the graph the
+decisions *become*. Nothing in this repository builds it.
 
-**That is Decision Intelligence, and it is already built.**
+⛔ **So Layer 3 is a real BUILD** — which is the opposite of Layer 2, where nine steps found that
+almost everything already existed and was merely unswitched.
 
 ---
 
-## 3. ⛔ The two readings, priced
+## 1. The chain today: two hops exist, one is missing
 
-### Reading A · **L3 = Decision Intelligence** (`reason/`)
+```
+    a situation                    a decision                     an outcome
+  context_situations   ──⛔ NOTHING──▶  reasoning_* / l4_*  ──decision_hash──▶  execution_outcomes
+       21 columns                          16 tables                         29 columns
+```
 
-| | |
-|---|---|
-| what moves | **nothing.** `reason/` is named and its 117 modules get the same treatment `context/` just got |
-| what Layer 3 does | takes an admitted `BusinessSituationObject` + an `ExpertisePackage`, and produces a **Decision Object** |
-| the work | exactly Layer 2's shape — measure what is built and unswitched, name what is silent, wire what is orphaned |
-| what it costs | nothing structural. Consistent with **`LAYERS.py`**, `docs/LAYER_MAP.md`, and everything L2-1 renamed |
-| ⛔ what we already know is wrong in there | **R-1 has never fired on the pilot.** `reason/` has **13 files with a metered model call** — the most of any package — and the shadow lane's `live=False` |
+Measured across all 185 tables:
 
-### Reading B · **L3 = the Context Graph** (`context/`, moved)
-
-| | |
-|---|---|
-| what moves | **118 modules and 22 tables**, plus every import in `packs/` and `reason/` that reads them |
-| what Layer 2 becomes | **empty** — or a thin qualification layer that duplicates L1 |
-| what it costs | ⛔ **`test_import_direction` is a ratchet.** Moving `context` above `reason` inverts a dependency that 117 modules rely on. L2-5's module was moved for importing *one* layer upward |
-| what it buys | a diagram that matches the sentence |
-| ⛔ and it re-opens | L2-1's naming, L2-4's routing table, L2-7's card seam — each of which encodes "L2 is where situations live" |
-
-### 3.1 · The recommendation, and it is not close
-
-⛔ **Reading A.** Not because B is wrong as a picture, but because:
-
-1. **The Business Situation is Layer 2's output and nine steps just proved it.** `situation_bso`,
-   the eight admission laws, `situation_admission_decisions`, the slice, the validator, the
-   reasoner — all of it says *this layer produces a situation.*
-2. **The graph is UPSTREAM of the situation, not downstream.** Situations are *derived from* graph
-   correlations. A Layer 3 that "holds the graph" would sit below the layer that reads it.
-3. **`reason/` is 117 unclaimed modules that do exactly what Decision Intelligence means.**
-   Leaving it unnamed is how it came to have thirteen model sites and a shadow lane nobody read.
-
-> **Both can be true in the picture.** The graph can feed correlation *and* accumulate what was
-> concluded — `situation_interpretations` already does the second half. What cannot be true is
-> that the layer which *produces* a situation is also the layer *after* it.
-
----
-
-## 4. ⛔ What Layer 3 looks like if it is Decision Intelligence
-
-Measured, not proposed. This is what exists in `reason/` today:
-
-| group | modules | what is already there |
+| link | exists? | evidence |
 |---|---|---|
-| **Candidate generation** | `plan` · `simulation` · `reasoners/` | plays, candidate steps, eliminated-by records |
-| **Ranking** | `decision_maker` · `brief_ranking` · `baselines` | six-component utility, `ranking_v2` behind an activation |
-| **Interpretation** | `interpretation` (R-1) · `llm_interpretation` | ⛔ *"has never fired on the pilot tenant"* |
-| **The R-sites** | `bundle/` · `llm_sites` | one gate, six sites, five outcomes, a budget and a ledger |
-| **Narration** | `narration` · `bundle/narrator` | R-2, after the decision is fixed |
-| **Verification** | `verify/` · `critique` · `guards` | the gauntlet, the V-checks |
-| **Authority** | `authority` · `actionability` | what a decision is permitted to assert |
-| **Audit** | `audit` · `store` | 16 `l4_*` / `reasoning_*` tables |
-| **The L2 seam** | `domain_shadow` | ⛔ `live=False`, and L2-8 enumerated the seven switches |
+| decision → outcome | ✅ | `execution_outcomes.decision_hash` |
+| decision → the play, capability, assignee, band | ✅ | nine more columns on the same row |
+| **situation → decision** | ⛔ **NO** | **not one of the 16 `reasoning_*`/`l4_*` tables carries a `situation_id`**. `l4_reasoning_bundles` mentions a situation only in its comments |
+| **decision → situation** | ⛔ **NO** | `context_situations` has 21 columns and **none of them names a decision** |
+| decision → decision (superseded, revised) | ⛔ **NO** | no `parent_decision`, no `prior_decision`, no decision edge table |
 
-### 4.1 · What is missing, on today's evidence
+### 1.1 · ⛔ It is L2-7's defect, one layer up
 
-| | |
-|---|---|
-| **The Decision Object as a named contract** | `DecisionCandidate` exists in `reason/`; the architecture calls the output a *Decision Object*. L2-1 measured what two names for one thing costs: fifteen wrong annotations |
-| **A Persona Brain** | the fifth brain. Not in `BrainKind`, not an `ExpertisePackage` lane. *How this kind of company and this role works* — what makes a tenant legible before Behavior has history |
-| **Goals** | `org_goals` → **0 files.** They belong in **Organization Brain**, beside `approval`/`policy`/`process`/`criticality` |
-| **A read of what `reason/` already does and does not do** | the same first step Layer 2 took, and the one that found eight things built and never switched on |
+L2-7 found that `shadow_compile` reads `row["situation_id"]` **four times within twenty lines of
+emitting a signal** and then drops it, because there was nowhere to put it. Migration 0182 gave it
+somewhere.
+
+**The same value is in scope when the decision is persisted, and is dropped again.** `not_carried`,
+at the next seam.
 
 ---
 
-## 5. ⛔ What this analysis does NOT do
+## 2. ⛔ "The Decision Object" is not one thing today. It is five.
 
-* **It does not choose.** §1 is a decision only you can make, and everything after it depends on
-  which way it goes.
-* **It does not plan.** Layer 2's plan was written before its premise check and six of its eight
-  premises were wrong. **The measurement comes first this time.**
-* **It does not assume `reason/` is healthy.** It is 117 modules nobody has audited, with thirteen
-  model sites and an interpretation lane that has never fired. **That is the same shape Layer 2
-  was in before L2-0**, and it should be expected to hold the same kind of surprise.
+| shape | where | what it actually is |
+|---|---|---|
+| `DecisionCandidate` | `contracts/` | the in-memory candidate the reasoner ranks |
+| `reasoning_run_outputs` | audit | what one run produced, with its hash |
+| `l4_reasoning_bundles` | audit | the narrative, keyed on `decision_hash` |
+| `decisions` | `0015` | ⛔ **the QUERY API's cache.** Written by `api/intelligence_routes.py` **and nothing else**, keyed on `sha256(org│module│question│graph_version)`. It is not the sweep's output at all |
+| `execution_outcomes` | `0041` | what happened afterwards |
+
+⛔ **This is L2-1's defect at five times the scale.** Two classes sharing one name cost fifteen
+wrong annotations across the Domain Expertise compiler. **Five shapes sharing one concept is why
+"the Decision Object" can be described in a sentence and cannot be pointed at in the schema.**
+
+**Layer 3 cannot build a graph of decision objects until one of those five is the decision
+object.** That is step one, and it is a naming step before it is a graph step — exactly what L2-1
+was.
 
 ---
 
-## 6. The one thing I need from you
+## 3. What the Intelligence Graph would hold
 
-**Which is Layer 3?**
+Not proposed — derived from what the five shapes already carry and what the chain already links.
+
+```
+NODES                                    from
+  situation        what was concluded    context_situations           (exists)
+  decision         what we chose         reasoning_run_outputs        (exists)
+  outcome          what happened         execution_outcomes           (exists)
+  entity           who it was about      graph_nodes                  (exists, Evidence Graph)
+
+EDGES                                    from
+  decision  ─about→        situation     ⛔ MISSING — §1
+  decision  ─supersedes→   decision      ⛔ MISSING — no edge table
+  outcome   ─followed→     decision      ✅ execution_outcomes.decision_hash
+  situation ─anchored_on→  entity        ✅ context_situations.anchor_node_id
+  decision  ─cited→        evidence      ✅ reasoning_evidence_id_map
+```
+
+⛔ **Four of the five node types and three of the five edges already exist.** What is missing is
+the two edges that make it a graph *of decisions* rather than a log of them — and the naming that
+makes "a decision" one thing.
+
+### 3.1 · What the graph is FOR, and it is the reason it must exist
+
+A flat log answers *"what did we decide"*. A graph answers the questions a founder actually asks:
+
+| question | needs |
+|---|---|
+| *"why did GeniOS tell me this?"* | decision → situation → evidence · **the missing edge** |
+| *"did that work?"* | decision → outcome · ✅ exists |
+| *"have we been wrong about this account before?"* | decision → decision, over time · **missing** |
+| *"what changed since we last looked at this?"* | situation → its decisions, ordered · **missing** |
+| *"stop telling me this"* | decision → decision, so a mute reaches the family · **missing** |
+
+**Every one of those is a traversal, and four of the five cannot be answered today.**
+
+---
+
+## 4. What exists that Layer 3 will read, and what state it is in
+
+| | modules | state |
+|---|---|---|
+| `reason/` | **117** | ⛔ **no layer claims it**, and nobody has audited it. Thirteen files with a metered model call — the most of any package |
+| `reason/interpretation` (R-1) | | ⛔ *"has never fired on the pilot tenant"* |
+| `reason/domain_shadow` | | `live=False`; L2-8 enumerated the **seven** switches |
+| `reasoning_*` / `l4_*` | 16 tables | the audit trail exists and is thorough |
+| `situation_interpretations` | 1 table | **new in L2-5** — one reading per (situation, slice), **with the slice**, so a conclusion can be replayed against its premises |
+
+⛔ **`situation_interpretations` is already the first row of the Intelligence Graph**, built two
+steps ago without being called that. It records what was concluded, when, from what, and what
+expires.
+
+---
+
+## 5. ⛔ What this means for the layer numbering
+
+Under your model the packages line up cleanly, and **nothing has to move**:
+
+```
+capture    L1   Enterprise Signals        sources → a qualified signal
+context    L2   Situation Intelligence    signals → a situation → a DECISION OBJECT
+   ⛔ and `reason/` is where L2's reasoning happens — a PLANE, not a layer after it
+   packs   Plane D · Domain Expertise
+   reason  Plane R · Reasoning
+??????     L3   the Intelligence Graph    the objects, accumulating, traversable
+executive  L4   Executive                 a decision → an execution object
+deliver    L5   Delivery
+feedback   L6   Learning
+```
+
+⛔ **There is no package for L3, and that is correct** — because the graph it builds does not
+exist. `situation_interpretations` is its first table, and it currently lives in `context/`.
+
+**That is the one structural question this analysis raises:** a new `intelligence/` package, or
+does the Intelligence Graph live beside the Evidence Graph in `context/` with a clean internal
+seam? The import ratchet decides it — whatever writes it must be importable by `executive/`, and
+must not import `reason/` upward.
+
+---
+
+## 6. What Layer 3's first step must be, and it is not a build
+
+Layer 2's plan was written before its premise check and **six of its eight premises were wrong**.
+The first step here is the one L2-0 was:
+
+> **Measure `reason/`.** 117 modules, thirteen model sites, one lane that has never fired, and no
+> layer claiming it. Find what is built and unswitched *before* deciding what to add.
+
+Then, in order:
 
 | | |
 |---|---|
-| **A** · Decision Intelligence — `reason/`, 117 modules, already built, unnamed and unaudited | *recommended* |
-| **B** · the Context Graph — move `context/` up, and Layer 2 becomes qualification only | re-opens L2-1, L2-4, L2-7 and inverts a dependency ratchet |
+| **1** | ⛔ **Name the Decision Object.** One of the five shapes becomes it; the others become its stages, its audit or its cache. L2-1's exact work, and L2-1 measured what skipping it costs |
+| **2** | ⛔ **Carry the situation id into the decision.** L2-7's migration, one seam up. Without it there is no graph, only a log |
+| **3** | The decision→decision edge — supersession, revision, and what a mute must reach |
+| **4** | The traversals in §3.1, each with the question it answers |
+| **5** | Persona Brain · goals in **Organization Brain** · the two things Layer 2 recorded as missing entirely |
 
-Everything else in this file holds either way. **§4 is the plan if you say A**, and it starts the
-way Layer 2 should have: by measuring what is already there.
+---
+
+## 7. What I still need from you
+
+**One thing, and it is smaller than the first draft's question.**
+
+`situation_interpretations` — the first Intelligence Graph table — lives in `context/` today.
+**Does the Intelligence Graph get its own package, or does it stay beside the Evidence Graph?**
+
+Everything else in this file follows from the code and does not need a decision:
+the two graphs are different, L3 is the second one, it is a genuine build, and its first step is
+to measure `reason/` rather than to plan against it.
