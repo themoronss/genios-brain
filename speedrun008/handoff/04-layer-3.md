@@ -1,13 +1,13 @@
 # Layer 3 — handoff for Harsh
 
-**Written:** 2026-09-25 · branch `speedrun008` · **steps L3-0A through L3-07 complete**
-**Suite at handoff:** 13,216 passed · 1,061 skipped · 152 xfailed · **14 failed, all pre-existing**
+**Written:** 2026-09-25 · branch `speedrun008` · **steps L3-0A through L3-08 complete**
+**Suite at handoff:** 13,224 passed · 1,061 skipped · 152 xfailed · **14 failed, all pre-existing**
 
 ---
 
 ## 0. Read this first — what changed, in one paragraph
 
-Eight steps landed. **Two need something from you, and one needs a decision** (one migration, one operator call). **Five need
+Nine steps landed. **Two need something from you, and one needs a decision** (one migration, one operator call). **Five need
 nothing** — they are code and tests already on the branch. Nothing in here changes a computed score,
 a prompt, or `vocabulary_fingerprint`; there is **no model call in any of the seven**, and **one
 migration**.
@@ -176,6 +176,7 @@ either direction — so whichever option is chosen, it cannot happen by accident
 | **L3-05** | the corroboration `distinct` given one home and a pin | — |
 | **L3-06** | four guards on the heartbeat that notices what did not happen | — |
 | **L3-07** | the two staleness curves given one owner each; the dead column pinned dead | ⛔ **decision §1.3** |
+| **L3-08** | ⛔ **an unsent draft no longer counts as a sent reply** | — (see §3.4) |
 
 ---
 
@@ -190,6 +191,29 @@ found"* being published off an 8%-read mailbox.
 **2 · Situations may carry new `gaps` sentences (L3-02b).** e.g. *"the gmail sweep did not finish,
 so a tail of this window was never read"*. They land where `unmet_source_families` lands. ⛔ **Whether
 the renderer surfaces them is a `deliver/` question and is not claimed.**
+
+**⛔ 4 · Outbound counts will DROP for any tenant with drafts (L3-08), and that is the fix.**
+
+`reconstruct_thread.direction_of` asked one question — is the author one of us — and a draft is
+authored by us, so **an unsent draft returned `outbound`**. Outbound is read everywhere as *"we
+replied"*: `ball_in_court` flipped to `them`, a waiting relationship read as **answered**, and the
+benchmark's headline *"you have sent zero emails in 28 days"* would have read *"you sent two"* on
+two drafts sitting in a folder.
+
+Gmail states it with a `DRAFT` label, carried on the raw payload of every message. `light_junk`
+reads that same list for SPAM, TRASH, PROMOTIONS and SOCIAL. **`DRAFT` appeared nowhere in the
+engine.**
+
+**What you will see after this ships:** on a tenant with unsent drafts, outbound message counts go
+down, some `ball_in_court` values flip back to `us`, and some relationships that read as answered
+will correctly read as waiting. ⛔ **That is the correction, not a regression** — and it makes
+several *more* things surface, not fewer.
+
+**Two things deliberately NOT done, so nobody "finishes" them the wrong way:**
+* **Drafts are not filtered out.** *"You drafted a reply three weeks ago and never sent it"* is real
+  intelligence; a test pins that `DRAFT` never joins the junk labels.
+* **`direction` becomes `unknown`, not a fourth enum value.** Adding one would touch every consumer
+  of a closed vocabulary; `unknown` is this enum's own documented refusal.
 
 **3 · The capture backfill now costs more per run (L3-0A).** It chains a Layer 2 rebuild and, when
 that moves anything, a second L4/cards pass. That is the point — before it, a widened window landed

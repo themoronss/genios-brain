@@ -95,6 +95,16 @@ class ThreadMessage:
     in_reply_to: str | None = None
     references: tuple[str, ...] = ()
     is_forward: bool | None = None
+    #: ⛔ L3-08 · IS THIS MESSAGE STILL UNSENT? Stated by a connector that can tell (Gmail's
+    #: `DRAFT` label); `None` means nobody said, which is what every pre-L3-08 caller supplies and
+    #: is treated exactly as it was.
+    #:
+    #: WHY IT HAD TO EXIST. `direction_of` below asks one question — is the author one of us — and
+    #: a draft is authored by us, so it returned `outbound`: A MESSAGE NOBODY EVER SENT COUNTED AS
+    #: A REPLY. `ball_in_court` then flips to `them`, a waiting relationship reads as answered, and
+    #: "you have sent nothing in 28 days" becomes "you sent two" on the strength of two unsent
+    #: drafts sitting in a folder.
+    is_draft: bool | None = None
 
 
 @dataclass(frozen=True)
@@ -267,6 +277,18 @@ def reconstruct_thread(messages: Sequence[ThreadMessage],
 
     def direction_of(message: ThreadMessage) -> Direction:
         if not identities or not message.actor_email or not message.actor_email.strip():
+            return Direction.unknown
+        # ⛔ L3-08 · A DRAFT IS NOT A SEND. It is authored by us, so the identity test below calls
+        # it `outbound` — and outbound is read everywhere as "we replied". `unknown` is the honest
+        # answer and it is the same refusal this enum's own docstring describes: a message whose
+        # direction nobody can derive stays out of every rule that means "we said".
+        #
+        # ⛔ IT IS NOT DROPPED, DELIBERATELY. "You drafted a reply three weeks ago and never sent
+        # it" is one of the most useful things in a founder's mailbox; the defect is calling it a
+        # send, not keeping it. `is_draft` travels so a later reading can say exactly that.
+        #
+        # `None` means no connector stated it, and behaves exactly as before.
+        if message.is_draft is True:
             return Direction.unknown
         return (Direction.outbound if message.actor_email.strip().lower() in identities
                 else Direction.inbound)

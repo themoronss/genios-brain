@@ -564,7 +564,8 @@ exist. The work is one edge, two writers, and a read.
 | **L3-05** | [Copies do not corroborate](layer-3/step-05-evidence-lineage.md) · [findings](layer-3/findings/step-05-evidence-lineage.md) | ✅ **COMPLETE** · +6 tests · 0 regressions. ⛔ **The plan's headline claim was FALSE** — `src_count` already counts distinct sources. The real defect was one untested word in two copies. **Wave 1 complete** |
 | **L3-06** | [The heartbeat](layer-3/step-06-the-timer.md) · [findings](layer-3/findings/step-06-the-timer.md) | ✅ **COMPLETE** · +4 tests · 0 regressions · **no migration**. ⛔ **The loudest claim in the plan was FALSE** — elapsed time is evaluated at four live levels and the main one was already pinned |
 | **L3-07** | [One answer per decay question](layer-3/step-07-freshness.md) · [findings](layer-3/findings/step-07-freshness.md) | ✅ **COMPLETE** · +8 tests · 0 regressions. ⛔ **A behavioural test found `half_life_days` is an e-folding constant — 0.368 at the configured value, not 0.5.** Nothing changed; decision routed to Harsh §1.3 |
-| **L3-08** | Cross Tool correlator | **NEXT** |
+| **L3-08** | [Cross Tool — a draft is not a reply](layer-3/step-08-cross-tool.md) · [findings](layer-3/findings/step-08-cross-tool.md) | ✅ **COMPLETE** · +8 tests · 0 regressions. ⛔ **The join is entity resolution, not a correlator** — but CT-10 was live: **an unsent draft counted as a sent reply** |
+| **L3-09** | Typed relation vocabulary | **NEXT** · ⛔ migration |
 | **L3-1** | `intel_nodes` + `intel_edges`, landed with their first writer | NOT STARTED · ⛔ migration |
 | **L3-2** | Lift `about` out of `signals` into an addressable edge | NOT STARTED |
 | **L3-3** | Delivery and feedback write back — `delivered_as`, `resulted_in` | NOT STARTED |
