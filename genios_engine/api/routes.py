@@ -498,6 +498,61 @@ def _run_l2(org_id: str, *, lease_wait_s: float | None = None, defer: bool = Tru
         defer=defer)
 
 
+#: L3-0A · the keys in `backfill_layer2`'s return that mean WORK HAPPENED, taken from the four
+#: `return {...}` statements it composes — `backfill_aliases` (nodes_registered),
+#: `backfill_deal_nodes` (deal_nodes_created), `backfill_correlations` (events_correlated) and
+#: `backfill_layer2` itself (situations_written). `events_seen` is deliberately NOT here: reading
+#: an event is not changing anything, and counting it would re-run the chain on every drain.
+_MOVED_KEYS = ("situations_written", "deal_nodes_created", "nodes_registered", "events_correlated")
+
+
+def _replay_l2_history(org_id: str) -> bool:
+    """L3-0A · rebuild Layer 2 over history a drain just landed. True when anything moved.
+
+    WHY `_run_l2` IS NOT ENOUGH. Its `process_pending` walks events ONE AT A TIME under
+    `order by triage_lane asc, occurred_at asc` — oldest-first WITHIN a lane, lane-first globally.
+    That is right for incremental mail, where a sweep sees one morning of one lane. It is not what
+    a year of history needs, and `context/backfill` exists to say so: aliases are claimed inside
+    `find_or_create_node` and correlation runs inside the L2 drain, so both "only fire when an
+    event arrives" — and on a tenant that already has months of history "the features would look
+    broken while being perfectly implemented, which is worse than missing".
+
+    ⛔ AND NOTHING CONNECTED THE TWO HALVES. `backfill_layer2` was reachable only from
+    POST /situations/backfill — an endpoint an operator raising a backfill window has no reason to
+    know exists. The drain lands the mail; the pass that turns a year of it into situations was a
+    separate button.
+
+    ORDER. This runs AFTER `process_pending`, deliberately: it resolves and correlates data ALREADY
+    IN THE GRAPH, so the graph has to be written first. Inside it, aliases → deals → correlations →
+    situations is non-negotiable and `backfill_layer2` owns that ordering.
+
+    NEVER RAISES. L2-7's lesson at the same seam: "a receipt that can abort the thing it is a
+    receipt for turns an accounting failure into a product failure." A replay that fails must not
+    lose the history the drain already landed, so the drain's own summary stands either way.
+    """
+    if _graph is None:
+        return False
+    try:
+        from genios_engine.context.backfill import backfill_layer2
+        out = backfill_layer2(_graph, org_id)
+    except Exception:                        # noqa: BLE001 — never fail the drain
+        _log.exception("l2 history replay failed org=%s", org_id)
+        return False
+    # "Anything moved" is what decides whether L4 and the card builder are worth re-running. A
+    # replay over an already-correlated tenant legitimately writes nothing, and paying for a
+    # second full chain to discover that is the cost this flag exists to avoid.
+    #
+    # ⛔ THESE FOUR KEYS ARE READ FROM THE RETURN STATEMENTS, NOT GUESSED. The first draft of this
+    # line asked for `aliases_claimed` and `correlations_written`; neither exists, so alias and
+    # correlation work would have read falsy forever and only a new deal or situation could ever
+    # have re-run the chain. That is L1 step 14's defect — a name that is never present, tested
+    # against a value that is never there — and `_MOVED_KEYS` is pinned by a test so the next
+    # rename inside `context/backfill` fails loudly instead of silently reporting "nothing moved".
+    moved = any(out.get(k) for k in _MOVED_KEYS)
+    _log.info("l2 history replay org=%s moved=%s %s", org_id, moved, out)
+    return moved
+
+
 def _run_l2_chain(org_id: str) -> bool:
     """THE chain, unguarded: provision → L2 → L4 → cards. Call `_run_l2`, which holds the org
     lease around it. False when the pass failed (logged here), True otherwise."""
@@ -1547,6 +1602,15 @@ def backfill_connection(connection_id: str, background_tasks: BackgroundTasks,
                       " — older tail remains; re-run /backfill to resume" if capped else "")
             if _graph is not None:
                 _run_l2(conn.org_id)                     # extract everything the backfill landed
+                # L3-0A · and then REBUILD from it. `process_pending` above is per-event and
+                # lane-ordered; a year of history needs the three-phase pass in
+                # `context/backfill`, which was reachable only from POST /situations/backfill.
+                #
+                # ⛔ DELIBERATELY OUTSIDE the `capped` test above. A TRUNCATED drain still landed
+                # events, and leaving those uncorrelated is exactly the failure `context/backfill`
+                # opens with — history in the graph that no situation was ever derived from.
+                if _replay_l2_history(conn.org_id):
+                    _run_l2(conn.org_id)                 # L4 + cards over the rebuilt situations
         except Exception:                                # a drain failure must not crash the worker
             _log.exception("backfill drain failed org=%s conn=%s", conn.org_id, connection_id)
 

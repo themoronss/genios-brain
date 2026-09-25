@@ -3,7 +3,7 @@
 **Needs Harsh:** ⛔ **an operator action** (set the window on the pilot connection) · **Model:** none
 · **Migration:** none
 
-> ## ⛔ PREMISE CHECK COMPLETE — the step shrank three times · [findings](findings/step-0A-the-window.md)
+> ## ✅ COMPLETE — 2026-09-25 · ⛔ PENDING HARSH (item 21, the window) · the step shrank three times · [findings](findings/step-0A-the-window.md)
 >
 > All three things this step planned to build **already exist**: the window setting is wired with
 > an admin endpoint and five test files; `backfill_drain` is the background progressive sync,
@@ -39,13 +39,13 @@ Every later step in Layer 3 would operate on 3 of 8 facts.
 
 ## 3. Done criteria
 
-- [ ] the chain exists and runs in one background task
-- [ ] it runs on `TRUNCATED` as well as `done`
-- [ ] an L2 replay failure is logged and cannot fail the drain
-- [ ] a test proves both halves ran, in order
-- [ ] technique 3 probe goes red when the chain is neutralised
-- [ ] runbook: window → drain → verification query
-- [ ] full suite: 0 regressions
+- [x] the chain exists and runs in one background task
+- [x] it runs on `TRUNCATED` as well as `done`
+- [x] an L2 replay failure is logged and cannot fail the drain
+- [x] a test proves both halves ran, in order — `drain → run_l2 → replay → run_l2`
+- [x] technique 3: **three** mutations, all red, restore green
+- [x] runbook: HARSH-ORDER **item 21**
+- [x] full suite: **13,132 passed · 14 pre-existing · 0 regressions · +10 tests**
 
 ## 4. The decision this step needs
 

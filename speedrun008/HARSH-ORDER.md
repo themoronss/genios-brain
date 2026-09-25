@@ -967,3 +967,61 @@ learned to flatter itself.
 | 18 | joinability: what share of attendees have an email-side key? | |
 | 19 | replies-vs-total query, and **A (re-sync)** or **B (forward-only)**? | |
 | 20 | scratch Postgres URL — **same as #1**, and it now blocks step 17 | |
+| **21** | ⛔ **L3-0A · the backfill window on the pilot connection** — see below | |
+
+---
+
+## 21 · L3-0A · The backfill window (operator action, no deploy)
+
+**Why:** tested against the 23 Sept benchmark mailbox, **5 of 8 waiting relationships and 3 of 4
+broken-promise source messages sit outside the current 60-day window.** They are not badly
+answered — they are invisible.
+
+**The code is already built and now chains correctly** (this step). What is left is one call.
+
+### Step 1 — set the window
+
+```
+PATCH /connections/{connection_id}/backfill-window
+{ "days": 365 }
+```
+
+| days | buys |
+|---|---|
+| 180 | all 8 waiting rows · all 4 broken promises · benchmark **P3** (6 months) |
+| **365** ✅ recommended | **＋ P4** (12-month calendar × email) |
+
+Cost is **one-time and bounded** — the extraction cache means a document is extracted once, ever.
+Range is enforced at 1–3650; an out-of-range value is refused at the edit, not at the next sync.
+
+### Step 2 — drain
+
+```
+POST /connections/{connection_id}/backfill
+```
+
+Background. ⛔ **It now chains into the Layer 2 rebuild by itself** — that chain is what L3-0A
+built. Before this step it did not, so a widened window landed a year of mail and derived no
+situations from it.
+
+### Step 3 — verify
+
+Look for both lines in the log, in this order:
+
+```
+backfill drain done|TRUNCATED org=... scanned=... emitted=...
+l2 history replay org=... moved=True {...}
+```
+
+⛔ **`moved=False` after a first widened drain is the signal to investigate** — it means the
+rebuild ran and found nothing to do, which on freshly landed history should not happen.
+
+**`TRUNCATED` is not a failure.** It means the older tail remains; re-run `POST /backfill` to
+resume. The rebuild runs either way, deliberately.
+
+### What this does NOT do
+
+It does not re-examine facts that were **held** for lack of coverage. Widening history improves
+coverage for those, and nothing revisits them yet — that is Wave 4's held-candidate recovery step,
+and L3-0A's findings are why it exists.
+
