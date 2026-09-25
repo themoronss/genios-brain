@@ -475,7 +475,8 @@ class CaptureStore:
         cols = ("enabled", "allowed_apps", "blocked_domains", "generic_web_allowed",
                 "draft_assist_allowed", "retention_days", "moments_display",
                 "moments_max_per_hour", "moments_max_per_day")
-        params = {"o": org_id, "by": updated_by}
+        params = {"o": org_id, "by": updated_by,
+                  "default_apps": json.dumps(list(DEFAULT_ALLOWED_APPS))}
         for col in cols:
             v = changes.get(col)
             params[col] = json.dumps(v) if isinstance(v, list) else v
@@ -485,8 +486,13 @@ class CaptureStore:
                 "generic_web_allowed, draft_assist_allowed, retention_days, moments_display, "
                 "moments_max_per_hour, moments_max_per_day, updated_by, updated_at) "
                 "values (:o, coalesce(:enabled, false), "
-                "coalesce(cast(:allowed_apps as jsonb), '[\"gmail\", \"whatsapp\", \"linkedin\", "
-                "\"slack\", \"outlook\", \"gcal\"]'::jsonb), "
+                # BOUND FROM `DEFAULT_ALLOWED_APPS`, never re-typed as a SQL literal. This was the
+                # THIRD copy of the app list — `APP_IDS`, 0141's column default, and here — and it
+                # is the one that decides, because the upsert names the column explicitly and so
+                # the column default never applies to a row this method writes. It still said six
+                # apps after P15 added `teams`, so every tenant whose policy was saved from the
+                # console lost the Teams reader while the API reported it allowed.
+                "coalesce(cast(:allowed_apps as jsonb), cast(:default_apps as jsonb)), "
                 "coalesce(cast(:blocked_domains as jsonb), '[]'::jsonb), "
                 "coalesce(:generic_web_allowed, true), coalesce(:draft_assist_allowed, false), "
                 "coalesce(:retention_days, 90), coalesce(:moments_display, false), "
