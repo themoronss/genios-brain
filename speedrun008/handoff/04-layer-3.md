@@ -1,13 +1,13 @@
 # Layer 3 — handoff for Harsh
 
-**Written:** 2026-09-25 · branch `speedrun008` · **steps L3-0A through L3-09 complete**
-**Suite at handoff:** 13,237 passed · 1,061 skipped · 152 xfailed · **14 failed, all pre-existing**
+**Written:** 2026-09-25 · branch `speedrun008` · **steps L3-0A through L3-10 complete — Waves 1, 2 and 3 done**
+**Suite at handoff:** 13,244 passed · 1,061 skipped · 152 xfailed · **14 failed, all pre-existing**
 
 ---
 
 ## 0. Read this first — what changed, in one paragraph
 
-Ten steps landed. **Two need something from you, and one needs a decision** (one migration, one operator call). **Five need
+Eleven steps landed. **Two need something from you, and one needs a decision** (one migration, one operator call). **Five need
 nothing** — they are code and tests already on the branch. Nothing in here changes a computed score,
 a prompt, or `vocabulary_fingerprint`; there is **no model call in any of the seven**, and **one
 migration**.
@@ -178,6 +178,7 @@ either direction — so whichever option is chosen, it cannot happen by accident
 | **L3-07** | the two staleness curves given one owner each; the dead column pinned dead | ⛔ **decision §1.3** |
 | **L3-08** | ⛔ **an unsent draft no longer counts as a sent reply** | — (see §3.4) |
 | **L3-09** | the graph's edge vocabulary closed; `causes`/`blocks`/`related_to` refused | — (see §4.5) |
+| **L3-10** | the residue kinds closed; correlation's stated limitation pinned | — |
 
 ---
 
@@ -282,6 +283,10 @@ carry the corrections inline, but they were written before the code was measured
 
 | the plan said | measured |
 |---|---|
+| *"nothing evaluates when nothing arrives"* (the layer's #2 item) | **four live mechanisms**, three already pinned |
+| *"Cross Tool is the only correlator with no module"* (the #4 item) | the join is **entity resolution**, and stronger than a correlator |
+| *"5 of 12 typed relations exist"* | all seven "missing" ones exist **in other layers** |
+| *"there is no correlation decision record"* | `context/residue.py`, with **better growth properties than the spec's design** |
 | *"the Decision Object is five shapes; one must become it"* | **one object, five projections.** `ReasoningDecision` already was it — which **removed a Wave 6 blocker** |
 | *"the absence contract is 3 of 8 ingredients"* | `capture/coverage/` is a **seven-module subsystem**; `context/` reads `source_coverage` in five places |
 | *"ten copies of one claim read as ten independent sources"* | `src_count` is `count(distinct sr.source)`. **Ten forwards are one system.** The real defect was that the word was untested |

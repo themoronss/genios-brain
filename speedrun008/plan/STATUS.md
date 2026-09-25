@@ -566,7 +566,8 @@ exist. The work is one edge, two writers, and a read.
 | **L3-07** | [One answer per decay question](layer-3/step-07-freshness.md) · [findings](layer-3/findings/step-07-freshness.md) | ✅ **COMPLETE** · +8 tests · 0 regressions. ⛔ **A behavioural test found `half_life_days` is an e-folding constant — 0.368 at the configured value, not 0.5.** Nothing changed; decision routed to Harsh §1.3 |
 | **L3-08** | [Cross Tool — a draft is not a reply](layer-3/step-08-cross-tool.md) · [findings](layer-3/findings/step-08-cross-tool.md) | ✅ **COMPLETE** · +8 tests · 0 regressions. ⛔ **The join is entity resolution, not a correlator** — but CT-10 was live: **an unsent draft counted as a sent reply** |
 | **L3-09** | [The edge vocabulary is closed](layer-3/step-09-edge-vocabulary.md) · [findings](layer-3/findings/step-09-edge-vocabulary.md) | ✅ **COMPLETE** · +13 tests · 0 regressions · ⛔ **no migration**. The 7 'missing' relations all exist elsewhere; **`edge_type` was free text with no vocabulary** |
-| **L3-10** | Correlation decision record | **NEXT** · ⛔ migration |
+| **L3-10** | [The residue kinds are closed](layer-3/step-10-correlation-record.md) · [findings](layer-3/findings/step-10-correlation-record.md) | ✅ **COMPLETE** · +7 tests · 0 regressions · ⛔ **no migration**. `residue.py` **is** the record, with better growth properties than the spec's design. ⛔ **Wave 3 complete** |
+| **L3-11** | Three-valued predicates | **NEXT** |
 | **L3-1** | `intel_nodes` + `intel_edges`, landed with their first writer | NOT STARTED · ⛔ migration |
 | **L3-2** | Lift `about` out of `signals` into an addressable edge | NOT STARTED |
 | **L3-3** | Delivery and feedback write back — `delivered_as`, `resulted_in` | NOT STARTED |
