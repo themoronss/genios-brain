@@ -726,7 +726,22 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
             # report what a tenant WOULD get from corpora it has not switched on, and filtering
             # it would make route coverage unmeasurable for exactly the domains an operator is
             # deciding whether to activate.
-            activated_domains=live_domains,
+            # `or None` — AND THE TWO ARE NOT THE SAME ANSWER. `CapabilityResolver` reads
+            # `activated_domains is not None` as "filter to this set"; an EMPTY frozenset
+            # therefore means "this tenant has activated nothing" and refuses every situation
+            # with `NoExpertiseRoute`. That is exactly right for the per-tenant switch — and
+            # exactly wrong for `live=True`, which is the GLOBAL cutover flag documented above
+            # as moving "every tenant at once". Reached through `live=True` with no activation
+            # rows, the pass forced every situation onto the live lane (`live_lane(forced=...)`)
+            # and then had the resolver refuse all of them: `no_route` for the whole tenant,
+            # `counts` with no `emitted` key at all, and a global flag that silently compiles
+            # nothing. `None` restores what "every tenant" has to mean — no filter.
+            #
+            # Production is unchanged: `reason/runner.py` passes `live_domains=l3_domains` read
+            # from the activation table and `live=use_domain_compiler`, which is set in no
+            # environment — so the live path here is reached with a NON-empty set and filters
+            # exactly as before.
+            activated_domains=live_domains or None,
         ) if any_live else None
         counts["l3_activated_domains"] = len(live_domains)
         # THE VARIANT DECLARATION, read once per sweep per live domain — the same shape and
