@@ -1,5 +1,10 @@
 # PENDING · Layer 4 (Executive) — analysed, basics fixed, the rest waiting on decisions
 
+> **Layer 4 folder:** [`00-STATUS.md`](00-STATUS.md) — the step table and measured coverage ·
+> [`01-WHAT-HARSH-DOES.md`](01-WHAT-HARSH-DOES.md) — Harsh's list, in order ·
+> [`02-THE-REMAINING-STEPS.md`](02-THE-REMAINING-STEPS.md) — the seven steps, planned.
+> **This file is the analysis behind all three.**
+
 **Branch `speedrun008` · 2026-09-25 · `13,313 passed · 0 regressions`**
 
 > ## ⛔ THE HEADLINE, BECAUSE IT IS THE OPPOSITE OF LAYER 3

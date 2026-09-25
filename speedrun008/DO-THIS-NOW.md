@@ -204,7 +204,7 @@ Supabase host — that friction is deliberate, do not remove it.
 | | |
 |---|---|
 | ⛔ [`plan/layer-3/PENDING-layer-3-architecture-and-completion.md`](plan/layer-3/PENDING-layer-3-architecture-and-completion.md) | **Layer 3 end to end** — how it runs, how it integrates, Admin's measured state, every trap, and what is pending. **Read this before touching Layer 3 or the corpus.** |
-| ⛔ [`plan/layer-4/PENDING-layer-4-executive-analysis.md`](plan/layer-4/PENDING-layer-4-executive-analysis.md) | **Layer 4 (Executive)** — it already runs on every tick; what is missing is the org data, the policy confirmations and two product decisions. **Read before touching `executive/`.** |
+| ⛔ [`plan/layer-4/`](plan/layer-4/) | **Layer 4 (Executive)** — it already runs on every tick. [`00-STATUS`](plan/layer-4/00-STATUS.md) the step table · [`01-WHAT-HARSH-DOES`](plan/layer-4/01-WHAT-HARSH-DOES.md) ⛔ **your list** · [`02-THE-REMAINING-STEPS`](plan/layer-4/02-THE-REMAINING-STEPS.md) the seven steps |
 | [`handoff/`](handoff/) | the short form, sorted by kind of thing — **start here for detail** |
 | [`HARSH-ORDER.md`](HARSH-ORDER.md) | the long form: same items, full reasoning behind each |
 | [`plan/STATUS.md`](plan/STATUS.md) | every step in all three layers with its outcome |
