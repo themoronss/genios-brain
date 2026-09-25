@@ -90,10 +90,20 @@ def gather(conn, *, org_id: str, seat_id: str, now: datetime) -> dict:
     from genios_engine.reason.moments import screen_insight as SI
     tz = F.seat_tz(conn, org_id, seat_id)
     p = {"o": org_id, "s": seat_id, "since": now - WINDOW}
+    # `collate "C"` ON THE MIN, and it decides which SPELLING of a name a person is shown.
+    # The group is `lower(who)`, so "Priya Shah" and "priya shah" are one person — correct — and
+    # `min(who)` then picks which of the two to display. Under the database's default collation
+    # that comparison is case-INSENSITIVE-ish and the answer is whichever row happened to sort
+    # first, so the same data renders "Priya Shah" on one Postgres and "priya shah" on another.
+    # A name in a nudge the founder reads is not a value that may depend on a server's locale.
+    # `C` orders by byte, where every capital precedes every lowercase, so the capitalised
+    # spelling wins deterministically — which is the one a person typed.
     people = [{"who": r.who, "count": int(r.n)} for r in conn.execute(text(
-        "select min(who) as who, count(*) as n from screen_followups where org_id = :o "
+        "select min(who collate \"C\") as who, count(*) as n from screen_followups "
+        "where org_id = :o "
         "and seat_id = :s and created_at >= :since and who is not null "
-        "group by lower(who) order by n desc, min(who) limit :k"), {**p, "k": TOP_PEOPLE})]
+        "group by lower(who) order by n desc, min(who collate \"C\") limit :k"),
+        {**p, "k": TOP_PEOPLE})]
     kinds = {r.kind: int(r.n) for r in conn.execute(text(
         "select kind, count(*) as n from screen_followups where org_id = :o and seat_id = :s "
         "and created_at >= :since group by kind order by kind"), p)}
