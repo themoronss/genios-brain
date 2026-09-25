@@ -538,3 +538,33 @@ so this file is still readable at step 17.
 
 `PENDING · HARSH` is **not** `NOT STARTED`. It is owned, specified and handed off — skip it. The
 next actionable step is the lowest-numbered row that is `NOT STARTED` or `NEXT`.
+
+---
+
+## LAYER 3 — THE CONTEXT GRAPH
+
+**Plan:** [`layer-3/10-OVERVIEW.md`](layer-3/10-OVERVIEW.md) · analysis in `layer-3/00`–`09`
+**Cost:** ⛔ **no model calls in any step** · `vocabulary_fingerprint` unchanged · 2 migrations
+
+Two premise checks ran before the plan was written and both shrank it:
+**the Decision Object is one thing on the live path** (`reasoning_run_outputs`, FK'd from `signals`
+since migration 0031), and **the `decision → situation` edge already exists as data** — L2-7 put
+`situation_id` beside `reasoning_decision_hash` in the same `signals` row. Five of seven edges
+exist. The work is one edge, two writers, and a read.
+
+| Step | What | State |
+|---|---|---|
+| **L3-0** | [Name the Decision Object](layer-3/step-00-name-the-decision.md) | **NEXT** |
+| **L3-1** | `intel_nodes` + `intel_edges`, landed with their first writer | NOT STARTED · ⛔ migration |
+| **L3-2** | Lift `about` out of `signals` into an addressable edge | NOT STARTED |
+| **L3-3** | Delivery and feedback write back — `delivered_as`, `resulted_in` | NOT STARTED |
+| **L3-4** | Revision — `insert·noop·restated·reversed·expired` ＋ `supersedes` | NOT STARTED · ⛔ migration |
+| **L3-5** | ⛔ **The history reaches the situation** — the read | NOT STARTED |
+| **L3-6** | The surface — card line · side panel · founder count | NOT STARTED |
+| **L3-7** | Turn it on — cutover, scenarios, sensitivity | NOT STARTED |
+
+⛔ **L3-5 is the payload.** L3-0 → L3-4 are plumbing; nothing a founder sees changes until then.
+
+**The measurement that justifies the layer:** `prior_decision`, `previous_decision`,
+`last_decision`, `past_decisions` — **0 occurrences each** in the entire engine. Every sweep
+decides from scratch.
