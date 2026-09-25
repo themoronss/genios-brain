@@ -63,6 +63,7 @@ thresholds into a predicate whose thresholds the author declared.
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from decimal import Decimal, DecimalException
@@ -96,6 +97,24 @@ class PredicateState(str, Enum):
     TRUE = "true"
     FALSE = "false"
     UNKNOWN = "unknown"
+
+
+#: ⛔ L3-11 · HOW EVERY `{absent: …}` EVALUATION RESOLVED, so the size of a known gap stops being
+#: a word. `context_adapter`'s own comment says closing the fail-open default "would turn MOST
+#: `absent:` answers into abstentions until [the coverage map is total]" — and nobody has measured
+#: "most". An unmeasured adjective is what a decision not to act was resting on.
+#:
+#: This is the same move the plan's cost checks make elsewhere: 10x became 2.9x, "the largest saving
+#: in the plan" became ~$3/month. A number can be argued with; "most" cannot.
+ABSENT_OUTCOMES: dict[str, str] = {
+    "refused_unknowable": "the path was DECLARED unknowable, so no inference was licensed",
+    "finding_typed_absent": "typed GENUINELY_ABSENT under a standing coverage epoch — the "
+                            "intelligence, and the one case where absence is TRUE",
+    "abstained_missing": "the path is missing but not typed, so the answer is UNKNOWN",
+    "unclassified_licensed": "⛔ THE GAP. Nobody classified this path, so it fell through to "
+                             "licensed and absence was concluded from silence.",
+    "held": "the fact is present, so the absence is FALSE",
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -231,6 +250,26 @@ class ContextAdapter:
         self.unknowable_fields = read_string_set(*sources, key=UNKNOWABLE_FIELDS_KEY)
         self.absent_fields = read_string_set(*sources, key=ABSENT_FIELDS_KEY)
         self.observation_absence_licensed = read_licence(*sources, key=OBSERVATION_LICENCE_KEY)
+
+    @property
+    def absent_outcomes(self) -> "Counter[str]":
+        """L3-11 · how every `{absent: …}` evaluation resolved. Counted, never gated on.
+
+        ⛔ LAZY, AND THAT IS NOT STYLE. A first cut initialised this in `__init__` and broke four
+        tests instantly: `test_the_borrow_reaches_the_rule_gate` builds an adapter with
+        `ContextAdapter.__new__(ContextAdapter)` — "constructed directly rather than through a
+        fixture" — so the attribute did not exist and EVERY `{absent: …}` EVALUATION RAISED
+        AttributeError. A counter had been given the power to crash the compiler.
+
+        That is L2-7's lesson at a third seam: "a receipt that can abort the thing it is a receipt
+        for turns an accounting failure into a product failure." A tally is accounting. It may be
+        wrong, it may be empty, it may never be read — it may not raise.
+        """
+        existing = self.__dict__.get("_absent_outcomes")
+        if existing is None:
+            existing = Counter()
+            self.__dict__["_absent_outcomes"] = existing
+        return existing
 
     @staticmethod
     def _combine(primary: Any, inline: Any, label: str) -> Mapping[str, Any]:
@@ -661,17 +700,31 @@ class ContextAdapter:
             # consulted and a copy that decided. Two copies of one rule is how the next consumer
             # gets a third.
             if not may_infer_absent(path, unknowable=self.unknowable_fields):
+                self.absent_outcomes["refused_unknowable"] += 1
                 return PredicateVerdict(PredicateState.UNKNOWN, (path,))
+            # ⛔ L3-11 · THE GAP, COUNTED WHERE IT HAPPENS. A path in neither `absent_fields` nor
+            # `missing_fields` was classified by nobody, and the branches below will conclude
+            # absence from silence. The count is taken here rather than inferred from the verdict,
+            # because TRUE from "typed absent" and TRUE from "nobody looked" are the same value.
+            elif path not in self.absent_fields and path not in self.missing_fields:
+                self.absent_outcomes["unclassified_licensed"] += 1
             # Typed GENUINELY_ABSENT under a coverage epoch that still stands: a source could
             # have carried it, everything we can see was checked, and none did. THIS is the
             # finding, and it is the one case where the answer is TRUE rather than an abstention
             # — the whole point of typing an absence is that some absences are the intelligence.
             if path in self.absent_fields and not self._fact(path)[0]:
+                self.absent_outcomes["finding_typed_absent"] += 1
                 return PredicateVerdict(PredicateState.TRUE)
             if path in self.missing_fields:
+                self.absent_outcomes["abstained_missing"] += 1
                 return PredicateVerdict(PredicateState.UNKNOWN, (path,))
-            return PredicateVerdict(PredicateState.FALSE if self._fact(path)[0]
-                                    else PredicateState.TRUE)
+            # The fact is present, so the absence is simply false — nothing was inferred and
+            # nothing fell through. The unclassified case was already counted above, at the point
+            # where it was still distinguishable.
+            held = self._fact(path)[0]
+            if held:
+                self.absent_outcomes["held"] += 1
+            return PredicateVerdict(PredicateState.FALSE if held else PredicateState.TRUE)
         if "has_obs" in condition:
             return PredicateVerdict(PredicateState.TRUE if str(condition["has_obs"])
                                     in self.observations else PredicateState.FALSE)

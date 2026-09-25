@@ -567,7 +567,8 @@ exist. The work is one edge, two writers, and a read.
 | **L3-08** | [Cross Tool — a draft is not a reply](layer-3/step-08-cross-tool.md) · [findings](layer-3/findings/step-08-cross-tool.md) | ✅ **COMPLETE** · +8 tests · 0 regressions. ⛔ **The join is entity resolution, not a correlator** — but CT-10 was live: **an unsent draft counted as a sent reply** |
 | **L3-09** | [The edge vocabulary is closed](layer-3/step-09-edge-vocabulary.md) · [findings](layer-3/findings/step-09-edge-vocabulary.md) | ✅ **COMPLETE** · +13 tests · 0 regressions · ⛔ **no migration**. The 7 'missing' relations all exist elsewhere; **`edge_type` was free text with no vocabulary** |
 | **L3-10** | [The residue kinds are closed](layer-3/step-10-correlation-record.md) · [findings](layer-3/findings/step-10-correlation-record.md) | ✅ **COMPLETE** · +7 tests · 0 regressions · ⛔ **no migration**. `residue.py` **is** the record, with better growth properties than the spec's design. ⛔ **Wave 3 complete** |
-| **L3-11** | Three-valued predicates | **NEXT** |
+| **L3-11** | [`unknown` never becomes `false`](layer-3/step-11-three-valued.md) · [findings](layer-3/findings/step-11-three-valued.md) | ✅ **COMPLETE** · +10 tests · 0 regressions. It is all built; **the open gap is a fail-OPEN default the code declares itself**, deferred on the unmeasured word "most" — now countable |
+| **L3-12** | The four missing graph views | **NEXT** |
 | **L3-1** | `intel_nodes` + `intel_edges`, landed with their first writer | NOT STARTED · ⛔ migration |
 | **L3-2** | Lift `about` out of `signals` into an addressable edge | NOT STARTED |
 | **L3-3** | Delivery and feedback write back — `delivered_as`, `resulted_in` | NOT STARTED |

@@ -1,13 +1,13 @@
 # Layer 3 — handoff for Harsh
 
-**Written:** 2026-09-25 · branch `speedrun008` · **steps L3-0A through L3-10 complete — Waves 1, 2 and 3 done**
-**Suite at handoff:** 13,244 passed · 1,061 skipped · 152 xfailed · **14 failed, all pre-existing**
+**Written:** 2026-09-25 · branch `speedrun008` · **steps L3-0A through L3-11 complete — Waves 1, 2 and 3 done**
+**Suite at handoff:** 13,254 passed · 1,061 skipped · 152 xfailed · **14 failed, all pre-existing**
 
 ---
 
 ## 0. Read this first — what changed, in one paragraph
 
-Eleven steps landed. **Two need something from you, and one needs a decision** (one migration, one operator call). **Five need
+Twelve steps landed. **Two need something from you, and one needs a decision** (one migration, one operator call). **Five need
 nothing** — they are code and tests already on the branch. Nothing in here changes a computed score,
 a prompt, or `vocabulary_fingerprint`; there is **no model call in any of the seven**, and **one
 migration**.
@@ -179,6 +179,7 @@ either direction — so whichever option is chosen, it cannot happen by accident
 | **L3-08** | ⛔ **an unsent draft no longer counts as a sent reply** | — (see §3.4) |
 | **L3-09** | the graph's edge vocabulary closed; `causes`/`blocks`/`related_to` refused | — (see §4.5) |
 | **L3-10** | the residue kinds closed; correlation's stated limitation pinned | — |
+| **L3-11** | the fail-open absence default made **countable** | ⛔ **a number to read, §5.1** |
 
 ---
 
@@ -273,6 +274,28 @@ production changes and re-running: they fail either way. They are not this layer
 | held candidates are not re-examined when coverage improves | → **Wave 4**, and item 21 makes it matter |
 | cross-channel evidence lineage | one assertion quoted across channels counts as several sources. **Declared** in `reason/runner.LINEAGE_UNPROTECTED` with a mover: **the third connector** |
 | `independence_group` populated only for screen/email | same declaration |
+
+---
+
+## 5.1 · ⛔ A NUMBER WORTH READING once the pilot has run
+
+`packs/compiler/context_adapter` has a **fail-open default** that it declares itself:
+
+> *"`unknowable_fields` holds only what somebody DECLARED unknowable — so **a path nobody classified
+> falls through to 'licensed'**, and this branch concludes absence from silence."*
+
+Closing it was deferred because it *"would turn **most** `absent:` answers into abstentions"* —
+**and nobody has measured "most."** L3-11 makes it countable: `ContextAdapter.absent_outcomes` now
+tallies every `{absent: …}` evaluation into five named buckets, one of which is the gap.
+
+**What to do with it:** after a pilot sweep, read the ratio of `unclassified_licensed` to the rest.
+
+* **Small** → close the gap; the abstention cost is not what the comment feared.
+* **Large** → the coverage map has to be made total first, and now there is a number saying how
+  much work that is instead of an adjective.
+
+⛔ **Until then every `unclassified_licensed` is a card that may be asserting "they never replied"
+from a blind spot.** The tally changes no verdict — it only makes the size of that visible.
 
 ---
 
