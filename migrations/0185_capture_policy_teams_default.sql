@@ -1,4 +1,4 @@
--- 0182 · `teams` reaches the column default, which is where the policy actually comes from.
+-- 0185 · `teams` reaches the column default, which is where the policy actually comes from.
 --
 -- WHAT WAS WRONG. P15 added Teams as a work surface and put it in `platform/capture_policy.APP_IDS`
 -- — seven ids — while `capture_policies.allowed_apps` kept 0141's SIX-id column default. The two
