@@ -1,13 +1,13 @@
 # Layer 3 — handoff for Harsh
 
-**Written:** 2026-09-25 · branch `speedrun008` · **steps L3-0A through L3-06 complete**
-**Suite at handoff:** 13,208 passed · 1,061 skipped · 152 xfailed · **14 failed, all pre-existing**
+**Written:** 2026-09-25 · branch `speedrun008` · **steps L3-0A through L3-07 complete**
+**Suite at handoff:** 13,216 passed · 1,061 skipped · 152 xfailed · **14 failed, all pre-existing**
 
 ---
 
 ## 0. Read this first — what changed, in one paragraph
 
-Seven steps landed. **Two need something from you** (one migration, one operator call). **Five need
+Eight steps landed. **Two need something from you, and one needs a decision** (one migration, one operator call). **Five need
 nothing** — they are code and tests already on the branch. Nothing in here changes a computed score,
 a prompt, or `vocabulary_fingerprint`; there is **no model call in any of the seven**, and **one
 migration**.
@@ -118,6 +118,50 @@ recovery step. Do not read a quiet result as "nothing was there".
 
 ---
 
+## 1.3 · ⛔ A DECISION, not a task — `freshness_half_life_days` is misnamed
+
+**Nothing is broken and nothing was changed. This needs a call from you and Rohit.**
+
+`reason/engine._freshness` feeds the 30%-freshness slot of every decision's confidence term:
+
+```python
+def _freshness(occurred_at, eval_time, *, half_life_days: float = 30.0) -> float:
+    return math.exp(-age_days / max(1.0, half_life))
+```
+
+`exp(-age / T)` is an **e-folding time constant, not a half-life.** Measured:
+
+```
+  0d -> 1.0000
+ 15d -> 0.6065
+ 30d -> 0.3679      ⛔ the value a pack configures as its "half life" — 36.8%, not 50%
+ 60d -> 0.1353
+120d -> 0.0183
+```
+
+**The curve's true half-life is `half_life_days × ln2` ≈ 20.8 days when a pack sets 30.**
+
+**Why it matters operationally:** a pack author reading `freshness_half_life_days: 30` reasonably
+expects half the weight after a month. They get 37%. **Every value anyone has tuned is roughly 30%
+out from the intent behind it** — and the tuning looks like it worked, because the number moved.
+
+### The three options, with their blast radius
+
+| | change | blast radius |
+|---|---|---|
+| **A** | **Do nothing.** Behaviour is pinned; the misnomer is documented at the function and here | zero. The next author still has to read the docstring to avoid the trap |
+| **B** | **Rename the key** to `freshness_efold_days` (or similar), keeping the formula | ⛔ breaks every authored pack config that sets it. Needs a compatibility read of the old key for at least one release |
+| **C** | **Fix the formula** to a true half-life (`0.5 ** (age/hl)`) | ⛔⛔ **moves the confidence term of every decision this product has ever made.** Every stored `decision_hash` stays valid but every NEW score shifts, and replay comparisons across the change will differ. Needs a measured before/after on real data, not a deploy |
+
+**My recommendation: A now, B when packs are next versioned.** C is only worth it if someone shows
+the current curve is measurably too aggressive — and nobody has measured it. ⛔ **Do not take C as
+"a small maths fix"; it is a silent global re-scoring.**
+
+**Pinned by** `tests/test_one_answer_per_decay_question.py`, which fails if the curve moves in
+either direction — so whichever option is chosen, it cannot happen by accident.
+
+---
+
 ## 2. What landed, step by step
 
 | step | what | needs you |
@@ -131,6 +175,7 @@ recovery step. Do not read a quiet result as "nothing was there".
 | **L3-04** | knowledge time | ⛔ **item 22** |
 | **L3-05** | the corroboration `distinct` given one home and a pin | — |
 | **L3-06** | four guards on the heartbeat that notices what did not happen | — |
+| **L3-07** | the two staleness curves given one owner each; the dead column pinned dead | ⛔ **decision §1.3** |
 
 ---
 
