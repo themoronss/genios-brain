@@ -581,6 +581,37 @@ exist. The work is one edge, two writers, and a read.
 | **L3-X3** | Held-candidate recovery (cross-check 2.3) | ✅ **ALREADY EXISTS** ([findings](layer-3/findings/crosscheck-extras-2-1-to-2-4.md)). ⛔ `situation_admission_decisions` (**0122**) — `outcome in ('admit','hold','reject')`, `reevaluate_after`, and a **check constraint** making a hold without a retry instant unwritable, plus the sweep's index. The cross-check's premise was wrong here |
 | **L3-X4** | Typed change records (cross-check 2.4) | ✅ **CLOSED by measurement** ([findings](layer-3/findings/crosscheck-extras-2-1-to-2-4.md)) · no code. `graph_change_outbox` exists and has no `change_kind` — ⛔ **but it is a version CLOCK, not a change feed**: its only reader is `select max(graph_version)` and `published_at` is never read. Typing it adds a column nothing selects; the bitemporal history it would duplicate is `valid_to` (95 files) + `supersedes` (28) |
 
+---
+
+## LAYER 4 — THE EXECUTIVE ENGINE
+
+⛔ **Not a layer waiting to be switched on.** `api/routes.py:1150` calls `sweep.run_executive` for
+**every org on every heartbeat tick**, before distribution — planning commitments from authoritative
+decisions, then validating, transitioning, reminding, escalating and closing them, and handing
+outcomes to Layer 7. Five tables (0041) + delegation (0157), **both already applied**. 14 test
+files, 197 tests.
+
+⛔ **Its input is gated on Layer 3.** `plan_commitments` reads `AUTHORITATIVE_SIGNAL_PREDICATE` —
+seven conditions — so **until Admin is activated it examines nothing and creates nothing.** That is
+the gate working, not a fault.
+
+**Plan:** [`layer-4/00-STATUS.md`](layer-4/00-STATUS.md) ·
+[`layer-4/01-WHAT-HARSH-DOES.md`](layer-4/01-WHAT-HARSH-DOES.md) ·
+[`layer-4/02-THE-REMAINING-STEPS.md`](layer-4/02-THE-REMAINING-STEPS.md) ·
+[`layer-4/PENDING-layer-4-executive-analysis.md`](layer-4/PENDING-layer-4-executive-analysis.md)
+
+| step | what | state |
+|---|---|---|
+| **L4-00** | [The layer can say which of its silences are deliberate](layer-4/findings/step-00-the-layer-could-not-say.md) | ✅ **COMPLETE** · +12 tests · 8/8 mutations · 0 regressions. `executive/unreached.py` — **6 unreached functions**, **5 pull-only surfaces**, checked both directions. ⛔ Found **2 real product gaps** and **2 defects in its own first measurement** |
+| **L4-01** | ⛔ `explain.py` has **0% coverage** (0 of 47 lines) | **NOT STARTED** · no decision needed |
+| **L4-02** | `assignment.py` — **49%**, the largest module (496 lines) | **NOT STARTED** · no decision needed |
+| **L4-03** | `planning.py` — **58%** | **NOT STARTED** · no decision needed |
+| **L4-04** | ⛔ **Escalation names the step it is stuck on** — today every stalled escalation says *"stalled"* and never *"stuck on getting it approved"* | **BLOCKED** on a rung field · ⛔ **REAL GAP** |
+| **L4-05** | ⛔ **An approval routes to an approver** — `requires_approval` is read, but nothing resolves who signs | **BLOCKED** on org authority rules, not on code · ⛔ **REAL GAP** |
+| **L4-06** | ⛔ **Preventive warning → card.** `modes.py` calls it *"the vision's USP"*; `deliver/` has **zero** references, so no preventive finding has ever become a card | **BLOCKED** on Rohit — the threshold IS the decision |
+| **L4-07** | **Brief → pushed or pull-only.** `brief.py` calls it *"the executive unit of output"* and nothing composes one on a tick | **BLOCKED** on Rohit |
+| **L4-08** | Units 6 and 8 have no file | **DECLARED UNKNOWN** — the L5 spec is not in this repo, and L3-17 is the lesson about declaring a capability missing from a name search |
+
 ⛔ **L3-5 is the payload.** L3-0 → L3-4 are plumbing; nothing a founder sees changes until then.
 
 **The measurement that justifies the layer:** `prior_decision`, `previous_decision`,
