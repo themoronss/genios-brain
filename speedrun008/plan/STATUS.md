@@ -558,7 +558,8 @@ exist. The work is one edge, two writers, and a read.
 | **L3-00** | [Carry the product vocabulary into `LAYERS.py`](layer-3/step-00-layer-vocabulary.md) · [findings](layer-3/findings/step-00-layer-vocabulary.md) | ✅ **COMPLETE** · +3 tests · 0 regressions. ⛔ Found a live hole: `mcp/` was unmapped, and an unmapped package escapes the import ratchet **in both directions** |
 | **L3-01** | [Name the Decision Object](layer-3/step-01-name-the-decision.md) · [findings](layer-3/findings/step-01-name-the-decision.md) | ✅ **COMPLETE** · +8 tests · 0 regressions. ⛔ **Premise wrong: it is ONE object with five projections, not five shapes.** `ReasoningDecision` already was it — and that **removes a Wave 6 blocker** |
 | **L3-02** | [The coverage record](layer-3/step-02-the-coverage-record.md) · [findings](layer-3/findings/step-02-coverage-record.md) | ✅ **COMPLETE** · +21 tests · 0 regressions · ⛔ **no migration — 0178 already had the columns**. The defect was **one writer, zero readers** |
-| **L3-02b** | Carry the coverage sentence across the seam | **NEXT** |
+| **L3-02b** | [Carry the coverage sentence](layer-3/step-02b-carry-the-coverage.md) · [findings](layer-3/findings/step-02b-carry-the-coverage.md) | ✅ **COMPLETE** · +12 tests · 0 regressions. ⛔ **One seam, not three** — the window belongs to the claim, so it never crosses the QES |
+| **L3-03** | `scoped_absence()` — the gate | **NEXT** |
 | **L3-1** | `intel_nodes` + `intel_edges`, landed with their first writer | NOT STARTED · ⛔ migration |
 | **L3-2** | Lift `about` out of `signals` into an addressable edge | NOT STARTED |
 | **L3-3** | Delivery and feedback write back — `delivered_as`, `resulted_in` | NOT STARTED |

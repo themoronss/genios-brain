@@ -286,6 +286,68 @@ SITUATION_STATUS_ON_CONFLICT = (
 COVERAGE_UNKNOWN = -1
 
 
+def window_coverage_gaps(conn, org_id: str, *, since: datetime, until: datetime) -> tuple[str, ...]:
+    """L3-02b · one sentence per source whose window cannot bear the weight of an absence claim.
+
+    THE SIBLING OF `unmet_source_families`, and the other half of the same honesty.
+    That function answers *which system of record is not connected at all*. This one answers the
+    question a connected source still leaves open: **of the window this situation reasons over, how
+    much did we actually read — and can we prove it?**
+
+    WHY IT BELONGS BESIDE THE OTHER ONE. `source_coverage_insufficient` held 18 pilot situations
+    and 0 of 18 named the family, which is why `unmet_source_families` exists. The quantitative
+    version of that invisibility is worse, because it does not hold anything: a sweep that read 8%
+    of a mailbox and exhausted nothing produces situations that look exactly like a sweep that read
+    all of it. On 23 Sept two assistants were asked the same question over one mailbox; one read
+    about 18 threads of roughly 465 and reported *"18 of 18"*. **An empty result over an unmeasured
+    slice, reported as a fact about the business.**
+
+    ⛔ NO THRESHOLD, DELIBERATELY. A percentage floor would be a number nobody could defend, and
+    the first argument about it would be won by whoever wanted more cards. The rule is
+    `WindowCoverage.can_support_absence` — the sweep exhausted its cursor AND a denominator exists
+    — which is the same rule `capture/coverage/window` already applies and the same one L3-03's
+    gate will consume. One rule, three readers.
+
+    IT READS AND NEVER WRITES, exactly like `unmet_source_families`: what was synced is a fact
+    about a sweep that already happened, and a reader that could mark a window complete would be
+    asserting a sweep that did not occur.
+
+    `()` WHEN THERE IS NOTHING TO SAY — a source that can support an absence claim contributes no
+    sentence. It is also `()` when the read itself fails, because a sentence is never worth the
+    sweep.
+    """
+    from genios_engine.capture.coverage.window import SyncHealth, coverage_for_window
+
+    try:
+        sources = [r.source for r in conn.execute(text(
+            "select distinct source from l1_sync_runs "
+            " where org_id = :o and source is not null "
+            "   and finished_at >= :since and finished_at < :until"),
+            {"o": org_id, "since": since, "until": until}).fetchall()]
+    except Exception:          # noqa: BLE001 — absent table, unmigrated tenant, no rows
+        return ()
+
+    out: list[str] = []
+    for source in sorted(s for s in sources if s):
+        cov = coverage_for_window(conn, org_id=org_id, source=source, since=since, until=until)
+        if cov.can_support_absence:
+            continue
+        # The WHY is the sentence. "Coverage is low" sends nobody anywhere; "the sync failed" and
+        # "the provider gave no total" are different problems with different owners, and the
+        # distinction is the one thing this module was built to stop collapsing.
+        if cov.health is SyncHealth.FAILED:
+            out.append(f"a {source} sync failed in this window, so nothing here rules anything out")
+        elif cov.health is SyncHealth.PARTIAL:
+            out.append(f"the {source} sweep did not finish, so a tail of this window was never read")
+        elif cov.health is SyncHealth.SUCCESS_EMPTY:
+            out.append(f"no {source} activity was read in this window, which is not the same as none existing")
+        elif cov.health is SyncHealth.UNKNOWN:
+            out.append(f"no {source} sync covers this window")
+        else:                  # HEALTHY without a denominator — read all we were OFFERED
+            out.append(f"{source} gave no total, so we read {cov.indexed} of an unknown number")
+    return tuple(out)
+
+
 def unmet_source_families(conn, org_id: str, domain: str | None) -> tuple[str, ...]:
     """The source families this domain needs and the tenant has not connected.
 

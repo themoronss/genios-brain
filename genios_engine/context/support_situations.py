@@ -65,6 +65,7 @@ from genios_engine.context.domain_spec import domains_declaring, spec_for
 from genios_engine.context.periodic import WINDOW_DAYS
 from genios_engine.context.situations import (  # noqa: I001
     unmet_source_families,
+    window_coverage_gaps,
     SITUATION_STATUS_ON_CONFLICT,
     COVERAGE_UNKNOWN,
     RESOLVED_BY_FACT,
@@ -1561,6 +1562,7 @@ def refresh_support_situations(store, org_id: str, *, now: datetime | None = Non
     #: reading; a read inside it would be the per-situation shape
     #: `docs/plans/PERFORMANCE_HARDENING.md` records taking a pass past thirty minutes.
     _unmet: dict[str, tuple[str, ...]] = {}
+    _cov_gaps: dict[object, tuple[str, ...]] = {}
     written = 0
 
     with store.engine.begin() as c:
@@ -1612,6 +1614,19 @@ def refresh_support_situations(store, org_id: str, *, now: datetime | None = Non
                     for _family in _unmet.setdefault(
                             domain, unmet_source_families(c, org_id, domain)):
                         gaps = [*gaps, f"a {_family} source, which is not connected"]
+                    # L3-02b · AND HOW MUCH OF THE WINDOW WE ACTUALLY READ. The line above names a
+                    # system of record that is missing entirely; this one names a connected one we
+                    # only partly saw, which produces situations indistinguishable from complete
+                    # ones.
+                    #
+                    # ⛔ THE WINDOW IS THE FINDING'S OWN SPAN, not a constant. A fixed lookback
+                    # would attach a sentence about the wrong days. `first_seen_at is None` means
+                    # the evidence carries no times, so the question cannot be asked and is not
+                    # guessed at. Memoised on the SPAN, not the domain.
+                    if f.first_seen_at is not None:
+                        gaps = [*gaps, *_cov_gaps.setdefault(
+                            f.first_seen_at,
+                            window_coverage_gaps(c, org_id, since=f.first_seen_at, until=now))]
                     fresh, fresh_known = freshness_score(last_seen_at=f.last_seen_at, now=now)
                     identity = identity_score(
                         open_merge_proposals=desk.merge_pressure.get(
