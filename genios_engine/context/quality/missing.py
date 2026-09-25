@@ -173,12 +173,58 @@ def expectations_from_spec(domain: str | None, situation_type: str) -> tuple[Exp
     return tuple(out)
 
 
+#: ⛔ L3-03 · DECLARED SILENCE — who does NOT pass `window_ok`, and why that is acceptable.
+#:
+#: `window_ok=None` leaves a caller's behaviour exactly as it was. That is deliberate (making it
+#: refuse would empty the Ownership surface for every un-updated caller, turning a safety
+#: improvement into an outage) and it is also precisely the shape of the defect this project has
+#: caught six times: a unit built, tested, green, and reached by nothing on a real path.
+#:
+#: So the exemption is a LIST, not a default. `test_every_caller_either_asks_or_is_declared`
+#: reads the source for calls into this cascade and fails on one that neither passes `window_ok`
+#: nor appears here. A seventh occurrence of that defect will be a build failure rather than a
+#: discovery.
+#:
+#: Same idiom as `DARK_DOMAINS`, `SILENT_LANES` and `EMPTY_BY_DESIGN`: declared, with a reason and
+#: a mover.
+WINDOW_UNCHECKED: dict[str, str] = {
+    "context.quality.__init__":
+        "re-export only; it calls nothing. Listed so the guard's source scan is total rather "
+        "than selectively blind.",
+}
+
+
 def classify_absence(subject: AbsenceSubject, expectation: Expectation, lens: CoverageLens, *,
-                     eval_time: datetime, stale_after: timedelta | None = None) -> AbsenceType:
+                     eval_time: datetime, stale_after: timedelta | None = None,
+                     window_ok: bool | None = None) -> AbsenceType:
     """Which of the five this (subject, expected fact) pair is. PURE.
 
     `lens` is injected and `eval_time` is a parameter: the same subject against the same lens is
     the same answer on any machine at any time, which is what makes a stored absence replayable.
+
+    ⛔ `window_ok` IS L3-03, AND IT CLOSES A HOLE THIS CASCADE COULD NOT SEE.
+    `lens.ready_for` answers *"is there a connected, fresh source that COULD have carried this"*.
+    It says nothing about **how much of the window that source was actually swept.** So a tenant
+    with Gmail connected and a sweep that read 37 of about 465 threads passed both gates above and
+    reached `GENUINELY_ABSENT` — a licensed negative inference over 8% of a mailbox.
+
+    That is exactly the failure the 23 Sept benchmark caught in public, surviving inside the
+    module built to prevent it. The two facts are genuinely different and neither implies the
+    other: *connected* is about the tenant, *read* is about the sweep.
+
+    TRI-STATE, and the three states mean three different things:
+
+        True   the sources covering this window exhausted their cursors and have a denominator
+        False  ⛔ they did not — downgrade to UNKNOWABLE, which is what not knowing spells
+        None   the caller did not ask. Unchanged behaviour, and DECLARED in `WINDOW_UNCHECKED`
+               rather than left to be discovered.
+
+    ⛔ WHY `None` PASSES, WHEN THIS MODULE'S OWN RULE IS THAT `None` IS NOT `True`. It is a
+    different `None`: `lens.ready_for` returns it about a TENANT (a domain nobody declared), and
+    refusing there is correct. This one is about a CALLER. Making it refuse would silently empty
+    the Ownership surface — which is built entirely on typed absence — for every caller that had
+    not been updated yet, turning a safety improvement into an outage. The declared-silence table
+    below is what stops that becoming the "unit nothing calls" defect in reverse.
     """
     if expectation.field in subject.present_fields:
         observed = subject.observed_at.get(expectation.field)
@@ -200,11 +246,19 @@ def classify_absence(subject: AbsenceSubject, expectation: Expectation, lens: Co
         # object; refusing it HERE keeps the reason in one place: a claim with no receipt is a
         # guess, and the honest spelling of a guess is `UNKNOWABLE`.
         return AbsenceType.UNKNOWABLE
+    if window_ok is False:
+        # ⛔ L3-03 · CONNECTED IS NOT READ. Both gates above are satisfied by a source that exists
+        # and is fresh; neither looks at whether the sweep over this window finished or knew how
+        # much there was to finish. A cursor that stopped early, a sync that failed, or a provider
+        # that gave no total all leave a tail nobody saw — and a tail nobody saw is exactly where
+        # the thing we are about to declare absent would be.
+        return AbsenceType.UNKNOWABLE
     return AbsenceType.GENUINELY_ABSENT
 
 
 def missing_fact(subject: AbsenceSubject, expectation: Expectation, lens: CoverageLens, *,
-                 eval_time: datetime, stale_after: timedelta | None = None) -> MissingFact:
+                 eval_time: datetime, stale_after: timedelta | None = None,
+                 window_ok: bool | None = None) -> MissingFact:
     """One classified expectation, as the CONTRACT object.
 
     The contract re-checks the two rules this module already applied (`GENUINELY_ABSENT` needs
@@ -212,8 +266,8 @@ def missing_fact(subject: AbsenceSubject, expectation: Expectation, lens: Covera
     classifier is not the only thing that will ever construct one of these, and a rule enforced
     only at the one call site that exists today is a rule that a second call site does not have.
     """
-    absence = classify_absence(subject, expectation, lens,
-                               eval_time=eval_time, stale_after=stale_after)
+    absence = classify_absence(subject, expectation, lens, eval_time=eval_time,
+                               stale_after=stale_after, window_ok=window_ok)
     domain = expectation.coverage_domain(subject)
     return MissingFact(
         subject_node_id=subject.subject_node_id,
@@ -229,24 +283,26 @@ def missing_fact(subject: AbsenceSubject, expectation: Expectation, lens: Covera
 
 def classify_all(subject: AbsenceSubject, expectations: Sequence[Expectation],
                  lens: CoverageLens, *, eval_time: datetime,
-                 stale_after: timedelta | None = None) -> tuple[MissingFact, ...]:
+                 stale_after: timedelta | None = None,
+                 window_ok: bool | None = None) -> tuple[MissingFact, ...]:
     """The TOTAL answer — every expectation, including the ones that are present.
 
     A caller must never have to read "no row" as "present"; that absence-of-a-row ambiguity is
     the thing this whole module exists to remove, and it would be reintroduced one layer up if
     the only available answer were the gaps.
     """
-    return tuple(missing_fact(subject, expectation, lens,
-                              eval_time=eval_time, stale_after=stale_after)
+    return tuple(missing_fact(subject, expectation, lens, eval_time=eval_time,
+                              stale_after=stale_after, window_ok=window_ok)
                  for expectation in expectations)
 
 
 def detect_missing(subject: AbsenceSubject, expectations: Sequence[Expectation],
                    lens: CoverageLens, *, eval_time: datetime,
-                   stale_after: timedelta | None = None) -> tuple[MissingFact, ...]:
+                   stale_after: timedelta | None = None,
+                   window_ok: bool | None = None) -> tuple[MissingFact, ...]:
     """The GAPS: everything the cascade did not answer `PRESENT` or `NOT_EXPECTED`."""
-    return tuple(fact for fact in classify_all(subject, expectations, lens,
-                                               eval_time=eval_time, stale_after=stale_after)
+    return tuple(fact for fact in classify_all(subject, expectations, lens, eval_time=eval_time,
+                                               stale_after=stale_after, window_ok=window_ok)
                  if fact.absence_type in STORED_TYPES)
 
 
@@ -288,7 +344,9 @@ on conflict (org_id, situation_id, expected_fact) do update set
 
 def refresh_typed_absences(conn, org_id: str, subjects: Sequence[AbsenceSubject], *,
                            lens: CoverageLens, eval_time: datetime,
-                           stale_after: timedelta | None = None) -> int:
+                           stale_after: timedelta | None = None,
+                           window_ok_for: Callable[[AbsenceSubject], bool | None] | None = None
+                           ) -> int:
     """Recompute every situation's typed absences. Returns rows written.
 
     IDEMPOTENT, and a recomputation rather than an append: a gap that has since been filled must
@@ -299,12 +357,22 @@ def refresh_typed_absences(conn, org_id: str, subjects: Sequence[AbsenceSubject]
     (This is not the "held candidates are never deleted" rule; that is `L2.5.8`'s and it is about
     a situation that failed to publish. An absence is a derived view of the graph, and a derived
     view that could not shrink would keep asserting a missing owner after the owner was recorded.)
+
+    ⛔ `window_ok_for` IS PER SUBJECT, NOT PER SWEEP. Each situation reasons over its own evidence
+    span, so "was this window read well enough" has a different answer for a situation whose
+    evidence starts in March and one whose evidence starts yesterday. A sweep-wide flag would give
+    every situation the first situation's answer — the same mistake the memo key in L3-02b was
+    written to avoid, one layer up.
+
+    `None` from the resolver, and `None` for the resolver itself, both mean "not asked" and leave
+    the cascade exactly as it was. See `WINDOW_UNCHECKED`.
     """
     written = 0
     for subject in subjects:
         expectations = expectations_from_spec(subject.domain, subject.situation_type)
-        facts = detect_missing(subject, expectations, lens,
-                               eval_time=eval_time, stale_after=stale_after)
+        facts = detect_missing(subject, expectations, lens, eval_time=eval_time,
+                               stale_after=stale_after,
+                               window_ok=None if window_ok_for is None else window_ok_for(subject))
         domain = canonical_domain(subject.domain)
         epoch = lens.epoch_for(domain)
         for fact in facts:

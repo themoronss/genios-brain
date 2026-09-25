@@ -559,7 +559,8 @@ exist. The work is one edge, two writers, and a read.
 | **L3-01** | [Name the Decision Object](layer-3/step-01-name-the-decision.md) · [findings](layer-3/findings/step-01-name-the-decision.md) | ✅ **COMPLETE** · +8 tests · 0 regressions. ⛔ **Premise wrong: it is ONE object with five projections, not five shapes.** `ReasoningDecision` already was it — and that **removes a Wave 6 blocker** |
 | **L3-02** | [The coverage record](layer-3/step-02-the-coverage-record.md) · [findings](layer-3/findings/step-02-coverage-record.md) | ✅ **COMPLETE** · +21 tests · 0 regressions · ⛔ **no migration — 0178 already had the columns**. The defect was **one writer, zero readers** |
 | **L3-02b** | [Carry the coverage sentence](layer-3/step-02b-carry-the-coverage.md) · [findings](layer-3/findings/step-02b-carry-the-coverage.md) | ✅ **COMPLETE** · +12 tests · 0 regressions. ⛔ **One seam, not three** — the window belongs to the claim, so it never crosses the QES |
-| **L3-03** | `scoped_absence()` — the gate | **NEXT** |
+| **L3-03** | [Connected is not read](layer-3/step-03-scoped-absence.md) · [findings](layer-3/findings/step-03-scoped-absence.md) | ✅ **COMPLETE** · +10 tests · 0 regressions. ⛔ **The gate already existed and was stronger** — the missing half was the sweep, not the tenant. `scoped_absence()` deliberately NOT built |
+| **L3-04** | Knowledge time | **NEXT** · ⛔ migration |
 | **L3-1** | `intel_nodes` + `intel_edges`, landed with their first writer | NOT STARTED · ⛔ migration |
 | **L3-2** | Lift `about` out of `signals` into an addressable edge | NOT STARTED |
 | **L3-3** | Delivery and feedback write back — `delivered_as`, `resulted_in` | NOT STARTED |

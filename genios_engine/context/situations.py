@@ -1139,7 +1139,34 @@ def refresh_situations(store, org_id: str, *, eval_time: datetime | None = None)
     if absence_subjects:
         with store.engine.begin() as conn:
             lens = read_coverage_lens(conn, org_id)
-            refresh_typed_absences(conn, org_id, absence_subjects, lens=lens, eval_time=now)
+            # L3-03 · CONNECTED IS NOT READ. The lens answers "could a source have carried this";
+            # this answers "did the sweep over this situation's own span actually finish, and did
+            # it know how much there was to finish". Without it a tenant with Gmail connected and
+            # a sweep that read 37 of about 465 threads reaches `GENUINELY_ABSENT` — a licensed
+            # negative inference over 8% of a mailbox, which is the failure the 23 Sept benchmark
+            # caught in public.
+            #
+            # ⛔ THE SAME FUNCTION AS THE CARD'S SENTENCE, NOT A SECOND RULE. `()` means every
+            # source covering the span exhausted its cursor and had a denominator, which is
+            # exactly `can_support_absence` for all of them. One rule, three readers — the card
+            # line, this gate, and `capture/coverage/window` underneath both.
+            _span_ok: dict[object, bool] = {}
+
+            def _window_ok(subject) -> bool | None:
+                # The span is the earliest fact this situation actually holds. Undated evidence
+                # cannot be asked the question, so it returns None and the cascade is unchanged —
+                # a guessed window would refuse absences over days nobody observed.
+                times = [t for t in subject.observed_at.values() if t is not None]
+                if not times:
+                    return None
+                first = min(times)
+                if first not in _span_ok:
+                    _span_ok[first] = not window_coverage_gaps(
+                        conn, org_id, since=first, until=now)
+                return _span_ok[first]
+
+            refresh_typed_absences(conn, org_id, absence_subjects, lens=lens, eval_time=now,
+                                   window_ok_for=_window_ok)
     return written
 
 
