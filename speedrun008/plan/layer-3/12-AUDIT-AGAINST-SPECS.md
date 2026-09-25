@@ -173,11 +173,53 @@ did.**
 
 ## 5 · ⛔ THE BIGGEST FUNCTIONAL GAP — nothing evaluates when nothing arrives
 
+> ## ⛔ CORRECTED — 2026-09-25, during L3-06
+>
+> **This claim is false and was the loudest in the plan.** Elapsed time is evaluated at FOUR live
+> levels: `platform/scheduler`'s **heavy tick runs L1 → L2/L3/L5 for every org every 6 hours**
+> whether or not a message arrived; `reason/runner` applies per-rule cooldowns; `executions.
+> next_check_at` **is** a registered due instant with a real due query; and
+> `age_uncorrelated_situations` retires quiet situations on time alone. **The heavy tick was already
+> pinned** by `test_the_heavy_sweep_still_reasons_for_every_org`.
+>
+> `due_evaluation` and `next_evaluation` do return zero — **they are not the names this system
+> uses.** A grep for two invented words found none of a scheduler thread, a cadence in hours, a
+> per-rule cooldown and a column called `next_check_at`. See
+> [`findings/step-06-the-timer.md`](findings/step-06-the-timer.md).
+
 ```
 due_evaluation   0 files      next_evaluation   0 files
+
+> ## ⛔ CORRECTED — 2026-09-25, during L3-06
+>
+> **This claim is false and was the loudest in the plan.** Elapsed time is evaluated at FOUR live
+> levels: `platform/scheduler`'s **heavy tick runs L1 → L2/L3/L5 for every org every 6 hours**
+> whether or not a message arrived; `reason/runner` applies per-rule cooldowns; `executions.
+> next_check_at` **is** a registered due instant with a real due query; and
+> `age_uncorrelated_situations` retires quiet situations on time alone. **The heavy tick was already
+> pinned** by `test_the_heavy_sweep_still_reasons_for_every_org`.
+>
+> `due_evaluation` and `next_evaluation` do return zero — **they are not the names this system
+> uses.** A grep for two invented words found none of a scheduler thread, a cadence in hours, a
+> per-rule cooldown and a column called `next_check_at`. See
+> [`findings/step-06-the-timer.md`](findings/step-06-the-timer.md).
 ```
 
 **Five of the supplied documents name this independently**: LCX-14, CL-03, TL-01, BW-14, LCW-04 —
+
+> ## ⛔ CORRECTED — 2026-09-25, during L3-06
+>
+> **This claim is false and was the loudest in the plan.** Elapsed time is evaluated at FOUR live
+> levels: `platform/scheduler`'s **heavy tick runs L1 → L2/L3/L5 for every org every 6 hours**
+> whether or not a message arrived; `reason/runner` applies per-rule cooldowns; `executions.
+> next_check_at` **is** a registered due instant with a real due query; and
+> `age_uncorrelated_situations` retires quiet situations on time alone. **The heavy tick was already
+> pinned** by `test_the_heavy_sweep_still_reasons_for_every_org`.
+>
+> `due_evaluation` and `next_evaluation` do return zero — **they are not the names this system
+> uses.** A grep for two invented words found none of a scheduler thread, a cadence in hours, a
+> per-rule cooldown and a column called `next_check_at`. See
+> [`findings/step-06-the-timer.md`](findings/step-06-the-timer.md).
 plus CC-23 and §5.4.
 
 > *"A response window elapses with no incoming events. GeniOS never detects a material stalled

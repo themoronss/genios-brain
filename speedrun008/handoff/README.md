@@ -70,3 +70,5 @@ reasoning behind each item. **These four files are the short version, to work fr
 ```
 
 **Steps 1 and 2 are mechanical. Step 3 is where the product learns what it actually is.**
+| [`04-layer-3.md`](04-layer-3.md) | ⛔ **Layer 3, steps 0A–06** — 1 migration (0184), 1 operator call (backfill window), 3 behaviour changes, and **four corrected premises** |
+
