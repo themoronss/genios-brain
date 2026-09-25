@@ -1,5 +1,15 @@
 # Harsh — everything blocked on you, in the order to do it
 
+> ## 📌 THE SHORT VERSION IS [`handoff/`](handoff/)
+>
+> Written 2026-09-25, after Layer 1 and Layer 2 both closed. **Four files, sorted by what kind of
+> thing each item is** — eight migrations, six measurements, five decisions, one access item —
+> each with the exact command and what breaks if it is skipped.
+>
+> **This file is the long form**: the same items with the full reasoning behind each. Work from
+> `handoff/`; come here when you want to know *why*.
+
+
 > **Branch:** `speedrun008` · **Updated:** 2026-09-24 · **Steps covered:** 1 – 15
 > **This file replaces `HANDOFF-CTO.md`**, which only covered steps 1–3 and is now stale.
 > **Read time:** 6 minutes. Each row links to its full runbook.

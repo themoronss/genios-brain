@@ -211,9 +211,97 @@ a decision, a migration or an access I cannot do from this machine.**
 
 ## LAYER 1 — COMPLETE
 
-*Not written yet. This section is filled only when every step above has passed its proof, and it
-must contain: what was built, the START-vs-END number for all six metrics, what is still open and
-why, and what was deliberately not done.*
+**Closed 2026-09-25.** Eighteen steps, all code-complete. **Nothing is open because nobody got to
+it** — every remaining item is a number somebody must read, a migration somebody must apply, or a
+decision somebody must make, and each is named with its owner below.
+
+### What was built
+
+| | |
+|---|---|
+| steps | **18**, each with a findings file, a cost check run BEFORE the build, and four artifacts on completion |
+| scenarios | **39** — closed 29 · guard 5 · open 1 · corpus 4 · impossible 1 |
+| migrations | **six** (0176–0181), **none applied** |
+| model calls added | **zero.** Every step that could have added one derived the value instead — steps 6, 7, 9 and 14 each changed their own design at the cost check |
+| `vocabulary_fingerprint` | `a3d5496aa0d3`, unchanged across steps 9–18 |
+
+### The six numbers, at END
+
+Already stated above, and the honest part is what is NOT given a number: **three of six are
+`⛔ unmeasurable`** because the pilot corpus no longer exists. **Writing a figure there would be
+the failure this whole round was built to end** — a number nobody measured, sitting in a table
+that looks measured.
+
+| moved | blocked |
+|---|---|
+| **2** · seam columns 9 → **17 declared** | **1** · attachments — the corpus is gone |
+| **3ʹ** · claim lanes 8 → **11 of 15** | **4** · domain coverage — needs the corpus |
+| **6** · benchmark **15 → 24 of 38** | **5** · relevance — needs the corpus |
+
+⛔ **Metric 6 is +9 and still short of 30+.** `calibrate()` reports **0 unexplained and 0
+regressed**, so the movement is real and not a harness flattering itself.
+
+### What is still open, and why
+
+| | owner | why |
+|---|---|---|
+| **S01b** · `last_inbound_at` | **Rohit — priced** | Three routes; only one is correct, and it needs a migration, a connection plumbed into `_thread_context`, and **one read per threaded event on a module that issues one `.execute(` in its entirety.** It buys **2 benchmark objects**. The seam is already correct — this is a supplier decision, not a code gap |
+| **S15 · S17 · S29 · S33** | Harsh | the LOGIC is proven against synthetic data; the DISTRIBUTION needs the pilot |
+| **six migrations** | Harsh | 0176–0181. Three are **hard ordering constraints** — the signal store names those columns |
+| **17-U6** | Harsh | **991 of 995 skips are one environment variable.** A skip is not a pass |
+| **step 10** | Harsh | it **gated itself on a measurement** rather than guessing whether a fourth outcome should exist |
+
+### What was deliberately NOT done
+
+* **No LLM was added anywhere.** Four steps looked at one and derived the value instead.
+* **The prompt was never moved.** `vocabulary_fingerprint` is the same string it was at step 9, so
+  no step re-extracted the corpus.
+* **S02 · bcc** — **impossible**, not deferred. Gmail does not supply it, and on a message we
+  RECEIVED it is invisible by definition.
+* **The 60-day backfill window was not raised.** Until it is, benchmark P3 and P4 are
+  **impossible, not unproven** — and the STATUS says so rather than citing them.
+
+---
+
+## LAYER 2 — COMPLETE
+
+**Closed 2026-09-24, swept 2026-09-24.** Nine steps, all code-complete, and a 0→8 sweep after
+them — see [`layer-2/09-SWEEP-0-TO-8.md`](layer-2/09-SWEEP-0-TO-8.md).
+
+| | |
+|---|---|
+| steps | **9**, each with a findings file and the same four artifacts |
+| scenarios | **40** — closed 29 · guard 3 · **OPEN 0** · harsh 7 · impossible 1 |
+| migrations | **two** (0182, 0183), **neither applied** |
+| model calls added | **one site** — R-6, registered behind the existing gate, **off on every tenant** |
+| cutover switches | **seven**, all off, each with its number named |
+
+### ⛔ What this layer turned out to be
+
+**Almost none of it was a build.** Every step's premise check changed its own step, and four
+changed a later one:
+
+| the plan said | measured |
+|---|---|
+| build the refusal accounting | three quarters already existed |
+| author a fundraising corpus | **it was authored, inside Sales** — one `None` hid it |
+| add six interpretation fields | v2 was already full of interpretation; the **label** was missing |
+| build a reasoner slice | four of five criteria were already true, and nothing watched them |
+| build a gate | the gate existed; Layer 2 owed the validator |
+| 534 capabilities · 37% admissible | **155 · 100%** |
+| ~40 situations · 10× saving | **159 · 2.9×** |
+| "the largest saving in the plan" | **about $3 a month** |
+
+### What is still open, and why
+
+**Zero OPEN scenarios.** Seven wait on the pilot database, one is a decision between three
+corpora that nobody should make by hand. All ten remaining items are in
+[`../HARSH-ORDER.md`](../HARSH-ORDER.md) — **two migrations, five measurements, three decisions,
+and no code.**
+
+⛔ **Two of them are the whole product:** pointing `fundraising` at `sales` (the pilot is a
+fundraising founder and the doctrine already exists), and reading the shadow tallies (the only
+thing between a layer that is built and a layer that is on).
 
 ---
 
@@ -403,7 +491,10 @@ decision somebody must make — **no row is open because nobody got to it.**
 
 ## HARSH — THE CONSOLIDATED ORDER
 
-Everything blocked on the CTO, across steps 1–5, in the order to do it:
+📌 **The short version, sorted by kind of work: [`../handoff/`](../handoff/)** — eight migrations,
+six measurements, five decisions, one access item, each with its command and its consequence.
+
+The long form, with the reasoning behind each:
 **[`../HARSH-ORDER.md`](../HARSH-ORDER.md)** — 9 items: 1 access, 3 migrations, 1 deploy,
 2 decisions, 1 measurement, 1 question.
 
