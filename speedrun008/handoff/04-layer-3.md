@@ -1,5 +1,11 @@
 # Layer 3 — handoff for Harsh
 
+> # 👉 ARCHITECTURE + EVERYTHING PENDING: [`../plan/layer-3/PENDING-layer-3-architecture-and-completion.md`](../plan/layer-3/PENDING-layer-3-architecture-and-completion.md)
+> How Layer 3 runs end to end, how it integrates, Admin's measured state, the traps,
+> and what is left. ⛔ **Scope is ADMIN ONLY — Sales and Support are on hold.**
+> This file stays the per-step detail; that one is the whole picture.
+
+
 **Written:** 2026-09-25 · branch `speedrun008` · **steps L3-0A through L3-12 complete — Waves 1, 2 and 3 done**
 **Suite at handoff:** 13,265 passed · 1,061 skipped · 152 xfailed · **14 failed, all pre-existing**
 
@@ -162,6 +168,101 @@ either direction — so whichever option is chosen, it cannot happen by accident
 
 ---
 
+## 1.4 · ✅ DECIDED 2026-09-25 — **HOLD** (option A). Nothing for you to do; read it before you touch `signals`
+
+> ⛔ **Harsh — this is the one that will look like an easy win and is not.** If you see that
+> `signals.situation_id` is null on almost every row and think *"three lines and it's fixed"*, you are
+> looking at exactly the change that was considered and refused below. **Do not wire it.** The reason is
+> recorded in `genios_engine/reason/situation_binding.py` and the build will stop you.
+
+**Rohit's answer: A — hold.** The gap stays declared and measured; nothing is wired. The rest of this
+section is kept in full because it is the record of WHY, and the mover for when it changes.
+
+### The situation in three lines
+
+`signals.situation_id` has existed since **migration 0182** (L2-7). **Five functions insert into
+`signals`. Exactly one names the column** — `reason/domain_shadow._emit_capability_signal`, the
+**compiled lane, which is feature-flagged**. So on the live path the column is null on essentially
+every row, and `deliver/card_source.classify` reads null as **`UNINTERPRETED`**.
+
+| writer | lane | binds today |
+|---|---|---|
+| `reason/runner._emit` | pack (**the largest**) | ❌ |
+| `reason/publication.publish_native_signal` | native | ❌ |
+| `reason/composer.compose_deal_health` | composite | ❌ |
+| `reason/domain_shadow._emit_capability_signal` | compiled (flagged) | ✅ |
+| `reason/team/emit._write_card` | team — **different vocabulary, must never bind** | ❌ |
+
+### It would cost nothing to wire
+
+`reason/runner.run()` already loads every node's situation in one query — `_bulk_load_situations`
+at line 318, assigned at line 885 — and **all three silent main-path writers are called from inside
+that same function with the map in scope** (lines 1310, 1347, 1365). **Zero extra queries. Zero
+migrations.** One column per insert, one parameter per signature.
+
+### ⛔ Why it is not done: co-location is not provenance
+
+A pack rule fires on **graph nodes**. It never reads the situation. Writing that id onto the signal
+asserts *"this card came from that situation"* about a decision made without it.
+
+And **`classify` is binary** — any non-empty id reads as `CardSource.SITUATION`. There is **no value
+meaning "a situation sits on this subject but the rule did not use it."**
+
+⛔ **Worse: it would corrupt the measurement that decides the cutover.**
+`card_source.COMPARISON_KEYS` grades the new path against the old on `cards_from_situation` vs
+`cards_uninterpreted`. Binding co-located situations **moves rows from the second to the first
+without changing a single decision** — the old path would look like it had become the new one.
+
+`reason/uncited_lanes.UNCITED_LANES["general"]` measured the size of this on the pilot,
+**2026-09-16**: **9 of 11 open general-pack signals sit on a subject that also holds an active L2
+situation** — 82% — and recorded that binding them *"is an architecture decision, not a repair, and
+it is the user's to make."*
+
+### The three options, with their blast radius
+
+| | change | blast radius |
+|---|---|---|
+| **A** | **Do nothing.** The gap stays declared and measured in `reason/situation_binding` | zero code risk. ⛔ But every main-path card keeps reading UNINTERPRETED, and the benchmark's central complaint stands |
+| **B** | **Wire all three lanes to the co-located situation.** ~3 lines + 3 signatures | ⛔ **Instantly "fixes" 82% of the pilot's uninterpreted cards — and the fix is a claim, not an improvement.** The cutover comparison becomes unusable, because `cards_from_situation` would count cards no situation produced. Cheap to do, expensive to detect later |
+| **C** | **Add a third provenance value** — `CardSource.CO_LOCATED` — then wire all three | ⛔ honest, and the only option that keeps the cutover measurable. Costs a `CardSource` member, a `COMPARISON_KEYS` entry, and every reader of `classify`. **Needs a product answer first: does a card that says "there is a situation on this account, but this alert did not come from it" help a founder, or confuse them?** |
+
+**Recommended A now / C later. ✅ Rohit chose A on 2026-09-25.** B is the one to refuse: it is the
+cheapest to type and the only one that makes a real number lie. C is right but it starts with a
+product question about what the founder should *see*, not with code. ⛔ **Nobody should take B
+because it makes a dashboard look better.**
+
+**Pinned by** `tests/test_the_situation_reaches_the_signal.py`:
+`bound_fraction() == (1, 5)`, `len(list(CardSource)) == 2`, and `binding_drift()` against each
+writer's **real parsed column list** — so whichever option is chosen, **the build will tell whoever
+wires it to come back and update the reason recorded beside it.** It cannot happen by accident.
+
+---
+
+## 1.5 · ⛔ ONE CALL, WHEN THE COMPARISON IS DONE (L3-19)
+
+`cards_from_situations` is now a registered Layer 4 feature. It was not one before — the name was a
+literal in `deliver/card_source` that `require_feature` **refused**, so no tenant could ever hold an
+activation row for it.
+
+**Nothing to do yet.** When the criterion-5 comparison has run on a pilot tenant:
+
+```python
+from genios_engine.platform.l4_activation import activate, missing_cross_layer_preconditions
+
+missing_cross_layer_preconditions(engine, org_id, "cards_from_situations")   # ⛔ CHECK THIS FIRST
+activate(engine, org_id, feature="cards_from_situations", by="<your name>")
+```
+
+⛔ **If that returns `("l3_domain",)`, do not switch it on.** Without a live L3 domain nothing writes
+`signals.situation_id`, so every card groups into the NULL bucket and reads UNINTERPRETED — while
+the console says `live`. Same trap `ranking_v2` carries and for the same reason.
+
+⛔ **`make_tenant_live` does NOT turn this on, deliberately** — it is a cutover, and switching it on
+at provisioning would mean no tenant ever runs the comparison. Declared in
+`intelligence_onboarding.NOT_DEFAULT_ON`.
+
+---
+
 ## 2. What landed, step by step
 
 | step | what | needs you |
@@ -181,6 +282,10 @@ either direction — so whichever option is chosen, it cannot happen by accident
 | **L3-10** | the residue kinds closed; correlation's stated limitation pinned | — |
 | **L3-11** | the fail-open absence default made **countable** | ⛔ **a number to read, §5.1** |
 | **L3-12** | the node vocabulary closed; the read-model map named | — (see §4.6) |
+| **L3-13** | ⛔ **Nothing built — the graph already exists.** Measured that `signals` holds situation + decision, that nothing deletes a signal, and that situation → decision → delivery → outcome is already foreign keys. Built the totality guard `reason/situation_binding` over all five signal writers | ⛔ **§1.4 — a decision** |
+| **L3-14** | ⛔ **Nothing built for the step as written — it was void.** What replaced it: `packs/substrate_demand` + a pinned measurement. **70 of 141 declared substrate fields are used by NONE of the 1,425 authored capabilities** | ⛔ **§5.2 — needs an AUTHOR** |
+| **L3-15 · 16 · 17 · 18** | ⛔ **Nothing built — all four closed by measurement.** The feedback loop is already closed through FKs; the revision table is migration **0183**; the history reader exists and runs live; the surface is built and its routing is deliberately held | — |
+| **L3-19** | ⛔ **A real defect fixed.** `cards_from_situations` was a literal in `deliver/card_source` and **not** in `L4_FEATURES`, so `require_feature` **raised** and no tenant could ever be switched on. Also found and fixed: `L4_DEFAULT_FEATURES` was a drifted second copy that **silently never switched on the Context Reasoner** | ⛔ **§1.5** |
 
 ---
 
@@ -315,7 +420,32 @@ from a blind spot.** The tally changes no verdict — it only makes the size of 
 
 ---
 
-## 6. ⛔ Four premises this plan got wrong, corrected in place
+## 5.2 · ⛔ THE BIGGEST FINDING IN LAYER 3, AND IT IS NOT AN ENGINEERING TASK
+
+`Domain Expertise/_schema/vocabulary.yaml` declares **141** substrate fact paths to capability
+authors. **70 of them are named by NONE of the 1,425 authored capability files** (57 on the
+strictest reading, excluding leaf-name coincidences).
+
+The sharpest case: `context/correlation_history.py` runs inside the L2 sweep on every pass and
+publishes four facts, including
+
+> `derived.history.prior_card_verdict` — **"we already told them this and they marked it wrong"**
+
+declared in the same list as `derived.momentum`, `derived.engagement` and `derived.sentiment`, which
+authors use **83, 191 and 154** times between them. The history four are used **zero** times.
+
+⛔ **So the engine is not the constraint. Roughly half of what Layer 2 computes and writes every
+sweep is never asked for.** Nothing in `genios_engine` is broken and no wiring change closes it —
+**the gap is in the authored corpus, and it needs an author.**
+
+Pinned by `tests/test_the_corpus_asks_for_what_the_engine_publishes.py` as a **ratchet**: the
+unconsumed count may fall and may never silently rise.
+`test_no_capability_asks_for_the_history_the_engine_computes_every_sweep` is **meant to fail** the
+day somebody authors against it — that failure is the trigger to update these numbers.
+
+---
+
+## 6. ⛔ The premises this plan got wrong, corrected in place
 
 **Read this before acting on anything in `speedrun008/plan/layer-3/12`–`16`.** Those documents now
 carry the corrections inline, but they were written before the code was measured.
@@ -329,6 +459,9 @@ carry the corrections inline, but they were written before the code was measured
 | *"the Decision Object is five shapes; one must become it"* | **one object, five projections.** `ReasoningDecision` already was it — which **removed a Wave 6 blocker** |
 | *"the absence contract is 3 of 8 ingredients"* | `capture/coverage/` is a **seven-module subsystem**; `context/` reads `source_coverage` in five places |
 | *"ten copies of one claim read as ten independent sources"* | `src_count` is `count(distinct sr.source)`. **Ten forwards are one system.** The real defect was that the word was untested |
+| *"no table holds both a situation and a decision"* (the case for `intel_nodes`/`intel_edges`) | **`signals` holds both** — `situation_id` (0182) + `reasoning_decision_hash` (0031, FK'd). Both were added by `alter table`, so the scan that produced the premise was blind to them by construction |
+| *"it dies when a signal is archived"* (the fallback case for the same tables) | **0 `delete from signals` exist in the tree**; 12 `update signals set status`. Soft-delete only, the repo's own doctrine. The join cannot die |
+| *"five node kinds need two new tables"* | ⛔ **ALL FIVE already exist as foreign keys.** `signals.situation_id` → `reasoning_decision_hash` → `executions.decision_hash` → `execution_outcomes.decision_hash`, and the fifth kind — `interpretation` — is `situation_interpretations` (**0183**, written by `context/interpretation_store.py`). **This deleted a migration and two tables from the plan** |
 | ⛔ *"nothing evaluates when nothing arrives — the biggest functional gap"* | **four live mechanisms**, three already pinned. The heavy tick reasons for **every org every 6 hours** regardless of new mail |
 
 **The pattern in all four: a grep for a word I expected, rather than a measurement of the

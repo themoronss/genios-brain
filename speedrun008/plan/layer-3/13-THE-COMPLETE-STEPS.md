@@ -278,20 +278,57 @@ them is what stops each caller inventing its own.
 
 # WAVE 5 · The Intelligence Graph
 
-### L3-13 · `intel_nodes` + `intel_edges`, landed with their first writer
-**Harsh:** ⛔ **migration** · **Model:** none
+### L3-13 · ~~`intel_nodes` + `intel_edges`~~ → ⛔ **CORRECTED 2026-09-25: the graph already exists**
+**Harsh:** none · **Model:** none · **Migration:** ⛔ **none**
 
-Five node kinds (`situation · decision · delivery · outcome · interpretation`), six edge kinds,
-closed vocabularies, `on delete cascade` to `orgs`, soft-delete only.
-⛔ **Separate tables, deliberately** — a decision in `graph_nodes` would get an `authority_rank`
-and start competing with a CRM on the same ladder.
+> ⛔ **WHAT THIS ENTRY ORIGINALLY SAID, AND WHY IT WAS WRONG.** It asked for five node kinds
+> (`situation · decision · delivery · outcome · interpretation`), six edge kinds, closed
+> vocabularies and a migration, on the premise that **"no table holds both a situation and a
+> decision."** All three load-bearing premises were measured false:
+>
+> * **`signals` holds both** — `situation_id` (0182) beside `reasoning_decision_hash` (0031,
+>   FK'd to `reasoning_run_outputs`). ⛔ **Both were added by `alter table`**, so the scan that
+>   produced the premise — which read `create table` blocks — was blind to them by construction.
+> * **Nothing deletes a signal.** L3-14's fallback argument (*"it dies when a signal is
+>   archived"*) is false: **0** `delete from signals` in the tree, **12** `update signals set
+>   status`. Soft-delete only.
+> * **The chain does not stop at the decision.** `executions.decision_hash` →
+>   `execution_outcomes.decision_hash` make **situation → decision → delivery → outcome already
+>   foreign keys** — four of the five node kinds, today.
+>
+> Two tables would have been a **second copy of a graph the schema already enforces.**
+
+**What the step actually delivered:** `genios_engine/reason/situation_binding.py` — a closed
+`SIGNAL_WRITERS` guard over all five writers of `signals`, checked in both directions, reading each
+writer's real column list **out of the AST**.
+
+⛔ **And it found the real defect, which is worse and smaller than the one planned: five writers
+insert into `signals` and ONE names `situation_id`** — the feature-flagged compiled lane. So the
+column is null on essentially every live row and `card_source.classify` calls every main-path card
+**UNINTERPRETED**. Wiring it costs nothing (`runner.run()` already has the map in scope for all
+three silent lanes) but would assert **co-location as provenance** and corrupt the cutover
+measurement. **→ DECISION FOR ROHIT, handoff §1.4.**
+
+See [step-13](step-13-the-graph-already-exists.md) ·
+[findings](findings/step-13-the-graph-already-exists.md).
 
 ### L3-14 · Lift `about` out of `signals`
 **Harsh:** — · **Model:** none · **Migration:** none
 
 The edge **already exists as data**: `signals` carries `reasoning_decision_hash` (0031, FK'd) and
-`situation_id` (0182) in one row. It is a delivery table doing a graph's job — it dies when a
-signal is archived.
+`situation_id` (0182) in one row. It is a delivery table doing a graph's job — ~~it dies when a
+signal is archived~~.
+
+> ⛔ **CORRECTED 2026-09-25 (L3-13).** The struck clause is false and it was this entry's only
+> argument. **There is no `delete from signals` anywhere in the tree**; every lifecycle transition
+> is `update signals set status=...` (`open · acted · expired · resolved`), and nothing purges the
+> reasoning spine either. **The edge cannot die.**
+>
+> ⛔ **What is actually wrong is that the edge is almost never WRITTEN.** Four of the five
+> functions that insert into `signals` never name `situation_id`, so it is null on essentially
+> every live row. That is not a storage problem and lifting the column somewhere else does not fix
+> it — it is the held decision in handoff §1.4, and it is guarded by
+> `reason/situation_binding.SIGNAL_WRITERS`.
 
 ### L3-15 · `deliver/` and `feedback/` write back
 **Harsh:** — · **Model:** none · **Migration:** none
@@ -354,7 +391,7 @@ probes · the parity gate. **L2-8's pattern, applied to twenty steps instead of 
 | **model calls** | ⛔ **zero, in all twenty steps.** L3 is structure, reads and receipts |
 | **`vocabulary_fingerprint`** | unchanged — no prompt is touched |
 | **re-extraction** | none |
-| **migrations** | **7** — L3-02, L3-04, L3-06, L3-09, L3-10, L3-13, L3-16 |
+| **migrations** | ~~**7**~~ → **6** — L3-02, L3-04, L3-06, L3-09, L3-10, L3-16. ⛔ **L3-13's migration was deleted on 2026-09-25**: the tables it would have created already exist as foreign keys |
 | **row growth** | tens per tenant per week; the slice digest is the defence against the 995 MB incident |
 
 ---

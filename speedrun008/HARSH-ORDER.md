@@ -1,5 +1,10 @@
 # Harsh — everything blocked on you, in the order to do it
 
+> # 👉 START AT [`DO-THIS-NOW.md`](DO-THIS-NOW.md)
+> One file, the whole open list, in the order to do it, with the commands.
+> Come back here for the reasoning behind any single item.
+
+
 > ## 📌 THE SHORT VERSION IS [`handoff/`](handoff/)
 >
 > Written 2026-09-25, after Layer 1 and Layer 2 both closed. **Four files, sorted by what kind of

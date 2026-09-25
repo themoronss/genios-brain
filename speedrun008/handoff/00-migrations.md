@@ -1,4 +1,4 @@
-# 🗄 Migrations — eight, in number order
+# 🗄 Migrations — NINE, in number order
 
 All idempotent (`if not exists`), all safe to re-run, ~2 minutes each.
 
@@ -14,6 +14,7 @@ psql "$DATABASE_URL" -f migrations/0180_signal_coverage.sql
 psql "$DATABASE_URL" -f migrations/0181_signal_conversation.sql
 psql "$DATABASE_URL" -f migrations/0182_signal_situation.sql
 psql "$DATABASE_URL" -f migrations/0183_situation_interpretations.sql
+psql "$DATABASE_URL" -f migrations/0184_graph_recorded_at.sql
 ```
 
 ---
@@ -30,6 +31,7 @@ psql "$DATABASE_URL" -f migrations/0183_situation_interpretations.sql
 | **0181** | five conversation columns + two partial indexes | **every signal INSERT fails.** And Layer 2 keeps recomputing *whose turn it is* from Gmail labels because L1's real answer never arrives — it moved the benchmark 20 → 24 |
 | **0182** | `signals.situation_id` + a partial index | **every compiled signal INSERT fails.** And the card loop stays one-per-SIGNAL: one situation firing three rules keeps producing three cards that can never merge — the *"Nitesh Pant × 3"* symptom exactly. **Nullable, no FK, deliberately**: a situation archives on its own lifecycle while its signals stay open |
 | **0183** | `situation_interpretations`, a new table | **every Context Reasoner reading is lost.** The writer swallows the failure, so a sweep still succeeds and simply remembers nothing — which is worse than crashing, because the reading looks like it happened. It stores the SLICE a reading was made from, so a conclusion can be replayed against its own premises |
+| **0184** | ⛔ **nullable `recorded_at` on `graph_nodes` / `graph_facts` / `graph_edges`** + three partial indexes, **no backfill of existing rows** | `GET /graph/as-of` keeps answering *"what did we know at T"* with a predicate that reads the EVENT's time on edges. A backfilled six-month-old email produces an edge dated six months ago, so an as-of read of five months ago sees a relationship we learned this morning. ⛔ **Widening the backfill window (item 21) makes this worse by design** — a year of mail is a year of backdated edges. Apply this BEFORE or WITH item 21 |
 
 ---
 

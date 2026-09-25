@@ -1,5 +1,10 @@
 # Harsh — everything blocked on you, across Layer 1 and Layer 2
 
+> # 👉 START AT [`../DO-THIS-NOW.md`](../DO-THIS-NOW.md)
+> One file, the whole open list, in the order to do it, with the commands.
+> Come back here for the reasoning behind any single item.
+
+
 **Written 2026-09-25** · branch `speedrun008` · 27 steps complete, **13,122 tests passing**
 
 ---

@@ -21,6 +21,8 @@ PURE. No I/O, no clock. It classifies, labels and tallies; the pipeline reads ro
 from __future__ import annotations
 
 from enum import Enum
+
+from genios_engine.platform.l4_activation import FEATURE_CARDS_FROM_SITUATIONS
 from typing import Any, MutableMapping
 
 
@@ -63,7 +65,12 @@ COMPARISON_KEYS: frozenset[str] = frozenset({
 })
 
 #: The per-tenant activation name. A row, not a boolean.
-FEATURE = "cards_from_situations"
+#:
+#: ⛔ IMPORTED, NOT SPELT AGAIN. This module held the string as a literal and
+#: `platform/l4_activation.L4_FEATURES` did not contain it, so `require_feature` refused the name
+#: and the lane below could never be switched on for any tenant — the reader was looking for a
+#: word the writer rejected. Two spellings of one name is how that happens; there is now one.
+FEATURE = FEATURE_CARDS_FROM_SITUATIONS
 
 
 def tally_source(counts: MutableMapping[str, Any], *, situation_id: Any) -> None:
