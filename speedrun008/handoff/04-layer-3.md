@@ -1,13 +1,13 @@
 # Layer 3 — handoff for Harsh
 
-**Written:** 2026-09-25 · branch `speedrun008` · **steps L3-0A through L3-08 complete**
-**Suite at handoff:** 13,224 passed · 1,061 skipped · 152 xfailed · **14 failed, all pre-existing**
+**Written:** 2026-09-25 · branch `speedrun008` · **steps L3-0A through L3-09 complete**
+**Suite at handoff:** 13,237 passed · 1,061 skipped · 152 xfailed · **14 failed, all pre-existing**
 
 ---
 
 ## 0. Read this first — what changed, in one paragraph
 
-Nine steps landed. **Two need something from you, and one needs a decision** (one migration, one operator call). **Five need
+Ten steps landed. **Two need something from you, and one needs a decision** (one migration, one operator call). **Five need
 nothing** — they are code and tests already on the branch. Nothing in here changes a computed score,
 a prompt, or `vocabulary_fingerprint`; there is **no model call in any of the seven**, and **one
 migration**.
@@ -177,6 +177,7 @@ either direction — so whichever option is chosen, it cannot happen by accident
 | **L3-06** | four guards on the heartbeat that notices what did not happen | — |
 | **L3-07** | the two staleness curves given one owner each; the dead column pinned dead | ⛔ **decision §1.3** |
 | **L3-08** | ⛔ **an unsent draft no longer counts as a sent reply** | — (see §3.4) |
+| **L3-09** | the graph's edge vocabulary closed; `causes`/`blocks`/`related_to` refused | — (see §4.5) |
 
 ---
 
@@ -236,6 +237,27 @@ L3-05 gave it one home. **If you duplicate SQL in this codebase, pin it the same
 
 **4.3 · `context/importance.py` bans clock tokens in its own source, comments included.** A comment
 explaining a change tripped it. The guard is right; write around it.
+
+**⛔ 4.5 · `write_edge` now RAISES on an unknown edge type, and one query is worth running.**
+
+`graph_edges.edge_type` was free text with no constraint and no vocabulary anywhere in the engine.
+A typo — `work_at` for `works_at` — wrote a relation every reader walks past: **a fact in the graph
+that can never be found, with no error.** It is now a closed set of six and `write_edge` raises.
+
+**No live call can raise.** A build-time test walks the whole engine and proves every `edge_type=`
+is one of the six, so nothing in production can hit it. A raise only happens if someone adds a new
+writer without declaring the type — which is the point.
+
+⛔ **But historic rows were never audited.** Worth running once against the pilot:
+
+```sql
+select edge_type, count(*) from graph_edges
+ where org_id = :org
+ group by edge_type order by 2 desc;
+```
+
+Anything outside `works_at · attended · owns · concerns · raised_in · corresponded_with` is an edge
+nothing reads. **Finding them is a query, not a code change** — the fix stops new ones.
 
 **4.4 · The 14 pre-existing failures are genuinely pre-existing.** Verified by stashing the branch's
 production changes and re-running: they fail either way. They are not this layer's.

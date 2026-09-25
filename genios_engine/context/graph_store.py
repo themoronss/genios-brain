@@ -106,6 +106,52 @@ def fact_write_action(*, held_value_json: str | None, held_rank: int | None,
 # `context/` for `delete from graph_*` and fails on one.
 
 
+# =================================================================================================
+# L3-09 · THE EDGE VOCABULARY — closed, because it was a free string
+# =================================================================================================
+#
+# `graph_edges.edge_type` is `text not null` with no check constraint, and until this constant
+# existed there was no list of legal values anywhere in the engine. Six are written; anything else
+# would have been accepted silently — including a typo of one of the six, which creates a relation
+# no reader queries and an edge that is invisible for ever.
+#
+# ⛔ THE HAZARD THE SPECS NAME IS THE SAME ONE: "`related_to` must not silently become `blocks`",
+# and "co-occurrence cannot produce `causes` or `blocks`". Neither could be prevented, because
+# there was no vocabulary to violate.
+#
+# NOT A MIGRATION. A check constraint would make adding a relation a schema change and would fail
+# on any historic row nobody has audited. This repo's idiom for a closed set is a Python constant
+# with a totality guard in both directions — `LAYERS`, `PRECEDENCE`, `ANCHOR_FAMILIES`,
+# `SYNC_HEALTHS` — and that is what this is.
+
+#: Every relation the graph may assert, with what it means. A seventh entry is a decision: it means
+#: something new is claimable about how two entities relate, and every reader that walks edges has
+#: to be asked whether it should see it.
+EDGE_TYPES: dict[str, str] = {
+    "works_at":           "person -> company. Employment, from a domain or a stated role.",
+    "attended":           "person -> meeting. Presence on a calendar event, not engagement.",
+    "owns":               "company -> deal. The commercial relationship a deal sits inside.",
+    "concerns":           "deal|situation -> subject. What a thing is ABOUT, deliberately weak.",
+    "raised_in":          "commitment|topic -> thread. Where something was first said.",
+    "corresponded_with":  "person -> person. They exchanged mail. NOT a relationship strength.",
+}
+
+#: ⛔ RELATIONS THIS GRAPH MAY NOT ASSERT, AND WHY. Each of these is a conclusion wearing an edge's
+#: clothes: cheap to write, impossible to distinguish later from an observation, and named in the
+#: specs as the exact thing correlation must not produce.
+FORBIDDEN_EDGE_TYPES: dict[str, str] = {
+    "causes": "a causal claim. CC-35: co-occurrence is not causation, and an edge cannot carry the "
+              "evidence that would make it one. If something really does cause something else, it "
+              "is a CONCLUSION and belongs where conclusions live, with their slice and their law.",
+    "blocks": "a dependency VERDICT. DP-06: temporal order is not a prerequisite. `requires` is a "
+              "claim a requirement definition can support; `blocks` is one only a reasoner can.",
+    "related_to": "the untyped edge. The specs' own warning is that it "
+                  "'must not silently become blocks' — and the way that happens is that somebody "
+                  "writes it because the real type was unclear, and a later reader needs it to "
+                  "mean something.",
+}
+
+
 def _confidence_bp(value: Any) -> int:
     """`numeric(4,3)` as integer basis points. Deterministic, and never a float.
 
@@ -921,7 +967,26 @@ class GraphStore:
         `count_interaction=False` is for DERIVED edges a reading re-asserts on every sweep (the
         support and outreach `concerns` links): re-asserting one is not contact, so it advances
         `last_seen_at` without bumping `interaction_count` — otherwise the count measures how
-        many sweeps ran, not how often two parties interacted."""
+        many sweeps ran, not how often two parties interacted.
+
+        ⛔ L3-09 · `edge_type` IS CHECKED AGAINST A CLOSED SET, AND AN UNKNOWN ONE RAISES.
+        The column is free text and was unvalidated, so a typo of an existing type — `attend`,
+        `work_at` — wrote a relation no reader queries, and the edge became invisible for ever with
+        nothing failing. A raise is right rather than a skip: an edge type is written by a
+        programmer, not supplied by data, so an unknown one is a bug in the caller and a silent
+        drop would let it ship. Same seam and same argument as `corroborate`'s refusal to lift an
+        unnamed confidence.
+
+        `FORBIDDEN_EDGE_TYPES` raises with its own reason, because "causes" and "blocks" are not
+        typos — they are conclusions somebody is about to store as observations."""
+        if edge_type in FORBIDDEN_EDGE_TYPES:
+            raise ValueError(
+                f"graph edges may not assert {edge_type!r}: {FORBIDDEN_EDGE_TYPES[edge_type]}")
+        if edge_type not in EDGE_TYPES:
+            raise ValueError(
+                f"unknown edge_type {edge_type!r}. The graph's relations are a closed set "
+                f"({', '.join(sorted(EDGE_TYPES))}) — an unlisted one is a relation no reader "
+                "queries. Add it to EDGE_TYPES with what it means, or use the one that fits.")
         if not from_node_id or not to_node_id or from_node_id == to_node_id:
             return None
         held = conn.execute(text(
