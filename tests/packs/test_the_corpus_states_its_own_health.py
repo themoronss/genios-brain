@@ -142,13 +142,32 @@ def test_a_draft_situation_is_reported_because_its_card_cannot_instruct(catalog)
     founder is told a thing is happening without being told what to do about it.
 
     Measured 2026-09-24: **24 of 69**, and 16 of those are Customer Support's 20. A one-word edit
-    per file, by an author. The report exists so somebody knows which twenty-four."""
+    per file, by an author. The report exists so somebody knows which twenty-four.
+
+    ⛔ **IT FELL TO 23 ON 2026-09-26, AND THIS MESSAGE ASKED TO BE TOLD SO.**
+    `admin.sit.document_under_control` went `draft -> stable` and was re-stamped with
+    `Domain Expertise/_tools/admit.py --accept`. It was the one draft situation whose block was a
+    LAG rather than a review: it already carried `review_status: approved` and
+    `reviewed_by: harsh`, and its own note said the gap it was authored to name *"turned out to be
+    a projection rather than a connector… and now bound"*.
+
+    That note was verified before the flip rather than taken on trust: Admin is the only domain
+    that declares the `document` anchor, `spec_for("admin").type_for("document")` returns
+    `document_under_control`, the situation matches exactly that type, and
+    `context/document_register.py` writes it. So the binding is real and the `draft` was stale.
+
+    ⛔ **The remaining 23 are NOT one more edit each.** Admin's 7 split two ways: four are declared
+    `pending_l2_types` in `registry/situation-capability-map.yaml` and MUST NOT be flipped — one of
+    them records that flipping it *"would cost a false assurance"* — and three carry
+    `review_status: unreviewed`, meaning no human has read their prose. Those three need a named
+    reviewer, which is the half of the ceremony no tool may perform.
+    """
     health = corpus_health(catalog)
     total = sum(r.situations for r in health.values())
     unreviewed = sum(r.situations_unreviewed for r in health.values())
     assert total == 69, f"the corpus has {total} authored situations, not 69 — update the plan"
-    assert unreviewed == 24, (
-        f"{unreviewed} authored situations cannot instruct, not 24. If this FELL, say so in the "
+    assert unreviewed == 23, (
+        f"{unreviewed} authored situations cannot instruct, not 23. If this FELL, say so in the "
         f"findings — it is the cheapest quality win in Layer 2 and it is authoring, not code")
     assert health["customer_support"].situations_unreviewed == 16, (
         "Customer Support carries two thirds of the gap and that concentration is the finding")
@@ -183,6 +202,11 @@ def test_the_situation_rule_is_read_and_not_reimplemented(catalog):
         "the plan's 63%-inadmissible headline")
 
 
-#: Admin's own draft count, measured 2026-09-24. Named rather than inlined so the sensitivity
-#: test above reads as "unchanged by the edit" instead of as a second magic number.
-_BASELINE_ADMIN_DRAFTS = 8
+#: Admin's own draft count. Named rather than inlined so the sensitivity test above reads as
+#: "unchanged by the edit" instead of as a second magic number.
+#:
+#: ⛔ 8 on 2026-09-24, **7 from 2026-09-26**: `admin.sit.document_under_control` was flipped to
+#: `stable` and re-stamped, its binding having been verified rather than assumed. Of the seven that
+#: remain, four are declared `pending_l2_types` and must stay draft, and three are awaiting a named
+#: human reviewer. See the docstring above.
+_BASELINE_ADMIN_DRAFTS = 7

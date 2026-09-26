@@ -31,7 +31,7 @@ identity:
   domain: admin
   owner_capability: admin.records_and_documentation.document_control
   version: 1.0.0
-  status: draft
+  status: stable
 
 description: >
   A document the organisation is accountable for exists in a state somebody must maintain: it has
@@ -144,3 +144,6 @@ metadata:
     arriving and being discarded. What the binding buys is a real anchor for four of the five
     records capabilities; what it does not buy is approval or retention, and both stay visibly
     absent in `missing` rather than being inferred from a modification history.
+
+admission:
+  accepted_content_hash: c5c734240e5f7c6a73f875cd8abea01e40e2625b411cb7c1ad0e9e7fe68ce5d1
