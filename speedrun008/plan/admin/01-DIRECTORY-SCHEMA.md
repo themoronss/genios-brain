@@ -1,7 +1,7 @@
 # Admin Expertise — the complete directory schema
 
 **Measured 2026-09-27 against `Domain Expertise/Admin Expertise/`.**
-**59 capabilities · 34 situations · 211 files under `capabilities/` · 400 YAML files total.**
+**59 capabilities · 34 situations · 211 files under `capabilities/` · 403 YAML files total.**
 
 > ⛔ **The headline is at the bottom, in PART 5.** The corpus has written down **210 signals it is
 > waiting for**, each tagged with the layer that owns it. That is a roadmap it wrote for itself, and
