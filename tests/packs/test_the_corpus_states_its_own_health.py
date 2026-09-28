@@ -141,17 +141,37 @@ def test_a_draft_situation_is_reported_because_its_card_cannot_instruct(catalog)
     `review_state='draft'`, `_apply_abstention` downgrades the card to an OBSERVATION, and the
     founder is told a thing is happening without being told what to do about it.
 
-    Measured 2026-09-24: **24 of 69**, and 16 of those are Customer Support's 20. A one-word edit
-    per file, by an author. The report exists so somebody knows which twenty-four."""
+    Measured 2026-09-24: **24 of 69**, and 16 of those were Customer Support's 20. A one-word
+    edit per file, by an author. The report exists so somebody knows which twenty-four.
+
+    ⛔ **IT FELL, 2026-09-28: 24 → 18**, and this docstring is the "say so in the findings" the
+    old assertion asked for. The twenty-four were read one file at a time rather than flipped as
+    a block, because they were draft for three different reasons:
+
+      * **6 were finished and never flipped** — `review_status: approved` sitting under
+        `status: draft`. Those six are now `stable`: `asset_in_custody`,
+        `document_under_control`, `employee_lifecycle_event`, `obligation_falls_due`,
+        `spend_against_a_commitment`, `issue_under_diagnosis`.
+      * **5 are draft because a DEPENDENCY does not exist** — their own notes say so in as many
+        words: *"first_response_sent is a planned obs kind and nothing emits it"*. Flipping one
+        would ship doctrine whose progress signals no lane can ever emit, which is worse than an
+        observation card. They stay draft until the substrate catches up.
+      * **13 are genuinely unreviewed** — `review_status: unreviewed`, most at
+        `confidence: provisional`. Those need an author, not an edit.
+
+    So the remaining 18 is not one number to drive to zero: 5 of it is a substrate gap and 13 is
+    authoring. The cheap half is spent."""
     health = corpus_health(catalog)
     total = sum(r.situations for r in health.values())
     unreviewed = sum(r.situations_unreviewed for r in health.values())
     assert total == 69, f"the corpus has {total} authored situations, not 69 — update the plan"
-    assert unreviewed == 24, (
-        f"{unreviewed} authored situations cannot instruct, not 24. If this FELL, say so in the "
-        f"findings — it is the cheapest quality win in Layer 2 and it is authoring, not code")
-    assert health["customer_support"].situations_unreviewed == 16, (
-        "Customer Support carries two thirds of the gap and that concentration is the finding")
+    assert unreviewed == 18, (
+        f"{unreviewed} authored situations cannot instruct, not 18. If this FELL again, say so in "
+        f"the docstring above — the remaining 18 is 5 substrate-blocked and 13 unreviewed, and "
+        f"those two move for different reasons")
+    assert health["customer_support"].situations_unreviewed == 15, (
+        "Customer Support carries five sixths of what is left and that concentration is the "
+        "finding — 5 of its 15 are the substrate-blocked ones")
 
 
 def test_the_situation_rule_is_read_and_not_reimplemented(catalog):
@@ -185,4 +205,4 @@ def test_the_situation_rule_is_read_and_not_reimplemented(catalog):
 
 #: Admin's own draft count, measured 2026-09-24. Named rather than inlined so the sensitivity
 #: test above reads as "unchanged by the edit" instead of as a second magic number.
-_BASELINE_ADMIN_DRAFTS = 8
+_BASELINE_ADMIN_DRAFTS = 3

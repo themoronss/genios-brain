@@ -31,8 +31,7 @@ identity:
   domain: admin
   owner_capability: admin.records_and_documentation.document_control
   version: 1.0.0
-  status: draft
-
+  status: stable
 description: >
   A document the organisation is accountable for exists in a state somebody must maintain: it has
   a current version, an owner, a place it lives, and a date after which keeping it is a liability

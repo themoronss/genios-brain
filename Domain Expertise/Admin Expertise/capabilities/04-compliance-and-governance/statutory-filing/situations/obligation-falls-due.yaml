@@ -14,8 +14,7 @@ identity:
   domain: admin
   owner_capability: admin.compliance_and_governance.statutory_filing
   version: 1.0.0
-  status: draft
-
+  status: stable
 description: >
   Something the organisation is legally or contractually bound to do has a date approaching, and
   the evidence that it was done has to survive being asked about later. The read is about the
