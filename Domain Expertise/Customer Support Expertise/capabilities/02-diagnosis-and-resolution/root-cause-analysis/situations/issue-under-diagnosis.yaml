@@ -9,7 +9,7 @@ identity:
   domain: customer_support
   owner_capability: customer_support.diagnosis_and_resolution.root_cause_analysis
   version: 1.0.0
-  status: stable
+  status: draft
 description: >
   An underlying defect or gap is being worked on: what is actually wrong, whether it reproduces,
   what makes it stop, and whether the customer has confirmed it did. The subject is the issue, not

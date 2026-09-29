@@ -10,7 +10,7 @@ identity:
   domain: admin
   owner_capability: admin.finance_administration.budget_tracking
   version: 1.0.0
-  status: stable
+  status: draft
 description: >
   Money or an entitlement has been committed against something with a limit — a budget line, a
   purchase order, an expense policy, a travel authorisation — and the question is whether the

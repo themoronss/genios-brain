@@ -9,7 +9,7 @@ identity:
   domain: admin
   owner_capability: admin.facilities_and_assets.asset_register
   version: 1.0.0
-  status: stable
+  status: draft
 description: >
   Something the organisation owns or is responsible for is in somebody's hands, or in a space it
   is accountable for, and the record of that has to be true: who holds it, since when, what

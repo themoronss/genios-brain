@@ -13,7 +13,7 @@ identity:
   domain: admin
   owner_capability: admin.people_administration.onboarding_administration
   version: 1.0.0
-  status: stable
+  status: draft
 description: >
   Somebody is joining, changing role, or leaving, and a set of administrative steps has to happen
   in a defined window: access granted or revoked, records created or closed, payroll informed,
