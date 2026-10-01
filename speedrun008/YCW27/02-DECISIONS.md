@@ -182,3 +182,51 @@ audits the **Master Atlas-vs-Code Coverage Matrix, dated 2026-08-22**. It found 
 
 Every delta is this programme's own work since 29 September. **Do not read the matrix's staleness
 as the Atlas's.** The six-week-old audit aged; the two-day-old architecture document did not.
+
+---
+
+# DECISION #5 · ⛔ THE SWITCH THAT TURNED A BUDGET CEILING INTO A PRODUCT OUTAGE
+
+> **Opened** 2026-10-01 · **Owner** Rohit · **Blocks** every card the product could produce
+> **Evidence** `layer-4-executive/05-RECROSSCHECK-why-the-queue-is-empty.md`
+
+## The measurement
+
+    GENIOS_L4_LLM_DECISION_MAKER = true            ON, and no org allowlist → every org
+    Anthropic spend limit                          refusing every call since 2026-09-25 11:09 UTC
+    llm_decision_maker.py:20                       "Failure is DEFER, never the formula."
+
+    8,044 candidates on the 2,681 runs since 2026-09-29:
+        formula_utility   5,469   ✅ the deterministic scorer is HEALTHY
+        llm_utility           0   ⛔ zero on every single one
+        final_utility_bp      0   ⛔ zero on every single one
+        outcome_kind      defer 2,669 · blocked 12 · decision ZERO
+        signals emitted       0
+
+    L1 / L2 / L3 wrote rows on 2026-09-30.  L4 and L5 stopped on 2026-09-25.
+
+**L4 is not broken and neither is the decision maker.** The module refuses to fall back to the
+formula on purpose, with a stated reason: *"Falling back to the formula would make a test of 'what
+does the model decide' silently measure the formula."* That reasoning is sound. What nobody
+declared is that **the measurement mode is the production mode** — so a budget ceiling became a
+full product outage, with six layers reporting healthy and no alarm that said why.
+
+## The three options
+
+| | Option | Cost | Effect |
+|---|---|---|---|
+| **A** | raise the Anthropic spend limit | money | the switch stays on; the product resumes exactly as designed |
+| **B** | `GENIOS_L4_LLM_DECISION_MAKER = false` | the LLM-decision measurement stops | the formula decides; `formula_utility` is already **5,469** on live candidates, so cards resume immediately |
+| **C** | build a third path — `llm_decision_unavailable` falls back to the formula, `llm_declined` still defers | one unit, **and a declared doctrine changes** | the only option that makes the product survive a budget ceiling without a human noticing |
+
+## Recommendation — **B now, C as a unit, A when the budget allows**
+
+**B** restores the product today on a scorer that is measured healthy and already tested. **C** is
+what stops this recurring: the module's stated reason covers a model that **answered badly**, and
+arguably does not cover a model that was **never reachable** — but that is a doctrine change and
+has to be said out loud, not slipped in. **A** is orthogonal and good whenever affordable.
+
+⛔ **Doing nothing is also a choice, and its cost is that the product shows nobody anything.**
+
+> ⛔ **A deliberate refusal to degrade is still a stop.** Measurement modes must declare that they
+> are measurement modes, or the first budget ceiling takes the product down silently.

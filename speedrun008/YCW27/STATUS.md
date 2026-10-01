@@ -979,3 +979,83 @@ error `AXIS_UNKNOWN_BP = -1` exists to prevent, one layer down, where the sentin
 - **150 of 165 cards are expired**, 6 surfaced. ⛔ That is L4's first crosscheck question, not a
   finding: expiry is a window, and a window over a queue starved since the OCR deploy expires
   everything in it. Answerable by measuring expiry dates against the deploy date.
+
+---
+
+# 2026-10-01 · ⛔ L4 RE-CROSSCHECK — the queue is empty for ONE reason, and it is not L4
+
+`layer-4-executive/05-RECROSSCHECK-why-the-queue-is-empty.md` · 364 lines · every number
+measured read-only against production the same day.
+
+## L4 does not need building
+
+27 files, 6,167 lines, running on every heartbeat tick, 186 executions · 794 actions ·
+466 escalations · 186 outcomes. ⛔ And it is the **only** layer that shipped with its own
+declared-silence module (`executive/unreached.py`) — every function it built and does not call,
+each with a reason **and** a mover. L2 needed nine findings to learn that discipline.
+
+## ⛔ The chain, every link counted
+
+    L1 / L2 / L3 wrote rows 2026-09-30.   L4 stopped 09-25.   L5 stopped 09-25.
+
+    sweep._PLANNABLE_SIGNALS decomposed:  42 open signals survive joins 1-5, then
+      join 6 (core.constraint completed on the run)  ->  0     ⛔ ZERO HERE
+
+    two eras of reasoning run:
+      2,681 WITH unit results    evaluated 09-29 -> 09-30
+      9,489 WITHOUT              evaluated 08-17 -> 09-29
+      open signals pointing at the second:  98 = 100%
+
+    the 2,681 new runs:  8,044 candidates, 7,872 'eligible', selected_candidate_id NULL on ALL
+      impact 7,351 · risk 1,758 · effort 6,610 · urgency 5,182 · success 6,658
+      formula_utility 5,469   ✅ THE DETERMINISTIC SCORER IS HEALTHY
+      llm_utility         0   ⛔ zero on all 8,044
+      final_utility_bp    0   ⛔ zero on all 8,044
+      outcome_kind    defer 2,669 · blocked 12 · decision ZERO   ->  0 signals emitted
+
+    GENIOS_L4_LLM_DECISION_MAKER = true, for every org
+
+## ⛔ And it is NOT a defect — the tenth near-miss
+
+`reason/llm_decision_maker.py:20`: *"**Failure is DEFER, never the formula.** A missing key, an
+exhausted budget, a network error... all DEFER with a reason code. Falling back to the formula
+would make a test of 'what does the model decide' silently measure the formula."*
+
+The reasoning is sound. **What nobody declared is that the measurement mode is the production
+mode.** So the Anthropic spend limit did not merely switch off LLM features — it stopped the card
+pipeline, in a way that reads from outside as a delivery defect.
+
+> ⛔ **A deliberate refusal to degrade is still a stop.**
+
+**This is now DECISION #5 in `02-DECISIONS.md`** — three options, recommendation **B now, C as a
+unit, A when the budget allows**. It is Rohit's, it is one line, and nothing in `executive/`
+changes either way.
+
+## The Atlas got L4 right — 11 claims checked, 1 superseded
+
+Including, exactly: *"Units 6 and 8 have no file and three files carry no number"* — numbered are
+1, 2, 2.5, 3, 4, 5, 7, 9, 10; unnumbered are `assignment`, `escalation`, `execution_guard`.
+Its one superseded claim is *"the queue is empty because no domain is activated"* — true when
+written, and no longer the binding constraint, because L4 produced 165 cards.
+
+## Six units planned · four buildable · two blocked on a product number
+
+| | Unit | State |
+|---|---|---|
+| **U0** | ⛔ decision #5 — raise, flip, or build the third path | **Rohit's. Nothing produces a card until this is answered** |
+| **U1** | a 32nd receipt: *"no reasoning era selects zero candidates"* — ⛔ a **conjunction**, not a count: a high defer rate is healthy (the old era deferred 8,208 times and still made 1,157 decisions); a **100%** defer rate is the defect | buildable |
+| **U2** | **G2** `assignment.resolve_approver_seat` reaches a live path — 8 tests already written, `None` stays `None` | buildable · safest |
+| **U3** | **G1** `monitor.blocking_action` — escalations name the step they wait on. ⛔ **the only `UNREACHED` entry with no tests**, so tests first | buildable |
+| **U4** | **F-4** ⛔ `source_events.occurred_at` max = **2056-04-20** — a date 30 years in the future in production | buildable · L1 |
+| **U5** | **F-5** 708 outputs carry no `ranking_weights_version` — the legacy lane cannot say which weights it used | buildable · L2 |
+| **U6** | **G3** brief push + **G4** preventive push | ⛔ **blocked**: needs *how many warnings a founder sees a day*. `modes.py` calls preventive *"the vision's USP"* and `deliver/` has **zero** references to it |
+
+## ⛔ F-6 · and one of my own citations was stale
+
+`unreached.py` cites `api/routes.py:1150` for the `run_executive` call. It is at **1195**. The
+claim is true, the address is not — the exact shape of *"a comment that cites a record reads as a
+record somebody can go and read"*. ⛔ **`tests/test_spec_deferrals_resolve.py` cannot catch it**:
+it resolves document paths, not `file.py:line` citations in prose. That generalises, and it is
+U-next.
+
+**Five load-bearing citations in the document were opened by hand. One in five was wrong.**
