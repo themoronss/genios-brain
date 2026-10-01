@@ -111,3 +111,48 @@ layer boundary.
 
 > ⛔ **Always name the package, never the digit alone.**
 
+
+---
+
+## ⛔ Who produces an OBJECT, and who produces the EVIDENCE for it — 2026-09-30 (YCW27 step 5)
+
+Four recurring arguments, one rule.
+
+> **`capture/` produces the EVIDENCE. `context/` produces the OBJECT.
+> The VOCABULARY both use lives in `contracts/`.**
+
+| Object | `contracts/` — the vocabulary | `capture/` — the evidence | `context/` — the object |
+|---|---|---|---|
+| commitment | `extraction.Commitment` | the extracted `Commitment` | situations that read it |
+| condition | `extraction.Commitment.is_conditional` · `.condition_text` | those two fields, verbatim from the sentence | `correlation_timeline.DormantCondition` |
+| open question | `open_loop.ASK_KINDS` · `is_ask` | the ask, as extracted | `open_loops.py` · `waiting.py` |
+| meeting follow-up | — | the calendar event and the thread | `meeting_touch.py` |
+| delivery status | `signal.SignalType.DELIVERY_FAILURE` | `capture/delivery_status.py` | readings that consume it |
+
+### Why this way round
+
+1. **It is what the code already does, in every case.** Recording it moves no file.
+2. ⛔ **An object needs the graph; evidence does not.** `open_loop` must know what the company
+   already knows. If `capture/` built it, `capture/` would import `context/` — upward, and
+   `tests/test_layer_topology.py` fails the build on it. The rule is not a preference; the
+   alternative is unbuildable without moving the graph.
+3. ⛔ **The condition split is deliberate and load-bearing.** `correlation_timeline.parse_condition`
+   refuses anything it cannot ground, and *that refusal is the queue the `condition_now_true` angle
+   gates on*. Collapsing the split into one L1 object destroys the refusal queue, and with it the
+   only thing that keeps a rhetorical aside — *"let's talk once things settle down"* — from becoming
+   a predicate that eventually fires.
+
+### The alternative, stated fairly
+
+Move the four producers down into `capture/`. It buys vocabulary alignment with the Design Atlas,
+and it costs four migrations, the topology problem in (2), and the refusal queue in (3). **Rejected
+on those grounds, not on effort.**
+
+### What is genuinely missing
+
+**Thread terminal state exists at SIGNAL level (`esqe/lifecycle.py`) and not at THREAD level.**
+It is the one member of this family with no producer anywhere. Either build it in `context/` beside
+the other thread state, or declare it in `deferrals.yaml` **with a reason** — an absence with no
+record is indistinguishable from an oversight.
+
+Guarded by `tests/test_object_placement.py`.

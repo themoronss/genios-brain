@@ -1,3 +1,32 @@
+# ═════════════════════════════════════════════════════════════════════════════════════════════
+# ⛔ HOW A UNIT ID IS ADDRESSED — read this before quoting one.
+#
+# This file holds FOUR programme blocks, and three of them number their milestones from M8:
+#
+#   <root>                            M1  … M7    retired in place
+#   persona_brain_and_layer_repair    M8  … M12
+#   l1_signal_quality_seam            M13 … M15
+#   atlas_v2_alignment                M8  … M14   ← the YCW27 work
+#
+# So `M11` is AMBIGUOUS on its own: it names "The remaining Layer 3 losses" in one block and
+# "L2 Reasoning" in another, and `M11.C1.L-logic.V0.U01` exists twice with different meanings.
+#
+# ⛔ THE CANONICAL FORM IS `<block>/<id>` — e.g. `atlas_v2_alignment/M11.C2.L-logic.V1.U04`.
+# A bare id in a ticket, a commit or a step document is only legible when the block is obvious from
+# context, and it is usually not.
+#
+# WHY NOT RENUMBER. Two reasons, and both are rules this repo already follows.
+#   1. An id is RETIRED, never reused and never changed. Renumbering the older blocks would rewrite
+#      the address of work that has already been logged against it.
+#   2. `atlas_v2_alignment` is referenced by ~800 lines of step documents under
+#      speedrun008/YCW27/ that say M8–M14. Renumbering it would make every one of them wrong.
+#
+# This is the same shape as the layer-vocabulary collision that `genios_engine/LAYERS.py` documents
+# and answers with the identical rule: **always name the namespace, never the digit alone.**
+# `tests/test_tree_ids_are_addressable.py` fails the build if a block is added that widens the
+# collision.
+# ═════════════════════════════════════════════════════════════════════════════════════════════
+
 vision: >
   On the pilot tenant, the intelligence that reaches Layer 4 is about things that actually
   happened in this mailbox: promises this org made, threads where the ball is ours, counterparties
@@ -1572,3 +1601,896 @@ l1_signal_quality_seam:
                       artifact: speedrun008/docs/L1_SEAM_MEASUREMENT.md
                       verify: uv run --no-sync python -m scripts.l1_signal_detail_report --help
                       depends_on: [M15.C1.L-logic.V0.U16, M13.C3.L-integration.V1.U11]
+
+# ═══════════════════════════════════════════════════════════════════════════════════════════════
+# ATLAS v2 ALIGNMENT — M8 onward. Added 2026-09-30.
+#
+# M1-M7 above are permanent and retired-in-place; their IDs are never reused. This block is a
+# NEW program: bring the code into line with the GeniOS Design Atlas v2 (29 Sep 2026), layer by
+# layer, in DATA-FLOW order (capture -> context -> reason -> executive -> deliver -> feedback),
+# which is not the Atlas's own numbering.
+#
+# ⛔ WHY M8 EXISTS AND NOTHING MAY START BEFORE IT.
+# The Atlas is grounded — every codebase number in it was re-measured and matches. But it was
+# written design-side, so several things it badges `gap` or `target` are already built, and one
+# of them is built BETTER than the Atlas specifies:
+#
+#   Atlas badge                      | measured reality
+#   ---------------------------------|-------------------------------------------------------
+#   L1 "no coverage receipts" (gap)  | capture/coverage/signal_coverage.py — per-source, frozen
+#                                    | at capture, never 100% by default; + context/quality/
+#                                    | window.py "read 37 of about 465". Both written against
+#                                    | the same benchmark failure the Atlas cites.
+#   ReasoningRequest (target)        | contracts/reasoning.py:679 — exists
+#   ContextSnapshot (built)          | contracts/reasoning.py:365 — correct
+#   "targeted second pass" (target)  | CritiqueVerdict — exists
+#   DeliveryResult (target name)     | DeliveryObject / DeliveryDecision — exists
+#   DecisionObject (target)          | ⛔ SETTLED ALREADY. tests/contracts/
+#                                    | test_the_decision_object_is_one_object.py: "The plan that
+#                                    | led here assumed five competing definitions to choose
+#                                    | between. It did not: ReasoningDecision IS the object."
+#                                    | The Atlas re-opens a question the code closed.
+#
+# A previous plan made exactly this mistake once and the code investigation corrected it. M8 is
+# the guard against making it a second time, and it produces a RE-RUNNABLE check, not a one-time
+# human read, so the Atlas cannot drift from the code again.
+#
+# VERIFIED MISSING (zero hits, safe to build under any M8 outcome):
+#   EvidenceNeed · SituationSeed · QualifiedEnterpriseSignalBundle · the five funnel counters ·
+#   the five output lanes.
+#
+# Verify prelude every unit needs:
+#   export PATH="/Users/rohitswerashi/MacBook Air Professional/VS Code/VS Code Setup/toolchains/bin:$PATH"
+#   cd "<repo>" && uv run --no-sync pytest <file> -q
+# ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+atlas_v2_alignment:
+  status: proposed_awaiting_confirmation
+  source: "GeniOS Design Atlas v2 — 29 Sep 2026 (HTML + Markdown editions)"
+  vision: >
+    Every built/target/gap badge in the Atlas is checked against the code by a command anyone can
+    re-run, and the four architecture decisions the Atlas leaves open are recorded where the code
+    enforces them rather than where prose describes them. On that corrected baseline each of the
+    six product layers reaches its Atlas target in data-flow order: Layer 1 hands up a bundle that
+    carries its own coverage and can be asked for a named missing fact; the Context Graph answers a
+    bounded, revision-stamped read and turns a HOLD into a request instead of a wait; no reasoning
+    unit runs without its declared inputs scheduled and uncertainty routes a finding to a lane
+    instead of deleting it; the Executive queue is not empty and one situation reaches a verified
+    outcome end to end; every sentence on a card is cited or labelled and nothing is dropped
+    without a receipt; and a wrong card debits the layer that actually failed.
+  order_note: >
+    Data-flow order, not Atlas numbering. capture feeds context; reason READS context. The Atlas
+    numbers Reasoning L2 and the Context Graph L3, but data reaches them the other way round.
+
+  milestones:
+    # ─────────────────────────────────────────────────────────────────────────────────────────
+    - id: M8
+      name: The baseline is true
+      ships: >
+        A command prints, for every Atlas badge, whether the code agrees — and the four blocking
+        decisions exist as enforced code instead of prose. Nothing above this milestone is planned
+        in detail until it is green.
+      categories:
+
+        - id: M8.C1
+          name: Badge verification
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M8.C1.L-logic.V0.U01
+                      what: >
+                        Extract every badge claim in the Atlas markdown (running / built / target /
+                        gap, plus each named symbol, table and file) into one machine-readable
+                        claims file.
+                      artifact: scripts/atlas_claims.py
+                      verify: uv run --no-sync python scripts/atlas_claims.py --count
+                      depends_on: []
+                    - id: M8.C1.L-logic.V0.U02
+                      what: >
+                        The probe library: for a claimed symbol, table, file or caller, answer
+                        EXISTS / ABSENT / UNPROVABLE against the tree. UNPROVABLE is a real third
+                        answer and is never silently read as ABSENT.
+                      artifact: scripts/atlas_probe.py
+                      verify: uv run --no-sync pytest tests/tools/test_atlas_probe.py -q
+                      depends_on: []
+                - level: 1
+                  units:
+                    - id: M8.C1.L-logic.V1.U03
+                      what: >
+                        The resolver: run every claim through the probes and emit the disagreement
+                        list — each row naming the badge, the claim, the probe verdict and the file
+                        that settles it.
+                      artifact: scripts/atlas_verify.py
+                      verify: uv run --no-sync python scripts/atlas_verify.py --report
+                      depends_on: [M8.C1.L-logic.V0.U01, M8.C1.L-logic.V0.U02]
+            - layer: integration
+              levels:
+                - level: 2
+                  units:
+                    - id: M8.C1.L-integration.V2.U04
+                      what: >
+                        The corrected baseline, committed as the document the rest of this program
+                        is planned against.
+                      artifact: speedrun008/ATLAS_BASELINE.md
+                      verify: uv run --no-sync python scripts/atlas_verify.py --assert-baseline speedrun008/ATLAS_BASELINE.md
+                      depends_on: [M8.C1.L-logic.V1.U03]
+
+        - id: M8.C2
+          name: The four decisions, enforced
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M8.C2.L-contract.V0.U05
+                      what: >
+                        DECISION 1 — the confidence vector's axes. Code has evidence / freshness /
+                        consistency / identity / coverage / analytic and the law that overall_bp is
+                        bounded by the weakest axis. The Atlas names evidence / frame / temporal /
+                        causal / authority / coverage; only two overlap. Record the chosen set and
+                        the composition law in one place, with the rejected set named.
+                      artifact: genios_engine/contracts/situation.py
+                      verify: uv run --no-sync pytest tests/contracts/test_the_vector_axes_are_declared_once.py -q
+                      depends_on: [M8.C1.L-integration.V2.U04]
+                    - id: M8.C2.L-contract.V0.U06
+                      what: >
+                        DECISION 2 — correlation placement. The Atlas puts one Signal Correlation
+                        component in L1; ten correlator modules (5,234 lines) live in context/ and
+                        every one reads the graph, which the Atlas puts downstream. Record which
+                        way it goes and why, next to the import rule that forbids the other.
+                      artifact: docs/LAYER_MAP.md
+                      verify: uv run --no-sync pytest tests/test_layer_topology.py -q
+                      depends_on: [M8.C1.L-integration.V2.U04]
+                    - id: M8.C2.L-contract.V0.U07
+                      what: >
+                        DECISION 3 — the naming freeze. One table mapping every Atlas name to the
+                        code name that already holds it (ReasoningDecision, DeliveryObject,
+                        brief.v1), naming which side moves.
+                      artifact: docs/LAYER_MAP.md
+                      verify: uv run --no-sync pytest tests/test_atlas_names_resolve.py -q
+                      depends_on: [M8.C1.L-integration.V2.U04]
+                    - id: M8.C2.L-contract.V0.U08
+                      what: >
+                        DECISION 4 — is a layer the package or the product layer? context/ spans
+                        product L2 and L3; reason/ spans L2 and L4. Record the addressing rule so
+                        two product layers cannot be scheduled against one package.
+                      artifact: genios_engine/LAYERS.py
+                      verify: uv run --no-sync pytest tests/test_layer_topology.py -q
+                      depends_on: [M8.C1.L-integration.V2.U04]
+                - level: 1
+                  units:
+                    - id: M8.C2.L-contract.V1.U09
+                      what: >
+                        The totality guard, both directions — a name the Atlas uses that the code
+                        does not hold fails, and a boundary contract the code holds that the Atlas
+                        never names also fails. One direction alone is half a guard.
+                      artifact: tests/test_atlas_names_resolve.py
+                      verify: uv run --no-sync pytest tests/test_atlas_names_resolve.py -q
+                      depends_on: [M8.C2.L-contract.V0.U07]
+
+        - id: M8.C3
+          name: The funnel counters
+          layers:
+            - layer: data
+              levels:
+                - level: 0
+                  units:
+                    - id: M8.C3.L-data.V0.U10
+                      what: The five-counter table, one row per sweep per tenant.
+                      artifact: migrations/0186_pipeline_counters.sql
+                      verify: uv run --no-sync pytest tests/platform/test_migrations_apply.py -q
+                      depends_on: []
+            - layer: integration
+              levels:
+                - level: 1
+                  units:
+                    - id: M8.C3.L-integration.V1.U11
+                      what: signals_detected and situations_formed, written by the capture and context sweeps.
+                      artifact: genios_engine/context/runner.py
+                      verify: uv run --no-sync pytest tests/context/test_the_funnel_is_counted.py -q
+                      depends_on: [M8.C3.L-data.V0.U10]
+                    - id: M8.C3.L-integration.V1.U12
+                      what: capability_resolved and decision_emitted, written by the shadow compile.
+                      artifact: genios_engine/reason/domain_shadow.py
+                      verify: uv run --no-sync pytest tests/reason/test_the_funnel_is_counted.py -q
+                      depends_on: [M8.C3.L-data.V0.U10]
+                    - id: M8.C3.L-integration.V1.U13
+                      what: card_delivered, written by the delivery pipeline.
+                      artifact: genios_engine/deliver/pipeline.py
+                      verify: uv run --no-sync pytest tests/deliver/test_the_funnel_is_counted.py -q
+                      depends_on: [M8.C3.L-data.V0.U10]
+
+        - id: M8.C4
+          name: The Atlas, corrected
+          layers:
+            - layer: interface
+              levels:
+                - level: 0
+                  units:
+                    - id: M8.C4.L-interface.V0.U14
+                      what: Atlas markdown badges corrected from the baseline report.
+                      artifact: speedrun008/atlas/genios-design-atlas-v2.md
+                      verify: uv run --no-sync python scripts/atlas_verify.py --zero-disagreements
+                      depends_on: [M8.C1.L-integration.V2.U04, M8.C2.L-contract.V1.U09]
+                    - id: M8.C4.L-interface.V0.U15
+                      what: Atlas HTML edition brought level with the markdown.
+                      artifact: speedrun008/atlas/genios-design-atlas-v2.html
+                      verify: uv run --no-sync python scripts/atlas_verify.py --editions-agree
+                      depends_on: [M8.C4.L-interface.V0.U14]
+
+    # ─────────────────────────────────────────────────────────────────────────────────────────
+    - id: M9
+      name: L1 Enterprise Signals — capture/
+      ships: >
+        Layer 1 hands up a bundle that carries its own coverage, and can be asked for one named
+        missing fact instead of being read once and never asked again.
+      categories:
+
+        - id: M9.C1
+          name: The signal bundle
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M9.C1.L-contract.V0.U01
+                      what: >
+                        QualifiedEnterpriseSignalBundle — signals, entities, candidate relationships,
+                        unresolved[], and a coverage receipt that REUSES the existing per-source
+                        SourceCoverage rather than blending a new number.
+                      artifact: genios_engine/contracts/signal.py
+                      verify: uv run --no-sync pytest tests/contracts/test_l1_contracts.py -q
+                      depends_on: [M8.C2.L-contract.V1.U09]
+            - layer: data
+              levels:
+                - level: 1
+                  units:
+                    - id: M9.C1.L-data.V1.U02
+                      what: The bundle table, keyed so a replayed signal is idempotent.
+                      artifact: migrations/0187_signal_bundle.sql
+                      verify: uv run --no-sync pytest tests/platform/test_migrations_apply.py -q
+                      depends_on: [M9.C1.L-contract.V0.U01]
+            - layer: logic
+              levels:
+                - level: 1
+                  units:
+                    - id: M9.C1.L-logic.V1.U03
+                      what: >
+                        The grouper — incoming signals only, joined by entity, thread, time window,
+                        commitment and meeting. It does not read the graph.
+                      artifact: genios_engine/capture/esqe/bundle.py
+                      verify: uv run --no-sync pytest tests/capture/esqe/test_bundle.py -q
+                      depends_on: [M9.C1.L-contract.V0.U01]
+                - level: 2
+                  units:
+                    - id: M9.C1.L-logic.V2.U04
+                      what: >
+                        The coverage receipt assembled onto the bundle from signal_coverage and the
+                        window read — per source, never blended, unknown stays None.
+                      artifact: genios_engine/capture/esqe/bundle.py
+                      verify: uv run --no-sync pytest tests/capture/esqe/test_bundle_coverage.py -q
+                      depends_on: [M9.C1.L-logic.V1.U03]
+            - layer: integration
+              levels:
+                - level: 3
+                  units:
+                    - id: M9.C1.L-integration.V3.U05
+                      what: >
+                        The publisher emits a bundle BESIDE qualified_signals — built beside the old
+                        path, not over it, and both counted on one sweep before either is retired.
+                      artifact: genios_engine/capture/esqe/publisher.py
+                      verify: uv run --no-sync pytest tests/capture/esqe/test_publisher_emits_a_bundle.py -q
+                      depends_on: [M9.C1.L-logic.V2.U04, M9.C1.L-data.V1.U02]
+
+        - id: M9.C2
+          name: The evidence-need door
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M9.C2.L-contract.V0.U06
+                      what: >
+                        EvidenceNeed — the question, why it changes the decision, acceptable and
+                        unacceptable sources, time range, visibility, cost limit, expiry and an
+                        idempotency key.
+                      artifact: genios_engine/contracts/evidence.py
+                      verify: uv run --no-sync pytest tests/contracts/test_evidence_need.py -q
+                      depends_on: [M8.C2.L-contract.V1.U09]
+            - layer: data
+              levels:
+                - level: 1
+                  units:
+                    - id: M9.C2.L-data.V1.U07
+                      what: evidence_needs — open / met / unavailable, never hard-deleted.
+                      artifact: migrations/0188_evidence_needs.sql
+                      verify: uv run --no-sync pytest tests/platform/test_migrations_apply.py -q
+                      depends_on: [M9.C2.L-contract.V0.U06]
+            - layer: logic
+              levels:
+                - level: 2
+                  units:
+                    - id: M9.C2.L-logic.V2.U08
+                      what: >
+                        The executor — fetch the full thread, backfill older history, or re-extract
+                        an attachment, bounded by the need's own cost limit and expiry.
+                      artifact: genios_engine/capture/acquire/evidence_need.py
+                      verify: uv run --no-sync pytest tests/capture/test_evidence_need_executor.py -q
+                      depends_on: [M9.C2.L-data.V1.U07]
+            - layer: integration
+              levels:
+                - level: 3
+                  units:
+                    - id: M9.C2.L-integration.V3.U09
+                      what: >
+                        The wire that does not exist today — residue.signal_unreached, which already
+                        measures what Layer 2 could not explain, raises an EvidenceNeed instead of
+                        reaching only the angles.
+                      artifact: genios_engine/context/residue.py
+                      verify: uv run --no-sync pytest tests/context/test_residue_raises_a_need.py -q
+                      depends_on: [M9.C2.L-logic.V2.U08]
+
+    # ─────────────────────────────────────────────────────────────────────────────────────────
+    - id: M10
+      name: L3 Context Graph — context/
+      ships: >
+        A bounded, revision-stamped read the reasoning layer can ask for, and a HOLD that asks for
+        what it is missing instead of only waiting for the next sweep.
+      categories:
+
+        - id: M10.C1
+          name: The bounded query API
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M10.C1.L-contract.V0.U01
+                      status: done            # 2026-09-30
+                      what: >
+                        The read request — seeds, allowed edge types, max hops, max nodes and the
+                        asking seat's visibility. Bounded by DEFAULT: an unbounded default makes
+                        every caller's mistake invisible until the tenant is large.
+                      # Landed beside the reader rather than in contracts/reasoning.py: it is only
+                      # ever constructed by a context/ caller and consumed by the traversal below
+                      # it, so a contracts/ home would add an import for no reader's benefit.
+                      artifact: genios_engine/context/bounded_read.py
+                      verify: uv run --no-sync pytest tests/context/test_the_bounded_read_says_when_it_stopped.py -q
+                      depends_on: []
+            - layer: data
+              levels:
+                - level: 1
+                  units:
+                    - id: M10.C1.L-data.V1.U02
+                      status: done            # 2026-09-30
+                      what: >
+                        The bounded reader — one capped breadth-first traversal, with the revision it
+                        read AND whether a cap stopped it. A result that hit its cap and does not say
+                        so is a partial answer that reads as a complete one.
+                      artifact: genios_engine/context/bounded_read.py
+                      verify: uv run --no-sync pytest tests/context/test_the_bounded_read_says_when_it_stopped.py -q
+                      depends_on: [M10.C1.L-contract.V0.U01]
+            - layer: logic
+              levels:
+                - level: 2
+                  units:
+                    - id: M10.C1.L-logic.V2.U03
+                      status: retired         # 2026-09-30 — already built; the finding was wrong
+                      what: >
+                        RETIRED, NOT DEFERRED. Compare-and-set on write was already built:
+                        reason/runner.py:570 _graph_version_guard reads the tenant row `for share`,
+                        compares against the expected revision and yields a boolean the caller at
+                        line 1276 honours by refusing to publish on drift. 12 more sites in deliver/
+                        and api/ take the same lock. The finding came from grepping context/ only,
+                        and the read-modify-write spans packages by design — a guard lives with the
+                        READER, not the writer. See
+                        speedrun008/YCW27/layer-3-context-graph/STEP-02-WITHDRAWN-compare-and-set.md
+                      artifact: genios_engine/reason/runner.py
+                      verify: uv run --no-sync pytest tests/test_graph_version_consistency.py -q
+                      depends_on: [M10.C1.L-data.V1.U02]
+
+        - id: M10.C2
+          name: A hold that asks
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M10.C2.L-logic.V0.U04
+                      status: done            # 2026-09-30
+                      what: >
+                        A HOLD raises the EvidenceNeed that would clear it. THREE of seven hold
+                        reasons, and the four exclusions are the design: conflict_open and
+                        cross_domain_contradiction are adjudication, identity_review_required needs a
+                        human, and pattern_evidence_required is OUR missing rule not the tenant's
+                        missing document. AND qes_required + verified_evidence_required are ONE
+                        question, not two — measured at 480 of 504 holds carrying both.
+                      # A separate module rather than inside situation_publisher: publication must
+                      # not grow a second responsibility, and this is a pure mapping over a held
+                      # candidate that is testable without the publisher's eight admission laws.
+                      artifact: genios_engine/context/hold_needs.py
+                      verify: uv run --no-sync pytest tests/context/test_a_hold_asks_for_what_would_free_it.py -q
+                      depends_on: [M9.C2.L-contract.V0.U06]
+                - level: 1
+                  units:
+                    - id: M10.C2.L-logic.V1.U05
+                      status: done            # 2026-09-30
+                      what: >
+                        A met need earns another admission attempt; an unavailable one stops the
+                        waiting WITH A REASON; a still-open one changes nothing; and a hold that
+                        asked no question is not called "waiting" at all. An EXPIRED open need counts
+                        as unavailable — otherwise a hold waits forever on a question nobody will
+                        answer. eval_time is a parameter, never now().
+                      artifact: genios_engine/context/hold_resolution.py
+                      verify: uv run --no-sync pytest tests/context/test_a_met_need_clears_its_hold.py -q
+                      depends_on: [M10.C2.L-logic.V0.U04, M9.C2.L-integration.V3.U09]
+
+            - layer: integration
+              levels:
+                - level: 2
+                  units:
+                    - id: M10.C2.L-integration.V2.U06
+                      status: done            # 2026-09-30 — added during the build, not planned
+                      what: >
+                        The needs queue is written, and the sweep writes it. detect_residue measured
+                        the gap and needs_from_residue turned it into a question, but NOTHING
+                        persisted a need — so the executor read an empty table. ⛔ `on conflict do
+                        nothing`, never `do update`: residue is re-derived every sweep and a
+                        re-derived need is born `open`, so an update would reopen every closed
+                        question forever and teach the system that its questions are always answered.
+                      artifact: genios_engine/context/evidence_need_store.py
+                      verify: uv run --no-sync pytest tests/context/test_residue_reaches_the_sweep.py -q
+                      depends_on: [M10.C2.L-logic.V0.U04]
+
+    # ─────────────────────────────────────────────────────────────────────────────────────────
+    - id: M11
+      name: L2 Reasoning — reason/ + packs/
+      ships: >
+        No unit runs half-blind, and a finding that cannot be decided is routed rather than deleted.
+      categories:
+
+        - id: M11.C1
+          name: Dependency-complete plans
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M11.C1.L-logic.V0.U01
+                      status: rewritten       # 2026-09-30 — as specified it was a REGRESSION
+                      what: >
+                        REWRITTEN AS A RECEIPT, NOT A REFUSAL. This unit originally said "plan compile
+                        FAILS when a scheduled unit declares a source no other scheduled unit
+                        produces", justified by "the defect that has left two of core.risk's three
+                        plugins silent". Both halves were false.
+
+                        (1) reason/plan.py:229 records REMOVING exactly that rule: under it "six units
+                        lost to one absent fact" — core.tradeoff, then alternative, validation and
+                        recommendation behind it. The settled rule is that a unit is dropped only when
+                        it has NOTHING left to read.
+
+                        (2) scripts/l2_unit_silence.py measured it: core.risk is ONE unit, not three
+                        plugins, and it completed 1,165 of 1,165. 20 of 22 units speak.
+
+                        What was actually missing: a unit KEPT with some of its sources dropped
+                        recorded nothing. Asserted in the positive by a passing test —
+                        test_selector_and_registration.py:86. DegradedStep is that receipt, and it
+                        names what the unit KEPT as well as what it lost.
+                      artifact: genios_engine/reason/plan.py
+                      verify: uv run --no-sync pytest tests/reason/test_a_kept_unit_says_what_it_lost.py -q
+                      depends_on: [M8.C1.L-integration.V2.U04]
+                - level: 1
+                  units:
+                    - id: M11.C1.L-logic.V1.U02
+                      status: retired         # 2026-09-30 — already built AND already tested
+                      what: >
+                        RETIRED, NOT DEFERRED. The SkippedStep receipt exists at reason/plan.py:258
+                        and is covered by a PASSING test:
+                        test_selector_and_registration.py::test_a_unit_whose_every_source_went_is_dropped_and_names_all_of_them
+                        asserts both reason_code and missing_fields. Production carries 3,102 of 26,396
+                        result rows with a skip_reason_code, so it runs.
+
+                        No code and no test were written. The tree named
+                        tests/reason/adapters/test_a_skip_names_its_missing_input.py, which does not
+                        exist and should not be created. See
+                        speedrun008/YCW27/layer-2-reasoning/STEP-02-RETIRED-skip-receipt.md
+                      artifact: genios_engine/reason/plan.py
+                      verify: uv run --no-sync pytest tests/reason/test_selector_and_registration.py -q
+                      depends_on: [M11.C1.L-logic.V0.U01]
+                - level: 2
+                  units:
+                    - id: M11.C1.L-logic.V2.U05
+                      status: done            # 2026-09-30 — added during the build
+                      what: >
+                        The degradation receipt reaches the decision's `uncertainty` as
+                        degraded_sources:<unit>:2of3 or starved_sources:<unit>:0of1. Not done until a
+                        human can read it: this programme has found the not_carried shape (a value
+                        computed correctly and dropped at a boundary) six times, and a receipt that
+                        stopped at ExecutionPlan would be the seventh.
+                      artifact: genios_engine/reason/orchestrator.py
+                      verify: uv run --no-sync pytest tests/reason/test_a_lost_source_reaches_the_decision.py -q
+                      depends_on: [M11.C1.L-logic.V0.U01]
+
+        - id: M11.C2
+          name: The output lanes
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M11.C2.L-contract.V0.U03
+                      status: done            # 2026-09-30
+                      what: >
+                        The five lanes as a closed enum — decision, investigation, conflict, monitor,
+                        suppress — a lane is chosen, never a card deleted.
+
+                        NAMED `OutputLane`, NEVER A BARE `lane`: reason/uncited_lanes.py already means
+                        a PACK lane by that word, and its docstring records what the conflation cost —
+                        "Layer 2 lost five readings to exactly that ambiguity". And it is NOT
+                        DecisionOutcome: that enum's six members answer "did we reach a decision", and
+                        a `decision` outcome routes to DECISION or MONITOR depending on confidence.
+                      # In contracts/reasoning.py rather than contracts/situation.py: the lane is a
+                      # property of a DECISION, and it lands beside DecisionOutcome so the distinction
+                      # between them is readable in one place.
+                      artifact: genios_engine/contracts/reasoning.py
+                      verify: uv run --no-sync pytest tests/contracts/test_the_output_lanes_are_not_the_outcomes.py -q
+                      depends_on: [M8.C2.L-contract.V0.U05]
+            - layer: logic
+              levels:
+                - level: 1
+                  units:
+                    - id: M11.C2.L-logic.V1.U04
+                      status: done            # 2026-09-30
+                      what: >
+                        The router — pure, deterministic, NO MODEL (00-ARCHITECTURE §4: "if the output
+                        is a number, a route or a permission, no model produces it" — a lane is a
+                        route). CONFLICT outranks everything including a 10,000 bp decision: a
+                        confident decision is the MOST dangerous thing to publish over an open
+                        disagreement. Totality is asserted in BOTH directions — every input reaches one
+                        lane, and every lane is reachable.
+                      # In its own module, not publication.py: it is a pure decision over an outcome
+                      # and a confidence, and it must import no clock, no client and no database —
+                      # which a test checks via ast rather than by grepping text.
+                      artifact: genios_engine/reason/output_lane.py
+                      verify: uv run --no-sync pytest tests/reason/test_every_decision_reaches_exactly_one_lane.py -q
+                      depends_on: [M11.C2.L-contract.V0.U03]
+                - level: 2
+                  units:
+                    - id: M11.C2.L-logic.V2.U06
+                      status: done            # 2026-09-30
+                      what: >
+                        Something ROUTES, and the lane reaches the flat projection the card reads.
+                        decision_maker routes where outcome and confidence first exist together;
+                        domain_shadow carries it onto `signals` (migration 0189).
+
+                        TRIMMED ON MEASUREMENT: no columns on reasoning_run_outputs. That row already
+                        carries the lane — to_semantic_dict includes it, so it is inside decision_hash
+                        — and duplicating a value in the same row lets the copies disagree.
+                      artifact: genios_engine/reason/domain_shadow.py
+                      verify: uv run --no-sync pytest tests/reason/test_the_lane_reaches_every_projection.py -q
+                      depends_on: [M11.C2.L-logic.V1.U04]
+
+        # ═══════════════════════════════════════════════════════════════════════════════════
+        # S6 · Plane D — routing and the draft corpus.  ADDED 2026-09-30.
+        #
+        # ⛔ RETIRED: M11.C5.U01 ("the 5 unrouted types become a runtime counter"). A runtime counter
+        # already existed -- domain_shadow counted no_route per sweep. What was missing was its
+        # DIMENSION, and behind that a four-way diagnosis performed by grepping an exception message.
+        # One artifact could not hold all three, so U01 retires and U05/U06/U07 mint. IDs are never
+        # reused; see the header note on addressing.
+        #
+        # ⛔ WITHDRAWN: M11.C5.U03 -- see the unit itself.
+        # ⛔ REWRITTEN: M11.C5.U02 -- see the unit itself.
+        - id: M11.C5
+          name: Plane D — routing and the draft corpus
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M11.C5.L-contract.V0.U05
+                      what: >
+                        NoExpertiseRoute carries a validated refusal reason, closed at four:
+                        unknown_domain_hint, domain_not_activated, predicate_rejected,
+                        no_situation_binds_type. Measured 2026-09-30: the only classifier in the
+                        codebase (scripts/corpus_route_probe.py) told them apart with THREE substring
+                        tests over FOUR causes plus an else, and reported domain_not_activated -- an
+                        operations fact -- as no_route_type, an authoring gap. The raise site's own
+                        comment says those two are different facts fixed in different places.
+                      artifact: genios_engine/packs/compiler/errors.py
+                      verify: .venv/bin/python -m pytest tests/packs/compiler/test_a_refusal_says_which_kind_it_is.py -q
+                      depends_on: []
+            - layer: data
+              levels:
+                - level: 0
+                  units:
+                    - id: M11.C5.L-data.V0.U02
+                      status: rewritten      # 2026-09-30 -- the premise was false
+                      what: >
+                        REWRITTEN. As specified this read "unrouted_l2_types is generated, not
+                        hand-kept". It IS generated: _tools/index.py:205 emits the block, comment and
+                        all, from all_l2 - bound_globally computed at line 61, and regenerating all
+                        three domains was byte-identical. The real gap is that NOTHING FAILED when the
+                        committed file went stale -- index.py has to be run -- while validate.py
+                        computed the same set three lines away and never compared them. Two
+                        computations of one fact, never compared. validate.py now errors on a stale
+                        registry, names the types, and names index.py as the only writer.
+                      artifact: Domain Expertise/_tools/validate.py
+                      verify: .venv/bin/python -m pytest tests/packs/test_the_unrouted_list_cannot_drift.py -q
+                      depends_on: []
+                - level: 1
+                  units:
+                    - id: M11.C5.L-data.V1.U04
+                      what: >
+                        Customer Support's deferrals.yaml -- all seven authored-and-routed-by-nothing
+                        capabilities, each blocked_on_l2_type on a planned type nothing emits. The
+                        ledger is all-or-nothing: validate.py errors on an unrouted capability with no
+                        deferral ONLY when the file exists, so a partial commit leaves the corpus at
+                        ERROR. An explanation, never an activation -- Support stays on hold. Sales
+                        deliberately gets no ledger: nothing there is routed by nothing.
+                      artifact: Domain Expertise/Customer Support Expertise/deferrals.yaml
+                      verify: .venv/bin/python -m pytest tests/packs/test_every_capability_has_a_door_or_a_reason.py -q
+                      depends_on: [M11.C5.L-data.V0.U02]
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M11.C5.L-logic.V0.U03
+                      status: withdrawn      # 2026-09-30 -- already built, and already tested
+                      what: >
+                        WITHDRAWN. As specified: "a draft situation may not compile a card, and the
+                        refusal names it". capability_resolver.situation_admission_reason already does
+                        it, admitted=not admission_gaps already carries it (line 790), review_state
+                        already becomes draft, _apply_abstention already downgrades the card, and the
+                        gap already names the situation. Measured over the whole corpus: all 23 draft
+                        situations are flagged identity_status_draft and ZERO may instruct. 15 tests
+                        already covered it. The cross-check's contrary finding came from believing a
+                        corpus comment that was true when written and no longer is; that comment now
+                        carries a dated correction, which is the only thing this unit produced.
+                      artifact: genios_engine/packs/compiler/expertise_builder.py
+                      verify: .venv/bin/python -m pytest tests/packs/compiler/test_situation_admission.py -q
+                      depends_on: []
+                - level: 1
+                  units:
+                    - id: M11.C5.L-logic.V1.U06
+                      what: >
+                        Route refusals counted by (reason x situation type), beside the flat no_route
+                        total which is deliberately unchanged because a cutover gate asserts on it.
+                        A count without its dimension is not a measurement -- this layer's own L1
+                        rule, reaching its own code. Both breakdowns must sum to the total and the
+                        pass compares them, recording no_route_unbalanced rather than raising: a
+                        receipt that can abort what it observes turns an accounting failure into a
+                        product failure. No sixth funnel stage and no migration.
+                      artifact: genios_engine/reason/domain_shadow.py
+                      verify: .venv/bin/python -m pytest tests/reason/test_a_situation_that_binds_nothing_is_counted.py -q
+                      depends_on: [M11.C5.L-contract.V0.U05]
+            - layer: interface
+              levels:
+                - level: 2
+                  units:
+                    - id: M11.C5.L-interface.V2.U07
+                      what: >
+                        corpus_route_probe reads exc.reason through a table closed against
+                        NoExpertiseRoute.REASONS in both directions at import time; the three
+                        substring tests are gone and the three existing output keys keep their names
+                        so saved reports keep working. The guard is an AST walk over the probe,
+                        domain_shadow and capability_resolver, because the probe now quotes the old
+                        code in a comment on purpose and a grep would fail on the documentation of
+                        the fix.
+                      artifact: scripts/corpus_route_probe.py
+                      verify: .venv/bin/python -m pytest tests/packs/test_a_refusal_is_never_diagnosed_from_its_message.py -q
+                      depends_on: [M11.C5.L-contract.V0.U05, M11.C5.L-logic.V1.U06]
+
+        - id: M11.C3
+          name: The five pipeline counters
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M11.C3.L-contract.V0.U01
+                      status: done            # 2026-09-30 — added; all five names had ZERO hits
+                      what: >
+                        The funnel table and its writer. ONE ROW PER STAGE, never one wide row: a wide
+                        row needs every stage to have run before it can be written, so a sweep that
+                        dies at stage three writes nothing — losing the measurement that would explain
+                        the death. AND A ZERO IS WRITTEN, NOT SKIPPED: `= 0` means the stage ran and
+                        counted nothing, no row means nobody looked.
+
+                        In platform/ because five packages (capture..deliver) write these five numbers
+                        and a writer in any one of them would be imported upward — the topology test
+                        caught exactly that earlier the same day.
+                      artifact: genios_engine/platform/funnel.py
+                      verify: uv run --no-sync pytest tests/platform/test_a_zero_is_written_not_skipped.py -q
+                      depends_on: []
+            - layer: integration
+              levels:
+                - level: 1
+                  units:
+                    - id: M11.C3.L-integration.V1.U02
+                      status: done            # 2026-09-30
+                      what: >
+                        The chain counts four of the five. ONE SOURCE PER NUMBER: every value is read
+                        straight off the result dict of the pass that computed it, never re-derived —
+                        a test asserts no arithmetic appears in any _count() call.
+
+                        signals_detected is DELIBERATELY NOT WRITTEN: it belongs to capture, and
+                        _reread_unread returns a RECOVERY count, not qualified signals detected.
+                        Labelling it would put a WRONG number where a missing one belongs.
+                      artifact: genios_engine/api/routes.py
+                      verify: uv run --no-sync pytest tests/test_the_funnel_has_five_numbers.py -q
+                      depends_on: [M11.C3.L-contract.V0.U01]
+
+    # ─────────────────────────────────────────────────────────────────────────────────────────
+    - id: M12
+      name: L4 Executive — executive/
+      ships: >
+        The queue is not empty, and one situation on the pilot tenant travels signal to verified
+        outcome without a human carrying it between layers.
+      categories:
+
+        - id: M12.C1
+          name: Organisation data
+          layers:
+            - layer: data
+              levels:
+                - level: 0
+                  units:
+                    - id: M12.C1.L-data.V0.U01
+                      what: >
+                        Seats, channels and the reporting line for the pilot — reports_to read from
+                        seat_responsibilities, never org_seats.manager_seat_id.
+                      artifact: genios_engine/executive/assignment.py
+                      verify: uv run --no-sync pytest tests/executive/test_the_reporting_line_resolves.py -q
+                      depends_on: []
+            - layer: interface
+              levels:
+                - level: 1
+                  units:
+                    - id: M12.C1.L-interface.V1.U02
+                      what: The admin door that loads an org record and reports what is still missing.
+                      artifact: genios_engine/api/account_routes.py
+                      verify: uv run --no-sync pytest tests/api/test_org_record_loads.py -q
+                      depends_on: [M12.C1.L-data.V0.U01]
+
+        - id: M12.C2
+          name: Activation and the end-to-end walk
+          layers:
+            - layer: integration
+              levels:
+                - level: 0
+                  units:
+                    - id: M12.C2.L-integration.V0.U03
+                      what: >
+                        The admin activation row for the pilot tenant, and the receipt that the live
+                        pass — not the shadow pass — actually ran.
+                      artifact: genios_engine/platform/l3_activation.py
+                      verify: uv run --no-sync pytest tests/platform/test_activation_changes_the_pass.py -q
+                      depends_on: [M12.C1.L-interface.V1.U02]
+                - level: 1
+                  units:
+                    - id: M12.C2.L-integration.V1.U04
+                      what: >
+                        One situation walks signal -> card -> approval -> execution -> verified
+                        outcome, and the walk is a test, not a demo.
+                      artifact: tests/test_e2e_all_layers.py
+                      verify: uv run --no-sync pytest tests/test_e2e_all_layers.py -q
+                      depends_on: [M12.C2.L-integration.V0.U03, M11.C2.L-logic.V1.U04]
+
+    # ─────────────────────────────────────────────────────────────────────────────────────────
+    - id: M13
+      name: L5 Delivery — deliver/
+      ships: >
+        Every sentence on a card is cited or labelled, and nothing is held back without a receipt.
+      categories:
+
+        - id: M13.C1
+          name: Claim-level validation
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M13.C1.L-logic.V0.U01
+                      what: >
+                        The claim extractor — split rendered copy into claims and tag each fact,
+                        inference, hypothesis or recommendation.
+                      artifact: genios_engine/deliver/render.py
+                      verify: uv run --no-sync pytest tests/deliver/test_claims_are_extracted.py -q
+                      depends_on: [M8.C1.L-integration.V2.U04]
+                - level: 1
+                  units:
+                    - id: M13.C1.L-logic.V1.U02
+                      what: >
+                        The validator — claim type, evidence id, supporting span, permitted wording
+                        and visibility. It widens the invention validator from numbers, names and
+                        dates to every claim, without weakening it.
+                      artifact: genios_engine/deliver/render.py
+                      verify: uv run --no-sync pytest tests/deliver/test_no_claim_without_evidence.py -q
+                      depends_on: [M13.C1.L-logic.V0.U01]
+
+        - id: M13.C2
+          name: Lanes on the card
+          layers:
+            - layer: interface
+              levels:
+                - level: 0
+                  units:
+                    - id: M13.C2.L-interface.V0.U03
+                      what: The lane renders on the card, and an investigation card carries one precise ask.
+                      artifact: genios_engine/deliver/card_builder.py
+                      verify: uv run --no-sync pytest tests/deliver/test_the_lane_reaches_the_card.py -q
+                      depends_on: [M11.C2.L-logic.V1.U04]
+            - layer: logic
+              levels:
+                - level: 1
+                  units:
+                    - id: M13.C2.L-logic.V1.U04
+                      what: >
+                        REWRITTEN 2026-09-30 — the recall guard. There is no scalar publication
+                        floor in deliver/ to replace: gate.py is moment + permission, bands.py cuts
+                        an urgency band from pack config, and the score gate is reason/runner.py:1133
+                        whose below_gate receipt executive/explain.py already reads. What was real
+                        and unproven is the other half: prove no decision under the confidence floor
+                        lands in a silent lane, and prove the per-lane tallies sum to the cards
+                        written. See speedrun008/YCW27/layer-5-delivery/01-CROSSCHECK.md section 4.
+                      artifact: genios_engine/deliver/lane_recall.py
+                      verify: uv run --no-sync pytest tests/deliver/test_nothing_dies_of_low_confidence.py -q
+                      depends_on: [M13.C2.L-interface.V0.U03]
+
+    # ─────────────────────────────────────────────────────────────────────────────────────────
+    - id: M14
+      name: L6 Learning — feedback/
+      ships: >
+        A wrong card debits the layer that failed, and a timing complaint never lowers a correct
+        rule's precision.
+      categories:
+
+        - id: M14.C1
+          name: Attribution by layer
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M14.C1.L-contract.V0.U01
+                      what: >
+                        The attribution vocabulary — eleven reasons, each mapped to exactly one
+                        layer, closed in both directions. ARTIFACT MOVED 2026-09-30: a NEW file
+                        beside contracts/learning.py, not inside it. That file holds LearningObject
+                        v2, which is content-addressed and round-trip verified, so adding a member
+                        to an enum it validates against would change identities already minted.
+                        The layer names are plain strings here and are checked against LAYERS.py by
+                        a test, because tests/test_layer_topology.py rightly refused an import of
+                        LAYERS from contracts/ — the boundary vocabulary every layer imports may
+                        depend on platform/stdlib only.
+                      artifact: genios_engine/contracts/learning_attribution.py
+                      verify: uv run --no-sync pytest tests/contracts/test_learning_attribution.py -q
+                      depends_on: [M8.C2.L-contract.V1.U09]
+            - layer: interface
+              levels:
+                - level: 1
+                  units:
+                    - id: M14.C1.L-interface.V1.U02
+                      what: '"Wrong because..." on the card, returning one of the eleven reasons.'
+                      artifact: genios_engine/deliver/card_builder.py
+                      verify: uv run --no-sync pytest tests/deliver/test_wrong_because_is_offered.py -q
+                      depends_on: [M14.C1.L-contract.V0.U01]
+            - layer: logic
+              levels:
+                - level: 2
+                  units:
+                    - id: M14.C1.L-logic.V2.U03
+                      what: >
+                        NARROWED 2026-09-30 — the layer debit, plus a guard over what already works.
+                        "bad_timing reaches timing rather than the rule's precision" was ALREADY
+                        true in three independent places before this unit: TAXONOMY's precision
+                        "none", units.py's judged = acted + wrong, and _PRECISION_SQL's reason list.
+                        None of the three failed a build if it stopped being true, so the unit
+                        became the reason-to-layer router and the two guards that now hold the
+                        property. A debit is a direction to look and changes no weight.
+                      artifact: genios_engine/feedback/attribution.py
+                      verify: uv run --no-sync pytest tests/feedback/test_the_right_layer_is_debited.py -q
+                      depends_on: [M14.C1.L-interface.V1.U02]

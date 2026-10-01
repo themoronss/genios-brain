@@ -1,0 +1,115 @@
+# Plane D — `packs/` + `Domain Expertise/` · S6 · **COMPLETE**
+
+**Read in this order:** `README.md` (what the plane is) → `01-CROSSCHECK.md` (what is true, **including
+its own two retractions**) → `02-PLAN.md` → the six `STEP-*.md`.
+
+| Step | unit | layer · level | State |
+|---|---|---|---|
+| 01 | `M11.C5.U05` | contract · 0 | ✅ a refusal says which of **four** kinds it is — 19 tests |
+| 02 | `M11.C5.U02` | data · 0 | ✅ the unrouted list cannot drift — 14 tests |
+| 03 | `M11.C5.U03` | logic · 0 | ⛔ **WITHDRAWN** — already built, and already 15 tests (14 + abstention) |
+| 04 | `M11.C5.U06` | logic · 1 | ✅ refusals counted by (reason × type) — 19 tests |
+| 05 | `M11.C5.U04` | data · 1 | ✅ every capability has a door or a reason — 33 tests |
+| 06 | `M11.C5.U07` | interface · 2 | ✅ read the field, never the message — 13 tests |
+| — | ~~`M11.C5.U01`~~ | — | ⛔ **RETIRED** — split into U05/U06/U07 |
+| **07** | **`G1`–`G5`** | **the completeness wave** | ✅ **the expertise itself — 105 tests** |
+
+**203 new tests** (98 routing + 105 completeness). Built **bottom-up, leaf first** — level 0, then 1, then 2, never a parent before its
+children were green.
+
+---
+
+## ⛔ And then: is the EXPERTISE complete?
+
+Asked separately, answered by measurement, and the answer was **no**. Five gaps — see
+`04-COMPLETENESS-AUDIT.md` and `STEP-07-DONE-the-expertise-is-complete.md`. **All five are now
+closed.**
+
+```
+corpus warnings   283 -> 35
+"planned but not authored yet"   237 -> 0
+objects required by a capability and unauthored   11 -> 0
+```
+
+**22 core objects authored** (9 Admin, 13 Customer Support), every one derived from what the corpus
+already implied about it — `approver.yaml` had already written what a `delegate` is NOT, `invoice.yaml`
+what a `purchase_order` is. Plus the admission ceremony extended to objects and heuristics (**counted,
+not gated**), and an `_eval/` corpus whose cases are **half must-abstain**.
+
+⛔ **Complete does not mean reviewed.** 88 objects and 283 heuristics are `draft` with no admission
+hash. That is now measured per package rather than invisible. Every object I authored is
+`created_by: ai`, `review_status: unreviewed`, and **none can instruct**.
+
+---
+
+## The one thing that matters most
+
+⛔ **Two of the four findings in my own cross-check were WRONG**, and both were caught by continuing to
+measure while building rather than by review. Both retractions are appended to `01-CROSSCHECK.md` in
+full, with how the wrong conclusion was reached, rather than edited in place.
+
+| | I wrote | Actually |
+|---|---|---|
+| `U02` | *"the corpus also stores it by hand"* | `_tools/index.py:205` **generates** it — including the comment I quoted as evidence of hand-keeping |
+| `U03` | *"`status: draft` gates nothing"* and *"`plan.admitted` is always True"* | `situation_admission_reason` closed it; `admitted = not admission_gaps`. **Zero** draft situations can instruct |
+
+⛔ **`U03`'s cause is the sharpest lesson in this section: I believed a comment in the corpus.** It said
+*"a situation's status gates nothing"*, which was **true when written**, and I quoted it as a current
+measurement and specified a unit on top of it. **A stale comment is more dangerous than no comment,
+because it reads as a measurement somebody already took.** That paragraph now carries a dated
+correction — the one thing actually done in `U03`'s territory.
+
+---
+
+## What was genuinely wrong, and is now fixed
+
+⛔ **`domain_not_activated` was published as an authoring gap.** The one tool routing coverage is read
+from told four causes apart with three substring tests and an `else`. *"This tenant has not switched
+this domain on"* came out as *"nobody authored a route for it"* — and **the raise site's own comment
+says those are different facts fixed in different places.** Found by replaying the old classifier over
+the four real messages, before writing a line.
+
+⛔ **`no_route` had no dimension.** *"Twelve situations found no route"* is one type twelve times or
+twelve types once. This layer's own L1 rule — **a count without its dimension is not a measurement** —
+came back to bite our own code.
+
+⛔ **Seven Support capabilities were authored, sound, unreachable and unexplained**, and the validator
+could only warn because the domain had no ledger to be held to.
+
+---
+
+## New and changed
+
+```
+genios_engine/packs/compiler/errors.py                    NoExpertiseRoute.REASONS — four, closed
+genios_engine/packs/compiler/capability_resolver.py       all four raise sites labelled
+genios_engine/reason/domain_shadow.py                     counted by (reason × type), with a receipt
+scripts/corpus_route_probe.py                             reads the field; the grep is gone
+Domain Expertise/_tools/validate.py                       a stale registry is an ERROR
+Domain Expertise/Customer Support Expertise/deferrals.yaml        NEW — all seven
+Domain Expertise/Customer Support Expertise/registry/...yaml      regenerated by index.py
+Domain Expertise/.../condition-awaiting-review.yaml        the stale comment, corrected and dated
+```
+
+⛔ **No migration.** A route-refusal **reason** is not a sixth funnel stage — that vocabulary is closed
+and check-constrained in `0188` — and five migrations (`0186`–`0190`) are already unapplied. Two tests
+assert both.
+
+---
+
+## ⛔ What is yours to decide — neither blocked any unit
+
+1. **Who owns each of the five unrouted L2 types** — `commitment_unresolved`, `founder_bottleneck`,
+   `meeting_preparation_gap`, `relationship_going_cold`, `vendor_renewal_decision`. `U06` makes the
+   loss visible **with a name on it**; binding a type is **authoring**, and three of the five are not
+   obviously Admin's.
+2. **Whether Admin's 7 draft situations get reviewed or stay draft.** The consequence is already
+   correct either way: reviewed, they instruct; draft, they inform. Nothing is broken while you decide.
+
+## What Plane D deliberately still does not do
+
+The corpus's **217 *"planned but not authored yet"*** warnings stay. That is the corpus declaring its
+own frontier — declared silence, working — and authoring them is content work, not engineering. The
+plane's own README lists the six deeper polish items (heuristics governance, the organisation brain at
+onboarding, behaviour brain in observe-only, depth before breadth); **none of them is an S6 unit**, and
+all of them need you.
