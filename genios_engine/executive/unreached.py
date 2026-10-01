@@ -65,7 +65,17 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "'anyone may approve'. Eight tests cover that distinction and no live path uses it.",
         "MOVES WHEN a commitment carrying `requires_approval` routes to an approver. That needs "
         "the org to have published authority rules at all — until it has, the honest answer is "
-        "None and the card is right to say only that sign-off is needed."),
+        "None and the card is right to say only that sign-off is needed. "
+        "⛔ NOW COUNTED, 2026-10-01: `execution_actions` holds 794 rows and **410 carry "
+        "`requires_approval`** — 52% of every action this layer has planned (182, 121, 107 across "
+        "the three orgs) — against **zero** rows in `authority_rules`. A mover without a number "
+        "is a wish, so receipt #32 `every action that needs sign-off can name who signs` now "
+        "counts it and is RED at 410. "
+        "⛔ AND THE WIRING IS BLOCKED TWICE, which is why this entry is not being deleted: "
+        "neither `execution_actions` nor `executions` has an approver column, so consuming an "
+        "answer needs a contract field and a migration — and `0186`-`0190` have never run. "
+        "Wiring it today would add a column that `None` fills on every row while deleting the "
+        "only place this reason is written down."),
 
     "execution.build_from_decision": (
         "AN ALTERNATIVE ENTRY SHAPE, NOT A BYPASSED GATE — and the distinction took a measurement. "

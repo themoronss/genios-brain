@@ -118,6 +118,64 @@ def _PLACEHOLDER_COMPONENTS_SQL(org: str | None) -> str:
     )
 
 
+def _UNATTRIBUTED_APPROVALS_SQL(org: str | None) -> str:
+    r"""Actions that announce a sign-off requirement while nothing can name who signs.
+
+    ⛔ THE MEASURED GAP. 2026-10-01: `execution_actions` holds 794 rows and **410 of them carry
+    `requires_approval`** — 52% of every action this layer has ever planned. `authority_rules`
+    holds **zero** rows, so `AuthorityView.resolve` answers `no_authority_rule` for every subject
+    and `assignment.resolve_approver_seat` correctly returns `None` for every call. Per org:
+    182, 121 and 107 actions each saying *this needs sign-off* and none able to say whose.
+
+    `resolve_approver_seat`'s own docstring states the cost: *"a card that says 'this needs
+    sign-off' and cannot say whose is less useful than one that can, and far better than one that
+    quietly drops the requirement."* ⛔ **This receipt is what stops the "less useful" state from
+    being silent.** Nothing today counts it.
+
+    ⛔ A CONJUNCTION, NOT A COUNT — the same shape as the era receipt next door, for the same
+    reason. `requires_approval` on its own is **healthy**: it is the autonomy gate
+    (`contracts/execution.py:233` — `not requires_approval and not external_effect`) doing its
+    job, and 410 gated actions is the layer being careful. The defect is a gated action **in an
+    org that holds no rule capable of naming an approver**.
+
+    ⛔ AN IN-FORCE RULE, NOT ANY ROW. Three conditions, and each one is a way to hold a rule and
+    still name nobody:
+      · `approver_node_id is not null`  — a threshold with no approver names nobody
+      · `valid_from <= now()`           — a rule that starts next quarter is not in force
+      · `valid_until is null or > now()` — an expired rule is not an enforceable one
+    Counting rows alone would go green for a tenant whose only rule lapsed last year.
+
+    ⛔ WHY `now()` IS CORRECT HERE AND NOWHERE ELSE. The doctrine is `eval_time` as a parameter,
+    never a clock read — because a unit must replay at its original instant. A receipt is the
+    opposite question: *is the DEPLOYMENT in the state the code implies, right now.* `evaluate()`
+    binds exactly one parameter, and receipt #1 (`watermark > now()`) set this precedent.
+
+    ⛔ AND ZERO IS A TRUE PASS HERE, UNLIKE THE ERA RECEIPT. `_ERA_SELECTS_NOTHING_SQL` returns
+    `-1` for an empty window because an era that produced nothing is a dead pipeline. This one is
+    different: no gated actions genuinely means no requirement is unattributed. The two receipts
+    make opposite choices about emptiness on purpose, because emptiness means opposite things.
+
+    ⛔ WHAT IT DOES *NOT* CLAIM. It does not say every gated action resolves an approver — a
+    tenant may hold a rule for one subject type and not another, and that is a finer question with
+    a different query. It says the tenant holds **no** way to name one, which is the state that
+    makes all 410 unattributable at once. The wiring that would consume an answer is **not built**:
+    neither `execution_actions` nor `executions` has an approver column, so it needs a contract
+    field and a migration, and `0186`-`0190` have never run. See
+    `speedrun008/YCW27/layer-4-executive/02-PLAN.md` U2.
+    """
+    return (
+        "select count(*) from execution_actions a"
+        " where a.requires_approval"
+        "   and not exists ("
+        "         select 1 from authority_rules r"
+        "          where r.org_id = a.org_id"
+        "            and r.approver_node_id is not null"
+        "            and r.valid_from <= now()"
+        "            and (r.valid_until is null or r.valid_until > now()))"
+        + _org_filter(org, "a")
+    )
+
+
 def _ERA_SELECTS_NOTHING_SQL(org: str | None) -> str:
     r"""Runs in the current reasoning era that produced candidates and selected none of them.
 
@@ -525,6 +583,13 @@ def receipts(org: str | None) -> list[Receipt]:
         # ⛔ THE CLAIM IS NOT "no bound path is empty", for the reason the sibling receipt states:
         # `ready = not failed`, and 14 of 22 are empty for a reason this layer cannot clear. This one
         # passes today and fails when a FIFTEENTH goes quiet — which produces no error anywhere else.
+        Receipt("L4", "every action that needs sign-off can name who signs",
+                _UNATTRIBUTED_APPROVALS_SQL(org),
+                lambda n: n == 0,
+                "an action carrying requires_approval in an org that holds no in-force authority "
+                "rule announces a requirement it can never attribute \u2014 the card says \"this needs "
+                "sign-off\" and cannot say whose, and nothing counts how often. Measured "
+                "2026-10-01: 410 of 794 actions, against zero authority rules"),
         Receipt("L2", "the current reasoning era selects, not only defers",
                 _ERA_SELECTS_NOTHING_SQL(org),
                 lambda n: n == 0,

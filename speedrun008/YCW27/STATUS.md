@@ -1207,3 +1207,94 @@ spend limit + the declared *"Failure is DEFER, never the formula"*.
     remaining buildable:  U2 (G2 approver) · U3 (G1 blocking step) · U4 (F9) · U5 (F10)
     blocked on a number:  U6 (G3 brief push · G4 preventive push)
     Rohit's:              DECISION #5 · the reporting line · the rest of the list above
+
+---
+
+# 2026-10-01 · ✅ U2 DONE — but NOT as the plan wrote it
+
+`layer-4-executive/STEP-06-DONE-410-approvals-nobody-can-attribute.md` · 10 tests · 6 mutations ·
+**full suite 14,626 passed, 0 failed** · **receipts 31 → 32**
+
+## ⛔ The plan said "safest, only the wiring is missing". The measurement refuted it twice.
+
+    execution_actions          794 rows
+      requires_approval        410   ⛔ 52% of every action this layer has ever planned
+                                        182 · 121 · 107 across the three orgs
+    authority_rules              0   ⛔ ZERO rows — nobody can ever be named
+    authority.* graph facts      0
+
+    an approver column on execution_actions   ⛔ does not exist
+    an approver column on executions          ⛔ does not exist
+
+**Blocked twice:** no place to put an answer (needs a contract field **and** migration `0191`,
+behind `0186`–`0190` which have never run), and no answer to put there (zero rules → the column
+would be `None` on all 410 rows).
+
+⛔ **And `unreached.py` had already declared it** — *"That needs the org to have published
+authority rules at all — until it has, the honest answer is None."* The plan told me to **delete**
+that entry. Doing so would have traded the only written record of *why* nobody can be named for a
+call that still names nobody.
+
+> ⛔ **A plan is not evidence.** This one was written one step earlier, by me, and still had to be
+> measured before it could be believed. **Twelfth** correction-before-code in the programme, and
+> the first where the wrong plan was my own from the previous step.
+
+## What was built — the half that needs no migration and no rules
+
+**Receipt #32** · L4 · *"every action that needs sign-off can name who signs"* — ⛔ **RED at 410**
+(107 · 182 · 121, per-org sum exact). It goes **green the moment one in-force rule with an approver
+is published**, before any wiring exists — because the prerequisite is what has not moved.
+
+    where a.requires_approval
+      and not exists (select 1 from authority_rules r
+                       where r.org_id = a.org_id
+                         and r.approver_node_id is not null       -- a threshold names nobody
+                         and r.valid_from  <= now()               -- not one starting next quarter
+                         and (r.valid_until is null
+                              or r.valid_until > now()))          -- ⛔ not an EXPIRED one
+
+⛔ **`requires_approval` alone is HEALTHY** — it is the autonomy gate working, and 410 gated
+actions is the layer being careful. ⛔ **And zero is a TRUE pass here, the opposite of #31**, which
+returns `-1` on an empty window because a dead era is not a pass. The two receipts disagree about
+emptiness on purpose, and a test pins the difference.
+
+And the `unreached` entry was **STRENGTHENED, not deleted**: it now carries 410 / 794 / zero rules
+and names **both** blockers. *A mover without a number is a wish.*
+
+## ⛔ Three of my own mistakes, each caught by a different mechanism
+
+| | Mistake | Caught by |
+|---|---|---|
+| 1 | the plan's "only the wiring is missing" | **the measurement**, before any code |
+| 2 | `"not exists" in sql` — presence, not effect. `and false` neutralises the subquery and 410 red becomes 0 green | **mutation M1** — and it is U1's M2 in different clothes, twice in two units |
+| 3 | a global `len(receipts(None))` literal, and a duplicate claim-uniqueness test | ⛔ **the full suite**, on `test_activation_changes_the_pass.py` — a file I had not thought to run |
+
+### ⛔ Mistake 3 is the one worth reading
+
+I had grepped `len(receipts(` , found only my own, and wrote *"canonical jagah thi hi nahi"*. The
+guard existed, counted **per layer**, and the grep could not see it. Its docstring had already
+rejected my design in advance:
+
+> *"the cheap fix for that is to bump the number, **which is how a decision gate becomes a rubber
+> stamp.**"*
+
+And `test_no_receipt_claim_is_duplicated` — the replacement I wrote — **already existed eleven
+lines below the test that failed.**
+
+> ⛔ **A grep that finds nothing is not evidence that nothing is there.** Thirteenth instance.
+> ⛔ **Presence is not effect.** Two units, two files, same shape.
+> ⛔ **Two targeted test runs are not a suite run** — `pytest tests/platform/` was green on the
+> broken design, because the file that failed was the one I had not run.
+
+**The gate worked on the person who did not know it existed, which is the only real test of a gate.**
+L4's count is now `== 7`, with the decision — and the fact that it caught its own author — written
+into the docstring.
+
+## Where U2 stands
+
+    ✅ U2a  receipt #32, RED at 410                                    DONE
+    ⛔ U2b  the approver column + contract field + wiring
+              blocked on  H1 (migrations 0186-0190)                    Harsh
+              blocked on  the org publishing one authority rule        Rohit
+
+    remaining buildable:  U3 (G1 blocking step) · U4 (F9) · U5 (F10)

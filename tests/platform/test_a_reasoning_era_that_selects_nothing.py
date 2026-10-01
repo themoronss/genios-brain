@@ -244,6 +244,24 @@ def test_the_detail_names_the_consequence_and_the_minus_one() -> None:
         "different sentence from a zero selection rate")
 
 
-def test_the_receipt_count_went_to_thirty_one() -> None:
-    """A literal, so the next change to this list is deliberate. 30 -> 31 on 2026-10-01."""
-    assert len(receipts(None)) == 31
+def test_the_era_receipt_is_in_the_list_exactly_once() -> None:
+    """⛔ WHAT THIS FILE ORIGINALLY ASSERTED WAS BOTH WRONG AND ALREADY WRITTEN.
+
+    It pinned `len(receipts(None)) == 31` — the global total — which
+    `tests/platform/test_activation_changes_the_pass.py` had already rejected in favour of a
+    per-layer count, and said why: *"the cheap fix for that is to bump the number, **which is how
+    a decision gate becomes a rubber stamp.**"*
+
+    My second attempt asserted claim-uniqueness instead. ⛔ **That test already exists**, at
+    `test_activation_changes_the_pass.py::test_no_receipt_claim_is_duplicated`, and a second copy
+    is two tests to update and one of them silently weaker.
+
+    ⛔ I had grepped for `len(receipts(` , found only my own, and concluded no canonical guard
+    existed. It existed and counted per layer, so the grep could not see it. **A grep that finds
+    nothing is not evidence that nothing is there.**
+
+    What is left is the only part that is this file's business: the era receipt exists, once.
+    `_receipt()` asserts the "once"; this asserts the "exists" against the whole list, so deleting
+    the receipt fails here rather than only making every other test in this file vacuous.
+    """
+    assert CLAIM in [r.claim for r in receipts(None)]

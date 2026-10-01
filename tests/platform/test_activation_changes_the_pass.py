@@ -154,8 +154,20 @@ def test_the_l4_receipt_count_grew_by_exactly_three():
     test about L4 — and the cheap fix for that is to bump the number, which is how a decision gate
     becomes a rubber stamp. Counting L4's own receipts still fails on an undecided L4 addition, and
     stops failing on decisions taken elsewhere. L5's own count is guarded in
-    `tests/deliver/test_nothing_dies_of_low_confidence.py`."""
-    assert len([r for r in R.receipts("org_1") if r.layer == "L4"]) == 6
+    `tests/deliver/test_nothing_dies_of_low_confidence.py`.
+
+    ⛔ 6 -> 7 ON 2026-10-01, and it is a decision rather than a bump. The seventh is
+    `every action that needs sign-off can name who signs` — measured: 410 of 794 actions carry
+    `requires_approval` against **zero** rows in `authority_rules`, so every one of them announces
+    a requirement it cannot attribute and nothing counted it. It is L4's question because
+    *who signs, and with what right* is this layer's own; see
+    `speedrun008/YCW27/layer-4-executive/STEP-06-DONE-410-approvals-nobody-can-attribute.md`.
+
+    ⛔ AND IT IS WHAT CAUGHT THE AUTHOR OF THAT RECEIPT. Two drafts of its test pinned the GLOBAL
+    total instead, which is the pattern this docstring rejects — the full suite failed here, this
+    docstring explained why, and the global literal came out. The gate worked on the person who
+    did not know it existed, which is the only real test of a gate."""
+    assert len([r for r in R.receipts("org_1") if r.layer == "L4"]) == 7
 
 
 def test_no_receipt_claim_is_duplicated():

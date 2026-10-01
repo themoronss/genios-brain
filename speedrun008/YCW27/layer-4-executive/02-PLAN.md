@@ -347,3 +347,37 @@ what to do, and it has said it since STEP-02:
 > responsibility*
 
 Either closes it. Neither is a build.
+
+---
+
+# ⛔ 2026-10-01 · U2 WAS PLANNED WRONG — the correction, in place
+
+This plan called U2 *"UNBLOCKED · safest … the thinking is done; only the wiring is missing"* and
+told the builder to **delete** the `assignment.resolve_approver_seat` entry from
+`unreached.UNREACHED` in the same commit.
+
+**Measured before writing any code:**
+
+    execution_actions   794 rows · 410 carry requires_approval  (52%, and 182/121/107 per org)
+    authority_rules       0 rows        ⛔ nobody can ever be named
+    authority.* facts     0 rows
+    an approver column on execution_actions or executions   ⛔ neither exists
+
+⛔ **So the wiring is blocked twice** — on a contract field plus migration `0191` (behind
+`0186`–`0190`, which have never run), and on the org publishing any rule at all. The column would
+be filled by `None` on all 410 rows.
+
+⛔ **And `unreached.py` had already declared exactly this**: *"That needs the org to have published
+authority rules at all — until it has, the honest answer is None."* Deleting that entry, as this
+plan instructed, would have traded the only written record of **why** nobody can be named for a
+call that still names nobody.
+
+> ⛔ **A plan is not evidence.** This one was written one step earlier, by me, from
+> `unreached.py`'s own description — and it still had to be measured before it could be believed.
+
+**What was built instead:** receipt **#32** *"every action that needs sign-off can name who
+signs"* — RED at 410 — and the `unreached` entry **strengthened with the number** rather than
+deleted. See [`STEP-06`](STEP-06-DONE-410-approvals-nobody-can-attribute.md).
+
+**U2's wiring is now U2b**, and it is blocked. Its blockers are named above, and both belong to
+somebody else.

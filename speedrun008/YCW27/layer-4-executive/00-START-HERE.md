@@ -43,6 +43,7 @@ and a clock attached.**
 | 3 | [The live pass leaves a receipt](STEP-03-DONE-activation-receipt.md) | ✅ **DONE** | 14 |
 | 4 | [Activity is not outcome](STEP-04-DONE-activity-is-not-outcome.md) | ✅ **DONE** | 16 |
 | 5 | [⛔ The receipt that says the product stopped](STEP-05-DONE-the-receipt-that-says-the-product-stopped.md) | ✅ **DONE** · **U1** · ⛔ it goes **RED**, and that is the success condition | 16 |
+| 6 | [⛔ 410 approvals nobody can attribute](STEP-06-DONE-410-approvals-nobody-can-attribute.md) | ✅ **DONE** · **U2** · ⛔ **the plan for this unit was WRONG and the measurement corrected it** | 10 |
 
 ## ⛔ What is planned next — six units, four buildable
 
@@ -50,7 +51,7 @@ and a clock attached.**
 |---|---|---|
 | **U0** | **DECISION #5** — raise the limit · flip the switch · or build the third path | ⛔ **Rohit's. No card is produced until this is answered** |
 | ~~**U1**~~ | ✅ **DONE** — receipt **#31**, *"the current reasoning era selects, not only defers"*. 16 tests · 5 mutations · ⛔ **RED at 3,582, correctly**. See [STEP-05](STEP-05-DONE-the-receipt-that-says-the-product-stopped.md) |
-| **U2** | **G2** `assignment.resolve_approver_seat` reaches a live path — 8 tests already exist | buildable · safest |
+| ~~**U2**~~ | ✅ **DONE as receipt #32**, ⛔ **not as wiring.** Measured: 410 of 794 actions need sign-off against **zero** authority rules, and neither table has an approver column. The wiring is blocked on H1 *and* on the org publishing a rule; the plan's instruction to delete the `unreached` entry would have deleted the only record of why. See [STEP-06](STEP-06-DONE-410-approvals-nobody-can-attribute.md) |
 | **U3** | **G1** `monitor.blocking_action` — escalations name the step they wait on. ⛔ the **only** `UNREACHED` entry with no tests | buildable |
 | **U4** | **F-4** ⛔ `source_events.occurred_at` max = **2056-04-20** | buildable · L1 |
 | **U5** | **F-5** 708 outputs carry no `ranking_weights_version` | buildable · L2 |
