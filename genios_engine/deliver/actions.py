@@ -27,8 +27,19 @@ _CLAIMING_ACTIONS = frozenset({"run_play", "do_it_myself"})
 # Requeue
 # is NOT a fifth button: logged ui.requeued, excluded from precision math, expires normally.
 
+from genios_engine.contracts.learning_attribution import ALL_REASONS as _ALL_WRONG_REASONS
+
 BUTTONS = {"run_play", "do_it_myself", "snooze", "wrong", "requeue"}
-WRONG_REASONS = {"not_relevant", "wrong_facts", "bad_timing"}
+# ⛔ THE ONE VOCABULARY, IMPORTED — never a fourth hand-written copy of it.
+#
+# This held three literals while the card offered three, and widening one without the other gives
+# the founder a button the server refuses with `allowed_reasons`. `api/intelligence_routes.py`
+# re-exports this set as `_FB_WRONG_REASONS` and validates against it, so both doors open together
+# or neither does.
+#
+# ⛔ AND NOTHING IS REMOVED. The three original spellings are members of `WrongReason`, so every
+# client and every recorded judgment keeps working unchanged.
+WRONG_REASONS = frozenset(_ALL_WRONG_REASONS)
 
 
 def snooze_until(option: str | None, eval_time: datetime, custom=None) -> datetime:

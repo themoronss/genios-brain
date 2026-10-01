@@ -122,10 +122,14 @@ def enabled_for(org_id: str) -> bool:
 _clients: dict[tuple[str, str], Any] = {}
 
 #: Models that REJECT sampling parameters with a 400 (Sonnet 5, Opus 5 / 4.8 / 4.7, Fable).
-#: `context/llm/client.LLMClient` always sends `temperature=0`, which is right for Haiku and would
-#: turn every decision on these models into a DEFER, so decisions use their own thin client.
-_NO_SAMPLING_PREFIXES = ("claude-sonnet-5", "claude-opus-5", "claude-opus-4-8",
-                         "claude-opus-4-7", "claude-fable")
+#:
+#: ⛔ ONE LIST, AND IT LIVES WITH THE CODE THAT SENDS THE FIELD. This module used to hold its own
+#: copy and work around the shared client by building a thin one of its own — which fixed
+#: decisions and left every OTHER lane on `LLMClient` still sending `temperature=0` to these
+#: models. `l4_bundle` on `claude-sonnet-5` measured 600 calls and 0 successes over twelve days
+#: for exactly that reason. `context/llm/client.py` now owns the set and omits the field; this
+#: module reads it so the two cannot drift apart again.
+from genios_engine.context.llm.client import NO_SAMPLING_PREFIXES as _NO_SAMPLING_PREFIXES
 
 
 def request_kwargs(model: str) -> dict[str, Any]:

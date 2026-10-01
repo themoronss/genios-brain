@@ -152,6 +152,12 @@ def _output(execution: ReasoningExecution) -> dict[str, Any]:
                 ("confidence_vector", decision.confidence_vector),
                 ("ranking_weights_version", decision.ranking_weights_version),
                 ("do_nothing", decision.do_nothing),
+                # ⛔ `output_lane` is NOT here, and that is the resolution rather than an omission. It
+                # is not in the contract's semantic dict either, because `route()` derives it from
+                # `outcome`, `confidence_bp` and `uncertainty` — all of which this envelope already
+                # carries. The lane is therefore reconstructable from what is here, and persisting it
+                # would widen `decision_core` for every decision to store a value that adds no
+                # information. The card reads it from `signals.output_lane` (migration 0189).
             ) if value},
             # Every persisted row, the receipts for the units selection dropped included: the
             # replay verifier rebuilds this list from the rows it reads, so the two must describe

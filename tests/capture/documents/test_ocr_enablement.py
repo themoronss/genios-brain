@@ -70,6 +70,34 @@ def test_the_env_list_is_parsed_once_and_never_yields_an_empty_org_id(raw, expec
     assert parse_org_allowlist(raw) == expected
 
 
+#: The two Python modules `tesseract_available()` probes with `find_spec`, beside the binary.
+BINDINGS = ("pytesseract", "PIL")
+
+
+def _bindings(monkeypatch, *, present: tuple[str, ...]) -> None:
+    """Put BOTH halves of the availability probe under the test's control.
+
+    ⛔ WHY THIS EXISTS. `tesseract_available()` requires the binary **and** the bindings, and a test
+    that stubs only `shutil.which` is asserting a positive outcome while one prerequisite is still
+    whatever the host happens to have. On a host without `pytesseract` installed — which is this
+    repo's dev host, and is why the L1 receipt reports 872 unsupported `document_jobs` — the probe
+    correctly answered False and the test read that correct answer as a product failure.
+
+    It delegates to the real `find_spec` for every other module, so stubbing the probe cannot
+    quietly change how anything else imports.
+    """
+    import importlib.util as _iu
+
+    real = _iu.find_spec
+
+    def fake(name, *a, **kw):
+        if name in BINDINGS:
+            return object() if name in present else None
+        return real(name, *a, **kw)
+
+    monkeypatch.setattr("genios_engine.capture.documents.tesseract.importlib.util.find_spec", fake)
+
+
 def test_the_wiring_returns_no_engine_rather_than_one_that_raises(monkeypatch):
     """The end of the U2 story, at the seam that decides it. On a host with no Tesseract binary,
     `enable_ocr=true` must produce None (scanned documents park, recoverably) and NOT an engine
@@ -79,6 +107,7 @@ def test_the_wiring_returns_no_engine_rather_than_one_that_raises(monkeypatch):
 
     monkeypatch.setattr(wiring, "get_settings",
                         lambda: Settings(enable_ocr=True, ocr_enabled_orgs=ORG))
+    _bindings(monkeypatch, present=BINDINGS)
     monkeypatch.setattr("genios_engine.capture.documents.tesseract.shutil.which",
                         lambda _name: None)
     assert wiring.make_ocr(ORG) is None
@@ -92,3 +121,47 @@ def test_the_wiring_returns_no_engine_rather_than_one_that_raises(monkeypatch):
                         lambda: Settings(enable_ocr=False, ocr_enabled_orgs=ORG))
     assert wiring.make_ocr("org_other") is None
     assert wiring.make_ocr(ORG) is not None
+
+
+@pytest.mark.parametrize("missing", list(BINDINGS))
+def test_the_binary_without_its_bindings_wires_nothing(monkeypatch, missing):
+    """⛔ The regression `tesseract.py` says reached production, and the half no test covered.
+
+    Its own words: *"the deploy image gained the apt packages while `pytesseract` and `Pillow` were
+    in no requirements file, so the binary probe said yes, an engine was wired, and every scanned
+    document came back `ocr_failed: ModuleNotFoundError`."* The binary being present is the state
+    that makes this dangerous, because it is the state where a one-input probe says yes.
+
+    Both bindings are parametrised: `all()` over two names is one `and` away from checking one.
+    """
+    import genios_engine.platform.wiring as wiring
+    from genios_engine.platform.config import Settings
+
+    monkeypatch.setattr(wiring, "get_settings",
+                        lambda: Settings(enable_ocr=True, ocr_enabled_orgs=ORG))
+    monkeypatch.setattr("genios_engine.capture.documents.tesseract.shutil.which",
+                        lambda _name: "/usr/bin/tesseract")
+    _bindings(monkeypatch, present=tuple(m for m in BINDINGS if m != missing))
+
+    assert wiring.make_ocr(ORG) is None, (
+        f"the binary is present and {missing} is not; wiring an engine here converts every scanned "
+        f"document into ocr_failed: ModuleNotFoundError")
+
+
+def test_the_probe_is_not_answered_by_the_binary_alone(monkeypatch):
+    """The probe must ask about the bindings at all — a `shutil.which`-only probe passes the test
+    above only by accident of what the host has installed."""
+    from genios_engine.capture.documents import tesseract
+
+    asked: list[str] = []
+    monkeypatch.setattr(tesseract.shutil, "which", lambda _name: "/usr/bin/tesseract")
+
+    import importlib.util as _iu
+    real = _iu.find_spec
+    monkeypatch.setattr(
+        "genios_engine.capture.documents.tesseract.importlib.util.find_spec",
+        lambda name, *a, **kw: (asked.append(name), object())[1] if name in BINDINGS
+        else real(name, *a, **kw))
+
+    assert tesseract.tesseract_available() is True
+    assert set(asked) == set(BINDINGS), f"the probe must ask about both bindings; asked {asked}"

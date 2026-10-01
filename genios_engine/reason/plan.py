@@ -126,6 +126,97 @@ class SkippedStep:
 
 
 @dataclass(frozen=True, slots=True)
+class DegradedStep:
+    """A unit that RAN, and ran on fewer inputs than it declared.
+
+    ⛔ THE GAP THIS FILLS IS ASSERTED, IN THE POSITIVE, BY A PASSING TEST IN THIS REPOSITORY —
+    `tests/reason/test_selector_and_registration.py:86`:
+
+        assert "core.tension" in plan.reasoner_plan                            # KEPT
+        assert [step.reasoner_id for step in plan.skipped] == ["core.money"]   # only core.money
+
+    `core.tension` was kept, it lost `core.money`, and the plan's `skipped` list mentions only
+    `core.money`. Nothing anywhere recorded that `core.tension` is now reasoning over two sources
+    instead of three. Its reading is then computed over a narrower set of inputs than it declared and
+    reported as if it read them all — the same shape as `not_carried`, and as the coverage defect one
+    layer down.
+
+    ⛔ A RECEIPT, NEVER A REFUSAL. `_select` keeps a partially-fed unit on purpose, and `_select`'s own
+    docstring records why the stricter rule was removed: under it *"six units lost to one absent
+    fact"*. This class adds the missing fact without touching that decision. `speedrun008/YCW27/
+    layer-2-reasoning/02-PLAN.md` §S2 has the full argument.
+
+    ⛔ AND IT NAMES WHAT IT KEPT, NOT ONLY WHAT IT LOST. *"lost core.cost"* does not say whether three
+    sources remained or none, and those are different readings.
+
+    ⛔ NONE REMAINING IS POSSIBLE, AND IT IS THE LOUDEST THING THIS RECEIPT CAN SAY. The starvation
+    rule applies to OPTIONAL units only — `_select`: *"a required unit's missing input is a fact the
+    decision must confront, not one the schedule may hide."* So:
+
+        OPTIONAL, every source gone  ->  dropped, and `skipped` receipts it
+        REQUIRED, every source gone  ->  KEPT, running on nothing, and only `starved` says so
+
+    The first version of this class refused an empty `available_sources` on the theory that such a unit
+    is always skipped. `test_a_required_dependent_survives_the_loss_of_every_source` — which predates
+    this work — proved otherwise by failing: `core.risk` is required, its only source drops, and it
+    runs. **The constructor was rejecting the single most important case the receipt exists to
+    record.**
+    """
+
+    reasoner_id: str
+    reasoner_version: str
+    #: Everything the unit declared as a dependency.
+    declared_sources: tuple[str, ...]
+    #: The declared sources that are still scheduled. Never empty — see `__post_init__`.
+    available_sources: tuple[str, ...]
+    #: The declared sources that were dropped. Never empty, or this step is not degraded.
+    lost_sources: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        if not self.lost_sources:
+            raise ValueError(
+                f"{self.reasoner_id} lost nothing, so it is not degraded — a receipt for an intact "
+                f"unit would make 'how many units ran on full input?' unanswerable")
+        if set(self.available_sources) | set(self.lost_sources) != set(self.declared_sources):
+            raise ValueError(
+                f"{self.reasoner_id}: kept + lost must account for every declared source, or the "
+                f"receipt describes a plan that was not made")
+
+    @property
+    def starved(self) -> bool:
+        """⛔ Every declared source went and the unit ran anyway — only a REQUIRED unit reaches this.
+
+        Distinct from ordinary degradation and worth a separate name: *"ran on 2 of 3"* is a reading
+        over less; *"ran on 0 of 1"* is a unit asserting something with none of the input it said it
+        needed. A consumer that treated the two alike would rank them the same.
+        """
+        return not self.available_sources
+
+    @property
+    def share_lost_bp(self) -> int:
+        """How much of the declared input went, in basis points. Integer, like every ratio here."""
+        return (len(self.lost_sources) * 10_000) // len(self.declared_sources)
+
+    def explain(self) -> str:
+        """One line for a card or an operator. Says both halves, always."""
+        if self.starved:
+            return (f"{self.reasoner_id} ran on NONE of its {len(self.declared_sources)} declared "
+                    f"sources; lost {', '.join(self.lost_sources)}")
+        return (f"{self.reasoner_id} ran on {len(self.available_sources)} of "
+                f"{len(self.declared_sources)} declared sources; lost "
+                f"{', '.join(self.lost_sources)}")
+
+    def to_semantic_dict(self) -> dict[str, Any]:
+        return {"reasoner_id": self.reasoner_id, "reasoner_version": self.reasoner_version,
+                "declared_sources": self.declared_sources,
+                "available_sources": self.available_sources,
+                "lost_sources": self.lost_sources,
+                # Derived, and stored anyway: a reader of the persisted trace must not have to know
+                # that "available is empty" is the interesting case.
+                "starved": self.starved}
+
+
+@dataclass(frozen=True, slots=True)
 class ExecutionPlan:
     """The orchestrator's committed answer to what will run, in what order, and at what cost."""
 
@@ -134,6 +225,11 @@ class ExecutionPlan:
     planner_version: str
     steps: tuple[PlannedStep, ...]
     skipped: tuple[SkippedStep, ...] = ()
+    #: ⛔ Units that RAN on fewer inputs than they declared. Separate from `skipped` because a skipped
+    #: unit produced NOTHING and a degraded one produced a reading — folding them into one list would
+    #: make "how many units ran?" unanswerable, and a consumer counting `skipped` would start counting
+    #: units that did run.
+    degraded: tuple[DegradedStep, ...] = ()
 
     @property
     def reasoner_plan(self) -> tuple[str, ...]:
@@ -190,7 +286,14 @@ class ExecutionPlan:
                 "capability_version": self.capability_version,
                 "planner_version": self.planner_version,
                 "steps": tuple(step.to_semantic_dict() for step in self.steps),
-                "skipped": tuple(step.to_semantic_dict() for step in self.skipped)}
+                "skipped": tuple(step.to_semantic_dict() for step in self.skipped),
+                # ⛔ PRESENT ONLY WHEN SOMETHING DEGRADED, and that is deliberate. A degraded plan IS a
+                # different plan and belongs in the hash — but adding `"degraded": ()` to every plan
+                # would change `plan_hash` for every plan ever computed, breaking replay verification
+                # and audit continuity for runs where nothing degraded at all. An absent key and an
+                # empty tuple mean the same thing here; only one of them costs the trail.
+                **({"degraded": tuple(step.to_semantic_dict() for step in self.degraded)}
+                   if self.degraded else {})}
 
     @property
     def plan_hash(self) -> str:
@@ -217,7 +320,8 @@ class ExecutionPlan:
 
 
 def _select(ordered: Sequence[ReasonerSpec], capability: CapabilityManifest,
-            request: Any) -> tuple[tuple[ReasonerSpec, ...], tuple[SkippedStep, ...]]:
+            request: Any) -> tuple[tuple[ReasonerSpec, ...], tuple[SkippedStep, ...],
+                                   tuple[DegradedStep, ...]]:
     """Choose which declared units this run will actually schedule.
 
     Three rules keep this honest. Only *optional* units are ever dropped, because a required unit's
@@ -244,10 +348,13 @@ def _select(ordered: Sequence[ReasonerSpec], capability: CapabilityManifest,
     missing, and why keeping it scheduled cannot manufacture a reading.
     """
     if request is None or not capability.metadata.get(CONTEXT_AWARE_SELECTION_KEY):
-        return tuple(ordered), ()
+        # Nothing was selected away, so nothing can be degraded. Not "we did not look" — there was
+        # nothing to look at, and the empty tuple says so for both.
+        return tuple(ordered), (), ()
 
     kept: list[ReasonerSpec] = []
     skipped: list[SkippedStep] = []
+    degraded: list[DegradedStep] = []
     dropped: set[str] = set()
     for spec in ordered:
         declared = set(spec.dependencies)
@@ -265,8 +372,22 @@ def _select(ordered: Sequence[ReasonerSpec], capability: CapabilityManifest,
             skipped.append(SkippedStep(spec.reasoner_id, spec.version,
                                        "no_declared_input_available", missing))
             continue
+
+        # ⛔ THE ONLY NEW BEHAVIOUR IN THIS FUNCTION, AND IT IS A RECORD, NOT A DECISION. Every branch
+        # above is untouched: the same units are kept and dropped as before, which
+        # `test_the_receipt_changes_nothing_about_what_is_kept_or_dropped` asserts directly. What was
+        # missing is that a unit kept with SOME of its sources gone said nothing about it — see
+        # `DegradedStep`.
+        lost = tuple(sorted(declared & dropped))
+        if lost:
+            degraded.append(DegradedStep(
+                reasoner_id=spec.reasoner_id, reasoner_version=spec.version,
+                declared_sources=tuple(sorted(declared)),
+                available_sources=tuple(sorted(declared - dropped)),
+                lost_sources=lost))
+
         kept.append(spec)
-    return tuple(kept), tuple(skipped)
+    return tuple(kept), tuple(skipped), tuple(degraded)
 
 
 def _fallback_for(spec: ReasonerSpec) -> str | None:
@@ -336,7 +457,7 @@ class ReasoningPlanner:
         deterministic: selection follows from declared inputs, never from a guess about intent.
         """
         ordered = ReasonerRegistry.topological_order(capability.reasoners)
-        ordered, skipped = _select(ordered, capability, request)
+        ordered, skipped, degraded = _select(ordered, capability, request)
         specs_by_id = {spec.reasoner_id: spec for spec in ordered}
         stages = _stage_index(specs_by_id, ordered)
         steps = tuple(
@@ -360,6 +481,7 @@ class ReasoningPlanner:
             planner_version=self.version,
             steps=steps,
             skipped=skipped,
+            degraded=degraded,
         )
         _validate_budget(plan, capability)
         _validate_metric_authorities(plan, capability)
@@ -445,5 +567,5 @@ def describe_plans(capabilities: Iterable[CapabilityManifest]) -> str:
 
 __all__ = ["CONTEXT_AWARE_SELECTION_KEY", "FALLBACK_FOR_KEY", "LATENCY_CEILING_KEY",
            "PLANNER_VERSION",
-           "ExecutionPlan", "PlannedStep", "ReasoningPlanner", "SkippedStep",
+           "DegradedStep", "ExecutionPlan", "PlannedStep", "ReasoningPlanner", "SkippedStep",
            "describe_plans", "plan_capability"]

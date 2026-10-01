@@ -206,4 +206,102 @@ class EvidenceSpan(BaseModel):
         return self
 
 
-__all__ = ["MAX_QUOTE_CHARS", "EvidenceSpan"]
+#: What an unmet need is still doing. Closed, and `unavailable` is the member that matters.
+NEED_STATES = ("open", "met", "unavailable")
+
+
+class EvidenceNeed(BaseModel):
+    """L2 → L1 · the one fact that would change the conclusion, asked for by name.
+
+    ⛔ THE EDGE THIS SYSTEM DID NOT HAVE. Layer 2 could only HOLD and wait: a situation missing its
+    signed contract stayed incomplete until some later sweep happened to bring the document in by
+    luck. Meanwhile `context/residue.py` was already computing the demand — `signal_unreached`
+    measures *"the Layer 1 verdicts no Layer 2 reading consumes"* — and that number reached the
+    model angles and stopped. **The measurement half existed; only the wire did not.**
+
+    ⛔ IT IS NOT A BACKFILL. A backfill fetches everything and hopes. This names ONE fact, for ONE
+    decision, with a cost limit and an expiry, and records what would and would not settle it. That
+    is the difference between widening a window and asking a question.
+
+    ⛔ `unacceptable_sources` IS NOT DECORATION, AND IT IS WHY THIS IS A CONTRACT AND NOT A STRING.
+    A vendor's quote email may not stand in for the signed contract. Without the negative list, an
+    executor that found *something* mentioning the right words would close the need and Layer 2
+    would proceed on evidence that cannot carry the claim — which is worse than the hold it
+    replaced, because the hold at least knew it was missing something.
+
+    ⛔ AND `unavailable` IS A REAL OUTCOME, NOT A FAILURE. A need that can never be met must CLOSE,
+    with a reason. One left open forever is a hold that can never clear — exactly the state this
+    contract exists to end, re-created one layer down.
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    #: Deterministic over the question and its subject, so the same need raised on two sweeps is
+    #: one row. An unmet need re-raised every sweep would be a queue that grows forever.
+    need_id: str
+    org_id: str
+    trace_id: str
+    #: What is being asked, in words a person could act on. Not a code.
+    question: str
+    #: ⛔ WHY IT CHANGES THE DECISION. A need that cannot say this is not decision-relevant, and
+    #: fetching for it spends a tenant's budget on curiosity.
+    why_it_matters: str
+    #: What the need is about — `contract:CTR-441`, `thread:…`, `signal:…`.
+    subject_ref: str | None = None
+    #: What WOULD settle it.
+    acceptable_sources: tuple[str, ...] = ()
+    #: ⛔ What would NOT, however well it matches. See the class docstring.
+    unacceptable_sources: tuple[str, ...] = ()
+    #: The period to look in. `None` means the executor's own default, not "all time".
+    window_from: Any | None = None
+    window_to: Any | None = None
+    #: How much this question is worth. An unbounded fetch is a backfill wearing a question's
+    #: clothes.
+    max_cost_usd: float | None = None
+    #: After this, the answer would arrive too late to change anything, so it is not worth buying.
+    expires_at: Any | None = None
+    state: str = "open"
+    #: Set only when `state` is `unavailable` — the sentence a card can show instead of waiting.
+    unavailable_reason: str | None = None
+
+    @field_validator("question", "why_it_matters")
+    @classmethod
+    def _must_say_something(cls, value: str, info: ValidationInfo) -> str:
+        return require_text(value, info.field_name or "field")
+
+    @field_validator("state")
+    @classmethod
+    def _state_is_closed(cls, value: str) -> str:
+        if value not in NEED_STATES:
+            raise ValueError(f"state must be one of {NEED_STATES}, not {value!r}")
+        return value
+
+    @model_validator(mode="after")
+    def _closure_is_explained(self) -> "EvidenceNeed":
+        if self.state == "unavailable" and not (self.unavailable_reason or "").strip():
+            raise ValueError(
+                "an unavailable need carries its reason: a need that closes without one is "
+                "indistinguishable from a need nobody worked, and the card has nothing to say "
+                "in place of the fact it was waiting for")
+        if self.state != "unavailable" and self.unavailable_reason:
+            raise ValueError("unavailable_reason belongs only to an unavailable need")
+        overlap = set(self.acceptable_sources) & set(self.unacceptable_sources)
+        if overlap:
+            raise ValueError(
+                f"{sorted(overlap)} is named as both acceptable and unacceptable; an executor "
+                f"reading this could close the need with evidence the need itself rejects")
+        return self
+
+    def accepts(self, source: str) -> bool:
+        """Whether evidence from `source` may close this need.
+
+        ⛔ The negative list wins. A source named in both would be a contradiction the validator
+        already refuses; a source in neither is allowed, because an executor that only ever
+        accepted an enumerated list could not answer a question nobody anticipated a source for.
+        """
+        if source in self.unacceptable_sources:
+            return False
+        return not self.acceptable_sources or source in self.acceptable_sources
+
+
+__all__ = ["MAX_QUOTE_CHARS", "NEED_STATES", "EvidenceNeed", "EvidenceSpan"]

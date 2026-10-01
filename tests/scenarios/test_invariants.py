@@ -235,7 +235,19 @@ def test_the_failure_log_counts_match_the_registry():
     from tests.scenarios._registry import SCENARIOS
 
     counts = collections.Counter(s.verdict for s in SCENARIOS.values())
-    log = pathlib.Path("speedrun008/plan/layer-1/FAILURE-LOG.md").read_text()
+    # ⛔ RESOLVED, NOT HARDCODED, AND NOT RELATIVE TO THE CALLER'S CWD. This read was
+    # `pathlib.Path("speedrun008/plan/...")` and broke the day the folder moved under
+    # `Ancient Architecture/` — a scoreboard test felled by a directory rename, which is a worse
+    # failure than the drift it exists to catch. The candidates are tried oldest-path-last so the
+    # current home wins, and a miss names both rather than reporting "file not found".
+    root = pathlib.Path(__file__).resolve().parents[2]
+    candidates = (root / "speedrun008" / "Ancient Architecture" / "plan" / "layer-1"
+                  / "FAILURE-LOG.md",
+                  root / "speedrun008" / "plan" / "layer-1" / "FAILURE-LOG.md")
+    found = next((p for p in candidates if p.exists()), None)
+    assert found is not None, ("FAILURE-LOG.md is at neither known path:\n  "
+                               + "\n  ".join(str(p) for p in candidates))
+    log = found.read_text()
 
     for verdict, label in (("closed", "CLOSED"), ("guard", "GUARD"), ("corpus", "CORPUS"),
                            ("open", "OPEN"), ("impossible", "IMPOSSIBLE")):

@@ -25,6 +25,7 @@ from genios_engine.contracts.situation import BusinessSituationObject
 from genios_engine.contracts.domain_expertise import _visibility
 
 from .context_adapter import ContextAdapter
+from .capability_resolver import artifact_admission_reason
 from .models import ExpertSlice, RoutePlan, RuntimeBrainEntry, RuntimeBrainSnapshot
 
 COMPILER_VERSION = "domain-compiler.v1"
@@ -102,6 +103,28 @@ class ExpertiseBuilder:
             # `review_state`: a thin capability is a content gap, an unadmitted one is an
             # authority gap, and one number cannot mean both.
             "hollow_capability_ids": plan.hollow_capability_ids,
+            # ⛔ THE THIRD LAYER OF THE ADMISSION CEREMONY, COUNTED RATHER THAN ENFORCED.
+            #
+            # A capability that fails review is dropped; a situation that fails is flagged and its
+            # card stops instructing. An OBJECT and a HEURISTIC were asked nothing at all — measured
+            # 2026-09-30, 66 of 75 objects and 218 of 283 heuristics are `draft` and NOT ONE of
+            # either carries an admission hash. And `heuristics/` is where `reads:` lives, so the
+            # widest surface in the corpus by file count is the one where somebody can change what
+            # the expertise consults with nothing noticing.
+            #
+            # ⛔ COUNTED, NOT GATED — see `artifact_admission_reason`. Refusing them today would make
+            # 284 documents inadmissible in one step on a corpus whose capabilities all pass;
+            # `card_source` already wrote the rule for the other cutover here — measure before you
+            # retire. These two lists are that measurement, and they are DELIBERATELY kept apart
+            # from `review_state` for exactly the reason `hollow_capability_ids` is: an unreviewed
+            # heuristic is a governance gap, an unadmitted capability is an authority gap, and one
+            # number cannot mean both.
+            "unreviewed_object_ids": tuple(
+                item.id for item in expert.objects
+                if artifact_admission_reason(item.content) is not None),
+            "unreviewed_artifact_ids": tuple(
+                item.id for item in expert.artifacts
+                if artifact_admission_reason(item.content) is not None),
             "excluded_runtime_entry_ids": runtime.excluded_entry_ids,
             "shadowed_runtime_entry_ids": runtime.shadowed_entry_ids,
             "runtime_conflict_resolutions": runtime.conflict_resolutions,

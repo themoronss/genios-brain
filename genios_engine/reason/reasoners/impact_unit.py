@@ -109,6 +109,27 @@ def _mapping_config(view: UnitView, key: str) -> Mapping[str, Any]:
     return value
 
 
+#: The unit that owns the account footprint this plugin falls back to, and the config key a
+#: capability overrides it with.
+#:
+#: ⛔ NAMED, BECAUSE A LITERAL IN A FUNCTION BODY CANNOT BE DECLARED FROM. This value lived inline at
+#: the one site that reads it, while its three siblings — `risk.DEFAULT_TEMPORAL_SOURCE`,
+#: `risk.DEFAULT_RELATIONSHIP_SOURCE`, `opportunity.DEFAULT_MOMENTUM_SOURCE` — are module constants.
+#: `risk.py` states why they are: *"enumerated here so the registration check can prove they name
+#: units that exist — a source unit that was never registered reads exactly like a source unit that
+#: did not run."* This unit had the same dependency and no way for that check to see it.
+#:
+#: ⛔ AND IT IS THE SILENT-RENAME HAZARD. Rename `core.relationship` and the three siblings break where
+#: a reader can see it; this one kept running and read nothing, because `prior_metric` on an absent
+#: unit returns the sentinel and the plugin returns `()` — which is indistinguishable from "the
+#: dependency ran and had nothing to say". `core.tradeoff` shipped exactly that bug for its whole life
+#: (see `tradeoff_unit.AXIS_SOURCES`), and this was the next one waiting to happen.
+DEFAULT_RELATIONSHIP_SOURCE = "core.relationship"
+
+#: The config key a capability uses to point this plugin at a different unit.
+RELATIONSHIP_SOURCE_KEY = "relationship_reasoner"
+
+
 class RevenueExposurePlugin:
     """The money at stake, expressed against what this capability calls a large deal.
 
@@ -188,7 +209,7 @@ class AccountImportancePlugin:
                             evidence_ids=evidence_ids(view.request, tier_field),
                             reason_codes=("named_account_tier",),
                         ),)
-        source = str(view.config.get("relationship_reasoner") or "core.relationship")
+        source = str(view.config.get(RELATIONSHIP_SOURCE_KEY) or DEFAULT_RELATIONSHIP_SOURCE)
         coverage_bp = view.prior_metric(source, "coverage_bp", -1)
         if coverage_bp < 0:
             return ()                       # the dependency did not run; we have nothing to say
@@ -277,6 +298,12 @@ class ImpactUnit(ReasoningUnit):
     publishes = ("impact_bp", "revenue_exposure_bp", "relationship_exposure_bp",
                  "strategic_bp", "impact_signal_count")
     plugins = (AccountImportancePlugin(), RevenueExposurePlugin(), StrategicLinkagePlugin())
+
+    #: ⛔ The one unit this reads by default. Honest only because `DEFAULT_RELATIONSHIP_SOURCE` was
+    #: named first: written against the old inline literal this line would have been
+    #: `("core.relationship",)` — a second copy of the default, in the declaration meant to make the
+    #: first one checkable.
+    source_units = (DEFAULT_RELATIONSHIP_SOURCE,)
 
     def calculate(self, view: UnitView,
                   observations: Sequence[Observation]) -> Mapping[str, int]:
@@ -381,5 +408,6 @@ class ImpactUnit(ReasoningUnit):
         )
 
 
-__all__ = ["AccountImportancePlugin", "IMPACT_ADJUSTMENT_REASON", "IMPACT_UNMEASURED_REASON",
+__all__ = ["DEFAULT_RELATIONSHIP_SOURCE", "RELATIONSHIP_SOURCE_KEY",
+           "AccountImportancePlugin", "IMPACT_ADJUSTMENT_REASON", "IMPACT_UNMEASURED_REASON",
            "ImpactUnit", "RevenueExposurePlugin", "StrategicLinkagePlugin"]

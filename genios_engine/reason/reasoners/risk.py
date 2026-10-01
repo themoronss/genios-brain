@@ -251,6 +251,22 @@ class RiskUnit(ReasoningUnit):
     publishes = ("risk_bp",)
     plugins = (MomentumDecayPlugin(), PlayMitigationPlugin(), RelationshipHealthPlugin())
 
+    #: ⛔ THE TWO UNITS THIS ONE READS BY DEFAULT — the constants above, not their values.
+    #:
+    #: Those constants were named FOR THIS, and their own comment says so: *"enumerated here so the
+    #: registration check can prove they name units that exist — a source unit that was never
+    #: registered reads exactly like a source unit that did not run."* The constants existed, the
+    #: check existed, and the one line joining them did not — so `validate_sources()` ran on every
+    #: registration and validated nothing.
+    #:
+    #: ⛔ THIS IS THE UNIT WITH CONSEQUENCES. `legacy_pack` schedules both `core.temporal` and
+    #: `core.relationship` on the LIVE lane, and `expertise._ROSTER` calls this unit *"the reading the
+    #: whole lane already depends on"*. A rename of either source would have silenced two of these
+    #: three plugins exactly as it silenced one of `core.tradeoff`'s — and `RISK_SOURCE_SILENT`-style
+    #: reason codes exist in this module precisely because the difference between "measured, no decay"
+    #: and "nothing measured the decay" is invisible in `risk_bp` alone.
+    source_units = (DEFAULT_RELATIONSHIP_SOURCE, DEFAULT_TEMPORAL_SOURCE)
+
     def validate(self, view: UnitView) -> None:
         """Nothing to refuse: this unit reads no context facts.
 

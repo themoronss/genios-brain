@@ -1349,6 +1349,41 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
         from genios_engine.platform.logging import get_logger
         get_logger("genios.l2").exception("residue detection failed for org=%s", org_id)
 
+    # L2 -> L1 · THE QUESTION THE MEASUREMENT ABOVE EARNS.
+    #
+    # `detect_residue` has measured what this sweep could not explain since the day it shipped, and
+    # that number went to the model angles and stopped. So the system knew precisely what it was
+    # missing and had no way to go and get it. This turns the one residue kind that is an EVIDENCE
+    # gap into rows the Layer 1 executor reads.
+    #
+    # ⛔ ONE OF FOUR KINDS, AND THE EXCLUSION IS THE DESIGN. Only `signal_unreached` becomes a
+    # question; `node_evidence_unread`, `ball_in_court` and `open_loop` are missing READINGS, and
+    # fetching for those would deliver what we already hold — then close successfully every time,
+    # teaching the system that its questions are always answered. `context/evidence_needs.py` states
+    # it per kind.
+    #
+    # ⛔ IT FILES A ROW; IT DOES NOT FETCH. A sweep that fetched inline would make ingestion wait on
+    # a network. The need is data, the executor is a separate pass, and `docs/LAYER_MAP.md` records
+    # the rule. Deterministic, bounded by the residue limit, no model and no clock of its own, and
+    # never fatal for the same reason the measurement above is not.
+    needs_filed = 0
+    try:
+        from genios_engine.context.evidence_need_store import file_needs
+        from genios_engine.context.evidence_needs import needs_from_residue
+        from genios_engine.context.residue import read_residue
+        from genios_engine.platform.canonical import stable_id
+        # Derived from the org and the sweep instant rather than minted fresh, because this
+        # function's contract is that the same graph at the same `eval_time` replays identically. A
+        # random trace here would be the one field in the row that a replay could not reproduce.
+        _trace = stable_id("trace", {"org": org_id, "sweep_at": sweep_at.isoformat()})
+        with store.engine.connect() as _c:
+            _rows = read_residue(_c, org_id)
+        needs_filed = file_needs(store, needs_from_residue(
+            _rows, org_id=org_id, trace_id=_trace))
+    except Exception:      # noqa: BLE001 — asking a question must never break ingestion
+        from genios_engine.platform.logging import get_logger
+        get_logger("genios.l2").exception("evidence needs not filed for org=%s", org_id)
+
     # L2 · THE NEAR-MISS CAMPAIGNS — sends the exact-sentence grouping DECLINED to merge.
     #
     # `correlation_conversation` groups outbound mail by the exact sentence and is right to: "a
@@ -1535,6 +1570,11 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
             # this layer explained everything it holds; a zero because the pass failed is
             # why it carries its own key rather than being folded into a total.
             "residue": residue,
+            # ⛔ NEW questions filed, not questions held. A count of needs derived would report the
+            # same number every sweep, because residue is re-derived every sweep — it would read as
+            # activity and mean nothing. This counts rows the queue did not already have, so a zero
+            # means "nothing new to ask", which is the useful reading.
+            "evidence_needs_filed": needs_filed,
             # WHAT THE CORRELATORS CONVERTED. Reported here because the number that mattered —
             # claims in against facts out — existed in two separate fields of two separate sweep
             # objects and was never put beside itself. `conversion.read_conversion` reads the

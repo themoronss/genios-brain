@@ -28,6 +28,26 @@ from genios_engine.packs.compiler.errors import (
     SituationContextIncomplete,
     UnsupportedCoverage,
 )
+
+#: Refusal reason -> this probe's output key. ⛔ TWO OF THE FOUR KEEP THE NAMES THEY HAD, because
+#: reports and saved CSVs read them; the two that used to be indistinguishable get their own.
+#:
+#: ⛔ CLOSED AGAINST `NoExpertiseRoute.REASONS` AT IMPORT TIME, both directions. A reason with no
+#: key would raise mid-probe on a tenant; a key for a reason that cannot be raised is dead
+#: vocabulary in a report somebody makes a decision from.
+_PROBE_KEY = {
+    "unknown_domain_hint": "unknown_domain_hint",
+    "domain_not_activated": "domain_not_activated",
+    "predicate_rejected": "no_route_predicate",
+    "no_situation_binds_type": "no_route_type",
+}
+_missing = NoExpertiseRoute.REASONS - set(_PROBE_KEY)
+if _missing:                                                      # pragma: no cover - import guard
+    raise RuntimeError(f"refusal reasons with no probe key: {sorted(_missing)}")
+_extra = set(_PROBE_KEY) - NoExpertiseRoute.REASONS
+if _extra:                                                        # pragma: no cover - import guard
+    raise RuntimeError(f"probe keys for things that are not reasons: {sorted(_extra)}")
+del _missing, _extra
 from genios_engine.packs.compiler.runtime_brains import PostgresRuntimeBrains
 from genios_engine.platform.wiring import make_graph_store
 from genios_engine.reason.domain_shadow import (
@@ -104,19 +124,31 @@ def main() -> int:
                     cid = cap["id"] if isinstance(cap, Mapping) else getattr(cap, "id", cap)
                     caps_by_type[stype][str(cid)] += 1
             except NoExpertiseRoute as exc:
-                # Three different failures wear one exception, and they need three different
-                # fixes: a domain hint the corpus has no folder for, a type no situation binds,
-                # or a bound type whose authored `when` predicate rejected this instance.
-                text_ = str(exc)
-                if "unknown domains" in text_:
-                    key = "unknown_domain_hint"
-                elif "no authored" in text_:
-                    key = "no_route_predicate"
-                else:
-                    key = "no_route_type"
+                # ⛔ THE REASON IS READ OFF THE EXCEPTION. It used to be inferred from the message:
+                #
+                #     text_ = str(exc)
+                #     if "unknown domains" in text_:   key = "unknown_domain_hint"
+                #     elif "no authored" in text_:     key = "no_route_predicate"
+                #     else:                            key = "no_route_type"
+                #
+                # FOUR causes, three tests, and an `else` catch-all. Measured 2026-09-30 against the
+                # resolver's four actual messages: `domain_not_activated` — *this tenant has not
+                # switched this domain on* — matched neither pattern and was reported as
+                # `no_route_type`, *nobody authored a route for it*. The raise site's own comment
+                # says those two "are a different fact … and the operator fixes them in different
+                # places", and this tool, which is where routing coverage is READ from, merged them.
+                #
+                # It is also the blunt-grep family in a measurement tool: a diagnosis that depends
+                # on wording changes the moment somebody improves a sentence, and the `else` meant
+                # every such change landed silently in the one bucket this probe exists to size.
+                #
+                # `NoExpertiseRoute.REASONS` is now a closed set of four, validated at construction.
+                # THE OUTPUT KEYS ARE UNCHANGED for the two that already existed, so every report
+                # and every reader of this probe's CSV keeps working.
+                key = _PROBE_KEY[exc.reason]
                 by_type[stype][key] += 1
                 totals[key] += 1
-                samples.setdefault(f"{stype}/{key}", text_[:200])
+                samples.setdefault(f"{stype}/{key}", str(exc)[:200])
             except SituationContextIncomplete as exc:
                 by_type[stype]["incomplete"] += 1
                 totals["incomplete"] += 1

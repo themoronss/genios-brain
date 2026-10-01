@@ -211,6 +211,25 @@ class PriorityReasoner(ReasoningUnit):
     #: The reserved pair.  `tests/test_unit_roster.py` asserts that no other unit in the roster
     #: declares either of these, and that this one declares both.
     publishes = ("urgency_bp", "priority_override_bp")
+    #: ⛔ EMPTY, AND SAID OUT LOUD RATHER THAN LEFT ABSENT.
+    #:
+    #: This unit reads its source ONLY from a manifest — `view.config["source_reasoner"]` — and
+    #: carries no default. So there is genuinely nothing for `validate_sources()` to check here, and
+    #: `validate_capability_sources` already refuses a manifest that names a source it does not
+    #: schedule, is not a dependency, or that is the unit itself.
+    #:
+    #: ⛔ THE DECLARATION STILL MATTERS, because `()` and ABSENT are the same value through
+    #: `getattr` and opposite facts. Before this section all 23 units read `()`: twenty-one because
+    #: nobody had declared, two because there is nothing to declare. A reader could not tell them
+    #: apart, and the only way to tell is for the second kind to say so. *Every silent lane carries a
+    #: reason and a mover* — this is the reason; the mover is whoever gives this unit a default.
+    #:
+    #: ⛔ AND IT RECORDS A REAL RISK THAT IS NOT FIXED HERE. The read is `or ""`, so a manifest that
+    #: FORGETS `source_reasoner` yields an empty source string rather than a refusal — the unit then
+    #: reads a prior metric from `""`, gets the sentinel, and is silent. Safe today because every
+    #: manifest sets it. Changing `or ""` to a refusal changes behaviour and is its own unit; naming
+    #: it here is what makes it findable.
+    source_units: tuple[str, ...] = ()
     # ORDER IS THE PRECEDENCE RULE. `evaluate_metrics` keeps the LAST override observation it
     # sees, so the authored priority is offered first and a source that ruled at RUNTIME overrides
     # it — a live ruling about THIS node beats a general one about its situation type. The two

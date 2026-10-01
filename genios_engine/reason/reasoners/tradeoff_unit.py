@@ -95,6 +95,41 @@ def _side_bp(view: UnitView, key: str) -> int | None:
     return None if value == _ABSENT else clamp_bp(value)
 
 
+#: The three axes this unit can compare, each as `(axis name, first side key, second side key)`.
+#:
+#: ⛔ DERIVED FROM THE PLUGINS' OWN KEYS, so an axis added above cannot be missed here. The order of
+#: each pair matches the `_weigh` call in the plugin, which is what makes a reason code's side names
+#: match the comparison a reader is looking at.
+_AXES: tuple[tuple[str, str, str], ...] = (
+    ("speed_vs_certainty", "speed_source", "certainty_source"),
+    ("risk_vs_reward", "reward_source", "risk_source"),
+    ("cost_vs_benefit", "benefit_source", "cost_source"),
+)
+
+
+def _absent_side(view: UnitView, key: str) -> str | None:
+    """`"core.impact.impact_bp"` when that side could not be read, else `None`.
+
+    ⛔ WHY THIS EXISTS. `_side_bp` returns `None` and the plugin returns `()`, so the unit sees "no
+    observation" — which is indistinguishable from "this axis was not contested". Measured on
+    production 2026-10-01: `axis_count` is 1 on 63% of runs and 2 on 37%, **never 3**, and
+    `tradeoff.cost_vs_benefit` has fired **0 times in 1,200 rows**. The unit already publishes the
+    honest count; what it could never say is WHICH comparison was lost and WHY.
+
+    ⛔ THE UNIT AND METRIC ARE DERIVED FROM `AXIS_SOURCES`, never retyped. `_AXIS_BY_KEY` already
+    holds the pair; a formatted literal here would be a third copy of a fact that lives in one tuple,
+    and the seventh axis somebody adds would leave it behind.
+
+    ⛔ AND IT HONOURS A CAPABILITY'S OVERRIDE. `_side_bp` resolves the unit through `_config_id`, so a
+    capability that appoints its own authority gets ITS unit named in the receipt rather than the
+    default — otherwise the receipt would send a reader to a unit this manifest never scheduled.
+    """
+    default_unit, metric = _AXIS_BY_KEY[key]
+    unit_id = _config_id(view, key, default_unit)
+    value = view.prior_metric(unit_id, metric, _ABSENT)
+    return None if value != _ABSENT else f"{unit_id}.{metric}"
+
+
 def _weigh(view: UnitView, plugin_id: str, axis: str,
            first_side: str, first_bp: int, second_side: str, second_bp: int
            ) -> tuple[Observation, ...]:
@@ -215,8 +250,31 @@ class TradeoffUnit(ReasoningUnit):
     unit_id = "core.tradeoff"
     version = "1.0.0"
     category = UnitCategory.OPTIMIZATION
-    publishes = ("tension_bp", "margin_bp", "axis_count", "contested_count")
+    #: ⛔ `axes_unavailable` IS DECLARED, and it is emitted ONLY when it is non-zero — see
+    #: `evaluate_meaning`. Declared because nothing validates output-against-`publishes` at runtime,
+    #: so an undeclared metric would work and would be a lie; and because
+    #: `tests/test_unit_roster.py` allows exactly one declared publisher per name, which this one has.
+    publishes = ("tension_bp", "margin_bp", "axis_count", "contested_count", "axes_unavailable")
     plugins = (CostVersusBenefitPlugin(), RiskVersusRewardPlugin(), SpeedVersusCertaintyPlugin())
+
+    #: ⛔ THE UNITS THIS ONE READS BY DEFAULT — DERIVED FROM `AXIS_SOURCES`, NEVER RETYPED.
+    #:
+    #: `ReasonerRegistry.validate_sources()` runs on every registration and refuses a default source
+    #: that is not itself a registered unit. Until this line it had nothing to check: all 23 units
+    #: returned `()` through `declared_source_units`, and `registry.py` says why that mattered —
+    #: *"`AXIS_SOURCES`-style defaults are a hard dependency on the roster even though no capability
+    #: ever spells them, and this is where a unit states them so they can be checked."*
+    #:
+    #: ⛔ AND THIS UNIT IS WHERE THE BUG ALREADY HAPPENED. See the note on `AXIS_SOURCES`: this unit
+    #: *"has been comparing two axes while declaring three since the day it shipped. Nothing failed,
+    #: because a missing source is indistinguishable from a source that did not run."* A declaration
+    #: would have turned that into an import-time refusal.
+    #:
+    #: ⛔ ONE EXPRESSION, NOT SIX STRINGS. A retyped list is a second copy of the truth, and a seventh
+    #: axis added above would leave it behind — reproducing, inside the guard, the exact defect the
+    #: guard exists to prevent. `sorted`/`set` because `declared_source_units` sorts and de-duplicates
+    #: anyway, and a declaration that differs from what the registry stores is a confusing diff.
+    source_units = tuple(sorted({unit_id for _, unit_id, _ in AXIS_SOURCES}))
 
     def calculate(self, view: UnitView,
                   observations: Sequence[Observation]) -> Mapping[str, int]:
@@ -264,9 +322,48 @@ class TradeoffUnit(ReasoningUnit):
             codes.update(f"headline.{code}" for code in ranked[0].reason_codes
                          if not code.startswith("tradeoff."))
             codes.add("tradeoff_contested" if contested else "tradeoff_settled")
+
+        # ⛔ WHICH COMPARISON WAS LOST, AND WHICH UNIT TO GO AND LOOK AT.
+        #
+        # `axis_count` already says HOW MANY comparisons were possible — *"which is how a reviewer
+        # tells 'nothing was contested' apart from 'nothing was measurable'"*. Measured on production
+        # 2026-10-01 it is 1 on 63% of runs and 2 on 37%, never 3, and `tradeoff.cost_vs_benefit` has
+        # fired 0 times in 1,200 rows. The number was honest and unactionable: it never named the axis
+        # or the absent source, and nothing outside this module read it.
+        #
+        # ⛔ THE UNIT ASKS; THE PLUGIN DOES NOT TELL. A plugin reporting an absence would emit an
+        # OBSERVATION, and `axis_count = len(ranked)` counts observations — so an absence counted as
+        # an axis would make the one honest number report comparisons that never happened.
+        #
+        # ⛔ `absent_source.<unit>.<metric>` IS THE MOVER. `absent_source.core.impact.impact_bp` sends
+        # a reader to the exact unit and metric; `axis_count: 1` could only say that something was
+        # missing. *Every silent lane carries a reason and a mover.*
+        spoke = {item.plugin_id for item in ranked}
+        unavailable = 0
+        for axis, first_key, second_key in _AXES:
+            if axis in spoke:
+                continue
+            absent = tuple(sorted(
+                side for side in (_absent_side(view, first_key), _absent_side(view, second_key))
+                if side is not None))
+            if not absent:
+                # Both sides were readable and the plugin still said nothing — not an availability
+                # problem, so it is not this receipt's business and must not be reported as one.
+                continue
+            unavailable += 1
+            codes.add(f"unavailable.{axis}")
+            codes.update(f"absent_source.{side}" for side in absent)
+
+        # ⛔ CONDITIONALLY INCLUDED, and that is the house rule rather than a preference.
+        # `contracts/reasoning.py:845` records what an unconditional field costs: a key written on
+        # every result *"enters the canonical JSON of every finding ever emitted"*. A run where all
+        # six sources were present stays byte-identical to the runs before this seam existed.
+        published = dict(metrics)
+        if unavailable:
+            published["axes_unavailable"] = unavailable
         return Verdict(
             matched=contested,
-            metrics=dict(metrics),
+            metrics=published,
             findings=findings,
             reason_codes=tuple(sorted(codes)),
         )

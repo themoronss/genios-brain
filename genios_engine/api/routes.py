@@ -578,6 +578,35 @@ def _run_l2_chain(org_id: str) -> bool:
         _log.exception("intelligence provisioning failed for org_id=%s", org_id)
     _ensure_tenant_live(org_id)
     _reread_unread(org_id)          # mail captured while L1 was off, before L2 drains
+
+    # THE FUNNEL'S ONE SWEEP ID. Every stage below shares it, so the five counts for this pass are a
+    # single-key read. Derived from the org and the instant rather than random, because this chain is
+    # meant to be replayable and a random id would be the one field a replay could not reproduce.
+    from datetime import datetime as _fdt, timezone as _ftz
+
+    from genios_engine.platform import funnel as _funnel
+    from genios_engine.platform.canonical import stable_id as _stable_id
+    _sweep_at = _fdt.now(_ftz.utc)
+    _sweep_id = _stable_id("fsweep", {"org": org_id, "at": _sweep_at.isoformat()})
+
+    def _count(stage_name: str, n) -> None:
+        """Relay one pass's OWN published number into the funnel.
+
+        ⛔ THE RULE IS ONE SOURCE PER NUMBER, AND THIS RELAYS RATHER THAN RE-DERIVES. A collector that
+        recomputed a count could disagree with the pass that produced it, at which point there are two
+        answers and no way to tell which is the measurement. Every value below is read straight off the
+        result dict of the pass that computed it — `tests/test_the_funnel_has_five_numbers.py` asserts
+        that no arithmetic happens here.
+
+        Writing at the chain rather than inside each pass buys one sweep id shared by all of them; a
+        per-pass write would need the id threaded through fifty call sites, and passes run outside this
+        chain would then write rows that cannot join to anything.
+        """
+        if n is None:
+            return                     # ⛔ unmeasured writes NO row — see platform/funnel.py
+        _funnel.observe(_graph, org_id=org_id, sweep_id=_sweep_id, stage=stage_name,
+                        n=int(n), sweep_at=_sweep_at)
+
     try:
         from genios_engine.context.runner import process_pending
         with stage("l2.process_pending", org_id) as st:
@@ -586,14 +615,30 @@ def _run_l2_chain(org_id: str) -> bool:
                                      crypto_key=get_settings().crypto_key)
             st["processed"] = result.get("processed", 0) if isinstance(result, dict) else 0
         _charge_ingestion(org_id, result)
+        # ⛔ `signals_detected` IS DELIBERATELY NOT WRITTEN HERE. It belongs to `capture`, and nothing
+        # in this chain holds an honest count of it — `_reread_unread` returns a RECOVERY count (mail
+        # captured while L1 was off), not the number of qualified signals detected, and labelling it
+        # `signals_detected` would put a wrong number where a missing one belongs. It stays unmeasured
+        # until the capture sync writes it, and `read_sweep` reports `None`, which is the truth.
+        _count(_funnel.SITUATIONS_FORMED,
+               result.get("situations_ranked") if isinstance(result, dict) else None)
+
         from genios_engine.reason.runner import run_all as run_l3    # L3 after the graph updates
         with stage("l4.run_all", org_id):
-            run_l3(org_id=org_id, store=_graph, registry=_registry)
+            _l3 = run_l3(org_id=org_id, store=_graph, registry=_registry)
+        _outcomes = (_l3 or {}).get("outcomes") if isinstance(_l3, dict) else None
+        _count(_funnel.CAPABILITY_RESOLVED,
+               (_l3 or {}).get("nodes") if isinstance(_l3, dict) else None)
+        _count(_funnel.DECISION_EMITTED,
+               _outcomes.get("emitted") if isinstance(_outcomes, dict) else None)
+
         if _card_store is not None:                              # L5: new gated signals → cards
             from genios_engine.deliver.pipeline import build_cards_for_org
             with stage("deliver.build_cards", org_id):
-                build_cards_for_org(graph=_graph, card_store=_card_store, org_id=org_id,
-                                    llm=_llm, registry=_registry)
+                _cards = build_cards_for_org(graph=_graph, card_store=_card_store, org_id=org_id,
+                                             llm=_llm, registry=_registry)
+            _count(_funnel.CARD_DELIVERED,
+                   (_cards or {}).get("built") if isinstance(_cards, dict) else None)
             # P4 post-passes (reason/team, reason/verify — SCREEN_INTEL_P4 §3.1): deterministic
             # team/verify situations → card + moment. Logged, never fails the chain.
             try:

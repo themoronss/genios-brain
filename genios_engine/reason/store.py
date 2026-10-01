@@ -2174,6 +2174,10 @@ class ReasoningStore:
         # Read from `decision_core` rather than recomputed, and the emptiness rule is the
         # contract's own: a field the decision did not carry must not appear, or a bundle written
         # before it existed stops verifying. `audit._output` writes them on exactly these terms.
+        # ⛔ `output_lane` is NOT a member of this list, and must not become one. The contract keeps it
+        # out of its semantic dict because `route()` derives it from `outcome`, `confidence_bp` and
+        # `uncertainty`, which are rebuilt above — so a routed decision reconstructs to the same bytes
+        # as an unrouted one, and no bundle's verification depends on the router existing.
         for _optional in ("citations", "constraints_applied", "confidence_vector",
                           "ranking_weights_version", "do_nothing"):
             _carried = decision_core.get(_optional)

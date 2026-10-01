@@ -35,7 +35,8 @@ WHAT THIS PUBLISHES, and the line each one refuses to cross:
                                       spellings of the same question come to disagree.
   derived.history.prior_card_verdict  what the person DID with the last card about this anchor,
                                       as `cause` or `cause:reason` —
-                                      `run_play | do_it_myself | wrong:not_relevant | …`.
+                                      `run_play | do_it_myself | wrong:not_relevant | …`
+                                      (eleven `wrong:*` reasons — see `learning_attribution`).
                                       "We already told them this and they dismissed it" is the
                                       single most useful thing this file can say, and the
                                       hardest to say honestly.
@@ -145,8 +146,10 @@ _PRIOR_OUTCOMES = text(
 #: `cards` carries `signal_id` and no anchor column at all.
 #:
 #: THE COLUMN IS `cause`, NOT `verdict`. Its check constraint fixes the vocabulary at
-#: `run_play | do_it_myself | wrong`, and `reason` narrows a `wrong` to `not_relevant |
-#: wrong_facts | bad_timing`. Those are different sentences and the pair is carried whole:
+#: `run_play | do_it_myself | wrong`, and `reason` narrows a `wrong` to one of the ELEVEN in
+#: `contracts/learning_attribution.WrongReason` — three until 2026-09-30, and the three keep their
+#: exact spellings so every row already written still reads the same. Those are different sentences
+#: and the pair is carried whole:
 #: "they did it themselves" is not "we were wrong", and reporting either as the other is the
 #: precision-denominator defect this branch already fixed once at the feedback layer.
 _PRIOR_VERDICTS = text(

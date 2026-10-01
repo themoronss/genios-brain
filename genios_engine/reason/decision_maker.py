@@ -1180,8 +1180,35 @@ class DecisionMaker:
         # minted from candidate content a few lines above. Imported inside the function because
         # `reason.adapters` imports the orchestrator, which imports this module.
         from genios_engine.reason.adapters.rule_compiler import constraint_applications
+
+        # ⛔ WHICH KIND OF OUTPUT THE READER GETS, decided HERE because this is where the outcome and
+        # the confidence first exist together — the two inputs the route actually turns on. Routing
+        # later would mean re-deriving both from a projection, and a re-derived route can disagree
+        # with the decision it describes.
+        #
+        # ⛔ NO MODEL TOUCHES THIS. `00-ARCHITECTURE.md` §4: *"If the output is a number, a route or a
+        # permission, no model produces it."* A lane is a route. `reason/output_lane.py` is pure.
+        #
+        # `conflict_open` is read off the uncertainty markers the situation layer already publishes
+        # rather than re-detected: a second detector could disagree with the hold that raised it, and
+        # then two places would decide whether a conflict is open.
+        from genios_engine.reason.output_lane import route as _route_lane
+        _lane = _route_lane(
+            outcome=outcome,
+            confidence_bp=confidence_bp,
+            conflict_open=any(str(marker).startswith(("conflict_open", "cross_domain_contradiction"))
+                              for marker in uncertainty),
+            # ⛔ Conservatively False. A block the reader can clear routes to INVESTIGATION, and
+            # claiming a block is reader-actionable when it is not would put our own plumbing in front
+            # of a founder as a business question. The caller that knows better can say so; this seam
+            # does not, and says nothing rather than guessing.
+            reader_actionable_block=False,
+        )
+
         decision = ReasoningDecision(
             outcome=outcome,
+            output_lane=_lane.lane,
+            lane_reason=_lane.reason,
             capability_id=request.capability.capability_id,
             capability_version=request.capability.version,
             context_snapshot_id=request.context.context_snapshot_id,

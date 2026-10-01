@@ -74,6 +74,22 @@ def _bp(numerator: int, denominator: int) -> int:
 _PRESCRIBING_LEVELS: frozenset[str] = frozenset(ACTIONABLE)
 
 
+
+def _grades_accuracy(reason: str) -> bool:
+    """Does this `wrong` reason count against the rule's precision?
+
+    ⛔ THE ONE MAP, ASKED — never a literal compared here. An UNKNOWN reason grades accuracy, which
+    is the conservative answer in this one direction and is chosen deliberately: today an
+    unrecognised word falls into `c["wrong"]` exactly as it always has, so a client sending
+    something this build has never heard of cannot make a bad rule look good. `attribution.route`
+    counts the unknowns separately so the disagreement is visible rather than merely safe.
+    """
+    from genios_engine.contracts.learning_attribution import attribute
+
+    found = attribute(reason)
+    return True if found is None else found.grades_accuracy
+
+
 def unit_feedback_learning(batch: LearningBatch, policy: LearningPolicy,
                            now: datetime) -> list[LearningObject]:
     """Per rule: what humans actually said about its cards — the only direct quality signal.
@@ -85,9 +101,10 @@ def unit_feedback_learning(batch: LearningBatch, policy: LearningPolicy,
 
     Grouped by rule_id, because the verdict vocabulary is about the RULE's judgment:
     `run_play`/`do_it_myself` say the card was worth acting on; `wrong` says it was not, and its
-    mandatory reason says how — `not_relevant` and `wrong_facts` are quality failures,
-    `bad_timing` is a scheduling failure on a correct card and must not count against the rule's
-    accuracy. Target is METRICS: this unit reports evidence; changing thresholds from it is
+    mandatory reason says how. ⛔ Six of the eleven reasons are quality failures and five say the
+    card was CORRECT and something else about it was not; only the six may count against the rule's
+    accuracy. Which is which is declared once, in
+    `contracts/learning_attribution.ATTRIBUTION`, and read here — never restated. Target is METRICS: this unit reports evidence; changing thresholds from it is
     calibration's job, behind its own governance.
     """
     cohorts: dict[str, dict] = defaultdict(
@@ -121,7 +138,19 @@ def unit_feedback_learning(batch: LearningBatch, policy: LearningPolicy,
             c["reasons"][reason] += 1
             if not graded:
                 c["answered"] += 1
-            elif reason == "bad_timing":
+            elif not _grades_accuracy(reason):
+                # ⛔ `not _grades_accuracy(reason)`, NOT `reason == "bad_timing"`.
+                #
+                # THIS LINE WAS THE HOLE THE VOCABULARY WIDENING WOULD HAVE FALLEN INTO. It tested
+                # one literal. The reason vocabulary went from three to eleven, and FIVE of the
+                # eleven say the card was RIGHT and something else about it was not —
+                # `bad_timing`, `stale_data`, `wrong_playbook`, `wrong_person`, `badly_written`.
+                # Four of those five would have landed in the `else` below and debited the rule's
+                # accuracy: the exact defect this milestone exists to end, created for four new
+                # reasons by the step that was meant to fix it for one.
+                #
+                # It asks the single attribution map instead, so a reason added later is graded by
+                # whoever declared it rather than by whoever last edited this line.
                 c["bad_timing"] += 1
             else:
                 c["wrong"] += 1

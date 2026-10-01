@@ -12,6 +12,30 @@ CACHE_WRITE_MULTIPLIER = 1.25
 CACHE_WRITE_MULTIPLIER_1H = 2.0
 CACHE_READ_MULTIPLIER = 0.1
 
+#: ⛔ MODELS THAT REJECT SAMPLING PARAMETERS WITH A 400. Sending `temperature` to one of these is
+#: not a degraded call — it is a request the API refuses outright, so the lane gets nothing.
+#:
+#: MEASURED, WHICH IS WHY THIS MOVED HERE. `llm_costs` records `l4_bundle` on `claude-sonnet-5` as
+#: **600 calls, 0 successes**, every one of them
+#: `"`temperature` is deprecated for this model"`, from 13 Sep to 25 Sep. The narrator has never
+#: produced a bundle. Nothing surfaced it because the lane fails open and a missing narrative
+#: looks exactly like a narrative nobody asked for.
+#:
+#: WHY THE CONSTANT LIVES IN THE CLIENT AND NOT IN THE CALLER. `reason/llm_decision_maker.py` knew
+#: this list and worked around it by building *its own thin client*, leaving the shared client
+#: still sending `temperature=0` to every model — so the knowledge existed and the module that
+#: actually sends the parameter did not have it. A second copy of a closed set is a set that
+#: drifts; the module that sends the field is the one that must own which models accept it.
+#: `reason` may import `context` (same-or-lower), so the decision maker now reads this one.
+NO_SAMPLING_PREFIXES = ("claude-sonnet-5", "claude-opus-5", "claude-opus-4-8",
+                        "claude-opus-4-7", "claude-fable")
+
+
+def accepts_sampling(model: str) -> bool:
+    """Whether `model` will accept `temperature`. A model we do not recognise is assumed to, which
+    is the same default every Haiku-class call has always run under."""
+    return not str(model).startswith(NO_SAMPLING_PREFIXES)
+
 
 @dataclass
 class LLMResult:
@@ -95,8 +119,12 @@ class LLMClient:
                 opts["max_retries"] = max_retries
             client = client.with_options(**opts)
         try:
+            # `temperature=0` is the determinism this engine runs on and stays the default. It is
+            # OMITTED, never changed, for the models that refuse it — see NO_SAMPLING_PREFIXES.
+            # Those models are deterministic enough without it; sending it costs the whole call.
+            sampling = {"temperature": 0} if accepts_sampling(self._model) else {}
             resp = client.messages.create(
-                model=self._model, max_tokens=max_tokens, temperature=0,
+                model=self._model, max_tokens=max_tokens, **sampling,
                 messages=[{"role": "user", "content": content}])
         except Exception as e:      # noqa: BLE001 — network/API errors surfaced, not raised
             return LLMResult(parsed={}, raw="", ok=False, error=str(e)[:400], model=self._model)

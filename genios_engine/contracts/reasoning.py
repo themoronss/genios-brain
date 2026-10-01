@@ -306,6 +306,55 @@ class DecisionOutcome(str, Enum):
     FAILED = "failed"
 
 
+class OutputLane(str, Enum):
+    """What kind of output the READER should receive — and it is NOT `DecisionOutcome`.
+
+    ⛔ THE TWO ARE ON DIFFERENT AXES, AND MERGING THEM DESTROYS A VOCABULARY.
+
+        DecisionOutcome  ->  did we reach a decision, and if not, why not
+        OutputLane       ->  what kind of output should the human see
+
+    `ReasoningDecision`'s own docstring defends the first: *"`outcome` may be `no_action`, `defer`,
+    `insufficient_context`, `blocked` or `failed`, and each of those is a real decision that must
+    survive to the surface. A projection that only carries `decision` loses five sixths of the
+    vocabulary."* A `decision` outcome may belong in the `DECISION` lane or the `MONITOR` lane
+    depending on confidence, so the two cannot be one field.
+
+    ⛔ AND IT IS `OutputLane`, NEVER A BARE `lane`. `reason/uncited_lanes.py` already means something
+    else entirely by "lane" — whether a PACK lane can cite an authored expert — and its own docstring
+    records what that conflation already cost: *"Layer 2 lost five readings to exactly that
+    ambiguity."* Four of these five words are also taken elsewhere (`suppress` in
+    `contracts/delivery.py` and `contracts/outcomes.py`, `monitor` in `contracts/execution.py`,
+    `conflict` as an L3 hold reason), which is why the type is named and the members are documented by
+    what the reader DOES rather than by what happened.
+    """
+
+    #: Act. One clear next move, asserted with enough confidence to stand behind.
+    DECISION = "decision"
+    #: Find out. We cannot conclude, and NAMING THE GAP is the value — this is the lane that turns
+    #: `insufficient_context` from an internal state into something a person can act on.
+    INVESTIGATION = "investigation"
+    #: Adjudicate. Two sources or two domains claim opposite things, and no amount of evidence
+    #: resolves it — a ruling does. ⛔ Publishing either side while the disagreement stands would
+    #: erase it by omission, which is the same principle `CONFLICT_OPEN` enforces one layer down.
+    CONFLICT = "conflict"
+    #: Watch. Nothing to do yet, and going quiet would lose the thread. Distinct from SUPPRESS: this
+    #: says "still live", and silence would say "over".
+    MONITOR = "monitor"
+    #: Say nothing — and ⛔ RECORD THAT WE SAID NOTHING. This is declared silence, not absence: the
+    #: lane is stored on the decision, so "we withheld, deliberately, for this reason" is answerable
+    #: later. Suppression that left no trace is the defect this programme has found in six other
+    #: places.
+    SUPPRESS = "suppress"
+
+
+#: The five, in the order a reader's attention should fall. Closed on purpose: an open vocabulary makes
+#: "is every lane handled?" unanswerable, and there is no totality assertion to write against it.
+OUTPUT_LANES: tuple[OutputLane, ...] = (OutputLane.DECISION, OutputLane.INVESTIGATION,
+                                        OutputLane.CONFLICT, OutputLane.MONITOR,
+                                        OutputLane.SUPPRESS)
+
+
 class CandidateDisposition(str, Enum):
     ELIGIBLE = "eligible"
     ELIMINATED = "eliminated"
@@ -1384,6 +1433,17 @@ class ReasoningDecision:
     #: QUOTED.  `require_citation` re-checks byte-identity here rather than trusting the package,
     #: because this is the object a card renders from and the render is where a paraphrase would
     #: finally become visible to a customer.
+    #: ⛔ WHICH KIND OF OUTPUT THE READER SHOULD GET, and WHY that one. Both or neither: a lane with no
+    #: recorded reason is undiagnosable, which is the whole argument in `reason/output_lane.py`.
+    #:
+    #: Defaulted and omitted from `to_semantic_dict` when absent, exactly as `citations` below is and
+    #: for the same reason: widening `decision_hash` for content a stored decision does not have would
+    #: invalidate replay for every decision already written, in exchange for nothing.
+    #:
+    #: NOT merged into `outcome`. `OutputLane`'s docstring has the argument — the two are on different
+    #: axes and a `decision` outcome routes to DECISION or MONITOR depending on confidence.
+    output_lane: OutputLane | None = None
+    lane_reason: str | None = None
     citations: tuple[Mapping[str, Any], ...] = ()
     #: Which compiled corpus rules fired, were satisfied, or could not be evaluated — the last of
     #: those naming what was UNKNOWN.  A blocking rule that fired names the candidates it
@@ -1595,6 +1655,19 @@ class ReasoningDecision:
             body["ranking_weights_version"] = self.ranking_weights_version
         if self.do_nothing:
             body["do_nothing"] = self.do_nothing
+        # ⛔ THE LANE IS DELIBERATELY NOT IN THE HASH, and this is a correctness point rather than a
+        # hash-stability nicety — the same one `reasoning_bundle` below makes in its own words.
+        #
+        # `reason/output_lane.route()` is a PURE FUNCTION of fields already in this dict: `outcome`,
+        # `confidence_bp`, and the conflict markers inside `uncertainty`. So the lane adds ZERO
+        # information to the content address — the same bytes always produce the same lane — while
+        # changing the identity of every decision that carries one.
+        #
+        # It cost four replay tests to learn: adding it here made every new decision's `decision_core`
+        # two keys wider than every old one, so a row from last week and a row from today stopped being
+        # the same shape, which is exactly what
+        # `test_a_legacy_decision_envelope_persists_the_bytes_it_always_persisted` guards. A derived
+        # value has no business in a content hash.
         return body
 
     @property

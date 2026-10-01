@@ -185,11 +185,14 @@ class CardStore:
                 "capability_key, capability_version, capability_review_state, "
                 "outcome_window_days, success_signal, do_nothing_consequence, "
                 "confidence_vector, surfaces, builder_version, "
+                # ⛔ WHICH KIND OF OUTPUT THIS IS (0190). The surface reads THIS row, so a
+                # lane that stops at `signals` reached nobody.
+                "output_lane, lane_reason, "
                 "state, expires_at) values (:id,:sig,:o,:asg,:dom,:lvl,:band,:head,:sit,:score,"
                 "cast(:sb as jsonb),cast(:act as jsonb),cast(:why as jsonb),:tags,"
                 "cast(:art as jsonb),:rm,:cs,:tv,:rjc,:rjd,:abst,"
                 ":bsub,:brole,:bitem,:bwhy,:ckey,:cver,:crev,:owin,:osig,:odnc,"
-                "cast(:cvec as jsonb),:surf,:bver,'queued',:exp) "
+                "cast(:cvec as jsonb),:surf,:bver,:lane,:lreason,'queued',:exp) "
                 # PRESENTATION ONLY. `state`, `created_at`, `snooze_until`, `resolved_at` and
                 # `expires_at` are the user's side of the row and are never touched here: a
                 # refresh improves what the card SAYS, never where it sits or what was decided
@@ -216,7 +219,11 @@ class CardStore:
                 "success_signal=excluded.success_signal, "
                 "do_nothing_consequence=excluded.do_nothing_consequence, "
                 "confidence_vector=excluded.confidence_vector, surfaces=excluded.surfaces, "
-                "builder_version=excluded.builder_version "
+                "builder_version=excluded.builder_version, "
+                # A refresh re-reads the signal, so a re-routed decision must be able to
+                # move its card between lanes. Carrying the old lane forward would show a
+                # founder a conclusion the engine has since withdrawn.
+                "output_lane=excluded.output_lane, lane_reason=excluded.lane_reason "
                 "where cards.builder_version is distinct from excluded.builder_version "
                 "and cards.state in :refreshable and cards.resolved_at is null "
                 "returning card_id, (xmax = 0) as inserted").bindparams(
@@ -248,6 +255,12 @@ class CardStore:
                  # why this card declines to instruct, or NULL when it does
                  "abst": card.get("abstained_because"),
                  "bver": card.get("builder_version"),
+                 # `lane_display.describe` already resolved NULL to the word `unrouted`;
+                 # the fallback covers a caller that built its card before this field
+                 # existed, and it is the same word rather than a NULL for the reason
+                 # 0190 states: "not routed" and "not yet backfilled" must not read alike.
+                 "lane": card.get("output_lane") or "unrouted",
+                 "lreason": card.get("lane_reason"),
                  "refreshable": list(self.REFRESHABLE_STATES),
                  "exp": card["expires_at"]}).first()
             if inserted is None:

@@ -216,6 +216,59 @@ def situation_admission_reason(authored) -> str | None:
     return None
 
 
+def artifact_admission_reason(authored) -> str | None:
+    r"""None = this OBJECT or HEURISTIC has been reviewed. Else the named reason it has not.
+
+    ⛔ THE THIRD LAYER OF A CEREMONY THAT WAS ONLY EVER PERFORMED ON TWO. `_admission_reason` asks a
+    named human to accept a CAPABILITY's bytes. `situation_admission_reason` asks the same of a
+    SITUATION's words. An OBJECT and a HEURISTIC were asked nothing at all.
+
+    Measured 2026-09-30:
+
+        capabilities   155   all stable + approved + hash-accepted
+        objects         75   66 draft, 9 stable, ZERO carrying an admission hash
+        heuristics     283   218 draft, 65 stable, ZERO carrying an admission hash
+
+    ⛔ AND `heuristics/` IS WHERE `reads:` LIVES — the declaration of which objects a piece of
+    doctrine consults. So the widest surface in the corpus, by file count, is the one where somebody
+    can change what the expertise looks at, silently, with no gate, no test and no receipt noticing.
+
+    ⛔ IT REPORTS. IT DOES NOT GATE, AND THAT IS DELIBERATE — FOR NOW. Turning this into a refusal
+    today would make 218 heuristics and 66 objects inadmissible in one step, on a corpus whose
+    capabilities all pass. `card_source` wrote the rule this follows for the other cutover in this
+    codebase: measure both paths on the same sweep BEFORE either is retired. The size of the
+    ungoverned surface reaches `ExpertisePackage.metadata` as `unreviewed_object_ids` and
+    `unreviewed_artifact_ids`; what to do about it is a decision with a number under it rather than
+    a guess.
+
+    ⛔ NO CONTENT HASH IS DEMANDED, for the same reason `situation_admission_reason` demands none: no
+    object or heuristic file carries an `admission` block to put one in, and requiring one would mean
+    editing 358 files before the guard could be switched on at all. Status plus an approved review
+    plus a named reviewer is the part a human actually performs, and it is what these files already
+    declare.
+
+    ⛔ RAISE ON THE WRONG TYPE, DO NOT ANSWER. Its two siblings both carry this scar: a function that
+    turns a caller's type error into a plausible data verdict cost this programme two debugging
+    passes against numbers that were never real ("all 69 situations inadmissible", "534 capabilities,
+    200 admissible"). `None` and `{}` are REAL cases and fail closed; anything else is a bug here.
+    """
+    if authored is not None and not isinstance(authored, Mapping):
+        raise TypeError(
+            f"artifact_admission_reason takes a parsed document mapping, not a "
+            f"{type(authored).__name__}. Pass `document.content`, as the resolver does at its own "
+            f"call sites. (`None` and `{{}}` are accepted and refuse, because a malformed file must "
+            f"fail closed.)")
+    identity = (authored.get("identity") or {}) if authored is not None else {}
+    metadata = (authored.get("metadata") or {}) if authored is not None else {}
+    if str(identity.get("status") or "") != "stable":
+        return f"identity_status_{identity.get('status') or 'absent'}"
+    if str(metadata.get("review_status") or "") != "approved":
+        return "review_not_approved"
+    if not str(metadata.get("reviewed_by") or "").strip():
+        return "no_named_reviewer"
+    return None
+
+
 def _admission_reason(capability) -> str | None:
     """None = admitted. Else the named reason this capability may not carry authority."""
     content = capability.content
@@ -544,7 +597,8 @@ class CapabilityResolver:
         unknown_hints = hints - set(self.catalog.domains)
         if unknown_hints:
             raise NoExpertiseRoute(
-                f"situation {situation.id!r} names unknown domains {sorted(unknown_hints)}")
+                f"situation {situation.id!r} names unknown domains {sorted(unknown_hints)}",
+                reason="unknown_domain_hint", situation_type=situation.type)
         domain_ids = sorted(hints or self.catalog.domains.keys())
         if self.activated_domains is not None:
             live = [d for d in domain_ids if d in self.activated_domains]
@@ -552,10 +606,18 @@ class CapabilityResolver:
                 # Honest and specific. "This tenant has not switched on any domain that serves
                 # this situation" is a different fact from "nobody authored a route for it", and
                 # the operator fixes them in different places.
+                # ⛔ `domain_not_activated`, AND IT USED TO BE COUNTED AS AN AUTHORING GAP. The
+                # comment above says this is "a different fact from 'nobody authored a route for
+                # it'" and that "the operator fixes them in different places" — and
+                # `corpus_route_probe` classified it by grepping the message, matched neither of
+                # its two patterns, and fell into the `else` that means `no_route_type`. An
+                # operations fact reported as missing content, in the one tool routing coverage is
+                # read from.
                 raise NoExpertiseRoute(
                     f"situation {situation.id!r} routes to {domain_ids}, none of which this "
                     f"tenant has activated ({sorted(self.activated_domains)}). See "
-                    "platform/l3_activation.")
+                    "platform/l3_activation.",
+                    reason="domain_not_activated", situation_type=situation.type)
             domain_ids = live
         adapter = ContextAdapter(situation, context)
         selected_domains: set[str] = set()
@@ -717,12 +779,19 @@ class CapabilityResolver:
                     f"situation {situation.id!r} cannot resolve authored routes; missing "
                     f"{sorted(unresolved)}")
             if saw_index_route:
+                # ⛔ This one may be entirely CORRECT behaviour — an authored `when` that declines
+                # an instance is the predicate doing its job. It shares a bucket with nothing else
+                # for exactly that reason.
                 raise NoExpertiseRoute(
                     f"situation {situation.id!r} matched the type index but no authored "
-                    "situation predicate")
+                    "situation predicate",
+                    reason="predicate_rejected", situation_type=situation.type)
             scope = f" in domains {domain_ids}" if hints else ""
+            # The bucket the five declared `unrouted_l2_types` live in — see
+            # `Admin Expertise/registry/situation-capability-map.yaml`.
             raise NoExpertiseRoute(
-                f"no expertise route for situation type {situation.type!r}{scope}")
+                f"no expertise route for situation type {situation.type!r}{scope}",
+                reason="no_situation_binds_type", situation_type=situation.type)
 
         required -= never
         optional -= never | required

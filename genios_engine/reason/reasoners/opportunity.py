@@ -214,6 +214,10 @@ class OpportunityUnit(ReasoningUnit):
     publishes = ("opportunity_bp", "opportunity_count")
     plugins = (UnansweredInboundPlugin(), StalledButOpenPlugin(), UnworkedRelationshipPlugin())
 
+    #: ⛔ The one unit this reads by default — the constant, never its value. See
+    #: `tradeoff_unit.source_units` for why a retyped literal defeats the check it is written for.
+    source_units = (DEFAULT_MOMENTUM_SOURCE,)
+
     #: The config keys a manifest binds to this unit's inputs. Enumerated so a capability author
     #: can be told what is missing, and so the unit can tell the difference between "declared and
     #: nothing found" and "never declared" without inspecting its own plugins.

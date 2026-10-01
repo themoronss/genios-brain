@@ -1013,5 +1013,100 @@ class QualifiedEnterpriseSignal(BaseModel):
         return self.confidence_bp <= floor
 
 
+class QualifiedEnterpriseSignalBundle(BaseModel):
+    """L1 → L2 · the signals that arrived TOGETHER, handed over as one thing.
+
+    WHAT IT IS FOR. Four signals about one vendor renewal used to cross this seam as four loose
+    events, and Layer 2 rebuilt the grouping — badly, because by then the only thing left in common
+    was whatever survived the projection. Four weak situations instead of one strong one. This is
+    the group, made once, where the evidence for it still exists.
+
+    ⛔ INCOMING ONLY. It joins signals that ARRIVED together — same entity, thread, time window,
+    commitment, meeting. It does **not** relate them to what the company already knows: that needs
+    the graph, the graph is Layer 3, and Layer 1 reading Layer 3 is an upward import that
+    `tests/test_layer_topology.py` fails the build on. Relating new signals to old situations is
+    reasoning, and it happens above this seam. See `docs/LAYER_MAP.md`.
+
+    ⛔ NO BLENDED COVERAGE NUMBER, AND THE VALIDATOR ENFORCES IT. `coverage` carries
+    `SignalCoverage.as_dict()` — per source, exactly as `capture/coverage/signal_coverage.py`
+    computed it — because *"a tenant with complete calendar coverage and 8% email coverage has two
+    different licences to make a negative claim, and one blended number would grant the stronger one
+    to both."* A top-level `completeness_bp` on this object is refused at construction.
+
+    WHY THE DICT AND NOT THE CLASS. `contracts/` may import nothing but `platform` and the standard
+    library, so it cannot hold `SignalCoverage` itself. The shape is the one already stored as jsonb
+    on C-12, so this carries the established serialisation rather than a second one that would drift
+    from it.
+
+    `unresolved` IS NOT AN ERROR LIST. It is what the grouper could not settle and is saying so —
+    the signed contract it never saw, the owner nobody named. Layer 2 reads it to decide whether to
+    ask (`EvidenceNeed`) rather than to guess, which is the whole reason it is on the boundary
+    instead of in a log.
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    #: Stable across a replay of the same signals — a replayed page produces one bundle, not two.
+    bundle_id: str
+    org_id: str
+    #: Minted in L1 and unchanged to L6.
+    trace_id: str
+    #: The signals in this group, by id. Order is the order they were qualified.
+    signal_ids: tuple[str, ...]
+    #: What the group is ABOUT, when the grouper could name it. `None` is honest: a group can be
+    #: real ("these three arrived in one thread") before anybody can say which business object it
+    #: concerns.
+    subject_key: str | None = None
+    #: Entities the signals mention, by the key L1 resolved them to.
+    entity_keys: tuple[str, ...] = ()
+    #: ⛔ CANDIDATE, never asserted. "SIG-101 concerns CTR-441" is a proposal the grouper is making
+    #: from what arrived together; Layer 2 may accept or discard it. Naming them `candidate_` is
+    #: what stops a downstream reader treating a time-window coincidence as a fact.
+    candidate_relationships: tuple[str, ...] = ()
+    #: `SignalCoverage.as_dict()` — `window_from`, `window_to`, and one entry per source.
+    #: A plain `{}` default, matching `contracts/situation.py`: a `MappingProxyType` here cannot be
+    #: deep-copied, and pydantic silently swallowed every OTHER validation error on this model
+    #: while trying to render one — so "a bundle carries at least one signal" arrived as
+    #: "cannot pickle 'mappingproxy' object". The refusal was correct and unreadable.
+    coverage: Mapping[str, Any] = {}
+    #: What the grouper knows it could not settle.
+    unresolved: tuple[str, ...] = ()
+
+    @field_validator("coverage")
+    @classmethod
+    def _coverage_is_never_blended(cls, value: Mapping[str, Any]) -> Mapping[str, Any]:
+        """⛔ A single completeness figure for a whole bundle is the failure this field exists to
+        prevent. Per source or not at all."""
+        if "completeness_bp" in value:
+            raise ValueError(
+                "a bundle may not carry a top-level completeness_bp: coverage is per source, and "
+                "one blended number grants the best-covered source's licence to every claim the "
+                "bundle supports. Put the figure on each entry of coverage['sources'].")
+        return value
+
+    @model_validator(mode="after")
+    def _a_bundle_holds_something(self) -> "QualifiedEnterpriseSignalBundle":
+        """An empty bundle is not a group with nothing in it — it is a grouper that ran and had
+        nothing to say, and that belongs in a receipt, not on this seam."""
+        if not self.signal_ids:
+            raise ValueError("a bundle carries at least one signal")
+        if len(set(self.signal_ids)) != len(self.signal_ids):
+            raise ValueError("a bundle lists each signal once; a repeat means the grouper "
+                             "double-counted and the coverage denominator is wrong")
+        return self
+
+    def coverage_for(self, source: str) -> Mapping[str, Any] | None:
+        """This bundle's coverage of ONE source, or `None` when it has none for it.
+
+        `None` is not zero. *"We read 8% of the mail"* and *"we do not know what we read"* license
+        different claims, and a caller that cannot tell them apart will eventually make the wrong
+        one.
+        """
+        for entry in self.coverage.get("sources", ()) or ():
+            if entry.get("source") == source:
+                return entry
+        return None
+
+
 __all__ = ["CONFIDENCE_COMPONENTS", "SIGNAL_STATES", "TRIAGE_LANES",
-           "QualifiedEnterpriseSignal", "SignalType"]
+           "QualifiedEnterpriseSignal", "QualifiedEnterpriseSignalBundle", "SignalType"]

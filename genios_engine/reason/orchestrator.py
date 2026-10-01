@@ -234,6 +234,21 @@ class ReasoningOrchestrator:
         uncertainty.extend(optional_degradations)
         uncertainty.extend(field for result in results for field in result.missing_fields)
 
+        # ⛔ THE PLANNER'S DEGRADATION RECEIPTS REACH THE SURFACE HERE, AND THIS LINE IS THE WHOLE
+        # POINT OF `DegradedStep`. A unit kept with some of its sources dropped computes its reading
+        # over a narrower set of inputs than it declared; without this the reading is reported as if
+        # it read them all. `plan.py`'s `DegradedStep` docstring has the case that proved it.
+        #
+        # ⛔ `starved` is stated separately rather than folded in. "Ran on 2 of 3" is a reading over
+        # less; "ran on 0 of 1" is a unit asserting something with none of the input it said it needed,
+        # and a reader that could not tell them apart would weigh them the same.
+        for degraded_step in plan.degraded:
+            uncertainty.append(
+                (f"starved_sources:{degraded_step.reasoner_id}" if degraded_step.starved
+                 else f"degraded_sources:{degraded_step.reasoner_id}")
+                + f":{len(degraded_step.available_sources)}of"
+                  f"{len(degraded_step.declared_sources)}")
+
         if terminal is None:
             # TEST MODE (`GENIOS_L4_LLM_DECISION_MAKER`): R-1 read by a model, only for a run that
             # is about to reach the decision maker. It adds `interpretation.*` facts, so the run is
@@ -251,6 +266,13 @@ class ReasoningOrchestrator:
             request, results,
             terminal=terminal,
             uncertainty=uncertainty,
+            # ⛔ `plan.degraded` is DELIBERATELY NOT FOLDED INTO THIS FLAG, and the omission is the
+            # scope line for this unit. `degraded=` feeds the decision maker's confidence, so adding
+            # planner degradations here would change decisions — arguably for the better, since a
+            # required unit running on none of its declared sources is unambiguously a degraded run.
+            # But that is a behaviour change nobody asked for, and this unit's job is to make the fact
+            # REACH the surface, not to re-weigh it. Recorded as an open question in
+            # speedrun008/YCW27/layer-2-reasoning/02-PLAN.md rather than decided here.
             degraded=bool(optional_degradations),
         )
 

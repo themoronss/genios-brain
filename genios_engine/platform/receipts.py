@@ -11,10 +11,20 @@ drift apart about what "ready" means.
 """
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from typing import Callable
 
 from sqlalchemy import text
+
+# ⛔ The organisation-readiness counts, from the FLOOR — not from `executive/`. Both this module and
+# `executive/readiness.py` need the same three queries, and duplicating them would let one drift from
+# the other. Importing them from `executive/` would have made the floor import a layer, which the
+# topology test does not catch because `platform` is cross-cutting and exempt — and an import nothing
+# fails the build on is not a safe one, it is an unchecked one.
+from genios_engine.platform.org_readiness_sql import COUNT_SQL as _RD_SQL
+from genios_engine.platform.org_readiness_sql import COUNT_SQL_FLEET as _RD_SQL_FLEET
+from genios_engine.platform import org_readiness_sql as _RD
 
 @dataclass(frozen=True)
 class Receipt:
@@ -41,6 +51,105 @@ class Receipt:
 def _org_filter(org: str | None, alias: str = "") -> str:
     p = f"{alias}." if alias else ""
     return f" and {p}org_id = :org" if org else ""
+
+
+def _UNDECLARED_UNWRITTEN_FACTS_SQL(org: str | None) -> str:
+    r"""How many fact paths a reasoning unit BINDS have no rows and no declaration.
+
+    ⛔ THE BOUND LIST IS DERIVED FROM `expertise._ROSTER`, never copied. A seventh role added to a unit
+    enters this query without an edit — the rule `S5.U02` established for `AXIS_SOURCES`.
+
+    ⛔ THE QUESTION IS NOT "IS ANY BOUND PATH EMPTY". Measured 2026-10-01: 14 of 22 are, for one root
+    (no CRM connector) this layer cannot clear. `api/routes.py:161` computes `ready = not failed` from
+    this list, so that claim would be permanently red, and a gate that is always red is a gate nobody
+    reads. The claim is the one that is true today and false when it gets worse.
+
+    ⛔ IT COUNTS ROWS PER PATH, NOT DISTINCT NODES. A path with one row has a writer; that is the whole
+    question. How WELL it is covered is `deal.status`'s 3-of-293 problem, a different measurement with
+    a different mover.
+
+    The paths are inlined as literals for the reason the sibling builder states: `evaluate()` binds
+    exactly one parameter. A test asserts every one matches `^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$`.
+    """
+    from genios_engine.reason.unit_health import DECLARED_UNWRITTEN_PATHS, roster_fact_paths
+
+    candidates = sorted(set(roster_fact_paths()) - set(DECLARED_UNWRITTEN_PATHS))
+    if not candidates:
+        return "select 0"
+    wanted = ", ".join(f"'{path}'" for path in candidates)
+    return (
+        f"select {len(candidates)} - count(distinct field) from graph_facts "
+        f"where field in ({wanted})" + _org_filter(org)
+    )
+
+
+def _PLACEHOLDER_COMPONENTS_SQL(org: str | None) -> str:
+    r"""Candidates the CURRENT scorer wrote carrying the neutral-default ranking formula.
+
+    ⛔ THE PREDICATE IS UNCHANGED FROM THE ORIGINAL RECEIPT. The three equalities below are
+    byte-for-byte what this receipt has always asked. The ONLY thing added is a lower bound, and
+    that is the entire fix — see `speedrun008/YCW27/layer-2-reasoning/12-AUDIT-D-the-frozen-formula-receipt.md`.
+
+    ⛔ WHY A LOWER BOUND IS NOT A WEAKENING. `reasoning_candidates` is append-only and this codebase
+    soft-deletes only, so the 59 rows the defect wrote on one org between 2026-08-17 and
+    2026-09-07 are permanent. Without a bound the receipt returns 59 forever, for a defect closed
+    on 2026-09-08, and `api/routes.py:161` computes `ready = not failed` over it — one unfixable
+    receipt holding the release gate shut. **A receipt over append-only history needs a lower
+    bound, or it is not a gate but a monument.**
+
+    ⛔ THE BOUND IS IMPORTED, NEVER RESTATED HERE. `reason/unit_health.neutral_default_boundary()`
+    owns the date together with the commit that establishes it, so the receipt cannot drift from
+    the declaration by carrying its own copy. Measured 2026-10-01: 34,167 candidates written at or
+    after the boundary, across all three orgs, **zero** frozen.
+
+    The date is inlined as a literal because `evaluate()` binds exactly one parameter; a test
+    asserts it matches `^\d{4}-\d{2}-\d{2}$` before it is interpolated.
+    """
+    from genios_engine.reason.unit_health import neutral_default_boundary
+
+    boundary = neutral_default_boundary()
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", boundary):
+        raise ValueError(f"boundary must be an ISO date, got {boundary!r}")
+    return (
+        "select count(*) from reasoning_candidates where "
+        "score_components->>'impact' = '5000' and score_components->>'risk' = '5000' "
+        f"and score_components->>'effort' = '5000' and created_at >= '{boundary}'"
+        + _org_filter(org)
+    )
+
+
+def _UNDECLARED_SILENT_UNITS_SQL(org: str | None) -> str:
+    """How many units are silent above the threshold and NOT declared in `reason/unit_health`.
+
+    ⛔ THE PREDICATE COMES FROM `reason/unit_health.SILENT_SQL`, NEVER RESTATED HERE. It is the same
+    rule `is_silent` applies in Python, and `tests/reason/test_a_unit_that_says_nothing_is_not_working.py`
+    runs both over the same production rows under the `pg` gate. Two expressions of one rule that are
+    never compared eventually disagree — this programme has found that shape five times.
+
+    ⛔ A SHARE, NOT A COUNT. One silent completion out of a thousand is noise; ninety per cent is a
+    unit that does not work. The threshold is `SILENT_THRESHOLD_PCT` and lives with the declaration.
+
+    ⛔ THE DECLARED SET IS INLINED AS LITERALS RATHER THAN BOUND. `evaluate()` passes exactly one
+    parameter (`:org`), so a second bound list would need a signature change across every receipt.
+    The ids are module constants matching `^[a-z][a-z0-9_.]+$`, asserted by a test, so there is
+    nothing here a caller can influence.
+    """
+    from genios_engine.reason.unit_health import (DECLARED_SILENT_IDS, SILENT_SQL,
+                                                  SILENT_THRESHOLD_PCT)
+
+    declared = ", ".join(f"'{unit}'" for unit in sorted(DECLARED_SILENT_IDS)) or "''"
+    return (
+        "select count(*) from ("
+        "  select reasoner_id,"
+        f"         100 * sum(case when {SILENT_SQL.strip()} then 1 else 0 end) / count(*) as pct"
+        "    from reasoning_reasoner_results"
+        "   where status = 'completed'" + _org_filter(org) +
+        "   group by reasoner_id"
+        f"  having 100 * sum(case when {SILENT_SQL.strip()} then 1 else 0 end) / count(*) "
+        f"         >= {int(SILENT_THRESHOLD_PCT)}"
+        f"     and reasoner_id not in ({declared})"
+        ") as undeclared_silent"
+    )
 
 
 def receipts(org: str | None) -> list[Receipt]:
@@ -197,6 +306,117 @@ def receipts(org: str | None) -> list[Receipt]:
                 f"select count(*) from tenant_packs where state='active'{o}",
                 lambda n: n > 0),
 
+        # ── L4 executive · ORGANISATION DATA ──────────────────────────────────────────
+        #
+        # ⛔ WHY THESE THREE ARE NEW. Twenty-three receipts existed and NOT ONE was about organisation
+        # data. So a tenant with a compiled pack, a live activation row, a full graph and every receipt
+        # green could still be completely unroutable — which is the state the pilot is in, and the whole
+        # reason `executive/` "examines nothing every tick".
+        #
+        # `test_a_tenant_nobody_feeds_is_not_ready` made the identical argument one layer down: *"Every
+        # other receipt can pass while a tenant's feed is dead. ... seventeen receipts still say PASS.
+        # Nothing said the feed had stopped."* This is that failure one layer up.
+        #
+        # The SQL is imported from `executive/readiness.COUNT_SQL` rather than retyped, so the receipt
+        # and the readiness page cannot drift about what "ready" means — the same rule this module's own
+        # docstring states: *"One list of claims, two surfaces."*
+        #
+        # ⛔ ORG-FILTERED, ALWAYS. Every one of these is a question about a TENANT, so none may be
+        # `fleet_wide`: answering it unfiltered would report one tenant's seats on another's page.
+        Receipt("L4", "the tenant has at least one active seat",
+                _RD_SQL[_RD.SEATS] if org else _RD_SQL_FLEET[_RD.SEATS],
+                lambda n: n > 0,
+                "no active seat means nobody to assign an owner to, so every execution plan is "
+                "refused before it is written"),
+        Receipt("L4", "at least one seat has a manager",
+                _RD_SQL[_RD.REPORTING_LINE] if org else _RD_SQL_FLEET[_RD.REPORTING_LINE],
+                lambda n: n > 0,
+                "with no reporting line, rung 7 of the ladder (escalate -> manager) climbs into "
+                "nothing and a stalled item is never escalated"),
+        # ⛔ ACTIVATED IS NOT THE SAME AS RAN. `platform/l3_activation` shipped once with a reader, a
+        # fail-closed gate, an erasure row, an admin API and a report -- AND NO CALLER. The lesson
+        # Plane R recorded from it: *"a switch that reports itself on and changes nothing is worse than
+        # no switch."*
+        #
+        # `reasoning_runs.mode` already answers this exactly: `domain_shadow` writes
+        # `ExecutionMode.LIVE if live_row else ExecutionMode.SHADOW`, and only the live lane reaches
+        # `_persist_live`. So a tenant with an activation row and zero live runs has a switch that is on
+        # and doing nothing -- which is precisely the state this receipt exists to make visible.
+        Receipt("L4", "the live pass has actually run, not only the shadow pass",
+                "select count(*) from reasoning_runs where mode = 'live'" + _org_filter(org),
+                lambda n: n > 0,
+                "an activation row with no live run means the switch reports itself on and changes "
+                "nothing -- the exact defect l3_activation shipped with once"),
+
+        # ⛔ L2 · EVERY REASONING UNIT THAT SAYS NOTHING IS ONE WE DECLARED.
+        #
+        # Measured 2026-10-01: `core.impact` completes 1,973 times with 100% silent output
+        # (`{"impact_signal_count": 0}`) and `core.opportunity` 94%. Both succeed. Both compute
+        # nothing. Every reader downstream treats the absence as "no signal here" rather than "this
+        # unit had nothing to read" — and `core.tradeoff`'s `cost_vs_benefit` axis has fired 0 times
+        # in 1,200 rows as a direct result, while a unit test proves the axis works on a prior the
+        # test supplies itself.
+        #
+        # ⛔ THE CLAIM IS NOT "NO UNIT IS SILENT", AND THAT CHOICE IS THE WHOLE DESIGN.
+        # `api/routes.py:161` computes `ready = not failed` from this list, and it is what the
+        # release gate runs. Asserting "no unit is silent" would be PERMANENTLY RED for an upstream
+        # reason this layer cannot clear — `deal.status` has no writer — and a gate that is always
+        # red is a gate nobody reads. So the claim is the one that is true today and false the moment
+        # it gets worse: every silent unit is a DECLARED one, with a reason and a mover.
+        #
+        # ⛔ AND THE SILENCE TEST IS IMPORTED, NOT RESTATED HERE. `reason/unit_health.SILENT_SQL` is
+        # the same rule the probe applies in Python, and a test runs both over the same production
+        # rows — because two expressions of one rule that are never compared eventually disagree.
+        Receipt("L2", "every reasoning unit that says nothing is one we declared",
+                _UNDECLARED_SILENT_UNITS_SQL(org),
+                lambda n: n == 0,
+                "a unit that completes and computes nothing is read downstream as 'no signal here' "
+                "rather than 'nothing to read' -- declare it in reason/unit_health with a reason and "
+                "a mover, or find out why it went quiet"),
+
+        # ⛔ L2 · EVERY FACT PATH A UNIT BINDS IS EITHER WRITTEN OR DECLARED UNWRITTEN.
+        #
+        # Measured 2026-10-01: `expertise._ROSTER` binds 22 fact paths and **14 have zero rows**. One
+        # root — there is no CRM connector, so `deal.*` is empty beyond `status` (3 rows) and
+        # `last_inbound` (34). `core.policy` has skipped all 165 of its rows because ALL FOUR of its
+        # essential fields are in that list: it is not failing, it is correctly refusing to run on
+        # nothing, forever.
+        #
+        # ⛔ AND THIS IS WHAT `no_declared_input_available` CANNOT SAY. That skip reason conflates
+        # "this situation did not carry the field" with "nothing has ever written the field anywhere".
+        # Different movers; the second is not fixable by looking at the situation at all.
+        #
+        # ⛔ THE CLAIM IS NOT "no bound path is empty", for the reason the sibling receipt states:
+        # `ready = not failed`, and 14 of 22 are empty for a reason this layer cannot clear. This one
+        # passes today and fails when a FIFTEENTH goes quiet — which produces no error anywhere else.
+        Receipt("L2", "every fact path a reasoning unit binds is written or declared unwritten",
+                _UNDECLARED_UNWRITTEN_FACTS_SQL(org),
+                lambda n: n == 0,
+                "a bound fact path with no writer means a unit role that can never bind -- declare "
+                "it in reason/unit_health with a reason and a mover, or find out what stopped "
+                "writing it"),
+
+        # ⛔ L5 · EVERY DELIVERED CARD SAYS WHICH KIND OF OUTPUT IT IS, OR SAYS IT WAS NEVER ROUTED.
+        #
+        # `0190` made `cards.output_lane` nullable so the migration could land on a live table, and
+        # a nullable column with no reader is how "built, tested, green, called by nothing" happens
+        # — which is the defect this whole lane vocabulary was added to end, and which the lane
+        # vocabulary then reproduced for one step. A NULL here means a card written by a path that
+        # does not carry a lane at all; `unrouted` means the delivery layer looked and found nothing
+        # it could honour, which is an answer and passes.
+        Receipt("L5", "every delivered card carries a lane, or is labelled unrouted",
+                "select count(*) from cards where output_lane is null" + _org_filter(org),
+                lambda n: n == 0,
+                "a card with no lane at all was written by a path that never read the signal's "
+                "routing -- the founder cannot tell a decision from a thing to watch"),
+
+        # ⛔ NO CHANNEL RECEIPT HERE, DELIBERATELY. One already exists further down — *"there is a
+        # channel this tenant can be reached on"*, over the same `org_channels` table. Adding a second
+        # would be two receipts answering one question, and the first time somebody tuned one they
+        # would disagree. `executive/readiness.py` still reports channels, because the readiness page
+        # needs all three requirements in ONE verdict with a named fix — that is the other surface this
+        # module's docstring names, not a duplicate claim.
+
         # ── L4 reasoning ──────────────────────────────────────────────────────────────
         Receipt("L4", "more than one candidate is ever considered",
                 "select coalesce(max(c), 0) from (select count(*) as c from reasoning_candidates"
@@ -204,12 +424,16 @@ def receipts(org: str | None) -> list[Receipt]:
                 " group by run_id) t",
                 lambda n: n > 1,
                 "exactly one candidate per run means no alternative, no do-nothing, no ranking"),
-        Receipt("L4", "the score components are measured, not placeholders",
-                "select count(*) from reasoning_candidates where "
-                "score_components->>'impact' = '5000' and score_components->>'risk' = '5000' "
-                "and score_components->>'effort' = '5000'" + _org_filter(org),
+        Receipt("L4", "the score components the scorer writes NOW are measured, not placeholders",
+                _PLACEHOLDER_COMPONENTS_SQL(org),
                 lambda n: n == 0,
-                "four of five components frozen at 5000 means every L4 unit adjustment is a no-op"),
+                "a candidate whose impact, risk and effort are all the 5000 neutral default was "
+                "ranked by nothing -- every reasoning unit that adjusts those components was a "
+                "no-op on it. This happened: 59 rows on one org, and 53 of them carried ALL FIVE "
+                "of guards.CANDIDATE_COMPONENTS at 5000. It was closed on 2026-09-08 by 75096bab "
+                "and 34,167 candidates have been clean since, so the question is dated at that "
+                "boundary -- declared in reason/unit_health.CLOSED_DEFECTS, which also records "
+                "why the history cannot be repaired. A hit here means the defect returned"),
         Receipt("L4", "the system has abstained at least once",
                 "select count(*) from reasoning_run_outputs where outcome_kind <> 'decision'"
                 + _org_filter(org),
@@ -230,10 +454,46 @@ def receipts(org: str | None) -> list[Receipt]:
                 lambda n: n > 1,
                 "one distinct level across every card means the pack's predictive rules are "
                 "rendered as direct commands"),
-        Receipt("L6", "cards carry a written draft, not a template stub",
-                "select count(*) from cards where render_mode <> 'llm'" + _org_filter(org),
+        # ⛔ REWRITTEN 2026-10-01. It asked `render_mode <> 'llm'` and expected zero, which was wrong
+        # in BOTH directions. Measured on production:
+        #
+        #     llm        105 cards,  13 with an empty artifact body
+        #     raw_slot    59 cards,  24 with an empty artifact body
+        #     template     1 card,    1
+        #
+        #   (1) it COUNTED 35 `raw_slot` cards that do have a body. A deterministic fallback carrying
+        #       real content is the designed behaviour when the model refuses or the validator rejects
+        #       — not a stub — so `expect n == 0` made that fallback a permanent failure.
+        #   (2) it MISSED 13 `llm` cards with an empty body, which by this receipt's own detail ARE
+        #       "a card with no content".
+        #
+        # ⛔ AND THE HONEST QUESTION IS NARROWER STILL. Of the 38 empty-body cards, 19 ABSTAINED — 13
+        # `review` and 6 `observation` — and an abstained card is SUPPOSED to carry no draft:
+        # `card_builder` strips `run_play` and `render.py` sets `art = ""` when the artifact is
+        # rejected. Demanding a body from those 19 would demand a draft the engine deliberately
+        # refused to write.
+        #
+        # What is left is the thing the claim always meant: a card with no content that is
+        # nonetheless giving an order. Measured: 18, so this receipt still FAILS. ⛔ A receipt is not
+        # fixed by making it green.
+        #
+        # `level in ('prescriptive','predictive')` is `abstention.ACTIONABLE`, and a NULL level is
+        # EXCLUDED rather than assumed — the rule `calibrate._PRECISION_SQL` already states: *"a card
+        # whose level nobody recorded is ungradeable, and defaulting it to 'instruction' is how the
+        # old behaviour comes back."*
+        #
+        # Both conditions, not either: a card can be downgraded by level with no abstention reason
+        # (one such card exists), and a reason without a downgrade is a contradiction the card layer
+        # does not produce.
+        Receipt("L6", "no card gives an order with an empty draft",
+                "select count(*) from cards "
+                "where coalesce(artifact->>'body', '') = '' "
+                "  and abstained_because is null "
+                "  and level in ('prescriptive', 'predictive')" + _org_filter(org),
                 lambda n: n == 0,
-                "raw_slot with an empty artifact body is a card with no content"),
+                "a card at an instructing level with no artifact body tells the reader to act and "
+                "gives them nothing to act with -- an ABSTAINED card correctly carries no draft and "
+                "is excluded"),
         Receipt("L6", "there is a channel this tenant can be reached on",
                 # THE PRECONDITION, ASKED FIRST. Measured 2026-09-17: all three orgs register
                 # `in_app` and nothing else, and `in_app` is the PULL surface — the card is
@@ -282,7 +542,28 @@ def receipts(org: str | None) -> list[Receipt]:
 
 
 def evaluate(engine, org: str | None) -> list[dict]:
-    """Run every receipt; an unrunnable one is a finding (ERROR), never a skip."""
+    """Run every receipt; an unrunnable one is a finding (ERROR), never a skip.
+
+    ⛔ AND ONE UNRUNNABLE RECEIPT MUST NOT TAKE EVERY RECEIPT AFTER IT. Measured against production
+    2026-10-01: migration `0190` is unapplied, so the L5 lane receipt raised `UndefinedColumn` —
+    correctly, once. Then **twelve** further receipts reported `InFailedSqlTransaction`, because
+    SQLAlchemy opens an implicit transaction on first use and a statement that raises leaves it
+    invalid. The page said `13 ERROR` where the truth was `1 ERROR` and twelve untried, and an
+    operator reading it could not tell which receipt had actually failed.
+
+    ⛔ THIS IS THE SAME DEFECT `domain_shadow` ALREADY FIXED FOR ITS OWN LOOP, and its comment is the
+    diagnosis: *"ONE connection serves the whole loop … a single bad situation silently takes every
+    situation after it. Measured on the design partner's org: one persist_error was followed by five
+    cascade failures … The six missing situations were not unroutable; they were never attempted."*
+    The cure there was an unconditional `rollback()` per iteration, for the same reason it is used
+    here: `rollback()` on a healthy connection is a no-op, so it needs no flag anybody must keep
+    correct.
+
+    ⛔ AND THE ROLLBACK GOES IN `finally`, NOT IN `except`. A receipt whose query SUCCEEDS still leaves
+    an open implicit transaction; putting the reset only on the failure path would leave a successful
+    receipt holding one, and the next failure would then be attributed to whichever receipt happened
+    to be running. The reset belongs after every receipt, not after the broken ones.
+    """
     rows: list[dict] = []
     with engine.connect() as c:
         for r in receipts(org):
@@ -295,6 +576,8 @@ def evaluate(engine, org: str | None) -> list[dict]:
             except Exception as exc:                       # noqa: BLE001 — evidence, not control flow
                 rows.append({"layer": r.layer, "claim": r.claim, "value": None,
                              "status": "ERROR", "detail": f"{type(exc).__name__}: {exc}"[:160]})
+            finally:
+                c.rollback()
     return rows
 
 

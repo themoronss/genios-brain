@@ -9,6 +9,9 @@ from types import SimpleNamespace
 from genios_engine.contracts.abstention import Level as _ABSTENTION
 from genios_engine.contracts.abstention import VALID_LEVELS as _ABSTENTION_LEVELS
 from .bands import band
+from .lane_display import describe as describe_lane
+from genios_engine.contracts.learning_attribution import (ALL_REASONS as _WRONG_REASONS,
+                                                          reasons_for_layer as _reasons_for_layer)
 from .router import co_recipients_for, resolve_assignee
 from .slots import _fval, compute_slots
 
@@ -30,7 +33,20 @@ from .slots import _fval, compute_slots
 #: production, and deciding that a change is user-visible is a judgment the author makes.
 # Seven stored campaign recipients now render as 7/7 and keep their verified quote outside
 # the prose budget. v4 cards otherwise block a build claim and retain the old copy forever.
-BUILDER_VERSION = "card-builder.v5-evidence-backed-copy"
+BUILDER_VERSION = "card-builder.v6-lane-and-eleven-reasons"
+
+#: ⛔ The eleven reasons, grouped by the QUESTION a founder is actually answering — not by our
+#: package names. "The facts are wrong" is a sentence a person can pick; "capture" is not.
+#:
+#: Derived from `reasons_for_layer` so a reason added to the map appears here without an edit, and
+#: a group that loses its last reason becomes visibly empty rather than silently stale.
+_WRONG_REASON_GROUPS: dict[str, list[str]] = {
+    "the facts are wrong": [*_reasons_for_layer("capture"), *_reasons_for_layer("context")],
+    "the conclusion is wrong": list(_reasons_for_layer("reason")),
+    "this is not how we work": list(_reasons_for_layer("packs")),
+    "right card, wrong delivery": [*_reasons_for_layer("executive"),
+                                   *_reasons_for_layer("deliver")],
+}
 
 EXPIRY_DAYS = 3650      # effectively "never" — a card only leaves the queue via user action
                         # (do_it_myself/snooze/dismiss) or a genuine decision_expires_at deadline,
@@ -789,6 +805,7 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
     name = _fval(facts, "outreach.counterparty") or _fval(facts, "commitment.owed_to") or name
     sources = _real_sources(store, org_id, node_id)
     reason_code = signal["reason_code"]
+    _lane = describe_lane(signal.get("output_lane"), signal.get("lane_reason"))
 
     scoring = effective.get("scoring", {})
     urgency_band = band(int(signal["score"]), scoring.get("bands"))
@@ -844,7 +861,26 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
          "artifact_ready": True},
         {"type": "do_it_myself"},
         {"type": "snooze", "options": ["4h", "tomorrow_09", "3d", "custom"]},
-        {"type": "wrong", "reasons": ["not_relevant", "bad_timing", "wrong_facts"]},
+        # ⛔ ELEVEN REASONS, FROM THE ONE MAP, EACH NAMING A LAYER SOMEBODY OWNS.
+        #
+        # Three of these existed and kept their exact spellings; eight are new because
+        # `wrong_facts` alone covered a mis-read email (capture), a fact linked to the wrong
+        # company (context) and a stale value nobody refreshed (capture again) — three teams, one
+        # word, and no way to debit any of them.
+        #
+        # ⛔ `reasons` IS THE SET THE CARD OFFERS AND `actions.WRONG_REASONS` IS THE SET THE API
+        # ACCEPTS, AND BOTH NOW READ ONE SOURCE. Offering a button the server refuses is the
+        # `FEATURE_CARDS_FROM_SITUATIONS` failure — "the reader was looking for a word the writer
+        # rejected" — which cost this codebase a lane no tenant could switch on.
+        #
+        # ⛔ A PRODUCT CONCERN, RECORDED RATHER THAN QUIETLY RESOLVED: eleven options is a worse
+        # experience than three, and a founder asked to classify OUR failure will pick the first
+        # plausible one. `reason_groups` is here so a surface can show four headings instead of
+        # eleven radio buttons, and narrowing what is DISPLAYED stays a one-line change on a
+        # surface rather than a change to the vocabulary underneath. Which of the eleven a card
+        # shows is Rohit's call, not the builder's.
+        {"type": "wrong", "reasons": list(_WRONG_REASONS),
+         "reason_groups": _WRONG_REASON_GROUPS},
     ]
     # CLARITY GATE, at build time. When the fact that gives this card's imperative its meaning is
     # absent, the card is WRITTEN as an observation: no run_play button, and a stated reason. The
@@ -1016,6 +1052,13 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
         "candidate_steps": signal.get("candidate_steps") or [],
         "rejected_candidates": signal.get("rejected_candidates") or [],
         "uncertainty": signal.get("uncertainty") or [],
+        # ⛔ WHICH KIND OF OUTPUT THIS IS. Routed deterministically by
+        # `reason/output_lane.route` and written onto the signal row by `domain_shadow`;
+        # read here because the surface reads the CARD, so a lane that stops at the signal
+        # has reached nobody. A signal with no lane is labelled `unrouted`, never defaulted
+        # to `decision` — see `deliver/lane_display`.
+        "output_lane": _lane.lane, "lane_reason": _lane.reason,
+        "lane_label": _lane.label,
         # Decomposed, not a scalar: "unsure about the evidence" and "unsure about the timing"
         # call for different user actions and a single number cannot tell them apart.
         "confidence_vector": {k: score_inputs.get(k) for k in ("C", "U", "I", "R")},

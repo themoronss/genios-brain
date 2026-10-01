@@ -14,6 +14,18 @@ from genios_engine.reason.authority import (
 
 # Learning is deliberately conservative: passive impressions are observability, not labels.
 # Only canonical human judgments enter confidence and eligibility calculations.
+#: ⛔ The single vocabulary, imported. `contracts/` is cross-cutting, so `feedback` (7) may import
+#: it; a second copy of the reason list in this file is a second source of truth.
+from genios_engine.contracts.learning_attribution import ATTRIBUTION as _ATTRIBUTION
+from genios_engine.contracts.learning_attribution import PrecisionRole as _PrecisionRole
+
+#: The reasons that count against a rule's precision, as a SQL literal list. Sorted so the emitted
+#: statement is byte-stable: a query text that reorders itself between runs is a query nobody can
+#: diff, and `_PRECISION_SQL` is compared in tests.
+_PRECISION_DENOMINATOR_SQL = ", ".join(
+    f"'{reason.value}'" for reason, att in sorted(_ATTRIBUTION.items(), key=lambda kv: kv[0].value)
+    if att.precision is _PrecisionRole.DENOMINATOR)
+
 WINDOW_DAYS = 28
 MIN_JUDGMENTS = 8
 MUTE_PRECISION = 0.25
@@ -26,11 +38,38 @@ OFFSET_BOUND = 15
 TAXONOMY = {
     "run_play": {"label": "positive_strong", "precision": "numerator"},
     "do_it_myself": {"label": "positive_moderate", "precision": "numerator"},
-    "wrong:not_relevant": {"label": "negative_relevance", "precision": "denominator"},
-    "wrong:wrong_facts": {"label": "negative_relevance", "precision": "denominator"},
-    "wrong:bad_timing": {"label": "timing", "precision": "none"},
     "snooze": {"label": "timing", "precision": "none"},
     "requeue": {"label": "window_mgmt", "precision": "none"},
+    # ⛔ THE ELEVEN `wrong:*` KEYS ARE GENERATED FROM `contracts/learning_attribution.ATTRIBUTION`,
+    # NOT WRITTEN OUT HERE. This map held three by hand; the vocabulary now has eleven, and two
+    # hand-written lists of one vocabulary is precisely how `FEATURE_CARDS_FROM_SITUATIONS` became
+    # a lane no tenant could switch on — *"the reader was looking for a word the writer rejected."*
+    #
+    # The `label` is derived rather than restated, so a new reason cannot arrive with a label
+    # nobody chose:
+    #   denominator            -> negative_relevance   (it counts against the rule)
+    #   none, and about WHEN   -> timing
+    #   none, and about FIT    -> fit
+    #
+    # ⛔ `fit` IS A NEW LABEL AND IT HAD TO BE. The first version of this expression mapped every
+    # `none` reason to `timing`, which would have recorded `wrong_person` and `wrong_playbook` as
+    # scheduling complaints — a quiet falsehood in a column, and the kind that survives because
+    # nothing crashes. The old four-word label vocabulary was designed for three reasons.
+    #
+    # ⛔ AND `label` HAS NO CODE READER TODAY. Grepped: `TAXONOMY` is read by
+    # `attribution.timing_never_grades_accuracy` (which reads `precision`) and named in two
+    # comments. This is near-miss territory for "built and called by nothing" — it predates this
+    # work and is documentation-only, so it is recorded here rather than removed, because deleting
+    # a field two comments describe is a bigger change than labelling it correctly.
+    #
+    # ⛔ The three original spellings and their three original roles come out of this expression
+    # UNCHANGED — `attribution.every_legacy_reason_still_grades_the_way_it_did` is the test that
+    # says so, and it matters because every judgment already recorded grades on those words.
+    **{f"wrong:{reason.value}": {
+           "label": ("negative_relevance" if att.precision is _PrecisionRole.DENOMINATOR
+                     else "timing" if reason.value in ("bad_timing", "stale_data") else "fit"),
+           "precision": att.precision.value}
+       for reason, att in _ATTRIBUTION.items()},
 }
 
 _PRECISION_SQL = text(
@@ -58,8 +97,15 @@ _PRECISION_SQL = text(
     # `card_level in ('prescriptive','predictive')` is `abstention.ACTIONABLE`, and a NULL level
     # is excluded rather than assumed: a card whose level nobody recorded is ungradeable, and
     # defaulting it to "instruction" is how the old behaviour comes back.
+    # ⛔ THE DENOMINATOR IS BUILT FROM THE ATTRIBUTION MAP, AND WIDENING IT WAS NOT OPTIONAL.
+    # This literal held two reasons. The vocabulary now has SIX that count against a rule
+    # (`misread_source`, `wrong_subject`, `bad_link`, `bad_reasoning`, plus the two originals) and
+    # five that do not. Leaving the literal at two would have let four real quality failures be
+    # recorded by a founder and counted by nothing — the same absence in the other direction from
+    # the one this milestone exists to fix, and the harder one to notice, because nothing breaks
+    # and precision merely looks better than it is.
     "count(*) filter (where cause='wrong' and (detail->>'reason') "
-    "in ('not_relevant','wrong_facts') "
+    "in (" + _PRECISION_DENOMINATOR_SQL + ") "
     "and card_level in ('prescriptive','predictive')) as rel_wrong "
     "from canonical_judgments where occurred_at >= :since "
     "and pack_id=:p and pack_version=:pv and authority_pack_revision=:pr "

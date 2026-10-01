@@ -563,6 +563,13 @@ class PublicationReport:
     #: reason `stored` is distinct from `len(emitted)`: "the gate refused nine signals and the
     #: ledger took none" is a database incident, and it must not report as a quiet Tuesday.
     rejections_filed: int = 0
+    #: L1.6.11 · the groups this sweep's EMITTED signals fall into. Built beside the rows above,
+    #: never instead of them: with no bundle store this is empty and nothing else about the pass
+    #: changes, which is what lets both paths run for a release and be compared on one sweep.
+    bundles: tuple[Any, ...] = ()
+    #: Counted separately from `len(bundles)` for the same reason `stored` is counted separately
+    #: from `len(emitted)`: "we grouped eleven and stored none" is a database incident.
+    bundles_stored: int = 0
 
     @property
     def downgraded(self) -> tuple[PublishedSignal, ...]:
@@ -1106,7 +1113,8 @@ def _inputs_for(result: Any, signal: NormalizedSignal, verdict: Any, summary: An
 def publish_sweep(summary: Any, outcome: QualificationOutcome, *, org_id: str,
                   store: Any = None, parked_store: Any = None, rejections: Any = None,
                   lifecycle: LifecycleStamper | None = None,
-                  eval_time: datetime | None = None) -> PublicationReport:
+                  eval_time: datetime | None = None,
+                  bundle_store: Any = None) -> PublicationReport:
     """THE SEAM. Every signal this sweep QUALIFIED, gated by V-1..V-7 and stored.
 
     Takes the `QualificationOutcome` rather than re-deriving it, and joins it to the sweep's
@@ -1127,7 +1135,8 @@ def publish_sweep(summary: Any, outcome: QualificationOutcome, *, org_id: str,
     try:
         return _publish_sweep(summary, outcome, org_id=org_id, store=store,
                               parked_store=parked_store, rejections=rejections,
-                              lifecycle=lifecycle, eval_time=eval_time)
+                              lifecycle=lifecycle, eval_time=eval_time,
+                              bundle_store=bundle_store)
     except Exception:      # noqa: BLE001 — downstream of capture, never above it
         _log.warning("publication failed for org=%s", org_id, exc_info=True)
         return PublicationReport()
@@ -1136,7 +1145,8 @@ def publish_sweep(summary: Any, outcome: QualificationOutcome, *, org_id: str,
 def _publish_sweep(summary: Any, outcome: QualificationOutcome, *, org_id: str,
                    store: Any, parked_store: Any, rejections: Any,
                    lifecycle: LifecycleStamper | None,
-                   eval_time: datetime | None) -> PublicationReport:
+                   eval_time: datetime | None,
+                   bundle_store: Any = None) -> PublicationReport:
     """`publish_sweep` without the guard, so the guard has exactly one job and the body reads."""
     qualified = {v.signal_id: v for v in outcome.qualified if v.org_id == org_id}
     if not qualified:
@@ -1213,8 +1223,39 @@ def _publish_sweep(summary: Any, outcome: QualificationOutcome, *, org_id: str,
     if refused:
         _log.info("publication refused %d signal(s) for org=%s: %s", len(refused), org_id,
                   ", ".join(f"{r.signal_id}:{r.outcome}:{'/'.join(r.rules)}" for r in refused))
+    # ── L1.6.11 · the groups, built BESIDE the rows ───────────────────────────────────────────
+    #
+    # ⛔ FROM `emitted`, NEVER FROM `qualified`. A signal the gate REFUSED at V-2..V-7 did not cross
+    # this seam, and a bundle that listed it would hand Layer 2 a group whose members it cannot
+    # fetch — and, worse, a coverage denominator computed over rows that were never published.
+    # The bundle groups what actually crossed.
+    #
+    # BUILT BESIDE THE OLD PATH, NOT OVER IT. With no `bundle_store` this costs one pure function
+    # over a list already in memory and changes nothing else about the pass, which is what lets
+    # both paths run for a release and be compared on one sweep — the same rule `card_source`
+    # already keeps at L5.
+    bundles: tuple[Any, ...] = ()
+    bundles_stored = 0
+    if emitted:
+        try:
+            from genios_engine.capture.esqe.bundle import build_bundles
+            trace = str(getattr(emitted[0].signal, "trace_id", "") or "")
+            bundles = tuple(build_bundles(org_id, trace, [p.signal for p in emitted]))
+        except Exception:      # noqa: BLE001 — grouping is an addition; losing it costs a group
+            _log.warning("could not group %d published signal(s) for org=%s", len(emitted),
+                         org_id, exc_info=True)
+    if bundle_store is not None and bundles:
+        # Guarded separately, for the reason `stored` is: swallowed one level up, a store outage
+        # and a sweep that grouped nothing report the identical empty tuple.
+        try:
+            bundles_stored = bundle_store.put(bundles)
+        except Exception:      # noqa: BLE001 — a store outage costs rows, never the sweep
+            _log.warning("could not store %d bundle(s) for org=%s", len(bundles), org_id,
+                         exc_info=True)
+
     return PublicationReport(emitted=tuple(emitted), parked=tuple(parked),
-                             refused=tuple(refused), stored=stored, rejections_filed=filed)
+                             refused=tuple(refused), stored=stored, rejections_filed=filed,
+                             bundles=bundles, bundles_stored=bundles_stored)
 
 
 __all__ = ["DEFAULT_STATE", "REJECTION_TABLE", "UNBUILDABLE", "InMemoryRejectionLedger",

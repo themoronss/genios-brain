@@ -1201,6 +1201,20 @@ class GraphStore:
                  "sr": subject_ref, "cc": client_context_id,
                  "seat": (seat_id or None),
                  "crt": int(cache_read_tokens or 0), "cwt": int(cache_write_tokens or 0)})
+        # ⛔ AND THE SAME ARGUMENT FOR WHETHER THE PROVIDER IS ANSWERING AT ALL. `success` and
+        # `error` have been written on every row since this table existed and were read by nothing:
+        # between 25 and 30 September 2026 every call in the product failed on the account's spend
+        # limit, for five days, with no alert — and the same thing had happened on 16–17 September
+        # and recovered unnoticed. The ledger knew both times.
+        #
+        # Its own try, not the analytics one below: telemetry is best-effort and an outage alert is
+        # not, so a PostHog failure must not be able to swallow it.
+        try:
+            from genios_engine.platform import provider_health
+            provider_health.observe(success=bool(success), error=error, model=model,
+                                    purpose=purpose, org_id=org_id)
+        except Exception:      # noqa: BLE001 — an alert must never break the accounting write
+            pass
         # Every LLM call in the engine lands here, so this is the one place that can report spend
         # to PostHog without a per-call-site instrumentation that later drifts. Priced with the same
         # function the admin console uses, so both surfaces quote one dollar figure.

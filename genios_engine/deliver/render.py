@@ -855,10 +855,26 @@ def render_copy(*, reason_code: str, template: dict, facts: dict, slots: dict,
     # V-02 — invention. A field that names something ungrounded is unusable; its siblings are
     # unaffected. Runs on the REPAIRED text: a trimmed situation is what would ship, so it is
     # what has to be grounded.
+    # ⛔ LOCAL, AND THAT IS STRUCTURAL, NOT STYLE. `claim_validator` imports `invention_ok` from
+    # THIS module, so a module-level import here is a cycle. The validator depends on the
+    # renderer because it must use the renderer's own folding rules; the renderer depends on the
+    # validator only at call time.
+    from .claim_validator import claims_ok
+
     for name, chunk in (("headline", head), ("situation", sit), ("artifact", art)):
         if name in rejects:
             continue
-        ok, why = invention_ok(chunk, corpus_text, corpus_nums)
+        # ⛔ `claims_ok`, WHICH CALLS `invention_ok` FIRST AND REPORTS ITS REFUSALS UNCHANGED.
+        # The widening is per SENTENCE rather than per field: the same corpus, the same folding
+        # helpers, the same `V-02:number:12` vocabulary, and strictly more refusals — never fewer.
+        # `tests/deliver/test_a_fact_and_a_guess_do_not_look_alike.py` holds the old function's
+        # verdict and this one side by side on the cases it refuses.
+        #
+        # It is swapped in HERE, at the only place the old function was called, because a widened
+        # validator nothing calls is the "built, tested, green, and called by nothing" defect this
+        # programme has now found eight times — once in its own work, one step ago.
+        ok, why, _refusals = claims_ok(chunk, corpus_text, corpus_nums,
+                                       quotes_something=bool(quotes))
         if not ok:
             rejects[name] = f"V-02:{why}"
             notes[name] = rejects[name]

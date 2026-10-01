@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from sqlalchemy import text
 
 from genios_engine.packs.wiring import ensure_default, make_registry
+from .lane_display import TALLY_KEYS, tally_lane
 from genios_engine.reason.authority import (
     AUTHORITATIVE_REASON_CODE_SQL,
     AUTHORITATIVE_SCORE_SQL,
@@ -81,7 +82,14 @@ def _open_signals_without_cards(graph, org_id: str,
             # and not the card is a quote that reached nobody: `scripts/l3_pilot_report.py`
             # measured `cards_quoting_the_claim_in_their_own_copy` at 0 on every card ever built,
             # and the cause was this column having no reader between the emitter and the surface.
-            "s.citations "
+            "s.citations, "
+            # ⛔ WHICH LANE. `0189` added these and `domain_shadow` writes them on every
+            # routed decision; until this line nothing in `deliver/` read either, so the
+            # vocabulary was built, tested, green and called by nothing. NULL is carried as
+            # NULL — `lane_display.describe` labels it `unrouted` rather than guessing
+            # `decision`, because a default here would have the card assert an authority no
+            # router granted it.
+            "s.output_lane, s.lane_reason "
             "from signals s " + AUTHORITATIVE_SIGNAL_JOINS +
             " left join reasoning_context_payloads authority_payload "
             "on authority_payload.org_id=authority_ctx.org_id and "
@@ -324,7 +332,12 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
            # and a comparison that only exists AFTER the cutover cannot inform the cutover.
            # Initialised at zero for the same reason `BY REASON` prints its zeros: a key that
            # appears only when it fires is a key nobody knows exists.
-           "cards_from_signal": 0, "cards_from_situation": 0, "cards_uninterpreted": 0}
+           "cards_from_signal": 0, "cards_from_situation": 0, "cards_uninterpreted": 0,
+           # ⛔ THE LANE MIX. Zeroed for the same reason as the three above — "a key that appears
+           # only when it fires is a key nobody knows exists" — and ALL SIX are zeroed, including
+           # `unrouted`, because today every production signal is unrouted and a mix that hid that
+           # would read as though the router had run.
+           **{k: 0 for k in TALLY_KEYS}}
     from .bands import band
     from .card_source import cards_from_situations, tally_source
     # How many of one situation type may interrupt in a single pass. Counted per pass rather than
@@ -489,10 +502,25 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
                     # shown this card, and a rewrite is not a new event to interrupt them with.
                     out["refreshed"] += 1
                     out["llm" if copy["render_mode"] == "llm" else "raw_slot"] += 1
+                    tally_lane(out, lane=draft.get("output_lane"))
                 elif card_id is not None:
                     out["already_built"] += 1
                 continue
             out["built"] += 1
+            # ⛔ WHICH KIND OF OUTPUT, COUNTED — INCLUDING `suppress` AND INCLUDING `unrouted`.
+            #
+            # AT THE TWO SITES WHERE A CARD IS WRITTEN, not where a draft is composed. A draft can
+            # end as `built`, `refreshed`, `already_built` or a refused persist, and only the first
+            # two put something in front of a reader. Counting at composition time would make the
+            # lane mix describe a population that includes cards nobody received — and would make
+            # `lane_recall.recall_verdict` a tautology, since the tally and the comparison would
+            # then be incremented by the same line. Two independently incremented counters that
+            # must agree is the only version of this check worth having.
+            #
+            # The lane the DRAFT resolved, never the raw column: `build_draft` already read the
+            # pair through `lane_display.describe`, and resolving it twice is how a count and a
+            # label come to give two answers to one question.
+            tally_lane(out, lane=draft.get("output_lane"))
             out["llm" if copy["render_mode"] == "llm" else "raw_slot"] += 1
             try:
                 # ENQUEUED, not POSTed. The inline send from inside this build loop was the

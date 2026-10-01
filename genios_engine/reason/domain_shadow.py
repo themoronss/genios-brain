@@ -329,13 +329,18 @@ def _emit_capability_signal(conn, *, org_id: str, node_id: str, package, executi
         "config_snapshot_id, reasoning_run_id, reasoning_candidate_id, reasoning_decision_hash, "
         "authority_expires_at, authority_binding_version, authority_pack_revision, "
         "do_nothing_consequence, uncertainty, outcome_window_days, "
+        # ⛔ L2-S3 · migration 0189. The lane is what the card renders AS — a thing to do, to find out,
+        # to rule on, to watch, or deliberately withheld. NULLABLE, and the NULL is an answer: a signal
+        # written before routing existed was never routed, and a default lane would claim a decision
+        # nobody made. Same rule `situation_id` above states for UNINTERPRETED.
+        "output_lane, lane_reason, "
         "capability_id, capability_version, capability_review_state, rejected_candidates, "
         # ⛔ L2-7 · migration 0182. NULLABLE, and the NULL is an answer: a signal whose situation
         # never formed still reaches the founder, labelled UNINTERPRETED by
         # `deliver/card_source.classify`. Fewer cards must come from merging, never from dropping.
         "citations, situation_id) "
         "values (:id,:o,:pack,:packv,:r,:rv,:lv,:n,:s,cast(:si as jsonb),:rc,cast(:ev as jsonb),"
-        ":play,:et,:cfg,:run,:cand,:dhash,:exp,1,:rev,:dnc,cast(:unc as jsonb),:owd,"
+        ":play,:et,:cfg,:run,:cand,:dhash,:exp,1,:rev,:dnc,cast(:unc as jsonb),:owd,:lane,:lreason,"
         ":cap,:capv,:caprev,cast(:rej as jsonb),cast(:cit as jsonb),:sit) "
         "on conflict (org_id,pack_id,pack_version,rule_id,subject_node_id) "
         "where status='open' do nothing returning signal_id"), {
@@ -368,6 +373,11 @@ def _emit_capability_signal(conn, *, org_id: str, node_id: str, package, executi
             "dnc": decision.do_nothing_consequence,
             "unc": json.dumps(list(decision.uncertainty)),
             "owd": decision.outcome_window_days,
+            # Carried, not re-derived. Re-routing here from the projected columns could disagree with
+            # the audited decision — which is the same failure `score` and `reason_code` above are
+            # commented against.
+            "lane": (decision.output_lane.value if decision.output_lane is not None else None),
+            "lreason": decision.lane_reason,
             "cap": decision.capability_id, "capv": decision.capability_version,
             "caprev": review_state,
             # WHAT WAS CONSIDERED AND REJECTED, which the compiled lane has never written. The
@@ -640,6 +650,17 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
     facts_by_node = _bulk_load_facts(store, org_id)
     obs_by_node = _bulk_load_obs(store, org_id)
     counts: Counter = Counter()
+    # ⛔ PLAIN DICTS, BESIDE THE COUNTER, NOT INSIDE IT. `counts` is a `Counter` and every other
+    # value in it is an int; a mapping stored among them makes `most_common()` and `Counter.__add__`
+    # raise on a type comparison the moment somebody reaches for either. The result is flattened
+    # with `dict(counts)` at the end, so these merge in there instead.
+    #
+    # ⛔ AND THEY ARE ALWAYS PRESENT, EVEN EMPTY. A key that appears only when it fires is a key
+    # nobody knows exists — `deliver/pipeline` prints its zeros for the same reason. An absent
+    # `no_route_by_reason` reads as "this build does not measure that"; an empty one reads as
+    # "nothing was refused", which is the fact.
+    no_route_by_reason: dict[str, int] = {}
+    no_route_by_type: dict[str, int] = {}
     # `registry` is injectable for the same reason `run()` takes one: `make_registry()` resolves
     # its URL from global settings, so a caller holding a DIFFERENT store (a test on a scratch
     # Postgres, a one-off script against another tenant's database) would silently resolve the
@@ -1224,8 +1245,28 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                     counts["reason_error"] += 1
                     logger.exception("domain-compiler shadow: reasoning for %s failed",
                                      row["situation_id"])
-            except NoExpertiseRoute:
+            except NoExpertiseRoute as exc:
+                # ⛔ THE FLAT TOTAL IS UNCHANGED, AND DELIBERATELY SO.
+                # `tests/reason/test_the_cutover_is_declared_before_it_happens.py` asserts on
+                # `"no_route": 0` and scripts read the same key. Replacing a counter to improve it
+                # is how a measurement wave breaks the gate that was watching it.
                 counts["no_route"] += 1
+                # ⛔ AND NOW IT HAS ITS DIMENSIONS. "Twelve situations found no route" is one type
+                # twelve times or twelve types once — opposite problems, opposite fixes, and the
+                # same number. This layer's own rule, written in L1: *a count without its dimension
+                # is not a measurement.*
+                #
+                # READ OFF THE EXCEPTION, NEVER OFF ITS MESSAGE. `NoExpertiseRoute` carries a
+                # validated `reason` from a closed set of four; until it did, the only classifier
+                # in the codebase (`scripts/corpus_route_probe.py`) told them apart with three
+                # substring tests and an `else`, and reported `domain_not_activated` — an
+                # operations fact — as `no_route_type`, an authoring gap.
+                no_route_by_reason[exc.reason] = no_route_by_reason.get(exc.reason, 0) + 1
+                # `None` is kept as a key rather than dropped: a refusal that could not name its
+                # type is still a refusal, and a slice this pass could not dimension must be
+                # visible as that rather than absent from the total.
+                _type = exc.situation_type if exc.situation_type is not None else "unknown"
+                no_route_by_type[_type] = no_route_by_type.get(_type, 0) + 1
             except SituationContextIncomplete:
                 counts["incomplete"] += 1
             except SituationContextConflict:
@@ -1261,6 +1302,21 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                 conn.rollback()
 
     result = dict(counts)
+    result["no_route_by_reason"] = dict(sorted(no_route_by_reason.items()))
+    result["no_route_by_type"] = dict(sorted(no_route_by_type.items()))
+    # ⛔ THE RECEIPT: two breakdowns of one total, COMPARED. Two numbers that are supposed to agree
+    # and are never compared eventually disagree — the argument `deliver/lane_recall` makes about
+    # the per-lane tallies, and the reason a total that is never checked is a claim rather than a
+    # measurement. Recorded rather than raised: a bookkeeping disagreement must never abort a pass
+    # it is only observing, which is the rule `BundleStore.record_call` already states — *"a receipt
+    # that can abort the thing it is a receipt for turns an accounting failure into a product
+    # failure."*
+    _flat = int(counts.get("no_route", 0))
+    if sum(no_route_by_reason.values()) != _flat or sum(no_route_by_type.values()) != _flat:
+        result["no_route_unbalanced"] = 1
+        logger.warning("domain-compiler org=%s: no_route=%d but by_reason=%d and by_type=%d — a "
+                       "refusal was counted in the total and not in a breakdown", org_id, _flat,
+                       sum(no_route_by_reason.values()), sum(no_route_by_type.values()))
     logger.info("domain-compiler %s org=%s domains=%s %s",
                 "LIVE" if live else ("PILOT" if live_domains else "shadow"),
                 org_id, sorted(live_domains) or "-", result)
