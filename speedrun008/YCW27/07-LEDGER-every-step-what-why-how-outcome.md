@@ -413,5 +413,7 @@ class names. The artefact was indistinguishable from a real finding until the ru
 ### State after the re-check
 
     30 receipts, fleet-wide   22 PASS · 7 FAIL · 1 ERROR     (was 21/7/1 of 29)
-    remaining Plane D gap     23 unreviewed situations — the designed refusal; gating is Rohit's
+    remaining Plane D gap     23 DRAFT situations, and they are TWO states: 18 draft+unreviewed
+                              (need a reader) and 5 draft+APPROVED (need one word). Corrected
+                              2026-10-01 — see 14-PLANE-D-AND-R; 'unreviewed' was wrong for 5
     remaining Plane R gap     core.signal_composition, 0 runs — ALARM A2, roster activation

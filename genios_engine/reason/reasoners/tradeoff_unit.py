@@ -106,6 +106,17 @@ _AXES: tuple[tuple[str, str, str], ...] = (
     ("cost_vs_benefit", "benefit_source", "cost_source"),
 )
 
+#: The same three axes, public, because a READER outside this module legitimately needs them and
+#: the alternative is a second list that must agree with this one. `scripts/l2_tradeoff_axes.py`
+#: imports this: `unit_health`'s header records why the fix for a lost axis is a reader and not a
+#: new field — *"`axis_count` is ALREADY published on every run and read by nobody."* An alias
+#: rather than a rename so nothing inside this module changes.
+AXES: tuple[tuple[str, str, str], ...] = _AXES
+
+#: Axis name -> the two source keys it compares. What a reader needs to say WHICH side was missing.
+AXIS_SIDES: Mapping[str, tuple[str, str]] = {
+    axis: (first, second) for axis, first, second in _AXES}
+
 
 def _absent_side(view: UnitView, key: str) -> str | None:
     """`"core.impact.impact_bp"` when that side could not be read, else `None`.

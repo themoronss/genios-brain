@@ -144,6 +144,26 @@ def test_a_draft_situation_is_reported_because_its_card_cannot_instruct(catalog)
     Measured 2026-09-24: **24 of 69**, and 16 of those are Customer Support's 20. A one-word edit
     per file, by an author. The report exists so somebody knows which twenty-four.
 
+    ⛔ **AND IT FELL TO 20 ON 2026-10-01 — three at once, and this message asked to be told so.**
+    `admin.sit.campaign_awaiting_reply`, `admin.sit.condition_awaiting_review` and
+    `admin.sit.organization_gone_quiet` went `draft -> stable` with `review_status: approved` and
+    `reviewed_by: rohit`. He was shown each one's description, what it fires on, the production row
+    count behind every predicate and how many times its L2 type has formed, and accepted all three.
+
+    ⛔ **The four below were checked against `pending_l2_types` BEFORE the flip, and none of the
+    three is in it.** That check is the whole safety of this edit: this docstring says four of
+    Admin's seven must not be flipped, and the registry names them —
+    `asset_in_custody`, `employee_lifecycle_event`, `goal_behind_pace`, `obligation_falls_due`,
+    `spend_against_a_commitment`. Admin's remaining draft count is therefore **4**, and
+    `_BASELINE_ADMIN_DRAFTS` moved 7 -> 4 with it.
+
+    ⛔ **A retraction that belongs here too.** An earlier pass this session called those declared
+    situations *"reviewed and nobody flipped the word"* and put five of them on the ALARMS table as
+    one-word edits waiting on a human. **That was wrong** — this docstring had already said they
+    must not be flipped, and one of them records that flipping it *"would cost a false assurance"*.
+    The validator check built on that false reading now reads the registry and reports zero; see
+    `tests/packs/test_a_review_that_was_never_flipped.py`.
+
     ⛔ **IT FELL TO 23 ON 2026-09-26, AND THIS MESSAGE ASKED TO BE TOLD SO.**
     `admin.sit.document_under_control` went `draft -> stable` and was re-stamped with
     `Domain Expertise/_tools/admit.py --accept`. It was the one draft situation whose block was a
@@ -166,7 +186,7 @@ def test_a_draft_situation_is_reported_because_its_card_cannot_instruct(catalog)
     total = sum(r.situations for r in health.values())
     unreviewed = sum(r.situations_unreviewed for r in health.values())
     assert total == 69, f"the corpus has {total} authored situations, not 69 — update the plan"
-    assert unreviewed == 23, (
+    assert unreviewed == 20, (
         f"{unreviewed} authored situations cannot instruct, not 23. If this FELL, say so in the "
         f"findings — it is the cheapest quality win in Layer 2 and it is authoring, not code")
     assert health["customer_support"].situations_unreviewed == 16, (
@@ -209,4 +229,4 @@ def test_the_situation_rule_is_read_and_not_reimplemented(catalog):
 #: `stable` and re-stamped, its binding having been verified rather than assumed. Of the seven that
 #: remain, four are declared `pending_l2_types` and must stay draft, and three are awaiting a named
 #: human reviewer. See the docstring above.
-_BASELINE_ADMIN_DRAFTS = 7
+_BASELINE_ADMIN_DRAFTS = 4

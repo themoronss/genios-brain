@@ -82,7 +82,9 @@ re-measured by hand here.
 ### What remains true, and it is the honest remaining gap
 
     situations_unreviewed     Customer Support 16 of 20 · Admin 7 of 34 · Sales 0 of 15
-    total                     23 unreviewed situations of 69
+    total                     23 DRAFT situations of 69
+    ⛔ corrected 2026-10-01    of those 23, only 18 are unreviewed; 5 are approved by harsh
+                              and wait on one word. See 14-PLANE-D-AND-R PART 1.
 
 A `draft` situation's cards **cannot instruct** — `capability_resolver.situation_admission_reason`
 enforces that, and all 23 are flagged. So this is the designed refusal, not a leak. Whether `draft`

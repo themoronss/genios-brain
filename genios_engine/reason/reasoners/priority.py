@@ -224,11 +224,34 @@ class PriorityReasoner(ReasoningUnit):
     #: apart, and the only way to tell is for the second kind to say so. *Every silent lane carries a
     #: reason and a mover* — this is the reason; the mover is whoever gives this unit a default.
     #:
-    #: ⛔ AND IT RECORDS A REAL RISK THAT IS NOT FIXED HERE. The read is `or ""`, so a manifest that
-    #: FORGETS `source_reasoner` yields an empty source string rather than a refusal — the unit then
-    #: reads a prior metric from `""`, gets the sentinel, and is silent. Safe today because every
-    #: manifest sets it. Changing `or ""` to a refusal changes behaviour and is its own unit; naming
-    #: it here is what makes it findable.
+    #: ⛔ A RISK THIS COMMENT USED TO CLAIM, RETIRED 2026-10-01 — AND THE RETRACTION IS THE POINT.
+    #: It read: *"The read is `or ""`, so a manifest that FORGETS `source_reasoner` yields an empty
+    #: source string rather than a refusal — the unit then reads a prior metric from `""`, gets the
+    #: sentinel, and is silent. Safe today because every manifest sets it. Changing `or ""` to a
+    #: refusal changes behaviour and is its own unit."* It was carried on STATUS.md as ALARM A6,
+    #: queued as work. **Measured, all three of its claims are wrong:**
+    #:
+    #:   1. *"every manifest sets it"* — the one shipped built-in capability schedules
+    #:      `core.confidence` with the key ABSENT. It is not set, and that is correct.
+    #:      (The capability is named in `tests/reason/test_an_absent_source_is_a_branch_not_a_fault`,
+    #:      not here: `test_units_domain_free` ratchets domain vocabulary in this file and a
+    #:      retraction is no reason to spend the budget.)
+    #:   2. *"reads a prior metric from `""`"* — it does not. `_declared_source` is
+    #:      `if not source: return None`, before any lookup; `confidence.py` guards identically.
+    #:      No empty-string read exists in either unit.
+    #:   3. ⛔ *"change `or ""` to a refusal"* — **that fix would be a defect.** Falsy here is the
+    #:      BRANCH SELECTOR: absent/empty means "no declared source, use the derived path", which
+    #:      `_source_reasoner`'s own docstring states and `confidence.py:27` calls *"two branches,
+    #:      one output"*. A refusal would break the designed path for every capability that
+    #:      legitimately declares no source.
+    #:
+    #: What is genuinely true is narrower and is NOT a fault today: a key deliberately omitted and a
+    #: key forgotten are indistinguishable. It costs nothing because **neither unit requires a
+    #: source** — both have a designed derived path — so a forgotten key always lands somewhere
+    #: real. It would start costing something the day a unit is written that cannot work without
+    #: one, and that unit should declare the requirement rather than this accessor refusing.
+    #: `tests/reason/test_an_absent_source_is_a_branch_not_a_fault.py` pins the behaviour so the
+    #: retired claim cannot be acted on later.
     source_units: tuple[str, ...] = ()
     # ORDER IS THE PRECEDENCE RULE. `evaluate_metrics` keeps the LAST override observation it
     # sees, so the authored priority is offered first and a source that ruled at RUNTIME overrides

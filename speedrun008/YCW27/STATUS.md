@@ -624,7 +624,9 @@ The source was the Atlas's own matrix — `Rohit_Updates/Secret War Updates/08-C
 | corpus | *"**zero** reviewed or accepted"* | **155 capabilities, every one admitted, 0 hollow** |
 
 Measured with `corpus_health()` — the function the code's own comment points at, not a count of
-mine. **Remaining honest gap: 23 unreviewed situations** (Support 16/20, Admin 7/34, Sales 0/15).
+mine. **Remaining honest gap: 23 DRAFT situations** (Support 16/20, Admin 7/34, Sales 0/15).
+⛔ *Corrected 2026-10-01: calling all 23 "unreviewed" was wrong. **Five are reviewed and
+approved by harsh** and wait only on `identity.status: draft -> stable`. See `14-PLANE-D-AND-R`.*
 A `draft` situation's cards **cannot instruct** and all 23 are flagged, so this is the designed
 refusal. ⛔ Whether `draft` should also **gate** is still yours. *(Two earlier records say 24; it is
 23 today.)*
@@ -670,3 +672,185 @@ time in this programme that reading the thing a name points at prevented a false
 `deal.status` 3 of 293 → `core.relationship` 0 completions → `core.impact` 100% silent →
 `cost_vs_benefit` 0 fires in 1,200 rows. **Three of the four links are now declared facts rather
 than prose.** The connector is **Harsh, H4**.
+
+---
+---
+
+# 2026-10-01 · PLANE D AND PLANE R, in the order you asked
+
+Full audit: `layer-2-reasoning/14-PLANE-D-AND-R-the-word-that-was-never-flipped.md`.
+
+## ⛔ PLANE D · five of your "23 unreviewed" are already reviewed
+
+    CAPABILITIES   155   stable + approved  155          nothing waiting
+    SITUATIONS      69   stable + approved   46   live
+                         draft  + unreviewed 18   need a READER
+                         draft  + APPROVED    5   ⛔ need one WORD
+
+All 23 are refused for one reason — `identity_status_draft` — and **not one for missing content**.
+Five of them carry `reviewed_by: harsh`, `review_status: approved`, and
+**`reviewed_at == last_updated`**, so the approval covers the bytes in the file right now:
+
+    admin.sit.asset_in_custody · admin.sit.employee_lifecycle_event
+    admin.sit.obligation_falls_due · admin.sit.spend_against_a_commitment
+    customer_support.sit.issue_under_diagnosis
+
+The gate wants **both** `identity.status == "stable"` **and** `review_status == "approved"`. These
+have the second. **The review is done; nobody flipped the word** — and commit `90f8edf0` in this
+repo is titled, exactly, *"Six situations were finished and nobody flipped the word."* Six then,
+five now, nothing counting in between.
+
+**So "23 unreviewed" was a count without its dimension** — my own first rule, broken on my own
+status page. It bundled 18 reviews with 5 one-word edits. Corrected in every document and in memory.
+
+### ⛔ ALARM D-A2 · five one-word edits — **yours or Harsh's**
+`identity.status: draft -> stable` on those five files. It takes them from *cannot instruct* to
+*live*, which is a production-authority change, so I did **not** do it: `identity.status` is the
+authoring lifecycle, and flipping it on the strength of `review_status` is the forgery the two-gate
+design exists to prevent. `Domain Expertise/_tools/validate.py` now **reports it on every run** with
+the reviewer and mover named, and a test pins the set at five — a sixth turns it red.
+
+## PLANE R · ALARM A6 is retired — it was asking for a defect
+
+A6 sat on the table above as *"mine, on request"*. Measured, **all three of its claims are false**:
+
+| | A6 claimed | Measured |
+|---|---|---|
+| 1 | *"every manifest sets `source_reasoner`"* | ⛔ `sales.deal_cooling` schedules `core.confidence` with the key **absent** — and that is correct |
+| 2 | *"the unit reads a prior metric from `""`"* | ⛔ it does not. Both units are `if not source: return None`, **before** any lookup |
+| 3 | *"change `or """` to a refusal"* | ⛔ **that would have broken the designed branch.** Falsy is the branch selector: *"no declared source, use the derived path"* |
+
+Retracted in place in `priority.py` with the measurement, and 6 tests pin the behaviour so the
+retired claim cannot be acted on later. **A6 comes off the table — not done, not deferred, wrong.**
+
+### The reader for the axis that never fired
+
+    axis_count = 0       16 runs    four zeros, no findings
+    axis_count = 1      929 runs   47%
+    axis_count = 2    1,028 runs   52%
+    axis_count = 3        0 runs   ⛔ a THREE-axis comparator that has never compared three
+
+    speed_vs_certainty  1,897 firings  96%      risk_vs_reward  1,088  55%
+    cost_vs_benefit         0 firings  ⛔ NEVER — needs core.impact.impact_bp (absent, declared,
+                                        mover Harsh) and core.cost.effort_bp (healthy, 1973/1973)
+
+`scripts/l2_tradeoff_axes.py`, read-only, 8 tests on its pure verdict rule. `axes_unavailable` has
+**0 occurrences in 1,973 rows** — every stored row predates the field, so it awaits exercise rather
+than having failed, and the probe says which.
+
+⛔ **The probe had two bugs of mine and both looked like findings**: it read the source key as the
+axis name (announcing a "6-axis comparator"), and it inferred absence from the declaration list,
+reporting the perfectly healthy `core.cost` as a cause. **A declaration list answers "is this
+absence declared". It never answers "is there an absence."** Both recorded, both now tested.
+
+## What is left for you, after this
+
+| | Item | Whose |
+|---|---|---|
+| 🔴 | **the push** — 5 commits ready, clean tree, fast-forward. The classifier blocks me; one line from you | **Rohit** |
+| 🔴 | `0186`–`0190` | **Harsh** · H1 |
+| 🟠 | **D-A2** · five `identity.status` flips | **you or Harsh** |
+| 🟠 | **18 situations to review** | **you or Harsh** |
+| 🟠 | `deal.status` writer — it is the single root under `cost_vs_benefit` | **Harsh** · H4 |
+| 🟡 | ALARM A2 roster activation (A5 ordering first) | **Rohit** |
+| ⚪ | ~~A6~~ | **retired — it was wrong** |
+
+---
+---
+
+# ⛔ 2026-10-01 · ALARM D-A2 IS RETRACTED — it was wrong, and the corpus had already said so
+
+**What I told you:** five situations carry `review_status: approved` with `identity.status: draft`,
+so *"the review is done and nobody flipped the word"* — five one-word edits waiting on you or
+Harsh. It went on the ALARMS table.
+
+**What is actually true.** All five are declared in their domain registry's `pending_l2_types`:
+
+    admin.sit.asset_in_custody · admin.sit.employee_lifecycle_event
+    admin.sit.obligation_falls_due · admin.sit.spend_against_a_commitment
+    customer_support.sit.issue_under_diagnosis
+
+`tests/packs/test_the_corpus_states_its_own_health.py` says it in its own words — they **MUST NOT
+be flipped** — and one of them records that flipping it *"would cost a false assurance"*. For those
+five, `draft` + `approved` is **not a half-state**: the content is approved and the lifecycle is
+held on purpose, because the L2 type the situation needs does not exist yet.
+
+> **A document in two states is not automatically in a half-state.** Check whether somebody
+> declared the combination before calling it an oversight.
+
+**What it cost, and what fixed it.** The validator check I shipped on that reading was crying wolf
+on five correct files. `review_done_but_not_flipped()` now takes a `protected` set **read from the
+domain's own registry**, and reports **zero**. Warnings 40 → 35.
+
+⛔ **And the first attempt at that fix was itself broken**: it read a name called `registry` that
+was a loop variable in scope holding `oid -> path`, so the exemption came back empty and the check
+kept reporting all five. A test now asserts the exemption is non-empty, because an exemption that
+silently becomes empty is indistinguishable from no fix.
+
+**Eighth time in this programme** that a state was called a defect before the declaration that
+created it was read.
+
+## ⛔ What this means for the three I DID flip
+
+It is why they were safe. `campaign_awaiting_reply`, `condition_awaiting_review` and
+`organization_gone_quiet` were checked against `pending_l2_types` **before** the flip —
+**zero overlap** — and each file records the check. Admin's drafts went 7 → 4, and the four that
+remain are four of the five declared-pending above.
+
+    situations that cannot instruct      23 -> 20
+    Admin drafts                          7 -> 4     (all four declared pending_l2_types)
+    validator "never flipped" warnings    5 -> 0
+
+### So the ALARMS table loses a row
+| | Was | Now |
+|---|---|---|
+| ~~🟠 **D-A2** · five `identity.status` flips, yours or Harsh's~~ | queued work | ⛔ **retracted — the five are correctly held. No action, by anybody.** |
+
+---
+---
+
+# 2026-10-01 · THE LIST — what is actually left, and whose it is
+
+⛔ **The table at line 745 is stale.** It lists the push (done, `3e36951b`), D-A2 (retracted — no
+action by anybody) and *"18 situations to review"* (collapsed to 3, all 3 accepted). This section
+replaces it. The log is append-only, so the old table stays where it is; this one is the live one.
+
+**Nothing below blocks anything else below.** All six layers and both planes are built, the suite
+is green at **14,585 passed / 0 failed**, and every remaining item is a deploy, a connector, a
+decision or one unit of mine.
+
+## MINE — 1 item
+
+| | Item | Why it is mine | Status |
+|---|---|---|---|
+| 1 | **readiness axis** — a 7th `ConfidenceVector` axis computed from `capture/coverage`'s readiness model | the only honest way to close Atlas cell **L2-07** (*"role/source-readiness completeness is not part of the blocking vector"*). Unblocked by your **A**. | ready to start — needs your go-ahead, because it **changes behaviour**: a 7th axis binds `overall_bp` through the weakest-axis law |
+
+## HARSH — 5 items, one of them breaking a write path
+
+| | Item | What it unblocks | Brief |
+|---|---|---|---|
+| H1 | 🔴 **apply migrations `0186`–`0190`** | ⛔ **`0190` — the next card write FAILS without it.** Never run in production. | `HANDOFF-HARSH.md` |
+| H2 | 🔴 **OCR stack** — `pytesseract`+`Pillow` in requirements **and** `tesseract-ocr` apt in the image. **Both together or neither works.** | **1,696 rows**: 872 attachments + 824 parked `NEEDS_REFETCH` (half the parked queue) | `HANDOFF-HARSH.md` |
+| H3 | 🟠 backfill window 60 → 365 days | history depth for every freshness axis | `HANDOFF-HARSH.md` |
+| H4 | 🟠 a **`deal.status` writer** | the single root under `cost_vs_benefit` — that axis has fired **0 times in 1,973 runs** | `HANDOFF-HARSH.md` |
+| H5 | 🟡 an **approval-workflow source** | `core.relationship`: 929 runs, **0 completions** | `HANDOFF-HARSH.md` |
+
+## ROHIT — 6 items
+
+| | Item | What it is | Blocking? |
+|---|---|---|---|
+| R1 | 🔴 **push `e6125684`** | 1 commit, clean tree, fast-forward. The classifier blocks me; one line from you. | no, but it is the record |
+| R2 | 🟠 **raise the Anthropic spend limit** | the API has refused **every** model call since 2026-09-25 11:09 UTC. Every production number in this programme is model-off. | nothing is blocked — but no LLM path can be measured until it is lifted |
+| R3 | 🟠 **roster activation** (ALARM A2) — ⛔ **ALARM A5's ordering FIRST**: schedule `core.impact` / `core.cost` / `core.opportunity` **before** `core.tradeoff` | `core.signal_composition` has **never run** — 0 runs, which is why `NeverCompleted` refuses `runs <= 0` at construction | no |
+| R4 | 🟡 **the 709 `low_relevance` parks** | terminal state, or narrow the receipt? 43% of the parked queue. Not a bug either way — a product call. | no |
+| R5 | 🟡 **three Atlas documentation edits** | from your **A**: the Atlas's axis list is wrong, not the code's. `frame_bp`/`causal_bp` have **0 references**; `authority_bp` means three different things in three places. | no |
+| R6 | 🟡 **Atlas cell L2-08**, and the **97 `draft` objects** gating question | both are "what should this mean", not "is this broken" | no |
+
+## NOT PENDING — do not re-open these
+
+| | Why |
+|---|---|
+| ~~ALARM D-A2~~ | **retracted.** The five are declared `pending_l2_types` and the repo's own test says they MUST NOT be flipped. No action, by anybody. |
+| ~~ALARM A6~~ | **retired.** All three of its claims were false, and its proposed fix would have broken a designed derived branch. |
+| ~~CA1~~ | retired · ~~**CA2**~~ built (`scripts/l2_tradeoff_axes.py`) · ~~**CA3**~~ measured: **zero code gap** in the parked queue |
+| ~~the 15 remaining Customer Support situations~~ | domain on hold. Only Admin is in scope. |

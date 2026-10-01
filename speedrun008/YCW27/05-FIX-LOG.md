@@ -1032,3 +1032,85 @@ ran"*; all but one had run thousands of times. The six supplementary units carry
 attribute — they are identified by `spec.reasoner_id` on an **instance** — so my id helper returned
 class names and nothing matched. The artefact was indistinguishable from a real finding until the
 run counts were read.
+
+---
+
+# G · 2026-10-01 · the word that was never flipped, and an alarm that asked for a defect
+
+## ⛔ Plane D · "23 unreviewed situations" was a count without its dimension
+
+Every document in this programme said it, including `STATUS.md` and the memory index. Measured with
+the product's own catalog:
+
+    CAPABILITIES  155   stable+approved 155                nothing waiting
+    SITUATIONS     69   stable+approved  46   draft+unreviewed 18   draft+APPROVED 5
+
+All 23 are refused for one reason, `identity_status_draft`, and **not one for missing content** — 18
+carry nine authored fields each. And five carry `reviewed_by: harsh`, `review_status: approved`,
+with **`reviewed_at == last_updated`**, so the approval covers the bytes now in the file.
+
+`situation_admission_reason` requires **both** `identity.status == "stable"` and
+`review_status == "approved"`. The five have the second. **The review is done; nobody flipped the
+word** — and commit `90f8edf0` in this repo is titled, exactly, *"Six situations were finished and
+nobody flipped the word."* Six found by hand then; five now; nothing counting in between.
+
+So one number bundled **18 reviews and 5 one-word edits** — two states, two movers. *A count
+without its dimension is not a measurement*: this programme's first rule, broken by its own status
+page. Corrected in three documents and two memory entries.
+
+`review_done_but_not_flipped()` in `Domain Expertise/_tools/validate.py`, pure, wired at the
+situations walk, 9 tests. ⛔ **It warns and does not flip.** `identity.status` is the authoring
+lifecycle; flipping it on the strength of `review_status` would be the forgery the two-gate design
+exists to prevent — the corpus's own words: *"an author flipping `stub: true -> false` in a text
+editor granted production authority."* And it reports a file **edited after its approval**
+separately, because that needs the opposite action: another review, never a flip.
+
+⛔ **My first corpus loader globbed `*/situations/*.yaml` and found nothing**, so the five-known-ones
+test passed empty until the vacuous-pass guard I had written beside it caught the lie. Replaced with
+the product's `ExpertBrainCatalog`: *a test that re-derives the corpus layout is a second
+implementation that can disagree with the first.*
+
+## ⛔ Plane R · ALARM A6 is retired, because it asked for a defect
+
+A6 sat on `STATUS.md` as queued work, *"mine, on request"*, sourced from a comment in `priority.py`.
+Measured, all three of its claims are wrong:
+
+1. *"every manifest sets `source_reasoner`"* — `sales.deal_cooling` schedules `core.confidence` with
+   the key **absent**, and that is correct. Both branches ship.
+2. *"the unit reads a prior metric from `\"\"`"* — it does not. `priority._declared_source` and
+   `confidence._bridged_confidence_bp` are both `if not source: return None`, **before** any lookup.
+3. ⛔ *"change `or \"\"` to a refusal"* — **that fix would have been the defect.** Falsy is the
+   BRANCH SELECTOR: *"no source declared, use the derived path"*, which `_source_reasoner`'s own
+   docstring states and `confidence.py:27` calls *"two branches, one output… the bridge is not a
+   fallback."* A refusal would break every capability that legitimately declares no source.
+
+Retracted in place with the measurement, and 6 tests pin the behaviour — one of them asserts the
+retraction text is still present, because **a retired claim deleted silently is a claim that comes
+back.** Sixth time this programme that reading the thing a comment names changed the answer.
+
+## The reader `unit_health` had already specified
+
+*"`axis_count` is ALREADY published on every run and read by nobody — so the fix is a reader, not a
+field."* `scripts/l2_tradeoff_axes.py`, read-only, over 1,973 completed `core.tradeoff` runs:
+
+    axis_count 0:16 · 1:929 · 2:1,028 · 3:ZERO — a three-axis comparator that never compared three
+    speed_vs_certainty 1,897 (96%) · risk_vs_reward 1,088 (55%) · cost_vs_benefit 0 ⛔ NEVER
+    cost_vs_benefit needs core.impact.impact_bp (absent, declared, Harsh) + core.cost.effort_bp (healthy)
+    axes_unavailable: 0 of 1,973 — every row predates the field; awaiting exercise, not failed
+
+The 16 all-zero runs do **not** make the silence receipt wrong: 0.8% against a 90% threshold —
+*"one silent completion out of a thousand is noise."* A share, not a count.
+
+### ⛔ Two bugs of mine in that probe, both indistinguishable from findings
+
+**It read `AXIS_SOURCES[*][0]` as the axis name.** It is the source KEY (`benefit_source`), so the
+probe announced *"a 6-axis comparator that has never compared 6"* and *"every axis has NEVER
+fired"*. Axis names now come from `tradeoff_unit.AXES`, exported for the purpose rather than retyped.
+
+**It inferred absence from the declaration list** and reported `core.cost` — which publishes
+`effort_bp` on 1,973 of 1,973 runs — as an undeclared cause.
+
+> **A declaration list answers "is this absence declared". It never answers "is there an absence."**
+
+Third artefact of that exact shape in one session. The rule is now `classify_lost_axes()`, pure,
+with 8 tests, each one a wrong verdict the probe really produced.

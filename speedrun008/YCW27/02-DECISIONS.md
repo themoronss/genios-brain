@@ -138,3 +138,47 @@ and it blocked by being enforceable in a test.
 That is the correction worth carrying forward: a decision that can be enforced by a test is the kind
 that blocks. A decision about what to call something can almost always be deferred, and deferring it
 made it cheaper rather than more expensive.
+
+---
+
+## ✅ 2026-10-01 · DECISION #1 IS CLOSED — option A, by Rohit
+
+**"A"** — keep the code's six axes; correct the Atlas. Measurement behind it:
+`09-DECISION-C-the-confidence-vector-axes.md`.
+
+| | |
+|---|---|
+| **Kept** | `evidence · freshness · consistency · identity · coverage · analytic`, each `int \| None`, with `overall_bp` **bounded by the weakest axis** and `composed_from` recording which axes went in |
+| **Why not the Atlas's six** | `frame_bp` and `causal_bp` have **0 references** in the engine, while `identity`, `consistency` and `analytic` are populated on **459 of 459** stored situations. Adopting the Atlas vocabulary would delete four computed axes for three that compute nothing |
+| **Why `authority` is not a free win** | it exists three times and means three things — `actor_authority_bp` (is the sender senior, L1), `graph_facts.authority_rank` (which source wins, 6,253 rows), `situation_resolution_claims.authority_bp` (how authoritative a resolution claim is, 529 rows). None is *situation readiness*, which is what L2-07 asks for. Composing them would produce a number that looks like authority and means nothing in particular |
+| **Code change** | **zero.** No migration, no rename, no field |
+
+### What the Atlas must now say — three edits, and they are documentation only
+
+1. **`temporal` → it is already there, called `freshness`.** Same axis, different word. Rename in the Atlas; the code keeps `freshness_bp`, which is what 459 rows are stored under.
+2. **Drop `frame` and `causal` from the vector,** or mark them explicitly as future axes with nothing claimed. Nothing in the engine computes either, so listing them as dimensions of a live vector overstates the product.
+3. **Add `consistency`, `identity` and `analytic`.** These are measured on every situation and the Atlas's A.4 table does not name them, so a reader cannot reconcile the card's six bars with the code's six columns.
+
+⛔ **The Atlas's substantive point survives this decision and is NOT closed by it.** Cell **L2-07**: *"role/source-readiness completeness is not part of the blocking vector."* That is true, it is not solved by any existing `authority_bp`, and it needs its own axis computed from `capture/coverage`'s readiness model. It is a **build** — a seventh axis binds `overall_bp` through the weakest-axis law, so some situations correctly become less confident — and therefore its own unit with its own crosscheck, after this decision rather than inside it.
+
+### ⛔ And a correction about which document was stale
+
+`00-CORRECTIONS-2026-10-01.md` in `Rohit_Updates/Secret War Updates/08-Cross-Layer-Synthesis/`
+audits the **Master Atlas-vs-Code Coverage Matrix, dated 2026-08-22**. It found 6 expired cells.
+
+**The Design Atlas v2 itself (29 Sep) is a different document and it is accurate.** Verified
+2026-10-01 against the tree:
+
+    vocabulary substrate fact paths     Atlas 141      measured 141   exact
+    packs/ files                        Atlas  34      measured  34   exact
+    reason/ files                        118            120           +2
+    executive/ files                      26             27           +1
+    feedback/ files                       12             13           +1
+    capture/ files                       154            157           +3
+    deliver/ files                        36             40           +4
+    context/ files                       118            123           +5
+    23 units = 17 core + 6 supplementary                              exact
+    Admin 59 capabilities · 34 situations · 7 draft                   exact
+
+Every delta is this programme's own work since 29 September. **Do not read the matrix's staleness
+as the Atlas's.** The six-week-old audit aged; the two-day-old architecture document did not.
