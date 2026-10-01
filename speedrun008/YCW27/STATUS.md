@@ -1379,3 +1379,90 @@ lines (it is **27 / 6,167**) and cited `api/routes.py:1150` (it is **1195**).
     receipts   32 · #31 RED at 3,582 · #32 RED at 410
     UNREACHED   5 · real product gaps 1
     remaining buildable:  U4 (F9 the 2056 date) · U5 (F10 ranking weights)
+
+---
+
+# 2026-10-01 · ✅ U4 DONE — ⛔ F9 RETRACTED, and its retraction found the real defect
+
+`layer-4-executive/STEP-08-DONE-a-baseline-is-a-statement-about-the-past.md` · 6 tests ·
+5 mutations · **suite 14,643 passed, 0 failed**
+
+## ⛔ F9 was wrong, and the fix it proposed would have destroyed correct data
+
+**F9 said:** *"`source_events.occurred_at` max = 2056-04-20 … one row shaped like a parser escape.
+One row is a finding; the absence of a bound at ingest is the defect."*
+
+    future-dated rows        37, not one
+    source / object_type     gcal / calendar_event — every single one
+    the far ones             2051-04-20 · 2052 · 2053 · 2054 · 2055 · 2056-04-20
+    captured_at              all 2026-09-19 06:15:11, within milliseconds
+    captured_at in future    0
+    outcome                  'emitted' on all 37
+
+⛔ **An annual recurring calendar event — a birthday.** `occurred_at` for a calendar event is
+**when the meeting happens**, so a future value is *correct*. **A bound at ingest would have
+discarded every future meeting**, which is exactly what a calendar connector must not do.
+
+> **Seventeenth near-miss, and the most dangerous.** The others would have produced a wrong
+> report. This one would have produced a wrong **product**.
+
+## ⛔ And the retraction found the real defect — three people lost their cold-start
+
+Three of the four reads that order by this column already bound it (`occurred_at <= :until`);
+`capture/landing/unread.py` filters on `captured_at`; receipt #4 uses `captured_at` and is immune.
+⛔ **`reason/baselines.build_baselines` was the one with no bound.**
+
+**And the cost is not magnitude.** `anisha@vaultex.in` has 697 events of which 30 are future, and
+her median gap is **identical** either way — 667 real gaps drown 30. **0 of 222 baselines changed
+value.**
+
+The cost is at the `MIN_SAMPLES` boundary, where one row is decisive:
+
+    person                 all  past  future   computed(all)  computed(past)
+    aditi@noveum.ai          4     3       1       True          False      ⛔ FLIPS
+    asmit@supymem.com        4     3       1       True          False      ⛔ FLIPS
+    tejas@tryclean.ai        4     3       1       True          False      ⛔ FLIPS
+
+Three real events is below `MIN_SAMPLES` and must be `cold_start` — *"we do not know this person's
+rhythm yet"*. Four crosses it, so each was given a **computed** `reply_cadence` from a gap set
+ending in a future year. Downstream, *"this relationship is going cold"* was judged against that
+instead of the honest default.
+
+⛔ **My first measurement reported ZERO** — it compared medians and skipped every person whose
+past-only sample fell below `MIN_SAMPLES`, which is **exactly the affected population**.
+
+> ⛔ **A statistic can be unchanged while the verdict flips.** 0 of 222 medians moved; 3 of 222
+> people stopped being cold-start.
+
+## The fix — at the read, where its three siblings already put it
+
+`and occurred_at <= :until` with `until = eval_time`. ⛔ **`eval_time`, not `now()`** — it is
+already the function's parameter, so a replay of a September sweep uses September's cutoff. **No
+new concept**: an omission closed, and `baselines.py` made consistent with three reads that already
+did this.
+
+## ⛔ Two of my own mistakes — one invalidated a mutation result
+
+**1 · an over-broad assertion**, caught by my own test: it asserted *no `now()` anywhere* in
+`build_baselines`'s SQL and failed, because the function also writes `computed_at=now()` — which is
+**correct**, a row timestamp rather than a cutoff. Narrowed to the one read.
+
+**2 · ⛔ a stale `.pyc` invalidated a mutation run.** M3 wrote `MIN_SAMPLES = 2`; the restore copied
+the source back but Python served **cached bytecode**, so the next mutation and the restore check
+both ran against the mutated value. The symptom was `grep` showing `3` in a file whose import
+returned `2`.
+
+> ⛔ **A mutation harness that restores by copying a file must invalidate the bytecode cache, or a
+> later mutation reads an earlier one's compiled output.** M4 and M5 were re-run clean; the first
+> results were discarded rather than reported.
+
+## And what this unit deliberately did NOT build
+
+⛔ A receipt for "unbounded reads over `occurred_at`" — **the scope is wrong**: most
+`order by … occurred_at` hits in the engine are over **`graph_facts`**, a different column where
+the question does not apply. **Eighteenth near-miss, caught by measuring the scope before writing
+the guard.** The three-sibling consistency test is the narrow version that is actually true.
+
+    receipts   32 · #31 RED at 3,582 · #32 RED at 410
+    UNREACHED   5 · real product gaps 1
+    remaining buildable:  U5 (F10 — 708 outputs with no `ranking_weights_version`)

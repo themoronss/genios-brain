@@ -132,11 +132,68 @@ valid_until, created_at`. `assignment.REPORTS_TO = "reports_to"` is a **value of
 `org_seats.manager_seat_id` for the standing line, or file a dated `reports_to` responsibility"*.
 Only the prose was imprecise, in two documents, and this is the correction.
 
-## F9 · ⛔ `source_events.occurred_at` max = **2056-04-20**
+## F9 · ⛔⛔ RETRACTED — and the proposed fix would have destroyed correct data
 
-A date **30 years in the future** in a production column. Every freshness axis, every window and
-every "most recent" read over that table is wrong for that row. ⛔ **One row is a finding; the
-absence of a bound at ingest is the defect.** L1, its own unit.
+**What I wrote:** *"`source_events.occurred_at` max = 2056-04-20. A date 30 years in the future in
+a production column … It is one row shaped like a parser escape. ⛔ One row is a finding; the
+absence of a bound at ingest is the defect."*
+
+**What is actually true, measured 2026-10-01:**
+
+    future-dated rows        37, not one
+    source / object_type     gcal / calendar_event — every single one
+    the far ones             2051-04-20 · 2052-04-20 · 2053-04-20 · 2054 · 2055 · 2056
+    captured_at              all 2026-09-19 06:15:11, within milliseconds of each other
+    captured_at in future    0
+    outcome                  'emitted' on all 37 — already processed, none stuck
+
+⛔ **An annual recurring calendar event, expanded into yearly instances.** `occurred_at` for a
+calendar event is **when the meeting happens**, so a future value is *correct*. **A bound at ingest
+would have truncated or rejected legitimate calendar data** — precisely what a calendar connector
+must not do.
+
+**Seventeenth time in this programme a state was called a defect before it was understood, and the
+most dangerous one yet: the "fix" was a data-destroying change to correct behaviour.**
+
+⛔ **And every reader is already bounded.** Three of the four reads that order by this column carry
+`occurred_at <= :until` — `capture/esqe/baseline_reader._HISTORY_SQL`,
+`context/correlation_timeline._CLAIMS_SQL`, `context/correlation_dependency._CLAIMS_SQL`. The
+fourth, `capture/landing/unread.py`, filters on `captured_at` (zero future rows) and its queue is
+empty. Receipt #4 *"the tenant is still being fed"* uses `captured_at`, not `occurred_at`, and is
+immune by construction.
+
+## ⛔ F9b · THE REAL DEFECT THE RETRACTION FOUND — three people lost their cold-start
+
+`reason/baselines.build_baselines` was the **one** read over this column with **no bound**.
+
+⛔ **And the cost is not what it looks like.** The obvious worry is magnitude — a 30-year gap
+wrecking a median. **Measured: it does not.** `anisha@vaultex.in` has 697 events of which 30 are
+future, and her median gap is identical either way, because 667 real gaps drown them.
+**Zero of 222 baselines changed value.**
+
+The cost is at the `MIN_SAMPLES` boundary:
+
+    person                 all  past  future   computed(all)  computed(past)
+    aditi@noveum.ai          4     3       1       True          False      ⛔ FLIPS
+    asmit@supymem.com        4     3       1       True          False      ⛔ FLIPS
+    tejas@tryclean.ai        4     3       1       True          False      ⛔ FLIPS
+
+Three real events is below `MIN_SAMPLES` and must be `cold_start` — *"we do not know this person's
+rhythm yet"*. Four crosses it, so each of the three was given a **computed** `reply_cadence` from a
+gap set ending in a future year, and `cold_start` stopped being true about them. Downstream,
+*"this relationship is going cold"* was judged against that number instead of the honest default.
+
+⛔ **My first measurement missed this entirely.** It compared medians and skipped every person
+whose past-only sample fell below `MIN_SAMPLES` — **exactly the affected population**. A comparison
+that skips the cases where the answer changes KIND rather than VALUE reports zero and means
+nothing.
+
+> ⛔ **A statistic can be unchanged while the verdict flips.** 0 of 222 medians moved; 3 of 222
+> people stopped being cold-start.
+
+**Fixed** at the read, not at ingest: `occurred_at <= :until` with `until = eval_time`, which is
+what its three siblings already did. See
+[`STEP-08`](STEP-08-DONE-a-baseline-is-a-statement-about-the-past.md).
 
 ## F10 · 708 outputs carry no `ranking_weights_version`
 

@@ -45,6 +45,7 @@ and a clock attached.**
 | 5 | [⛔ The receipt that says the product stopped](STEP-05-DONE-the-receipt-that-says-the-product-stopped.md) | ✅ **DONE** · **U1** · ⛔ it goes **RED**, and that is the success condition | 16 |
 | 6 | [⛔ 410 approvals nobody can attribute](STEP-06-DONE-410-approvals-nobody-can-attribute.md) | ✅ **DONE** · **U2** · ⛔ **the plan for this unit was WRONG and the measurement corrected it** | 10 |
 | 7 | [A reminder names the step it waits on](STEP-07-DONE-a-reminder-names-the-step-it-waits-on.md) | ✅ **DONE** · **U3** · ⛔ **UNREACHED 6 → 5** · the first tests `blocking_action` ever had | 11 |
+| 8 | [A baseline is a statement about the past](STEP-08-DONE-a-baseline-is-a-statement-about-the-past.md) | ✅ **DONE** · **U4** · ⛔ **F9 RETRACTED** — the fix would have destroyed correct calendar data; its retraction found the real defect | 6 |
 
 ## ⛔ What is planned next — six units, four buildable
 
@@ -54,7 +55,7 @@ and a clock attached.**
 | ~~**U1**~~ | ✅ **DONE** — receipt **#31**, *"the current reasoning era selects, not only defers"*. 16 tests · 5 mutations · ⛔ **RED at 3,582, correctly**. See [STEP-05](STEP-05-DONE-the-receipt-that-says-the-product-stopped.md) |
 | ~~**U2**~~ | ✅ **DONE as receipt #32**, ⛔ **not as wiring.** Measured: 410 of 794 actions need sign-off against **zero** authority rules, and neither table has an approver column. The wiring is blocked on H1 *and* on the org publishing a rule; the plan's instruction to delete the `unreached` entry would have deleted the only record of why. See [STEP-06](STEP-06-DONE-410-approvals-nobody-can-attribute.md) |
 | ~~**U3**~~ | ✅ **DONE.** ⛔ The defect was worse than described: `reminder_facts` named `actions[0]` with **no completion filter**, and that value reached a Slack message. Latent — 0 of 794 actions completed — and it fires on the first completion. **UNREACHED 6 → 5.** See [STEP-07](STEP-07-DONE-a-reminder-names-the-step-it-waits-on.md) |
-| **U4** | **F-4** ⛔ `source_events.occurred_at` max = **2056-04-20** | buildable · L1 |
+| ~~**U4**~~ | ✅ **DONE, and F9 is RETRACTED.** The 37 future rows are a **recurring calendar event** and are correct; bounding at ingest would have discarded every future meeting. ⛔ The real defect was one layer over: `reason/baselines.py` was the only read over that column with **no bound**, and 3 people crossed `MIN_SAMPLES` on one calendar instance each, losing their `cold_start`. See [STEP-08](STEP-08-DONE-a-baseline-is-a-statement-about-the-past.md) |
 | **U5** | **F-5** 708 outputs carry no `ranking_weights_version` | buildable · L2 |
 | **U6** | **G3** brief push + **G4** preventive push | ⛔ **blocked on a product number** |
 
