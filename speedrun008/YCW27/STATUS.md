@@ -854,3 +854,86 @@ decision or one unit of mine.
 | ~~ALARM A6~~ | **retired.** All three of its claims were false, and its proposed fix would have broken a designed derived branch. |
 | ~~CA1~~ | retired · ~~**CA2**~~ built (`scripts/l2_tradeoff_axes.py`) · ~~**CA3**~~ measured: **zero code gap** in the parked queue |
 | ~~the 15 remaining Customer Support situations~~ | domain on hold. Only Admin is in scope. |
+
+---
+---
+
+# 2026-10-01 · THE READINESS AXIS — audited, and U1 + U2 BUILT
+
+Atlas cell **L2-07** — *"role/source-readiness completeness is not part of the blocking vector"*.
+Unblocked by decision #1 = **A**. Audit and plan:
+`layer-2-reasoning/16-AUDIT-AND-PLAN-the-readiness-axis.md`.
+
+## The cell is real, and it has a number
+
+`coverage_bp` — the axis that SOUNDS like readiness — is not readiness. It reads
+`context_situations.coverage`, written by `situations.coverage_score(present_fields, expected)`:
+**how many of a situation's own expected FIELDS are known.** Source readiness is computed in
+`capture/coverage/model.compute_coverage`, enters L1's **four**-component signal vector at
+`capture/esqe/publisher.py:415` as `10000 if coverage_ready else 0`, and **stops there.**
+
+    source_coverage      admin FALSE x3 orgs · sales FALSE x3 · support FALSE x3 · fundraising TRUE x3
+                         fresh in all three orgs: {calendar, communication}
+                         ⛔ `finance` has NEVER been connected -> admin has never been ready
+    context_situations   admin 310 · support 73 · sales 61 · fundraising 11 · general 4   (459)
+                         103 of the 459 carry coverage = -1, and ALL 103 are admin's
+
+**Admin is the only activated domain, it is 67% of every stored situation, it has never been
+coverage-ready, and the blocking vector could not see that.**
+
+## What was built
+
+| | Unit | State |
+|---|---|---|
+| **U1** | `situations.readiness_score(required, freshness)` — pure, keyword-only, no clock, no connection. Empty `required` returns `COVERAGE_UNKNOWN`, **never 0**. Admin = 50 with `['finance (not connected)']`. | ✅ **DONE** · 8 tests, 3 mutations proved |
+| **U2** | the 7th axis on `contracts/situation.ConfidenceVector` + `situations.Confidence`, **declared and NOT composed** | ✅ **DONE** · 6 tests, mutation proved |
+| **U3** | `0191_situation_readiness.sql` + the writer + a 31st receipt | ⛔ **BLOCKED on Harsh's H1** — `0186`–`0190` have never run |
+| **U4** | whether readiness should COMPOSE | ⛔ **blocked on U3, and it is Rohit's call** |
+
+### ⛔ `overall` did not move, and that is the unit's whole promise
+
+`readiness` is **REPORTED, not composed** — exactly as `coverage` and `analytic` already are.
+Admin scores 1-of-2, so composing it would cap `overall_bp` at 5000 on **all 310 admin
+situations** through the weakest-axis law. That is two thirds of the corpus re-scored by a line in
+a scorer, it is a product decision about what the product should refuse to say, and it is not
+answerable before the axis has been stored for a full sweep.
+
+    score_situation(... no readiness row ...)      overall=100  readiness=-1  known=False
+    score_situation(... admin's real row ...)      overall=100  readiness=50  missing=['finance (not connected)']
+                                                   ^^^^^^^^^^^ identical
+
+### ⛔ The 5000 problem, and why the axis returns a tuple
+
+Admin's honest readiness is 1-of-2 = 50 = **5000 basis points** — the forbidden neutral default
+(`reason/decision_maker.py:181`: *"Never substitute 5000."*). A **measured** 5000 is legitimate;
+a **substituted** one is the bug; and on a stored column six months later the two are
+indistinguishable by inspection. So the missing list travels with the number and U3 stores it.
+`ConfidenceVector.composed_from`'s discipline, applied one field down.
+
+## ⛔ F-1 · the axis names were declared THREE times and only two were constants
+
+`context/situation_publisher.py:161` held a **hand-written tuple** of the six names. A seventh
+axis added to the contract would have been read by nothing there, published as `None` on every
+situation, and **reported as working by every test that only asked the contract**. The publisher
+now reads `CONFIDENCE_AXES` and splats the dict, and an AST test keeps it reading it — proved by
+mutating it back to a hardcoded list with the *correct seven names*, which the test still caught.
+
+> A vocabulary declared in three places and named in two is not a vocabulary; it is a coincidence
+> that has not failed yet.
+
+### The two lists differ by exactly one name, declared
+
+`contracts/situation.CONFIDENCE_AXES` has **7**; `contracts/situation_evidence.CONFIDENCE_AXES`
+has **6**. The second is the STORAGE vector and its `complete` property **is the group gate's own
+row** ("confidence vector axes present — all 6") taken as a count. Declaring a seventh axis there
+before `context_situations.confidence_readiness` exists would turn that gate permanently red for
+a reason nobody could look up, because there would be no column to inspect. The divergence is one
+unit long and asserted as an **exact set difference**, not a length — a second axis quietly added
+to one list would pass a length check on the day it landed.
+
+## Two findings handed to L1 — their own units, not fixed here
+
+| | Finding | Severity |
+|---|---|---|
+| **F-2** | `compute_coverage` gates on the constant `PACK_REQUIREMENTS` while `declaration.py:163` iterates the function `pack_requirements()` — an authored corpus is asked about, then answered `unknown_domain` with every predicate FALSE, the exact failure `_authored_requirements()` says it exists to prevent. ⛔ **MEASURED: zero authored domains exist, so it is LATENT, not live.** Reporting it as a live bug would have been the ninth time this programme called a state a defect before counting it. | 🟡 latent · 0 rows |
+| **F-3** | `coverage_ready` is a **tri-state** and `10000 if coverage_ready else 0` turns `None` into **0** — "we looked and it was terrible" standing in for "we never looked", the one error `AXIS_UNKNOWN_BP` exists to prevent. | 🟠 |

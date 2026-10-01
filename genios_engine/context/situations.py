@@ -48,6 +48,7 @@ dimension with no basis is left out of the minimum and marked, so the score says
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 
@@ -431,6 +432,71 @@ def coverage_score(*, present_fields: set[str], expected: dict[str, str]) -> tup
     return int(round(100 * known / len(expected))), missing
 
 
+# ── the seventh axis: are the SOURCES this domain needs even connected? ─────────────
+#
+# Atlas cell L2-07. The six axes above all ask about THIS SITUATION: is it true, is it current,
+# do the sources agree, is it the right entity, how many of its fields do we know, how good were
+# its comparisons. Not one of them asks the prior question — whether the tenant has connected the
+# tools this domain is defined to need.
+#
+# WHY `coverage_score` IS NOT THAT QUESTION, despite the name. It scores `known/expected` over a
+# situation's own FIELDS: not knowing a close date is what it measures. A tenant with no finance
+# connector at all still scores perfectly on a situation whose three expected fields happen to be
+# present. The two are independent, and the product measured one of them.
+#
+# The data already exists and already stops short. `capture/coverage/model.compute_coverage`
+# computes `coverage_ready`, five readiness predicates and `missing_required`; the verdict reaches
+# L1's FOUR-component signal vector at `capture/esqe/publisher.py:415` as `10000 if coverage_ready
+# else 0` and goes no further. Measured 2026-10-01: `admin` — the one activated domain — is
+# `coverage_ready=False` in all three orgs because `finance` has never been connected, and 310 of
+# the 459 stored situations are admin's. The blocking vector could not see any of it.
+
+
+def readiness_score(*, required: Sequence[str],
+                    freshness: Mapping[str, str]) -> tuple[int, list[str]]:
+    """Of the capabilities this domain REQUIRES, how many are connected and fresh?
+
+    Shaped exactly like `coverage_score` — a percentage and the plain names of what is missing —
+    because it is read beside it and a second shape at one seam is a second thing to remember.
+
+    `required` and `freshness` are the two columns of the tenant's own `source_coverage` row, so
+    this stays pure: no connection, no clock, no registry read. The caller already holds the row.
+
+    AN EMPTY `required` IS `COVERAGE_UNKNOWN`, NEVER 0 — the same third state `coverage_score`
+    returns for `not expected`, and for the same reason. A domain nobody registered requirements
+    for has not been assessed, and `compute_coverage` already fails such a domain closed with
+    "no negative inference is licensed". Scoring it 0 would turn "we never defined what complete
+    means here" into "nothing is connected", which is the error
+    `capture/esqe/publisher.py:415` makes one layer down by collapsing a tri-state
+    `coverage_ready` into a binary.
+
+    ⛔ WHY THE MISSING LIST IS RETURNED AND NOT DERIVED LATER. Admin requires two capabilities
+    and has one fresh, so its honest score is 50 — **5000 in basis points**, which is the forbidden
+    neutral default `reason/decision_maker.py:181` exists to refuse: *"Never substitute 5000. A
+    neutral default is exactly the bug that made every card score 50."* A MEASURED 5000 is
+    legitimate and a SUBSTITUTED one is the bug, and on a stored column six months later the two
+    are indistinguishable. So the numerator's evidence travels with the number, and the caller
+    stores it. This is `ConfidenceVector.composed_from`'s discipline applied one field down: the
+    reason a number is what it is must be readable off the record, not reconstructed from it.
+
+    STALE IS MISSING, AND IS NOT THE SAME WORD AS ABSENT. `compute_coverage` treats anything but
+    `fresh` as missing and this agrees with it deliberately — one rule for "can we see this", in
+    one place. But the two are reported apart: a capability present and stale reads
+    `"finance (stale)"`, one never connected reads `"finance (not connected)"`. A tenant whose
+    connector broke this morning and a tenant who never had one need the same score and different
+    sentences.
+    """
+    names = [str(cap) for cap in required]
+    if not names:
+        return COVERAGE_UNKNOWN, [
+            "readiness unknown — no capability requirements registered for this domain"]
+    status = {str(cap): str(state) for cap, state in dict(freshness or {}).items()}
+    missing = [f"{cap} ({status.get(cap, 'not connected')})"
+               for cap in sorted(names) if status.get(cap) != "fresh"]
+    fresh = len(names) - len(missing)
+    return int(round(100 * fresh / len(names))), missing
+
+
 # ── the sixth axis: how good were the COMPARATIVE inputs? ────────────────────────
 #
 # L2.5.1-U1. The five axes above ask whether the situation is TRUE. This one asks whether the
@@ -615,6 +681,11 @@ class Confidence:
     #: not-applicable at construction: a caller that used no comparison passes none, and the
     #: sentinel — never a 0 — is what it gets. Read it through `coverage_is_known()`.
     analytic: int = COVERAGE_UNKNOWN
+    #: Atlas cell L2-07's seventh axis. Defaulted for the same reason `analytic` is: most callers
+    #: score a situation without the tenant's `source_coverage` row in hand, and an unassessed
+    #: domain gets the sentinel rather than a 0. REPORTED, NEVER COMPOSED — see the note above
+    #: `return Confidence(...)`. Read it through `coverage_is_known()`.
+    readiness: int = COVERAGE_UNKNOWN
     missing: tuple[str, ...] = ()
     inputs: dict = field(default_factory=dict)
 
@@ -624,13 +695,20 @@ def score_situation(*, event_count: int, source_count: int, voice_count: int = 0
                     open_merge_proposals: int, present_fields: set[str],
                     expected_fields: dict[str, str], now: datetime,
                     strong_merge_proposals: int | None = None,
-                    trends=(), cohort_positions=(), anomalies=()) -> Confidence:
+                    trends=(), cohort_positions=(), anomalies=(),
+                    required_capabilities: Sequence[str] = (),
+                    capability_freshness: Mapping[str, str] | None = None) -> Confidence:
     """The whole confidence vector. Pure — every input explicit, fully replayable.
 
     The three analytic arguments are the comparisons an importance number LEANED ON — the ones
     whose modifiers actually fired, not every trend the org holds. They default to empty because
     most callers make no comparison at all, and that is a not-applicable axis rather than a bad
     one (see `analytic_score`).
+
+    The two readiness arguments are the tenant's own `source_coverage` columns for this domain.
+    They default to empty, which scores the axis `COVERAGE_UNKNOWN` — a caller that does not hold
+    the row has not ASSESSED readiness, and must not be recorded as having found nothing
+    connected. A caller that does hold it passes both.
     """
     evidence = evidence_score(event_count=event_count, source_count=source_count,
                               voice_count=voice_count)
@@ -642,6 +720,9 @@ def score_situation(*, event_count: int, source_count: int, voice_count: int = 0
                                        expected=expected_fields)
     coverage_known = coverage_is_known(coverage)
     analytic, analytic_receipt_keys = analytic_receipt(trends, cohort_positions, anomalies)
+    readiness, readiness_missing = readiness_score(
+        required=required_capabilities, freshness=capability_freshness or {})
+    readiness_known = coverage_is_known(readiness)
 
     # Minimum, not average — you are only as sure as your weakest link. A dimension with
     # no basis is left OUT rather than scored zero, so "we cannot tell how current this
@@ -650,6 +731,14 @@ def score_situation(*, event_count: int, source_count: int, voice_count: int = 0
     if freshness_known:
         trust.append(freshness)
 
+    # ⛔ `readiness` is REPORTED, not composed, and that is this unit's whole promise. Admin scores
+    # 1-of-2 required capabilities, so composing it would cap `overall` at 50 on all 310 admin
+    # situations — two thirds of the stored corpus re-scored by a line in a scorer. Whether the
+    # product SHOULD refuse to speak that confidently about a domain with no finance connector is
+    # a product decision, it is not answerable until the axis has been stored for a full sweep,
+    # and doc 09's must-not-regress item 3 is the rule that says a new axis may not silently move
+    # every existing overall. The axis becomes readable here; composing it is its own unit.
+    #
     # `analytic` is REPORTED, not composed — beside `overall` where `coverage` already sits, and
     # for the same reason. A five-member cohort does not make the situation less true; it makes
     # the IMPORTANCE that leaned on it less certain, and folding it into `overall` would answer a
@@ -660,7 +749,7 @@ def score_situation(*, event_count: int, source_count: int, voice_count: int = 0
     return Confidence(
         overall=min(trust), evidence=evidence, freshness=freshness,
         consistency=consistency, identity=identity, coverage=coverage,
-        analytic=analytic, missing=tuple(missing),
+        analytic=analytic, readiness=readiness, missing=tuple(missing),
         inputs={"event_count": event_count, "source_count": source_count,
                 "voice_count": voice_count,
                 "freshness_known": freshness_known,
@@ -668,6 +757,13 @@ def score_situation(*, event_count: int, source_count: int, voice_count: int = 0
                 # basis rather than being scored, so "we never said what complete means for this
                 # domain" cannot be read as "this is fully covered".
                 "coverage_known": coverage_known,
+                # Same shape a third time. And the MISSING LIST, because admin's honest readiness
+                # is 1-of-2 = 50 — 5000 in basis points, the forbidden neutral default
+                # (`reason/decision_maker.py:181`). A measured 5000 is legitimate and a
+                # substituted one is the bug, and on a stored record the two are
+                # indistinguishable without the numerator's evidence beside them.
+                "readiness_known": readiness_known,
+                "readiness_missing": list(readiness_missing),
                 # Same shape once more, plus the receipt — built by `analytic_receipt` so the
                 # later pass that re-fills these keys for the whole org cannot construct them
                 # differently.

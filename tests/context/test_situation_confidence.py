@@ -128,13 +128,30 @@ def test_no_comparison_is_not_a_bad_comparison() -> None:
     assert not 0 <= score <= SCORE_MAX
 
 
-def test_the_vector_has_six_axes_and_still_reports_a_weakest() -> None:
+def test_the_vector_has_seven_axes_and_still_reports_a_weakest() -> None:
     """Doc 09's must-not-regress item 3: the vector is a vector. An axis that exists only in a
-    spec is the same defect as one collapsed into a scalar."""
+    spec is the same defect as one collapsed into a scalar.
+
+    THE SET WENT FROM SIX TO SEVEN ON 2026-10-01, deliberately, and this is the record of it.
+    `readiness` is Atlas cell L2-07's axis — of the capabilities this DOMAIN requires, how many
+    are connected and fresh — built because the six above are all questions about the SITUATION
+    and none of them notices that `admin`, the one activated domain, has never had a `finance`
+    connector in any of the three orgs while holding 310 of the 459 stored situations.
+
+    ⛔ The number this test actually guards is the one BELOW it. `readiness` is REPORTED, not
+    composed, exactly as `coverage` and `analytic` already are, so `weakest` must still be
+    `consistency` here. If a later edit folds readiness into `overall`, this line fails — and it
+    should, because that caps 310 admin situations at 50 and is a product decision, not a scorer
+    change. See `speedrun008/YCW27/layer-2-reasoning/16-AUDIT-AND-PLAN-the-readiness-axis.md`.
+    """
     axes = {f.name for f in dataclasses.fields(Confidence)} - {"overall", "missing", "inputs"}
-    assert axes == {"evidence", "freshness", "consistency", "identity", "coverage", "analytic"}
+    assert axes == {"evidence", "freshness", "consistency", "identity", "coverage", "analytic",
+                    "readiness"}
     c = _score(open_discrepancies=2)
-    assert c.inputs["weakest"] == "consistency"
+    assert c.inputs["weakest"] == "consistency", (
+        "a reported axis moved `overall` — `readiness` and `coverage` and `analytic` sit BESIDE "
+        "the composed number, and folding one in silently re-scores every situation already "
+        "stored, which is doc 09's must-not-regress item 3")
 
 
 def test_no_float_anywhere_in_the_axis_path() -> None:

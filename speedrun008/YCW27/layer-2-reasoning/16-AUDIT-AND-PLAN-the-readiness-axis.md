@@ -2,7 +2,7 @@
 
 > **Date** 2026-10-01 · **Layer** YCW27 L2 (Atlas L4 Reasoning) · **Unlocked by** decision #1 = A
 > **Atlas cell** L2-07 — *"role/source-readiness completeness is not part of the blocking vector"*
-> **Status** AUDIT COMPLETE · PLAN WRITTEN · **NOT BUILT** — awaiting Rohit's go-ahead on the shape
+> **Status** AUDIT COMPLETE · **U1 BUILT · U2 BUILT** · U3 blocked on H1 · U4 is Rohit's call
 
 ---
 
@@ -106,7 +106,7 @@ switched on**, which is why storing and composing are different units.
 (Harsh's H1). A readiness column is `0191`, so **U3 cannot be verified in production until H1
 lands.** U1 and U2 do not touch the database and are unblocked today.
 
-### U1 · `readiness_score()` — the pure function. **UNBLOCKED**
+### U1 · `readiness_score()` — the pure function. ✅ **BUILT**
 
 One function in `context/situations.py`, beside the six that are already there, same shape as
 them: keyword-only, no clock, no connection, returns `(score, missing)`.
@@ -127,7 +127,7 @@ them: keyword-only, no clock, no connection, returns `(score, missing)`.
 **Verify:** `pytest tests/context/test_readiness_score.py -q` — the unknown branch, the all-fresh
 branch, the half branch returning exactly 5000 **with** its receipt, and a stale-not-missing case.
 
-### U2 · the seventh axis on the two contracts, **not composed**. **UNBLOCKED**
+### U2 · the seventh axis, **declared and not composed**. ✅ **BUILT**
 
 `readiness_bp: int | None = None` on `ConfidenceVector`; `readiness: int` on
 `SituationConfidenceVector`; both `CONFIDENCE_AXES` tuples go to seven.
@@ -182,3 +182,83 @@ be "connect `finance` first" rather than "re-score everything".
 
 **Nothing below U2 can be verified until `0186`–`0190` are applied.** That is H1, and it is the
 same blocker that breaks the next card write.
+
+
+---
+
+## PART 4 · WHAT WAS BUILT, 2026-10-01 — and the one place the plan was wrong
+
+### U1 ✅ `context/situations.readiness_score()` · 8 tests · 3 mutations proved
+
+    admin (finance missing)      ->   50   missing=['finance (not connected)']
+    fundraising (ready)          ->  100   missing=[]
+    unregistered domain          ->   -1   COVERAGE_UNKNOWN, never 0
+    all required stale           ->    0   ['communication (stale)', 'finance (stale)']
+    sales (crm missing)          ->   50   missing=['crm (not connected)']
+
+Stale and never-connected cost the same SCORE and read as different PROSE, because only one of
+them has something to reconnect. The three mutations proved: the unknown branch returning 0, the
+missing list emptied, and stale counted as fresh — each caught by the test written for it.
+
+### U2 ✅ the seventh axis · 6 tests · mutation proved
+
+`contracts/situation.CONFIDENCE_AXES` -> 7 · `ConfidenceVector.readiness_bp: int | None = None` ·
+`situations.Confidence.readiness` · `situation_publisher._confidence` reads the constant.
+
+    score_situation(... no readiness row ...)   overall=100  readiness=-1  known=False
+    score_situation(... admin's real row ...)   overall=100  readiness=50  missing=[...]
+                                                ^^^^^^^^^^^ IDENTICAL
+
+### ⛔ WHERE THE PLAN WAS WRONG, and the test that caught it
+
+PART 2's U2 said "the seventh axis on the two contracts". **That was wrong in two ways, and the
+repo's own tests found both before anything shipped:**
+
+**1 · The plan forgot `situations.Confidence` entirely.** `tests/contracts/test_l2_contracts.py::
+test_the_six_axes_are_the_six_that_exist` pins `CONFIDENCE_AXES` against the fields of the
+dataclass the scorer returns, and says why: *"an axis the contract names but the scorer does not
+produce is that collapse one field at a time."* The plan named two contracts and the real answer
+was three places — the constant, the model, and the scorer's own dataclass.
+
+**2 · The plan would have broken the group gate.** It said to add the axis to
+`contracts/situation_evidence.SituationConfidenceVector` as well. That object's `complete`
+property **is** the group gate's row — *"confidence vector axes present — all 6"* — taken as a
+count (`situation_bso.py:1663`). A seventh axis there, before `confidence_readiness` exists as a
+column, flips `complete` to False on every situation **for a reason nobody can look up**, because
+there is no column to inspect. The storage vector was therefore left at six, and the divergence
+asserted as an exact set difference.
+
+> ⛔ **A gate whose criterion names a count is a contract with the number.** Changing the count
+> is changing the contract, and it may only be done in the unit that makes the new count
+> reachable.
+
+### F-1 was the real content of U2
+
+`context/situation_publisher.py:161` held a **hand-written tuple** of the six axis names — a third
+copy of a vocabulary that already existed twice as a constant. A seventh axis added to the
+contract would have been read by nothing there, published as `None` on every situation, and
+**reported as working by every test that only asked the contract.**
+
+The fix is one line and the test is an AST walk, not a grep. It was mutation-proved by putting
+back a hardcoded tuple **with the correct seven names** — and the test still caught it, because it
+asserts on the structure (`ast.Tuple` of string constants inside `_confidence`) and not on the
+text. The blunt-grep family, avoided on purpose.
+
+### What U3 needs, written down now while it is fresh
+
+    0191_situation_readiness.sql
+      alter table context_situations
+        add column confidence_readiness int,          -- percent, COVERAGE_UNKNOWN = -1
+        add column readiness_missing    text[];       -- the numerator's evidence
+
+    situation_bso.py:1328      readiness=axis("confidence_readiness")
+    situation_evidence.py      CONFIDENCE_AXES -> 7, SituationConfidenceVector.readiness
+                               ⛔ AND the group gate's row moves from "all 6" to "all 7"
+                                  IN THIS UNIT, because this is the unit that makes 7 reachable
+    receipts.py                a 31st claim: "every situation on an assessed domain carries a
+                               readiness axis" — red until the sweep runs, which is honest
+    the sweep                  pass `required_capabilities` + `capability_freshness` from the
+                               tenant's `source_coverage` row into `score_situation`
+
+⛔ **U3 cannot be verified in production until `0186`–`0190` are applied.** That is Harsh's H1, and
+it is the same blocker that breaks the next card write.

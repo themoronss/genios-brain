@@ -980,11 +980,23 @@ def test_a_situation_cannot_be_built_without_an_attribution():
 
 # --------------------------------------------------------- D-01 · the confidence vector
 
-def test_the_vector_has_six_axes_and_an_unmeasured_one_is_none():
+def test_the_vector_has_seven_axes_and_an_unmeasured_one_is_none():
+    """SIX BECAME SEVEN ON 2026-10-01 — `readiness`, Atlas cell L2-07.
+
+    The count is asserted rather than left to `tuple(vector.axes) == CONFIDENCE_AXES`, which
+    would pass against ANY list the constant happened to hold. A bare equality cannot tell an
+    axis that was added on purpose from one that was dropped by a bad merge; the literal is what
+    makes the next change deliberate.
+    """
     vector = confidence()
-    assert tuple(vector.axes) == CONFIDENCE_AXES and len(CONFIDENCE_AXES) == 6
+    assert tuple(vector.axes) == CONFIDENCE_AXES and len(CONFIDENCE_AXES) == 7
     assert vector.axes["coverage"] is None
     assert "coverage" not in vector.measured_axes
+    # ⛔ The seventh axis is DECLARED AND NOT COMPOSED. It is `None` on an unfilled vector and
+    # `composed_from` does not name it, so `overall_bp` is identical to what it was before the
+    # axis existed. Storing it is migration 0191; composing it is a separate decision.
+    assert vector.axes["readiness"] is None
+    assert "readiness" not in vector.composed_from
     assert_round_trips(vector)
 
 
