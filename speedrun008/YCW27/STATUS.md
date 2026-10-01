@@ -601,3 +601,72 @@ was enforceable in a test.**
 
 ⛔ **Still nothing committed.** 300+ files in the working tree; last commit `c7cdf4c1` predates all
 of this work.
+
+---
+---
+
+# 2026-10-01 · THE ATLAS RE-CHECK · the two planes, re-measured
+
+Full audit: `layer-2-reasoning/13-ATLAS-RECHECK-the-two-planes-and-the-third-silence.md`.
+
+The source was the Atlas's own matrix — `Rohit_Updates/Secret War Updates/08-Cross-Layer-Synthesis/
+01-Master-Atlas-vs-Code-Coverage-Matrix.md`, seven layer audits against `harsh/mvp@b739bd5c` on
+**2026-08-22**. It is a good document and it is **six weeks old**, so our own rule applied to it:
+*a measurement read six weeks later is a claim.* Every number was taken again.
+
+## ⛔ PLANE D IS COMPLETE — and the Atlas's sharpest accusation about it has EXPIRED
+
+| | Atlas · 2026-08-22 | Measured · 2026-10-01 |
+|---|---|---|
+| **Admin** | *"**Stub.** 57 files, **all 57 stubs**, zero non-stub, zero reviewed/accepted and **zero routes**. No current basis exists for prescriptive Admin expertise"* | **59 capabilities · 59 admitted · 0 hollow · 34 situations** |
+| Support | 49 / 40 stubs / 9 non-stub | 49 · all admitted · 0 hollow · 20 situations |
+| Sales | 46 / 43 stubs / 3 non-stub | 47 · all admitted · 0 hollow · 15 situations |
+| corpus | *"**zero** reviewed or accepted"* | **155 capabilities, every one admitted, 0 hollow** |
+
+Measured with `corpus_health()` — the function the code's own comment points at, not a count of
+mine. **Remaining honest gap: 23 unreviewed situations** (Support 16/20, Admin 7/34, Sales 0/15).
+A `draft` situation's cards **cannot instruct** and all 23 are flagged, so this is the designed
+refusal. ⛔ Whether `draft` should also **gate** is still yours. *(Two earlier records say 24; it is
+23 today.)*
+
+## PLANE R — the Atlas's counts were exact; its conclusion has expired
+
+*"Seventeen units are registered; the manifest schedules roughly six"* — **both right.**
+`CORE_UNITS` is 17; `BUILTIN_CAPABILITIES` is one capability scheduling 7.
+
+But *"registered is not active"* no longer holds:
+
+    registered in code        23  (17 core + 6 supplementary)
+    ever ran in production    22
+    never ran                  1  core.signal_composition — DEAL_HEALTH_V1 unswept = ALARM A2
+    ran but not registered     0  — the registry and production agree exactly
+
+## ⛔ THE FINDING — and it was one unit
+
+`core.relationship`: **929 runs, 0 completions.** Invisible to the silence receipt, because that
+query filters `where status = 'completed'` and a unit with no completed rows is not a low row — **it
+is not a row.** Not an unwritten fact either: it binds `deal.status`, which has 3 rows. The fact was
+written in prose **twice** and declared nowhere a receipt could read.
+
+Built: `NeverCompleted` — the third grain in `reason/unit_health` — plus a 30th receipt and 17 tests,
+mutation-proved. `core.policy` (165 runs, 0 completions) is **excused by derivation**, not by a second
+declaration: all four paths it binds are already in `DECLARED_UNWRITTEN`.
+
+    30 receipts, fleet-wide:   22 PASS · 7 FAIL · 1 ERROR     (was 21/7/1 of 29)
+
+### ⛔ ALARM R-A1 · the receipts break `LAYERS.py`'s own rule
+All 30 receipts are labelled `L1`–`L7` — **bare digits in the package vocabulary** — and
+`GET /health/readiness` returns them as `{"layer": "L2"}`. Against the PRODUCT vocabulary you read,
+`L2` is Reasoning; the receipt means Context. `LAYERS.py` states the rule — *"always name the
+package, never the digit alone"* — and documents all four vocabularies. Cheap to fix, changes a
+response shape, so it is its own unit. **Not done.**
+
+⛔ I nearly filed the folder names as the programme's largest defect. Reading `LAYERS.py` first
+stopped it: the YCW27 folders are the PRODUCT column, which that file names as legitimate. Fifth
+time in this programme that reading the thing a name points at prevented a false finding.
+
+### What this did NOT fix
+`core.relationship` still never completes. The chain is unchanged and still four deep —
+`deal.status` 3 of 293 → `core.relationship` 0 completions → `core.impact` 100% silent →
+`cost_vs_benefit` 0 fires in 1,200 rows. **Three of the four links are now declared facts rather
+than prose.** The connector is **Harsh, H4**.

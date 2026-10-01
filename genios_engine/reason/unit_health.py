@@ -285,6 +285,124 @@ def neutral_default_boundary() -> str:
     return CLOSED_DEFECTS["score_components.neutral_default"].boundary
 
 
+@dataclass(frozen=True, slots=True)
+class NeverCompleted:
+    """A unit that RUNS and has never once completed — absent, not quiet.
+
+    ⛔ WHY A THIRD GRAIN WAS NEEDED. `DeclaredSilence` asks whether a **completed** output said
+    anything; `UnwrittenFact` asks whether a bound fact path has a writer. Measured 2026-10-01,
+    `core.relationship` escapes both: it has **929 runs and 0 completions**, so
+    `_UNDECLARED_SILENT_UNITS_SQL` cannot see it — that query filters `status = 'completed'` and
+    groups by unit, and a unit with no completed rows is not a row with a low share, **it is not a
+    row**. And it binds `deal.status`, which has 3 rows, so it is not an unwritten path either; the
+    sibling receipt states that boundary on purpose — *"A path with one row has a writer; that is
+    the whole question. How WELL it is covered is `deal.status`'s 3-of-293 problem, a different
+    measurement with a different mover."*
+
+    So the fact was written down twice in prose — once in `receipts.py` and once inside
+    `DECLARED_SILENT["core.impact"]`'s own reason text, as an argument for a different unit's
+    entry — and declared nowhere a receipt could read.
+
+    > **A unit that never completes is not a quiet unit; it is an absent one, and a question asked
+    > only of completions cannot see it.**
+
+    ⛔ NOT FOR A UNIT ALREADY DECLARED THROUGH ITS INPUTS. `core.policy` also has zero completions
+    (165 runs, all `skipped: no_declared_input_available`), and it is deliberately **not** declared
+    here: all four fact paths it binds are in `DECLARED_UNWRITTEN`, so it is already accounted for
+    at the grain that names the real mover. A second declaration of one fact is exactly the drift
+    this module exists to prevent, and a test asserts the two sets do not overlap.
+    """
+
+    #: Why it never completes — the CAUSE. "No output" is the symptom.
+    reason: str
+    #: ⛔ Who can change it. Same rule as `DeclaredSilence`: a declared absence with no named mover
+    #: is an undeclared absence with paperwork.
+    mover: str
+    #: Runs observed with zero completions, and the date measured. ⛔ The run count is what makes
+    #: this an absence rather than a unit that simply has not been scheduled yet — one run proves
+    #: nothing, 929 proves the lane is live and the unit still never answers.
+    runs: int
+    measured_on: str
+
+    def __post_init__(self) -> None:
+        if not self.reason.strip():
+            raise ValueError("a unit declared never-completing with no reason is an undeclared one")
+        if not self.mover.strip():
+            raise ValueError(
+                "a never-completing unit with no mover cannot be cleared by anybody; name who can")
+        if self.runs <= 0:
+            raise ValueError(
+                f"runs must be positive -- a unit that has never been scheduled is a different "
+                f"fact from one that runs and never answers, got {self.runs}")
+        if not self.measured_on.strip():
+            raise ValueError("a count with no date is a claim, not a measurement")
+
+
+#: ⛔ THE DECLARATION. Units measured with runs and zero completions, and nothing else.
+#:
+#: `core.signal_composition` is NOT here: it has **zero runs**, because the capability that
+#: schedules it (`DEAL_HEALTH_V1`) has never been swept. That is ALARM A2 — a roster activation,
+#: not a silence — and `runs <= 0` is refused above so it cannot be mis-filed here.
+DECLARED_NEVER_COMPLETED: Mapping[str, NeverCompleted] = MappingProxyType({
+    "core.relationship": NeverCompleted(
+        reason=(
+            "708 insufficient_context and 221 skipped:no_declared_input_available. It binds "
+            "deal.status, which has 3 rows across 293 candidate nodes -- the path is written, so it "
+            "is not an unwritten fact, but it is not usefully written, so the unit can never reach "
+            "its threshold. This starves core.impact (100% silent) and through it "
+            "tradeoff.cost_vs_benefit, which has fired 0 times in 1,200 rows."),
+        mover="Harsh -- a CRM connector writing deal.status across more than 3 of 293 nodes",
+        runs=929,
+        measured_on="2026-10-01"),
+})
+
+#: The units declared never-completing, as a plain frozenset — what a SQL `not in` list is built from.
+DECLARED_NEVER_COMPLETED_IDS: frozenset[str] = frozenset(DECLARED_NEVER_COMPLETED)
+
+
+def starved_by_declared_paths() -> frozenset[str]:
+    """Units whose EVERY bound fact path is already declared unwritten.
+
+    ⛔ DERIVED, NEVER LISTED. `core.policy` has 165 runs and 0 completions and is nonetheless fully
+    accounted for: all four paths it binds are in `DECLARED_UNWRITTEN`, so it is declared at the
+    grain that names the real mover. Hard-coding its id here would put one fact in two places,
+    which is the drift this module exists to prevent — and it would go stale the moment a path
+    gained a writer. Computed from the roster, so it cannot.
+
+    A unit that binds no roster path is NOT in this set: having nothing to bind is not the same as
+    binding something nobody writes.
+    """
+    bound: dict[str, set[str]] = {}
+    for path, roles in roster_fact_paths().items():
+        for role in roles:
+            unit = role.rsplit(".", 1)[0]
+            bound.setdefault(unit, set()).add(path)
+    return frozenset(unit for unit, paths in bound.items()
+                     if paths and paths <= set(DECLARED_UNWRITTEN_PATHS))
+
+
+def undeclared_never_completed(runs: Mapping[str, int],
+                               completions: Mapping[str, int]) -> tuple[str, ...]:
+    """Units with runs and no completions that nobody declared. Empty is the passing answer.
+
+    ⛔ Takes BOTH maps rather than a ratio. A ratio of 0/0 and 0/929 are the same number and
+    completely different facts — the first is a unit nobody scheduled, the second is a unit that
+    answers nothing. Only the second belongs here.
+
+    Accounted for means EITHER grain: declared here, or starved by paths already declared unwritten.
+    """
+    excused = DECLARED_NEVER_COMPLETED_IDS | starved_by_declared_paths()
+    return tuple(sorted(
+        unit for unit, n in runs.items()
+        if n > 0 and completions.get(unit, 0) == 0 and unit not in excused))
+
+
+def completed_after_all(completions: Mapping[str, int]) -> tuple[str, ...]:
+    """Declared units that have now completed — the good direction, and a thing to go and delete."""
+    return tuple(sorted(unit for unit in DECLARED_NEVER_COMPLETED_IDS
+                        if completions.get(unit, 0) > 0))
+
+
 def roster_fact_paths() -> Mapping[str, tuple[str, ...]]:
     """Every fact path `expertise._ROSTER` binds, to the `unit.role` names that bind it.
 
@@ -381,8 +499,11 @@ def drifted(shares: Mapping[str, int]) -> tuple[str, ...]:
                         if shares.get(unit, 0) < SILENT_THRESHOLD_PCT))
 
 
-__all__ = ["CLOSED_DEFECTS", "DECLARED_SILENT", "DECLARED_SILENT_IDS", "DECLARED_UNWRITTEN",
+__all__ = ["CLOSED_DEFECTS", "DECLARED_NEVER_COMPLETED", "DECLARED_NEVER_COMPLETED_IDS",
+           "DECLARED_SILENT", "DECLARED_SILENT_IDS", "DECLARED_UNWRITTEN",
            "DECLARED_UNWRITTEN_PATHS", "SILENT_SQL", "SILENT_THRESHOLD_PCT", "ClosedDefect",
-           "DeclaredSilence", "UnwrittenFact", "drifted", "is_silent",
-           "neutral_default_boundary", "roster_fact_paths", "undeclared_silent",
-           "undeclared_unwritten", "written_after_all"]
+           "DeclaredSilence", "NeverCompleted", "UnwrittenFact", "completed_after_all",
+           "drifted", "is_silent", "neutral_default_boundary", "roster_fact_paths",
+           "starved_by_declared_paths",
+           "undeclared_never_completed", "undeclared_silent", "undeclared_unwritten",
+           "written_after_all"]

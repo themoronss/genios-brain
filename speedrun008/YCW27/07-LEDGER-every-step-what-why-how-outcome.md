@@ -322,3 +322,96 @@ passes.** The reason is recorded in the module rather than deleted with the code
     step files                        40 · 34 DONE · 3 PENDING · 2 WITHDRAWN · 1 RETIRED
     layer/plane folders               8 · all four documents each
     production receipts (29)          21 PASS · 7 FAIL · 1 ERROR
+
+---
+---
+
+# PART 7 · THE ATLAS RE-CHECK · 2026-10-01 · the two planes, re-measured against their own matrix
+
+Full audit: `layer-2-reasoning/13-ATLAS-RECHECK-the-two-planes-and-the-third-silence.md`.
+
+The Atlas's own synthesis — `Rohit_Updates/Secret War Updates/08-Cross-Layer-Synthesis/
+01-Master-Atlas-vs-Code-Coverage-Matrix.md`, seven layer audits against `harsh/mvp@b739bd5c`,
+**2026-08-22** — was re-measured rather than read, under the programme's own rule: *a measurement
+read six weeks later is a claim.*
+
+## ⛔ First, the vocabulary, because it is why this looks misaligned and is not
+
+The matrix numbers **seven** layers; YCW27 has **six** folders. `genios_engine/LAYERS.py` documents
+**four** vocabularies in its header, including the collision:
+
+    package     layer   name                       Atlas   PRODUCT (the YCW27 folders)
+    capture       1     Enterprise Signals           1       L1
+    context       2     Situation Intelligence       2       L2 + L3
+    packs         -     Plane D · Domain Expertise   3       into L2
+    reason        -     Plane R · Reasoning          4       L2 + L4
+    executive     5     Executive Intelligence       5       L4
+    deliver       6     Intelligence Distribution    5.2     L5
+    feedback      7     Learning Engine              6       L6
+
+So **"layer 1, layer 2, layer 3" in the YCW27 vocabulary spans Atlas L1, L2, L3 and L4**, with both
+planes inside YCW27's L2. `packs` and `reason` carry dashes on purpose: *a digit implies a position
+in a pipeline; these two are what `context` reasons WITH.*
+
+⛔ **I nearly filed this as the programme's largest defect** — five of six folder names contradict
+`LAYERS.py`'s digits. That file explains the collision in capitals and states the rule: **"always
+name the package, never the digit alone."** Reading it first stopped the finding. Fifth instance in
+this programme of reading the thing a name points at before writing anything down.
+
+## Both planes are in good standing. What changed is the Atlas's description of them.
+
+> ⛔ **READ THE VERDICT COLUMN AS A VERDICT ON THE ATLAS'S OLD CLAIM, NOT ON THE PLANE.**
+> An earlier draft of this table put the word *FALSE* in a column headed "Now", beside the row
+> labelled **Plane D**, and it scanned as *"Plane D: false"* — the exact opposite of the
+> measurement. **Plane D is complete: 155 capabilities, every one admitted, zero hollow.** The
+> accusation is what expired. Corrected 2026-10-01 rather than deleted, because it is the same
+> defect this programme has now paid for seven times: a label that reads as a status somebody
+> checked.
+
+| | The Atlas claimed, 2026-08-22 | Measured 2026-10-01 | That claim today |
+|---|---|---|---|
+| **Plane D** | *"**Stub.** Admin: 57 files, all 57 stubs, zero reviewed/accepted, zero routes"*, and *"zero reviewed or accepted"* across the corpus | Admin **59 capabilities, all admitted, 0 hollow, 34 situations**; corpus **155, all admitted, 0 hollow** | ⛔ **the claim has EXPIRED** — the corpus was authored since |
+| **Plane R** | *"Seventeen registered; the manifest schedules roughly six. Registered is not active"* | `CORE_UNITS` **17**, `BUILTIN_CAPABILITIES` schedules **7**, and **22 of 23** units run in production; registry and production agree exactly | **counts were exact; the conclusion has expired** |
+
+**Plane D's matrix entry expired because the corpus was authored out from under it.** The code had
+already met this exact failure: `capability_resolver._hollow` carries its own dated retraction —
+*"THAT COUNT IS HISTORY, NOT A FACT ABOUT TODAY'S CORPUS, AND LEAVING IT UNMARKED COST A PLAN"* —
+and fixed it by moving the count into **a function a test can run** (`corpus_health()`). The matrix
+has no such function, which is why it had to be re-measured by hand.
+
+## ⛔ The finding: a third kind of silence, and exactly one unit in it
+
+`core.relationship` — **929 runs, 0 completions** — escaped both existing grains:
+
+* not `DeclaredSilence`: that receipt filters `where status = 'completed'`, and a unit with no
+  completed rows **is not a row with a low share, it is not a row**
+* not `UnwrittenFact`: it binds `deal.status`, which has **3 rows**, and that declaration is for
+  paths with *zero*
+
+> **A unit that never completes is not a quiet unit; it is an absent one, and a question asked only
+> of completions cannot see it.**
+
+The fact had been written in prose **twice** — in `receipts.py`, and inside
+`DECLARED_SILENT["core.impact"]`'s own reason as an argument for a *different* unit's entry — and
+declared nowhere a receipt could read.
+
+**Built:** `NeverCompleted`, the third grain, demanding the **run count** beside reason/mover/date
+because that separates *absent* from *never scheduled* (`runs <= 0` refused at construction, so
+`core.signal_composition`'s 0 runs cannot be mis-filed). A 30th receipt whose only difference from
+its sibling is one clause. 17 tests, mutation-proved.
+
+⛔ **My first version would have made that receipt permanently red** by reporting `core.policy`
+undeclared, when all four paths it binds are already in `DECLARED_UNWRITTEN`. Closed with
+`starved_by_declared_paths()`, derived from the roster — hard-coding the id would have put one fact
+in two places and gone stale the moment a path gained a writer.
+
+⛔ **And my own measurement manufactured a finding first.** It reported *"6 registered units never
+ran"*; five had run thousands of times. The six supplementary units carry no `unit_id` class
+attribute and are identified by `spec.reasoner_id` on an **instance**, so the id helper returned
+class names. The artefact was indistinguishable from a real finding until the run counts were read.
+
+### State after the re-check
+
+    30 receipts, fleet-wide   22 PASS · 7 FAIL · 1 ERROR     (was 21/7/1 of 29)
+    remaining Plane D gap     23 unreviewed situations — the designed refusal; gating is Rohit's
+    remaining Plane R gap     core.signal_composition, 0 runs — ALARM A2, roster activation

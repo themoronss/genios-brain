@@ -118,6 +118,54 @@ def _PLACEHOLDER_COMPONENTS_SQL(org: str | None) -> str:
     )
 
 
+def _UNDECLARED_NEVER_COMPLETED_SQL(org: str | None) -> str:
+    r"""Units that have RUN and never once completed, and that nobody declared.
+
+    ⛔ THIS QUESTION IS NOT THE SILENCE QUESTION, AND THE DIFFERENCE IS ONE CLAUSE.
+    `_UNDECLARED_SILENT_UNITS_SQL` filters `status = 'completed'` and asks whether the completions
+    said anything. A unit with **zero** completed rows is therefore not a row with a low share —
+    **it is not a row** — so it cannot appear in that GROUP BY at all. Measured 2026-10-01,
+    `core.relationship` has **929 runs and 0 completions** and the silence receipt PASSES.
+
+    > A unit that never completes is not a quiet unit; it is an absent one, and a question asked
+    > only of completions cannot see it.
+
+    ⛔ SO THIS ONE DELIBERATELY DOES NOT FILTER BY STATUS. That filter is the whole defect. It
+    groups every result row per unit and keeps the units whose completed count is zero.
+
+    ⛔ `having count(*) > 0` IS NOT REDUNDANT, IT IS THE POINT. A unit with no rows at all is a
+    different fact — nobody scheduled it — and belongs to ALARM A2, not here.
+    `core.signal_composition` is exactly that: 0 runs, because `DEAL_HEALTH_V1` has never been
+    swept. A ratio would make 0/0 and 0/929 the same number.
+
+    ⛔ THE EXCUSED SET IS IMPORTED AND PARTLY DERIVED. `core.policy` also has zero completions (165
+    runs) and is legitimately accounted for by the sibling grain: all four fact paths it binds are
+    in `DECLARED_UNWRITTEN`. `unit_health.starved_by_declared_paths()` computes that from the
+    roster, so this receipt never carries a second copy of the fact and cannot go stale when a path
+    gains a writer. Inlined as literals because `evaluate()` binds exactly one parameter; a test
+    asserts every id matches `^[a-z][a-z0-9_.]+$`.
+    """
+    from genios_engine.reason.unit_health import (DECLARED_NEVER_COMPLETED_IDS,
+                                                  starved_by_declared_paths)
+
+    excused = sorted(DECLARED_NEVER_COMPLETED_IDS | starved_by_declared_paths())
+    for unit in excused:
+        if not re.fullmatch(r"[a-z][a-z0-9_.]+", unit):
+            raise ValueError(f"not a unit id: {unit!r}")
+    declared = ", ".join(f"'{unit}'" for unit in excused) or "''"
+    return (
+        "select count(*) from ("
+        "  select reasoner_id"
+        "    from reasoning_reasoner_results"
+        "   where 1=1" + _org_filter(org) +
+        "   group by reasoner_id"
+        "  having count(*) > 0"
+        "     and sum(case when status = 'completed' then 1 else 0 end) = 0"
+        f"     and reasoner_id not in ({declared})"
+        ") as undeclared_never_completed"
+    )
+
+
 def _UNDECLARED_SILENT_UNITS_SQL(org: str | None) -> str:
     """How many units are silent above the threshold and NOT declared in `reason/unit_health`.
 
@@ -373,6 +421,22 @@ def receipts(org: str | None) -> list[Receipt]:
                 "a unit that completes and computes nothing is read downstream as 'no signal here' "
                 "rather than 'nothing to read' -- declare it in reason/unit_health with a reason and "
                 "a mover, or find out why it went quiet"),
+
+        # ⛔ L2 · A UNIT THAT RUNS AND NEVER COMPLETES IS DECLARED, OR IT IS INVISIBLE.
+        #
+        # The silence receipt above asks whether COMPLETIONS said anything, so it cannot see a unit
+        # with no completions -- that unit is not a low row, it is no row. Measured 2026-10-01:
+        # `core.relationship`, 929 runs, 0 completions, and the silence receipt green. The fact had
+        # been written in prose twice (once below, once inside DECLARED_SILENT["core.impact"]'s own
+        # reason) and declared nowhere a receipt could read.
+        Receipt("L2", "every unit that runs and never completes is a declared one",
+                _UNDECLARED_NEVER_COMPLETED_SQL(org),
+                lambda n: n == 0,
+                "a unit with runs and zero completions is absent, not quiet, and the silence "
+                "receipt cannot see it -- declare it in reason/unit_health.DECLARED_NEVER_COMPLETED "
+                "with a reason, a mover and the run count, or find out what stopped it answering. "
+                "A unit with no runs at all is a different fact (nobody scheduled it) and belongs "
+                "to the roster, not here"),
 
         # ⛔ L2 · EVERY FACT PATH A UNIT BINDS IS EITHER WRITTEN OR DECLARED UNWRITTEN.
         #

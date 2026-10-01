@@ -956,3 +956,79 @@ False on this host and still right, and zero documents gained one word of text. 
 receipt shared a root cause but not a fix: the test was measuring the host, the receipt is measuring
 the deploy image. Whose: **Harsh** — two packages in `requirements`, one apt package in the image,
 together.
+
+---
+
+# F · 2026-10-01 · the third kind of silence, and an Atlas claim that expired
+
+Re-checking the two planes against the Atlas's own matrix
+(`Rohit_Updates/.../01-Master-Atlas-vs-Code-Coverage-Matrix.md`, dated **2026-08-22**) produced one
+build and one retirement.
+
+## ⛔ The build: a unit that runs and never completes was invisible
+
+`reason/unit_health` declared two grains and a receipt read each — *a unit completes and computes
+nothing*, and *a bound fact path nothing writes*. One unit escaped both:
+
+    core.relationship   929 runs   708 insufficient_context   221 skipped   0 COMPLETED
+    core.policy         165 runs     0                        165 skipped   0 COMPLETED
+
+`_UNDECLARED_SILENT_UNITS_SQL` filters `where status = 'completed'` and groups by unit, so a unit
+with zero completed rows **is not a row with a low share — it is not a row.** It cannot appear in
+that GROUP BY at all, and the silence receipt was green while this unit had produced nothing in 929
+attempts.
+
+> **A unit that never completes is not a quiet unit; it is an absent one, and a question asked only
+> of completions cannot see it.**
+
+And `core.relationship` was not an unwritten fact either: it binds `deal.status`, which has **3
+rows**, and the declaration is for paths with *zero*. `receipts.py` draws that boundary on purpose —
+*"A path with one row has a writer; that is the whole question. How WELL it is covered is
+`deal.status`'s 3-of-293 problem, a different measurement with a different mover."*
+
+**So the fact was written down twice in prose and declared nowhere a receipt could read** — once in
+`receipts.py`, and once inside `DECLARED_SILENT["core.impact"]`'s own reason text, as an argument
+for a different unit's entry.
+
+`NeverCompleted` is the third grain. It demands the **run count** beside the reason, mover and date,
+because that is what separates *absent* from *never scheduled*; `runs <= 0` is refused at
+construction so `core.signal_composition` (0 runs, unswept capability, ALARM A2) cannot be mis-filed
+here. 30th receipt, 17 tests, mutation-proved.
+
+⛔ **My first version would have made the receipt permanently red.** It reported `core.policy` as
+undeclared, when all four fact paths it binds are already in `DECLARED_UNWRITTEN` — the codebase
+accounts for it at the grain that names the real mover. Closed with
+`starved_by_declared_paths()`, **derived from the roster**: hard-coding `core.policy` would have put
+one fact in two places and gone stale the moment a path gained a writer.
+
+## The retirement: the Atlas's sharpest Plane D claim has expired
+
+| | Atlas · 2026-08-22 | Measured · 2026-10-01 |
+|---|---|---|
+| Admin | *"**Stub.** 57 files, **all 57 stubs**, zero non-stub, zero reviewed/accepted, **zero routes**"* | **59 capabilities · all admitted · 0 hollow · 34 situations** |
+| corpus | *"**zero** reviewed or accepted"* | **155 capabilities, every one admitted, 0 hollow** |
+
+The corpus was authored out from under the matrix. **And the code had already learned this lesson
+the expensive way** — `capability_resolver._hollow`'s docstring carries its own retraction: *"THAT
+COUNT IS HISTORY, NOT A FACT ABOUT TODAY'S CORPUS, AND LEAVING IT UNMARKED COST A PLAN."* It fixed
+it by moving the count into **a function a test can run**. The matrix has no such function, which is
+why it had to be re-measured by hand.
+
+Plane R's claim was the opposite: *"Seventeen units are registered; the manifest schedules roughly
+six"* is **exactly right** (`CORE_UNITS` is 17, `BUILTIN_CAPABILITIES` schedules 7) — but **22 of 23
+units now run in production** and the registry and production agree exactly, so *"registered is not
+active"* no longer holds.
+
+## ⛔ Two false findings of mine, recorded rather than deleted
+
+**I nearly filed the programme's largest defect.** I measured that five of six YCW27 folder names
+contradict `LAYERS.py`'s digits and was about to write it up. `LAYERS.py` explains the collision in
+its own header, in capitals, and states the rule — *"always name the package, never the digit
+alone."* The YCW27 folders are the **PRODUCT** column, a legitimate fourth vocabulary. Fifth time in
+this programme that reading the thing a name points at prevented a false finding.
+
+**And my own measurement manufactured a finding.** The first run reported *"6 registered units never
+ran"*; all but one had run thousands of times. The six supplementary units carry no `unit_id` class
+attribute — they are identified by `spec.reasoner_id` on an **instance** — so my id helper returned
+class names and nothing matched. The artefact was indistinguishable from a real finding until the
+run counts were read.
