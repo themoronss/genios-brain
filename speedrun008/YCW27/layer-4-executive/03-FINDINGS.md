@@ -195,11 +195,61 @@ nothing.
 what its three siblings already did. See
 [`STEP-08`](STEP-08-DONE-a-baseline-is-a-statement-about-the-past.md).
 
-## F10 · 708 outputs carry no `ranking_weights_version`
+## F10 · ⛔⛔ RETRACTED — wrong in the scope, the reasoning AND the conclusion
 
-Present on **1,973 of 2,681** new outputs. The missing 708 are exactly the
+**What I wrote:** *"Present on 1,973 of 2,681 new outputs. The missing 708 are exactly the
 `legacy.rule` + `legacy.score_gate` run count. Two scoring lanes, one of which cannot say which
-weights it used — so it is not replayable. L2, its own unit.
+weights it used — so it is not replayable."*
+
+**Measured 2026-10-01, working backwards from the newest row:**
+
+| | What F10 said | What is true |
+|---|---|---|
+| **scope** | 708 of 2,681 | ⛔ **3,512 of 12,170**, and ~27% on **every single day** including the newest — not a time boundary at all |
+| **cause** | inferred from `708 == 708` | ⛔ a coincidence of a narrow window. The real split is a **perfect partition** on the weights **key set** |
+| **conclusion** | *"cannot say which weights it used … not replayable"* | ⛔ **false for all 12,170.** Every lane says which weights it used, exactly |
+
+    expertise   8,658 runs   6 keys  effort,impact,importance,risk,success,urgency  -> @2
+    legacy      3,500 runs   5 keys  effort,impact,risk,success,urgency             -> @1
+    expertise      12 runs   5 keys  effort,impact,risk,success,urgency             -> @1
+    ──────────────────────────────────────────────────────────────────────────────────────
+                12,170 runs — every one resolves, ZERO carry no weights at all
+
+⛔ `CapabilityManifest.ranking_weights_version` is a **property**, derived by
+`require_ranking_weights` from the key set, and **both shapes have one**:
+*"`ranking_weights@1` for the legacy five, `ranking_weights@2` for G-06's six."* The weights are
+persisted per decision in `reasoning_capability_snapshots.manifest`, so the version is recoverable
+**exactly** for every decision ever made.
+
+### ⛔ And F10's proposed fix would have broken replay
+
+The contract says why, at the exact line I would have changed:
+
+> *"Properties, not fields, and that is the whole reason old capabilities still address to the same
+> bytes: a stored `ranking_weights_version` column would have entered `to_semantic_dict`, changed
+> `capability_snapshot_id` for every capability in the tree, and **invalidated the
+> `reasoning_capability_snapshots` rows replay is verified against** — in exchange for a string the
+> key set already determines."*
+
+**Twentieth near-miss in this programme, and the third consecutive one whose fix would have caused
+harm**: F9 would have discarded every future calendar event; F10 would have invalidated the replay
+chain.
+
+### ⛔ Twelve rows prove the design is right
+
+Twelve `expertise.*` runs are on the v1 **five** weights. The obvious shortcut — `legacy.*` means
+`@1`, `expertise.*` means `@2`, which is exactly what the `708 == 708` coincidence pointed at —
+would have labelled those twelve **wrong**. And the two shapes have different divisors (100 vs
+10,000), so a mislabelled version also mis-divides by a factor of 100.
+
+> ⛔ **A lane name is not a version.** `require_ranking_weights` reads the key set *"never by their
+> sum"* and never off an activation table, and twelve production rows need exactly that.
+
+**Nothing was built.** 8 tests pin the derivation so the next reader who measures 3,512 absent keys
+finds the answer rather than the symptom. ⛔ **And deliberately no receipt** — 12,170 of 12,170
+resolve and the contract validates at construction, so it could never go red, and *a receipt that
+cannot fail is not a gate.* See
+[`STEP-09`](STEP-09-DONE-a-weights-version-is-derived-not-stored.md).
 
 ## ⛔ F11 · `unreached.py` cites `api/routes.py:1150`; it is at **1195**
 

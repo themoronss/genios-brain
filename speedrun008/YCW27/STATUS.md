@@ -1466,3 +1466,90 @@ the guard.** The three-sibling consistency test is the narrow version that is ac
     receipts   32 · #31 RED at 3,582 · #32 RED at 410
     UNREACHED   5 · real product gaps 1
     remaining buildable:  U5 (F10 — 708 outputs with no `ranking_weights_version`)
+
+---
+
+# 2026-10-01 · ✅ U5 DONE — ⛔ F10 RETRACTED · all five units closed
+
+`layer-4-executive/STEP-09-DONE-a-weights-version-is-derived-not-stored.md` · 8 tests ·
+4 mutations · **suite 14,651 passed, 0 failed** · ⛔ **zero production code changed**
+
+## ⛔ F10 was wrong in the scope, the reasoning AND the conclusion
+
+| | F10 said | Measured |
+|---|---|---|
+| scope | 708 of 2,681 | ⛔ **3,512 of 12,170**, ~27% on **every day including the newest** — no boundary at all |
+| cause | inferred from `708 == 708` | ⛔ a coincidence of a narrow window. A **join** shows a perfect partition on the weights **key set** |
+| conclusion | *"cannot say which weights it used … not replayable"* | ⛔ **false for all 12,170** |
+
+    expertise   8,658 runs   6 keys  effort,impact,importance,risk,success,urgency  -> @2
+    legacy      3,500 runs   5 keys  effort,impact,risk,success,urgency             -> @1
+    expertise      12 runs   5 keys  effort,impact,risk,success,urgency             -> @1
+                12,170 — every one resolves, ZERO carry no weights at all
+
+`CapabilityManifest.ranking_weights_version` is a **property** and both shapes have one; the
+weights are persisted per decision in `reasoning_capability_snapshots.manifest`.
+
+## ⛔ And the fix would have broken replay — the third such finding in a row
+
+> *"a stored `ranking_weights_version` column would have entered `to_semantic_dict`, changed
+> `capability_snapshot_id` for every capability in the tree, and **invalidated the
+> `reasoning_capability_snapshots` rows replay is verified against** — in exchange for a string the
+> key set already determines."*
+
+| | Finding | What my fix would have done |
+|---|---|---|
+| F9 | bound `occurred_at` at ingest | ⛔ discarded every future calendar event |
+| F10 | store the weights version | ⛔ invalidated every persisted capability snapshot |
+
+**Twentieth near-miss, and the third consecutive one whose fix would have caused harm.**
+
+## ⛔ Twelve rows prove the design is right
+
+**Twelve `expertise.*` runs are on the v1 five weights.** The shortcut the `708 == 708` pointed at
+— `legacy.*`→`@1`, `expertise.*`→`@2` — would have labelled them wrong. And the scales differ by
+**100×**, so a mislabelled version also mis-divides.
+
+> ⛔ **A lane name is not a version.**
+
+## And deliberately NO receipt
+
+All 12,170 resolve and the contract validates at construction, so it could never go red.
+
+> ⛔ **A receipt that cannot fail is not a gate.** #31 and #32 went red the day they shipped; that
+> is the test of whether one is worth adding.
+
+## ⛔ Why reverse-chronological mattered
+
+Newest-first refuted the scope in the **first** query — every recent day carries both kinds, so
+there is no boundary. Oldest-first would have found the 18 September feature landing, a true but
+useless fact, and the coincidence would have survived another step.
+
+> ⛔ **Start at the newest row.** A defect still happening shows up there; one that stopped shows
+> up by its absence there. Both answers in one query; only one is visible from the other end.
+
+---
+
+# 2026-10-01 · ALL FIVE L4 UNITS CLOSED — the scoreboard
+
+| | Unit | Outcome | Tests |
+|---|---|---|---|
+| **U1** | receipt #31 *"the current reasoning era selects, not only defers"* | ✅ built · ⛔ **RED at 3,582** | 16 |
+| **U2** | receipt #32 *"every action that needs sign-off can name who signs"* | ✅ built · ⛔ **RED at 410** · wiring blocked twice | 10 |
+| **U3** | `blocking_action` wired — a reminder stopped naming finished work | ✅ built · **UNREACHED 6 → 5** | 11 |
+| **U4** | the baseline read bounded at `eval_time` | ✅ built · ⛔ **F9 retracted** | 6 |
+| **U5** | the weights version is derived | ⛔ **F10 retracted · nothing built** | 8 |
+
+    51 tests · 26 mutations · 2 findings retracted · 2 receipts RED on the day they shipped
+    full suite 14,651 passed · 0 failed      (14,599 when the L4 pass began)
+
+## ⛔ What is left, and none of it is mine
+
+| | Item | Whose |
+|---|---|---|
+| **DECISION #5** — raise the limit · flip the switch · build the third path | ⛔ **Rohit.** #31 stays red until answered |
+| the reporting line — `org_seats.manager_seat_id` or a dated `reports_to` | **Rohit.** 124 day-7 escalations have never fired |
+| one in-force authority rule with an approver | **Rohit.** #32 goes green on the first one |
+| **H1** `0186`–`0190` · **H2** OCR · H3 backfill · H4 `deal.status` · H5 approval source | **Harsh** |
+| **U2b** the approver column + wiring | blocked on H1 **and** on an authority rule |
+| **U6** brief push · preventive push | blocked on a product number |
