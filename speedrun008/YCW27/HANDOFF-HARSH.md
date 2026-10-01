@@ -7,6 +7,28 @@
 
 ---
 
+## 2026-10-01 · H1 RE-VERIFIED AGAINST PRODUCTION
+
+Measured read-only, so this is not a reconstruction from the branch:
+
+```
+select version from schema_migrations order by 1 desc limit 1;
+  -> 0185_capture_policy_teams_default.sql     applied 2026-09-26 08:10:36 UTC
+
+select column_name from information_schema.columns
+ where table_name='cards' and column_name='lane';
+  -> ⛔ ZERO ROWS — the column the card writer names DOES NOT EXIST
+```
+
+`0186`–`0190` have still never run, five days on. ⛔ **`version` holds the full filename, not the
+number**, which is worth knowing before you write the check query.
+
+**The full end-to-end picture for L1, L2 and L3 — every number measured the same day — is
+`17-THE-THREE-LAYERS-end-to-end.md`. PART 7 of that document is this handoff expanded: what each
+item unblocks, how to know it worked, and the four things not to do.**
+
+---
+
 ## ⛔ BEFORE ANYTHING — one rule about reads
 
 Any query you run to *check* something runs inside:

@@ -937,3 +937,45 @@ to one list would pass a length check on the day it landed.
 |---|---|---|
 | **F-2** | `compute_coverage` gates on the constant `PACK_REQUIREMENTS` while `declaration.py:163` iterates the function `pack_requirements()` — an authored corpus is asked about, then answered `unknown_domain` with every predicate FALSE, the exact failure `_authored_requirements()` says it exists to prevent. ⛔ **MEASURED: zero authored domains exist, so it is LATENT, not live.** Reporting it as a live bug would have been the ninth time this programme called a state a defect before counting it. | 🟡 latent · 0 rows |
 | **F-3** | `coverage_ready` is a **tri-state** and `10000 if coverage_ready else 0` turns `None` into **0** — "we looked and it was terrible" standing in for "we never looked", the one error `AXIS_UNKNOWN_BP` exists to prevent. | 🟠 |
+
+---
+
+# 2026-10-01 · DOC 17 — the three layers, end to end
+
+`17-THE-THREE-LAYERS-end-to-end.md` · 834 lines · **written for Harsh and a coding agent.**
+Every number in it was measured read-only against production the same day.
+
+    PART 0   ⛔ the layer numbers are NOT the data flow: L1 -> L3 -> L2 -> L4
+    PART 1   what each layer IS — package, size, job, in, out, sub-stages
+    PART 2   the flow traced on ONE real email, table by table, plus all 11 seam contracts
+    PART 3   the production funnel, measured
+    PART 4   what was done per layer + ⛔ the NINE times a state was called a defect first
+    PART 5   expected vs actual per layer + ⛔ F-3, a LIVE defect on 141 rows
+    PART 6   why this architecture is better — and its honest cost
+    PART 7   ⛔ HARSH's five items in full: what each unblocks, how to verify, what NOT to do
+    PART 8   the 14 open items with owners
+    PART 9   the road to L4, and the crosscheck question it must start from
+
+## ⛔ What writing it found that nothing else had
+
+**F-3 is LIVE, not latent — 141 rows.** `capture/esqe/publisher.py:415` reads
+`10000 if coverage_ready else 0`, and `coverage_ready` is a **tri-state**:
+
+    coverage_ready = NULL    141 signals  ->  coverage axis = 0 on ALL 141
+    coverage_ready = FALSE   353 signals  ->  coverage axis = 0 on ALL 353
+    coverage_ready = TRUE     61 signals  ->  coverage axis = 10000 on all 61
+
+So **141 of 555 qualified signals (25%) assert "we looked and found nothing connected" when the
+truth is "nobody ever assessed it"** — and they are indistinguishable from the 353 that are
+honestly FALSE. 494 rows look the same and 141 of them are a different fact. This is exactly the
+error `AXIS_UNKNOWN_BP = -1` exists to prevent, one layer down, where the sentinel was not used.
+
+**It is mine, it is blocked on nothing, and it is the highest-value small fix left in L1-L3.**
+
+## And two numbers worth knowing before touching the funnel
+
+- **The 552 drops were not borderline.** Average floor **2,500 bp**, average dropped importance
+  **1,251 bp** — they scored *half* the floor. Lowering it admits noise; it does not recover signal.
+- **150 of 165 cards are expired**, 6 surfaced. ⛔ That is L4's first crosscheck question, not a
+  finding: expiry is a window, and a window over a queue starved since the OCR deploy expires
+  everything in it. Answerable by measuring expiry dates against the deploy date.
