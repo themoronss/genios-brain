@@ -1,0 +1,178 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Support Agent — the person a ticket is assigned to, and their capacity to answer it.
+#
+# ⛔ AUTHORED 2026-09-30 to close a dangling reference. `domain.yaml` listed it with
+# `referenced_by: 34` — the most-referenced unauthored object anywhere in this corpus — and no file
+# behind it. Eight other objects assign work to it (`ticket --assigned_to-->`, `commitment`,
+# `escalation`, `knowledge_article`) and four hold it as an attribute reference
+# (`bug_report.filed_by`, `bug_report.support_owner`, `entitlement.tam_ref`,
+# `postmortem.author_ref`).
+#
+# ⛔ SO ITS SHAPE IS ALREADY DECIDED BY THOSE TWELVE USES: it is the assignable, accountable human
+# on the support side — the one object every workflow in the domain points at and none defined.
+#
+# ⛔ CUSTOMER SUPPORT IS ON HOLD. Authoring an object activates nothing; it closes a reference so a
+# reader following the pointer finds a definition instead of a gap. See this domain's
+# `deferrals.yaml` header for the same argument applied to seven capabilities.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: customer_support.obj.core.support_agent
+  name: Support Agent
+  domain: customer_support
+  scope: core
+  owner_capability: customer_support.support_operations.workload_balancing
+  subdomain: support_operations
+  version: 0.1.0
+  status: draft
+  aliases: ["Agent", "Rep", "Analyst", "Support Engineer", "Assignee"]
+
+purpose:
+  statement: >
+    The named person on the support side who a ticket, commitment, escalation or article is
+    assigned to. It carries who they are, what they are qualified to handle, which queues they
+    serve, whether they are available right now, and how much is already open on them. It is the
+    object that lets "assigned" mean "somebody specific can answer this".
+  discriminator: >
+    Assignability. An agent is somebody work can be given to and taken back from. A manager who
+    reviews, a specialist who is consulted and an engineer who fixes are all involved and none is
+    the assignee — and a system that models them alike cannot tell who is answerable for a reply.
+  not:
+    - "NOT the escalation owner. customer_support.obj.core.escalation_owner is who an escalation
+      goes UP to, which is a different availability question and usually a different person."
+    - "NOT the queue. customer_support.obj.core.queue is where unassigned work waits; an agent is
+      who takes it out."
+    - "NOT the customer's contact. The named person on the customer side belongs on the account."
+
+attributes:
+  - name: person_ref
+    purpose: Which human, resolved rather than typed.
+    type: reference
+    ref: customer_support.obj.core.ticket
+    data_type: ref
+    required: true
+    description: >
+      A name in a text field is how one agent becomes two in a report. Resolved, and an unresolved
+      reference is an absence rather than a placeholder.
+  - name: serves_queues
+    purpose: Which queues this agent can be assigned from.
+    type: value
+    data_type: list
+    required: false
+    description: >
+      An agent serving every queue is an agent the router will over-assign; an agent serving none is
+      invisible to it. Both are common and neither is recorded today.
+  - name: skills
+    purpose: What they are qualified to handle.
+    type: value
+    data_type: list
+    required: false
+    description: >
+      ⛔ The difference between routing and dumping. A ticket assigned to somebody who cannot resolve
+      it is not assigned — it is queued again, silently, with the clock running.
+  - name: availability
+    purpose: Whether they can pick work up right now.
+    type: value
+    data_type: enum
+    allowed_values: [available, at_capacity, absent, unknown]
+    required: false
+    description: >
+      `unknown` is the honest default and is not `available`. Assigning to an absent agent is the
+      commonest cause of a first-response breach that nobody caused.
+  - name: open_load
+    purpose: How much is already assigned and unresolved.
+    type: derived
+    derived_from: [customer_support.obj.core.ticket]
+    data_type: integer
+    required: false
+    description: >
+      Derived from assignments rather than typed, so it cannot disagree with the tickets it counts.
+  - name: tier
+    purpose: Which support tier they work at.
+    type: value
+    data_type: enum
+    allowed_values: [tier_1, tier_2, tier_3, specialist, unknown]
+    required: false
+
+relationships:
+  - target: customer_support.obj.core.ticket
+    type: owns
+    cardinality: zero_or_many
+    description: >
+      The tickets currently assigned. The inverse of `ticket --assigned_to-->` and the join that
+      makes `open_load` computable.
+  - target: customer_support.obj.core.queue
+    type: member_of
+    cardinality: zero_or_many
+    description: The queues they draw from.
+  - target: customer_support.obj.core.escalation_owner
+    type: precedes
+    cardinality: zero_or_one
+    description: >
+      Where their escalations go. `precedes` rather than `reports_to`: an escalation path is not an
+      org chart, and conflating them sends escalations to whoever happens to be a line manager.
+
+inference_patterns:
+  heuristic:
+    - id: support_agent.assigned_while_absent
+      statement: >
+        Work assigned to an agent whose availability is `absent` is work with a name on it and
+        nobody behind it, and the clock runs regardless.
+      status: needs_signal
+      requires_signals:
+        - kind: fact_path
+          name: agent.availability
+          note: >
+            Nothing emits agent availability; this corpus has no helpdesk connector. Declared so the
+            gap is a frontier rather than a silence.
+      yields:
+        confidence_bp: 8500
+        attribute: availability
+      false_positive: >
+        A short absence on a ticket with a long clock is not an exposure, and this pattern cannot yet
+        read the clock alongside the absence.
+    - id: support_agent.skill_mismatch
+      statement: >
+        A ticket assigned to an agent whose skills do not cover its intent will be reassigned, and
+        the reassignment is invisible in every first-response metric.
+      status: needs_signal
+      requires_signals:
+        - kind: fact_path
+          name: agent.skills
+          note: No writer exists.
+        - kind: fact_path
+          name: ticket.intent_ref
+          note: >
+            The other half. Without both, a mismatch is unmeasurable and reassignment looks like
+            normal workflow.
+      yields:
+        confidence_bp: 7000
+      false_positive: >
+        Deliberate stretch assignment for development is correct practice and looks identical.
+
+evidence:
+  - source: ticket
+    strength_bp: 9000
+    description: The assignment itself. Definitive where a helpdesk is connected.
+  - source: email
+    strength_bp: 5500
+    description: >
+      An agent replying is evidence they hold the ticket, and is the only assignment signal this
+      product can see today.
+  - source: manual_entry
+    strength_bp: 7000
+    description: A roster somebody maintains. As good as how recently it was maintained.
+
+metadata:
+  owner: customer_support.support_operations.workload_balancing
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-09-30'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: partial
+  notes: >
+    ⛔ Derived from twelve existing uses — four attribute references and eight `assigned_to` edges —
+    rather than invented. A fuller pass would add states, the shift/rota question, the
+    specialist-versus-tier distinction this file only names, and the quality relationship to
+    `quality_scorecard`. Customer Support is on hold; this object activates nothing.

@@ -1,0 +1,139 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Queue — where unassigned work waits, and the promise attached to waiting there.
+#
+# ⛔ AUTHORED 2026-09-30 to close a dangling reference (`referenced_by: 15`). `ticket.queue_ref`
+# holds it, and both `ticket --attaches_to-->` and `sla_target --attaches_to-->` point at it — so a
+# queue is already, in this corpus, the thing an SLA attaches to. That is the whole design.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: customer_support.obj.core.queue
+  name: Queue
+  domain: customer_support
+  scope: core
+  owner_capability: customer_support.support_operations.queue_management
+  subdomain: support_operations
+  version: 0.1.0
+  status: draft
+  aliases: ["Group", "Team Inbox", "Work Pool", "Bucket"]
+
+purpose:
+  statement: >
+    A named pool that unassigned work waits in, with the service promise, the coverage and the
+    agents attached to it. It carries what belongs in it, who can draw from it, what standard
+    applies while work sits there, and how much is currently waiting. It is the object that makes a
+    wait attributable.
+  discriminator: >
+    Work waits in it unassigned. That is what separates a queue from a team (people), a view (a
+    filter) and an SLA (a promise). If nothing can wait in it, it is a view with a queue's name —
+    which is the commonest misconfiguration in any helpdesk.
+  not:
+    - "NOT the agent. customer_support.obj.core.support_agent is who takes work out."
+    - "NOT the SLA target. customer_support.obj.core.sla_target is the promise; the queue is what it
+      attaches to, and `sla_target --attaches_to--> queue` already says so."
+    - "NOT the coverage window. customer_support.obj.core.coverage_window is when somebody is there;
+      a queue accumulates whether or not anybody is."
+
+attributes:
+  - name: admits
+    purpose: What belongs in this queue.
+    type: value
+    data_type: string
+    required: true
+    description: >
+      A queue with no stated admission rule receives whatever a router could not place, which makes
+      it the queue nobody owns and the one with the worst numbers.
+  - name: depth
+    purpose: How much is waiting right now.
+    type: derived
+    derived_from: [customer_support.obj.core.ticket]
+    data_type: integer
+    required: false
+  - name: oldest_waiting
+    purpose: How long the oldest unassigned item has waited.
+    type: derived
+    derived_from: [customer_support.obj.core.ticket]
+    data_type: duration
+    required: false
+    description: >
+      ⛔ The number that predicts a breach, and depth does not. A shallow queue with one very old item
+      is in worse trouble than a deep queue turning over fast, and every dashboard reports depth.
+  - name: coverage_window_ref
+    purpose: When this queue is actually staffed.
+    type: reference
+    ref: customer_support.obj.core.coverage_window
+    data_type: ref
+    required: false
+
+relationships:
+  - target: customer_support.obj.core.ticket
+    type: owns
+    cardinality: zero_or_many
+    description: What is waiting. The inverse of `ticket.queue_ref`.
+  - target: customer_support.obj.core.sla_target
+    type: gates
+    cardinality: zero_or_many
+    description: The promise that applies while work waits here.
+  - target: customer_support.obj.core.support_agent
+    type: references
+    cardinality: zero_or_many
+    description: Who may draw from it.
+  - target: customer_support.obj.core.coverage_window
+    type: requires
+    cardinality: zero_or_one
+    description: >
+      ⛔ The edge that catches the worst configuration in support: a queue with a service promise and
+      no coverage window accrues breach in every hour nobody is looking at it.
+
+inference_patterns:
+  heuristic:
+    - id: queue.promise_without_coverage
+      statement: >
+        A queue carrying an SLA target and naming no coverage window accrues breach in every
+        uncovered hour, and nobody is on shift to notice.
+      status: needs_signal
+      requires_signals:
+        - kind: fact_path
+          name: queue.coverage_window_ref
+          note: Nothing emits a queue; no helpdesk connector exists.
+      yields:
+        confidence_bp: 8500
+        attribute: coverage_window_ref
+      false_positive: >
+        A 24/7 operation has one implicit window and needs none declared.
+    - id: queue.aged_head
+      statement: >
+        A queue whose oldest waiting item is far past the promise is failing regardless of how fast
+        the rest of it turns over.
+      status: needs_signal
+      requires_signals:
+        - kind: fact_path
+          name: ticket.queued_at
+          note: No writer exists.
+      yields:
+        confidence_bp: 8000
+        attribute: oldest_waiting
+      false_positive: >
+        A deliberately parked item awaiting a customer is old by design, and `pauses_on` is exactly
+        what nothing records.
+
+evidence:
+  - source: ticket
+    strength_bp: 9000
+    description: The queue assignment on a ticket. Definitive where a helpdesk is reachable.
+  - source: manual_entry
+    strength_bp: 6500
+    description: A queue somebody configured. As current as the last time anybody looked.
+
+metadata:
+  owner: customer_support.support_operations.queue_management
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-09-30'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: partial
+  notes: >
+    ⛔ Derived from `ticket.queue_ref` and the two `attaches_to` edges already pointing here — one of
+    which is `sla_target`, which is what made the promise-without-coverage pattern obvious. A fuller
+    pass would add routing rules, overflow behaviour and the priority interaction.

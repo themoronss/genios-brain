@@ -1,0 +1,113 @@
+# ⛔ AUTHORED 2026-09-30 to close a dangling reference (`referenced_by: 6`).
+# `incident.root_cause_ref` and `postmortem.root_cause_ref` hold it; `postmortem --produces-->` and
+# `incident --caused_by-->` point at it. An existing file already says what it is NOT: *"Not the
+# causal finding — that is customer_support.obj.core.root_cause."*
+identity:
+  id: customer_support.obj.core.root_cause
+  name: Root Cause
+  domain: customer_support
+  scope: core
+  owner_capability: customer_support.diagnosis_and_resolution.root_cause_analysis
+  subdomain: diagnosis_and_resolution
+  version: 0.1.0
+  status: draft
+  aliases: ["Cause", "Causal Finding", "Underlying Issue"]
+purpose:
+  statement: >
+    The established reason a class of problems occurs, as distinct from any one report of it. It
+    carries the finding, what evidence established it, how confident that finding is, and which
+    issues it explains. It is the object that lets a fix be aimed at a cause rather than at a symptom.
+  discriminator: >
+    It explains MORE THAN ONE occurrence. A cause established from a single report is a hypothesis
+    with a confident name, and the identity across reports is exactly what this domain cannot see
+    today — which is why `root_cause_analysis` is deferred.
+  not:
+    - "NOT the resolution. customer_support.obj.core.resolution is what was done; a workaround
+      resolves without ever establishing this."
+    - "NOT the incident. customer_support.obj.core.incident is an event; a root cause outlives it."
+    - "NOT the bug report. A bug report is a claim filed with engineering; this is the finding."
+attributes:
+  - name: finding
+    purpose: The cause, stated so somebody could disagree with it.
+    type: value
+    data_type: string
+    required: true
+    description: >
+      ⛔ "Human error" and "process gap" are not findings — nothing follows from them. A finding must
+      name something changeable, or the postmortem that produced it changes nothing.
+  - name: confidence_bp
+    purpose: How well established, in basis points.
+    type: value
+    data_type: integer
+    unit: bp
+    required: false
+    description: >
+      Integer basis points, like every ratio here. A cause asserted at full confidence from one
+      incident is the commonest postmortem failure.
+  - name: explains_count
+    purpose: How many occurrences it accounts for.
+    type: derived
+    derived_from: [customer_support.obj.core.incident]
+    data_type: integer
+    required: false
+    description: >
+      The number that separates a finding from a guess, and the one that needs issue identity across
+      reports — which nothing provides.
+  - name: addressed
+    purpose: Whether anything was actually changed because of it.
+    type: value
+    data_type: boolean
+    required: false
+    description: >
+      ⛔ The field that makes a postmortem library worth keeping. An unaddressed cause found three
+      times is a decision somebody made by not making it.
+relationships:
+  - target: customer_support.obj.core.incident
+    type: caused_by
+    cardinality: zero_or_many
+    description: The incidents this explains. The inverse of `incident --caused_by-->`.
+  - target: customer_support.obj.core.resolution
+    type: references
+    cardinality: zero_or_many
+    description: The resolutions that acted on it.
+inference_patterns:
+  heuristic:
+    - id: root_cause.recurring_and_unaddressed
+      statement: >
+        A cause that explains more than one occurrence and records no change made because of it will
+        explain the next one too.
+      status: needs_signal
+      requires_signals:
+        - kind: fact_path
+          name: issue.id
+          note: >
+            Issue identity across reports. In `planned_substrate` as `issue_under_diagnosis`, emitted
+            by nothing, and the reason `root_cause_analysis` is deferred in this domain.
+      yields:
+        confidence_bp: 8500
+        attribute: addressed
+      false_positive: >
+        A cause consciously accepted — cost of fixing exceeds cost of recurrence — is a decision, not
+        an omission, and nothing distinguishes the two today.
+evidence:
+  - source: document
+    strength_bp: 9000
+    description: A postmortem with a named author. The strongest form a causal finding takes.
+  - source: ticket
+    strength_bp: 6000
+    description: A diagnosis recorded on a ticket. Narrow, because it sees one report.
+  - source: derived
+    strength_bp: 4000
+    description: A cause clustered from several reports. Currently impossible, and the point.
+metadata:
+  owner: customer_support.diagnosis_and_resolution.root_cause_analysis
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-09-30'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: partial
+  notes: >
+    ⛔ Derived from the two `root_cause_ref` attributes and the `produces`/`caused_by` edges already
+    pointing here, plus the exclusion line an existing file had already written. Its owning capability
+    is deferred `blocked_on_l2_type`.

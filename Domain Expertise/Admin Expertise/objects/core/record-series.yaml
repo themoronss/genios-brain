@@ -1,0 +1,161 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Record Series — the retention class a record belongs to, not the record.
+#
+# ⛔ AUTHORED 2026-09-30 to close a dangling reference (`referenced_by: 2`).
+#
+# `employee-record.yaml` already decided the shape: a personnel file points at this rather than at
+# a date, because *"different components of a personnel file carry different periods — payroll
+# records outlive appraisal notes by years — which is why"* the reference exists at all.
+#
+# ⛔ SO THE DISCRIMINATOR IS THAT IT IS A CLASS, NOT AN INSTANCE. Every retention failure this
+# object prevents comes from putting a date on a document instead of a class: the schedule changes,
+# and nothing moves, because a thousand documents each hold their own stale copy of the rule.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: admin.obj.core.record_series
+  name: Record Series
+  domain: admin
+  scope: core
+  owner_capability: admin.records_and_documentation.retention_and_archival
+  subdomain: compliance_and_governance
+  version: 0.1.0
+  status: draft
+  aliases: ["Retention Class", "Records Schedule Entry", "Disposal Class"]
+
+purpose:
+  statement: >
+    A named class of records sharing one retention rule — how long they must be kept, what starts
+    the clock, what happens at the end, and which authority requires it. Records point at it;
+    it does not point at records. It is the object that lets a retention schedule change once and
+    take effect everywhere.
+  discriminator: >
+    One rule, many records. If a rule applies to exactly one document it is not a series, it is a
+    condition on that document. The value of this object is entirely in the fan-out.
+  not:
+    - "NOT the record. admin.obj.core.document and admin.obj.core.employee_record are instances;
+      this is the class they belong to."
+    - "NOT the deadline. admin.obj.core.deadline is a dated obligation with a consequence for
+      missing it; a retention period is a floor below which destruction is the offence."
+    - "NOT the policy. admin.obj.core.policy may mandate a schedule; this object is one line of it."
+
+attributes:
+  - name: retention_period
+    purpose: How long records in this class must survive.
+    type: value
+    data_type: duration
+    required: true
+  - name: trigger_event
+    purpose: What starts the retention clock.
+    type: value
+    data_type: enum
+    allowed_values: [creation, last_action, relationship_end, financial_year_end, superseded]
+    required: true
+    description: >
+      ⛔ The field that makes the period computable. "Seven years" from creation and from
+      relationship end differ by the length of the relationship, which for an employee record is
+      most of the period.
+  - name: disposal_action
+    purpose: What happens when the period elapses.
+    type: value
+    data_type: enum
+    allowed_values: [destroy, review, transfer, retain_permanently]
+    required: true
+    description: >
+      `review` is the honest default for anything with legal exposure and is the answer most
+      schedules avoid because it creates work at the far end.
+  - name: authority
+    purpose: Which statute, regulator or policy requires this.
+    type: value
+    data_type: string
+    required: false
+    description: >
+      A retention period with no cited authority is somebody's caution, and it will be defended as
+      law by whoever inherits it.
+  - name: legal_hold
+    purpose: Whether disposal is currently suspended.
+    type: value
+    data_type: boolean
+    required: false
+    description: >
+      ⛔ Overrides everything above. Destroying under an active hold is a materially worse event
+      than keeping too long, which is why this is a field on the class and not a note.
+
+relationships:
+  - target: admin.obj.core.document
+    type: gates
+    cardinality: zero_or_many
+    description: The documents whose disposal this class governs.
+  - target: admin.obj.core.policy
+    type: belongs_to
+    cardinality: zero_or_one
+    description: The schedule this series is one line of.
+  - target: admin.obj.core.compliance_obligation
+    type: references
+    cardinality: zero_or_one
+    description: The duty that makes the period mandatory rather than prudent.
+
+inference_patterns:
+  heuristic:
+    - id: record_series.period_without_authority
+      statement: >
+        A retention period citing no authority is a convention, and conventions are defended as law
+        by whoever inherits them.
+      status: needs_signal
+      requires_signals:
+        - kind: fact_path
+          name: record_series.authority
+          note: No writer exists; retention schedules live outside every connected system.
+      yields:
+        confidence_bp: 7000
+        attribute: authority
+      false_positive: >
+        A genuine business-judgment retention period is legitimate and uncited by design.
+    - id: record_series.elapsed_with_no_disposal
+      statement: >
+        Records whose period has elapsed and which were never reviewed or destroyed are a growing
+        liability, and one nobody is measured on.
+      status: needs_signal
+      requires_signals:
+        - kind: fact_path
+          name: document.created_at
+          note: >
+            In `planned_substrate` and emitted by nothing — one of the eight `document.*` paths this
+            corpus declares and no pack writes.
+      yields:
+        confidence_bp: 7500
+      false_positive: >
+        An active legal hold makes retention correct rather than negligent, and a hold is exactly
+        what nothing records.
+
+evidence:
+  - source: document
+    strength_bp: 9000
+    description: A published retention schedule. What an auditor asks for first.
+  - source: derived
+    strength_bp: 6000
+    description: >
+      A period inferred from a statutory reference elsewhere in the corpus. Reasonable and worth
+      marking as inferred rather than stated.
+  - source: manual_entry
+    strength_bp: 5500
+    description: Somebody typed the class onto a record. Common, and only as good as who typed it.
+
+metadata:
+  owner: admin.records_and_documentation.retention_and_archival
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-09-30'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: partial
+  notes: >
+    ⛔ `owner_capability` CORRECTED 2026-09-30: the first draft named `admin.compliance_and_governance.retention_and_archival`,
+    which does not exist in this corpus. Nothing validated it — an object's owner_capability was
+    not cross-checked against real capability ids, so the invented name sat there as a dangling
+    reference no tool would have reported. That check now exists in `_tools/validate.py`.
+
+    ⛔ Derived from `employee-record.yaml`'s class-not-date reference and `compliance-obligation`'s
+    enriching edge. Both patterns are `needs_signal` and both name a `document.*` path from
+    `planned_substrate` that nothing emits — which is the same gap the completeness audit records
+    as ten unconsumed `document.*` fact paths.

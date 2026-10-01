@@ -1,0 +1,118 @@
+# ⛔ AUTHORED 2026-09-30 to close a dangling reference (`referenced_by: 8`). An existing file had
+# already defined it by exclusion: *"Not the effort the customer had to spend — that is
+# customer_support.obj.core.effort_score, and it is the better retention predictor of the two."*
+#
+# ⛔ THAT CLAUSE IS THE WHOLE ARGUMENT FOR THE OBJECT. Satisfaction asks how somebody felt; effort
+# asks what it cost them. The second predicts whether they stay and the first predicts whether they
+# say something nice, and most support functions measure only the first.
+identity:
+  id: customer_support.obj.core.effort_score
+  name: Effort Score
+  domain: customer_support
+  scope: core
+  owner_capability: customer_support.voice_of_customer.satisfaction_measurement
+  subdomain: voice_of_customer
+  version: 0.1.0
+  status: draft
+  aliases: ["CES", "Customer Effort", "Friction Score"]
+purpose:
+  statement: >
+    How much work the customer had to do to get their outcome — measured by asking, or estimated from
+    contacts, channel switches and elapsed time. It carries the score, its basis, and what drove it.
+    It is the retention signal satisfaction surveys miss.
+  discriminator: >
+    It measures the customer's work, not their mood. A delighted customer who wrote four times has a
+    bad effort score and a good satisfaction score, and only one of those predicts renewal.
+  not:
+    - "NOT satisfaction. customer_support.obj.core.customer_sentiment is how they felt, and
+      `customer_sentiment --precedes--> effort_score` already orders the two."
+    - "NOT cost to serve. What it cost US is a different object and an opposite optimisation: a
+      cheap-to-serve interaction is frequently a high-effort one for the customer."
+attributes:
+  - name: score_bp
+    purpose: The effort score, in basis points of a normalised scale.
+    type: value
+    data_type: integer
+    unit: bp
+    required: false
+    description: Integer basis points, like every ratio here.
+  - name: basis
+    purpose: Whether it was asked or estimated.
+    type: value
+    data_type: enum
+    allowed_values: [surveyed, estimated, unknown]
+    required: true
+    description: >
+      ⛔ Required, because an estimated score presented as a surveyed one is a fabricated measurement.
+      `estimated` is legitimate and must never be silently promoted.
+  - name: contact_count
+    purpose: How many times they had to get in touch.
+    type: derived
+    derived_from: [customer_support.obj.core.ticket]
+    data_type: integer
+    required: false
+    description: >
+      The strongest single component of estimated effort, and the only one this product could
+      compute today if it could see tickets.
+  - name: channel_switches
+    purpose: How many times they had to change channel.
+    type: derived
+    derived_from: [customer_support.obj.core.ticket]
+    data_type: integer
+    required: false
+    description: >
+      ⛔ The most under-measured driver of effort. Being told to email after phoning is a small
+      operational convenience and a large customer cost.
+relationships:
+  - target: customer_support.obj.core.customer_sentiment
+    type: caused_by
+    cardinality: zero_or_one
+    description: >
+      Effort drives sentiment more reliably than the reverse, which is what the existing
+      `precedes` edge between them asserts.
+  - target: customer_support.obj.core.churn_risk
+    type: influences
+    cardinality: zero_or_many
+    description: >
+      The retention consequence. The reason the exclusion line calls this the better predictor.
+inference_patterns:
+  heuristic:
+    - id: effort_score.repeat_contact_is_effort
+      statement: >
+        A customer contacting repeatedly about one intent is spending effort regardless of how
+        pleasantly each exchange went.
+      status: needs_signal
+      requires_signals:
+        - kind: fact_path
+          name: ticket.contact_count
+          note: >
+            Repeat-contact identity. `repeat_contact` is one of this domain's planned L2 types and is
+            emitted by nothing.
+      yields:
+        confidence_bp: 7500
+        attribute: contact_count
+      false_positive: >
+        A customer with several genuinely unrelated issues is not expending effort on one thing, and
+        without intent classification the two are indistinguishable.
+evidence:
+  - source: ticket
+    strength_bp: 8000
+    description: Contact counts and channel history. The basis for an estimate.
+  - source: manual_entry
+    strength_bp: 9000
+    description: A survey response. The only `surveyed` basis, and rare.
+  - source: derived
+    strength_bp: 6000
+    description: An estimate. Legitimate, and it must stay labelled as one.
+metadata:
+  owner: customer_support.voice_of_customer.satisfaction_measurement
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-09-30'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: partial
+  notes: >
+    ⛔ Derived from the exclusion line an existing file had already written and from the two edges
+    pointing here. A fuller pass would add the survey instrument question and the normalisation
+    across channels.

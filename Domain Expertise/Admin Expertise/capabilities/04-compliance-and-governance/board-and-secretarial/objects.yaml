@@ -15,6 +15,7 @@ core:
     - admin.obj.core.meeting
     - admin.obj.core.document
   optional:
+    - admin.obj.core.admin_risk
     - admin.obj.core.approval
     - admin.obj.core.compliance_obligation
     - admin.obj.core.policy

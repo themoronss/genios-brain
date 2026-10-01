@@ -1,0 +1,133 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Intent — what the customer is actually trying to achieve, not what they asked about.
+#
+# ⛔ AUTHORED 2026-09-30 to close a dangling reference (`referenced_by: 20`). `ticket.intent_ref`
+# and `macro.intent_ref` hold it; `knowledge_article --covers-->` and `macro --covers-->` point at
+# it; `product_area --references-->` relates to it. Five uses decided its shape before it existed.
+#
+# ⛔ IT IS THE OBJECT DEFLECTION AND ROUTING BOTH DEPEND ON, and the one every helpdesk replaces
+# with a category dropdown. A category describes the SUBJECT; an intent describes the GOAL, and the
+# same subject carries opposite goals — "billing" is both "I want a refund" and "I cannot pay you".
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: customer_support.obj.core.intent
+  name: Intent
+  domain: customer_support
+  scope: core
+  owner_capability: customer_support.intake_and_triage.intent_classification
+  subdomain: intake_and_triage
+  version: 0.1.0
+  status: draft
+  aliases: ["Reason for Contact", "Contact Driver", "Issue Type", "Goal"]
+
+purpose:
+  statement: >
+    What the customer is trying to achieve by contacting support, as distinct from the subject they
+    mentioned. It carries the goal, the product area it concerns, whether it is answerable from
+    knowledge, and how often it recurs. It is the object routing, deflection and content-gap
+    analysis all read.
+  discriminator: >
+    A goal, not a subject. The test is whether a sentence beginning "the customer wants to…"
+    completes naturally. "Billing" does not; "get a refund" does. A taxonomy of subjects cannot
+    route, because two opposite goals share a subject.
+  not:
+    - "NOT the product area. customer_support.obj.core.product_area is where in the product the
+      issue lives; an intent is what the person wants done about it."
+    - "NOT the resolution. customer_support.obj.core.resolution is what was eventually done; an
+      intent is what was wanted, and the gap between them is the most useful thing in the domain."
+    - "NOT the sentiment. How the customer feels is a separate axis and a furious customer and a
+      calm one can hold the same intent."
+
+attributes:
+  - name: goal
+    purpose: What the customer wants to achieve, stated as a goal.
+    type: value
+    data_type: string
+    required: true
+    description: >
+      ⛔ Phrased from the customer's side, always. An intent written from ours ("process refund")
+      quietly turns a taxonomy of goals into a taxonomy of our own workflow steps.
+  - name: product_area_ref
+    purpose: Where in the product this concerns.
+    type: reference
+    ref: customer_support.obj.core.product_area
+    data_type: ref
+    required: false
+  - name: self_serviceable
+    purpose: Whether this intent can be satisfied without a human.
+    type: value
+    data_type: enum
+    allowed_values: [yes, with_article, no, unknown]
+    required: false
+    description: >
+      `with_article` is the member deflection exists for, and the one that turns an unanswered intent
+      into a content gap rather than a staffing problem.
+  - name: volume_30d
+    purpose: How often this intent arrived recently.
+    type: derived
+    derived_from: [customer_support.obj.core.ticket]
+    data_type: integer
+    required: false
+    description: >
+      Derived from tickets rather than typed. A high-volume intent with no article is the single
+      cheapest content decision a support function can make, and it is invisible without this number.
+
+relationships:
+  - target: customer_support.obj.core.ticket
+    type: references
+    cardinality: zero_or_many
+    description: The tickets carrying this intent. The inverse of `ticket.intent_ref`.
+  - target: customer_support.obj.core.knowledge_article
+    type: references
+    cardinality: zero_or_many
+    description: >
+      The articles that answer it. Zero articles on a high-volume intent IS the content gap, which is
+      why `content_gap --caused_by-->` exists.
+  - target: customer_support.obj.core.product_area
+    type: references
+    cardinality: zero_or_one
+    description: Where it lives in the product.
+
+inference_patterns:
+  heuristic:
+    - id: intent.high_volume_no_article
+      statement: >
+        A recurring intent that no article covers is a content gap, not a staffing problem, and the
+        two are answered in opposite directions.
+      status: needs_signal
+      requires_signals:
+        - kind: fact_path
+          name: ticket.intent_ref
+          note: >
+            Nothing classifies intent today; this corpus has no helpdesk connector and no classifier.
+            Declared so the absence is a frontier.
+      yields:
+        confidence_bp: 8000
+      false_positive: >
+        An intent that recurs because a defect recurs needs the defect fixed, not an article written,
+        and both look identical from ticket volume alone.
+
+evidence:
+  - source: ticket
+    strength_bp: 8500
+    description: A classified ticket. Definitive where a classifier exists, which is nowhere yet.
+  - source: email
+    strength_bp: 5000
+    description: The customer's own words. All that is available today, and unclassified.
+  - source: derived
+    strength_bp: 6000
+    description: An intent inferred from the article a customer was eventually sent.
+
+metadata:
+  owner: customer_support.intake_and_triage.intent_classification
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-09-30'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: partial
+  notes: >
+    ⛔ Derived from `ticket.intent_ref`, `macro.intent_ref` and the three `covers`/`references` edges
+    that already pointed here. A fuller pass would add the hierarchy question (intents nest), the
+    multi-intent ticket, and the relationship to `effort_score`.

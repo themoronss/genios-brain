@@ -36,6 +36,24 @@
 # `admission` block for a situation at all, and `capability_resolver._admission_reason` takes a
 # CAPABILITY. A situation's status gates nothing.
 #
+# ⛔ CORRECTED 2026-09-30. THE SENTENCE ABOVE — "a situation's status gates nothing" — WAS TRUE WHEN
+# IT WAS WRITTEN AND IS NO LONGER. `capability_resolver.situation_admission_reason` closed the hole
+# afterwards: it reads `identity.status`, `metadata.review_status` and `metadata.reviewed_by`, and a
+# failure lands in `admission_gaps` -> `plan.admitted=False` (`capability_resolver.py:790`,
+# `admitted=not admission_gaps`) -> `review_state='draft'` -> `_apply_abstention` downgrades the card
+# to an observation. Measured over the whole corpus on that date: all 23 `draft` situations are
+# flagged `identity_status_draft`, and ZERO draft situations may instruct.
+#
+# ⛔ AND THE STALENESS COST A REAL PASS. A cross-check for Plane D quoted this paragraph as current
+# evidence, concluded that six of Admin's seven draft situations were shipping prescriptive cards,
+# and specified a unit to fix it. Nothing was wrong. A stale comment is more dangerous than no
+# comment, because it reads as a measurement somebody already took.
+#
+# Everything else in this header still holds: `states_absence: true` IS this situation's honest
+# description, and it answers a different question from `status` — whether the FINDING is an absence,
+# not whether the COPY has been reviewed. Its sibling `organization-gone-quiet.yaml` refuses the flag
+# for exactly that reason, correctly.
+#
 # `states_absence: true` in the render block is the real guard, and it is also the honest
 # description. `deliver/card_builder` reads it and writes the card at `review` — "something is
 # missing and a human must look" — with no run_play button. That is exactly what this card is.

@@ -15,6 +15,7 @@ core:
     - admin.obj.core.request
     - admin.obj.core.sop
   optional:
+    - admin.obj.core.service_level
     - admin.obj.core.escalation
     - admin.obj.core.approver
     - admin.obj.core.policy

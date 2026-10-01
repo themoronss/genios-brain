@@ -1,0 +1,109 @@
+# ⛔ AUTHORED 2026-09-30 to close a dangling reference (`referenced_by: 13`). Two edges point at it —
+# `knowledge_article --caused_by-->` and `macro --caused_by-->` — and `caused_by` is the telling verb:
+# in this corpus a content gap is what CAUSES an article to be written, not what an article reports.
+identity:
+  id: customer_support.obj.core.content_gap
+  name: Content Gap
+  domain: customer_support
+  scope: core
+  owner_capability: customer_support.knowledge_and_deflection.content_gap_analysis
+  subdomain: knowledge_and_deflection
+  version: 0.1.0
+  status: draft
+  aliases: ["Knowledge Gap", "Missing Article", "Deflection Miss"]
+purpose:
+  statement: >
+    A recurring customer intent that no article or macro answers, with the volume behind it and the
+    effort it costs. It carries the intent, how often it arrives, what currently happens instead, and
+    whether anybody has been asked to write the answer. It is the object that turns "we get a lot of
+    these" into a decision.
+  discriminator: >
+    Demand without supply. A gap needs BOTH — a recurring intent and no content. An intent nobody
+    asks about is not a gap however thin the documentation, and a well-documented topic people still
+    write in about is a findability problem, which is a different fix.
+  not:
+    - "NOT the intent. customer_support.obj.core.intent is what the customer wants; a gap is the
+      absence of an answer to it."
+    - "NOT the article. customer_support.obj.core.knowledge_article is the answer; the gap `caused_by`
+      relationship already says which produces which."
+    - "NOT a staffing problem. Volume answered by humans well is a cost question; volume answered
+      badly or slowly is this."
+attributes:
+  - name: intent_ref
+    purpose: The unanswered intent.
+    type: reference
+    ref: customer_support.obj.core.intent
+    data_type: ref
+    required: true
+  - name: volume_30d
+    purpose: How much demand sits behind it.
+    type: derived
+    derived_from: [customer_support.obj.core.ticket]
+    data_type: integer
+    required: false
+    description: >
+      ⛔ Without this a content backlog is ordered by whoever complained most recently, which is how
+      the third-most-common question gets written up and the first does not.
+  - name: current_handling
+    purpose: What happens today instead.
+    type: value
+    data_type: enum
+    allowed_values: [answered_manually, macro_partially_covers, escalated, unanswered, unknown]
+    required: false
+    description: >
+      `macro_partially_covers` is the honest middle and the one most often recorded as covered.
+  - name: assigned_author_ref
+    purpose: Who has been asked to write it.
+    type: reference
+    ref: customer_support.obj.core.support_agent
+    data_type: ref
+    required: false
+    description: >
+      An unassigned gap is a gap nobody is closing. Most content backlogs are entirely unassigned and
+      are nonetheless reported as a plan.
+relationships:
+  - target: customer_support.obj.core.intent
+    type: references
+    cardinality: one
+    description: The demand.
+  - target: customer_support.obj.core.knowledge_article
+    type: produces
+    cardinality: zero_or_many
+    description: >
+      The article eventually written. The inverse of `knowledge_article --caused_by--> content_gap`,
+      which is the edge that made this object's direction unambiguous.
+inference_patterns:
+  heuristic:
+    - id: content_gap.volume_without_content
+      statement: >
+        A recurring intent with no covering article and no assigned author is demand nobody has
+        decided about — neither to answer nor to accept.
+      status: needs_signal
+      requires_signals:
+        - kind: fact_path
+          name: ticket.intent_ref
+          note: No classifier exists; intent is unclassified today.
+      yields:
+        confidence_bp: 8000
+      false_positive: >
+        An intent that should NOT be self-served — anything needing identity verification or
+        judgment — is correctly unanswered by content and will read as a gap.
+evidence:
+  - source: ticket
+    strength_bp: 8500
+    description: Ticket volume against a classified intent. The whole basis, and unavailable today.
+  - source: derived
+    strength_bp: 6000
+    description: A gap inferred from repeated similar replies. Weak and available.
+metadata:
+  owner: customer_support.knowledge_and_deflection.content_gap_analysis
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-09-30'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: partial
+  notes: >
+    ⛔ Derived from the two `caused_by` edges already pointing here, whose direction decided this
+    object's shape. A fuller pass would add the findability-versus-absence distinction and the
+    deflection-rate feedback loop.

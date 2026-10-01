@@ -15,6 +15,7 @@ core:
     - admin.obj.core.meeting
     - admin.obj.core.commitment
   optional:
+    - admin.obj.core.itinerary
     - admin.obj.core.approval
     - admin.obj.core.employee_record
 

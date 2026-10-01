@@ -15,6 +15,7 @@ core:
     - admin.obj.core.vendor
     - admin.obj.core.approval
   optional:
+    - admin.obj.core.purchase_order
     - admin.obj.core.budget_line
     - admin.obj.core.contract
     - admin.obj.core.policy

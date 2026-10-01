@@ -1,0 +1,211 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Audit Evidence — the artefact that proves a control ran, as opposed to the control's wording.
+#
+# ⛔ AUTHORED 2026-09-30 to close a dangling reference. `domain.yaml` listed it with
+# `referenced_by: 11` — the most-referenced unauthored object in the domain — and no file behind it.
+#
+# WHAT THE CORPUS ALREADY DECIDED THIS IS: `policy.yaml` says the controls are what carry
+# `admin.obj.core.audit_evidence`, "and they are what an auditor actually tests — the wording is
+# never what is tested." `deadline.yaml` enriches it. `compliance-obligation.yaml` points at it.
+#
+# ⛔ SO THE DISCRIMINATOR IS THE GAP BETWEEN WHAT AN ORGANISATION SAYS AND WHAT IT CAN SHOW. Every
+# policy library is full of well-written controls nobody can evidence, and the writing is the part
+# that gets reviewed annually. An auditor does not read the policy; they ask for the artefact, and
+# the artefact either exists with a date and a name on it or the control did not run.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: admin.obj.core.audit_evidence
+  name: Audit Evidence
+  domain: admin
+  scope: core
+  owner_capability: admin.compliance_and_governance.audit_support
+  subdomain: compliance_and_governance
+  version: 0.1.0
+  status: draft
+  aliases: ["Control Evidence", "Audit Artefact", "Proof of Control", "Test Evidence"]
+
+purpose:
+  statement: >
+    The dated, attributable artefact that shows a control actually operated — an approval with a
+    name and a timestamp, a completed attestation, a signed register entry, a filing receipt, a
+    reviewed access list. It carries what it proves, when it was produced, who produced it, where
+    it is held, and how long it must survive. It is the object that turns a written control into a
+    defensible one.
+  discriminator: >
+    Producibility on demand. A control is evidenced when somebody outside the process can be handed
+    the artefact without anyone reconstructing it. If producing it requires remembering, searching
+    or asking, there is no evidence — there is a belief that the control ran.
+  not:
+    - "NOT the control or the policy. admin.obj.core.policy owns the wording and the intent; this
+      object is what an auditor tests instead of the wording."
+    - "NOT the obligation. admin.obj.core.compliance_obligation is the duty that exists whether or
+      not anybody evidenced it."
+    - "NOT the document. admin.obj.core.document owns a file's identity, location and version; this
+      object is a claim ABOUT a control, which a document may happen to substantiate."
+    - "NOT the deadline. admin.obj.core.deadline owns when something is due; evidence is what
+      remains afterwards to show it was done."
+
+attributes:
+  - name: proves_ref
+    purpose: Which control or obligation this artefact evidences.
+    type: reference
+    ref: admin.obj.core.compliance_obligation
+    data_type: ref
+    required: true
+    description: >
+      Evidence not attached to a claim is a file. The reference is what lets an audit question
+      ("show me this control operating") be answered by a query rather than by a person's memory.
+  - name: artefact_kind
+    purpose: What sort of proof this is, because they are not equally strong.
+    type: value
+    data_type: enum
+    allowed_values: [approval_record, attestation, register_entry, filing_receipt, review_log,
+                     system_export, correspondence]
+    required: true
+    description: >
+      A filing receipt from an authority is near-incontrovertible; correspondence is a person's
+      account of events. Ranking them is the difference between an audit file and a folder.
+  - name: produced_at
+    purpose: When the artefact came into existence.
+    type: value
+    data_type: timestamp
+    required: true
+    description: >
+      ⛔ The production time, not the control's due date. Evidence produced after the fact to fill a
+      gap is a known audit finding in its own right, and the two dates are what expose it.
+  - name: produced_by_ref
+    purpose: Who produced it.
+    type: reference
+    ref: admin.obj.core.stakeholder
+    data_type: ref
+    required: false
+    description: >
+      Unattributed evidence is weak evidence. Optional rather than required because a system export
+      genuinely has no author, and demanding one would push authors to invent them.
+  - name: held_at
+    purpose: Where it can be produced from.
+    type: value
+    data_type: string
+    required: false
+    description: >
+      The commonest audit failure is not missing evidence but evidence nobody can find within the
+      window the auditor allows.
+  - name: retain_until
+    purpose: The date before which it must not be destroyed.
+    type: derived
+    derived_from: [admin.obj.core.record_series]
+    data_type: timestamp
+    required: false
+    description: >
+      Derived from the retention class rather than typed, so a change to the schedule moves every
+      artefact rather than none.
+
+relationships:
+  - target: admin.obj.core.policy
+    type: references
+    cardinality: zero_or_one
+    description: >
+      The written control this evidences. `policy.yaml`'s own line is the reason this edge exists:
+      the wording is never what is tested.
+  - target: admin.obj.core.record_series
+    type: belongs_to
+    cardinality: zero_or_one
+    description: The retention class that decides how long this artefact must survive.
+  - target: admin.obj.core.approval
+    type: produces
+    cardinality: zero_or_many
+    description: >
+      An approval record is the commonest artefact kind in an administrative function, and it is
+      produced as a by-product of a decision rather than authored as evidence — which is why it is
+      the evidence most often complete and least often filed.
+
+inference_patterns:
+  deterministic:
+    - id: audit_evidence.budget_approval_is_evidence
+      statement: >
+        A recorded BUDGET approval with a named approver and a timestamp is audit evidence for the
+        control that required it, whether or not anybody filed it as such.
+      status: executable
+      when:
+        - {has_obs: budget_approved}
+      yields:
+        confidence_bp: 9000
+        attribute: artefact_kind
+        value: approval_record
+      evidence_fields: [commitment.action]
+      note: >
+        ⛔ NARROWED TO BUDGET APPROVALS, DELIBERATELY. The first draft claimed every recorded
+        approval and named `approval_recorded`, which Layer 2 does not emit — the validator refused
+        it, correctly. `budget_approved` IS emitted, so this fires today on the one approval class
+        the substrate can see. The wider claim is a `needs_signal` pattern somebody should add when
+        a general approval observation exists; asserting it now would have been an executable
+        pattern that never executes.
+
+        Still the cheapest expansion of an audit file this product can make: the artefacts already
+        exist in the approval trail and are simply not indexed as evidence.
+  heuristic:
+    - id: audit_evidence.control_with_no_artefact
+      statement: >
+        A control whose obligation has passed its due date and which points at no artefact was
+        either not performed or not evidenced, and the two are indistinguishable from outside.
+      status: needs_signal
+      requires_signals:
+        - kind: fact_path
+          name: obligation.last_evidenced_at
+          note: >
+            When this control was last shown to have operated. Nothing emits it, which is why the
+            distinction between "not done" and "not filed" cannot be made today — and an audit
+            treats them identically anyway.
+      yields:
+        confidence_bp: 7000
+      false_positive: >
+        Evidence held outside every connected system — a signed paper register in a drawer — reads
+        as absent. Real, common, and the reason this pattern reports an exposure rather than a
+        breach.
+
+evidence:
+  - source: document
+    strength_bp: 9500
+    description: >
+      A filing receipt, a signed register, a completed attestation. The artefact itself, which is
+      the only thing an auditor accepts without discussion.
+  - source: derived
+    strength_bp: 9000
+    description: >
+      An approval record assembled from the approval trail — named approver, timestamp, and the
+      limit that made them sufficient. Derived rather than filed, and the reason the executable
+      pattern above is worth having at all.
+  - source: crm
+    strength_bp: 7500
+    decays: true
+    description: >
+      A system export. Strong at the moment of export and decaying immediately: an access review
+      from March proves nothing about June, and exports are routinely filed as though they did.
+  - source: email
+    strength_bp: 3500
+    independent_of: [crm]
+    description: >
+      A person's account that something happened. Weakest available artefact, and frequently the
+      only one — which is itself the finding this object exists to surface.
+
+metadata:
+  owner: admin.compliance_and_governance.audit_support
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-09-30'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: partial
+  notes: >
+    ⛔ `owner_capability` CORRECTED 2026-09-30: the first draft named `admin.compliance_and_governance.audit_readiness`,
+    which does not exist in this corpus. Nothing validated it — an object's owner_capability was
+    not cross-checked against real capability ids, so the invented name sat there as a dangling
+    reference no tool would have reported. That check now exists in `_tools/validate.py`.
+
+    ⛔ AUTHORED TO CLOSE ELEVEN DANGLING REFERENCES. Derived from `policy.yaml`'s statement that
+    controls, not wording, are what an auditor tests, and from the enriching edges already declared
+    by `deadline.yaml` and `compliance-obligation.yaml`. A fuller pass would add states (an artefact
+    ages out of validity), the sampling question an auditor actually asks, and the anti-pattern
+    library around back-dated evidence. `review_status: unreviewed` keeps it out of any authority
+    path until a named human accepts it.

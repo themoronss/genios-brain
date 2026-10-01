@@ -1,0 +1,144 @@
+# V1 ROUTING DEFERRALS — the named reason a capability has no door.
+#
+# Authored, not generated. `_tools/index.py` reads it and `_tools/validate.py` enforces it; the
+# generated registry carries the result as `deferred_capabilities` so a compile can be asked what it
+# deliberately does not know and get a list instead of a shrug.
+#
+# WHY THIS FILE EXISTS, FOR THIS DOMAIN. Seven Customer Support capabilities were authored,
+# admission-stamped, `stable`, not stubs — and reachable by nothing. Until this file existed the
+# validator could only WARN about them, because the census is enforced as errors for a domain that
+# has opted in by authoring a ledger. Seven warnings among 290 is a fact nobody reads. The
+# difference between "deferred, and here is why" and "forgotten" is the entire declared-silence
+# doctrine, and this domain had nowhere to say the first.
+#
+# ⛔ WRITING THIS FILE RAISES THIS DOMAIN'S BAR, DELIBERATELY. From now on an unrouted Customer
+# Support capability with no entry here is an ERROR, not a warning. That is the point: the census
+# cannot rot back into silence. It also means this file must cover ALL seven or the corpus fails —
+# a partial ledger is worse than none.
+#
+# ⛔ THIS IS AN EXPLANATION, NOT AN ACTIVATION. Customer Support is on hold. Nothing here switches a
+# domain on, nothing here is compiled for any tenant, and the only activated corpus remains Admin.
+# The reason this file is in scope at all is that an unexplained silence is indistinguishable from
+# an oversight, and seven sound capabilities deserved better than a shrug.
+#
+# ⛔ AND SALES GETS NO SUCH FILE. Sales has 47 capabilities and zero routed by nothing, so there is
+# nothing to explain. Creating an empty ledger there would raise its error bar for no present
+# benefit and would be a file whose only content is that it exists.
+#
+# WHAT DEFERRED MEANS, EXACTLY — unchanged from Admin's ledger, which set the shape.
+#   - The capability does NOT appear in any route in the generated registry.
+#   - Any situation it OWNS is suppressed from the map, so the resolver never selects it and no
+#     package can ever be compiled through it. Deferral is structural, not a label.
+#   - The knowledge is NOT deleted and NOT deprecated. It is sound; its trigger does not exist.
+#     Reversing a deferral is deleting a block from this file.
+#   - It does not count against activation coverage.
+#
+# ⛔ ALL SEVEN ARE ONE KIND, AND THAT IS THE FINDING. Every one is `blocked_on_l2_type`: not out of
+# scope, not unobservable in principle — waiting on a type Layer 1 or Layer 2 does not emit yet.
+# Measured 2026-09-30:
+#
+#     issue_under_diagnosis      in planned_substrate, emitted by nothing
+#     ticket_reopened            in planned_substrate, emitted by nothing
+#     major_incident_declared    in planned_substrate, emitted by nothing
+#     incident_unresolved        in planned_substrate, emitted by nothing
+#
+# Three of the seven own one situation each, and all three bind ZERO l2_situation_types while
+# declaring a `pending_l2_situation_types` block that names the missing emitter. That is why they
+# route nothing: not a missing door, a missing doorway. The other four own no situation at all and
+# are blocked on the same absent `issue` and `incident` objects.
+#
+# ⛔ SUPPRESSION COST, STATED: deferring these three removes
+# `customer_support.sit.issue_under_diagnosis`, `customer_support.sit.ticket_reopened` and
+# `customer_support.sit.major_incident_declared` from the generated map. All three are `status:
+# draft` and bind no type, so they route nothing today and nothing functional changes — but the
+# registry does, so `_tools/index.py` must be re-run, and `_tools/validate.py` now fails if it is
+# not (see its `unrouted_l2_types is stale` check).
+#
+# Every entry carries `reason` — a sentence, not a category — because the category is the cheap half
+# and the sentence is the one a reader six months from now actually needs. The validator enforces it:
+# under 40 characters is "a category is not a reason".
+
+domain: customer_support
+version: 1.0.0
+
+deferred:
+
+  # ── blocked_on_l2_type · Diagnosis & Resolution (4) ──────────────────────────────────────
+  # All four wait on ONE missing object: an `issue` with identity across the tickets that report
+  # it. Its own situation file states the requirement and why the nearest available type will not
+  # do: *"`support_case` is anchored on a company; an issue spans companies, so the binding would
+  # produce one root-cause analysis per customer of the same defect — the exact fragmentation the
+  # issue object exists to remove."* Clustering distinct reports onto one issue is a Layer 2
+  # identity problem of the same shape as person merge, and belongs specified as one.
+
+  - capability: customer_support.diagnosis_and_resolution.root_cause_analysis
+    kind: blocked_on_l2_type
+    reason: >
+      A root cause is invisible from one report at a time, and one report at a time is all this
+      product can currently see: no `issue` object exists, so nothing clusters the tickets that
+      describe the same defect. Owns `customer_support.sit.issue_under_diagnosis`, which binds no
+      L2 type and is suppressed with it. Unblocked when Layer 2 emits `issue_under_diagnosis` with
+      issue identity, reproduction state and resolution kind — not by authoring more expertise.
+    blocked_on: [issue_under_diagnosis]
+
+  - capability: customer_support.diagnosis_and_resolution.issue_reproduction
+    kind: blocked_on_l2_type
+    reason: >
+      Advising on how to reproduce a defect requires knowing whether it reproduces, and
+      `issue.reproduction_state` is emitted by nothing. Binding to `support_case` instead would
+      have this capability advise on reproducing something with no record of whether it ever has —
+      which its sibling situation names as the second specific reason that binding is wrong.
+    blocked_on: [issue_under_diagnosis]
+
+  - capability: customer_support.diagnosis_and_resolution.resolution_delivery
+    kind: blocked_on_l2_type
+    reason: >
+      Delivering a resolution presupposes a resolution to deliver, and `issue.resolution_kind` —
+      none, workaround, or fix — has no writer. Without it this capability cannot tell a workaround
+      being shipped as a fix from a fix, which is the one distinction it exists to hold.
+    blocked_on: [issue_under_diagnosis]
+
+  - capability: customer_support.diagnosis_and_resolution.verification_and_closure
+    kind: blocked_on_l2_type
+    reason: >
+      Closure cannot be inferred from silence, and silence is the only signal available today.
+      `issue.verified_at` and `ticket.reopen_count` are emitted by nothing, so this capability would
+      read a customer going quiet as a customer confirming a fix — reporting live defects as
+      resolved, which is precisely the failure it was authored to prevent. Owns
+      `customer_support.sit.ticket_reopened`, suppressed with it.
+    blocked_on: [issue_under_diagnosis, ticket_reopened]
+
+  # ── blocked_on_l2_type · Escalation & Incident (3) ───────────────────────────────────────
+  # A declaration is an ACT, not an inference. Its situation file is explicit: *"a type that fires
+  # when the system thinks something looks bad will be argued with in exactly the minutes nobody
+  # has spare."* What the engine may infer is a candidate; the type must carry whether the incident
+  # was declared or merely suspected, because the suppression these capabilities drive is far too
+  # aggressive to hang on a guess.
+
+  - capability: customer_support.escalation_and_incident.incident_management
+    kind: blocked_on_l2_type
+    reason: >
+      There is no incident to manage until a named human declares one with a severity, a start
+      time, a blast radius and a commander, and no source emits that. The nearest signal available
+      is a burst of unanswered mail, which arrives late, is proportional to who wrote in rather
+      than who is affected, and prescribes N individual replies — the exact wrong action. Owns
+      `customer_support.sit.major_incident_declared`, suppressed with it.
+    blocked_on: [major_incident_declared, incident_unresolved]
+
+  - capability: customer_support.escalation_and_incident.major_incident_communication
+    kind: blocked_on_l2_type
+    reason: >
+      Communicating during an incident needs the clock no incident tool tracks — time since the
+      last customer-facing update, carried separately from time since declaration. An incident can
+      be under control technically and completely silent externally, and the silence is what
+      generates the escalations. `incident_unresolved` is planned and emitted by nothing.
+    blocked_on: [major_incident_declared, incident_unresolved]
+
+  - capability: customer_support.escalation_and_incident.postmortem
+    kind: blocked_on_l2_type
+    reason: >
+      A postmortem needs an incident that was declared and then resolved, and neither end of that
+      interval is observable: nothing emits the declaration and nothing records the resolution. A
+      postmortem written from inferred boundaries would document an incident that may never have
+      been called, and would be read as a record of one that was.
+    blocked_on: [major_incident_declared, incident_unresolved]

@@ -1,0 +1,98 @@
+# ⛔ AUTHORED 2026-09-30 to close a dangling reference (`referenced_by: 5`). Like `backlog`, it is
+# referenced only from knowledge and prose, so its shape is derived from its naming capability —
+# `capacity_planning` — rather than from declared attribute or edge usage.
+identity:
+  id: customer_support.obj.core.capacity_plan
+  name: Capacity Plan
+  domain: customer_support
+  scope: core
+  owner_capability: customer_support.support_operations.capacity_planning
+  subdomain: support_operations
+  version: 0.1.0
+  status: draft
+  aliases: ["Staffing Plan", "Headcount Plan", "Coverage Plan"]
+purpose:
+  statement: >
+    The intended supply of support capacity for a period — how many people, at what skill, across
+    which coverage windows, against what expected demand. It carries the plan, the assumption behind
+    it, and how it compares to what actually happened.
+  discriminator: >
+    It is an intention with an assumption attached. A capacity plan without a stated demand
+    assumption is a headcount number, and it cannot be wrong — which means it cannot be learned from.
+  not:
+    - "NOT the backlog. customer_support.obj.core.backlog is what demand actually did; this is what
+      somebody expected it to do."
+    - "NOT the coverage window. customer_support.obj.core.coverage_window is when support is open;
+      this is how many people are behind it."
+attributes:
+  - name: period
+    purpose: What span the plan covers.
+    type: value
+    data_type: string
+    required: true
+  - name: planned_headcount
+    purpose: The intended supply.
+    type: value
+    data_type: number
+    required: false
+  - name: demand_assumption
+    purpose: The volume the plan assumes.
+    type: value
+    data_type: number
+    required: false
+    description: >
+      ⛔ The field that makes the plan falsifiable. Without it a shortfall is always attributed to the
+      team rather than to the forecast.
+  - name: variance
+    purpose: How far actual demand diverged from the assumption.
+    type: derived
+    derived_from: [customer_support.obj.core.backlog]
+    data_type: number
+    required: false
+    description: >
+      Derived, so it cannot disagree with the backlog it is computed from. The number that decides
+      whether next quarter's plan is an improvement or the same guess restated.
+relationships:
+  - target: customer_support.obj.core.backlog
+    type: references
+    cardinality: zero_or_one
+    description: The observed demand this plan is measured against.
+  - target: customer_support.obj.core.coverage_window
+    type: requires
+    cardinality: zero_or_many
+    description: The windows this plan has to staff.
+inference_patterns:
+  heuristic:
+    - id: capacity_plan.assumption_never_compared
+      statement: >
+        A plan whose demand assumption was never compared to what happened teaches nothing, and the
+        next plan will contain the same assumption.
+      status: needs_signal
+      requires_signals:
+        - kind: fact_path
+          name: ticket.created_at
+          note: Demand cannot be counted; no helpdesk connector exists.
+      yields:
+        confidence_bp: 7000
+        attribute: variance
+      false_positive: >
+        A plan for a period still running has no variance yet and is not a failure to compare.
+evidence:
+  - source: document
+    strength_bp: 8500
+    description: A written plan with a stated assumption.
+  - source: manual_entry
+    strength_bp: 6000
+    description: A headcount somebody recorded. Usually without the assumption.
+metadata:
+  owner: customer_support.support_operations.capacity_planning
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-09-30'
+  review_status: unreviewed
+  confidence: experimental
+  completeness: skeleton
+  notes: >
+    ⛔ `skeleton` and `experimental`, honestly — no declared attribute or edge usage existed to derive
+    from, only prose in the capabilities that name it. A weaker basis than its siblings and recorded
+    as such rather than dressed up.

@@ -1,0 +1,30 @@
+# Sales — on hold. Cases assert what the corpus SHOULD do if activated, and asserting it now is what
+# stops activation day from being the first time anybody checked.
+domain: sales
+cases:
+  - id: sales.opportunity.routes
+    situation_type: opportunity
+    domain_hints: [sales]
+    expect: resolve
+    why: >
+      ⛔ CORRECTED 2026-09-30. This case first named `unanswered_email`, which Sales does NOT bind —
+      I wrote the case from what the substrate emits rather than from what the corpus binds, and the
+      runner caught it on its first run. Sales binds `opportunity`, `deal`, `relationship`,
+      `investor_contact` and four more. An opportunity is the domain's own central object; if this
+      does not route, Sales is disconnected rather than merely on hold.
+
+  - id: sales.vendor_renewal_decision.abstains
+    situation_type: vendor_renewal_decision
+    domain_hints: [sales]
+    expect: abstain
+    reason: no_situation_binds_type
+    why: >
+      Declared globally unrouted. A vendor renewal is a buying decision, not a selling one, and a
+      Sales capability catching it would be a route widened past its own subject.
+
+  - id: sales.unknown_domain.abstains
+    situation_type: opportunity
+    domain_hints: [procurement]
+    expect: abstain
+    reason: unknown_domain_hint
+    why: There is no procurement corpus. The hint is the defect, not the type.

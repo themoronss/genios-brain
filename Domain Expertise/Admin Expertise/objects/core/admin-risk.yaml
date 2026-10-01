@@ -1,0 +1,207 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Admin Risk — a probability and an impact, which a duty is not.
+#
+# ⛔ AUTHORED 2026-09-30 to close a dangling reference (`referenced_by: 1`), and it is the sharpest
+# of the nine because the corpus defined it in one sentence and the sentence is a whole argument:
+#
+#   compliance-obligation.yaml  "Not a risk. admin.obj.core.admin_risk is a probability and an
+#                                impact; an obligation is a duty that exists whether or not anyone
+#                                has assessed it."
+#
+# ⛔ THAT DISTINCTION IS WHY MOST ADMINISTRATIVE RISK REGISTERS ARE USELESS. They are filled with
+# obligations restated as risks — "risk: we fail to file on time" — which is not a risk assessment,
+# it is the duty written twice. A risk is an assessment somebody made, with two numbers and a date,
+# and it can be wrong. An obligation cannot be wrong; it can only be met or missed.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: admin.obj.core.admin_risk
+  name: Admin Risk
+  domain: admin
+  scope: core
+  owner_capability: admin.compliance_and_governance.board_and_secretarial
+  subdomain: compliance_and_governance
+  version: 0.1.0
+  status: draft
+  aliases: ["Risk", "Exposure", "Register Entry"]
+
+purpose:
+  statement: >
+    An assessed exposure: something that may happen, how likely somebody judged it, what it would
+    cost, who assessed it, when, and what is being done about it. It carries the two numbers, their
+    basis, the treatment chosen, and the residual assessment after treatment. It is the object that
+    makes an administrative exposure comparable to another one.
+  discriminator: >
+    It is an ASSESSMENT and can therefore be wrong. If the statement is true regardless of anybody's
+    judgment, it is an obligation, a constraint or a fact — not a risk. The presence of a named
+    assessor and a date is the test, and a register entry with neither is a worry somebody typed.
+  not:
+    - "NOT the obligation. admin.obj.core.compliance_obligation is a duty that exists unassessed,
+      and its own file draws this line."
+    - "NOT the escalation. admin.obj.core.escalation is a route for something happening now; a risk
+      is about something that has not happened."
+    - "NOT the incident. A risk that materialised stops being a risk and becomes an event — keeping
+      it in the register as though it were still a probability is how registers stop being read."
+
+attributes:
+  - name: statement
+    purpose: What might happen, stated as an event rather than as a fear.
+    type: value
+    data_type: string
+    required: true
+    description: >
+      ⛔ "We might get fined" is a consequence; "the annual return is filed late" is an event. Only
+      the second can be assessed for likelihood, and a register of consequences cannot be scored.
+  - name: likelihood_bp
+    purpose: How likely, in basis points.
+    type: value
+    data_type: integer
+    required: false
+    unit: bp
+    description: >
+      Integer basis points, like every ratio in this codebase, because a float here makes two
+      assessments disagree in the last digit and invites false precision into a judgment.
+  - name: impact
+    purpose: What it would cost if it happened.
+    type: value
+    data_type: money
+    required: false
+    description: >
+      Money where money is the exposure. Deliberately not a 1-to-5 scale: a five-point scale makes
+      two unrelated risks look comparable when the only thing they share is the word "high".
+  - name: assessed_by_ref
+    purpose: Who made the judgment.
+    type: reference
+    ref: admin.obj.core.stakeholder
+    data_type: ref
+    required: false
+    description: >
+      Absent means nobody owns the number, which is the state most register entries are in and the
+      reason they are never revised.
+  - name: assessed_at
+    purpose: When.
+    type: value
+    data_type: timestamp
+    required: false
+    description: >
+      ⛔ A risk assessment has a shelf life and no register enforces one. An 18-month-old likelihood
+      on a changed business is not an assessment, it is a historical record being read as current.
+  - name: treatment
+    purpose: What is being done about it.
+    type: value
+    data_type: enum
+    allowed_values: [accept, mitigate, transfer, avoid, untreated]
+    required: false
+    description: >
+      `accept` and `untreated` are opposite facts that look identical in a register: one is a
+      decision, the other is an omission. Separating them is most of this field's value.
+  - name: residual_likelihood_bp
+    purpose: The likelihood after treatment.
+    type: value
+    data_type: integer
+    required: false
+    unit: bp
+    description: >
+      Where treatment is claimed and residual is absent, the treatment is asserted and not measured.
+
+states:
+  initial: identified
+  terminal: [closed, materialised]
+  values:
+    - name: identified
+      description: Stated, not yet assessed. Two numbers missing.
+    - name: assessed
+      description: Carries a likelihood, an impact, an assessor and a date.
+    - name: treated
+      description: A treatment chosen and a residual assessment recorded.
+    - name: materialised
+      description: >
+        ⛔ It happened. Terminal HERE on purpose: it is now an event, and leaving it in the register
+        as a probability is how a register stops describing the future.
+    - name: closed
+      description: No longer credible, or the exposure was removed.
+
+relationships:
+  - target: admin.obj.core.compliance_obligation
+    type: references
+    cardinality: zero_or_many
+    description: >
+      The duties whose failure this risk is about. `references` rather than `requires`: the
+      obligation exists unassessed, which is precisely the distinction this object was created to
+      hold.
+  - target: admin.obj.core.escalation
+    type: gates
+    cardinality: zero_or_one
+    description: Where it goes if it materialises.
+  - target: admin.obj.core.stakeholder
+    type: references
+    cardinality: zero_or_one
+    description: The assessor. Not the same person as whoever owns the obligation, usually.
+
+inference_patterns:
+  heuristic:
+    - id: admin_risk.obligation_restated_as_risk
+      statement: >
+        A register entry whose statement is the failure of a single named obligation, with no
+        likelihood and no assessor, is that obligation written twice.
+      status: needs_signal
+      requires_signals:
+        - kind: fact_path
+          name: risk.statement
+          note: >
+            Nothing emits a risk register; it lives in a spreadsheet. Declared so the gap is a
+            frontier rather than a silence.
+      yields:
+        confidence_bp: 7500
+      false_positive: >
+        A genuine assessment of a specific obligation's failure IS a legitimate risk. The signal is
+        the missing likelihood and assessor, not the subject.
+    - id: admin_risk.assessment_past_its_shelf_life
+      statement: >
+        A likelihood assessed long enough ago that the business has changed is a historical record
+        being read as a current judgment.
+      status: needs_signal
+      requires_signals:
+        - kind: fact_path
+          name: risk.assessed_at
+          note: No writer exists.
+      yields:
+        confidence_bp: 7000
+        attribute: assessed_at
+      false_positive: >
+        A stable exposure in a stable business genuinely does not need reassessing annually, and
+        every register contains some.
+
+evidence:
+  - source: document
+    strength_bp: 8500
+    description: A risk register entry with an assessor and a date. What a board paper cites.
+  - source: manual_entry
+    strength_bp: 6000
+    description: Somebody typed it. The origin of most register entries, including the good ones.
+  - source: derived
+    strength_bp: 4500
+    description: >
+      An exposure inferred from an unmet obligation. Legitimately weak, and it must be marked
+      inferred — otherwise this object fills with the very restatements the first pattern detects.
+
+metadata:
+  owner: admin.compliance_and_governance.board_and_secretarial
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-09-30'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: partial
+  notes: >
+    ⛔ `owner_capability` CORRECTED 2026-09-30: the first draft named `admin.compliance_and_governance.risk_administration`,
+    which does not exist in this corpus. Nothing validated it — an object's owner_capability was
+    not cross-checked against real capability ids, so the invented name sat there as a dangling
+    reference no tool would have reported. That check now exists in `_tools/validate.py`.
+
+    ⛔ Derived from one sentence in `compliance-obligation.yaml` — *"a probability and an impact"*
+    versus *"a duty that exists whether or not anyone has assessed it"* — which is a complete
+    definition and an argument at the same time. A fuller pass would add the aggregation question
+    (whether a register can be summed at all), the appetite/tolerance vocabulary, and the board
+    reporting cadence. `materialised` is terminal on purpose and that choice deserves a reviewer's
+    attention specifically.

@@ -20,6 +20,40 @@ outcomes:
 - A compelling event established, or its absence recorded as an absence.
 - Fit scored against the ICP, with disqualifiers checked.
 - 'An explicit verdict: pursue, nurture, or disqualify. `Continue by default` is not an outcome.'
+failure_modes:
+  - >
+    Qualifying on interest instead of on purchase. A demo booked, a deck downloaded and a
+    reply within the hour all read as progress and none of them is evidence that money can
+    move. The question this capability asks is whether a purchase is POSSIBLE; enthusiasm is
+    an input to that answer and is routinely mistaken for it.
+  - >
+    Taking authority from a title. "Head of" resolves to a decision maker in the CRM and to
+    a recommender in the room, and the two are indistinguishable on a business card. The
+    outcome demands authority VERIFIED rather than inferred, and the verification is one
+    question nobody enjoys asking.
+  - >
+    Recording an absent compelling event as an unknown. "No deadline mentioned" and "we
+    asked and there is none" are the same field and opposite facts: the first is work not
+    done, the second is a qualified answer. Collapsing them is how a pipeline fills with
+    deals that were never going to close this quarter and never said so.
+  - >
+    Budget state left at `unknown` because asking felt early. It is the cheapest field to
+    leave blank and the most expensive one to be wrong about, and it stays blank precisely
+    on the deals where the answer would have changed what happened next.
+  - >
+    `Continue by default`. The capability's own outcome forbids it and it remains the most
+    common verdict in every pipeline: nothing was disqualified, nothing was committed to,
+    and the deal advances on the absence of a decision rather than the presence of one.
+  - >
+    Disqualifying on fit alone while the ICP is stale. A profile written before a pricing
+    change will reject the accounts the company can now serve, and it will do so quietly,
+    because a disqualified lead generates no argument and no review.
+  - >
+    Re-qualifying from the record instead of from the counterparty. Six weeks on, the budget
+    line, the sponsor and the deadline have all moved, and the qualification that is read
+    back is the one taken when the deal was new. A qualification has a shelf life and the
+    record does not say so.
+
 kpis:
 - name: qualification_rate
   unit: percent
@@ -62,7 +96,7 @@ applies_to:
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: harsh
+  reviewed_by: rohit
   last_updated: '2026-08-08'
   review_status: approved
   confidence: provisional
@@ -71,6 +105,7 @@ metadata:
     The moment a number appears in a capability file, the Layer 3/4 boundary has leaked.
 
     '
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-09-30'
+
 admission:
-  accepted_content_hash: c40d0922554bcbf769065b76e2b8ebca275c87a2b1a0eb71e18aebdc2fb9a93c
+  accepted_content_hash: be71503c3477f0108c7b4d260214f745f56ced8492fb73d48b8839bb3dcbac21

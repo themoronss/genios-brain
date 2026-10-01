@@ -38,7 +38,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _lib import (ARTIFACT_ID_PREFIX, ARTIFACT_KIND_BY_DIR, DEFERRAL_KINDS,  # noqa: E402
                   artifact_dir_of, capability_dir_of, deferrals, domains, iter_bp_fields,
                   iter_predicate_blocks, knowledge_refs, load_schema, load_set,
-                  load_vocabulary, object_scope_of, patterns_of, refs_in_condition, walk)
+                  load_vocabulary, load_yaml, object_scope_of, patterns_of,
+                  refs_in_condition, walk)
 
 try:
     import jsonschema
@@ -59,6 +60,34 @@ def err(path: Path, msg: str) -> None:
 
 def warn(path: Path, msg: str) -> None:
     WARNINGS.append(f"{short(path)}: {msg}")
+
+
+def registry_staleness(computed: list[str], stored: list[str]) -> str | None:
+    """`None` when the committed `unrouted_l2_types` agrees with what was just computed.
+
+    ⛔ A PURE FUNCTION, AND THAT IS NOT TIDINESS. The first version of this check lived inline in
+    `main()`, so the only way to test it was to edit a real registry file, run the tool, and restore
+    it. Two of this repo's own test files did exactly that — and then failed, because the suite runs
+    more than one pytest process and both were mutating the same file in the same repository. A guard
+    that has to modify the corpus in order to prove it works cannot be trusted in CI, and the fix for
+    a flaky test is never to weaken the check it guards.
+
+    Order matters: the file is generated sorted, so the same members in a different order means
+    somebody edited it by hand.
+    """
+    if list(stored) == list(computed):
+        return None
+    missing = sorted(set(computed) - set(stored))
+    extra = sorted(set(stored) - set(computed))
+    detail = []
+    if missing:
+        detail.append(f"missing {missing}")
+    if extra:
+        detail.append(f"lists {extra} which ARE bound")
+    if not detail:
+        detail.append("same members, different order")
+    return ("unrouted_l2_types is stale: " + "; ".join(detail) +
+            " — run `_tools/index.py` to regenerate (it is the only writer)")
 
 
 def short(path: Path) -> str:
@@ -558,6 +587,29 @@ def main(strict: bool = False) -> int:
         # A domain with no ledger is not yet held to the census and gets the warning it already
         # got, because turning the census on for everybody at once would fail three domains for
         # a discipline two of them have not been asked to adopt.
+        # ⛔ AN OBJECT'S `owner_capability` MUST BE A REAL CAPABILITY, AND NOTHING CHECKED IT.
+        #
+        # WHAT FOUND THIS. Authoring the nine planned core objects on 2026-09-30, I invented six
+        # `owner_capability` ids — `risk_administration`, `audit_readiness`, `travel_coordination`
+        # and three more — none of which exist in this corpus. The validator reported **zero errors**
+        # on all six. It surfaced only because the load-set wiring could not find the capability, and
+        # had I not been wiring them the six invented names would have sat in `objects/core/` as
+        # dangling references no tool reports.
+        #
+        # It is the same defect class as the nine dangling OBJECT ids this pass exists to close, in a
+        # field one level up — and strictly worse, because an object id at least produces a
+        # "planned but not authored yet" warning while this produced nothing at all.
+        #
+        # ⛔ AN ERROR, NOT A WARNING. `owner_capability` decides which capability's review a change to
+        # this object belongs to. Pointing at a capability that does not exist means nobody owns the
+        # object and no review will ever notice.
+        for oid, opath in sorted(authored_objects.items()):
+            odoc = load_yaml(opath) or {}
+            owner = str(((odoc.get("identity") or {}).get("owner_capability")) or "").strip()
+            if owner and owner not in capabilities:
+                err(opath, f"owner_capability {owner!r} is not a capability in this domain — an "
+                           f"object owned by nothing is an object no review covers")
+
         deferred = deferrals(droot)
         ledger = droot / "deferrals.yaml"
         routed_caps: set[str] = set()
@@ -612,9 +664,52 @@ def main(strict: bool = False) -> int:
                 if p.get("type"):
                     pending_anywhere[p["type"]].add(droot.name)
 
-    for t in sorted(l2_types - bound_anywhere):
+    computed_unrouted = sorted(l2_types - bound_anywhere)
+    for t in computed_unrouted:
         WARNINGS.append(f"<routing>: Layer 2 emits {t!r} and no situation in any domain binds "
                         f"it — no capability will ever compile for it")
+
+    # ⛔ THE COMMITTED REGISTRY MUST AGREE WITH WHAT THIS PASS JUST COMPUTED.
+    #
+    # WHAT WAS WRONG, AND IT IS NOT WHAT THE PLAN SAID. The plan for this unit read
+    # "`unrouted_l2_types` is generated, not hand-kept". It IS generated — `_tools/index.py:205`
+    # emits the block, its comment and all, from `all_l2 - bound_globally` at line 61. Measured
+    # 2026-09-30: regenerating all three domains was byte-identical, so nothing is hand-kept and
+    # nothing has drifted today.
+    #
+    # THE REAL GAP IS THAT NOTHING NOTICES WHEN IT DOES. `index.py` has to be RUN. Add a situation
+    # that binds `vendor_renewal_decision`, commit without regenerating, and the registry — the
+    # single file everyone reads for routing coverage — says a bound type is unrouted. And it fails
+    # in the SAFE-LOOKING direction: the list reads shorter or longer than the truth while every
+    # tool reports OK.
+    #
+    # Meanwhile THIS pass computes the same set independently, three lines up, and never compared
+    # the two. Two computations of one fact that are never compared eventually disagree — the same
+    # argument `deliver/lane_recall` makes about the per-lane tallies, and the reason a total that
+    # is never checked is a claim rather than a measurement.
+    #
+    # ⛔ AN ERROR, NOT A WARNING. There are 290 warnings; a 291st would be read by nobody. A stale
+    # registry is a wrong fact in the file the compiler's reverse index is built from, and the fix
+    # is one command.
+    #
+    # ⛔ AND IT DOES NOT WRITE. A validator that rewrites the corpus turns a read into a write and
+    # makes `git status` unreadable after a routine check. `index.py` remains the only writer.
+    for droot in domains():
+        reg = droot / "registry" / "situation-capability-map.yaml"
+        if not reg.exists():
+            # Absent is not stale. A domain with no registry is a separate, louder problem that
+            # the index pass reports when it runs; inventing an error here would put the same
+            # complaint in two tools with two wordings.
+            continue
+        try:
+            committed = load_yaml(reg) or {}
+        except Exception as exc:                        # noqa: BLE001 - a broken file is an error
+            err(reg, f"registry will not parse: {exc}")
+            continue
+        stale = registry_staleness(computed_unrouted,
+                                   list(committed.get("unrouted_l2_types") or []))
+        if stale is not None:
+            err(reg, stale)
 
     print(f"checked {total} files across {len(domains())} domain(s)")
     if pending_anywhere:

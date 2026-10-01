@@ -22,6 +22,38 @@ outcomes:
 - Where the relationship carries no opportunity, that is recorded as a fact and not treated as a
   stalled deal. Reading a healthy non-buying relationship as a lost one is this capability''s
   most expensive failure and the reason it exists apart from the deal capabilities.
+failure_modes:
+  - >
+    Reading warmth as health. A friendly thread on an unused product is the single most
+    reliable precursor to a churn nobody saw coming, and it presents as the healthiest
+    signal in the account. The capability's own outcome separates adoption from tone for
+    this reason, and the separation is the first thing abandoned under time pressure.
+  - >
+    Taking relationship state from the last CRM edit. The field says `active` because
+    somebody typed it, not because anybody spoke. Observed contact and recorded status
+    diverge silently and always in the optimistic direction, because nobody updates a record
+    to say a relationship has gone quiet.
+  - >
+    `Stay in touch`. The outcome names it explicitly: it is what gets written when nobody
+    decided. It survives review because it is never wrong, and it commits no one to
+    anything, which is the same property.
+  - >
+    Treating a healthy non-buying relationship as a stalled deal. The capability exists
+    apart from the deal capabilities precisely to prevent this, and the pressure to reclassify
+    a good relationship as pipeline is strongest exactly when the forecast is short.
+  - >
+    Measuring the outcome the vendor sells instead of the one the customer bought. Usage of
+    the product is not the same as the result it was purchased for, and a capability that
+    reports the first while the second is failing will be confidently wrong for two quarters.
+  - >
+    Escalating on a single bad interaction. One curt reply is noise; a pattern is a signal,
+    and the difference requires history this capability must go and read rather than infer
+    from the message in front of it.
+  - >
+    An open loop named on our side only. "What we owe them" is easy to see and "what we are
+    waiting on" is invisible until it is late — and a relationship where WE are the blocker
+    and nobody recorded it is the one that ends without a conversation.
+
 kpis:
 - name: relationship_coverage
   unit: percent
@@ -63,7 +95,7 @@ applies_to:
 metadata:
   owner: Sales
   created_by: ai
-  reviewed_by: harsh
+  reviewed_by: rohit
   last_updated: '2026-08-08'
   review_status: approved
   confidence: experimental
@@ -76,7 +108,7 @@ metadata:
     has leaked.
 
     '
-  reviewed_at: '2026-08-24'
+  reviewed_at: '2026-09-30'
 
 admission:
-  accepted_content_hash: 09411ca2834019a0982afca36f5d1d3b71be24acab75757a45074543f4748c14
+  accepted_content_hash: 6fdc9edbed6bb12b72059e568a4686003395f3f20285fe7bd388d515fc224ff4

@@ -15,6 +15,7 @@ core:
     - admin.obj.core.approval
     - admin.obj.core.approver
   optional:
+    - admin.obj.core.delegate
     - admin.obj.core.policy
     - admin.obj.core.escalation
     - admin.obj.core.deadline

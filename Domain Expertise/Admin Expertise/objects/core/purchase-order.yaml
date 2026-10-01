@@ -1,0 +1,198 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Purchase Order — the moment money became committed, long before it moved.
+#
+# ⛔ AUTHORED 2026-09-30 to close a dangling reference (`referenced_by: 2`).
+#
+# Two authored objects had already decided what this is, and between them they define it exactly:
+#   invoice.yaml     "NOT the purchase commitment. That is admin.obj.core.purchase_order — the
+#                     invoice arrives long after the money was committed, and confusing the two is
+#                     why commitment stays invisible until the invoice lands."
+#   budget-line.yaml "NOT the commitment itself. admin.obj.core.purchase_order and
+#                     admin.obj.core.contract create the obligations; this line aggregates them and
+#                     is why it is always aggregating incompletely."
+#
+# ⛔ SO THIS OBJECT EXISTS TO MAKE COMMITMENT VISIBLE EARLY. A budget that only sees invoices is a
+# budget that discovers its own overspend after the fact. This is the object between the decision
+# and the arrival of the bill.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: admin.obj.core.purchase_order
+  name: Purchase Order
+  domain: admin
+  scope: core
+  owner_capability: admin.contract_and_vendor.procurement_administration
+  subdomain: finance_administration
+  version: 0.1.0
+  status: draft
+  aliases: ["PO", "Commitment", "Order", "Requisition"]
+
+purpose:
+  statement: >
+    An authorised commitment to spend a stated amount with a stated supplier, raised before the
+    goods, the service or the invoice. It carries the amount, the supplier, the budget line it
+    consumes, the approval that authorised it, how much of it has been invoiced, and whether it is
+    still open. It is the object that makes spend visible at the point of decision.
+  discriminator: >
+    It commits money that has not moved. That is what separates it from an invoice, which reports
+    money already owed, and from an approval, which grants permission without committing anything.
+    An organisation that cannot answer "what have we committed this quarter" is missing this object
+    specifically.
+  not:
+    - "NOT the invoice. admin.obj.core.invoice is the demand for payment and arrives afterwards —
+      `invoice.yaml` records that conflating them is why commitment stays invisible."
+    - "NOT the approval. admin.obj.core.approval owns whether a person MAY commit this money and
+      the limit that made them sufficient; this object is the commitment itself."
+    - "NOT the budget line. admin.obj.core.budget_line owns whether cover exists and aggregates
+      commitments; this object is one of the things being aggregated."
+    - "NOT the contract. admin.obj.core.contract owns the relationship, the rate card and the
+      notice period; a purchase order is a single draw against it."
+
+attributes:
+  - name: amount_committed
+    purpose: The value committed at the point of raising.
+    type: value
+    data_type: money
+    required: true
+  - name: supplier_ref
+    purpose: Who it is committed with.
+    type: reference
+    ref: admin.obj.core.vendor
+    data_type: ref
+    required: true
+  - name: budget_line_ref
+    purpose: Which budget this consumes.
+    type: reference
+    ref: admin.obj.core.budget_line
+    data_type: ref
+    required: false
+    description: >
+      Optional in the schema and the single most consequential omission in practice: an order
+      against no line is spend nobody's budget will show until the invoice arrives.
+  - name: approval_ref
+    purpose: The authorisation that permitted it.
+    type: reference
+    ref: admin.obj.core.approval
+    data_type: ref
+    required: false
+  - name: amount_invoiced
+    purpose: How much has actually been billed against it.
+    type: derived
+    derived_from: [admin.obj.core.invoice]
+    data_type: money
+    required: false
+    description: >
+      Derived, never typed. The gap between committed and invoiced is the accrual, and it is the
+      number a month-end most often gets wrong.
+  - name: state
+    purpose: Whether the commitment is still live.
+    type: value
+    data_type: enum
+    allowed_values: [draft, open, partially_invoiced, closed, cancelled]
+    required: true
+  - name: raised_at
+    purpose: When the commitment was made.
+    type: value
+    data_type: timestamp
+    required: true
+
+states:
+  initial: draft
+  terminal: [closed, cancelled]
+  values:
+    - name: open
+      description: Committed, not yet fully invoiced. Consumes budget and appears on no ledger.
+    - name: partially_invoiced
+      description: >
+        The state most orders spend most of their life in, and the one that makes accruals hard.
+    - name: closed
+      description: >
+        Fully invoiced or explicitly closed short. ⛔ An order closed short releases budget, and a
+        release nobody recorded is cover that quietly stops existing.
+    - name: cancelled
+      description: Committed and then withdrawn. Releases the full amount.
+
+relationships:
+  - target: admin.obj.core.invoice
+    type: precedes
+    cardinality: zero_or_many
+    description: >
+      The invoices that arrive against it, sometimes several, sometimes none. `precedes` rather than
+      `produces`, because a purchase order does not cause an invoice — a delivery does.
+  - target: admin.obj.core.budget_line
+    type: requires
+    cardinality: zero_or_one
+    description: The cover it draws down. Hard in principle and frequently absent in fact.
+  - target: admin.obj.core.approval
+    type: requires
+    cardinality: zero_or_one
+    description: The authority that permitted the commitment.
+  - target: admin.obj.core.vendor
+    type: belongs_to
+    cardinality: one
+    description: The party committed with.
+
+inference_patterns:
+  heuristic:
+    - id: purchase_order.commitment_without_cover
+      statement: >
+        An order naming no budget line is spend that will surface at invoice time, in a month
+        nobody planned for it.
+      status: needs_signal
+      requires_signals:
+        - kind: fact_path
+          name: purchase_order.budget_line_ref
+          note: >
+            Nothing emits a purchase order; procurement lives in systems this product does not read.
+            The vocabulary exists here so the gap is declared rather than silent.
+      yields:
+        confidence_bp: 8000
+        attribute: budget_line_ref
+      false_positive: >
+        Genuinely unbudgeted emergency spend is a real and correct category. The finding is that it
+        was not RECORDED as such, not that it happened.
+    - id: purchase_order.stale_open_commitment
+      statement: >
+        An order open long past its expected delivery, with nothing invoiced, is either a commitment
+        that should be released or a delivery nobody chased.
+      status: needs_signal
+      requires_signals:
+        - kind: fact_path
+          name: purchase_order.raised_at
+          note: The clock. No writer exists.
+      yields:
+        confidence_bp: 7000
+      false_positive: >
+        Long-lead capital orders are open for quarters by design and are the commonest false hit.
+
+evidence:
+  - source: document
+    strength_bp: 9500
+    description: The order itself. Decisive where the system is reachable.
+  - source: email
+    strength_bp: 6500
+    description: >
+      "Go ahead and order it." The form a commitment most often takes in a small organisation, and
+      the reason commitment is invisible in one.
+  - source: derived
+    strength_bp: 6000
+    description: An order inferred from an approval plus a supplier. Reasonable, and marked inferred.
+
+metadata:
+  owner: admin.contract_and_vendor.procurement_administration
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-09-30'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: partial
+  notes: >
+    ⛔ `owner_capability` CORRECTED 2026-09-30: the first draft named `admin.finance_administration.procurement_administration`,
+    which does not exist in this corpus. Nothing validated it — an object's owner_capability was
+    not cross-checked against real capability ids, so the invented name sat there as a dangling
+    reference no tool would have reported. That check now exists in `_tools/validate.py`.
+
+    ⛔ Derived from the exclusion lines already written in `invoice.yaml` and `budget-line.yaml`,
+    which between them define this object completely enough that authoring it invented nothing. A
+    fuller pass would add the three-way match (order, receipt, invoice), the change-order question,
+    and the release-on-close-short anti-pattern this file only names.

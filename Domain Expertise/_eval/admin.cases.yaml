@@ -1,0 +1,90 @@
+# Admin — the only activated domain. Cases are claims about correct behaviour, not a record of
+# current behaviour: a case that fails is an argument to settle, not a number to restore.
+domain: admin
+cases:
+
+  # ── MUST RESOLVE ──────────────────────────────────────────────────────────────────────────
+  - id: admin.reply_owed.routes
+    situation_type: reply_owed
+    domain_hints: [admin]
+    expect: resolve
+    why: >
+      A thread awaiting a reply is the most basic administrative finding there is. If this does not
+      route, nothing does, and the corpus is disconnected from the substrate rather than thin.
+
+  - id: admin.promise_past_its_date.routes
+    situation_type: commitment_overdue
+    domain_hints: [admin]
+    expect: resolve
+    why: >
+      A commitment past its date is the one situation every administrator is measured on. It is
+      emitted by the shipped substrate and bound by a stable Admin situation.
+
+  - id: admin.meeting_without_follow_through.routes
+    situation_type: meeting_follow_through
+    domain_hints: [admin]
+    expect: resolve
+    why: >
+      A meeting that produced no follow-up is observable from calendar and mail alone, which is why
+      it is one of the few genuinely executable situations in the corpus.
+
+  # ── MUST ABSTAIN ──────────────────────────────────────────────────────────────────────────
+  - id: admin.vendor_renewal_decision.abstains
+    situation_type: vendor_renewal_decision
+    domain_hints: [admin]
+    expect: abstain
+    reason: no_situation_binds_type
+    why: >
+      ⛔ Layer 2 emits this type and NO situation in any domain binds it — the corpus declares it in
+      `registry/situation-capability-map.yaml` under `unrouted_l2_types`. A renewal decision reaching
+      a capability anyway would mean a route was widened to catch it, which is precisely how an
+      unowned type acquires an owner nobody chose.
+
+  - id: admin.founder_bottleneck.abstains
+    situation_type: founder_bottleneck
+    domain_hints: [admin]
+    expect: abstain
+    reason: no_situation_binds_type
+    why: >
+      Declared unrouted. Naming a founder as a bottleneck is a judgment about a person, and it must
+      not arrive by accident through a loosely-bound route.
+
+  - id: admin.relationship_going_cold.abstains
+    situation_type: relationship_going_cold
+    domain_hints: [admin]
+    expect: abstain
+    reason: no_situation_binds_type
+    why: >
+      Declared unrouted, and the temptation to bind it to the outreach situations is exactly what
+      this case exists to refuse: going cold and awaiting a reply are different findings with
+      different evidence, and merging them would make every quiet thread a relationship problem.
+
+  - id: admin.unknown_domain.abstains
+    situation_type: reply_owed
+    domain_hints: [fundraising]
+    expect: abstain
+    reason: unknown_domain_hint
+    why: >
+      ⛔ There is no fundraising corpus. The refusal must name the HINT rather than the type —
+      `unknown_domain_hint`, not `no_situation_binds_type` — because the two are fixed by different
+      people: one by whoever set the hint, one by whoever must author a situation.
+
+  - id: admin.draft_situation.cannot_instruct
+    kind: admission
+    situation_id: admin.sit.asset_in_custody
+    expect: abstain
+    reason: identity_status_draft
+    why: >
+      ⛔ THE MOST IMPORTANT CASE IN THIS FILE. A `draft` situation is authored to the point of
+      describing a situation and not to the point of telling somebody what to do. Its detection is
+      evidence-backed and still ships; its prescriptive words are unreviewed and must not. A card that
+      describes and does not instruct is safe; one that instructs from unreviewed copy is the failure
+      the whole admission ceremony exists to prevent.
+
+  - id: admin.every_draft_situation.cannot_instruct
+    kind: admission_all_drafts
+    expect: abstain
+    reason: identity_status_draft
+    why: >
+      The same claim over the whole corpus rather than one file, so that a newly drafted situation
+      cannot quietly acquire the authority to instruct by being added after this case was written.

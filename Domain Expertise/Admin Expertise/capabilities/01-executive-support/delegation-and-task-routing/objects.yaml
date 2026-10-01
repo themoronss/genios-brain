@@ -15,6 +15,7 @@ core:
     - admin.obj.core.action_item
     - admin.obj.core.request
   optional:
+    - admin.obj.core.stakeholder
     - admin.obj.core.commitment
     - admin.obj.core.employee_record
 

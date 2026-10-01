@@ -1,0 +1,117 @@
+# ⛔ AUTHORED 2026-09-30 to close a dangling reference (`referenced_by: 15`). `ticket.resolution_ref`
+# holds it; `ticket --resolves-->` and `knowledge_article --references-->` point at it.
+#
+# THE DISCRIMINATOR IS THAT IT IS WHAT WAS DONE, NOT THAT IT ENDED. A closed ticket and a resolved
+# one are different facts, and every support metric that counts closures as resolutions is measuring
+# its own workflow rather than the customer's outcome.
+identity:
+  id: customer_support.obj.core.resolution
+  name: Resolution
+  domain: customer_support
+  scope: core
+  owner_capability: customer_support.diagnosis_and_resolution.resolution_delivery
+  subdomain: diagnosis_and_resolution
+  version: 0.1.0
+  status: draft
+  aliases: ["Fix", "Answer", "Outcome", "Solution"]
+purpose:
+  statement: >
+    What was actually done to satisfy a ticket's intent — the answer given, the fix applied, the
+    workaround offered, or the reason nothing was. It carries the kind, whether it was verified with
+    the customer, what it referenced, and whether it held.
+  discriminator: >
+    It answers "what did the customer get", not "did the ticket close". A ticket closed on silence
+    has no resolution and a system that infers one from closure will report its own timeout as a
+    success.
+  not:
+    - "NOT the closure. A ticket state change is our workflow; a resolution is the customer's outcome."
+    - "NOT the root cause. customer_support.obj.core.root_cause is why it happened; a resolution is
+      what was done about this instance, and a workaround resolves without addressing the cause."
+    - "NOT the knowledge article. An article is reusable content; a resolution is what happened once."
+attributes:
+  - name: kind
+    purpose: What sort of resolution this was.
+    type: value
+    data_type: enum
+    allowed_values: [answered, fixed, workaround, referred, no_action, withdrawn, timed_out]
+    required: true
+    description: >
+      ⛔ `timed_out` is the member that makes this object honest. Most helpdesks have no such state
+      and record a silent close as `answered`, which is how a deflection rate rises while service falls.
+  - name: verified_with_customer
+    purpose: Whether the customer confirmed it worked.
+    type: value
+    data_type: boolean
+    required: false
+    description: >
+      ⛔ Absence is not confirmation. A customer going quiet is the single most misread signal in
+      support, and this field exists so that silence stays silence.
+  - name: referenced_article_ref
+    purpose: The article used, where one was.
+    type: reference
+    ref: customer_support.obj.core.knowledge_article
+    data_type: ref
+    required: false
+  - name: held
+    purpose: Whether it survived — no reopen within a meaningful window.
+    type: derived
+    derived_from: [customer_support.obj.core.ticket]
+    data_type: boolean
+    required: false
+    description: >
+      The only measure of resolution quality that does not rely on asking. Derived from reopens,
+      which is why `ticket_reopened` is one of the L2 types this domain's deferrals are blocked on.
+relationships:
+  - target: customer_support.obj.core.ticket
+    type: belongs_to
+    cardinality: one
+    description: The ticket this resolved.
+  - target: customer_support.obj.core.root_cause
+    type: references
+    cardinality: zero_or_one
+    description: >
+      The cause, where one was established. Absent on every workaround, which is the point of
+      distinguishing them.
+  - target: customer_support.obj.core.knowledge_article
+    type: references
+    cardinality: zero_or_one
+    description: Content used or produced.
+inference_patterns:
+  heuristic:
+    - id: resolution.closure_is_not_resolution
+      statement: >
+        A ticket closed with no recorded resolution kind was closed by a timeout or by an agent
+        tidying a queue, and counting it as resolved overstates the outcome.
+      status: needs_signal
+      requires_signals:
+        - kind: fact_path
+          name: ticket.resolution_ref
+          note: Nothing emits a resolution; no helpdesk connector exists.
+      yields:
+        confidence_bp: 8000
+        attribute: kind
+      false_positive: >
+        A genuinely trivial answer given inline and never recorded is a real resolution with no record.
+evidence:
+  - source: ticket
+    strength_bp: 9000
+    description: A recorded resolution. Definitive and unavailable today.
+  - source: email
+    strength_bp: 6000
+    description: The reply that actually answered. What this product can see.
+  - source: derived
+    strength_bp: 5000
+    description: A resolution inferred from a closing message. Weak, and marked inferred.
+metadata:
+  owner: customer_support.diagnosis_and_resolution.resolution_delivery
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-09-30'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: partial
+  notes: >
+    ⛔ Derived from `ticket.resolution_ref` and the `resolves`/`references` edges. Its owning
+    capability is DEFERRED in this domain's `deferrals.yaml` as `blocked_on_l2_type` — nothing emits
+    `issue.resolution_kind` — so this object is a vocabulary waiting for a writer, authored to close
+    a reference rather than because the capability is live.

@@ -48,6 +48,7 @@ map:
         - admin.obj.core.compliance_obligation
         - admin.obj.core.document
         - admin.obj.core.escalation
+        - admin.obj.core.purchase_order
       never_load:
         - admin.obj.core.access_right
         - admin.obj.core.asset
@@ -104,7 +105,11 @@ map:
       optional:
         - admin.obj.core.budget_line
         - admin.obj.core.compliance_obligation
+        - admin.obj.core.delegate
         - admin.obj.core.escalation
+        - admin.obj.core.purchase_order
+        - admin.obj.core.service_level
+        - admin.obj.core.stakeholder
       never_load:
         - admin.obj.core.access_right
         - admin.obj.core.approval
@@ -180,6 +185,7 @@ map:
         - admin.obj.core.approval
         - admin.obj.core.document
         - admin.obj.core.escalation
+        - admin.obj.core.stakeholder
       never_load:
         - admin.obj.core.asset
         - admin.obj.core.employee_record
@@ -366,7 +372,11 @@ map:
       optional:
         - admin.obj.core.budget_line
         - admin.obj.core.compliance_obligation
+        - admin.obj.core.delegate
         - admin.obj.core.escalation
+        - admin.obj.core.purchase_order
+        - admin.obj.core.service_level
+        - admin.obj.core.stakeholder
       never_load:
         - admin.obj.core.access_right
         - admin.obj.core.approval
@@ -404,7 +414,9 @@ map:
         - admin.obj.core.sop
       optional:
         - admin.obj.core.compliance_obligation
+        - admin.obj.core.delegate
         - admin.obj.core.escalation
+        - admin.obj.core.stakeholder
         - admin.obj.core.vendor
       never_load:
         - admin.obj.core.access_right
@@ -456,6 +468,8 @@ map:
         - admin.obj.core.document
         - admin.obj.core.escalation
         - admin.obj.core.policy
+        - admin.obj.core.service_level
+        - admin.obj.core.stakeholder
       never_load:
         - admin.obj.core.access_right
         - admin.obj.core.asset
@@ -503,6 +517,7 @@ map:
         - admin.obj.core.approval
         - admin.obj.core.escalation
         - admin.obj.core.meeting
+        - admin.obj.core.stakeholder
       never_load:
         - admin.obj.core.access_right
         - admin.obj.core.asset
@@ -558,6 +573,7 @@ map:
         - admin.obj.core.contract
         - admin.obj.core.deadline
         - admin.obj.core.employee_record
+        - admin.obj.core.record_series
 
 # ── Deferred ──────────────────────────────────────────────────────────────
 # Capabilities with no door and a named reason for it. They appear in no route, the
@@ -743,6 +759,6 @@ stats:
   capabilities_deferred: 24
   capabilities_unrouted_unreasoned: 0
   situations_suppressed: 1
-  objects_total: 25
-  objects_core: 20
+  objects_total: 34
+  objects_core: 29
   objects_scoped: 5

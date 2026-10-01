@@ -15,6 +15,7 @@ core:
     - admin.obj.core.asset
     - admin.obj.core.request
   optional:
+    - admin.obj.core.facility
     - admin.obj.core.vendor
     - admin.obj.core.policy
     - admin.obj.core.employee_record

@@ -15,6 +15,7 @@ core:
     - admin.obj.core.document
     - admin.obj.core.compliance_obligation
   optional:
+    - admin.obj.core.audit_evidence
     - admin.obj.core.policy
     - admin.obj.core.sop
     - admin.obj.core.contract

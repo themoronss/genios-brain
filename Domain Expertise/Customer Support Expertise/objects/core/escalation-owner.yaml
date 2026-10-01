@@ -1,0 +1,114 @@
+# ⛔ AUTHORED 2026-09-30 to close a dangling reference (`referenced_by: 13`). Four attributes hold it
+# — `incident.incident_commander_ref`, `incident.comms_owner_ref`, `churn_risk.receiving_owner_ref`,
+# `postmortem.facilitator_ref` — and three edges point at it, including `escalation --escalates_to-->`.
+#
+# ⛔ THOSE FOUR ATTRIBUTE NAMES ARE THE DESIGN: commander, comms owner, receiving owner, facilitator.
+# One object, four roles, and the corpus had already decided they are the same kind of person —
+# somebody senior enough to take something over, named in advance.
+identity:
+  id: customer_support.obj.core.escalation_owner
+  name: Escalation Owner
+  domain: customer_support
+  scope: core
+  owner_capability: customer_support.escalation_and_incident.escalation_management
+  subdomain: escalation_and_incident
+  version: 0.1.0
+  status: draft
+  aliases: ["Incident Commander", "Duty Manager", "Escalation Contact", "Facilitator"]
+purpose:
+  statement: >
+    The named person an escalation, incident or churn risk is handed to — senior enough to take it
+    over rather than advise on it. It carries who, for what class, when they are on, and whether the
+    handover was accepted rather than merely sent.
+  discriminator: >
+    They take it over. An escalation owner assumes the thing; an agent keeps it and asks for help.
+    If ownership does not move, nothing was escalated — it was discussed.
+  not:
+    - "NOT the support agent. customer_support.obj.core.support_agent holds the work; this object is
+      who it moves TO, and it is a different availability question."
+    - "NOT the account manager. Commercial ownership and incident ownership are different people on
+      purpose, and fusing them puts a relationship holder in charge of an outage."
+attributes:
+  - name: person_ref
+    purpose: Which human.
+    type: reference
+    ref: customer_support.obj.core.support_agent
+    data_type: ref
+    required: true
+  - name: owns_class
+    purpose: What they take over.
+    type: value
+    data_type: enum
+    allowed_values: [incident, escalation, churn_risk, postmortem, any]
+    required: false
+    description: >
+      The four are genuinely different jobs — an incident commander and a postmortem facilitator
+      should usually not be the same person, because one of them is being reviewed.
+  - name: on_duty_from
+    purpose: When their rotation starts.
+    type: value
+    data_type: timestamp
+    required: false
+  - name: on_duty_until
+    purpose: When it ends.
+    type: value
+    data_type: timestamp
+    required: false
+    description: >
+      ⛔ A rota with no end is a person permanently on call who does not know it, and the handover at
+      the boundary is where incidents are dropped.
+  - name: handover_accepted
+    purpose: Whether they acknowledged taking it.
+    type: value
+    data_type: boolean
+    required: false
+    description: >
+      ⛔ Sending is not handing over. An escalation raised into an unattended channel is the failure
+      this field exists to make visible.
+relationships:
+  - target: customer_support.obj.core.escalation
+    type: owns
+    cardinality: zero_or_many
+    description: What they have taken over.
+  - target: customer_support.obj.core.support_agent
+    type: references
+    cardinality: zero_or_one
+    description: The person, where they also work tickets.
+inference_patterns:
+  heuristic:
+    - id: escalation_owner.unaccepted_handover
+      statement: >
+        An escalation sent to an owner who never acknowledged it is still the sender's, and both
+        parties usually believe otherwise.
+      status: needs_signal
+      requires_signals:
+        - kind: fact_path
+          name: escalation.accepted_at
+          note: Nothing emits an escalation; no connector exists.
+      yields:
+        confidence_bp: 8500
+        attribute: handover_accepted
+      false_positive: >
+        Acknowledgement out of band — a phone call, a corridor — is real and invisible.
+evidence:
+  - source: ticket
+    strength_bp: 8500
+    description: A recorded escalation with an owner. Definitive and unavailable.
+  - source: manual_entry
+    strength_bp: 7000
+    description: An on-call rota. As good as how current it is.
+  - source: email
+    strength_bp: 5000
+    description: The escalation message itself. What this product can see.
+metadata:
+  owner: customer_support.escalation_and_incident.escalation_management
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-09-30'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: partial
+  notes: >
+    ⛔ Derived from four existing attribute references whose names — commander, comms owner, receiving
+    owner, facilitator — had already decided this object's shape. A fuller pass would separate the
+    four roles properly and add the rota/handover lifecycle this file only names.

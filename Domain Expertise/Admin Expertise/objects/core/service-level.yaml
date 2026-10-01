@@ -1,0 +1,166 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Service Level — the published standard a request is measured against.
+#
+# ⛔ AUTHORED 2026-09-30 to close a dangling reference (`referenced_by: 5`).
+#
+# `request.yaml` already decided this: *"NOT the published standard it is measured against — that
+# is admin.obj.core.service_level. The request holds the clock; the service level sets it."*
+#
+# ⛔ THE DISCRIMINATOR IS PUBLICATION. A target nobody was told about cannot be breached, because
+# nobody formed an expectation against it — it is a management aspiration and belongs on a metric.
+# A service level is a promise someone is entitled to rely on, and the entitlement is what makes
+# the breach mean something.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: admin.obj.core.service_level
+  name: Service Level
+  domain: admin
+  scope: core
+  owner_capability: admin.admin_operations.request_intake
+  subdomain: admin_operations
+  version: 0.1.0
+  status: draft
+  aliases: ["SLA", "Service Standard", "Turnaround Commitment", "Response Target"]
+
+purpose:
+  statement: >
+    A published commitment about how long a class of request will take, and under what conditions
+    the clock runs. It carries the request class it governs, the target duration, what starts and
+    pauses the clock, the calendar it is measured on, and who the promise was made to. It is the
+    object that turns "this is taking a while" into "this is late".
+  discriminator: >
+    Publication to the person who relies on it. If the requester was never told, there is no
+    service level — there is an internal target, and internal targets belong in `metrics`. The
+    same number becomes a different object the moment somebody is entitled to it.
+  not:
+    - "NOT the request. admin.obj.core.request holds the clock and the individual instance; this
+      object sets the clock."
+    - "NOT the escalation route. admin.obj.core.escalation owns where a breach goes, and
+      `request.yaml` already states the principle: escalation is a route, not a mood."
+    - "NOT the contract. admin.obj.core.contract may CONTAIN a service level with money attached
+      to it; this object is the standard itself and exists whether or not anybody is paying."
+
+attributes:
+  - name: applies_to_class
+    purpose: Which class of request this governs.
+    type: value
+    data_type: string
+    required: true
+    description: >
+      A service level with no stated class is applied to everything or to nothing, and in practice
+      to whichever request somebody is currently arguing about.
+  - name: target_duration
+    purpose: The promised elapsed time.
+    type: value
+    data_type: duration
+    required: true
+  - name: clock_basis
+    purpose: Which calendar the duration is measured on.
+    type: value
+    data_type: enum
+    allowed_values: [calendar_hours, business_hours, business_days]
+    required: true
+    description: >
+      ⛔ The single most common cause of a disputed breach. "Two days" means Monday to Wednesday to
+      the requester and Monday to Tuesday to the team, and neither wrote down which.
+  - name: starts_on
+    purpose: The event that starts the clock.
+    type: value
+    data_type: enum
+    allowed_values: [receipt, acknowledgement, acceptance, approval]
+    required: false
+    description: >
+      A clock starting at ACCEPTANCE rather than receipt lets a queue absorb unlimited delay before
+      the promise begins — real, widespread, and the reason this field is not assumed.
+  - name: pauses_on
+    purpose: What legitimately stops the clock.
+    type: value
+    data_type: list
+    required: false
+    description: >
+      Waiting on the requester is the honest one. A pause list that grows every quarter is a
+      service level being negotiated downwards without anybody restating it.
+  - name: published_to
+    purpose: Who was told, which is what makes this a service level at all.
+    type: value
+    data_type: string
+    required: false
+
+relationships:
+  - target: admin.obj.core.request
+    type: gates
+    cardinality: zero_or_many
+    description: The requests measured against this standard.
+  - target: admin.obj.core.escalation
+    type: references
+    cardinality: zero_or_one
+    description: Where a breach is routed. Absent means a breach that reaches nobody.
+  - target: admin.obj.core.contract
+    type: belongs_to
+    cardinality: zero_or_one
+    description: >
+      Present when the standard is contractual, which changes a breach from an embarrassment into
+      a liability.
+
+inference_patterns:
+  heuristic:
+    - id: service_level.clock_basis_unstated
+      statement: >
+        A service level with a duration and no `clock_basis` will be disputed the first time it is
+        breached near a weekend.
+      status: needs_signal
+      requires_signals:
+        - kind: fact_path
+          name: service_level.clock_basis
+          note: Nothing emits a service level today; this vocabulary is waiting for a writer.
+      yields:
+        confidence_bp: 8000
+        attribute: clock_basis
+      false_positive: >
+        A 24/7 operation where calendar and business hours coincide has no ambiguity to resolve.
+    - id: service_level.pause_list_growing
+      statement: >
+        A pause list that has gained conditions since publication is a promise being weakened
+        without being restated to the people relying on it.
+      status: needs_signal
+      requires_signals:
+        - kind: fact_path
+          name: service_level.published_at
+          note: Needed to compare the current pause list against the published one.
+      yields:
+        confidence_bp: 6500
+      false_positive: >
+        Adding a pause for a genuinely new dependency is correct practice, and looks identical.
+
+evidence:
+  - source: document
+    strength_bp: 9000
+    description: A published service catalogue or standards page. What a requester can point at.
+  - source: contract
+    strength_bp: 9500
+    description: A contractual service level. Strongest, because breach has a defined consequence.
+  - source: email
+    strength_bp: 5000
+    decays: true
+    description: >
+      "We aim to turn these around in two days." A promise all the same, and the form most
+      administrative service levels actually exist in.
+
+metadata:
+  owner: admin.admin_operations.request_intake
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-09-30'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: partial
+  notes: >
+    ⛔ `owner_capability` CORRECTED 2026-09-30: the first draft named `admin.admin_operations.request_management`,
+    which does not exist in this corpus. Nothing validated it — an object's owner_capability was
+    not cross-checked against real capability ids, so the invented name sat there as a dangling
+    reference no tool would have reported. That check now exists in `_tools/validate.py`.
+
+    ⛔ Derived from `request.yaml`'s clock-versus-standard line and its escalation exclusion. A
+    fuller pass would add states, the tiering question (per-requester service levels), and the
+    metrics this object should feed rather than contain.

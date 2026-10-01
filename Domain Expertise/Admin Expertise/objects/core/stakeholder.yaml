@@ -1,0 +1,219 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Stakeholder — the named internal person a thing is somebody's problem.
+#
+# ⛔ AUTHORED 2026-09-30 to close a dangling reference, not to finish a subject. `domain.yaml`
+# listed this object with `referenced_by: 8` and no file behind it, so eight objects pointed at a
+# definition that did not exist. That is worse than an absence: a reader following the pointer
+# learns nothing and cannot tell whether the concept was decided or forgotten. What is here is
+# real and derived from those eight uses; the depth of `approver.yaml` (1,400 lines) is a later
+# pass, and `metadata.completeness` says so rather than implying otherwise.
+#
+# WHAT THE CORPUS ALREADY DECIDED THIS IS, before this file existed:
+#   vendor.yaml       "NOT the internal owner of the relationship — admin.obj.core.stakeholder is
+#                      the person, this is the party."
+#   budget-line.yaml   requires: [owner_ref, admin.obj.core.stakeholder]
+#   commitment.yaml    requires: [admin.obj.core.stakeholder, owner_ref]
+#   invoice.yaml       requires: [exception_owner_ref, admin.obj.core.stakeholder]
+#
+# Read together, those four say one thing: this object exists so that a budget line, a vendor, a
+# commitment and an invoice exception can each name A PERSON WHO ANSWERS FOR IT. It is the
+# accountability end of every administrative fact.
+#
+# ⛔ SO THE DISCRIMINATOR IS ACCOUNTABILITY, NOT INVOLVEMENT. Every system that models
+# "stakeholders" ends up with a list of everyone who was ever copied in, which is a distribution
+# list wearing a governance name. A stakeholder here is someone from whom an answer can be
+# demanded. If nothing can be demanded, the person is an audience, and an audience belongs on the
+# notification and not on the object.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: admin.obj.core.stakeholder
+  name: Stakeholder
+  domain: admin
+  scope: core
+  owner_capability: admin.executive_support.delegation_and_task_routing
+  subdomain: executive_support
+  version: 0.1.0
+  status: draft
+  aliases: ["Owner", "Accountable Person", "Responsible Party", "Business Owner"]
+
+purpose:
+  statement: >
+    A named internal person who answers for something — a budget line, a vendor relationship, a
+    commitment, an exception, a filing. It carries who they are, what they answer for, the basis
+    on which they do (a role, a delegation, an explicit assignment), and whether they are
+    currently available to answer at all. It is the object that lets every other administrative
+    fact stop saying "the business" and start saying a name.
+  discriminator: >
+    Accountability, not involvement. A stakeholder is someone from whom an answer can be
+    demanded. Somebody who must merely be told is an audience and belongs on the notification.
+    The test is one question: if this goes wrong, does this person have to explain it? If not,
+    they are not a stakeholder on this object however senior they are.
+  not:
+    - "NOT the approver. admin.obj.core.approver owns whether a person may say yes to a specific
+      thing under a specific limit; a stakeholder owns the consequence either way."
+    - "NOT the delegate. Covering an absence is admin.obj.core.delegate; this object is the
+      standing accountability the delegation temporarily sits on."
+    - "NOT the counterparty. A vendor, a client or a regulator is a party
+      (admin.obj.core.vendor), and vendor.yaml already draws that line: this is the person, that
+      is the party."
+    - "NOT the assignee of a task. admin.obj.core.action_item owns who is doing the work.
+      Accountability and execution separate constantly and an object that fuses them cannot
+      express the most common administrative failure — work moved, answerability did not."
+
+attributes:
+  - name: person_ref
+    purpose: Which person this is, resolved against the graph rather than typed as a string.
+    type: reference
+    ref: admin.obj.core.approver
+    data_type: ref
+    required: true
+    description: >
+      Points at the seat vocabulary rather than holding a name. A name in a text field is how two spellings of one person become two accountable people.
+      This is a resolved reference and an unresolved one is an absence, not a placeholder.
+  - name: accountable_for_ref
+    purpose: The thing they answer for.
+    type: reference
+    ref: admin.obj.core.commitment
+    data_type: ref
+    required: true
+    description: >
+      Deliberately a reference rather than free text. "Vendor management" is a job description;
+      this field must point at the budget line, vendor, commitment or obligation in question,
+      because accountability that is not attached to an object cannot be checked against it.
+  - name: basis
+    purpose: Why this person is accountable — and the three answers behave differently.
+    type: value
+    data_type: enum
+    allowed_values: [role, explicit_assignment, delegation, inferred]
+    required: true
+    description: >
+      `role` survives the person leaving; `explicit_assignment` does not and must be re-made;
+      `delegation` has an expiry and reverts; `inferred` is a guess this layer made and is the
+      only one a reader should argue with. Collapsing the four is how an organisation discovers
+      after a departure that nobody owned something everybody assumed was owned.
+  - name: availability
+    purpose: Whether an answer can actually be obtained right now.
+    type: value
+    data_type: enum
+    allowed_values: [available, absent, unknown]
+    required: false
+    description: >
+      An accountable person on leave is the commonest cause of an administrative deadline being
+      missed by an organisation that knew about it. `unknown` is the honest default and is not the
+      same as `available`.
+  - name: since
+    purpose: When this accountability began.
+    type: value
+    data_type: timestamp
+    required: false
+  - name: until
+    purpose: When it ends, where it is time-boxed.
+    type: value
+    data_type: timestamp
+    required: false
+    description: >
+      Present on a delegation, absent on a role. An `until` in the past with no successor is the
+      single most useful unowned-thing detector in the model.
+
+relationships:
+  - target: admin.obj.core.delegate
+    type: references
+    cardinality: zero_or_many
+    description: >
+      The delegation instruments that stand in for this person while they are absent. Zero is
+      normal and is the fact worth surfacing when `availability` is `absent`.
+  - target: admin.obj.core.approver
+    type: references
+    cardinality: zero_or_one
+    description: >
+      The same human is frequently both, and the two roles fail apart: an approver who has left
+      still appears on the instrument, while accountability has silently moved. Modelled as a
+      separate edge so that discovering one does not imply the other.
+  - target: admin.obj.core.escalation
+    type: gates
+    cardinality: zero_or_one
+    description: >
+      Where an unanswered demand goes next. An accountability with no route above it is a
+      dead end, and `escalation.yaml` already owns that the route is structural rather than a mood.
+
+inference_patterns:
+  heuristic:
+    - id: stakeholder.from_repeated_authorship
+      statement: >
+        The person who has answered for this object before is the person accountable for it now,
+        until something says otherwise.
+      status: needs_signal
+      yields:
+        confidence_bp: 5500
+        attribute: person_ref
+      requires_signals:
+        - kind: obs_kind
+          name: message_principal
+          note: >
+            Who a message was sent ON BEHALF OF, distinct from who pressed send. Nothing emits it,
+            which is exactly why the assistant false positive below cannot be ruled out today.
+      false_positive: >
+        An assistant who sent every message on someone else's behalf will look like the
+        accountable person, and is precisely not. Requires an authorship signal that distinguishes
+        the sender from the principal, which no pack emits today.
+    - id: stakeholder.absent_owner_has_no_successor
+      statement: >
+        An accountability whose `until` has passed, or whose person is `absent`, and which names no
+        delegate, is unowned right now — regardless of what any org chart says.
+      status: needs_signal
+      yields:
+        confidence_bp: 8000
+        attribute: availability
+      requires_signals:
+        - kind: fact_path
+          name: seat.availability
+          note: Whether the accountable seat can answer right now. No writer exists.
+        - kind: fact_path
+          name: obligation.next_due_at
+          note: >
+            The clock the absence has to be read against. An absence over a quiet period is not an
+            exposure, and without this the pattern would report every holiday as one.
+      false_positive: >
+        A short absence over a period with nothing due is not an exposure. Needs the deadline
+        clock alongside the availability, which is why it is one pattern and not two.
+
+evidence:
+  - source: manual_entry
+    strength_bp: 9500
+    description: >
+      An explicit assignment — somebody wrote it down and named a person. The strongest basis, and
+      the rarest.
+  - source: document
+    strength_bp: 9000
+    decays: true
+    description: >
+      A delegation instrument or a role definition. Strong and time-boxed; it decays because a
+      delegation outliving its reason is how temporary authority becomes permanent without anybody
+      deciding, and a role definition outlives the person who last held the seat.
+  - source: email
+    strength_bp: 4000
+    independent_of: [manual_entry]
+    description: >
+      Who actually answers, observed. Weak alone and valuable AGAINST a written assignment, because
+      the gap between the two is the finding — the named owner and the person replying are routinely
+      different people and nothing reports it.
+
+metadata:
+  owner: admin.executive_support.delegation_and_task_routing
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-09-30'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: partial
+  notes: >
+    ⛔ AUTHORED TO CLOSE A DANGLING REFERENCE, AND DECLARED PARTIAL ON PURPOSE. Eight objects
+    referenced this id with no file behind it. Every statement here is derived from those eight
+    uses — `vendor.yaml`'s person-versus-party line, and the `requires: [owner_ref, ...]` triples
+    in budget-line, commitment and invoice — rather than invented. What a fuller pass would add:
+    states, business_rules, metrics, events, actions and anti_patterns at the depth of
+    `approver.yaml`, plus the RACI question this object deliberately does not answer yet (whether
+    consulted and informed parties belong here at all, or stay on the notification where this
+    header argues they belong). `review_status: unreviewed` is the truth and is what keeps this
+    file out of any live authority path.

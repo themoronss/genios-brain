@@ -1,0 +1,124 @@
+# ⛔ AUTHORED 2026-09-30 to close the last roster entry — and it is the ONE object in this pass with
+# `referenced_by: 0`. `domain.yaml` lists it under `core_objects.people_and_orgs` beside `requester`,
+# `named_contact` and `escalation_owner`, and nothing anywhere points at it.
+#
+# ⛔ THAT IS RECORDED RATHER THAN HIDDEN. Every other object authored today closed between 5 and 34
+# dangling references; this one closes a declaration. A roster entry IS the domain stating its own
+# vocabulary ahead of usage, which is legitimate — but an object nothing references is one edit away
+# from being the "built and called by nothing" defect this programme has found nine times, so the
+# next reader should know which of the two it is looking at.
+#
+# THE DISTINCTION FROM ITS NEIGHBOURS, which is why the roster has all four:
+#   requester        the person who wrote in
+#   named_contact    the person on the account we are supposed to deal with
+#   stakeholder      somebody with INFLUENCE OVER THE RELATIONSHIP who may never write in at all
+#   escalation_owner ours, not theirs — who WE hand an escalation to
+identity:
+  id: customer_support.obj.core.stakeholder
+  name: Stakeholder
+  domain: customer_support
+  scope: core
+  owner_capability: customer_support.support_management.account_relationship_management
+  subdomain: support_management
+  version: 0.1.0
+  status: draft
+  aliases: ["Sponsor", "Exec Sponsor", "Influencer", "Account Stakeholder"]
+purpose:
+  statement: >
+    A person on the customer side with influence over whether the relationship continues, whether or
+    not they ever contact support. It carries who they are, what kind of influence they hold, how
+    recently they were in contact, and what they last heard about.
+  discriminator: >
+    Influence without necessarily contact. The requester writes in; a stakeholder may be silent for a
+    year and still decide the renewal. That asymmetry is the whole reason the object exists: the
+    people support hears from and the people who decide are frequently disjoint sets.
+  not:
+    - "NOT the requester. The person who raised a ticket is the requester and is usually not this."
+    - "NOT the named contact. A named contact is who we are supposed to deal with operationally; a
+      stakeholder is who cares about the outcome."
+    - "NOT our escalation owner. customer_support.obj.core.escalation_owner is on OUR side."
+attributes:
+  - name: person_ref
+    purpose: Which person.
+    type: reference
+    ref: customer_support.obj.core.named_contact
+    data_type: ref
+    required: true
+  - name: influence_kind
+    purpose: What sort of influence they hold.
+    type: value
+    data_type: enum
+    allowed_values: [budget_holder, executive_sponsor, technical_authority, day_to_day, unknown]
+    required: false
+    description: >
+      A budget holder and a technical authority need opposite communications during an incident, and
+      an account that treats them alike will over-inform one and lose the other.
+  - name: last_heard_from
+    purpose: When they were last in contact, if ever.
+    type: value
+    data_type: timestamp
+    required: false
+    description: >
+      ⛔ Silence is the measurement here, not the absence of one. A budget holder who has not been
+      heard from in a year is the commonest shape of a renewal that surprises everybody.
+  - name: last_informed_at
+    purpose: When we last proactively told them anything.
+    type: value
+    data_type: timestamp
+    required: false
+    description: >
+      Distinct from `last_heard_from` on purpose: the gap between what we send and what comes back is
+      the relationship's actual state, and one field cannot carry both halves.
+relationships:
+  - target: customer_support.obj.core.customer_account
+    type: belongs_to
+    cardinality: one
+    description: The account they influence.
+  - target: customer_support.obj.core.churn_risk
+    type: influences
+    cardinality: zero_or_many
+    description: >
+      The retention consequence, which is the only reason a support function should model this person
+      at all rather than leaving them to the commercial side.
+inference_patterns:
+  heuristic:
+    - id: stakeholder.silent_budget_holder
+      statement: >
+        A budget holder with no contact in a long window, on an account with open escalations, is a
+        renewal conversation nobody has started.
+      status: needs_signal
+      requires_signals:
+        - kind: fact_path
+          name: stakeholder.influence_kind
+          note: >
+            Nothing emits a stakeholder; this object has no writer AND no reader today — see the
+            header. Declared so that state is visible rather than assumed.
+      yields:
+        confidence_bp: 7000
+      false_positive: >
+        A healthy account where the day-to-day contact is happy needs no executive contact, and
+        manufacturing one is worse than the silence.
+evidence:
+  - source: email
+    strength_bp: 6000
+    description: Somebody appearing on a thread. Weak, and the only signal available.
+  - source: crm
+    strength_bp: 8500
+    description: A recorded account stakeholder. Definitive where a CRM is connected.
+  - source: manual_entry
+    strength_bp: 7000
+    description: An account manager naming them.
+metadata:
+  owner: customer_support.support_management.account_relationship_management
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-09-30'
+  review_status: unreviewed
+  confidence: experimental
+  completeness: skeleton
+  notes: >
+    ⛔ `skeleton` and `experimental`, and the weakest basis of the thirteen authored today: ZERO
+    existing references to derive from, only a roster entry. Its shape comes from the three
+    neighbours it sits beside in that roster — requester, named_contact, escalation_owner — by
+    elimination rather than from declared usage. A reviewer should decide first whether this domain
+    needs the object at all, or whether the roster entry should be removed instead.

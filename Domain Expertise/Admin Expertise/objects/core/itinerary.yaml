@@ -1,0 +1,214 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Itinerary — the sequenced schedule the traveller actually reads.
+#
+# ⛔ AUTHORED 2026-09-30 to close a dangling reference (`referenced_by: 1`).
+#
+# ⛔ NOTE THE ID: the trip is `admin.obj.travel_booking.trip`, a SCOPED object, not a core one. My
+# first draft referenced `admin.obj.core.trip` and the validator refused it — *"appears nowhere,
+# not authored, and not in domain.yaml planned_objects"*. Guessing an id from a filename is how a
+# reference dangles in the other direction.
+#
+# `trip.yaml` already decided it: *"NOT an itinerary. `admin.obj.core.itinerary` is the sequenced,
+# on-the-ground schedule — the thing the traveller actually reads. The trip is the authorisation
+# and accountability wrapper around it, and it survives the itinerary being rewritten
+# mid-journey."*
+#
+# ⛔ THAT LAST CLAUSE IS THE DESIGN. An itinerary is VOLATILE — a cancelled flight rewrites it at
+# 6am — and the trip's approval, budget and purpose must not be rewritten with it. One object that
+# tried to be both would either lose the authorisation on every disruption or refuse to reflect
+# reality.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: admin.obj.core.itinerary
+  name: Itinerary
+  domain: admin
+  scope: core
+  owner_capability: admin.travel_and_events.itinerary_management
+  subdomain: travel_and_logistics
+  version: 0.1.0
+  status: draft
+  aliases: ["Schedule", "Travel Plan", "Route"]
+
+purpose:
+  statement: >
+    The ordered sequence of segments that make up a journey — flights, trains, transfers, stays,
+    meetings — with their times, references and current status. It carries the order, the
+    connections between segments, which segments are confirmed, and what breaks if one slips. It is
+    the object a traveller reads and the object a disruption rewrites.
+  discriminator: >
+    Sequence and volatility. A trip has a purpose and an approval and changes rarely; an itinerary
+    has an ORDER and changes often. If the fact survives a cancelled flight it belongs on the trip.
+  not:
+    - "NOT the trip. admin.obj.travel_booking.trip is the authorisation and accountability wrapper, and
+      `trip.yaml` records that it must survive this object being rewritten mid-journey."
+    - "NOT the booking. A single reservation is a segment here, not the itinerary."
+    - "NOT the expense. admin.obj.core.expense_claim comes afterwards and reports what was spent,
+      not what was planned."
+
+attributes:
+  - name: trip_ref
+    purpose: The authorisation this schedule sits inside.
+    type: reference
+    ref: admin.obj.travel_booking.trip
+    data_type: ref
+    required: true
+    description: >
+      Required, because an itinerary with no trip is travel nobody authorised — which is a finding,
+      not a record.
+  - name: segments
+    purpose: The ordered sequence itself.
+    type: composite
+    contains: [segment_kind, segment_starts_at, segment_ends_at, segment_reference,
+               segment_confirmed]
+    data_type: list
+    required: true
+    description: >
+      Ordered deliberately. An unordered set of bookings cannot express a connection, and a
+      connection is the only thing on this object that can actually fail.
+  - name: segment_kind
+    purpose: What sort of leg this is.
+    type: value
+    data_type: enum
+    allowed_values: [flight, train, road_transfer, stay, meeting, other]
+    required: false
+  - name: segment_starts_at
+    purpose: When the leg begins.
+    type: value
+    data_type: timestamp
+    required: false
+  - name: segment_ends_at
+    purpose: When it ends.
+    type: value
+    data_type: timestamp
+    required: false
+  - name: segment_reference
+    purpose: The booking reference, where there is one.
+    type: value
+    data_type: string
+    required: false
+  - name: segment_confirmed
+    purpose: Whether this specific leg is actually held.
+    type: value
+    data_type: boolean
+    required: false
+    description: >
+      Per segment, never per itinerary — `partially_confirmed` above is derived from these, and a
+      single boolean on the whole journey is what makes an unconfirmed transfer invisible.
+  - name: first_departure
+    purpose: When the journey begins.
+    type: derived
+    derived_from: [segments]
+    data_type: timestamp
+    required: false
+    description: >
+      Derived from the earliest segment rather than typed, so a re-booked first leg moves it and a
+      stale copy cannot disagree with the schedule it summarises.
+  - name: last_arrival
+    purpose: When it ends.
+    type: derived
+    derived_from: [segments]
+    data_type: timestamp
+    required: false
+  - name: confirmation_state
+    purpose: Whether the whole sequence is actually held.
+    type: value
+    data_type: enum
+    allowed_values: [all_confirmed, partially_confirmed, unconfirmed, disrupted]
+    required: false
+    description: >
+      ⛔ `partially_confirmed` is the dangerous one and the reason this is not a boolean. A journey
+      with a confirmed flight and an unconfirmed transfer reads as booked and is not.
+  - name: tightest_connection
+    purpose: The smallest gap between consecutive segments.
+    type: derived
+    derived_from: [segments]
+    data_type: duration
+    required: false
+    description: >
+      The one number that predicts whether the schedule survives contact with reality, and the one
+      nobody computes.
+
+relationships:
+  - target: admin.obj.travel_booking.trip
+    type: belongs_to
+    cardinality: one
+    description: The authorisation wrapper. Exactly one, always.
+  - target: admin.obj.core.meeting
+    type: references
+    cardinality: zero_or_many
+    description: >
+      The meetings the journey exists for. The join that makes a disruption actionable rather than
+      merely inconvenient — a slipped flight matters because of what it is late for.
+
+inference_patterns:
+  heuristic:
+    - id: itinerary.tight_connection
+      statement: >
+        A connection shorter than the realistic transfer time for the location will fail often
+        enough that it should be flagged before it is booked, not after it breaks.
+      status: needs_signal
+      requires_signals:
+        - kind: fact_path
+          name: itinerary.segment_times
+          note: >
+            Nothing emits travel segments; itineraries arrive as unparsed confirmation emails. This
+            vocabulary is declared so the gap is visible rather than assumed away.
+      yields:
+        confidence_bp: 7000
+        attribute: tightest_connection
+      false_positive: >
+        A frequent traveller on a route they know may deliberately take a short connection. The
+        judgment is theirs, and this pattern should surface rather than refuse.
+    - id: itinerary.unconfirmed_segment_near_departure
+      statement: >
+        An unconfirmed segment within a short window of departure is the commonest travel failure
+        that is entirely preventable.
+      status: needs_signal
+      requires_signals:
+        - kind: fact_path
+          name: itinerary.confirmation_state
+          note: No writer exists.
+      yields:
+        confidence_bp: 8000
+        attribute: confirmation_state
+      false_positive: >
+        Segments booked on arrival by design — a taxi, a local train — are correctly unconfirmed and
+        will read as exposure.
+
+evidence:
+  - source: email
+    strength_bp: 8000
+    description: >
+      The booking confirmation. Where every itinerary actually lives today, unparsed, which is why
+      both patterns above are `needs_signal`.
+  - source: calendar
+    strength_bp: 7000
+    independent_of: [email]
+    description: >
+      Segments a traveller put in their own calendar. Independent of the confirmation and often more
+      current, because a person updates their calendar when plans change and not their inbox.
+  - source: document
+    strength_bp: 8500
+    description: A travel agent's issued itinerary. Complete when it exists.
+
+metadata:
+  owner: admin.travel_and_events.itinerary_management
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-09-30'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: partial
+  notes: >
+    ⛔ `owner_capability` CORRECTED 2026-09-30: the first draft named `admin.travel_and_logistics.travel_coordination`,
+    which does not exist in this corpus. Nothing validated it — an object's owner_capability was
+    not cross-checked against real capability ids, so the invented name sat there as a dangling
+    reference no tool would have reported. That check now exists in `_tools/validate.py`.
+
+    ⛔ Derived entirely from `trip.yaml`'s exclusion paragraph, whose key claim — that the trip must
+    survive the itinerary being rewritten mid-journey — is what makes this a separate object rather
+    than a field. A fuller pass would add the segment sub-schema properly (this file declares
+    disruption handling and the traveller-versus-arranger distinction. The `segments` composite IS
+    decomposed here — the schema refused a composite naming no `contains`, correctly: a container
+    nobody can read is not a structure.

@@ -1,0 +1,112 @@
+# ⛔ AUTHORED 2026-09-30 to close a dangling reference (`referenced_by: 9`). An existing file defined
+# it by exclusion: *"Not an agent quality measure — that is customer_support.obj.core.quality_scorecard,
+# and using this object for it inverts the metric."*
+#
+# ⛔ "INVERTS THE METRIC" IS THE WARNING WORTH KEEPING. Measuring agent quality with a customer-facing
+# instrument rewards the agent for the customer's mood, which is mostly outside their control and
+# strongly correlated with whether the answer was one the customer wanted to hear.
+identity:
+  id: customer_support.obj.core.quality_scorecard
+  name: Quality Scorecard
+  domain: customer_support
+  scope: core
+  owner_capability: customer_support.support_management.quality_assurance
+  subdomain: support_management
+  version: 0.1.0
+  status: draft
+  aliases: ["QA Scorecard", "Ticket Review", "Quality Review"]
+purpose:
+  statement: >
+    An internal assessment of how well an interaction was handled, scored against stated criteria by
+    a named reviewer. It carries the criteria, the score, who reviewed, when, and whether the agent
+    saw it. It is the object that measures OUR work rather than the customer's feelings about it.
+  discriminator: >
+    Internally scored against declared criteria. If the number came from the customer it is
+    satisfaction or effort, not quality — and the exclusion line already warns that using one for the
+    other inverts the metric.
+  not:
+    - "NOT satisfaction or effort. customer_support.obj.core.effort_score and customer sentiment are
+      the customer's measures; this is ours."
+    - "NOT the resolution. customer_support.obj.core.resolution is what was done; a correct resolution
+      delivered badly scores poorly here, which is the point."
+attributes:
+  - name: reviewed_ticket_ref
+    purpose: What was reviewed.
+    type: reference
+    ref: customer_support.obj.core.ticket
+    data_type: ref
+    required: true
+  - name: reviewer_ref
+    purpose: Who reviewed it.
+    type: reference
+    ref: customer_support.obj.core.support_agent
+    data_type: ref
+    required: false
+    description: >
+      ⛔ An unattributed quality score cannot be calibrated, and reviewer variance is usually larger
+      than agent variance — which is invisible without this field.
+  - name: criteria_version
+    purpose: Which version of the scorecard was applied.
+    type: value
+    data_type: string
+    required: false
+    description: >
+      Scores from different criteria versions are not comparable, and they are compared constantly.
+  - name: score_bp
+    purpose: The score, in basis points.
+    type: value
+    data_type: integer
+    unit: bp
+    required: false
+  - name: shared_with_agent
+    purpose: Whether the agent ever saw it.
+    type: value
+    data_type: boolean
+    required: false
+    description: >
+      ⛔ A quality programme whose scores are not returned to the people scored is a reporting
+      exercise. This field is the difference between coaching and surveillance.
+relationships:
+  - target: customer_support.obj.core.ticket
+    type: references
+    cardinality: one
+    description: The interaction reviewed.
+  - target: customer_support.obj.core.support_agent
+    type: references
+    cardinality: zero_or_many
+    description: The agent scored, and the reviewer who scored them.
+inference_patterns:
+  heuristic:
+    - id: quality_scorecard.scores_never_returned
+      statement: >
+        Quality scores that are never shared with the agent change nothing, and the programme will be
+        defended by its coverage percentage.
+      status: needs_signal
+      requires_signals:
+        - kind: fact_path
+          name: quality_review.shared_at
+          note: Nothing emits a quality review; no connector exists.
+      yields:
+        confidence_bp: 7500
+        attribute: shared_with_agent
+      false_positive: >
+        Calibration reviews are deliberately not returned and are a legitimate exception.
+evidence:
+  - source: manual_entry
+    strength_bp: 9000
+    description: A completed review. The only real source.
+  - source: ticket
+    strength_bp: 5000
+    description: The interaction itself, which a reviewer reads. Not a score.
+metadata:
+  owner: customer_support.support_management.quality_assurance
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-09-30'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: partial
+  notes: >
+    ⛔ Derived from the exclusion line already written elsewhere in this corpus, whose phrase "inverts
+    the metric" is the whole argument for keeping this separate from the customer measures. A fuller
+    pass would add the criteria sub-schema and reviewer calibration.

@@ -1,0 +1,169 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Facility — the physical space, which is not where the person sits.
+#
+# ⛔ AUTHORED 2026-09-30 to close a dangling reference (`referenced_by: 2`).
+#
+# `asset.yaml` already decided it, and named the failure: *"Not the facility —
+# admin.obj.core.facility owns the physical space. Hybrid working broke most registers precisely
+# because they conflated where the item lives with where the custodian sits."*
+#
+# ⛔ THAT SENTENCE IS THIS OBJECT'S WHOLE JUSTIFICATION. Before hybrid working, location and
+# occupant were one fact and one field served both. They are now independent, and every register
+# that kept one field is now wrong about one of them — usually silently, and usually about the
+# expensive items.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: admin.obj.core.facility
+  name: Facility
+  domain: admin
+  scope: core
+  owner_capability: admin.facilities_and_assets.workplace_management
+  subdomain: facilities_and_assets
+  version: 0.1.0
+  status: draft
+  aliases: ["Site", "Office", "Location", "Premises", "Workplace"]
+
+purpose:
+  statement: >
+    A physical space the organisation holds or occupies — an office, a floor, a store, a unit, a
+    home-working location where organisation property sits. It carries what it is, where, on what
+    basis it is held, who is responsible for it, and what obligations attach to occupying it. It is
+    the object that answers "where is this thing" independently of "whose is it".
+  discriminator: >
+    Space, not people and not tenure. A facility exists whether anybody is in it. If the fact is
+    about who sits somewhere it belongs on the seat; if it is about the lease it belongs on the
+    contract; this object is the space itself.
+  not:
+    - "NOT the asset. admin.obj.core.asset is the item; this is where the item is, and `asset.yaml`
+      records that fusing them is what hybrid working broke."
+    - "NOT the lease. admin.obj.core.contract owns tenure, rent and notice; a facility survives a
+      lease being renegotiated."
+    - "NOT the custodian. admin.obj.core.stakeholder owns who answers for something — including for
+      a facility — and a custodian's location is not the facility's."
+
+attributes:
+  - name: facility_kind
+    purpose: What sort of space, because the obligations differ completely.
+    type: value
+    data_type: enum
+    allowed_values: [office, floor, meeting_space, storage, retail, home_working, other]
+    required: true
+    description: >
+      ⛔ `home_working` is the member that makes this object necessary rather than tidy. An
+      organisation with assets in forty homes has forty facilities it does not control and is
+      nonetheless answerable for.
+  - name: address
+    purpose: Where it is.
+    type: value
+    data_type: string
+    required: false
+    description: >
+      Optional because a `home_working` facility's address is personal data an organisation may
+      deliberately not hold, and a schema that demands it forces a choice between a broken record
+      and an unnecessary one.
+  - name: held_basis
+    purpose: On what basis the organisation occupies it.
+    type: value
+    data_type: enum
+    allowed_values: [owned, leased, licensed, employee_premises, none]
+    required: false
+    description: >
+      `employee_premises` is where control ends and accountability does not — the distinction every
+      asset register misses.
+  - name: responsible_ref
+    purpose: Who answers for this space.
+    type: reference
+    ref: admin.obj.core.stakeholder
+    data_type: ref
+    required: false
+  - name: capacity
+    purpose: How many people it seats, where that is meaningful.
+    type: value
+    data_type: integer
+    required: false
+
+relationships:
+  - target: admin.obj.core.asset
+    type: owns
+    cardinality: zero_or_many
+    description: >
+      The items located here. The inverse of `asset.yaml`'s own edge, and the join that answers
+      "what do we have at this site" — which is the question an insurer asks.
+  - target: admin.obj.core.contract
+    type: belongs_to
+    cardinality: zero_or_one
+    description: The lease or licence. Absent for owned and for employee premises.
+  - target: admin.obj.core.stakeholder
+    type: references
+    cardinality: zero_or_one
+    description: The responsible person.
+  - target: admin.obj.core.compliance_obligation
+    type: requires
+    cardinality: zero_or_many
+    description: >
+      Obligations that attach to occupying a space — inspections, certificates, insurance. The
+      reason a facility is an administrative object at all and not just an address.
+
+inference_patterns:
+  heuristic:
+    - id: facility.assets_at_an_unheld_space
+      statement: >
+        Assets located at a facility held on `employee_premises` or `none` are property the
+        organisation is answerable for and does not control.
+      status: needs_signal
+      requires_signals:
+        - kind: fact_path
+          name: asset.location_ref
+          note: >
+            Where an item physically is, distinct from who holds it. In `planned_substrate` as
+            `asset_custody_unknown` territory and emitted by nothing — which is why `asset_register`
+            is one of the capabilities Admin's `deferrals.yaml` defers as `out_of_v1_scope`.
+      yields:
+        confidence_bp: 7500
+      false_positive: >
+        A laptop at an employee's home is normal and correct. The finding is only interesting in
+        aggregate, or on high-value items, and this object cannot yet tell those apart.
+    - id: facility.obligation_without_a_responsible_person
+      statement: >
+        A facility carrying inspection or certificate obligations and naming no responsible person
+        has obligations nobody is answerable for.
+      status: needs_signal
+      requires_signals:
+        - kind: fact_path
+          name: facility.responsible_ref
+          note: Nothing emits a facility today; this vocabulary awaits a writer.
+      yields:
+        confidence_bp: 8000
+        attribute: responsible_ref
+      false_positive: >
+        A meeting room needs no responsible person, and the pattern must be scoped to facilities
+        carrying obligations rather than to all of them.
+
+evidence:
+  - source: document
+    strength_bp: 9000
+    description: A lease, a licence or a site register. Decisive for held space.
+  - source: manual_entry
+    strength_bp: 6500
+    description: Somebody recorded the site. The usual origin of a facility record.
+  - source: calendar
+    strength_bp: 3500
+    description: >
+      A room booking implies a space exists. Weak, and the only signal available today for
+      meeting-space facilities.
+
+metadata:
+  owner: admin.facilities_and_assets.workplace_management
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-09-30'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: partial
+  notes: >
+    ⛔ Derived from `asset.yaml`'s location-versus-custodian line. Note the honest tension: the
+    owning capability `workplace_management` is DEFERRED in Admin's `deferrals.yaml` as
+    `out_of_v1_scope` — *"a founder tenant has no workplace to manage"* — so this object is
+    authored to close a reference from `asset.yaml`, not because V1 serves a facilities function.
+    That is exactly why it is `draft` and `unreviewed`.

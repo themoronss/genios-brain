@@ -1,0 +1,107 @@
+# ⛔ AUTHORED 2026-09-30 to close a dangling reference (`referenced_by: 13`). Unlike its siblings this
+# one is referenced only from knowledge and prose — no attribute holds it and no edge points at it —
+# so its shape is derived from what the capabilities that name it are FOR: queue management,
+# capacity planning and support analytics.
+identity:
+  id: customer_support.obj.core.backlog
+  name: Backlog
+  domain: customer_support
+  scope: core
+  owner_capability: customer_support.support_operations.support_analytics
+  subdomain: support_operations
+  version: 0.1.0
+  status: draft
+  aliases: ["Open Work", "WIP", "Outstanding Tickets"]
+purpose:
+  statement: >
+    The accumulated open work across a queue or team at a moment, with its age profile and its rate
+    of change. It carries how much, how old, and whether it is growing or shrinking. It is the object
+    that tells a capacity decision from a staffing panic.
+  discriminator: >
+    Rate of change, not size. A backlog is only meaningful as a trend: a stable backlog of 200 is a
+    functioning system and a growing backlog of 40 is a failing one, and a dashboard reporting only
+    the number cannot tell them apart.
+  not:
+    - "NOT the queue. customer_support.obj.core.queue is a named pool with a promise attached; a
+      backlog is what has accumulated, possibly across several."
+    - "NOT the capacity plan. customer_support.obj.core.capacity_plan is the intended supply; this is
+      the observed demand that did not get met."
+attributes:
+  - name: open_count
+    purpose: How much is open now.
+    type: derived
+    derived_from: [customer_support.obj.core.ticket]
+    data_type: integer
+    required: false
+  - name: age_profile
+    purpose: The distribution of how long items have been open.
+    type: derived
+    derived_from: [customer_support.obj.core.ticket]
+    data_type: list
+    required: false
+    description: >
+      ⛔ A distribution, not an average. An average age hides the twenty items that have been open for
+      a month behind two hundred opened today, and those twenty are the entire problem.
+  - name: arrival_rate
+    purpose: How fast work is coming in.
+    type: derived
+    derived_from: [customer_support.obj.core.ticket]
+    data_type: number
+    required: false
+  - name: completion_rate
+    purpose: How fast it is being closed.
+    type: derived
+    derived_from: [customer_support.obj.core.ticket]
+    data_type: number
+    required: false
+    description: >
+      ⛔ The pair with `arrival_rate` is the only honest reading of a backlog. Reporting one without
+      the other is how a team is asked to work harder on a volume problem.
+relationships:
+  - target: customer_support.obj.core.queue
+    type: references
+    cardinality: zero_or_many
+    description: The queues this backlog accumulates across.
+  - target: customer_support.obj.core.capacity_plan
+    type: influences
+    cardinality: zero_or_one
+    description: The plan it is evidence for or against.
+inference_patterns:
+  heuristic:
+    - id: backlog.arrival_exceeds_completion
+      statement: >
+        A backlog whose arrival rate exceeds its completion rate will not recover by effort, and
+        asking for effort is the standard response.
+      status: needs_signal
+      requires_signals:
+        - kind: fact_path
+          name: ticket.created_at
+          note: Nothing emits tickets; no helpdesk connector exists.
+        - kind: fact_path
+          name: ticket.closed_at
+          note: The other half of the pair. Neither exists.
+      yields:
+        confidence_bp: 8500
+      false_positive: >
+        A one-off spike inverts for a week and recovers without intervention, and the pattern must be
+        read over a window rather than a day.
+evidence:
+  - source: ticket
+    strength_bp: 9000
+    description: Open and closed counts over time. The entire basis, and unavailable today.
+  - source: derived
+    strength_bp: 5000
+    description: A backlog inferred from unanswered mail. Crude, and what this product could do now.
+metadata:
+  owner: customer_support.support_operations.support_analytics
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-09-30'
+  review_status: unreviewed
+  confidence: experimental
+  completeness: skeleton
+  notes: >
+    ⛔ `completeness: skeleton` and `confidence: experimental`, honestly — unlike its siblings this
+    object had NO attribute reference and NO relationship edge pointing at it, only prose. Its shape
+    is derived from what the naming capabilities are for rather than from declared usage, which is a
+    weaker basis and is recorded as such.

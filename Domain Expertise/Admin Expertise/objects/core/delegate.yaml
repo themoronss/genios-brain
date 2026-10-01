@@ -1,0 +1,179 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Delegate — the covering person AND the instrument that made them cover.
+#
+# ⛔ AUTHORED 2026-09-30 to close a dangling reference (`referenced_by: 5`).
+#
+# `approver.yaml` already decided what this is, in one line: *"NOT the delegate. The covering
+# person and the delegation instrument are admin.obj.core.delegate."* Two things in one object,
+# deliberately — a covering person with no instrument is a rumour, and an instrument naming
+# nobody available is a form.
+#
+# ⛔ THE FAILURE THIS OBJECT EXISTS FOR IS EXPIRY NOBODY NOTICED. A delegation is created under
+# time pressure, for a fortnight, and is never revoked. Two years later an organisation has a
+# second approver nobody appointed, holding authority through a document nobody can find, and it
+# surfaces during an audit rather than during an approval.
+# ─────────────────────────────────────────────────────────────────────────────
+
+identity:
+  id: admin.obj.core.delegate
+  name: Delegate
+  domain: admin
+  scope: core
+  owner_capability: admin.executive_support.approval_coordination
+  subdomain: executive_support
+  version: 0.1.0
+  status: draft
+  aliases: ["Deputy", "Alternate", "Acting", "Cover", "Delegation of Authority"]
+
+purpose:
+  statement: >
+    A time-boxed transfer of someone's ability to act, and the instrument that created it. It
+    carries who is covered, who covers, what may be done, within what limit, from when, until
+    when, and whether the transfer was ever revoked. It is the object that answers "who can sign
+    this while she is away" without anybody guessing.
+  discriminator: >
+    A named end. Every real delegation has one; every dangerous delegation lost it. If the
+    arrangement has no `until` and no revocation, it is not a delegation — it is a second
+    permanent holder of the authority, created without the ceremony that a permanent holder needs.
+  not:
+    - "NOT the approver. admin.obj.core.approver owns standing authority and its limit; this
+      object is a temporary loan of it."
+    - "NOT the stakeholder. admin.obj.core.stakeholder is the standing accountability the
+      delegation temporarily sits on, and it does NOT transfer — being covered does not stop the
+      principal answering for the outcome."
+    - "NOT the access right. admin.obj.core.access_right is the button in a system, and
+      `approver.yaml` already records that the two drift apart in both directions: a delegate with
+      no entitlement cannot act, an entitlement outliving a delegation is an open door."
+
+attributes:
+  - name: covers_ref
+    purpose: Whose authority is being exercised.
+    type: reference
+    ref: admin.obj.core.approver
+    data_type: ref
+    required: true
+  - name: delegate_ref
+    purpose: Who is exercising it.
+    type: reference
+    ref: admin.obj.core.stakeholder
+    data_type: ref
+    required: true
+  - name: scope_limit
+    purpose: The ceiling on what may be committed under this delegation.
+    type: value
+    data_type: money
+    required: false
+    description: >
+      ⛔ Frequently LOWER than the principal's own limit and almost never recorded as such. A
+      delegation copied at the principal's ceiling is how a fortnight's cover authorises a decision
+      the organisation would not have taken.
+  - name: effective_from
+    purpose: When the cover begins.
+    type: value
+    data_type: timestamp
+    required: true
+  - name: effective_until
+    purpose: When it ends.
+    type: value
+    data_type: timestamp
+    required: false
+    description: >
+      ⛔ OPTIONAL IN THE SCHEMA AND MANDATORY IN PRACTICE, and the gap between those two sentences
+      is this object's entire reason for existing. An absent `effective_until` is the finding, not
+      a missing field — see the pattern below.
+  - name: revoked_at
+    purpose: When it was explicitly ended, if it was.
+    type: value
+    data_type: timestamp
+    required: false
+  - name: instrument_ref
+    purpose: The document that created it.
+    type: reference
+    ref: admin.obj.core.document
+    data_type: ref
+    required: false
+    description: >
+      A delegation asserted in conversation and never written is unprovable at exactly the moment
+      it matters, which is when a decision made under it is questioned.
+
+relationships:
+  - target: admin.obj.core.approver
+    type: references
+    cardinality: one
+    description: The standing authority this borrows from.
+  - target: admin.obj.core.approval
+    type: produces
+    cardinality: zero_or_many
+    description: >
+      The decisions actually taken under this cover. The join that answers the audit question
+      nobody can answer today: what was approved while the principal was away.
+  - target: admin.obj.core.document
+    type: references
+    cardinality: zero_or_one
+    description: The instrument. Absent for the informal delegations that make up most of them.
+
+inference_patterns:
+  heuristic:
+    - id: delegate.open_ended_is_permanent
+      statement: >
+        A delegation with no `effective_until` and no `revoked_at` is a permanent transfer of
+        authority that nobody decided to make permanent.
+      status: needs_signal
+      requires_signals:
+        - kind: fact_path
+          name: delegation.effective_until
+          note: >
+            Nothing emits a delegation at all today; this object is a vocabulary waiting for a
+            writer. Recorded here so the absence is a declared frontier rather than a silence.
+      yields:
+        confidence_bp: 8500
+        attribute: effective_until
+      false_positive: >
+        A standing deputy arrangement — a genuine second approver by design — reads identically.
+        The distinction is whether the arrangement was ever reviewed, which no field carries.
+    - id: delegate.cover_without_entitlement
+      statement: >
+        A delegation whose delegate holds no access right in the system the decision is made in
+        will be discovered at the moment of the decision, not before.
+      status: needs_signal
+      requires_signals:
+        - kind: fact_path
+          name: access_right.holder_ref
+          note: Who can actually press the button. No writer exists.
+      yields:
+        confidence_bp: 7500
+      false_positive: >
+        Systems where approval is recorded by an administrator on someone's behalf work fine
+        without the delegate holding anything, and are common in smaller organisations.
+
+evidence:
+  - source: document
+    strength_bp: 9500
+    description: A signed or countersigned delegation instrument. Rare and decisive.
+  - source: email
+    strength_bp: 6000
+    decays: true
+    description: >
+      "Priya is covering for me until the 14th." The commonest form a delegation actually takes,
+      and it decays because the fortnight passes and the message does not.
+  - source: calendar
+    strength_bp: 4000
+    independent_of: [email]
+    description: >
+      An out-of-office period establishes the ABSENCE, which is half the fact and is often the
+      only half recorded anywhere.
+
+metadata:
+  owner: admin.executive_support.approval_coordination
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-09-30'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: partial
+  notes: >
+    ⛔ Derived from `approver.yaml`'s own exclusion lines — the covering person AND the instrument,
+    not the entitlement, not the standing authority. Nothing in the substrate emits a delegation
+    today, so both patterns are `needs_signal` and say which fact path would change that. A fuller
+    pass would add states (proposed / active / lapsed / revoked), the sub-delegation question, and
+    the anti-pattern set around delegations that outlive their reason.

@@ -1,0 +1,117 @@
+# ⛔ AUTHORED 2026-09-30 to close a dangling reference (`referenced_by: 12`).
+# `sla_target.coverage_window_ref` holds it; `entitlement --covers-->`, `sla_target --governed_by-->`
+# and `support_plan --requires-->` point at it.
+#
+# ⛔ IT IS THE OBJECT THAT STOPS A PROMISE ACCRUING WHILE NOBODY IS THERE. An SLA measured on
+# calendar hours against a team working business hours breaches every weekend, and the breach is
+# real to the customer and meaningless to the team — which is how SLA dashboards stop being read.
+identity:
+  id: customer_support.obj.core.coverage_window
+  name: Coverage Window
+  domain: customer_support
+  scope: core
+  owner_capability: customer_support.entitlement_and_sla.coverage_and_on_call
+  subdomain: entitlement_and_sla
+  version: 0.1.0
+  status: draft
+  aliases: ["Support Hours", "Coverage", "On-Call Window", "Operating Hours"]
+purpose:
+  statement: >
+    The hours during which a queue, plan or entitlement is actually staffed, in a stated timezone,
+    with stated exceptions. It carries when, where, what happens outside it, and whether an on-call
+    rotation covers the gap. It is the clock an SLA should be measured on.
+  discriminator: >
+    Staffing, not promising. A coverage window says when somebody is there; an SLA says how fast they
+    answer. An organisation that has only the second has a promise it cannot schedule against.
+  not:
+    - "NOT the SLA target. customer_support.obj.core.sla_target is the duration promised;
+      `sla_target --governed_by--> coverage_window` already states which governs which."
+    - "NOT the entitlement. customer_support.obj.core.entitlement is what a customer is owed; a
+      coverage window is when it is available."
+attributes:
+  - name: timezone
+    purpose: Which clock the window is stated in.
+    type: value
+    data_type: string
+    required: true
+    description: >
+      ⛔ A window with no timezone is eight hours wrong for somebody, and the somebody is always the
+      customer furthest from headquarters.
+  - name: days
+    purpose: Which days it operates.
+    type: value
+    data_type: list
+    required: false
+  - name: starts_at
+    purpose: Local start time.
+    type: value
+    data_type: string
+    required: false
+  - name: ends_at
+    purpose: Local end time.
+    type: value
+    data_type: string
+    required: false
+  - name: outside_window_behaviour
+    purpose: What happens when something arrives outside it.
+    type: value
+    data_type: enum
+    allowed_values: [clock_pauses, clock_runs, on_call_takes_it, unknown]
+    required: false
+    description: >
+      ⛔ The single field that decides whether a weekend is a breach. `unknown` is the honest default
+      and is the state most support functions are actually in.
+  - name: holiday_calendar
+    purpose: Which holidays apply.
+    type: value
+    data_type: string
+    required: false
+    description: >
+      A multi-region team has several, and an SLA computed against one of them is wrong in the others.
+relationships:
+  - target: customer_support.obj.core.sla_target
+    type: gates
+    cardinality: zero_or_many
+    description: The promises measured against this window.
+  - target: customer_support.obj.core.queue
+    type: references
+    cardinality: zero_or_many
+    description: The queues it staffs.
+inference_patterns:
+  heuristic:
+    - id: coverage_window.clock_runs_outside_cover
+      statement: >
+        A promise whose clock runs outside its own coverage window will breach on schedule every
+        weekend, for reasons nobody on the team can act on.
+      status: needs_signal
+      requires_signals:
+        - kind: fact_path
+          name: sla_target.clock_basis
+          note: Nothing emits an SLA target or a coverage window; no connector exists.
+      yields:
+        confidence_bp: 8500
+        attribute: outside_window_behaviour
+      false_positive: >
+        A genuine 24/7 commitment is correctly measured on calendar hours and will read as this.
+evidence:
+  - source: document
+    strength_bp: 9000
+    description: A published support-hours page or contract schedule.
+  - source: contract
+    strength_bp: 9500
+    description: Contractual coverage. Strongest, because breach has a consequence.
+  - source: manual_entry
+    strength_bp: 6000
+    description: A rota or a helpdesk business-hours setting.
+metadata:
+  owner: customer_support.entitlement_and_sla.coverage_and_on_call
+  created_by: ai
+  reviewed_by: ''
+  last_updated: '2026-09-30'
+  review_status: unreviewed
+  confidence: provisional
+  completeness: partial
+  notes: >
+    ⛔ Derived from `sla_target.coverage_window_ref` and the three `covers`/`governed_by`/`requires`
+    edges. A fuller pass would add follow-the-sun handover, the multi-region holiday question, and
+    the interaction with on-call escalation.
