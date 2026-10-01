@@ -286,6 +286,52 @@ def neutral_default_boundary() -> str:
 
 
 @dataclass(frozen=True, slots=True)
+class ReasoningEra:
+    """When the CURRENT reasoning implementation began writing, and what makes it current.
+
+    ⛔ WHY AN ERA IS A DECLARATION AND NOT A DATE SOMEBODY MEASURED. `reasoning_runs` holds two
+    populations that answer a receipt's question differently: 2,681 runs carry per-unit results and
+    9,489 do not, because unit results only began being written on 2026-09-29. A receipt asking
+    "does reasoning select anything" over both at once averages a live implementation with a
+    retired one and reports neither.
+
+    The boundary is therefore stated here, with the observation that establishes it, rather than
+    inferred inside a query from `min(created_at) where results exist` — which would move on its
+    own the first time an old run was backfilled.
+    """
+
+    #: ISO date the current implementation's first run was evaluated.
+    boundary: str
+    #: What changed at the boundary, in one sentence a reader can go and check.
+    what_changed: str
+    #: How the boundary was established — the count, not the reasoning.
+    measured: str
+
+
+#: ⛔ The reasoning implementations this codebase has had, newest LAST.
+#:
+#: Appended to, never edited: the boundary of a past era is a fact about history and a receipt that
+#: cites it must keep citing the same number. A new era is a new entry.
+REASONING_ERAS: tuple[ReasoningEra, ...] = (
+    ReasoningEra(
+        boundary="2026-09-29",
+        what_changed="per-unit results began being persisted — `reasoning_reasoner_results` has "
+                     "rows for runs from this date and none before it",
+        measured="measured 2026-10-01: of 12,170 runs, 2,681 carry unit results (evaluated "
+                 "2026-09-29 to 09-30) and 9,489 carry none (2026-08-17 to 09-29)"),
+)
+
+
+def current_reasoning_era() -> ReasoningEra:
+    """The era a receipt about reasoning behaviour should scope itself to.
+
+    A function and not a constant for the same reason `neutral_default_boundary` is one: the
+    receipt must not carry its own copy of a date the declaration owns.
+    """
+    return REASONING_ERAS[-1]
+
+
+@dataclass(frozen=True, slots=True)
 class NeverCompleted:
     """A unit that RUNS and has never once completed — absent, not quiet.
 

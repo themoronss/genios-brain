@@ -118,6 +118,78 @@ def _PLACEHOLDER_COMPONENTS_SQL(org: str | None) -> str:
     )
 
 
+def _ERA_SELECTS_NOTHING_SQL(org: str | None) -> str:
+    r"""Runs in the current reasoning era that produced candidates and selected none of them.
+
+    ⛔ THE DEFECT THIS EXISTS FOR, AND WHY THIRTY RECEIPTS MISSED IT. Measured 2026-10-01: the
+    product had produced no card for six days. `reasoning_candidates` held 8,044 candidates on
+    2,681 runs, every one `disposition='eligible'`, and `selected_candidate_id` was NULL on all
+    2,681 — so no signal was emitted, `executive/`'s gate matched nothing, and the existing cards
+    aged out. **Every receipt that could plausibly have caught it was green**, and four of them
+    were green for reasons worth stating:
+
+        #19 more than one candidate is ever considered   = 11      candidates ARE produced
+        #21 the system has abstained at least once       = 1,772   ⛔ green BECAUSE of the defect
+        #22 decisions become tracked commitments         = 75      green on append-only history
+        #14 the live pass has actually run               = 2,376   the pass runs, and emits nothing
+
+    `#21` is the one to read twice: abstention is healthy and this receipt measures that it
+    happens, so a system abstaining **100% of the time** satisfies it perfectly.
+
+    ⛔ A CONJUNCTION, NOT A COUNT — and this is the whole design. A high defer rate is healthy: the
+    previous era deferred 8,208 times and still produced 1,157 decisions. The defect is a
+    selection rate of **exactly zero** over runs that had something to select from. Audit D's rule
+    one layer down: *a count without its dimension is not a measurement*.
+
+    ⛔ AND IT MUST NOT PASS VACUOUSLY. `count(*) > 0 and count(selected) = 0` expressed as a
+    `having` clause returns no rows when the era produced no runs at all — which reads as "no
+    violation" and would make this receipt **green on a completely dead pipeline**, the exact
+    failure it exists to prevent. So an empty era returns `-1` and fails. The three answers are
+    distinct on purpose:
+
+        -1   the era produced no runs with candidates   -> FAIL, and it is a different sentence
+         N   N runs had candidates and selected NONE     -> FAIL, and N says how many
+         0   at least one selection happened             -> PASS
+
+    ⛔ THE ERA BOUNDARY IS IMPORTED, NEVER RESTATED. `reason/unit_health.current_reasoning_era()`
+    owns it together with the measurement that establishes it — the same rule
+    `neutral_default_boundary` established, for the same reason: a receipt carrying its own copy
+    of a date drifts from the declaration silently.
+
+    ⛔ WHY THE ERA BOUND IS NOT A WEAKENING. Without it this question averages a live
+    implementation with a retired one: 9,489 runs predate per-unit results and answer about a
+    pipeline that no longer exists. With it, the receipt is about what the deployed code does now.
+    **A receipt over append-only history needs a lower bound, or it is not a gate but a monument.**
+
+    ⛔ WHAT IT DOES *NOT* CLAIM. It does not say the cause. The cause on 2026-10-01 was
+    `GENIOS_L4_LLM_DECISION_MAKER = true` with the Anthropic spend limit refusing every call and
+    `reason/llm_decision_maker.py:20`'s declared *"Failure is DEFER, never the formula"* — a
+    deliberate design, not a bug. A receipt reports a state; the reason lives in
+    `speedrun008/YCW27/layer-4-executive/05-RECROSSCHECK-why-the-queue-is-empty.md` and the choice
+    in `02-DECISIONS.md` decision #5.
+
+    The date is inlined as a literal because `evaluate()` binds exactly one parameter; the ISO
+    shape is asserted before interpolation, as the frozen-formula receipt does.
+    """
+    from genios_engine.reason.unit_health import current_reasoning_era
+
+    boundary = current_reasoning_era().boundary
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", boundary):
+        raise ValueError(f"reasoning era boundary must be an ISO date, got {boundary!r}")
+    return (
+        "select case"
+        "         when count(*) = 0 then -1"
+        "         when count(ro.selected_candidate_id) = 0 then count(*)"
+        "         else 0"
+        "       end"
+        "  from reasoning_run_outputs ro"
+        f" where ro.created_at >= '{boundary}'"
+        "   and exists (select 1 from reasoning_candidates rc"
+        "                where rc.org_id = ro.org_id and rc.run_id = ro.run_id)"
+        + _org_filter(org, "ro")
+    )
+
+
 def _UNDECLARED_NEVER_COMPLETED_SQL(org: str | None) -> str:
     r"""Units that have RUN and never once completed, and that nobody declared.
 
@@ -453,6 +525,13 @@ def receipts(org: str | None) -> list[Receipt]:
         # ⛔ THE CLAIM IS NOT "no bound path is empty", for the reason the sibling receipt states:
         # `ready = not failed`, and 14 of 22 are empty for a reason this layer cannot clear. This one
         # passes today and fails when a FIFTEENTH goes quiet — which produces no error anywhere else.
+        Receipt("L2", "the current reasoning era selects, not only defers",
+                _ERA_SELECTS_NOTHING_SQL(org),
+                lambda n: n == 0,
+                "a selection rate of exactly zero over runs that had candidates means no signal "
+                "is emitted, so no commitment is planned and no card is built \u2014 while the pass "
+                "itself keeps running and every other receipt stays green. -1 means the era "
+                "produced no runs at all, which is a different sentence and also a failure"),
         Receipt("L2", "every fact path a reasoning unit binds is written or declared unwritten",
                 _UNDECLARED_UNWRITTEN_FACTS_SQL(org),
                 lambda n: n == 0,

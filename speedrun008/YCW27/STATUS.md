@@ -1117,3 +1117,93 @@ documents' prose was imprecise, and that is now corrected in both.
 | `HANDOFF-CODING-AGENT.md` | **four new briefs** (A–D) and an explicit **DO NOT BUILD** list |
 
 ⛔ **Nothing was built this round, and that is the finding.** L4 needed a cause, not code.
+
+---
+
+# 2026-10-01 · ✅ U1 DONE — receipt #31, and it goes RED
+
+`layer-4-executive/STEP-05-DONE-the-receipt-that-says-the-product-stopped.md` · 16 tests ·
+5 mutations · **full suite 14,615 passed, 0 failed.**
+
+## ⛔ First, the measurement that justified it
+
+All thirty receipts were run against production. **Every receipt that could plausibly have caught
+the stop was GREEN:**
+
+    #19 more than one candidate is ever considered   = 11      candidates ARE produced (8,044)
+    #21 the system has abstained at least once       = 1,772   ⛔ green BECAUSE of the defect
+    #22 decisions become tracked commitments         = 75      green on append-only history
+    #14 the live pass has actually run               = 2,376   the pass runs, and emits nothing
+    #20 score components written NOW are measured    = 0       the components are fine
+
+**#21 is the one to read twice.** Abstention is healthy and that receipt measures that it
+*happens* — so a system abstaining **100% of the time** satisfies it perfectly.
+
+⛔ **The one receipt red for the right reason was #13** *"at least one seat has a manager"* = 0 —
+which is **block 2**. **Block 1 had no receipt at all.** That is what U1 built.
+
+    30 receipts vs production:  20 PASS · 9 FAIL · 1 ERROR
+    (#18 ERRORs on `output_lane` — migration 0189, which is Harsh's H1)
+
+## What was built
+
+| Artifact | What |
+|---|---|
+| `reason/unit_health.ReasoningEra` · `REASONING_ERAS` · `current_reasoning_era()` | the era boundary **declared with the measurement that establishes it** |
+| `platform/receipts._ERA_SELECTS_NOTHING_SQL` | the query, with the reasoning for every line |
+| **receipt #31** · L2 | *"the current reasoning era selects, not only defers"* |
+
+    -1   the era produced no runs with candidates   -> FAIL, a DIFFERENT sentence
+     N   N runs had candidates and selected NONE     -> FAIL, N says how many
+     0   at least one selection happened             -> PASS
+
+⛔ **The `-1` is the design.** `having count(*) > 0 and count(selected) = 0` returns **no rows** for
+an empty era, every caller reads that as "no violation", and the receipt goes **green on a dead
+pipeline** — the exact state it exists to detect.
+
+## ⛔ It is RED, and that was the success condition
+
+    org_66bca8…     480     org_2f1bc0…     849     org_e97e86…   2,253
+    ALL ORGS      3,582    ⛔ correctly FAIL
+
+    with the era bound REMOVED (both eras)       0    ✅ GREEN
+
+**The previous era's 1,157 selections hide the current era's zero.** The bound is not a weakening;
+it is the entire thing that makes the receipt work. *A receipt over append-only history needs a
+lower bound, or it is not a gate but a monument* — audit D, second application.
+
+## ⛔ The mutation that found a half-guard I had shipped
+
+| | Mutation | Caught? |
+|---|---|---|
+| M1 | the `-1` arm → `0` | ✅ |
+| **M2** | **the era bound → `where 1=1`** | ⛔ **SURVIVED all 15 tests** |
+| M3 | count defers instead of selections | ✅ |
+| M4 | drop the `exists (candidates)` restriction | ✅ |
+| M5 | strip the measurement out of the era declaration | ✅ |
+
+M2 turns 3,582 red into 0 green on production — the receipt becomes a liar while every test
+passes. It survived because one test proved the boundary is **imported** and nothing proved it was
+**used**.
+
+> ⛔ **Declared and written are two directions, and one alone is half a guard.**
+
+`test_the_boundary_actually_REACHES_the_sql` closes it. 15 → 16 tests.
+
+## And my own test failed on its own prose — the eleventh instance
+
+The AST walk for inlined dates excluded the docstring **by value**. ⛔ `ast.get_docstring()`
+returns the **cleaned** text while the node holds the **raw** one, so the comparison never matched
+and the assertion failed on the builder's own docstring. Excluding the node **by identity** — the
+function's first statement — is exact.
+
+## ⛔ What is next, and what this receipt does not claim
+
+It reports a **state**, never a cause. The cause is `GENIOS_L4_LLM_DECISION_MAKER = true` + the
+spend limit + the declared *"Failure is DEFER, never the formula"*.
+
+⛔ **Receipt #31 stays red until DECISION #5 is answered, and that is correct.**
+
+    remaining buildable:  U2 (G2 approver) · U3 (G1 blocking step) · U4 (F9) · U5 (F10)
+    blocked on a number:  U6 (G3 brief push · G4 preventive push)
+    Rohit's:              DECISION #5 · the reporting line · the rest of the list above

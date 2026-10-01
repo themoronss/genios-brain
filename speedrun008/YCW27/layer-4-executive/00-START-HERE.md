@@ -42,13 +42,14 @@ and a clock attached.**
 | 2 | [Organisation readiness](STEP-02-DONE-organisation-readiness.md) | ✅ **DONE** · ⛔ **the reason the queue is empty** | 30 |
 | 3 | [The live pass leaves a receipt](STEP-03-DONE-activation-receipt.md) | ✅ **DONE** | 14 |
 | 4 | [Activity is not outcome](STEP-04-DONE-activity-is-not-outcome.md) | ✅ **DONE** | 16 |
+| 5 | [⛔ The receipt that says the product stopped](STEP-05-DONE-the-receipt-that-says-the-product-stopped.md) | ✅ **DONE** · **U1** · ⛔ it goes **RED**, and that is the success condition | 16 |
 
 ## ⛔ What is planned next — six units, four buildable
 
 | # | Unit | State |
 |---|---|---|
 | **U0** | **DECISION #5** — raise the limit · flip the switch · or build the third path | ⛔ **Rohit's. No card is produced until this is answered** |
-| **U1** | a 32nd receipt: *"no reasoning era selects zero candidates"* — ⛔ a **conjunction, not a count** | buildable |
+| ~~**U1**~~ | ✅ **DONE** — receipt **#31**, *"the current reasoning era selects, not only defers"*. 16 tests · 5 mutations · ⛔ **RED at 3,582, correctly**. See [STEP-05](STEP-05-DONE-the-receipt-that-says-the-product-stopped.md) |
 | **U2** | **G2** `assignment.resolve_approver_seat` reaches a live path — 8 tests already exist | buildable · safest |
 | **U3** | **G1** `monitor.blocking_action` — escalations name the step they wait on. ⛔ the **only** `UNREACHED` entry with no tests | buildable |
 | **U4** | **F-4** ⛔ `source_events.occurred_at` max = **2056-04-20** | buildable · L1 |
