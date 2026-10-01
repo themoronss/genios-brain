@@ -1553,3 +1553,119 @@ useless fact, and the coincidence would have survived another step.
 | **H1** `0186`–`0190` · **H2** OCR · H3 backfill · H4 `deal.status` · H5 approval source | **Harsh** |
 | **U2b** the approver column + wiring | blocked on H1 **and** on an authority rule |
 | **U6** brief push · preventive push | blocked on a product number |
+
+---
+---
+
+# 2026-10-01 · ⛔ LAYER 4 · THE COMPLETENESS AUDIT — and it found two more things
+
+STEP-09 closed U1–U5 and I wrote *"none of it is mine."* ⛔ **That was an assertion, not a
+measurement.** Re-deriving from `executive/unreached.py` found two items that were mine and
+buildable, and a third stale statement one layer down.
+
+> ⛔ **"Nothing is left" is a claim like any other and has to be measured.**
+
+`layer-4-executive/STEP-10-DONE-the-declaration-had-one-stale-line.md` · 10 tests · 3 mutations ·
+**suite 14,661 passed, 0 failed**
+
+## ⛔ U7 · `summary.build_summary`'s declaration was false, and had been for weeks
+
+Its `PULL_ONLY` entry said the ladder *"is still only composed where a caller asks for a summary,
+**never as a scheduled digest**"*. Measured:
+
+    deliver/outbox.py:313   _current_digest_payload  composes build_summary("one_minute", …)
+    deliver/outbox.py:1073  inside `_drain_claimed`, from `drain(engine, …)`
+                            payload = _current_digest_payload(…)
+                            res = ch.send(payload, cfg)        ⛔ THE VERY NEXT LINE
+
+**A route AND a producer, sent on every drain that claims a digest.** Not pull-only — shipped.
+**Removed, with the reason recorded.** `PULL_ONLY` **5 → 4**.
+
+### ⛔ And it survived because the table had half a guard
+
+`UNREACHED` is checked both ways. `PULL_ONLY` had three tests — routes exist, no overlap, and a
+**bespoke** check on `modes.load_preventive` that was never generalised. **Four of five surfaces
+were never asked whether they had grown a producer.**
+
+> ⛔ **One direction alone is half a guard, and a guard written for one member of a closed table is
+> half of that.**
+
+`test_no_pull_only_surface_has_quietly_acquired_a_producer` is the general form, read through
+`unreached.called_names` so a renamed import still counts. The preventive test stays, renamed,
+because its claim is **stronger**: `deliver/` must not reach preventive by **any** spelling.
+
+## ⛔ U6 · `is_terminal` had no tests — and the caller that wants it may not have it
+
+The declaration predicted it: *"Deleting it would push the next caller to re-inline the membership
+test, which is how a closed set acquires a second spelling."* ⛔ **The second spelling already
+exists** — `execution_guard.py:126` opens `validate` with `if state.state in TERMINAL_STATES:`.
+
+⛔ **And it cannot have the predicate.** `lifecycle.py:39` imports `GuardAction` and `GuardVerdict`
+**from** `execution_guard`, so the dependency runs lifecycle → guard and importing back is a cycle.
+
+> ⛔ **An unreached function is not always a forgotten one; sometimes it is an unreachable one.**
+> **Twenty-third near-miss** — the plan for this step said *"wire it"*.
+
+The entry stays, with the measured reason, and what would resolve it named: move the predicate to
+`contracts/execution` beside the `TERMINAL_STATES` it reads, which adds no dependency. ⛔ Not done
+— it changes a public boundary and nobody asked.
+
+**And `CREATED` is in neither set** (4 open · 4 terminal · 1 neither, disjoint but not exhaustive).
+⛔ **Pinned, not corrected.**
+
+## ⛔ And one stale line one layer down
+
+`layer-1-enterprise-signals/STEP-04-PENDING-api-limit.md` said *"not blocked on any code in this
+repo · **no build waits on it**"*. **Everything downstream of L2 waits on it.** Corrected in place,
+with the measurement and a link to **DECISION #5**.
+
+---
+
+# ⛔ LAYER 4 · FINAL STATE, MEASURED
+
+    executive/              27 files · 6,167 lines · runs on every heartbeat tick
+    production rows         186 executions · 794 actions · 466 escalations · 1,021 events · 186 outcomes
+    step files              10, ALL DONE — no PENDING in this folder
+    L4 receipts              7   (was 6)
+    UNREACHED                5   and ⛔ ZERO of them untested   (was 6, two untested)
+    PULL_ONLY                4   each with a producer-free guard (was 5, one guarded)
+    Atlas claims            11 checked · 1 superseded · 2 imprecise, both corrected
+
+## The seven units
+
+| | Unit | Outcome | Tests |
+|---|---|---|---|
+| **U1** | receipt **#31** *"the current reasoning era selects, not only defers"* | ⛔ **RED at 3,582** | 16 |
+| **U2** | receipt **#32** *"every action that needs sign-off can name who signs"* | ⛔ **RED at 410** | 10 |
+| **U3** | `blocking_action` wired — a reminder stopped naming finished work | **UNREACHED 6 → 5** | 11 |
+| **U4** | the baseline read bounded at `eval_time` | ⛔ **F9 retracted** | 6 |
+| **U5** | the weights version is derived | ⛔ **F10 retracted · nothing built** | 8 |
+| **U6** | `is_terminal`'s first tests · the cycle recorded | the untested count → 0 | 9 |
+| **U7** | a stale declaration removed · the half-guard generalised | **PULL_ONLY 5 → 4** | 1 |
+
+    61 tests · 29 mutations · 2 findings retracted · 3 stale statements corrected
+    2 receipts RED on the day they shipped
+    full suite 14,661 passed · 0 failed      (14,599 when the L4 pass began)
+
+⛔ **Four of the seven units' plans were wrong**, each caught by measuring before building:
+U2 (blocked twice, not "safest") · U4 (F9's fix would have discarded calendar data) · U5 (F10's
+would have invalidated every snapshot) · U6 ("wire it" was a circular import).
+
+## ⛔ WHAT IS LEFT IN L4 — nothing of mine, and now that is measured
+
+| | Item | Whose | Blocked on |
+|---|---|---|---|
+| **DECISION #5** | ⛔ **Rohit** | nothing. **Receipt #31 stays red until answered** |
+| the reporting line — `org_seats.manager_seat_id` or a dated `reports_to` | **Rohit** | nothing. **124 day-7 escalations have never fired** |
+| one in-force authority rule with an approver | **Rohit** | nothing. **Receipt #32 goes green on the first one** |
+| **U2b** the approver column + contract field + wiring | me | ⛔ **H1** *and* an authority rule |
+| **U6b** move `is_terminal` to `contracts/execution` | me | ⛔ nobody asked — it changes a public boundary |
+| **U6c** whether `CREATED` belongs in a set | ⛔ **a product question** | nobody has stated what `CREATED` means operationally |
+| **U6d** brief push · preventive push | ⛔ **Rohit** | *how many warnings a founder should see a day* |
+| **H1**–**H5** | **Harsh** | nothing |
+
+## And the three PENDING steps in the whole programme — none of them mine
+
+    layer-1 · STEP-04-PENDING-api-limit      ⛔ now DECISION #5 · Rohit
+    layer-1 · STEP-08-PENDING-HARSH-ocr      H2 · Harsh
+    layer-1 · STEP-09-PENDING-HARSH-backfill H3 · Harsh

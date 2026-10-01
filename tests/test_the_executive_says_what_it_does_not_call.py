@@ -109,6 +109,13 @@ def test_the_count_is_five_and_they_are_the_measured_five():
                                 "coordination.coordination_snapshot",
                                 "execution.build_from_decision",
                                 "lifecycle.is_terminal"}
+    # ⛔ AND NONE OF THE FIVE IS NOW UNTESTED. Two were — `blocking_action` (wired in U3) and
+    # `lifecycle.is_terminal`, which got its first tests in
+    # `tests/executive/test_a_closed_set_with_two_spellings.py`. Measured there: the guard at
+    # `execution_guard.py:126` re-inlines `TERMINAL_STATES` and CANNOT import the predicate,
+    # because `lifecycle.py:39` imports `execution_guard`. The caller that wants it may not have
+    # it, which is why the entry stays rather than closing.
+    #
     # ⛔ ONE OF THE FIVE IS A REAL PRODUCT GAP — it was two. `assignment.resolve_approver_seat` is
     # the one left, and it is blocked twice over: `execution_actions` has no approver column (so a
     # contract field and migration `0191`, behind the unapplied `0186`-`0190`) and
@@ -187,11 +194,44 @@ def test_no_surface_is_in_both_tables():
     assert pull & unreached == set()
 
 
-def test_the_preventive_surface_records_that_no_card_is_built():
-    """⛔ THE CLAIM WORTH PROTECTING. `modes.py` calls preventive mode the vision's USP, and
-    measured, `deliver/` contains no reference to it — so no preventive finding has ever become a
-    card. The day one does, this entry is stale and must be rewritten rather than left saying the
-    opposite of what ships."""
+def test_no_pull_only_surface_has_quietly_acquired_a_producer():
+    """⛔ THE MISSING DIRECTION, AND THE STALENESS IT LET THROUGH FOR WEEKS.
+
+    `UNREACHED` is checked both ways: undeclared silences fail, and declarations for things now
+    called fail too. `PULL_ONLY` had only the first half — three tests asking whether the routes
+    exist, whether the tables overlap, and one BESPOKE check on `modes.load_preventive`. Nothing
+    asked the other four whether they had grown a producer.
+
+    ⛔ So `summary.build_summary` sat here saying the ladder *"is still only composed where a caller
+    asks for a summary, **never as a scheduled digest**"* while
+    `deliver/outbox._current_digest_payload` composed a `one_minute` summary and `_drain_claimed`
+    sent it on the very next line (`outbox.py:1073`, inside `drain`). It had a route AND a
+    producer, so it was not pull-only — it was simply shipped. It has been removed.
+
+    > ⛔ **One direction alone is half a guard, and a guard written for one member of a closed
+    > table is half of that.**
+
+    This is the preventive check generalised: for every surface, the function it names must not be
+    CALLED anywhere under `deliver/`. A route plus a producer is a push, whatever the entry says.
+    """
+    delivery = {name: src for name, src in _sources().items()
+                if name.startswith("genios_engine/deliver/")}
+    called = U.called_names(delivery)
+
+    for surface in U.PULL_ONLY:
+        function = surface.split(".")[-1]
+        assert called.get(function, 0) == 0, (
+            f"⛔ `{surface}` is called {called[function]} time(s) under `deliver/`, so it has a "
+            "producer and is no longer pull-only. Either it ships — remove the entry and say so "
+            "where a reader will look — or the call is not a producer and the entry must say why. "
+            "This is exactly how `summary.build_summary` went stale.")
+
+
+def test_the_preventive_surface_still_records_that_no_card_is_built():
+    """⛔ THE ONE CLAIM THAT NEEDS MORE THAN THE GENERAL CHECK. `modes.py` calls preventive mode
+    the vision's USP. The general test above proves `load_preventive` has no caller in `deliver/`;
+    this proves `deliver/` does not reach preventive mode by ANY other spelling, which is a
+    stronger statement and the one the entry actually makes."""
     delivered = any("preventive" in src for name, src in _sources().items()
                     if name.startswith("genios_engine/deliver/"))
     assert not delivered, (

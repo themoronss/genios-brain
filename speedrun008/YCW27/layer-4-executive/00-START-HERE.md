@@ -47,6 +47,7 @@ and a clock attached.**
 | 7 | [A reminder names the step it waits on](STEP-07-DONE-a-reminder-names-the-step-it-waits-on.md) | ✅ **DONE** · **U3** · ⛔ **UNREACHED 6 → 5** · the first tests `blocking_action` ever had | 11 |
 | 8 | [A baseline is a statement about the past](STEP-08-DONE-a-baseline-is-a-statement-about-the-past.md) | ✅ **DONE** · **U4** · ⛔ **F9 RETRACTED** — the fix would have destroyed correct calendar data; its retraction found the real defect | 6 |
 | 9 | [A weights version is derived, not stored](STEP-09-DONE-a-weights-version-is-derived-not-stored.md) | ✅ **DONE** · **U5** · ⛔ **F10 RETRACTED** — wrong in scope, reasoning AND conclusion; the fix would have invalidated every capability snapshot. **Zero production code changed** | 8 |
+| 10 | [⛔ The declaration had one stale line, and half a guard](STEP-10-DONE-the-declaration-had-one-stale-line.md) | ✅ **DONE** · **U6 + U7** · found by re-auditing **after** claiming nothing was left. **PULL_ONLY 5 → 4** · the two untested entries are now zero | 10 |
 
 ## ⛔ What is planned next — six units, four buildable
 

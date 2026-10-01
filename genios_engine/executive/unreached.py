@@ -98,12 +98,37 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "predicate over it is where a future reader will look. Deleting it would push the next "
         "caller to re-inline the membership test, which is how a closed set acquires a second "
         "spelling. ⛔ It carries NO tests, which is the weaker state — same as `blocking_action`.",
-        "MOVES WHEN a caller wants the predicate rather than the set — or it is deleted, which is "
-        "an equally acceptable resolution and would simply remove this entry."),
+        "⛔ MEASURED 2026-10-01, AND THE ANSWER IS THAT IT CANNOT MOVE WHERE IT WOULD BE WANTED. "
+        "The prediction above came true: `execution_guard.py:126` re-inlines "
+        "`state.state in TERMINAL_STATES` as its very first branch — a second spelling of the "
+        "closed set already exists, in the one place that most wants the predicate. "
+        "⛔ AND IT CANNOT HAVE IT: `lifecycle.py:39` imports `GuardAction` and `GuardVerdict` "
+        "FROM `execution_guard`, so the dependency runs lifecycle -> guard and importing "
+        "`is_terminal` back would be a circular import. The caller that wants it is the one "
+        "caller that may not have it. "
+        "MOVES WHEN either the predicate moves to `contracts/execution`, beside the "
+        "`TERMINAL_STATES` it reads — which adds no dependency, since the set is already there — "
+        "or a caller outside that cycle wants it. ⛔ IT NOW CARRIES TESTS "
+        "(`tests/executive/test_a_closed_set_with_two_spellings.py`), so it is no longer in the "
+        "weaker of the two states; `blocking_action` was the other and is now wired."),
 
 }
 
 #: ⛔ Built, reachable, and only ever PULLED — `{surface: (route, why it is not pushed)}`.
+#:
+#: ⛔ `summary.build_summary` WAS HERE AND IS NOT ANY MORE, 2026-10-01. Its entry said the ladder
+#: *"is still only composed where a caller asks for a summary, never as a scheduled digest"*, and
+#: that had stopped being true: `deliver/outbox._current_digest_payload` composes a `one_minute`
+#: summary and `_drain_claimed` sends it on the very next line (`outbox.py:1073`, inside `drain`).
+#: It has a route AND a producer, so it is not pull-only — it is simply shipped.
+#:
+#: ⛔ AND THE ONLY REASON THAT SURVIVED is that this table had no both-directions guard. `UNREACHED`
+#: has one, and `modes.load_preventive` had a BESPOKE one
+#: (`test_the_preventive_surface_records_that_no_card_is_built`) that was never generalised — so
+#: four of the five surfaces were never asked whether they had acquired a producer.
+#: `test_no_pull_only_surface_has_quietly_acquired_a_producer` is the general form.
+#: **One direction alone is half a guard, and a guard written for one member of a closed table is
+#: half of that.**
 #:
 #: These are not unreached: each has a live HTTP route and a caller. What none of them has is a
 #: producer — nothing in the sweep composes them, so they exist only for a client that asks. That
@@ -126,12 +151,6 @@ PULL_ONLY: dict[str, tuple[str, str]] = {
         "elapsed-time rule condition on every node produces a clock reading, so a naive 'one card "
         "per finding' would spend the daily card budget on warnings. It needs a threshold, and "
         "the threshold is a product decision about how many warnings a founder should see a day."),
-
-    "summary.build_summary": (
-        "GET /summary",
-        "The one_line / one_minute / five_minute ladder. `deliver/outbox.py:315` does import it, "
-        "so this one is closer to pushed than the others — it is listed because the ladder itself "
-        "is still only composed where a caller asks for a summary, never as a scheduled digest."),
 
     "memory": (
         "GET /memory",
