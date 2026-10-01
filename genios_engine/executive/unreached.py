@@ -101,18 +101,6 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "MOVES WHEN a caller wants the predicate rather than the set — or it is deleted, which is "
         "an equally acceptable resolution and would simply remove this entry."),
 
-    "monitor.blocking_action": (
-        "⛔ THE ONE WORTH READING TWICE, AND THE ONLY ONE HERE THAT IS A REAL PRODUCT GAP. Its own "
-        "docstring states the case: *'What a stalled-commitment escalation should actually name. "
-        "\"Your Acme follow-up is stuck on getting it approved\" is a message somebody can act on; "
-        "\"your Acme follow-up is stalled\" is a message somebody can only feel bad about.'* "
-        "Measured: `executive/escalation.py` and `deliver/` contain no reference to a blocking "
-        "step, so every stalled-commitment escalation today is the second sentence. ⛔ AND IT IS "
-        "THE ONLY ENTRY IN THIS TABLE WITH NO TESTS EITHER — unreached and unexercised, which is "
-        "the weaker of the two states.",
-        "MOVES WHEN the escalation ladder's `remind` and `escalate` rungs name the step they are "
-        "waiting on. That is a change to escalation copy, not to the ladder's timing, so it does "
-        "not touch policy — but it needs the rung to carry a field it does not carry today."),
 }
 
 #: ⛔ Built, reachable, and only ever PULLED — `{surface: (route, why it is not pushed)}`.

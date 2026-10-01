@@ -1298,3 +1298,84 @@ into the docstring.
               blocked on  the org publishing one authority rule        Rohit
 
     remaining buildable:  U3 (G1 blocking step) · U4 (F9) · U5 (F10)
+
+---
+
+# 2026-10-01 · ✅ U3 DONE — a reminder could name work that was already finished
+
+`layer-4-executive/STEP-07-DONE-a-reminder-names-the-step-it-waits-on.md` · 11 tests ·
+6 mutations, all caught · **suite 14,637 passed, 0 failed** · ⛔ **UNREACHED 6 → 5**
+
+## ⛔ The defect was worse than `unreached.py` described
+
+It said escalations say *"your Acme follow-up is stalled"* instead of *"stuck on getting it
+approved"* — a missing nicety. The code said this:
+
+    contracts/execution.py:508   first_action  ->  self.actions[0]        ⛔ NO completion filter
+    executive/monitor.py         _next_action  ->  skips completed        ✅ correct
+    executive/reminder.py:214    "next_action": execution.first_action.label        ⛔
+
+    and that value travels:  reminder_facts -> store.record_reminder(facts=…)
+                             -> deliver/executive_bridge.py:105
+                             -> deliver/channels/slack.py:125  -> the message
+
+**So a commitment whose first step was finished was reminded about the finished step** — the exact
+thing `sweep.py`'s own docstring calls *"the single most damaging thing a system like this can
+do"*. The existing guard stops a reminder about a resolved **situation**; it never stopped one
+naming a completed **step** inside a live commitment.
+
+⛔ **And the function that fixes it was already written, uncalled and untested** —
+`monitor.blocking_action`, the only `UNREACHED` entry with no tests at all.
+
+## ⛔ LATENT, not live — the fourteenth near-miss
+
+    executions                       186 · with >=1 completed action  0 · first action done  0
+    execution_actions          794 rows · completed                   0
+
+**Not one action has ever been completed**, so the two agreed on every commitment in existence.
+**It fires on the first completion**, and `api/executive_routes.complete_action` is live.
+
+> ⛔ **A defect that fires on the first use of a feature is better fixed before the feature is
+> used.** The opposite of U2, where the prerequisite was missing and building would have produced
+> a column `None` fills.
+
+## What was built
+
+`reminder_facts` now takes `report` — ⛔ **required and keyword-only**, because an optional one with
+a fallback leaves `actions[0]` reachable and this codebase has two names for a wrong value left
+reachable. One caller, and the report was already in scope at that line.
+
+⛔ **The key is ABSENT when nothing is outstanding** — not `""`, not the last step. The dict is a
+closed vocabulary and a key being present is what *licenses* a sentence about it.
+
+⛔ **One fix covers both rungs**: the escalation fires at `sweep.py:465`, immediately before
+`record_reminder` at `:473`, so remind and escalate share one vocabulary. And **timing did not
+move** — day 1/3/7/14 and `max_rungs: 6` untouched; the field went on the **vocabulary**, never the
+plan, so execution objects stay frozen and *"why did this escalate on day 7?"* stays answerable.
+
+## Two of my own mistakes
+
+**1 · the fixture.** A hand-built `ExecutionObject` dict either trips its dozen invariants or is
+shaped to dodge them and stops being a commitment. Replaced with
+`tests/test_executive_execution.build`, which goes through `build_from_decision` — ⛔ the
+object-shaped front door `unreached.py` declares, whose only callers are tests. And the assertions
+read the plan's **own** ids, because a hard-coded `"a1"` makes a test a statement about the fixture.
+
+**2 · ⛔ my own blunt-grep, fifteenth of its kind.** The test asserted
+`"first_action" not in inspect.getsource(reminder_facts)` and **failed on correct code**, because
+`getsource` includes the docstring and that docstring *explains the old read* to warn the next
+reader. Replaced with an AST walk: no `ast.Attribute` named `first_action` in the body,
+`blocking_action` among the called names.
+
+## And the declaration's count guard shrank the way it invited
+
+`test_the_count_is_six_and_they_are_the_measured_six` said *"It may shrink; it may not grow without
+somebody writing down why."* **6 → 5**, renamed, with the reason written in. Real product gaps
+**2 → 1**.
+
+⛔ **F11 fixed at its source too**: that file's own docstring said `executive/` is 25 files / 5,731
+lines (it is **27 / 6,167**) and cited `api/routes.py:1150` (it is **1195**).
+
+    receipts   32 · #31 RED at 3,582 · #32 RED at 410
+    UNREACHED   5 · real product gaps 1
+    remaining buildable:  U4 (F9 the 2056 date) · U5 (F10 ranking weights)

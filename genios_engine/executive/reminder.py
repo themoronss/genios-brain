@@ -37,6 +37,7 @@ from typing import Any
 
 from genios_engine.contracts.execution import ExecutionObject, ExecutionState
 from genios_engine.executive.escalation import due_rungs, next_rung
+from genios_engine.executive.monitor import ProgressReport, blocking_action
 
 REMINDER_VERSION = "remind.v1"
 
@@ -196,27 +197,54 @@ def decide_reminder(execution: ExecutionObject, *, state: ExecutionState,
 
 
 def reminder_facts(execution: ExecutionObject, decision: ReminderDecision,
-                   now: datetime) -> dict[str, Any]:
+                   now: datetime, *, report: ProgressReport) -> dict[str, Any]:
     """The grounded fact corpus a reminder may be worded from.
 
     Every value here is derived from the commitment itself — no lookups, no inference, no
     freshly computed business claims.  Layer 6's invention validator will refuse any rendered
     sentence containing a number, name or date that is not in this dict, so this function is
     quite literally the vocabulary of what a reminder is allowed to say.
+
+    ⛔ `next_action` IS THE OUTSTANDING STEP, NOT `actions[0]`. It read `execution.first_action`
+    — which is `self.actions[0]` with no completion filter — so a commitment whose first step was
+    already done offered the DONE step to the renderer, and `deliver/channels/slack.py:125` put it
+    in the message. `sweep.py`'s own docstring names that as the worst thing this layer can do:
+    *"The single most damaging thing a system like this can do is nudge somebody about work the
+    world already finished."* The existing guard stops a reminder about a resolved SITUATION; it
+    never stopped one naming a completed STEP inside a live commitment.
+
+    Measured 2026-10-01: **0 of 794 actions had ever been completed**, so the two agreed on every
+    commitment in existence and the defect had never fired. It fires on the first completion, and
+    `api/executive_routes.complete_action` is a live route — which is why this was fixed before
+    the feature was used rather than after.
+
+    ⛔ `report` IS REQUIRED, NOT OPTIONAL WITH A FALLBACK. A default would leave the `actions[0]`
+    behaviour reachable, and a wrong value left reachable is one this codebase has repeatedly
+    found reached (`not_carried`, the six-times defect). There is exactly one caller and the
+    report is already in scope at that line, so a default buys nothing.
+
+    ⛔ AND THE KEY IS ABSENT, NOT EMPTY, WHEN NOTHING IS OUTSTANDING. This dict is a closed
+    vocabulary: a key being present is what LICENSES a sentence about it. With every step complete
+    there is no next action, so offering one — even the last step, even `""` — licenses a reminder
+    to name something. `deliver/executive_bridge.py:105` already reads it as
+    `str(facts.get("next_action") or "")`, so absence renders as nothing rather than raising.
     """
-    return {
+    outstanding = blocking_action(execution, report)
+    facts: dict[str, Any] = {
         "goal": execution.goal,
         "days_open": max(0, int((now - execution.created_at).total_seconds()) // 86_400),
         "days_remaining": max(0, int((execution.deadline_at - now).total_seconds()) // 86_400),
         "deadline": execution.deadline_at.isoformat(),
         "window_elapsed_pct": elapsed_bp(execution, now) // 100,
         "consequence": execution.do_nothing_consequence,
-        "next_action": execution.first_action.label,
         "urgency": decision.urgency,
         "reason_code": decision.reason_code,
         "escalation_day": decision.escalation_day,
         "subject_ref": execution.subject_ref,
     }
+    if outstanding is not None:
+        facts["next_action"] = outstanding.label
+    return facts
 
 
 __all__ = ["DEFAULTS", "FIRM", "GENTLE", "REMINDER_VERSION", "URGENT", "ReminderDecision",

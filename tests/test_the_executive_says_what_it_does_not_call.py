@@ -1,7 +1,8 @@
 """L4-00 · the executive layer could not say which of its silences were deliberate.
 
-⛔ WHAT THIS LAYER IS, MEASURED FIRST. `executive/` is 25 files and 5,731 lines, and unlike Layer
-3's dormant machinery it IS wired: `api/routes.py:1150` calls `sweep.run_executive` for every org
+⛔ WHAT THIS LAYER IS, MEASURED FIRST. `executive/` is 27 files and 6,167 lines (25 / 5,731 when
+this file was written), and unlike Layer 3's dormant machinery it IS wired: `api/routes.py:1195`
+calls `sweep.run_executive` for every org
 on every heartbeat tick, before distribution, and that plans commitments from authoritative
 decisions then validates, transitions, reminds, escalates and closes them. Five tables, delegation
 wiring, fourteen test files, and `record_outcome` feeding Layer 7. **The execution half is done.**
@@ -10,7 +11,13 @@ wiring, fourteen test files, and `record_outcome` feeding Layer 7. **The executi
 `context/lane_health.DORMANT_LANES` and `patterns/routing.UNROUTED_PATTERN_TYPES` all exist so a
 reader can tell a deferred capability from a forgotten one. `executive/` had NOTHING of the kind,
 so three public functions with no caller looked exactly like three oversights — and one of them,
-`monitor.blocking_action`, is a real product gap while the other two are correct.
+`monitor.blocking_action`, was a real product gap while the other two are correct.
+
+⛔ **UPDATED 2026-10-01.** `monitor.blocking_action` is now wired (see the count test below), so
+the table is five. And the citation above was `api/routes.py:1150`; it is **1195** — the claim was
+true and the address had gone stale, which is finding **F11** in
+`speedrun008/YCW27/layer-4-executive/03-FINDINGS.md`. ⛔ `tests/test_spec_deferrals_resolve.py`
+cannot catch that: it resolves document paths, not `file.py:line` citations in prose.
 
 This file makes that distinction enforceable in both directions.
 """
@@ -76,19 +83,39 @@ def test_every_declared_entry_is_still_unreached():
         "stale silence is worse than none, because somebody will act on it.")
 
 
-def test_the_count_is_six_and_they_are_the_measured_six():
+def test_the_count_is_five_and_they_are_the_measured_five():
     """Pinned so the gap is a number rather than an impression. It may shrink; it may not grow
-    without somebody writing down why."""
+    without somebody writing down why.
+
+    ⛔ SIX -> FIVE ON 2026-10-01, and it shrank the way the docstring invites.
+    `monitor.blocking_action` is now called from `executive/reminder.reminder_facts`, so its
+    `next_action` names the step actually outstanding instead of `actions[0]`.
+
+    What it was doing before: `reminder_facts` read `execution.first_action`, which is
+    `self.actions[0]` with **no completion filter**, and that value travels to
+    `deliver/executive_bridge.py:105` and onto a Slack message. ⛔ So a commitment whose first step
+    was already done was reminded about the **finished** step — which `sweep.py`'s own docstring
+    calls *"the single most damaging thing a system like this can do"*.
+
+    ⛔ Measured 2026-10-01: **0 of 794 actions had ever been completed**, so the two agreed on every
+    commitment in existence and it had never fired. It fires on the first completion, and
+    `api/executive_routes.complete_action` is live — which is why it was fixed before the feature
+    was used. Tests:
+    `tests/executive/test_a_reminder_names_the_step_it_waits_on.py` (11, and six of them are the
+    first tests `blocking_action` has ever had).
+    """
     assert set(U.UNREACHED) == {"assignment.resolve_approver_seat",
                                 "coordination.can_complete",
                                 "coordination.coordination_snapshot",
                                 "execution.build_from_decision",
-                                "lifecycle.is_terminal",
-                                "monitor.blocking_action"}
-    # ⛔ TWO OF THE SIX ARE REAL PRODUCT GAPS, and they are marked so a reader scanning this table
-    # does not weigh a one-line predicate the same as a missing approver.
+                                "lifecycle.is_terminal"}
+    # ⛔ ONE OF THE FIVE IS A REAL PRODUCT GAP — it was two. `assignment.resolve_approver_seat` is
+    # the one left, and it is blocked twice over: `execution_actions` has no approver column (so a
+    # contract field and migration `0191`, behind the unapplied `0186`-`0190`) and
+    # `authority_rules` holds zero rows, so the answer would be `None` on all 410 gated actions.
+    # Receipt #32 counts it rather than leaving it to prose.
     real = [k for k, (why, _m) in U.UNREACHED.items() if "REAL PRODUCT GAP" in why]
-    assert sorted(real) == ["assignment.resolve_approver_seat", "monitor.blocking_action"]
+    assert sorted(real) == ["assignment.resolve_approver_seat"]
 
 
 def test_every_declaration_carries_a_reason_and_a_mover():
