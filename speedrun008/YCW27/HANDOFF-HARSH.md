@@ -7,6 +7,29 @@
 
 ---
 
+## ⛔ 2026-10-01 · READ THIS BEFORE H1 AND H2 — they will not produce a card on their own
+
+Measured the same day: **L1, L2 and L3 wrote rows on 2026-09-30. L4 and L5 stopped on 09-25.**
+
+The cause is not a deploy and not a migration. `GENIOS_L4_LLM_DECISION_MAKER = true` for every
+org, the Anthropic spend limit has refused every call since 2026-09-25 11:09 UTC, and
+`reason/llm_decision_maker.py:20` says *"**Failure is DEFER, never the formula**"* — by design,
+with a stated reason. So every decision defers, nothing is selected, no signal is emitted, and the
+card pipeline is stopped.
+
+    the 8,044 candidates on the 2,681 runs since 09-29:
+      formula_utility  5,469   ✅ the deterministic scorer is HEALTHY
+      llm_utility          0   ⛔
+      final_utility_bp     0   ⛔      outcome_kind: decision ZERO
+
+⛔ **H1 and H2 are still worth doing and still unblock what their briefs say.** But neither
+produces a single card until **DECISION #5** is answered (`02-DECISIONS.md`) — raise the limit,
+flip the switch, or build the third path. That is Rohit's, it is one line, and it is not yours.
+
+**Full trace:** `layer-4-executive/05-RECROSSCHECK-why-the-queue-is-empty.md`.
+
+---
+
 ## 2026-10-01 · H1 RE-VERIFIED AGAINST PRODUCTION
 
 Measured read-only, so this is not a reconstruction from the branch:

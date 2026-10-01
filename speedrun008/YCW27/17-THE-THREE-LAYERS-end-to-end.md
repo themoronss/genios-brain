@@ -766,7 +766,7 @@ a product decision, or one unit that is blocked on a deploy.
 | 9 | approval-workflow source | L2 | **Harsh** | nothing · **H5** |
 | 10 | roster activation — ⛔ **A5's ordering FIRST**: schedule `core.impact`/`core.cost`/`core.opportunity` **before** `core.tradeoff` | L2 | **Rohit** | nothing |
 | 11 | the **709 `low_relevance`** parks — terminal state, or narrow the receipt? | L1 | **Rohit** | nothing |
-| 12 | Anthropic spend limit — the API has refused **every** model call since 2026-09-25 11:09 UTC | all | **Rohit** | nothing |
+| 12 | ⛔🔴 **Anthropic spend limit / DECISION #5** — refused every call since 2026-09-25 11:09 UTC. **Measured 2026-10-01: this is what stopped the card pipeline**, not a convenience. See PART 9 | all | **Rohit** | nothing — and it blocks every card |
 | 13 | three Atlas documentation edits (from decision #1 = A) | docs | **Rohit** | nothing |
 | 14 | Atlas cell **L2-08**, and the 97 `draft` objects gating question | L2 | **Rohit** | nothing |
 
@@ -809,14 +809,35 @@ directly downstream of everything in this document.
     execution_events 1,022 · execution_actions 794 · execution_escalations 466
     executive/readiness.py exists · platform/org_readiness_sql.py exists
 
-⛔ **150 of 165 cards expired and only 6 surfaced.** Before planning any L4 build, that number
-needs its own crosscheck: expiry is a *window*, and a window over a starved queue expires
-everything in it. The honest question for L4's crosscheck is therefore **"is the 150 a delivery
-defect, or is it the downstream shadow of H2?"** — and that is answerable by measuring expiry dates
-against the OCR deploy date, not by reading `executive/`.
+## ⛔ ANSWERED, 2026-10-01 — and it was neither
 
-**So the first step of the L4 pass is a crosscheck, not a plan**, exactly as it was for each of
-these three layers. The same four beats: measure, plan, build bottom-up, verify by running it.
+The crosscheck ran. The question was *"is the 150 a delivery defect, or the downstream shadow of
+H2?"* **It is neither**, and the answer is in
+`layer-4-executive/05-RECROSSCHECK-why-the-queue-is-empty.md`.
+
+    L1 / L2 / L3 wrote rows 2026-09-30.   L4 stopped 09-25.   L5 stopped 09-25.
+      -> the OCR deploy would have starved L1. It did not. Guess refuted on the spot.
+
+**There are TWO blocks, at two different places, and neither is a defect in `executive/`:**
+
+| | Block | Measured |
+|---|---|---|
+| **1 · the input** | `GENIOS_L4_LLM_DECISION_MAKER = true` (every org) + the Anthropic spend limit + `llm_decision_maker.py:20`'s declared *"Failure is DEFER, never the formula"* | `formula_utility` **5,469** ✅ healthy · `llm_utility` **0** · `final_utility_bp` **0** on all 8,044 candidates · `outcome_kind` defer 2,669 · decision **ZERO** · **0 signals emitted** |
+| **2 · the ladder** | no reporting line, so `manager_of` returns `None` | **124 day-7 manager escalations scheduled, 0 ever fired.** The ladder works to day 3 and stops |
+
+⛔ **So the spend limit did not merely switch off LLM features — it stopped the card pipeline**, in
+a way that reads from outside as a delivery defect while six layers report healthy. The logic is
+sound and stated; what nobody declared is that **the measurement mode is the production mode.**
+
+> ⛔ **A deliberate refusal to degrade is still a stop.**
+
+That is now **DECISION #5** in `02-DECISIONS.md` — three options, one line, Rohit's. **L4 needs no
+build work to start producing.** Six units are planned in `layer-4-executive/02-PLAN.md`, four
+buildable, two blocked on a product number.
+
+⛔ **And this changes the priority order in PART 8.** R2 (the spend limit) is not a 🟠 that blocks
+nothing — it is a 🔴 that blocks **every card the product could produce**. H1 and H2 remain worth
+doing and will not produce a single card until decision #5 is answered.
 
 ---
 
@@ -828,7 +849,7 @@ these three layers. The same four beats: measure, plan, build bottom-up, verify 
 | 2 | **`HANDOFF-HARSH.md`** | the five items above, as standalone briefs |
 | 3 | `HANDOFF-CODING-AGENT.md` | three standalone briefs + the twelve rules this repo fails a build over |
 | 4 | `STATUS.md` — **the LAST section** | the live task list. ⛔ The table at line 745 is stale |
-| 5 | `08-ATLAS-SCORECARD-L1-L2-L3.md` | 24 Atlas claims, each verified or refuted |
+| 5 | `08-ATLAS-SCORECARD-L1-to-L4.md` | 24 Atlas claims, each verified or refuted |
 | 6 | `layer-2-reasoning/16-AUDIT-AND-PLAN-the-readiness-axis.md` | the readiness axis, audit + plan + what was built |
 | 7 | `genios_engine/LAYERS.py` | ⛔ **read this before using any layer number** |
 | 8 | `genios_engine/reason/unit_health.py` | the four grains of declared silence, each with a named mover |

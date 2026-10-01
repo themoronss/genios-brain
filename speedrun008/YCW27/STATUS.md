@@ -1059,3 +1059,61 @@ it resolves document paths, not `file.py:line` citations in prose. That generali
 U-next.
 
 **Five load-bearing citations in the document were opened by hand. One in five was wrong.**
+
+---
+
+# 2026-10-01 · ⛔ BLOCK 2 — STEP-02 was right too, and it cost 124 escalations
+
+The re-crosscheck above found what stops work **entering** L4. It does **not** supersede
+`STEP-02-DONE-organisation-readiness.md`. Both were re-measured today, through STEP-02's own
+diagnostic:
+
+    org_readiness, all three orgs:    seats 1 ✅   channels 1 ✅   reporting_line 0 ⛔
+    manager_of has two sources:       org_seats.manager_seat_id  0 of 3
+                                      seat_responsibilities      0 rows
+
+    execution_escalations, 466 rows:
+      day 1 notify   owner    175   127 fired   127 targeted   ✅
+      day 2 remind   owner      1     1 fired     1 targeted   ✅
+      day 3 remind   owner    165    75 fired    75 targeted   ✅
+      day 5 escalate manager    1     1 fired     1 targeted   ✅
+      day 7 escalate manager  124     0 fired     0 targeted   ⛔⛔
+
+⛔ **124 day-7 manager escalations were scheduled and not one ever fired.** The ladder works to
+day 3 and stops. Seats and channels existing is exactly why 186 executions and 165 cards exist at
+all — so organisation data is **partial, not absent**, and STEP-02's finding is **narrowed, not
+wrong**: its scope is the **ladder**, not the queue's input.
+
+> ⛔ **Two blocks at two places.** Fixing either alone leaves the other.
+
+**Block 2 is not a unit.** `readiness.py:66` has said what to do since STEP-02: *set
+`org_seats.manager_seat_id` for the standing line, or file a dated `reports_to` responsibility.*
+
+## ⛔ F8 · and `seat_responsibilities.reports_to` is not a column
+
+`03-FINDINGS.md` F1 and the Atlas both write it as one. The table's columns are `org_id, seat_id,
+scope_kind, scope_key, accountability, source, evidence_ref, valid_from, valid_until, created_at`;
+`assignment.REPORTS_TO = "reports_to"` is a **value of `accountability`**, and `reports_to` appears
+in **no migration**. **The code is right** — `readiness.py:66` names both paths exactly. Two
+documents' prose was imprecise, and that is now corrected in both.
+
+---
+
+# 2026-10-01 · EVERY FILE UPDATED THIS ROUND
+
+| File | What changed |
+|---|---|
+| `layer-4-executive/05-RECROSSCHECK-why-the-queue-is-empty.md` | **NEW**, 420 lines — the chain link by link, the two blocks, 11 Atlas claims, 6 units, and the five citations opened by hand |
+| `layer-4-executive/00-START-HERE.md` | the two blocks at the top; `05` is now the first read; the six planned units |
+| `layer-4-executive/01-CROSSCHECK.md` | its two "why the queue is empty" lines — one confirmed-and-narrowed, one now given a dated reason |
+| `layer-4-executive/02-PLAN.md` | **round 2**, six units with the *why* and the *do not* for each |
+| `layer-4-executive/03-FINDINGS.md` | **F6–F12** |
+| `layer-4-executive/STEP-02-DONE-...md` | narrowed, not wrong — with the 124 |
+| `02-DECISIONS.md` | **DECISION #5**, three options, recommendation **B now, C as a unit, A when affordable** |
+| `07-LEDGER-...md` | the L4 step — ⛔ **the one with no build in it** — and the five doctrine rules it produced |
+| `08-ATLAS-SCORECARD-L1-to-L4.md` | **renamed** from `-L1-L2-L3`, every citation fixed; L4's 11 claims added · **35 total** |
+| `17-THE-THREE-LAYERS-end-to-end.md` | PART 9's open question **answered**; PART 8 raises R2 from 🟠 to 🔴 |
+| `HANDOFF-HARSH.md` | ⛔ a warning above H1: **H1 and H2 produce no card until decision #5** |
+| `HANDOFF-CODING-AGENT.md` | **four new briefs** (A–D) and an explicit **DO NOT BUILD** list |
+
+⛔ **Nothing was built this round, and that is the finding.** L4 needed a cause, not code.

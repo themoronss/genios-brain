@@ -9,7 +9,7 @@ an appended correction, because *how* a cell went stale is the part worth keepin
 
 > ⛔ **Read as current, this matrix would send the next person to build six things that already
 > exist, and to "fix" one thing that is working as designed.**
-> Full measurement: `speedrun008/YCW27/08-ATLAS-SCORECARD-L1-L2-L3.md`,
+> Full measurement: `speedrun008/YCW27/08-ATLAS-SCORECARD-L1-to-L4.md`,
 > `.../layer-2-reasoning/13-ATLAS-RECHECK...` and `.../14-PLANE-D-AND-R...`.
 
 **The matrix's own rule, applied to itself.** It opens by distinguishing *Present · Wired · Live ·

@@ -286,3 +286,82 @@ receipt has been failing with one number and no breakdown for the whole programm
 **State at handoff:** full suite **14,534 passed, 0 failed**. Production receipts **21 PASS, 7 FAIL,
 1 ERROR** of 29 — and not one of the failures is a mis-asked question. Every remaining red is a true
 statement about a real gap with a named mover, which is what makes this list short.
+
+---
+---
+
+# 2026-10-01 · FOUR MORE BRIEFS — L4 round 2
+
+⛔ **Read `speedrun008/YCW27/layer-4-executive/05-RECROSSCHECK-why-the-queue-is-empty.md` first.**
+`executive/` needs no build work; these four are about what it **built and never calls**, plus two
+findings one layer either side.
+
+⛔ **And none of them produces a card until DECISION #5 is answered.** They are worth building
+anyway — U1 most of all, because it is what makes the stop visible — but do not expect a card.
+
+## BRIEF A · the receipt that says the queue is empty, and why
+
+**File** `genios_engine/platform/receipts.py` — a 32nd claim.
+**Claim** *"no reasoning era selects zero candidates."*
+
+⛔ **A CONJUNCTION, NOT A COUNT.** A high defer rate is healthy: the old era deferred 8,208 times
+and still produced 1,157 decisions. The defect is `count(*) > 0 and count(selected_candidate_id) = 0`
+over a window.
+
+⛔ **The lower bound comes from a FUNCTION, never a literal.** `reason/unit_health.neutral_default_boundary()`
+is the pattern — a copied date goes stale and the receipt becomes a monument. See
+`tests/platform/test_the_frozen_formula_receipt_is_dated.py`.
+
+**Success condition** ⛔ the receipt goes **RED** against production today. "It goes green" is the
+wrong test — a receipt that is green on a stopped product is the thing it exists to prevent.
+
+## BRIEF B · `assignment.resolve_approver_seat` reaches a live path
+
+**Files** `genios_engine/executive/sweep.py` (`plan_commitments`) ·
+`genios_engine/executive/unreached.py` (delete the entry).
+
+Resolve the approver beside the owner when `context.requires_approval` is set.
+
+⛔ **Three outcomes, and only one may name anybody.** `AuthorityView.resolve` returns `enforced`
+(may name a seat), `suggested` (observed behaviour matched — a human must confirm) or
+`no_authority_rule` (the org holds no rule, which is **NOT** "anyone may approve"). Eight tests
+already pin this. **`None` stays `None`** and the card says *"sign-off needed"* naming nobody,
+which is correct.
+
+⛔ **Delete the `unreached.UNREACHED` entry in the SAME commit.**
+`tests/test_the_executive_says_what_it_does_not_call` checks both directions — an entry naming a
+function that is now called is as much a lie as a function unreached and undeclared. **That test
+going red is how you know you forgot.**
+
+## BRIEF C · the escalation names the step it is waiting on
+
+**Files** `genios_engine/executive/monitor.py` (tests first) ·
+`genios_engine/executive/escalation.py` (copy) · `unreached.py` (delete the entry).
+
+Today every stalled-commitment escalation says *"your Acme follow-up is stalled"*. It should say
+*"stuck on getting it approved"*. `escalation.py` and `deliver/` contain **zero** references to a
+blocking step — verified.
+
+⛔ **`monitor.blocking_action` has NO TESTS.** It is the only `UNREACHED` entry in that state.
+**Write them first.** Building on an untested function is how an untested function becomes a wrong
+one.
+
+⛔ **Timing does not move, and the plan stays immutable.** This is escalation **copy**, not ladder
+**policy** — day 1/3/7/14 and `max_rungs: 6` are untouched. And the field goes on the **rung**,
+never on the plan: execution objects are frozen and content-addressed so *"why did this escalate on
+day 7?"* stays answerable months later.
+
+## BRIEF D · two findings, one either side of L4
+
+| | Finding | File |
+|---|---|---|
+| **F9** | ⛔ `source_events.occurred_at` max = **2056-04-20** — a date 30 years in the future. Measure the blast radius first (how many reads order or window on it), then bound it at ingest. ⛔ **The bound is the unit; the row is the symptom** | `capture/` |
+| **F10** | 708 of 2,681 outputs carry no `ranking_weights_version` — exactly the `legacy.rule` + `legacy.score_gate` count. Either the lane records its weights or it **declares that it has none**, in `unit_health.py`'s shape: a reason and a mover | `reason/` |
+
+## ⛔ DO NOT BUILD
+
+| | Why |
+|---|---|
+| **G3 brief push** · **G4 preventive push** | both need a **product number** — *how many warnings a founder should see a day* — and `unreached.PULL_ONLY` spells out why a naive one-card-per-finding would spend the whole daily budget on warnings. Building the threshold by guessing it is building a guess |
+| the reporting line | ⛔ **not code.** `readiness.py:66` already says what to do: set `org_seats.manager_seat_id`, or file a dated `reports_to` responsibility. It is organisation data |
+| ⛔ a fallback inside `llm_decision_maker` | that is **option C of DECISION #5** and it **changes a declared doctrine**. It needs saying out loud, not slipping in |

@@ -163,6 +163,62 @@ spend limit from a 🟠 inconvenience to a 🔴 total block on everything downst
 
 ---
 
+# PART 2b · ⛔ THERE ARE **TWO** BLOCKS, NOT ONE — and STEP-02 was right too
+
+PART 2 found what stops work **entering** L4. It does not supersede `STEP-02-DONE-organisation-
+readiness.md`, which found something different and is **still live**. Both were measured today.
+
+## BLOCK 1 · the input · ⛔ NEW · stops commitments being created at all
+
+The switch, the spend limit and the declared DEFER (PART 2). **0 new commitments since
+2026-09-25.**
+
+## BLOCK 2 · the ladder · STEP-02's finding, confirmed with a number
+
+`executive/readiness.py` was built in STEP-02 to answer *"why can this tenant not be routed to"*.
+Run today, through its own `platform/org_readiness_sql.COUNT_SQL`:
+
+    org                           seats   reporting_line   channels
+    org_66bca8...                     1            ⛔ 0           1
+    org_2f1bc0...                     1            ⛔ 0           1
+    org_e97e86...                     1            ⛔ 0           1
+
+**Seats and channels exist, so a commitment can find an owner and a channel — which is exactly why
+186 executions were written.** The reporting line is zero, and `manager_of` has two sources and
+both are empty:
+
+    org_seats.manager_seat_id          0 of 3 seats     (the standing line)
+    seat_responsibilities              0 rows           (the dated line)
+
+⛔ **And here is what that cost, counted:**
+
+    execution_escalations, 466 rows, by rung:
+      day 1 · notify   · owner      175 rows   127 fired   127 with a target   ✅
+      day 2 · remind   · owner        1 row      1 fired     1 with a target   ✅
+      day 3 · remind   · owner      165 rows    75 fired    75 with a target   ✅
+      day 5 · escalate · manager      1 row      1 fired     1 with a target   ✅
+      day 7 · escalate · manager    124 rows     0 fired     0 with a target   ⛔⛔
+
+**124 day-7 manager escalations were scheduled and not one ever fired, because there is no
+reporting line for `manager_of` to climb.** The ladder works to day 3 and stops.
+
+> ⛔ **Two blocks at two places.** One stops work entering the layer; the other caps the ladder
+> inside it. Fixing either alone leaves the other. Neither is a defect in `executive/`.
+
+## And a precision note on the reporting line's name
+
+`03-FINDINGS.md` F1 and the Atlas both write *"`seat_responsibilities.reports_to`"*, which reads
+as a column. ⛔ **There is no such column** — the table's columns are `org_id, seat_id, scope_kind,
+scope_key, accountability, source, evidence_ref, valid_from, valid_until, created_at`, and
+`assignment.REPORTS_TO = "reports_to"` is a **value of `accountability`**, not a column name.
+`reports_to` appears in **no migration**, correctly.
+
+**The code is right**; `readiness.py:66` states both paths exactly — *"set
+`org_seats.manager_seat_id` for the standing line, or file a dated `reports_to` responsibility"*.
+Only the prose in two documents is imprecise, and this is the correction.
+
+---
+
 # PART 3 · WHAT THE ATLAS SAYS ABOUT L4, CLAIM BY CLAIM
 
 The Atlas's L4 section is unusually accurate. Each claim verified:

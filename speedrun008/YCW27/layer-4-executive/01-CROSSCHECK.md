@@ -166,3 +166,23 @@ and where one of them turned out to be wrong the retraction is recorded at the p
 not here. For current status read
 [`../07-LEDGER-every-step-what-why-how-outcome.md`](../07-LEDGER-every-step-what-why-how-outcome.md)
 — or `../../07-LEDGER-...` from a plane folder.
+
+---
+---
+
+# ⛔ 2026-10-01 · SUPERSEDED IN ONE PLACE, CONFIRMED IN ANOTHER
+
+Two lines in this document are about **why L4's queue is empty**. Re-measured 2026-10-01:
+
+| Line | Said | Now |
+|---|---|---|
+| `:17` *"the admin door that reports what is still missing — and it is why L4's queue is empty"* | organisation data | ⛔ **CONFIRMED but NARROWED.** Seats 1 ✅ and channels 1 ✅ exist — which is why **186 executions** were written. Only `reporting_line` is 0, and it caps the **ladder**, not the input: **124 day-7 manager escalations scheduled, 0 ever fired.** See F7 |
+| `:124` *"The Atlas's own summary of this layer is accurate: 'Running correctly over an empty queue.'"* | ✅ still accurate | ⛔ **and now the queue has a REASON with a date.** `GENIOS_L4_LLM_DECISION_MAKER = true` + the spend limit + `llm_decision_maker`'s declared DEFER → every decision defers → 0 new commitments since 2026-09-25. See F6 and DECISION #5 |
+
+⛔ **Neither line was wrong.** The first measured a real gap that caps the ladder; the second
+quoted the Atlas correctly. What neither could know is that the **input** stopped for a different
+reason, one layer up, five days before this branch began.
+
+> ⛔ **Two blocks at two places.** Fixing either alone leaves the other.
+
+Full trace: [`05-RECROSSCHECK-why-the-queue-is-empty.md`](05-RECROSSCHECK-why-the-queue-is-empty.md).

@@ -1,4 +1,4 @@
-# ATLAS SCORECARD · L1, L2, L3 — claim by claim, re-measured 2026-10-01
+# 08 · ATLAS SCORECARD — L1 to L4 · 35 claims checked, claim by claim
 
 **The source.** `Rohit_Updates/Secret War Updates/08-Cross-Layer-Synthesis/
 01-Master-Atlas-vs-Code-Coverage-Matrix.md` — seven layer audits against
@@ -92,3 +92,34 @@ replay, and the confidence-vector axes.** Those are design decisions and connect
 default* as *empty requirements look complete*. The code states the reasoning, and the reasoning is
 this codebase's own rule: absence is never read as negative evidence. **That one should be corrected
 in the Atlas, not in the code.**
+
+---
+---
+
+# ⛔ 2026-10-01 · L4 ADDED TO THE SCORECARD — 11 claims, 1 superseded
+
+The Atlas's L4 section is the most accurate in the document. Full trace:
+`layer-4-executive/05-RECROSSCHECK-why-the-queue-is-empty.md` PART 3.
+
+| | Atlas claim | Verdict |
+|---|---|---|
+| **L4-01** | `executive/` 26 files, 5,990 lines | ⚠️ **27 / 6,167** — the Atlas is dated 29 Sep; `readiness.py` landed after. A date, not an error |
+| **L4-02** | *"Units 6 and 8 have no file and three files carry no number"* | ✅ **EXACT.** Numbered: 1, 2, 2.5, 3, 4, 5, 7, 9, 10. Unnumbered "Unit": `assignment`, `escalation`, `execution_guard` |
+| **L4-03** | *"the spec that numbered them is not in the repo — an open question, not a gap"* | ✅ and ⛔ **the code says it better**: `unreached.UNIT_NUMBERING_UNRESOLVED` already records it as *"A declared UNKNOWN, not a finding ... An absent number is not an absent unit"* |
+| **L4-04** | execution.v1 runs on every heartbeat tick, before distribution | ✅ — at `api/routes.py:1195`, not the `:1150` `unreached.py` cites (**F11**) |
+| **L4-05** | ladder day 1 notify · 3 remind · 7 escalate · 14 critical · max_rungs 6 | ✅ built · **466 escalation rows** · ⛔ **but 124 day-7 rungs never fired** (F7) |
+| **L4-06** | five tables, migration 0041, delegation wiring 0157 | ✅ 186 executions · 794 actions · 466 escalations · 1,021 events · 186 outcomes |
+| **L4-07** | *"the queue is empty: no domain activated; organisation data missing"* | ⛔ **SUPERSEDED.** L4 produced 186 executions and 165 cards, so it was never blocked on activation. **Two real blocks**: the LLM switch (F6) and the reporting line (F7) |
+| **L4-08** | `seat_responsibilities.reports_to`, never `org_seats.manager_seat_id` | ⚠️ ⛔ **there is no such column.** `reports_to` is a **value of `accountability`**, and it appears in no migration. The code is right; the prose is not (**F8**) |
+| **L4-09** | DecisionObject is `target`; brief.v1 exists | ✅ and `unreached.PULL_ONLY` says why: *nothing in `sweep.py` composes a brief* |
+| **L4-10** | two open product decisions: preventive → card? brief pushed? | ✅ **both already declared** in `unreached.PULL_ONLY`, each with its cost spelled out |
+| **L4-11** | L4 owns who/where (`assignment.py`, `communication.py`) | ✅ `deliver/router.py:9-12` records the move; all four `deliver/` modules import it |
+
+    L1 + L2 + L3    24 claims checked
+    L4              11 claims checked
+    ────────────────────────────────
+    total           35 claims · 2 superseded · 2 imprecise · the rest verified exact
+
+⛔ **The Atlas's L4 section is more accurate than its L1 section**, and the one place the code
+beats it (L4-03) is `unreached.py`, which declared the unit-numbering unknown before the Atlas
+described it.

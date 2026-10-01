@@ -1,6 +1,23 @@
 # Step 2 — ✅ DONE · why this tenant cannot be routed to
 
 > **Tree:** `M12.C1.U02` · 30 tests · **the reason L4's queue is empty**
+>
+> ## ⛔ 2026-10-01 · NARROWED, NOT WRONG — and it cost 124 escalations
+>
+> Re-measured through this step's own `COUNT_SQL`: **seats 1 ✅ · channels 1 ✅ ·
+> reporting_line 0 ⛔**, on all three orgs. So organisation data is **partial**, not absent —
+> seats and channels are exactly why **186 executions and 165 cards** exist at all.
+>
+> ⛔ What the missing reporting line actually costs, counted:
+> **124 day-7 manager escalations were scheduled and NOT ONE EVER FIRED** (0 with a resolved
+> target). The ladder works to day 3 and stops. `manager_of` has two sources and both are empty:
+> `org_seats.manager_seat_id` 0 of 3, `seat_responsibilities` 0 rows.
+>
+> ⛔ And the **input** stopped for a different reason, one layer up, five days before this branch
+> began — see `05-RECROSSCHECK-why-the-queue-is-empty.md` F6 and DECISION #5. **Two blocks at two
+> places; fixing either alone leaves the other.**
+>
+> This step's finding stands. Its scope is the **ladder**, not the queue's input.
 
 ## 1 · What is actually true
 

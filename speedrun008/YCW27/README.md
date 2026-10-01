@@ -1,5 +1,14 @@
 # YCW27 — the working folder for the new architecture
 
+> ## ⛔ 2026-10-01 · START WITH THESE
+>
+> 1. **`17-THE-THREE-LAYERS-end-to-end.md`** — L1, L2 and L3 end to end, every number measured
+> 2. ⛔ **`layer-4-executive/05-RECROSSCHECK-why-the-queue-is-empty.md`** — **why the product has
+>    produced no card since 2026-09-25**, traced link by link. L4 needs no build work
+> 3. **`02-DECISIONS.md` decision #5** — three options, one line, Rohit's. **No card is produced
+>    until it is answered**
+> 4. **`STATUS.md`, LAST section** — the live task list. The table at line 745 is stale
+
 **Branch:** `speedrun008` @ `c7cdf4c1` (harsh/mvp merged in, 30 Sep 2026)
 **Supersedes:** `../Ancient Architecture/` — every document that planned the system before the
 Design Atlas v2. Nothing in there is deleted and nothing in there is authoritative any more.

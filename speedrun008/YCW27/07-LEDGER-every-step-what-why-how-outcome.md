@@ -417,3 +417,84 @@ class names. The artefact was indistinguishable from a real finding until the ru
                               (need a reader) and 5 draft+APPROVED (need one word). Corrected
                               2026-10-01 — see 14-PLANE-D-AND-R; 'unreviewed' was wrong for 5
     remaining Plane R gap     core.signal_composition, 0 runs — ALARM A2, roster activation
+
+---
+---
+
+# 2026-10-01 · L4 RE-CROSSCHECK — the step with no build in it
+
+| | |
+|---|---|
+| **Task** | answer doc 17's PART 9 question: *is the 150 expired cards a delivery defect, or the downstream shadow of H2?* |
+| **Why it mattered** | it decides whether L4 needs building. Planning an L4 build on the wrong cause would have produced correct code for a problem that does not exist |
+| **Expected** | one of the two named causes, and then an L4 build plan |
+| **Outcome** | ⛔ **neither cause. Two blocks, at two different places, and L4 needs no build work at all.** Nothing was built, and that is the finding |
+
+## How it was done — measure which things STOPPED, never name a cause
+
+    1  the last timestamp of every stage
+         L1/L2/L3 wrote rows 2026-09-30 · L4 stopped 09-25 · L5 stopped 09-25
+         -> the OCR guess dies here: it would have starved L1, and L1 is running
+
+    2  decompose L4's own gate join by join
+         42 open signals survive joins 1-5, join 6 -> 0
+         join 6 = core.constraint completed on the run behind the signal
+
+    3  is it the status filter?
+         NO — all 2,681 core.constraint rows are 'completed'
+
+    4  then what?
+         the 98 runs behind every open signal have ZERO reasoner results of any kind
+         because reasoner results only began being written on 2026-09-29
+
+    5  so why did the new era emit no signals?
+         2,681 outputs · 8,044 candidates · 7,872 'eligible' · selected_candidate_id NULL on ALL
+         outcome_kind: defer 2,669 · blocked 12 · decision ZERO
+
+    6  read the component VALUES, not the key names
+         impact 7,351 · risk 1,758 · effort 6,610 · urgency 5,182 · success 6,658
+         formula_utility 5,469   ✅ THE DETERMINISTIC SCORER IS HEALTHY
+         llm_utility         0   ⛔ zero on all 8,044
+         final_utility_bp    0   ⛔ zero on all 8,044
+
+    7  ⛔ BEFORE CALLING IT A DEFECT — read the module
+         llm_decision_maker.py:20 "Failure is DEFER, never the formula."
+         GENIOS_L4_LLM_DECISION_MAKER = true, no allowlist -> every org
+
+    8  and re-run STEP-02's own diagnostic rather than assuming it was superseded
+         seats 1 ✅ · channels 1 ✅ · reporting_line 0 ⛔
+         466 escalations: day 1 ✅ · day 3 ✅ · day 7 -> 124 scheduled, 0 fired, 0 targeted
+
+**Step 7 is the whole step.** It was the **tenth** time in this programme that a state would have
+been named a defect before the declaration that created it was read — and the first nine are
+listed in doc 17 PART 4.4.
+
+## What it produced
+
+| | |
+|---|---|
+| **DECISION #5** | three options, one line, Rohit's. Recommendation: **B now, C as a unit, A when the budget allows** |
+| **F6–F12** | seven findings in `layer-4-executive/03-FINDINGS.md` |
+| **six units** | `layer-4-executive/02-PLAN.md` round 2 — four buildable, two blocked on a product number |
+| **a correction** | doc 17 PART 9's open question is answered; PART 8 raises R2 from 🟠 to 🔴 |
+| **a narrowing** | STEP-02's finding stands, scoped to the **ladder** rather than the queue's input |
+| **code written** | ⛔ **none** |
+
+## The doctrine rules this step produced
+
+> ⛔ **A deliberate refusal to degrade is still a stop.** The design was right that a measurement
+> must not be faked. What nothing declared is that **the measurement mode is the production mode**
+> — so a budget ceiling became a full product outage with six layers reporting healthy.
+
+> ⛔ **Measure which things stopped, never name a cause.** Both obvious explanations were refuted
+> by one query over thirteen tables' last timestamps.
+
+> ⛔ **A gate is decomposed, not read.** Ten joins, added one at a time, named the exact one. The
+> same gate read as prose would have suggested the authority predicate, which never ran.
+
+> ⛔ **Re-run the earlier step's own diagnostic instead of assuming it was superseded.** STEP-02
+> built `readiness.py` for exactly this question; running it turned "superseded" into "narrowed,
+> and it cost 124 escalations".
+
+> ⛔ **Read the component VALUES, not the key names.** All seven score components were present on
+> all 8,044 candidates. The presence check says healthy; the values say one is zero.
