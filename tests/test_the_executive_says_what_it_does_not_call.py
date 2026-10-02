@@ -44,8 +44,20 @@ def _sources() -> dict[str, str]:
 
 
 def _unreached() -> frozenset[str]:
-    """`{module.function}` for every public executive function nothing calls."""
-    called = U.called_names(_sources())          # ONE pass over the engine, not one per function
+    """`{module.function}` for every public executive function nothing calls.
+
+    ⛔ CHANGED 2026-10-01 FROM `called_names` TO `qualified_call_counts`, AND IT FOUND FIVE.
+    `called_names` counts by NAME ALONE, so any function sharing a name with any method anywhere
+    in the engine read as reached. `readiness.read` had 11 apparent callers and has none;
+    `execution_guard.is_live` had 3; `execution_store.supersede` 2; `delegation.propose` 1;
+    `lifecycle.is_open` 2. All five are now declared, and the whole of `executive/readiness.py`
+    turned out to be unreached rather than just one function of it.
+
+    ⛔ **A call resolved by name alone is a call to any function with that name.** The declaration
+    was never wrong -- it was answering a question the tool could not ask. `called_names` keeps its
+    other jobs in this module; this is the one question that needs the module not to be collapsed.
+    """
+    counts = U.qualified_call_counts(_sources())  # ONE pass over the engine, keyed (module, name)
     found = set()
     for path in sorted(EXECUTIVE.glob("*.py")):
         # ⛔ `unreached.py` IS THE GUARD, and its callers are this file by design. Scanning it
@@ -54,7 +66,7 @@ def _unreached() -> frozenset[str]:
         if path.name in {"__init__.py", "unreached.py"}:
             continue
         for name in U.public_functions(path):
-            if called.get(name, 0) == 0:
+            if counts.get((path.stem, name), 0) == 0:
                 found.add(f"{path.stem}.{name}")
     return frozenset(found)
 
@@ -83,9 +95,25 @@ def test_every_declared_entry_is_still_unreached():
         "stale silence is worse than none, because somebody will act on it.")
 
 
-def test_the_count_is_five_and_they_are_the_measured_five():
+def test_the_count_is_ten_and_they_are_the_measured_ten():
     """Pinned so the gap is a number rather than an impression. It may shrink; it may not grow
     without somebody writing down why.
+
+    ⛔⛔ FIVE -> TEN ON 2026-10-01, AND THE LAYER DID NOT GET WORSE -- THE TOOL GOT SHARPER.
+    `_unreached()` asked `called_names`, which counts by NAME ALONE, so any function sharing a name
+    with any method anywhere in the engine read as reached. Switching to `qualified_call_counts`,
+    which keys on `(module, name)` and resolves aliases, found five that were never called:
+
+        readiness.read              11 apparent callers  ->  0    ⛔ and the WHOLE module is unreached
+        execution_guard.is_live      3                   ->  0    ⛔ third spelling of a closed set
+        lifecycle.is_open            2                   ->  0    ⛔ second spelling of the same set
+        execution_store.supersede    2                   ->  0    a race-free replacement, uncalled
+        delegation.propose           1                   ->  0    superseded by two better names
+
+    ⛔ *A call resolved by name alone is a call to any function with that name.* This docstring says
+    the number may not grow without somebody writing down why. **This is the why, and it is the one
+    reason a growth is good news: the gap was always ten.** The engine-wide form of the same
+    measurement found 28 such functions and is `STEP-17` in the YCW27 programme.
 
     ⛔ SIX -> FIVE ON 2026-10-01, and it shrank the way the docstring invites.
     `monitor.blocking_action` is now called from `executive/reminder.reminder_facts`, so its
@@ -107,8 +135,13 @@ def test_the_count_is_five_and_they_are_the_measured_five():
     assert set(U.UNREACHED) == {"assignment.resolve_approver_seat",
                                 "coordination.can_complete",
                                 "coordination.coordination_snapshot",
+                                "delegation.propose",
                                 "execution.build_from_decision",
-                                "lifecycle.is_terminal"}
+                                "execution_guard.is_live",
+                                "execution_store.supersede",
+                                "lifecycle.is_open",
+                                "lifecycle.is_terminal",
+                                "readiness.read"}
     # ⛔ AND NONE OF THE FIVE IS NOW UNTESTED. Two were — `blocking_action` (wired in U3) and
     # `lifecycle.is_terminal`, which got its first tests in
     # `tests/executive/test_a_closed_set_with_two_spellings.py`. Measured there: the guard at

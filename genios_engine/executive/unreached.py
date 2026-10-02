@@ -53,6 +53,78 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "MOVES WHEN a commitment surface shows next-actionable steps rather than all steps. It is "
         "the natural reader and it does not exist yet."),
 
+    # -----------------------------------------------------------------------------------------
+    # ⛔ FIVE ENTRIES ADDED 2026-10-01, EVERY ONE INVISIBLE UNTIL THE RESOLVER WAS FIXED.
+    #
+    # `called_names` counts by NAME ALONE, so each of these looked reached because some other
+    # object in the engine has a method of the same name — `read` had 11 apparent callers, `is_live`
+    # 3, `supersede` 2, `propose` 1. `qualified_call_counts` keys on `(module, name)` and resolves
+    # aliases, and all five come back ZERO. Engine-wide the same measurement found 28 such
+    # functions, which is `STEP-17` in the YCW27 programme.
+    #
+    # ⛔ The declaration was never WRONG. It was answering a question the tool could not ask.
+    # -----------------------------------------------------------------------------------------
+
+    "readiness.read": (
+        "⛔ THE WHOLE MODULE IS UNREACHED, NOT JUST THIS FUNCTION. `read` -> `assess` -> `_verdict` "
+        "is the entire public chain of `executive/readiness.py`, and `assess`'s single caller is "
+        "`read` itself at `readiness.py:172`. Nothing calls `read`, and **no route exposes it**. "
+        "⛔ Production still answers the question: `platform/receipts.py` reads the same three "
+        "counts through `platform/org_readiness_sql.COUNT_SQL` — the module this file also imports, "
+        "extracted precisely so *'duplicating them would let one drift from'* the other. So the "
+        "extraction worked, the receipt works, and the executive-layer READER of it has no surface. "
+        "What is missing is not logic; it is an API that asks for org readiness.",
+        "MOVES WHEN a surface asks for organisation readiness per tenant. ⛔ Its docstring states "
+        "what that surface would gain over re-reading the SQL: *'Every failed read becomes "
+        "`unknown`, never `missing`. Each count is caught on its own, so one unreadable table does "
+        "not turn the other two into `unknown`'* — a per-row seam a caller doing three reads would "
+        "have to reimplement."),
+
+    "execution_store.supersede": (
+        "⛔ A RACE-FREE REPLACEMENT PATH WITH NO CALLER. *'Close a commitment because a newer plan "
+        "replaces it. A changed plan is a changed commitment, so it gets its own row and its own "
+        "identity rather than mutating the old one in place. Closing the predecessor frees the "
+        "partial unique key, which is how the replacement lands without a race.'* Measured: zero "
+        "qualified callers. So **a revised plan never closes the commitment it replaces** — and the "
+        "partial unique key this function exists to free is the thing a replacement would collide "
+        "with. It has not bitten because no decision has produced a second plan in production "
+        "since the API spend limit began refusing calls on 2026-09-25.",
+        "MOVES WHEN re-planning an open commitment is a path anyone takes. ⛔ Whether a revision "
+        "should supersede or branch is a product question, and the function answers only one of "
+        "the two."),
+
+    "delegation.propose": (
+        "⛔ SUPERSEDED IN PLACE BY TWO BETTER-NAMED SIBLINGS. *'The engine proposes handing one "
+        "action to one agent. Nothing is sent.'* Measured against the live call sites: "
+        "`propose_action` has 2 qualified callers and `create_proposal` 1, both reached through "
+        "`from genios_engine.executive import delegation as DLG`; `DLG.propose` appears nowhere. "
+        "Three entry points to one idea and the plainest name is the unused one, which is exactly "
+        "the shape that makes a reader wire the wrong one.",
+        "MOVES WHEN it is deleted, or when the three entry points are collapsed into one. ⛔ Listed "
+        "rather than deleted here because deleting a public function is a boundary change nobody "
+        "asked for -- see UNIT_NUMBERING_UNRESOLVED for the same restraint."),
+
+    "execution_guard.is_live": (
+        "⛔ NO DOCSTRING, AND THE THIRD SPELLING OF A SET THIS LAYER ALREADY FOUND. A bare state "
+        "predicate over `ExecutionState`, sitting beside `lifecycle.is_terminal` — which this "
+        "programme found untested in L4-STEP-10 and guarded in "
+        "`tests/executive/test_a_closed_set_with_two_spellings.py`. `is_live`, `is_open` and "
+        "`is_terminal` are three partitions of one closed table, written in three files, and **not "
+        "one of them has a production caller.** ⛔ A guard written for one member of a closed table "
+        "is half of that -- and this is the half that was invisible, because `is_live` is a name "
+        "three other objects in the engine also use.",
+        "MOVES WHEN all three spellings move together -- `lifecycle.is_open` and "
+        "`lifecycle.is_terminal` with it, or none of them. ⛔ The open product question is L4's U6c, "
+        "whether `CREATED` belongs in a state set, and answering it for one spelling while two "
+        "others disagree is how the set drifts."),
+
+    "lifecycle.is_open": (
+        "⛔ NO DOCSTRING. The second of the three spellings above, in the module that also holds "
+        "`is_terminal`. Two predicates over one closed table, in one file, neither called by "
+        "production, and `is_terminal` got its first tests only on 2026-10-01.",
+        "MOVES WHEN the three spellings move together -- see `execution_guard.is_live`. ⛔ Moving one "
+        "alone is what produced three spellings in the first place."),
+
     "assignment.resolve_approver_seat": (
         "⛔ THE SECOND REAL PRODUCT GAP, AND ITS OWN DOCSTRING PREDICTS THE SYMPTOM: *'a card that "
         "says \"this needs sign-off\" and cannot say whose is less useful than one that can'*. "
@@ -181,84 +253,29 @@ UNIT_NUMBERING_UNRESOLVED: str = (
     "L5 spec. MOVES WHEN somebody supplies it; until then this is an open question, not a gap.")
 
 
-def public_functions(module_path: Path) -> tuple[str, ...]:
-    """Every module-level public function in `module_path`, read from the AST.
-
-    ⛔ THE AST, NOT THE TEXT, and module scope only — so a nested helper, a method, or a name that
-    appears in a docstring cannot enter the inventory. Ten assertions on this branch went green or
-    red on a word that lived only in prose; a structural read cannot.
-    """
-    try:
-        tree = ast.parse(module_path.read_text(encoding="utf-8"))
-    except (OSError, SyntaxError):                            # pragma: no cover - unreadable file
-        return ()
-    return tuple(node.name for node in tree.body
-                 if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
-                 and not node.name.startswith("_"))
-
-
-def call_sites(name: str, sources: dict[str, str]) -> int:
-    """How many times `name` is CALLED across `sources`, ignoring its own definition.
-
-    Counts `ast.Call` nodes whose callee resolves to `name`, whether called bare (`f()`) or
-    through an attribute (`mod.f()`). A definition, an `__all__` entry and a mention in prose are
-    none of them calls — which is the distinction the hand-written grep that preceded this could
-    not make, and it reported two functions as dead that are called on live paths.
-    """
-    total = 0
-    for source in sources.values():
-        try:
-            tree = ast.parse(source)
-        except SyntaxError:                                   # pragma: no cover
-            continue
-        for node in ast.walk(tree):
-            if not isinstance(node, ast.Call):
-                continue
-            func = node.func
-            if isinstance(func, ast.Name) and func.id == name:
-                total += 1
-            elif isinstance(func, ast.Attribute) and func.attr == name:
-                total += 1
-    return total
-
-
-def called_names(sources: dict[str, str]) -> dict[str, int]:
-    """Every name CALLED anywhere in `sources`, counted — in ONE pass over each file.
-
-    ⛔ WHY THIS EXISTS BESIDE `call_sites`. The first version of this guard asked `call_sites` once
-    per candidate function, so it re-parsed all ~600 engine modules for each of ~80 public
-    functions — roughly 48,000 AST parses, and the test ran for minutes instead of seconds. A
-    correctness guard that is too slow to run is a guard people start skipping, which is a worse
-    failure than the one it catches. Same answer, one pass.
-    """
-    counts: dict[str, int] = {}
-    for source in sources.values():
-        try:
-            tree = ast.parse(source)
-        except SyntaxError:                                   # pragma: no cover
-            continue
-        # ⛔ ALIASES FIRST, AND THIS IS NOT OPTIONAL. `deliver/actions.py` does
-        # `from genios_engine.executive.execution_store import link_card as _link_execution_card`
-        # and then calls the ALIAS. Counting only the bare name reported `link_card` — a function
-        # on the live card-completion path — as dead, which is precisely the false verdict this
-        # guard exists to prevent. Every renamed import is resolved back to its original name.
-        aliases: dict[str, str] = {}
-        for node in ast.walk(tree):
-            if isinstance(node, (ast.Import, ast.ImportFrom)):
-                for alias in node.names:
-                    if alias.asname:
-                        aliases[alias.asname] = alias.name.rsplit(".", 1)[-1]
-        for node in ast.walk(tree):
-            if not isinstance(node, ast.Call):
-                continue
-            func = node.func
-            name = (func.id if isinstance(func, ast.Name)
-                    else func.attr if isinstance(func, ast.Attribute) else None)
-            if name is None:
-                continue
-            name = aliases.get(name, name)
-            counts[name] = counts.get(name, 0) + 1
-    return counts
+# ---------------------------------------------------------------------------------------------
+# ⛔ THE MACHINERY MOVED TO `platform/reachability.py` — 2026-10-01, STEP-17
+# ---------------------------------------------------------------------------------------------
+#
+# This module wrote the AST walk and the two resolvers, and `deliver/delivery_health.py` imported
+# them from here, which was correct while there were two users: `deliver/` is PRODUCT layer 6 and
+# `executive/` is 5, so that import is DOWNWARD and legal.
+#
+# ⛔ `capture/` IS LAYER 1. `capture/ -> executive/` is an UPWARD import that
+# `tests/test_layer_topology.py` fails the build over, so the eleventh package could not have used
+# this. **Two users is an import; eleven is an extraction**, and the only place every layer may
+# import from is `CROSS_CUTTING`.
+#
+# They are RE-EXPORTED here, not merely moved, because L4's own tests import them from this module
+# and a public surface is not changed as a side effect of an extraction. Every docstring, every
+# recorded mistake and the asymmetry between the two resolvers travelled with them.
+from genios_engine.platform.reachability import (  # noqa: E402  (deliberate: after the tables)
+    call_sites,
+    called_names,
+    public_functions,
+    qualified_call_counts,
+    qualified_call_sites,
+)
 
 
 def undeclared(unreached: frozenset[str]) -> tuple[str, ...]:
@@ -272,5 +289,5 @@ def missing(unreached: frozenset[str]) -> tuple[str, ...]:
 
 
 __all__ = ["PULL_ONLY", "UNIT_NUMBERING_UNRESOLVED", "UNREACHED", "call_sites",
-           "called_names", "missing",
-           "public_functions", "undeclared"]
+           "called_names", "missing", "public_functions", "qualified_call_counts",
+           "qualified_call_sites", "undeclared"]
