@@ -332,6 +332,42 @@ def _sender_resolver_for(org_id: str):
     return _known
 
 
+#: ⛔ THE FUNNEL'S FIRST NUMBER, HELD BETWEEN TWO DIFFERENT SHAPES OF PASS.
+#:
+#: `signals_detected` is owned by `capture` (`platform/funnel.STAGE_OWNERS`) and the only honest count
+#: of it is `FinalizeOutcome.published` — what the publisher actually wrote. But capture finalizes
+#: PER CONNECTION, inside `run_sync`, while the funnel's `sweep_id` is minted later and PER ORG in
+#: `_run_l2_chain`. A tenant with Gmail and Calendar finalizes twice before the chain exists.
+#:
+#: So the count is accumulated here and POPPED by the chain. What that makes it, stated precisely:
+#: *the qualified signals published for this org since its last counted pass* — which is exactly the
+#: population that pass reasoned over, and a truer denominator than "signals in this wall-clock
+#: sweep" would have been. Signals captured in an earlier sweep are what today's situations are
+#: built from; forcing them into today's row would have been the wrong kind of tidy.
+#:
+#: ⛔ NOT RE-DERIVED, AND NOT RESET ON READ-FAILURE. The chain pops; if the chain never runs for an
+#: org the count waits rather than being discarded, because a lost measurement is the one outcome
+#: `platform/funnel.py` is written to prevent. Process-local on purpose — the sweep is in-process
+#: (no Celery), the same reason `_LIVE_ORGS` below is a set and not a table.
+_SIGNALS_PUBLISHED: dict[str, int] = {}
+_SIGNALS_PUBLISHED_LOCK = threading.Lock()
+
+
+def _note_signals_published(org_id: str, published: int) -> None:
+    """Add one finalize's published count to this org's pending funnel total. Never raises."""
+    if not org_id or not published:
+        return
+    with _SIGNALS_PUBLISHED_LOCK:
+        _SIGNALS_PUBLISHED[org_id] = _SIGNALS_PUBLISHED.get(org_id, 0) + int(published)
+
+
+def _take_signals_published(org_id: str) -> int | None:
+    """This org's pending count, removed as it is read. `None` when capture published nothing since
+    the last pass — which `_count` turns into NO ROW, because nobody looked is not zero."""
+    with _SIGNALS_PUBLISHED_LOCK:
+        return _SIGNALS_PUBLISHED.pop(org_id, None)
+
+
 def _run_ledger(*, org_id: str, connection_id: str, source: str, mode: str, summary=None,
                 error: str | None = None) -> None:
     """l1_sync_runs writer — the per-run ingestion ledger run_sync used to log-and-drop.
@@ -353,7 +389,12 @@ def _run_ledger(*, org_id: str, connection_id: str, source: str, mode: str, summ
     #
     # `finalize_l1` never raises: every seam inside it is guarded on its own terms, because all
     # four are downstream of capture and capture is the part the tenant paid for.
-    finalize_l1(summary, org_id=org_id, stores=_l1_stores())
+    # ⛔ ITS RESULT WAS DISCARDED, AND THAT IS WHY THE FUNNEL HAD FOUR NUMBERS. `FinalizeOutcome`
+    # carries `published` — the count the PUBLISHER wrote, the only honest `signals_detected` in the
+    # product — and this call site dropped it on the floor: the `not_carried` shape, on the one value
+    # the funnel's first stage needs. Relayed, never recomputed; see `_SIGNALS_PUBLISHED`.
+    _finalized = finalize_l1(summary, org_id=org_id, stores=_l1_stores())
+    _note_signals_published(org_id, getattr(_finalized, "published", 0) or 0)
     if _graph is None:
         return
     from sqlalchemy import text
@@ -615,11 +656,18 @@ def _run_l2_chain(org_id: str) -> bool:
                                      crypto_key=get_settings().crypto_key)
             st["processed"] = result.get("processed", 0) if isinstance(result, dict) else 0
         _charge_ingestion(org_id, result)
-        # ⛔ `signals_detected` IS DELIBERATELY NOT WRITTEN HERE. It belongs to `capture`, and nothing
-        # in this chain holds an honest count of it — `_reread_unread` returns a RECOVERY count (mail
-        # captured while L1 was off), not the number of qualified signals detected, and labelling it
-        # `signals_detected` would put a wrong number where a missing one belongs. It stays unmeasured
-        # until the capture sync writes it, and `read_sweep` reports `None`, which is the truth.
+        # ⛔ `signals_detected` COMES FROM CAPTURE'S PUBLISHER, AND FROM NOTHING ELSE HERE.
+        #
+        # This stage used to be left unwritten on purpose, and the reason was right: the only count
+        # this chain held was `_reread_unread`'s, which is a RECOVERY count (mail captured while L1
+        # was off) and not qualified signals detected. Labelling that `signals_detected` would have
+        # put a wrong number where a missing one belongs — and a wrong number is worse than `None`,
+        # because `None` says nobody looked while a wrong one says we did.
+        #
+        # What changed is the source, not the rule: `_run_ledger` now keeps `FinalizeOutcome
+        # .published` — the count the PUBLISHER wrote — and this pops it. `_reread_unread` is still
+        # called above and is still not this number.
+        _count(_funnel.SIGNALS_DETECTED, _take_signals_published(org_id))
         _count(_funnel.SITUATIONS_FORMED,
                result.get("situations_ranked") if isinstance(result, dict) else None)
 
@@ -627,8 +675,14 @@ def _run_l2_chain(org_id: str) -> bool:
         with stage("l4.run_all", org_id):
             _l3 = run_l3(org_id=org_id, store=_graph, registry=_registry)
         _outcomes = (_l3 or {}).get("outcomes") if isinstance(_l3, dict) else None
+        # ⛔ `nodes` WAS RELAYED HERE AND IT IS NOT THIS NUMBER. `run_all`'s `nodes` is
+        # `len(graph_nodes read)` — the subjects the sweep EXAMINED, counted before any capability
+        # is resolved — so the one stage meant to expose "no authored expertise, empty package"
+        # reported the population it loses from. On a tenant whose nodes mostly resolve nothing it
+        # read HIGHER than `situations_formed`, i.e. a funnel that grows in the middle.
+        # `reason/runner` now counts the resolution itself and publishes it under its own name.
         _count(_funnel.CAPABILITY_RESOLVED,
-               (_l3 or {}).get("nodes") if isinstance(_l3, dict) else None)
+               _outcomes.get(_funnel.CAPABILITY_RESOLVED) if isinstance(_outcomes, dict) else None)
         _count(_funnel.DECISION_EMITTED,
                _outcomes.get("emitted") if isinstance(_outcomes, dict) else None)
 

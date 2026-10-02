@@ -204,7 +204,11 @@ def _verdict(unit_rows: list[dict], *, clean_era: bool) -> tuple[str, str]:
         return "UNATTRIBUTABLE", (f"{detail}. \u26d4 Every row is outage-era, so this cannot be told "
                                   f"apart from the model never answering")
 
-    return "SILENT", f"{detail}, reasons {sorted(reasons) or '\u2014'}"
+    # \u2014 is lifted out of the f-string expression on purpose: a backslash inside the expression
+    # part is a SyntaxError until Python 3.12 (PEP 701), and this repo runs 3.11 \u2014 so the file did
+    # not parse at all, which broke every gate that AST-walks the source rather than imports it.
+    reasons_text = sorted(reasons) or "\u2014"
+    return "SILENT", f"{detail}, reasons {reasons_text}"
 
 
 def main() -> int:

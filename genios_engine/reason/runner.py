@@ -18,6 +18,7 @@ from genios_engine.packs.registry import PackRegistry
 from genios_engine.packs.wiring import (DEFAULT_PACK_ID, ensure_default, ensure_defaults,
                                         make_registry)
 from genios_engine.platform.config import get_settings, l1_seam_enabled
+from genios_engine.platform.funnel import CAPABILITY_RESOLVED, NO_CAPABILITY
 from genios_engine.platform.ids import new_id
 
 from .baselines import build_baselines, load_node_metrics
@@ -911,7 +912,20 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
         node_capabilities = tuple(capability for capability in native_capabilities
                                   if capability.root_entity_type == nd.node_type)
         if not rules and not node_capabilities:
+            # ⛔ THE BARE `continue` THAT WAS HERE IS THE FUNNEL'S MISSING GATE. A subject with no
+            # rule and no native capability has no expertise to reason with — the Atlas calls it
+            # "an empty package" and names it the third and largest place a card dies — and this
+            # loop walked past it counting nothing at all. `_count` upstream then relayed the
+            # NODE count as `capability_resolved`, so the one stage that is supposed to expose
+            # this loss reported the population it had lost FROM.
+            out[NO_CAPABILITY] += 1
             continue
+        # Resolved: at least one authored capability or pack rule speaks for this subject. Counted
+        # BEFORE evaluation on purpose — "expertise was resolved" and "the evaluation concluded
+        # something" are two different questions, and `emitted` / `below_gate` / `muted` already
+        # answer the second one. Conflating them is how a routing gap and a gating decision end up
+        # indistinguishable in the same number.
+        out[CAPABILITY_RESOLVED] += 1
         ctx = _load_context(store, org_id, nd.node_id, nd.node_type,
                             facts_by_node=facts_by_node, obs_by_node=obs_by_node)
         baselines, derived = metrics_by_node.get(nd.node_id, ({}, {}))  # C1: bulk-loaded once
@@ -1511,7 +1525,21 @@ def run_all(*, org_id: str, store: GraphStore, eval_time: datetime | None = None
         res = run(org_id=org_id, store=store, eval_time=eval_time, registry=registry, pack_id=pid)
         nodes = max(nodes, res["nodes"])
         for k, v in res["outcomes"].items():
-            combined[k] += v
+            if k == CAPABILITY_RESOLVED:
+                # ⛔ MAX, NOT SUM — AND FOR THE SAME REASON `nodes` ABOVE IS A MAX. Every pack walks
+                # the SAME node set, so summing counts one subject once per pack: a tenant holding an
+                # active pack and a shadow pack would report twice as many subjects resolved as it
+                # has subjects, and `capability_resolved` would exceed `situations_formed` again —
+                # the exact shape of the bug this counter was added to remove.
+                #
+                # ⛔ AND ITS LIMIT, STATED: max is the best-covered pack, not the DISTINCT subjects
+                # resolved across all packs, so a subject only pack B speaks for is not added to
+                # pack A's count. It is therefore a conservative FLOOR. A true distinct count needs
+                # the subject ids carried out of `run`, which no caller needs today; when one does,
+                # that is the change to make rather than turning this into a sum.
+                combined[k] = max(combined[k], v)
+            else:
+                combined[k] += v
     # ── Z4 / L4.5 · THE VOICE. Give the decisions this sweep just published their narrative.
     #
     # LAST, AND DELIBERATELY SO. Doc 05 §7 and doc 11 guard 5: a bundle is generated AFTER

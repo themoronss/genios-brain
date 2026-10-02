@@ -60,6 +60,19 @@ CARD_DELIVERED = "card_delivered"
 STAGES: tuple[str, ...] = (SIGNALS_DETECTED, SITUATIONS_FORMED, CAPABILITY_RESOLVED,
                            DECISION_EMITTED, CARD_DELIVERED)
 
+#: ⛔ NOT A STAGE — the LOSS at `capability_resolved`, and the one gate the funnel could not explain.
+#:
+#: `reason/runner.run`'s per-node loop skipped a subject with no rule and no native capability on a
+#: bare `continue`: no counter, no receipt, nothing. That is the Atlas's gate 3 — *"no authored
+#: expertise, so an empty package"* — and it was the single largest unexplained drop in the product
+#: while being literally uncounted.
+#:
+#: It is deliberately kept OUT of `STAGES`: migration 0188 carries the same five-name list as a check
+#: constraint, and a sixth value would be a schema change for a number that is a reason rather than a
+#: stage. It travels on the sweep's `outcomes` counter beside `muted`, `below_gate` and `cooldown`,
+#: which is where every other "why did this subject say nothing" already lives.
+NO_CAPABILITY = "no_capability"
+
 #: ⛔ Which package owns each number. Stated as data so the "one writer per number" rule is checkable
 #: by a test rather than asserted in a comment — `DECISION_PROJECTIONS` does the same thing for the
 #: decision object. A second package writing someone else's stage is the failure this names.
