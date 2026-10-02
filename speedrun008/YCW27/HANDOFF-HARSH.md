@@ -317,3 +317,267 @@ objects should gate.
 **Nothing in `genios-brain` is waiting on a decision from you.** The full suite is 14,534 passed,
 0 failed, and 21 of 29 production receipts pass. The 7 FAIL + 1 ERROR are exactly the items on this
 page and Rohit's list — every one a true statement about a real gap, none a mis-asked question.
+
+---
+---
+
+# ⛔ H6 · 🟠 ADDED 2026-10-01 · run `tests/test_delivery_spine.py` where a database exists
+
+**Not a deployment. A test run.** It takes one command and needs nothing built.
+
+```
+.venv/bin/pytest tests/test_delivery_spine.py -q
+```
+
+## What it is
+
+L5 `STEP-06` gave `deliver/spine.recover_expired_claims` its **first tests ever**. That function is
+the ambiguity-marker of the v2 delivery control plane:
+
+> *"An expired worker may have POSTed to a provider before dying; **we must never silently retry over
+> that ambiguity.**"*
+
+Four new tests cover it: an expired claim's unsettled attempt becomes `unknown`; a **live** claim's
+attempt is untouched; a **settled** attempt is never rewritten (`delivered` must not become
+`unknown`); and an attempt under a stale fence is *not* recovered — which pins a known blind spot
+rather than hiding it.
+
+## ⛔ Why I cannot run them
+
+The file proves the spine against **real PostgreSQL**, deliberately: its SQL uses
+`for update skip locked` and a partial-index `on conflict`, and *a fake cannot model that*. It runs
+inside one transaction and rolls back, leaving the database byte-identical — and it uses the
+**scratch** database when one is set, never the configured production one
+(`tests/conftest.py::live_test_database_url` enforces the ordering).
+
+**No database is configured in this checkout.** Result here:
+
+```
+7 skipped in 0.15s       # all 7 — including the 3 that predate this step
+```
+
+Collection succeeded, so the imports and the syntax are sound. ⛔ **The behaviour is unverified, and
+a skip is not a pass.** Five database-free tests in
+`tests/deliver/test_the_spine_cutover_cannot_be_taken_unguarded.py` assert the recovery's SQL
+contract structurally, which is weaker evidence than behaviour and is not zero.
+
+## What a failure would mean
+
+| Outcome | Reading |
+|---|---|
+| 7 passed | ⛔ the best case, and the one to report. The v2 claiming tier is now behaviourally proven |
+| any failure | ⛔ **a real finding** — the recovery has never run, so a failure is a defect in code nobody has executed, not a regression. Send the output; it goes into `layer-5-delivery/03-FINDINGS.md` |
+| still skipped | the scratch database is not reachable. ⛔ **Do not point it at production to make it run** — it writes, and the rollback is a property of the test, not a promise to the database |
+
+## Why it is worth your five minutes
+
+The v2 control plane is **un-cut-over**: nothing in production calls any of it, which is why none of
+this is urgent. But `outbox.py:838` records the hazard waiting at the other end — *"the moment it
+does, both workers could select the same one and double-send"* — and the day somebody takes that
+cutover, these four tests are the only thing that has ever exercised the step that prevents it.
+
+⛔ **Everything else on this page changes what production does. This one only changes what we know.**
+
+
+---
+---
+
+# ⛔ H7 · 🟠 ADDED 2026-10-02 · 27 learning tests have never run — and they are the two that matter
+
+**Same shape as `H6`, different layer.** Five minutes with a database, and it answers the one
+question the L6 pass could not.
+
+## What it is
+
+```
+$ .venv/bin/pytest tests/feedback -q -rs
+60 passed, 27 skipped
+
+14  tests/feedback/test_org_brain_filled_through_the_routes.py                    ENTIRELY skipped
+13  tests/feedback/test_behavior_and_adaptive_brains_filled_through_the_paths.py   ENTIRELY skipped
+--
+    every one: "GENIOS_TEST_DATABASE_URL not set — J4's org row / brain rows need real Postgres"
+```
+
+⛔ **Read the two filenames.** *"filled through the routes"* and *"filled through the paths"* — these
+are the tests that prove the **brains actually get filled end to end**. The 60 that pass are the
+deterministic ones: maps, taxonomies, attribution routing, property guards.
+
+## ⛔ Why this matters more than a skip count
+
+The L6 re-crosscheck measured that `feedback/` is guarded by **four receipts and all four are
+presence checks** — *"has the learning engine executed"*, *"has calibration executed"*. Every one is
+satisfied by a single successful tick. **Nothing in production asks whether what the loop wrote is
+correct.**
+
+So the only evidence that a brain value arrives intact is these 27 tests, **and they do not run.**
+
+> ⛔ **A skip is not a pass.** Two entire files of end-to-end evidence are currently reported as
+> neither passing nor failing, and no document in `layer-6-learning/` had mentioned them.
+
+## What to run
+
+```bash
+export GENIOS_TEST_DATABASE_URL='postgres://…'        # a scratch database, not production
+.venv/bin/pytest tests/feedback -q -rs
+```
+
+⛔ **`GENIOS_TEST_DATABASE_URL`, not `GENIOS_DATABASE_URL`** — the tests write. And ⛔ **do not set
+`GENIOS_ALLOW_PROD_WRITE`**: that variable is named for writes because it was written for writes.
+
+## What a failure would mean
+
+| | |
+|---|---|
+| **27 passed** | the brains fill correctly end to end, and L6's missing correctness receipts are a **monitoring** gap rather than a correctness one. That is a materially different plan |
+| **any failure** | a brain value does not arrive the way the deterministic tests say it should — and ⛔ **production has no receipt that would notice**, because all four are presence checks |
+
+## Why it is worth your five minutes
+
+It is the difference between *"the learning loop is unguarded"* and *"the learning loop is unguarded
+**and** untested where it touches the database."* ⛔ **I cannot tell those apart from this
+checkout**, and the plan for L6's correctness receipts (`U03`–`U05`) is shaped differently
+depending on the answer.
+
+→ `layer-6-learning/05-RECROSSCHECK-the-loop-that-runs-and-is-never-questioned.md` §6,
+`03-FINDINGS.md` §F15
+
+---
+---
+
+# H8 · 🟠 Three questions only the database can answer, and one decision that is yours
+
+Added 2026-10-02 by the `context/` coverage audit. ⛔ **All three checks are read-only and take
+about two minutes together.** The decision at the end is a product/infra call, not a code change we
+should make on our own.
+
+## What we measured, and what we could not
+
+We measured every SQL statement in `genios_engine/` and `scripts/` — 2,867 of them — and
+cross-referenced each table against every reader, every writer and all 42 receipts. ⛔ **Nine
+tables are written by the product and read by nothing at all:**
+
+```
+contract_spend_attributions   context/correlation_resource.py
+source_identity_map           context/graph_store.py + context/merge.py
+situation_interpretations     context/interpretation_store.py
+learning_metrics              feedback/publisher.py
+human_events                  capture/events_store.py + deliver/actions.py
+card_feedback_revisions       api/intelligence_routes.py
+agent_metering                deliver/agent_api.py
+delivery_rate_windows         deliver/rate_limiter.py
+domain_requests               api/expertise_routes.py
+```
+
+⛔ **That is a statement about the CODE, which is all we can see from here.** Whether those tables
+are large, whether they are growing, and whether anything outside this repo reads them (a dashboard,
+a notebook, a cron you own) is a question about the deployment.
+
+---
+
+### H8.1 · How much are the nine costing, and is anything growing?
+
+```sql
+set transaction read only;
+
+select relname as table_name,
+       n_live_tup as approx_rows,
+       pg_size_pretty(pg_total_relation_size(relid)) as total_size
+  from pg_stat_user_tables
+ where relname in ('contract_spend_attributions','source_identity_map',
+                   'situation_interpretations','learning_metrics','human_events',
+                   'card_feedback_revisions','agent_metering','delivery_rate_windows',
+                   'domain_requests')
+ order by pg_total_relation_size(relid) desc;
+```
+
+**What the answer changes.** A table with a handful of rows is a tidy-up nobody is blocked on. ⛔ One
+with millions of rows and a live write path is paying storage and vacuum cost for a number no
+decision has ever used — and `learning_metrics` in particular receives a row from **every** one of
+the eleven weekly analysis units.
+
+---
+
+### H8.2 · ⛔ Two receipts have never once run against a real database
+
+`platform/receipts.py` now has **42** claims. Two of them have never been evaluated anywhere,
+because this checkout has no database configured:
+
+```sql
+set transaction read only;
+
+-- 1 · "a deleted tenant leaves nothing behind" — asks the DEPLOYED schema whether any org-scoped
+--     table outlives an erased tenant. It is the ONLY thing that can see a child table cascading
+--     through a parent, which no code-level list can show.
+select c.table_name
+  from information_schema.columns c
+  join information_schema.tables t
+    on t.table_schema = c.table_schema and t.table_name = c.table_name
+ where c.table_schema = 'public' and c.column_name = 'org_id'
+   and t.table_type = 'BASE TABLE'
+   and c.table_name not in ('llm_costs','credit_ledger','subscriptions','orgs_archive','orgs')
+   and exists (select 1 from orgs_archive)          -- only meaningful once a tenant was erased
+ limit 20;
+
+-- 2 · "no live row points at a node a merge absorbed" — the new one. Expected: 0.
+select count(*) from graph_facts t
+  join merge_history m on m.org_id = t.org_id and m.merged_node_id = t.subject_node_id
+ where not m.reversed;
+```
+
+**What the answer changes.** `merge.py`'s own comment is the claim: *"Missing one leaves rows
+pointing at a closed node — invisible in the UI, still returned by any query that joins on
+node_id."* ⛔ A non-zero count is live graph corruption after an entity merge, and `context/` had
+**two** receipts over 50,877 lines before this one, neither about merge.
+
+---
+
+### H8.3 · ⛔ Is `merge_history` empty? — because that decides whether the new receipt means anything
+
+```sql
+set transaction read only;
+select count(*) as merges, count(*) filter (where reversed) as reversed from merge_history;
+```
+
+**What the answer changes.** If no merge has ever run, the receipt above is **structurally green
+forever** and tells nobody anything — *a gate that is always green is a gate nobody reads*. Say so
+and we will gate it on the same marker pattern the learning receipts use, so it reads
+*"not yet exercised"* rather than *"passing"*.
+
+---
+
+### H8.4 · ⛔ The decision: three tables survive a tenant `/reset`, and nothing says whether they should
+
+`api/account_routes.py` has two declared lists — `_ORG_SCOPED_TABLES` (what `/reset` erases, 102
+tables) and `RETAINED_AFTER_ERASURE` (what may outlive an erased account, 5). ⛔ **These three are
+in neither:**
+
+| table | writer | what it holds |
+|---|---|---|
+| `agent_metering` | `deliver/agent_api.py` | per-call metering for the Agent API |
+| `delivery_rate_windows` | `deliver/rate_limiter.py` | the rate limiter's window state |
+| `domain_requests` | `api/expertise_routes.py` | a tenant asking for a domain that does not exist yet |
+
+⛔ **For account DELETION this is fine** — migration `0033`'s foreign keys take everything that
+hangs off `orgs`, directly or through a parent, and we verified the four `reasoning_*` children
+reach `orgs` transitively. ⛔ **For `/reset` it is a question**: that endpoint promises *"wipe this
+org's learned graph + signals + cards (keeps the account, connections, tasks)"*, and whether
+metering, rate windows and unfulfilled domain requests belong on the "keeps" side has never been
+written down.
+
+**Our read:** metering and rate windows probably SHOULD survive a reset (they are accounting and
+abuse-control state, not tenant content), and `domain_requests` probably should too (it is a
+request to us, not data about them). ⛔ **If you agree, they belong in `RETAINED_AFTER_ERASURE` with
+that reasoning** — and the comment beside that list already says why it matters that the answer be
+written rather than implied: *"a comment cannot be asked"*, and the loop beside it *"runs with no
+try/except by design, so a name missing here leaks silently."*
+
+### Why it is yours and not ours
+
+⛔ We can measure which tables are in which list; we cannot decide what a tenant reset is **for**.
+Moving a name into `RETAINED_AFTER_ERASURE` changes what survives a customer pressing a destructive
+button in Settings, and it changes what we would tell a customer asking a data question. That is
+your call and Rohit's, not a tidy-up.
+
+→ `layer-3-context-graph/04-AUDIT-PLAN-the-worst-covered-package.md`,
+`genios_engine/platform/table_coverage.py` (the measurement, with its limits declared)

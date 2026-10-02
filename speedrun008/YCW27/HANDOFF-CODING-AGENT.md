@@ -365,3 +365,142 @@ day 7?"* stays answerable months later.
 | **G3 brief push** · **G4 preventive push** | both need a **product number** — *how many warnings a founder should see a day* — and `unreached.PULL_ONLY` spells out why a naive one-card-per-finding would spend the whole daily budget on warnings. Building the threshold by guessing it is building a guess |
 | the reporting line | ⛔ **not code.** `readiness.py:66` already says what to do: set `org_seats.manager_seat_id`, or file a dated `reports_to` responsibility. It is organisation data |
 | ⛔ a fallback inside `llm_decision_maker` | that is **option C of DECISION #5** and it **changes a declared doctrine**. It needs saying out loud, not slipping in |
+
+---
+---
+
+# ⛔ 2026-10-01 · L5 ROUND 2 — four rules that will fail your build, and three briefs
+
+`deliver/` now has a declared-silence module, and `executive/unreached.py` has a second resolver.
+**Both are enforced by tests.** If you touch either package, these four will fail your build before
+anything else does.
+
+## ⛔ R-L5-1 · every public function in `deliver/` that production does not call must be DECLARED
+
+`deliver/delivery_health.py` holds **25** entries in **three** tables, and
+`tests/deliver/test_the_delivery_layer_says_what_it_does_not_call.py` enforces all of it:
+
+```
+UNCUT_OVER      12   the v2 control plane — (tier, why, measured_by, mover)
+UNREACHED       11   deliberate, explained — (why, mover)
+KNOWN_UNWIRED    2   ⛔ DEFECTS — (what is wrong, STEP-NN)
+PULL_ONLY        1   reached and routed, never pushed — NOT in DECLARED
+```
+
+**What will fail you:**
+
+| | |
+|---|---|
+| adding a public function nothing calls | `undeclared()` is non-empty |
+| declaring a function that does not exist | ⛔ **both directions are checked** — `missing()` |
+| ⛔ **wiring a declared function and leaving its entry** | `now_called()` — L4 deleted `monitor.blocking_action` the moment it was wired |
+| putting a defect in `UNREACHED` or a decision in `KNOWN_UNWIRED` | the same function in two tables has two reasons and the build cannot say which is current |
+| a `KNOWN_UNWIRED` entry with no `STEP-NN` | ⛔ it is not a parking lot |
+| an entry whose reason or mover is under ~80/20 chars | an entry that explains nothing is paperwork |
+| claiming a tier 2, 3 or 4 is measured | only tier 1 is — `outbox.shadow_resolve_v2` |
+
+⛔ **Do not "fix" a failure by widening the guard.** If your function genuinely should be uncalled,
+write the reason and the mover. If it should be called, call it.
+
+## ⛔ R-L5-2 · use `qualified_call_counts`, never `called_names`, to ask whether something is reached
+
+`executive/unreached.called_names` counts by **name alone**, so every function sharing a name shares
+one count. It resolves aliases correctly and then collapses the module.
+
+```python
+# ⛔ WRONG — any method named `read` anywhere in the engine votes for this
+called_names(sources).get("read", 0)
+
+# RIGHT
+qualified_call_counts(sources).get(("readiness", "read"), 0)
+```
+
+Measured 2026-10-01: switching L4's own guard found **five** `executive/` functions that had read as
+reached and are not. `readiness.read` had **11** apparent callers and zero real ones.
+
+⛔ **Both resolvers stay, and the asymmetry is deliberate** — `called_names` is still correct for
+*"what names does this file call"*. **A call resolved by name alone is a call to any function with
+that name.**
+
+## ⛔ R-L5-3 · a measurement may never kill what it measures
+
+`deliver/pipeline.py`'s own rule, written for `collapse_unmeasured`: *"a receipt that can abort the
+thing it is a receipt for turns an accounting failure into a product failure."*
+
+So the recall guard at the end of `build_cards_for_org`:
+
+| | |
+|---|---|
+| unbalanced tally | recorded in `out`, **warned**, never raised |
+| the guard itself throws | `out["lane_recall_unmeasured"] = 1` |
+| ⛔ **and those two states must stay distinguishable** | *"I could not measure this"* and *"I measured it and it is wrong"* are different sentences. A mutation that collapsed them survived 12 tests until one assertion was added |
+
+## ⛔ R-L5-4 · no comment in `deliver/` may claim a declared-uncalled function is called
+
+`tests/deliver/test_a_comment_is_not_a_measurement.py` walks every COMMENT token in the package
+against all 25 declared entries, with a closed verb set (`fired by`, `called by`, `invoked by`,
+`triggered by`, …).
+
+⛔ **And `push.py`'s header must name every `push_*` entry point**, because it announces a count:
+*"Two flavours"* with one bullet is how a deleted bullet leaves its tail behind, parsing as English
+attached to the wrong bullet.
+
+---
+
+# ⛔ BRIEF E · `card_builder.resolved_person_name` — a measured defect, built and never wired
+
+`deliver/card_builder.py:610` carries its own measurement: ***"35 of 38 person cards named an address
+in the headline"***, and a `mention:person` observation carries the real name. Somebody measured 38
+cards, found 35 broken, wrote the resolver, and **never called it.**
+
+| | |
+|---|---|
+| **do** | call it on the person-card headline path. ⛔ The fallback **stays**: no `mention:person` observation → keep the address. **Null is an answer**; never invent a name |
+| ⛔ **the real risk** | `invention_ok` (`render.py:334`) refuses any name not in the grounded corpus. A `mention:person` observation **is** in the corpus, so this should pass — **assert it, do not predict it** |
+| ⛔ **the absolute rule** | if a resolved name fails `invention_ok`, **the fix is wrong, not the validator.** Never weaken a verify to make it pass |
+| **do not** | trust the 35. It predates M13's card rebuild and no signal has been routed since 2026-09-25. ⛔ The wiring is justified by the function being correct, **not** by the number |
+| **then** | delete its `KNOWN_UNWIRED` entry, or `now_called()` fails your build |
+
+Spec: `layer-5-delivery/STEP-08-TO-BUILD-the-headline-fix-nobody-wired.md`.
+
+---
+
+# ⛔ BRIEF F · `outbox.revive_undeliverable` — a stated product promise with no caller
+
+*"Re-open every row this org parked only because it had nowhere to send it… **This is the answer to
+'a card must become deliverable the moment a channel exists'.** The alternative designs were
+considered and rejected."* **Nothing calls it.**
+
+The failure has a shape: **a tenant registers Slack on Tuesday, and every card parked before Tuesday
+stays parked.**
+
+| | |
+|---|---|
+| ⛔ **measure first** | *when* does a channel come into existence? Three candidate triggers, different properties — read `STEP-15 §3` before writing a line |
+| ⛔ **the risk nobody has checked** | a revived card must not resurrect one whose `expires_at` has passed. `store.py:317` expires non-terminal cards and logs `window.lapsed` into **L6's ignore-rate** — so a careless revive feeds a different layer a delivery for a closed window |
+| **keep narrow** | *"only because it had nowhere to send it"* is a narrow predicate and must stay narrow. `outbox.py` records that conflating this with a terminal failure *"burned the card forever"* |
+
+Spec: `layer-5-delivery/STEP-15-TO-BUILD-a-card-must-become-deliverable.md`.
+
+---
+
+# ⛔ BRIEF G · nine packages have never been asked what they do not call
+
+**147 top-level public functions across the engine are unreached by production and declared
+nowhere** — 18 hidden by the old resolver, **129 visible to both resolvers all along**.
+
+```
+context 48 · reason 29 · platform 26 · feedback 17 · capture 8 · contracts 8 · mcp 5 · packs 3 · api 3
+```
+
+| | |
+|---|---|
+| ⛔ **147 is NOT 147 defects** | L5's 24 were 12 un-cut-over, 7 deliberate, **5** defects — and `deliver/` was unusual in carrying a second architecture. **Extrapolating is the mistake this brief exists to prevent** |
+| ⛔ **a level, not a unit** | one unit per package, in data-flow order. `capture/` (8) first — **not** because it is smallest, but because the generalised guard has never run against a package with no declaration module |
+| ⛔ **two exclusions must be settled first** | **25** functions are decorator-registered route handlers with no Python caller by design; and `scripts/` is outside the source set, so a CLI-only function reads as unreached. **Deciding that after writing 25 declarations is the expensive order** |
+| ⛔ **check the import direction** | `capture/` is layer 1 and cannot import `executive/` (5). The extraction target is `platform/` (CROSS_CUTTING) — **confirm, do not assume** |
+| **do not** | add a global receipt or declaration count. ⛔ Count guards are **per layer**: *"the cheap fix for that is to bump the number, which is how a decision gate becomes a rubber stamp"* |
+
+Audit: `18-AUDIT-the-engine-wide-reachability-gap.md`. Spec:
+`layer-5-delivery/STEP-17-TO-BUILD-nine-packages-nobody-asked.md`. ⛔ **It is the LAST thing in the
+programme, not the next** — L5's own steps 08–11 come first.

@@ -1,6 +1,14 @@
 # L2 · every step, in order — the full list
 
-**18 units · 7 sections · ⛔ 10 done, 1 retired, 7 left — and the 7 are BOTH PLANES ONLY.**
+⛔⛔ **18 units · 7 sections · ALL CLOSED — 15 done, 3 retired/withdrawn, 0 left.**
+
+⛔ **CORRECTED 2026-10-02.** This line said *"10 done, 1 retired, 7 left — and the 7 are BOTH
+PLANES ONLY"*, and the table below still shows `M11.C4.U01`–`U03` as ⬜ **next**. **Both are
+stale.** S6 closed (the body of this page already says so), and S5 closed as **8** units in
+`plane-r-reasoning-units/` — `STEP-01-DONE` and `STEP-02-to-08-DONE`, 45 tests,
+`validate_sources()` 0 → 10 sources. The three ⬜ rows in the table are the PLANNED shape of work
+that shipped as eight; they are left visible with this correction rather than rewritten, because
+the plan-vs-built difference is the record.
 
 ⛔ **Everything except Plane R (S5) and Plane D (S6) is built.** Per Rohit's instruction the two planes
 are last and will be done unit by unit together. S1 · S2 · S3 · S4 are complete: **263 new tests.** Detail for each is in
@@ -19,9 +27,9 @@ S1  prove the claims          ✅ DONE — retired 2 units
 S2  the DegradedStep          ✅ DONE — 3 units,  38 tests
 S4  the counters              ✅ DONE — 2 units,  42 tests
 S3  the lanes + router        ✅ DONE — 4 units, 169 tests
-   │
-   ├─▶ S5  Plane R contract   ⬜ 3 units  ← NEXT, unit by unit with Rohit
-   └─▶ S6  Plane D routing    ✅ DONE — 4 units became 6, of which 4 built,
+S5  Plane R contract          ✅ DONE — ⛔ 3 planned units became 8, all green · 45 tests
+                                 validate_sources(): 0 sources checked -> 10
+S6  Plane D routing           ✅ DONE — 4 units became 6, of which 4 built,
                                  1 retired, 1 withdrawn · 98 tests
 
 S7  the vector axes           ⛔ Rohit — blocks M13, not M11

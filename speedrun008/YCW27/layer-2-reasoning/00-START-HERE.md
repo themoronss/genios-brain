@@ -5,7 +5,22 @@
 **The primary layer.** It answers: *given professional expertise and everything the company already
 knows, what does this mean — and what is the best next move?*
 
-**Milestone M11.** Status: **S1 COMPLETE** — 1 done, 1 retired, **15 left of 18 units.**
+**Milestone M11.** Status: ⛔⛔ **ALL SEVEN SECTIONS CLOSED — nothing in L2 is left to build.**
+
+⛔ **CORRECTED 2026-10-02.** This line read *"S1 COMPLETE — 1 done, 1 retired, **15 left of 18
+units**"* and had been wrong for days. Three documents in this folder disagreed about the same
+state — this one said 15 left, [`04-STEPS.md`](04-STEPS.md) said 7, and its unit table said 3 —
+because each was edited where the work happened and never where the header was.
+⛔ **The ground truth is the code:** `plane-r-reasoning-units/` holds `STEP-01-DONE` and
+`STEP-02-to-08-DONE`, `validate_sources()` went from checking **0** sources to **10** on every
+registration, and `plane-r/00-START-HERE.md` states it plainly — *"Nothing in S5. The section was
+3 units as planned, became 8 at unit level, and all 8 are green."*
+⛔ *A list edited one line at a time accumulates the lines nobody edited* — third instance in this
+programme, and the first across three files at once.
+
+**What remains in L2 is not engineering:** switch the roster on (`A2`), populate the Organisation
+Brain (`A3`), and the unapplied migrations (`A8` = Harsh's `H1`). Plus `S7`, the ConfidenceVector
+axes — **Rohit's**, and it blocks M13, not M11.
 
 ⛔ **The unit count went from 11 to 18** after Plane R and Plane D were measured. The plan's first draft
 had written both out of scope on the grounds that *"nothing in the cross-check found a defect there"* —

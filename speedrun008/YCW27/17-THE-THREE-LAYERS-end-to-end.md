@@ -849,7 +849,7 @@ doing and will not produce a single card until decision #5 is answered.
 | 2 | **`HANDOFF-HARSH.md`** | the five items above, as standalone briefs |
 | 3 | `HANDOFF-CODING-AGENT.md` | three standalone briefs + the twelve rules this repo fails a build over |
 | 4 | `STATUS.md` — **the LAST section** | the live task list. ⛔ The table at line 745 is stale |
-| 5 | `08-ATLAS-SCORECARD-L1-to-L4.md` | 24 Atlas claims, each verified or refuted |
+| 5 | `08-ATLAS-SCORECARD-L1-to-L6.md` | ⛔ **56** Atlas claims, each verified or refuted — renamed from `-L1-to-L5` when L6's eleven were added. ⛔ **L6 here is `feedback/`**: this scorecard numbers `deliver/` as L5, while the source matrix labels the same rows `L7 Learning` |
 | 6 | `layer-2-reasoning/16-AUDIT-AND-PLAN-the-readiness-axis.md` | the readiness axis, audit + plan + what was built |
 | 7 | `genios_engine/LAYERS.py` | ⛔ **read this before using any layer number** |
 | 8 | `genios_engine/reason/unit_health.py` | the four grains of declared silence, each with a named mover |

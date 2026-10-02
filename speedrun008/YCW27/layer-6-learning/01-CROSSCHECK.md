@@ -145,7 +145,13 @@ against would change identities already minted. A new closed map is additive and
 
 ## ⛔ 2026-10-01 · *"No code written yet"* at the top of this file was true on the day it was written
 
-**L6 (M14) has since been built: 3 steps, all DONE, 87 tests.**
+**L6 (M14) has since been built: 3 steps, all DONE, 87 tests.** *(the count on 2026-10-01)*
+
+⛔ **CORRECTED 2026-10-02.** That `87` and `00-START-HERE`'s `53` counted different things on
+different days, and neither is the layer's total now — the directory runs **243 passed, 27
+skipped** after `S1`–`S9`. ⛔ **A hardcoded count is wrong the next day; the command is the
+answer**: `.venv/bin/pytest tests/feedback -q -rs`. The `87` is left standing because it is dated,
+and *a dated number is a record rather than a claim about today.*
 
 This file is a **crosscheck**, so *"no code written yet"* is not an error — it is what a crosscheck
 says, and the date beside it is what makes it honest. It is noted here anyway because a reader
