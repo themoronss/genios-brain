@@ -33,6 +33,19 @@ def preflight(obj: LearningObject, policy: LearningPolicy, *, now: datetime) -> 
     if not policy.learning_enabled:
         return PreflightResult(False, "consent_disabled")
 
+    # ⛔ BEFORE THE TWO CHECKS BELOW, NOT AFTER. If the prohibition lists did not load they are
+    # empty, and an empty list is indistinguishable from "this tenant blocks nothing" — so the two
+    # checks below would ADMIT everything the tenant meant to forbid and report "admitted".
+    # `LearningPolicy.prohibitions_state` is what makes the difference visible; `migrations/0045`
+    # and the orchestrator's seed have always kept NULL and `[]` apart at the database.
+    #
+    # ⛔ This gate covers ALL THREE producers — `orchestrator.run_learning`,
+    # `brain_pipeline.admit_proposals` and `org_rule_ingest.run_org_discovery` all call this exact
+    # function — which is why the refusal lives here as well as in `run_learning`. The one in
+    # `run_learning` exists for a different reason: it stops the pass BEFORE the weekly claim.
+    if not policy.prohibitions_loaded:
+        return PreflightResult(False, f"policy_prohibitions_{policy.prohibitions_state}")
+
     if obj.target.value in policy.blocked_targets:
         return PreflightResult(False, "target_blocked")
 

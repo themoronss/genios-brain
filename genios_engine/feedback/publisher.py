@@ -16,10 +16,12 @@ from typing import Any
 from sqlalchemy import text
 
 from genios_engine.contracts.learning import (
+    ALLOWED_LEARNING_TRANSITIONS,
     BrainTarget,
     LearningObject,
     LearningState,
     LearningTarget,
+    learning_can_transition,
 )
 from genios_engine.platform.canonical import canonical_dumps
 from genios_engine.platform.ids import new_id
@@ -30,6 +32,43 @@ _BRAIN_TARGETS = {LearningTarget.ORGANIZATION, LearningTarget.BEHAVIOR, Learning
 def log_transition(conn, *, org_id: str, learning_id: str, from_state: str | None,
                    to_state: str, reason_code: str, at: datetime, actor: str | None = None,
                    detail: dict | None = None) -> None:
+    """Append one lifecycle edge — ⛔ and refuse one the contract forbids.
+
+    ⛔ WHY THIS REFUSES RATHER THAN RECORDS. `ALLOWED_LEARNING_TRANSITIONS` existed from the start
+    and **nothing checked it on this path**: `publish()` wrote `governed → published` on every
+    brain publish, which is not in `GOVERNED`'s allowed set, and `learning_transitions` is the
+    ledger nothing reads — so the record that would have shown it was never asked. An illegal edge
+    means the lifecycle state machine is wrong, and a wrong state machine is not something to log
+    and continue past. The weekly sweep already isolates one tenant's failure and, since `S3`,
+    names it in `skipped_by_reason`, so a refusal here is visible rather than silent.
+
+    ⛔ `from_state=None` IS EXEMPT AND MUST BE. The first transition of an object's life —
+    `persist`'s *"nothing → governed"* — has no predecessor to validate, and
+    `ALLOWED_LEARNING_TRANSITIONS` has no `None` key by design.
+
+    ⛔ AN UNKNOWN STATE STRING IS ALSO A REFUSAL. A value that is not a `LearningState` cannot be
+    checked against the map at all, and treating "I could not validate this" as "this is fine" is
+    the fail-open `S3` closed in `load_or_seed_policy`.
+
+    ⛔ ONE WRITER IS NOT GUARDED BY THIS. `api/learning_routes.py`'s review route inserts its
+    transition with raw SQL, because it builds a deterministic id for idempotency that this
+    function's `new_id("ltr")` would break. Both of its edges (`human_review → promoted` and
+    `human_review → rejected`) are legal, and
+    `tests/feedback/test_no_transition_takes_an_edge_the_contract_forbids.py` asserts that from the
+    route's own source so the unguarded writer is still covered at build time.
+    """
+    if from_state is not None:
+        try:
+            current, target = LearningState(from_state), LearningState(to_state)
+        except ValueError as exc:
+            raise ValueError(
+                f"learning transition {from_state!r} -> {to_state!r} names a state that does not "
+                f"exist: {exc}") from exc
+        if not learning_can_transition(current, target):
+            allowed = [s.value for s in ALLOWED_LEARNING_TRANSITIONS.get(current, ())]
+            raise ValueError(
+                f"illegal learning transition {from_state} -> {to_state} for {learning_id}; "
+                f"{from_state} may go to {allowed}")
     conn.execute(text(
         "insert into learning_transitions (id, org_id, learning_id, from_state, to_state, "
         "reason_code, actor, detail, occurred_at) values (:id, :o, :l, :f, :t, :r, :a, :d, :at)"),
@@ -209,6 +248,28 @@ def publish(conn, obj: LearningObject, *, target_state: LearningState, at: datet
             result = publish_metric(conn, obj, at=at)
         elif obj.target in _BRAIN_TARGETS:
             result = publish_brain(conn, obj, at=at)
+            # ⛔⛔ THE MISSING HOP, ADDED 2026-10-02. `target_state` is reassigned to PUBLISHED
+            # below, and this function logs ONE transition from a fixed `from_state = GOVERNED` —
+            # so a brain publish wrote `governed → published`, and
+            # `ALLOWED_LEARNING_TRANSITIONS[GOVERNED]` is
+            # `(TEMPORARY, HUMAN_REVIEW, PROMOTED, REJECTED)`. **`published` is not in it.**
+            # `learning_can_transition(GOVERNED, PUBLISHED)` returns False.
+            #
+            # ⛔ The map's own docstring states the intended path — *"| Promoted→Published |
+            # Rejected}; Published → {Superseded | RolledBack}"* — two hops, and the publisher
+            # collapsed them into one, skipping PROMOTED entirely. So the ledger carried an edge
+            # the contract forbids AND lost the state that distinguishes *"promoted, publisher not
+            # yet done"* from *"published"*. The Atlas names exactly that gap: `L7-30`, *"Publisher
+            # crashes after persistence but before activation receipt → Do not infer active state
+            # from row existence."*
+            #
+            # ⛔ Nothing caught it because `learning_transitions` is written and read by nothing —
+            # the ledger that would have shown it was the unread one. `log_transition` now refuses
+            # an illegal edge, so this hop is not optional.
+            log_transition(conn, org_id=obj.org_id, learning_id=obj.learning_id,
+                           from_state=from_state, to_state=LearningState.PROMOTED.value,
+                           reason_code=result, at=at)
+            from_state = LearningState.PROMOTED.value
             target_state = LearningState.PUBLISHED
         else:
             result = "promoted"

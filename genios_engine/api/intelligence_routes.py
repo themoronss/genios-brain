@@ -744,8 +744,16 @@ def list_insights(limit: int = 50, state: str = "open",
 
 @router.get("/v1/insights/stats")
 def insight_stats(days: int = 7, org_id: str = Depends(get_current_org)) -> dict:
-    """Dashboard ActionsCard — honest counts from the cards + card_events ledger (ROI / intervention
-    rate stay null until the feedback→L6 loop of Phase 4 records outcomes)."""
+    """Dashboard ActionsCard — honest counts from the cards + card_events ledger.
+
+    ⛔ CORRECTED 2026-10-02. This docstring said *"ROI / intervention rate stay null until the
+    feedback→L6 loop of Phase 4 records outcomes"* and **both halves were stale**:
+    `intervention_rate` is computed from `acted / fired` whenever anything has fired, and
+    `outcomes_recorded` is a real `count(*)` over `execution_outcomes`. Only `value_recovered_inr`
+    is still null, and the reason is in the comment above the `return` — a different one from the
+    reason that was recorded there. **A docstring describing two fields that have since been
+    implemented reads as a measurement of today.**
+    """
     if _graph is None:
         raise HTTPException(400, "graph store not configured")
     with _graph.engine.connect() as c:
@@ -772,11 +780,37 @@ def insight_stats(days: int = 7, org_id: str = Depends(get_current_org)) -> dict
             {"o": org_id}).scalar() or 0)
 
     # `0` and "we have no way to know yet" are different claims, and returning 0 for both is how
-    # an absent measurement becomes a reported result. Value attribution needs the counterfactual
-    # ledger (L7-12), which does not exist — so this says so rather than inventing a number.
+    # an absent measurement becomes a reported result.
+    #
+    # ⛔ THAT PRINCIPLE IS RIGHT AND THE CITATION WAS WRONG. This comment used to read "value
+    # attribution needs the counterfactual ledger (L7-12), which does not exist". It does exist:
+    # `counterfactual_ledger` is created by migration 0072, joins signal → card → card_events →
+    # verdict → delivery_outbox → executions → execution_outcomes → llm_costs one row per
+    # recommendation, and carries a production receipt asserting the join reaches end to end. It
+    # answers "did this recommendation lead to anything" — NOT "how much money". It has no
+    # monetary column, and neither does `execution_outcomes` or `llm_costs` (tokens only).
+    #
+    # ⛔ THE TABLE BUILT FOR THIS NUMBER IS `macv_ledger` (migration 0012), whose own comment calls
+    # it "the North Star … the number the customer can verify" and gives it `period`, `deal_id`,
+    # `amount`, `resolved_signal_id`. MEASURED 2026-10-02 across the whole repository: it appears
+    # in five places — the migration that creates it, the cascade FK (0033),
+    # `api/account_routes.py`'s deletion list, `tests/test_reasoning_retention.py`'s table list,
+    # and `docs/LAYER_MAP.md`. ⛔ NOTHING EVER INSERTS A ROW AND NOTHING EVER SELECTS ONE: the only
+    # code that touches the North Star ledger deletes it.
+    #
+    # So `None` stays. ⛔ Reading the empty ledger to report `0` would be precisely the defect the
+    # first sentence of this comment exists to prevent, which is why this is a reason change and
+    # not a value change. `tests/api/test_the_value_is_withheld_for_the_right_reason.py` binds the
+    # `value_state` string to that measurement: add a writer for `macv_ledger` and it fails.
     return {"insights_fired": fired, "actions_taken": acted, "outcomes_recorded": outcomes,
             "value_recovered_inr": None,
-            "value_state": "unavailable_no_counterfactual_ledger",
+            # ⛔ RENAMED 2026-10-02 from "unavailable_no_counterfactual_ledger", which named the
+            # wrong ledger and told a founder a false cause. Measured first: nothing in this
+            # repository branches on the literal — the only occurrence was this writer — and
+            # `value_state` has only ever had one value, so no client can be switching on a set.
+            # ⛔ A client OUTSIDE this checkout cannot be measured from here; one that string-matches
+            # falls through to its default, which is strictly better than displaying a false cause.
+            "value_state": "unavailable_macv_ledger_has_no_writer",
             "intervention_rate": (round(acted / fired, 3) if fired else None),
             "headline": (f"{fired} insight(s) surfaced" if fired else "No insights yet")}
 
