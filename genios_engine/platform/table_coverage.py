@@ -1,0 +1,478 @@
+r"""Which tables each package WRITES, who reads them, and which nobody reads — measured.
+
+⛔ WHY THIS EXISTS. `S7` turned "receipts per package" into data and the number pointed at
+`context/`: **50,877 lines, 124 files, 2 receipts.** ⛔ The first thing the audit found is that the
+headline is wrong — `context/` is heavily unit-tested (306 test files import it) and **both** its
+receipts are CORRECTNESS receipts. What it does not have is any check that the **36 tables it
+writes** are behaving in production. `receipt_coverage.py` answers *"which package does each
+receipt guard"*; this answers *"which table does nothing guard, and does anything even read it"*.
+
+⛔⛔ FOUR RESOLVER TRAPS WERE HIT BUILDING THIS, AND EVERY ONE WOULD HAVE PRODUCED A CONFIDENT
+WRONG ANSWER. They are why the shape of this module is what it is:
+
+  1. ⛔ `[a-z_]+` CANNOT MATCH A DIGIT. `l2_convergence` resolved as table `l`, and `l2_model_runs`
+     did not appear at all — **one of the three real findings was invisible.** Second time that
+     exact pattern has lied in this programme, so `_TABLE` is asserted against a digit below.
+  2. ⛔ THE ENGINE IS NOT THE WHOLE READER SET. `situation_admission_decisions` looked written-and-
+     unread; it is read by **five scripts** (`activate_tenant`, `l2_refusal_report`,
+     `pipeline_funnel_report`, `speedrun008_layer2_measurements`). **An operator-read table is a
+     read table**, so `_ROOTS` includes `scripts/`.
+  3. ⛔ A BARE-NAME GREP HANDS OVER A SENTENCE WITHOUT ITS SUBJECT. `context_node_lifecycle` looked
+     unread; `context/runner.py` reads it. Every mention is classified by VERB, and a mention in a
+     docstring is not a read.
+  4. ⛔⛔ A WRITE CAN HAPPEN THROUGH A NAME CONSTANT. `context/merge.py` holds
+     `_NODE_REFERENCES = (("graph_facts", "subject_node_id"), …)` and repoints every one of them in
+     a generic loop, so the table name never appears in any SQL literal. That is the
+     `authority_rules` / `AUTHORITY_TABLE` trap in the WRITE direction, and
+     `NAME_CONSTANT_TABLE_SITES` is how it is accounted for — **declared, because a heuristic that
+     treats any tuple of table names as a write would read the tenant DELETE LIST as 36 writers.**
+"""
+from __future__ import annotations
+
+import ast
+import re
+from functools import lru_cache
+from pathlib import Path
+
+_ROOT = Path(__file__).resolve().parents[2]
+_ENGINE = _ROOT / "genios_engine"
+#: ⛔ `scripts/` is in here because of trap 2. An operator report is a reader.
+_ROOTS: tuple[Path, ...] = (_ENGINE, _ROOT / "scripts")
+
+#: A table identifier. ⛔ The digit class is trap 1 and is asserted by the guard.
+_TABLE = r"([a-z_][a-z_0-9]*)"
+_VERBS: dict[str, str] = {
+    "insert": rf"insert into {_TABLE}",
+    "update": rf"update {_TABLE} set",
+    "delete": rf"delete from {_TABLE}",
+    "read": rf"(?:from|join) {_TABLE}",
+}
+WRITE_VERBS: frozenset[str] = frozenset({"insert", "update"})
+
+#: Where the tenant erasure loop gets its table names. ⛔ Read off the AST rather than imported:
+#: `api/` importing `platform/` is the normal direction, and reversing it for a list of strings
+#: would be a cycle for no gain.
+_DELETE_LIST = ("api/account_routes.py", "_ORG_SCOPED_TABLES")
+
+#: ⛔⛔ Writes that happen through a NAME CONSTANT, so no SQL literal names the table —
+#: `{module: (constant, verb, why)}`. Declared, never inferred (see trap 4 above).
+NAME_CONSTANT_TABLE_SITES: dict[str, tuple[str, str, str]] = {
+    "context/merge.py": (
+        "_NODE_REFERENCES", "update",
+        "⛔ Entity merge repoints every reference to the absorbed node in a GENERIC LOOP over "
+        "`(table, column)` pairs, so `graph_facts`, `graph_observations`, `graph_aliases`, "
+        "`source_identity_map` and `context_situations` are each written by a statement that "
+        "never spells their name. The module's own comment states the stake: a row left pointing "
+        "at the absorbed node is *'invisible in the UI, still returned by any query that joins "
+        "on node_id'*"),
+    "feedback/store.py": (
+        "QUARANTINABLE_SEAMS", "read",
+        "⛔⛔ THE CASE THAT PROVES WHY THIS TABLE IS DECLARED AND NOT INFERRED. `store.py` passes "
+        "`_OPTIONAL_INBOX_TABLE` as an ARGUMENT to `_read_optional_seam`, which builds "
+        "`f\"select * from {table} …\"` from the PARAMETER — so the name reaches the SQL through a "
+        "function boundary that no amount of module-level constant substitution can follow. "
+        "⛔ Without this entry the measurement called `learning_event_inbox` write-only, and `S5` "
+        "had already PROVEN it is loaded into every weekly learning batch. *A name-constant is a "
+        "read* — and a name-constant passed as an argument is a read nothing static can see"),
+}
+
+#: ⛔⛔ TABLES A PACKAGE WRITES THAT NOTHING READS — `{table: (writer, why, mover)}`.
+#:
+#: ⛔ Membership here means: no `select`/`join` anywhere in `genios_engine/` or `scripts/`, no
+#: receipt, and no name-constant read. The ONLY other reference is the tenant delete list — which
+#: is the third time this programme has found that shape, after `macv_ledger` (the North Star
+#: number, `S2`) and `counterfactual_ledger` (which turned out to be a VIEW and was NOT one).
+#:
+#: ⛔ The delete list's own comment states what is at stake in it: *"the loop below runs with no
+#: try/except by design, so a name missing here leaks silently."* A write-only table is therefore
+#: correctly deleted and otherwise inert: it costs storage, it is in the erasure path, and no
+#: decision has ever been made from it.
+UNREAD_WRITES: dict[str, tuple[str, str, str]] = {
+    # ── context/ ────────────────────────────────────────────────────────────────────────
+    "contract_spend_attributions": (
+        "context/correlation_resource.py",
+        "⛔ Written when resource correlation attributes spend to a contract. Every other mention "
+        "in the repo is prose. ⛔ So the attribution is COMPUTED, STORED and never consulted — no "
+        "card, no situation and no report has ever been shaped by it",
+        "MOVES WHEN a spend-attribution surface reads it. ⛔ Not mine: deleting a written ledger "
+        "destroys history, and building the reader is a product decision about whether contract "
+        "spend belongs in the product"),
+    "source_identity_map": (
+        "context/graph_store.py + context/merge.py",
+        "⛔ TWO writers, and the second is only visible because of `NAME_CONSTANT_TABLE_SITES`: "
+        "`merge.py` repoints it in the generic node-reference loop. Read by nothing. ⛔ An "
+        "identity map that nothing resolves against is maintained correctly for no consumer",
+        "MOVES WHEN identity resolution reads back its own map — the natural caller is "
+        "`context/identity.py`, which resolves alias candidates and does not consult it"),
+    "situation_interpretations": (
+        "context/interpretation_store.py",
+        "⛔ `record_interpretation` inserts; the module exports exactly `TABLE` and that function, "
+        "and nothing selects from it. `contracts/situation.py` and `platform/l4_activation.py` "
+        "name it in prose only. ⛔ The L4 activation note is the tell: an interpretation written "
+        "for a layer that was being brought up, and the reader never arrived",
+        "MOVES WHEN L4 reads the interpretation it was given, or the write is retired with the "
+        "shadow path"),
+
+    # ── other packages — the same measurement, engine-wide ──────────────────────────────
+    "learning_metrics": (
+        "feedback/publisher.py",
+        "⛔⛔ THIS IS `F11`'s LAST UNREAD LEDGER, REDISCOVERED FROM THE OTHER SIDE. L6 counted "
+        "four ledgers nothing read and `S5`/`S6` closed three of them; this audit found the "
+        "fourth without looking for it, which is the cross-check that makes both measurements "
+        "worth trusting. Every `METRICS` proposal the eleven analysis units produce lands here "
+        "and no reader exists",
+        "MOVES WHEN a precision-by-layer surface exists. ⛔ `feedback/calibrate` consumes the RAW "
+        "judgments directly, so the metric rows are for a reader rather than for the loop — the "
+        "same conclusion `feedback_health` reached about `attribution.ranked_precision`"),
+    "human_events": (
+        "capture/events_store.py + deliver/actions.py",
+        "⛔ Two packages write it and nothing reads it. A human action ledger spanning capture and "
+        "delivery is exactly the join an outcome question needs, and `execution_outcomes` answers "
+        "that question from a different table",
+        "MOVES WHEN outcome reconciliation (Atlas L7 #3) needs a human-action timeline, or the "
+        "second writer is removed"),
+    "card_feedback_revisions": (
+        "api/intelligence_routes.py",
+        "⛔ A revision history for card feedback, written by the API and read by nothing — while "
+        "`card_feedback_verdicts`, the table beside it, is read by every weekly learning batch. "
+        "⛔ So the verdict is consumed and its REVISIONS are not: a human who corrects their own "
+        "correction is recorded and never heard",
+        "MOVES WHEN the learning batch reads revisions as well as verdicts — which is Atlas L7 "
+        "#3's *'correction retracts derived proposal'* clause, and is Rohit's"),
+    "agent_metering": (
+        "deliver/agent_api.py",
+        "⛔ Per-call metering for the Agent API. Read by nothing, and ⛔ **not named in the "
+        "`/reset` erasure loop either** — so it survives a tenant reset. That may be deliberate "
+        "for billing-shaped data; it is not written down anywhere, which is the finding",
+        "MOVES WHEN metering is billed from or reported on. ⛔ Whether it should survive `/reset` "
+        "is a product decision and belongs in `RETAINED_AFTER_ERASURE`'s reasoning if the answer "
+        "is yes"),
+    "delivery_rate_windows": (
+        "deliver/rate_limiter.py",
+        "⛔ The rate limiter's own window state: written, never read back. ⛔ A limiter that does "
+        "not read its windows is not limiting from them — `S8`'s `test_the_hourly_ceiling_is_"
+        "exact_at_one_worker` proves the ceiling holds, so the enforcement is elsewhere and this "
+        "table is a record of it",
+        "MOVES WHEN the limiter reads its own history (a multi-worker ceiling needs exactly "
+        "that), or the write is retired"),
+    "domain_requests": (
+        "api/expertise_routes.py",
+        "⛔ A tenant asking for a domain that does not exist yet. Written by the request handler "
+        "and read by nobody — ⛔ so the request is recorded and no human or job is ever shown it. "
+        "*A refusal nobody can see is a silent stop*, and this is its product-side twin: a "
+        "REQUEST nobody can see",
+        "MOVES WHEN domain requests reach an operator surface. ⛔ The write is correct; the queue "
+        "has no reader"),
+}
+
+#: ⛔⛔ RETRACTED FROM THE TABLE ABOVE, AND WHY IT MATTERS THAT THEY ARE NAMED HERE.
+#:
+#: The audit's first pass called six tables write-only. ⛔ **Every broadening of the resolver
+#: killed a finding**, and these two died last — after the extractor learned to read SQL held in
+#: a module-level constant rather than only SQL passed to `text(...)`:
+#:
+#:   * `edge_coverage_declarations` — read by its OWN writer, `context/patterns/store.py`;
+#:   * `l2_model_runs` — read by `context/lifecycle/resolution.py`.
+#:
+#: ⛔ They are recorded rather than deleted because the next reader of this module will be
+#: tempted to re-derive the list with a simpler scan and will get them back. *An invalid finding
+#: is not a finding* — and the measurement that produced them is in `resolution()`.
+RETRACTED_UNREAD_WRITES: dict[str, str] = {
+    "edge_coverage_declarations":
+        "⛔ RETRACTED — read by its own writer `context/patterns/store.py`. A self-read is a read: "
+        "the pattern store consults the coverage it declared",
+    "l2_model_runs":
+        "⛔ RETRACTED — read by `context/lifecycle/resolution.py`. The first classification pass "
+        "sampled line 103 of that module, which is prose; the READ is in a SQL constant further "
+        "down. *A bare-name grep hands over a sentence without its subject*",
+}
+
+
+#: A string literal that IS a SQL statement, rather than one that mentions a table.
+_SQL_SHAPE = re.compile(r"^\s*(?:select|insert|update|delete|with)\b", re.IGNORECASE)
+
+
+def _known_tables() -> frozenset[str]:
+    """Every table the migrations create. The vocabulary a name constant is matched against."""
+    sql = "\n".join(p.read_text(encoding="utf-8")
+                    for p in sorted((_ROOT / "migrations").glob("*.sql")))
+    return frozenset(re.findall(r"create table (?:if not exists )?" + _TABLE, sql, re.IGNORECASE))
+
+
+def _template(node: ast.AST) -> str | None:
+    """A string-ish expression rendered with ``{NAME}`` where a variable was interpolated.
+
+    ⛔⛔ THIS IS THE WHOLE POINT OF THE MODULE AND IT WAS THE SEVENTH TRAP OF THE AUDIT. A table
+    whose name lives in a constant never appears in any SQL literal:
+    `f"insert into {COVERAGE_TABLE} …"`, `"select … from " + AUTHORITY_TABLE`. Engine-wide there
+    are **51** such constants, and before this function existed the measurement called
+    `learning_event_inbox` write-only — a table `S5` had already PROVEN is loaded into every weekly
+    learning batch, through `store._OPTIONAL_INBOX_TABLE`.
+
+    ⛔ *A name-constant is a read* — third time this programme has paid for that, after
+    `authority_rules` (read 3 readers as 1) and `_NODE_REFERENCES` (a write nothing could see).
+    """
+    if isinstance(node, ast.Constant):
+        return node.value if isinstance(node.value, str) else None
+    if isinstance(node, ast.JoinedStr):
+        parts: list[str] = []
+        for value in node.values:
+            if isinstance(value, ast.Constant) and isinstance(value.value, str):
+                parts.append(value.value)
+            elif isinstance(value, ast.FormattedValue):
+                inner = value.value
+                parts.append("{" + inner.id + "}" if isinstance(inner, ast.Name) else "{?}")
+            else:                                  # pragma: no cover - JoinedStr has 2 node kinds
+                parts.append("{?}")
+        return "".join(parts)
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
+        left, right = _template(node.left), _template(node.right)
+        if left is None or right is None:
+            return None
+        return left + right
+    if isinstance(node, ast.Name):
+        return "{" + node.id + "}"
+    return None
+
+
+def _module_table_constants(tree: ast.Module, known: frozenset[str]) -> dict[str, tuple[str, ...]]:
+    """``{constant: (table, …)}`` for every module-level constant naming known tables."""
+    out: dict[str, tuple[str, ...]] = {}
+    for node in tree.body:
+        targets = (node.targets if isinstance(node, ast.Assign)
+                   else [node.target] if isinstance(node, ast.AnnAssign) else [])
+        value = getattr(node, "value", None)
+        if value is None:
+            continue
+        for target in targets:
+            if not isinstance(target, ast.Name):
+                continue
+            names = tuple(n for n in _string_elements(value) if n in known)
+            if names:
+                out[target.id] = names
+    return out
+
+
+def _statements(source: str, known: frozenset[str]) -> tuple[tuple[str, int], ...]:
+    """``(sql, unresolved placeholders)`` for every SQL statement in the module.
+
+    Constants naming tables are substituted; a literal whose enclosing call is ``print`` is
+    skipped, because **printing a query is not running one** (`scripts/activate_tenant.py` prints
+    `select … from situation_admission_decisions` for a human to paste).
+    """
+    tree = ast.parse(source)
+    constants = _module_table_constants(tree, known)
+    printed: set[int] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call) and getattr(node.func, "id", None) == "print":
+            printed.update(id(n) for n in ast.walk(node))
+    out: list[tuple[str, int]] = []
+    for node in ast.walk(tree):
+        if id(node) in printed or not isinstance(node, (ast.Constant, ast.JoinedStr, ast.BinOp)):
+            continue
+        rendered = _template(node)
+        if rendered is None or not _SQL_SHAPE.match(rendered):
+            continue
+        for name, tables in constants.items():
+            if "{" + name + "}" in rendered:
+                rendered = rendered.replace("{" + name + "}", tables[0])
+        out.append((rendered, rendered.count("{")))
+    return tuple(out)
+
+
+def _sources() -> tuple[tuple[str, str], ...]:
+    out: list[tuple[str, str]] = []
+    for root in _ROOTS:
+        if not root.exists():                      # pragma: no cover - both exist in-tree
+            continue
+        for path in sorted(root.rglob("*.py")):
+            out.append((str(path.relative_to(_ROOT)), path.read_text(encoding="utf-8")))
+    return tuple(out)
+
+
+@lru_cache(maxsize=1)
+def _table_usage() -> dict[str, dict[str, frozenset[str]]]:
+    """⛔ CACHED, AND THAT IS NOT AN OPTIMISATION — IT IS WHAT MAKES THE MODULE USABLE. The first
+    version re-parsed every file in `genios_engine/` and `scripts/` once per table lookup, and
+    `written_without_a_receipt` calls `writers_of` in a loop: a single call took minutes and was
+    killed. The answer is a property of one checkout, so computing it once is also the only
+    honest reading of it."""
+    known = _known_tables()
+    acc: dict[str, dict[str, set[str]]] = {}
+    for rel, source in _sources():
+        try:
+            statements = _statements(source, known)
+        except SyntaxError:                        # pragma: no cover - the tree parses
+            continue
+        for blob, _unresolved in statements:
+            sql = " ".join(blob.lower().split())
+            for verb, pattern in _VERBS.items():
+                for match in re.finditer(pattern, sql):
+                    if match.group(1) in known:
+                        acc.setdefault(match.group(1), {}).setdefault(verb, set()).add(rel)
+    for site, (constant, verb, _why) in NAME_CONSTANT_TABLE_SITES.items():
+        for table in _name_constant_tables(site, constant):
+            acc.setdefault(table, {}).setdefault(verb, set()).add(f"genios_engine/{site}")
+    return {t: {v: frozenset(f) for v, f in verbs.items()} for t, verbs in acc.items()}
+
+
+@lru_cache(maxsize=1)
+def resolution() -> dict[str, int]:
+    """⛔ COVERAGE, REPORTED BESIDE THE VERDICT. How many SQL statements were read, how many still
+    carry an unresolved `{placeholder}`, and how many table-name constants were resolved.
+
+    *A resolver that answers for 1 of 104 answers nothing* — so the guard asserts this, and a drop
+    in resolution fails the build rather than quietly shrinking the findings.
+    """
+    known = _known_tables()
+    statements = constants = unresolved = modules = 0
+    for _rel, source in _sources():
+        try:
+            tree = ast.parse(source)
+        except SyntaxError:                        # pragma: no cover - the tree parses
+            continue
+        found = _module_table_constants(tree, known)
+        if found:
+            modules += 1
+            constants += len(found)
+        for _sql, holes in _statements(source, known):
+            statements += 1
+            unresolved += 1 if holes else 0
+    return {"statements": statements, "unresolved": unresolved,
+            "table_name_constants": constants, "modules_with_constants": modules,
+            "known_tables": len(known)}
+
+
+def table_usage() -> dict[str, dict[str, frozenset[str]]]:
+    """``{table: {verb: {file, …}}}`` over every ``text(...)`` literal in the engine and scripts.
+
+    A fresh outer dict each call so a caller cannot poison the cache; the inner frozensets are
+    already immutable.
+    """
+    return {t: dict(v) for t, v in _table_usage().items()}
+
+
+def _string_elements(node: ast.AST) -> tuple[str, ...]:
+    """The table names in a constant. ⛔ A TUPLE OF PAIRS CONTRIBUTES ITS FIRST ELEMENT ONLY.
+
+    `context/merge.py:_NODE_REFERENCES` is `(("graph_facts", "subject_node_id"), …)`. Taking every
+    string made `node_id` and `anchor_node_id` into TABLES, and both then appeared in the
+    written-and-unread list — ⛔ two invented tables in a report whose whole purpose is to name
+    tables nothing reads.
+    """
+    if isinstance(node, (ast.Tuple, ast.List, ast.Set)):
+        out: list[str] = []
+        for element in node.elts:
+            if isinstance(element, (ast.Tuple, ast.List)) and element.elts:
+                head = element.elts[0]
+                if isinstance(head, ast.Constant) and isinstance(head.value, str):
+                    out.append(head.value)
+            elif isinstance(element, ast.Constant) and isinstance(element.value, str):
+                out.append(element.value)
+        return tuple(out)
+    return tuple(n.value for n in ast.walk(node)
+                 if isinstance(n, ast.Constant) and isinstance(n.value, str))
+
+
+def _module_constant(rel_to_engine: str, name: str) -> ast.AST | None:
+    path = _ENGINE / rel_to_engine
+    if not path.exists():                          # pragma: no cover - guarded by the test
+        return None
+    for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+        targets = (node.targets if isinstance(node, ast.Assign)
+                   else [node.target] if isinstance(node, ast.AnnAssign) else [])
+        for target in targets:
+            if isinstance(target, ast.Name) and target.id == name:
+                return node.value
+    return None
+
+
+def _name_constant_tables(rel_to_engine: str, constant: str) -> tuple[str, ...]:
+    """The tables a declared constant names, following ONE level of indirection.
+
+    ⛔ `feedback/store.QUARANTINABLE_SEAMS` is `(_OPTIONAL_FEEDBACK_TABLE, _OPTIONAL_INBOX_TABLE)`
+    — a tuple of NAMES, not of strings. Reading only string literals returned nothing and left
+    `learning_event_inbox` looking unread for the second time in one audit. Same rule as
+    `target_policy._scope_of`: resolve one hop, and report what is still unresolved rather than
+    assuming it away.
+    """
+    node = _module_constant(rel_to_engine, constant)
+    if node is None:
+        return ()
+    found = list(_string_elements(node))
+    if isinstance(node, (ast.Tuple, ast.List, ast.Set)):
+        for element in node.elts:
+            if isinstance(element, ast.Name):
+                inner = _module_constant(rel_to_engine, element.id)
+                if isinstance(inner, ast.Constant) and isinstance(inner.value, str):
+                    found.append(inner.value)
+    known = _known_tables()
+    return tuple(s for s in found if s in known)
+
+
+def deletion_list() -> tuple[str, ...]:
+    """The tables the tenant erasure loop names, read off `api/account_routes.py`'s AST."""
+    return _name_constant_tables(*_DELETE_LIST)
+
+
+def tables_with_a_receipt() -> frozenset[str]:
+    from genios_engine.platform.receipts import receipts
+
+    blob = " ".join(r.sql.lower() for r in receipts("org_probe"))
+    return frozenset(t for t in _table_usage() if re.search(rf"\b{t}\b", blob))
+
+
+def writers_of(table: str) -> frozenset[str]:
+    verbs = _table_usage().get(table, {})
+    return frozenset().union(*(verbs.get(v, frozenset()) for v in WRITE_VERBS)) \
+        if any(v in verbs for v in WRITE_VERBS) else frozenset()
+
+
+def readers_of(table: str) -> frozenset[str]:
+    return _table_usage().get(table, {}).get("read", frozenset())
+
+
+def written_and_unread() -> tuple[str, ...]:
+    """Tables with a writer and no reader anywhere.
+
+    ⛔ A RECEIPT IS NOT A READER, AND THE FIRST VERSION OF THIS EXCLUDED RECEIPTED TABLES. Adding
+    the merge receipt — whose SQL names `source_identity_map` as one of `_NODE_REFERENCES`'s pairs
+    — made a DECLARED write-only table look like it had gained a reader, and the both-ways guard
+    went red. ⛔ The two questions are different: *"does any code consult this table"* and *"does
+    anything check its contents in production"*. Conflating them meant writing a receipt could
+    silently retire a finding about readership. `written_without_a_receipt` asks the second
+    question and is where the receipt condition belongs.
+    """
+    return tuple(sorted(t for t in _table_usage() if writers_of(t) and not readers_of(t)))
+
+
+def undeclared_unread_writes() -> tuple[str, ...]:
+    return tuple(t for t in written_and_unread() if t not in UNREAD_WRITES)
+
+
+def stale_unread_declarations() -> tuple[str, ...]:
+    """Declared write-only tables that now have a reader or a receipt — the declaration is a lie."""
+    live = set(written_and_unread())
+    return tuple(sorted(t for t in UNREAD_WRITES if t not in live))
+
+
+def written_without_a_receipt(package: str) -> tuple[tuple[str, int], ...]:
+    """``(table, external reader count)`` for one package's writes that no receipt covers,
+    busiest first — the ranking that says which missing receipt costs the most."""
+    receipted = tables_with_a_receipt()
+    prefix = f"genios_engine/{package}/"
+    out = []
+    for table, verbs in _table_usage().items():
+        writers = frozenset().union(*(verbs.get(v, frozenset()) for v in WRITE_VERBS)) \
+            if any(v in verbs for v in WRITE_VERBS) else frozenset()
+        if not any(w.startswith(prefix) for w in writers) or table in receipted:
+            continue
+        external = sum(1 for r in verbs.get("read", ()) if not r.startswith(prefix))
+        out.append((table, external))
+    return tuple(sorted(out, key=lambda row: (-row[1], row[0])))
+
+
+__all__ = ["NAME_CONSTANT_TABLE_SITES", "RETRACTED_UNREAD_WRITES", "UNREAD_WRITES", "WRITE_VERBS", "deletion_list",
+           "readers_of", "stale_unread_declarations", "table_usage", "tables_with_a_receipt",
+           "resolution", "undeclared_unread_writes", "writers_of", "written_and_unread",
+           "written_without_a_receipt"]

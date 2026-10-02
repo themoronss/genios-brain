@@ -330,6 +330,221 @@ def _UNDECLARED_SILENT_UNITS_SQL(org: str | None) -> str:
     )
 
 
+#: ⛔ L5 · AN ATTEMPT THAT STARTED AND NEVER SETTLED IS AN AMBIGUITY, AND IT MUST NOT BE SILENT.
+#:
+#: `deliver/spine.recover_expired_claims` exists to mark exactly these `unknown` before anyone
+#: reclaims the row: *"An expired worker may have POSTed to a provider before dying; we must never
+#: silently retry over that ambiguity."* Measured 2026-10-01: **nothing calls it, and nothing calls
+#: `claim_due` either** — the v2 control plane is un-cut-over, so this reads 0 today. That is the
+#: point. It is the receipt that starts answering the moment the cutover is taken.
+#:
+#: ⛔ DELIBERATELY FENCE-INDEPENDENT, AND THIS IS THE DESIGN DECISION WORTH READING. The recovery
+#: joins on `a.claim_token = d.fence_token`, and `claim_due` writes a NEW fence when it reclaims a
+#: row — so the orphans that matter MOST, the ones whose row was already handed to a fresh worker,
+#: can never match the recovery's own predicate again. A receipt built on that join would miss
+#: precisely the permanently-unrecoverable cases. **A guard must not inherit the blind spot of the
+#: thing it guards.**
+#:
+#: ⛔ AND THE WINDOW IS JUSTIFIED, NOT PICKED. One hour is twelve default leases
+#: (`claim_due(lease_seconds=300)`) and nine hundred provider timeouts (`push._TIMEOUT_S = 4.0`), so
+#: a merely slow attempt cannot be reported as an ambiguous one. A tighter window would turn
+#: latency into an alarm, and the fix for a false alarm is always to loosen the check.
+_UNSETTLED_ATTEMPT_SQL = (
+    "select count(*) from delivery_attempts a"
+    " where a.outcome = 'started'"
+    "   and a.settled_at is null"
+    "   and a.started_at < now() - interval '1 hour'")
+
+
+#: ⛔ L5 · A CARD MUST NOT OUTLIVE ITS OWN WINDOW IN A LIVE STATE.
+#:
+#: `CardStore.sweep_lifecycle` expires non-terminal cards past `expires_at` and logs
+#: `window.lapsed`, which feeds L6's ignore-rate — so a card still `queued` long after its window
+#: closed is BOTH a card a founder may still act on and a row L6 will never count. The sweep is
+#: wired: `api/routes.py:951` calls it "every tick: expire + snooze-wake + claim-release".
+#:
+#: ⛔ THE TWELVE HOURS ARE MEASURED, NOT PICKED. That tick is `run_maintenance_sweep`'s HEAVY
+#: pass, whose interval is `config.sync_interval_hours` — measured at **6.0** — and one sweep is
+#: bounded by `scheduler._SWEEP_TIMEOUT_S = 1200`. A one-hour grace (my first instinct) would have
+#: fired on every card that expired in the normal six-hour gap between ticks: latency reported as an
+#: alarm, and *the fix for a false alarm is always to loosen the check.* Twelve hours is TWO full
+#: maintenance cycles, so a card must survive two of them before it counts.
+_CARD_OUTLIVED_ITS_WINDOW_SQL = (
+    "select count(*) from cards"
+    " where state in ('queued', 'surfaced', 'snoozed')"
+    "   and expires_at < now() - interval '12 hours'")
+
+
+#: ⛔ L5 · A CARD PARKED FOR WANT OF A CHANNEL MUST NOT STAY PARKED ONCE ONE EXISTS.
+#:
+#: `outbox.revive_undeliverable` is "the answer to 'a card must become deliverable the moment a
+#: channel exists'", and until 2026-10-01 nothing called it — so a tenant who registered Slack on
+#: Tuesday kept every card parked before Tuesday. `api/channel_routes.set_slack` now revives on
+#: registration (STEP-15); this is the production question that says whether it worked.
+#:
+#: ⛔ THE CHANNEL SET IS INJECTED, NOT HARD-CODED. `deliverable_channels` intersects
+#: `org_channels` with the channels that HAVE AN ADAPTER, and that half lives in a Python registry
+#: (`channels/base.get_channel`) which SQL cannot see. Naming 'slack' in the query would rot the
+#: day a second adapter lands; building the literal from `_implemented_channels()` keeps the two
+#: halves of that judgement in one place — the same injection receipt #31 uses for its era
+#: boundary.
+#:
+#: ⛔ AND IT MATCHES THE ROW'S OWN CHANNEL. The park is per-channel: a row parked for `teams` is
+#: not revived because `slack` appeared. `c.channel = d.channel` is what keeps this a question about
+#: THIS row rather than about the org.
+def _CONSTRAINED_BRAIN_VALUE_SQL(org: str | None) -> str:
+    r"""Active brain values narrower than the surface that renders them.
+
+    ⛔ WHY THE CODE GUARD IS NOT ENOUGH. `feedback/target_policy` proves statically that no
+    PRODUCER proposes a constrained durable value — every delegated producer constructs
+    `Visibility(scope=ORGANIZATION)`, and the one PRIVATE `LearningObject` in the engine targets
+    `METRICS`, which lands in `learning_metrics`. But the human APPROVAL path
+    (`api/learning_routes`) rehydrates a persisted proposal and its visibility is a value read back
+    from `learning_objects.visibility`. ⛔ **No amount of AST reading can know what is in that
+    column**, so the only honest check of the second half is this one, against the data.
+
+    ⛔ WHAT A NON-ZERO COUNT MEANS. `api/brain_routes` selects the VALUE out of both sinks filtered
+    only on `org_id` / `active` / `brain`, behind `Depends(get_current_org)` — which admits any
+    credential of the tenant, including a `member` seat whose own definition in `platform/auth.py`
+    is *"reads and acts on the cards routed to their own seat, **and nothing org-wide**."* So one
+    constrained row in either sink is a learned value rendered to people its own visibility
+    excludes — Atlas `L7`'s *"prohibited evidence never reaches active brain or rendered
+    rationale"*.
+
+    ⛔ THE OPEN SET IS DERIVED FROM THE CONTRACT, NEVER SPELLED. `target_policy.OPEN_SCOPES` holds
+    ENUM MEMBER NAMES because it is read off the AST; the column holds enum VALUES. Translating
+    through `VisibilityScope[...]` is what keeps a renamed member from widening what this accepts,
+    which is the rule `_ILLEGAL_TRANSITION_SQL` follows for lifecycle edges.
+    """
+    from genios_engine.contracts.learning import VisibilityScope
+    from genios_engine.feedback.target_policy import BRAIN_SINKS, OPEN_SCOPES
+
+    open_values = sorted(VisibilityScope[name].value for name in OPEN_SCOPES)
+    for v in open_values:                     # SQL text from an Enum: assert the shape, never assume
+        assert re.fullmatch(r"[a-z_]+", v), v
+    literal = ", ".join(f"'{v}'" for v in open_values)
+    # Both sinks, one scalar. `visibility_scope is null` counts: an unrecorded scope is not an open
+    # one, which is the same fail-closed reading `contracts/learned_state._visible` takes.
+    parts = [f"(select count(*) from {sink} where active "
+             f"and (visibility_scope is null or visibility_scope not in ({literal}))"
+             f"{_org_filter(org)})"
+             for sink in BRAIN_SINKS]
+    return "select " + " + ".join(parts)
+
+
+def _ABSORBED_NODE_REFERENCE_SQL(org: str | None) -> str:
+    r"""Live rows still pointing at a node a merge absorbed.
+
+    ⛔ THE MODULE'S OWN WORDS ARE THE CLAIM. `context/merge.py` introduces its node-reference list
+    with *"Every table that names a node. **Missing one leaves rows pointing at a closed node —
+    invisible in the UI, still returned by any query that joins on node_id.**"* That is a failure
+    nothing checked: entity merge is the one operation that rewrites identity across the graph, and
+    `context/` had two receipts over 50,877 lines, neither about merge.
+
+    ⛔ THE PAIRS ARE DERIVED FROM THE THREE DECLARED CONSTANTS, NEVER COPIED — `_NODE_REFERENCES`,
+    `_CORRELATION_HANDLED_SEPARATELY` and `_EDGE_NODE_COLUMNS`. A sixth table entering the merge
+    loop enters this receipt without an edit, which is the `QUARANTINABLE_SEAMS` pattern; a copy
+    here would silently stop covering whatever was added last.
+
+    ⛔ `reversed` MERGES ARE EXCLUDED. `reverse_merge` repoints the rows back and reopens exactly
+    the edges it closed, so a reversed row legitimately names the formerly-merged node again.
+    Counting those would make this red on every tenant that has ever undone a merge — *a gate that
+    is always red is a gate nobody reads.*
+    """
+    from genios_engine.context.merge import (_CORRELATION_HANDLED_SEPARATELY,
+                                             _EDGE_NODE_COLUMNS, _NODE_REFERENCES)
+
+    pairs = [*_NODE_REFERENCES, _CORRELATION_HANDLED_SEPARATELY,
+             *(("graph_edges", column) for column in _EDGE_NODE_COLUMNS)]
+    # SQL text built from Python constants: the shape is asserted, never assumed.
+    for table, column in pairs:
+        assert re.fullmatch(r"[a-z_][a-z_0-9]*", table), table
+        assert re.fullmatch(r"[a-z_][a-z_0-9]*", column), column
+    parts = [
+        f"(select count(*) from {table} t join merge_history m "
+        f"on m.org_id = t.org_id and m.merged_node_id = t.{column} "
+        f"where not m.reversed{_org_filter(org, 't')})"
+        for table, column in pairs]
+    return "select " + " + ".join(parts)
+
+
+def _PARKED_WITH_A_CHANNEL_SQL() -> str:
+    from genios_engine.deliver.routing import AGENT_TRANSPORTS
+    from genios_engine.deliver.units import _implemented_channels
+    usable = sorted(_implemented_channels() - AGENT_TRANSPORTS)
+    literal = ", ".join(f"'{ch}'" for ch in usable) or "''"
+    return (
+        "select count(*) from delivery_outbox d"
+        " where d.status = 'undeliverable'"
+        "   and exists (select 1 from org_channels c"
+        "                where c.org_id = d.org_id and c.active"
+        f"                  and c.channel = d.channel and c.channel in ({literal}))")
+
+
+def _QUARANTINED_SEAM_SQL(org: str | None) -> str:
+    r"""Inputs the learning layer deliberately threw away — its isolation ledger, finally read.
+
+    ⛔ `feedback/store._read_optional_seam` catches a read that raises, records it in
+    `learning_input_rejections` and returns `()`. Its own comment states the defect it half-fixed:
+    *"`learning_input_rejections` exists (migration 0046) and its own comment calls it 'sanitized
+    isolation of a malformed/lineage-less input' — and **nothing in the codebase ever wrote to
+    it**. So the layer's isolation ledger recorded nothing, and an input the system deliberately
+    quarantined was indistinguishable from one that never arrived. **That is the no-silent-drop
+    contract failing in the one place built to uphold it.**"*
+
+    ⛔ The WRITE was then built and the READ never was. This is the read.
+
+    ⛔ THE SEAM FILTER IS NOT OPTIONAL AND IT IS DERIVED. `org_rule_ingest.record_refusal` writes to
+    the same table under `seam = "brains.org_discovery"` for every candidate the discovery gate
+    turns down — which is **routine, not an alarm**, and is already counted per run in
+    `org_rule_discovery_runs.counters` (`candidates`, `admitted`, `refused`, `refused_<reason>`).
+    Counting those here would make this receipt red on healthy tenants. The two batch seams come
+    from `store.QUARANTINABLE_SEAMS` rather than being spelled again, so a third optional seam
+    enters this query without an edit.
+    """
+    from genios_engine.feedback.store import QUARANTINABLE_SEAMS
+
+    for seam in QUARANTINABLE_SEAMS:
+        assert re.fullmatch(r"[a-z_]+", seam), seam
+    seams = ", ".join(f"'{s}'" for s in QUARANTINABLE_SEAMS)
+    return ("select count(*) from learning_input_rejections j "
+            f"where j.seam in ({seams}){_org_filter(org, 'j')}")
+
+
+def _ILLEGAL_TRANSITION_SQL(org: str | None) -> str:
+    r"""Lifecycle edges `learning_transitions` holds that `ALLOWED_LEARNING_TRANSITIONS` forbids.
+
+    ⛔ THE LEGAL SET IS DERIVED FROM THE CONTRACT, NEVER COPIED. A hand-written pair list would
+    drift the first time a state is added, and the drift would widen what this receipt accepts —
+    the same rule `_UNDECLARED_UNWRITTEN_FACTS_SQL` follows for `expertise._ROSTER`.
+
+    ⛔ `from_state is null` IS EXCLUDED. `publisher.persist` writes the first edge of an object's
+    life with no predecessor, and `ALLOWED_LEARNING_TRANSITIONS` has no `None` key by design.
+
+    ⛔ WHAT A NON-ZERO COUNT MEANS TODAY. Until 2026-10-02 `publisher.publish` wrote
+    `governed → published` on every brain publish, and `GOVERNED` may only go to
+    `(temporary, human_review, promoted, rejected)`. The publisher now logs the missing `promoted`
+    hop and `log_transition` refuses an illegal edge — so **new** rows cannot be illegal. Rows
+    written before that fix can be, and this receipt does not hide them: it names them. The
+    read-only query that settles whether any exist is
+    `select from_state, to_state, count(*) from learning_transitions group by 1, 2`, and it answers
+    a second question at the same time — whether any brain value has ever been published at all,
+    which is what `L7-27` asks.
+    """
+    from genios_engine.contracts.learning import ALLOWED_LEARNING_TRANSITIONS
+
+    pairs = [(cur.value, nxt.value)
+             for cur, nxts in ALLOWED_LEARNING_TRANSITIONS.items() for nxt in nxts]
+    # The values come from an Enum, but this builds SQL text, so the shape is asserted rather than
+    # assumed — a state named with a quote would otherwise be an injection in a receipt.
+    for a, b in pairs:
+        assert re.fullmatch(r"[a-z_]+", a) and re.fullmatch(r"[a-z_]+", b), (a, b)
+    literal = ", ".join(f"('{a}','{b}')" for a, b in pairs)
+    return ("select count(*) from learning_transitions t where t.from_state is not null "
+            f"and (t.from_state, t.to_state) not in ({literal})"
+            f"{_org_filter(org, 't')}")
+
+
 def receipts(org: str | None) -> list[Receipt]:
     # THE DORMANCY WINDOW IS THE THRESHOLD, and it is imported rather than restated. L2 decides a
     # situation has ended after `DORMANT_AFTER_DAYS` of silence, so a tenant that has been fed
@@ -458,6 +673,17 @@ def receipts(org: str | None) -> list[Receipt]:
                 lambda n: n == 0,
                 "one last-write-wins row per person collapses every conversation into the newest"),
 
+        # ⛔⛔ `context/`'s THIRD receipt, and the first about the operation that rewrites
+        # identity. 50,877 lines and 124 files had two receipts, neither covering entity merge —
+        # the one place where a missed table leaves live rows naming a node that no longer exists.
+        Receipt("L2", "no live row points at a node a merge absorbed",
+                _ABSORBED_NODE_REFERENCE_SQL(org), lambda n: n == 0,
+                "⛔ `context/merge.py` says it itself: *\"Missing one leaves rows pointing at a "
+                "closed node — invisible in the UI, still returned by any query that joins on "
+                "node_id.\"* The table/column pairs are DERIVED from `_NODE_REFERENCES`, "
+                "`_CORRELATION_HANDLED_SEPARATELY` and `_EDGE_NODE_COLUMNS`, so a sixth table "
+                "entering the merge loop enters this check without an edit. Reversed merges are "
+                "excluded — `reverse_merge` legitimately repoints those rows back"),
         Receipt("L2", "the sweep settles instead of chasing itself",
                 # `_record_convergence` re-hashes the graph after a pass and counts how many it
                 # took to stop moving; at `MAX_PASSES` it stamps `exceeded_at` and raises
@@ -618,6 +844,30 @@ def receipts(org: str | None) -> list[Receipt]:
                 "a card with no lane at all was written by a path that never read the signal's "
                 "routing -- the founder cannot tell a decision from a thing to watch"),
 
+        Receipt("L5", "no card outlives its own window in a live state",
+                _CARD_OUTLIVED_ITS_WINDOW_SQL + _org_filter(org),
+                lambda n: n == 0,
+                "a card still queued twelve hours past `expires_at` is one a founder may act on and "
+                "one L6 will never count -- `CardStore.sweep_lifecycle` expires them and logs "
+                "`window.lapsed`, so a non-zero here means that sweep is not reaching this org"),
+
+        Receipt("L5", "a card parked for want of a channel is revived when one appears",
+                _PARKED_WITH_A_CHANNEL_SQL() + _org_filter(org, alias="d"),
+                lambda n: n == 0,
+                "this org has an active, adapter-backed channel AND rows still parked as "
+                "undeliverable on that same channel -- `outbox.revive_undeliverable` exists to "
+                "re-open exactly these, and `api/channel_routes.set_slack` calls it on "
+                "registration, so a non-zero here is a backlog that predates that wiring"),
+
+        Receipt("L5", "no delivery attempt is left unsettled long enough to be ambiguous",
+                _UNSETTLED_ATTEMPT_SQL + _org_filter(org, alias="a"),
+                lambda n: n == 0,
+                "an attempt that said `started` an hour ago and never settled may already have "
+                "reached a provider -- retrying over it sends the same thing twice, and "
+                "`spine.recover_expired_claims` is the function that exists to mark it `unknown` "
+                "first. Nothing calls it, because the v2 control plane is not cut over; this goes "
+                "non-zero the first time it is"),
+
         # ⛔ NO CHANNEL RECEIPT HERE, DELIBERATELY. One already exists further down — *"there is a
         # channel this tenant can be reached on"*, over the same `org_channels` table. Adding a second
         # would be two receipts answering one question, and the first time somebody tuned one they
@@ -730,6 +980,125 @@ def receipts(org: str | None) -> list[Receipt]:
         Receipt("L7", "the learning engine has executed",
                 f"select count(*) from learning_runs where 1=1{o}",
                 lambda n: n > 0),
+        # ⛔ `feedback/`'s FIRST CORRECTNESS RECEIPT. Measured 2026-10-02: the layer had four
+        # receipts and all four were PRESENCE checks — "has the learning engine executed", "has
+        # calibration executed" — every one satisfied by a single successful tick. A loop that runs
+        # weekly and writes four append-only ledgers could be entirely wrong and pass all four.
+        #
+        # ⛔ WHY THIS CLAIM AND NOT "THE LOOP DROPPED NOTHING". `learning_event_inbox` (0046) is
+        # written in production by `reason/moments/store.record_feedback` (reached from
+        # `api/moment_routes.py:746`), loaded into every weekly batch by `feedback/store`, and
+        # **no unit consumes it** — `orchestrator.run_learning` counts the rows it is about to drop
+        # as `inbox_unconsumed`. So `inbox_unconsumed > 0` is the KNOWN state of a declared gap,
+        # and this file's own rule applies: *a gate that is always red is a gate nobody reads; the
+        # claim is the one that is true today and false when it gets worse.*
+        #
+        # ⛔ SO THE CLAIM GUARDS THE VISIBILITY. The counter is the only thing that will make the
+        # arrival of a consumer — or the arrival of a second writer — discoverable, and until now
+        # it was written into `learning_runs.counts` and read by nothing. Delete the counter, or
+        # complete a run without it, and this goes red. **The reader is half the unit.**
+        Receipt("L7", "no completed learning run hides whether it dropped inbox rows",
+                "select count(*) from learning_runs where status = 'completed' "
+                f"and counts->>'inbox_unconsumed' is null{o}",
+                lambda n: n == 0,
+                "⛔ `learning_event_inbox` rows are written, loaded into every batch and consumed "
+                "by nothing: `unit_preference_learning` and `unit_temporary_memory` both return "
+                "`[]`. `inbox_unconsumed` in `learning_runs.counts` is how many were dropped, and "
+                "this receipt is its first reader. A non-zero count is the DECLARED gap (Atlas "
+                "Layer 7 #1); a MISSING count is a regression in the only thing that makes the gap "
+                "visible"),
+        # ⛔⛔ THE NO-SILENT-DROP CONTRACT, which the Atlas states in full: *"Every rejected or
+        # deferred candidate must retain run_id, tenant, unit, evidence IDs, REASON CODE, failed
+        # gate, policy version, timestamp, and recovery status … A weekly sweep that returns zero
+        # objects without this accounting is operationally indistinguishable from broken wiring."*
+        #
+        # ⛔ Until 2026-10-02 `run_learning` discarded all three refusal reasons — `ok, _ =
+        # validate_learning(...)`, and only `.ok` / `.rejected` read off the gate and the decision
+        # — so a refused proposal was COUNTED and never NAMED, and
+        # `learning_object_evaluations` recorded only the successes. `migrations/0046` describes
+        # that ledger as *"every actual per-run decision (new or HELD object)"*: the held case is
+        # named in the schema's own comment and was never written.
+        #
+        # ⛔ WHY IT IS GATED ON `counts->>'evaluations'`. A run completed before that change has
+        # `held`/`refused` above zero and no evaluation rows, so an ungated claim would be red for
+        # history it could not have recorded — *a gate that is always red is a gate nobody reads.*
+        # The key's PRESENCE is the marker that the run executed under the contract.
+        #
+        # ⛔ AND THE PRECEDENT IS IN `run_learning` ITSELF: its `published` counter once disagreed
+        # with this ledger inside one transaction, and the comment there records why that mattered
+        # — *"the one number that says 'learning is working' has never been true."* This receipt is
+        # the same reconciliation, for the refusals.
+        Receipt("L7", "every proposal a completed learning run made is recorded as a decision",
+                "select count(*) from learning_runs r where r.status = 'completed' "
+                "and r.counts->>'evaluations' is not null "
+                "and (r.counts->>'proposals')::int <> "
+                "(select count(*) from learning_object_evaluations e "
+                f"where e.org_id = r.org_id and e.run_id = r.run_id){_org_filter(org, 'r')}",
+                lambda n: n == 0,
+                "⛔ One evaluation row per proposal, held and refused included. A non-zero count "
+                "means a decision path returned without recording its reason — the Atlas's "
+                "no-silent-drop contract — and it also gives `learning_object_evaluations` its "
+                "first reader and its `_by_run` index its first query"),
+        # ⛔⛔ `learning_transitions` IS THE LEDGER THAT WOULD HAVE SHOWN ITS OWN DEFECT. It is
+        # append-only, written by five call sites, and read by NOTHING — and
+        # `publisher.publish` wrote `governed → published` on every brain publish while
+        # `ALLOWED_LEARNING_TRANSITIONS[GOVERNED]` is `(temporary, human_review, promoted,
+        # rejected)`. The map's own docstring states the intended two hops, *"| Promoted→Published
+        # | Rejected}"*, and the publisher collapsed them, skipping PROMOTED — which is the state
+        # that distinguishes *"promoted, publisher not yet done"* from *"published"*, exactly the
+        # ambiguity the Atlas's `L7-30` is about.
+        #
+        # ⛔ Fixed at the source in the same step — the hop is logged and `log_transition` now
+        # REFUSES an illegal edge — so this receipt cannot go red on new rows. It is here because
+        # a guard at the writer protects the future and says nothing about the past.
+        Receipt("L7", "no learning transition takes an edge the contract forbids",
+                _ILLEGAL_TRANSITION_SQL(org), lambda n: n == 0,
+                "⛔ The legal pairs are derived from `contracts.learning"
+                ".ALLOWED_LEARNING_TRANSITIONS`, never copied. A non-zero count is a row written "
+                "before 2026-10-02, when `publisher.publish` logged `governed → published` and "
+                "nothing validated it. Settle it with `select from_state, to_state, count(*) from "
+                "learning_transitions group by 1, 2` — which also answers whether any brain value "
+                "has ever been published at all (`L7-27`)"),
+        # ⛔⛔ THE ISOLATION LEDGER, FINALLY READ. `learning_input_rejections` had its WRITE built
+        # with a comment naming the contract it was upholding — and no reader, so a quarantined
+        # input stayed indistinguishable from one that never arrived. `L7-29` requires the **empty
+        # reason** to be exposed, and the no-silent-drop contract requires a quarantine to be an
+        # observable state.
+        Receipt("L7", "no learning input has been quarantined",
+                _QUARANTINED_SEAM_SQL(org), lambda n: n == 0,
+                "⛔ A read of `card_feedback_verdicts` or `learning_event_inbox` that RAISED and "
+                "was isolated — not a seam that returned nothing. Routine discovery refusals "
+                "(`seam = brains.org_discovery`) are excluded: those are counted per run in "
+                "`org_rule_discovery_runs.counters` and are healthy. A non-zero count means the "
+                "verdict or inbox seam is failing to read, which `L7-29` calls a breach of the "
+                "declared health SLO"),
+        # ⛔⛔ THE HALF THE CODE CANNOT GUARD. `target_policy` proves no producer makes a
+        # constrained durable proposal; the approval path rehydrates visibility from the DATABASE,
+        # so only this query can close the loop. *A guard that stops at the source boundary
+        # catches nothing past it.*
+        Receipt("L7", "no active brain value is narrower than the surface that renders it",
+                _CONSTRAINED_BRAIN_VALUE_SQL(org), lambda n: n == 0,
+                "⛔ `api/brain_routes` renders the VALUE from `learned_brain_entries` and "
+                "`temporary_memories` with no principal check, behind an org-only dependency that "
+                "admits a `member` seat. A non-zero count is a learned value shown to people its "
+                "own visibility excludes. ⛔ The open set is derived from "
+                "`contracts.learning.VisibilityScope` via `target_policy.OPEN_SCOPES`, and a NULL "
+                "scope counts — an unrecorded scope is not an open one. Settle it with `select "
+                "brain, visibility_scope, count(*) from learned_brain_entries where active group "
+                "by 1, 2`"),
+        # ⛔ And the run must SAY which seam it lost. Gated on `evaluations` — `S6`'s marker — so a
+        # run that completed before either field existed is not judged against a contract it
+        # predates. *A gate that is always red is a gate nobody reads.*
+        Receipt("L7", "a completed learning run says which seams it lost, not only which were empty",
+                "select count(*) from learning_runs where status = 'completed' "
+                "and counts->>'evaluations' is not null "
+                f"and counts->>'quarantined_seams' is null{o}",
+                lambda n: n == 0,
+                "⛔ `degraded_seams` says WHICH seams were empty; `quarantined_seams` says which "
+                "were LOST. Until 2026-10-02 an isolated read arrived at the run identical to an "
+                "empty one — and the same block reported the delivery seam degraded on every run "
+                "forever, because it read `getattr(batch, \"deliveries\", ())` and the field is "
+                "`delivery`"),
         Receipt("L7", "calibration has executed",
                 f"select count(*) from calibration_runs where 1=1{o}",
                 lambda n: n > 0,
