@@ -7,6 +7,7 @@ from sqlalchemy import text
 
 from genios_engine.packs.wiring import ensure_default, make_registry
 from .lane_display import TALLY_KEYS, tally_lane
+from .lane_recall import recall_verdict
 from genios_engine.reason.authority import (
     AUTHORITATIVE_REASON_CODE_SQL,
     AUTHORITATIVE_SCORE_SQL,
@@ -593,4 +594,34 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
                 surfaced_by_reason[reason_code] = surfaced_by_reason.get(reason_code, 0) + 1
         finally:
             card_store.release_build(org_id, sig["signal_id"], claim_token)
+
+    # ⛔ THE RECALL GUARD, RUN — and until 2026-10-01 it was written, tested and never invoked.
+    #
+    # `lane_recall.py` was built on 2026-09-30 with 24 tests to "prove nothing died quietly", and
+    # nothing imported it. The comment ~80 lines above — explaining that the lane is tallied at the
+    # two sites where a card is WRITTEN so that `recall_verdict` would not be a tautology — was
+    # reasoning about the correctness of a verdict nobody computed. ⛔ A comment that reasons about
+    # a guard's correctness is not evidence the guard runs.
+    #
+    # ⛔ IT MAY NEVER RAISE, and the rule is already written down in this file: "a receipt that can
+    # abort the thing it is a receipt for turns an accounting failure into a product failure." An
+    # unbalanced tally means cards went somewhere nobody is looking; dropping the whole pass over
+    # it would mean they went nowhere at all.
+    try:
+        verdict = recall_verdict(out)
+        out["lane_recall"] = verdict.explain()
+        out["lane_recall_balanced"] = verdict.balanced
+        if not verdict.balanced:
+            import logging
+
+            logging.getLogger(__name__).warning(
+                "lane recall unbalanced for org=%s: %s", org_id, verdict.explain())
+    except Exception as exc:      # noqa: BLE001 — a MEASUREMENT may never kill what it measures
+        import logging
+
+        logging.getLogger(__name__).warning(
+            "could not compute the lane recall for org=%s: %s", org_id, exc)
+        # ⛔ The same rule as `collapse_unmeasured` above: a pass that could not measure itself must
+        # not look identical to one that measured zero.
+        out["lane_recall_unmeasured"] = 1
     return out

@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import text
 
+from genios_engine.deliver.outbox import deliverable_channels, revive_undeliverable
 from genios_engine.platform.auth import get_current_org
 from genios_engine.platform.wiring import make_graph_store
 
@@ -71,7 +72,29 @@ def set_slack(org_id: str, body: SlackConfig, org: str = Depends(_org)) -> dict:
             "config=excluded.config, active=excluded.active, updated_at=now()"),
             {"o": org, "cfg": json.dumps({"webhook_url": body.webhook_url}),
              "a": body.active})
-    return {"saved": True, "channel": "slack", "active": body.active}
+        # ⛔ A CARD MUST BECOME DELIVERABLE THE MOMENT A CHANNEL EXISTS — and until
+        # 2026-10-01 the function that does it had no caller.
+        #
+        # `outbox.revive_undeliverable` is the answer to that sentence, it lists the alternative
+        # designs it rejected to get there, and nothing invoked it. So the shape of the failure was:
+        # a tenant registers Slack on Tuesday, and every card parked before Tuesday — parked ONLY
+        # because there was nowhere to send it — stays parked forever.
+        #
+        # ⛔ THE GATE IS `deliverable_channels`, NOT A HAND-WRITTEN `if body.active`. Its own
+        # docstring: *"Two conditions, and every historical delivery failure in this database is one
+        # of them being assumed rather than checked"* — registered-and-active, AND an adapter
+        # exists. Re-deriving those two here by hand is that same mistake by hand, and it is how
+        # production ended up with three rows, all `failed_terminal`, on a channel with no
+        # transport. Looping the canonical answer also means a second channel route needs no edit.
+        #
+        # ⛔ IN THE SAME TRANSACTION as the upsert, deliberately: the revive must see the row it
+        # was triggered by, and a channel registration that commits without the revive would leave
+        # the backlog parked until somebody re-saved the same webhook.
+        revived = sum(revive_undeliverable(c, org, ch)
+                      for ch in deliverable_channels(c, org))
+    # Returned, not merely done. A count nobody can see is a count nobody checks — and the one
+    # question this answers is "did registering the channel actually clear my backlog?"
+    return {"saved": True, "channel": "slack", "active": body.active, "revived": revived}
 
 
 @router.delete("/api/org/{org_id}/channels/slack")

@@ -367,7 +367,14 @@ def get_result(org_id: str, delivery_id: str, org: str = Depends(_org)) -> dict:
                         {"o": org, "d": delivery_id}).mappings().first()
         if row is None:
             raise HTTPException(404, "no such delivery")
-        events = c.execute(text("select kind, occurred_at, actor from delivery_events "
+        # ⛔ `detail` ADDED 2026-10-01, AND WITHOUT IT THE WRITER WOULD HAVE BEEN DECORATION.
+        #
+        # This is the endpoint a support question lands on — "why did my notification not arrive?"
+        # — and it returned the event KINDS (`deferred`, `suppressed`) and not the reason. The
+        # column has always been written; `_mark_lifecycle` now writes the gate's full record into
+        # it via `gate.describe_decision`, so the answer that "ends the support ticket" is the one
+        # this response carries. A record nobody reads is presence without effect.
+        events = c.execute(text("select kind, occurred_at, actor, detail from delivery_events "
                                 "where org_id = :o and delivery_id = :d order by occurred_at"),
                            {"o": org, "d": delivery_id}).mappings().all()
     return {**_result_row(row), "events": [dict(e) for e in events]}

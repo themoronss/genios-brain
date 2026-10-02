@@ -236,7 +236,40 @@ def test_the_two_new_receipts_exist_and_the_channel_one_was_not_duplicated():
     claims = [r.claim for r in R.receipts("org_1")]
     assert "the tenant has at least one active seat" in claims
     assert "at least one seat has a manager" in claims
-    assert sum("channel" in c for c in claims) == 1
+    # ⛔ THIS WAS `sum("channel" in c for c in claims) == 1` UNTIL 2026-10-01, AND IT COUNTED THE
+    # WORD RATHER THAN THE QUESTION.
+    #
+    # L5 `STEP-10` added *"a card parked for want of a channel is revived when one appears"*, which
+    # contains the word and asks the OPPOSITE-conditioned question:
+    #
+    #     L6  "there is a channel this tenant can be reached on"   from org_channels     passes > 0
+    #     L5  "a card parked for want of a channel is revived..."  from delivery_outbox  passes == 0
+    #                                                              ⛔ and only counts anything WHEN
+    #                                                                 a channel exists
+    #
+    # The two cannot disagree: one asks whether a channel exists at all, the other only measures a
+    # backlog once one does. The intent here — *one receipt owns the channel-EXISTENCE question* —
+    # is unchanged; what was too broad was reading it off a substring.
+    #
+    # ⛔ AND THIS VERSION IS STRICTER, NOT LOOSER. It counts receipts whose OUTER SUBJECT is
+    # `org_channels`, so a duplicate is caught even if its claim never says "channel" — which the
+    # old substring count would have missed entirely.
+    #
+    # ⛔ THE OUTER `from`, NOT A MENTION. My first attempt at this checked `"from org_channels" in
+    # r.sql` and caught the L5 receipt as well, because that table appears in its EXISTS subquery.
+    # A receipt's SUBJECT is what its first `from` names; everything after is a condition on it.
+    # Two substring-shaped guards in a row, and the second was mine.
+    assert claims.count("there is a channel this tenant can be reached on") == 1
+
+    def _subject(sql: str) -> str:
+        head = " ".join(sql.split()).lower()
+        return head.split(" from ", 1)[1].split()[0] if " from " in head else ""
+
+    owns_the_table = sorted(r.claim for r in R.receipts("org_1")
+                            if _subject(r.sql) == "org_channels")
+    assert owns_the_table == ["there is a channel this tenant can be reached on"], (
+        "a second receipt takes org_channels as its subject -- two receipts answering one question "
+        f"disagree the first time somebody tunes one: {owns_the_table}")
 
 
 def test_the_new_receipts_are_never_fleet_wide():

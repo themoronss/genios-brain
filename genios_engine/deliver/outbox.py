@@ -51,6 +51,7 @@ from genios_engine.deliver.gate import (
     candidate_from_row,
     channel_class_for,
     defer_until,
+    describe_decision,
 )
 from genios_engine.executive.communication import may_interrupt
 from genios_engine.executive.execution import execution_config
@@ -1132,8 +1133,14 @@ def _defer(engine, row: dict, decision, context, now: datetime, out: dict) -> No
             "gate_unit=:u, gate_reason=:r where id=:i and status='queued'"),
             {"na": defer_until(decision, now), "u": decision.unit,
              "r": decision.reason_code, "i": row["id"]})
+        # ⛔ AND `context` WAS A PARAMETER THIS FUNCTION ACCEPTED AND NEVER READ.
+        #
+        # `_defer(engine, row, decision, context, now, out)` took the resolved context and used
+        # nothing from it — presence without effect, in the signature. A deferral is the verdict a
+        # founder is most likely to ask about ("why is it 09:00 and I still have not seen it?"),
+        # and the answer is the tenant's own window, which was sitting in `context` unread.
         _mark_lifecycle(c, row, "deferred", "deferred", now,
-                        {"reason": decision.reason_code})
+                        describe_decision(decision, context))
     out["deferred"] += 1
 
 
@@ -1154,8 +1161,19 @@ def _suppress(engine, row: dict, decision, context, out: dict) -> None:
             "update delivery_outbox set status='suppressed', gate_unit=:u, gate_reason=:r, "
             "last_error=:e where id=:i and status='queued'"),
             {"u": decision.unit, "r": decision.reason_code, "e": note[:300], "i": row["id"]})
+        # ⛔ THE SETTINGS BEHIND THE VERDICT, NOT JUST THE VERDICT.
+        #
+        # This wrote `{"reason": decision.reason_code}` — the thinnest possible record — while
+        # `admit` had already handed both halves over and said what they were for: *"Returns the
+        # context alongside the verdict so the caller can put the resolved settings into the audit
+        # row. 'It was held because quiet hours' is only half an answer; '…and this tenant's quiet
+        # hours are 21:00–08:00 Asia/Kolkata' is the half that ends the support ticket."*
+        #
+        # `gate.describe_decision` is the function that builds that record, and until 2026-10-01
+        # nothing called it: `decision.detail` and the whole resolved context were dropped on the
+        # floor at the one seam where both were in hand.
         _mark_lifecycle(c, row, "suppressed", "suppressed",
-                        datetime.now(timezone.utc), {"reason": decision.reason_code})
+                        datetime.now(timezone.utc), describe_decision(decision, context))
     out["suppressed"] += 1
 
 

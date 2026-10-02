@@ -613,7 +613,19 @@ def resolved_person_name(quotes: list[dict], fallback: str) -> str:
     35 of 38 person cards named an address in the headline. The real name was already extracted —
     a `mention:person` observation carries `{"name": "Maria Exconde"}` — but the node's
     display_name stayed the address, so the headline spent its 60-character budget on
-    "maria@alystventures.com" and the invention guard rejected any draft that wrote "Maria".
+    "maria@alystventures.com".
+
+    ⛔ THIS DOCSTRING ALSO SAID "and the invention guard rejected any draft that wrote Maria".
+    That was true and is not: `render._corpus` appends `q["name"]` for every quote it is handed, so
+    a `mention:person` name is grounded and `invention_ok` accepts it. Measured 2026-10-01 — see
+    `tests/deliver/test_a_person_card_names_a_person.py::
+    test_the_resolved_name_passes_the_invention_validator`, which asserts it rather than claiming
+    it. The grounding half of this defect was fixed when the corpus was widened; only the headline
+    half was still open, and that is what WIRING this function closes.
+
+    ⛔ Called from `build_draft`'s subject chain, LAST and only for `node_type == "person"`. On a
+    company node the quotes are its people's observations, so resolving there would rename the card
+    after whichever of them spoke first.
     """
     for q in quotes:
         if q.get("kind") == "mention:person" and q.get("name"):
@@ -802,7 +814,30 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
     #
     # The plain counterparty travels as a FACT on the anchor for exactly this reason, so the card
     # reads the name from the data rather than from a label meant for a different reader.
-    name = _fval(facts, "outreach.counterparty") or _fval(facts, "commitment.owed_to") or name
+    # ⛔ AND A PERSON NODE'S DISPLAY NAME IS AN EMAIL ADDRESS. The fix for that was written,
+    # measured, and never called.
+    #
+    # `resolved_person_name` carries its own evidence: *"35 of 38 person cards named an address in
+    # the headline. The real name was already extracted — a `mention:person` observation carries
+    # {"name": "Maria Exconde"} — but the node's display_name stayed the address, so the headline
+    # spent its 60-character budget on 'maria@alystventures.com'."* Somebody measured 38 cards,
+    # found 35 broken, wrote the resolver, and nothing ever called it.
+    #
+    # ⛔ IT GOES LAST IN THIS CHAIN, NOT FIRST. `outreach.counterparty` and `commitment.owed_to`
+    # are FACTS written by the extractor about who the reading concerns; a `mention:person` name is
+    # an observation. Putting the resolver ahead of them would let an observation override the fact
+    # that names the counterparty — so it replaces only the `or name` fallback, which is exactly
+    # the shape `resolved_person_name(quotes, fallback)` was written for.
+    #
+    # ⛔ AND THE `person` GATE IS LOAD-BEARING. On a COMPANY node the quote loader returns
+    # "observations of the people who works_at it" — this module's own comment, with the reason:
+    # *"the card names the company, and these are its people."* Resolving a name there would rename
+    # a company card after whichever of its people spoke first. On a `thread` node the quotes are
+    # that conversation's, and the subject is a conversation. The minted `outreach`/`commitment`
+    # anchors are already handled by the two facts above; extending this to them is a separate
+    # decision nobody has asked for, and it is recorded in STEP-08 rather than taken here.
+    name = (_fval(facts, "outreach.counterparty") or _fval(facts, "commitment.owed_to")
+            or (resolved_person_name(quotes or [], name) if node_type == "person" else name))
     sources = _real_sources(store, org_id, node_id)
     reason_code = signal["reason_code"]
     _lane = describe_lane(signal.get("output_lane"), signal.get("lane_reason"))

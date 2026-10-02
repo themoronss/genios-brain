@@ -15,13 +15,29 @@ from genios_engine.reason.authority import (
     AUTHORITATIVE_SIGNAL_PREDICATE,
 )
 
-# Outbound delivery to agents (GeniOS -> executor). Two flavours, one transport:
-#   • push_card_to_agents   — proactive "here's a new signal" (fired by L5 when a card is emitted).
-# Body == the /v1/signals poll projection, so push and poll are interchangeable. HMAC-SHA256 signed
-# (X-Genios-Signature). Proactive delivery is executor-agnostic and carries no execution request.
-# in the org that registered a webhook (Hermes or the client's own tool) — GeniOS never executes
-# itself. Best-effort: a slow/dead webhook is swallowed-and-logged, never blocks the caller. Uses only
-# `store.engine`, so any store (CardStore or GraphStore) works.
+# Outbound delivery to agents (GeniOS -> executor). Two flavours, one transport.
+#
+#   • push_card_to_agents    — proactive "here's a new signal". ⛔ WRITTEN, SIGNED, AND WIRED TO
+#     NOTHING. This block said "(fired by L5 when a card is emitted)" until 2026-10-01 and nothing
+#     fired it. Agents receive by POLLING — `agent_api.poll_signals` (GET /v1/signals) — and the
+#     body here IS that poll projection, so pushing would change WHO initiates, not WHAT arrives.
+#     That is why the surface works with this half unwired. Declared in `delivery_health.UNREACHED`
+#     with `agent_api.poll_signals` in `PULL_ONLY` beside it, and
+#     `tests/deliver/test_a_comment_is_not_a_measurement.py` now fails the build if any comment in
+#     this package claims a declared-uncalled function is called.
+#
+#   • push_action_to_agents  — a request to ACT, to every agent in the org that registered a
+#     webhook (Hermes or the client's own tool). ⛔ THIS BULLET WAS MISSING AND ITS TAIL WAS NOT:
+#     the line that began "in the org that registered a webhook" was the orphaned second half of a
+#     deleted bullet, so the block announced two flavours and listed one, and the leftover fragment
+#     read as a sentence about the bullet above it. The shim is deliberately FAIL-CLOSED — it
+#     raises — because an org-wide unapproved action fan-out is exactly what the delegation protocol
+#     exists to make impossible; `executive/delegation.py` is the governed path.
+#
+# GeniOS never executes itself: proactive delivery is executor-agnostic and carries no execution
+# request. HMAC-SHA256 signed (X-Genios-Signature). Best-effort — a slow or dead webhook is
+# swallowed-and-logged and never blocks the caller. Uses only `store.engine`, so any store
+# (CardStore or GraphStore) works.
 
 _log = get_logger("genios.deliver.push")
 _TIMEOUT_S = 4.0

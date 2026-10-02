@@ -496,7 +496,24 @@ def describe_decision(decision: DeliveryDecision, context: DeliveryContext) -> d
                               "reason_code": decision.reason_code,
                               "not_before": (decision.not_before.isoformat()
                                              if decision.not_before else None),
-                              "detail": dict(decision.detail)}
+                              "detail": dict(decision.detail),
+                              # ⛔ "AND THE SETTINGS BEHIND IT" — this docstring's own third
+                              # promise, unkept until 2026-10-01. The record carried the verdict and
+                              # the reason and read only `config_error` off the context, so
+                              # "it was held because quiet hours" was all it could ever say.
+                              # `admit` names the missing half in writing: "…and this tenant's
+                              # quiet hours are 21:00-08:00 Asia/Kolkata is the half that ends the
+                              # support ticket."
+                              #
+                              # ⛔ The capability was already exposed on the wrong path:
+                              # `api/delivery_routes.py` calls this on the PREVIEW endpoint, so a
+                              # dry run could show a founder their own quiet hours while the live
+                              # refusal recorded none of them.
+                              "settings": context.to_semantic_dict()}
+    # ⛔ THE FLAG STAYS SEPARATE FROM THE BLOB, and that is deliberate. This conditional key is
+    # this function's own contract; `to_semantic_dict` carries `config_error` unconditionally, and a
+    # key that is always present and usually null teaches a reader to ignore it. Two readers, two
+    # shapes, both correct — so the duplication is the cheap half of that trade.
     if context.config_error:
         record["config_error"] = context.config_error
     return record

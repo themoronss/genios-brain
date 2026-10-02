@@ -168,6 +168,57 @@ def test_a_lane_nobody_declared_is_counted_as_unrouted_not_dropped():
 
 # ── the receipt ───────────────────────────────────────────────────────────────────────────────
 
+def test_the_l5_receipt_count_is_five_and_they_are_the_measured_five():
+    """⛔ L4's OWN DOCSTRING PROMISED THIS GUARD EXISTED HERE, AND IT DID NOT.
+
+    `tests/platform/test_activation_changes_the_pass.py` argues for per-layer receipt counts
+    instead of a global total — *"the cheap fix for that is to bump the number, which is how a
+    decision gate becomes a rubber stamp"* — and ends: *"L5's own count is guarded in
+    `tests/deliver/test_nothing_dies_of_low_confidence.py`."* This file held only PRESENCE filters.
+    So the rule was stated and half-unenforced, and the sentence pointing here was stale.
+
+    ⛔ TWO -> FIVE ACROSS 2026-10-01, every one a decision rather than a bump:
+
+        the lane receipt            M13 STEP-01  (ERRORs until `0190` is applied)
+        decisions become tracked commitments                        pre-existing
+        no delivery attempt is left unsettled long enough to be ambiguous   STEP-06
+        no card outlives its own window in a live state                     STEP-10
+        a card parked for want of a channel is revived when one appears     STEP-10
+
+    ⛔ AND STEP-10 REJECTED TWO CANDIDATES FOR MEASURED REASONS, which is why this is five and not
+    seven: a delivery row with no attempt is structurally 0 while the v2 path writes nothing, and a
+    card delivered on an adapter-less channel is impossible because `outbox.py:935` parks it first.
+    **A receipt that cannot fail is not a gate.**
+
+    ⛔ SCOPED TO L5, like L4's. A sixth means something was added without a decision.
+    """
+    from genios_engine.platform import receipts as R
+
+    l5 = [r.claim for r in R.receipts(None) if r.layer == "L5"]
+    assert len(l5) == 5, f"L5 receipt count moved: {l5}"
+    assert set(l5) == {
+        "every delivered card carries a lane, or is labelled unrouted",
+        "decisions become tracked commitments",
+        "no delivery attempt is left unsettled long enough to be ambiguous",
+        "no card outlives its own window in a live state",
+        "a card parked for want of a channel is revived when one appears",
+    }
+
+
+# ⛔ A SECOND TEST WAS WRITTEN HERE, RAN, AND WAS DELETED — recorded because the reason is the
+# useful part. It asserted that this file pins no GLOBAL receipt total, by scanning its own module
+# source for `len(receipts(None))`. **It failed on its own assertion string**: the forbidden text
+# appears in the `assert` line that forbids it, and excluding the line by value is the exact
+# blunt-grep family that has bitten this programme seventeen times.
+#
+# It cannot be written in that shape, and it does not need to be. The real guard is the count above,
+# which counts L5's receipts ONLY — so a global literal added here would not make it pass, it would
+# simply be a second, weaker assertion beside a correct one. L4's docstring already carries the
+# argument, and the full suite already caught the one time somebody (me, in STEP-06) added a global
+# literal anyway. **A convention is enforced by the guard that implements it, not by a test that
+# greps for its own prose.**
+
+
 def test_a_card_with_no_lane_at_all_has_a_receipt():
     from genios_engine.platform import receipts as R
 
