@@ -59,6 +59,14 @@ no receipt** — the top of the ranked gap list, left as a measurement rather th
 invented claim. What is left in
 Layer 7 is six PARTLY rows whose residues are all decisions, listed below.
 
+⛔⛔ **AND `api/` IS AUDITED (2026-10-03)** — step `1.1` of `21-PLAN-TO-PRODUCTION.md`. ⛔ **Eleven
+candidates raised, eleven retired**: every one died on reading the code or the declaration beside
+it, and **two of the three columns I called `api/` worst on were my own mis-signal** (25 route
+handlers are decorator-excluded by design). ✅ The survivor: **`learning_objects` is write-once
+except `state` and nothing asserted it** — now guarded both ways, with **no receipt deliberately**,
+because the data cannot answer it without reimplementing `semantic_hash` in SQL.
+**Next: `1.2 platform/`** — 12,651 lines, 1 receipt, 29 tables written, 25 uncovered.
+
 ### ⛔ New on Rohit's list, out of `S10`
 
 | | What, and why it is not mine |

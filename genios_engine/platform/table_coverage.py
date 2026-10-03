@@ -280,6 +280,98 @@ def _statements(source: str, known: frozenset[str]) -> tuple[tuple[str, int], ..
     return tuple(out)
 
 
+#: ⛔⛔ TABLES WHOSE ROWS ARE WRITE-ONCE EXCEPT FOR NAMED COLUMNS —
+#: `{table: (mutable columns, why, mover)}`.
+#:
+#: ⛔ WHY THIS IS A GUARD AND NOT A RECEIPT. The claim is about what the CODE may do, and the data
+#: cannot answer it: a value rewritten in place leaves no trace unless the hash beside it is
+#: recomputed, and recomputing `semantic_hash` in SQL would mean reimplementing the canonical
+#: serialisation in a second language. ⛔ *A gate derived from an invented claim is a gate nobody
+#: reads* — so this is a build-time guard and the absence of a receipt is deliberate, the same
+#: decision the `context/` audit took for `graph_nodes`.
+#:
+#: ⛔ `learning_objects` IS THE WHOLE LEARNING LEDGER'S FOUNDATION, AND NOTHING GUARDED IT.
+#: `feedback/publisher.persist` states the contract in its first line — *"Insert an **immutable**
+#: proposal at `state`"* — and keeps it: it never updates an existing row, returning `reevaluated`
+#: or `unchanged` instead, so an object that reached a later state can never be reopened. Measured
+#: 2026-10-03: the engine holds exactly TWO `update learning_objects` statements,
+#: `api/learning_routes.py` (human approval) and `feedback/org_rule_ingest.py` (discovery), and
+#: **both set only `state`**. Nothing touches `proposed_value`, `semantic_hash`, `evidence` or
+#: `visibility`.
+#:
+#: ⛔ THE DAY SOMEBODY WRITES `set proposed_value = …` — to "fix" a bad proposal, which is the
+#: obvious thing to want — every downstream guarantee goes with it: `semantic_hash` is content-
+#: derived, `learning_transitions` points at a row that no longer says what it said when the
+#: transition was logged, and the Atlas's *"immutable proposal storage"* becomes a sentence about
+#: the past. **That is the whole reason this table exists.**
+WRITE_ONCE_TABLES: dict[str, tuple[frozenset[str], str, str]] = {
+    "learning_objects": (
+        frozenset({"state"}),
+        "⛔ `publisher.persist`'s own first line: *'Insert an **immutable** proposal at `state`'*. "
+        "The value columns are the proposal; `state` is the lifecycle, and `learning_transitions` "
+        "records every move of it. Two updaters, both state-only: `api/learning_routes` (a human "
+        "approving or rejecting a `human_review` object, under `for update`, 409 if the state is "
+        "anything else) and `feedback/org_rule_ingest` (the discovery path's own lifecycle)",
+        "MOVES WHEN a proposal legitimately needs a mutable field — ⛔ and then the field is named "
+        "here with its reason, never added by widening this set to make a build pass"),
+}
+
+
+def set_columns(sql: str, table: str) -> frozenset[str]:
+    """The columns an ``update <table> set …`` statement assigns. Pure, so it can be tested.
+
+    ⛔ THE IDENTIFIER FILTER IS WHAT MAKES THIS SAFE, AND IT IS LOAD-BEARING. The clause is split
+    on every comma, so `set active = false, expires_at = least(expires_at, :at)` — which
+    `feedback/reset.py` really writes — yields a third fragment, `:at)`. The `fullmatch` below
+    drops it, because anything following a comma inside a call is an expression fragment and never
+    `identifier =`. That case is pinned by a parametrised test, so removing the filter fails.
+
+    ⛔ A PAREN-DEPTH SPLIT WAS HERE AND WAS REMOVED. Its mutation **survived**: turning the
+    depth-aware split back into a plain one changed no answer, because the filter catches the same
+    wreckage. *A mutation that survives because something else catches it is a guard nobody is
+    checking* — and a branch whose mutation cannot fail is complexity, not safety. The filter is
+    the safeguard, so the filter is what the tests assert.
+
+    ⛔ And it is a FUNCTION rather than a loop body because the first guard over it reimplemented
+    the parse and asserted against its own copy — which is how a test ends up proving the thing it
+    duplicated rather than the thing that ships. *One implementation, tested directly.*
+    """
+    out: set[str] = set()
+    for match in re.finditer(rf"update\s+{re.escape(table)}\s+set\s+(.+?)(?:\s+where\s|$)",
+                             " ".join(sql.lower().split())):
+        for piece in match.group(1).split(","):
+            name = piece.split("=")[0].strip()
+            if re.fullmatch(r"[a-z_][a-z_0-9]*", name):
+                out.add(name)
+    return frozenset(out)
+
+
+def update_columns(table: str) -> dict[str, frozenset[str]]:
+    """``{file: {column, …}}`` for every ``update <table> set …`` in the engine and scripts."""
+    known = _known_tables()
+    out: dict[str, set[str]] = {}
+    for rel, source in _sources():
+        try:
+            statements = _statements(source, known)
+        except SyntaxError:                        # pragma: no cover - the tree parses
+            continue
+        for blob, _unresolved in statements:
+            columns = set_columns(blob, table)
+            if columns:
+                out.setdefault(rel, set()).update(columns)
+    return {f: frozenset(c) for f, c in out.items()}
+
+
+def illegal_column_updates() -> tuple[tuple[str, str, str], ...]:
+    """``(table, file, column)`` for every update of a write-once table outside its allowlist."""
+    out: list[tuple[str, str, str]] = []
+    for table, (mutable, _why, _mover) in WRITE_ONCE_TABLES.items():
+        for file, columns in update_columns(table).items():
+            for column in sorted(columns - mutable):
+                out.append((table, file, column))
+    return tuple(out)
+
+
 def _sources() -> tuple[tuple[str, str], ...]:
     out: list[tuple[str, str]] = []
     for root in _ROOTS:
@@ -473,6 +565,7 @@ def written_without_a_receipt(package: str) -> tuple[tuple[str, int], ...]:
 
 
 __all__ = ["NAME_CONSTANT_TABLE_SITES", "RETRACTED_UNREAD_WRITES", "UNREAD_WRITES", "WRITE_VERBS", "deletion_list",
-           "readers_of", "stale_unread_declarations", "table_usage", "tables_with_a_receipt",
+           "illegal_column_updates", "readers_of", "set_columns", "stale_unread_declarations",
+           "table_usage", "tables_with_a_receipt", "update_columns",
            "resolution", "undeclared_unread_writes", "writers_of", "written_and_unread",
            "written_without_a_receipt"]

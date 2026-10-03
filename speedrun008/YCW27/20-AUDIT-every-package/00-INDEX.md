@@ -18,7 +18,7 @@ because its audit has a findings document beside it.
 
 | package | files | lines | writers | ⛔ tables, no receipt | declared silences | ⛔ no test names it |
 |---|---:|---:|---:|---:|---:|---:|
-| ⛔⛔ [`api`](api.md) | 44 | 19,498 | 20 | **28** | **2** | **11** |
+| ⛔⛔ [`api`](api.md) | 44 | 19,498 | 20 | **28** | 2 ✅ | 11 |
 | [`context`](../layer-3-context-graph/05-AUDIT-context-file-by-file.md) | 124 | 50,885 | 37 | 33 | 23 | 2 |
 | ⛔ [`reason`](reason.md) | 121 | 41,363 | 21 | 29 | 14 | **14** |
 | [`capture`](capture.md) | 158 | 47,184 | 25 | 19 | 7 | 1 |
@@ -60,9 +60,26 @@ platform   12,651 lines · ⛔ 1 receipt  · 29 tables written · 25 with no rec
 contracts  14,617 lines ·    0 receipts · ✅ 0 tables written   ← the control
 ```
 
-⛔ **`api/` is the least-guarded package in the product on three columns at once** — most
-unreceipted tables, fewest declared silences, and the most modules no test names. And it is the
-layer a customer actually touches.
+⛔ **`api/` has the most unreceipted tables in the product, and it is the layer a customer
+actually touches.**
+
+⛔⛔ **CORRECTED 2026-10-03, AND THE CORRECTION IS THE AUDIT'S FIRST FINDING.** This paragraph said
+`api/` was worst *"on three columns at once — most unreceipted tables, fewest declared silences, and
+the most modules no test names."* ⛔ **Two of those three were my own mis-signal:**
+
+* **declared silences = 2 is CORRECT AND COMPLETE, not thin.** `api_health.py` explains why: **25
+  route handlers are deliberately excluded**, because a `@router.get` function is wired by a
+  decorator and has no Python caller by design, and `tests/executive/test_a_call_resolved_by_name_is_not_a_call.py`
+  pins the exclusion. Auth dependencies go too — `require_session_seat` has **8** `Depends()`
+  references. ⛔ And the two entries it does hold say something precise together: **the policy
+  enforcement path does not exist** — `approval_routes.enqueue` and `policy_routes.evaluate`, one
+  honest about it in the future tense and one not.
+* **`no test names it` = 11 is a reading list, not a defect list** — the caveat below the table
+  says so, and when this column ran for `context/` **both** of its rows turned out to be live and
+  reached.
+
+⛔ *A column that mis-signals for one package's wiring style is a measurement that needs its
+caveat read before its number is quoted.* The unreceipted-tables column is the one that holds.
 
 ⛔ **`contracts/` is the control that makes the receipt column readable**: 14,617 lines, zero
 receipts, and **zero tables written**. It holds no state, so its zero is correct rather than a gap.

@@ -976,3 +976,17 @@ number is meaningless without its source set* · *never pipe a suite run through
 | **for Harsh** | the handoff said *"five items"* and has **eight**; it now opens with a do-this-in-this-order table and names the three that are read-only or one command |
 | **for Rohit** | `R1`–`R15`, `D1`/`D2`, `P` — stable ids, introduced in the plan and mirrored into `19-PENDING`, because the same item was named four ways across four files |
 | **outcome** | 94 affected tests green · `resolution()` 639 of 2,872 (0.222) · plan, audit index and ten new audit pages written · ⛔ **no source behaviour changed** — one report generator was corrected |
+
+
+---
+
+## 1.1 · the `api/` audit — eleven candidates, eleven retirements, one real finding
+
+| | |
+|---|---|
+| **why first** | `20-AUDIT-every-package` ranked on *tables written that no receipt asks anything of*, and `api/` led with **28** over a package with **zero receipts**, in the layer a customer touches. ⛔ It never appeared in `S7`'s ranking: a ratio with a zero denominator does not sort |
+| ⛔⛔ **eleven retirements** | `decisions` (the route binds the envelope it returned) · `approvals_queue` and `policy_routes.evaluate` (**already declared**, and the declaration is sharper than the candidate) · `learning_objects`' third writer (state only, `for update`, 404+409) · `api_keys`' four writers · `card_events`' eight · `agent_registry` (left as a measurement) · ⛔⛔ **`api/`'s "thin" declarations — my own mis-signal, 25 route handlers are decorator-excluded by design** · the zero-receipts filing (reasoned) · the two "no test names it" columns |
+| ✅ **the survivor** | **`learning_objects` is write-once except `state`, and nothing asserted it.** `publisher.persist` states it in its first line and keeps it; the engine holds exactly two updates and both set `state` |
+| **the repair** | `platform/table_coverage.WRITE_ONCE_TABLES` + `illegal_column_updates()`, guarded both ways — a value column fails **and** a third updater fails. The producer's half is behavioural, with a double that records every statement. ⛔ **No receipt, deliberately**: the data cannot answer it without reimplementing `semantic_hash` in SQL |
+| ⛔ **one mutation survived** | a paren-depth split whose removal changed no answer, because an identifier filter catches the same wreckage. ⛔ **The branch was deleted and the filter named as the safeguard** — a branch whose mutation cannot fail is complexity |
+| **outcome** | 22 tests · **10/10 mutations caught** · one audit-index correction · full suite **15,242 passed · 1,067 skipped · 152 xfailed · 0 failed** |

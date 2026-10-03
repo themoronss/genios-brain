@@ -65,6 +65,16 @@ UNREACHED: dict[str, tuple[str, str]] = {
     # repo's SQL and the migrations and answer questions about a FIXED checkout — identical on
     # every run, touching no production data. The half that only production can answer is a
     # RECEIPT: *"no live row points at a node a merge absorbed"*.
+    "table_coverage.illegal_column_updates": (
+        "⛔ Every update of a WRITE-ONCE table outside its declared allowlist. Returns `()` and "
+        "the emptiness is load-bearing: `learning_objects` holds the whole learning ledger's "
+        "immutable proposals, `publisher.persist`'s first line states the contract — *'Insert an "
+        "**immutable** proposal at `state`'* — and until 2026-10-03 **nothing asserted it**. The "
+        "engine has exactly two `update learning_objects` statements and both set only `state`",
+        "⛔ MOVES WHEN a proposal legitimately needs a mutable field, which is a contract decision. "
+        "A build-time guard rather than a receipt on purpose: a value rewritten in place leaves no "
+        "trace unless `semantic_hash` is recomputed, and recomputing it in SQL would mean "
+        "reimplementing the canonical serialisation in a second language"),
     "table_coverage.undeclared_unread_writes": (
         "The positive half of `UNREAD_WRITES` — a package writing a table nothing reads, "
         "undeclared. ⛔ The audit's first pass named SIX and nine survived three broadenings of "

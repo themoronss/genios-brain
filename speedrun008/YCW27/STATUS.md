@@ -15,6 +15,7 @@
 
 | When | What | Where |
 |---|---|---|
+| **2026-10-03** | ⛔⛔ **`api/` AUDIT DONE — 11 candidates raised, 11 RETIRED, and the one finding was never guarded.** ⛔ Every candidate died on reading the code or the declaration beside it: `decisions` is written by the route that **returned** the envelope · `approvals_queue` and `policy_routes.evaluate` are **already declared** (*"the policy enforcement path does not exist"*) · `api/learning_routes` only updates `state`. ⛔⛔ **Two of the three columns I called `api/` worst on were my own mis-signal** — 25 route handlers are decorator-excluded by design. ✅ The survivor: **`learning_objects` is write-once except `state` and NOTHING asserted it** — `publisher.persist`'s own first line says *"Insert an **immutable** proposal"*. 22 tests · 10/10 mutations | [`22-AUDIT-api-eleven-candidates-eleven-retirements.md`](22-AUDIT-api-eleven-candidates-eleven-retirements.md) |
 | **2026-10-03** | ⛔⛔ **THE PLAN TO PRODUCTION, AND THE AUDIT OF ALL ELEVEN PACKAGES.** ⛔ The crux measured: everything is **built**, almost nothing is **live**, and the three things between them are **`H1` migrations · `R1` the spend limit · `R2` activation** — **none of them mine**. ⛔⛔ `api/` is the least-guarded package in the product on THREE columns at once (19,498 lines · 28 unreceipted tables · 2 declared silences · 11 modules no test names), and it never appeared in `S7`'s ranking because a ratio with a zero denominator does not sort. ✅ The original brief's eight VERIFIED-MISSING items are **closed** — 7 built, 1 declared unnecessary. Seven checkable conditions now define *production level*, and ⛔ **by them nothing in the product qualifies today** | [`21-PLAN-TO-PRODUCTION.md`](21-PLAN-TO-PRODUCTION.md) |
 | **2026-10-02** | ⛔⛔ **L3 `context/` COVERAGE AUDIT DONE — and it retracted SIX of its own findings.** `S7`'s number put `context/` last (2 receipts / 50,885 lines); ⛔ the headline was **wrong** — 306 test files import it and both receipts are correctness ones. The real gap is that nothing checks the **44 tables it writes** in production. ⛔⛔ The largest retraction: **77 org-scoped tables that read as a data-retention hole and are not one** — `/reset` deliberately keeps the account, and ACCOUNT erasure is foreign keys plus an existing receipt. **9 write-only tables declared · receipt 42 (merge) · 37 tests · 11/11 mutations** | [`layer-3-context-graph/04-AUDIT-PLAN-the-worst-covered-package.md`](layer-3-context-graph/04-AUDIT-PLAN-the-worst-covered-package.md) |
 | **2026-10-02** | ⛔⛔ **L6 `S10` DONE — `M14.C2` IS COMPLETE, 10 of 10.** The three gaps nobody had measured. ⛔⛔ **0 of 11 Atlas Layer 7 gaps now unmeasured — and none of the three became CLOSED**: each has one clause left and all three are Rohit's. ⛔⛔ `#3`'s real finding is a TRAP — `recommendation_learning`'s durable ADAPTIVE path is unreachable by **arithmetic**, and the obvious repair springs it. ⛔ `#5`'s enforcement is **proven**; the rendered surface is **unreached**. ⛔ `#6`'s reset **propagates into delivery**, uncredited by the Atlas. **4 of my own guards needed repair.** 69 tests · 27/27 mutations | [`layer-6-learning/STEP-S10-DONE-the-three-unmeasured-gaps.md`](layer-6-learning/STEP-S10-DONE-the-three-unmeasured-gaps.md) |
@@ -37,7 +38,9 @@
 ```
 full suite   15,220 passed · 1,067 skipped · 152 xfailed · 0 failed      (14,534 when YCW27 began)
 ⛔ built≠live  5 migrations unapplied · no domain activated · no card since 25 Sep 11:09 UTC
-⛔ coverage    141 of 183 written tables have NO receipt · api/ is the worst (28 of 42)
+⛔ coverage    141 of 183 written tables have NO receipt · api/ leads it (28 of 42)
+✅ api/        AUDITED 2026-10-03 · ⛔ 11 candidates, 11 retirements · write-once guard added
+⛔ next up     1.2 platform/ — 12,651 lines, 1 receipt, 29 tables written, 25 uncovered
 L6 M14.C2    ⛔⛔ COMPLETE — 10 of 10 DONE · 0 failed at every step
 Atlas L7     11 gaps: 5 CLOSED · 6 PARTLY · ⛔ 0 LIVE · ⛔⛔ 0 UNMEASURED
 scorecard    08-ATLAS-SCORECARD-L1-to-L6.md · ⛔ 56 Atlas claims verified or refuted
@@ -4079,3 +4082,75 @@ worked twice or dropped silently.
 | ⛔ **print the raw terms beside the ratio** — a ratio hides what its denominator cannot express |
 | ⛔ **define "production level" before claiming it**, or it means "work until it feels done" |
 | **a link that may not resolve is a stale pointer** |
+
+
+---
+---
+
+## ✅⛔⛔ 2026-10-03 · API AUDIT BUILT — eleven candidates, eleven retirements, one real finding
+
+```
+api/        44 files · 19,498 lines · 20 writers · 42 tables · ⛔ 28 with no receipt
+new tests   22 · mutations 10 caught · 0 survived
+⛔ 11 candidates raised · 11 retired · 1 survived
+full suite  15,242 passed · 1,067 skipped · 152 xfailed · 0 failed
+```
+
+### ⛔⛔ Eleven retirements IS the result
+
+| | Candidate | Why it died |
+|---|---|---|
+| `decisions` written only by an API route, read by `executive/` | ✅ `_persist_decision_envelope` binds **the envelope the route returned**, content-addressed, fail-closed on collision. The API is the correct writer |
+| `approvals_queue` — a queue nothing consumes | ✅ **already declared**, and more sharply than my candidate: *"the policy enforcement path does not exist, so 'called from' is a sentence about a future"* |
+| `learning_objects` has three writers | ✅ `api/learning_routes` only updates `state`, under `for update`, 404 + 409 gated |
+| `api_keys` has four writers · `card_events` has eight | ✅ a credential table's lifecycle, and an append-only event log |
+| ⛔⛔ **`api/`'s 2 declared silences are thin** | ⛔ **MY OWN MIS-SIGNAL.** 25 route handlers are excluded **by design** — a decorator-wired function has no Python caller, pinned by a test. `require_session_seat` has 8 `Depends()` references |
+| `api/` has zero receipts | ⚠️ the erasure receipt imports `RETAINED_AFTER_ERASURE` **from `api/account_routes`** and is filed under `platform` **with its reason written** |
+| the 11 modules no test names | ⚠️ the column does not say untested, and its own caveat says so |
+
+> ⛔ **A coverage column mis-signals for a package whose functions are wired by decorators and
+> dependencies rather than calls.** The unreceipted-tables column is the one that holds;
+> `00-INDEX.md` is corrected in place.
+
+### ⛔⛔ The survivor: an immutable table nothing called immutable
+
+`publisher.persist`'s first line is the contract — *"Insert an **immutable** proposal at `state`"* —
+and it keeps it: an existing row is never updated, only reported `reevaluated` or `unchanged`.
+
+```
+every `update learning_objects` in the engine:
+  api/learning_routes.py        set state = :st
+  feedback/org_rule_ingest.py   set state = :st
+⛔ touching proposed_value / semantic_hash / evidence / visibility:  NONE
+⛔ tests asserting it:                                              NONE
+```
+
+⛔ The day somebody writes `set proposed_value = …` to "fix" a bad proposal, `semantic_hash` stops
+describing its row and every transition already logged against it points at something else.
+`WRITE_ONCE_TABLES` + `illegal_column_updates()` guard it **both ways** — a value column fails, and
+**a third updater fails even if it only sets `state`**.
+
+⛔ **The producer's half is behavioural, with a double that RECORDS what it was asked to run** — a
+double that only checked the return value could not see a `persist` that quietly rewrote a row.
+
+⛔ **And there is deliberately NO receipt**: a value rewritten in place leaves no trace unless
+`semantic_hash` is recomputed, and recomputing it in SQL means reimplementing the canonical
+serialisation in a second language. Same decision as `graph_nodes`.
+
+### ⛔ One mutation survived, and the answer was to DELETE the code
+
+`M6` reverted a paren-depth-aware comma split to a plain one and nothing failed — an identifier
+filter drops the wreckage either way. ⛔ **A branch whose mutation cannot fail is complexity, not
+safety.** The branch is gone, the filter is named as the safeguard, and both mutations against the
+filter are now caught. **Second time in two days the honest answer was deletion.**
+
+### Doctrine
+
+| Rule |
+|---|
+| ⛔ **eleven retirements is a result, not a failed audit** |
+| ⛔ **a branch whose mutation cannot fail is complexity — delete it and name the real safeguard** |
+| ⛔ **a test that reimplements the parser proves the copy, not the code** |
+| ⛔ **a double that only checks the return value cannot see a quiet write** |
+| ⛔ **no receipt is a decision too**, written down beside the claim |
+| **a third writer is a finding even when it writes the right column** |
