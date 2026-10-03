@@ -83,6 +83,13 @@ deleted**, with the reasoning kept on every page. ⛔ Two live modules with no t
 work: `api/identity_routes.py` and `reason/team/away.py` (**`1.3b`**). **Next: `1.4 capture/`**, then
 **`2.1` Atlas L2's nine claims** — the largest remaining block.
 
+✅⛔ **AND `1.3b` IS DONE (2026-10-03)** — the two modules the deleted naming column left behind.
+⛔⛔ **One of them was guarding health information with no test**: `reason/team/away.py` promises
+*"no leave reason ever leaves this module"* and maps `sick` to `leave`, and a single line changed
+would have told every seat why a colleague is off. ⛔ The other, `api/identity_routes.py`, had an
+untested gate on a **destructive** merge. 32 tests, 17/17 mutations. ⛔ Not on anybody's list — both
+are closed. **Next: `1.4 capture/` or `2.1` Atlas L2's nine claims.**
+
 ### ⛔ New on Rohit's list, out of `S10`
 
 | | What, and why it is not mine |

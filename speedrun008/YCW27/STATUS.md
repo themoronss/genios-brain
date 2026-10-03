@@ -15,6 +15,7 @@
 
 | When | What | Where |
 |---|---|---|
+| **2026-10-03** | ⛔⛔ **`1.3b` DONE — and one of the two untested modules was guarding HEALTH INFORMATION.** `reason/team/away.py` promises in its own docstring *"no leave reason ever leaves this module — the `sick` kind is reported as `leave`"*, and **nothing asserted it**: one line changed, or one new kind unmapped, and every seat learns why a colleague is off. ⛔ `api/identity_routes.py`'s node-set gate is the only thing stopping a human merging two nodes **no proposal names** — a rewrite of every fact and edge about them. ⛔ The test asserts the merge **did not happen**, not that a 422 came back: moving the merge above the gate fails four tests while still returning 422. 32 tests · **17/17 mutations** | [`25-STEP-1.3b-two-untested-modules-and-one-was-health-data.md`](25-STEP-1.3b-two-untested-modules-and-one-was-health-data.md) |
 | **2026-10-03** | ⛔⛔ **`reason/` AUDIT DONE — 20 candidates, 20 RETIRED, 0 receipts, and the finding was in the AUDIT'S OWN MEASUREMENT.** ⛔ Every derivable claim was already enforced: `signals`' *"byte-identical bindings"* is a partial unique index · 16 of 23 reasoning units ARE exercised by `parametrize(ALL_UNITS)` · a suppression log IS read by `executive/explain`. ⛔⛔ **The *"no test names it"* column was wrong 19 of 33 times across three audits, six repairs each over-corrected the other way, and the guard written FOR it named two functions in its own docstring — making the module it asserted was untested read as named. DELETED**, with the reasoning in every page and a guard against all six heuristics returning | [`24-AUDIT-reason-the-column-that-had-to-go.md`](24-AUDIT-reason-the-column-that-had-to-go.md) |
 | **2026-10-03** | ⛔⛔ **`platform/` AUDIT DONE — 15 candidates, 15 RETIRED, and the survivor is a park the health check EXCLUDES BY CONSTRUCTION.** `warm_lane` sets `parked_at` for a row whose attempts ran out — the schema says *"parked for a human"* — and every reader uses the column only as an exclusion: `_OPEN`, the backlog count, the staleness warning. ⛔⛔ **Nothing selects a parked row, the prune never removes one, so a stuck tenant reports a CLEAN lane and the invisible set grows.** Receipt **43**, predicate DERIVED from `warm_lane._OPEN`. ⛔ Fifteenth retirement was mine, five minutes old: Atlas `L2-02` is **declared** in `LINEAGE_UNPROTECTED`, and its mover — *"the third connector"* — is now a one-line query (`H8.5`) | [`23-AUDIT-platform-the-park-the-health-check-excludes.md`](23-AUDIT-platform-the-park-the-health-check-excludes.md) |
 | **2026-10-03** | ⛔⛔ **`api/` AUDIT DONE — 11 candidates raised, 11 RETIRED, and the one finding was never guarded.** ⛔ Every candidate died on reading the code or the declaration beside it: `decisions` is written by the route that **returned** the envelope · `approvals_queue` and `policy_routes.evaluate` are **already declared** (*"the policy enforcement path does not exist"*) · `api/learning_routes` only updates `state`. ⛔⛔ **Two of the three columns I called `api/` worst on were my own mis-signal** — 25 route handlers are decorator-excluded by design. ✅ The survivor: **`learning_objects` is write-once except `state` and NOTHING asserted it** — `publisher.persist`'s own first line says *"Insert an **immutable** proposal"*. 22 tests · 10/10 mutations | [`22-AUDIT-api-eleven-candidates-eleven-retirements.md`](22-AUDIT-api-eleven-candidates-eleven-retirements.md) |
@@ -45,7 +46,8 @@ full suite   15,220 passed · 1,067 skipped · 152 xfailed · 0 failed      (14,
 ✅ platform/   AUDITED 2026-10-03 · ⛔ 15 candidates, 15 retirements · receipt 43 · 1 → 2 receipts
 ✅ reason/     AUDITED 2026-10-03 · ⛔ 20 candidates, 20 retirements, 0 receipts — and the
              audit's own naming column DELETED for being wrong 19 of 33 times
-⛔ next up     1.3b two live modules with no test · then 1.4 capture/ · then 2.1 Atlas L2's nine
+✅ 1.3b        DONE 2026-10-03 · ⛔ a health-data privacy transformation had no test
+⛔ next up     1.4 capture/ (19 unreceipted, 158 files) · or 2.1 Atlas L2's nine — the biggest
 L6 M14.C2    ⛔⛔ COMPLETE — 10 of 10 DONE · 0 failed at every step
 Atlas L7     11 gaps: 5 CLOSED · 6 PARTLY · ⛔ 0 LIVE · ⛔⛔ 0 UNMEASURED
 scorecard    08-ATLAS-SCORECARD-L1-to-L6.md · ⛔ 56 Atlas claims verified or refuted
@@ -4330,3 +4332,56 @@ row.*
 | ⛔ **a re-export is not a definition** · **a name that is not distinctive is not evidence** |
 | ⛔ **an index over generated pages is an addition, not a measurement** |
 | **twenty retirements and no receipt is a result** |
+
+
+---
+---
+
+## ✅⛔⛔ 2026-10-03 · 1.3b BUILT — two untested modules, and one was health information
+
+```
+new tests   32  (18 + 14) · mutations 17 caught · 0 survived
+full suite  15,324 passed · 1,067 skipped · 152 xfailed · 0 failed
+```
+
+### ⛔⛔ `team_away` promised health information never leaves it, and nothing checked
+
+> *"**No leave reason ever leaves this module**: windows are reported as who + when; the `sick`
+> kind is reported as `leave`."* · `_PUBLIC_KIND = {"sick": "leave"}` — *"`sick` is health
+> information → reported as leave."*
+
+⛔ A one-line change to that dict, or a kind added to `AVAILABILITY_KINDS` and not mapped, tells
+every seat in the org why a colleague is off. ⛔ **The emitted vocabulary is now DERIVED** from the
+contract, with one parametrised case per kind — so the newest kind is covered without an edit. And
+the mapping must **transform, not suppress**: a dropped window hides that somebody is away at all.
+
+⛔ No database: the collaborators are module-level imports, and the doubles return the **real**
+`AvailabilityWindow` and `Person` dataclasses, so a renamed field breaks the test rather than
+passing it.
+
+### ⛔ `identity_routes` — a destructive operation whose gate had no test
+
+> *"Merging is destructive (it rewrites who every fact and edge is about)."*
+
+A human confirming a proposal about `A` and `B` may send a body naming `A` and `C`, and one line
+stops it. ⛔⛔ **The test asserts `apply_merge` was never called, not that a 422 came back** — a gate
+placed *after* the act still returns the right status. The mutation proves it: moving the merge
+above the gate fails **four** tests while the response stays 422.
+
+### ⛔ And one of my own tests was theatre
+
+`test_a_row_carries_only_who_and_when` set the field it was about with
+`object.__setattr__(...) if hasattr(...) else None` — an expression that asserted nothing. It now
+builds a window that really carries a cover and checks the fixture carries it **before** checking
+the row does not.
+
+### Doctrine
+
+| Rule |
+|---|
+| ⛔⛔ **assert the destructive call did not happen, not that an error was returned** |
+| ⛔ **derive the vocabulary from the contract** — a hand-written list stops covering the newest member |
+| ⛔ **a privacy transformation must transform, not suppress** |
+| ⛔ **a double returns the real dataclass** — a stand-in cannot fail the way a renamed field fails |
+| ⛔ **a test that cannot observe the thing it names proves nothing** |
+| **two modules that survived six heuristic repairs and a hand check were worth testing; the other nineteen were not** |

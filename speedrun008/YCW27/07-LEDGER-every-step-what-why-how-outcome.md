@@ -1020,3 +1020,17 @@ number is meaningless without its source set* · *never pipe a suite run through
 | ⛔ **a second drift** | `00-INDEX.md` is hand-written over generated pages and kept three stale `platform/` numbers. A guard now compares every row with its page and fails if a row stops parsing |
 | **what survived** | two live modules with no test — `api/identity_routes.py` (five routes) and `reason/team/away.py` — named in the plan as `1.3b` rather than left as table rows |
 | **outcome** | 26 tests · two guards · receipts unchanged at **43** · full suite **15,292 passed · 1,067 skipped · 152 xfailed · 0 failed** |
+
+
+---
+
+## 1.3b · the two untested modules — and one was guarding health information
+
+| | |
+|---|---|
+| **why these two** | they survived all six repairs to the audit's naming column **and** a hand check. The other nineteen entries were false |
+| ⛔⛔ **the finding** | `reason/team/away.py` promises *"no leave reason ever leaves this module — the `sick` kind is reported as `leave`"* and **nothing asserted it**. One line changed, or one new `AVAILABILITY_KINDS` member unmapped, and every seat learns why a colleague is off |
+| **how it is guarded** | ⛔ the emitted vocabulary is **derived** from `AVAILABILITY_KINDS`/`ABSENT_KINDS`/`_PUBLIC_KIND`, one parametrised case per kind, so the newest kind is covered without an edit · the mapping must **transform, not suppress** · the row carries only who and when, proved with a fixture that really holds a `cover` |
+| ⛔ **the second module** | `api/identity_routes.py`'s node-set gate is the only thing stopping a human merging two nodes **no proposal names** — *"it rewrites who every fact and edge is about"*. ⛔ **The test asserts `apply_merge` was never CALLED**, because a gate placed after the act still returns 422; the mutation that moves the merge above the gate fails four tests |
+| ⛔ **one test of mine was theatre** | it set the field under test with a no-op expression. Repaired to assert the fixture carries it before asserting the row does not |
+| **outcome** | 32 tests · **17/17 mutations caught** · no receipts (neither claim is answerable from data) · full suite **15,324 passed · 1,067 skipped · 152 xfailed · 0 failed** |
