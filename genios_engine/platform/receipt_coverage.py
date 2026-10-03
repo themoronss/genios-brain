@@ -51,6 +51,15 @@ RECEIPT_PACKAGE: dict[str, tuple[str, str]] = {
     # ── capture/ · read + normalise reality ────────────────────────────────────────────────
     "no sync cursor is ahead of the clock": (
         "capture", "A cursor past the clock means the connector will skip real events"),
+    "no warm-lane row is parked where nothing can see it": (
+        "platform",
+        "⛔ `platform/warm_lane.py` parks a row whose attempts ran out — the schema comments it "
+        "*'parked for a human, never retried'* — and then every reader excludes it: `_OPEN` is "
+        "`done_at is null and parked_at is null`, `api/routes`'s backlog count uses the same "
+        "predicate, `housekeep` warns on the OPEN backlog and prunes only finished rows. ⛔ The "
+        "health signal does not merely miss these rows, it excludes them by construction, so a "
+        "stuck tenant reports a clean lane. Filed under `platform` because the lane, the "
+        "predicate and the park are all `warm_lane.py`'s"),
     "the parked queue is not a black hole": (
         "capture", "Parked events must be reviewable; `capture/` owns the park and the triage"),
     "every drop we might be wrong about can still be reviewed": (

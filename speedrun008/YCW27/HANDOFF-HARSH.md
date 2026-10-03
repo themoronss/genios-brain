@@ -12,7 +12,7 @@ being touched. *A list edited one line at a time accumulates the lines nobody ed
 |---|---|---|---|
 | **1** | 🔴 **`H1`** apply `0186`–`0190` | **deployment**, one window | ⛔ **`insert_card` FAILS ON WRITE without `0190`** right now. Masked only because nothing is routing. ⛔ **Do not apply `0190` without `0189`** — one adds the lane column the other's card write needs, and clearing one alone turns a silent outage into a loud one |
 | **2** | 🔴 **`H2`** the OCR stack | **deployment** — `pytesseract`+`Pillow` in requirements **and** `tesseract-ocr` apt in the image, **both together** | 1,696 rows become readable; an L1 receipt can go green. Either half alone does nothing |
-| **3** | ⛔ **`H8`** three read-only checks + one decision | ⛔ **~2 minutes of SQL, no deployment** | ⛔ **This is the cheapest item on the page and the only one that tells us what production actually HOLDS.** Nine write-only tables' size · two receipts that have never run anywhere · whether `merge_history` is empty |
+| **3** | ⛔ **`H8`** **four** read-only checks + one decision | ⛔ **~3 minutes of SQL, no deployment** | ⛔ **This is the cheapest item on the page and the only one that tells us what production actually HOLDS.** Nine write-only tables' size · two receipts that have never run anywhere · whether `merge_history` is empty |
 | **4** | ⛔ **`H7`** 27 learning tests that have never run | **one command** where a DB exists | ⛔ *A skip is not a pass.* Any failure is a **real finding**, not a regression |
 | **5** | ⛔ **`H6`** `tests/test_delivery_spine.py` | **one command** where a DB exists | gives `spine.recover_expired_claims` its **first tests ever** |
 | **6** | 🟠 **`H3`** backfill 60 → 365 days | config | benchmark prompts P3/P4 become answerable at all |
@@ -483,10 +483,14 @@ depending on the answer.
 ---
 ---
 
-# H8 · 🟠 Three questions only the database can answer, and one decision that is yours
+# H8 · 🟠 Four questions only the database can answer, and one decision that is yours
 
-Added 2026-10-02 by the `context/` coverage audit. ⛔ **All three checks are read-only and take
-about two minutes together.** The decision at the end is a product/infra call, not a code change we
+⛔ **This heading said "Three" and `H8.5` was added on 2026-10-03.** Third stale count in this file
+in three days — the title, the item list, and now a subsection count. *A list edited one line at a
+time accumulates the lines nobody edited.*
+
+Added 2026-10-02 by the `context/` coverage audit. ⛔ **All four checks are read-only and take
+about three minutes together.** The decision at the end is a product/infra call, not a code change we
 should make on our own.
 
 ## What we measured, and what we could not
@@ -581,6 +585,32 @@ select count(*) as merges, count(*) filter (where reversed) as reversed from mer
 forever** and tells nobody anything — *a gate that is always green is a gate nobody reads*. Say so
 and we will gate it on the same marker pattern the learning receipts use, so it reads
 *"not yet exercised"* rather than *"passing"*.
+
+---
+
+### ⛔ H8.5 · How many connector kinds does any tenant actually have? — one query, and it moves a declared silence
+
+```sql
+set transaction read only;
+select org_id, count(distinct source_type) as kinds
+  from connections where status = 'connected' group by 1 order by 2 desc;
+```
+
+**What the answer changes.** `reason/runner.py` declares a gap it deliberately has **not** built —
+`LINEAGE_UNPROTECTED["cross_channel_quote"]`: one original assertion quoted across two or more
+channels counts as that many **independent** sources, which is exactly what the confidence ladder
+must not do. The reason is written in capitals — *"**NOT BUILT, ON PURPOSE.** A two-connector tenant
+cannot produce the case, and building a lineage system for an unreachable failure is the
+over-scaffolding this plan refuses"* — and the **mover is "the third connector"**.
+
+⛔ **The code already implements more than two connector kinds** (`calendar`, `drive`, `hubspot`,
+`linear`, `notion`, `composio`, `database`, `push_ingest`…). What nobody knows is whether a LIVE
+tenant has three **connected at once**. ⛔ **Any org at three or more means the case has become
+reachable and the declared silence has to become work** — real engineering, scoped by this one
+number.
+
+⛔ It is on your page rather than ours because the answer is in `connections`, and the entire point
+of the declaration is that we do not guess at it.
 
 ---
 

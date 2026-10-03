@@ -468,6 +468,47 @@ def _ABSORBED_NODE_REFERENCE_SQL(org: str | None) -> str:
     return "select " + " + ".join(parts)
 
 
+def _PARKED_WARM_LANE_SQL(org: str | None) -> str:
+    r"""Warm-lane rows parked for a human that no human can see.
+
+    ⛔ THE SCHEMA STATES THE CLAIM. `migrations/0136_warm_lane.sql` comments the column itself:
+    *"attempts ran out: parked for a human, never retried, never blocking a re-enqueue."*
+
+    ⛔⛔ AND EVERY READER USES IT ONLY AS AN EXCLUSION. `warm_lane._OPEN` is
+    `"done_at is null and parked_at is null"`; `api/routes.py`'s backlog count uses the same
+    predicate, and `warm_lane.housekeep` warns on the age of the OPEN backlog and prunes only
+    `done_at` rows. So a row whose attempts ran out is removed from every count, never pruned, and
+    **selected by nothing** — the tenant's events stop being processed silently and permanently,
+    while the health signal reports zero open rows and looks fine.
+
+    ⛔ *A refusal nobody can see is a silent stop* — and this is the worst version of it in the
+    product, because the health check does not merely miss the parked rows, it **excludes them by
+    construction**.
+
+    ⛔ THE PREDICATE IS DERIVED FROM `warm_lane._OPEN`, NEVER RESPELLED. This receipt must cover
+    exactly what that predicate excludes; a copy here would stop matching the day the lane's own
+    definition of "open" changes, which is the rule `_ILLEGAL_TRANSITION_SQL` follows for the
+    learning lifecycle edges.
+
+    ⛔ L1 ALREADY HAS THIS RECEIPT FOR THE OTHER PARKED TABLE — *"the parked queue is not a black
+    hole"*, over `parked_events`. This is the same claim applied to the table that lacked it, so it
+    is a precedent rather than an invention.
+    """
+    from genios_engine.platform.warm_lane import _OPEN
+
+    # The lane's own "open" is `done_at is null and parked_at is null`. The half this receipt is
+    # about is the second clause, taken from that string rather than written again.
+    clauses = [c.strip() for c in _OPEN.split(" and ")]
+    parked = next((c for c in clauses if c.startswith("parked_at")), None)
+    assert parked == "parked_at is null", (
+        f"warm_lane._OPEN no longer excludes parked rows the way this receipt assumes: {_OPEN!r}. "
+        "⛔ If the lane has started counting parked rows as open, they are visible and this "
+        "receipt is redundant — delete it deliberately rather than leaving it asking the wrong "
+        "question")
+    return ("select count(*) from l2_work_queue where parked_at is not null"
+            f"{_org_filter(org)}")
+
+
 def _PARKED_WITH_A_CHANNEL_SQL() -> str:
     from genios_engine.deliver.routing import AGENT_TRANSPORTS
     from genios_engine.deliver.units import _implemented_channels
@@ -573,6 +614,19 @@ def receipts(org: str | None) -> list[Receipt]:
                 lambda n: n == 0,
                 "a future watermark asks the provider for changes since a date that has not "
                 "happened; the connector goes silent while still reporting success"),
+        # ⛔⛔ THE WORST SHAPE OF SILENT STOP IN THE PRODUCT: the health check does not merely
+        # miss these rows, `warm_lane._OPEN` excludes them by construction, so a lane with a
+        # hundred parked rows and none open reports a clean backlog.
+        Receipt("L1", "no warm-lane row is parked where nothing can see it",
+                _PARKED_WARM_LANE_SQL(org), lambda n: n == 0,
+                "⛔ `migrations/0136_warm_lane.sql` comments the column: *\"attempts ran out: "
+                "parked for a human, never retried.\"* Nothing selects a parked row — "
+                "`warm_lane._OPEN`, `api/routes`'s backlog count and `housekeep`'s staleness "
+                "warning all exclude it, and the hourly prune removes only finished rows. A "
+                "non-zero count is a tenant whose events stopped being processed, permanently and "
+                "invisibly. ⛔ The predicate is DERIVED from `warm_lane._OPEN`, so it cannot drift "
+                "from the lane's own definition of open. Same claim L1 already makes for "
+                "`parked_events` — *\"the parked queue is not a black hole\"*"),
         Receipt("L1", "the parked queue is not a black hole",
                 f"select count(*) from parked_events where status='pending'{o}",
                 lambda n: n == 0,

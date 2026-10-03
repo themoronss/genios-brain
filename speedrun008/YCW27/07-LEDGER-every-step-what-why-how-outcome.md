@@ -990,3 +990,18 @@ number is meaningless without its source set* · *never pipe a suite run through
 | **the repair** | `platform/table_coverage.WRITE_ONCE_TABLES` + `illegal_column_updates()`, guarded both ways — a value column fails **and** a third updater fails. The producer's half is behavioural, with a double that records every statement. ⛔ **No receipt, deliberately**: the data cannot answer it without reimplementing `semantic_hash` in SQL |
 | ⛔ **one mutation survived** | a paren-depth split whose removal changed no answer, because an identifier filter catches the same wreckage. ⛔ **The branch was deleted and the filter named as the safeguard** — a branch whose mutation cannot fail is complexity |
 | **outcome** | 22 tests · **10/10 mutations caught** · one audit-index correction · full suite **15,242 passed · 1,067 skipped · 152 xfailed · 0 failed** |
+
+
+---
+
+## 1.2 · the `platform/` audit — fifteen retirements, and a park the health check excludes
+
+| | |
+|---|---|
+| **why second** | one receipt over 12,651 lines, 18 writers, 25 unreceipted tables — and ⛔ **the package every other package imports**, so one wrong invariant travels furthest |
+| ⛔⛔ **fifteen retirements** | `pipeline_counters` (read through `funnel`'s own accessor) · the four activation tables (⛔ a cross-layer ordering would have to be **invented** — declined) · `use_domain_compiler` (kept in capitals, deliberately) · `org_run_leases` (self-healing, 120 s heart-beaten) · `presence_leases` / `warm_lane_slots` / `rate_counters` / `auth_sessions` / `seat_slice_versions` / … (read through their own modules) · ⛔⛔ **Atlas `L2-02`, which was mine and wrong five minutes after I wrote it** — `LINEAGE_UNPROTECTED` declares it with a reason and a mover |
+| ✅ **the survivor** | **`warm_lane` parks a row "for a human" and every reader excludes it.** `_OPEN`, the backlog count and the staleness warning all filter `parked_at is null`; nothing selects a parked row; the prune only removes finished ones. ⛔ A stuck tenant reports a clean lane, and the invisible set **grows** |
+| **the repair** | **Receipt 43** — *"no warm-lane row is parked where nothing can see it"* — predicate **derived** from `warm_lane._OPEN`, with the builder asserting the shape so it cannot drift. ⛔ A **precedent**: L1 already makes this claim for `parked_events`, and a test pins that the precedent exists |
+| ⛔ **what it handed on** | the mover of a declared silence became a **one-line query** — `H8.5`: how many connector kinds does any live tenant have? **Three or more and `LINEAGE_UNPROTECTED` becomes work** |
+| ⛔ **the receipt broke a test** | and the break was the **test's** defect: `[r for r in receipts(None) if "lane" in r.claim][0]` matched three claims, one of them `lane` **inside `plane`**. ⛔ The rule, not the rewrite — one site named its claim, and a guard now fails on any future collision. ⛔⛔ **The guard needed three corrections of its own**, each a rule already written: the AST not the text, a lookup is not an assertion, and a surviving mutation fixed by extracting a pure function rather than deleting the check |
+| **outcome** | 23 tests · **16/16 mutations caught** · receipts 42 → **43** · `platform/` 1 → **2** · three stale counts corrected in `HANDOFF-HARSH.md` · full suite **15,266 passed · 1,067 skipped · 152 xfailed · 0 failed** |

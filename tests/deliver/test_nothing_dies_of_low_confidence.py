@@ -222,8 +222,18 @@ def test_the_l5_receipt_count_is_five_and_they_are_the_measured_five():
 def test_a_card_with_no_lane_at_all_has_a_receipt():
     from genios_engine.platform import receipts as R
 
-    found = [r for r in R.receipts(None) if "lane" in r.claim]
-    assert found, "no receipt asks whether a delivered card knows what kind of output it is"
+    # ⛔ THE EXACT CLAIM, AND THIS USED TO BE `if "lane" in r.claim` THEN `found[0]`.
+    # Three receipts contain the substring: this one, L6's *"the delivery control **p-lane** has
+    # run"* — `lane` inside `plane` — and, from 2026-10-03, L1's *"no warm-**lane** row is parked
+    # where nothing can see it"*. The test passed only because this one happened to come first in
+    # the list, and it broke the day a receipt was added above it. ⛔ *A grep hands over a sentence
+    # without its subject*, and a lookup that takes `[0]` of a substring match is that grep.
+    # `tests/platform/test_a_receipt_lookup_is_unambiguous.py` now fails on any such collision.
+    found = [r for r in R.receipts(None)
+             if r.claim == "every delivered card carries a lane, or is labelled unrouted"]
+    assert len(found) == 1, (
+        "the lane receipt's claim was reworded; name the new wording here rather than widening "
+        "the match back to a substring")
     receipt = found[0]
     assert receipt.layer == "L5"
     assert "output_lane is null" in receipt.sql
@@ -236,7 +246,8 @@ def test_the_receipt_treats_unrouted_as_an_answer():
     decision that, under the spend limit, no production row can currently have."""
     from genios_engine.platform import receipts as R
 
-    receipt = [r for r in R.receipts(None) if "lane" in r.claim][0]
+    receipt = next(r for r in R.receipts(None)
+                   if r.claim == "every delivered card carries a lane, or is labelled unrouted")
     assert "unrouted" not in receipt.sql
 
 

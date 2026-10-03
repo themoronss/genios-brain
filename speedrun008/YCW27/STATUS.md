@@ -15,6 +15,7 @@
 
 | When | What | Where |
 |---|---|---|
+| **2026-10-03** | ⛔⛔ **`platform/` AUDIT DONE — 15 candidates, 15 RETIRED, and the survivor is a park the health check EXCLUDES BY CONSTRUCTION.** `warm_lane` sets `parked_at` for a row whose attempts ran out — the schema says *"parked for a human"* — and every reader uses the column only as an exclusion: `_OPEN`, the backlog count, the staleness warning. ⛔⛔ **Nothing selects a parked row, the prune never removes one, so a stuck tenant reports a CLEAN lane and the invisible set grows.** Receipt **43**, predicate DERIVED from `warm_lane._OPEN`. ⛔ Fifteenth retirement was mine, five minutes old: Atlas `L2-02` is **declared** in `LINEAGE_UNPROTECTED`, and its mover — *"the third connector"* — is now a one-line query (`H8.5`) | [`23-AUDIT-platform-the-park-the-health-check-excludes.md`](23-AUDIT-platform-the-park-the-health-check-excludes.md) |
 | **2026-10-03** | ⛔⛔ **`api/` AUDIT DONE — 11 candidates raised, 11 RETIRED, and the one finding was never guarded.** ⛔ Every candidate died on reading the code or the declaration beside it: `decisions` is written by the route that **returned** the envelope · `approvals_queue` and `policy_routes.evaluate` are **already declared** (*"the policy enforcement path does not exist"*) · `api/learning_routes` only updates `state`. ⛔⛔ **Two of the three columns I called `api/` worst on were my own mis-signal** — 25 route handlers are decorator-excluded by design. ✅ The survivor: **`learning_objects` is write-once except `state` and NOTHING asserted it** — `publisher.persist`'s own first line says *"Insert an **immutable** proposal"*. 22 tests · 10/10 mutations | [`22-AUDIT-api-eleven-candidates-eleven-retirements.md`](22-AUDIT-api-eleven-candidates-eleven-retirements.md) |
 | **2026-10-03** | ⛔⛔ **THE PLAN TO PRODUCTION, AND THE AUDIT OF ALL ELEVEN PACKAGES.** ⛔ The crux measured: everything is **built**, almost nothing is **live**, and the three things between them are **`H1` migrations · `R1` the spend limit · `R2` activation** — **none of them mine**. ⛔⛔ `api/` is the least-guarded package in the product on THREE columns at once (19,498 lines · 28 unreceipted tables · 2 declared silences · 11 modules no test names), and it never appeared in `S7`'s ranking because a ratio with a zero denominator does not sort. ✅ The original brief's eight VERIFIED-MISSING items are **closed** — 7 built, 1 declared unnecessary. Seven checkable conditions now define *production level*, and ⛔ **by them nothing in the product qualifies today** | [`21-PLAN-TO-PRODUCTION.md`](21-PLAN-TO-PRODUCTION.md) |
 | **2026-10-02** | ⛔⛔ **L3 `context/` COVERAGE AUDIT DONE — and it retracted SIX of its own findings.** `S7`'s number put `context/` last (2 receipts / 50,885 lines); ⛔ the headline was **wrong** — 306 test files import it and both receipts are correctness ones. The real gap is that nothing checks the **44 tables it writes** in production. ⛔⛔ The largest retraction: **77 org-scoped tables that read as a data-retention hole and are not one** — `/reset` deliberately keeps the account, and ACCOUNT erasure is foreign keys plus an existing receipt. **9 write-only tables declared · receipt 42 (merge) · 37 tests · 11/11 mutations** | [`layer-3-context-graph/04-AUDIT-PLAN-the-worst-covered-package.md`](layer-3-context-graph/04-AUDIT-PLAN-the-worst-covered-package.md) |
@@ -40,11 +41,12 @@ full suite   15,220 passed · 1,067 skipped · 152 xfailed · 0 failed      (14,
 ⛔ built≠live  5 migrations unapplied · no domain activated · no card since 25 Sep 11:09 UTC
 ⛔ coverage    141 of 183 written tables have NO receipt · api/ leads it (28 of 42)
 ✅ api/        AUDITED 2026-10-03 · ⛔ 11 candidates, 11 retirements · write-once guard added
-⛔ next up     1.2 platform/ — 12,651 lines, 1 receipt, 29 tables written, 25 uncovered
+✅ platform/   AUDITED 2026-10-03 · ⛔ 15 candidates, 15 retirements · receipt 43 · 1 → 2 receipts
+⛔ next up     1.3 reason/ — 41,363 lines, 8 receipts, 29 uncovered tables, 14 untested modules
 L6 M14.C2    ⛔⛔ COMPLETE — 10 of 10 DONE · 0 failed at every step
 Atlas L7     11 gaps: 5 CLOSED · 6 PARTLY · ⛔ 0 LIVE · ⛔⛔ 0 UNMEASURED
 scorecard    08-ATLAS-SCORECARD-L1-to-L6.md · ⛔ 56 Atlas claims verified or refuted
-receipts     35 → 41 · ⛔ feedback/ correctness receipts 0 → 6
+receipts     35 → 43 · ⛔ feedback/ 0 → 6 correctness · context/ 2 → 3 · platform/ 1 → 2
 ledgers      ⛔ unread of F11's four: 4 → 1 — asking them found FOUR live defects
 ✅ coverage   context/ AUDITED 2026-10-02 · ⛔ 306 test files import it — the gap was RECEIPTS,
              not tests. 2 → 3 receipts · 9 write-only tables declared engine-wide
@@ -4154,3 +4156,97 @@ filter are now caught. **Second time in two days the honest answer was deletion.
 | ⛔ **a double that only checks the return value cannot see a quiet write** |
 | ⛔ **no receipt is a decision too**, written down beside the claim |
 | **a third writer is a finding even when it writes the right column** |
+
+
+---
+---
+
+## ✅⛔⛔ 2026-10-03 · PLATFORM AUDIT BUILT — fifteen retirements, and a park nobody can see
+
+```
+platform/   49 files · 12,651 lines · 18 writers · 29 tables · ⛔ 25 with no receipt
+new tests   23 · mutations 16 caught · 0 survived    (the receipt, plus a guard it forced)
+⛔ 15 candidates raised · 15 retired · 1 survived     (26 across both audits today)
+receipts    42 → 43 · platform/ 1 → 2
+full suite  15,266 passed · 1,067 skipped · 152 xfailed · 0 failed
+```
+
+### ⛔⛔ The finding: a health predicate that hides a failure twice
+
+`migrations/0136_warm_lane.sql` comments the column itself — *"attempts ran out: **parked for a
+human**, never retried"* — and then:
+
+```
+warm_lane.py:480   parked_at = now()                                ← the park
+warm_lane.py:383   _OPEN = "done_at is null and parked_at is null"
+api/routes.py:225  backlog count — the same predicate
+housekeep()        warns on the OPEN backlog · prunes only done_at rows
+⛔ statements that SELECT a parked row:  NONE      ⛔ receipts:  NONE
+```
+
+⛔⛔ **A tenant whose rows park stops being processed silently and permanently, and the health
+signal reports zero open rows.** A lane with a hundred parked rows and none open is
+indistinguishable from an idle one — and because the prune only touches finished rows, **the
+invisible set grows.**
+
+> ⛔ *A refusal nobody can see is a silent stop* — and this is the worst version in the product: the
+> health check does not **miss** these rows, it **excludes them by construction**.
+
+**Receipt 43**, with its predicate **derived** from `warm_lane._OPEN` and the builder asserting the
+shape — change `_OPEN` and five tests fail. ⛔ And it is a **precedent, not an invention**: L1
+already makes this claim for `parked_events` (*"the parked queue is not a black hole"*), and a test
+pins that the precedent still exists.
+
+### ⛔ Fifteen retirements, two of them about the MEASUREMENT
+
+| | |
+|---|---|
+| `pipeline_counters` — written, zero readers | ✅ read through `funnel.read_sweep`, which `api/routes` calls. ⛔ **A table read through its module's own accessor shows zero external SQL readers** — the second column mis-signal in two audits, after `api/`'s decorator-wired functions |
+| the four activation tables have no receipt | ⚠️ true, and ⛔ **a cross-layer ordering receipt would have to be INVENTED** — no module states that L3 must precede L4. Declined |
+| `use_domain_compiler` still exists | ✅ kept in capitals: *"THIS MODULE DOES NOT RETIRE THE GLOBAL FLAG, AND MUST NOT YET"* |
+| `org_run_leases` could stick | ✅ self-healing: 120 s TTL, heart-beaten, `lease_until < now()` is claimable |
+| ⛔⛔ Atlas `L2-02` — an ungrouped ref counts as independent | ⛔ **MINE, AND WRONG FIVE MINUTES AFTER I WROTE IT.** `reason/runner.LINEAGE_UNPROTECTED` declares it: *"NOT BUILT, ON PURPOSE. A two-connector tenant cannot produce the case"*, mover **"the third connector"** |
+
+⛔ **And that mover is now a one-line query.** The code implements more than two connector kinds;
+whether a LIVE tenant has three connected at once is `H8.5`, and **three or more means a correct
+declared silence has become real work.**
+
+### ⛔⛔ And adding the receipt broke a test — which turned out to be the TEST's defect
+
+```python
+found = [r for r in R.receipts(None) if "lane" in r.claim]
+receipt = found[0];  assert receipt.layer == "L5"    # ⛔ got 'L1'
+```
+
+⛔ **Three claims contain `lane`:** the L5 one it meant, L6's *"the delivery control **p-lane** has
+run"* — the substring inside `plane` — and receipt 43. ⛔⛔ **It had been one receipt-ordering away
+from asserting about the wrong receipt since the L6 claim was written.**
+
+⛔ **The rule, not the rewrite:** ten sites use the idiom, **exactly one** was ambiguous (measured),
+so one site now names its claim and a new guard fails on any future collision — in one named place
+instead of inside whichever test loses the ordering. It fails the other way too: a claim reworded
+out from under a lookup matches **nothing**.
+
+⛔⛔ **The guard needed three corrections of its own**, each a rule already written down: a regex
+over file text matched the **repair comment** (⛔ fifth instance — *a claim about CODE needs the
+AST*) · counting every `in …claim` flagged `assert "declared" in receipt.claim`, an assertion about
+an **already-selected** receipt (⛔ a pattern matching the shape without its subject) · and a
+surviving mutation on the `receipts(...)` check was fixed by **extracting a pure function over
+source text** so both branches are exercised, rather than deleting a check that will matter later.
+
+⛔ My first measurement of the class was wrong too: a regex said *"5 of 6 unique"*, the AST found
+**two** ambiguous — and one of those two was the false positive above.
+
+### Doctrine
+
+| Rule |
+|---|
+| ⛔ **adding a receipt can break a test, and the break can be the TEST's defect** |
+| ⛔ **a substring lookup that takes `[0]` tests whichever row is first** — name the exact claim |
+| ⛔ **a health predicate that excludes a failure state hides it twice** — from the count and from the alarm |
+| ⛔ **an invisible set that is never pruned grows** — which is what makes it a receipt, not a note |
+| ⛔ **a table read through its module's accessor shows zero external SQL readers** |
+| ⛔ **derive the predicate from the module's own constant and assert its shape** |
+| ⛔ **a receipt whose subject cannot occur is green forever** — pin the writer |
+| ⛔ **declined: an ordering nobody states** — the claim would have been invented |
+| **a declared silence's MOVER can be a one-line query** — which turns paperwork into a decision |

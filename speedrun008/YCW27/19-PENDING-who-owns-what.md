@@ -67,6 +67,14 @@ except `state` and nothing asserted it** — now guarded both ways, with **no re
 because the data cannot answer it without reimplementing `semantic_hash` in SQL.
 **Next: `1.2 platform/`** — 12,651 lines, 1 receipt, 29 tables written, 25 uncovered.
 
+⛔⛔ **AND `platform/` IS AUDITED (2026-10-03)** — step `1.2`. ⛔ **15 candidates, 15 retirements**,
+and the survivor is a park the health check **excludes by construction**: `warm_lane` sets
+`parked_at` for a row whose attempts ran out and every reader filters it out, so a stuck tenant
+reports a clean lane. **Receipt 43** closes it. ⛔ The fifteenth retirement was mine and five
+minutes old — Atlas `L2-02` is **declared** in `LINEAGE_UNPROTECTED`, and its mover is now a
+read-only query on Harsh's page (`H8.5`). **Next: `1.3 reason/`** — 41,363 lines, 29 uncovered
+tables, 14 modules no test names.
+
 ### ⛔ New on Rohit's list, out of `S10`
 
 | | What, and why it is not mine |
