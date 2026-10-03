@@ -15,7 +15,10 @@ answers one question and prints it.
 from __future__ import annotations
 
 import ast
+import pathlib
+import re
 import sys
+from functools import lru_cache
 from collections import defaultdict
 from datetime import date
 from pathlib import Path
@@ -63,31 +66,6 @@ def declared_silences(package: str) -> dict[str, list[str]]:
     return out
 
 
-def test_mentions(package: str) -> dict[str, int]:
-    """``{module path: how many test files name it}`` — the unit-test side of coverage.
-
-    ⛔ KEYED ON THE DOTTED PATH, NOT THE BARE STEM, AND THE FIRST VERSION WAS WRONG. Matching
-    `f"{package}.{stem}"` missed every subpackage: a test importing
-    `genios_engine.context.analytic.cohort` contains `context.analytic.cohort`, never
-    `context.cohort`. ⛔ That version reported **41** modules of 100+ lines as named by no test, in
-    a package 306 test files import — a confident wrong number in the one column a reader would
-    act on. *A resolver that answers for part of its input answers for none of it.*
-    """
-    pkg_dir = ROOT / "genios_engine" / package
-    paths = sorted(pkg_dir.rglob("*.py"))
-    dotted = {p: f"{package}." + str(p.relative_to(pkg_dir).with_suffix("")).replace("/", ".")
-              for p in paths}
-    counts: dict[str, int] = defaultdict(int)
-    corpus = [path.read_text(encoding="utf-8", errors="replace")
-              for path in (ROOT / "tests").rglob("*.py")]
-    for path, module in dotted.items():
-        parent, _, stem = module.rpartition(".")
-        for text in corpus:
-            if module in text or f"{parent} import {stem}" in text:
-                counts[str(path.relative_to(pkg_dir))] += 1
-    return counts
-
-
 def main() -> int:
     package = sys.argv[1] if len(sys.argv) > 1 else "context"
     pkg_dir = ROOT / "genios_engine" / package
@@ -98,7 +76,6 @@ def main() -> int:
     usage = TC.table_usage()
     receipted = TC.tables_with_a_receipt()
     silences = declared_silences(package)
-    mentions = test_mentions(package)
 
     rows = []
     for path in sorted(pkg_dir.rglob("*.py")):
@@ -120,14 +97,12 @@ def main() -> int:
             "public": len(public_functions(tree)),
             "declared": len(silences.get(path.stem, [])),
             "writes": writes, "reads": reads,
-            "tests": mentions.get(rel, 0),
             "unreceipted": [t for t in writes if t not in receipted],
         })
 
     total_lines = sum(r["lines"] for r in rows)
     writers = [r for r in rows if r["writes"]]
     unreceipted = sorted({t for r in rows for t in r["unreceipted"]})
-    untested = [r for r in rows if r["tests"] == 0 and r["lines"] >= 100]
 
     print(f"# L3 · `{package}/` — the file-by-file coverage audit\n")
     print(f"⛔ **GENERATED, NOT WRITTEN.** Regenerate with:\n")
@@ -143,7 +118,6 @@ def main() -> int:
     print(f"distinct tables written     {len({t for r in rows for t in r['writes']})}")
     print(f"⛔ written, no receipt       {len(unreceipted)}")
     print(f"declared silences           {sum(r['declared'] for r in rows)}")
-    print(f"⛔ >=100 lines, no test names it  {len(untested)}")
     print("```\n")
 
     print("## ⛔ Tables this package writes that no receipt covers\n")
@@ -155,34 +129,47 @@ def main() -> int:
         print(f"| `{table}` | {external} | {', '.join(f'`{w}`' for w in ws) or '—'} |")
     print()
 
-    print("## ⛔ Files of 100+ lines that no test file names\n")
-    print("⛔ **READ THE COLUMN LITERALLY.** This says no test file imports the module by its "
-          "dotted path. It does **not** say the code is untested — a module reached only through "
-          "a caller that is itself heavily tested appears here, and so does one whose functions "
-          "a test calls under a different import form. ⛔ *A guard that measures naming cannot "
-          "answer coverage*; what this column finds is a module with no test of its OWN, which is "
-          "a different and smaller thing. ⛔ Each row needs its callers checked before it is "
-          "called a gap — when this ran for `context/`, BOTH rows turned out to be live and "
-          "reached.\n")
-    if untested:
-        print("| file | lines | public fns | writes |")
-        print("|---|---|---|---|")
-        for r in sorted(untested, key=lambda x: -x["lines"]):
-            print(f"| `{r['file']}` | {r['lines']} | {r['public']} | "
-                  f"{', '.join(f'`{t}`' for t in r['writes']) or '—'} |")
-    else:
-        print("None — every module of 100+ lines is named by at least one test file.")
-    print()
-
+    print("## ⛔ THE COLUMN THAT WAS HERE IS GONE, AND THAT IS A FINDING\n")
+    print("This section used to list modules of 100+ lines that no test file names. ⛔⛔ **It was "
+          "removed on 2026-10-03 after six repairs failed to make it honest**, and the removal is "
+          "the most useful thing it produced.\n")
+    print("Across three package audits it reported **33** entries. ⛔ Nineteen were false, and "
+          "each false entry was a candidate finding that died on inspection:\n")
+    print("```")
+    print("a @router.get handler has no Python caller and no test imports its module   -> false")
+    print("a table read through funnel.read_sweep: reached, path written nowhere       -> false")
+    print("test_unit_roster.py parametrises ALL_UNITS: 23 units run, no class named    -> false x16")
+    print("ConstraintReasoner = ConstraintUnit — an alias a ClassDef scan cannot see   -> false")
+    print("```\n")
+    print("⛔ And every repair over-corrected in the other direction, which is worse, because a "
+          "false negative **hides** a live module:\n")
+    print("```")
+    print("counting a generic CAPABILITY constant rescued a module with NO test at all")
+    print("counting __all__ as a definition made all 23 unit names look ambiguous, so the")
+    print("    whole column collapsed to zero findings")
+    print("⛔⛔ and the guard written FOR this column named two functions in its own docstring,")
+    print("    which made the module it was asserting is untested read as named — the observer")
+    print("    altering the thing it measured")
+    print("```\n")
+    print("> ⛔ **A column whose error rate is unknown in BOTH directions is a column nobody "
+          "should act on.** Naming is not coverage, six attempts did not make it one, and the "
+          "section produced **zero** surviving findings in three audits while costing nineteen "
+          "false leads.\n")
+    print("⛔ **What it did produce, kept as a real finding rather than a table row:** "
+          "`api/identity_routes.py` has **five routes and 130 lines**, and no test file mentions "
+          "it by any means — verified by hand, not by this column. That is on "
+          "`21-PLAN-TO-PRODUCTION.md`.\n")
+    print("⛔ **What replaced it: nothing.** The table above — *tables a package writes that no "
+          "receipt covers* — held in all three audits and is what the audit is for.\n")
     print("## Every file\n")
-    print("| file | lines | public | tests | declared silences | writes | reads |")
-    print("|---|---|---|---|---|---|---|")
+    print("| file | lines | public | declared silences | writes | reads |")
+    print("|---|---|---|---|---|---|")
     for r in sorted(rows, key=lambda x: -x["lines"]):
         w = ", ".join(f"`{t}`" for t in r["writes"]) or "—"
         rd = ", ".join(f"`{t}`" for t in r["reads"][:6])
         if len(r["reads"]) > 6:
             rd += f" +{len(r['reads']) - 6}"
-        print(f"| `{r['file']}` | {r['lines']} | {r['public']} | {r['tests']} | "
+        print(f"| `{r['file']}` | {r['lines']} | {r['public']} | "
               f"{r['declared'] or '—'} | {w} | {rd or '—'} |")
     return 0
 

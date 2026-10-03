@@ -15,6 +15,7 @@
 
 | When | What | Where |
 |---|---|---|
+| **2026-10-03** | ⛔⛔ **`reason/` AUDIT DONE — 20 candidates, 20 RETIRED, 0 receipts, and the finding was in the AUDIT'S OWN MEASUREMENT.** ⛔ Every derivable claim was already enforced: `signals`' *"byte-identical bindings"* is a partial unique index · 16 of 23 reasoning units ARE exercised by `parametrize(ALL_UNITS)` · a suppression log IS read by `executive/explain`. ⛔⛔ **The *"no test names it"* column was wrong 19 of 33 times across three audits, six repairs each over-corrected the other way, and the guard written FOR it named two functions in its own docstring — making the module it asserted was untested read as named. DELETED**, with the reasoning in every page and a guard against all six heuristics returning | [`24-AUDIT-reason-the-column-that-had-to-go.md`](24-AUDIT-reason-the-column-that-had-to-go.md) |
 | **2026-10-03** | ⛔⛔ **`platform/` AUDIT DONE — 15 candidates, 15 RETIRED, and the survivor is a park the health check EXCLUDES BY CONSTRUCTION.** `warm_lane` sets `parked_at` for a row whose attempts ran out — the schema says *"parked for a human"* — and every reader uses the column only as an exclusion: `_OPEN`, the backlog count, the staleness warning. ⛔⛔ **Nothing selects a parked row, the prune never removes one, so a stuck tenant reports a CLEAN lane and the invisible set grows.** Receipt **43**, predicate DERIVED from `warm_lane._OPEN`. ⛔ Fifteenth retirement was mine, five minutes old: Atlas `L2-02` is **declared** in `LINEAGE_UNPROTECTED`, and its mover — *"the third connector"* — is now a one-line query (`H8.5`) | [`23-AUDIT-platform-the-park-the-health-check-excludes.md`](23-AUDIT-platform-the-park-the-health-check-excludes.md) |
 | **2026-10-03** | ⛔⛔ **`api/` AUDIT DONE — 11 candidates raised, 11 RETIRED, and the one finding was never guarded.** ⛔ Every candidate died on reading the code or the declaration beside it: `decisions` is written by the route that **returned** the envelope · `approvals_queue` and `policy_routes.evaluate` are **already declared** (*"the policy enforcement path does not exist"*) · `api/learning_routes` only updates `state`. ⛔⛔ **Two of the three columns I called `api/` worst on were my own mis-signal** — 25 route handlers are decorator-excluded by design. ✅ The survivor: **`learning_objects` is write-once except `state` and NOTHING asserted it** — `publisher.persist`'s own first line says *"Insert an **immutable** proposal"*. 22 tests · 10/10 mutations | [`22-AUDIT-api-eleven-candidates-eleven-retirements.md`](22-AUDIT-api-eleven-candidates-eleven-retirements.md) |
 | **2026-10-03** | ⛔⛔ **THE PLAN TO PRODUCTION, AND THE AUDIT OF ALL ELEVEN PACKAGES.** ⛔ The crux measured: everything is **built**, almost nothing is **live**, and the three things between them are **`H1` migrations · `R1` the spend limit · `R2` activation** — **none of them mine**. ⛔⛔ `api/` is the least-guarded package in the product on THREE columns at once (19,498 lines · 28 unreceipted tables · 2 declared silences · 11 modules no test names), and it never appeared in `S7`'s ranking because a ratio with a zero denominator does not sort. ✅ The original brief's eight VERIFIED-MISSING items are **closed** — 7 built, 1 declared unnecessary. Seven checkable conditions now define *production level*, and ⛔ **by them nothing in the product qualifies today** | [`21-PLAN-TO-PRODUCTION.md`](21-PLAN-TO-PRODUCTION.md) |
@@ -42,7 +43,9 @@ full suite   15,220 passed · 1,067 skipped · 152 xfailed · 0 failed      (14,
 ⛔ coverage    141 of 183 written tables have NO receipt · api/ leads it (28 of 42)
 ✅ api/        AUDITED 2026-10-03 · ⛔ 11 candidates, 11 retirements · write-once guard added
 ✅ platform/   AUDITED 2026-10-03 · ⛔ 15 candidates, 15 retirements · receipt 43 · 1 → 2 receipts
-⛔ next up     1.3 reason/ — 41,363 lines, 8 receipts, 29 uncovered tables, 14 untested modules
+✅ reason/     AUDITED 2026-10-03 · ⛔ 20 candidates, 20 retirements, 0 receipts — and the
+             audit's own naming column DELETED for being wrong 19 of 33 times
+⛔ next up     1.3b two live modules with no test · then 1.4 capture/ · then 2.1 Atlas L2's nine
 L6 M14.C2    ⛔⛔ COMPLETE — 10 of 10 DONE · 0 failed at every step
 Atlas L7     11 gaps: 5 CLOSED · 6 PARTLY · ⛔ 0 LIVE · ⛔⛔ 0 UNMEASURED
 scorecard    08-ATLAS-SCORECARD-L1-to-L6.md · ⛔ 56 Atlas claims verified or refuted
@@ -4250,3 +4253,80 @@ source text** so both branches are exercised, rather than deleting a check that 
 | ⛔ **a receipt whose subject cannot occur is green forever** — pin the writer |
 | ⛔ **declined: an ordering nobody states** — the claim would have been invented |
 | **a declared silence's MOVER can be a one-line query** — which turns paperwork into a decision |
+
+
+---
+---
+
+## ✅⛔⛔ 2026-10-03 · REASON AUDIT BUILT — and the audit deleted one of its own columns
+
+```
+reason/     121 files · 41,363 lines · 21 writers · 35 tables · ⛔ 29 with no receipt
+new tests   26 · two guards · ⛔ 20 candidates raised · 20 retired · 0 receipts added
+full suite  15,292 passed · 1,067 skipped · 152 xfailed · 0 failed
+```
+
+### ⛔ Twenty retirements and no receipt — which is a result
+
+`signals` leads the uncovered list with 29 readers and six writers, and its owner states the
+contract itself: *"**Projection, not decision.** … publishing twice from the same execution produces
+**byte-identical bindings**."* ⛔ **It is database-enforced** — a partial unique index matching the
+insert's `on conflict`. ⛔ My two follow-up suspicions were both wrong: a single-line grep said the
+index did not exist, and then a flattened read of every migration showed **two** overlapping indexes
+when `0034` **drops and recreates** one. *A measurement that flattens history cannot see a
+replacement.*
+
+⛔ 16 of 23 reasoning units looked untested; `tests/test_unit_roster.py` is
+`parametrize("unit", ALL_UNITS)` — **all 23 exercised, not one class name in the file.** A
+suppression log looked unread; `executive/explain.py` reads it. A silent unit is already receipted.
+
+> ⛔ After `context/`'s receipt 42 and `platform/`'s 43 — both derived from a module's own sentence
+> — `reason/` had no sentence left to derive from, and *a gate derived from an invented claim is a
+> gate nobody reads.*
+
+### ⛔⛔ THE FINDING: the "no test names it" column was wrong 19 of 33 times
+
+```
+a @router.get handler has no caller and no test imports its module         api/
+a table read through funnel.read_sweep — reached, path written nowhere     platform/
+⛔ parametrize(ALL_UNITS): 23 units run, no class named                     reason/  x16
+ConstraintReasoner = ConstraintUnit — an alias a ClassDef scan misses      reason/
+```
+
+⛔ **Six repairs, and every one over-corrected** — a generic `CAPABILITY` constant rescued a module
+with no test at all; counting `__all__` as a *definition* made all 23 unit names ambiguous and the
+column collapsed to **zero**; reading the corpus from the AST brought back two modules already
+hand-verified as reached, because `*_health.py` is reached by `importlib` over a **string**.
+
+⛔⛔ **And the sharpest: the guard written FOR the column named `deadline_situations` and `team_away`
+in its own docstring** — so the corpus scan counted those words and the module became *named by the
+test claiming it was not.* **The observer altered the thing it measured.**
+
+> ⛔⛔ **A column whose error rate is unknown in BOTH directions is a column nobody should act on.**
+> Zero surviving findings in three audits, nineteen false leads, and each repair traded false
+> positives for false negatives — which are worse, because a false negative **hides** a live module.
+> **Deleted**, not repaired a seventh time.
+
+⛔ Its one real contribution is kept as a finding, verified by hand: **`api/identity_routes.py` — five
+routes, 130 lines, mentioned by no test by any means**, plus `reason/team/away.py`. Both are step
+`1.3b`. ⛔ And the generator went from **minutes to 1.6 s**.
+
+### ⛔ A second drift, found while writing the first guard
+
+`00-INDEX.md`'s table is hand-written over **generated** pages, and today's `platform/` code moved
+three of its numbers while the index kept the old ones. A second guard now compares every row with
+the page it links, per package, and fails if a row stops parsing — *an unparsed row is an unchecked
+row.*
+
+### Doctrine
+
+| Rule |
+|---|
+| ⛔⛔ **a column whose error rate is unknown in both directions is a column nobody should act on** |
+| ⛔ **delete a measurement rather than repair it a seventh time** — and record why, or it gets rebuilt |
+| ⛔ **a false negative is worse than a false positive** |
+| ⛔⛔ **the observer can alter what it measures** |
+| ⛔ **a measurement that flattens history cannot see a replacement** |
+| ⛔ **a re-export is not a definition** · **a name that is not distinctive is not evidence** |
+| ⛔ **an index over generated pages is an addition, not a measurement** |
+| **twenty retirements and no receipt is a result** |

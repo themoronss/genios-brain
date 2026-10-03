@@ -75,6 +75,14 @@ minutes old — Atlas `L2-02` is **declared** in `LINEAGE_UNPROTECTED`, and its 
 read-only query on Harsh's page (`H8.5`). **Next: `1.3 reason/`** — 41,363 lines, 29 uncovered
 tables, 14 modules no test names.
 
+⛔⛔ **AND `reason/` IS AUDITED (2026-10-03)** — step `1.3`. ⛔ **20 candidates, 20 retirements, 0
+receipts**: every derivable claim was already enforced or receipted. ⛔⛔ **The finding was the
+audit's own measurement** — the *"no test names it"* column was wrong **19 of 33 times**, six
+repairs each over-corrected, and the guard written for it altered its own subject's score. **It is
+deleted**, with the reasoning kept on every page. ⛔ Two live modules with no test survive as real
+work: `api/identity_routes.py` and `reason/team/away.py` (**`1.3b`**). **Next: `1.4 capture/`**, then
+**`2.1` Atlas L2's nine claims** — the largest remaining block.
+
 ### ⛔ New on Rohit's list, out of `S10`
 
 | | What, and why it is not mine |

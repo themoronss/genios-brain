@@ -1005,3 +1005,18 @@ number is meaningless without its source set* · *never pipe a suite run through
 | ⛔ **what it handed on** | the mover of a declared silence became a **one-line query** — `H8.5`: how many connector kinds does any live tenant have? **Three or more and `LINEAGE_UNPROTECTED` becomes work** |
 | ⛔ **the receipt broke a test** | and the break was the **test's** defect: `[r for r in receipts(None) if "lane" in r.claim][0]` matched three claims, one of them `lane` **inside `plane`**. ⛔ The rule, not the rewrite — one site named its claim, and a guard now fails on any future collision. ⛔⛔ **The guard needed three corrections of its own**, each a rule already written: the AST not the text, a lookup is not an assertion, and a surviving mutation fixed by extracting a pure function rather than deleting the check |
 | **outcome** | 23 tests · **16/16 mutations caught** · receipts 42 → **43** · `platform/` 1 → **2** · three stale counts corrected in `HANDOFF-HARSH.md` · full suite **15,266 passed · 1,067 skipped · 152 xfailed · 0 failed** |
+
+
+---
+
+## 1.3 · the `reason/` audit — twenty retirements, no receipt, and a column deleted
+
+| | |
+|---|---|
+| **why third** | 41,363 lines, 21 writers, **29** unreceipted tables, and the most Atlas claims still open |
+| ⛔ **twenty retirements** | `signals`' idempotency is a **partial unique index** matching its own `on conflict` — and my two follow-ups were both wrong (a single-line grep; then a flattened read that missed `0034`'s drop-and-recreate) · 16 of 23 reasoning units ARE exercised by `parametrize("unit", ALL_UNITS)` · `signal_suppression_log` IS read by `executive/explain` · a silent unit is already receipted |
+| ⛔ **no receipt, deliberately** | every derivable claim was already enforced or receipted. After 42 and 43, both taken from a module's own sentence, this package had no sentence left — *a gate derived from an invented claim is a gate nobody reads* |
+| ⛔⛔ **the finding was the measurement** | the *"no test names it"* column was wrong **19 of 33 times** across three audits. **Six repairs, every one over-correcting**; the worst being that **the guard written for the column named two functions in its own docstring**, making the module it asserted was untested read as named. ⛔ **Deleted** — section, five helpers and the per-file cell — with the reasoning on every page and a parametrised guard against each heuristic returning. Generator: **minutes → 1.6 s** |
+| ⛔ **a second drift** | `00-INDEX.md` is hand-written over generated pages and kept three stale `platform/` numbers. A guard now compares every row with its page and fails if a row stops parsing |
+| **what survived** | two live modules with no test — `api/identity_routes.py` (five routes) and `reason/team/away.py` — named in the plan as `1.3b` rather than left as table rows |
+| **outcome** | 26 tests · two guards · receipts unchanged at **43** · full suite **15,292 passed · 1,067 skipped · 152 xfailed · 0 failed** |

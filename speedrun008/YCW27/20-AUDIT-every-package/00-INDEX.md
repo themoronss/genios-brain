@@ -16,19 +16,19 @@ because its audit has a findings document beside it.
 
 ## The whole engine, on six numbers
 
-| package | files | lines | writers | ⛔ tables, no receipt | declared silences | ⛔ no test names it |
-|---|---:|---:|---:|---:|---:|---:|
-| ⛔⛔ [`api`](api.md) | 44 | 19,498 | 20 | **28** | 2 ✅ | 11 |
-| [`context`](../layer-3-context-graph/05-AUDIT-context-file-by-file.md) | 124 | 50,885 | 37 | 33 | 23 | 2 |
-| ⛔ [`reason`](reason.md) | 121 | 41,363 | 21 | 29 | 14 | **14** |
-| [`capture`](capture.md) | 158 | 47,184 | 25 | 19 | 7 | 1 |
-| ⛔ [`platform`](platform.md) | 49 | 12,651 | 18 | 25 | 26 | 0 |
-| [`contracts`](contracts.md) | 41 | 14,617 | **0** | 0 | 8 | 3 |
-| [`deliver`](deliver.md) | 41 | 10,020 | 10 | 10 | 23 | 0 |
-| [`packs`](packs.md) | 35 | 8,188 | 2 | 2 | 3 | 1 |
-| [`executive`](executive.md) | 27 | 6,230 | 3 | 6 | 14 | 1 |
-| [`feedback`](feedback.md) | 15 | 4,461 | 7 | 9 | 17 | 0 |
-| [`mcp`](mcp.md) | 2 | 594 | 1 | 1 | 0 | 0 |
+| package | files | lines | writers | ⛔ tables, no receipt | declared silences |
+|---|---:|---:|---:|---:|---:|
+| ⛔⛔ [`api`](api.md) | 44 | 19,498 | 20 | **28** | 2 ✅ |
+| [`context`](../layer-3-context-graph/05-AUDIT-context-file-by-file.md) | 124 | 50,885 | 37 | 33 | 23 |
+| ⛔ [`reason`](reason.md) | 121 | 41,363 | 21 | 29 | 14 |
+| [`capture`](capture.md) | 158 | 47,184 | 25 | 19 | 7 |
+| ⛔ [`platform`](platform.md) | 49 | 12,817 | 18 | 24 | 27 |
+| [`contracts`](contracts.md) | 41 | 14,617 | **0** | 0 | 8 |
+| [`deliver`](deliver.md) | 41 | 10,020 | 10 | 10 | 23 |
+| [`packs`](packs.md) | 35 | 8,188 | 2 | 2 | 3 |
+| [`executive`](executive.md) | 27 | 6,230 | 3 | 6 | 14 |
+| [`feedback`](feedback.md) | 15 | 4,461 | 7 | 9 | 17 |
+| [`mcp`](mcp.md) | 2 | 594 | 1 | 1 | 0 |
 
 ```
 packages above   657 files · 215,691 lines   (the eleven package directories, summed)
@@ -74,9 +74,9 @@ the most modules no test names."* ⛔ **Two of those three were my own mis-signa
   references. ⛔ And the two entries it does hold say something precise together: **the policy
   enforcement path does not exist** — `approval_routes.enqueue` and `policy_routes.evaluate`, one
   honest about it in the future tense and one not.
-* **`no test names it` = 11 is a reading list, not a defect list** — the caveat below the table
-  says so, and when this column ran for `context/` **both** of its rows turned out to be live and
-  reached.
+* ⛔⛔ **`no test names it` was DELETED** — see the caveat below. It was wrong **19 of 33 times**
+  across three audits, every repair over-corrected the other way, and it produced zero surviving
+  findings. **The unreceipted-tables column is the one that holds.**
 
 ⛔ *A column that mis-signals for one package's wiring style is a measurement that needs its
 caveat read before its number is quoted.* The unreceipted-tables column is the one that holds.
@@ -99,11 +99,29 @@ wrong on a tenant, nothing would notice.* The ranked list per package is in each
 section, busiest reader first, because the cost of a missing receipt scales with how many readers
 trust the table.
 
-**`no test names it`** — no test file imports the module by its dotted path. ⛔ It does **not** mean
-untested either: a module reached only through a heavily-tested caller appears here, and so does one
-whose functions a test calls under a different import form. ⛔ **When this ran for `context/`, BOTH
-rows turned out to be live and reached.** Each row needs its callers checked before it is called a
-gap — which is why `api`'s **11** and `reason`'s **14** are a reading list, not a defect list.
+**`no test names it`** — ⛔⛔ **DELETED 2026-10-03, and the deletion is the most useful thing it
+produced.** It listed modules of 100+ lines that no test file names. Across three audits it reported
+**33** entries and **nineteen were false**, each one a candidate finding that died on inspection: a
+decorator-wired route handler, a table read through its module's own accessor, and ⛔ **sixteen
+reasoning units that `tests/test_unit_roster.py` exercises by `parametrize("unit", ALL_UNITS)` —
+twenty-three units run and not one class name appears in the file.**
+
+⛔ Six repairs followed, and **every one over-corrected**, which is worse because a false negative
+*hides* a live module: a generic `CAPABILITY` constant rescued a module with no test at all;
+counting `__all__` as a definition made all 23 unit names look ambiguous and the column collapsed to
+zero; and ⛔⛔ **the guard written for the column named two functions in its own docstring, which
+made the module it asserted was untested read as named** — the observer altering the thing it
+measured.
+
+> ⛔ **A column whose error rate is unknown in BOTH directions is a column nobody should act on.**
+> Naming is not coverage. It produced **zero** surviving findings in three audits and cost nineteen
+> false leads, so it was removed rather than repaired a seventh time. Each package page carries the
+> full reasoning, and `tests/platform/test_the_coverage_report_does_not_mis_signal.py` fails if any
+> of the six heuristics comes back.
+
+⛔ **Its one real contribution is kept as a finding, not a table row** — verified by hand:
+`api/identity_routes.py`, five routes and 130 lines, mentioned by no test by any means. It is
+step `1.3b` of [`../21-PLAN-TO-PRODUCTION.md`](../21-PLAN-TO-PRODUCTION.md).
 
 ---
 
