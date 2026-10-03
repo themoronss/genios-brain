@@ -188,7 +188,64 @@ them with **22 test callers**, broken at a layer boundary rather than by an over
 
 ---
 
-# ⛔ ROHIT'S — eight items
+# ⛔ ROHIT'S — the stable list
+
+> ⛔ **THIS HEADER SAID "eight items" AND THE COUNT WAS WRONG BY 2026-10-02.** L6's ten steps and
+> the `context/` audit added five more, and the items were named differently in four files —
+> *"DECISION #5"* here, *"U6c"* in L4's folder, *"the reporting line"* in prose. ⛔ **Every item now
+> has a stable `R#`**, introduced in [`21-PLAN-TO-PRODUCTION.md`](21-PLAN-TO-PRODUCTION.md) and
+> mirrored here, so one item cannot be worked twice or dropped silently. *A membership list shrinks
+> every time the work succeeds; an invariant does not — so this list carries ids, not a count.*
+
+| id | item | ⛔ what it costs to leave open | gate |
+|---|---|---|---|
+| **`R1`** | **DECISION #5** — the spend limit vs `GENIOS_L4_LLM_DECISION_MAKER` | ⛔ **no card since 2026-09-25 11:09 UTC.** Recommendation **B** (`false`) now, **C** as a unit, **A** when affordable | ⛔ **PHASE 0** |
+| **`R2`** | **activation** — turn **Admin** on for one tenant | ⛔ the lower half of the stack runs correctly over an **empty queue**, which proves nothing. Five switches: `l1_semantic_activation`, `l2_v2_activation`, `l3_activation`, `l4_activation`, `pattern_activation` | ⛔ **PHASE 0** |
+| **`R3`** | ⛔⛔ **ADR-10** — the Adaptive representation | ⛔ **Until it is ratified, do not let anybody "fix" `feedback/units.distinct_days`** — that constant is the only thing keeping an auto-promoted durable ADAPTIVE write closed, and the obvious repair opens it. Sizing query is in the tripwire's mover |
+| **`R4`** | ⛔ the correction / preference **SURFACE** | Atlas L7's own **P1**. `learning_event_inbox` is written in production and loaded into every weekly batch; **no unit consumes it**, because a `kind` is a surface and there is none |
+| **`R5`** | ⛔ the **MACV writer** | `macv_ledger` is the number the customer verifies, and it is referenced only by the delete list |
+| **`R6`** | `api/brain_routes` — a seat principal | the route depends on `get_current_org` and has **no caller identity**; `AuthCtx` carries `email`/`seat_id`. Safe today only because every durable producer declares an open scope |
+| **`R7`** | Atlas `#6` — should a reset **fail promotion**? | blocking promotion after every reset would stop learning for a tenant that merely **seated a teammate** (`seat_joined` calls the same function) |
+| **`R8`** | **`U6c` / `U6d`** (L4) | does `CREATED` belong in a state set · ⛔ **how many warnings a day should a founder see** — blocks the preventive push, *"the vision's USP"* |
+| **`R9`** | ⛔ does **`scripts/` count as a caller**? | flag is already `True` **on my call**, recorded as such. 147 → 123 scope. ⛔ On 2026-10-02 it caught a real failure in my own declaration — **recommendation: ratify it** |
+| **`R10`** | **ConfidenceVector axes** (L2 `S7`) | code's six vs the Atlas's six, **2 of 6** overlap. ⛔ Recommendation: **keep the code's six and correct the Atlas** — `identity → authority` is not a rename, it is a different measurement. Blocks M13, not M11 |
+| **`R11`** | **`L2-08`** — should the `draft` objects gate? | an Atlas cell and a corpus question |
+| **`R12`** | who owns the **5 unrouted L2 types** | 3 of 5 are not obviously Admin's. ⛔ **Visibility is ours; ownership is yours** |
+| **`R13`** | a **clamp** on the stored policy floor | `load_or_seed_policy` takes every column verbatim and `0045` has **no CHECK**; `LearningPolicy`'s docstring claimed the opposite and is corrected. A clamp changes what **every** tenant admits |
+| **`R14`** | move the **reset clock** into `contracts/` | the honest fix for a duplication the layer topology forces — same as `feedback/consumer.py` → `contracts/learned_state.py` |
+| **`R15`** | ⛔ the three tables that survive a **`/reset`** | `agent_metering`, `delivery_rate_windows`, `domain_requests` are in neither declared list. Our read: they probably **should** survive — then they belong in `RETAINED_AFTER_ERASURE` **with that reasoning**. → `HANDOFF-HARSH.md` §H8.4 |
+
+## ⛔ Data gaps (2)
+
+| id | item | ⛔ what it unblocks |
+|---|---|---|
+| **`D1`** | the reporting line — `org_seats.manager_seat_id`, or a dated `reports_to` | ⛔ **124 day-7 escalations have never fired** |
+| **`D2`** | one in-force authority rule with an approver | ⛔ **794 actions, 410 want `requires_approval`, `authority_rules` has ZERO rows.** Also unblocks `U2b` |
+
+## And one thing only you can do
+
+| id | | |
+|---|---|---|
+| **`P`** | ⛔ **`git push origin speedrun008`** | **17 commits, working tree clean, suite 15,220 passed · 0 failed.** `git push` is refused for me by the auto-mode classifier and the refusal covers later turns, tools and sub-agents — **so it is not retried or worked around.** You run it |
+
+## ⛔ Four read-only queries that are yours
+
+All inside `set transaction read only`, and ⛔ **never** `GENIOS_ALLOW_PROD_WRITE` to run a report.
+
+```sql
+select from_state, to_state, count(*) from learning_transitions group by 1, 2;
+select brain, count(*) from learned_brain_entries group by brain;
+select revision, blocked_targets is null, blocked_subject_prefixes is null from learning_policies;
+-- ⛔ the one that sizes R3 (ADR-10), answerable only because S6 built the ledger:
+select unit, result_state, sink_reason, count(*) from learning_object_evaluations
+ where unit = 'recommendation_learning' group by 1, 2, 3;
+```
+
+---
+
+# ⛔ ROHIT'S — the original eight, kept for the record
+
+## The original table, as it stood on 2026-10-01
 
 ## Decisions (5)
 

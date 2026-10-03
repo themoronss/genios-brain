@@ -7,7 +7,7 @@ python scripts/context_coverage_report.py context > \
     speedrun008/YCW27/layer-3-context-graph/05-AUDIT-context-file-by-file.md
 ```
 
-Measured 2026-10-02. ⛔ Every number here is a measurement of one checkout; *a hardcoded count in a document is wrong the next day*, so the command above is the real answer and this file is its output.
+Measured 2026-10-03. ⛔ Every number here is a measurement of one checkout; *a hardcoded count in a document is wrong the next day*, so the command above is the real answer and this file is its output.
 
 ```
 files                       124
@@ -59,7 +59,7 @@ declared silences           23
 
 ## ⛔ Files of 100+ lines that no test file names
 
-⛔ **READ THE COLUMN LITERALLY.** This says no test file imports the module by its dotted path. It does **not** say the code is untested: both of the modules below are live and reached — `lifecycle/resolution.py` from `context/runner.py`, and `correlation_membership.declare_finding_events` from three production modules while `finding_events` is called directly by `tests/test_nothing_reads_a_name_that_cannot_exist.py` under a different import form. ⛔ *A guard that measures naming cannot answer coverage* — what this column finds is a module with no test of its OWN, which is a different and smaller thing.
+⛔ **READ THE COLUMN LITERALLY.** This says no test file imports the module by its dotted path. It does **not** say the code is untested — a module reached only through a caller that is itself heavily tested appears here, and so does one whose functions a test calls under a different import form. ⛔ *A guard that measures naming cannot answer coverage*; what this column finds is a module with no test of its OWN, which is a different and smaller thing. ⛔ Each row needs its callers checked before it is called a gap — when this ran for `context/`, BOTH rows turned out to be live and reached.
 
 | file | lines | public fns | writes |
 |---|---|---|---|

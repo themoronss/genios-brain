@@ -1,4 +1,42 @@
-# HANDOFF · Harsh (CTO) — five items, in the order that unblocks the most
+# HANDOFF · Harsh (CTO) — eight items, in the order that unblocks the most
+
+⛔ **This title said "five items" and there are eight.** `H6` was added 2026-10-01, `H7` on
+2026-10-02 and `H8` on the same day, and each landed at the bottom of the file without the header
+being touched. *A list edited one line at a time accumulates the lines nobody edited.*
+
+---
+
+## ⛔ START HERE — what to do, in this order
+
+| | Item | Shape | ⛔ Why this position |
+|---|---|---|---|
+| **1** | 🔴 **`H1`** apply `0186`–`0190` | **deployment**, one window | ⛔ **`insert_card` FAILS ON WRITE without `0190`** right now. Masked only because nothing is routing. ⛔ **Do not apply `0190` without `0189`** — one adds the lane column the other's card write needs, and clearing one alone turns a silent outage into a loud one |
+| **2** | 🔴 **`H2`** the OCR stack | **deployment** — `pytesseract`+`Pillow` in requirements **and** `tesseract-ocr` apt in the image, **both together** | 1,696 rows become readable; an L1 receipt can go green. Either half alone does nothing |
+| **3** | ⛔ **`H8`** three read-only checks + one decision | ⛔ **~2 minutes of SQL, no deployment** | ⛔ **This is the cheapest item on the page and the only one that tells us what production actually HOLDS.** Nine write-only tables' size · two receipts that have never run anywhere · whether `merge_history` is empty |
+| **4** | ⛔ **`H7`** 27 learning tests that have never run | **one command** where a DB exists | ⛔ *A skip is not a pass.* Any failure is a **real finding**, not a regression |
+| **5** | ⛔ **`H6`** `tests/test_delivery_spine.py` | **one command** where a DB exists | gives `spine.recover_expired_claims` its **first tests ever** |
+| **6** | 🟠 **`H3`** backfill 60 → 365 days | config | benchmark prompts P3/P4 become answerable at all |
+| **7** | 🟠 **`H4`** a writer for `deal.status` | **product plumbing** | `core.relationship` → `core.impact` → `cost_vs_benefit`, a four-deep chain |
+| **8** | 🟡 **`H5`** an approval-workflow source | **product plumbing** | 6 fact paths, 2 units |
+
+⛔ **Items 3, 4 and 5 are read-only or one command.** If you only have twenty minutes, do `H1` and
+then those three — they cost almost nothing and they are the difference between *"we think"* and
+*"we measured"*.
+
+⛔ **`H1` is the only item on this page that is breaking something right now.** Everything else is
+either a capability nobody has yet or a number nobody has yet.
+
+### What we did on our side, so you are not repeating it
+
+```
+15,220 tests green · 0 failed · 42 receipts · 17 commits waiting on Rohit's push
+⛔ every number in this document was measured from the code or from production, and
+⛔ where production could not be reached, the document says so instead of guessing
+```
+
+The full record is `speedrun008/YCW27/07-LEDGER-every-step-what-why-how-outcome.md`; the plan these
+items sit inside is `21-PLAN-TO-PRODUCTION.md`, where they are **Phase 0** — ⛔ the phase that
+nothing else can substitute for, and that we own none of.
 
 > **Written:** 2026-10-01 · **by:** Claude, from the YCW27 programme
 > **Nothing here needs a code change in `genios-brain`.** Every item is a deployment, a dependency

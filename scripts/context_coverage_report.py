@@ -33,18 +33,33 @@ def public_functions(tree: ast.Module) -> list[str]:
 
 
 def declared_silences(package: str) -> dict[str, list[str]]:
-    """``{module stem: [function, …]}`` from the package's own health module."""
+    """``{module stem: [function, …]}`` from whatever declaration modules the package holds.
+
+    ⛔ DISCOVERED, NOT DERIVED FROM THE PACKAGE NAME, AND THE FIRST VERSION WAS WRONG FOR FOUR
+    PACKAGES. It imported `genios_engine.<package>.<package>_health` — but the modules are named
+    for what they describe, not for their directory: `deliver/delivery_health.py`,
+    `reason/reasoning_health.py`, `packs/pack_health.py`, and `executive/unreached.py`, which does
+    not carry `health` at all. ⛔ So the column read **0 declared silences** for every one of them
+    while their tables were full, in a report whose whole job is to say what is declared.
+
+    *A name derived from a directory is a guess; a name found on disk is a measurement.*
+    """
     import importlib
 
     out: dict[str, list[str]] = defaultdict(list)
-    for name in (f"{package}_health", "contract_health"):
+    pkg_dir = ROOT / "genios_engine" / package
+    modules = sorted({p.stem for p in pkg_dir.glob("*.py")
+                      if p.stem.endswith("_health") or p.stem == "unreached"})
+    for name in modules:
         try:
             mod = importlib.import_module(f"genios_engine.{package}.{name}")
-        except ModuleNotFoundError:
-            continue
-        for entry in getattr(mod, "UNREACHED", {}):
-            stem, _, fn = entry.partition(".")
-            out[stem].append(fn)
+        except Exception:                          # noqa: BLE001 - a module that will not import
+            continue                               # is a finding for the suite, not for this report
+        for table in ("UNREACHED", "PULL_ONLY", "KNOWN_UNWIRED", "UNCUT_OVER",
+                      "REACHED_BY_DISPATCH"):
+            for entry in getattr(mod, table, {}):
+                stem, _, fn = entry.partition(".")
+                out[stem].append(fn or stem)
     return out
 
 
@@ -142,13 +157,13 @@ def main() -> int:
 
     print("## ⛔ Files of 100+ lines that no test file names\n")
     print("⛔ **READ THE COLUMN LITERALLY.** This says no test file imports the module by its "
-          "dotted path. It does **not** say the code is untested: both of the modules below are "
-          "live and reached — `lifecycle/resolution.py` from `context/runner.py`, and "
-          "`correlation_membership.declare_finding_events` from three production modules while "
-          "`finding_events` is called directly by "
-          "`tests/test_nothing_reads_a_name_that_cannot_exist.py` under a different import form. "
-          "⛔ *A guard that measures naming cannot answer coverage* — what this column finds is a "
-          "module with no test of its OWN, which is a different and smaller thing.\n")
+          "dotted path. It does **not** say the code is untested — a module reached only through "
+          "a caller that is itself heavily tested appears here, and so does one whose functions "
+          "a test calls under a different import form. ⛔ *A guard that measures naming cannot "
+          "answer coverage*; what this column finds is a module with no test of its OWN, which is "
+          "a different and smaller thing. ⛔ Each row needs its callers checked before it is "
+          "called a gap — when this ran for `context/`, BOTH rows turned out to be live and "
+          "reached.\n")
     if untested:
         print("| file | lines | public fns | writes |")
         print("|---|---|---|---|")

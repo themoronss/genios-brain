@@ -959,3 +959,20 @@ number is meaningless without its source set* · *never pipe a suite run through
 | ⛔⛔ **the near-catastrophe** | 77 org-scoped tables in neither erasure list read as a retention hole including verbatim customer mail. ⛔ **It is not one** — `/reset` keeps the account by contract, ACCOUNT erasure is foreign keys, and a receipt already asks the deployed schema. **Read the endpoint's contract before calling a list incomplete** |
 | **what shipped** | `platform/table_coverage.py` (9 write-only tables declared, 2 retractions recorded, `resolution()` reporting 639 unresolved of 2,867) · **receipt 42**, derived from `merge.py`'s own constants · `scripts/context_coverage_report.py` and the generated `05-AUDIT-context-file-by-file.md` · `HANDOFF-HARSH.md` §H8 |
 | **outcome** | 37 tests · **11/11 mutations caught** · receipts 41 → **42** · `context/` correctness 2 → **3** · full suite **15,220 passed · 1,067 skipped · 152 xfailed · 0 failed** |
+
+
+---
+
+## 2026-10-03 · the plan to production, and the audit of all eleven packages
+
+| | |
+|---|---|
+| **the task** | Rohit: *"plan bana ke do ki kya kya bacha hai, steps wise list do… make everything at production level… write notes to harsh and detailed auditing report"* |
+| ⛔⛔ **the crux** | everything is **built**, almost nothing is **live**, and the three things between them — `H1` migrations, `R1` the spend limit, `R2` activation — are **not mine**. Said plainly rather than buried under a list of my own work |
+| **the definition** | ⛔ *production level* got **seven checkable conditions**, each from a defect this programme failed to catch. **By them nothing qualifies today**, because the migration and activation conditions fail for everything |
+| **the audit** | all **eleven** packages, generated — `20-AUDIT-every-package/`. ⛔ `api/` is the worst on three columns at once and ⛔ **never appeared in `S7`'s ranking**, because *lines per receipt* with a zero denominator does not sort. `contracts/` is the control: 0 receipts **and** 0 tables written |
+| ✅ **a list closed** | the original brief's eight VERIFIED-MISSING items: **7 built, 1 declared unnecessary** |
+| ⛔ **four defects in my own paperwork** | a declaration column that read 0 for four packages (the module name was derived from the directory) · context-specific prose in a reusable tool · a total added instead of measured, **twice**, the second breaking a correct file count · `164` unreceipted tables where the number is **141** |
+| **for Harsh** | the handoff said *"five items"* and has **eight**; it now opens with a do-this-in-this-order table and names the three that are read-only or one command |
+| **for Rohit** | `R1`–`R15`, `D1`/`D2`, `P` — stable ids, introduced in the plan and mirrored into `19-PENDING`, because the same item was named four ways across four files |
+| **outcome** | 94 affected tests green · `resolution()` 639 of 2,872 (0.222) · plan, audit index and ten new audit pages written · ⛔ **no source behaviour changed** — one report generator was corrected |

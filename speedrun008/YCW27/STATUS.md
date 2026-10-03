@@ -15,6 +15,7 @@
 
 | When | What | Where |
 |---|---|---|
+| **2026-10-03** | ⛔⛔ **THE PLAN TO PRODUCTION, AND THE AUDIT OF ALL ELEVEN PACKAGES.** ⛔ The crux measured: everything is **built**, almost nothing is **live**, and the three things between them are **`H1` migrations · `R1` the spend limit · `R2` activation** — **none of them mine**. ⛔⛔ `api/` is the least-guarded package in the product on THREE columns at once (19,498 lines · 28 unreceipted tables · 2 declared silences · 11 modules no test names), and it never appeared in `S7`'s ranking because a ratio with a zero denominator does not sort. ✅ The original brief's eight VERIFIED-MISSING items are **closed** — 7 built, 1 declared unnecessary. Seven checkable conditions now define *production level*, and ⛔ **by them nothing in the product qualifies today** | [`21-PLAN-TO-PRODUCTION.md`](21-PLAN-TO-PRODUCTION.md) |
 | **2026-10-02** | ⛔⛔ **L3 `context/` COVERAGE AUDIT DONE — and it retracted SIX of its own findings.** `S7`'s number put `context/` last (2 receipts / 50,885 lines); ⛔ the headline was **wrong** — 306 test files import it and both receipts are correctness ones. The real gap is that nothing checks the **44 tables it writes** in production. ⛔⛔ The largest retraction: **77 org-scoped tables that read as a data-retention hole and are not one** — `/reset` deliberately keeps the account, and ACCOUNT erasure is foreign keys plus an existing receipt. **9 write-only tables declared · receipt 42 (merge) · 37 tests · 11/11 mutations** | [`layer-3-context-graph/04-AUDIT-PLAN-the-worst-covered-package.md`](layer-3-context-graph/04-AUDIT-PLAN-the-worst-covered-package.md) |
 | **2026-10-02** | ⛔⛔ **L6 `S10` DONE — `M14.C2` IS COMPLETE, 10 of 10.** The three gaps nobody had measured. ⛔⛔ **0 of 11 Atlas Layer 7 gaps now unmeasured — and none of the three became CLOSED**: each has one clause left and all three are Rohit's. ⛔⛔ `#3`'s real finding is a TRAP — `recommendation_learning`'s durable ADAPTIVE path is unreachable by **arithmetic**, and the obvious repair springs it. ⛔ `#5`'s enforcement is **proven**; the rendered surface is **unreached**. ⛔ `#6`'s reset **propagates into delivery**, uncredited by the Atlas. **4 of my own guards needed repair.** 69 tests · 27/27 mutations | [`layer-6-learning/STEP-S10-DONE-the-three-unmeasured-gaps.md`](layer-6-learning/STEP-S10-DONE-the-three-unmeasured-gaps.md) |
 | **2026-10-02** | ⛔⛔ **L6 `S9` DONE — and a finding of mine is RETRACTED.** `F17` called `MOVES WITH` a convention deviation; measured, it is in **nine of thirteen** declaration modules (29 vs 115). ⛔ The gate stopped me tightening a guard onto **29 correct entries**, and the mutation proves it: narrowing the form fails **9 modules**. The 104 absence guards got **the rule, not 78 rewrites**. +10 tests · 2/2 mutations | [`layer-6-learning/STEP-S9-DONE-the-paperwork-and-a-finding-of-mine-refuted.md`](layer-6-learning/STEP-S9-DONE-the-paperwork-and-a-finding-of-mine-refuted.md) |
@@ -35,6 +36,8 @@
 
 ```
 full suite   15,220 passed · 1,067 skipped · 152 xfailed · 0 failed      (14,534 when YCW27 began)
+⛔ built≠live  5 migrations unapplied · no domain activated · no card since 25 Sep 11:09 UTC
+⛔ coverage    141 of 183 written tables have NO receipt · api/ is the worst (28 of 42)
 L6 M14.C2    ⛔⛔ COMPLETE — 10 of 10 DONE · 0 failed at every step
 Atlas L7     11 gaps: 5 CLOSED · 6 PARTLY · ⛔ 0 LIVE · ⛔⛔ 0 UNMEASURED
 scorecard    08-ATLAS-SCORECARD-L1-to-L6.md · ⛔ 56 Atlas claims verified or refuted
@@ -3996,3 +3999,83 @@ tables written** — its zero is correct, not a gap.
 | ⛔ **a mutation that survives because something else catches it is a guard nobody is checking** |
 | ⛔ **verify a transitive claim transitively** — a direct-FK check cannot see a parent |
 | **a 124-file audit is generated, not written** |
+
+
+---
+---
+
+## ✅⛔⛔ 2026-10-03 · THE PLAN TO PRODUCTION — and the audit of all eleven packages
+
+```
+engine          660 files · 215,992 lines · 42 receipts · 189 tables in the migrations
+⛔ coverage      183 tables have a writer · 42 have a receipt · 141 have NONE
+⛔ built≠live    5 migrations unapplied · 0 domains activated · 0 cards since 25 Sep
+```
+
+### ⛔⛔ The crux, and it is not engineering
+
+Everything is built and almost nothing is live. The distance is **three things, two of them not
+mine**: `H1` the five unapplied migrations (⛔ `0190` breaks `insert_card` **on write**), `R1` the
+spend limit decision, `R2` activation for one tenant. ⛔ **My remaining work does not reach
+production on its own** — it makes the product *provable* once it is live, which is worth doing in
+parallel, not instead.
+
+### ✅ The original brief's VERIFIED-MISSING list is CLOSED
+
+Of the eight items that were missing when this programme opened — `EvidenceNeed`, `SituationSeed`,
+`QualifiedEnterpriseSignalBundle`, `ConfidenceVector`, the five pipeline counters and the five
+output lanes — ⛔ **seven are built** and the eighth, `SituationSeed`, is **declared unnecessary**:
+*"the Atlas names it; it has zero hits in the code and nothing needs it."*
+
+### ⛔ Seven conditions now define "production level", and nothing meets them
+
+receipt against production data · the receipt **can fail** · silences declared **both ways** ·
+tests **do not skip** · migration **applied** · path **activated** · measured **once** against
+production. ⛔ **`P5` and `P6` fail for everything**, which is not a reason to weaken the
+definition.
+
+### ⛔⛔ `api/` is the answer `S7` could not see
+
+```
+api        44 files · 19,498 lines · ⛔ 0 receipts · 42 tables · 28 unreceipted · 2 silences · 11 untested modules
+context   124 files · 50,885 lines ·    3 receipts · 44 tables · 33 unreceipted
+contracts  41 files · 14,617 lines ·    0 receipts · ✅ 0 tables written   ← the control
+```
+
+⛔ `S7` ranked by *lines per receipt* and a **zero denominator does not sort**, so the worst-covered
+package was invisible to the measurement built to find it. ⛔ `contracts/` is the control that makes
+the column readable: zero receipts **and** zero tables written, so its zero is correct.
+
+### ⛔ Four defects in my own paperwork, all found before it shipped
+
+| | |
+|---|---|
+| the report's **declaration column read 0** for four packages | it derived the module name from the directory, and they are named for what they describe — `delivery_health`, `reasoning_health`, `pack_health`, `executive/unreached.py`. ⛔ `deliver/` showed **0** silences with **23** declared |
+| a **context-specific paragraph in a reusable tool** | the caveat named two `context/` modules — true there, a **lie** on the other ten pages |
+| a **total I added instead of measuring** | twice: `657 · 215,591` then `667 · 215,091`, and ⛔ **the correction broke a file count that had been right**. Both are now printed by one script |
+| **`164` unreceipted tables** | the real number is **141**. Stated before measuring |
+
+⛔ Every one is the class this report exists to surface. *A report whose own numbers are wrong is
+worse than no report*, because it is read as a measurement.
+
+### Paperwork
+
+⛔ **`HANDOFF-HARSH.md` said "five items" and has eight** — `H6`, `H7` and `H8` each landed at the
+bottom without the header being touched. It now opens with a do-this-in-this-order table, and names
+the three items that are **read-only or one command**: `H8`, `H7`, `H6`.
+
+⛔ **Rohit's items had no stable ids** and were named differently in four files. **`R1`–`R15` plus
+`D1`/`D2` and `P`** are introduced in the plan and mirrored into `19-PENDING`, so one item cannot be
+worked twice or dropped silently.
+
+### Doctrine
+
+| Rule |
+|---|
+| ⛔ **a total is a measurement, not an addition of other people's measurements** |
+| ⛔ **and a correction needs the same measurement the original needed** |
+| ⛔ **a name derived from a directory is a guess; a name found on disk is a measurement** |
+| ⛔ **context-specific prose does not belong in a reusable tool** |
+| ⛔ **print the raw terms beside the ratio** — a ratio hides what its denominator cannot express |
+| ⛔ **define "production level" before claiming it**, or it means "work until it feels done" |
+| **a link that may not resolve is a stale pointer** |
