@@ -492,8 +492,76 @@ def weigh_authority(provenance: Provenance) -> AuthorityWeight:
     return AuthorityWeight(UNMAPPED_AUTHORITY, AuthorityBasis.UNMAPPED)
 
 
+#: ⛔⛔ **RANKS A READER CANNOT INTERPRET FROM THE NUMBER ALONE** — `{rank: (why, mover)}`.
+#:
+#: Atlas **L2-01** says *"incorrect authority configuration would still be applied consistently"*
+#: and grades the residual risk as real. It is, and this is where it lives. The table above is a
+#: dense ladder of seven classes, `0..MAX_AUTHORITY_RANK`, and `graph_facts.authority_rank` is a
+#: plain integer column that four other things also write — so some values arriving in it do not
+#: identify the class they claim.
+#:
+#: ⛔ WHY A COLLIDING RANK IS NOT COSMETIC. `context/graph_store.fact_write_action` compares the
+#: two numbers and nothing else::
+#:
+#:     if held_rank is not None and new_rank < held_rank:
+#:         return "discrepancy"       # lower authority disagrees -> flag, keep held
+#:     return "supersede"
+#:
+#: A strictly-lower new rank is **flagged and discarded**; anything else **overwrites**. And this
+#: module's own docstring already says why the scale may not be stretched: ALG-12's gap of `>= 2`
+#: *"only means anything because the ranks here are a dense, evenly-spaced ladder rather than
+#: scores: subtracting two of these and comparing the difference to 2 is arithmetic that becomes
+#: meaningless the moment the scale changes."*
+#:
+#: ⛔ WHAT IS **NOT** CLAIMED HERE, measured rather than assumed. `publish_derived_fact` scopes its
+#: own lookup by `version_prefix`, so it never supersedes an observed row; and across the engine the
+#: observed and derived writers share **no literal field name**. So no live corruption is asserted.
+#: But `write_fact`'s lookup is **not** prefix-scoped — it takes the first active row for
+#: `(org, node, field)` whatever wrote it — so the separation rests entirely on two field
+#: vocabularies never meeting, which nothing enforces. ⛔ And that measurement is a **lower bound**:
+#: 31 call sites pass a `field=` this programme could not resolve statically.
+#:
+#: CHECKED IN BOTH DIRECTIONS by `tests/capture/test_a_rank_says_how_it_was_decided.py`: a declared
+#: rank that has become unambiguous is as much a lie as an ambiguous rank nobody declared. One
+#: direction alone is how `mcp/` escaped the import ratchet in L3-01.
+UNINTERPRETABLE_RANKS: dict[int, tuple[str, str]] = {
+    0: ("`UNMAPPED_AUTHORITY` is `inferred`, so the FLOOR a provenance gets when none of the four "
+        "tables matched is the same number as a genuine inference. The module accepts this in "
+        "writing — *'rank 0 AND a warning. The warning is the half that gets the table fixed'* — "
+        "⛔ and a `log.warning` is not a reader. `AuthorityBasis.UNMAPPED` is the value that tells "
+        "the two apart and it is recorded on exactly ONE lane's trace "
+        "(`capture/pipeline.py`'s `STRUCTURED_STAGE`); nowhere else does the basis cross the seam",
+        "MOVES WHEN the basis is stored beside the rank wherever a rank is stored, or an unmapped "
+        "source is counted somewhere a person looks. ⛔ Renumbering the floor is a data migration "
+        "over `graph_facts` and is not this module's call"),
+    1: ("`context/graph_store.write_fact` and `reason/evidence.build_evidence_ref` both default "
+        "`authority_rank` to a bare `1`, and 1 is `chat_aside`. A caller that passes nothing is "
+        "indistinguishable from one asserting a Slack aside — and `graph_store` has a promotion "
+        "rule keyed on exactly that value (`held.authority_rank == 1 and authority_rank >= 2`), so "
+        "the ambiguity is load-bearing rather than latent",
+        "MOVES WITH rank 2 — the same defect in two signatures. ⛔ The fix is one named constant, "
+        "the way `context/analytic/publish.DEFAULT_AUTHORITY_RANK` already does it, and changing a "
+        "default changes what existing callers write"),
+    2: ("`context/graph_store.write_edge` defaults `authority_rank` to a bare `2`, and 2 is "
+        "`email_prose`. Same defect as rank 1, one layer over, on edges instead of facts",
+        "MOVES WITH rank 1 — see that entry. The two are one fix and neither is worth doing alone"),
+    100: ("⛔⛔ OFF THE LADDER ENTIRELY. `context/analytic/publish.DEFAULT_AUTHORITY_RANK = 100` "
+          f"against a ladder that ends at {MAX_AUTHORITY_RANK}. ✅ It is at least NAMED, which is "
+          "more than ranks 1 and 2 manage — but by `fact_write_action`'s comparison a row at 100 "
+          "can never be superseded by anything, and a `signed_document` arriving against one is "
+          "returned as a `discrepancy` and discarded in favour of the derived value. ⛔ The "
+          "comment introducing it says *'what the four writers already stamp'* and there are "
+          "**eight** callers, so the number was inherited and the count was never re-read",
+          "MOVES WHEN a derived field and an observed field first share a `(node, field)`, which "
+          "is the moment this stops being a hazard and becomes a corruption. ⛔ Rohit's: either "
+          "the derived scale folds into the ladder or `write_fact`'s lookup becomes "
+          "prefix-scoped the way `publish_derived_fact`'s already is"),
+}
+
+
 __all__ = [
     "AUTHORITY_RANK",
+    "UNINTERPRETABLE_RANKS",
     "LEGACY_RANK",
     "MAX_AUTHORITY_RANK",
     "OBJECT_TYPE_AUTHORITY",

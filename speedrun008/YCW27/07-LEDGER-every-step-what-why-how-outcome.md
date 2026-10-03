@@ -1049,3 +1049,22 @@ number is meaningless without its source set* · *never pipe a suite run through
 | ⛔ **the harness itself** | a missing file **crashed** it and lost the run; a repeated phrase could not be changed deliberately. Both repaired |
 | **outcome** | 12 tests · **10/10 mutations** · receipts 43 → **44** · capture/ 5 → **6**, all correctness · full suite **15,337 passed · 0 failed · 11:39** |
 | ✅ **PHASE 1 CLOSED** | five steps · ⛔ **52 candidates raised, 52 retired** · 3 receipts · 6 guard suites · 0 failed at every step. **Next: `2.1` Atlas L2's nine** |
+
+
+---
+
+## 2.1 · Atlas Layer 2 — nine claims, two receipts, eleven corrections
+
+| | |
+|---|---|
+| **what it arrived with** | nine claims graded six weeks ago, two of which nobody had ever located in code. ⛔ The rule says the Atlas check comes FIRST, so all nine were re-measured against today's code before a unit was drawn |
+| ⛔⛔ **L2-11, located** | `expertise.py:1463` takes `domain_ids[0]` from a `tuple(sorted(selected_domains))` over a **set** — the **alphabetically first** domain. It becomes `CapabilityManifest.domain`, and `domain_shadow.py:1169` uses that to pick **which tenant pack the reasoning reads**; `runner.py:760` gates on it. ⛔ Nothing records the choice, while the package's own citation tags carry every domain. ✅ `domain_hints` already returns them all. **Receipt 45** |
+| ⛔⛔ **L2-01, located** | `graph_facts.authority_rank` holds a dense `0..6` ladder AND `DEFAULT_AUTHORITY_RANK = 100`. `fact_write_action` compares raw integers, so 100 is unsupersedable and a **signed document** against it is returned a `discrepancy` and dropped. Plus three ranks that do not say how they were decided (floor 0 = `inferred`; bare defaults 1 = `chat_aside`, 2 = `email_prose`) — and rank 1 is **load-bearing**, `graph_store` promotes on `== 1`. **Receipt 46** + `UNINTERPRETABLE_RANKS` |
+| ✅ **measured as not firing** | the derived writer is `version_prefix`-scoped and the two writers share no literal field name. ⛔ But `write_fact`'s lookup is NOT prefix-scoped, and **31 `field=` arguments could not be resolved statically** — stated beside the verdict, because a measurement that hides its blind spot reads as a proof |
+| ✅ **L2-03 was wrong** | closed in code both ways: the writer marks `contended`, the reader excludes it and refuses on 2+, and a third function keeps *"nobody"* and *"several"* apart. ⛔ I nearly inverted it — the law is at the WRITE, and the read is one line |
+| ✅ **L2-09 measured** | `relationships`/`dependencies` really are **0 mentions in 2,133 lines**, and declared twice. But *"0 derived facts"* has a census with a **reader** — the half I expected to find unread |
+| ⛔ **L2-04** | partly expired: `authority` is built and imported in production. ⛔⛔ And `authority_view.py`'s *"the eighth view over the one graph"* is **uncheckable** — one occurrence engine-wide, no list anywhere. Attributed, not counted |
+| ⛔⛔ **eleven corrections** | nine to my own first reading, including **a second writer I had missed**, **the wrong class** (two `to_semantic_dict` in one module), and a declaration that **falsified its own count** the moment it was written |
+| ⛔ **two invalid mutations** | M17 mutated the test's own threshold (a test cannot catch a weakening of itself); M9's label said citation and it stripped reasoning. Both re-run correctly and caught — ⛔ and M9 still found a real hole, which is why an invalid mutation is read |
+| **outcome** | 50 tests · **49/49 mutations** · receipts 44 → **46** · 9 claims: 1 expired, 2 located, 1 partly expired, 1 measured, 4 Rohit's, ⛔ **0 unmeasured** · full suite **15,389 passed · 0 failed · 11:40** |
+| **next** | `2.2` — Atlas L1's five open claims |

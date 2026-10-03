@@ -15,6 +15,7 @@
 
 | When | What | Where |
 |---|---|---|
+| **2026-10-03** | ⛔⛔ **`2.1` DONE — Atlas L2's nine claims settled, and the two nobody had located are now receipts.** ⛔⛔ **L2-11**: `expertise.py:1463` takes `domain_ids[0]` out of a `tuple(sorted(set))`, so the **alphabetically first** domain becomes `CapabilityManifest.domain` and `domain_shadow.py:1169` uses it to pick **which tenant pack the reasoning reads** — nothing records the choice while the package's own citation tags carry every domain. ⛔⛔ **L2-01**: `graph_facts.authority_rank` carries **two scales** — the dense 0..6 ladder and `DEFAULT_AUTHORITY_RANK = 100`, same column — and `fact_write_action` compares raw integers, so a row at 100 is unsupersedable and a **signed document** arriving against one is returned a `discrepancy` and dropped. ✅ **L2-03 was simply WRONG** and is closed in code both ways. ⛔ **Eleven corrections, nine to my own first reading**, including a declaration that **falsified its own count** | [`28-AUDIT-step-2.1-atlas-layer-2-nine-claims.md`](28-AUDIT-step-2.1-atlas-layer-2-nine-claims.md) |
 | **2026-10-03** | ⛔⛔ **`1.4 capture/` DONE — PHASE 1 CLOSED, and *"why did I never see X?"* is now a receipt.** `capture/journey.py` was built for one sentence — *a system that discards 92% of what a founder was sent has to be able to answer "why did I never see X?" in one query* — and records that *"every layer wrote its refusal down. **Nothing ever joined them.**"* ✅ The join is reachable; ⛔ **nothing checked that every event HAS an answer.** **Receipt 44**, five derivations and nothing spelled: stopping actions from `TRACE_STOPPING`, event-keyed ledgers from `_LEDGERS` minus `_PER_SIGNAL_LEDGERS`, horizon from 4 sweep ticks. ⛔ Two mutations survived, **both about EMPTINESS** — an empty set made a loop assertion vacuous | [`26-AUDIT-capture-why-did-i-never-see-this-one.md`](26-AUDIT-capture-why-did-i-never-see-this-one.md) |
 | **2026-10-03** | ⛔⛔ **`1.3b` DONE — and one of the two untested modules was guarding HEALTH INFORMATION.** `reason/team/away.py` promises in its own docstring *"no leave reason ever leaves this module — the `sick` kind is reported as `leave`"*, and **nothing asserted it**: one line changed, or one new kind unmapped, and every seat learns why a colleague is off. ⛔ `api/identity_routes.py`'s node-set gate is the only thing stopping a human merging two nodes **no proposal names** — a rewrite of every fact and edge about them. ⛔ The test asserts the merge **did not happen**, not that a 422 came back: moving the merge above the gate fails four tests while still returning 422. 32 tests · **17/17 mutations** | [`25-STEP-1.3b-two-untested-modules-and-one-was-health-data.md`](25-STEP-1.3b-two-untested-modules-and-one-was-health-data.md) |
 | **2026-10-03** | ⛔⛔ **`reason/` AUDIT DONE — 20 candidates, 20 RETIRED, 0 receipts, and the finding was in the AUDIT'S OWN MEASUREMENT.** ⛔ Every derivable claim was already enforced: `signals`' *"byte-identical bindings"* is a partial unique index · 16 of 23 reasoning units ARE exercised by `parametrize(ALL_UNITS)` · a suppression log IS read by `executive/explain`. ⛔⛔ **The *"no test names it"* column was wrong 19 of 33 times across three audits, six repairs each over-corrected the other way, and the guard written FOR it named two functions in its own docstring — making the module it asserted was untested read as named. DELETED**, with the reasoning in every page and a guard against all six heuristics returning | [`24-AUDIT-reason-the-column-that-had-to-go.md`](24-AUDIT-reason-the-column-that-had-to-go.md) |
@@ -49,11 +50,12 @@ full suite   15,220 passed · 1,067 skipped · 152 xfailed · 0 failed      (14,
              audit's own naming column DELETED for being wrong 19 of 33 times
 ✅ 1.3b        DONE 2026-10-03 · ⛔ a health-data privacy transformation had no test
 ✅ PHASE 1      CLOSED 2026-10-03 · 5 steps · ⛔ 52 candidates raised, 52 retired · 3 receipts
-⛔ next up     2.1 Atlas L2's nine open claims — the largest remaining block
+✅ PHASE 2      2.1 DONE · ⛔ 0 unmeasured L2 claims left on my side
+⛔ next up     2.2 Atlas L1's five open claims
 L6 M14.C2    ⛔⛔ COMPLETE — 10 of 10 DONE · 0 failed at every step
 Atlas L7     11 gaps: 5 CLOSED · 6 PARTLY · ⛔ 0 LIVE · ⛔⛔ 0 UNMEASURED
 scorecard    08-ATLAS-SCORECARD-L1-to-L6.md · ⛔ 56 Atlas claims verified or refuted
-receipts     35 → 44 · ⛔ feedback/ 0 → 6 correctness · context/ 2 → 3 · platform/ 1 → 2 · capture/ 5 → 6
+receipts     35 → 46 · ⛔ feedback/ 0 → 6 correctness · context/ 2 → 3 · platform/ 1 → 2 · capture/ 5 → 7 · reason/ 8 → 9
 ledgers      ⛔ unread of F11's four: 4 → 1 — asking them found FOUR live defects
 ✅ coverage   context/ AUDITED 2026-10-02 · ⛔ 306 test files import it — the gap was RECEIPTS,
              not tests. 2 → 3 receipts · 9 write-only tables declared engine-wide
@@ -4459,3 +4461,100 @@ missing file is not a surviving mutation either.*
 | ⛔ **name the one judgement in a derived query** |
 | ⛔ **a builder refuses rather than guesses** when its declared source changes shape |
 | **two receipts about one ledger must each pin what the other does not ask** |
+
+
+---
+---
+
+## ⛔⛔ 2026-10-03 · ATLAS LAYER 2 SETTLED — nine claims, two receipts, eleven corrections
+
+```
+claims      9 re-checked · 1 EXPIRED · 2 located with a receipt · 1 partly expired
+            1 measured · 4 Rohit's · ⛔ 0 unmeasured
+receipts    44 → 46   both correctness, both L2, both org-scoped
+tests       50 new    mutations 49 valid, 49 caught · 0 surviving · 2 invalid
+full suite  15,389 passed · 0 failed · 11:40
+```
+
+### ⛔⛔ L2-11 · the alphabetically first domain picks the reasoning's playbook
+
+```
+capability_resolver.py:833   domain_ids=tuple(sorted(selected_domains))        ← a SET
+expertise_builder.py:87      "domain_ids": plan.domain_ids                     ← written
+expertise.py:1463            domain = str(domain_ids[0]) …                     ← PICKED
+expertise.py:1511            CapabilityManifest(domain=domain, …)
+domain_shadow.py:1169        packs[manifest.domain] = _tenant_pack(…)          ← the KNOWLEDGE
+runner.py:760                if capability.domain == effective["pack_id"]      ← gated
+```
+
+⛔ **The index does not pick a label, it picks the pack** — and because the list is `sorted()` over
+a set, `[0]` is the **alphabetically first** domain. A situation with no usable hint resolves
+against *every authored domain*. **Nothing records that a choice was made**, while the same
+package's citation tags carry all of them. ✅ The contract already owns the accessor that returns
+every entry (`domain_hints`); the routing site reaches past it. **Receipt 45.**
+
+### ⛔⛔ L2-01 · two authority scales in one integer column
+
+`capture/validate/authority` is a **dense 0..6 ladder** — `inferred` 0 … `signed_document` 6, no
+ties. `context/analytic/publish.DEFAULT_AUTHORITY_RANK` is **100**, into the **same column of the
+same table**. And `fact_write_action` compares the raw integers:
+
+```python
+if held_rank is not None and new_rank < held_rank:
+    return "discrepancy"      # lower authority disagrees -> flag, keep held
+return "supersede"
+```
+
+⛔ So a row at 100 is **unsupersedable**, and a countersigned contract arriving against one is
+returned a `discrepancy` and **dropped**. Three more ranks do not say how they were decided: the
+unmapped floor is `inferred`'s own 0; `write_fact`/`build_evidence_ref` default to a **bare 1** =
+`chat_aside`; `write_edge` to a **bare 2** = `email_prose`. ⛔ And rank 1's ambiguity is
+load-bearing — `graph_store` promotes on `held.authority_rank == 1` exactly.
+
+✅ **Measured as NOT firing today**: the derived writer is prefix-scoped and the two writers share
+no literal field name. ⛔ But `write_fact`'s lookup is **not** prefix-scoped, so the separation
+rests on two vocabularies never meeting — and **31 `field=` arguments could not be resolved
+statically**, which the measurement states beside its verdict. **Receipt 46** + `UNINTERPRETABLE_RANKS`.
+
+### ✅ Two claims were already closed, and one of them the scorecard had simply wrong
+
+**L2-03** — `observe_person_name` marks `origin='contended'`, `resolve_alias` excludes it **and**
+returns `None` on 2+ rows, `resolve_alias_candidates` keeps *"nobody"* and *"several"* apart, and a
+test guards it. ⛔ I nearly got it wrong the other way: `resolve_person_name` is a one-line
+delegation and looks like a lie — **the law is enforced at the WRITE, 200 lines away.**
+
+**L2-09** — `situation_bso.py` really does mention `relationships` and `dependencies` **0 times** in
+2,133 lines, and both are **declared twice** with the X8 cutover named. ✅ But *"0 derived facts"* is
+visible: `context/conversion.py` has a writer, a **reader**, and a test. ⛔ This is the one I
+expected to find unread.
+
+### ⛔⛔ Eleven corrections, nine to my own first reading
+
+| ⛔ what I was about to claim | what was true |
+|---|---|
+| *"the only writer emits ≤1 domain"* | **a SECOND writer** — `plan.domain_ids` is multi-valued by construction |
+| *"`ExpertisePackage._NON_CONTENT_METADATA`"* | **wrong class** — that is `SituationCandidate`'s, 300 lines earlier in the same file |
+| *"`AuthorityBasis` is thrown away"* | **persisted** at `pipeline.py:1685` |
+| *"two call sites disagree about arity"* | ⛔ **unfair** — a tag set takes all correctly; the defect is that the pick is SILENT |
+| *"three of four views absent"* | `authority` is **built and imported in production**; `ownership`'s DATA is written |
+| *"the eighth view over the one graph"* | ⛔ **uncheckable** — the phrase appears once, no list anywhere. Now attributed |
+| my guard `len(why) > 80` | measures **length, not content** — caught by a surviving mutation |
+| my declaration *"0 files engine-wide"* | ⛔⛔ **false the moment it was written.** *The observer can alter what it measures* |
+
+⛔ **And two mutations were invalid, which is reported rather than rounded up.** **M17** mutated the
+*test's own* threshold — a test cannot catch a weakening of itself; re-run against the SOURCE it
+failed 10 tests. **M9**'s label said it stripped a citation and it stripped the *reasoning*; it
+still exposed a real hole, which is why an invalid mutation is read and not discarded.
+
+### Doctrine
+
+| rule |
+|---|
+| ⛔⛔ **a declaration can falsify its own measurement** |
+| ⛔⛔ **two `to_semantic_dict` methods in one module make the right-looking name the wrong object** |
+| ⛔ **a citation that does not resolve is worse than none** — it reads as a measurement somebody took |
+| ⛔ **a test cannot catch a weakening of itself** — mutate the source |
+| ⛔ **an invalid mutation is read, not discarded** |
+| ⛔ **a law enforced at the write is invisible at the read** |
+| ⛔ **grep every spelling of a key, not the first one found** |
+| ⛔ **a comment's count ages faster than its claim** — *"the four writers"*, and there are eight callers |

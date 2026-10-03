@@ -1,6 +1,12 @@
 """L2.1.4 · the AUTHORITY VIEW — *who can decide what, in this org, at a stated instant*.
 
-The eighth view over the one graph, and the only one that was missing entirely. Doc 01 states
+⛔ ATTRIBUTED, NOT COUNTED. An earlier draft of this line read *"the eighth view over the one
+graph"*. **Nothing in this repository enumerates eight views** — the phrase appeared exactly once,
+engine-wide, and `L2.1.4` is the only view-numbered module in `context/`. The list lives in doc 01,
+which is not in the repo, so the ordinal cannot be checked from here and a reader who tried would
+conclude seven siblings existed somewhere. What IS checkable is the second half of the sentence,
+and it is the half that matters: of the views doc 01 names, this is the one it grades as missing
+entirely. Doc 01 states
 what it holds in one line — *"`Arjun approves contracts > $50K` lives here as **data**, not as an
 `if` statement"* — and names the three things that cannot happen without it: Layer 4's Policy
 unit has no rules to read, its Constraint unit has no thresholds to check, and the Founder
@@ -49,6 +55,64 @@ from typing import Any, Protocol
 
 from genios_engine.contracts.authority import (NO_AUTHORITY_RULE, AuthorityRule, AuthoritySource)
 from genios_engine.contracts.validators import require_aware, require_text
+
+
+#: ⛔ **THE FOUR VIEWS ATLAS L2-04 NAMES, AND WHICH OF THEM HAS A READ SURFACE** —
+#: `{view: (state, mover)}`.
+#:
+#: The Atlas claim is *"explicit complete authority/ownership/resource/use-restriction views … are
+#: absent"*, graded STILL TRUE on 2026-10-01. ⛔ **One of the four is this module**, so the claim
+#: has partly expired — and the first re-measurement of the other three was taken by **grepping for
+#: module filenames**, which is how `ownership` came to be called absent when its data is written on
+#: every sweep. *A name that is not distinctive is not evidence.* So each entry below says what was
+#: measured, and the measurement is the concept rather than the spelling.
+#:
+#: ⛔ WHAT A "VIEW" MEANS HERE, because the word is doing two jobs. `context/projections.py` holds
+#: DOMAIN lenses — the Sales/Support/HR cut of one graph — and is a different thing from these,
+#: which are question-shaped read surfaces (*who may decide · who owns this · what is committed ·
+#: how may this be used*). Conflating them is why a first pass reported `projections.py` as
+#: covering L2-04 when it answers none of those four questions.
+#:
+#: CHECKED IN BOTH DIRECTIONS by `tests/context/test_the_four_views_say_which_exist.py`.
+#:
+#: ⛔⛔ BUILDING THE THREE ABSENT ONES IS NOT A UNIT THIS PROGRAMME MAY MINT FOR ITSELF. Three new
+#: read surfaces is a roadmap decision; what is owed here is an honest statement of which exist.
+ATLAS_L2_04_VIEWS: dict[str, tuple[str, str]] = {
+    "authority": ("✅ BUILT — this module. `who can decide what, at a stated instant`, with three "
+                  "stated laws: an inferred rule never enforces, absence is not permission, and "
+                  "every read takes `evaluated_at` as a parameter rather than a clock. Imported by "
+                  "`context/patterns/store.py` in production, so it is a surface and not a draft",
+                  "MOVES WHEN nothing — it is done. The entry stays so the Atlas row can be "
+                  "corrected against code rather than against memory"),
+    "ownership": ("⛔ THE DATA IS WRITTEN, THE SURFACE IS NOT. `commitment.owner` is a fact, and "
+                  "`context/pipeline.py` records why it had to become one: "
+                  "`executive/assignment.resolve_owner` CANNOT SEE EDGES, so ownership sat in the "
+                  "graph unreadable at the one point that needed it and *'all 43 cards carry "
+                  "assignee = NULL'*. The same file names the gap this entry is about — *'the "
+                  "distinction an ownership surface is built out of'* — stated vs attributed "
+                  "ownership, which is kept in the data and has nowhere to be asked",
+                  "MOVES WHEN a surface asks `who owns this, and did they say so or did we infer "
+                  "it`. ⛔ Rohit's: a new read surface, not a repair"),
+    "resource": ("⛔ A CORRELATOR AND A REASONER, NO SURFACE. `context/correlation_resource.py` "
+                 "derives resource facts and `reason/reasoners/resource_unit.py` reasons over "
+                 "them, so the question is answerable INSIDE a sweep and nowhere else. Neither is "
+                 "a read surface: nothing can be asked `what is committed, by whom, until when` "
+                 "outside the pipeline that happens to compute it",
+                 "MOVES WITH ownership — the two are the same shape of gap and the same shape of "
+                 "fix. ⛔ Rohit's"),
+    "use_restriction": ("⛔⛔ ABSENT, AND THE NEAREST BUILT THING ANSWERS A DIFFERENT QUESTION. The "
+                        "term appears in **0 files engine-wide other than this declaration** — ⛔ and that "
+                        "qualifier is load-bearing: writing the gap down is what put the word in "
+                        "the codebase, so a later count of 1 is this entry and not a surface. "
+                        "`capture/visibility_rules.py` "
+                        "governs AUDIENCE — who may see this — which is not USE: *'shared under "
+                        "NDA'* and *'do not forward'* restrict what may be DONE with a fact that "
+                        "the reader is fully entitled to see. ⛔ Neither substitutes for the "
+                        "other, and treating visibility as a use policy is how a system ends up "
+                        "quoting a competitor's price back to them with correct permissions",
+                        "MOVES WHEN a source carries a use term the engine must honour. ⛔ Rohit's, "
+                        "and it is the only one of the four with no data behind it either"),
+}
 
 #: The table migration 0097 creates. Spelled once so the store, the erasure list and the tests
 #: all name it the same way.

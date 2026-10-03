@@ -573,6 +573,141 @@ def _UNEXPLAINED_EVENT_SQL(org: str | None) -> str:
             + _org_filter(org, "se"))
 
 
+def _MIXED_AUTHORITY_SCALE_SQL(org: str | None) -> str:
+    r"""Active `(node, field)` pairs holding BOTH an on-ladder and an off-ladder authority rank.
+
+    ⛔⛔ ATLAS L2-01, LOCATED. The claim is *"incorrect authority configuration would still be
+    applied consistently"*, and `graph_facts.authority_rank` is where it lives: a plain integer
+    column carrying two scales that were never reconciled.
+
+    * `capture/validate/authority.AUTHORITY_RANK` is a dense ladder, `0..MAX_AUTHORITY_RANK`,
+      seven classes, no ties — `inferred` at the bottom and `signed_document` at the top.
+    * `context/analytic/publish.DEFAULT_AUTHORITY_RANK` is **100**, and writes the same column of
+      the same table (`FACT_TABLE = "graph_facts"`).
+
+    ⛔ AND THE TWO NUMBERS ARE COMPARED WITH NOTHING ELSE. `context/graph_store.fact_write_action`::
+
+        if held_rank is not None and new_rank < held_rank:
+            return "discrepancy"       # lower authority disagrees -> flag, keep held
+        return "supersede"
+
+    So a held row at 100 can never be superseded, and a `signed_document` arriving against one
+    comes back a `discrepancy` and is discarded in favour of the derived value. The ladder's own
+    module says why stretching the scale breaks more than this: ALG-12's gap of `>= 2` *"only means
+    anything because the ranks here are a dense, evenly-spaced ladder rather than scores."*
+
+    ⛔ WHAT THIS RECEIPT DOES **NOT** ASSERT, because it was measured instead of assumed. No live
+    corruption is claimed. `publish_derived_fact` scopes its own lookup by `version_prefix` and so
+    never supersedes an observed row, and the observed and derived writers share no literal field
+    name anywhere in the engine. ⛔ But `write_fact`'s lookup is NOT prefix-scoped — it takes the
+    first active row for `(org, node, field)` whoever wrote it — so the separation rests on two
+    field vocabularies never meeting, which nothing enforces, and 31 call sites pass a `field=`
+    that could not be resolved statically. **This receipt is the thing that notices the first
+    meeting**, which is the moment the hazard becomes a corruption.
+
+    ⛔ THE PREDICATE IS THE READER'S, NOT A FRESH ONE. `valid_to is null and status = 'active'` is
+    exactly what `graph_store.write_fact` selects `held` with; asking a different question here
+    would measure rows the comparison never sees.
+
+    DERIVED: the ladder's top from `MAX_AUTHORITY_RANK`, and the existence of an off-ladder writer
+    from `UNINTERPRETABLE_RANKS`. ⛔ If nothing wrote off-ladder ranks any more this receipt could
+    never go red, so that is a refusal rather than a silent pass.
+    """
+    from genios_engine.capture.validate.authority import (MAX_AUTHORITY_RANK,
+                                                          UNINTERPRETABLE_RANKS)
+
+    top = int(MAX_AUTHORITY_RANK)
+    off_ladder = sorted(r for r in UNINTERPRETABLE_RANKS if r > top)
+    assert off_ladder, (
+        "no rank above the ladder's top is declared in `UNINTERPRETABLE_RANKS` any more, so this "
+        f"receipt's `authority_rank > {top}` half can never match and it would pass for ever. If "
+        "the derived scale folded into the ladder, retire this receipt deliberately")
+    return ("select count(*) from (select subject_node_id, field from graph_facts "
+            f"where valid_to is null and status = 'active'{_org_filter(org)} "
+            "group by subject_node_id, field "
+            f"having bool_or(authority_rank <= {top}) and bool_or(authority_rank > {top})) x")
+
+
+def _MULTI_DOMAIN_ROUTED_PACKAGE_SQL(org: str | None) -> str:
+    r"""Published expertise packages whose route selected SEVERAL business domains.
+
+    ⛔ WHY THIS IS NOT A STYLE COMPLAINT ABOUT AN INDEX. `reason/adapters/expertise.py` reaches into
+    the package's own metadata and takes the first entry::
+
+        domain_ids = package.metadata.get("domain_ids") or ()
+        domain = str(domain_ids[0]) if domain_ids else "general"
+
+    That value becomes `CapabilityManifest.domain`, and `reason/domain_shadow.py` uses that field to
+    SELECT THE TENANT PACK the reasoning then reads::
+
+        if manifest.domain not in packs:
+            packs[manifest.domain] = _tenant_pack(registry, store, org_id, manifest.domain)
+
+    `reason/runner.py` gates on the same field (`capability.domain == effective["pack_id"]`). So the
+    index does not pick a label — it picks the knowledge.
+
+    ⛔⛔ AND THE LIST IS SORTED, WHICH MAKES `[0]` THE ALPHABETICALLY FIRST DOMAIN. `RoutePlan` is
+    sealed with `domain_ids=tuple(sorted(selected_domains))` over a `set`, and a situation carrying
+    no usable hint resolves against `sorted(self.catalog.domains.keys())` — every authored domain.
+    A multi-domain route therefore reasons against whichever pack sorts first alphabetically, and
+    **no line anywhere records that a choice was made**. This is Atlas L2-11, *"wrong first domain
+    … can still enter the wrong view"*, with its mechanism traced rather than suspected.
+
+    ✅ THE CONTRACT ALREADY OWNS THE ACCESSOR THAT DOES NOT DO THIS. `ExpertisePackage.domain_hints`
+    returns every entry, sorted and unique, and `packs/compiler/runtime_brains` consumes it that
+    way. The routing site reaches past it into the raw bag.
+
+    ⛔ TWO REFUSALS, BECAUSE EITHER WOULD MAKE THIS RECEIPT ALWAYS-GREEN RATHER THAN CORRECT:
+
+    1. the metadata key is read off `RoutePlan`'s own field names, so a rename is a refusal here
+       instead of a query that quietly counts a key nobody writes;
+    2. `OBSERVATION_METADATA_KEYS` must NOT contain it. `addressable_metadata` strips that set
+       inside `ExpertisePackage.to_semantic_dict`, which is what the publisher stores, so adding
+       the key to it would empty this query's column while every test still passed — the
+       always-green failure this programme has now hit twice.
+
+    ⛔ RETRACTION, KEPT WHERE THE CLAIM WAS MADE. The first draft of this receipt asserted against
+    `ExpertisePackage._NON_CONTENT_METADATA`. **There is no such attribute on this class.**
+    `_NON_CONTENT_METADATA` and `address_free_metadata` belong to `SituationCandidate`, several
+    hundred lines earlier in the same file, and that object is NOT what the publisher stores. The
+    conclusion held — `domain_ids` does survive into the payload — but it held through a different
+    filter, and the measurement that nearly went in was of the wrong class. Two `to_semantic_dict`
+    methods in one module is enough to make the right-looking name the wrong object.
+
+    DECLARED LIMIT, not an oversight: a `domain_ids` stored as a bare STRING is not counted.
+    `domain_hints` tolerates that shape and normalises it to one entry, so it is a single-domain
+    route by construction and has nothing to pick between.
+    """
+    from dataclasses import fields as _fields
+    from dataclasses import is_dataclass as _is_dataclass
+
+    from genios_engine.contracts.domain_expertise import OBSERVATION_METADATA_KEYS
+    from genios_engine.packs.compiler.models import RoutePlan
+
+    # ⛔ ASKED, NOT ASSUMED. `fields()` raises `TypeError` on a non-dataclass, and a receipt
+    # builder that dies with "must be called with a dataclass type or instance" tells the reader
+    # nothing about which claim just stopped being checkable.
+    assert _is_dataclass(RoutePlan), (
+        "`packs.compiler.models.RoutePlan` is no longer a dataclass, so this receipt cannot read "
+        "the metadata key off its fields. Re-derive the key before trusting the query")
+    plan_fields = {f.name for f in _fields(RoutePlan)}
+    key = "domain_ids"
+    assert key in plan_fields, (
+        f"`RoutePlan` no longer carries a {key!r} field, and `packs/compiler/expertise_builder` "
+        f"writes this receipt's metadata key straight from it. Fields today: {sorted(plan_fields)}")
+    assert key not in OBSERVATION_METADATA_KEYS, (
+        f"{key!r} has joined `OBSERVATION_METADATA_KEYS`, so `addressable_metadata` now strips it "
+        "from the payload `ExpertisePackage.to_semantic_dict` hands the publisher. This receipt "
+        "would then read an absent column and pass for ever. Either the key moved or the receipt "
+        "is obsolete -- decide, do not let it go green by itself")
+    path = f"p.payload->'metadata'->'{key}'"
+    return ("select count(*) from expertise_packages p "
+            f"where p.payload->'metadata' ? '{key}' "
+            f"and jsonb_typeof({path}) = 'array' "
+            f"and jsonb_array_length({path}) > 1"
+            f"{_org_filter(org, 'p')}")
+
+
 def _PARKED_WITH_A_CHANNEL_SQL() -> str:
     from genios_engine.deliver.routing import AGENT_TRANSPORTS
     from genios_engine.deliver.units import _implemented_channels
@@ -960,6 +1095,41 @@ def receipts(org: str | None) -> list[Receipt]:
                 "a bound fact path with no writer means a unit role that can never bind -- declare "
                 "it in reason/unit_health with a reason and a mover, or find out what stopped "
                 "writing it"),
+
+        # ⛔⛔ L2 · TWO AUTHORITY SCALES SHARE ONE COLUMN, AND THE COLUMN DECIDES WHO WINS.
+        #
+        # Atlas L2-01, located. The ladder is 0..6 and `context/analytic/publish` stamps 100 into
+        # the same `graph_facts.authority_rank`. `fact_write_action` compares the raw integers, so
+        # a row at 100 is unsupersedable and a signed document arriving against one is returned a
+        # `discrepancy` and dropped. ⛔ Measured as NOT firing today — the two writers share no
+        # literal field name and the derived writer is prefix-scoped — so this receipt is the
+        # thing that notices the first time they meet.
+        Receipt("L2", "no fact holds two authority scales at once",
+                _MIXED_AUTHORITY_SCALE_SQL(org),
+                lambda n: n == 0,
+                "a (node, field) carrying both an on-ladder rank and the off-ladder derived rank "
+                "is one where fact_write_action compares incomparable numbers -- fold the derived "
+                "scale into the ladder, or prefix-scope write_fact's lookup the way "
+                "publish_derived_fact's already is"),
+
+        # ⛔⛔ L2 · A MULTI-DOMAIN ROUTE PICKS ONE PACK ALPHABETICALLY AND SAYS SO NOWHERE.
+        #
+        # Atlas L2-11, located. `reason/adapters/expertise.py` takes `domain_ids[0]` out of the
+        # package metadata; that becomes `CapabilityManifest.domain`; and `domain_shadow.py` uses
+        # that field to pick which TENANT PACK the reasoning reads. The list arrives
+        # `tuple(sorted(...))` out of a set, so the index selects the alphabetically first domain
+        # and nothing records that several were available.
+        #
+        # ⛔ The receipt is labelled L2 and the table is L3's (`0047_l3_domain_compiler.sql`). The
+        # CLAIM is about the pick, which is Layer 2's; the storage is where the evidence happens to
+        # live. Said out loud because this programme has already paid once for two vocabularies
+        # sharing one field.
+        Receipt("L2", "no published reasoning package was routed by picking one of several domains",
+                _MULTI_DOMAIN_ROUTED_PACKAGE_SQL(org),
+                lambda n: n == 0,
+                "a package whose route selected several domains reasoned against whichever pack "
+                "sorts first alphabetically -- use ExpertisePackage.domain_hints, which returns "
+                "them all, or record the choice where a reader can see it"),
 
         # ⛔ L5 · EVERY DELIVERED CARD SAYS WHICH KIND OF OUTPUT IT IS, OR SAYS IT WAS NEVER ROUTED.
         #

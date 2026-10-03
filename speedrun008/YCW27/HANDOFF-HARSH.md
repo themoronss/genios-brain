@@ -1,6 +1,8 @@
-# HANDOFF · Harsh (CTO) — eight items, in the order that unblocks the most
+# HANDOFF · Harsh (CTO) — nine items, in the order that unblocks the most
 
-⛔ **This title said "five items" and there are eight.** `H6` was added 2026-10-01, `H7` on
+⛔ **This title has now been wrong twice — "five" when there were eight, "eight" when `H9` landed.** A count in a title is a number that ages; it is corrected rather than removed because the count is what tells you whether you have read all of it.
+
+⛔ **The original note:** this said "five items" and there were eight. `H6` was added 2026-10-01, `H7` on
 2026-10-02 and `H8` on the same day, and each landed at the bottom of the file without the header
 being touched. *A list edited one line at a time accumulates the lines nobody edited.*
 
@@ -649,3 +651,101 @@ your call and Rohit's, not a tidy-up.
 
 → `layer-3-context-graph/04-AUDIT-PLAN-the-worst-covered-package.md`,
 `genios_engine/platform/table_coverage.py` (the measurement, with its limits declared)
+
+
+---
+---
+
+# ⛔⛔ H9 · 🔴 ADDED 2026-10-03 · **Two queries that decide whether a signed contract can be overwritten by a weekly metric**
+
+## What it is
+
+`graph_facts.authority_rank` is one integer column carrying **two different scales**.
+
+| scale | range | where it comes from |
+|---|---|---|
+| the authority ladder | **0 … 6** | `capture/validate/authority.AUTHORITY_RANK` — dense, evenly spaced, no ties. `inferred` 0 · `chat_aside` 1 · `email_prose` 2 · `attachment` 3 · `structured_source` 4 · `company_canon` 5 · **`signed_document` 6** |
+| the derived default | **100** | `context/analytic/publish.DEFAULT_AUTHORITY_RANK`, and `FACT_TABLE = "graph_facts"` — the **same table, same column** |
+
+And `context/graph_store.fact_write_action` compares the raw integers and nothing else:
+
+```python
+if held_rank is not None and new_rank < held_rank:
+    return "discrepancy"      # lower authority disagrees -> flag, keep held
+return "supersede"
+```
+
+⛔⛔ **So a row sitting at 100 can never be superseded by anything**, and a **countersigned
+contract** (rank 6) arriving against one is returned a `discrepancy` and **discarded in favour of
+the derived value**.
+
+## ✅ What we already measured, and why it is still a question
+
+Two things keep the scales apart **today**:
+
+1. `publish_derived_fact` scopes its own lookup by `version_prefix`, so it never supersedes a row
+   it did not write.
+2. Across the whole engine the two writers share **no literal field name**. Observed writes
+   `deal.stage`, `party.role`, `thread.ball_in_court`, `commitment.due_at`…; derived writes
+   `derived.contract_spend.summary` and friends. **Intersection: none.**
+
+⛔ **But `write_fact`'s lookup is NOT prefix-scoped.** It takes the first active row for
+`(org_id, subject_node_id, field)` whoever wrote it. So the separation rests entirely on two field
+vocabularies never meeting, and **nothing enforces that**.
+
+⛔ **And our measurement states its own blind spot: 31 call sites pass a `field=` we could not
+evaluate statically** (10 in `write_fact`, 14 in `_write_fact`, 7 in `publish_derived_fact`). A
+static read cannot close this. **The database can, in two queries.**
+
+## ⛔ Why I cannot run them
+
+No database URL is configured in this checkout. And a reminder that holds for every query on this
+page: **a read runs inside `set transaction read only`, and `GENIOS_ALLOW_PROD_WRITE` is never set
+to run a report** — that variable is named for writes because it was written for writes.
+
+## What to run
+
+```sql
+-- H9.1 · do any active facts sit off the ladder at all?
+begin; set transaction read only;
+
+select authority_rank, count(*) as rows
+from graph_facts
+where valid_to is null and status = 'active'
+group by authority_rank
+order by authority_rank;
+
+-- H9.2 · THE ONE THAT MATTERS. Receipt 46, by hand: has a (node, field) ever held
+--        BOTH an on-ladder rank and an off-ladder one? This is the collision.
+select count(*) as colliding_pairs
+from (
+  select subject_node_id, field
+  from graph_facts
+  where valid_to is null and status = 'active'
+  group by subject_node_id, field
+  having bool_or(authority_rank <= 6) and bool_or(authority_rank > 6)
+) x;
+
+commit;
+```
+
+## What a failure would mean
+
+| result | what it means |
+|---|---|
+| `H9.2` returns **0** | ✅ the hazard has never fired. **Receipt 46 is green against production**, and `R16` is a design decision taken at leisure rather than an incident |
+| `H9.2` returns **> 0** | ⛔⛔ **it is live.** On those pairs, `write_fact` is already comparing incomparable numbers, and the higher-authority side has been losing. Each row is a fact where the engine preferred a derived weekly value over an observed one — possibly over a signed document. **This stops being `R16` and becomes an incident** |
+| `H9.1` shows ranks **other than 0-6 and 100** | ⛔ a **third** scale exists that nothing in the code accounts for, and `UNINTERPRETABLE_RANKS` is incomplete |
+
+## Why it is worth your five minutes
+
+It is the only question on this page where a static read genuinely cannot get the answer, and the
+two outcomes are **a roadmap item** and **a data incident**. ⛔ Receipt 46 will answer it
+automatically on every readiness run once a database is reachable — this is just the first reading,
+and the first reading is the one that decides whether anybody needs to hurry.
+
+⛔ **One more thing worth two minutes while you are in there**: `H9.1`'s distribution also settles
+whether rank **1** is doing two jobs in practice. `graph_store` promotes on `held.authority_rank == 1`
+exactly, and 1 is both `chat_aside` **and** what `write_fact` writes when the caller passes
+nothing. A large pile at rank 1 is not proof either way — but a pile at rank 1 whose `source` is
+null is, and that is `R17`'s evidence.

@@ -90,6 +90,21 @@ would have told every seat why a colleague is off. ⛔ The other, `api/identity_
 untested gate on a **destructive** merge. 32 tests, 17/17 mutations. ⛔ Not on anybody's list — both
 are closed. **Next: `1.4 capture/` or `2.1` Atlas L2's nine claims.**
 
+⛔⛔ **NEW ON ROHIT'S LIST, OUT OF `2.1` (2026-10-03)** — four items, all design decisions that
+no amount of building closes. Each is declared in code with its cost stated.
+
+| # | the decision | where it is declared | ⛔ why it cannot be mine |
+|---|---|---|---|
+| **R16** | ⛔⛔ **the two authority numbers.** `graph_facts.authority_rank` carries the dense `0..6` ladder AND `DEFAULT_AUTHORITY_RANK = 100`. `fact_write_action` compares raw integers, so a row at 100 is unsupersedable and a **signed document** arriving against one is returned a `discrepancy` and **dropped**. Either the derived scale folds into the ladder, or `write_fact`'s lookup becomes `version_prefix`-scoped the way `publish_derived_fact`'s already is | `capture/validate/authority.UNINTERPRETABLE_RANKS[100]` · **receipt 46** | a **data migration over `graph_facts`**, and a choice about which scale is right |
+| **R17** | the **bare rank defaults**: `write_fact` and `build_evidence_ref` default to `1` (= `chat_aside`) and `write_edge` to `2` (= `email_prose`), so "the caller passed nothing" is indistinguishable from a stated class. ⛔ Load-bearing: `graph_store` promotes on `held.authority_rank == 1`. ✅ The fix has a precedent in the codebase — name the constant, as `publish.py` does | `UNINTERPRETABLE_RANKS[1]` and `[2]`, declared as **one fix** | changing a default **changes what every existing caller writes** |
+| **R18** | ⛔ **the silent domain pick.** `expertise.py:1463` routes on the **alphabetically first** of several domains and records nothing. Use `domain_hints` (which returns them all), or record the choice where a reader can see it | **receipt 45** · the receipt's own detail line | which of the two is right is a **product** answer about multi-domain situations |
+| **R19** | ⛔ **three graph views**: `ownership` (the data is written, the surface is not), `resource` (a correlator and a reasoner, no surface), `use_restriction` (**0 files** engine-wide — and ⛔ it is *not* `visibility_rules`, which governs AUDIENCE, not USE) | `context/authority_view.ATLAS_L2_04_VIEWS` | **three new read surfaces is a roadmap item**, not a unit I may mint |
+
+✅ **And three L2 claims moved OFF the open list**: `L2-03` is **EXPIRED** (closed in code, both
+directions, with a test), `L2-09`'s census half is **closed** (it has a reader), and `L2-04` is
+**partly expired** (`authority` is built and imported in production). ⛔ The scorecard rows for all
+five were corrected — two of them had been graded by re-reading the Atlas rather than the code.
+
 ✅⛔⛔ **PHASE 1 IS CLOSED (2026-10-03)** — five coverage steps, ⛔ **52 candidates raised and 52
 retired**, three receipts and six guard suites. `1.4 capture/` added **receipt 44**, which turns
 `journey.py`'s own sentence — *"why did I never see X?"* — into a production check with five

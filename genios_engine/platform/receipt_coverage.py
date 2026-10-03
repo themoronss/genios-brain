@@ -111,6 +111,20 @@ RECEIPT_PACKAGE: dict[str, tuple[str, str]] = {
     "every unit that runs and never completes is a declared one": (
         "reason", "The third kind of silence — runs and never completes. ⛔ Derived-table outer "
                   "`from`; the real source is `reasoning_reasoner_results`"),
+    "no fact holds two authority scales at once": (
+        "capture", "⛔ The table is `graph_facts` (`context/`'s) and the comparison is "
+                   "`context/graph_store.fact_write_action`'s -- but the LADDER is "
+                   "`capture/validate/authority`'s, it is the thing that defines what a rank "
+                   "means, and `UNINTERPRETABLE_RANKS` there is where the collision is declared. "
+                   "*A receipt guards a contract, not a table*: an operator reading this goes to "
+                   "the ladder to find out which scale is right"),
+    "no published reasoning package was routed by picking one of several domains": (
+        "reason", "⛔ The table is `expertise_packages` (`0047_l3_domain_compiler.sql`, so L3's) "
+                  "and the CLAIM is about `reason/adapters/expertise`'s `domain_ids[0]`, which "
+                  "becomes `CapabilityManifest.domain` and picks the TENANT PACK in "
+                  "`reason/domain_shadow`. The thing an operator would go and read is the routing "
+                  "site. *A receipt guards a contract, not a table* -- the same reason the bound "
+                  "fact-path receipt is `reason/` while its table is `context/`'s"),
     "the current reasoning era selects, not only defers": (
         "reason", "An era that only defers is a reasoner that never decides"),
     "every fact path a reasoning unit binds is written or declared unwritten": (
