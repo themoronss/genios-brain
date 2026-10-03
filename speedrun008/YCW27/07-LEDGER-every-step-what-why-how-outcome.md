@@ -1034,3 +1034,18 @@ number is meaningless without its source set* · *never pipe a suite run through
 | ⛔ **the second module** | `api/identity_routes.py`'s node-set gate is the only thing stopping a human merging two nodes **no proposal names** — *"it rewrites who every fact and edge is about"*. ⛔ **The test asserts `apply_merge` was never CALLED**, because a gate placed after the act still returns 422; the mutation that moves the merge above the gate fails four tests |
 | ⛔ **one test of mine was theatre** | it set the field under test with a no-op expression. Repaired to assert the fixture carries it before asserting the row does not |
 | **outcome** | 32 tests · **17/17 mutations caught** · no receipts (neither claim is answerable from data) · full suite **15,324 passed · 1,067 skipped · 152 xfailed · 0 failed** |
+
+
+---
+
+## 1.4 · the `capture/` audit — "why did I never see X?" becomes a receipt · PHASE 1 CLOSED
+
+| | |
+|---|---|
+| **what it arrived with** | the strongest receipt set in the product — **five, all correctness**. So the nineteen uncovered tables were checked for a DIFFERENT gap, and ⛔ every one is read inside `capture/` by the module that owns it |
+| ⛔⛔ **the claim** | `journey.py`'s own first sentence: *"a system that discards 92% of what a founder was sent has to be able to answer 'why did I never see X?' in one query"* — and its record that *"every layer wrote its refusal down. **Nothing ever joined them**"* |
+| **receipt 44** | ✅ the join is reachable; ⛔ **nothing checked that every event HAS an answer.** Five derivations, nothing spelled: `TRACE_STOPPING` · `_LEDGERS` minus `_PER_SIGNAL_LEDGERS` (⛔ a per-signal refusal cannot name an event that produced no signal) · `qualified_signals` as the success test · **4 × the declared sweep tick**. ⛔ The multiplier is the one judgement and is named in the docstring; the builder **refuses rather than guesses** when `_LEDGERS` changes shape |
+| ⛔ **two survivors, both emptiness** | emptying `_PER_SIGNAL_LEDGERS` made a loop assertion **vacuous** — repaired by asserting non-emptiness first. The second was **invalid** (a phrase in three places, one changed), and a third was a **no-op** (`() or (x,)`) |
+| ⛔ **the harness itself** | a missing file **crashed** it and lost the run; a repeated phrase could not be changed deliberately. Both repaired |
+| **outcome** | 12 tests · **10/10 mutations** · receipts 43 → **44** · capture/ 5 → **6**, all correctness · full suite **15,337 passed · 0 failed · 11:39** |
+| ✅ **PHASE 1 CLOSED** | five steps · ⛔ **52 candidates raised, 52 retired** · 3 receipts · 6 guard suites · 0 failed at every step. **Next: `2.1` Atlas L2's nine** |

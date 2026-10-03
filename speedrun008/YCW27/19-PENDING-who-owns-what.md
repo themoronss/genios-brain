@@ -90,6 +90,13 @@ would have told every seat why a colleague is off. ⛔ The other, `api/identity_
 untested gate on a **destructive** merge. 32 tests, 17/17 mutations. ⛔ Not on anybody's list — both
 are closed. **Next: `1.4 capture/` or `2.1` Atlas L2's nine claims.**
 
+✅⛔⛔ **PHASE 1 IS CLOSED (2026-10-03)** — five coverage steps, ⛔ **52 candidates raised and 52
+retired**, three receipts and six guard suites. `1.4 capture/` added **receipt 44**, which turns
+`journey.py`'s own sentence — *"why did I never see X?"* — into a production check with five
+derivations and nothing spelled. ⛔ **Nothing from Phase 1 is on anybody's list**: every finding was
+either closed with a guard or declared with a reason. **Next: `2.1` Atlas L2's nine open claims**,
+the largest remaining block — and `L2-02`'s mover is already `H8.5` on Harsh's page.
+
 ### ⛔ New on Rohit's list, out of `S10`
 
 | | What, and why it is not mine |

@@ -509,6 +509,70 @@ def _PARKED_WARM_LANE_SQL(org: str | None) -> str:
             f"{_org_filter(org)}")
 
 
+def _UNEXPLAINED_EVENT_SQL(org: str | None) -> str:
+    r"""Captured events that never reached a signal and say nowhere why.
+
+    ⛔ THE CLAIM IS `capture/journey.py`'s OPENING SENTENCE, quoted from `qualification.py`:
+
+        a system that discards 92% of what a founder was sent has to be able to answer
+        "why did I never see X?" in one query
+
+    ⛔⛔ AND THE SAME MODULE RECORDS WHAT IT COST TO NOT HAVE THIS. *"Every layer kept its half of
+    that bargain and wrote its refusal down. **Nothing ever joined them.** Measured on the pilot
+    org: `event_trace` holds 10,840 rows and had NO read surface at all … Of 138 events one support
+    question was really about, 103 stopped at `s4_esqe short_circuit bulk_headers` and 33 at
+    `llm5_not_business`; **a founder reading `/qualification/drops` would have found nothing and
+    concluded the events were lost.**"* `journey.event_journey` is the join that answers it — and
+    nothing checks that every event HAS an answer.
+
+    ⛔ EVERYTHING HERE IS DERIVED, NOTHING SPELLED:
+      * the stopping actions come from `journey.TRACE_STOPPING`;
+      * the event-keyed ledgers come from `journey._LEDGERS` minus `journey._PER_SIGNAL_LEDGERS`,
+        because a per-SIGNAL refusal cannot name an event that never produced a signal — the module
+        declares that distinction itself, and a fifth event-keyed ledger joins this check without
+        an edit;
+      * `qualified_signals` is that tuple's success member and becomes the "did reach a signal"
+        test rather than a refusal;
+      * and the horizon is `4 x platform/config.sync_interval_hours`, the declared sweep tick —
+        four ticks, so an event still mid-flight is never counted. ⛔ **The multiplier is the one
+        judgement in this query and it is stated here rather than buried in the SQL.**
+
+    ⛔ A NON-ZERO COUNT IS A FOUNDER'S QUESTION WITH NO ANSWER. The event was captured, four sweeps
+    have passed, it produced no signal, and no layer wrote down what stopped it — which is the one
+    outcome `journey.py` exists to make impossible.
+    """
+    from genios_engine.capture.journey import _LEDGERS, _PER_SIGNAL_LEDGERS, TRACE_STOPPING
+    from genios_engine.platform.config import get_settings
+
+    actions = sorted(TRACE_STOPPING)
+    for action in actions:                      # SQL text from a frozenset: assert, never assume
+        assert re.fullmatch(r"[a-z_]+", action), action
+    event_keyed = [name for name, _column in _LEDGERS if name not in _PER_SIGNAL_LEDGERS]
+    assert "qualified_signals" in event_keyed, (
+        "`journey._LEDGERS` no longer carries the success ledger; this receipt's 'did it reach a "
+        f"signal' test came from it. Event-keyed members today: {event_keyed}")
+    refusals = [name for name in event_keyed if name != "qualified_signals"]
+    assert refusals, (
+        "no event-keyed refusal ledger is left in `journey._LEDGERS` — every refusal is now "
+        "per-signal, and an event that produced no signal has nowhere to be recorded. That is a "
+        "bigger finding than this receipt and should be read before it is deleted")
+    for name in event_keyed:
+        assert re.fullmatch(r"[a-z_]+", name), name
+
+    hours = 4 * float(get_settings().sync_interval_hours or 6.0)
+    clauses = [f"se.captured_at < now() - make_interval(hours => {hours:g})"]
+    clauses.append("not exists (select 1 from qualified_signals qs "
+                   "where qs.org_id = se.org_id and qs.event_id = se.event_id)")
+    clauses.append("not exists (select 1 from event_trace t where t.org_id = se.org_id "
+                   f"and t.event_id = se.event_id and t.action in "
+                   f"({', '.join(repr(a) for a in actions)}))")
+    for name in refusals:
+        clauses.append(f"not exists (select 1 from {name} l "
+                       "where l.org_id = se.org_id and l.event_id = se.event_id)")
+    return ("select count(*) from source_events se where " + " and ".join(clauses)
+            + _org_filter(org, "se"))
+
+
 def _PARKED_WITH_A_CHANNEL_SQL() -> str:
     from genios_engine.deliver.routing import AGENT_TRANSPORTS
     from genios_engine.deliver.units import _implemented_channels
@@ -631,6 +695,19 @@ def receipts(org: str | None) -> list[Receipt]:
                 f"select count(*) from parked_events where status='pending'{o}",
                 lambda n: n == 0,
                 "pending forever means a park is a slower delete"),
+        # ⛔⛔ `capture/journey.py` EXISTS FOR THIS SENTENCE — *"a system that discards 92% of
+        # what a founder was sent has to be able to answer 'why did I never see X?' in one query"* —
+        # and the module records that the join was missing while every layer wrote its own refusal
+        # down. This checks that every event HAS an answer, which `journey` can then render.
+        Receipt("L1", "every captured event that reached no signal says where it stopped",
+                _UNEXPLAINED_EVENT_SQL(org), lambda n: n == 0,
+                "⛔ A non-zero count is a founder's question with no answer: captured, four sweeps "
+                "past, no signal produced, and no layer recorded what stopped it. ⛔ The stopping "
+                "actions come from `journey.TRACE_STOPPING` and the event-keyed ledgers from "
+                "`journey._LEDGERS` minus `_PER_SIGNAL_LEDGERS` — a per-signal refusal cannot name "
+                "an event that never produced a signal. The horizon is four ticks of "
+                "`config.sync_interval_hours`, so an event mid-flight is never counted. Walk one "
+                "with `journey.event_journey(engine, org_id=..., event_id=...)`"),
         Receipt("L1", "every drop we might be wrong about can still be reviewed",
                 # SCOPED TO THE JUDGED DROPS, and that is a correction rather than a narrowing.
                 # Asked of EVERY drop this counted 2,818 deterministic refusals that by documented

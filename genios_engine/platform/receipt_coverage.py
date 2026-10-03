@@ -62,6 +62,14 @@ RECEIPT_PACKAGE: dict[str, tuple[str, str]] = {
         "predicate and the park are all `warm_lane.py`'s"),
     "the parked queue is not a black hole": (
         "capture", "Parked events must be reviewable; `capture/` owns the park and the triage"),
+    "every captured event that reached no signal says where it stopped": (
+        "capture",
+        "⛔ `capture/journey.py` exists for one sentence — *'a system that discards 92% of what a "
+        "founder was sent has to be able to answer \"why did I never see X?\" in one query'* — and "
+        "records that the join was missing while every layer wrote its own refusal down. The "
+        "sibling drop receipt asks a narrower question (can a model's JUDGMENT still be reviewed); "
+        "this one asks whether an answer exists at all. Filed under `capture` because the event, "
+        "the trace and the park are all its own"),
     "every drop we might be wrong about can still be reviewed": (
         "capture", "The gate's drops keep their payload and trace — `capture/`'s own contract"),
     "the tenant is still being fed": (

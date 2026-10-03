@@ -15,6 +15,7 @@
 
 | When | What | Where |
 |---|---|---|
+| **2026-10-03** | ⛔⛔ **`1.4 capture/` DONE — PHASE 1 CLOSED, and *"why did I never see X?"* is now a receipt.** `capture/journey.py` was built for one sentence — *a system that discards 92% of what a founder was sent has to be able to answer "why did I never see X?" in one query* — and records that *"every layer wrote its refusal down. **Nothing ever joined them.**"* ✅ The join is reachable; ⛔ **nothing checked that every event HAS an answer.** **Receipt 44**, five derivations and nothing spelled: stopping actions from `TRACE_STOPPING`, event-keyed ledgers from `_LEDGERS` minus `_PER_SIGNAL_LEDGERS`, horizon from 4 sweep ticks. ⛔ Two mutations survived, **both about EMPTINESS** — an empty set made a loop assertion vacuous | [`26-AUDIT-capture-why-did-i-never-see-this-one.md`](26-AUDIT-capture-why-did-i-never-see-this-one.md) |
 | **2026-10-03** | ⛔⛔ **`1.3b` DONE — and one of the two untested modules was guarding HEALTH INFORMATION.** `reason/team/away.py` promises in its own docstring *"no leave reason ever leaves this module — the `sick` kind is reported as `leave`"*, and **nothing asserted it**: one line changed, or one new kind unmapped, and every seat learns why a colleague is off. ⛔ `api/identity_routes.py`'s node-set gate is the only thing stopping a human merging two nodes **no proposal names** — a rewrite of every fact and edge about them. ⛔ The test asserts the merge **did not happen**, not that a 422 came back: moving the merge above the gate fails four tests while still returning 422. 32 tests · **17/17 mutations** | [`25-STEP-1.3b-two-untested-modules-and-one-was-health-data.md`](25-STEP-1.3b-two-untested-modules-and-one-was-health-data.md) |
 | **2026-10-03** | ⛔⛔ **`reason/` AUDIT DONE — 20 candidates, 20 RETIRED, 0 receipts, and the finding was in the AUDIT'S OWN MEASUREMENT.** ⛔ Every derivable claim was already enforced: `signals`' *"byte-identical bindings"* is a partial unique index · 16 of 23 reasoning units ARE exercised by `parametrize(ALL_UNITS)` · a suppression log IS read by `executive/explain`. ⛔⛔ **The *"no test names it"* column was wrong 19 of 33 times across three audits, six repairs each over-corrected the other way, and the guard written FOR it named two functions in its own docstring — making the module it asserted was untested read as named. DELETED**, with the reasoning in every page and a guard against all six heuristics returning | [`24-AUDIT-reason-the-column-that-had-to-go.md`](24-AUDIT-reason-the-column-that-had-to-go.md) |
 | **2026-10-03** | ⛔⛔ **`platform/` AUDIT DONE — 15 candidates, 15 RETIRED, and the survivor is a park the health check EXCLUDES BY CONSTRUCTION.** `warm_lane` sets `parked_at` for a row whose attempts ran out — the schema says *"parked for a human"* — and every reader uses the column only as an exclusion: `_OPEN`, the backlog count, the staleness warning. ⛔⛔ **Nothing selects a parked row, the prune never removes one, so a stuck tenant reports a CLEAN lane and the invisible set grows.** Receipt **43**, predicate DERIVED from `warm_lane._OPEN`. ⛔ Fifteenth retirement was mine, five minutes old: Atlas `L2-02` is **declared** in `LINEAGE_UNPROTECTED`, and its mover — *"the third connector"* — is now a one-line query (`H8.5`) | [`23-AUDIT-platform-the-park-the-health-check-excludes.md`](23-AUDIT-platform-the-park-the-health-check-excludes.md) |
@@ -47,11 +48,12 @@ full suite   15,220 passed · 1,067 skipped · 152 xfailed · 0 failed      (14,
 ✅ reason/     AUDITED 2026-10-03 · ⛔ 20 candidates, 20 retirements, 0 receipts — and the
              audit's own naming column DELETED for being wrong 19 of 33 times
 ✅ 1.3b        DONE 2026-10-03 · ⛔ a health-data privacy transformation had no test
-⛔ next up     1.4 capture/ (19 unreceipted, 158 files) · or 2.1 Atlas L2's nine — the biggest
+✅ PHASE 1      CLOSED 2026-10-03 · 5 steps · ⛔ 52 candidates raised, 52 retired · 3 receipts
+⛔ next up     2.1 Atlas L2's nine open claims — the largest remaining block
 L6 M14.C2    ⛔⛔ COMPLETE — 10 of 10 DONE · 0 failed at every step
 Atlas L7     11 gaps: 5 CLOSED · 6 PARTLY · ⛔ 0 LIVE · ⛔⛔ 0 UNMEASURED
 scorecard    08-ATLAS-SCORECARD-L1-to-L6.md · ⛔ 56 Atlas claims verified or refuted
-receipts     35 → 43 · ⛔ feedback/ 0 → 6 correctness · context/ 2 → 3 · platform/ 1 → 2
+receipts     35 → 44 · ⛔ feedback/ 0 → 6 correctness · context/ 2 → 3 · platform/ 1 → 2 · capture/ 5 → 6
 ledgers      ⛔ unread of F11's four: 4 → 1 — asking them found FOUR live defects
 ✅ coverage   context/ AUDITED 2026-10-02 · ⛔ 306 test files import it — the gap was RECEIPTS,
              not tests. 2 → 3 receipts · 9 write-only tables declared engine-wide
@@ -4385,3 +4387,75 @@ the row does not.
 | ⛔ **a double returns the real dataclass** — a stand-in cannot fail the way a renamed field fails |
 | ⛔ **a test that cannot observe the thing it names proves nothing** |
 | **two modules that survived six heuristic repairs and a hand check were worth testing; the other nineteen were not** |
+
+
+---
+---
+
+## ✅⛔⛔ 2026-10-03 · CAPTURE AUDIT BUILT — Phase 1 closed, and a founder's question becomes a check
+
+```
+capture/    158 files · 47,184 lines · 25 writers · 25 tables · ⛔ 19 with no receipt
+new tests   12 · mutations 10 caught · 0 survived
+receipts    43 → 44 · capture/ 5 → 6, all correctness
+full suite  15,337 passed · 0 failed · 11:39
+```
+
+### ⛔⛔ The claim is the module's own first sentence
+
+`capture/journey.py`, quoting `qualification.py`:
+
+> *"a system that discards 92% of what a founder was sent has to be able to answer **'why did I
+> never see X?'** in one query"*
+
+and then: *"Every layer kept its half of that bargain and wrote its refusal down. **Nothing ever
+joined them.** … `event_trace` holds 10,840 rows and had **NO read surface at all** … **a founder
+reading `/qualification/drops` would have found nothing and concluded the events were lost.**"*
+
+✅ The join exists and is reachable. ⛔⛔ **Nothing checked that every event has an answer for it to
+render** — which is **receipt 44**, with five derivations and nothing spelled: the stopping actions
+from `TRACE_STOPPING`; the event-keyed ledgers from `_LEDGERS` **minus** `_PER_SIGNAL_LEDGERS`,
+because ⛔ a per-SIGNAL refusal cannot name an event that never produced a signal; the horizon from
+**4 × the declared sweep tick**. ⛔ The multiplier is the one judgement and it is named in the
+builder's docstring. A fifth event-keyed ledger joins without an edit, and the builder **refuses
+rather than guesses** when its source changes shape.
+
+⛔ It does not duplicate its sibling: *"every drop we might be wrong about can still be reviewed"*
+asks whether a model's **judgment** can be re-examined; this asks whether an answer exists **at
+all**. A test pins that the sibling still asks the narrower question.
+
+### ⛔ Two mutations survived, both about emptiness
+
+⛔⛔ **Emptying `_PER_SIGNAL_LEDGERS` made my loop run zero times** while the per-signal tables
+flowed into an event-keyed query — *an empty collection makes an assertion over it vacuous*,
+the same defect as a gate that can never be red. Non-emptiness is now asserted first.
+
+⛔ The second was **invalid**: the quoted sentence appears **three** times and one change left it
+present. And a third was a **no-op** — `() or (x,)` is `(x,)`.
+
+⛔ **The harness needed two repairs too**: a missing file **crashed** it and took the whole run's
+results with it, and a phrase appearing more than once could not be changed deliberately. *A
+missing file is not a surviving mutation either.*
+
+### ✅ PHASE 1 IS CLOSED
+
+```
+1.1  api/        11 candidates, 11 retired · learning_objects write-once guard
+1.2  platform/   15 retired · receipt 43 — a park the health check excludes
+1.3  reason/     20 retired, 0 receipts · ⛔ the audit's own naming column DELETED
+1.3b —           ⛔⛔ a health-data privacy guard, and a destructive-merge gate
+1.4  capture/     6 retired · receipt 44 — "why did I never see X?"
+
+⛔ 52 candidates raised · 52 retired · 3 receipts · 6 guard suites · 0 failed at every step
+```
+
+### Doctrine
+
+| Rule |
+|---|
+| ⛔⛔ **an empty collection makes an assertion over it vacuous** — assert non-emptiness before iterating |
+| ⛔ **a no-op mutation is not a survivor** · **a phrase appearing three times needs all three changed** |
+| ⛔ **a missing file must be reported, not raised** — a crashing harness loses the run |
+| ⛔ **name the one judgement in a derived query** |
+| ⛔ **a builder refuses rather than guesses** when its declared source changes shape |
+| **two receipts about one ledger must each pin what the other does not ask** |
