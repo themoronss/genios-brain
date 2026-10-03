@@ -1094,7 +1094,9 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
             # P2 + P2b: only pay for the full ~9-row audit bundle (its own transaction) when something
             # downstream actually reads it. The bundle's run_id is just the in-memory trace run id, so:
             #   - matched          → the emission path reads audit_bundle["output"] → MUST persist
-            #   - failed / insuff. → kept as inspectable fail-closed audit records → persist
+            #   - FAILED           → a real error, rare, and the bundle is the only place the cause
+            #                        survives → persist
+            #   - INSUFFICIENT_CTX → see below; skip the bundle, keep the suppression row
             #   - BLOCKED          → only referenced by the reasoning_blocked suppression, which stores
             #                        the (in-memory) run id in its detail; the heavy bundle is never
             #                        read again → skip the write, keep the lightweight suppression row
@@ -1102,13 +1104,36 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
             # BLOCKED + no-op are the overwhelming majority of a sweep (score-gate rejections), so this
             # is what turns a ~10-min sweep into ~1 min. Signals and their audit are byte-for-byte
             # unchanged (only matched emits, and matched still persists in full). Far less Postgres load.
+            #
+            # ⛔ INSUFFICIENT_CONTEXT MOVED FROM "persist" TO "skip" — 2026-10-03, and it is the
+            # single largest writer in the product.
+            #
+            # MEASURED ON PRODUCTION: 165 cards, against 12,182 `reasoning_runs`, 34,272
+            # `reasoning_candidates` and 43,200 `reasoning_reasoner_results` — about 6.4 MB of
+            # receipts per card, and roughly 1 GB of a 1.5 GB database. `core.relationship` alone
+            # answered INSUFFICIENT_CONTEXT 708 times. That table took the database past its disk
+            # quota into read-only, which crash-loops every deploy (`platform/migrate` raises when
+            # migrations are pending and the server will not write).
+            #
+            # WHY IT IS PURE WASTE, and not a judgement about audit value. INSUFFICIENT_CONTEXT
+            # means "I had nothing to decide with" — `deal.status` has no writer, so the answer is
+            # the same for the same node on every sweep, four times a day, forever. Persisting it
+            # wrote a ~9-row bundle (run + context snapshot + candidates + six reasoner results) to
+            # say one sentence, and re-wrote that sentence every six hours. Nothing reads it: the
+            # branch below `continue`s after `_suppress`, and that suppression row already carries
+            # the outcome, the uncertainty and the in-memory trace run id — the same lightweight
+            # shape BLOCKED has used since P2b, by the same argument.
+            #
+            # FAILED IS DELIBERATELY NOT MOVED WITH IT. The two sit together in the branch below and
+            # read alike, but they are opposites: FAILED is an exception inside reasoning — rare, a
+            # bug signal, and the bundle is where its cause survives. "We had no data" is a fact
+            # about the tenant; "we crashed" is a fact about us.
             _outcome = reasoned.execution.decision.outcome
             audit_bundle = None
             reasoning_run_id = reasoned.execution.trace.run_id
-            if _outcome == DecisionOutcome.BLOCKED:
-                pass                                          # handled by the reasoning_blocked branch
-            elif reasoned.matched or _outcome in {
-                    DecisionOutcome.FAILED, DecisionOutcome.INSUFFICIENT_CONTEXT}:
+            if _outcome in (DecisionOutcome.BLOCKED, DecisionOutcome.INSUFFICIENT_CONTEXT):
+                pass                      # each handled by its own suppression branch below
+            elif reasoned.matched or _outcome == DecisionOutcome.FAILED:
                 try:
                     audit_bundle = persist_execution(
                         store=reasoning_store,
