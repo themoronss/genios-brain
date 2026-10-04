@@ -57,6 +57,27 @@ class CardStore:
     _STALE = ("k.builder_version is distinct from :builder "
               "and k.state in :refreshable and k.resolved_at is null")
 
+    #: ⛔ AN EXPIRED CARD DOES NOT BLOCK A REBUILD, AND THIS IS WHERE THE THREE PLACES AGREE.
+    #:
+    #: `pipeline.build_cards_for_org` has excluded expired cards from its join since the
+    #: no-auto-expiry fix, in its own words: *"an expired card used to permanently block a
+    #: still-open signal from ever getting a fresh one … only 'expired' reopens the door for a
+    #: rebuild."* `claim_build` and the upsert below were never told. So the selection said
+    #: "rebuild these" and the claim said "blocked", on every one of them.
+    #:
+    #: Measured on the design partner's org 2026-10-04: nine `dependency_stated` signals, all
+    #: `status='open'`, all with an expired card, all nine selected by the pipeline and all nine
+    #: refused by `claim_build` — `claim_allowed = False`, 0 of 9. Those nine cards could never
+    #: have come back, on any sweep, ever. The queue showed four cards where the tenant had
+    #: thirteen.
+    #:
+    #: AND NOT MERELY "STALE". `_STALE` asks whether a DIFFERENT builder wrote the card, which is
+    #: false here — the same builder wrote them. Expiry is a different question: the card's window
+    #: has closed, so there is nothing to protect. Adding `expired` to `REFRESHABLE_STATES` would
+    #: not have fixed it for exactly that reason, and would also have let a live refresh silently
+    #: overwrite an expired card mid-window.
+    _REPLACEABLE = "(k.state = 'expired' and k.resolved_at is null) or (" + _STALE + ")"
+
     def claim_build(self, org_id: str, signal_id: str, *, eval_time=None,
                     lease_minutes: int = 15, builder_version: str | None = None) -> str | None:
         """Claim the expensive render step without holding a database lock across the LLM call.
@@ -74,7 +95,7 @@ class CardStore:
         # `not exists (no card)` OR `exists (a stale, untouched card)` — spelled as one NOT EXISTS
         # over the cards that BLOCK a claim, so the two branches cannot drift apart.
         blocked = ("not exists (select 1 from cards k where k.signal_id=%s "
-                   "and not (" + self._STALE + "))")
+                   "and not (" + self._REPLACEABLE + "))")
         with self._engine.begin() as c:
             row = c.execute(text(
                 "insert into card_build_claims "
@@ -224,8 +245,13 @@ class CardStore:
                 # move its card between lanes. Carrying the old lane forward would show a
                 # founder a conclusion the engine has since withdrawn.
                 "output_lane=excluded.output_lane, lane_reason=excluded.lane_reason "
-                "where cards.builder_version is distinct from excluded.builder_version "
-                "and cards.state in :refreshable and cards.resolved_at is null "
+                # Same rule as `_REPLACEABLE`, spelled against `cards.` — an expired card is
+                # replaced whatever wrote it, a live one only when a newer builder has something
+                # better to say. The claim and the write must agree or a claimed signal silently
+                # writes nothing.
+                "where (cards.state = 'expired' and cards.resolved_at is null) "
+                "or (cards.builder_version is distinct from excluded.builder_version "
+                "and cards.state in :refreshable and cards.resolved_at is null) "
                 "returning card_id, (xmax = 0) as inserted").bindparams(
                     bindparam("refreshable", expanding=True)),
                 {"id": card_id, "sig": card["signal_id"], "o": card["org_id"],
