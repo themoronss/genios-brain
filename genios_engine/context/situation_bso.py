@@ -66,6 +66,7 @@ from genios_engine.contracts.situation_evidence import (
     VerifiedEvidenceSpan,
 )
 from genios_engine.contracts.visibility import Visibility, narrowest
+from genios_engine.platform.canonical import canonical_dumps
 from genios_engine.platform.logging import get_logger
 
 _log = get_logger("genios.context.situation_bso")
@@ -2048,6 +2049,17 @@ def _missing_paths(situation: Mapping[str, Any], facts: Mapping[str, Any],
     held = set(facts or ()) | set(neighbor_facts or ())
     return tuple(sorted(path for path in expected if path not in held))
 
+def _observation_order(observation: Mapping[str, Any]) -> tuple[str, str]:
+    """A total order over observations, so a slice's identity cannot depend on row order.
+
+    Sorts on the two fields the loaders actually select — `kind` and `occurred_at` — and falls
+    back to the canonical form of the whole row, so two observations identical in both still land
+    in a fixed order rather than keeping whatever order the database happened to return.
+    """
+    return (f"{observation.get('kind')!s}\x00{observation.get('occurred_at')!s}",
+            canonical_dumps(observation))
+
+
 def build_context_slice(
     *, org_id: str, situation: Mapping[str, Any], facts: Mapping[str, Any],
     observations: list[Mapping[str, Any]], neighbor: tuple[int, set, Mapping[str, Any]],
@@ -2079,7 +2091,33 @@ def build_context_slice(
         evaluation_time=eval_time,
         root_entity_ids=(anchor,),
         facts=_no_floats(dict(facts)),
-        observations=tuple(_no_floats(dict(o)) for o in observations),
+        # ⛔ SORTED, AND THAT IS NOT A TIDINESS CHOICE — IT IS THE CONTENT ADDRESS.
+        #
+        # `canonical_dumps` sorts dict KEYS and preserves LIST ORDER, so this tuple's order is
+        # hashed. Both loaders read `graph_observations` with no ORDER BY (`reason/runner`
+        # `_load_context` and `_bulk_load_observations`), and Postgres is free to return those
+        # rows in a different order on every run — a plan flip, a heap page rewritten by an
+        # update, a vacuum. Nothing about the tenant's knowledge changed; the row order did.
+        #
+        # That order reached `SituationContextSlice.semantic_hash`, which is written into the
+        # package as `metadata.context_slice_hash`, which feeds `expertise_id`. So every sweep
+        # minted a brand-new ~118 kB package for byte-identical knowledge and the publisher's
+        # `on conflict do nothing` never fired. Measured on the design partner's org 2026-10-04:
+        # three packages per situation in three hours, and a diff of two consecutive payloads
+        # showed EXACTLY TWO differing fields — `metadata.context_slice_hash` and the `id`
+        # derived from it. Everything else was identical, and no graph table had a single row
+        # written between the two mints.
+        #
+        # ⛔ THIS IS THE SECOND TIME THIS EXACT COST HAS BEEN PAID. `to_semantic_dict`'s docstring
+        # records the first: `graph_version` in the slice's identity reached 4,086 rows and 995 MB
+        # — 67% of the whole database — and took production into read-only, which stops every
+        # write the product makes. That fix removed the clock; this one removes the row order,
+        # which is the same defect wearing the other disguise.
+        #
+        # `neighbor_observations` on the line below has been sorted all along, which is the proof
+        # that the hazard was known at this exact call site and one of the two was missed.
+        observations=tuple(sorted((_no_floats(dict(o)) for o in observations),
+                                  key=_observation_order)),
         neighbor_facts=_no_floats(dict(neighbor_facts)),
         neighbor_observations=tuple(sorted({str(k) for k in neighbor_obs})),
         edge_count=int(edge_count),

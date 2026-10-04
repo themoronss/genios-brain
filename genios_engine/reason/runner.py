@@ -177,8 +177,14 @@ def _load_context(store, org_id, node_id, node_type, *,
                                                      if r.source_group else "unattributed"),
                               "src_count": int(r.src_count or 1)}
         obs = [{"kind": r.kind, "occurred_at": r.occurred_at} for r in c.execute(text(
+            # ORDER BY, because this list is hashed. `build_context_slice` puts these rows in a
+            # tuple, `canonical_dumps` preserves list order, and that order reaches
+            # `expertise_id` — so an unordered read re-minted a ~118 kB package every sweep for
+            # knowledge that had not changed. The slice sorts them too; this is the cheaper half,
+            # at the source, so every other reader gets a stable order for free.
             "select kind, occurred_at from graph_observations "
-            "where org_id=:o and subject_node_id=:n and status='active'"),
+            "where org_id=:o and subject_node_id=:n and status='active' "
+            "order by kind, occurred_at"),
             {"o": org_id, "n": node_id})]
     return NodeContext(node_id=node_id, node_type=node_type, facts=facts, obs=obs)
 
@@ -235,8 +241,11 @@ def _bulk_load_obs(store, org_id) -> dict:
     out: dict = {}
     with store.engine.connect() as c:
         for r in c.execute(text(
+                # Same reason as `_load_context` above — these rows are hashed into the
+                # slice's identity, so the read that produces them has to be ordered.
                 "select subject_node_id, kind, occurred_at from graph_observations "
-                "where org_id=:o and status='active'"), {"o": org_id}):
+                "where org_id=:o and status='active' "
+                "order by subject_node_id, kind, occurred_at"), {"o": org_id}):
             out.setdefault(r.subject_node_id, []).append(
                 {"kind": r.kind, "occurred_at": r.occurred_at})
     return out
