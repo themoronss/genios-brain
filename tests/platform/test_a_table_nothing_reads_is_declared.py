@@ -34,7 +34,16 @@ def test_the_resolver_reads_most_of_the_sql_in_the_repo():
 
 
 def test_the_unresolved_share_is_declared_rather_than_hidden():
-    """⛔ 639 of 2,867 statements still carry a `{placeholder}` this module cannot resolve — a
+    """⛔⛔ THIS CEILING IS WHY THE NUMBER GREW SILENTLY, and the docstring below used to say
+    *"639 of 2,867"* — a count in prose, stale by six.
+
+    The share assertion is kept and is deliberately the LOOSE guard: 22.4% against a 30% ceiling is
+    about 220 statements of headroom, and fragment SQL grows for ordinary reasons. ⛔ The guard that
+    actually ratchets is `test_the_table_hole_count_cannot_grow_silently`, on an absolute ceiling
+    over `unresolved_table`. Counts in this docstring are now DERIVED, because a comment's count
+    ages faster than its claim.
+
+    ⛔ Originally: 639 of 2,867 statements still carry a `{placeholder}` this module cannot resolve — a
     table name passed through a FUNCTION ARGUMENT needs dataflow, not constant substitution. The
     share is asserted so it cannot grow silently; the known cases are in
     `NAME_CONSTANT_TABLE_SITES`."""

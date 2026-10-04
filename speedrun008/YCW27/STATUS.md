@@ -15,6 +15,7 @@
 
 | When | What | Where |
 |---|---|---|
+| **2026-10-04** | ⛔⛔ **`3.1` DONE — the number this step was scoped around was the WRONG NUMBER.** Of **645** *"unresolved SQL statements"*, only **49 (7%)** had a hole where a TABLE belongs; **596 (92%)** were predicates and column lists built from shared fragment constants — ⛔ **and 17 of those were our own `_org_filter`.** ⛔⛔ **Three more were this module's own regexes: the observer was counting its instrument.** Three resolver hops took the table figure **49 → 16**, all 16 now declared with a category. ⛔ The ratchet the plan credits *did* exist — `unresolved/statements <= 0.30` against a 22.4% actual, **about 220 statements of headroom**, which is how 639 became 645 unnoticed. ⛔ Every dependent finding captured before and after: **16 attributions recovered, 0 verdicts moved** | [`32-AUDIT-step-3.1-the-number-that-was-the-wrong-number.md`](32-AUDIT-step-3.1-the-number-that-was-the-wrong-number.md) |
 | **2026-10-04** | ⛔⛔ **`2.2` DONE — Atlas L1 settled, and TWO SCORECARD ROWS CARRIED FALSE EVIDENCE.** ⛔ `L1-08`'s said *"zero declare a visibility field"* — **all three declare one**; optional is not absent. ✅ Its consequence is closed at **four layers** (derive → **gate PARKS** → re-drain STILL_BLOCKED → 5 of 6 columns NOT NULL). ⛔ The finding is **five readers in `context/` that treat a missing audience as permitted or org-wide**, safe only by that chain and declared nowhere — found by AST; grep found 5 of 8 sites. ⛔⛔ `L1-09` led to **five of `GatedEvent`'s 21 fields carried and read by nothing**, worst `degraded_compile`, whose own comment calls this defect FIXED while L2 reads the stored signal, which has no column for it. ⛔ `L1-01`'s number was **7, and it is 9**. ⛔⛔ **And three of my own guards had holes only mutation found** — including a declaration that satisfied the test that its own source exists | [`30-AUDIT-step-2.2-atlas-layer-1.md`](30-AUDIT-step-2.2-atlas-layer-1.md) |
 | **2026-10-03** | ⛔⛔ **`2.1` DONE — Atlas L2's nine claims settled, and the two nobody had located are now receipts.** ⛔⛔ **L2-11**: `expertise.py:1463` takes `domain_ids[0]` out of a `tuple(sorted(set))`, so the **alphabetically first** domain becomes `CapabilityManifest.domain` and `domain_shadow.py:1169` uses it to pick **which tenant pack the reasoning reads** — nothing records the choice while the package's own citation tags carry every domain. ⛔⛔ **L2-01**: `graph_facts.authority_rank` carries **two scales** — the dense 0..6 ladder and `DEFAULT_AUTHORITY_RANK = 100`, same column — and `fact_write_action` compares raw integers, so a row at 100 is unsupersedable and a **signed document** arriving against one is returned a `discrepancy` and dropped. ✅ **L2-03 was simply WRONG** and is closed in code both ways. ⛔ **Eleven corrections, nine to my own first reading**, including a declaration that **falsified its own count** | [`28-AUDIT-step-2.1-atlas-layer-2-nine-claims.md`](28-AUDIT-step-2.1-atlas-layer-2-nine-claims.md) |
 | **2026-10-03** | ⛔⛔ **`1.4 capture/` DONE — PHASE 1 CLOSED, and *"why did I never see X?"* is now a receipt.** `capture/journey.py` was built for one sentence — *a system that discards 92% of what a founder was sent has to be able to answer "why did I never see X?" in one query* — and records that *"every layer wrote its refusal down. **Nothing ever joined them.**"* ✅ The join is reachable; ⛔ **nothing checked that every event HAS an answer.** **Receipt 44**, five derivations and nothing spelled: stopping actions from `TRACE_STOPPING`, event-keyed ledgers from `_LEDGERS` minus `_PER_SIGNAL_LEDGERS`, horizon from 4 sweep ticks. ⛔ Two mutations survived, **both about EMPTINESS** — an empty set made a loop assertion vacuous | [`26-AUDIT-capture-why-did-i-never-see-this-one.md`](26-AUDIT-capture-why-did-i-never-see-this-one.md) |
@@ -52,7 +53,8 @@ full suite   15,220 passed · 1,067 skipped · 152 xfailed · 0 failed      (14,
 ✅ 1.3b        DONE 2026-10-03 · ⛔ a health-data privacy transformation had no test
 ✅ PHASE 1      CLOSED 2026-10-03 · 5 steps · ⛔ 52 candidates raised, 52 retired · 3 receipts
 ✅ PHASE 2      2.1 DONE · ⛔ 0 unmeasured L2 claims left on my side
-⛔ next up     2.3 re-measure the scorecard once Phase 0 is live
+⛔ 2.3 BLOCKED   needs Phase 0 live — Rohit's and Harsh's
+⛔ next up     3.1b the fourth resolver hop · or 3.2 the always-green receipts
 L6 M14.C2    ⛔⛔ COMPLETE — 10 of 10 DONE · 0 failed at every step
 Atlas L7     11 gaps: 5 CLOSED · 6 PARTLY · ⛔ 0 LIVE · ⛔⛔ 0 UNMEASURED
 scorecard    08-ATLAS-SCORECARD-L1-to-L6.md · ⛔ 56 Atlas claims verified or refuted
@@ -4640,3 +4642,86 @@ docstring is read at the moment the rule could be broken.
 | ⛔ **a one-sided resolver must say which side it errs on** |
 | ⛔ **a same-named local or function makes a dead field look alive** |
 | ⛔ **a rule learned in a doctrine table is not a rule applied** |
+
+
+---
+---
+
+## ⛔⛔ 2026-10-04 · `3.1` — THE NUMBER THAT WAS THE WRONG NUMBER
+
+```
+"unresolved SQL statements"      645 → 621
+⛔ holes in a TABLE POSITION      49 → 16     the figure that bears on table coverage
+   holes ELSEWHERE ONLY          596 → 605    predicates, column lists, bind parameters
+sites accounted for                2 → 11     with a CATEGORY each
+tests  29 · mutations 20 caught · 0 surviving · ⛔ 2 real holes closed
+full suite  15,466 passed · 0 failed · 12:16
+```
+
+### ⛔⛔ 92% of the headline was never about tables — and 17 of it was ours
+
+`{AUTHORITATIVE_SIGNAL_JOINS}` ×133 · `{AUTHORITATIVE_SCORE_SQL}` ×116 ·
+`{AUTHORITATIVE_REASON_CODE_SQL}` ×81 · `{_COLUMNS}` ×27 — **shared SQL fragment constants**,
+which is good practice. ⛔ And `{o}` in `platform/receipts.py` is `_org_filter`'s output, the
+string `" and org_id = :org"`: **a correctly parameterised filter counted as unresolved SQL,
+seventeen times, one module from the one defining the measurement.** The filter is right; the
+metric was wrong, and the fix belongs in the metric.
+
+### ⛔⛔ Three were the resolver's own regexes
+
+`_VERBS` interpolates `_TABLE` — the table-name **pattern** — into four templates shaped exactly
+like SQL. **The observer was counting its own instrument.** ⛔ Excluded by declaration, not by
+heuristic: *"skip a statement with a regex character class"* would hide real SQL, because
+`0047_l3_domain_compiler.sql` contains `expertise_id ~ '^expertise_[0-9a-f]{64}$'`.
+
+### Three hops, and only one recovered knowledge
+
+| hop | effect |
+|---|---|
+| **imported constants** | 49 → 27. `HISTORY_TABLE` is in `history.py`; the 15 statements using it are in `anomaly.py`, which imports it. ✅ **Recovered 16 (table, file) attributions** |
+| **own regexes** | 27 → 24, by declaration |
+| **local aliases** | 24 → 16. All three activation modules do `table = L3_ACTIVATION_TABLE`. ⛔ **Added ZERO attributions** — every aliasing module already referenced its own table in a plain literal. Said plainly rather than implied |
+
+### ⛔ The observer problem, checked rather than assumed
+
+Captured before, compared after: `known_tables` 189 ✅ · `table_usage` 185 ✅ ·
+`written_and_unread` the same 9 ✅ · `undeclared_unread_writes` () ✅ · unreceipted per package
+identical ✅ · `deletion_list` 102 ✅. **No verdict moved** — ⛔ and that was **luck, not design**: a
+table referenced ONLY through an imported constant would have been reported write-only, the bug
+this module says it has paid for three times. The values are now pinned in the guard.
+
+### ⛔ The ratchet, and why it failed
+
+It existed: `unresolved / statements <= 0.30` against **22.4%** — about **220 statements of
+headroom**. ⛔ A ceiling that loose cannot notice. And the guard's docstring still said *"639 of
+2,867"*. It is now **absolute** on `unresolved_table`, **asserted to be within 2 of the actual**,
+with a floor under `statements` — and the fragment count deliberately **not** ratcheted, because
+extracting a `where` clause into a constant is good practice.
+
+### ⛔⛔ The self-witness family, fourth variant
+
+My test expected four verb patterns in the source and found **five**: the fifth is inside
+`SELF_MEASURED_PATTERNS`' own comment, which **quotes** the pattern it excludes.
+
+| step | variant |
+|---|---|
+| `2.1` | a declaration **falsifies its own count** |
+| `2.2` | a declaration **satisfies the test that its source exists** |
+| `2.2` | a **correction's names** were checked against nothing |
+| `3.1` | a **quoted example counted as a real one** |
+
+⛔ And two of my own guards had real holes: `STATEMENT_FLOOR` was read from the constant the test
+asserted against (**lowering it weakened the test**), and an `or` let half the evidence go — the
+**fourth** time that disjunction has done it.
+
+### Doctrine
+
+| rule |
+|---|
+| ⛔⛔ **the observer counts its own instrument** |
+| ⛔⛔ **a quoted example is counted as a real one** — count distinctly, never delete the quote |
+| ⛔ **a threshold a test reads from the thing it guards is a variable with a confident name** |
+| ⛔ **a ceiling with slack is not a ratchet** |
+| ⛔ **a resolvable hole declared unresolvable says there is nothing to do** |
+| ⛔ **the test must read what the measurement reads** |
+| ⛔ **state an expectation only after measuring it** |

@@ -253,6 +253,102 @@ def _module_table_constants(tree: ast.Module, known: frozenset[str]) -> dict[str
     return out
 
 
+@lru_cache(maxsize=1)
+def _exported_table_constants() -> dict[str, dict[str, tuple[str, ...]]]:
+    """``{dotted.module: {CONSTANT: (table, …)}}`` for every module in the tree.
+
+    ⛔ WHY THIS EXISTS. `_module_table_constants` answers for ONE module, and
+    `*a name-constant is a read*` — the rule this module's own `_template` docstring says the
+    programme has now paid for three times. ⛔ It paid a fourth time, one import away:
+    `HISTORY_TABLE = "metric_history"` lives in `context/analytic/history.py`, and the **fifteen**
+    statements interpolating it live in `anomaly.py`, which imports it on line 68. The resolver
+    could not see across the import, so those fifteen were counted as tables nobody could name.
+
+    Measured 2026-10-04: **27 of the 49** table-position holes were an imported constant of
+    exactly this kind — `HISTORY_TABLE` (15), `COHORT_MEMBERSHIP_TABLE` (6), `_TABLE` (3),
+    `COHORT_DEFINITION_TABLE`, `L1_SEMANTIC_TABLE`, `BUNDLE_TABLE`.
+    """
+    known = _known_tables()
+    out: dict[str, dict[str, tuple[str, ...]]] = {}
+    for rel, source in _sources():
+        try:
+            tree = ast.parse(source)
+        except SyntaxError:                        # pragma: no cover - the tree parses
+            continue
+        found = _module_table_constants(tree, known)
+        if found:
+            out[rel[:-3].replace("/", ".")] = found
+    return out
+
+
+def _imported_table_constants(tree: ast.Module) -> dict[str, tuple[str, ...]]:
+    """``{local name: (table, …)}`` for table constants this module IMPORTS.
+
+    ⛔ ONE HOP, AND DIRECT `from X import NAME` ONLY — bounded on purpose. No transitive
+    resolution, no `import X` plus `X.NAME`, and no re-exports: *a re-export is not a definition*,
+    and a resolver that chases arbitrarily far is one nobody can predict. The two forms left out
+    are declared rather than forgotten, and `3.1`'s audit names them.
+
+    An `as` alias is honoured, because the interpolation uses the local name.
+    """
+    exported = _exported_table_constants()
+    out: dict[str, tuple[str, ...]] = {}
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.ImportFrom) or node.level or not node.module:
+            continue
+        table_constants = exported.get(node.module)
+        if not table_constants:
+            continue
+        for alias in node.names:
+            tables = table_constants.get(alias.name)
+            if tables:
+                out[alias.asname or alias.name] = tables
+    return out
+
+
+def _local_table_aliases(tree: ast.Module,
+                         resolved: dict[str, tuple[str, ...]]) -> dict[str, tuple[str, ...]]:
+    """``{local name: (table, …)}`` for `local = CONSTANT` where CONSTANT names known tables.
+
+    ⛔ THE THIRD WAY A NAME-CONSTANT HIDES A TABLE, and it accounted for **eight** of the
+    twenty-four holes left after imports were resolved. All three activation modules do the same
+    thing::
+
+        table = L3_ACTIVATION_TABLE                 # a module constant, already resolvable
+        f"insert into {table} (org_id, domain, …)"  # interpolates the LOCAL name
+
+    So the constant was found and the statement still read as unresolved, because the hole carries
+    the alias rather than the constant. ⛔ *A name-constant is a read* — the rule this module says
+    the programme paid for three times, and this step paid for it twice more: once across an
+    import, once across an assignment inside a function.
+
+    ⛔ AMBIGUITY IS REFUSED, NOT GUESSED. A local name bound to two different table constants in
+    one module resolves to NOTHING and the hole stays — the same answer `resolve_alias` gives a
+    contended person name, and for the same reason: picking one would be a silent re-attribution
+    that nothing records. One hop only; no reassignment tracking and no control flow.
+    """
+    out: dict[str, set[str]] = {}
+    for node in ast.walk(tree):
+        targets = (node.targets if isinstance(node, ast.Assign)
+                   else [node.target] if isinstance(node, ast.AnnAssign) else [])
+        value = getattr(node, "value", None)
+        if not isinstance(value, ast.Name):
+            continue
+        tables = resolved.get(value.id)
+        if not tables:
+            continue
+        for target in targets:
+            if isinstance(target, ast.Name) and target.id != value.id:
+                out.setdefault(target.id, set()).update(tables)
+    # ⛔ A local bound to two different tables answers for neither.
+    settled: dict[str, tuple[str, ...]] = {}
+    for name, tables in out.items():
+        seen = {t for t in tables}
+        if len(seen) == 1:
+            settled[name] = tuple(sorted(seen))
+    return settled
+
+
 def _statements(source: str, known: frozenset[str]) -> tuple[tuple[str, int], ...]:
     """``(sql, unresolved placeholders)`` for every SQL statement in the module.
 
@@ -261,7 +357,13 @@ def _statements(source: str, known: frozenset[str]) -> tuple[tuple[str, int], ..
     `select … from situation_admission_decisions` for a human to paste).
     """
     tree = ast.parse(source)
-    constants = _module_table_constants(tree, known)
+    # ⛔ THE IMPORTED ONES FIRST, so a same-module constant of the same name WINS. A module that
+    # redefines an imported name means the local value, and resolving to the far one would be a
+    # measurement of a module that is not running.
+    constants = {**_imported_table_constants(tree), **_module_table_constants(tree, known)}
+    # ⛔ AFTER the two above, because a local alias resolves THROUGH them: `table = HISTORY_TABLE`
+    # needs `HISTORY_TABLE` already known, whether it was defined here or imported.
+    constants = {**_local_table_aliases(tree, constants), **constants}
     printed: set[int] = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.Call) and getattr(node.func, "id", None) == "print":
@@ -408,6 +510,205 @@ def _table_usage() -> dict[str, dict[str, frozenset[str]]]:
     return {t: {v: frozenset(f) for v, f in verbs.items()} for t, verbs in acc.items()}
 
 
+#: ⛔⛔ A HOLE THAT IS ACTUALLY HIDING A TABLE — the only kind that weakens table coverage.
+#:
+#: ⛔ WHY THIS REGEX IS THE WHOLE OF `3.1`. Before it, `resolution()["unresolved"]` counted a
+#: statement as unresolved if it carried ANY `{placeholder}`, and reported the total as though it
+#: measured tables the resolver could not see. Measured 2026-10-04 over 645 such statements:
+#:
+#:     hole in a TABLE POSITION      49    7%
+#:     holes ELSEWHERE ONLY         596   92%
+#:
+#: The 596 are predicates, column lists, join clauses and bind parameters assembled from shared
+#: fragment constants — `{AUTHORITATIVE_SIGNAL_JOINS}` 133 times, `{AUTHORITATIVE_SCORE_SQL}` 116,
+#: `{_COLUMNS}` 27 — and resolving them would lengthen the rendered SQL while answering no question
+#: this module asks.
+#:
+#: ⛔ **AND SEVENTEEN OF THEM WERE OURS.** `{o}` in `platform/receipts.py` is `_org_filter`'s
+#: output, the string `" and org_id = :org"`. The metric counted a correctly parameterised org
+#: filter as an unresolved SQL statement, seventeen times, one module over from the one that
+#: defines this measurement. ⛔ The org filter is CORRECT; the metric was wrong, and the fix
+#: belongs here rather than in the code that flattered it.
+#:
+#: One number answering two questions is how `3.1` came to be scoped as *"639 unresolved SQL
+#: statements"* when the figure that bears on table coverage was 49.
+_TABLE_HOLE = re.compile(r"\b(?:from|join|into|update)\s+\{([^{}]*)\}", re.IGNORECASE)
+
+
+#: ⛔⛔ **THE RATCHET — `{key: (ceiling, why)}`.**
+#:
+#: ⛔ The plan's sentence for this step ended *"the share is asserted so it cannot grow silently."*
+#: It **was** asserted, and it **did** grow silently, from 639 to 645. Both halves are true because
+#: the assertion was `unresolved / statements <= 0.30` against an actual share of **22.4%** —
+#: ⛔ **eight percentage points of slack, about 220 statements of headroom.** A ceiling that loose
+#: is a ceiling that cannot notice, and the test's own docstring still said *"639 of 2,867"*.
+#:
+#: ⛔⛔ SO THE RATCHET IS ABSOLUTE AND ON THE NUMBER THAT MATTERS. `unresolved_table` is small
+#: enough that an exact ceiling is readable: a new hole is +1 and fails. The fragment count is
+#: deliberately NOT ratcheted — fragments are predicates and column lists assembled from shared
+#: constants, they are not a gap in this module's knowledge of tables, and ratcheting them would
+#: fail the build for an ordinary refactor that extracts a `where` clause.
+#:
+#: ⛔ RAISING A CEILING IS A DECISION, NOT A FIX. The guard's message says so, because the first
+#: instinct on a red ratchet is to edit the number — and the whole point is that doing so has to be
+#: deliberate and visible in a diff.
+RESOLUTION_CEILINGS: dict[str, tuple[int, str]] = {
+    "unresolved_table": (
+        16,
+        "⛔ Holes where a TABLE belongs, after three resolver hops (imported constants, this "
+        "module's own regexes, local aliases of a constant). All 16 are accounted for in "
+        "`TABLE_HOLES_NOT_CLOSED` and `NAME_CONSTANT_TABLE_SITES`. ⛔ A 17th means a table the "
+        "measurement cannot see — declare it with a category, or close it"),
+}
+
+#: ⛔ The FLOOR under the resolver's own reach. *A resolver that answers for 1 of 104 answers
+#: nothing* — so a drop in how much it reads fails the build rather than quietly shrinking every
+#: finding that depends on it. ⛔ The number is a floor and not an equality because adding SQL to
+#: the engine is ordinary; losing the ability to read it is not.
+STATEMENT_FLOOR = 2_800
+
+
+#: ⛔ **EVERY TABLE-POSITION HOLE THE RESOLVER DOES NOT CLOSE, AND WHY** —
+#: `{site: (category, why, mover)}`.
+#:
+#: ⛔ The number this step was scoped around was *"639 unresolved SQL statements (22%)"*. Measured:
+#: 645 statements carried a placeholder, **49** had one where a TABLE belongs, and 596 were
+#: predicates and column lists assembled from shared fragment constants. Three resolver hops later
+#: (imported constants, this module's own regexes, local aliases of a constant) the table figure is
+#: **16**, in 11 modules, and each one is accounted for below.
+#:
+#: ⛔⛔ THE CATEGORIES MATTER MORE THAN THE COUNT, because they are different problems:
+#:
+#:   `resolved-elsewhere`   a purpose-built reader already answers for it; the generic resolver
+#:                          not closing the hole costs nothing
+#:   `resolvable-deferred`  a loop over a constant collection of literal table names. ⛔ RESOLVABLE
+#:                          AND DELIBERATELY NOT RESOLVED HERE — a fourth resolver hop with a
+#:                          102-table blast radius is its own unit with its own baseline, not a
+#:                          silent addition to this one
+#:   `runtime`              the table is genuinely not knowable from the source
+#:   `not-a-table`          the hole is not an engine table at all
+#:
+#: ✅ `context/merge.py` and `feedback/store.py` are not listed: they are already declared in
+#: `NAME_CONSTANT_TABLE_SITES`, which resolves them by name-constant rather than leaving them open.
+#:
+#: Checked in BOTH directions by `tests/platform/test_every_table_hole_is_accounted_for.py`: a
+#: declared site whose hole has closed is as much a lie as a hole nobody declared.
+TABLE_HOLES_NOT_CLOSED: dict[str, tuple[str, str, str]] = {
+    "api/account_routes.py": (
+        "resolved-elsewhere",
+        "⛔ `for tbl in _ORG_SCOPED_TABLES: delete from {tbl}` — the tenant erasure loop. ✅ The "
+        "102 tables ARE read, by `deletion_list()`, which reads the constant off this module's AST "
+        "on purpose. The generic resolver leaving the hole open costs nothing because the one "
+        "question that matters about this loop already has a dedicated reader",
+        "MOVES WHEN the erasure loop stops being a loop over a module constant — at which point "
+        "`deletion_list()` breaks loudly, which is the right failure"),
+    "capture/journey.py": (
+        "resolvable-deferred",
+        "⛔ `for table, when in _LEDGERS` — tuple unpacking over a module constant of "
+        "`(table, column)` pairs. Resolvable, and the unpacking makes it the hardest of the "
+        "deferred set: a resolver would have to know which element of the pair is the table",
+        "MOVES WITH context/backfill.py and the two scripts/ loops — one unit, one baseline"),
+    "context/backfill.py": (
+        "resolvable-deferred",
+        '⛔ `for table in ("context_situations", "context_correlation_members", '
+        '"context_correlations")` — an INLINE TUPLE OF LITERAL TABLE NAMES, the most trivially '
+        "resolvable hole in the engine. ⛔ It is open only because the resolver reads module-level "
+        "assignments and not loop targets",
+        "MOVES WITH capture/journey.py — see that entry"),
+    "scripts/e2e_verify.py": (
+        "resolvable-deferred",
+        "⛔ `for t in _GRAPH_TABLES` — a module-level list of literal table names. Resolvable: the "
+        "collection is a constant and every element is a literal",
+        "MOVES WITH capture/journey.py — see that entry"),
+    "scripts/equivalence_check.py": (
+        "resolvable-deferred",
+        "⛔ `for t in TABLES` — a module-level tuple of literal table names. Resolvable, same shape "
+        "as `scripts/e2e_verify.py`",
+        "MOVES WITH capture/journey.py — see that entry"),
+    "api/home_routes.py": (
+        "runtime",
+        "⛔ `_weekly(conn, org, table: str, …)` — the table is a FUNCTION PARAMETER, which is the "
+        "dataflow case: closing it needs the call graph, not constant substitution. ✅ Every caller "
+        "passes a literal, so the tables ARE attributed from the call sites; what is unknowable "
+        "here is which one this statement is about",
+        "MOVES WHEN a resolver walks call sites. ⛔ That is dataflow analysis and it is not worth "
+        "it for one statement"),
+    "capture/connectors/database.py": (
+        "runtime",
+        "⛔ `f\"select * from {self._table}\"` ×3 — the table comes from TENANT CONFIGURATION and "
+        "cannot be known from the source at all. ✅ And it is the one site with a real injection "
+        "surface, which the module already guards: an identifier validator runs first "
+        "(*\"unsafe {what} identifier\"*) and the comment beside the query says *\"table = trusted "
+        "config, not user input\"*. ⛔ A different risk class from every other entry here",
+        "MOVES WHEN a tenant can name a table the validator admits and the engine does not own — "
+        "which is the validator's job, not this resolver's"),
+    "scripts/wipe_org_data.py": (
+        "runtime",
+        "⛔ `for t in [t for t in tables if …]`, where `tables` is read from `information_schema` "
+        "**at run time**. ✅ Unresolvable BY DESIGN and the script says why: *\"A positive selection "
+        "cannot be out of date\"* — it asks the live database which tables carry `org_id` rather "
+        "than keeping a list somebody must remember to extend",
+        "MOVES WHEN never. ⛔ Resolving this would mean replacing a correct design with a stale "
+        "list, which is the inversion this module exists to prevent"),
+    "scripts/rebuild_graph.py": (
+        "not-a-table",
+        "⛔ `create table if not exists {tbl}_bak_{ts} as …` — the hole is part of a name being "
+        "MINTED, not an engine table being read. The table does not exist until the script runs "
+        "and is a timestamped backup",
+        "MOVES WHEN never — there is nothing here for a table-coverage measurement to know"),
+}
+
+
+#: ⛔⛔ **THE RESOLVER'S OWN REGEXES, WHICH IT WAS COUNTING AS SQL** — `{site: (constant, why)}`.
+#:
+#: ⛔⛔ THE OBSERVER WAS MEASURING ITS OWN INSTRUMENT. `_VERBS` is built out of `_TABLE`, this
+#: module's table-name **regex**::
+#:
+#:     _TABLE = r"([a-z_][a-z_0-9]*)"
+#:     "insert": rf"insert into {_TABLE}"
+#:
+#: Those templates match `_SQL_SHAPE`, carry a `{_TABLE}` hole in a table position, and are not SQL
+#: at all — so **three of the twenty-seven remaining table-position holes were the measurement's
+#: own patterns.** The same family as `{o}` in `platform/receipts.py`, which is `_org_filter`'s
+#: output and was counted seventeen times, except that this one is in the measuring module itself.
+#:
+#: ⛔ WHY A DECLARATION AND NOT A HEURISTIC. The obvious filter is *"skip a statement containing a
+#: regex character class"* — and **SQL contains them**: `0047_l3_domain_compiler.sql` has
+#: `expertise_id ~ '^expertise_[0-9a-f]{64}$'`. A heuristic that cannot tell a `check` constraint
+#: from a regex would hide real statements, which is the failure this module exists to prevent.
+#: Three named sites are cheaper to read and impossible to over-apply.
+#:
+#: ⛔ `_table_usage` IS NOT AFFECTED and that is worth saying: its verb regexes look for
+#: `([a-z_][a-z_0-9]*)` after the keyword, and `{_TABLE}` does not match a class without `{`. Only
+#: the COUNT was wrong, never the attribution — so nothing in the coverage findings moves when this
+#: is excluded.
+#:
+#: Checked in BOTH directions by `tests/platform/test_the_resolver_does_not_count_itself.py`: a
+#: declared site that no longer holds a pattern is as much a lie as a pattern counted as SQL.
+SELF_MEASURED_PATTERNS: dict[str, tuple[str, str]] = {
+    "platform/table_coverage.py": (
+        "_TABLE",
+        "⛔ `_VERBS` interpolates this module's own table-name regex into four templates that look "
+        "exactly like SQL (`insert into {_TABLE}`, `update {_TABLE} set`, `delete from {_TABLE}`, "
+        "`(?:from|join) {_TABLE}`). Counting them made the instrument part of its own reading"),
+}
+
+
+def _rel_key(rel: str) -> str:
+    """`genios_engine/platform/x.py` → `platform/x.py`, the spelling every declaration here uses."""
+    return rel[len("genios_engine/"):] if rel.startswith("genios_engine/") else rel
+
+
+def table_holes(sql: str) -> tuple[str, ...]:
+    """The placeholder names sitting where a TABLE belongs, in order.
+
+    ⛔ `{NAME}` is a bare variable and `{?}` is any other expression — `_template`'s own spelling.
+    Both count: `f"select * from {self._table}"` hides a table exactly as `f"… {TABLE}"` does, and
+    the connector that does it says so in a comment beside the validator it runs first.
+    """
+    return tuple(_TABLE_HOLE.findall(sql))
+
+
 @lru_cache(maxsize=1)
 def resolution() -> dict[str, int]:
     """⛔ COVERAGE, REPORTED BESIDE THE VERDICT. How many SQL statements were read, how many still
@@ -415,9 +716,23 @@ def resolution() -> dict[str, int]:
 
     *A resolver that answers for 1 of 104 answers nothing* — so the guard asserts this, and a drop
     in resolution fails the build rather than quietly shrinking the findings.
+
+    ⛔⛔ `unresolved` IS KEPT AND IS NO LONGER THE NUMBER TO QUOTE. It counts a statement carrying
+    ANY placeholder, which conflates *"a table we cannot see"* with *"a predicate assembled from a
+    constant"*. The split:
+
+    * **`unresolved_table`** — a hole where a table belongs. ⛔ **This is the one that weakens
+      table coverage**, and the one the guard ratchets.
+    * **`unresolved_fragment`** — holes only elsewhere: predicates, column lists, joins, bind
+      parameters. Not a gap in this module's knowledge of tables.
+
+    The old key stays because `scripts/context_coverage_report.py` and the coverage guard both read
+    it, and because a measurement that changes its own definition without keeping the old one is
+    how two numbers come to mean one thing.
     """
     known = _known_tables()
     statements = constants = unresolved = modules = 0
+    unresolved_table = unresolved_fragment = 0
     for _rel, source in _sources():
         try:
             tree = ast.parse(source)
@@ -427,10 +742,24 @@ def resolution() -> dict[str, int]:
         if found:
             modules += 1
             constants += len(found)
-        for _sql, holes in _statements(source, known):
+        for sql, holes in _statements(source, known):
             statements += 1
-            unresolved += 1 if holes else 0
+            if not holes:
+                continue
+            unresolved += 1
+            # ⛔ TWO QUESTIONS, TWO NUMBERS. A statement can hold both kinds of hole; it counts
+            # once, under the table question, because that is the one that weakens coverage.
+            # ⛔ THE INSTRUMENT IS NOT PART OF THE READING. See `SELF_MEASURED_PATTERNS`.
+            declared = SELF_MEASURED_PATTERNS.get(_rel_key(_rel))
+            names = [h for h in table_holes(sql)
+                     if not (declared and h == declared[0])]
+            if names:
+                unresolved_table += 1
+            else:
+                unresolved_fragment += 1
     return {"statements": statements, "unresolved": unresolved,
+            "unresolved_table": unresolved_table,
+            "unresolved_fragment": unresolved_fragment,
             "table_name_constants": constants, "modules_with_constants": modules,
             "known_tables": len(known)}
 

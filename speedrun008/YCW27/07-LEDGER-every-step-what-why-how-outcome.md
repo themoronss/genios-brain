@@ -1084,3 +1084,21 @@ number is meaningless without its source set* · *never pipe a suite run through
 | ⛔⛔ **three holes in my own guards** | a missing converse grade check · **a declaration that satisfied the test that its own source exists** · a correction whose names nothing checked against the measurement. All three passed the suite first and were found by mutation. ⛔ And `len() > N` came back one step after `2.1` replaced it |
 | **outcome** | 48 tests · **51/51 mutations** (1 surviving by design, recorded) · receipts 46 → **48** · 5 claims: 2 false rows corrected, 1 partly expired, 2 Rohit's, ⛔ **0 unmeasured** · full suite **15,437 passed · 0 failed · 12:15** |
 | **next** | `2.3` — re-measure the scorecard once Phase 0 is live |
+
+
+---
+
+## 3.1 · the unresolved SQL — the number this step was scoped around was the wrong number
+
+| | |
+|---|---|
+| **what it arrived with** | a plan sentence: *"the 639 unresolved SQL statements (22%) — a table name passed through a function argument needs dataflow… the share is asserted so it cannot grow silently."* ⛔ Three of those four clauses are wrong |
+| ⛔ **it is 645, not 639** | and the clause crediting the safeguard is the evidence it does not work: the assertion was `unresolved/statements <= 0.30` against **22.4%** — about **220 statements of headroom** |
+| ⛔⛔ **92% is not about tables** | **49** of 645 had a hole where a TABLE belongs; **596** were predicates and column lists from shared fragment constants. ⛔ **17 of those were `_org_filter`'s own output**, counted as unresolved SQL one module from the measurement |
+| ⛔⛔ **3 were the instrument** | `_VERBS` interpolates `_TABLE`, the table-name REGEX, into four SQL-shaped templates. Excluded by DECLARATION — a character-class heuristic would hide real `check` constraints |
+| **three hops, 49 → 16** | imported constants (✅ **recovered 16 attributions** — `HISTORY_TABLE` is one import from its fifteen uses) · own regexes · local aliases (⛔ **recovered ZERO**, said plainly: every aliasing module already referenced its table in a literal). Ambiguity **refused, not guessed** |
+| ⛔ **the observer problem, checked** | every dependent finding captured before and compared after: `known_tables`, `table_usage`, `written_and_unread`, `undeclared_unread_writes`, unreceipted-per-package, `deletion_list` — **all identical. No verdict moved**, ⛔ and that was luck: a table referenced only through an import would have read write-only |
+| **16 declared, with a category** | `resolved-elsewhere` 1 · `resolvable-deferred` 4 · `runtime` 3 · `not-a-table` 1 · already declared 2. ⛔ The deferred four are a **deliberate refusal** — a fourth hop has a 102-table blast radius and gets its own unit (`3.1b`) |
+| ⛔⛔ **and my own guards** | **2 real holes**: `STATEMENT_FLOOR` read from the constant the test asserted against, so lowering it weakened the test; and an `or` that let half the evidence go — the **fourth** time. Plus the self-witness family's fourth variant: a quoted example counted as real |
+| **outcome** | 29 tests · **20/20 mutations** · `unresolved_table` **49 → 16** · a ratchet that is absolute and has no slack · full suite **15,466 passed · 0 failed · 12:16** |
+| **next** | `3.1b` the fourth resolver hop, or `3.2` the always-green receipts. ⛔ `2.3` stays blocked on Phase 0 |

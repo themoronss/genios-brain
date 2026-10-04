@@ -131,7 +131,8 @@ of its unmeasured gaps and every residue is a decision.
 
 | # | Step | Why |
 |---|---|---|
-| **3.1** | ⛔ the **639 unresolved SQL statements** (22%) | a table name passed through a **function argument** needs dataflow, not constant substitution. Today the two known cases are declared; the share is asserted so it cannot grow silently |
+| **3.1** ✅ DONE | ⛔ the **639 unresolved SQL statements** (22%) ⛔⛔ **MIS-SCOPED: it was 645, and only 49 were about tables. Now 16, all declared** |⛔| | a table name passed through a **function argument** needs dataflow, not constant substitution. Today the two known cases are declared; the share is asserted so it cannot grow silently |
+| **3.1b** | ⛔ the **fourth resolver hop** — loops over constant collections of literal table names (`capture/journey.py`, `context/backfill.py`, two `scripts/`). ⛔ Declared `resolvable-deferred` rather than done in `3.1`: the erasure loop gives it a **102-table blast radius**, so it needs its own baseline | ⛔ 4 of the 16 remaining table holes |
 | **3.2** | **the always-green receipts** | ⛔ If `H8.3` says `merge_history` is empty, receipt 42 is structurally green forever. Gate it on a marker the way the learning receipts are, so it reads *"not yet exercised"* rather than *"passing"* — `P2` |
 | **3.3** | **`U2b`** the approver column + contract field + wiring | ⛔ blocked on `H1` **and** one in-force authority rule. **794 actions, 410 want `requires_approval`, `authority_rules` has ZERO rows** |
 | **3.4** | **`STEP-12`** the lane receipt | ⛔ blocked on `H1` (`0190`). It currently reads **ERROR**, not an answer |
