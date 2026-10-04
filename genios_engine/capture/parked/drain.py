@@ -148,8 +148,29 @@ def drain_parked(engine, *, org_id: str | None = None, limit: int = 200,
                           {"e": r.event_id})
                 continue
 
+            # ⛔ ROUTE AND LANE, OR THE RE-ADMISSION IS A NO-OP.
+            #
+            # A PARKED row is written with `triage_lane` and `route` NULL — `capture/pipeline`
+            # only computes them when `gate.action` is neither drop nor park. Flipping `outcome`
+            # alone therefore produced a row that READS as emitted and is routed nowhere, and
+            # `route` is exactly what the extraction lane selects on.
+            #
+            # MEASURED on the design partner's org 2026-10-04: of 134 gmail events marked
+            # emitted, 77 had `route IS NULL` and extraction had never run on ONE of them. All 57
+            # with `route='needs_extraction'` had been extracted. Split by day it was getting
+            # worse, not better — 03 Oct 47 extracted / 29 not, 04 Oct 10 / 48 — because each
+            # drain re-admitted more parked rows into the same dead end. Those emails are in the
+            # database, counted as emitted, carrying their payload, and contributing nothing.
+            #
+            # P3 BECAUSE WE CANNOT HONESTLY SAY MORE. `triage.triage_lane` needs the prepared
+            # content to score urgency and the drain does not hold it; P3 is that module's own
+            # "low-signal / digest / backfill", which is what a row that has been sitting in a
+            # park queue actually is. Understating is the safe direction — the event is still
+            # extracted, it simply does not jump ahead of live mail.
             flipped = c.execute(text(
-                "update source_events set outcome='emitted' "
+                "update source_events set outcome='emitted', "
+                "route = coalesce(route, 'needs_extraction'), "
+                "triage_lane = coalesce(triage_lane, 'P3') "
                 "where org_id=:o and event_id=:e and outcome in ('parked', 'dropped')"),
                 {"o": r.org_id, "e": r.event_id}).rowcount
             if flipped:
