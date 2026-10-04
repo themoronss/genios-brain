@@ -52,6 +52,29 @@ class LLMResult:
     #: The raw prompt-cache counts, for measurement.
     cache_write_tokens: int = 0
     cache_read_tokens: int = 0
+    #: ⛔ THE MODEL RAN OUT OF BUDGET, which is not the same failure as bad output and does not
+    #: have the same fix. See `TRUNCATED` below.
+    truncated: bool = False
+
+
+#: ⛔ WHAT A TRUNCATED CALL IS CALLED, so it stops being called something else.
+#:
+#: MEASURED on the design partner's org 2026-10-04, across three days of `llm_costs`:
+#:
+#:     l1_extract     failed  n=8    output_tokens min=8192  max=8192   (ceiling 8192)
+#:     l1_relevance   failed  n=11   output_tokens min=1024  max=1024   (ceiling 1024)
+#:
+#: EVERY failure sat at exactly its ceiling. The successes ranged freely below it (l1_extract
+#: 812-8192, l1_relevance 81-1024). The model had written well-formed JSON and the API cut it
+#: mid-structure; `parse_json_lenient` then returned None and this client reported **"unparseable
+#: JSON"** — which sends every reader to the prompt and the schema, and the answer was never
+#: there. The budget was the answer, and `resp.stop_reason` had been saying so on every one of
+#: those calls while this function discarded it.
+#:
+#: The fix is to say the true thing. Raising a ceiling is a cost decision and needs this counter
+#: first: a lane that truncates once needs a bigger budget, a lane that truncates always needs a
+#: smaller question.
+TRUNCATED = "truncated: the model hit max_tokens and the JSON was cut mid-structure"
 
 
 class LLMClient:
@@ -137,10 +160,22 @@ class LLMClient:
         it = (int(getattr(usage, "input_tokens", 0) or 0)
               + round(cw * writes) + round(cr * CACHE_READ_MULTIPLIER))
         ot = getattr(usage, "output_tokens", 0)
+        # `stop_reason` is the API telling us WHY it stopped, and it was being thrown away.
+        cut_off = str(getattr(resp, "stop_reason", "") or "") == "max_tokens"
         parsed = parse_json_lenient(raw)
         if parsed is None:
             return LLMResult(parsed={}, raw=raw, input_tokens=it, output_tokens=ot,
-                             model=self._model, ok=False, error="unparseable JSON",
+                             model=self._model, ok=False, truncated=cut_off,
+                             error=(f"{TRUNCATED} (max_tokens={max_tokens})" if cut_off
+                                    else "unparseable JSON"),
+                             cache_write_tokens=cw, cache_read_tokens=cr)
+        # PARSED, BUT STILL CUT SHORT. `parse_json_lenient` is deliberately forgiving and will
+        # close an unterminated object, so a truncated call can come back `ok=True` carrying a
+        # SHORTER answer than the model meant to give — a half-written list of observations that
+        # nothing downstream can tell from a complete one. The flag travels either way.
+        if cut_off:
+            return LLMResult(parsed=parsed, raw=raw, input_tokens=it, output_tokens=ot,
+                             model=self._model, truncated=True,
                              cache_write_tokens=cw, cache_read_tokens=cr)
         return LLMResult(parsed=parsed, raw=raw, input_tokens=it, output_tokens=ot,
                          model=self._model, cache_write_tokens=cw, cache_read_tokens=cr)
