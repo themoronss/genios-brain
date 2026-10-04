@@ -801,6 +801,44 @@ def _org_paused(org_id: str) -> bool:
         return False
 
 
+def _plan_expired(org_id: str) -> bool:
+    """Has this tenant's plan lapsed past its grace window?
+
+    ⛔ THE LEAK THIS CLOSES. Expiry was enforced in exactly two places — both inside
+    `intelligence_routes`, on the two calls a PERSON makes. Everything the background does was
+    ungated: the sweep kept pulling mail, the chain kept reasoning, and `l4_llm_decision`,
+    `l1_extract` and `relevance_gate` kept calling the model. Measured on 2026-10-04, after each
+    org's grace window closed: 26,036 model calls across three lapsed tenants, ~29M input and
+    ~5.3M output tokens, running at ~$21/day and still climbing. That is OUR model spend on
+    accounts that stopped paying — the one cost in this system that is per-unit and real.
+
+    `grace` is NOT expired: the grace window exists so a late payment does not interrupt the
+    product, and gating it here would defeat the window's whole purpose. Only `expired` stops.
+
+    Nothing about this touches READS. `billing.py` is explicit that the dashboard stays reachable
+    — "locking an unpaid customer out of the page they would pay on is the one failure that
+    cannot recover itself" — so a lapsed tenant still signs in, still sees every card it already
+    has, and still finds the renew button. What stops is the spending.
+
+    Fails OPEN, like every other gate on this path: a billing row that cannot be read must never
+    be the reason a paying customer's mail stops arriving.
+    """
+    if _graph is None:
+        return False
+    try:
+        from sqlalchemy import text
+        from genios_engine.platform import billing as B
+        with _graph.engine.connect() as c:
+            row = c.execute(text("select plan_status, plan_expires_at, grace_until "
+                                 "from orgs where id=:o"), {"o": org_id}).first()
+        if row is None:
+            return False                             # unknown org: auth owns that refusal
+        return B.expiry_state(row.plan_status, row.plan_expires_at, row.grace_until) == "expired"
+    except Exception:                                # noqa: BLE001 — never block a payer's sync
+        _log.warning("plan state read failed for org=%s — sweeping without it", org_id)
+        return False
+
+
 def _sync_headroom(org_id: str) -> int:
     """Messages this org may still capture this period, or a large number when the meter cannot
     be read. Fails OPEN, like every other gate on this path: a quota that cannot be read must
@@ -871,11 +909,14 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None, *,
     else:
         conns_to_poll = list(conns)
     rc = make_relevance_classifier()
-    l1_ok = l1_err = l1_paused = l1_revoked = 0
+    l1_ok = l1_err = l1_paused = l1_revoked = l1_lapsed = 0
     paused: dict[str, bool] = {}
     # Per-org budget decisions are made ONCE per sweep, not per connection: an org with gmail +
     # gcal + drive would otherwise pay for three checks to reach the same answer.
     over_budget: dict[str, bool] = {}
+    # THE PLAN BOUNDARY, asked once per org per sweep like the two above. A lapsed tenant's
+    # background work spends OUR model budget, not theirs — see `_plan_expired`.
+    lapsed: dict[str, bool] = {}
     # THE INGESTION METER, asked once per org per sweep for the same reason as the two above.
     # It is a different question from `over_budget`: that one is "how much money today", this is
     # "how much mail this period". A backfill can sit inside the dollar ceiling and still be a
@@ -892,6 +933,11 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None, *,
             paused[conn.org_id] = _org_paused(conn.org_id)
         if paused[conn.org_id]:
             l1_paused += 1
+            continue
+        if conn.org_id not in lapsed:
+            lapsed[conn.org_id] = _plan_expired(conn.org_id)
+        if lapsed[conn.org_id]:
+            l1_lapsed += 1
             continue
         if conn.org_id not in over_budget:
             over_budget[conn.org_id] = _llm_over_daily_cap(conn.org_id)
@@ -962,7 +1008,8 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None, *,
                         error=f"{reason}: {str(e)[:480]}")
             _notify_sync_failure(org_id=conn.org_id, source=conn.source_type,
                                  error=f"{reason}: {e}")
-    orgs = {c.org_id for c in conns if not paused.get(c.org_id)}
+    orgs = {c.org_id for c in conns
+            if not paused.get(c.org_id) and not lapsed.get(c.org_id)}
     no_new = ({o for o in orgs if not new_events.get(o)} if chain_only_on_new_data else set())
     orgs -= no_new
     for org in orgs:                              # L2/L3/L5: once per org, after all its sources pulled
@@ -977,6 +1024,10 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None, *,
             # connections it said were due, in the order it put them in.
             "l1_due": l1_due,
             "l1_skipped_over_budget": l1_skipped, "l1_skipped_paused": l1_paused,
+            # Connections skipped because the tenant's PLAN has lapsed past its grace window.
+            # Separate from over_budget and sync_quota on purpose: those two clear with time or
+            # a bigger plan, this one clears only when somebody pays.
+            "l1_skipped_plan_expired": l1_lapsed,
             # Connections skipped because the ORG's ingestion meter is full for this period.
             # Distinct from over_budget on purpose: that one clears at midnight, this one needs
             # a bigger plan, and support cannot tell them apart from one counter.

@@ -106,6 +106,18 @@ _GROUNDED_BY_OUR_OWN_WORDS: frozenset[str] = frozenset({
     "first_touch_unanswered",   # sales, a first approach nobody answered
     "outbound_prospect",        # sales, a whole sequence that produced nothing
     "cohort_outreach_gap",      # the campaign reading over the same silence
+    # ⛔ `dependency_stated` — admin, "Waiting On Something Named". Measured on the design
+    # partner's org 2026-10-04: NINE of sixteen live cards, every one of them abstained with
+    # "nothing this account said is on record", every one of them withheld from the app queue,
+    # and the account holder saw three cards where the system had built sixteen.
+    #
+    # The corpus defines the situation as *"anchored on a STATED DEPENDENCY — one sentence in
+    # which something was said to wait on something else"*. THE SENTENCE IS THE SITUATION. Who
+    # uttered it is not part of the definition, and it cannot be: "I am waiting on Khushi's
+    # acceptance of the offer" is the whole finding whether Khushi wrote it or the founder did.
+    # Demanding the counterparty's words for a dependency the FOUNDER stated is the same error
+    # the four entries above exist to correct — requiring the silence to speak.
+    "dependency_stated",
 })
 
 
