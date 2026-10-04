@@ -727,7 +727,56 @@ def _plain_value(value):
         for tag in ("$decimal", "$datetime", "$date", "$uuid"):
             if tag in value:
                 return value[tag]
+    # ⛔ THE SAME BUG, THE REST OF IT. The wrapper case above was fixed; a MULTI-KEY structure
+    # still travelled whole. Measured on the design partner's org 2026-10-04: four of five open
+    # cards carried `why` rows whose `value` was a dict —
+    #     {"axis": "consistency", "value_bp": 10000}
+    #     {"fact": "situation.trend", "reason": "trend_confidence_below_floor", …}
+    #     {"spans": 5, "verified_spans": 5}
+    # — and the dashboard renders that field as `{w.value}`. React refuses an object as a child,
+    # the drawer threw, and the card error boundary replaced EVERY ONE of those cards with "This
+    # card could not be opened". The single card whose `why` held no dict was the only one that
+    # opened. A reasoning record is not a sentence, and this is the boundary where it has to
+    # become one.
+    #
+    # DETERMINISTIC AND FAITHFUL — nothing here invents a reading. Basis points become the
+    # percentage they already mean; anything else is joined from the pairs it already holds, in
+    # its own key order, so the row still says what it said.
+    if isinstance(value, dict):
+        return _readable_structure(value)
+    if isinstance(value, (list, tuple)):
+        return ", ".join(str(_plain_value(v)) for v in value) or None
     return value
+
+
+#: Keys whose value is in integer basis points (the repo's unit for a ratio) — rendered as the
+#: percentage a reader expects rather than the integer the engine stores.
+_BASIS_POINT_KEYS: frozenset[str] = frozenset({"value_bp", "base_bp", "floor_bp", "score_bp"})
+
+
+def _readable_structure(value: dict) -> str | None:
+    """One line a person can read, built only from what the structure already says.
+
+    Never a guess: the keys are rendered in their own order, basis points as a percentage, and a
+    `None` is dropped rather than printed as the word "None". An empty structure returns None, so
+    the caller can leave the row out instead of showing an empty quote.
+    """
+    parts: list[str] = []
+    for key, raw in value.items():
+        if raw is None or raw == "":
+            continue
+        inner = _plain_value(raw) if isinstance(raw, (dict, list, tuple)) else raw
+        if inner is None or inner == "":
+            continue
+        if key in _BASIS_POINT_KEYS and isinstance(inner, int):
+            parts.append(f"{key.removesuffix('_bp').replace('_', ' ')} {inner / 100:g}%")
+        elif isinstance(inner, bool):
+            if inner:
+                parts.append(str(key).replace("_", " "))
+        else:
+            parts.append(str(inner) if len(value) == 1 else
+                         f"{str(key).replace('_', ' ')} {inner}")
+    return " · ".join(parts) or None
 
 
 #: How many authored claims a card may rest its `why` on. Two, not all of them: the block is read
