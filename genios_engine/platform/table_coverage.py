@@ -45,7 +45,25 @@ _VERBS: dict[str, str] = {
     "insert": rf"insert into {_TABLE}",
     "update": rf"update {_TABLE} set",
     "delete": rf"delete from {_TABLE}",
-    "read": rf"(?:from|join) {_TABLE}",
+    # ⛔⛔ `(?<!delete )` AND IT IS LOAD-BEARING. `delete from cards` contains `from cards`, so
+    # without the lookbehind every DELETE was also counted as a READ of the same table.
+    #
+    # Latent for as long as this module has existed, and `3.1b`'s loop hop amplified it 102-fold:
+    # `api/account_routes.py`'s erasure loop iterates `_ORG_SCOPED_TABLES` with
+    # `delete from {tbl}`, so resolving that one hole attributed a spurious read to a hundred
+    # tables at once — and four of them stopped being reported write-only on the strength of it.
+    # ⛔ The baseline comparison this step committed to in writing is the only reason that was
+    # caught before four correct declarations were retired.
+    #
+    # Measured 2026-10-04: the lookbehind removes **139 spurious read facts across 106 tables**,
+    # and ⛔ **five tables lose their ONLY read attribution** — `macv_ledger` among them, which
+    # confirms mechanically what `19-PENDING` already records as a product finding: the number the
+    # customer verifies is referenced by the delete list and by nothing else.
+    #
+    # ⛔ A SUBQUERY'S `from` IS STILL A READ. The lookbehind blocks only the `from` immediately
+    # after `delete `, so `delete from a where x in (select 1 from b)` still attributes a read of
+    # `b`. That is correct and it is tested.
+    "read": rf"(?<!delete )(?:from|join) {_TABLE}",
 }
 WRITE_VERBS: frozenset[str] = frozenset({"insert", "update"})
 
@@ -88,6 +106,21 @@ NAME_CONSTANT_TABLE_SITES: dict[str, tuple[str, str, str]] = {
 #: correctly deleted and otherwise inert: it costs storage, it is in the erasure path, and no
 #: decision has ever been made from it.
 UNREAD_WRITES: dict[str, tuple[str, str, str]] = {
+    "warm_lane_slots": (
+        "platform/warm_lane.py",
+        "⛔⛔ NEWLY VISIBLE 2026-10-04, and it was HIDDEN BY ITS OWN DELETE. Until `3.1b` fixed the "
+        "`read` verb, `delete from warm_lane_slots` matched `(?:from|join) (…)` and the module "
+        "appeared to read the table it only writes. ✅ WRITE-ONLY BY DESIGN, and this entry is a "
+        "different kind from the others here: it is a LEASE table, where the row's existence IS "
+        "the state and the database enforces it through `primary key (slot)`. The holder learns "
+        "whether it won from `insert … on conflict … where s.lease_until < now() … RETURNING "
+        "slot`, and whether its heartbeat landed from `update … where slot = :n and holder = :h` "
+        "via `rowcount`. ⛔ So it IS read — through `returning` and `rowcount`, which no verb "
+        "pattern in this module can express. A fifth blind spot, recorded here because the table "
+        "would otherwise read as a gap",
+        "MOVES WHEN never. ⛔ Adding a `select` over a lease table would be a race: the answer "
+        "would be stale before the caller acted on it, which is precisely why the claim is a "
+        "conditional write"),
     # ── context/ ────────────────────────────────────────────────────────────────────────
     "contract_spend_attributions": (
         "context/correlation_resource.py",
@@ -97,13 +130,6 @@ UNREAD_WRITES: dict[str, tuple[str, str, str]] = {
         "MOVES WHEN a spend-attribution surface reads it. ⛔ Not mine: deleting a written ledger "
         "destroys history, and building the reader is a product decision about whether contract "
         "spend belongs in the product"),
-    "source_identity_map": (
-        "context/graph_store.py + context/merge.py",
-        "⛔ TWO writers, and the second is only visible because of `NAME_CONSTANT_TABLE_SITES`: "
-        "`merge.py` repoints it in the generic node-reference loop. Read by nothing. ⛔ An "
-        "identity map that nothing resolves against is maintained correctly for no consumer",
-        "MOVES WHEN identity resolution reads back its own map — the natural caller is "
-        "`context/identity.py`, which resolves alias candidates and does not consult it"),
     "situation_interpretations": (
         "context/interpretation_store.py",
         "⛔ `record_interpretation` inserts; the module exports exactly `TABLE` and that function, "
@@ -178,6 +204,15 @@ UNREAD_WRITES: dict[str, tuple[str, str, str]] = {
 #: tempted to re-derive the list with a simpler scan and will get them back. *An invalid finding
 #: is not a finding* — and the measurement that produced them is in `resolution()`.
 RETRACTED_UNREAD_WRITES: dict[str, str] = {
+    "source_identity_map": (
+        "⛔ RETRACTED 2026-10-04 by `3.1b`'s loop hop — and the retracted entry had PREDICTED its "
+        "own retraction. It said *'TWO writers, and the second is only visible because of "
+        "`NAME_CONSTANT_TABLE_SITES`: merge.py repoints it in the generic node-reference loop. "
+        "Read by nothing'* — and the loop hop makes the READ in that same loop visible: "
+        "`select {id_column} from {table} where org_id=:o and {owner_column}=:n`. ✅ So "
+        "`context/merge.py` reads it, has always read it, and the name-constant declaration "
+        "attributed only the `update` verb. ⛔ The mover it carried — *'MOVES WHEN identity "
+        "resolution reads back its own map'* — was answered by a resolver change, not by new code"),
     "edge_coverage_declarations":
         "⛔ RETRACTED — read by its own writer `context/patterns/store.py`. A self-read is a read: "
         "the pattern store consults the coverage it declared",
@@ -349,6 +384,70 @@ def _local_table_aliases(tree: ast.Module,
     return settled
 
 
+def _loop_table_targets(source: str, known: frozenset[str]) -> dict[str, tuple[str, ...]]:
+    """``{loop variable: (table, …)}`` for `for X in <collection of known table names>`.
+
+    ⛔ THE FOURTH WAY A NAME HIDES A TABLE, and the one `3.1` deliberately deferred because of its
+    reach: `api/account_routes.py`'s tenant erasure loop iterates **102 tables**, so this is the
+    hop that turns one statement into a hundred facts.
+
+    ⛔⛔ ATTRIBUTION ONLY. THIS DOES NOT TOUCH `_statements`, AND THAT IS A MEASURED DECISION. The
+    obvious implementation expands each loop statement into one statement per table, and measured
+    against the tree on 2026-10-04 it does this::
+
+        statements        2,885 → 3,036   (+151)
+        unresolved          621 →   631   ⛔ IT GOES UP
+
+    `statements` would stop meaning *"SQL statements in the source"* — a number the share assertion
+    divides by and `scripts/context_coverage_report.py` prints — and `unresolved` would RISE,
+    because expanding one statement into five leaves five each still carrying the other holes
+    (`{column}`, `{key_column}`). A real improvement reading as a regression is worse than no
+    improvement. So the loop map feeds the usage attribution and nothing else.
+
+    BOUNDS, declared before this was written and each one tested:
+
+    * `for X in (…literal strings…)` — admitted only when **every** element is a known table. ⛔ One
+      unknown element and the loop answers for NOTHING: a mixed collection is as likely to be a
+      list of columns, statuses or file names.
+    * `for X in CONSTANT` — resolved through the three existing hops and no further.
+    * `for X, _ in PAIRS` — the FIRST element of a tuple target only. ⛔ `for _, X in …` is not
+      guessed, because which position holds the table is not knowable from the shape.
+    * `for` statements and comprehensions. ⛔ Not `while`, `enumerate`, `zip` or `dict.items()`.
+    """
+    tree = ast.parse(source)
+    resolved = {**_imported_table_constants(tree), **_module_table_constants(tree, known)}
+    resolved = {**_local_table_aliases(tree, resolved), **resolved}
+    out: dict[str, set[str]] = {}
+    for node in ast.walk(tree):
+        if not isinstance(node, (ast.For, ast.comprehension)):
+            continue
+        iterable, target = node.iter, node.target
+        tables: tuple[str, ...] = ()
+        if isinstance(iterable, (ast.Tuple, ast.List, ast.Set)):
+            literals = tuple(e.value for e in iterable.elts
+                             if isinstance(e, ast.Constant) and isinstance(e.value, str))
+            known_ones = tuple(n for n in literals if n in known)
+            # ⛔ ALL OR NOTHING. A collection holding one name we do not recognise is probably not
+            # a table list at all, and half-resolving it would attribute real tables out of a list
+            # of columns that happens to share a word with one.
+            # ⛔ `literals and …` WAS HERE AND WAS DEAD CODE, found by a mutation that deleted
+            # it and changed nothing: an empty collection yields an empty `known_ones`, and the
+            # `if not tables: continue` below already refuses that. Removed rather than kept as
+            # belt, because a reader has to be able to tell a guard from a decoration.
+            if len(known_ones) == len(literals) == len(iterable.elts):
+                tables = known_ones
+        elif isinstance(iterable, ast.Name):
+            tables = resolved.get(iterable.id, ())
+        if not tables:
+            continue
+        if isinstance(target, ast.Name):
+            out.setdefault(target.id, set()).update(tables)
+        elif isinstance(target, ast.Tuple) and target.elts \
+                and isinstance(target.elts[0], ast.Name):
+            out.setdefault(target.elts[0].id, set()).update(tables)
+    return {name: tuple(sorted(tables)) for name, tables in out.items()}
+
+
 def _statements(source: str, known: frozenset[str]) -> tuple[tuple[str, int], ...]:
     """``(sql, unresolved placeholders)`` for every SQL statement in the module.
 
@@ -498,12 +597,22 @@ def _table_usage() -> dict[str, dict[str, frozenset[str]]]:
             statements = _statements(source, known)
         except SyntaxError:                        # pragma: no cover - the tree parses
             continue
+        loops = _loop_table_targets(source, known)
         for blob, _unresolved in statements:
             sql = " ".join(blob.lower().split())
-            for verb, pattern in _VERBS.items():
-                for match in re.finditer(pattern, sql):
-                    if match.group(1) in known:
-                        acc.setdefault(match.group(1), {}).setdefault(verb, set()).add(rel)
+            # ⛔ ONE STATEMENT IN A LOOP OVER N TABLES IS N FACTS, for ATTRIBUTION only — the
+            # statement count above is untouched. See `_loop_table_targets` for why.
+            renderings = [sql]
+            for name in table_holes(blob):
+                if name not in loops:
+                    continue
+                renderings = [r.replace("{" + name.lower() + "}", table)
+                              for r in renderings for table in loops[name]]
+            for rendered in renderings:
+                for verb, pattern in _VERBS.items():
+                    for match in re.finditer(pattern, rendered):
+                        if match.group(1) in known:
+                            acc.setdefault(match.group(1), {}).setdefault(verb, set()).add(rel)
     for site, (constant, verb, _why) in NAME_CONSTANT_TABLE_SITES.items():
         for table in _name_constant_tables(site, constant):
             acc.setdefault(table, {}).setdefault(verb, set()).add(f"genios_engine/{site}")
@@ -554,11 +663,13 @@ _TABLE_HOLE = re.compile(r"\b(?:from|join|into|update)\s+\{([^{}]*)\}", re.IGNOR
 #: deliberate and visible in a diff.
 RESOLUTION_CEILINGS: dict[str, tuple[int, str]] = {
     "unresolved_table": (
-        16,
-        "⛔ Holes where a TABLE belongs, after three resolver hops (imported constants, this "
-        "module's own regexes, local aliases of a constant). All 16 are accounted for in "
-        "`TABLE_HOLES_NOT_CLOSED` and `NAME_CONSTANT_TABLE_SITES`. ⛔ A 17th means a table the "
-        "measurement cannot see — declare it with a category, or close it"),
+        7,
+        "⛔ Holes where a TABLE belongs, after FOUR resolver hops: imported constants, this "
+        "module's own regexes, local aliases of a constant, and loops over a constant collection. "
+        "⛔ Lowered 16 → 7 by `3.1b`, and lowering it is the point — a ceiling only ratchets while "
+        "it sits on the actual. All 7 are accounted for in `TABLE_HOLES_NOT_CLOSED` and "
+        "`NAME_CONSTANT_TABLE_SITES`. ⛔ An 8th means a table the measurement cannot see — declare "
+        "it with a category, or close it"),
 }
 
 #: ⛔ The FLOOR under the resolver's own reach. *A resolver that answers for 1 of 104 answers
@@ -574,19 +685,28 @@ STATEMENT_FLOOR = 2_800
 #: ⛔ The number this step was scoped around was *"639 unresolved SQL statements (22%)"*. Measured:
 #: 645 statements carried a placeholder, **49** had one where a TABLE belongs, and 596 were
 #: predicates and column lists assembled from shared fragment constants. Three resolver hops later
-#: (imported constants, this module's own regexes, local aliases of a constant) the table figure is
-#: **16**, in 11 modules, and each one is accounted for below.
+#: (imported constants, this module's own regexes, local aliases of a constant) the table figure was
+#: **16**, in 11 modules. ⛔ `3.1b` added the FOURTH hop — loops over a constant collection — and it
+#: is now **7**, in 4 modules. Six entries were retired here on the day they closed, and the
+#: category they shared went with them.
 #:
 #: ⛔⛔ THE CATEGORIES MATTER MORE THAN THE COUNT, because they are different problems:
 #:
 #:   `resolved-elsewhere`   a purpose-built reader already answers for it; the generic resolver
 #:                          not closing the hole costs nothing
-#:   `resolvable-deferred`  a loop over a constant collection of literal table names. ⛔ RESOLVABLE
-#:                          AND DELIBERATELY NOT RESOLVED HERE — a fourth resolver hop with a
-#:                          102-table blast radius is its own unit with its own baseline, not a
-#:                          silent addition to this one
+#:   ⛔ `resolvable-deferred` RETIRED 2026-10-04 by `3.1b`, which is the unit it was deferring to.
+#:                          All four members (plus two more the measurement found) were loops over
+#:                          a constant collection, and the fourth hop closed every one. ⛔ The
+#:                          category is gone rather than kept empty: an empty category makes every
+#:                          assertion over it vacuous, the hole that let a mutation survive in
+#:                          `1.4` — and `not-a-table` was retired the same day for the same reason
 #:   `runtime`              the table is genuinely not knowable from the source
-#:   `not-a-table`          the hole is not an engine table at all
+#:   ⛔ `not-a-table`       RETIRED 2026-10-04. It had exactly one member,
+#:                          `scripts/rebuild_graph.py`, and that member was MISFILED: the
+#:                          statement the entry described carries no counted hole, and the one
+#:                          that does is a plain `delete` of eight real tables. An empty category
+#:                          makes every assertion over it vacuous — the hole that let a mutation
+#:                          survive in `1.4` — so it is gone rather than kept for symmetry
 #:
 #: ✅ `context/merge.py` and `feedback/store.py` are not listed: they are already declared in
 #: `NAME_CONSTANT_TABLE_SITES`, which resolves them by name-constant rather than leaving them open.
@@ -594,37 +714,6 @@ STATEMENT_FLOOR = 2_800
 #: Checked in BOTH directions by `tests/platform/test_every_table_hole_is_accounted_for.py`: a
 #: declared site whose hole has closed is as much a lie as a hole nobody declared.
 TABLE_HOLES_NOT_CLOSED: dict[str, tuple[str, str, str]] = {
-    "api/account_routes.py": (
-        "resolved-elsewhere",
-        "⛔ `for tbl in _ORG_SCOPED_TABLES: delete from {tbl}` — the tenant erasure loop. ✅ The "
-        "102 tables ARE read, by `deletion_list()`, which reads the constant off this module's AST "
-        "on purpose. The generic resolver leaving the hole open costs nothing because the one "
-        "question that matters about this loop already has a dedicated reader",
-        "MOVES WHEN the erasure loop stops being a loop over a module constant — at which point "
-        "`deletion_list()` breaks loudly, which is the right failure"),
-    "capture/journey.py": (
-        "resolvable-deferred",
-        "⛔ `for table, when in _LEDGERS` — tuple unpacking over a module constant of "
-        "`(table, column)` pairs. Resolvable, and the unpacking makes it the hardest of the "
-        "deferred set: a resolver would have to know which element of the pair is the table",
-        "MOVES WITH context/backfill.py and the two scripts/ loops — one unit, one baseline"),
-    "context/backfill.py": (
-        "resolvable-deferred",
-        '⛔ `for table in ("context_situations", "context_correlation_members", '
-        '"context_correlations")` — an INLINE TUPLE OF LITERAL TABLE NAMES, the most trivially '
-        "resolvable hole in the engine. ⛔ It is open only because the resolver reads module-level "
-        "assignments and not loop targets",
-        "MOVES WITH capture/journey.py — see that entry"),
-    "scripts/e2e_verify.py": (
-        "resolvable-deferred",
-        "⛔ `for t in _GRAPH_TABLES` — a module-level list of literal table names. Resolvable: the "
-        "collection is a constant and every element is a literal",
-        "MOVES WITH capture/journey.py — see that entry"),
-    "scripts/equivalence_check.py": (
-        "resolvable-deferred",
-        "⛔ `for t in TABLES` — a module-level tuple of literal table names. Resolvable, same shape "
-        "as `scripts/e2e_verify.py`",
-        "MOVES WITH capture/journey.py — see that entry"),
     "api/home_routes.py": (
         "runtime",
         "⛔ `_weekly(conn, org, table: str, …)` — the table is a FUNCTION PARAMETER, which is the "
@@ -650,12 +739,6 @@ TABLE_HOLES_NOT_CLOSED: dict[str, tuple[str, str, str]] = {
         "than keeping a list somebody must remember to extend",
         "MOVES WHEN never. ⛔ Resolving this would mean replacing a correct design with a stale "
         "list, which is the inversion this module exists to prevent"),
-    "scripts/rebuild_graph.py": (
-        "not-a-table",
-        "⛔ `create table if not exists {tbl}_bak_{ts} as …` — the hole is part of a name being "
-        "MINTED, not an engine table being read. The table does not exist until the script runs "
-        "and is a timestamped backup",
-        "MOVES WHEN never — there is nothing here for a table-coverage measurement to know"),
 }
 
 
@@ -710,6 +793,37 @@ def table_holes(sql: str) -> tuple[str, ...]:
 
 
 @lru_cache(maxsize=1)
+def open_table_holes() -> tuple[tuple[str, tuple[str, ...]], ...]:
+    """``((module, (hole, …)), …)`` — every table-position hole no hop can close.
+
+    ⛔ ONE SOURCE OF TRUTH, AND IT EXISTS BECAUSE THE GUARD HAD DRIFTED. `3.1` put this logic in
+    `resolution()` and `tests/platform/test_the_resolver_says_what_it_cannot_see.py` re-derived it
+    in a helper of its own. When `3.1b` added the loop hop, the metric stopped counting nine holes
+    and the test's copy did not — so the test went on asserting that declared sites still had
+    holes that the metric had already closed. ⛔ **Two implementations of one question will
+    disagree on the day one of them is right.**
+
+    Returned as a tuple of pairs so the cached value cannot be poisoned — `table_usage()`'s rule,
+    which `3.1`'s guard broke once by caching a dict.
+    """
+    known = _known_tables()
+    out: list[tuple[str, tuple[str, ...]]] = []
+    for rel, source in _sources():
+        key = _rel_key(rel)
+        declared = SELF_MEASURED_PATTERNS.get(key)
+        loops = _loop_table_targets(source, known)
+        holes: list[str] = []
+        for sql, unresolved in _statements(source, known):
+            if not unresolved:
+                continue
+            holes.extend(h for h in table_holes(sql)
+                         if not (declared and h == declared[0]) and h not in loops)
+        if holes:
+            out.append((key, tuple(sorted(set(holes)))))
+    return tuple(sorted(out))
+
+
+@lru_cache(maxsize=1)
 def resolution() -> dict[str, int]:
     """⛔ COVERAGE, REPORTED BESIDE THE VERDICT. How many SQL statements were read, how many still
     carry an unresolved `{placeholder}`, and how many table-name constants were resolved.
@@ -742,6 +856,8 @@ def resolution() -> dict[str, int]:
         if found:
             modules += 1
             constants += len(found)
+        loop_targets = _loop_table_targets(source, known)
+        declared = SELF_MEASURED_PATTERNS.get(_rel_key(_rel))
         for sql, holes in _statements(source, known):
             statements += 1
             if not holes:
@@ -749,10 +865,12 @@ def resolution() -> dict[str, int]:
             unresolved += 1
             # ⛔ TWO QUESTIONS, TWO NUMBERS. A statement can hold both kinds of hole; it counts
             # once, under the table question, because that is the one that weakens coverage.
-            # ⛔ THE INSTRUMENT IS NOT PART OF THE READING. See `SELF_MEASURED_PATTERNS`.
-            declared = SELF_MEASURED_PATTERNS.get(_rel_key(_rel))
+            # ⛔ THE INSTRUMENT IS NOT PART OF THE READING (`SELF_MEASURED_PATTERNS`), and a hole
+            # a loop closes is not open (`_loop_table_targets`). `open_table_holes()` applies the
+            # same two exclusions per module and is what the guard reads, so the two cannot drift.
             names = [h for h in table_holes(sql)
-                     if not (declared and h == declared[0])]
+                     if not (declared and h == declared[0])
+                     and h not in loop_targets]
             if names:
                 unresolved_table += 1
             else:

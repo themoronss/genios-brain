@@ -1102,3 +1102,21 @@ number is meaningless without its source set* · *never pipe a suite run through
 | ⛔⛔ **and my own guards** | **2 real holes**: `STATEMENT_FLOOR` read from the constant the test asserted against, so lowering it weakened the test; and an `or` that let half the evidence go — the **fourth** time. Plus the self-witness family's fourth variant: a quoted example counted as real |
 | **outcome** | 29 tests · **20/20 mutations** · `unresolved_table` **49 → 16** · a ratchet that is absolute and has no slack · full suite **15,466 passed · 0 failed · 12:16** |
 | **next** | `3.1b` the fourth resolver hop, or `3.2` the always-green receipts. ⛔ `2.3` stays blocked on Phase 0 |
+
+
+---
+
+## 3.1b · a delete is not a read — the fourth hop, and the bug it amplified 102-fold
+
+| | |
+|---|---|
+| **what it arrived with** | `3.1`'s own deferral, in writing: *"a fourth resolver hop with a 102-table blast radius is its own unit with its own baseline."* ⛔ That sentence is the whole value of this step |
+| ⛔⛔ **the bug** | `_VERBS["read"]` was `(?:from|join) (…)`, so **`delete from X` was counted as a read of X** — latent since the module existed. The loop hop amplified it through `api/account_routes.py`'s erasure loop over **102 tables**, and **four tables stopped being reported write-only.** ✅ The before/after comparison is the only reason four CORRECT declarations were not retired |
+| ⛔ **what the fix revealed** | `(?<!delete )` removes **139 spurious read facts across 106 tables**, and **five tables lose their ONLY read attribution** — ⛔ **`macv_ledger`** among them, mechanically proving what `19-PENDING` records. ✅ A subquery's `from` is still a read, tested |
+| ⛔ **the naive hop was rejected, measured** | expanding the statement list takes `statements` 2,885 → **3,036** and makes `unresolved` **rise** 621 → 631. ⛔ `statements` is the share assertion's denominator. **Attribution expands; the count does not** |
+| ⛔ **9 → 9, members turned over** | `source_identity_map` left (its retracted entry had **predicted its own retraction**) and `warm_lane_slots` arrived — ⛔ **hidden by its own delete**, and write-only **by design**: a lease read through `RETURNING` and `rowcount`, ⛔ **a fifth blind spot no verb pattern can express** |
+| ⛔ **3.1's entry was misfiled** | `scripts/rebuild_graph.py` was `not-a-table` describing a statement `_SQL_SHAPE` never counted; the counted one is a plain delete of eight real tables. Both emptied categories retired, and the test guarding one **deleted with it** |
+| ⛔ **the guard had drifted** | two implementations of one question; `open_table_holes()` is now the single answer |
+| ⛔ **mutations** | **17 caught** · ⛔ **1 real hole** — a test whose NAME promised a tuple target and whose body had none · 1 **dead clause** removed · 5 invalid by label, each named · ✅ and one survivor turned into a **cross-file proof** rather than a claim |
+| **outcome** | 56 tests (28 + 28) · `unresolved_table` **16 → 7**, ceiling 7, slack 0 · full suite **15,494 passed · 0 failed · 12:44** |
+| **next** | `3.2` — the always-green receipts |

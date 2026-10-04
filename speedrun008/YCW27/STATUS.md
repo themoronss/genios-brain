@@ -15,6 +15,7 @@
 
 | When | What | Where |
 |---|---|---|
+| **2026-10-04** | ⛔⛔ **`3.1b` DONE — the hop was the small part. `delete from X` was being counted as a READ of X.** `_VERBS["read"]` was `(?:from|join) (…)` and `delete from cards` contains `from cards` — latent since the module existed, and ⛔ **the loop hop amplified it 102-fold** through the tenant erasure loop, so **four tables stopped being reported write-only** and four correct declarations were about to be retired. ✅ Caught by the before/after comparison the plan committed to in writing. Fixing it removed **139 spurious read facts across 106 tables** and ⛔ **five tables lost their ONLY read attribution — `macv_ledger` among them**, which mechanically proves what `19-PENDING` records. ⛔ `written_and_unread` stayed **9 → 9 while its MEMBERSHIP turned over** | [`34-AUDIT-step-3.1b-a-delete-is-not-a-read.md`](34-AUDIT-step-3.1b-a-delete-is-not-a-read.md) |
 | **2026-10-04** | ⛔⛔ **`3.1` DONE — the number this step was scoped around was the WRONG NUMBER.** Of **645** *"unresolved SQL statements"*, only **49 (7%)** had a hole where a TABLE belongs; **596 (92%)** were predicates and column lists built from shared fragment constants — ⛔ **and 17 of those were our own `_org_filter`.** ⛔⛔ **Three more were this module's own regexes: the observer was counting its instrument.** Three resolver hops took the table figure **49 → 16**, all 16 now declared with a category. ⛔ The ratchet the plan credits *did* exist — `unresolved/statements <= 0.30` against a 22.4% actual, **about 220 statements of headroom**, which is how 639 became 645 unnoticed. ⛔ Every dependent finding captured before and after: **16 attributions recovered, 0 verdicts moved** | [`32-AUDIT-step-3.1-the-number-that-was-the-wrong-number.md`](32-AUDIT-step-3.1-the-number-that-was-the-wrong-number.md) |
 | **2026-10-04** | ⛔⛔ **`2.2` DONE — Atlas L1 settled, and TWO SCORECARD ROWS CARRIED FALSE EVIDENCE.** ⛔ `L1-08`'s said *"zero declare a visibility field"* — **all three declare one**; optional is not absent. ✅ Its consequence is closed at **four layers** (derive → **gate PARKS** → re-drain STILL_BLOCKED → 5 of 6 columns NOT NULL). ⛔ The finding is **five readers in `context/` that treat a missing audience as permitted or org-wide**, safe only by that chain and declared nowhere — found by AST; grep found 5 of 8 sites. ⛔⛔ `L1-09` led to **five of `GatedEvent`'s 21 fields carried and read by nothing**, worst `degraded_compile`, whose own comment calls this defect FIXED while L2 reads the stored signal, which has no column for it. ⛔ `L1-01`'s number was **7, and it is 9**. ⛔⛔ **And three of my own guards had holes only mutation found** — including a declaration that satisfied the test that its own source exists | [`30-AUDIT-step-2.2-atlas-layer-1.md`](30-AUDIT-step-2.2-atlas-layer-1.md) |
 | **2026-10-03** | ⛔⛔ **`2.1` DONE — Atlas L2's nine claims settled, and the two nobody had located are now receipts.** ⛔⛔ **L2-11**: `expertise.py:1463` takes `domain_ids[0]` out of a `tuple(sorted(set))`, so the **alphabetically first** domain becomes `CapabilityManifest.domain` and `domain_shadow.py:1169` uses it to pick **which tenant pack the reasoning reads** — nothing records the choice while the package's own citation tags carry every domain. ⛔⛔ **L2-01**: `graph_facts.authority_rank` carries **two scales** — the dense 0..6 ladder and `DEFAULT_AUTHORITY_RANK = 100`, same column — and `fact_write_action` compares raw integers, so a row at 100 is unsupersedable and a **signed document** arriving against one is returned a `discrepancy` and dropped. ✅ **L2-03 was simply WRONG** and is closed in code both ways. ⛔ **Eleven corrections, nine to my own first reading**, including a declaration that **falsified its own count** | [`28-AUDIT-step-2.1-atlas-layer-2-nine-claims.md`](28-AUDIT-step-2.1-atlas-layer-2-nine-claims.md) |
@@ -54,11 +55,12 @@ full suite   15,220 passed · 1,067 skipped · 152 xfailed · 0 failed      (14,
 ✅ PHASE 1      CLOSED 2026-10-03 · 5 steps · ⛔ 52 candidates raised, 52 retired · 3 receipts
 ✅ PHASE 2      2.1 DONE · ⛔ 0 unmeasured L2 claims left on my side
 ⛔ 2.3 BLOCKED   needs Phase 0 live — Rohit's and Harsh's
-⛔ next up     3.1b the fourth resolver hop · or 3.2 the always-green receipts
+⛔ next up     3.2 the always-green receipts
 L6 M14.C2    ⛔⛔ COMPLETE — 10 of 10 DONE · 0 failed at every step
 Atlas L7     11 gaps: 5 CLOSED · 6 PARTLY · ⛔ 0 LIVE · ⛔⛔ 0 UNMEASURED
 scorecard    08-ATLAS-SCORECARD-L1-to-L6.md · ⛔ 56 Atlas claims verified or refuted
 receipts     35 → 48 · ⛔ feedback/ 0 → 6 correctness · context/ 2 → 3 · platform/ 1 → 2 · capture/ 5 → 9 · reason/ 8 → 9
+unresolved_table  49 → 16 (3.1) → 7 (3.1b) · ceiling absolute, slack 0
 ledgers      ⛔ unread of F11's four: 4 → 1 — asking them found FOUR live defects
 ✅ coverage   context/ AUDITED 2026-10-02 · ⛔ 306 test files import it — the gap was RECEIPTS,
              not tests. 2 → 3 receipts · 9 write-only tables declared engine-wide
@@ -4725,3 +4727,88 @@ asserted against (**lowering it weakened the test**), and an `or` let half the e
 | ⛔ **a resolvable hole declared unresolvable says there is nothing to do** |
 | ⛔ **the test must read what the measurement reads** |
 | ⛔ **state an expectation only after measuring it** |
+
+
+---
+---
+
+## ⛔⛔ 2026-10-04 · `3.1b` — A DELETE IS NOT A READ
+
+```
+unresolved_table      16 → 7     ceiling re-ratcheted to 7, slack 0
+statements               2,885   ✅ unchanged — the measured decision
+⛔ written_and_unread     9 → 9   SAME COUNT, MEMBERSHIP TURNED OVER
+declarations   6 retired · 1 retracted · 1 added · ⛔ 2 CATEGORIES retired
+tests 56 (28 + 28) · mutations 17 caught · ⛔ 1 real hole · 1 dead clause removed
+full suite  15,494 passed · 0 failed · 12:44
+```
+
+### ⛔⛔ The bug the deferral found
+
+```python
+"delete": rf"delete from {_TABLE}"
+"read":   rf"(?:from|join) {_TABLE}"      # ⛔ `delete from cards` matches BOTH
+```
+
+⛔ The loop hop amplified it a hundredfold — `api/account_routes.py` runs `delete from {tbl}` over
+**102 tables** — so resolving one hole attributed a spurious read to a hundred tables and **four
+stopped being reported write-only**. ✅ **The before/after comparison is the only reason four
+correct declarations were not retired on the strength of a regex bug.**
+
+Fixing it (`(?<!delete )`) removed **139 spurious read facts across 106 tables**, and ⛔ **five
+tables lost their ONLY read attribution** — including **`macv_ledger`**, whose only "read" was
+`delete from macv_ledger`. ✅ That mechanically proves what `19-PENDING` already records as a
+product finding. ✅ And a subquery's read survives, which is tested.
+
+### ⛔ The naive hop was wrong, and it was measured before building
+
+| | before | ⛔ naive | ✅ built |
+|---|---|---|---|
+| `statements` | 2,885 | **3,036** | **2,885** |
+| `unresolved` | 621 | **631** — *rises* | 621 |
+| `unresolved_table` | 16 | 7 | **7** |
+
+⛔ `statements` is the share assertion's denominator and a number the coverage report prints. **A
+number other things read does not change meaning for a resolver improvement.** So attribution
+expands and the statement count does not.
+
+### ⛔ The count held while the membership turned over
+
+`source_identity_map` **left** — `context/merge.py` has always read it, inside the very loop this
+hop resolves, and ⛔ **the retracted entry had predicted its own retraction**: *"Read by nothing…
+MOVES WHEN identity resolution reads back its own map."* Answered by a resolver change, not by new
+code.
+
+`warm_lane_slots` **arrived** — ⛔ **hidden by its own delete.** ✅ And write-only **by design**: a
+lease table where the row's existence IS the state, read through `insert … RETURNING slot` and
+`update … rowcount`. ⛔ **A fifth blind spot: `returning` and `rowcount` are reads no verb pattern
+here can express.**
+
+### ⛔ `3.1`'s own declaration was misfiled, and two categories were retired
+
+`scripts/rebuild_graph.py` was filed `not-a-table` describing a `create table` statement that
+**`_SQL_SHAPE` never counted**; the one counted statement is a plain `delete` of eight real tables.
+⛔ Wrong in both halves. `not-a-table` and `resolvable-deferred` are both **retired with their
+membership**, and the test guarding the latter was **deleted with it** — a test over an empty set
+reads as coverage.
+
+### ⛔ The guard had drifted
+
+`3.1` put the exclusion logic in `resolution()` and its guard re-derived it. When this hop landed
+**the metric stopped counting nine holes and the guard's copy did not.** *Two implementations of
+one question will disagree on the day one of them is right.* `open_table_holes()` is now the single
+answer.
+
+### Doctrine
+
+| rule |
+|---|
+| ⛔⛔ **`delete from X` is not a read of X** — a regex that cannot tell them apart hides write-only tables behind their own deletes |
+| ⛔⛔ **a resolver improvement must not change what a shared number MEANS** |
+| ⛔⛔ **two implementations of one question will disagree on the day one is right** |
+| ⛔ **a count that holds while its membership turns over is a finding a bare count hides** |
+| ⛔ **clearing two of three caches is theatre with a prop** |
+| ⛔ **a mixed collection answers for nothing** |
+| ⛔ **`returning` and `rowcount` are reads no verb pattern can express** |
+| ⛔ **retire an emptied category, and delete the test that guarded it** |
+| ✅ **a deferred unit is where a pre-existing bug surfaces** |

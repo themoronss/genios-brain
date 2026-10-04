@@ -28,7 +28,6 @@ from __future__ import annotations
 
 import ast
 import re
-from functools import lru_cache
 
 import pytest
 
@@ -182,8 +181,13 @@ def test_the_verb_patterns_still_look_like_sql_which_is_why_they_were_counted():
     # has `join)` — the alternation's closing paren. ✅ So the declaration's claim of exactly three
     # is right, and it is right for a reason worth knowing: the resolver's own `read` pattern is
     # the one shape of SQL-looking text it cannot see.
+    # ⛔ `3.1b` gave `read` a `(?<!delete )` lookbehind, so its template no longer BEGINS with
+    # the keyword and `table_holes` cannot see it either. One pattern is still missed and it
+    # is still the read one -- asserted by shape, not by its exact text, because the text now
+    # changes whenever the lookbehind does.
     assert len(counted) == 3, sorted(verbs - counted)
-    assert {p for p in verbs - counted} == {"(?:from|join) {_TABLE}"}, sorted(verbs - counted)
+    missed = verbs - counted
+    assert len(missed) == 1 and "(?:from|join)" in next(iter(missed)), sorted(missed)
 
 
 def test_the_declaration_quoting_the_pattern_is_counted_by_a_regex_over_the_file():
@@ -226,35 +230,25 @@ def test_excluding_them_moves_the_count_by_exactly_three():
 
 # --------------------------------------------------------- U03b · every hole left is accounted for
 
-CATEGORIES = {"resolved-elsewhere", "resolvable-deferred", "runtime", "not-a-table"}
+# ⛔ TWO CATEGORIES RETIRED 2026-10-04. `not-a-table` had one member and it was misfiled;
+# `resolvable-deferred` had four (plus two the measurement found) and `3.1b`'s loop hop
+# closed every one. ⛔ An empty category makes every assertion over it vacuous -- the hole
+# that let a mutation survive in `1.4` -- so neither is kept for symmetry.
+CATEGORIES = {"runtime"}
 
 
-@lru_cache(maxsize=1)
-def _open_holes_cached() -> tuple[tuple[str, int], ...]:
-    """⛔ Cached: three tests ask for this and each call re-parses every module in the engine.
+def _open_holes() -> dict[str, tuple[str, ...]]:
+    """⛔⛔ THE MODULE'S OWN ANSWER, NOT A SECOND IMPLEMENTATION OF IT.
 
-    ⛔ IMMUTABLE, BECAUSE THE MODULE UNDER TEST SAYS SO. `table_usage()`'s docstring: *"A fresh
-    outer dict each call so a caller cannot poison the cache."* A first version of this cached a
-    `dict` and handed the same object to three tests — breaking the rule of the module it is
-    guarding, in the guard.
+    This helper used to re-derive the exclusions beside `resolution()`'s copy, and cache them. ⛔
+    When `3.1b` added the loop hop the metric stopped counting nine holes and **this copy did
+    not**, so the guard went on asserting that declared sites still held holes the metric had
+    already closed. *Two implementations of one question will disagree on the day one of them is
+    right.* `table_coverage.open_table_holes()` is now the single answer and both read it — which
+    also removes the cache this file was keeping, and with it the poisoning hazard the first
+    version introduced.
     """
-    known = TC._known_tables()
-    out: dict[str, int] = {}
-    for rel, source in TC._sources():
-        key = TC._rel_key(rel)
-        declared = TC.SELF_MEASURED_PATTERNS.get(key)
-        for sql, n in TC._statements(source, known):
-            if not n:
-                continue
-            names = [h for h in TC.table_holes(sql) if not (declared and h == declared[0])]
-            if names:
-                out[key] = out.get(key, 0) + len(names)
-    return tuple(sorted(out.items()))
-
-
-def _open_holes() -> dict[str, int]:
-    """A fresh dict over the cached pairs."""
-    return dict(_open_holes_cached())
+    return dict(TC.open_table_holes())
 
 
 def test_no_table_hole_is_undeclared():
@@ -290,20 +284,10 @@ def test_every_entry_is_categorised_and_carries_a_house_form_mover():
             "opinion, and the next reader cannot check it")
 
 
-def test_the_deferred_ones_say_they_are_resolvable_and_name_their_unit():
-    """⛔ A resolvable hole declared as if it were unresolvable is the worst of the four
-    categories, so the deferred entries must say so and point at one another."""
-    deferred = [s for s, (c, _w, _m) in TC.TABLE_HOLES_NOT_CLOSED.items()
-                if c == "resolvable-deferred"]
-    assert len(deferred) >= 4, deferred
-    for site in deferred:
-        _c, why, mover = TC.TABLE_HOLES_NOT_CLOSED[site]
-        assert "esolvable" in why, (
-            f"{site} is categorised resolvable-deferred and its reason does not say so. ⛔ A "
-            "resolvable hole described as if it were unresolvable is the worst of the four "
-            "categories: it tells the next reader there is nothing to do")
-        assert "MOVES WITH" in mover, (
-            f"{site} is deferred and does not move WITH the others -- four holes and one fix")
+# ⛔ `test_the_deferred_ones_say_they_are_resolvable_and_name_their_unit` was DELETED
+# 2026-10-04 with the `resolvable-deferred` category it guarded: `3.1b` closed every
+# member. ⛔ A test over an empty set passes vacuously, which is worse than no test --
+# it reads as coverage. Deleted deliberately rather than left green.
 
 
 def test_the_runtime_ones_say_why_they_cannot_be_known():
@@ -314,13 +298,19 @@ def test_the_runtime_ones_say_why_they_cannot_be_known():
                                           "information_schema")), f"{site}: {why[:60]!r}"
 
 
-def test_the_erasure_loop_is_accounted_for_by_its_own_reader():
-    """✅ `deletion_list()` reads `_ORG_SCOPED_TABLES` off the AST on purpose, so the generic
-    resolver leaving that hole open costs nothing. ⛔ If that reader broke, the entry is wrong."""
-    assert TC.TABLE_HOLES_NOT_CLOSED["api/account_routes.py"][0] == "resolved-elsewhere"
+def test_the_erasure_loop_needs_no_entry_now_and_its_own_reader_still_works():
+    """⛔ RE-WRITTEN 2026-10-04. The entry said `resolved-elsewhere` -- `deletion_list()` reads
+    `_ORG_SCOPED_TABLES` off the AST, so the generic resolver leaving the hole open cost nothing.
+    `3.1b`'s loop hop closes that hole outright, so the entry is retired.
+
+    ✅ But `deletion_list()` is still the only thing that answers *which* tables tenant erasure
+    names, so it is asserted here rather than dropped with the entry.
+    """
+    assert "api/account_routes.py" not in TC.TABLE_HOLES_NOT_CLOSED, (
+        "the erasure loop's hole is open again -- re-read whether the loop hop still resolves "
+        "`_ORG_SCOPED_TABLES` before re-adding a declaration")
     assert len(TC.deletion_list()) >= 100, (
-        "`deletion_list()` no longer reads the erasure loop's constant, so nothing accounts for "
-        "that hole any more")
+        "`deletion_list()` no longer reads the erasure loop's constant")
 
 
 def test_the_connector_hole_is_the_one_with_a_validator_beside_it():
@@ -408,8 +398,13 @@ def test_the_resolver_change_moved_no_coverage_verdict():
     assert sorted(TC.written_and_unread()) == [
         "agent_metering", "card_feedback_revisions", "contract_spend_attributions",
         "delivery_rate_windows", "domain_requests", "human_events", "learning_metrics",
-        "situation_interpretations", "source_identity_map"]
+        "situation_interpretations", "warm_lane_slots"], (
+        "⛔ RE-PINNED 2026-10-04 by `3.1b`. The COUNT is still 9 and the MEMBERS turned over: "
+        "`source_identity_map` left, because the loop hop made `context/merge.py`'s read visible; "
+        "`warm_lane_slots` arrived, because the read-verb fix stopped its own `delete from` "
+        "reading as a read. ⛔ A count that holds while its membership changes is exactly what a "
+        "baseline comparison is for, and exactly what a bare count would have hidden")
     assert TC.undeclared_unread_writes() == ()
     assert TC.stale_unread_declarations() == ()
-    assert len(TC.table_usage()) == 185
+    assert len(TC.table_usage()) == 186
     assert len(TC._known_tables()) == 189
