@@ -57,10 +57,24 @@ SITE_TIERS = {
 
 #: The output ceiling per site, in tokens. A cap rather than a hope: doc 11 sizes R-2 at ~450
 #: output tokens, and a model that decides to write an essay is a cost incident and a V-7 failure
-#: at the same time. Generous enough that a real narrative is never truncated.
+#: at the same time.
+#:
+#: ⛔ "GENEROUS ENOUGH THAT A REAL NARRATIVE IS NEVER TRUNCATED" IS WHAT THIS COMMENT USED TO SAY,
+#: AND IT WAS FALSE. Measured on the design partner's org 2026-10-04, over 24 hours of
+#: `llm_costs`: `l4_bundle` ran 12 calls and EIGHT failed, every one of them at exactly 1400
+#: output tokens — the ceiling, to the token. The successes ranged 737–1400 and averaged 1053, so
+#: the real distribution runs past this cap and the narrative site was being cut mid-JSON two
+#: times in three. The stored error said "unparseable JSON", which sent every reader to the
+#: prompt; the budget was the answer the whole time.
+#:
+#: 2400 IS A MEASURED STEP, NOT A FREE HAND. It is ~1.7x the old cap — above every success we
+#: have observed, still a hard bound on the essay this comment is right to fear. It is tuned from
+#: the next measurement rather than guessed again: `LLMClient` reads `stop_reason` now, so a call
+#: that still truncates says so in its own words instead of being filed as bad JSON, and
+#: `scripts/pipeline_health.py` fails the moment a lane's failures cluster on one output size.
 SITE_MAX_OUTPUT_TOKENS = {
     SITE_INTERPRET: 400,
-    SITE_NARRATE: 1400,
+    SITE_NARRATE: 2400,
     SITE_ALTERNATIVES: 600,
     SITE_EFFECT: 400,
     SITE_CONSULT: 600,
