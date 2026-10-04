@@ -663,12 +663,15 @@ _TABLE_HOLE = re.compile(r"\b(?:from|join|into|update)\s+\{([^{}]*)\}", re.IGNOR
 #: deliberate and visible in a diff.
 RESOLUTION_CEILINGS: dict[str, tuple[int, str]] = {
     "unresolved_table": (
-        7,
+        8,
         "⛔ Holes where a TABLE belongs, after FOUR resolver hops: imported constants, this "
         "module's own regexes, local aliases of a constant, and loops over a constant collection. "
         "⛔ Lowered 16 → 7 by `3.1b`, and lowering it is the point — a ceiling only ratchets while "
-        "it sits on the actual. All 7 are accounted for in `TABLE_HOLES_NOT_CLOSED` and "
-        "`NAME_CONSTANT_TABLE_SITES`. ⛔ An 8th means a table the measurement cannot see — declare "
+        "it sits on the actual. ⛔ RAISED 7 → 8 by `3.2`, deliberately and in the same diff as the "
+        "declaration: `receipts.witness_sql` derives a table name from a regex over another "
+        "receipt's SQL. ✅ The ratchet caught its own author, which is the only real proof a "
+        "ratchet works. All 8 are accounted for in `TABLE_HOLES_NOT_CLOSED` and "
+        "`NAME_CONSTANT_TABLE_SITES`. ⛔ A 9th means a table the measurement cannot see — declare "
         "it with a category, or close it"),
 }
 
@@ -714,6 +717,17 @@ STATEMENT_FLOOR = 2_800
 #: Checked in BOTH directions by `tests/platform/test_every_table_hole_is_accounted_for.py`: a
 #: declared site whose hole has closed is as much a lie as a hole nobody declared.
 TABLE_HOLES_NOT_CLOSED: dict[str, tuple[str, str, str]] = {
+    "platform/receipts.py": (
+        "runtime",
+        "⛔⛔ ADDED BY `3.2`, AND THE RATCHET CAUGHT ITS OWN AUTHOR. `receipts.witness_sql` builds "
+        "`f\"select count(*) from {table} where 1=1…\"` where `table` is a REGEX MATCH over another "
+        "receipt's SQL — so it is genuinely not knowable from this source. ✅ It is bounded: the "
+        "builder refuses a name that is not in `_known_tables()`, which is also why "
+        "`WITNESS_EXCEPTIONS` exists. ⛔ The ceiling was raised 7 → 8 in the same change, which is "
+        "what the guard's message demands: declare the hole AND move the number in one diff",
+        "MOVES WHEN a witness can be attached to a receipt at construction instead of derived "
+        "from its SQL. ⛔ That means 48 edits and a field nobody can forget to fill, which is the "
+        "trade this step did not take"),
     "api/home_routes.py": (
         "runtime",
         "⛔ `_weekly(conn, org, table: str, …)` — the table is a FUNCTION PARAMETER, which is the "
@@ -739,6 +753,37 @@ TABLE_HOLES_NOT_CLOSED: dict[str, tuple[str, str, str]] = {
         "than keeping a list somebody must remember to extend",
         "MOVES WHEN never. ⛔ Resolving this would mean replacing a correct design with a stale "
         "list, which is the inversion this module exists to prevent"),
+}
+
+
+#: ⛔⛔ **SCHEMA OBJECTS THIS MODULE CANNOT SEE** — `{object: (kind, why)}`.
+#:
+#: ⛔ `_known_tables()` reads `create table` out of the migrations, so anything the schema holds
+#: under a different keyword is invisible to it — and therefore invisible to `table_usage()`,
+#: `written_and_unread()`, `written_without_a_receipt()` and the deletion list. ⛔ A table nobody
+#: can see is a table nobody can audit.
+#:
+#: ✅ MEASURED 2026-10-04, AND IT IS NARROW: the whole schema holds **exactly one** such object.
+#: Narrow enough to declare, which is cheaper than teaching this module to parse `create view` and
+#: does not invite a second grammar.
+#:
+#: ⛔ THE ONE MEMBER IS NOT UNUSED. `counterfactual_ledger` is queried by
+#: `api/intelligence_routes.py` and by a receipt in `platform/receipts.py` — so the blind spot is
+#: over something live, not over a leftover. ✅ That receipt is a PRESENCE receipt, which is why
+#: `receipts.WITNESS_EXCEPTIONS` can declare it needs no witness: it fails on an empty ledger by
+#: itself.
+#:
+#: Checked in BOTH directions by `tests/platform/test_a_pass_over_an_empty_table_is_not_a_pass.py`:
+#: a declared object the schema no longer holds is as much a lie as a view nobody declared.
+SCHEMA_OBJECTS_NOT_SEEN: dict[str, tuple[str, str]] = {
+    "counterfactual_ledger": (
+        "view",
+        "⛔ `create or replace view counterfactual_ledger` in `0072_counterfactual_ledger.sql`. "
+        "`_known_tables()` matches `create table` only, so this never enters `known` and every "
+        "measurement built on it is silent about the ledger. ✅ It IS read — "
+        "`api/intelligence_routes.py` queries it and the L7 receipt *'the counterfactual ledger "
+        "joins end to end'* counts its joined rows — so nothing is lost today; what is missing is "
+        "the ability to NOTICE if that stopped"),
 }
 
 

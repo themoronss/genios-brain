@@ -175,17 +175,24 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 2_885, (
+    assert r["statements"] == 2_888, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
+    # ⛔ MOVED 2,885 → 2,888 by `3.2`, deliberately: `receipts.witness_sql` and
+    # `WITNESS_EXCEPTIONS` add three real SQL statements to the engine. That is the engine gaining
+    # SQL, which is ordinary; what this test exists to catch is the loop hop EXPANDING the
+    # statement list, which would have added 151 at once.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():
     """⛔ Measured, not asserted: 16 → 7 table holes, and the nine still carry `{column}`-shaped
     holes, so they move buckets rather than disappearing."""
     r = TC.resolution()
-    assert r["unresolved_table"] == 7, r
+    # ⛔ 7 → 8 by `3.2`: `witness_sql` derives a table from a regex over another receipt's SQL,
+    # which is a genuinely runtime name. Declared in `TABLE_HOLES_NOT_CLOSED` and the ceiling was
+    # raised in the same diff. ✅ The ratchet caught its own author.
+    assert r["unresolved_table"] == 8, r
     assert r["unresolved_table"] + r["unresolved_fragment"] == r["unresolved"]
 
 
@@ -256,20 +263,33 @@ def test_the_misfiled_entry_is_gone_and_the_correction_is_recorded_somewhere():
 
 
 def test_only_the_three_runtime_sites_remain_and_each_is_genuinely_unknowable():
+    # ⛔ FOUR now, not three: `3.2` added `platform/receipts.py`, where `witness_sql` derives a
+    # table from a regex over another receipt's SQL. ✅ The ratchet caught its own author and the
+    # ceiling moved 7 → 8 in the same diff, which is what its message demands.
     expected = {"api/home_routes.py", "capture/connectors/database.py",
-                "scripts/wipe_org_data.py"}
+                "platform/receipts.py", "scripts/wipe_org_data.py"}
     assert set(TC.TABLE_HOLES_NOT_CLOSED) == expected, sorted(TC.TABLE_HOLES_NOT_CLOSED)
 
 
 # ---------------------------------------------------------------------------- U04 · the ratchet
 
-def test_the_ceiling_came_DOWN_with_the_actual():
+def test_the_ceiling_TRACKS_the_actual_in_both_directions():
     """⛔ A ceiling only ratchets while it sits on the actual. Leaving it at 16 after the hop took
-    the figure to 7 would be nine statements of headroom -- the exact failure `3.1` fixed."""
+    the figure to 7 would be nine statements of headroom -- the exact failure `3.1` fixed.
+
+    ⛔ RENAMED 2026-10-04. This was `test_the_ceiling_came_DOWN_with_the_actual`, and then `3.2`
+    raised it 7 → 8 for a declared reason — so the name asserted a direction the code no longer
+    had. *Assert the thing the name claims*, which is that the ceiling TRACKS the actual, either
+    way. ⛔ `3.1b`'s mutations produced that rule from a test whose name promised a tuple target
+    and whose body had none; this is the same rule applied to a name that aged.
+    """
     ceiling, why = TC.RESOLUTION_CEILINGS["unresolved_table"]
-    assert ceiling == 7, ceiling
-    assert TC.resolution()["unresolved_table"] == ceiling
+    assert TC.resolution()["unresolved_table"] == ceiling, (
+        f"ceiling {ceiling} against an actual {TC.resolution()['unresolved_table']}. Any gap is "
+        "headroom, and headroom is how the number grew unnoticed before `3.1`")
     assert "FOUR resolver hops" in why
+    assert "RAISED 7 → 8" in why, (
+        "a ceiling that moved without saying why is a number somebody edited to go green")
 
 
 # ------------------------------------------------- the redundancy this hop created, measured

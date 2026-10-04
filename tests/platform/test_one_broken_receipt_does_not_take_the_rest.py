@@ -113,7 +113,13 @@ def test_every_receipt_is_still_attempted_after_a_failure():
     """*The six missing situations were not unroutable; they were never attempted.*"""
     conn = _PoisonedConnection(fail_on=_first_sql_fragment())
     rows = R.evaluate(_Engine(conn), None)
-    assert len(conn.attempted) == len(R.receipts(None))
+    # ⛔ EVERY RECEIPT'S OWN SQL WAS ATTEMPTED — which is what this test's name claims. It used
+    # to assert `len(conn.attempted) == len(R.receipts(None))`, a TOTAL, and `3.2` broke it by
+    # adding witness queries: 78 attempts for 48 receipts. ⛔ The total was never the claim; it was
+    # a proxy that happened to equal it, and a proxy breaks the day anything else runs.
+    attempted = {" ".join(sql.split()) for sql in conn.attempted}
+    missing = [r.claim for r in R.receipts(None) if " ".join(r.sql.split()) not in attempted]
+    assert not missing, f"receipts never attempted after the failure: {missing}"
     assert len(rows) == len(R.receipts(None))
 
 

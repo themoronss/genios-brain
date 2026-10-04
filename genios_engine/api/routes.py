@@ -158,9 +158,44 @@ def health_readiness(org_id: str = Depends(get_current_org)) -> dict:
         raise HTTPException(400, "graph store not configured")
     from genios_engine.platform.receipts import evaluate
     rows = evaluate(_graph.engine, org_id)
-    failed = [r for r in rows if r["status"] != "PASS"]
-    return {"org_id": org_id, "ready": not failed,
-            "passing": len(rows) - len(failed), "total": len(rows),
+    # ⛔⛔ THREE BUCKETS, NOT TWO, AND `ready` REQUIRES EXERCISED (changed 2026-10-04, `3.2`).
+    #
+    # This used to read `failed = [r for r in rows if r["status"] != "PASS"]` — everything that was
+    # not a pass counted as a failure, which left no room for a third answer. ⛔ And `evaluate()`
+    # now has one: `NOT_EXERCISED`, a correctness receipt whose claim held while **nothing
+    # exercised it**, because the table it reads has no rows in scope.
+    #
+    # ⛔ AN UNEXERCISED RECEIPT IS NOT READY, and this docstring is why. It says these receipts
+    # exist because *"an empty sweep looked healthy, A SKIP READ AS A PASS, and 'Present / Wired /
+    # Tested' was communicated as active intelligence."* ⛔ Counting an unexercised correctness
+    # receipt towards `ready` IS that skip reading as a pass — the exact failure the surface was
+    # built to stop. So it is reported separately AND it withholds readiness.
+    #
+    # ⛔ THIS IS A VISIBLE BEHAVIOUR CHANGE: a tenant with sparse data now reports
+    # `ready: false` where it reported `true`. That is not a new product decision — the paragraph
+    # above states the principle and this implements it — but it is recorded as `R24` in
+    # `speedrun008/YCW27/19-PENDING-who-owns-what.md` rather than left to be discovered.
+    #
+    # ⛔ THE PATH IN FULL, AND A PRE-EXISTING GUARD IS WHY. This comment first said just
+    # `19-PENDING`, and `tests/test_spec_deferrals_resolve.py` failed it: a deferral must
+    # point at a record that EXISTS, resolved as a path on disk or a name defined in the
+    # ✅ That guard was written for four comments which deferred to a record that was never
+    # created, and it caught the fifth — mine. ⛔ Naming that record here would have tripped
+    # its sibling guard, which greps for the token: the sixth time in this programme that
+    # explaining a rule has satisfied or violated the check for it. *A citation that does not resolve
+    # reads as a measurement and is not one*, which is a rule this programme has been
+    # writing into its own guards while leaving one dangling here.
+    # ⛔ WHICH STATUSES COUNT AS READY IS `RECEIPT_STATUSES`' ANSWER, NOT THIS FUNCTION'S. A first
+    # version of this block wrote `status in ("FAIL", "ERROR")` — a THIRD implementation of the
+    # question, in the same change that added the constant to stop exactly that.
+    from genios_engine.platform.receipts import RECEIPT_STATUSES
+
+    unready = [r for r in rows if not RECEIPT_STATUSES.get(r["status"], (False, ""))[0]]
+    unexercised = [r for r in rows if r["status"] == "NOT_EXERCISED"]
+    return {"org_id": org_id, "ready": not unready,
+            "passing": len(rows) - len(unready),
+            "failing": len(unready) - len(unexercised),
+            "not_exercised": len(unexercised), "total": len(rows),
             "receipts": rows, "concurrency": _resolved_concurrency()}
 
 

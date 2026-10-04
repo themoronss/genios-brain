@@ -1120,3 +1120,22 @@ number is meaningless without its source set* · *never pipe a suite run through
 | ⛔ **mutations** | **17 caught** · ⛔ **1 real hole** — a test whose NAME promised a tuple target and whose body had none · 1 **dead clause** removed · 5 invalid by label, each named · ✅ and one survivor turned into a **cross-file proof** rather than a claim |
 | **outcome** | 56 tests (28 + 28) · `unresolved_table` **16 → 7**, ceiling 7, slack 0 · full suite **15,494 passed · 0 failed · 12:44** |
 | **next** | `3.2` — the always-green receipts |
+
+
+---
+
+## 3.2 · a pass over an empty table is not a pass — and the surface would have crashed
+
+| | |
+|---|---|
+| **what it arrived with** | *"receipt 42 is structurally green forever. Gate it on a marker the way the learning receipts are."* ⛔ The intent was right and the mechanism was the opposite one: a marker prevents a false RED, this is a false GREEN |
+| **the mechanism** | a **witness** beside each correctness receipt — a second query whose non-zero result means the claim was exercised — and a **fourth status**, `NOT_EXERCISED`. **31 of 32 are DERIVED** from the receipt's own outer `from`, with its own scoping; 3 exceptions declared |
+| ⛔⛔ **a witness IS a presence receipt** | three already exist **byte-identical** (`expertise_packages`, `delivery_outbox`, `learning_runs`). *"Was this exercised"* and *"has this layer run"* are one question. ⛔ It made a test unanswerable three times, and the fixture that settled it hit the collision twice itself |
+| ⛔⛔ **and the CLI would have crashed** | `{"PASS": …, "FAIL": …, "ERROR": …}[status]` raises `KeyError` on a new status. The endpoint's docstring promises the two surfaces *"cannot drift apart"* — ⛔ they had drifted in SHAPE, which a promise about content does not catch. `RECEIPT_STATUSES` is now the one answer for all three |
+| ⛔⛔ **`ready` requires EXERCISED** | the endpoint exists because *"a skip read as a pass"*, and an unexercised receipt counted as ready IS that skip. ⛔ A visible behaviour change: sparse tenants now read `ready: false`. **`R24`** on Rohit's page with the alternative spelled out |
+| ✅ **the ratchet caught its own author** | `witness_sql` derives a table from a regex, so `unresolved_table` hit 8 against a ceiling of 7 and the build failed. Declared, ceiling raised 7 → 8 **in the same diff**, `statements` 2,885 → 2,888 deliberately |
+| ⛔ **two real holes** | a **test double that misclassified its inputs** (witness by suffix; many receipts end the same way) so a test passed for the wrong reason · and **a case the real set cannot provide** (fleet-wide scoping), now constructed |
+| ⛔ **the checklist broke three times and caught all three** | the sixth `or`-over-a-token-list, rejecting a CORRECT entry · the fifth self-witness variant, a comment quoting the code it replaced · and rule 12, caught by the ratchet |
+| ⛔ **a process error** | the platform suite was run concurrently with the mutation harness, which edits files in place. One artefact failure. ✅ Sequential: 784 passed |
+| **outcome** | 25 tests · **19/19 mutations** · statuses 3 → 4 · the views blind spot declared (exactly one view, and it is live) · full suite **15,519 passed · 0 failed · 12:45** |
+| **next** | ⛔ `3.3`/`3.4` blocked on `H1` (`0190`) · `3.5` is Rohit's · `2.3` blocked on Phase 0 |

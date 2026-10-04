@@ -48,6 +48,130 @@ class Receipt:
     fleet_wide: bool = False
 
 
+#: ⛔⛔ **EVERY STATUS `evaluate()` CAN RETURN, AND WHETHER IT COUNTS AS READY** —
+#: `{status: (ready?, one-line meaning)}`.
+#:
+#: ⛔ WHY THIS IS A CONSTANT AND NOT A CONVENTION. Two consumers read these strings — `/readiness`
+#: in `api/routes.py` and the release-gate CLI `scripts/runtime_receipts.py` — and the endpoint's
+#: own docstring promises *"the same list the release-gate CLI runs, so the operator surface and the
+#: release gate cannot drift apart about what 'ready' means."*
+#:
+#: ⛔⛔ THEY HAD ALREADY DRIFTED IN SHAPE. The endpoint computed `status != "PASS"` and the CLI held
+#: a literal `{"PASS": …, "FAIL": …, "ERROR": …}[status]` — ⛔ **which raises `KeyError` on a status
+#: it has not met.** Adding `NOT_EXERCISED` would have CRASHED the release gate, not merely
+#: disagreed with it. *Two implementations of one question will disagree on the day one of them is
+#: right* — and here one of them would have stopped running.
+#:
+#: ⛔ `ready` IS PART OF THE TABLE, not of each caller. A `NOT_EXERCISED` receipt is **not** ready,
+#: because `/readiness` exists to stop *"a skip reading as a pass"* and an unexercised correctness
+#: receipt is that skip.
+RECEIPT_STATUSES: dict[str, tuple[bool, str]] = {
+    "PASS": (True, "the claim held and something exercised it"),
+    "FAIL": (False, "the claim did not hold"),
+    "ERROR": (False, "the query could not run, or its witness could not — an unrunnable receipt "
+                     "is a finding, never a skip"),
+    "NOT_EXERCISED": (False, "⛔ the claim held and NOTHING exercised it: the table this receipt "
+                             "reads has no rows in scope, so 0 means 'nothing happened' rather "
+                             "than 'nothing went wrong'. Condition `P2` unmet, and visibly so"),
+}
+
+
+#: ⛔⛔ **RECEIPTS WHOSE WITNESS CANNOT BE DERIVED FROM THEIR OWN OUTER `from`** —
+#: `{claim: (witness sql or None, why)}`.
+#:
+#: ⛔ WHY A WITNESS EXISTS AT ALL. A **correctness** receipt asks *"did the wrong thing happen"* and
+#: answers 0 when it did not. ⛔ Over an EMPTY table it also answers 0 — and passes having proved
+#: nothing. That is condition `P2` of this programme's definition of production level (*the receipt
+#: can fail*), and before this it was unmet and invisible: the readiness surface reported a pass.
+#:
+#: ✅ A **presence** receipt needs none. It asks *"did anything happen"* and FAILS on an empty
+#: table, so it witnesses itself. Measured 2026-10-04: 32 of the 48 receipts are correctness and 16
+#: are presence, and the distinction is already in the data (`expect(0)`) rather than in a list
+#: anybody maintains.
+#:
+#: ✅ FOR 45 OF 48 THE WITNESS IS DERIVED, not written: the outer `from <table>` of the receipt's own
+#: SQL, counted with the same `:org` filter the receipt carries. ⛔ Only the outer one — a table
+#: named in a join or a subquery is not the subject of the claim, and taking it would witness the
+#: wrong thing.
+#:
+#: ⛔⛔ **A WITNESS IS A PRESENCE RECEIPT, AND THREE OF THEM ALREADY EXIST EXPLICITLY.** Measured
+#: 2026-10-04: the derived witness for a correctness receipt over `expertise_packages`,
+#: `delivery_outbox` and `learning_runs` is **byte-identical** to the SQL of the presence receipts
+#: *"compiled expertise packages exist"*, *"the delivery control plane has run"* and *"the learning
+#: engine has executed"*. ✅ That is a coherence check on the design rather than a duplication to
+#: remove: the question *"was this claim exercised"* and the question *"has this layer ever run"*
+#: are the same question, and 28 more of them are now derived instead of waiting to be written.
+#:
+#: ⛔ It also made a test unanswerable for three attempts — attributing a shared SQL string to the
+#: receipt that asked it is not possible, so `test_the_witness_is_asked_only_on_a_pass` uses a
+#: fixture of two.
+#:
+#: Three do not derive, each for a different reason, and `None` means *"needs no witness"*:
+WITNESS_EXCEPTIONS: dict[str, tuple[str | None, str]] = {
+    "every reasoning unit that says nothing is one we declared": (
+        "select count(*) from reasoning_reasoner_results where 1=1",
+        "⛔ A DERIVED-TABLE OUTER `from`: the query opens on `jsonb_each(...)`, so the outer name is "
+        "a function and not a table. ✅ The real source was ALREADY declared, in "
+        "`receipt_coverage`'s own entry for this claim — *'Derived-table outer `from`; the real "
+        "source is `reasoning_reasoner_results`'* — so this witness is that declaration's sibling "
+        "rather than a new judgement"),
+    "a deleted tenant leaves nothing behind": (
+        None,
+        "⛔ NEEDS NO WITNESS. A `with recursive` over `information_schema`: the claim is about the "
+        "SCHEMA's foreign keys, not about any tenant's rows, and the schema always has rows. A "
+        "witness here would be noise that always passed, which is the thing this table exists to "
+        "stop"),
+    "the counterfactual ledger joins end to end": (
+        None,
+        "⛔⛔ ITS OUTER NAME IS A VIEW, NOT A TABLE — `create or replace view counterfactual_ledger` "
+        "in `0072`, which is why `table_coverage._known_tables()` cannot see it. ✅ And it is a "
+        "PRESENCE receipt, so it fails on an empty ledger and needs no witness regardless. The "
+        "view blindness is declared in `platform/table_coverage.SCHEMA_OBJECTS_NOT_SEEN`"),
+}
+
+
+def witness_sql(receipt: "Receipt", org: str | None) -> str | None:
+    """The query whose NON-ZERO result means this receipt's `PASS` meant something.
+
+    `None` means no witness is wanted — either the receipt is a presence receipt (self-witnessing)
+    or `WITNESS_EXCEPTIONS` says so with a reason.
+
+    ⛔ ONE IMPLEMENTATION, AND THAT IS DELIBERATE. `3.1b` closed a hole where a guard re-derived a
+    metric's logic beside it and the two drifted the day one of them was right. Both `evaluate()`
+    and the guard call this.
+    """
+    # ⛔ THE FILTER IS THE RECEIPT'S, NOT THE CALLER'S. A first version appended
+    # `_org_filter(org)` unconditionally, which was right for all 48 receipts TODAY and wrong as a
+    # rule: a FLEET-WIDE correctness receipt asks about the schema, its table may carry no `org_id`
+    # column at all, and the witness would then raise instead of answering. Measured before the
+    # change: 0 of 48 disagreed — ⛔ a coincidence of the current set, not a reason.
+    scoped = _org_filter(org) if ":org" in receipt.sql else ""
+    if receipt.claim in WITNESS_EXCEPTIONS:
+        declared, _why = WITNESS_EXCEPTIONS[receipt.claim]
+        return None if declared is None else declared + scoped
+    if receipt.expect(0) is not True:
+        return None                                # presence: it fails on an empty table already
+    match = _OUTER_FROM.match(" ".join(receipt.sql.split()))
+    if match is None:                              # pragma: no cover - the exceptions cover these
+        return None
+    # ⛔⛔ THE DERIVED NAME MUST BE A TABLE, AND THE FIRST VERSION OF THIS DID NOT CHECK. An outer
+    # `from` can name a function (`jsonb_each`), a CTE, or a VIEW — `counterfactual_ledger` is one
+    # — and a witness over a non-existent relation does not report "unexercised", it raises. ⛔ So
+    # it refuses, and the refusal is what makes `WITNESS_EXCEPTIONS` necessary rather than
+    # incidental: a receipt whose outer name is not a table has to be declared.
+    from genios_engine.platform.table_coverage import _known_tables
+
+    table = match.group(1)
+    if table not in _known_tables():
+        return None
+    return f"select count(*) from {table} where 1=1{scoped}"
+
+
+#: The outer `from` of a receipt's own SQL — ⛔ the FIRST one, non-greedily, because a join or a
+#: subquery names tables the claim is not about.
+_OUTER_FROM = re.compile(r"^\s*select\s+.*?\bfrom\s+([a-z_][a-z_0-9]*)", re.IGNORECASE | re.DOTALL)
+
+
 def _org_filter(org: str | None, alias: str = "") -> str:
     p = f"{alias}." if alias else ""
     return f" and {p}org_id = :org" if org else ""
@@ -1540,6 +1664,17 @@ def receipts(org: str | None) -> list[Receipt]:
 def evaluate(engine, org: str | None) -> list[dict]:
     """Run every receipt; an unrunnable one is a finding (ERROR), never a skip.
 
+    ⛔⛔ FOUR STATUSES, AND THE FOURTH IS `3.2`'s WHOLE POINT. `PASS` · `FAIL` · `ERROR` ·
+    **`NOT_EXERCISED`** — a correctness receipt whose claim held while **nothing exercised it**,
+    because the table it reads has no rows in scope. Its 0 means *"nothing happened"*, not
+    *"nothing went wrong"*.
+
+    ⛔ A WITNESS THAT RAISES MAKES THE RECEIPT AN `ERROR`, NOT A PASS. An unverifiable pass is not
+    a pass, and the detail says which half broke — the same reasoning as the sentence above it: a
+    receipt that cannot be run is a finding, never a skip. ⛔ The instrument failing is a finding
+    about the instrument, and hiding it behind the receipt's own green is how a measurement stops
+    being one.
+
     ⛔ AND ONE UNRUNNABLE RECEIPT MUST NOT TAKE EVERY RECEIPT AFTER IT. Measured against production
     2026-10-01: migration `0190` is unapplied, so the L5 lane receipt raised `UndefinedColumn` —
     correctly, once. Then **twelve** further receipts reported `InFailedSqlTransaction`, because
@@ -1567,8 +1702,25 @@ def evaluate(engine, org: str | None) -> list[dict]:
             try:
                 value = c.execute(text(r.sql), params).scalar()
                 ok = bool(r.expect(value))
+                status, detail = ("PASS" if ok else "FAIL"), r.detail
+                # ⛔⛔ A PASS OVER AN EMPTY TABLE IS NOT A PASS. The witness is asked only on a
+                # PASS: a FAIL already found a bad row, so the table demonstrably has rows and
+                # asking would be noise.
+                #
+                # ⛔ This is condition `P2` — *the receipt can fail* — and before this it was unmet
+                # AND INVISIBLE: `/readiness` reported a pass. The endpoint's own docstring says
+                # what it exists to prevent — *"an empty sweep looked healthy, A SKIP READ AS A
+                # PASS"* — and an unexercised correctness receipt is that skip.
+                if ok:
+                    probe = witness_sql(r, org)
+                    if probe is not None:
+                        if not c.execute(text(probe), params).scalar():
+                            status = "NOT_EXERCISED"
+                            detail = ("⛔ the claim held and nothing exercised it: the table this "
+                                      "receipt reads has no rows in scope, so 0 means 'nothing "
+                                      "happened', not 'nothing went wrong'. " + r.detail)
                 rows.append({"layer": r.layer, "claim": r.claim, "value": value,
-                             "status": "PASS" if ok else "FAIL", "detail": r.detail})
+                             "status": status, "detail": detail})
             except Exception as exc:                       # noqa: BLE001 — evidence, not control flow
                 rows.append({"layer": r.layer, "claim": r.claim, "value": None,
                              "status": "ERROR", "detail": f"{type(exc).__name__}: {exc}"[:160]})

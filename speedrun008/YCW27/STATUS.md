@@ -15,6 +15,7 @@
 
 | When | What | Where |
 |---|---|---|
+| **2026-10-04** | ⛔⛔ **`3.2` DONE — a pass over an empty table is not a pass, and the surface that would say so WOULD HAVE CRASHED.** A correctness receipt over an empty table returns 0 and reported `PASS` — condition **`P2`** unmet and invisible. ⛔ The plan said to use the learning receipts' marker; that prevents a false RED and this is a false GREEN, so it needed a **witness** and a fourth status. **31 of 32** witnesses are DERIVED from each receipt's own outer `from`. ⛔⛔ And the release-gate CLI held a literal `{...}[status]` dict — **`KeyError` on a status it had not met**, so adding one would have crashed the gate, not disagreed with it. ⛔⛔ **A WITNESS IS A PRESENCE RECEIPT** — three already existed byte-identical. ⛔ `ready` now requires EXERCISED (**`R24`**), and the ratchet **caught its own author** | [`36-AUDIT-step-3.2-a-pass-over-an-empty-table.md`](36-AUDIT-step-3.2-a-pass-over-an-empty-table.md) |
 | **2026-10-04** | ⛔⛔ **`3.1b` DONE — the hop was the small part. `delete from X` was being counted as a READ of X.** `_VERBS["read"]` was `(?:from|join) (…)` and `delete from cards` contains `from cards` — latent since the module existed, and ⛔ **the loop hop amplified it 102-fold** through the tenant erasure loop, so **four tables stopped being reported write-only** and four correct declarations were about to be retired. ✅ Caught by the before/after comparison the plan committed to in writing. Fixing it removed **139 spurious read facts across 106 tables** and ⛔ **five tables lost their ONLY read attribution — `macv_ledger` among them**, which mechanically proves what `19-PENDING` records. ⛔ `written_and_unread` stayed **9 → 9 while its MEMBERSHIP turned over** | [`34-AUDIT-step-3.1b-a-delete-is-not-a-read.md`](34-AUDIT-step-3.1b-a-delete-is-not-a-read.md) |
 | **2026-10-04** | ⛔⛔ **`3.1` DONE — the number this step was scoped around was the WRONG NUMBER.** Of **645** *"unresolved SQL statements"*, only **49 (7%)** had a hole where a TABLE belongs; **596 (92%)** were predicates and column lists built from shared fragment constants — ⛔ **and 17 of those were our own `_org_filter`.** ⛔⛔ **Three more were this module's own regexes: the observer was counting its instrument.** Three resolver hops took the table figure **49 → 16**, all 16 now declared with a category. ⛔ The ratchet the plan credits *did* exist — `unresolved/statements <= 0.30` against a 22.4% actual, **about 220 statements of headroom**, which is how 639 became 645 unnoticed. ⛔ Every dependent finding captured before and after: **16 attributions recovered, 0 verdicts moved** | [`32-AUDIT-step-3.1-the-number-that-was-the-wrong-number.md`](32-AUDIT-step-3.1-the-number-that-was-the-wrong-number.md) |
 | **2026-10-04** | ⛔⛔ **`2.2` DONE — Atlas L1 settled, and TWO SCORECARD ROWS CARRIED FALSE EVIDENCE.** ⛔ `L1-08`'s said *"zero declare a visibility field"* — **all three declare one**; optional is not absent. ✅ Its consequence is closed at **four layers** (derive → **gate PARKS** → re-drain STILL_BLOCKED → 5 of 6 columns NOT NULL). ⛔ The finding is **five readers in `context/` that treat a missing audience as permitted or org-wide**, safe only by that chain and declared nowhere — found by AST; grep found 5 of 8 sites. ⛔⛔ `L1-09` led to **five of `GatedEvent`'s 21 fields carried and read by nothing**, worst `degraded_compile`, whose own comment calls this defect FIXED while L2 reads the stored signal, which has no column for it. ⛔ `L1-01`'s number was **7, and it is 9**. ⛔⛔ **And three of my own guards had holes only mutation found** — including a declaration that satisfied the test that its own source exists | [`30-AUDIT-step-2.2-atlas-layer-1.md`](30-AUDIT-step-2.2-atlas-layer-1.md) |
@@ -52,15 +53,18 @@ full suite   15,220 passed · 1,067 skipped · 152 xfailed · 0 failed      (14,
 ✅ reason/     AUDITED 2026-10-03 · ⛔ 20 candidates, 20 retirements, 0 receipts — and the
              audit's own naming column DELETED for being wrong 19 of 33 times
 ✅ 1.3b        DONE 2026-10-03 · ⛔ a health-data privacy transformation had no test
-✅ PHASE 1      CLOSED 2026-10-03 · 5 steps · ⛔ 52 candidates raised, 52 retired · 3 receipts
+⛔⛔ PHASE 1    NOT CLOSED — corrected 2026-10-04. 4 of 6 steps done (1.1-1.4), ⛔ 1.5 is OPEN
+               and 1.6 is a declared deferral. 52 candidates raised, 52 retired · 3 receipts
+               ⛔ It was called CLOSED at 1.4 by counting the steps that were finished
 ✅ PHASE 2      2.1 DONE · ⛔ 0 unmeasured L2 claims left on my side
 ⛔ 2.3 BLOCKED   needs Phase 0 live — Rohit's and Harsh's
-⛔ next up     3.2 the always-green receipts
+⛔ next up     3.3/3.4 blocked on H1 (0190) · 3.5 is Rohit's · 2.3 blocked on Phase 0
 L6 M14.C2    ⛔⛔ COMPLETE — 10 of 10 DONE · 0 failed at every step
 Atlas L7     11 gaps: 5 CLOSED · 6 PARTLY · ⛔ 0 LIVE · ⛔⛔ 0 UNMEASURED
 scorecard    08-ATLAS-SCORECARD-L1-to-L6.md · ⛔ 56 Atlas claims verified or refuted
 receipts     35 → 48 · ⛔ feedback/ 0 → 6 correctness · context/ 2 → 3 · platform/ 1 → 2 · capture/ 5 → 9 · reason/ 8 → 9
-unresolved_table  49 → 16 (3.1) → 7 (3.1b) · ceiling absolute, slack 0
+unresolved_table  49 → 16 (3.1) → 7 (3.1b) → 8 (3.2, declared) · ceiling absolute, slack 0
+receipt statuses  3 → 4 · ⛔ NOT_EXERCISED · 31 of 32 witnesses derived
 ledgers      ⛔ unread of F11's four: 4 → 1 — asking them found FOUR live defects
 ✅ coverage   context/ AUDITED 2026-10-02 · ⛔ 306 test files import it — the gap was RECEIPTS,
              not tests. 2 → 3 receipts · 9 write-only tables declared engine-wide
@@ -4812,3 +4816,101 @@ answer.
 | ⛔ **`returning` and `rowcount` are reads no verb pattern can express** |
 | ⛔ **retire an emptied category, and delete the test that guarded it** |
 | ✅ **a deferred unit is where a pre-existing bug surfaces** |
+
+
+---
+---
+
+## ⛔⛔ 2026-10-04 · `3.2` — A PASS OVER AN EMPTY TABLE IS NOT A PASS
+
+```
+receipts                 48    32 correctness · 16 presence
+witnesses                31    DERIVED from each receipt's own outer `from`
+exceptions                3    a derived-table outer · a VIEW · a schema-level claim
+statuses               3 → 4   PASS · FAIL · ERROR · ⛔ NOT_EXERCISED
+consumers reading one   1 → 3  ⛔ one of them would have raised KeyError
+tests 25 · mutations 19 caught · ⛔ 2 real holes closed
+full suite  15,519 passed · 0 failed · 12:45
+```
+
+### ⛔ The plan cited the opposite mechanism
+
+The learning receipts' marker prevents a **false RED** — a run judged against a contract it
+predates. ⛔ This is a **false GREEN**, and no predicate added to a receipt's own SQL can fix it: an
+empty table and a clean table return **the same number for different reasons**. So it needed a
+**witness beside** the query and a **third status**.
+
+✅ Only the **correctness** receipts needed one. A presence receipt FAILS on an empty table — it
+witnesses itself. ⛔ Though `expect(0) is True` is a **two-point probe of a predicate**, not a
+classification: *"the tenant is still being fed"* has a RANGE predicate and answers True to both 0
+and 7.
+
+### ⛔⛔ A WITNESS IS A PRESENCE RECEIPT — and three already existed
+
+The derived witness for a correctness receipt over T is `select count(*) from T where 1=1 …`, and
+for three tables that is **byte-identical** to *"compiled expertise packages exist"*, *"the delivery
+control plane has run"* and *"the learning engine has executed"*. ✅ So *"was this exercised"* and
+*"has this layer run"* are **one question**; 28 more are now derived instead of waiting to be
+written.
+
+⛔ It made a test unanswerable **three times** — a premise that was wrong, then membership matching
+over a shared string, then counting that could never balance — and the two-receipt fixture that
+settled it walked into the same collision **twice itself**. ✅ Which is confirmation the collision is
+structural.
+
+### ⛔⛔ The surfaces could not represent a third answer, and one would have crashed
+
+```python
+api/routes.py            failed = [r for r in rows if r["status"] != "PASS"]
+scripts/runtime_receipts.py   mark = {"PASS": …, "FAIL": …, "ERROR": …}[r["status"]]
+```
+
+⛔⛔ **The CLI's literal dict raises `KeyError` on a status it has not met** — so adding
+`NOT_EXERCISED` would have **crashed the release gate**. And the endpoint's docstring promises the
+two *"cannot drift apart about what 'ready' means"* — ⛔ they had already drifted in **shape**, which
+a promise about content does not catch. ✅ `RECEIPT_STATUSES` is now the one answer and all three
+read it. ⛔ A first version of the endpoint's new block wrote a **third** implementation in the same
+change that added the constant to prevent it.
+
+### ⛔⛔ `ready` now requires EXERCISED — `R24`
+
+The endpoint exists because *"an empty sweep looked healthy, **a skip read as a pass**."* An
+unexercised correctness receipt counted as ready **is** that skip. ⛔ A tenant with sparse data now
+reports `ready: false` where it reported `true` — not a new product decision, but **said out loud**
+on Rohit's page with the alternative spelled out.
+
+### ✅ The ratchet caught its own author
+
+`witness_sql` derives a table from a regex over another receipt's SQL — a table-position hole. ⛔
+`unresolved_table` went **8 against a ceiling of 7** and the build failed. **The only real proof a
+ratchet works.** Declared `runtime`, ceiling raised **7 → 8 in the same diff**, and `statements`
+moved **2,885 → 2,888** deliberately.
+
+### ⛔ Two real holes, and the fifth self-witness variant
+
+| ⛔ | |
+|---|---|
+| **a test double that misclassified its inputs** | the fakes identified a witness by SUFFIX, and many receipts end the same way — so `test_a_witness_that_raises…` **passed for the wrong reason** |
+| **the case the real set cannot provide** | deleting the receipt-scoped org filter is a no-op on all 48 receipts today; the fleet-wide case is now **constructed** |
+| **variant 5** | my comment **quoting the code it replaced** satisfied the check against that code |
+| **the sixth `or`-token-list** | `3.1`'s guard rejected a **correct** entry for saying *"REGEX MATCH"*. ⛔ And the derived replacement was first **too strict** — *a derived check that is too strict rejects a true statement* |
+
+### ⛔ And a process error
+
+The platform suite was run **concurrently with the mutation harness**, which edits files in place —
+one failure was reported that was an artefact. ✅ Sequentially: 784 passed. **Never run a suite while
+a mutation harness is running.**
+
+### Doctrine
+
+| rule |
+|---|
+| ⛔⛔ **a pass over an empty table is not a pass** — and `NOT_EXERCISED` is not ready |
+| ⛔⛔ **a witness IS a presence receipt** |
+| ⛔⛔ **a test double that misclassifies its inputs passes for the wrong reason** |
+| ⛔ **a derived check that is too strict rejects a true statement** |
+| ⛔ **a literal dict over a status crashes on a status it has not met** |
+| ⛔ **`expect(0) is True` is a two-point probe, not a classification** |
+| ⛔ **the case the real set cannot provide must be constructed** |
+| ⛔ **never run a suite while a mutation harness is running** |
+| ✅ **a ratchet that catches its own author is the only proof a ratchet works** |

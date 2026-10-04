@@ -26,6 +26,11 @@ breaking a write path right now** — `H1`.
 > ⛔ **This header said "NOTHING" and it was true for one day.** The L6 re-crosscheck found twelve
 > things and forced a correction on L5. **10 units planned, 1 already measured, 0 built** —
 > `layer-6-learning/06-PLAN-the-second-pass.md`.
+>
+> ⛔⛔ **AND THAT SENTENCE WAS STALE FROM 2026-10-02 UNTIL 2026-10-04.** It read as open work for
+> nine steps while the table immediately below it showed **`S1`–`S10` all DONE, `M14.C2` 10 of
+> 10**. ✅ Kept rather than deleted, because it is the record of what was true when it was written
+> — but a header that contradicts its own table is the thing a reader believes first.
 
 > ⛔ **THIS TABLE WAS STALE FOR THREE STEPS AND THE CAUSE WAS MY OWN TOOLING.** It still listed
 > plan v1's `U01`–`U10`, with `U03`/`U04`/`U05` as *"planned"* when the Atlas check had **retracted**
@@ -89,6 +94,28 @@ work: `api/identity_routes.py` and `reason/team/away.py` (**`1.3b`**). **Next: `
 would have told every seat why a colleague is off. ⛔ The other, `api/identity_routes.py`, had an
 untested gate on a **destructive** merge. 32 tests, 17/17 mutations. ⛔ Not on anybody's list — both
 are closed. **Next: `1.4 capture/` or `2.1` Atlas L2's nine claims.**
+
+⛔⛔ **A VISIBLE BEHAVIOUR CHANGE ON `/readiness`, OUT OF `3.2` (2026-10-04)** — **`R24`**.
+
+**What changed.** `evaluate()` has a fourth status, **`NOT_EXERCISED`**: a correctness receipt whose
+claim held while **nothing exercised it**, because the table it reads has no rows in scope. Its 0
+means *"nothing happened"*, not *"nothing went wrong"*.
+
+⛔ **And it withholds readiness.** A tenant with sparse data will now report `ready: false` where it
+previously reported `true`.
+
+| | |
+|---|---|
+| ⛔ why this is not mine to soften | the endpoint's **own docstring** says it exists because *"an empty sweep looked healthy, **a skip read as a pass**, and 'Present / Wired / Tested' was communicated as active intelligence."* An unexercised correctness receipt counted as ready **is** that skip. Implementing the paragraph is not a new product decision |
+| ⛔ why it is on your list anyway | it changes what an operator sees, for every tenant whose data is thin — which today is most of them. **A change like that is said out loud, not discovered** |
+| ✅ what it does NOT do | it does not change a single receipt's SQL, and it does not invent a judgement about which tables SHOULD have rows. The witness is **derived** from each receipt's own outer `from` |
+| ⛔ the number | **31 of 48** receipts now carry a witness (32 correctness, minus one schema-level claim that needs none). On a tenant with no data, **all 31 read `NOT_EXERCISED`** rather than `PASS` |
+| **your call** | whether `/readiness` should answer *"ready for what you have"* (the old behaviour) or *"ready, and proven"* (the new one). ⛔ I implemented the second because the docstring asks for it — say so if the first is what the surface is for, and it is a two-line change |
+
+⛔ **Related, and already yours:** `H9`/`H10` are the read-only queries that would tell you how many
+receipts are unexercised **in production right now**. Until one of them runs, the count above is
+structural — ⛔ **no receipt in this programme has ever been executed against the database**, which
+is condition `P1` and is unmet for all 48.
 
 ⛔ **NEW ON ROHIT'S LIST, OUT OF `2.2` (2026-10-04)** — four decisions, each declared in code.
 
@@ -378,8 +405,14 @@ Also open and **not blocking anything**: the **709 `low_relevance` parks**.
 
 ## WHERE THE PROGRAMME STANDS
 
-    full suite      14,768 tests · 0 failed        (14,534 when YCW27 began)
-    receipts        35      L5: 5   L4: 7          lines per L5 guard: 4,715 -> 1,886
+    ⛔⛔ CORRECTED 2026-10-04 — this block read "14,768 tests · receipts 35" and had been
+    ⛔ stale for nine steps. A counters block nobody updates is a measurement nobody can use.
+    full suite      15,519 tests · 0 failed        (14,534 when YCW27 began)
+    receipts        48      correctness 32 · presence 16 · ⛔ statuses 4, incl. NOT_EXERCISED
+    per package     feedback 10 · capture 9 · reason 9 · deliver 7 · readiness 5 · context 3
+                    platform 2 · executive 2 · packs 1 · api 0 · mcp 0
+    unresolved_table  8     ⛔ was 645 "unresolved SQL"; 92% of that was never about tables
+    ⛔ P1 UNMET FOR ALL 48  no receipt has ever been executed against a database
     ⛔ CORRECTED 2026-10-02 — "L5" is a LABEL, not a package. deliver/ holds 8 receipts
     ⛔ (4 labelled L5 + 4 labelled L6) = 1,252 lines per guard. 4,715 was never true.
     declared        deliver/ 22  ·  executive/ 10 + 4 PULL_ONLY

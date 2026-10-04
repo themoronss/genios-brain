@@ -294,8 +294,29 @@ def test_the_runtime_ones_say_why_they_cannot_be_known():
     for site, (category, why, _mover) in TC.TABLE_HOLES_NOT_CLOSED.items():
         if category != "runtime":
             continue
-        assert any(tok in why for tok in ("FUNCTION PARAMETER", "TENANT CONFIGURATION",
-                                          "information_schema")), f"{site}: {why[:60]!r}"
+        # ⛔⛔ THE SIXTH TIME AN `or` OVER A HAND-LISTED TOKEN SET HAS FAILED IN THIS PROGRAMME,
+        # and the second time in this very file. `3.2` added a `runtime` entry saying "REGEX
+        # MATCH" — a perfectly good reason that was not on the list, so a correct entry was
+        # rejected. ⛔ A list of allowed phrasings is a list somebody has to keep, which is the
+        # thing every declaration table here exists to avoid.
+        #
+        # ✅ DERIVED INSTEAD: a `runtime` entry has to quote CODE that is actually in the module it
+        # is about. A reader can then go and look at it, and no phrasing is privileged.
+        quoted = re.findall(r"`([^`]+)`", why)
+        assert quoted, f"{site}: the reason quotes no code"
+        source = (TC._ROOT / ("genios_engine/" + site if not site.startswith("scripts/")
+                              else site)).read_text(encoding="utf-8")
+        # ⛔ MATCHED ON THE IDENTIFIER, NOT THE WHOLE FRAGMENT. A first version demanded the
+        # quoted text verbatim and rejected `_weekly(conn, org, table: str, …)` — an honest
+        # citation written with an ellipsis. ⛔ A derived check that is too strict rejects a true
+        # statement, which is the mirror of a token list that is too loose: both replace reading
+        # with a rule, and both are wrong in one direction.
+        idents = {re.match(r"[A-Za-z_][A-Za-z_0-9.]*", q.lstrip("{")).group(0)
+                  for q in quoted if re.match(r"[A-Za-z_]", q.lstrip("{"))}
+        found = [i for i in idents if i.split(".")[-1] in source]
+        assert found, (
+            f"{site}: its reason quotes {sorted(idents)[:3]} and none of them appear in the "
+            "module. A citation that does not resolve reads as a measurement and is not one")
 
 
 def test_the_erasure_loop_needs_no_entry_now_and_its_own_reader_still_works():
