@@ -292,12 +292,52 @@ _SENDER_TTL_S = 300.0
 #: (`context/pipeline.py`, the outbound leg), so "we have written to this person" is already a
 #: stored fact. This is a filter over facts that exist, not a new computation, and it is exactly
 #: the line between a counterparty and a stranger with our address.
+#: ⛔ WHO THE TENANT HAS WRITTEN TO — ASKED OF TWO PLACES, BECAUSE ONE OF THEM IS CIRCULAR.
+#:
+#: The DEFINITION is unchanged and is the right one: a known counterparty is somebody this account
+#: has sent mail to. What changed is where that is read from.
+#:
+#: THE COLD START. `graph_facts.thread.last_outbound` only exists once an email has survived the
+#: gate, been extracted and reached the graph — and `whitelist()` consults this set to decide
+#: whether the gate may drop that very email. On a fresh tenant the graph is empty, so NOBODY is
+#: known, so W-01 protects nobody, and the N-codes run at full strength over the entire history.
+#: A sender becomes known only after one of their messages happens to survive, and every earlier
+#: message from the same person was already thrown away.
+#:
+#: MEASURED on the design partner's org 2026-10-04, wiped and re-synced on 03 Oct: 255 of 522
+#: gmail messages dropped at S1, and TWENTY senders had some mail emitted and some dropped — the
+#: same person, opposite fates, decided by nothing but which page of the backfill they landed on.
+#: `anshul@engramme.com` lost mail to N-01 (machine acknowledgement) while other mail from the
+#: same address was kept.
+#:
+#: `source_events.recipients` breaks the circle: it is written at CAPTURE, before any gate, on the
+#: tenant's own outbound mail. On this org the graph knew 11 people and the sent folder knew 26 —
+#: the same definition, available a whole pipeline earlier.
+#:
+#: NOT A WIDENING OF THE RULE. An address reaches this set only by being a recipient of a message
+#: THIS ACCOUNT SENT. A stranger who writes in is still a stranger, which is exactly what the
+#: N-codes exist to filter.
 KNOWN_COUNTERPARTY_SQL = (
     "select n.canonical_key from graph_nodes n "
     "where n.org_id = :o and n.node_type = 'person' and n.valid_to is null "
     "and exists (select 1 from graph_facts f "
     "             where f.org_id = n.org_id and f.subject_node_id = n.node_id "
     "               and f.field = 'thread.last_outbound' and f.status = 'active')"
+)
+
+#: The same question asked of the SENT FOLDER, which answers it a whole pipeline earlier.
+#:
+#: SEPARATE STATEMENT, NOT A UNION, for one reason: `unnest` is Postgres-only and the hermetic
+#: suite runs this resolver against SQLite. One combined query made the whole set unreadable
+#: there — including the graph half, which SQLite can answer perfectly well. Two statements let
+#: the half that CAN be answered always be answered.
+KNOWN_FROM_SENT_SQL = (
+    "select distinct lower(recipient) as canonical_key "
+    "  from source_events e, unnest(e.recipients) as recipient "
+    " where e.org_id = :o and e.recipients is not null "
+    "   and lower(e.actor ->> 'email') in ("
+    "       select lower(s.email) from org_seats s where s.org_id = :o and s.email is not null"
+    "   ) and nullif(trim(recipient), '') is not null"
 )
 
 
@@ -310,7 +350,20 @@ def known_counterparty_keys(connection, org_id: str) -> frozenset[str]:
     from sqlalchemy import text
 
     rows = connection.execute(text(KNOWN_COUNTERPARTY_SQL), {"o": org_id}).fetchall()
-    return frozenset((r.canonical_key or "").strip().lower() for r in rows if r.canonical_key)
+    keys = {(r.canonical_key or "").strip().lower() for r in rows if r.canonical_key}
+    # ⛔ THE SENT FOLDER, AND WHY ITS FAILURE MAY NOT TAKE THE GRAPH WITH IT.
+    #
+    # `unnest` is Postgres-only. On any other engine this raises, and the graph half — which that
+    # engine CAN answer — must still be returned: losing it would turn every known counterparty
+    # into a stranger and hand the N-codes the whole mailbox, which is strictly worse than the
+    # cold start this half exists to fix. Degrading to today's behaviour is the safe direction,
+    # and it is logged rather than silent.
+    try:
+        sent = connection.execute(text(KNOWN_FROM_SENT_SQL), {"o": org_id}).fetchall()
+        keys |= {(r.canonical_key or "").strip().lower() for r in sent if r.canonical_key}
+    except Exception:      # noqa: BLE001 — see above; never lose the graph half
+        _log.debug("sent-folder counterparties unavailable for org=%s; graph half only", org_id)
+    return frozenset(keys)
 
 
 def _sender_resolver_for(org_id: str):
