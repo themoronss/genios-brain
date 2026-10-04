@@ -122,7 +122,7 @@ of its unmeasured gaps and every residue is a decision.
 | # | Step | Claims | What they are |
 |---|---|---|---|
 | **2.1** ✅ DONE | ⛔⛔ **L2 — nine claims** | `L2-01`…`L2-12` | ⛔ **The largest remaining block in the product.** Distinct source labels are not independent causal authorities · first claimant owns a same-name alias · the authority/ownership/resource views are incomplete · same-company independent deals can collapse without a deal object · **a tenant replay is missing** · role/source readiness is not in the blocking vector |
-| **2.2** | **L1 — five claims** | `L1-01`, `L1-07`…`L1-10` | only **eight** canonical source IDs are buildable · no mandatory typed business roles leave L1 · `RawObject`/`SourceEvent`/`GatedEvent` do not require visibility · the coverage snapshot is not mandatory on an emitted signal |
+| **2.2** ✅ DONE | **L1 — five claims** | `L1-01`, `L1-07`…`L1-10` | only **eight** canonical source IDs are buildable · no mandatory typed business roles leave L1 · `RawObject`/`SourceEvent`/`GatedEvent` do not require visibility · the coverage snapshot is not mandatory on an emitted signal |
 | **2.3** | **the rest of the scorecard** | — | re-measure every row once Phase 0 is live, because ⛔ **8 claims EXPIRED the moment they were measured** and 4 cells hid a defect the Atlas did not name |
 
 ---

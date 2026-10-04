@@ -118,6 +118,16 @@ RECEIPT_PACKAGE: dict[str, tuple[str, str]] = {
                    "means, and `UNINTERPRETABLE_RANKS` there is where the collision is declared. "
                    "*A receipt guards a contract, not a table*: an operator reading this goes to "
                    "the ladder to find out which scale is right"),
+    "no live connection feeds a source that satisfies no capability": (
+        "capture", "⛔ The table is `connections` (`0002_l1_tables.sql`) and the CLAIM is "
+                   "`capture/source_registry`'s: it decides what `buildable` means and which "
+                   "capability a source satisfies. An operator reading this goes to the "
+                   "descriptor, which is the one place a source is described"),
+    "every recently qualified signal carries a coverage verdict": (
+        "capture", "`qualified_signals.coverage_ready` is written by `capture/pipeline`'s "
+                   "`coverage_verdict` off `capture/esqe/domain.tag_domains`. The CLAIM is the "
+                   "contract's own sentence -- *a freshly gated event always carries a real bool* "
+                   "-- so an operator reading this goes to the domain tagger"),
     "no published reasoning package was routed by picking one of several domains": (
         "reason", "⛔ The table is `expertise_packages` (`0047_l3_domain_compiler.sql`, so L3's) "
                   "and the CLAIM is about `reason/adapters/expertise`'s `domain_ids[0]`, which "

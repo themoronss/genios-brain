@@ -628,6 +628,99 @@ def _MIXED_AUTHORITY_SCALE_SQL(org: str | None) -> str:
             f"having bool_or(authority_rank <= {top}) and bool_or(authority_rank > {top})) x")
 
 
+def _CONNECTED_TO_NOTHING_SQL(org: str | None) -> str:
+    r"""Live connections to a source that satisfies no coverage capability.
+
+    ⛔ ATLAS L1-01: *"only eight canonical source IDs are buildable… catalogued is not connected."*
+    The counting is still true and the registry is honest about it — `BUILDABLE_SOURCES` is a
+    DERIVED view over one descriptor per source, `tests/test_source_registry.py` enforces the
+    invariants, and `L1.1-U2` exists so the UI renders one answer. ⛔ But measuring it properly
+    turned up something the registry does NOT say.
+
+    **`database` and `mysql` are buildable with `capability = None` and `object_types = 0`.** A
+    tenant can connect one and it satisfies no pack's coverage and maps no objects — so it
+    contributes to nothing, while the connection screen reports a success. That is the exact
+    INVERSE of the drift this registry was built to close: its docstring lists sources that
+    *"carried a coverage capability but NO family"*, and nobody asked the other direction.
+
+    ⛔ AND THE REGISTRY'S OWN EXAMPLE HAS EXPIRED. It says *"`hubspot` advertises the `crm`
+    capability that the `sales` pack REQUIRES, while no connector can be built for it"* — and
+    `hubspot` is buildable now. The sentence is still TRUE of eleven other sources (`salesforce`
+    is also `crm`), so its shape survived and its subject did not, which is the worst kind of
+    stale comment: it reads as a current measurement.
+
+    ⛔ THE LIST IS DERIVED, NEVER SPELLED. A source that gains a capability leaves this query with
+    no edit, and one added without a capability enters it the same way. Two refusals, because
+    either would make the receipt always-green:
+
+    1. the capability-less set must be NON-EMPTY -- otherwise `in ()` is a query that cannot match;
+    2. every member must be `buildable` -- a catalogued-but-unbuildable source with no capability
+       is not a finding, because nobody can connect it in the first place.
+    """
+    from genios_engine.capture.source_registry import BUILDABLE_SOURCES, descriptor_of
+
+    canonical = {descriptor_of(s).source for s in BUILDABLE_SOURCES}
+    orphans = sorted(s for s in canonical if descriptor_of(s).capability is None)
+    assert orphans, (
+        "every buildable source now advertises a coverage capability, so this query would read "
+        "`in ()` and pass for ever. ✅ That is the better world -- retire the receipt deliberately")
+    for name in orphans:
+        d = descriptor_of(name)
+        assert d.buildable, (
+            f"{name!r} has no capability and is not buildable either, so no tenant can connect it "
+            "and it is not what this receipt is about. Re-derive the set")
+        assert re.fullmatch(r"[a-z_0-9]+", name), name
+    listed = ", ".join(f"'{name}'" for name in orphans)
+    return ("select count(*) from connections c "
+            f"where c.status = 'connected' and c.source_type in ({listed})"
+            f"{_org_filter(org, 'c')}")
+
+
+def _UNSCOPED_COVERAGE_VERDICT_SQL(org: str | None) -> str:
+    r"""Recently qualified signals carrying no coverage verdict at all.
+
+    ⛔ ATLAS L1-09: *"the coverage snapshot is not mandatory on each emitted signal."* True --
+    `GatedEvent.coverage_ready` is `bool | None = None` and `qualified_signals.coverage_ready` is a
+    nullable boolean. ⛔ But the shape is not the finding; the CONTRACT'S OWN PROMISE is, because
+    it says this about the field one along and nothing checks it:
+
+        `None` means no tagger ran (a pre-S4 row); A FRESHLY GATED EVENT ALWAYS CARRIES A REAL BOOL.
+
+    and about `coverage_ready` itself:
+
+        A dead field on a contract is worse than a missing one: it invites a consumer to trust a
+        seam that carries nothing, and `None` READS AS "UNKNOWN" EXACTLY WHERE A CALLER MOST WANTS
+        A YES.
+
+    So this receipt asks the promise as a question. ⛔ THE HORIZON IS THE WHOLE DESIGN: the comment
+    is explicit that an OLD row is legitimately null (*"a pre-S4 row"*), so counting every null
+    would make this red for ever and tell nobody anything. The window is **4 sweep ticks**, derived
+    from `sync_interval_hours` exactly as the unexplained-event receipt derives its own -- the one
+    judgement is the multiplier, and four ticks is long enough that a signal written during a
+    deploy or a paused sweep is not reported as a defect.
+
+    ⛔ THE ALWAYS-GREEN FAILURE, GUARDED. If `coverage_ready` ever became NOT NULL in the schema or
+    required on the contract, this query could not return a row and would pass while measuring
+    nothing. The contract side is asserted here; the schema side is asserted by the guard suite,
+    which reads the migration.
+    """
+    from genios_engine.contracts.gated_event import GatedEvent
+    from genios_engine.platform.config import get_settings
+
+    field = GatedEvent.model_fields.get("coverage_ready")
+    assert field is not None, (
+        "`GatedEvent.coverage_ready` is gone, and this receipt measures the column it feeds. "
+        "Find out what replaced it before trusting the query")
+    assert field.is_required() is False, (
+        "`GatedEvent.coverage_ready` is now REQUIRED, so a gated event cannot be built without a "
+        "verdict and this receipt can only ever return 0. ✅ That is the better world -- retire the "
+        "receipt deliberately rather than letting it go green by itself")
+    hours = 4 * float(get_settings().sync_interval_hours or 6.0)
+    return ("select count(*) from qualified_signals qs where qs.coverage_ready is null "
+            f"and qs.created_at > now() - make_interval(hours => {hours:g})"
+            f"{_org_filter(org, 'qs')}")
+
+
 def _MULTI_DOMAIN_ROUTED_PACKAGE_SQL(org: str | None) -> str:
     r"""Published expertise packages whose route selected SEVERAL business domains.
 
@@ -1111,6 +1204,31 @@ def receipts(org: str | None) -> list[Receipt]:
                 "is one where fact_write_action compares incomparable numbers -- fold the derived "
                 "scale into the ladder, or prefix-scope write_fact's lookup the way "
                 "publish_derived_fact's already is"),
+
+        # ⛔ L1 · NOBODY IS CONNECTED TO A SOURCE THAT FEEDS NOTHING.
+        #
+        # Atlas L1-01, measured properly. `database` and `mysql` are BUILDABLE with no coverage
+        # capability and no object mappings, so a tenant can connect one, see a success, and
+        # contribute to no pack's readiness. The set is derived from the registry.
+        Receipt("L1", "no live connection feeds a source that satisfies no capability",
+                _CONNECTED_TO_NOTHING_SQL(org),
+                lambda n: n == 0,
+                "a connected source with no coverage capability and no object mappings reports "
+                "success on the connect screen and feeds nothing -- give it a capability, or stop "
+                "offering it as buildable"),
+
+        # ⛔ L1 · A FRESHLY QUALIFIED SIGNAL SAYS WHETHER ITS DOMAINS WERE COVERED.
+        #
+        # Atlas L1-09. The contract promises it in writing -- "a freshly gated event always carries
+        # a real bool" -- and nothing checked it. ⛔ The horizon is four sweep ticks because the
+        # same comment says an OLD row is legitimately null, so counting every null would make
+        # this red for ever.
+        Receipt("L1", "every recently qualified signal carries a coverage verdict",
+                _UNSCOPED_COVERAGE_VERDICT_SQL(org),
+                lambda n: n == 0,
+                "a signal with coverage_ready null inside the sweep window means the domain "
+                "tagger did not run for it -- and None reads as 'unknown' exactly where L3 most "
+                "wants a yes, so it compiles full expertise over domains nobody vouched for"),
 
         # ⛔⛔ L2 · A MULTI-DOMAIN ROUTE PICKS ONE PACK ALPHABETICALLY AND SAYS SO NOWHERE.
         #

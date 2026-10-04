@@ -14,9 +14,24 @@ Four hand-maintained lists drift, and they had:
     capability but NO family — so every event from them landed as `unclassified`, and a
     `stripe.subscription.v1` structured mapping existed for a source the taxonomy did
     not know. (No live impact yet: none of them is buildable.)
-  * `hubspot` advertises the `crm` capability that the `sales` pack REQUIRES, while no
-    connector can be built for it — so `sales` can never be coverage_ready, and nothing
-    in the codebase could say so.
+  * a source advertises a capability a pack REQUIRES while no connector can be built for
+    it — so that pack can never be coverage_ready, and nothing in the codebase could say
+    so. ⛔ THIS EXAMPLE USED TO NAME `hubspot`, AND `hubspot` IS BUILDABLE NOW. The shape
+    of the claim survived and its subject did not, which is the worst kind of stale
+    comment: it reads as a current measurement. Measured 2026-10-04, **eleven** sources
+    are in that state — `salesforce` (also `crm`), `slack`, `outlook`, `zendesk`,
+    `intercom`, `stripe`, `razorpay`, `mscal`, `gdocs`, `gsheets`, `mixpanel` — and the
+    example is left unnamed on purpose, because naming one is how this sentence went
+    stale. `tests/capture/test_a_connection_feeds_something.py` counts them instead.
+
+AND THE DIRECTION NOBODY ASKED (added 2026-10-04)
+-------------------------------------------------
+Every drift above is a source that advertises MORE than it can deliver. ⛔ The inverse was
+never checked: **`database` and `mysql` are `buildable` with `capability = None` and
+`object_types = 0`.** A tenant can connect one, see the connect screen report success, and
+contribute to no pack's coverage while mapping no objects. **Receipt 48** counts live
+connections to such a source, and the set is derived from these descriptors rather than
+written down — a source that gains a capability leaves the query with no edit.
 
 Adding a source is now one descriptor here. The four old names are derived views over
 this module, so no call site changed. tests/test_source_registry.py enforces the

@@ -1068,3 +1068,19 @@ number is meaningless without its source set* · *never pipe a suite run through
 | ⛔ **two invalid mutations** | M17 mutated the test's own threshold (a test cannot catch a weakening of itself); M9's label said citation and it stripped reasoning. Both re-run correctly and caught — ⛔ and M9 still found a real hole, which is why an invalid mutation is read |
 | **outcome** | 50 tests · **49/49 mutations** · receipts 44 → **46** · 9 claims: 1 expired, 2 located, 1 partly expired, 1 measured, 4 Rohit's, ⛔ **0 unmeasured** · full suite **15,389 passed · 0 failed · 11:40** |
 | **next** | `2.2` — Atlas L1's five open claims |
+
+
+---
+
+## 2.2 · Atlas Layer 1 — five claims, two receipts, and three holes in my own guards
+
+| | |
+|---|---|
+| **what it arrived with** | five open claims (`L1-01`, `L1-07`…`L1-10`), re-measured against today's code before a unit was drawn |
+| ⛔⛔ **two rows carried FALSE evidence** | `L1-08`'s said *"zero declare a `visibility` field"* — **all three declare one**, optional. `L1-07`'s said *"no roles contract"* — `RoleAssertion` exists and the contract records when it landed. ⛔ Both were graded by re-reading the Atlas rather than the code |
+| ✅ **L1-08's consequence is closed four times** | derive → **gate PARKS `visibility_unknown`** → re-drain `STILL_BLOCKED` → 5 of 6 columns NOT NULL, 6th paired to a `'private'` default. ⛔ The finding is the **five readers in `context/`** that treat a missing audience as permitted or org-wide, safe only by that chain and declared nowhere. Found by AST — grep found 5 of 8 sites, and the 3 extra are **fail-closed**, asserted against `can_view` |
+| ⛔⛔ **L1-09 went much deeper** | the contract's own rule is *"a dead field … invites a consumer to trust a seam that carries nothing"*, and **five of its 21 fields break it**. Worst: `degraded_compile`, whose own comment calls this defect FIXED — the fix put it on `GatedEvent` and stopped, and L2 reads the STORED signal, which has no column. ⛔ `coverage_ready` IS a column, so half the verdict crosses the boundary. **Receipt 47** holds the other promise, bounded by 4 sweep ticks because an old null is legitimate |
+| ⛔ **L1-01's number** | **7 → 9.** Folded by the declared `aliases` field instead of by reading names. And `database`/`mysql` are **buildable with no capability and no object types** — **receipt 48**. The registry's own `hubspot` example had expired; the correction names nobody and the eleven are counted in a test |
+| ⛔⛔ **three holes in my own guards** | a missing converse grade check · **a declaration that satisfied the test that its own source exists** · a correction whose names nothing checked against the measurement. All three passed the suite first and were found by mutation. ⛔ And `len() > N` came back one step after `2.1` replaced it |
+| **outcome** | 48 tests · **51/51 mutations** (1 surviving by design, recorded) · receipts 46 → **48** · 5 claims: 2 false rows corrected, 1 partly expired, 2 Rohit's, ⛔ **0 unmeasured** · full suite **15,437 passed · 0 failed · 12:15** |
+| **next** | `2.3` — re-measure the scorecard once Phase 0 is live |

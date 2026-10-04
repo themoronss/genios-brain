@@ -90,6 +90,21 @@ would have told every seat why a colleague is off. ⛔ The other, `api/identity_
 untested gate on a **destructive** merge. 32 tests, 17/17 mutations. ⛔ Not on anybody's list — both
 are closed. **Next: `1.4 capture/` or `2.1` Atlas L2's nine claims.**
 
+⛔ **NEW ON ROHIT'S LIST, OUT OF `2.2` (2026-10-04)** — four decisions, each declared in code.
+
+| # | the decision | where it is declared | ⛔ why it cannot be mine |
+|---|---|---|---|
+| **R20** | ⛔⛔ **what should L3 DO with a degraded compile?** `degraded_compile` is computed, carried onto `GatedEvent`, and then stored nowhere and read by nothing — while its own comment says the dropping was FIXED. ⛔ Storing it before deciding the behaviour just relocates a dead field one layer down | `contracts/gated_event.CARRIED_BUT_NOT_PERSISTED` | *"compile in degraded mode instead of pretending full expertise"* is **behaviour nobody has specified**, and the fix needs a migration (`0186`–`0190` are already unapplied) |
+| **R21** | the other **four carried-dead fields** — `prepared_content_ref` (already flagged in `contracts/signal`), `structured_fields`, `linkage_hints`, `availability_marker`. Keep them on the boundary contract, or take them off? ⛔ The contract's own rule says a dead field *"invites a consumer to trust a seam that carries nothing"* | same table | removing a field from a published boundary contract is a seam change |
+| **R22** | ⛔ **`database` and `mysql` are buildable and satisfy no capability.** Give them one, or stop offering them as buildable? A tenant can connect one and be told it worked | `capture/source_registry`'s docstring · **receipt 48** · `H10.1` | which it is depends on whether a raw database connection is a product |
+| **R23** | **two Atlas rows that are product decisions, not gaps**: `L1-07` — should a typed role be **mandatory**? (⛔ a message naming nobody has no role to carry, so requiring one drops the message). `L1-10` — the **4-state vs 6-state** signal lifecycle: `satisfied` vs `resolved` is a rename, `new` and `revoked` are new behaviour | the scorecard rows, corrected | what the engine must be able to SAY about a signal |
+
+✅ **And two L1 rows were corrected rather than worked on**: `L1-08`'s evidence line was false (all
+three contracts declare `visibility`; it is optional, and the consequence is closed at four layers)
+and `L1-07`'s was stale (`RoleAssertion` exists). ⛔ Both had been graded by re-reading the Atlas
+rather than the code — the second time this programme has found that, and the reason the Atlas
+check now comes first.
+
 ⛔⛔ **NEW ON ROHIT'S LIST, OUT OF `2.1` (2026-10-03)** — four items, all design decisions that
 no amount of building closes. Each is declared in code with its cost stated.
 

@@ -1,4 +1,4 @@
-# HANDOFF · Harsh (CTO) — nine items, in the order that unblocks the most
+# HANDOFF · Harsh (CTO) — ten items, in the order that unblocks the most
 
 ⛔ **This title has now been wrong twice — "five" when there were eight, "eight" when `H9` landed.** A count in a title is a number that ages; it is corrected rather than removed because the count is what tells you whether you have read all of it.
 
@@ -749,3 +749,73 @@ whether rank **1** is doing two jobs in practice. `graph_store` promotes on `hel
 exactly, and 1 is both `chat_aside` **and** what `write_fact` writes when the caller passes
 nothing. A large pile at rank 1 is not proof either way — but a pile at rank 1 whose `source` is
 null is, and that is `R17`'s evidence.
+
+
+---
+---
+
+# ⛔ H10 · 🟠 ADDED 2026-10-04 · **Two more receipts that have never been executed, and one of them is five seconds of work**
+
+## What it is
+
+`2.2` added **receipt 47** and **receipt 48**. Like all 48, neither has ever run — no database URL
+in the checkout, and the platform suite drives receipts through a fake engine. These two are the
+cheapest readings on this page and they answer questions a static read cannot.
+
+## What to run
+
+```sql
+begin; set transaction read only;
+
+-- H10.1 · RECEIPT 48 · is anybody connected to a source that feeds nothing?
+--   `database` and `mysql` are BUILDABLE with no coverage capability and no object mappings.
+--   A tenant can connect one, see the connect screen report success, and contribute to no
+--   pack's readiness.
+select org_id, source_type, status, count(*) as rows
+from connections
+where source_type in ('database', 'mysql')
+group by org_id, source_type, status
+order by rows desc;
+
+-- H10.2 · RECEIPT 47 · do freshly qualified signals carry their coverage verdict?
+--   The contract promises "a freshly gated event always carries a real bool", and nothing
+--   checked it. An OLD null is legitimate ("a pre-S4 row"), so the window matters: this is
+--   four sweep ticks at the default 6h interval.
+select count(*) filter (where coverage_ready is null)  as no_verdict,
+       count(*) filter (where coverage_ready is true)  as covered,
+       count(*) filter (where coverage_ready is false) as degraded,
+       count(*)                                        as total
+from qualified_signals
+where created_at > now() - interval '24 hours';
+
+-- H10.3 · and the distribution over all of history, for contrast. A big historical null
+--   pile is EXPECTED (pre-S4 rows); a null pile inside the window is the finding.
+select date_trunc('week', created_at) as week,
+       count(*) filter (where coverage_ready is null) as no_verdict,
+       count(*) as total
+from qualified_signals
+group by 1 order by 1 desc limit 8;
+
+commit;
+```
+
+## What a result would mean
+
+| result | what it means |
+|---|---|
+| `H10.1` returns **no rows** | ✅ nobody has connected a feed-nothing source. Receipt 48 is green and `R23` is a tidy-up taken at leisure |
+| `H10.1` returns rows with `status='connected'` | ⛔ **live.** Those tenants connected something, were told it worked, and it feeds no pack's coverage. That is a support conversation, not a backlog item |
+| `H10.2` `no_verdict` = **0** | ✅ the contract's promise holds. Receipt 47 is green against production |
+| `H10.2` `no_verdict` **> 0** | ⛔ the domain tagger is not running for some signals, and `None` reads as *"unknown"* exactly where L3 most wants a yes — so it compiles **full** expertise over domains nobody vouched for |
+| `H10.3` shows the null pile **stopping** at some week | ✅ that is the S4 cutover, and it is the evidence the window is drawn in the right place |
+| `H10.3` shows nulls **continuing** into recent weeks | ⛔ same as `H10.2` being non-zero, with a start date attached — which tells you what changed |
+
+## Why it is worth your five minutes
+
+`H10.1` is the one with a customer on the other end: somebody may have connected a database and
+been told it worked. ⛔ And `H10.3` is the cheap sanity check on my own receipt — if the historical
+null pile does **not** stop, then the window I derived is measuring the wrong thing and receipt 47
+needs redrawing before anybody trusts it.
+
+⛔ Same rule as every query on this page: **a read runs inside `set transaction read only`, and
+`GENIOS_ALLOW_PROD_WRITE` is never set to run a report.**

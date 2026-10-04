@@ -17,7 +17,9 @@ Sections:
 * D6     — the model call rate over a mixed page, measured; the rules-only path proved with a
            client that RAISES; the cost governor actually consulted; and the PAGE SEAM reached
            from the poll door and not only the webhook door.
-* D9     — `degraded_compile` survives all the way onto `GatedEvent`.
+* D9     — `degraded_compile` survives all the way onto `GatedEvent` -- and NO FURTHER;
+           it is persisted nowhere and read by nothing. See
+           `contracts/gated_event.CARRIED_BUT_NOT_PERSISTED`.
 * D10    — the thread reaches S4, lands on the normalized signal, and gates ALG-15's
            `new_party_on_known_thread` in BOTH directions.
 """
@@ -542,7 +544,13 @@ def test_d6_the_cost_governor_is_consulted_before_any_relevance_prompt_and_can_r
 
 
 # =============================================================================================
-# D9 — degraded_compile survives to the published envelope
+# ⛔ D9 — degraded_compile survives onto the GATED EVENT.
+#
+# This heading used to read "survives to the published envelope" and the assertions below
+# check `gated.degraded_compile` — the object one layer EARLIER. The flag is NOT in
+# `signal_store.ENVELOPE_KEYS` and is not a column anywhere, so nothing publishes it. The
+# assertions were right and the label was the false witness; see
+# `contracts/gated_event.CARRIED_BUT_NOT_PERSISTED`.
 # =============================================================================================
 def _one_event(raw: RawObject, *, coverage_fn=None, llm=None, relevance_page=None, **kw):
     lane = None

@@ -15,6 +15,7 @@
 
 | When | What | Where |
 |---|---|---|
+| **2026-10-04** | ⛔⛔ **`2.2` DONE — Atlas L1 settled, and TWO SCORECARD ROWS CARRIED FALSE EVIDENCE.** ⛔ `L1-08`'s said *"zero declare a visibility field"* — **all three declare one**; optional is not absent. ✅ Its consequence is closed at **four layers** (derive → **gate PARKS** → re-drain STILL_BLOCKED → 5 of 6 columns NOT NULL). ⛔ The finding is **five readers in `context/` that treat a missing audience as permitted or org-wide**, safe only by that chain and declared nowhere — found by AST; grep found 5 of 8 sites. ⛔⛔ `L1-09` led to **five of `GatedEvent`'s 21 fields carried and read by nothing**, worst `degraded_compile`, whose own comment calls this defect FIXED while L2 reads the stored signal, which has no column for it. ⛔ `L1-01`'s number was **7, and it is 9**. ⛔⛔ **And three of my own guards had holes only mutation found** — including a declaration that satisfied the test that its own source exists | [`30-AUDIT-step-2.2-atlas-layer-1.md`](30-AUDIT-step-2.2-atlas-layer-1.md) |
 | **2026-10-03** | ⛔⛔ **`2.1` DONE — Atlas L2's nine claims settled, and the two nobody had located are now receipts.** ⛔⛔ **L2-11**: `expertise.py:1463` takes `domain_ids[0]` out of a `tuple(sorted(set))`, so the **alphabetically first** domain becomes `CapabilityManifest.domain` and `domain_shadow.py:1169` uses it to pick **which tenant pack the reasoning reads** — nothing records the choice while the package's own citation tags carry every domain. ⛔⛔ **L2-01**: `graph_facts.authority_rank` carries **two scales** — the dense 0..6 ladder and `DEFAULT_AUTHORITY_RANK = 100`, same column — and `fact_write_action` compares raw integers, so a row at 100 is unsupersedable and a **signed document** arriving against one is returned a `discrepancy` and dropped. ✅ **L2-03 was simply WRONG** and is closed in code both ways. ⛔ **Eleven corrections, nine to my own first reading**, including a declaration that **falsified its own count** | [`28-AUDIT-step-2.1-atlas-layer-2-nine-claims.md`](28-AUDIT-step-2.1-atlas-layer-2-nine-claims.md) |
 | **2026-10-03** | ⛔⛔ **`1.4 capture/` DONE — PHASE 1 CLOSED, and *"why did I never see X?"* is now a receipt.** `capture/journey.py` was built for one sentence — *a system that discards 92% of what a founder was sent has to be able to answer "why did I never see X?" in one query* — and records that *"every layer wrote its refusal down. **Nothing ever joined them.**"* ✅ The join is reachable; ⛔ **nothing checked that every event HAS an answer.** **Receipt 44**, five derivations and nothing spelled: stopping actions from `TRACE_STOPPING`, event-keyed ledgers from `_LEDGERS` minus `_PER_SIGNAL_LEDGERS`, horizon from 4 sweep ticks. ⛔ Two mutations survived, **both about EMPTINESS** — an empty set made a loop assertion vacuous | [`26-AUDIT-capture-why-did-i-never-see-this-one.md`](26-AUDIT-capture-why-did-i-never-see-this-one.md) |
 | **2026-10-03** | ⛔⛔ **`1.3b` DONE — and one of the two untested modules was guarding HEALTH INFORMATION.** `reason/team/away.py` promises in its own docstring *"no leave reason ever leaves this module — the `sick` kind is reported as `leave`"*, and **nothing asserted it**: one line changed, or one new kind unmapped, and every seat learns why a colleague is off. ⛔ `api/identity_routes.py`'s node-set gate is the only thing stopping a human merging two nodes **no proposal names** — a rewrite of every fact and edge about them. ⛔ The test asserts the merge **did not happen**, not that a 422 came back: moving the merge above the gate fails four tests while still returning 422. 32 tests · **17/17 mutations** | [`25-STEP-1.3b-two-untested-modules-and-one-was-health-data.md`](25-STEP-1.3b-two-untested-modules-and-one-was-health-data.md) |
@@ -51,11 +52,11 @@ full suite   15,220 passed · 1,067 skipped · 152 xfailed · 0 failed      (14,
 ✅ 1.3b        DONE 2026-10-03 · ⛔ a health-data privacy transformation had no test
 ✅ PHASE 1      CLOSED 2026-10-03 · 5 steps · ⛔ 52 candidates raised, 52 retired · 3 receipts
 ✅ PHASE 2      2.1 DONE · ⛔ 0 unmeasured L2 claims left on my side
-⛔ next up     2.2 Atlas L1's five open claims
+⛔ next up     2.3 re-measure the scorecard once Phase 0 is live
 L6 M14.C2    ⛔⛔ COMPLETE — 10 of 10 DONE · 0 failed at every step
 Atlas L7     11 gaps: 5 CLOSED · 6 PARTLY · ⛔ 0 LIVE · ⛔⛔ 0 UNMEASURED
 scorecard    08-ATLAS-SCORECARD-L1-to-L6.md · ⛔ 56 Atlas claims verified or refuted
-receipts     35 → 46 · ⛔ feedback/ 0 → 6 correctness · context/ 2 → 3 · platform/ 1 → 2 · capture/ 5 → 7 · reason/ 8 → 9
+receipts     35 → 48 · ⛔ feedback/ 0 → 6 correctness · context/ 2 → 3 · platform/ 1 → 2 · capture/ 5 → 9 · reason/ 8 → 9
 ledgers      ⛔ unread of F11's four: 4 → 1 — asking them found FOUR live defects
 ✅ coverage   context/ AUDITED 2026-10-02 · ⛔ 306 test files import it — the gap was RECEIPTS,
              not tests. 2 → 3 receipts · 9 write-only tables declared engine-wide
@@ -4558,3 +4559,84 @@ still exposed a real hole, which is why an invalid mutation is read and not disc
 | ⛔ **a law enforced at the write is invisible at the read** |
 | ⛔ **grep every spelling of a key, not the first one found** |
 | ⛔ **a comment's count ages faster than its claim** — *"the four writers"*, and there are eight callers |
+
+
+---
+---
+
+## ⛔⛔ 2026-10-04 · ATLAS LAYER 1 SETTLED — and three holes in my own guards
+
+```
+claims      5 · ⛔ 2 rows carried FALSE evidence · 1 partly expired · 2 Rohit's · 0 unmeasured
+receipts    46 → 48   both correctness, both L1, both org-scoped
+tests       48 new    mutations 51 caught · 1 surviving BY DESIGN · ⛔ 3 REAL HOLES in my guards
+full suite  15,437 passed · 0 failed · 12:15
+```
+
+### ⛔⛔ L1-08 · *"zero declare a visibility field"* — all three declare one
+
+Optional is not absent, and the two have different fixes. ✅ The consequence is closed **four
+times**: `landing/normalize` derives · **the gate PARKS `visibility_unknown`** · a re-drain stays
+`STILL_BLOCKED` · 5 of 6 columns are NOT NULL and the 6th pairs a nullable jsonb with
+`visibility_scope text NOT NULL DEFAULT 'private'`. The gate says why: *"by Layer 2 the recipient
+list is gone, so **this is the last gate that can still refuse**."*
+
+⛔ **So the finding is the readers.** Three sites in `context/` read a missing audience as
+**permitted** and two more default it to **org-wide** — and nothing connected them to the gate.
+**The safety of a privacy default rested on one `if` in one file.** ⛔ Found by AST: grep found
+**five** of the **eight** sites, and the three extra turned out **fail-closed** —
+`Visibility(scope="private", principals=[]).can_view(...)` is `False` for everyone, which is
+asserted rather than reasoned about.
+
+### ⛔⛔ L1-09 · five of this contract's own fields break its own rule
+
+The contract states it: *"A dead field on a contract is worse than a missing one: **it invites a
+consumer to trust a seam that carries nothing**."* Five of its 21 fields are set at the boundary
+and then stored in no column, absent from `ENVELOPE_KEYS`, and read by nothing.
+
+⛔⛔ **`degraded_compile` is the worst because its own comment says this defect was fixed.** It
+records that *"the boundary object dropped it — so L2 … could not tell a full compile from a
+degraded one"*, and the fix put the field on `GatedEvent` **and stopped**. L2 reads the **stored**
+signal. ⛔ `coverage_ready`, the first half of the same answer, **is** a column — half the verdict
+crosses and half does not. **Receipt 47** holds the contract's other promise (*"a freshly gated
+event always carries a real bool"*), bounded by four sweep ticks because an old null is legitimate.
+
+⛔ And a test's own heading was the false witness: *"survives to the published **envelope**"* while
+asserting the object one layer earlier.
+
+### ⛔ L1-01 · the number was 7 and it is 9, and the registry's example had expired
+
+The descriptor carries a declared `aliases` field; folding by **it** gives 9. `database`, `mysql`
+and `postgres` are **three descriptors with three capabilities**, not aliases — *the fold was done
+by reading the names.* ⛔ And **`database` and `mysql` are buildable with `capability = None` and
+`object_types = 0`**: connect one, see a success, feed nothing. **Receipt 48.** ⛔ The registry's own
+example named `hubspot` as unbuildable and `hubspot` is buildable now — eleven other sources are in
+that state, and the corrected sentence names **nobody**, because naming one is how it went stale.
+
+### ⛔⛔ Three holes in my own guards, every one found by mutation after the suite was green
+
+| ⛔ the guard | the hole |
+|---|---|
+| `U01`'s grade checks | *"the open ones are open"* existed and **its converse did not** — a fail-closed site could be regraded in either direction and everything passed |
+| `U02`'s *"the rule is in the file"* | ⛔⛔ **the declaration QUOTES the rule as its justification**, so deleting the original left the quote and the check passed. *A declaration that cites its source satisfies the test that the source exists* |
+| `U03`'s registry warning | my warning names *"`database` and `mysql`"* and nothing checked the names against the measurement. ⛔ **My fix for a stale comment would have introduced one, two paragraphs below it** |
+
+⛔ **And `len(what) > 40` came back.** `2.1` replaced an `assert len(why) > 80` for exactly this
+reason — length is not content — and this step wrote the same guard again. *A rule learned in a
+doctrine table is not a rule applied.*
+
+⛔ **One mutation survives on purpose**, recorded in the test: tightening it would mean asserting a
+count in prose, which `2.1` forbids. Its cousin in `U03` was **not** left surviving, because that
+docstring is read at the moment the rule could be broken.
+
+### Doctrine
+
+| rule |
+|---|
+| ⛔⛔ **a declaration that cites its source satisfies the test that the source exists** |
+| ⛔⛔ **a grade needs its converse guarded** |
+| ⛔⛔ **the fix for a stale comment can be a stale comment** |
+| ⛔ **optional is not absent** |
+| ⛔ **a one-sided resolver must say which side it errs on** |
+| ⛔ **a same-named local or function makes a dead field look alive** |
+| ⛔ **a rule learned in a doctrine table is not a rule applied** |
