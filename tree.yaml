@@ -3131,6 +3131,16 @@ yc2_w27:
                       artifact: genios_engine/deliver/card_builder.py
                       verify: .venv/bin/python -m pytest tests/deliver/test_a_cards_quotes_break_ties_on_content.py tests/test_render_verified_quote_loader.py tests/test_render_evidence_selection.py -q
                       depends_on: [M19.C3.L-integration.V2.U01]
+                    - id: M19.C3.L-logic.V1.U03
+                      what: >
+                        The narrator is shown its facts in one order. `render._prompt` dumped the
+                        card's facts and its known values in dict insertion order, which follows
+                        the order rows came back from the database — so the same situation built
+                        a different prompt from one run to the next (found driving F13: the replay
+                        of a recorded case missed at the narrator). Keys are now sorted.
+                      artifact: genios_engine/deliver/render.py
+                      verify: .venv/bin/python -m pytest tests/deliver/test_the_narrator_sees_its_facts_in_one_order.py tests/deliver -q
+                      depends_on: [M19.C3.L-integration.V2.U01]
 
         - id: M19.C4
           name: The exam

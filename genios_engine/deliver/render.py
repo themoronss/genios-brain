@@ -756,7 +756,11 @@ def _prompt(reason_code: str, template: dict, facts: dict, slots: dict,
         "instruction. Never a status line, never a day count on its own"
     )
     known = grounded_slots(slots)
-    known_line = (f"Known values: {json.dumps(known, default=str)}\n" if known else "")
+    # SORTED, here and in the facts below: dict order follows the order rows came back from the
+    # database, so the same situation built a different prompt from one run to the next
+    # (yc2_w27/M19.C3.L-logic.V1.U03). What the model is told is unchanged; the order is fixed.
+    known_line = (f"Known values: {json.dumps(known, default=str, sort_keys=True)}\n"
+                  if known else "")
     # A field the system could not compute is stated as unknown rather than omitted: "we do not
     # know how long this has been waiting" is itself useful, and it stops the model reaching for
     # a plausible filler to occupy the sentence.
@@ -767,7 +771,7 @@ def _prompt(reason_code: str, template: dict, facts: dict, slots: dict,
         "You are GeniOS, writing ONE decision card for a salesperson. Use ONLY the facts and "
         "quotes below — never invent a name, number, company or date that is not present.\n\n"
         f"Situation type: {reason_code}\n"
-        f"Facts (typed, from the graph):\n{json.dumps({k: (v.get('value') if isinstance(v, dict) else v) for k, v in facts.items()}, default=str, indent=0)}\n"
+        f"Facts (typed, from the graph):\n{json.dumps({k: (v.get('value') if isinstance(v, dict) else v) for k, v in facts.items()}, default=str, indent=0, sort_keys=True)}\n"
         f"{known_line}{unknown_line}"
         f"{said}\n"
         f"Guidance: {template.get('render_hint', '')}\n\n"
