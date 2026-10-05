@@ -18,6 +18,7 @@ from genios_engine.packs.registry import PackRegistry
 from genios_engine.packs.wiring import (DEFAULT_PACK_ID, ensure_default, ensure_defaults,
                                         make_registry)
 from genios_engine.platform.config import get_settings, l1_seam_enabled
+from genios_engine.platform.funnel import CAPABILITY_RESOLVED, NO_CAPABILITY
 from genios_engine.platform.ids import new_id
 
 from .baselines import build_baselines, load_node_metrics
@@ -176,8 +177,14 @@ def _load_context(store, org_id, node_id, node_type, *,
                                                      if r.source_group else "unattributed"),
                               "src_count": int(r.src_count or 1)}
         obs = [{"kind": r.kind, "occurred_at": r.occurred_at} for r in c.execute(text(
+            # ORDER BY, because this list is hashed. `build_context_slice` puts these rows in a
+            # tuple, `canonical_dumps` preserves list order, and that order reaches
+            # `expertise_id` — so an unordered read re-minted a ~118 kB package every sweep for
+            # knowledge that had not changed. The slice sorts them too; this is the cheaper half,
+            # at the source, so every other reader gets a stable order for free.
             "select kind, occurred_at from graph_observations "
-            "where org_id=:o and subject_node_id=:n and status='active'"),
+            "where org_id=:o and subject_node_id=:n and status='active' "
+            "order by kind, occurred_at"),
             {"o": org_id, "n": node_id})]
     return NodeContext(node_id=node_id, node_type=node_type, facts=facts, obs=obs)
 
@@ -234,8 +241,11 @@ def _bulk_load_obs(store, org_id) -> dict:
     out: dict = {}
     with store.engine.connect() as c:
         for r in c.execute(text(
+                # Same reason as `_load_context` above — these rows are hashed into the
+                # slice's identity, so the read that produces them has to be ordered.
                 "select subject_node_id, kind, occurred_at from graph_observations "
-                "where org_id=:o and status='active'"), {"o": org_id}):
+                "where org_id=:o and status='active' "
+                "order by subject_node_id, kind, occurred_at"), {"o": org_id}):
             out.setdefault(r.subject_node_id, []).append(
                 {"kind": r.kind, "occurred_at": r.occurred_at})
     return out
@@ -911,7 +921,20 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
         node_capabilities = tuple(capability for capability in native_capabilities
                                   if capability.root_entity_type == nd.node_type)
         if not rules and not node_capabilities:
+            # ⛔ THE BARE `continue` THAT WAS HERE IS THE FUNNEL'S MISSING GATE. A subject with no
+            # rule and no native capability has no expertise to reason with — the Atlas calls it
+            # "an empty package" and names it the third and largest place a card dies — and this
+            # loop walked past it counting nothing at all. `_count` upstream then relayed the
+            # NODE count as `capability_resolved`, so the one stage that is supposed to expose
+            # this loss reported the population it had lost FROM.
+            out[NO_CAPABILITY] += 1
             continue
+        # Resolved: at least one authored capability or pack rule speaks for this subject. Counted
+        # BEFORE evaluation on purpose — "expertise was resolved" and "the evaluation concluded
+        # something" are two different questions, and `emitted` / `below_gate` / `muted` already
+        # answer the second one. Conflating them is how a routing gap and a gating decision end up
+        # indistinguishable in the same number.
+        out[CAPABILITY_RESOLVED] += 1
         ctx = _load_context(store, org_id, nd.node_id, nd.node_type,
                             facts_by_node=facts_by_node, obs_by_node=obs_by_node)
         baselines, derived = metrics_by_node.get(nd.node_id, ({}, {}))  # C1: bulk-loaded once
@@ -1080,7 +1103,9 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
             # P2 + P2b: only pay for the full ~9-row audit bundle (its own transaction) when something
             # downstream actually reads it. The bundle's run_id is just the in-memory trace run id, so:
             #   - matched          → the emission path reads audit_bundle["output"] → MUST persist
-            #   - failed / insuff. → kept as inspectable fail-closed audit records → persist
+            #   - FAILED           → a real error, rare, and the bundle is the only place the cause
+            #                        survives → persist
+            #   - INSUFFICIENT_CTX → see below; skip the bundle, keep the suppression row
             #   - BLOCKED          → only referenced by the reasoning_blocked suppression, which stores
             #                        the (in-memory) run id in its detail; the heavy bundle is never
             #                        read again → skip the write, keep the lightweight suppression row
@@ -1088,13 +1113,36 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
             # BLOCKED + no-op are the overwhelming majority of a sweep (score-gate rejections), so this
             # is what turns a ~10-min sweep into ~1 min. Signals and their audit are byte-for-byte
             # unchanged (only matched emits, and matched still persists in full). Far less Postgres load.
+            #
+            # ⛔ INSUFFICIENT_CONTEXT MOVED FROM "persist" TO "skip" — 2026-10-03, and it is the
+            # single largest writer in the product.
+            #
+            # MEASURED ON PRODUCTION: 165 cards, against 12,182 `reasoning_runs`, 34,272
+            # `reasoning_candidates` and 43,200 `reasoning_reasoner_results` — about 6.4 MB of
+            # receipts per card, and roughly 1 GB of a 1.5 GB database. `core.relationship` alone
+            # answered INSUFFICIENT_CONTEXT 708 times. That table took the database past its disk
+            # quota into read-only, which crash-loops every deploy (`platform/migrate` raises when
+            # migrations are pending and the server will not write).
+            #
+            # WHY IT IS PURE WASTE, and not a judgement about audit value. INSUFFICIENT_CONTEXT
+            # means "I had nothing to decide with" — `deal.status` has no writer, so the answer is
+            # the same for the same node on every sweep, four times a day, forever. Persisting it
+            # wrote a ~9-row bundle (run + context snapshot + candidates + six reasoner results) to
+            # say one sentence, and re-wrote that sentence every six hours. Nothing reads it: the
+            # branch below `continue`s after `_suppress`, and that suppression row already carries
+            # the outcome, the uncertainty and the in-memory trace run id — the same lightweight
+            # shape BLOCKED has used since P2b, by the same argument.
+            #
+            # FAILED IS DELIBERATELY NOT MOVED WITH IT. The two sit together in the branch below and
+            # read alike, but they are opposites: FAILED is an exception inside reasoning — rare, a
+            # bug signal, and the bundle is where its cause survives. "We had no data" is a fact
+            # about the tenant; "we crashed" is a fact about us.
             _outcome = reasoned.execution.decision.outcome
             audit_bundle = None
             reasoning_run_id = reasoned.execution.trace.run_id
-            if _outcome == DecisionOutcome.BLOCKED:
-                pass                                          # handled by the reasoning_blocked branch
-            elif reasoned.matched or _outcome in {
-                    DecisionOutcome.FAILED, DecisionOutcome.INSUFFICIENT_CONTEXT}:
+            if _outcome in (DecisionOutcome.BLOCKED, DecisionOutcome.INSUFFICIENT_CONTEXT):
+                pass                      # each handled by its own suppression branch below
+            elif reasoned.matched or _outcome == DecisionOutcome.FAILED:
                 try:
                     audit_bundle = persist_execution(
                         store=reasoning_store,
@@ -1511,7 +1559,21 @@ def run_all(*, org_id: str, store: GraphStore, eval_time: datetime | None = None
         res = run(org_id=org_id, store=store, eval_time=eval_time, registry=registry, pack_id=pid)
         nodes = max(nodes, res["nodes"])
         for k, v in res["outcomes"].items():
-            combined[k] += v
+            if k == CAPABILITY_RESOLVED:
+                # ⛔ MAX, NOT SUM — AND FOR THE SAME REASON `nodes` ABOVE IS A MAX. Every pack walks
+                # the SAME node set, so summing counts one subject once per pack: a tenant holding an
+                # active pack and a shadow pack would report twice as many subjects resolved as it
+                # has subjects, and `capability_resolved` would exceed `situations_formed` again —
+                # the exact shape of the bug this counter was added to remove.
+                #
+                # ⛔ AND ITS LIMIT, STATED: max is the best-covered pack, not the DISTINCT subjects
+                # resolved across all packs, so a subject only pack B speaks for is not added to
+                # pack A's count. It is therefore a conservative FLOOR. A true distinct count needs
+                # the subject ids carried out of `run`, which no caller needs today; when one does,
+                # that is the change to make rather than turning this into a sum.
+                combined[k] = max(combined[k], v)
+            else:
+                combined[k] += v
     # ── Z4 / L4.5 · THE VOICE. Give the decisions this sweep just published their narrative.
     #
     # LAST, AND DELIBERATELY SO. Doc 05 §7 and doc 11 guard 5: a bundle is generated AFTER

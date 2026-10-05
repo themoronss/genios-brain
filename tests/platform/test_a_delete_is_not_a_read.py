@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 2_888, (
+    assert r["statements"] == 2_902, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -183,6 +183,12 @@ def test_the_statement_count_did_NOT_move():
     # `WITNESS_EXCEPTIONS` add three real SQL statements to the engine. That is the engine gaining
     # SQL, which is ordinary; what this test exists to catch is the loop hop EXPANDING the
     # statement list, which would have added 151 at once.
+    # ⛔ MOVED 2,888 → 2,902 on 2026-10-05, deliberately, by the `origin/harsh/mvp` merge
+    # (YC-II W27 STEP-00). Measured per file on a pre-merge archive and on the merge: +2
+    # `api/routes.py` (the known-sender read from the sent folder, `48768ca7`, two statements by
+    # design), +1 `platform/warm_lane.py` (the lapsed-plan gate, `7075014c`), +11
+    # `scripts/pipeline_health.py` (`5ebfef8e`). Fourteen real statements; the loop hop expanded
+    # nothing.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

@@ -427,5 +427,9 @@ def test_the_resolver_change_moved_no_coverage_verdict():
         "baseline comparison is for, and exactly what a bare count would have hidden")
     assert TC.undeclared_unread_writes() == ()
     assert TC.stale_unread_declarations() == ()
-    assert len(TC.table_usage()) == 186
+    # ⛔ RE-PINNED 186 → 187 on 2026-10-05 by the `origin/harsh/mvp` merge (YC-II W27 STEP-00):
+    # `signal_bundles` gained its first reference — the tenant reset's `delete` list
+    # (`api/account_routes.py`, `50c50073`). An engine change, not a resolver change; the nine
+    # write-only members above did not move.
+    assert len(TC.table_usage()) == 187
     assert len(TC._known_tables()) == 189

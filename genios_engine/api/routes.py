@@ -327,12 +327,52 @@ _SENDER_TTL_S = 300.0
 #: (`context/pipeline.py`, the outbound leg), so "we have written to this person" is already a
 #: stored fact. This is a filter over facts that exist, not a new computation, and it is exactly
 #: the line between a counterparty and a stranger with our address.
+#: ⛔ WHO THE TENANT HAS WRITTEN TO — ASKED OF TWO PLACES, BECAUSE ONE OF THEM IS CIRCULAR.
+#:
+#: The DEFINITION is unchanged and is the right one: a known counterparty is somebody this account
+#: has sent mail to. What changed is where that is read from.
+#:
+#: THE COLD START. `graph_facts.thread.last_outbound` only exists once an email has survived the
+#: gate, been extracted and reached the graph — and `whitelist()` consults this set to decide
+#: whether the gate may drop that very email. On a fresh tenant the graph is empty, so NOBODY is
+#: known, so W-01 protects nobody, and the N-codes run at full strength over the entire history.
+#: A sender becomes known only after one of their messages happens to survive, and every earlier
+#: message from the same person was already thrown away.
+#:
+#: MEASURED on the design partner's org 2026-10-04, wiped and re-synced on 03 Oct: 255 of 522
+#: gmail messages dropped at S1, and TWENTY senders had some mail emitted and some dropped — the
+#: same person, opposite fates, decided by nothing but which page of the backfill they landed on.
+#: `anshul@engramme.com` lost mail to N-01 (machine acknowledgement) while other mail from the
+#: same address was kept.
+#:
+#: `source_events.recipients` breaks the circle: it is written at CAPTURE, before any gate, on the
+#: tenant's own outbound mail. On this org the graph knew 11 people and the sent folder knew 26 —
+#: the same definition, available a whole pipeline earlier.
+#:
+#: NOT A WIDENING OF THE RULE. An address reaches this set only by being a recipient of a message
+#: THIS ACCOUNT SENT. A stranger who writes in is still a stranger, which is exactly what the
+#: N-codes exist to filter.
 KNOWN_COUNTERPARTY_SQL = (
     "select n.canonical_key from graph_nodes n "
     "where n.org_id = :o and n.node_type = 'person' and n.valid_to is null "
     "and exists (select 1 from graph_facts f "
     "             where f.org_id = n.org_id and f.subject_node_id = n.node_id "
     "               and f.field = 'thread.last_outbound' and f.status = 'active')"
+)
+
+#: The same question asked of the SENT FOLDER, which answers it a whole pipeline earlier.
+#:
+#: SEPARATE STATEMENT, NOT A UNION, for one reason: `unnest` is Postgres-only and the hermetic
+#: suite runs this resolver against SQLite. One combined query made the whole set unreadable
+#: there — including the graph half, which SQLite can answer perfectly well. Two statements let
+#: the half that CAN be answered always be answered.
+KNOWN_FROM_SENT_SQL = (
+    "select distinct lower(recipient) as canonical_key "
+    "  from source_events e, unnest(e.recipients) as recipient "
+    " where e.org_id = :o and e.recipients is not null "
+    "   and lower(e.actor ->> 'email') in ("
+    "       select lower(s.email) from org_seats s where s.org_id = :o and s.email is not null"
+    "   ) and nullif(trim(recipient), '') is not null"
 )
 
 
@@ -345,7 +385,20 @@ def known_counterparty_keys(connection, org_id: str) -> frozenset[str]:
     from sqlalchemy import text
 
     rows = connection.execute(text(KNOWN_COUNTERPARTY_SQL), {"o": org_id}).fetchall()
-    return frozenset((r.canonical_key or "").strip().lower() for r in rows if r.canonical_key)
+    keys = {(r.canonical_key or "").strip().lower() for r in rows if r.canonical_key}
+    # ⛔ THE SENT FOLDER, AND WHY ITS FAILURE MAY NOT TAKE THE GRAPH WITH IT.
+    #
+    # `unnest` is Postgres-only. On any other engine this raises, and the graph half — which that
+    # engine CAN answer — must still be returned: losing it would turn every known counterparty
+    # into a stranger and hand the N-codes the whole mailbox, which is strictly worse than the
+    # cold start this half exists to fix. Degrading to today's behaviour is the safe direction,
+    # and it is logged rather than silent.
+    try:
+        sent = connection.execute(text(KNOWN_FROM_SENT_SQL), {"o": org_id}).fetchall()
+        keys |= {(r.canonical_key or "").strip().lower() for r in sent if r.canonical_key}
+    except Exception:      # noqa: BLE001 — see above; never lose the graph half
+        _log.debug("sent-folder counterparties unavailable for org=%s; graph half only", org_id)
+    return frozenset(keys)
 
 
 def _sender_resolver_for(org_id: str):
@@ -365,6 +418,42 @@ def _sender_resolver_for(org_id: str):
             _SENDER_CACHE[org_id] = hit
         return email in hit[1]
     return _known
+
+
+#: ⛔ THE FUNNEL'S FIRST NUMBER, HELD BETWEEN TWO DIFFERENT SHAPES OF PASS.
+#:
+#: `signals_detected` is owned by `capture` (`platform/funnel.STAGE_OWNERS`) and the only honest count
+#: of it is `FinalizeOutcome.published` — what the publisher actually wrote. But capture finalizes
+#: PER CONNECTION, inside `run_sync`, while the funnel's `sweep_id` is minted later and PER ORG in
+#: `_run_l2_chain`. A tenant with Gmail and Calendar finalizes twice before the chain exists.
+#:
+#: So the count is accumulated here and POPPED by the chain. What that makes it, stated precisely:
+#: *the qualified signals published for this org since its last counted pass* — which is exactly the
+#: population that pass reasoned over, and a truer denominator than "signals in this wall-clock
+#: sweep" would have been. Signals captured in an earlier sweep are what today's situations are
+#: built from; forcing them into today's row would have been the wrong kind of tidy.
+#:
+#: ⛔ NOT RE-DERIVED, AND NOT RESET ON READ-FAILURE. The chain pops; if the chain never runs for an
+#: org the count waits rather than being discarded, because a lost measurement is the one outcome
+#: `platform/funnel.py` is written to prevent. Process-local on purpose — the sweep is in-process
+#: (no Celery), the same reason `_LIVE_ORGS` below is a set and not a table.
+_SIGNALS_PUBLISHED: dict[str, int] = {}
+_SIGNALS_PUBLISHED_LOCK = threading.Lock()
+
+
+def _note_signals_published(org_id: str, published: int) -> None:
+    """Add one finalize's published count to this org's pending funnel total. Never raises."""
+    if not org_id or not published:
+        return
+    with _SIGNALS_PUBLISHED_LOCK:
+        _SIGNALS_PUBLISHED[org_id] = _SIGNALS_PUBLISHED.get(org_id, 0) + int(published)
+
+
+def _take_signals_published(org_id: str) -> int | None:
+    """This org's pending count, removed as it is read. `None` when capture published nothing since
+    the last pass — which `_count` turns into NO ROW, because nobody looked is not zero."""
+    with _SIGNALS_PUBLISHED_LOCK:
+        return _SIGNALS_PUBLISHED.pop(org_id, None)
 
 
 def _run_ledger(*, org_id: str, connection_id: str, source: str, mode: str, summary=None,
@@ -388,7 +477,12 @@ def _run_ledger(*, org_id: str, connection_id: str, source: str, mode: str, summ
     #
     # `finalize_l1` never raises: every seam inside it is guarded on its own terms, because all
     # four are downstream of capture and capture is the part the tenant paid for.
-    finalize_l1(summary, org_id=org_id, stores=_l1_stores())
+    # ⛔ ITS RESULT WAS DISCARDED, AND THAT IS WHY THE FUNNEL HAD FOUR NUMBERS. `FinalizeOutcome`
+    # carries `published` — the count the PUBLISHER wrote, the only honest `signals_detected` in the
+    # product — and this call site dropped it on the floor: the `not_carried` shape, on the one value
+    # the funnel's first stage needs. Relayed, never recomputed; see `_SIGNALS_PUBLISHED`.
+    _finalized = finalize_l1(summary, org_id=org_id, stores=_l1_stores())
+    _note_signals_published(org_id, getattr(_finalized, "published", 0) or 0)
     if _graph is None:
         return
     from sqlalchemy import text
@@ -650,11 +744,18 @@ def _run_l2_chain(org_id: str) -> bool:
                                      crypto_key=get_settings().crypto_key)
             st["processed"] = result.get("processed", 0) if isinstance(result, dict) else 0
         _charge_ingestion(org_id, result)
-        # ⛔ `signals_detected` IS DELIBERATELY NOT WRITTEN HERE. It belongs to `capture`, and nothing
-        # in this chain holds an honest count of it — `_reread_unread` returns a RECOVERY count (mail
-        # captured while L1 was off), not the number of qualified signals detected, and labelling it
-        # `signals_detected` would put a wrong number where a missing one belongs. It stays unmeasured
-        # until the capture sync writes it, and `read_sweep` reports `None`, which is the truth.
+        # ⛔ `signals_detected` COMES FROM CAPTURE'S PUBLISHER, AND FROM NOTHING ELSE HERE.
+        #
+        # This stage used to be left unwritten on purpose, and the reason was right: the only count
+        # this chain held was `_reread_unread`'s, which is a RECOVERY count (mail captured while L1
+        # was off) and not qualified signals detected. Labelling that `signals_detected` would have
+        # put a wrong number where a missing one belongs — and a wrong number is worse than `None`,
+        # because `None` says nobody looked while a wrong one says we did.
+        #
+        # What changed is the source, not the rule: `_run_ledger` now keeps `FinalizeOutcome
+        # .published` — the count the PUBLISHER wrote — and this pops it. `_reread_unread` is still
+        # called above and is still not this number.
+        _count(_funnel.SIGNALS_DETECTED, _take_signals_published(org_id))
         _count(_funnel.SITUATIONS_FORMED,
                result.get("situations_ranked") if isinstance(result, dict) else None)
 
@@ -662,8 +763,14 @@ def _run_l2_chain(org_id: str) -> bool:
         with stage("l4.run_all", org_id):
             _l3 = run_l3(org_id=org_id, store=_graph, registry=_registry)
         _outcomes = (_l3 or {}).get("outcomes") if isinstance(_l3, dict) else None
+        # ⛔ `nodes` WAS RELAYED HERE AND IT IS NOT THIS NUMBER. `run_all`'s `nodes` is
+        # `len(graph_nodes read)` — the subjects the sweep EXAMINED, counted before any capability
+        # is resolved — so the one stage meant to expose "no authored expertise, empty package"
+        # reported the population it loses from. On a tenant whose nodes mostly resolve nothing it
+        # read HIGHER than `situations_formed`, i.e. a funnel that grows in the middle.
+        # `reason/runner` now counts the resolution itself and publishes it under its own name.
         _count(_funnel.CAPABILITY_RESOLVED,
-               (_l3 or {}).get("nodes") if isinstance(_l3, dict) else None)
+               _outcomes.get(_funnel.CAPABILITY_RESOLVED) if isinstance(_outcomes, dict) else None)
         _count(_funnel.DECISION_EMITTED,
                _outcomes.get("emitted") if isinstance(_outcomes, dict) else None)
 
@@ -782,6 +889,44 @@ def _org_paused(org_id: str) -> bool:
         return False
 
 
+def _plan_expired(org_id: str) -> bool:
+    """Has this tenant's plan lapsed past its grace window?
+
+    ⛔ THE LEAK THIS CLOSES. Expiry was enforced in exactly two places — both inside
+    `intelligence_routes`, on the two calls a PERSON makes. Everything the background does was
+    ungated: the sweep kept pulling mail, the chain kept reasoning, and `l4_llm_decision`,
+    `l1_extract` and `relevance_gate` kept calling the model. Measured on 2026-10-04, after each
+    org's grace window closed: 26,036 model calls across three lapsed tenants, ~29M input and
+    ~5.3M output tokens, running at ~$21/day and still climbing. That is OUR model spend on
+    accounts that stopped paying — the one cost in this system that is per-unit and real.
+
+    `grace` is NOT expired: the grace window exists so a late payment does not interrupt the
+    product, and gating it here would defeat the window's whole purpose. Only `expired` stops.
+
+    Nothing about this touches READS. `billing.py` is explicit that the dashboard stays reachable
+    — "locking an unpaid customer out of the page they would pay on is the one failure that
+    cannot recover itself" — so a lapsed tenant still signs in, still sees every card it already
+    has, and still finds the renew button. What stops is the spending.
+
+    Fails OPEN, like every other gate on this path: a billing row that cannot be read must never
+    be the reason a paying customer's mail stops arriving.
+    """
+    if _graph is None:
+        return False
+    try:
+        from sqlalchemy import text
+        from genios_engine.platform import billing as B
+        with _graph.engine.connect() as c:
+            row = c.execute(text("select plan_status, plan_expires_at, grace_until "
+                                 "from orgs where id=:o"), {"o": org_id}).first()
+        if row is None:
+            return False                             # unknown org: auth owns that refusal
+        return B.expiry_state(row.plan_status, row.plan_expires_at, row.grace_until) == "expired"
+    except Exception:                                # noqa: BLE001 — never block a payer's sync
+        _log.warning("plan state read failed for org=%s — sweeping without it", org_id)
+        return False
+
+
 def _sync_headroom(org_id: str) -> int:
     """Messages this org may still capture this period, or a large number when the meter cannot
     be read. Fails OPEN, like every other gate on this path: a quota that cannot be read must
@@ -852,11 +997,14 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None, *,
     else:
         conns_to_poll = list(conns)
     rc = make_relevance_classifier()
-    l1_ok = l1_err = l1_paused = l1_revoked = 0
+    l1_ok = l1_err = l1_paused = l1_revoked = l1_lapsed = 0
     paused: dict[str, bool] = {}
     # Per-org budget decisions are made ONCE per sweep, not per connection: an org with gmail +
     # gcal + drive would otherwise pay for three checks to reach the same answer.
     over_budget: dict[str, bool] = {}
+    # THE PLAN BOUNDARY, asked once per org per sweep like the two above. A lapsed tenant's
+    # background work spends OUR model budget, not theirs — see `_plan_expired`.
+    lapsed: dict[str, bool] = {}
     # THE INGESTION METER, asked once per org per sweep for the same reason as the two above.
     # It is a different question from `over_budget`: that one is "how much money today", this is
     # "how much mail this period". A backfill can sit inside the dollar ceiling and still be a
@@ -873,6 +1021,11 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None, *,
             paused[conn.org_id] = _org_paused(conn.org_id)
         if paused[conn.org_id]:
             l1_paused += 1
+            continue
+        if conn.org_id not in lapsed:
+            lapsed[conn.org_id] = _plan_expired(conn.org_id)
+        if lapsed[conn.org_id]:
+            l1_lapsed += 1
             continue
         if conn.org_id not in over_budget:
             over_budget[conn.org_id] = _llm_over_daily_cap(conn.org_id)
@@ -943,7 +1096,8 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None, *,
                         error=f"{reason}: {str(e)[:480]}")
             _notify_sync_failure(org_id=conn.org_id, source=conn.source_type,
                                  error=f"{reason}: {e}")
-    orgs = {c.org_id for c in conns if not paused.get(c.org_id)}
+    orgs = {c.org_id for c in conns
+            if not paused.get(c.org_id) and not lapsed.get(c.org_id)}
     no_new = ({o for o in orgs if not new_events.get(o)} if chain_only_on_new_data else set())
     orgs -= no_new
     for org in orgs:                              # L2/L3/L5: once per org, after all its sources pulled
@@ -958,6 +1112,10 @@ def run_sync_sweep(mode: str = "incremental", limit: int | None = None, *,
             # connections it said were due, in the order it put them in.
             "l1_due": l1_due,
             "l1_skipped_over_budget": l1_skipped, "l1_skipped_paused": l1_paused,
+            # Connections skipped because the tenant's PLAN has lapsed past its grace window.
+            # Separate from over_budget and sync_quota on purpose: those two clear with time or
+            # a bigger plan, this one clears only when somebody pays.
+            "l1_skipped_plan_expired": l1_lapsed,
             # Connections skipped because the ORG's ingestion meter is full for this period.
             # Distinct from over_budget on purpose: that one clears at midnight, this one needs
             # a bigger plan, and support cannot tell them apart from one counter.

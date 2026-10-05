@@ -862,6 +862,78 @@ _ORG_SCOPED_TABLES = [
     "onboarding_progress", "sync_jobs",          # sync progress + durable job queue (org-scoped)
     "l2_work_queue", "org_run_leases",            # migration 0136: warm-lane triggers + chain lease
     "integration_preferences",                    # per-tool source settings (Sources modal)
+    # ⛔ TWELVE TABLES THAT SURVIVED A RESET, FOUND BY MEASURING ONE — 2026-10-03.
+    #
+    # Two tenants were reset through this function and then every org-scoped table in the schema
+    # was counted for them. 183 tables carry `org_id`; this list held 102; and TWELVE of the
+    # remainder still had rows afterwards — 5,800 of them, led by `context_correlation_members`
+    # at 2,703 and `execution_events` at 832. The rest of the gap is deliberate and stays out:
+    # `connections`, `api_keys`, `auth_sessions`, `devices`, `capture_policies` are the account
+    # and its tools (the docstring promises they survive), `credit_ledger` is billing, and
+    # `audit_log` must outlive an erasure or the erasure cannot be proved.
+    #
+    # WHY IT MATTERS MORE THAN THE ROW COUNT. These are CONCLUSIONS, not raw facts: executions
+    # already planned, correlations already drawn, residue already recorded. A tenant that reset
+    # its workspace kept them while the graph they were drawn from was erased — the same defect
+    # `context_situations` was added here for, in its own words: *"the next sweep's findings
+    # landed beside conclusions drawn from facts that no longer exist."* On a fresh sync that
+    # reads as the chain mysteriously stopping, because the stale half is already there.
+    #
+    # ORDER IS CHILD BEFORE PARENT, because the loop below runs with no try/except by design:
+    # a name missing here leaks silently, and a name in the wrong order fails loudly.
+    "execution_events", "execution_actions", "execution_escalations", "execution_outcomes",
+    "executions",
+    "context_correlation_members", "context_correlations",
+    "context_node_lifecycle", "context_residue", "graph_health",
+    # 0187's evidence-need queue and 0045's learning proposals. Both are per-tenant conclusions
+    # drawn from a graph that is being erased; `evidence_needs` additionally holds the QUESTION
+    # asked about the tenant's own data, which is tenant content by the same rule as
+    # `situation_admission_decisions` above.
+    "evidence_needs", "knowledge_suggestions",
+    # ⛔ AND THE REST OF THE AUDIT — 36 more org-scoped tables that were never classified.
+    #
+    # The twelve above were found by counting rows after a real reset. Running the same question
+    # over the SCHEMA rather than over one tenant's data found these: tables that carry `org_id`,
+    # are not erased here, and are not account/billing/audit. Most held nothing for the two
+    # tenants measured — they cascade from a parent that IS erased, or that tenant never used the
+    # feature — which is exactly why counting rows could not find them and why
+    # `tests/api/test_a_reset_leaves_no_tenant_conclusion_behind.py` now asks the schema instead.
+    #
+    # ⛔ A CASCADE IS NOT A DECISION. `reasoning_candidates` disappears today only because
+    # `reasoning_runs` is deleted above it and the FK says CASCADE; change that FK and the rows
+    # outlive the reset with nothing to notice. Naming them makes the erasure the list's promise
+    # rather than a side effect of someone else's constraint — the same argument
+    # `context_situations` is here under.
+    #
+    # Ordered child-before-parent within each group; every parent in these groups is already
+    # deleted further up, so a re-delete finds nothing and costs one statement.
+    "reasoning_candidate_checks", "reasoning_candidates", "reasoning_reasoner_results",
+    "reasoning_run_outputs", "reasoning_publication_watermarks",
+    # `l2_extraction_results` is NOT here although migration 0004 creates it and 0033 gives it an
+    # org FK: it does not exist in the production schema. The loop below has no try/except by
+    # design, so naming a table that is absent turns every /reset into a 500. The drift is real and
+    # is recorded in the test's DRIFT set rather than papered over with an exception handler.
+    "situation_interpretations", "context_angle_verdicts",
+    "open_loops", "post_pass_watermarks", "pipeline_counters", "signal_bundles",
+    "segment_members", "graph_segments",
+    # The compiled brain. A cache the next sweep rebuilds — but it is built FROM this tenant's
+    # situation and quotes their own objects, so it is tenant content while it exists, and it was
+    # the table that proved this whole gap: 327 rows for two tenants survived their reset.
+    "expertise_packages",
+    # Delivery control plane (0042/0043): what was sent, what failed, and the rate windows behind
+    # the decision. About a tenant's own cards, which are being erased above.
+    "delivery_attempts", "delivery_events", "delivery_materialization_failures",
+    "delivery_rate_windows",
+    # L6 learning (0045/0046). Every row is a conclusion drawn from outcomes that no longer exist;
+    # keeping them would calibrate the next graph against the deleted one.
+    "learning_transitions", "learning_object_evaluations", "learning_objects",
+    "learning_input_rejections", "learning_event_inbox", "learning_metrics", "learning_runs",
+    "learning_policies", "learned_brain_entries", "temporary_memories",
+    # Screen (0159/0163) and the team post-passes (0150/0151) — per-seat and per-tenant findings.
+    "screen_thread_verdicts", "screen_thread_summaries", "screen_memory_jobs", "screen_followups",
+    "team_milestones", "team_situations",
+    # Meeting transcripts (0155): the tenant's own recorded speech.
+    "transcripts",
 ]
 
 _UPLOAD_ROOT = (Path(__file__).resolve().parents[2] / "uploads").resolve()

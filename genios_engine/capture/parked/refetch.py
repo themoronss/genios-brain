@@ -412,9 +412,56 @@ def _attempt(plan: RefetchPlan, *, payload: dict[str, Any], connector_for: Conne
                             mask_phone=mask_phone))
 
 
+#: ⛔ HOW MANY CHARACTERS A STORED FAILURE GETS, and why the order inside them matters.
+#:
+#: `refetch_last_error` is capped at 400. A Gmail attachment id is ~350 characters on its own, and
+#: the connector's message is `"gmail attachment fetch failed for {message_id}::{attachment_id}:
+#: {reason}"` — so the identifier consumed the entire budget and the REASON, the only part that
+#: tells anybody what to do, was cut off every single time.
+#:
+#: MEASURED on the design partner's org 2026-10-04: 85 attachments parked since 03 Oct, 50 of them
+#: already through three retries. Every stored error was exactly 400 characters, and 48 of the 50
+#: said nothing but `"gmail attachment fetch failed for <ids>"`. The retry ladder was working
+#: perfectly and reporting nothing, so eleven PDFs, twenty PNGs and seven JPEGs sat unreadable
+#: with no way to find out why.
+#:
+#: THE FIX IS THE ORDER, NOT THE SIZE. Raising the cap would store more identifier. The reason
+#: goes FIRST and keeps a guaranteed share of the budget; the identifier is kept too, elided in
+#: the middle, because `event_id` on the same row already addresses the event exactly.
+ERROR_CAP = 400
+#: What the reason is guaranteed, before the identifier may use anything.
+REASON_BUDGET = 240
+
+
+def _readable_failure(message: str) -> str:
+    """One stored line in which the provider's REASON survives the cap.
+
+    A message with no `": "` after the identifier carries no reason at all, and is returned
+    head-truncated exactly as before — there is nothing to protect.
+    """
+    text = str(message or "")
+    if len(text) <= ERROR_CAP:
+        return text
+    head, sep, reason = text.partition("failed for ")
+    if not sep or ": " not in reason:
+        return text[:ERROR_CAP]
+    ids, _, detail = reason.partition(": ")
+    detail = detail.strip()
+    if not detail:
+        return text[:ERROR_CAP]
+    prefix = f"{head}{sep}"
+    room = ERROR_CAP - len(prefix) - min(len(detail), REASON_BUDGET) - len(": ")
+    if room > 24:
+        ids = f"{ids[:room // 2]}…{ids[-(room // 2):]}" if len(ids) > room else ids
+    else:
+        ids = "<id elided>"
+    return f"{prefix}{ids}: {detail}"[:ERROR_CAP]
+
+
 def _failed(message: str) -> AttemptResult:
     """A fetch failure, classified by what the provider said."""
-    return AttemptResult(ok=False, failure=classify_fetch_error(message), error=message[:400])
+    return AttemptResult(ok=False, failure=classify_fetch_error(message),
+                         error=_readable_failure(message))
 
 
 def _describe(exc: BaseException) -> str:

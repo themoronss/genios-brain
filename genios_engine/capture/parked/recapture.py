@@ -261,9 +261,14 @@ def drain_recapture(engine, *, eval_time: datetime, org_id: str | None = None,
 
             if plan.action is RecaptureAction.REDERIVED and plan.visibility is not None:
                 conn.execute(text(
+                    # Same rule as `parked/drain` — a re-admitted row must be ROUTED, or it
+                    # reads as emitted and reaches no lane. `coalesce` so a row that somehow
+                    # already carries a route keeps the one triage actually computed for it.
                     "update source_events set visibility_scope = :scope, "
                     "visibility_principals = :principals, visibility_derived_from = :derived, "
-                    "outcome = 'emitted' "
+                    "outcome = 'emitted', "
+                    "route = coalesce(route, 'needs_extraction'), "
+                    "triage_lane = coalesce(triage_lane, 'P3') "
                     "where org_id = :org and event_id = :event"),
                     {"scope": plan.visibility.scope,
                      "principals": list(plan.visibility.principals or ()),

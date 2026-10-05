@@ -30,14 +30,57 @@ from .models import ExpertSlice, RoutePlan, RuntimeBrainEntry, RuntimeBrainSnaps
 
 COMPILER_VERSION = "domain-compiler.v1"
 
+#: ⛔ WHAT AN **OBJECT**'S `definition` MAY CARRY INTO A PACKAGE — a closed list, because the whole
+#: authored document used to travel and almost none of it was ever read.
+#:
+#: MEASURED 2026-10-02 on production: `expertise_packages` was **460 MB over 1,163 rows** — 388 kB
+#: average, one row 1,338 kB — and `objects` was **85% of the biggest payload** (1,143 kB for 13
+#: objects, ~88 kB each). That is what took the database over its 0.5 GB quota and put it into
+#: read-only, which in turn crash-looped every deploy (`platform/migrate` raises when migrations
+#: are pending and the server will not accept writes). It is the THIRD time this table has done it;
+#: the module already carries the scars of the other two ("the 995 MB that took a production
+#: database read-only", and `e1a0c47`).
+#:
+#: AND THE DESIGN ALWAYS SAID SO. `objects.yaml` is specified as *"the load-set — references only"*.
+#: The package was inlining the full definition instead: `attributes` (1,008 kB across the corpus),
+#: `relationships`, `anti_patterns`, `states`, `business_rules`, `exceptions`, `actions` — none of
+#: which any consumer of `package.objects` opens.
+#:
+#: ⛔ THE LIST IS WHAT CONSUMERS ACTUALLY READ, grepped rather than guessed:
+#:   * `reason/adapters/expertise._executable_required_fields` and `._universal_required_fields`
+#:     read `definition["inference_patterns"]` and nothing else.
+#:   * `reason/adapters/citations.situation_tags` reads an object's `id` only — never its
+#:     definition. (`citations._definition` exists, but it is applied to `expert_rules`.)
+#:   * `contracts/domain_expertise` requires objects to be non-empty mappings and names no key
+#:     inside them.
+#: `identity` is kept on top of that: it is the header every authored document carries, it is
+#: ~1% of the bytes, and dropping the thing that says WHICH object a record is would make a package
+#: unreadable by a human debugging one. Measured saving with both kept: **82.6%** of object bytes
+#: across the 97 authored objects (4,499 kB -> 783 kB).
+#:
+#: ⛔ CAPABILITIES AND EXPERT RULES ARE NOT PRUNED, deliberately. `rule_compiler` reads a rule's
+#: `definition["rule"]`, and `adapters/expertise` reads several capability keys; they are also an
+#: order of magnitude smaller (41 kB and 109 kB against 1,143 kB in the measured payload). A
+#: closed list is only safe where the readers are known, so it is applied where they are.
+#:
+#: Adding a key here is cheap and safe. REMOVING one re-mints every package's content address, so
+#: it costs one compile — see the churn note on `metadata` below for why that matters.
+OBJECT_DEFINITION_KEYS: frozenset[str] = frozenset({"identity", "inference_patterns"})
 
-def _authored(document, *, bindings: Mapping[str, tuple[str, ...]] | None = None) \
-        -> dict[str, Any]:
+
+def _authored(document, *, bindings: Mapping[str, tuple[str, ...]] | None = None,
+              keep: frozenset[str] | None = None) -> dict[str, Any]:
+    content = document.content
+    if keep is not None and isinstance(content, Mapping):
+        # Insertion order is preserved so the pruned mapping canonicalizes the same way the full
+        # one did for the keys that survive — the content address must change exactly once, when
+        # the keys leave, and never again because a dict was rebuilt in a different order.
+        content = {key: value for key, value in content.items() if key in keep}
     result = {
         "id": document.id,
         "kind": document.kind,
         "version": document.version,
-        "definition": document.content,
+        "definition": content,
     }
     if bindings is not None:
         result["entity_bindings"] = bindings.get(document.id, ())
@@ -73,7 +116,8 @@ class ExpertiseBuilder:
             by_brain[entry.brain].append(entry)
 
         capabilities = tuple(_authored(item) for item in expert.capabilities)
-        objects = tuple(_authored(item, bindings=bindings) for item in expert.objects)
+        objects = tuple(_authored(item, bindings=bindings, keep=OBJECT_DEFINITION_KEYS)
+                        for item in expert.objects)
         expert_rules = tuple(_authored(item) for item in (
             *expert.artifacts, *expert.variants))
         organization = tuple(_runtime(item) for item in by_brain[BrainKind.ORGANIZATION])

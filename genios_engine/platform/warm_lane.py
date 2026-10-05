@@ -132,6 +132,31 @@ def wake() -> None:
     _wake.set()
 
 
+def plan_expired(engine, org_id: str) -> bool:
+    """Has this tenant's plan lapsed past its grace window?
+
+    The warm lane's half of the gate `api/routes._plan_expired` installs on the sweep. Both ask
+    `billing.expiry_state`, which is pure and is the single authority on what those three columns
+    mean, so the two lanes cannot drift into disagreeing about who is paid up.
+
+    `grace` is NOT expired — the grace window exists so a late payment does not interrupt the
+    product. FAILS OPEN: a billing row that cannot be read must never stop a paying tenant's mail.
+    """
+    if engine is None:
+        return False
+    try:
+        from genios_engine.platform import billing as B
+        with engine.connect() as c:
+            row = c.execute(text("select plan_status, plan_expires_at, grace_until "
+                                 "from orgs where id = :o"), {"o": org_id}).first()
+        if row is None:
+            return False
+        return B.expiry_state(row.plan_status, row.plan_expires_at, row.grace_until) == "expired"
+    except Exception:      # noqa: BLE001 — never block a payer's lane on a billing read
+        _log.warning("warm lane: plan state unreadable for org=%s — proceeding", org_id)
+        return False
+
+
 def enqueue(engine, org_id: str, event_ids: Iterable[str], source: str) -> int:
     """Queue `event_ids` of `org_id` for the lane and wake the worker. Returns rows written.
 
@@ -142,6 +167,13 @@ def enqueue(engine, org_id: str, event_ids: Iterable[str], source: str) -> int:
     committed, and a trigger that failed to queue is picked up by the next sweep tick anyway."""
     ids = sorted({str(e) for e in event_ids if e})
     if engine is None or not ids:
+        return 0
+    # ⛔ THE PLAN BOUNDARY, ENFORCED AT THE DOOR. Gating the claim loop instead would leave the
+    # rows queued, leased and retried forever; refusing to write them is the only version that
+    # actually stops. One check here covers every producer — pushed mail, uploads, the screen
+    # promoter — because they all reach the lane through this one function.
+    if plan_expired(engine, org_id):
+        _log.info("warm lane: org=%s plan lapsed — %d event(s) not queued", org_id, len(ids))
         return 0
     try:
         with engine.begin() as c:

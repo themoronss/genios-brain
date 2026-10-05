@@ -30,10 +30,44 @@
 # nothing stays off, and turning one on is a file and a review rather than a deploy. It does not
 # override an operator: `provision_intelligence` skips any tenant that already holds a row for
 # this domain, live or stamped off.
+# ⛔ OFF ON PURPOSE — AND THE REASON IS A BAR, NOT A BUG IN THIS CORPUS.
+#
+# The Design Atlas says this twice (V.2 P2.16, and "Brutal honesty on the plans"): Sales and
+# Customer Support stay in SHADOW until they pass the same evaluation bar Admin passed. Measured
+# 2026-10-02 against a scratch database, a brand-new tenant was provisioned `sales`, `general`,
+# `admin` AND `customer_support` all `active` — so a founder nobody had configured was already
+# being sent judgment from a corpus whose bar nobody had checked.
+#
+# ⛔ AND NOT ON THE STRENGTH OF `identity.status`, WHICH DOES NOT DISCRIMINATE. Measured the same
+# day: admin, sales and customer_support ALL declare `status: draft`, and admin stays on. So the
+# field is unmaintained and proves nothing here either way — recorded because the first version of
+# this comment leaned on it, and an argument that does not hold is worse than no argument. The bar
+# is the reason; the status line is not evidence for it.
+#
+# ⛔ THE OLD `why` IS KEPT HERE AS A COMMENT, NOT AS A SECOND KEY. `_schema` forbids unknown
+# properties on this block (`why_when_on` fails validation with "Additional properties are not
+# allowed"), and it is right to — a corpus that can grow fields nobody validates is how a half-
+# authored domain starts talking. Verbatim, because it is a real argument for the day this flips,
+# it just was never an argument about the evaluation bar:
+#
+#   "Its capabilities are what expertise.relationship, expertise.opportunity and
+#    expertise.investor_relationship already resolve to on the live tenant — the runs complete and
+#    the plays are eligible, so switching a new tenant on changes which corpus answers, not whether
+#    one can."
+#
+# WHAT THIS CHANGES AND WHAT IT DOES NOT. `default_on` is read only by
+# `platform.corpus.default_on_domains`, which decides what a tenant holding NO row gets. Facts from
+# this domain are still captured; shadow runs still happen and still write their receipts; and
+# every tenant that already holds a row — live or stamped off — is untouched, because
+# `provision_intelligence` may not overrule an operator. Returning an EXISTING tenant to shadow is
+# a deliberate act with a decision behind it, never a side effect of this file.
+#
+# TURNING IT BACK ON is a file and a review, exactly as the note above describes: flip this to true
+# once this domain's evaluation corpus passes, and move `why_when_on` back to `why`.
 activation:
-  default_on: true
+  default_on: false
   why: >
-    Its capabilities are what expertise.relationship, expertise.opportunity and expertise.investor_relationship already resolve to on the live tenant — the runs complete and the plays are eligible, so switching a new tenant on changes which corpus answers, not whether one can.
+    Held in shadow until this domain's evaluation corpus passes the same bar Admin passed. The Design Atlas requires it (V.2 P2.16): shipping Sales under the same brand as Admin at a lower bar is how a pilot's trust is lost. Facts are still captured and shadow runs still write receipts; only judgment for an unconfigured tenant is off.
 
 identity:
   id: sales
