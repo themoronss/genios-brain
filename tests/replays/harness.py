@@ -191,6 +191,9 @@ class CassetteRecorder:
         self.model = getattr(inner, "model", "")
         self._lock = threading.Lock()
         self.cassette: dict[str, dict[str, Any]] = {}
+        #: The same report a `RecordedLLM` keeps, so a recording run and its replay compare.
+        self.calls: list[tuple[str, str]] = []
+        self.misses: list[tuple[str, str]] = []
 
     @staticmethod
     def content_hash(material: str) -> str:
@@ -206,6 +209,7 @@ class CassetteRecorder:
                  "model": result.model}
         with self._lock:
             self.cassette[cassette_key(prompt)] = entry
+            self.calls.append((entry["site"], cassette_key(prompt)))
         return result
 
 

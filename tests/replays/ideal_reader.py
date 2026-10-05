@@ -42,6 +42,14 @@ _GATE_KEEP = {"disposition": "keep", "relevance": 0.9, "reason": "a person writi
 _GATE_DROP = {"disposition": "drop", "relevance": 0.05,
               "reason": "automated, nobody waits on a reply"}
 
+#: What `capture/esqe/relevance._item_block` puts in the fence when an object has no subject and no
+#: snippet — every calendar event, because its text is a `summary`, not a `subject`. Production
+#: asks the model about it anyway; a faithful model, told that "a guess is worse than an absence",
+#: says it is not business and leaves the rest unknown.
+NO_TEXT = "(no readable text)"
+_NO_TEXT_VERDICT = {"business": False, "description": "no readable text", "category": "unknown",
+                    "human_authored": None, "asks_for_reply": None}
+
 _FENCED = re.compile(r"<<<CONTENT_[0-9a-f]+>>>\n(.*?)\n<<<END_[0-9a-f]+>>>", re.S)
 _RELEVANCE_ITEM = re.compile(r"^item (\d+):\n<<<CONTENT_[0-9a-f]+>>>\n(.*?)\n<<<END_[0-9a-f]+>>>",
                              re.S | re.M)
@@ -91,7 +99,9 @@ class IdealReader:
             items = _RELEVANCE_ITEM.findall(prompt)
             if not items:
                 raise IdealReaderError("relevance prompt with no fenced items")
-            return {"verdicts": [{"item": int(n), **_relevance(self._match(text, site))}
+            return {"verdicts": [{"item": int(n), **(dict(_NO_TEXT_VERDICT)
+                                                     if text.strip() == NO_TEXT else
+                                                     _relevance(self._match(text, site)))}
                                  for n, text in items]}
         if site == "extraction":
             fenced = _FENCED.findall(prompt)
@@ -102,19 +112,31 @@ class IdealReader:
         if site == "unknown":
             raise IdealReaderError("a prompt no known site writes (identify_site: unknown): "
                                    f"{prompt[:160]!r}")
-        return self._case_level(site, prompt)
+        authored = self._authored(site, prompt)
+        if site == "r1":
+            return authored if authored is not None else read_stances(prompt)
+        if site == "bundle_narrator":
+            if "CORRECTION" in prompt or "was refused" in prompt:
+                raise IdealReaderError(f"{self.case.case_id}: the bundle narration was refused by "
+                                       f"the gauntlet — {_excerpt(prompt[-1500:])}")
+            return authored if authored is not None else narrate_decision(prompt)
+        if authored is None:
+            raise IdealReaderError(
+                f"{self.case.case_id}: the case gives the {site} site no answer for this prompt "
+                f"— author model.{site} with terms the prompt names. Prompt: {_excerpt(prompt)}")
+        if site == "decider":
+            return decide_from_formula(prompt, authored, self.case.case_id)
+        return authored
 
-    def _case_level(self, site: str, prompt: str) -> Any:
+    def _authored(self, site: str, prompt: str) -> Any:
         """A site that reads a situation, not one object: the first `model[site]` entry whose
-        `when` terms all appear in the prompt."""
+        `when` terms all appear in the prompt, or None."""
         lowered = prompt.lower()
         for entry in self.case.model.get(site) or ():
             terms = [str(t).lower() for t in entry.get("when") or ()]
             if terms and all(t in lowered for t in terms):
                 return entry["answer"]
-        raise IdealReaderError(
-            f"{self.case.case_id}: the case gives the {site} site no answer for this prompt — "
-            f"author model.{site} with the terms it names. Prompt opens: {prompt[:300]!r}")
+        return None
 
     def _match(self, text: str, site: str) -> CaseObject:
         """The one object of the case this text is about, by how much of it the text contains."""
@@ -230,3 +252,134 @@ def _span(quote: str, content: str, obj: CaseObject) -> dict[str, Any]:
 
 def _norm(text: str) -> str:
     return " ".join(str(text).split()).lower()
+
+
+def _excerpt(prompt: str) -> str:
+    """Enough of a situation prompt to author an answer from: its head and its situation block."""
+    at = prompt.find("SITUATION:")
+    return repr(prompt[:200] + (" … " + prompt[at:at + 900] if at > 0 else ""))
+
+
+# ── R-1: the prompt's own reading rules, applied mechanically ───────────────────────────────────
+_R1_ITEM = re.compile(r"^(\d+)\. \[([^\]]*)\] (.*)$", re.M)
+_R1_HEDGES = re.compile(r"hedged \(words like ([^)]*)\)")
+_COMMITMENT = re.compile(r"\b(i|we)(\s+will|'ll|\s+shall)\b|\bpromise[sd]?\b|\bcommit(ted|s)?\b",
+                         re.I)
+_DECISION = re.compile(r"\b(decided|confirmed|approved|signed|accepted|agreed|chose|chosen|"
+                       r"selected|rejected|declined|cancelled|canceled|completed)\b", re.I)
+_INTENT = re.compile(r"\b(plan(ning)? to|intend(s|ing)? to|going to|want(s)? to|aim(s|ing)? to)\b",
+                     re.I)
+_WEIGHING = ("consider", "evaluat", "explor", "thinking about", "looking into", "leaning")
+
+
+def read_stances(prompt: str) -> dict[str, Any]:
+    """R-1's answer when a case authors none: each item read by the rules R-1's own prompt states.
+
+    The hedge words are taken from the prompt itself; a plain settled statement is not ambiguous;
+    a record that disagrees with itself is; an item with no stance is NOT_INTERPRETABLE, because
+    the prompt says to answer that "rather than guessing". Mechanical on purpose — R-1 classifies
+    short statements, and a case that needs a different reading authors `model.r1`.
+    """
+    words_line = _R1_HEDGES.search(prompt)
+    hedges = re.findall(r"'([^']+)'", words_line.group(1)) if words_line else []
+    listing = prompt.split("ITEMS:", 1)[-1].split("\n\nAnswer with ONLY", 1)[0]
+    readings = []
+    for number, field_label, text in _R1_ITEM.findall(listing):
+        lowered = text.lower()
+        hedge = next((h for h in hedges if re.search(rf"\b{re.escape(h)}\b", lowered)), None)
+        disputed = "THE RECORD DISAGREES ABOUT THIS" in field_label
+        if hedge:
+            stance = ("EVALUATING_ALTERNATIVES" if any(w in hedge for w in _WEIGHING)
+                      else "SPECULATION_ONLY")
+        elif _COMMITMENT.search(text):
+            stance = "COMMITMENT_MADE"
+        elif _DECISION.search(text):
+            stance = "DECISION_MADE"
+        elif _INTENT.search(text):
+            stance = "INTENT_STATED"
+        else:
+            stance = "NOT_INTERPRETABLE"
+        readings.append({"item": int(number), "ambiguous": bool(hedge) or disputed,
+                         "classification": stance,
+                         "confidence_bp": 5000 if stance == "NOT_INTERPRETABLE" else 6000})
+    return {"readings": readings}
+
+
+# ── the decider: the formula's utilities, moved only where the case says why ────────────────────
+_PLAY = re.compile(r"^- play_id=([^ |]+) \|.*formula utility (\d+)", re.M)
+
+
+def decide_from_formula(prompt: str, authored: dict[str, Any], case_id: str) -> dict[str, Any]:
+    """The decider's answer: `outcome`, `confidence_bp`, `rationale` and `missing` as authored, and
+    a utility for EVERY eligible play the prompt lists — the formula's own, as the prompt says to
+    start from, moved only where the case names the play in `move`. A move naming no listed play is
+    an authoring error, not a play to invent."""
+    plays = {pid: int(n) for pid, n in _PLAY.findall(prompt)}
+    if not plays:
+        raise IdealReaderError(f"{case_id}: a decider prompt listing no eligible play")
+    scores = dict(plays)
+    for name, utility in (authored.get("move") or {}).items():
+        hits = [pid for pid in plays if pid == name or pid.endswith("." + name)]
+        if len(hits) != 1:
+            raise IdealReaderError(f"{case_id}: decider move {name!r} names {len(hits)} of the "
+                                   f"listed plays {sorted(plays)}")
+        scores[hits[0]] = int(utility)
+    outcome = authored.get("outcome")
+    if outcome not in ("decision", "defer"):
+        raise IdealReaderError(f"{case_id}: decider outcome {outcome!r} is not decision | defer")
+    return {"outcome": outcome, "scores": scores,
+            "confidence_bp": int(authored["confidence_bp"]),
+            "rationale": str(authored.get("rationale") or ""),
+            "missing": list(authored.get("missing") or [])}
+
+
+# ── the bundle narrator: the fixed decision, told from its own material ─────────────────────────
+_COMMITTED = re.compile(r"committed action\s*:\s*(\S+)")
+
+
+def narrate_decision(prompt: str) -> dict[str, str]:
+    """The bundle narrator's answer when a case authors none: a plain narration of the decision
+    the prompt fixes, from that prompt's material alone.
+
+    The narrator's prompt names the committed action and a catalogue of computed numbers, and
+    forbids everything else — digits, unnamed entities, instructions outside the rationale. So
+    this says what a faithful model can say from it: the action, by its own label; the priced
+    numbers, by placeholder; nothing about who it concerns, because the prompt names nobody.
+    """
+    committed = _COMMITTED.search(prompt)
+    if committed is None:
+        raise IdealReaderError("a bundle narration prompt with no committed action")
+    label = committed.group(1).rsplit(".", 1)[-1].replace("_", " ").strip()
+    has = {name for name in re.findall(r"^\s*\{(\w+)\} =", prompt, re.M)}
+
+    def number(name: str, text: str, fallback: str) -> str:
+        return text if name in has else fallback
+
+    out = {
+        "headline": (label[:1].upper() + label[1:])[:90],
+        "situation_summary": f"The {label} is the action this decision committed to.",
+        "why_it_matters": number(
+            "do_nothing_cost_bp",
+            "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
+            f"Leaving it alone leaves the {label} undone, and its cost is not priced."),
+        "root_cause": number(
+            "confidence_pct",
+            "The engine holds this reading at {confidence_pct} percent confidence.",
+            f"The reading behind the {label} rests on what the units found."),
+        "recommendation_rationale": number(
+            "recommended_score_pct",
+            f"The {label} ranked first at {{recommended_score_pct}} percent, ahead of every "
+            "alternative that lost.",
+            f"The {label} ranked first, ahead of every alternative that lost."),
+        "expected_effect": number(
+            "outcome_window_days",
+            f"Acting on the {label} shows its effect within {{outcome_window_days}} days, and "
+            "without it the situation stands as it is.",
+            f"Acting on the {label} changes the situation, and without it the situation stands "
+            "as it is."),
+    }
+    if "WHAT ELSE WAS ON THE TABLE" in prompt and "runner_up_score_pct" in has:
+        out["alternatives_narrative"] = ("The strongest alternative scored "
+                                         "{runner_up_score_pct} percent and lost to the "
+                                         "recommendation.")
+    return out

@@ -71,7 +71,7 @@ CASE = {
     "expected": {"cards": [{"about": ["Kavya"], "min": 1, "max": 1}]},
     "forbidden": {"names": [], "phrases": []},
     "witness": None, "not_expressible": {},
-    "model": {"decider": [{"when": ["Lotus Ventures"], "answer": {"outcome": "DECISION"}}]},
+    "model": {},
 }
 
 
@@ -143,11 +143,58 @@ def test_a_site_the_object_has_no_answer_for_is_refused():
         _reader().call(_extraction_prompt(f"This week in funding\n\n{DIGEST}"))
 
 
-def test_a_case_level_site_is_answered_by_the_terms_in_its_prompt():
-    prompt = "You are the chief of staff of a busy founder. ... Lotus Ventures asked for a deck."
-    assert _reader().call(prompt).parsed == {"outcome": "DECISION"}
+DECIDER = ("You are the chief of staff of a busy founder. GeniOS has flagged ONE situation.\n"
+           "SITUATION: admin contact — Lotus Ventures asked for a deck\n"
+           "PLAYS YOU CAN RECOMMEND:\n"
+           "- play_id=admin.pb.briefing.one_page_brief | brief | steps: [] | formula utility 4701 "
+           "(importance 2321)\n"
+           "- play_id=admin.pb.inbox.triage_to_five_outcomes | triage | steps: [] | formula "
+           "utility 4959 (importance 2321)\n")
+
+
+def test_the_decider_starts_from_the_formula_and_moves_only_what_the_case_names():
+    """Its prompt says START from the formula's utility and move it only for a reason: every
+    listed play keeps the formula's number unless the case moves it."""
+    case = copy.deepcopy(CASE)
+    case["model"] = {"decider": [{"when": ["Lotus Ventures"], "answer": {
+        "outcome": "decision", "confidence_bp": 6200, "move": {"one_page_brief": 6800},
+        "rationale": "an investor asked for the deck before a partner meeting"}}]}
+    parsed = _reader(case).call(DECIDER).parsed
+    assert parsed["outcome"] == "decision" and parsed["confidence_bp"] == 6200
+    assert parsed["scores"] == {"admin.pb.briefing.one_page_brief": 6800,
+                                "admin.pb.inbox.triage_to_five_outcomes": 4959}
+    assert parsed["missing"] == []
+
+
+def test_a_decider_move_naming_no_listed_play_is_refused():
+    case = copy.deepcopy(CASE)
+    case["model"] = {"decider": [{"when": ["Lotus Ventures"], "answer": {
+        "outcome": "decision", "confidence_bp": 6000, "move": {"send_the_deck": 9000}}}]}
+    with pytest.raises(IdealReaderError, match="send_the_deck"):
+        _reader(case).call(DECIDER)
+
+
+def test_a_situation_the_case_does_not_answer_is_refused():
     with pytest.raises(IdealReaderError, match="decider"):
-        _reader().call("You are the chief of staff of a busy founder. ... someone else entirely.")
+        _reader().call(DECIDER.replace("Lotus Ventures", "someone else entirely"))
+
+
+def test_r1_reads_each_item_by_the_rules_its_own_prompt_states():
+    from genios_engine.reason.llm_interpretation import build_prompt
+    prompt = build_prompt([
+        {"field": "meeting.start_at", "text": "2026-09-22T05:30:00Z", "conflict": False},
+        {"field": "meeting.status", "text": "confirmed", "conflict": False},
+        {"field": "mailbox.message_1", "text": "We will send the signed copy on Friday",
+         "conflict": False},
+        {"field": "mailbox.message_2", "text": "We are considering two other offers",
+         "conflict": False},
+        {"field": "deal.stage", "text": "maybe next quarter", "conflict": True}])
+    readings = {r["item"]: r for r in _reader().call(prompt).parsed["readings"]}
+    assert [readings[i]["classification"] for i in range(1, 6)] == [
+        "NOT_INTERPRETABLE", "DECISION_MADE", "COMMITMENT_MADE", "EVALUATING_ALTERNATIVES",
+        "SPECULATION_ONLY"]
+    assert [readings[i]["ambiguous"] for i in range(1, 6)] == [False, False, False, True, True]
+    assert all(2000 <= r["confidence_bp"] <= 8000 for r in readings.values())
 
 
 def test_an_unknown_prompt_is_refused():
@@ -157,3 +204,20 @@ def test_an_unknown_prompt_is_refused():
 
 def test_a_refusal_is_not_an_exception_production_can_swallow():
     assert not issubclass(IdealReaderError, Exception)
+
+
+def test_an_item_with_no_text_is_answered_as_a_model_answers_nothing():
+    """Every calendar event reaches the relevance page with no subject and no snippet."""
+    from pathlib import Path
+
+    from tests.replays.ideal_reader import NO_TEXT
+
+    class Candidate:
+        subject, snippet = "", ""
+
+    source = (Path(__file__).resolve().parents[2] / "genios_engine" / "capture" / "esqe"
+              / "relevance.py").read_text(encoding="utf-8")
+    assert f'"{NO_TEXT}"' in source, "the empty-item literal moved; move NO_TEXT with it"
+    verdict = _reader().call(_PROMPT_HEAD + _item_block(1, Candidate())).parsed["verdicts"][0]
+    assert verdict["item"] == 1 and verdict["business"] is False
+    assert verdict["category"] == "unknown" and verdict["asks_for_reply"] is None
