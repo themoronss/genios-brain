@@ -19,7 +19,7 @@ did not land again, so a failed re-read loses nothing and is simply tried on the
 from __future__ import annotations
 
 import json
-from datetime import timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from sqlalchemy import bindparam, text
@@ -142,5 +142,151 @@ def restore(engine, org_id: str, event_ids: list[str]) -> int:
                                     "ids": list(event_ids)}).rowcount
 
 
-__all__ = ["SUPERSEDED", "find_unread", "recover_orphans", "restore", "set_aside",
+# =================================================================================================
+# STEP-18 B18 · A PARKED EXTRACTION IS READ AGAIN — through the same door, under a bounded ladder
+# =================================================================================================
+#
+# The extractor parks a message when the model's answer cannot be used (`capture/semantic/
+# extractor.py` `PARK_*`). The event is already `emitted` and its payload is kept, so the parked
+# drain's own recovery — flipping `outcome` — changes nothing, and until this pass nothing read
+# them again: two mails on the design partner's org waited at `pending` from 3 Oct with zero
+# attempts. They are re-landed exactly like unread mail (set aside → capture again → restore what
+# did not land), so the second read is the first read's code path, not a parallel one.
+#
+# ⛔ THE LADDER FOLLOWS THE MESSAGE, NOT THE EVENT. A re-land mints a new event; if its extraction
+# parks again, that is a NEW park row for the same message. So the attempt count is the number of
+# extraction parks the message has accumulated — it can only go up — and a message is given up at
+# `MAX_EXTRACTION_ATTEMPTS` with its last reason, never retried for ever on a model that keeps
+# answering badly. A re-land that did not land at all advances its own row's counter instead, so
+# that path is bounded too.
+
+#: The extractor's park codes — the drain's `NEEDS_REEXTRACTION`, kept in one place.
+from genios_engine.capture.parked.drain import NEEDS_REEXTRACTION  # noqa: E402
+
+#: How many times a message's extraction may park before it is given up.
+MAX_EXTRACTION_ATTEMPTS = 3
+#: The wait before a parked message is read again: one hour, doubling with each park it has had.
+EXTRACTION_RETRY_BASE = timedelta(hours=1)
+#: The park status for the row whose event a later copy replaced.
+PARK_SUPERSEDED = "superseded"
+
+_FIND_PARKED = text(
+    "select se.event_id, se.connection_id, se.source, se.object_type, se.source_object_id, "
+    "       se.parent_object_id, se.dedup_key, se.actor, se.recipients, se.internal_kind, "
+    "       se.occurred_at, rp.enc_content, pe.created_at as parked_at, "
+    "       pe.refetch_attempts as row_attempts, pe.refetch_next_attempt_at as next_attempt_at, "
+    "       (select count(*) from parked_events p2 "
+    "          join source_events s2 on s2.org_id = p2.org_id and s2.event_id = p2.event_id "
+    "         where p2.org_id = se.org_id and s2.source = se.source "
+    "           and s2.source_object_id = se.source_object_id "
+    "           and p2.reason_code in :codes) as message_parks "
+    "  from source_events se "
+    "  join parked_events pe on pe.org_id = se.org_id and pe.event_id = se.event_id "
+    "  join raw_payloads rp on rp.event_id = se.event_id and rp.org_id = se.org_id "
+    " where se.org_id = :o and se.outcome = 'emitted' "
+    "   and pe.status = 'pending' and pe.reason_code in :codes "
+    "   and (rp.expires_at is null or rp.expires_at > :now) "
+    "   and not exists (select 1 from l1_extraction_results x "
+    "                    where x.org_id = se.org_id and x.event_id = se.event_id) "
+    " order by se.occurred_at desc "
+    " limit :lim").bindparams(bindparam("codes", expanding=True))
+
+_SUPERSEDE_PARK = text(
+    "update parked_events pe set status = :status "
+    " where pe.org_id = :o and pe.status = 'pending' and pe.event_id in :ids "
+    "   and exists (select 1 from source_events se where se.org_id = pe.org_id "
+    "               and se.event_id = pe.event_id and se.outcome = :sup)"
+).bindparams(bindparam("ids", expanding=True))
+
+_ADVANCE_PARK = text(
+    "update parked_events set refetch_attempts = refetch_attempts + 1, "
+    "       refetch_first_attempt_at = coalesce(refetch_first_attempt_at, :now), "
+    "       refetch_last_attempt_at = :now, refetch_next_attempt_at = :next "
+    " where org_id = :o and event_id = :e and status = 'pending'")
+
+_GIVE_UP = text(
+    "update parked_events set status = 'dead_letter', refetch_next_attempt_at = null, "
+    "       refetch_last_error = :why "
+    " where org_id = :o and event_id = :e and status = 'pending'")
+
+
+def _retry_wait(attempts: int) -> timedelta:
+    return EXTRACTION_RETRY_BASE * (2 ** max(0, attempts - 1))
+
+
+def find_parked_extractions(engine, org_id: str, *, limit: int = 50,
+                            now: datetime | None = None) -> list[Any]:
+    """Emitted events whose extraction parked, whose payload is kept, and that are due again.
+
+    Due means: the message has parked fewer than `MAX_EXTRACTION_ATTEMPTS` times, this row's own
+    re-land attempts are under it too, and the wait for the attempt it is on has passed. A message
+    over the limit is not returned here — `give_up_parked_extractions` settles it, with its reason.
+    """
+    now = now or datetime.now(timezone.utc)
+    with engine.connect() as c:
+        rows = c.execute(_FIND_PARKED, {"o": org_id, "lim": int(limit), "now": now,
+                                        "codes": sorted(NEEDS_REEXTRACTION)}).fetchall()
+    due = []
+    for r in rows:
+        attempts = int(r.message_parks or 0) + int(r.row_attempts or 0)
+        if attempts >= MAX_EXTRACTION_ATTEMPTS + 1:          # the first park is not a retry
+            continue
+        not_before = r.next_attempt_at or (r.parked_at + _retry_wait(attempts))
+        if not_before.tzinfo is None:
+            not_before = not_before.replace(tzinfo=timezone.utc)
+        if not_before > now:
+            continue
+        if compute_dedup_key(r.source, r.object_type, r.source_object_id, None) != r.dedup_key:
+            continue                                      # a versioned object: see find_unread
+        due.append(r)
+    return due
+
+
+def give_up_parked_extractions(engine, org_id: str, *, now: datetime | None = None) -> int:
+    """Dead-letter every pending extraction park whose message has reached the limit, saying why.
+    Returns how many. A message given up is visible as such — never left `pending` for ever."""
+    now = now or datetime.now(timezone.utc)
+    with engine.connect() as c:
+        rows = c.execute(_FIND_PARKED, {"o": org_id, "lim": 10_000, "now": now,
+                                        "codes": sorted(NEEDS_REEXTRACTION)}).fetchall()
+    over = [r for r in rows
+            if int(r.message_parks or 0) + int(r.row_attempts or 0) >= MAX_EXTRACTION_ATTEMPTS + 1]
+    if not over:
+        return 0
+    with engine.begin() as c:
+        for r in over:
+            c.execute(_GIVE_UP, {"o": org_id, "e": r.event_id,
+                                 "why": (f"extraction parked {int(r.message_parks or 0)} time(s) and "
+                                         f"was re-read {int(r.row_attempts or 0)} time(s) "
+                                         "without landing; given up")})
+    return len(over)
+
+
+def settle_parked_extractions(engine, org_id: str, event_ids: list[str], *,
+                              now: datetime | None = None) -> dict[str, int]:
+    """After a re-land: the park of every event a new copy replaced is settled `superseded`; the
+    park of every event that came back (`restore`) advances its own ladder."""
+    if not event_ids:
+        return {"superseded": 0, "advanced": 0}
+    now = now or datetime.now(timezone.utc)
+    with engine.begin() as c:
+        superseded = c.execute(_SUPERSEDE_PARK, {"o": org_id, "status": PARK_SUPERSEDED,
+                                                 "sup": SUPERSEDED,
+                                                 "ids": list(event_ids)}).rowcount
+        advanced = 0
+        for e in event_ids:
+            attempts = c.execute(text(
+                "select refetch_attempts from parked_events where org_id = :o and event_id = :e "
+                "and status = 'pending'"), {"o": org_id, "e": e}).scalar()
+            if attempts is None:
+                continue
+            advanced += c.execute(_ADVANCE_PARK, {
+                "o": org_id, "e": e, "now": now,
+                "next": now + _retry_wait(int(attempts) + 2)}).rowcount
+    return {"superseded": int(superseded or 0), "advanced": advanced}
+
+
+__all__ = ["EXTRACTION_RETRY_BASE", "MAX_EXTRACTION_ATTEMPTS", "PARK_SUPERSEDED", "SUPERSEDED",
+           "find_parked_extractions", "find_unread", "give_up_parked_extractions",
+           "recover_orphans", "restore", "set_aside", "settle_parked_extractions",
            "to_raw_object"]
