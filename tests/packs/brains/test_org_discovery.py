@@ -659,17 +659,29 @@ def test_a_brain_write_with_brain_expert_is_refused_by_the_database(conn):
 
 def test_nothing_outside_the_publisher_writes_a_brain_entry(conn):
     """J4: writes outside the L6 pipeline = 0. Asserted structurally — the ONE insert into
-    `learned_brain_entries` in the whole engine lives in `feedback/publisher.publish_brain`."""
+    `learned_brain_entries` in the whole engine lives in `feedback/publisher.publish_brain`.
+
+    ⛔ READ OFF THE AST, NOT THE SOURCE TEXT. The text scan broke on `feedback/target_policy.py`
+    (32a5c3a4), whose comments QUOTE the publisher's insert to explain who writes and who reads.
+    `derivation_dag_check._constants` is every string a module builds that is not a docstring —
+    a `text(...)` argument, a module-level SQL constant passed by name, a raw `exec_driver_sql`
+    string, an f-string over a bound table name — and whitespace is normalised below, so a
+    statement split across lines is seen too. (`target_policy.sql_literals` reads only literals
+    inside `text(...)` and misses the second, third and fourth.)"""
+    import ast
     import pathlib
+
+    from scripts.derivation_dag_check import _constants
 
     root = pathlib.Path(og.__file__).resolve().parents[3] / "genios_engine"
     writers = []
     for py in root.rglob("*.py"):
-        body = py.read_text()
-        for verb in ("insert into learned_brain_entries", "update learned_brain_entries",
-                     "insert into temporary_memories"):
-            if verb in body:
-                writers.append(py.relative_to(root).as_posix())
+        for literal in _constants(ast.parse(py.read_text())):
+            sql = " ".join(literal.lower().split())
+            for verb in ("insert into learned_brain_entries", "update learned_brain_entries",
+                         "insert into temporary_memories"):
+                if verb in sql:
+                    writers.append(py.relative_to(root).as_posix())
     assert sorted(set(writers)) == ["feedback/publisher.py"]
 
 
