@@ -890,7 +890,8 @@ class DependencySweep:
 #: neither endpoint: it answers "whose conversation was this said in", which the graph already
 #: knows because the message itself was written to somebody.
 _EVENT_PARTY = (
-    "select r.event_id as event_id, f.subject_node_id as node_id "
+    "select r.event_id as event_id, f.subject_node_id as node_id, "
+    "       n.canonical_key as canonical_key "
     "from graph_source_refs r "
     "join graph_facts f on f.fact_version_id = r.fact_version_id and f.org_id = r.org_id "
     "join graph_nodes n on n.org_id = f.org_id and n.node_id = f.subject_node_id "
@@ -899,17 +900,30 @@ _EVENT_PARTY = (
 )
 
 
-def event_parties(conn, org_id: str) -> dict[str, str]:
+def event_parties(conn, org_id: str, us: frozenset[str] = frozenset()) -> dict[str, str]:
     """`{event_id: node_id}` — one counterparty per event, chosen deterministically.
 
     SORTED AND FIRST, not "whichever the driver returned". Two sweeps at one instant must anchor a
     statement on the same person, or the fact flaps between two nodes and each looks like it
     stopped being true.
+
+    ⛔ SORTED BY CONTENT, AND NEVER ON US (yc2_w27/M19.C3.L-logic.V1.U04). This sorted node ids,
+    which are minted at random: "first" was a coin toss per tenant, so a rebuild — or the golden
+    replay of a case — anchored one statement on a different person, and on the founder's own sent
+    mail it could pick the founder himself, presenting the account holder as the counterparty of
+    his own words. `us` (the tenant's own addresses, `context/runner._internal_emails`) is passed
+    over whenever anyone else is in the thread; the rest are ordered by canonical key, the node id
+    breaking only a tie between two nodes with one key.
     """
-    found: dict[str, set[str]] = {}
+    found: dict[str, set[tuple[str, str]]] = {}
     for row in conn.execute(text(_EVENT_PARTY), {"o": org_id}):
-        found.setdefault(str(row.event_id), set()).add(str(row.node_id))
-    return {event: sorted(nodes)[0] for event, nodes in found.items() if nodes}
+        key = str(getattr(row, "canonical_key", None) or "").strip().lower()
+        found.setdefault(str(row.event_id), set()).add((key, str(row.node_id)))
+    out: dict[str, str] = {}
+    for event, parties in found.items():
+        others = [p for p in parties if p[0] not in us] or list(parties)
+        out[event] = sorted(others)[0][1]
+    return out
 
 
 def _stated_rows(correlation: DependencyCorrelation, party_of: Mapping[str, str]
@@ -1118,7 +1132,9 @@ def refresh_dependency_chains(store, org_id: str, *, eval_time: datetime,
     with store.engine.connect() as conn:
         # Resolved here rather than inside `_fact_rows` so that function stays pure and the rule
         # it encodes can be read without a database.
-        rows = list(rows) + _stated_rows(correlation, event_parties(conn, org_id))
+        from genios_engine.context.runner import _internal_emails
+        rows = list(rows) + _stated_rows(
+            correlation, event_parties(conn, org_id, us=_internal_emails(store, org_id)))
     with store.engine.begin() as conn:
         written, unchanged, closed = _write_facts(conn, org_id=org_id, rows=rows, now=at)
         # WHAT THIS SWEEP WAS GIVEN AND WHAT IT PRODUCED, published rather than returned and

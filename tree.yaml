@@ -3141,6 +3141,19 @@ yc2_w27:
                       artifact: genios_engine/deliver/render.py
                       verify: .venv/bin/python -m pytest tests/deliver/test_the_narrator_sees_its_facts_in_one_order.py tests/deliver -q
                       depends_on: [M19.C3.L-integration.V2.U01]
+                    - id: M19.C3.L-logic.V1.U04
+                      what: >
+                        A statement nobody could resolve is anchored on the counterparty, chosen by
+                        content. `event_parties` took "sorted and first" over node ids, which are
+                        minted at random: two identical runs anchored one statement on two
+                        different people — and one of them was the founder himself, the account
+                        holder, presented as the counterparty of his own sent mail (found driving
+                        F25: one run's decider saw Kavitha's thread, the next saw "Arjun Rao").
+                        The tenant's own addresses are passed over when anyone else is in the
+                        thread, and the rest are ordered by canonical key.
+                      artifact: genios_engine/context/correlation_dependency.py
+                      verify: .venv/bin/python -m pytest tests/context/test_a_stated_dependency_anchors_on_the_counterparty.py tests/context/test_a_dependency_nobody_could_resolve.py -q
+                      depends_on: [M19.C3.L-integration.V2.U01]
 
         - id: M19.C4
           name: The exam

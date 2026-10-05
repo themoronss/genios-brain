@@ -172,14 +172,16 @@ def test_the_party_lookup_actually_executes() -> None:
         c.execute(sql("create table graph_facts (org_id text, fact_version_id text, "
                       "subject_node_id text, status text)"))
         c.execute(sql("create table graph_nodes (org_id text, node_id text, node_type text, "
-                      "valid_to text)"))
+                      "canonical_key text, valid_to text)"))
         c.execute(sql("insert into graph_source_refs values ('o','evt_1','fv_1')"))
         c.execute(sql("insert into graph_facts values ('o','fv_1','n_b','active')"))
-        c.execute(sql("insert into graph_nodes values ('o','n_b','person',null)"))
-        # a second party on the same event: the choice must be deterministic, not driver order
+        c.execute(sql("insert into graph_nodes values ('o','n_b','person','b@x.test',null)"))
+        # a second party on the same event: the choice must be deterministic, not driver order —
+        # and by CONTENT, the canonical key, never the randomly minted id
+        # (tests/context/test_a_stated_dependency_anchors_on_the_counterparty.py)
         c.execute(sql("insert into graph_source_refs values ('o','evt_1','fv_2')"))
         c.execute(sql("insert into graph_facts values ('o','fv_2','n_a','active')"))
-        c.execute(sql("insert into graph_nodes values ('o','n_a','person',null)"))
+        c.execute(sql("insert into graph_nodes values ('o','n_a','person','a@x.test',null)"))
         got = event_parties(c, "o")
 
     assert got == {"evt_1": "n_a"}, "sorted-and-first, so two sweeps anchor on the same person"
