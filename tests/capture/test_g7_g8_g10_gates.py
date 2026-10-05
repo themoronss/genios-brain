@@ -602,7 +602,8 @@ def test_g7_the_same_corpus_captured_a_second_time_from_scratch_scores_identical
     engine = get_engine(gate_org)
     with engine.begin() as conn:
         for table in ("qualified_signals", "qualification_drops", "signal_lifecycle",
-                      "prepared_content", "raw_payloads", "parked_events"):
+                      "prepared_content", "raw_payloads", "parked_events",
+                      "message_fingerprints"):
             conn.execute(text(f"delete from {table} where org_id = :o"), {"o": ORG})
         # the corpus's own landing rows and extractions; the SEEDED HISTORY stays, because the
         # baseline is an input to the replay and not part of it
@@ -1149,7 +1150,8 @@ def test_g8_a_below_floor_signal_leaves_an_explainable_row_and_never_reaches_the
     engine = get_engine(gate_org)
     with engine.begin() as c:
         for table in ("qualified_signals", "qualification_drops", "signal_lifecycle",
-                      "prepared_content", "raw_payloads", "parked_events"):
+                      "prepared_content", "raw_payloads", "parked_events",
+                      "message_fingerprints"):
             c.execute(text(f"delete from {table} where org_id = :o"), {"o": ORG})
         c.execute(text("delete from l1_extraction_results where org_id = :o "
                        "and event_id not like 'evt_gate_hist%'"), {"o": ORG})
@@ -1211,7 +1213,8 @@ def test_g8_the_doc_06_group_acceptance_gate_passes_on_stored_rows(gate_org, mon
     engine = get_engine(gate_org)
     with engine.begin() as c:
         for table in ("qualified_signals", "qualification_drops", "signal_lifecycle",
-                      "prepared_content", "raw_payloads", "parked_events"):
+                      "prepared_content", "raw_payloads", "parked_events",
+                      "message_fingerprints"):
             c.execute(text(f"delete from {table} where org_id = :o"), {"o": ORG})
         c.execute(text("delete from l1_extraction_results where org_id = :o "
                        "and event_id not like 'evt_gate_hist%'"), {"o": ORG})
@@ -1391,7 +1394,8 @@ def test_g10_the_shadow_diff_reports_and_explains_every_line_on_a_real_tenant(ga
                             ctx=AuthCtx(org_id=ORG, actor_id="founder@genios.test"))
     with engine.begin() as c:
         for table in ("qualified_signals", "qualification_drops", "signal_lifecycle",
-                      "prepared_content", "raw_payloads", "parked_events"):
+                      "prepared_content", "raw_payloads", "parked_events",
+                      "message_fingerprints"):
             c.execute(text(f"delete from {table} where org_id = :o"), {"o": ORG})
         c.execute(text("delete from l1_extraction_results where org_id = :o "
                        "and event_id not like 'evt_gate_hist%'"), {"o": ORG})

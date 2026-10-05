@@ -881,11 +881,26 @@ def test_an_approver_resolves_through_the_identity_layers_own_keys(conn):
     c.execute(text("insert into graph_aliases (org_id, alias_type, alias_key, node_id, origin) "
                    "values (:o, 'person_name', 'rohit sharma', 'node_rohit', 'observed')"),
               {"o": org})
+    # The NAME rung binds only one of the tenant's OWN people (7faff157, PP-1): the node's
+    # canonical key must be an active seat, the org's own address or a connected account.
+    c.execute(text("insert into graph_nodes (node_id, version, org_id, node_type, canonical_key, "
+                   "display_name) values ('node_rohit', 1, :o, 'person', 'rohit@acme.io', "
+                   "'Rohit Sharma')"), {"o": org})
+    c.execute(text("insert into org_seats (org_id, seat_id, email, active) "
+                   "values (:o, 'seat_rohit', 'rohit@acme.io', true)"), {"o": org})
+    # ...and a name that only a STRANGER answers to resolves to nobody (the negative control).
+    c.execute(text("insert into graph_aliases (org_id, alias_type, alias_key, node_id, origin) "
+                   "values (:o, 'person_name', 'arjun', 'node_arjun_buyer', 'observed')"),
+              {"o": org})
+    c.execute(text("insert into graph_nodes (node_id, version, org_id, node_type, canonical_key, "
+                   "display_name) values ('node_arjun_buyer', 1, :o, 'person', "
+                   "'arjun@bigcustomer.example', 'Arjun')"), {"o": org})
     seed_founder(c, org)
 
     assert org_rule_ingest.resolve_approver_node(c, org_id=org, name="CFO@acme.io") == "node_cfo"
     assert org_rule_ingest.resolve_approver_node(
         c, org_id=org, name="Rohit Sharma") == "node_rohit"
+    assert org_rule_ingest.resolve_approver_node(c, org_id=org, name="Arjun") is None
     assert org_rule_ingest.resolve_approver_node(
         c, org_id=org, name="Founder") == "node_founder_1"
     assert org_rule_ingest.resolve_approver_node(c, org_id=org, name="the board") is None

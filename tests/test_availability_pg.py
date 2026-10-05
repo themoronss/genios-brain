@@ -297,7 +297,8 @@ def test_ooo_email_goes_gate_l1_qes_l2_to_person_availability(pg_store, monkeypa
                              "evidence": cite("Anisha"), "confidence_bp": 9000}],
         "availability": [{"person": "sender", "kind": "leave", "from": "from 15th",
                           "to": "22nd September", "coverage_person": "Priya",
-                          "evidence_text": "I am on leave from 15th to 22nd September"}],
+                          "evidence": cite("I am on leave from 15th to 22nd September"),
+                          "confidence_bp": 9000}],
     }
 
     class _Mailbox:

@@ -452,10 +452,14 @@ def test_a_situation_no_correlation_produced_is_named_but_never_scored(pilot):
     historical window and out of the read by accident.
     """
     assert pilot.direct_writer_situations, "the swept tenant has period readings to set aside"
-    assert {t for _s, _a, t in pilot.direct_writer_situations} == {
-        "admin_period_review", "pipeline_period_review", "support_period_review"}
-    # One tenant node carries all three; none of them is an anchor-path subject.
-    assert len({a for _s, a, _t in pilot.direct_writer_situations}) == 1
+    # TWO direct writers on this tenant, and only two: `periodic.py`'s period readings, and —
+    # since 3d88b894 — `analytic_situations.py`'s movement reading, which this fixture's falling
+    # series and named cohort trigger. Both insert with a synthetic correlation id.
+    period = {"admin_period_review", "pipeline_period_review", "support_period_review"}
+    assert {t for _s, _a, t in pilot.direct_writer_situations} == period | {"analytic_movement"}
+    # One tenant node carries all three period readings; no direct-writer row is an anchor-path
+    # subject.
+    assert len({a for _s, a, t in pilot.direct_writer_situations if t in period}) == 1
     assert not ({a for _s, a, _t in pilot.direct_writer_situations}
                 & {a for _s, a, _t in pilot.anchor_situations})
     assert "written by NEITHER path" in SD.render(pilot)

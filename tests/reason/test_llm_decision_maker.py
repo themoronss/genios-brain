@@ -417,13 +417,25 @@ class ScoringLLM(FakeLLM):
 
     It prefers them in REVERSE alphabetical order, so the winner is chosen by this answer rather
     than by anything the formula would have picked.
+
+    It also answers R-1. Since 10a4f14f the orchestrator asks `reason/llm_interpretation` — through
+    the SAME switch and the SAME client — before a run reaches the decision maker, so a live run
+    makes two calls. R-1's are kept apart in `r1_prompts` and answered with a valid reading that
+    finds nothing ambiguous: the snapshot is unchanged, and the answer is cached like the
+    decision's, so a replay can be held to zero calls of either kind.
     """
 
     def __init__(self, confidence=4_000):
         super().__init__()
         self.confidence = confidence
+        self.r1_prompts: list[str] = []
 
     def call(self, prompt, *, max_tokens=4096):
+        if '{"readings": [' in prompt.rsplit("\n", 1)[-1]:
+            self.r1_prompts.append(prompt)
+            reading = {"readings": []}
+            return LLMResult(parsed=reading, raw=json.dumps(reading), input_tokens=10,
+                             output_tokens=5, model=self.model)
         self.prompts.append(prompt)
         template = json.loads(prompt.rsplit("\n", 1)[-1])
         ids = sorted(template["scores"], reverse=True)
@@ -486,6 +498,9 @@ def pg_org(pg_engine, request):
 
 def test_an_llm_decision_persists_verifies_and_replays_on_real_postgres(
         pg_engine, pg_org, monkeypatch):
+    from genios_engine.reason import llm_interpretation
+
+    llm_interpretation._reset_for_tests()
     fake = ScoringLLM(confidence=4_000)          # under the formula's 4,500 floor
     monkeypatch.setattr(llm_dm, "enabled_for", lambda _org: True)
     monkeypatch.setattr(llm_dm, "client", lambda: fake)
@@ -496,7 +511,8 @@ def test_an_llm_decision_persists_verifies_and_replays_on_real_postgres(
         evaluation_time=PG_NOW, trigger_kind="email.received", trigger_ref="event_1",
         mode=ExecutionMode.LIVE, config_snapshot_id=None))
 
-    assert len(fake.prompts) == 1
+    assert len(fake.prompts) == 1                # one decision...
+    assert len(fake.r1_prompts) == 1             # ...and one R-1 reading before it
     assert execution.decision.outcome == DecisionOutcome.DECISION
     assert execution.decision.confidence_bp == 4_000
     selected = execution.selected_candidate
@@ -519,3 +535,4 @@ def test_an_llm_decision_persists_verifies_and_replays_on_real_postgres(
                                              orchestrator=orchestrator)
     assert comparison.matches
     assert len(fake.prompts) == 1                # replay was answered from the cache
+    assert len(fake.r1_prompts) == 1             # R-1's reading too
