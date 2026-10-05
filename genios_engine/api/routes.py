@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 import threading
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:                 # `_run_l2_chain`'s `eval_time` annotation only
+    from datetime import datetime
 
 from fastapi import (APIRouter, BackgroundTasks, Body, Depends, Header, HTTPException,
                      Query, Request)
@@ -682,9 +686,13 @@ def _replay_l2_history(org_id: str) -> bool:
     return moved
 
 
-def _run_l2_chain(org_id: str) -> bool:
+def _run_l2_chain(org_id: str, *, eval_time: datetime | None = None) -> bool:
     """THE chain, unguarded: provision → L2 → L4 → cards. Call `_run_l2`, which holds the org
-    lease around it. False when the pass failed (logged here), True otherwise."""
+    lease around it. False when the pass failed (logged here), True otherwise.
+
+    `eval_time` is the ONE instant every stage is judged at — `None`, which every production
+    caller passes, is now. A replay passes the instant its case happened at (STEP-01): before
+    this, each stage read its own clock and a case could only ever be judged at the wall clock."""
     from genios_engine.platform.stage_timer import stage
     # EVERYTHING LAYER 3 NEEDS BEFORE IT CAN SAY ANYTHING, first, every time.
     #
@@ -715,7 +723,7 @@ def _run_l2_chain(org_id: str) -> bool:
 
     from genios_engine.platform import funnel as _funnel
     from genios_engine.platform.canonical import stable_id as _stable_id
-    _sweep_at = _fdt.now(_ftz.utc)
+    _sweep_at = eval_time or _fdt.now(_ftz.utc)
     _sweep_id = _stable_id("fsweep", {"org": org_id, "at": _sweep_at.isoformat()})
 
     def _count(stage_name: str, n) -> None:
@@ -741,7 +749,7 @@ def _run_l2_chain(org_id: str) -> bool:
         with stage("l2.process_pending", org_id) as st:
             result = process_pending(org_id=org_id, store=_graph, llm=_llm,
                                      registry=_registry,
-                                     crypto_key=get_settings().crypto_key)
+                                     crypto_key=get_settings().crypto_key, eval_time=eval_time)
             st["processed"] = result.get("processed", 0) if isinstance(result, dict) else 0
         _charge_ingestion(org_id, result)
         # ⛔ `signals_detected` COMES FROM CAPTURE'S PUBLISHER, AND FROM NOTHING ELSE HERE.
@@ -761,7 +769,7 @@ def _run_l2_chain(org_id: str) -> bool:
 
         from genios_engine.reason.runner import run_all as run_l3    # L3 after the graph updates
         with stage("l4.run_all", org_id):
-            _l3 = run_l3(org_id=org_id, store=_graph, registry=_registry)
+            _l3 = run_l3(org_id=org_id, store=_graph, registry=_registry, eval_time=eval_time)
         _outcomes = (_l3 or {}).get("outcomes") if isinstance(_l3, dict) else None
         # ⛔ `nodes` WAS RELAYED HERE AND IT IS NOT THIS NUMBER. `run_all`'s `nodes` is
         # `len(graph_nodes read)` — the subjects the sweep EXAMINED, counted before any capability
@@ -783,7 +791,7 @@ def _run_l2_chain(org_id: str) -> bool:
             from genios_engine.deliver.pipeline import build_cards_for_org
             with stage("deliver.build_cards", org_id):
                 _cards = build_cards_for_org(graph=_graph, card_store=_card_store, org_id=org_id,
-                                             llm=_llm, registry=_registry)
+                                             llm=_llm, registry=_registry, eval_time=eval_time)
             _count(_funnel.CARD_DELIVERED,
                    (_cards or {}).get("built") if isinstance(_cards, dict) else None)
             # P4 post-passes (reason/team, reason/verify — SCREEN_INTEL_P4 §3.1): deterministic
@@ -792,7 +800,8 @@ def _run_l2_chain(org_id: str) -> bool:
                 from datetime import datetime as _dt, timezone as _tz
                 from genios_engine.reason.team.postpass import run_post_passes
                 with stage("post.passes", org_id):
-                    run_post_passes(_graph.engine, _card_store, org_id, now=_dt.now(_tz.utc))
+                    run_post_passes(_graph.engine, _card_store, org_id,
+                                    now=eval_time or _dt.now(_tz.utc))
             except Exception:      # noqa: BLE001
                 _log.exception("post-passes failed for org_id=%s", org_id)
     except Exception:
