@@ -133,7 +133,7 @@ class _Gmail(ComposioGmailConnector):
         self.full_fetches.append(mid)
         return self._full
 
-    def _attachment_bytes(self, mid, attachment_id):
+    def _attachment_bytes(self, mid, attachment_id, file_name=None):
         return b"%PDF-1.7 fake contract bytes"
 
 

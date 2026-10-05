@@ -197,6 +197,27 @@ def _parse_ts(m: dict) -> datetime:
     return datetime.now(timezone.utc)
 
 
+#: What `GMAIL_GET_ATTACHMENT` is told to call the download when the caller has no filename.
+#: The toolkit requires a non-empty `file_name`; the attachment itself is found by its id.
+_DEFAULT_ATTACHMENT_NAME = "attachment"
+
+
+def _shape(value, depth: int = 0):
+    """A response's STRUCTURE with every value replaced by its type — the part of a provider
+    answer an error may carry. Strings become their length, lists their first element's shape."""
+    if depth > 4:
+        return "…"
+    if isinstance(value, dict):
+        return {str(k): _shape(v, depth + 1) for k, v in list(value.items())[:20]}
+    if isinstance(value, (list, tuple)):
+        return [_shape(value[0], depth + 1), f"×{len(value)}"] if value else []
+    if isinstance(value, str):
+        return f"str[{len(value)}]"
+    if isinstance(value, (bytes, bytearray)):
+        return f"bytes[{len(value)}]"
+    return type(value).__name__
+
+
 class ComposioGmailConnector:
     source = "gmail"
 
@@ -278,7 +299,8 @@ class ComposioGmailConnector:
         d = r.get("data", r) if isinstance(r, dict) else {}
         return d if isinstance(d, dict) else {}
 
-    def fetch_attachment(self, message_id: str, attachment_id: str) -> bytes:
+    def fetch_attachment(self, message_id: str, attachment_id: str, *,
+                         file_name: str | None = None) -> bytes:
         """L1.3.8-U1 — download one attachment's bytes, and RAISE when that does not happen.
 
         The sibling `_attachment_bytes` swallows every error into ``b""``, which is right for a
@@ -295,8 +317,15 @@ class ComposioGmailConnector:
             raise ValueError(
                 f"no provider attachment id for message {message_id!r} — the parked reference "
                 "carries only a filename, which Gmail cannot be asked for")
+        # ⛔ STEP-18 B19 · `file_name` IS REQUIRED. Composio's toolkit (20260915_00) refuses the call
+        # without it — "Missing required fields: file_name" — and the toolkit version is not
+        # pinned here, so the requirement arrived unannounced: on the design partner's org every
+        # attachment fetch since 3 Oct was refused (88 of 88), at capture and on every refetch.
+        # It names the DOWNLOADED file; the attachment is found by `attachment_id`. So the
+        # attachment's own name when the caller has it, a neutral one when it does not.
         r = self._execute("GMAIL_GET_ATTACHMENT",
-                          {"message_id": message_id, "attachment_id": attachment_id})
+                          {"message_id": message_id, "attachment_id": attachment_id,
+                           "file_name": (file_name or "").strip() or _DEFAULT_ATTACHMENT_NAME})
         if isinstance(r, dict) and r.get("successful") is False:
             # Composio reports a tool failure in the envelope rather than by raising, so a
             # response that "arrived" can still be a 404. The message text is what
@@ -306,14 +335,19 @@ class ComposioGmailConnector:
         d = r.get("data", r) if isinstance(r, dict) else {}
         data = _b64url(d.get("data") or d.get("attachmentData") or d.get("body") if isinstance(d, dict) else "")
         if not data:
+            # ⛔ STEP-18 B19 · SAY WHAT ARRIVED. The toolkit documents `data` only as "data from the
+            # action execution", so a response in a shape this reader does not know must name
+            # that shape — keys and value types, NEVER a value — and the refetch ladder stores it
+            # in `parked_events.refetch_last_error`, where it can be read without reading content.
             raise RuntimeError(f"gmail returned no attachment data for "
-                               f"{message_id}::{attachment_id}")
+                               f"{message_id}::{attachment_id}: response shape {_shape(r)}")
         return data
 
-    def _attachment_bytes(self, mid: str, attachment_id: str | None) -> bytes:
+    def _attachment_bytes(self, mid: str, attachment_id: str | None,
+                          file_name: str | None = None) -> bytes:
         """Download one attachment's bytes via Gmail's attachments.get. Defensive → b'' on any error."""
         try:
-            return self.fetch_attachment(mid, attachment_id or "")
+            return self.fetch_attachment(mid, attachment_id or "", file_name=file_name)
         except Exception:      # noqa: BLE001 — a sync never dies on one file; the refetch ladder
             return b""         # is the path that needs the reason, and it calls fetch_attachment
 
@@ -647,7 +681,7 @@ class ComposioGmailConnector:
                     to_emails=to_emails, cc_emails=cc_emails, status=status))
                 continue
             raw_bytes = _b64url(a.get("data")) if a.get("data") else \
-                self._attachment_bytes(mid, a.get("attachmentId"))
+                self._attachment_bytes(mid, a.get("attachmentId"), a.get("filename"))
             if not raw_bytes:
                 # a file we WANTED (pdf/docx/…) whose download failed → park + retry, never lose it
                 objs.append(self._attachment_stub(

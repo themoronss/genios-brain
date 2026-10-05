@@ -2881,16 +2881,25 @@ yc2_w27:
                 - level: 0
                   units:
                     - id: M17.C3.L-contract.V0.U01
+                      retired: >
+                        RETIRED IN BUILD, 2026-10-05 — replaced by U05. A manual production call
+                        is not needed: the connector's no-data error now carries the response's
+                        SHAPE, so the first refetch after the deploy records it in
+                        `parked_events.refetch_last_error`, read-only, where it can be read back.
                       what: >
-                        HARSH, about ten minutes, in a production shell: one live
-                        `GMAIL_GET_ATTACHMENT` call WITH `file_name` against one already-parked
-                        attachment, and the response SHAPE — keys and types, no bytes, no names —
-                        committed as a fixture. Toolkit 20260915_00 documents `data` only as "data
-                        from the action execution", so the connector is built against the real
-                        shape, not a guess.
+                        (retired) HARSH records one live `GMAIL_GET_ATTACHMENT` response shape.
                       artifact: tests/capture/connectors/fixtures/gmail_get_attachment.shape.json
                       verify: .venv/bin/python -m pytest tests/capture/connectors/test_the_attachment_shape_is_recorded.py -q
                       depends_on: []
+                    - id: M17.C3.L-contract.V0.U05
+                      what: >
+                        ADDED IN BUILD. When a `GMAIL_GET_ATTACHMENT` response carries no bytes the
+                        connector knows how to read, the error names the response's SHAPE — keys
+                        and value types, never a value — so the shape the current toolkit returns
+                        is learned from the first refetch after the deploy instead of guessed.
+                      artifact: genios_engine/capture/connectors/composio.py
+                      verify: .venv/bin/python -m pytest tests/capture/connectors/test_attachment_fetch_sends_file_name.py tests/capture/connectors/test_fastpath_attachment_recovery.py -q
+                      depends_on: [M16.C6.L-integration.V0.U01]
             - layer: integration
               levels:
                 - level: 1
@@ -2903,7 +2912,7 @@ yc2_w27:
                         it, so one change serves both.
                       artifact: genios_engine/capture/connectors/composio.py
                       verify: .venv/bin/python -m pytest tests/capture/connectors/test_attachment_fetch_sends_file_name.py tests/capture/connectors/test_fastpath_attachment_recovery.py tests/capture/documents/test_attachment_refetch.py tests/capture/parked/test_refetch_drain.py -q
-                      depends_on: [M17.C3.L-contract.V0.U01, M16.C6.L-integration.V0.U01]
+                      depends_on: [M17.C3.L-contract.V0.U05]
             - layer: data
               levels:
                 - level: 2
