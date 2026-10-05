@@ -3115,6 +3115,22 @@ yc2_w27:
                       artifact: tests/replays/engine_runner.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/replays/test_engine_runner.py -q
                       depends_on: [M19.C1.L-contract.V0.U01, M19.C1.L-logic.V1.U03, M19.C2.L-logic.V0.U01]
+            - layer: logic
+              levels:
+                - level: 1
+                  units:
+                    - id: M19.C3.L-logic.V1.U02
+                      what: >
+                        The quotes a card is written from break a tie on content. The narrator's
+                        "What was actually said (newest first)" list ordered only by `occurred_at`,
+                        so the quotes of one message — same instant — came back in Postgres's
+                        physical order, and two identical runs built two different prompts (found
+                        driving F27: the replay of a recorded case missed at the narrator). Ties
+                        now break on kind, event and quote — in production too, where the same
+                        situation re-narrated on the next sweep read a reshuffled prompt.
+                      artifact: genios_engine/deliver/card_builder.py
+                      verify: .venv/bin/python -m pytest tests/deliver/test_a_cards_quotes_break_ties_on_content.py tests/test_render_verified_quote_loader.py tests/test_render_evidence_selection.py -q
+                      depends_on: [M19.C3.L-integration.V2.U01]
 
         - id: M19.C4
           name: The exam

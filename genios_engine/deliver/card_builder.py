@@ -394,9 +394,14 @@ select o.kind, o.occurred_at, sr.evidence, sr.event_id, se.actor ->> 'email' as 
    and o.kind not like 'email_noise%'
    and o.kind != 'event_presence'
    and o.observation_id in (select observation_id from reachable)
- order by o.occurred_at desc nulls last
+ order by o.occurred_at desc nulls last, o.kind, sr.event_id, cast(sr.evidence as text)
  limit :lim
 """
+# ⛔ THE TIE-BREAK IS CONTENT. The quotes of one message share its instant, and `occurred_at` alone
+# left their order — and, at the LIMIT, which of them made it in — to the database's physical
+# order: two identical runs gave the narrator two different prompts (yc2_w27/M19.C3.L-logic.V1.U02,
+# tests/deliver/test_a_cards_quotes_break_ties_on_content.py). Never `observation_id`: it is minted
+# at random, which is the same problem with a stable look.
 
 
 def _quote_source_texts(conn, org_id: str, event_ids) -> dict[str, str]:
