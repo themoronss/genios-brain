@@ -48,12 +48,14 @@ only) or read in the code, and says which.
 |---|---|---|---|
 | 1 | [`04-NOW-VS-SHOULD-VS-EXPECTED.md`](04-NOW-VS-SHOULD-VS-EXPECTED.md) | **What you see now, what you should see, what you will see** — case by case: Startup India, Boardy, investors, programs, meetings, screen, hiring, bounces | Rohit |
 | 2 | [`05-HOW-THE-EXPERT-THINKS.md`](05-HOW-THE-EXPERT-THINKS.md) | **How it will work** — patterns, history, analytics, scenarios; who does what; four worked examples from your mailbox | Rohit, then everyone |
-| 3 | [`06-DECISIONS.md`](06-DECISIONS.md) | the twelve decisions only you can make, each with a recommendation and a default | Rohit |
+| 3 | [`06-DECISIONS.md`](06-DECISIONS.md) | the thirteen decisions only you can make, each with a recommendation and a default | Rohit |
 | 4 | [`00-START-HERE.md`](00-START-HERE.md) | the step table — status, owner, order, what each step moves | everyone |
 | 5 | [`01-CROSSCHECK.md`](01-CROSSCHECK.md) | what is actually true, measured, before planning — production, code, the Atlas, Harsh's branch | Harsh, coding agent |
 | 6 | [`02-PLAN.md`](02-PLAN.md) | the plan: sections → functions → components → units, each with expected · true · how · why · outcome · verify | Harsh, coding agent |
 | 7 | [`03-FINDINGS.md`](03-FINDINGS.md) | defects, false alarms, already built, genuinely missing, open questions, numbers with sources | everyone |
 | 8 | `STEP-nn-*.md` | one per step — what, why, how, what will happen, expected, verify, depends on, owner | whoever builds it |
+| 9 | `../../tree.yaml`, block `yc2_w27` | the next block as addressable units — 43 of them, each with one artifact and one verify command; `00-START-HERE.md` summarises it | whoever builds it |
+| 10 | `baseline/` | `production_state.sql` — every production statement behind the baseline, read-only — and the dated outputs | Harsh, whoever re-measures |
 
 ## Conventions (the same as `../YCW27/`)
 

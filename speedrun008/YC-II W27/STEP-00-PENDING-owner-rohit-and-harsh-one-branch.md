@@ -185,6 +185,11 @@ That is the floor `STEP-02` onward is measured from.
 - the baseline committed with its statements — ✅;
 - pushed and deployed — ⏳ batched, by Rohit's decision.
 
+**Re-checked 2026-10-05, 21:40 IST** (`git fetch origin`): `origin/harsh/mvp` is still `2c42722d`,
+and no other remote branch has moved — this branch is **0 behind, 33 ahead**. Nothing new to
+merge. The step's only open items are the two above. Neither blocks the next block
+(`yc2_w27`), which is built and committed locally until the batch is pushed.
+
 ## 6 · Verify
 
 ```

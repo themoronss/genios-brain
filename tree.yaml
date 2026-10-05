@@ -2722,11 +2722,11 @@ yc2_w27:
                   units:
                     - id: M16.C6.L-integration.V0.U01
                       what: >
-                        Both suites run in full and the green record replaces the red one:
-                        0 failed and 0 errors with the scratch database (the H0 gate, which re-runs
+                        Both suites run in full and the green record is kept beside the red one of
+                        2026-10-05: 0 failed and 0 errors with the scratch database (the H0 gate, which re-runs
                         tests/context, passes on its own once C4.U03, C4.U04 and C3.U02 land), and
                         0 failed without it.
-                      artifact: speedrun008/YC-II W27/baseline/2026-10-05/suite_with_database.txt
+                      artifact: speedrun008/YC-II W27/baseline/m16-green/suite_with_database.txt
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q -p no:cacheprovider && .venv/bin/python -m pytest -q -p no:cacheprovider
                       depends_on: [M16.C1.L-contract.V1.U02, M16.C2.L-logic.V0.U01,
                                    M16.C3.L-data.V1.U04, M16.C3.L-data.V0.U02,
