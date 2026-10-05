@@ -1672,21 +1672,35 @@ def _reread_connection(org_id: str, row, seen: dict):
     return seen[k]
 
 
+#: Parked extractions read again per pass — small, because each one is a model call again.
+_PARKED_REREAD_LIMIT = 20
+
+
 def _reread_unread(org_id: str, *, limit: int = 200) -> int:
-    """Read again the mail this tenant captured while its L1 was switched off
-    (`capture/landing/unread.py`), through the push door, so L2 can pull it. Bounded per call; the
-    rest follows on the next pass. Returns how many objects were handed to capture. Never raises."""
+    """Read again, through the push door, the mail L2 could not pull: mail this tenant captured
+    while its L1 was switched off, and mail whose extraction PARKED (`capture/landing/unread.py`,
+    STEP-18 B18 — bounded by its own ladder). Bounded per call; the rest follows on the next pass.
+    Returns how many objects were handed to capture. Never raises."""
     if _graph is None or _connections is None:
         return 0
     from genios_engine.capture.landing import unread
     eng = _graph.engine
+    parked_ids: list[str] = []
     try:
         # Callers hold the org's run lease, so no other pass is mid-flight: anything still set
         # aside is an orphan of a pass a deploy or crash interrupted.
         back = unread.recover_orphans(eng, org_id)
         if back:
             _log.info("re-read: %s rows from an interrupted pass returned org=%s", back, org_id)
+        # Give up first, so a message past its ladder is never offered again.
+        given_up = unread.give_up_parked_extractions(eng, org_id)
+        if given_up:
+            _log.info("re-read: %s parked extractions given up after their ladder org=%s",
+                      given_up, org_id)
         rows = unread.find_unread(eng, org_id, limit=limit)
+        parked = unread.find_parked_extractions(eng, org_id, limit=_PARKED_REREAD_LIMIT)
+        parked_ids = [r.event_id for r in parked]
+        rows = list(rows) + list(parked)
         if not rows:
             return 0
         if _llm_over_daily_cap(org_id):
@@ -1737,8 +1751,16 @@ def _reread_unread(org_id: str, *, limit: int = 200) -> int:
                                   "restored", back, len(ids), org_id)
                 except Exception:      # noqa: BLE001
                     _log.exception("re-read restore failed org=%s", org_id)
+    if parked_ids:
+        # After the restore: an event a new copy replaced is settled, one that came back advances
+        # its own ladder — so a parked mail is read, retried later or given up, never lost.
+        try:
+            settled = unread.settle_parked_extractions(eng, org_id, parked_ids)
+            _log.info("re-read: parked extractions settled %s org=%s", settled, org_id)
+        except Exception:      # noqa: BLE001
+            _log.exception("re-read: settling parked extractions failed org=%s", org_id)
     if handed:
-        _log.info("re-read %s objects captured while L1 was off org=%s", handed, org_id)
+        _log.info("re-read %s objects (unread and parked extractions) org=%s", handed, org_id)
     return handed
 
 
