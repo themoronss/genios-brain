@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 2_910, (
+    assert r["statements"] == 2_913, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -194,6 +194,10 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 2,908 → 2,910 by yc2_w27/M17.C2.U02 (STEP-18 B20/B18):
     # `capture/screen/fingerprint._without_set_aside_claims` reads which claiming events were set
     # aside and deletes their claims — one SELECT, one DELETE, both literals at their own call.
+    # ⛔ MOVED 2,910 → 2,913 by yc2_w27/M17.C2.U05 (STEP-18 B20): the disconnect-with-wipe in
+    # `api/routes.integration_disconnect` deletes the fingerprints of the events it deletes. ONE
+    # statement, counted three times: the template walk records each prefix of its
+    # `"…" + mine + ")"` concatenation, exactly as it counts the `raw_payloads` delete beside it.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

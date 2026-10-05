@@ -3212,6 +3212,13 @@ def integration_disconnect(tool: str, wipe_data: bool = False, scope: str = "wor
             wiped = c.execute(text("delete from raw_payloads where org_id=:o and event_id in "
                                    "(select event_id from source_events where org_id=:o and source=:s"
                                    + mine + ")"), params).rowcount
+            # ⛔ STEP-18 B20 · THE FINGERPRINTS GO WITH THEIR EVENTS. A message's claim outlives
+            # the row it names, so without this a reconnect re-synced every message straight into
+            # `seen_on_screen` — claimed by an event that no longer exists — and extracted nothing,
+            # silently. The tenant reset already deletes this table (`account_routes`).
+            c.execute(text("delete from message_fingerprints where org_id=:o and event_id in "
+                           "(select event_id from source_events where org_id=:o and source=:s"
+                           + mine + ")"), params)
             c.execute(text("delete from source_events where org_id=:o and source=:s" + mine),
                       params)
     _mirror_connection(org_id, source, status="disconnected", seat_id=seat_id)
