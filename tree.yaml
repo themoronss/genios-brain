@@ -3057,6 +3057,28 @@ yc2_w27:
                       artifact: tests/replays/model_sites.py
                       verify: .venv/bin/python -m pytest tests/replays/test_every_chain_model_site_is_recorded.py tests/test_every_llm_call_site_is_metered.py -q
                       depends_on: [M19.C1.L-logic.V0.U02]
+                    - id: M19.C1.L-logic.V1.U04
+                      what: >
+                        The ideal reader: a case's authored answers served per site and per object —
+                        a faithful reading of each prompt as written, taken from production's own
+                        verdict where 04 §2 records it — with every quote resolved to its offsets in
+                        the fenced content. It raises on a site, an object or a quote the case does
+                        not answer, so a cassette is never recorded from a guess. Added in build:
+                        the cassettes need a writer, and M19.C4.L-data.V3.U02 cannot record without one.
+                      artifact: tests/replays/ideal_reader.py
+                      verify: .venv/bin/python -m pytest tests/replays/test_ideal_reader.py -q
+                      depends_on: [M19.C1.L-contract.V0.U01, M19.C1.L-logic.V0.U02]
+                    - id: M19.C1.L-logic.V1.U05
+                      what: >
+                        The marking: a case's expectations judged against what a run reports — the
+                        gate, memory, cards (about / min / max / mentions, distinct across sweeps),
+                        forbidden terms and the witness — into pass, fail, not exercised or not
+                        expressible, each with its reason. Pure: judged on reports built in the test.
+                        Added in build: the founder test and the board both judge, and the rule must
+                        live in one place.
+                      artifact: tests/replays/marking.py
+                      verify: .venv/bin/python -m pytest tests/replays/test_marking.py -q
+                      depends_on: [M19.C1.L-contract.V0.U01]
 
         - id: M19.C2
           name: One clock for the sweep
@@ -3118,7 +3140,7 @@ yc2_w27:
                         says so; none passes on nothing.
                       artifact: tests/replays/specs/founder/
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/replays/test_founder_cases.py -q
-                      depends_on: [M19.C3.L-integration.V2.U01, M19.C4.L-data.V0.U01]
+                      depends_on: [M19.C3.L-integration.V2.U01, M19.C4.L-data.V0.U01, M19.C1.L-logic.V1.U04, M19.C1.L-logic.V1.U05]
             - layer: logic
               levels:
                 - level: 3
@@ -3147,7 +3169,7 @@ yc2_w27:
                         scratch database.
                       artifact: scripts/golden_score.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py
-                      depends_on: [M19.C4.L-data.V3.U02, M19.C4.L-logic.V3.U03]
+                      depends_on: [M19.C4.L-data.V3.U02, M19.C4.L-logic.V3.U03, M19.C1.L-logic.V1.U05]
                     - id: M19.C5.L-interface.V4.U02
                       what: >
                         The live evaluation, outside CI: the same cases against the real model,
