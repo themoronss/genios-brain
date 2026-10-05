@@ -52,6 +52,24 @@ PRODUCTION_SWITCHES: dict[str, Any] = {"anthropic_api_key": PLACEHOLDER_KEY,
 _REPO = Path(__file__).resolve().parents[2]
 
 
+#: The engine's in-process model caches, as (module, attribute). A golden run starts COLD, the way
+#: a fresh process does: these are keyed by content, so a second run of one case in one process
+#: was served answers the first run cached and took a different path — and its replay missed.
+#: `test_engine_runner` holds this list to every module-level model cache under `reason/`.
+COLD_CACHES: tuple[tuple[str, str], ...] = (
+    ("genios_engine.reason.llm_decision_maker", "_cache"),
+    ("genios_engine.reason.llm_decision_maker", "_calls_by_org_day"),
+    ("genios_engine.reason.llm_interpretation", "_cache"),
+)
+
+
+def cold_start() -> None:
+    """Empty every in-process model cache (`COLD_CACHES`) before a case runs."""
+    import importlib
+    for module, attribute in COLD_CACHES:
+        getattr(importlib.import_module(module), attribute).clear()
+
+
 class RunnerRefused(RuntimeError):
     """The runner will not start: no scratch database, a production host, or a mis-bound process."""
 
@@ -230,6 +248,7 @@ def run_case(case: FounderCase, llm: Any, *, org_id: str | None = None) -> CaseR
     # be switched on again.
     routes._LIVE_ORGS.discard(org)
     routes._take_signals_published(org)
+    cold_start()
     mailbox_cls, calendar_cls = _connectors()
 
     landed: list[Landed] = []

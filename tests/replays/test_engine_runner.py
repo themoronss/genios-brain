@@ -201,6 +201,32 @@ def test_every_door_is_handed_the_recorded_model_and_restored():
     assert after == before, "a door was left open after the run"
 
 
+def test_a_run_starts_with_every_model_cache_cold():
+    """A second run of one case in one process must not be served the first run's answers."""
+    import ast
+    import importlib
+    from pathlib import Path
+
+    reason = Path(__file__).resolve().parents[2] / "genios_engine" / "reason"
+    caches = set()
+    for path in reason.rglob("*.py"):
+        for node in ast.parse(path.read_text(encoding="utf-8")).body:
+            targets = (node.targets if isinstance(node, ast.Assign) else
+                       [node.target] if isinstance(node, ast.AnnAssign) else [])
+            for target in targets:
+                if isinstance(target, ast.Name) and target.id == "_cache":
+                    module = "genios_engine." + ".".join(
+                        path.relative_to(reason.parent).with_suffix("").parts)
+                    caches.add((module, "_cache"))
+    assert caches <= set(er.COLD_CACHES), (
+        f"in-process model caches the runner does not empty: {sorted(caches - set(er.COLD_CACHES))}")
+    for module, attribute in er.COLD_CACHES:
+        getattr(importlib.import_module(module), attribute)["sentinel"] = 1
+    er.cold_start()
+    for module, attribute in er.COLD_CACHES:
+        assert not getattr(importlib.import_module(module), attribute), (module, attribute)
+
+
 # =================================================================================================
 # 3 · the real chain, recorded and replayed
 # =================================================================================================
