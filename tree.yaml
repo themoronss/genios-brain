@@ -3131,6 +3131,18 @@ yc2_w27:
                       artifact: speedrun008/YC-II W27/golden-labels.md
                       verify: .venv/bin/python -m pytest tests/test_golden_labels_sheet.py -q
                       depends_on: []
+                - level: 2
+                  units:
+                    - id: M19.C4.L-data.V2.U04
+                      what: >
+                        The cassettes' file and its two operations: record a case (the ideal reader
+                        or a live model, through `CassetteRecorder`) and replay it (`RecordedLLM`),
+                        one JSON per case beside the specs, carrying what wrote it and at which
+                        commit, refusing a real name in any answer. Added in build: the cases need
+                        their cassettes written before M19.C5.L-interface.V4.U02 exists to write them.
+                      artifact: tests/replays/cassettes.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/replays/test_cassettes.py -q
+                      depends_on: [M19.C1.L-logic.V0.U02, M19.C1.L-logic.V1.U04, M19.C3.L-integration.V2.U01]
                 - level: 3
                   units:
                     - id: M19.C4.L-data.V3.U02
@@ -3140,7 +3152,7 @@ yc2_w27:
                         says so; none passes on nothing.
                       artifact: tests/replays/specs/founder/
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/replays/test_founder_cases.py -q
-                      depends_on: [M19.C3.L-integration.V2.U01, M19.C4.L-data.V0.U01, M19.C1.L-logic.V1.U04, M19.C1.L-logic.V1.U05]
+                      depends_on: [M19.C3.L-integration.V2.U01, M19.C4.L-data.V0.U01, M19.C1.L-logic.V1.U04, M19.C1.L-logic.V1.U05, M19.C4.L-data.V2.U04]
             - layer: logic
               levels:
                 - level: 3
