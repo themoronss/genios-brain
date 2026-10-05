@@ -31,7 +31,7 @@ morning better — and nothing should be learned from a single click or a silenc
 | 3.3 | outcomes close loops | `executive/collect.py`; `STEP-09` | a reply arrives, a meeting is booked, an application advances → the file's stage moves, the exact ask closes, the card resolves **with the outcome recorded** |
 | 3.4 | patterns update | `STEP-10` | your reply time, Boardy's conversion, a program's typical stage time — recomputed from outcomes, in the behaviour brain, **observe-only** (Atlas V.3) |
 | 3.5 | the open lane is reviewed weekly | the learning sweep (`api/routes.py:1310`) | recurring unclassified kinds are proposed to you as new stages or kinds; accepted ones flow into `STEP-11`'s playbooks |
-| 3.6 | calibration repaired, in shadow | `reason/authority.py:329`; `feedback/calibrate.py` | project `card_level`; auto-mute **logs** what it would mute and mutes nothing until you say otherwise |
+| 3.6 | calibration repaired, in shadow — **moved ahead into tree `yc2_w27/M18`** (Rohit's "B1", 2026-10-05) | `reason/authority.py:329-332`; `feedback/calibrate.py`; `platform/l4_activation.py`; `api/routes.py` | the shadow switch lands before the column: `run_calibration(apply=False)` records `would_mute` / `would_recover` / `would_nudge` and writes nothing else; `calibration_apply` is fail-closed and not default-on. **Arming stays here**, after `STEP-18` B22–B24 (a muted rule's cards vanish unexplained; a mute never lifts; any applied mute or nudge hides every open card of the pack) and `06` D13 |
 
 ## 4 · What will happen
 

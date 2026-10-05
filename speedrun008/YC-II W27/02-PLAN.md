@@ -46,7 +46,7 @@ YC-II W27 · GeniOS as a 30-year chief of staff
 | S4 The expert thinks | 2 | 13 | Claude |
 | S5 What you see | 2 | 11 | Claude |
 | S6 Learning from you | 1 | 6 | Claude |
-| SX Across | 2 | 6 + 19 bugs (U-SX-00 and B17–B19 added by the `STEP-00` re-do) | Claude, Harsh |
+| SX Across | 2 | 6 + 24 bugs (U-SX-00 and B17–B24 added on 2026-10-05) | Claude, Harsh |
 
 ---
 
@@ -237,8 +237,9 @@ STEP-17 real tests and STEP-18 known bugs run alongside, inside the step whose f
 
 # SX · Across — `STEP-17`, `STEP-18`
 
-- **U-SX-00** the database suite green — **first**, added by the `STEP-00` re-do (`STEP-17` §3.0) · **U-SX-01** Postgres in CI (in `STEP-01`) · **U-SX-02** every statement `EXPLAIN`ed · **U-SX-03** write paths that cannot write · **U-SX-04** health gate in deploy · **U-SX-05** this folder's step-status test
-- the bugs of `STEP-18`, each with its probe — B1–B16 from the analysis, B17–B19 from the `STEP-00` re-do
+- **U-SX-00** the database suite green — **first**, added by the `STEP-00` re-do (`STEP-17` §3.0; now the 16 units of tree `yc2_w27/M16`) · **U-SX-01** Postgres in CI (in `STEP-01`) · **U-SX-02** every statement `EXPLAIN`ed · **U-SX-03** write paths that cannot write · **U-SX-04** health gate in deploy · **U-SX-05** this folder's step-status test
+- the bugs of `STEP-18`, each with its probe — B1–B16 from the analysis, B17–B19 from the `STEP-00` re-do, B20–B24 from the root-cause runs of 2026-10-05
+- ⛔ **the next block is in `tree.yaml` as `yc2_w27`** — M16 (database suite), M17 (B17–B20), M18 (B1, in shadow), M19 (`STEP-01`); 43 units, proposed, awaiting Rohit's go (`00-START-HERE.md`)
 
 ---
 

@@ -1,8 +1,13 @@
 # STEP-01 · NEXT · the golden set — your mailbox becomes the exam
 
-**Owner:** Claude builds · Rohit labels (`06-DECISIONS.md` D12). **Depends on:** nothing — it can
-run while `STEP-00` is being merged. **Moves:** a before-score exists, and every later step is
-judged against it.
+**Owner:** Claude builds · Rohit labels (`06-DECISIONS.md` D12). **Depends on:** the database suite
+green — tree `yc2_w27/M16`: the runner runs on Postgres, and on a red suite no case's verify can be
+read. **Order (Rohit, 2026-10-05):** after the database part, B17–B19 and B1 (`yc2_w27/M16–M18`);
+this step is `yc2_w27/M19`. **Moves:** a before-score exists, and every later step is judged
+against it.
+
+⚠️ **Re-checked against the code on 2026-10-05, claim by claim** (§9). The runner described in the
+first draft would have flattered the engine; §3 is rewritten from what the check found.
 
 ---
 
@@ -18,8 +23,9 @@ Two exams, both run on every change.
    engine: a "runnable" mutation only asserts its strings are non-empty, and a blocked one runs
    `pytest.fail(...)` unconditionally under `xfail(strict=True)`
    (`tests/replays/test_golden_replays.py:34-48`) — so it **cannot** start passing when the
-   capability lands. The specs date from 12 Sep and several `blocked_on` texts are already stale.
-   This step makes the replays drive the engine.
+   capability lands. The specs were added on 24 Aug (`944b4f76` — the first draft of this file said
+   12 Sep), and several `blocked_on` texts were stale from the start. This step makes the replays
+   drive the engine.
 2. **A founder-mailbox set**, new: about 40 synthetic cases modelled on the real items in
    `04-NOW-VS-SHOULD-VS-EXPECTED.md` — the same shapes, with invented names and text, so no real
    content enters the repository. Each case holds the input events (mail headers and body,
@@ -33,18 +39,21 @@ audit puts this first (`CP-0`: *freeze fixtures and baseline before changing arc
 the Atlas states the stakes plainly (V.4): *if a frontier model with the same connectors matches
 GeniOS on the long-horizon prompts, the thesis is false, and the company should know it early.*
 
-## 3 · How
+## 3 · How — the units of tree `yc2_w27/M19`
 
 | # | Unit | Where | What |
 |---|---|---|---|
-| 3.1 | the case format | `tests/replays/specs/founder/*.json` | the existing `ReplaySpec` shape (`tests/replays/harness.py`), plus `events` (synthetic input) and `expected` (workstream, stage, lane, card fields, forbidden phrases and targets) |
-| 3.2 | **an engine-driving runner** | `tests/replays/engine_runner.py` | seeds a scratch org from a case's `events`, runs the real chain — `capture_event` → `process_pending` → `run_all` → `build_cards_for_org` — and returns what each stage produced: gate verdict, nodes, situations, signals, lane, card. It runs on the real-Postgres seam the suite already has (`GENIOS_TEST_DATABASE_URL`, `tests/conftest.py:79-138`), because the pipeline's SQL is Postgres SQL — and without it the test **fails** rather than skips |
-| 3.3 | deterministic replays of a model step | `tests/replays/harness.py` | the harness's `NoLLM` stays for every deterministic layer. Every model site gets a **`RecordedLLM`**: a cassette keyed by prompt hash that **fails on a miss**. The CI exam stays deterministic — the Atlas's own replay law: *"replay reads the receipt; it never calls the model again"* |
-| 3.4 | the strict xfails made real | `tests/replays/test_golden_replays.py` | a blocked mutation asserts its pass condition **through the runner**, so the day the capability lands it XPASSes and the marker must come off. A mutation that cannot be expressed as a runner assertion yet says so in its spec |
-| 3.5 | Postgres in CI | `.github/workflows/ci.yml` | a `postgres` service and `GENIOS_TEST_DATABASE_URL`, so the exam — and the 150 pg-gated test files — run on every push (absorbs half of `STEP-17`) |
-| 3.6 | a live evaluation, outside CI | `scripts/golden_eval.py --live` | runs the real model on the same cases and writes a scorecard — recall, precision, forbidden outputs, tokens, cost — to `speedrun008/YC-II W27/scores/`. Used to compare prompts and models *before* a change ships |
-| 3.7 | the scoreboard | `scripts/golden_score.py` | one table: founder must-detect, must-abstain, forbidden outputs; Atlas replays 01–07 passing vs blocked |
-| 3.8 | your label sheet | `speedrun008/YC-II W27/golden-labels.md` | the real items below, by sender and date only, one question each: *should this have reached you?* — yes · no · in the morning brief only |
+| 3.1 | the founder case · `M19.C1.L-contract.V0.U01` | `tests/replays/founder_case.py`; specs in `tests/replays/specs/founder/` | its own dataclass and loader — `load_specs` reads no subfolder (`tests/replays/harness.py:125`) and the contract test pins exactly 12 Atlas specs. A case holds: the sweep instants; synthetic `RawObject`s that keep the real header class (labels, `List-Unsubscribe`, an attachment as the `fetch_failed` stub production gets); the expected gate code, memory, lane and card identity across sweeps; forbidden names and phrases; an `expressible` map; and **a witness for every must-abstain case** — today nothing gets a card, so an abstain case would otherwise pass on nothing |
+| 3.2 | recorded model answers · `M19.C1.L-logic.V0.U02` · `M19.C1.L-logic.V1.U03` | `tests/replays/harness.py`; `tests/replays/model_sites.py` | `RecordedLLM`, keyed by `LLMClient.content_hash` (`context/llm/client.py:106`), thread-safe (`run_sync` runs a pool), and a miss **raises** naming the site and the hash. Every model site the chain can reach is listed and held equal to `_SITES` — the junk filter included: with no key, the tests' default, it never runs, so a mail production junked would pass |
+| 3.3 | one clock · `M19.C2.L-logic.V0.U01` | `api/routes.py` `_run_l2_chain` | an optional `eval_time` threaded to every stage and to the funnel's `sweep_at`. Today the chain reads `now()` (`:718`) and cannot replay an instant |
+| 3.4 | **the engine-driving runner** · `M19.C3.L-integration.V2.U01` | `tests/replays/engine_runner.py` | provisions the org and makes it live; lands the case's objects through `run_sync` with the recorded model; runs **`finalize_l1`** — without it `_pull` drains nothing, because it needs an active `qualified_signals` row (`context/runner.py:244-254`); then `_run_l2_chain(eval_time=…)` per sweep instant, returning each stage's output. ⛔ It pins the scratch database **before** importing `api.routes`, whose stores bind at import (`api/routes.py:62-70`), and refuses to start without one. Negative control: at the production floor (2,500) the e2e mail of `tests/test_e2e_all_layers.py` yields 0 cards — that test passes only because it sets the floor to 1 and asserts a dict |
+| 3.5 | your label sheet · `M19.C4.L-data.V0.U01` | `golden-labels.md` | the real items by sender and date only, one question each: *should this have reached you?* — yes · no · in the morning brief only (`06` D12) |
+| 3.6 | the cases · `M19.C4.L-data.V3.U02` | `tests/replays/specs/founder/` | ~40 synthetic cases, invented names and text, with their cassettes. Several need more than one sweep (2, 3, 8, 12, 14, 24); case 30 needs the screen door |
+| 3.7 | the Atlas replays, scored · `M19.C4.L-logic.V3.U03` | `tests/replays/test_golden_replays.py` | a mutation's pass condition becomes a check on the runner's output, so a blocked one can XPASS the day its capability lands; one that cannot be expressed yet is counted apart from *blocked* |
+| 3.8 | the board · `M19.C5.L-interface.V4.U01` | `scripts/golden_score.py` | the table in §5; exits non-zero without a scratch database |
+| 3.9 | a live evaluation, outside CI · `M19.C5.L-interface.V4.U02` | `scripts/golden_eval.py --live` | the real model on the same cases; a scorecard — recall, precision, forbidden outputs, tokens, cost — in `speedrun008/YC-II W27/scores/`; re-records cassettes only when asked. Spend is your call (`06` D12) |
+| 3.10 | Postgres in CI · `M19.C5.L-integration.V5.U03` | `.github/workflows/ci.yml` | a separate `golden-pg` job (`postgres:17`); the hermetic job deselects it; the full database suite joins after `STEP-17` §3.0. It first runs when you push the batch (`06` D10) |
+| 3.11 | the before-score · `M19.C5.L-integration.V5.U04` | `03-FINDINGS.md` §F | written with the commit it was measured at; `golden_score.py --assert-recorded` agrees with it |
 
 ## 4 · The cases — first draft
 
@@ -106,10 +115,10 @@ exercises.
 When this step is done, one command prints the board:
 
 ```
-python scripts/golden_score.py
+GENIOS_TEST_DATABASE_URL=postgresql+psycopg://…/genios_test python scripts/golden_score.py
 
 founder golden set     must-detect  __/30    must-abstain  __/10    forbidden outputs  __
-atlas replays 01–07    passing      __/80    blocked       __/80
+atlas replays 01–07    passing      __/80    blocked       __/80    not expressible    __
 ```
 
 The blanks are filled by this step's run. They are the **before** numbers. Every later step file
@@ -124,9 +133,10 @@ quotes this board before and after, and none is DONE while its target rows have 
 ## 7 · Verify
 
 ```
-GENIOS_TEST_DATABASE_URL=postgresql://…/scratch \
+GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test \
   .venv/bin/python -m pytest tests/replays -q        # exits 0; 0 skipped; xfails counted, each naming its gap
-.venv/bin/python scripts/golden_score.py             # prints the board; exits 0
+GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test \
+  .venv/bin/python scripts/golden_score.py           # prints the board; exits 0
 ```
 
 The runner refuses to start without a scratch database — a golden set that skips is the
@@ -139,3 +149,28 @@ The runner refuses to start without a scratch database — a golden set that ski
 | Cases written to flatter the implementation | they are written **in this step, before any implementation**, from the real metadata; an `expected` value is never edited to make a later step pass — the repo's rule, *never weaken a verify* |
 | One mailbox flatters the sent-side prompts (L1's own audit, E4) | add a second founder's mailbox before any number is quoted outside |
 | A cassette goes stale when a prompt changes | a cassette miss **fails** the test; re-recording is a deliberate act with the live scorecard attached |
+
+## 9 · The check of 2026-10-05 — what the first draft got wrong
+
+Every claim in this file was re-read against `speedrun008` @ `e96787d8`, and the existing end-to-end
+pattern was run on a scratch database.
+
+| Claim | Verdict |
+|---|---|
+| 12 replays, 153 mutations; 01–07 are 80; `33 passed, 150 xfailed` | ✅ true |
+| the harness never calls the engine | ✅ true — an unconditional `pytest.fail` at `test_golden_replays.py:41-47`; `NoLLM` is injected nowhere |
+| the specs date from 12 Sep | ❌ 24 Aug (`944b4f76`) |
+| a founder case is the `ReplaySpec` shape plus `events` / `expected` | ⚠️ partly — the loader reads no subfolder and the contract pins 12 specs, so it needs its own type (3.1) |
+| the chain is `capture_event → process_pending → run_all → build_cards_for_org` | ⚠️ partly — it omits `finalize_l1`, provisioning, the post-passes and the funnel counts, and has no clock (3.3, 3.4) |
+| `NoLLM` serves every deterministic layer | ⚠️ partly — no mail reaches memory without a model answer: one mail costs about three calls (relevance twice, extraction once) |
+| the runner fails rather than skips | ⚠️ today every database test skips in CI, including the "never skip" gates |
+| `expected` holds workstream, stage and lane | ⚠️ the engine produces no workstream or stage yet (`STEP-09`), and the lane column is written NULL (F10) — those fields are `expressible: false` until then |
+| the Atlas lines quoted in §2 and §3.2 | `[ATLAS]` — from the Atlas you shared; that file is not in the repository |
+
+**Known causes the before-score will show.** These cases stay in the set and fail until the cause
+is fixed — that is what a before-score is for:
+
+- **F04** (a meeting becomes a deadline that expires): 7, 12, 26–29, 40;
+- **F14** (Boardy can never be an agent sender) and the N-02 drop on its unsubscribe header: 3–9, 37;
+- **B2** and **B19** are fixed before this step (`yc2_w27/M16`, `M17`); before those fixes they would
+  have blocked 10–15 and 25–29, and 17, 22, 24 and 25 `[inference]`.

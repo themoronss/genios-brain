@@ -2,7 +2,8 @@
 
 **Written for:** everyone. **Measured:** 2026-10-05, `speedrun008` @ `2dc61dac` and production
 (read-only, metadata). **Re-measured the same day after the merge** (`8a472b81`, the `STEP-00`
-re-do): F26–F29, E8, and the corrections to F24 and E4. A finding is never deleted; a correction
+re-do): F26–F29, E8, and the corrections to F24 and E4. **Root-caused the same day** on scratch
+databases, for tree `yc2_w27`: F30–F37, E9–E11. A finding is never deleted; a correction
 is a new line that says what it corrects.
 
 ---
@@ -41,6 +42,14 @@ is a new line that says what it corrects.
 | F27 | The funnel never records a zero decision: every sweep that emitted nothing reads *"nobody looked"* — and the stage counts the rule lane only | `[CODE]` `reason/runner.py:860, 1364`; `api/routes.py:774-775`; `[PROD]` 64 sweeps since 3 Oct, `decision_emitted` written in 3, values 1–4, never 0 | `STEP-18` B17 → `STEP-06` §3.2 |
 | F28 | A mail whose extraction did not parse waits forever: the extractor's four park codes are in no drain set, and the funnel calls the mail *kept unread* | `[CODE]` `capture/semantic/extractor.py:199-210` vs `capture/parked/drain.py:41-77`; `[PROD]` 2 mails pending since 3 Oct, 0 attempts | `STEP-18` B18 → `STEP-06` §3.1 |
 | F29 | **No Gmail attachment is read.** Composio refuses every fetch — *"Missing required fields: file_name"* | `[CODE]` `capture/connectors/composio.py:298-299`; `[PROD]` 88 of 88 stored errors; 50 dead-lettered, 38 pending, 0 recovered | `STEP-18` B19 |
+| F30 | `owns` carries two meanings: declared *company -> deal*, but also written *person -> document* — and read by nine modules | `[CODE]` `context/graph_store.py:171`; `context/documents.py:66, 263`; readers in `context/correlation_people.py`, `outreach_situations.py`, `correlation.py`, `lifecycle/store.py`, `reason/moments/recall.py`, `moments/slice.py`, `meetings/passes.py`, `meetings/prep.py` | a meaning audit, `STEP-17` §3.3 — not in `yc2_w27` |
+| F31 | A message fingerprint outlives its event: after a disconnect-with-wipe and a reconnect, every re-synced message is skipped as *seen on screen* — and so is any re-read through `set_aside` | `[CODE]` `api/routes.py:3207-3211`; `capture/screen/fingerprint.py` `claim`; event ids are new on every landing (`capture/landing/normalize.py:33`); `[TEST]` the G7/G8/G10 gates fail exactly this way | `STEP-18` B20 → `yc2_w27/M17.C2.L-data.V0.U02`; ⛔ before `STEP-08` |
+| F32 | A decimal number in a parsed model answer aborts the org's whole resolution pass, after the call is paid | `[CODE]` `context/model_audit.py:49` → `platform/canonical.py:51-53`; `context/lifecycle/resolution.py:221`; `[PROD]` latent — resolution calls equal audited runs, hour by hour, since the 3 Oct reset | `STEP-18` B21 |
+| F33 | Calibration's one-line fix arms unattended muting, and an armed calibration hides cards: a muted rule's cards vanish unexplained, a mute never lifts, and any applied mute or nudge hides every open card of the pack | `[CODE]` + `[TEST]` reproduced on a scratch Postgres, 2026-10-05 (a loosening nudge: queue 5 → 0) | `yc2_w27/M18` (shadow first); `STEP-18` B22–B24 before arming; `06` D13 |
+| F34 | Three tests expire with the calendar — a fixed seed date beside a wall-clock evaluation, or a weekly window: red since 4 Oct, since 22 Sep, and every Monday | `[TEST]` `tests/reason/adapters/test_roster_reaches_the_audit.py`, `tests/context/test_situation_publisher.py`, `tests/test_screen_followups_pg.py` | `yc2_w27/M16.C3`; the pattern is not yet swept (`STEP-17`) |
+| F35 | Three Python versions — production 3.11, CI 3.12, local 3.13 — and one guard answered differently on 3.13 | `[CODE]` `Dockerfile:33`; `.github/workflows/ci.yml:17`; `tests/test_l1_seam_activation.py:191-192` | `yc2_w27/M16.C5`; `STEP-17` §3.1 runs CI on 3.11 |
+| F36 | The scripts' `--json` output is not pure JSON — two `[db]` lines go to stdout first | `[CODE]` `scripts/_db.py:159-160` | a small unit, not in `yc2_w27` |
+| F37 | In the three sweeps that built cards, the funnel counted fewer decisions than cards: 4 → 15, 2 → 3, 1 → 3 | `[PROD]` `pipeline_counters`, 3–4 Oct | `STEP-18` B17 → `yc2_w27/M17.C1` |
 
 ## B · False alarms — things that looked wrong and are not
 
@@ -108,6 +117,9 @@ is a new line that says what it corrects.
 | E7 | The 11 Aug bounce reports — which addresses failed? | answered by `STEP-10` §3.5 once bounces are parsed |
 | E4 · corrected | ⚠️ 2026-10-05, the `STEP-00` re-do: E4's *"so the 2–4 Oct fixes are live"* claimed more than a 7/7 pass shows — the checks read production's data, not its commit. Measured per fix: `d4e035bb` is visibly live (the refetch errors written on 5 Oct carry their reason); `5ebfef8e`'s cap cannot show yet (F24 · re-measured). The commit is still Harsh's to confirm | Harsh |
 | E8 | Merge `origin/rohit-yc-brain`? 19 commits, 22 Aug – 9 Sep, **no code**: it moves 81 files from `Rohit_Updates/` into `Rohit_Updates (Version 2)/Version 1 Updates/`, adds one failure-analysis document, `qa-contract.yaml` (38 lines) and `tree.yaml` (656 lines). A dry-run merge conflicts in `tree.yaml` and on two `00-CORRECTIONS-2026-10-01.md` files this branch added inside a folder that branch renamed | Rohit |
+| E9 | Should `dependency_stated` declare coverage expectations? None is registered for it, so `context/situations.py:428-429` returns *coverage unknown* (−1) — while the gate row says *"all 6 axes present"* | Rohit |
+| E10 | Whose mailbox is the second golden set (`STEP-01` §8)? | Rohit |
+| E11 | Should a message already captured from the **same** source suppress extraction? `_seen_on_screen` treats any earlier claim, from any source, as canonical — its docstring says the screen copy. `yc2_w27/M17.C2.L-data.V0.U02` only voids claims by events that no longer exist | Rohit |
 
 ## F · Numbers, with their sources
 
@@ -141,4 +153,5 @@ Every number below was measured on 2026-10-05 against production, read-only; *sn
 | L2 processing runs | 30, all `done`, 0 edge-type errors (3–5 Oct) | `@l2_processing_runs` |
 | park queue | 88 attachments (50 dead-lettered, 38 pending) · 95 screen items pending, 162 recovered · 2 mails pending at extraction · 4 mails recovered | `@park_queue` |
 | per-sweep decider calls per UTC day | 718 · 477 · 1,204 · 306 (2–5 Oct; 5 Oct to 13:51) | `@model_calls_by_day` |
+| resolution calls vs audited model runs | equal hour by hour since the 3 Oct reset; the 24 unaudited calls (3 Oct 06:00–08:59 UTC) predate it | `llm_costs` vs `l2_model_runs`, read-only, 2026-10-05 |
 | the database suite on the merged branch | see `STEP-00` §4.2 | `baseline/2026-10-05/suite_with_database.txt` |

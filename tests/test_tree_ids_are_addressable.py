@@ -2,7 +2,7 @@
 
     pytest tests/test_tree_ids_are_addressable.py -q
 
-⛔ THE DEFECT. `tree.yaml` holds four programme blocks and three of them number milestones from M8, so
+⛔ THE DEFECT. `tree.yaml` holds five programme blocks and three of them number milestones from M8, so
 `M11.C1.L-logic.V0.U01` exists twice with different meanings. Every later stage — build, crosscheck,
 QA, trace — addresses work by unit id, and an ambiguous id makes that addressing a guess.
 
@@ -60,9 +60,9 @@ def test_the_tree_parses():
     assert yaml.safe_load(_TREE.read_text()) is not None
 
 
-def test_the_four_programme_blocks_are_present():
+def test_the_five_programme_blocks_are_present():
     assert set(_blocks()) == {"<root>", "persona_brain_and_layer_repair",
-                             "l1_signal_quality_seam", "atlas_v2_alignment"}
+                             "l1_signal_quality_seam", "atlas_v2_alignment", "yc2_w27"}
 
 
 def test_the_ycw27_block_is_the_one_this_programme_builds():
@@ -123,13 +123,23 @@ def test_the_rule_names_the_precedent_it_follows():
 # =================================================================================================
 # 4 · ⛔ a new block may not widen the collision
 # =================================================================================================
-def test_no_fifth_block_has_appeared_without_updating_this_guard():
-    """⛔ THE FORWARD HALF. Four blocks already collide and that is now documented; a fifth added
+def test_no_sixth_block_has_appeared_without_updating_this_guard():
+    """⛔ THE FORWARD HALF. Four blocks already collide and that is now documented; a new block added
     silently would collide again with nobody having decided to accept it. Adding one is fine — update
-    this test on purpose, and say in the tree why the ids were chosen."""
-    assert len(_blocks()) == 4, (
+    this test on purpose, and say in the tree why the ids were chosen. The fifth, `yc2_w27`
+    (2026-10-05), was added that way: numbered from M16, past every other block."""
+    assert len(_blocks()) == 5, (
         "a programme block was added or removed — update the header note in tree.yaml and this test, "
         "deliberately")
+
+
+def test_the_newest_block_widens_no_collision():
+    """⛔ The reason `yc2_w27` could be added: its milestone ids appear in no other block. If a later
+    edit gives it an id another block already uses, this fails before the ambiguity ships."""
+    blocks = _blocks()
+    newest = {m["id"] for m in blocks["yc2_w27"]}
+    others = {m["id"] for name, ms in blocks.items() if name != "yc2_w27" for m in ms}
+    assert newest and not (newest & others), sorted(newest & others)
 
 
 #: ⛔ RETIRED IN PLACE. `<root>`'s M1–M7 predate the YCW27 programme; the header note says so and

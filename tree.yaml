@@ -1,12 +1,14 @@
 # ═════════════════════════════════════════════════════════════════════════════════════════════
 # ⛔ HOW A UNIT ID IS ADDRESSED — read this before quoting one.
 #
-# This file holds FOUR programme blocks, and three of them number their milestones from M8:
+# This file holds FIVE programme blocks, and three of them number their milestones from M8:
 #
 #   <root>                            M1  … M7    retired in place
 #   persona_brain_and_layer_repair    M8  … M12
 #   l1_signal_quality_seam            M13 … M15
 #   atlas_v2_alignment                M8  … M14   ← the YCW27 work
+#   yc2_w27                           M16 … M19   ← YC-II W27; numbered past every other
+#                                                   block, so it adds no collision
 #
 # So `M11` is AMBIGUOUS on its own: it names "The remaining Layer 3 losses" in one block and
 # "L2 Reasoning" in another, and `M11.C1.L-logic.V0.U01` exists twice with different meanings.
@@ -2494,3 +2496,635 @@ atlas_v2_alignment:
                       artifact: genios_engine/feedback/attribution.py
                       verify: uv run --no-sync pytest tests/feedback/test_the_right_layer_is_debited.py -q
                       depends_on: [M14.C1.L-interface.V1.U02]
+
+# ═════════════════════════════════════════════════════════════════════════════════════════════
+# yc2_w27 — YC-II W27 (speedrun008/YC-II W27/), the block after STEP-00. Proposed 2026-10-05.
+#
+# ⛔ ITS MILESTONES START AT M16 ON PURPOSE. M1–M15 are each taken in at least one older block, so
+# a block numbered from M16 adds no collision; tests/test_tree_ids_are_addressable.py asserts that.
+# Canonical addresses are still `yc2_w27/<id>`.
+#
+# Verify commands run from the repo root. A command that sets GENIOS_TEST_DATABASE_URL needs the
+# scratch Postgres of `STEP-00` §4.2 — and the `postgresql+psycopg://` scheme, never a bare
+# `postgresql://` (tests/test_llm_cost_attribution.py builds its engine from the raw URL).
+#
+# ⛔ ONE WRITER PER FILE. `genios_engine/api/routes.py` is touched by four units (M17.C1.U02,
+# M17.C2.U04, M18.C1.U05, M19.C2.U01) and `tests/packs/brains/test_org_discovery.py` by two
+# (M16.C4.U05, M16.C5.U02): never build those in parallel.
+# ═════════════════════════════════════════════════════════════════════════════════════════════
+yc2_w27:
+  status: proposed_awaiting_confirmation
+  source: >
+    speedrun008/YC-II W27/ — STEP-00 §4.2 (the database suite), STEP-18 B1/B2/B17/B18/B19, STEP-01;
+    the root causes measured on 2026-10-05 against speedrun008 @ e96787d8 and a scratch Postgres 17.
+  vision: >
+    The database suite runs green on Postgres, so every later step's verify means something. The
+    funnel writes its zeros in every lane, a mail whose extraction failed is read again, and a
+    Gmail attachment is fetched instead of refused. Calibration runs on Postgres and only proposes —
+    it mutes nothing and moves no threshold until Rohit says otherwise. One command prints the
+    golden-set board, and its numbers are the before-score every later step is measured against.
+  order_note: >
+    Rohit's order (2026-10-05): the database part first, then B17, B18 and B19, then the golden set.
+    The edges below are facts, not that order: every later milestone depends on M16 because its
+    verify runs on the scratch database and a red baseline makes it unreadable. M17, M18 and M19
+    do not depend on each other; Rohit's order sequences them, and the one-writer rule above keeps
+    their shared files apart.
+
+  milestones:
+    # ─────────────────────────────────────────────────────────────────────────────────────────
+    - id: M16
+      name: The database suite is green
+      ships: >
+        GENIOS_TEST_DATABASE_URL=postgresql+psycopg://… pytest -q exits 0 — 0 failed, 0 errors —
+        where on 2026-10-05 it gave 16,683 passed, 50 failed. The hermetic suite stays green.
+        27 of the 50 are one live bug (B2); the other 23 are test-side and need no engine change.
+      categories:
+
+        - id: M16.C1
+          name: The edge vocabulary covers every writer (STEP-18 B2 — 27 tests)
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M16.C1.L-contract.V0.U01
+                      what: >
+                        The totality guard sees every way an edge type reaches `write_edge`: a
+                        literal, a module constant, a loop over literal tuples (with list +
+                        comprehension), and every `RelationMap` built from literals. It names the
+                        one indirection it resolves through `RelationMap` (`context/structured.py`
+                        ~93) and fails on any write site it cannot resolve. Today's regex sees only
+                        `edge_type="…"`, so `involves`, `edited`, `assigned` and `used` were invisible
+                        to it — and adding them naively would turn its other half red.
+                      artifact: tests/context/test_the_edge_vocabulary_is_closed.py
+                      verify: .venv/bin/python -m pytest "tests/context/test_the_edge_vocabulary_is_closed.py::test_the_collector_sees_every_write_path" -q
+                      depends_on: []
+                - level: 1
+                  units:
+                    - id: M16.C1.L-contract.V1.U02
+                      what: >
+                        `EDGE_TYPES` gains the four relations already being written — `involves`
+                        (deal and the person on it; CRM rows write it person -> deal, so readers
+                        walk it both ways), `edited` (person -> document: last editor, not owner),
+                        `assigned` (person -> task), `used` (person -> product account) — each with
+                        its direction and what it does not mean.
+                      artifact: genios_engine/context/graph_store.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_the_edge_vocabulary_is_closed.py tests/test_account_rollup_reaches_the_company.py tests/test_deal_node_from_correspondence.py tests/test_document_register.py tests/test_l2_db_e2e.py -q
+                      depends_on: [M16.C1.L-contract.V0.U01]
+
+        - id: M16.C2
+          name: The reachability report reads the counts it is given (5 tests)
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M16.C2.L-logic.V0.U01
+                      what: >
+                        `int()` is applied only to scalar counts; the two breakdowns
+                        `shadow_compile` has returned since 22d598b1 (`no_route_by_reason`,
+                        `no_route_by_type`) are kept as `dict[str, int]`. The engine's shape is
+                        pinned by its own tests, so the script follows it.
+                      artifact: scripts/unit_reachability_report.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/reason/adapters/test_unit_reachability_report.py -q
+                      depends_on: []
+
+        - id: M16.C3
+          name: Test clocks that cannot expire (3 time bombs — 6 tests)
+          layers:
+            - layer: data
+              levels:
+                - level: 0
+                  units:
+                    - id: M16.C3.L-data.V0.U01
+                      what: >
+                        The admin-pack seeding helpers take a keyword-only `occurred_at`
+                        (default `NOW`), so a caller that evaluates at its own instant can seed at
+                        the same instant. Every existing caller is unchanged.
+                      artifact: tests/test_admin_support_packs.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/test_admin_support_packs.py -q
+                      depends_on: []
+                    - id: M16.C3.L-data.V0.U02
+                      what: >
+                        The publisher's live-path test runs its sweep at the test's own instant
+                        (`eval_time=NOW`; dormant after 45 days since 2026-09-22 otherwise) and
+                        reads the `opportunity` receipt by type, not `quoted[0]`.
+                      artifact: tests/context/test_situation_publisher.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_situation_publisher.py -q
+                      depends_on: []
+                    - id: M16.C3.L-data.V0.U03
+                      what: >
+                        The screen weekly-claim test uses a fixed Wednesday, passed to
+                        `weekly_report` — on a Monday (2026-10-05) its rows fall in last week.
+                      artifact: tests/test_screen_followups_pg.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/test_screen_followups_pg.py -q
+                      depends_on: []
+                - level: 1
+                  units:
+                    - id: M16.C3.L-data.V1.U04
+                      what: >
+                        The roster test seeds at `_AT`, the instant it evaluates at. It evaluated at
+                        the wall clock while seeding at 2026-08-20, so its only situation went
+                        dormant on 2026-10-04 (ef7ec323 moved one instant and not the other).
+                      artifact: tests/reason/adapters/test_roster_reaches_the_audit.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/reason/adapters/test_roster_reaches_the_audit.py tests/test_admin_support_packs.py -q
+                      depends_on: [M16.C3.L-data.V0.U01]
+
+        - id: M16.C4
+          name: Fixtures that follow the code (premises the code outgrew — 6 tests)
+          layers:
+            - layer: data
+              levels:
+                - level: 0
+                  units:
+                    - id: M16.C4.L-data.V0.U01
+                      what: >
+                        The G7/G8/G10 gates' hand wipe between two sweeps includes
+                        `message_fingerprints` (since 835feaac, 2026-09-13). Without it the second
+                        sweep skips 132 of 132 messages as `seen_on_screen`. No assertion changes.
+                      artifact: tests/capture/test_g7_g8_g10_gates.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/capture/test_g7_g8_g10_gates.py -q
+                      depends_on: []
+                    - id: M16.C4.L-data.V0.U02
+                      what: >
+                        The out-of-office stub answers in the prompt's own contract — `evidence`
+                        and an integer `confidence_bp` (required since c98e9eff, 2026-09-24).
+                      artifact: tests/test_availability_pg.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/test_availability_pg.py -q
+                      depends_on: []
+                    - id: M16.C4.L-data.V0.U03
+                      what: >
+                        A situation the CRM already closed is resolved by fact before resolution
+                        detection runs (4ade9133). The test keeps its point — no model call, no
+                        claim row — and asserts the path that now delivers it.
+                      artifact: tests/context/lifecycle/test_resolution.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/lifecycle/test_resolution.py -q
+                      depends_on: []
+                    - id: M16.C4.L-data.V0.U04
+                      what: >
+                        The shadow-diff test names `analytic_movement` as the second direct
+                        situation writer (3d88b894); the one-anchor check applies to period rows.
+                      artifact: tests/context/test_l2_shadow_diff.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_l2_shadow_diff.py -q
+                      depends_on: []
+                    - id: M16.C4.L-data.V0.U05
+                      what: >
+                        The approver test seeds what 7faff157 requires — the person's node and an
+                        active seat — plus a negative control: a name whose only match is a
+                        stranger resolves to nobody.
+                      artifact: tests/packs/brains/test_org_discovery.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest "tests/packs/brains/test_org_discovery.py::test_an_approver_resolves_through_the_identity_layers_own_keys" -q
+                      depends_on: []
+                    - id: M16.C4.L-data.V0.U06
+                      what: >
+                        The decision-maker's fake answers the R-1 reading call (10a4f14f) and the
+                        test asserts one decision call and one R-1 call, after the run and after
+                        the replay.
+                      artifact: tests/reason/test_llm_decision_maker.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/reason/test_llm_decision_maker.py tests/reason/test_llm_interpretation.py -q
+                      depends_on: []
+
+        - id: M16.C5
+          name: Guards that read the AST, not the text (2 tests)
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M16.C5.L-contract.V0.U01
+                      what: >
+                        The seam-gate test strips the docstring through the AST, so Python 3.11
+                        (production), 3.12 (CI) and 3.13 (local) give one answer; a negative
+                        control proves the guard still fires on a real `use_domain_compiler` read.
+                      artifact: tests/test_l1_seam_activation.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/test_l1_seam_activation.py -q
+                      depends_on: []
+                - level: 1
+                  units:
+                    - id: M16.C5.L-contract.V1.U02
+                      what: >
+                        "Nothing outside the publisher writes a brain entry" scans string constants
+                        (`scripts/derivation_dag_check._constants`, docstrings excluded) instead of
+                        source text, which matched two comments in `feedback/target_policy.py`. Six
+                        negative controls: inline `text()`, a module constant, a split statement,
+                        `exec_driver_sql`, an f-string over a table constant must all fail it;
+                        comments and docstrings must not.
+                      artifact: tests/packs/brains/test_org_discovery.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/packs/brains/test_org_discovery.py -q
+                      depends_on: [M16.C4.L-data.V0.U05]
+
+        - id: M16.C6
+          name: The whole suite, on Postgres and without it
+          layers:
+            - layer: integration
+              levels:
+                - level: 0
+                  units:
+                    - id: M16.C6.L-integration.V0.U01
+                      what: >
+                        Both suites run in full and the green record replaces the red one:
+                        0 failed and 0 errors with the scratch database (the H0 gate, which re-runs
+                        tests/context, passes on its own once C4.U03, C4.U04 and C3.U02 land), and
+                        0 failed without it.
+                      artifact: speedrun008/YC-II W27/baseline/2026-10-05/suite_with_database.txt
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q -p no:cacheprovider && .venv/bin/python -m pytest -q -p no:cacheprovider
+                      depends_on: [M16.C1.L-contract.V1.U02, M16.C2.L-logic.V0.U01,
+                                   M16.C3.L-data.V1.U04, M16.C3.L-data.V0.U02,
+                                   M16.C3.L-data.V0.U03, M16.C4.L-data.V0.U01,
+                                   M16.C4.L-data.V0.U02, M16.C4.L-data.V0.U03,
+                                   M16.C4.L-data.V0.U04, M16.C4.L-data.V0.U06,
+                                   M16.C5.L-contract.V0.U01, M16.C5.L-contract.V1.U02]
+
+    # ─────────────────────────────────────────────────────────────────────────────────────────
+    - id: M17
+      name: Nothing captured is lost silently
+      ships: >
+        The funnel writes a zero when a pass decides nothing, in every lane; a mail whose
+        extraction failed is read again until it lands or is given up with its reason; and a Gmail
+        attachment is fetched instead of refused. Each closes a STEP-18 row (B17, B18, B19) whose
+        probe is in speedrun008/YC-II W27/baseline/production_state.sql.
+      categories:
+
+        - id: M17.C1
+          name: The funnel writes its zeros (STEP-18 B17)
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M17.C1.L-logic.V0.U01
+                      what: >
+                        A completed reasoning pass publishes `decision_emitted` as its own count —
+                        every decision it emitted in every lane (rule `emitted`, `native_emitted`,
+                        `composite`) — and 0 when it emitted none. A pass that returned early for a
+                        retry still writes no row. The per-lane keys stay in `outcomes`; `run_all`
+                        sums the stage across packs; `capability_resolved` writes its zero too.
+                      artifact: genios_engine/reason/runner.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/test_decision_emitted_writes_its_zero.py tests/test_capability_resolved_counts_expertise_not_nodes.py -q
+                      depends_on: [M16.C6.L-integration.V0.U01]
+            - layer: integration
+              levels:
+                - level: 1
+                  units:
+                    - id: M17.C1.L-integration.V1.U02
+                      what: >
+                        The sweep relays `_funnel.DECISION_EMITTED` from the pass's outcomes
+                        instead of the rule lane's `emitted` key — still a relay, never arithmetic.
+                      artifact: genios_engine/api/routes.py
+                      verify: .venv/bin/python -m pytest tests/test_the_funnel_has_five_numbers.py tests/test_decision_emitted_writes_its_zero.py tests/platform/test_a_zero_is_written_not_skipped.py -q
+                      depends_on: [M17.C1.L-logic.V0.U01]
+
+        - id: M17.C2
+          name: A failed extraction is read again (STEP-18 B18)
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M17.C2.L-contract.V0.U01
+                      what: >
+                        The extractor's four park codes (`extraction_call_failed`,
+                        `extraction_parse_failed`, `extraction_schema_failed`,
+                        `extraction_total_loss`) belong to a drain class, so `drain_parked` and
+                        `parked_aging` report them instead of walking past them; and the park-code
+                        coverage test reads park codes from `capture/semantic/` as well as
+                        `capture/gate/`, so the next orphaned code fails the build.
+                      artifact: genios_engine/capture/parked/drain.py
+                      verify: .venv/bin/python -m pytest tests/capture/parked/test_park_code_coverage.py tests/capture/parked/test_drain_surfaces.py -q
+                      depends_on: [M16.C6.L-integration.V0.U01]
+            - layer: data
+              levels:
+                - level: 0
+                  units:
+                    - id: M17.C2.L-data.V0.U02
+                      what: >
+                        A message fingerprint claimed by an event that no longer lives — deleted,
+                        or set aside for a re-read — does not suppress a re-landed copy: `claim`
+                        voids it and the new event becomes canonical. A claim by a live event (the
+                        screen copy) still suppresses as today. Without this, every re-read path
+                        is skipped as `seen_on_screen`: a disconnect-with-wipe and reconnect
+                        (STEP-18 B20), this category's re-read, and STEP-08's re-fetch.
+                      artifact: genios_engine/capture/screen/fingerprint.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/capture/test_a_claim_by_a_gone_event_is_void_pg.py tests/capture/test_g7_g8_g10_gates.py -q
+                      depends_on: [M16.C6.L-integration.V0.U01]
+            - layer: logic
+              levels:
+                - level: 1
+                  units:
+                    - id: M17.C2.L-logic.V1.U03
+                      what: >
+                        A second selector beside `find_unread`: emitted events whose extraction
+                        parked, with a retained payload, under a bounded ladder (at most 3 attempts,
+                        `refetch_next_attempt_at` honoured), then dead-lettered with the last
+                        reason. The same set-aside / re-land / restore mechanics, so STEP-05 §3.5
+                        extends it rather than replacing it.
+                      artifact: genios_engine/capture/landing/unread.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/capture/test_a_failed_extraction_is_read_again_pg.py tests/capture/test_unread_reread_pg.py -q
+                      depends_on: [M17.C2.L-contract.V0.U01, M17.C2.L-data.V0.U02]
+            - layer: integration
+              levels:
+                - level: 2
+                  units:
+                    - id: M17.C2.L-integration.V2.U04
+                      what: >
+                        The sweep's re-read pass takes the parked extractions through the same door
+                        (`ingest_pushed_objects` -> `finalize_l1`) and settles each park:
+                        `recovered` when the extraction lands, the ladder advanced when it fails.
+                      artifact: genios_engine/api/routes.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/capture/test_a_failed_extraction_is_read_again_pg.py tests/capture/test_unread_reread_pg.py tests/test_the_funnel_has_five_numbers.py -q
+                      depends_on: [M17.C2.L-logic.V1.U03]
+
+        - id: M17.C3
+          name: Gmail attachments are fetched (STEP-18 B19)
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M17.C3.L-contract.V0.U01
+                      what: >
+                        HARSH, about ten minutes, in a production shell: one live
+                        `GMAIL_GET_ATTACHMENT` call WITH `file_name` against one already-parked
+                        attachment, and the response SHAPE — keys and types, no bytes, no names —
+                        committed as a fixture. Toolkit 20260915_00 documents `data` only as "data
+                        from the action execution", so the connector is built against the real
+                        shape, not a guess.
+                      artifact: tests/capture/connectors/fixtures/gmail_get_attachment.shape.json
+                      verify: .venv/bin/python -m pytest tests/capture/connectors/test_the_attachment_shape_is_recorded.py -q
+                      depends_on: []
+            - layer: integration
+              levels:
+                - level: 1
+                  units:
+                    - id: M17.C3.L-integration.V1.U02
+                      what: >
+                        `fetch_attachment` sends `file_name` — the attachment's own filename on the
+                        capture path, a neutral default when a caller has none — and reads the
+                        recorded response shape. The capture path and the refetch ladder both call
+                        it, so one change serves both.
+                      artifact: genios_engine/capture/connectors/composio.py
+                      verify: .venv/bin/python -m pytest tests/capture/connectors/test_attachment_fetch_sends_file_name.py tests/capture/connectors/test_fastpath_attachment_recovery.py tests/capture/documents/test_attachment_refetch.py tests/capture/parked/test_refetch_drain.py -q
+                      depends_on: [M17.C3.L-contract.V0.U01, M16.C6.L-integration.V0.U01]
+            - layer: data
+              levels:
+                - level: 2
+                  units:
+                    - id: M17.C3.L-data.V2.U03
+                      what: >
+                        A re-queue script for the attachment parks dead-lettered by the `file_name`
+                        refusal: read-only by default, `--apply` behind the write flag,
+                        tenant-scoped, touching only rows whose stored error is that refusal. Claude
+                        writes it; Harsh runs it after the deploy.
+                      artifact: scripts/requeue_refused_attachments.py
+                      verify: .venv/bin/python -m pytest tests/scripts/test_requeue_refused_attachments.py -q
+                      depends_on: [M17.C3.L-integration.V1.U02]
+            - layer: integration
+              levels:
+                - level: 2
+                  units:
+                    - id: M17.C3.L-integration.V2.U04
+                      what: >
+                        Composio toolkit versions are pinned — gmail at the version the shape was
+                        recorded against — in the one place each connector executes, replacing
+                        `dangerously_skip_version_check=True`, so an upstream schema change cannot
+                        silently refuse every call again. Harsh confirms the versions.
+                      artifact: genios_engine/capture/connectors/composio_base.py
+                      verify: .venv/bin/python -m pytest tests/capture/connectors/test_composio_toolkits_are_pinned.py -q
+                      depends_on: [M17.C3.L-integration.V1.U02]
+
+    # ─────────────────────────────────────────────────────────────────────────────────────────
+    - id: M18
+      name: Calibration runs on Postgres, and only proposes (STEP-18 B1)
+      ships: >
+        The weekly calibration completes on Postgres (it has raised `UndefinedColumn card_level` on
+        every run since cd7f85d7, 2026-09-10) and writes what it WOULD mute, recover or nudge —
+        while `rule_mutes`, gate offsets, the pack revision, signals and cards stay untouched until
+        `calibration_apply` is switched on for a tenant. The one-line SQL fix cannot land without
+        the shadow switch: alone, it arms unattended muting.
+      categories:
+
+        - id: M18.C1
+          name: Shadow first, then the fix
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M18.C1.L-contract.V0.U01
+                      what: >
+                        `calibration_apply` is a registered L4 feature, fail-closed: a tenant with
+                        no row is in shadow.
+                      artifact: genios_engine/platform/l4_activation.py
+                      verify: .venv/bin/python -m pytest tests/feedback/test_calibration_is_shadow_until_armed.py -q
+                      depends_on: [M16.C6.L-integration.V0.U01]
+                - level: 1
+                  units:
+                    - id: M18.C1.L-contract.V1.U02
+                      what: >
+                        `calibration_apply` is in `NOT_DEFAULT_ON`, so `make_tenant_live` never arms
+                        it; arming is the audited `POST /admin/l4-activation/{org}`.
+                      artifact: genios_engine/platform/intelligence_onboarding.py
+                      verify: .venv/bin/python -m pytest tests/feedback/test_calibration_is_shadow_until_armed.py tests/test_the_cutover_switch_can_be_flipped.py -q
+                      depends_on: [M18.C1.L-contract.V0.U01]
+            - layer: logic
+              levels:
+                - level: 2
+                  units:
+                    - id: M18.C1.L-logic.V2.U03
+                      what: >
+                        `run_calibration(..., apply=False)`: in shadow it records `mode`,
+                        `would_mute`, `would_recover` and `would_nudge` with their statistics in
+                        `calibration_runs.result` and writes nothing else; with `apply=True` it
+                        behaves as today.
+                      artifact: genios_engine/feedback/calibrate.py
+                      verify: .venv/bin/python -m pytest tests/feedback -q
+                      depends_on: [M18.C1.L-contract.V1.U02]
+                - level: 3
+                  units:
+                    - id: M18.C1.L-logic.V3.U04
+                      what: >
+                        `canonical_judgments` carries `card_level`, so the precision denominator
+                        `calibrate.py` reads exists. Lands only after the shadow switch.
+                      artifact: genios_engine/reason/authority.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/feedback/test_calibration_runs_on_postgres.py tests/feedback/test_calibration_is_shadow_until_armed.py tests/contracts/test_the_outcome_vocabulary_is_wired.py -q
+                      depends_on: [M18.C1.L-logic.V2.U03]
+            - layer: integration
+              levels:
+                - level: 4
+                  units:
+                    - id: M18.C1.L-integration.V4.U05
+                      what: >
+                        The heavy tick calls `run_calibration(..., apply=is_l4_activated(engine,
+                        org, "calibration_apply"))`.
+                      artifact: genios_engine/api/routes.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/feedback/test_calibration_runs_on_postgres.py tests/feedback/test_calibration_is_shadow_until_armed.py -q
+                      depends_on: [M18.C1.L-logic.V3.U04]
+
+    # ─────────────────────────────────────────────────────────────────────────────────────────
+    - id: M19
+      name: The golden set drives the engine (STEP-01)
+      ships: >
+        `python scripts/golden_score.py` prints the board — founder must-detect, must-abstain,
+        forbidden outputs; Atlas replays 01–07 passing vs blocked vs not expressible — from cases
+        replayed through the real chain on the scratch database with recorded model answers, and
+        its numbers are written into 03-FINDINGS §F as the before-score.
+      categories:
+
+        - id: M19.C1
+          name: The case, and the recorded model
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M19.C1.L-contract.V0.U01
+                      what: >
+                        A founder case is its own dataclass and loader (`specs/founder/*.json` —
+                        `load_specs` reads no subfolder): the sweep instants, synthetic RawObjects
+                        that keep the real header class, the expected gate code, memory, lane and
+                        card identity across sweeps, a WITNESS for every must-abstain case,
+                        forbidden names and phrases, and an `expressible` map. An empty set fails.
+                      artifact: tests/replays/founder_case.py
+                      verify: .venv/bin/python -m pytest tests/replays/test_founder_case_contract.py -q
+                      depends_on: []
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M19.C1.L-logic.V0.U02
+                      what: >
+                        `RecordedLLM`: answers keyed by `LLMClient.content_hash`, thread-safe, and a
+                        miss raises naming the site and the hash — never returns `ok=False`, which
+                        would park a case forever (B18's shape).
+                      artifact: tests/replays/harness.py
+                      verify: .venv/bin/python -m pytest tests/replays/test_recorded_llm.py tests/replays -q
+                      depends_on: []
+                - level: 1
+                  units:
+                    - id: M19.C1.L-logic.V1.U03
+                      what: >
+                        The list of model sites the chain can call — the junk filter, relevance,
+                        extraction, resolution, the decider and R-1, the narrator, screen insight —
+                        held equal to `_SITES`, so a new site cannot run unrecorded.
+                      artifact: tests/replays/model_sites.py
+                      verify: .venv/bin/python -m pytest tests/replays/test_every_chain_model_site_is_recorded.py tests/test_every_llm_call_site_is_metered.py -q
+                      depends_on: [M19.C1.L-logic.V0.U02]
+
+        - id: M19.C2
+          name: One clock for the sweep
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M19.C2.L-logic.V0.U01
+                      what: >
+                        `_run_l2_chain(org_id, *, eval_time=None)` threads one instant to
+                        `process_pending`, `run_all`, `build_cards_for_org`, the post-passes and the
+                        funnel's `sweep_at`; production passes nothing and behaves as today.
+                      artifact: genios_engine/api/routes.py
+                      verify: .venv/bin/python -m pytest tests/test_the_sweep_chain_has_one_clock.py tests/test_the_funnel_has_five_numbers.py -q
+                      depends_on: [M16.C6.L-integration.V0.U01]
+
+        - id: M19.C3
+          name: The engine-driving runner
+          layers:
+            - layer: integration
+              levels:
+                - level: 2
+                  units:
+                    - id: M19.C3.L-integration.V2.U01
+                      what: >
+                        Seeds a scratch org (provision + live), lands a case's RawObjects through
+                        `run_sync` with the recorded model, runs `finalize_l1` and
+                        `_run_l2_chain(eval_time=…)` per sweep instant, and returns each stage's
+                        output — gate verdict, memory, situations, signals, lane, cards. It pins the
+                        scratch database before importing `api.routes` (whose stores bind at import)
+                        and refuses to start without one. Negative control: at the production floor
+                        (2,500) the e2e mail of tests/test_e2e_all_layers.py yields 0 cards.
+                      artifact: tests/replays/engine_runner.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/replays/test_engine_runner.py -q
+                      depends_on: [M19.C1.L-contract.V0.U01, M19.C1.L-logic.V1.U03, M19.C2.L-logic.V0.U01]
+
+        - id: M19.C4
+          name: The exam
+          layers:
+            - layer: data
+              levels:
+                - level: 0
+                  units:
+                    - id: M19.C4.L-data.V0.U01
+                      what: >
+                        Rohit's label sheet: the real items by sender and date only (D12), one
+                        question each — yes · no · morning brief only — every row he has not
+                        answered marked as Claude's.
+                      artifact: speedrun008/YC-II W27/golden-labels.md
+                      verify: .venv/bin/python -m pytest tests/test_golden_labels_sheet.py -q
+                      depends_on: []
+                - level: 3
+                  units:
+                    - id: M19.C4.L-data.V3.U02
+                      what: >
+                        The founder cases — synthetic, modelled on the labelled items, invented
+                        names and text — with their cassettes. A case the engine cannot yet express
+                        says so; none passes on nothing.
+                      artifact: tests/replays/specs/founder/
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/replays/test_founder_cases.py -q
+                      depends_on: [M19.C3.L-integration.V2.U01, M19.C4.L-data.V0.U01]
+            - layer: logic
+              levels:
+                - level: 3
+                  units:
+                    - id: M19.C4.L-logic.V3.U03
+                      what: >
+                        The Atlas replays are scored through the runner: a mutation's pass
+                        condition becomes a check on the runner's output, so a blocked mutation can
+                        XPASS the day its capability lands; one that cannot be expressed yet is
+                        counted apart from "blocked".
+                      artifact: tests/replays/test_golden_replays.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/replays -q
+                      depends_on: [M19.C3.L-integration.V2.U01]
+
+        - id: M19.C5
+          name: The board
+          layers:
+            - layer: interface
+              levels:
+                - level: 4
+                  units:
+                    - id: M19.C5.L-interface.V4.U01
+                      what: >
+                        One table: founder must-detect, must-abstain, forbidden outputs; Atlas
+                        replays 01–07 passing, blocked, not expressible. Exits non-zero without a
+                        scratch database.
+                      artifact: scripts/golden_score.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py
+                      depends_on: [M19.C4.L-data.V3.U02, M19.C4.L-logic.V3.U03]
+                    - id: M19.C5.L-interface.V4.U02
+                      what: >
+                        The live evaluation, outside CI: the same cases against the real model,
+                        writing a scorecard (recall, precision, forbidden outputs, tokens, cost) to
+                        speedrun008/YC-II W27/scores/, and re-recording cassettes only when asked.
+                        Model spend is Rohit's call (D12).
+                      artifact: scripts/golden_eval.py
+                      verify: .venv/bin/python scripts/golden_eval.py --dry-run
+                      depends_on: [M19.C4.L-data.V3.U02]
+            - layer: integration
+              levels:
+                - level: 5
+                  units:
+                    - id: M19.C5.L-integration.V5.U03
+                      what: >
+                        A `golden-pg` CI job — a `postgres:17` service and the scratch URL — runs
+                        the golden set on every push; the hermetic job deselects it. It first runs
+                        when Rohit pushes the batch (D10).
+                      artifact: .github/workflows/ci.yml
+                      verify: .venv/bin/python -m pytest tests/test_ci_runs_the_golden_set_on_postgres.py -q
+                      depends_on: [M19.C5.L-interface.V4.U01]
+                    - id: M19.C5.L-integration.V5.U04
+                      what: >
+                        The before-score, written into 03-FINDINGS §F with the commit it was
+                        measured at; `golden_score.py --assert-recorded` agrees with it.
+                      artifact: speedrun008/YC-II W27/03-FINDINGS.md
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py --assert-recorded "speedrun008/YC-II W27/03-FINDINGS.md"
+                      depends_on: [M19.C5.L-interface.V4.U01]

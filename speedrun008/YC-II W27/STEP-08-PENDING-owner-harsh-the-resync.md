@@ -4,6 +4,12 @@
 would delete the same mail again. **Decision:** `06` D5 (how far back; recommended 180 days).
 **Moves:** the 258 content-less mails come back with content; the funnel probe is re-run.
 
+⛔ **Also depends on `STEP-18` B20** (found 2026-10-05; tree `yc2_w27/M17.C2.L-data.V0.U02`). A
+message that already went through the semantic lane holds a fingerprint claim, and the claim
+outlives its event. Re-landed through `set_aside`, or after a disconnect-with-wipe and reconnect,
+the copy gets a new event id and is skipped as *seen on screen* — silently, extracting nothing.
+The tenant reset (`50c50073`) deletes the fingerprints; the other paths do not.
+
 ---
 
 ## 1 · What is true now `[CODE]`

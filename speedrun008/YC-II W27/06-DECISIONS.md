@@ -17,6 +17,7 @@ default holds, and the step that depends on it says so in its own file.
 | **D10** | One branch before building | ✅ **Merged 2026-10-05, on your instruction.** You push the whole batch at once, later; Harsh deploys after | `STEP-00` |
 | **D11** | The current per-sweep LLM Decision Maker until the expert replaces it | **Keep it, behind the change gate** | `STEP-02` |
 | **D12** | Ten minutes of labels for the golden set | **Yes** | `STEP-01` |
+| **D13** | Once calibration runs again, may it mute a rule or move a threshold on your account without your approval? | **No** — shadow: it logs what it would do; you arm it per tenant, after `STEP-18` B22–B24 | `yc2_w27/M18` (shadow, not blocked) · arming |
 
 ---
 
@@ -147,3 +148,36 @@ waits for that.
 asks one question of each: *should this have reached you?* Your answers become the exam every
 later step must pass. **Recommended: yes.** **Default:** I label them from this analysis, marked
 as mine, and you correct them later.
+
+**Five smaller questions came out of the 2026-10-05 check of `STEP-01`** (its §9). Each has a
+default, so none blocks the build:
+
+| | Question | Default if you say nothing |
+|---|---|---|
+| a | Label the ~40 items yourself, or accept mine, marked as mine? | mine, marked; you correct later |
+| b | Sender and date only — or may the sheet show subjects and card headlines too? `STEP-01` §4 already goes slightly beyond sender and date | sender and date only |
+| c | May the live recording spend model money on the synthetic set, and on which model? | no spend: the cassettes are my own writing, marked as such |
+| d | Score *"in the morning brief only"* as not expressible until `STEP-15` builds the brief? | yes |
+| e | May a case file carry a production `event_id` (an opaque id, no content)? | no — synthetic ids only |
+
+## D13 · Once calibration runs again, may it mute or move a threshold without you?
+
+**What it is.** The weekly calibration (`feedback/calibrate.py`) scores each rule from your "wrong"
+presses. Below a precision floor it **mutes** the rule, and it nudges score thresholds ±5 a week.
+It has failed on every run since 10 Sep, so it has never done either. The fix is one line
+(`STEP-18` B1). That line alone switches all of this on, unattended.
+
+**What the 2026-10-05 test on a scratch database found** once it applies anything (`STEP-18`
+B22–B24):
+
+- a muted rule's cards vanish and nothing explains why;
+- a mute never lifts;
+- any applied mute or nudge hides **every** open card of that pack — even a nudge meant to show
+  more. In the test the queue went from 5 to 0.
+
+| Option | |
+|---|---|
+| **A · Shadow** — it runs, and records what it would mute or nudge; nothing changes until you switch it on for a tenant | ✅ **Recommended.** Built in `yc2_w27/M18`, whatever you decide |
+| B · Let it apply | not before B22–B24 are fixed |
+
+**Default:** A.

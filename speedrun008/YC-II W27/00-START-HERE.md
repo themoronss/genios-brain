@@ -31,7 +31,7 @@ flip-flopping and most of the model spend disappears — and it depends on nothi
 | Step | Status | Owner | What it does | The number that must move |
 |---|---|---|---|---|
 | [`STEP-00`](STEP-00-PENDING-owner-rohit-and-harsh-one-branch.md) | **PENDING** | Rohit (push, batched) · Harsh (deploy) | one branch, one measured baseline — ✅ merged; both suites run, every failure attributed; production baseline committed with its SQL (5 Oct) | `harsh/mvp` vs `speedrun008`: 13 / 28 → 0 / N ✅ · pushed ⏳ batched · deployed ⏳ |
-| [`STEP-01`](STEP-01-NEXT-the-golden-set.md) | **NEXT** | Claude · Rohit labels | your mailbox becomes the exam: ~50 must-detect / must-abstain cases, a replay scorer | a measured before-score |
+| [`STEP-01`](STEP-01-NEXT-the-golden-set.md) | **NEXT** — after `yc2_w27` M16–M18 | Claude · Rohit labels | your mailbox becomes the exam: ~50 must-detect / must-abstain cases, a replay scorer | a measured before-score |
 | [`STEP-02`](STEP-02-TO-BUILD-the-change-gate.md) | TO BUILD | Claude | no new evidence → no new decision, zero model calls | `l4_llm_decision` ~870/day → < 50; cards stop flipping |
 | [`STEP-03`](STEP-03-TO-BUILD-the-gate-keeps-everything.md) | TO BUILD | Claude | the gate sets attention, never deletes | mails with content deleted: 258 → 0 |
 | [`STEP-04`](STEP-04-TO-BUILD-who-is-us.md) | TO BUILD | Claude · Rohit (D6) | one answer to "who is us", used everywhere | cards with you as the subject: ≥ 3 → 0 |
@@ -67,17 +67,25 @@ flip-flopping and most of the model spend disappears — and it depends on nothi
    a silent fix.
 5. Claim before editing, release after (`trace-claim.sh`). One writer per file.
 
-## Recommended next — as of 2026-10-05, after the `STEP-00` re-do
+## The next block — tree `yc2_w27`, in Rohit's order (2026-10-05)
 
-Rohit decides; this is the recommendation.
+*"Database ka part, B1, B17, B18, B19, aur phir step 01 golden set — perfectly align karo."* Every
+item was root-caused against the code on scratch databases before it became a unit. The block is in
+`tree.yaml` as `yc2_w27` — 43 units, each with one artifact and one verify command — and it is
+**proposed, awaiting Rohit's go**.
 
-1. **The database suite green**, before `STEP-01` (`STEP-17` §3.0). Every later step's *verify*
-   runs on Postgres, and 50 of those tests fail today, none because of the merge.
-2. Inside it, **`STEP-18` B2 first**. It accounts for 27 of the 50 failures, and `STEP-05` would
-   make it live on every deal-shaped fact and every document edit.
-3. **The three bugs the re-do found**, each small and certain: B17 (the funnel loses every zero
-   decision), B18 (an unparsed mail waits forever), B19 (no Gmail attachment is ever read).
-4. Then `STEP-01`, the golden set, on the same scratch database.
+| # | Milestone | What it ships | Units |
+|---|---|---|---|
+| 1 | `M16` the database suite is green | 50 failed → 0. 27 are one live bug (B2, the edge vocabulary). The other 23 are test-side: a script, three expiring test clocks, six outgrown fixtures, two text guards. No engine change outside B2 | 16 |
+| 2 | `M17` nothing captured is lost silently | B17 — the funnel writes its zeros, in every lane. B18 — a failed extraction is read again; first, a fingerprint claimed by an event that is gone stops blocking its re-landed copy (that also fixes B20). B19 — Gmail attachments are fetched; Harsh records one live response shape first | 10 |
+| 3 | `M18` calibration runs, and only proposes | B1 — the shadow switch lands before the one-line fix, because the fix alone arms unattended muting (`06` D13) | 5 |
+| 4 | `M19` the golden set drives the engine | `STEP-01`, rewritten from its claim-by-claim check: `finalize_l1`, one clock, recorded model answers, a witness for every must-abstain case | 12 |
+
+Every milestone after `M16` depends on it, because its verify runs on the scratch database.
+`M17`, `M18` and `M19` do not depend on each other; Rohit's order sequences them. The critical path
+is 8 units (`M16.C1` → `M16.C6` → `M18`).
+
+Nothing here is pushed. Rohit pushes the batch (`06` D10).
 
 ## Where this meets the other work
 
