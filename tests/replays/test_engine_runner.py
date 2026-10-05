@@ -254,17 +254,18 @@ def test_the_card_reader_reads_what_the_founder_sees(pg_store):
         c.execute(text("delete from cards where org_id = :o"), {"o": org})
         c.execute(text(
             "insert into cards (card_id, signal_id, org_id, level, urgency_band, headline, "
-            "situation, score, why, actions, state, expires_at, business_subject) values "
-            "('card_r1', 'sig_r1', :o, 'prescriptive', 'high', 'Reply to Kavya', "
+            "situation, score, why, actions, artifact, state, expires_at, business_subject) "
+            "values ('card_r1', 'sig_r1', :o, 'prescriptive', 'high', 'Reply to Kavya', "
             "'Kavya asked for the deck', 80, cast(:why as jsonb), cast(:act as jsonb), "
-            "'queued', :exp, 'Lotus Ventures')"),
+            "cast(:art as jsonb), 'queued', :exp, 'Lotus Ventures')"),
             {"o": org, "why": '["partners meet Monday"]', "act": '[{"label": "Send the deck"}]',
+             "art": '{"kind": "draft_reply", "body": "Hi Kavya, the deck is attached."}',
              "exp": at + timedelta(days=3)})
     try:
         (card,) = er._cards(pg_store.engine, org, [{"card_id_absent"}, {"card_r1"}])
         assert card.card_id == "card_r1" and card.sweeps == (1,)
         for said in ("Reply to Kavya", "asked for the deck", "partners meet Monday",
-                     "Send the deck", "Lotus Ventures"):
+                     "Send the deck", "the deck is attached", "Lotus Ventures"):
             assert said in card.text, said
     finally:
         with pg_store.engine.begin() as c:

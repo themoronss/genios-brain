@@ -371,17 +371,18 @@ def _cards(engine: Any, org: str, open_after: list[set[str]]) -> tuple[CardView,
         return ()
     with engine.connect() as conn:
         rows = conn.execute(text(
-            "select card_id, state, level, headline, situation, why, actions, business_subject, "
-            "unresolved_item, why_now, output_lane from cards "
+            "select card_id, state, level, headline, situation, why, actions, artifact, "
+            "business_subject, unresolved_item, why_now, output_lane from cards "
             "where org_id = :o and card_id = any(:ids) order by card_id"),
             {"o": org, "ids": sorted(seen)}).fetchall()
     out = []
     for r in rows:
         # One line per thing the founder reads — each WHY item and each action on its own, so a
         # reader can compare two cards line by line.
+        artifact = r.artifact if isinstance(r.artifact, dict) else {}
         parts = [r.headline, r.situation, *(_flat(w) for w in (r.why or ())),
-                 *(_flat(a) for a in (r.actions or ())), r.business_subject, r.unresolved_item,
-                 r.why_now]
+                 *(_flat(a) for a in (r.actions or ())), artifact.get("body"), r.business_subject,
+                 r.unresolved_item, r.why_now]
         out.append(CardView(card_id=r.card_id, state=r.state, level=r.level,
                             text="\n".join(str(p) for p in parts if p),
                             output_lane=r.output_lane,
