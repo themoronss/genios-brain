@@ -197,17 +197,18 @@ def _erase_tenant(store, org: str) -> None:
             conn.execute(text(f"delete from {tbl} where org_id=:o"), {"o": org})
 
 
-def _seed_event(conn, org: str, event_id: str, domain: str) -> None:
+def _seed_event(conn, org: str, event_id: str, domain: str, *,
+                occurred_at: datetime = NOW) -> None:
     reqd = conn.execute(text(
         "select column_name, data_type from information_schema.columns "
         "where table_name='source_events' and is_nullable='NO' and column_default is null")).all()
     vals = {"event_id": event_id, "org_id": org, "source": "gmail", "object_type": "email",
-            "outcome": "emitted", "occurred_at": NOW,
+            "outcome": "emitted", "occurred_at": occurred_at,
             "domain_hints": json.dumps([{"domain": domain}])}
     for r in reqd:
         if r.column_name in vals:
             continue
-        vals[r.column_name] = (NOW if ("time" in r.data_type or "date" in r.data_type)
+        vals[r.column_name] = (occurred_at if ("time" in r.data_type or "date" in r.data_type)
                                else 0 if ("int" in r.data_type or "numeric" in r.data_type)
                                else "{}" if "json" in r.data_type
                                else f"{r.column_name}_{event_id}")
@@ -281,11 +282,12 @@ _SUPPORT_CANNED = {
 }
 
 
-def _run_admin(store, org: str, event_id: str = "adm_evt") -> None:
+def _run_admin(store, org: str, event_id: str = "adm_evt", *,
+               occurred_at: datetime = NOW) -> None:
     with store.engine.begin() as conn:
-        _seed_event(conn, org, event_id, "admin")
+        _seed_event(conn, org, event_id, "admin", occurred_at=occurred_at)
     res = process_event(org_id=org, event_id=event_id, source="gmail", content=_ADMIN_CONTENT,
-                        sender_email="meera@northwind-registry.test", occurred_at=NOW,
+                        sender_email="meera@northwind-registry.test", occurred_at=occurred_at,
                         llm=_FakeLLM(_ADMIN_CANNED), store=store, is_inbound=True,
                         internal_emails=frozenset(), domain_hints=[{"domain": "admin"}])
     assert res.outcome == "committed"

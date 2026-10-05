@@ -164,7 +164,11 @@ def test_handled_closes_the_item_like_done(engine, seat):
 
 def test_the_week_does_not_claim_what_it_did_not_cause(engine, seat):
     org, seat_id = seat
-    created = NOW - timedelta(days=1)
+    # A FIXED MID-WEEK INSTANT, not the wall clock. The report counts the seat's LOCAL week
+    # [Mon 00:00, next Mon 00:00), so "a day ago" read off the wall clock is LAST week on every
+    # Monday and this failed one day in seven.
+    now = datetime(2026, 10, 7, 12, tzinfo=timezone.utc)          # a Wednesday
+    created = now - timedelta(days=1)
     with engine.begin() as c:
         # closed after its nudge, by the product's prompting
         _followup(c, org, seat_id, "ask", "done", nudged_before_close=True, created=created,
@@ -174,7 +178,7 @@ def test_the_week_does_not_claim_what_it_did_not_cause(engine, seat):
                   topic=uuid.uuid4().hex)
         _followup(c, org, seat_id, "my_promise", "handled", nudged_before_close=True,
                   created=created, topic=uuid.uuid4().hex)
-    r = F.weekly_report(engine, org_id=org, seat_id=seat_id, capability_id=CAP, now=NOW)
+    r = F.weekly_report(engine, org_id=org, seat_id=seat_id, capability_id=CAP, now=now)
     assert r["asks_answered"] == 2, "the ask WAS answered — the outcome is real either way"
     assert r["promises_kept"] == 1
     # …but the product only claims the one it caused
