@@ -1,0 +1,120 @@
+full suite WITH a database · speedrun008 @ 8a472b81 (merged) · 2026-10-05
+scratch Postgres 17.11 in Docker (production runs 17.6), created empty for this run;
+GENIOS_TEST_DATABASE_URL=postgresql+psycopg://… — the repo's own scheme. Migrations 0001..0190
+applied from zero without an error.
+
+  50 failed, 16683 passed, 4 skipped, 152 xfailed, 1595 warnings in 1200.05s (0:20:00)
+  skipped 1,068 -> 4: the database-gated tests ran for the first time on this branch.
+
+THE URL SCHEME. An earlier run with a bare postgresql:// showed 3 setup errors, all in
+tests/test_llm_cost_attribution.py: that file builds its engine from the raw URL (:179), and
+SQLAlchemy then picks psycopg2, which is not installed. With postgresql+psycopg:// its 9 tests
+pass. A run-configuration effect, not a defect.
+
+ATTRIBUTION -- the 16 failing files, run on three trees, each against a fresh database:
+  pre-merge  speedrun008 @ 2dc61dac   50 failed, 265 passed in 466.49s (0:07:46)
+  harsh/mvp  @ 2c42722d               49 failed, 266 passed in 479.56s (0:07:59)
+  merged     @ 8a472b81               50 failed, 265 passed in 481.69s (0:08:01)
+  failing only on the merge (a merge defect): NONE
+  failing on pre-merge and merge, passing on harsh/mvp:
+    tests/packs/brains/test_org_discovery.py::test_nothing_outside_the_publisher_writes_a_brain_entry
+    -> it scans source TEXT; feedback/target_policy.py (32a5c3a4, this branch) names the
+       statement in two comments (:474, :512). No second writer: a text guard tripped by prose.
+  (the attribution used the bare postgresql:// scheme; none of the 16 files builds its engine
+   from the raw URL, so the scheme cannot change their result)
+
+THIS RUN AGAINST THE ATTRIBUTED SET:
+  failing now, not in the attributed set: none
+  in the attributed set, not failing now: none
+
+THE 50, GROUPED BY CAUSE (count · the frame that raised · the first E line, 150 characters):
+   23  genios_engine/context/graph_store.py
+       ValueError: unknown edge_type 'involves'. The graph's relations are a closed set (attended, concerns, corresponded_with, owns, raised_in, works_at) —
+    5  scripts/unit_reachability_report.py
+       TypeError: int() argument must be a string, a bytes-like object or a real number, not 'dict'
+    4  genios_engine/context/graph_store.py
+       ValueError: unknown edge_type 'edited'. The graph's relations are a closed set (attended, concerns, corresponded_with, owns, raised_in, works_at) — an
+    3  tests/reason/adapters/test_roster_reaches_the_audit.py
+       AssertionError: {'roster_v2': 1, 'ranking_v2': 0, 'roster_v2_cross_layer_unmet': 1, 'r1_interpreter': 0, ...}
+    1  tests/capture/test_g7_g8_g10_gates.py
+       AssertionError: G8 failed on ['signals_emitted', 'signal_type_in_enum', 'importance_in_range', 'components_populated', 'verified_evidence', 'drop_rate
+    1  tests/capture/test_g7_g8_g10_gates.py
+       AssertionError: a floor of 4680 refused nothing; the cut did not happen
+    1  tests/capture/test_g7_g8_g10_gates.py
+       AssertionError: the replay produced 0 scored signals against 321
+    1  tests/capture/test_g7_g8_g10_gates.py
+       AssertionError: the window has no event of each kind to diff
+    1  tests/context/lifecycle/test_resolution.py
+       assert (0 == 0 and 0 >= 1)
+    1  tests/context/test_l2_shadow_diff.py
+       AssertionError: assert {'admin_perio...eriod_review'} == {'admin_perio...eriod_review'}
+    1  tests/context/test_situation_publisher.py
+       AssertionError: axis coverage arrived unassessed on the live path — the publisher can only carry what `_ACTIVE_SITUATIONS` selects
+    1  tests/contracts/test_h0_gate.py
+       AssertionError: the placeholder tree is not green:
+    1  tests/packs/brains/test_org_discovery.py
+       AssertionError: assert None == 'node_rohit'
+    1  tests/packs/brains/test_org_discovery.py
+       AssertionError: assert ['feedback/pu...et_policy.py'] == ['feedback/publisher.py']
+    1  tests/reason/adapters/test_roster_reaches_the_audit.py
+       AssertionError: {'roster_v2': 0, 'ranking_v2': 0, 'r1_interpreter': 0, 'l1_scoring_active': 1, ...}
+    1  tests/reason/test_llm_decision_maker.py
+       assert 2 == 1
+    1  tests/test_availability_pg.py
+       AssertionError: Layer 1 published no availability_change: []
+    1  tests/test_l1_seam_activation.py
+       AssertionError: the per-tenant seam gate reads a global boolean again
+    1  tests/test_screen_followups_pg.py
+       AssertionError: the ask WAS answered — the outcome is real either way
+
+every failing test:
+  FAILED tests/capture/test_g7_g8_g10_gates.py::test_g10_the_shadow_diff_reports_and_explains_every_line_on_a_real_tenant
+  FAILED tests/capture/test_g7_g8_g10_gates.py::test_g7_the_same_corpus_captured_a_second_time_from_scratch_scores_identically
+  FAILED tests/capture/test_g7_g8_g10_gates.py::test_g8_a_below_floor_signal_leaves_an_explainable_row_and_never_reaches_the_publisher
+  FAILED tests/capture/test_g7_g8_g10_gates.py::test_g8_the_doc_06_group_acceptance_gate_passes_on_stored_rows
+  FAILED tests/context/lifecycle/test_resolution.py::test_a_situation_the_crm_already_closed_costs_no_model_call
+  FAILED tests/context/test_l2_shadow_diff.py::test_a_situation_no_correlation_produced_is_named_but_never_scored
+  FAILED tests/context/test_situation_publisher.py::test_the_production_reasoning_pass_publishes_a_quoted_receipt
+  FAILED tests/contracts/test_h0_gate.py::test_every_layer_two_placeholder_skips_with_its_wave_and_gate_named
+  FAILED tests/packs/brains/test_org_discovery.py::test_an_approver_resolves_through_the_identity_layers_own_keys
+  FAILED tests/packs/brains/test_org_discovery.py::test_nothing_outside_the_publisher_writes_a_brain_entry
+  FAILED tests/reason/adapters/test_roster_reaches_the_audit.py::test_a_compiled_bundle_verifies_end_to_end
+  FAILED tests/reason/adapters/test_roster_reaches_the_audit.py::test_an_unactivated_tenant_persists_exactly_the_six_it_persists_today
+  FAILED tests/reason/adapters/test_roster_reaches_the_audit.py::test_the_activated_tenants_audit_holds_the_whole_roster_not_six_units
+  FAILED tests/reason/adapters/test_roster_reaches_the_audit.py::test_the_skips_the_selector_made_are_in_the_tenants_audit_rows
+  FAILED tests/reason/adapters/test_unit_reachability_report.py::test_an_unactivated_tenant_measures_the_six_unit_lane_and_the_gate_refuses_it
+  FAILED tests/reason/adapters/test_unit_reachability_report.py::test_main_exits_non_zero_when_a_row_fails
+  FAILED tests/reason/adapters/test_unit_reachability_report.py::test_main_exits_zero_when_every_row_holds
+  FAILED tests/reason/adapters/test_unit_reachability_report.py::test_the_gate_passes_on_an_activated_tenant_and_names_every_units_four_states
+  FAILED tests/reason/adapters/test_unit_reachability_report.py::test_the_report_writes_nothing_it_was_not_asked_to_write
+  FAILED tests/reason/test_llm_decision_maker.py::test_an_llm_decision_persists_verifies_and_replays_on_real_postgres
+  FAILED tests/test_account_rollup_reaches_the_company.py::test_a_lost_account_is_still_lost
+  FAILED tests/test_account_rollup_reaches_the_company.py::test_an_account_nobody_has_written_to_reports_nothing_rather_than_neutral
+  FAILED tests/test_account_rollup_reaches_the_company.py::test_deal_value_is_never_derived_at_the_account_level_either
+  FAILED tests/test_account_rollup_reaches_the_company.py::test_recomputing_overwrites_rather_than_appending
+  FAILED tests/test_account_rollup_reaches_the_company.py::test_the_account_is_waiting_on_us_if_any_one_person_is
+  FAILED tests/test_account_rollup_reaches_the_company.py::test_the_account_s_last_inbound_is_the_latest_across_its_people
+  FAILED tests/test_account_rollup_reaches_the_company.py::test_the_company_inherits_its_people_s_evidence
+  FAILED tests/test_account_rollup_reaches_the_company.py::test_the_company_stage_ladder_matches_the_deal_one[demo_requested-evaluating]
+  FAILED tests/test_account_rollup_reaches_the_company.py::test_the_company_stage_ladder_matches_the_deal_one[introduction-new]
+  FAILED tests/test_account_rollup_reaches_the_company.py::test_the_company_stage_ladder_matches_the_deal_one[meeting_request-engaged]
+  FAILED tests/test_account_rollup_reaches_the_company.py::test_the_company_stage_ladder_matches_the_deal_one[proposal_sent-proposing]
+  FAILED tests/test_account_rollup_reaches_the_company.py::test_the_deal_inherits_derived_facts_too
+  FAILED tests/test_account_rollup_reaches_the_company.py::test_the_roll_up_does_not_care_which_way_the_edge_was_written
+  FAILED tests/test_availability_pg.py::test_ooo_email_goes_gate_l1_qes_l2_to_person_availability
+  FAILED tests/test_deal_node_from_correspondence.py::test_a_deal_fact_from_correspondence_mints_a_deal_node
+  FAILED tests/test_deal_node_from_correspondence.py::test_a_later_message_about_the_account_reaches_the_deal
+  FAILED tests/test_deal_node_from_correspondence.py::test_deal_facts_land_on_the_deal_not_on_the_person
+  FAILED tests/test_deal_node_from_correspondence.py::test_re_running_the_same_event_does_not_mint_a_second_deal
+  FAILED tests/test_deal_node_from_correspondence.py::test_the_backfill_gives_history_the_deal_node_it_never_had
+  FAILED tests/test_deal_node_from_correspondence.py::test_the_backfill_reanchors_a_situation_that_was_already_correlated
+  FAILED tests/test_deal_node_from_correspondence.py::test_the_deal_is_edged_to_both_the_account_and_the_contact
+  FAILED tests/test_deal_node_from_correspondence.py::test_the_incremental_path_alone_cannot_correct_an_anchor
+  FAILED tests/test_deal_node_from_correspondence.py::test_the_situation_types_as_a_deal_not_as_an_opportunity
+  FAILED tests/test_document_register.py::test_a_governance_document_under_control_produces_no_row_at_all
+  FAILED tests/test_document_register.py::test_the_sweep_is_idempotent_and_closes_a_gap_that_stops_being_true
+  FAILED tests/test_document_register.py::test_the_sweep_opens_a_situation_for_a_policy_with_no_owner
+  FAILED tests/test_document_register.py::test_two_copies_of_one_policy_are_clustered_across_the_file_store
+  FAILED tests/test_l1_seam_activation.py::test_the_seams_gate_is_not_the_domain_compiler_flag
+  FAILED tests/test_l2_db_e2e.py::test_structured_deal_reaches_a_situation
+  FAILED tests/test_screen_followups_pg.py::test_the_week_does_not_claim_what_it_did_not_cause

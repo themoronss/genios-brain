@@ -1,8 +1,9 @@
 # 03 · Findings — what is broken, what only looked broken, what exists, what is missing
 
 **Written for:** everyone. **Measured:** 2026-10-05, `speedrun008` @ `2dc61dac` and production
-(read-only, metadata). A finding is never deleted; a correction is a new line that says what it
-corrects.
+(read-only, metadata). **Re-measured the same day after the merge** (`8a472b81`, the `STEP-00`
+re-do): F26–F29, E8, and the corrections to F24 and E4. A finding is never deleted; a correction
+is a new line that says what it corrects.
 
 ---
 
@@ -34,7 +35,12 @@ corrects.
 | F22 | Intro, information, approval and investor-update requests never open a loop | `[CODE]` `contracts/open_loop.py:24` vs `observations/kinds.yaml` | `STEP-09` |
 | F23 | The golden replays cannot fail or pass on the engine — the harness never calls it | `[CODE]` `tests/replays/test_golden_replays.py:34-48` | `STEP-01` |
 | F24 | The narrator truncates at its token ceiling | `[PROD]` `l4_bundle` 29 of 55 failed on 3 Oct, all at 1,400 | `harsh/mvp` `5ebfef8e` (cap 2,400) — verify after `STEP-00` |
-| F25 | The sixteen bugs of `STEP-18` | per row there | `STEP-18` |
+| F25 | The sixteen bugs of `STEP-18`, B1–B16 (B17–B19 came later: F27–F29) | per row there | `STEP-18` |
+| F24 · re-measured | ⚠️ **not yet verified.** All eight narrator failures of 4 Oct stopped at exactly 1,400 tokens, the last at 11:30 UTC — before `5ebfef8e` was committed (14:29 UTC). No narrator call has run since. The 24 h ceiling check in `pipeline_health` therefore passes on no data for this lane | `[PROD]` `baseline/2026-10-05/production_state.txt` `@narrator_ceiling` | unchanged — re-run the probe after the next narrator call |
+| F26 | The database tests had never run on this branch. Run, **50 fail** — none caused by the merge | `[TEST]` `baseline/2026-10-05/suite_with_database.txt`; attribution on three trees in `STEP-00` §4.2 | `STEP-17` §3.0; 27 of them are `STEP-18` B2 |
+| F27 | The funnel never records a zero decision: every sweep that emitted nothing reads *"nobody looked"* — and the stage counts the rule lane only | `[CODE]` `reason/runner.py:860, 1364`; `api/routes.py:774-775`; `[PROD]` 64 sweeps since 3 Oct, `decision_emitted` written in 3, values 1–4, never 0 | `STEP-18` B17 → `STEP-06` §3.2 |
+| F28 | A mail whose extraction did not parse waits forever: the extractor's four park codes are in no drain set, and the funnel calls the mail *kept unread* | `[CODE]` `capture/semantic/extractor.py:199-210` vs `capture/parked/drain.py:41-77`; `[PROD]` 2 mails pending since 3 Oct, 0 attempts | `STEP-18` B18 → `STEP-06` §3.1 |
+| F29 | **No Gmail attachment is read.** Composio refuses every fetch — *"Missing required fields: file_name"* | `[CODE]` `capture/connectors/composio.py:298-299`; `[PROD]` 88 of 88 stored errors; 50 dead-lettered, 38 pending, 0 recovered | `STEP-18` B19 |
 
 ## B · False alarms — things that looked wrong and are not
 
@@ -100,6 +106,8 @@ corrects.
 | E5 | After the merge, do Sales and Support stay `default_on: false`? | Harsh, Rohit (`06` D2) |
 | E6 | May I read email text for the golden labels — a permission rule, or will you run those queries? | Rohit (`06` D12) |
 | E7 | The 11 Aug bounce reports — which addresses failed? | answered by `STEP-10` §3.5 once bounces are parsed |
+| E4 · corrected | ⚠️ 2026-10-05, the `STEP-00` re-do: E4's *"so the 2–4 Oct fixes are live"* claimed more than a 7/7 pass shows — the checks read production's data, not its commit. Measured per fix: `d4e035bb` is visibly live (the refetch errors written on 5 Oct carry their reason); `5ebfef8e`'s cap cannot show yet (F24 · re-measured). The commit is still Harsh's to confirm | Harsh |
+| E8 | Merge `origin/rohit-yc-brain`? 19 commits, 22 Aug – 9 Sep, **no code**: it moves 81 files from `Rohit_Updates/` into `Rohit_Updates (Version 2)/Version 1 Updates/`, adds one failure-analysis document, `qa-contract.yaml` (38 lines) and `tree.yaml` (656 lines). A dry-run merge conflicts in `tree.yaml` and on two `00-CORRECTIONS-2026-10-01.md` files this branch added inside a folder that branch renamed | Rohit |
 
 ## F · Numbers, with their sources
 
@@ -128,3 +136,9 @@ Every number below was measured on 2026-10-05 against production, read-only; *sn
 | branch divergence | 13 / 28 → merged | `git rev-list --left-right --count origin/harsh/mvp...speedrun008`; `STEP-00` |
 | `pipeline_health` on production | **7 / 7 pass** | `baseline/2026-10-05/pipeline_health.txt` |
 | inbound mail by fate | 365 = 15 reached reasoning · 18 read, no signal · 67 junked · 258 deleted · 7 kept unread | `baseline/2026-10-05/workstream_funnel.txt` (`scripts/workstream_funnel.py`) |
+| **Re-measured in the `STEP-00` re-do, 13:51 UTC** — statements in `baseline/production_state.sql`, output in `baseline/2026-10-05/production_state.txt` | | |
+| funnel sweeps since 3 Oct 08:50 UTC | 64; `decision_emitted` written in 3 (values 1–4); `card_delivered` 0 in the last 7 that wrote it | `@sweeps_recorded`, `@funnel_per_stage`, `@funnel_last_8_sweeps` |
+| L2 processing runs | 30, all `done`, 0 edge-type errors (3–5 Oct) | `@l2_processing_runs` |
+| park queue | 88 attachments (50 dead-lettered, 38 pending) · 95 screen items pending, 162 recovered · 2 mails pending at extraction · 4 mails recovered | `@park_queue` |
+| per-sweep decider calls per UTC day | 718 · 477 · 1,204 · 306 (2–5 Oct; 5 Oct to 13:51) | `@model_calls_by_day` |
+| the database suite on the merged branch | see `STEP-00` §4.2 | `baseline/2026-10-05/suite_with_database.txt` |

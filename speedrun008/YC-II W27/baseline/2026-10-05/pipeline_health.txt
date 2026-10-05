@@ -1,4 +1,4 @@
-pipeline_health · org org_e97e86f858ad48b2bbf64b8a · measured 2026-10-05 12:13:07.121686+00:00 · read-only session (Claude; no write flag)
+pipeline_health · org org_e97e86f858ad48b2bbf64b8a · measured 2026-10-05 13:51:00 UTC · read-only session (Claude; no write flag)
 
 PASS  every emitted event is routed
       measured: 0 emitted events with route IS NULL

@@ -1,7 +1,8 @@
 # YC-II W27 — GeniOS as a 30-year chief of staff
 
 **Opened:** 2026-10-05. **Branch at writing:** `speedrun008` @ `2dc61dac`, which is **28 commits
-ahead of and 13 behind** `origin/harsh/mvp`, the branch production runs (see `STEP-00`).
+ahead of and 13 behind** `origin/harsh/mvp`, the branch production runs. Merged the same day:
+0 behind since `568a245d` (`STEP-00`).
 **Sits beside** `../YCW27/` — that programme built the six layers and their receipts; this one
 makes them **think about your company the way an expert would**. Nothing in `../YCW27/` is
 superseded.
@@ -60,6 +61,8 @@ only) or read in the code, and says which.
   Statuses: `NEXT`, `TO BUILD`, `PENDING` (title names the owner), `DONE`, `WITHDRAWN`, `RETIRED`.
 - A step is **done when its number moved on production**, not when its code merged. *A skip is not
   a pass.*
+- **The push is batched** (`06` D10). A step built and green locally stays `PENDING` — owner Rohit
+  (push) and Harsh (deploy) — until the batch is deployed and its production number moves.
 - Bottom-up, one unit at a time; a parent is never started before its children are green.
 - `[CODE]` = read in the repository · `[PROD]` = measured on production · `[ATLAS]` = Design Atlas
   v2 or the Secret War audit · `[MODELLED]` = an estimate or an illustration, labelled as such.

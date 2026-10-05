@@ -30,7 +30,7 @@ flip-flopping and most of the model spend disappears — and it depends on nothi
 
 | Step | Status | Owner | What it does | The number that must move |
 |---|---|---|---|---|
-| [`STEP-00`](STEP-00-PENDING-owner-rohit-and-harsh-one-branch.md) | **PENDING** | Rohit (push) · Harsh (deploy) | one branch, one deployed baseline — ✅ merged, suite green, baseline kept (5 Oct) | `harsh/mvp` vs `speedrun008`: 13 / 28 → 0 / N ✅ · pushed ⏳ · deployed ⏳ |
+| [`STEP-00`](STEP-00-PENDING-owner-rohit-and-harsh-one-branch.md) | **PENDING** | Rohit (push, batched) · Harsh (deploy) | one branch, one measured baseline — ✅ merged; both suites run, every failure attributed; production baseline committed with its SQL (5 Oct) | `harsh/mvp` vs `speedrun008`: 13 / 28 → 0 / N ✅ · pushed ⏳ batched · deployed ⏳ |
 | [`STEP-01`](STEP-01-NEXT-the-golden-set.md) | **NEXT** | Claude · Rohit labels | your mailbox becomes the exam: ~50 must-detect / must-abstain cases, a replay scorer | a measured before-score |
 | [`STEP-02`](STEP-02-TO-BUILD-the-change-gate.md) | TO BUILD | Claude | no new evidence → no new decision, zero model calls | `l4_llm_decision` ~870/day → < 50; cards stop flipping |
 | [`STEP-03`](STEP-03-TO-BUILD-the-gate-keeps-everything.md) | TO BUILD | Claude | the gate sets attention, never deletes | mails with content deleted: 258 → 0 |
@@ -60,9 +60,24 @@ flip-flopping and most of the model spend disappears — and it depends on nothi
    file is corrected first.**
 3. A step is **DONE** only when its number moved on production and its `verify` command exits 0
    with no skips. The file is then renamed `-DONE-` and its title updated in the same commit.
+   **The push is batched** (`06` D10): a step finished and green locally is renamed
+   `-PENDING-owner-rohit-and-harsh-` — push, deploy, then its production number — exactly as
+   `STEP-00` is, and becomes `-DONE-` only after that.
 4. Anything noticed on the way that is not this step becomes a line in `03-FINDINGS.md` §E — never
    a silent fix.
 5. Claim before editing, release after (`trace-claim.sh`). One writer per file.
+
+## Recommended next — as of 2026-10-05, after the `STEP-00` re-do
+
+Rohit decides; this is the recommendation.
+
+1. **The database suite green**, before `STEP-01` (`STEP-17` §3.0). Every later step's *verify*
+   runs on Postgres, and 50 of those tests fail today, none because of the merge.
+2. Inside it, **`STEP-18` B2 first**. It accounts for 27 of the 50 failures, and `STEP-05` would
+   make it live on every deal-shaped fact and every document edit.
+3. **The three bugs the re-do found**, each small and certain: B17 (the funnel loses every zero
+   decision), B18 (an unparsed mail waits forever), B19 (no Gmail attachment is ever read).
+4. Then `STEP-01`, the golden set, on the same scratch database.
 
 ## Where this meets the other work
 

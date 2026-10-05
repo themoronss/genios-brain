@@ -14,7 +14,7 @@ default holds, and the step that depends on it says so in its own file.
 | **D7** | Which model thinks, and the daily cap | **Sonnet-class; Opus-class for high stakes; $5/day** | `STEP-12` |
 | **D8** | Screen reminders out of hiding? | **Yes — in the morning brief first** | `STEP-14` |
 | **D9** | Where and when the morning brief arrives | **Dashboard, 08:00 IST** | `STEP-15` |
-| **D10** | One branch before building | ✅ **Merged by Claude on your instruction, 2026-10-05** — you push, Harsh deploys | `STEP-00` |
+| **D10** | One branch before building | ✅ **Merged 2026-10-05, on your instruction.** You push the whole batch at once, later; Harsh deploys after | `STEP-00` |
 | **D11** | The current per-sweep LLM Decision Maker until the expert replaces it | **Keep it, behind the change gate** | `STEP-02` |
 | **D12** | Ten minutes of labels for the golden set | **Yes** | `STEP-01` |
 
@@ -112,15 +112,24 @@ inside the morning brief first; in-the-moment popups only after a week of brief 
 **Recommended:** the dashboard's Today view at 08:00 IST. Email or WhatsApp later, if you want
 it. **Default:** dashboard only.
 
-## D10 · One branch before building — ✅ merged
+## D10 · One branch before building — ✅ merged; the push is batched
 
 **Rohit, 2026-10-05:** *"Harsh MVP se pull le lo — Step 00 karo."* Done locally: `origin/harsh/mvp`
 (13 commits, 2–4 Oct) merged into `speedrun008` with no conflicts. The two branches overlapped
-only in `api/routes.py` and `deliver/card_builder.py`, in disjoint hunks. Results and the
-remaining two actions are in `STEP-00`:
+only in `api/routes.py` and `deliver/card_builder.py`, in disjoint hunks. Results are in `STEP-00`.
 
-- **you** push — `git push origin speedrun008`; the auto-mode classifier refuses `git push` for me;
-- **Harsh** deploys it.
+**Rohit, the same day:** *"ek saath mein saari cheezein push kar dunga."* The push is **batched**.
+Each step is fixed and committed locally, and you push everything at once when the steps are done.
+Then:
+
+- **you** push — `git push origin speedrun008`. Claude does not push; the auto-mode classifier
+  refuses `git push` for Claude anyway;
+- **Harsh** deploys it. No migration is needed today: production and this branch are both at
+  `0190`. A step that adds a migration says so in its own file.
+
+Until that push and deploy, nothing built here reaches production. So a number a step moves
+locally is measured on production only afterwards, and each step's file says which of its numbers
+waits for that.
 
 ## D11 · The current per-sweep LLM Decision Maker, until the expert replaces it
 

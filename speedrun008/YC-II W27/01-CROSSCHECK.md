@@ -207,6 +207,19 @@ connected; it appears only as a recipient of the founder's own mail.
 > these fixes are live and the stranded rows were repaired. What they do not touch is unchanged:
 > 258 mails still have no content, 67 junked mails were never read, and 15 of 365 inbound mails
 > reach reasoning.
+>
+> ⚠️ **Corrected the same day, in the `STEP-00` re-do.** *"So these fixes are live"* claimed more
+> than the measurement shows. A 7/7 pass says production's data is healthy on seven checks. It
+> does not say which commit is running. Measured fix by fix:
+>
+> - `d4e035bb` **is visibly live** — the refetch errors written on 5 Oct carry their reason.
+> - `5ebfef8e`'s narrator cap **cannot show yet**. All eight narrator failures of 4 Oct stopped
+>   at exactly 1,400 tokens, the last at 11:30 UTC — before the fix was committed (19:59 IST,
+>   14:29 UTC). No narrator call has run since, so the 24 h ceiling check passed on no data for
+>   that lane.
+>
+> Which commit runs is still Harsh's to confirm (`03-FINDINGS.md` E4). The evidence is in
+> `baseline/2026-10-05/production_state.txt`.
 
 | Commit | Fixes | Overlap with this plan |
 |---|---|---|

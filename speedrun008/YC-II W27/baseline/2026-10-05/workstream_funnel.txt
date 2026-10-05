@@ -1,4 +1,4 @@
-workstream_funnel · org org_e97e86f858ad48b2bbf64b8a · measured 2026-10-05 12:13:07.121686+00:00 · groups founder-groups.json
+workstream_funnel · org org_e97e86f858ad48b2bbf64b8a · measured 2026-10-05 13:51:00 UTC · groups founder-groups.json
 
 workstream                   mails             parked  reached_reasoning     read_no_signal             junked            deleted        kept_unread
 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -17,12 +17,12 @@ TOTAL                          365                  0                 15        
 calendar events 35 → meeting nodes 3
 
 screen follow-ups (kind · total · open)
-  next_step           63    63
-  their_promise       28    28
-  my_promise          19    18
-  ask                 17    10
+  next_step           70    70
+  their_promise       29    29
+  my_promise          19    17
+  ask                 18    11
   risk                 9     9
-  deadline             6     5
+  deadline             6     4
 
 cards (state · count)
   queued              18
@@ -30,15 +30,15 @@ cards (state · count)
   expired              1
 
 model calls, last 3 days (purpose · calls · failed)
-  l4_llm_decision            2447      0
-  l4_llm_r1                  1464      0
-  relevance_gate              751      2
-  screen_memory_batch         284      0
+  l4_llm_decision            2159      0
+  l4_llm_r1                  1264      0
+  relevance_gate              753      2
+  screen_memory_batch         306      0
   l1_extract                  209      8
-  l1_relevance                197     11
+  l1_relevance                202     11
   l2:resolution               157      0
-  l5_render                    91      0
   moment.screen_insight        81      4
+  l5_render                    76      0
   l4_bundle                    67     37
 
 context an expert would need
