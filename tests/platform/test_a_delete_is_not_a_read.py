@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 2_902, (
+    assert r["statements"] == 2_908, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -189,6 +189,8 @@ def test_the_statement_count_did_NOT_move():
     # design), +1 `platform/warm_lane.py` (the lapsed-plan gate, `7075014c`), +11
     # `scripts/pipeline_health.py` (`5ebfef8e`). Fourteen real statements; the loop hop expanded
     # nothing.
+    # ⛔ MOVED 2,902 → 2,908 the same day by `scripts/workstream_funnel.py` (STEP-00's baseline
+    # probe): six SELECTs, each a literal at its own `sql()` call site.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():
