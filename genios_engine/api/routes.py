@@ -771,8 +771,13 @@ def _run_l2_chain(org_id: str) -> bool:
         # `reason/runner` now counts the resolution itself and publishes it under its own name.
         _count(_funnel.CAPABILITY_RESOLVED,
                _outcomes.get(_funnel.CAPABILITY_RESOLVED) if isinstance(_outcomes, dict) else None)
+        # ⛔ THE PASS'S OWN DECISION COUNT, NOT THE RULE LANE'S `emitted` KEY. That key counted one
+        # lane of three (native capabilities and composites never reached the stage — 4 decisions
+        # beside 15 cards on 3 Oct), and a Counter only carries it when something was emitted, so
+        # a pass that decided nothing wrote NO ROW: "nobody looked". `reason/runner.run` now
+        # publishes `decision_emitted` itself, every lane, zero included.
         _count(_funnel.DECISION_EMITTED,
-               _outcomes.get("emitted") if isinstance(_outcomes, dict) else None)
+               _outcomes.get(_funnel.DECISION_EMITTED) if isinstance(_outcomes, dict) else None)
 
         if _card_store is not None:                              # L5: new gated signals → cards
             from genios_engine.deliver.pipeline import build_cards_for_org

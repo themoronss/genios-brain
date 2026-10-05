@@ -18,7 +18,7 @@ from genios_engine.packs.registry import PackRegistry
 from genios_engine.packs.wiring import (DEFAULT_PACK_ID, ensure_default, ensure_defaults,
                                         make_registry)
 from genios_engine.platform.config import get_settings, l1_seam_enabled
-from genios_engine.platform.funnel import CAPABILITY_RESOLVED, NO_CAPABILITY
+from genios_engine.platform.funnel import CAPABILITY_RESOLVED, DECISION_EMITTED, NO_CAPABILITY
 from genios_engine.platform.ids import new_id
 
 from .baselines import build_baselines, load_node_metrics
@@ -1362,6 +1362,8 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                     pack_authority_revision, effective["pack_id"], effective["version"],
                     decision_payload=decision_payload)
                 out["emitted" if sid else "duplicate_race"] += 1
+                if sid:
+                    out[DECISION_EMITTED] += 1          # the funnel's stage counts every lane
 
             # Native capabilities publish after the legacy rules and out of the same daily
             # reservation, which `_budget_used` re-reads from the signals table so the spend above
@@ -1398,6 +1400,8 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                     pack_id=effective["pack_id"], pack_version=effective["version"],
                     authority_pack_revision=pack_authority_revision)
                 out["native_emitted" if native_sid else "native_duplicate_race"] += 1
+                if native_sid:
+                    out[DECISION_EMITTED] += 1
 
             # Recheck at the emission/composition boundary. The shared lock makes this invariant
             # stable in PostgreSQL; the explicit check also fails closed for test doubles and any
@@ -1418,6 +1422,7 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                         pack_id=effective["pack_id"], pack_version=effective["version"],
                         new_signal_budget=composite_budget)
                     out["composite"] += comp["emitted"]
+                    out[DECISION_EMITTED] += comp["emitted"]
                     out["composite_budget"] += comp.get("budget_held", 0)
                     out["composite_audit_failed"] += comp.get("audit_failed", 0)
                     for nid in comp["active"]:
@@ -1463,6 +1468,13 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                 "eval_time": eval_time.isoformat(), "retry_required": True,
                 "pack": {"pack_id": effective["pack_id"], "version": effective["version"],
                          "snapshot_id": snapshot_id, "graph_version": graph_version}}
+    # ⛔ A COMPLETED PASS WRITES ITS ZEROS. `out` is a Counter and `dict(out)` carries only the keys
+    # something incremented, so a pass that resolved or emitted nothing used to return no key at all
+    # — and the sweep's relay turned that missing key into NO ROW, which migration 0188 defines as
+    # "the stage did not run". It did run. Only this return materialises them: a pass that stopped
+    # early for a retry (the returns above) still reports nothing, because nobody finished looking.
+    out[CAPABILITY_RESOLVED] += 0
+    out[DECISION_EMITTED] += 0
     return {"nodes": len(nodes), "outcomes": dict(out), "eval_time": eval_time.isoformat(),
             "pack": {"pack_id": effective["pack_id"], "version": effective["version"],
                      "snapshot_id": snapshot_id}}
