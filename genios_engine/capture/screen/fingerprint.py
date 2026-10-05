@@ -114,6 +114,39 @@ def _is_pg(conn) -> bool:
     return conn.dialect.name == "postgresql"
 
 
+def _without_set_aside_claims(conn, org_id: str, rows: list) -> list:
+    """The claims still worth honouring: a claim whose event was SET ASIDE is void, and removed.
+
+    ⛔ STEP-18 B20 / B18. Event ids are minted fresh on every landing
+    (`capture/landing/normalize.py`), and a claim outlived its event. So every path that re-lands a
+    message — the re-read of mail captured while L1 was off, the re-read of an extraction that
+    parked, a targeted re-fetch — found the message "already claimed" by the copy it was replacing
+    and skipped it as `seen_on_screen`: a silent zero-extraction. `capture/landing/unread.set_aside`
+    marks the replaced row `superseded`; a claim held by such a row is void, so the copy that
+    replaces it becomes canonical.
+
+    A claim by an event with NO row is still honoured. Deleting events is the caller's to clean up
+    — the tenant reset and the disconnect-with-wipe delete their fingerprints with them — and
+    claims written in isolation (tests, the promoter) carry ids that never had a row.
+
+    PostgreSQL only. The SQLite twin of this table lives in hermetic tests with no `source_events`
+    of their own, and every production claim runs on PostgreSQL.
+    """
+    if not rows or not _is_pg(conn):
+        return rows
+    ids = sorted({str(r.event_id) for r in rows})
+    set_aside = {str(r[0]) for r in conn.execute(text(
+        "select event_id from source_events "
+        "where org_id = :o and outcome = 'superseded' and event_id in :ids").bindparams(
+            bindparam("ids", expanding=True)), {"o": org_id, "ids": ids})}
+    if not set_aside:
+        return rows
+    conn.execute(text(
+        "delete from message_fingerprints where org_id = :o and event_id in :ids").bindparams(
+            bindparam("ids", expanding=True)), {"o": org_id, "ids": sorted(set_aside)})
+    return [r for r in rows if str(r.event_id) not in set_aside]
+
+
 def _now_sql(conn) -> str:
     # clock_timestamp(), not now(): claims are serialised by an advisory lock, and now() is the
     # TRANSACTION start — a claimer that began earlier but waited on the lock would read as first.
@@ -169,6 +202,7 @@ def claim(conn, org_id: str, fps: list[str], source: str, event_id: str, *,
             "select fp, event_id, source, seen_at from message_fingerprints "
             "where org_id = :o and fp in :fps").bindparams(bindparam("fps", expanding=True)),
             {"o": org_id, "fps": sorted(set(family))}).fetchall()
+        before = _without_set_aside_claims(conn, org_id, before)
         if before:
             best = min(before, key=lambda r: (str(r.seen_at), str(r.source), str(r.event_id)))
             out[fp] = str(best.event_id)
