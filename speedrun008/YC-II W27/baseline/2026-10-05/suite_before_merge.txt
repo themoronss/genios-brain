@@ -1,0 +1,4 @@
+full suite · speedrun008 @ 2dc61dac · before the merge · 2026-10-05
+
+15519 passed, 1067 skipped, 152 xfailed, 1576 warnings in 765.12s (0:12:45)
+exit=0

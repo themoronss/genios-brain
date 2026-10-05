@@ -1,0 +1,9 @@
+full suite · speedrun008 + origin/harsh/mvp, merged, before the re-pins · 2026-10-05
+
+FAILED tests/platform/test_a_delete_is_not_a_read.py::test_the_statement_count_did_NOT_move
+FAILED tests/platform/test_the_resolver_says_what_it_cannot_see.py::test_the_resolver_change_moved_no_coverage_verdict
+2 failed, 15667 passed, 1068 skipped, 152 xfailed, 1595 warnings in 762.84s (0:12:42)
+exit=1
+
+Both failures are pinned counts the merge moved: statements 2,888 -> 2,908 and tables 186 -> 187.
+Attributed per file in the merge commit's message; re-pinned deliberately, as both tests ask.

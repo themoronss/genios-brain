@@ -1,0 +1,18 @@
+pipeline_health · org org_e97e86f858ad48b2bbf64b8a · measured 2026-10-05 12:13:07.121686+00:00 · read-only session (Claude; no write flag)
+
+PASS  every emitted event is routed
+      measured: 0 emitted events with route IS NULL
+PASS  a stored failure says why
+      measured: 0 of 88 stored refetch errors carry no reason
+PASS  the tenant knows who it has written to
+      measured: 29 known counterparties from 664 outbound events
+PASS  an open signal with a lapsed card gets rebuilt
+      measured: 0 open signals whose expired card has not been rebuilt in 2h
+PASS  live cards reach a surface a person reads
+      measured: 21 of 21 live cards carry the app surface
+PASS  no LLM lane is mostly failing
+      measured: 8 lane(s) under 20% in 24h
+PASS  no lane is failing at a fixed token ceiling
+      measured: no failure cluster pinned to one output size
+
+7/7 checks passed
