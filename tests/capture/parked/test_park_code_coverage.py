@@ -35,7 +35,7 @@ from genios_engine.capture.gate import gate as GATE_MODULE
 from genios_engine.capture.gate import rules as RULES_MODULE
 from genios_engine.capture.gate.context import GateContext
 from genios_engine.capture.gate.rules import REASON_LABELS, content_integrity_rule
-from genios_engine.capture.parked.drain import NEEDS_REFETCH, RE_ADJUDICABLE
+from genios_engine.capture.parked.drain import NEEDS_REEXTRACTION, NEEDS_REFETCH, RE_ADJUDICABLE
 from genios_engine.capture.parked.recapture import NEEDS_RECAPTURE
 from genios_engine.contracts.source_event import Actor, SourceEvent
 
@@ -78,7 +78,8 @@ def _assert_exactly_one_owner(reason_code: str) -> None:
 #: `test_every_drain_class_is_listed_here`, so this tuple cannot silently go stale.
 _DRAIN_CLASSES = (("RE_ADJUDICABLE", RE_ADJUDICABLE),
                   ("NEEDS_REFETCH", NEEDS_REFETCH),
-                  ("NEEDS_RECAPTURE", NEEDS_RECAPTURE))
+                  ("NEEDS_RECAPTURE", NEEDS_RECAPTURE),
+                  ("NEEDS_REEXTRACTION", NEEDS_REEXTRACTION))
 
 
 def test_the_drain_classes_never_overlap():
@@ -175,3 +176,43 @@ def test_the_three_late_document_codes_are_refetchable(reason_code):
     only the connector can answer them, which is the definition of NEEDS_REFETCH.
     """
     assert reason_code in NEEDS_REFETCH
+
+
+# ── ⛔ the extractor parks too ─────────────────────────────────────────────────────────────────
+
+def park_codes_from_the_extractor() -> frozenset[str]:
+    """Every reason code `capture/semantic/extractor.py` can PARK under — its module-level `PARK_*`
+    string constants, read from the AST.
+
+    ⛔ THE SITE THE GATE ENUMERATION COULD NOT SEE. `park_codes_from_the_gate` reads
+    `capture/gate/` only, and the extractor parks from `capture/semantic/`. Its four codes reached
+    `parked_events` with no drain claiming them — two mails pending from 3 Oct with zero attempts —
+    which is the defect this file was written for, a fourth time.
+    """
+    from genios_engine.capture.semantic import extractor as EXTRACTOR_MODULE
+    tree = ast.parse(inspect.getsource(EXTRACTOR_MODULE))
+    found: set[str] = set()
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and isinstance(node.value, ast.Constant) \
+                and isinstance(node.value.value, str):
+            for target in node.targets:
+                if isinstance(target, ast.Name) and target.id.startswith("PARK_"):
+                    found.add(node.value.value)
+    return frozenset(found)
+
+
+def test_the_extractor_enumeration_finds_its_park_sites():
+    """Guard on the guard: an enumeration that matched nothing would pass the ratchet below."""
+    assert park_codes_from_the_extractor() >= {"extraction_parse_failed", "extraction_call_failed"}
+
+
+@pytest.mark.gate
+def test_every_park_code_the_extractor_can_emit_is_claimed_by_exactly_one_drain():
+    for reason_code in sorted(park_codes_from_the_extractor()):
+        _assert_exactly_one_owner(reason_code)
+
+
+def test_the_reextraction_class_is_exactly_the_extractors_codes():
+    """The class is written out as literals so the drain does not import the extractor; this keeps
+    the two from drifting apart."""
+    assert NEEDS_REEXTRACTION == park_codes_from_the_extractor()

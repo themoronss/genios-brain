@@ -72,6 +72,25 @@ NEEDS_REFETCH: frozenset[str] = frozenset({
     "DOC-09",                 # a speech engine ran and produced no usable transcript
 })
 
+#: Parks the EXTRACTOR writes (`capture/semantic/extractor.py`, `PARK_*`), not the gate.
+#:
+#: ⛔ THE FOURTH ORPHANED CLASS. The coverage ratchet read park sites out of `capture/gate/` only,
+#: so these four reached `parked_events` and no drain claimed them: `drain_parked` counted them and
+#: walked past, `parked_aging` called them ``"terminal"``, and on the design partner's org two
+#: mails waited at ``pending`` from 3 Oct with zero attempts and no next attempt. The funnel probe
+#: counted them as *kept unread*.
+#:
+#: The event is already ``emitted`` and its payload is retained; what failed is the model's answer.
+#: So flipping ``outcome`` — this drain's own recovery — would change nothing. They are read again
+#: through the door `_reread_unread` uses (`capture/landing/unread.find_parked_extractions`), under
+#: a bounded ladder; here they are counted, so the backlog is visible to every surface that reads it.
+NEEDS_REEXTRACTION: frozenset[str] = frozenset({
+    "extraction_call_failed",      # the model call itself failed
+    "extraction_parse_failed",     # the answer was not parseable, even after one repair
+    "extraction_schema_failed",    # parseable, but not the schema the profile asked for
+    "extraction_total_loss",       # every claim in the answer was dropped as unusable
+})
+
 #: How old a pending park has to be before it is worth an operator's attention.
 STALE_AFTER = timedelta(days=3)
 
@@ -89,7 +108,8 @@ def drain_parked(engine, *, org_id: str | None = None, limit: int = 200,
 
     now = now or datetime.now(timezone.utc)
     out = {"examined": 0, "reinjected": 0, "blocked_no_payload": 0,
-           "needs_refetch": 0, "needs_recapture": 0, "stale": 0, "by_reason": {}}
+           "needs_refetch": 0, "needs_recapture": 0, "needs_reextraction": 0, "stale": 0,
+           "by_reason": {}}
 
     where_org = " and pe.org_id=:o" if org_id else ""
     params: dict = {"lim": limit}
@@ -138,6 +158,13 @@ def drain_parked(engine, *, org_id: str | None = None, limit: int = 200,
                 out["needs_recapture"] += 1
                 continue
 
+            if r.reason_code in NEEDS_REEXTRACTION:
+                # Owned by the re-read pass (`capture/landing/unread.find_parked_extractions`):
+                # the event is already emitted, so the flip below would do nothing. Counted, not
+                # walked past — the defect this class exists to end.
+                out["needs_reextraction"] += 1
+                continue
+
             if r.reason_code not in RE_ADJUDICABLE:
                 continue
 
@@ -183,9 +210,9 @@ def drain_parked(engine, *, org_id: str | None = None, limit: int = 200,
 
     if out["examined"]:
         _log.info("parked drain: examined=%d reinjected=%d needs_refetch=%d "
-                  "needs_recapture=%d stale=%d",
+                  "needs_recapture=%d needs_reextraction=%d stale=%d",
                   out["examined"], out["reinjected"], out["needs_refetch"],
-                  out["needs_recapture"], out["stale"])
+                  out["needs_recapture"], out["needs_reextraction"], out["stale"])
     return out
 
 
@@ -230,5 +257,6 @@ def parked_aging(engine, *, org_id: str | None = None, now: datetime | None = No
              "class": ("needs_refetch" if r.reason_code in NEEDS_REFETCH
                        else "re_adjudicable" if r.reason_code in RE_ADJUDICABLE
                        else "needs_recapture" if r.reason_code in NEEDS_RECAPTURE
+                       else "needs_reextraction" if r.reason_code in NEEDS_REEXTRACTION
                        else "terminal")}
             for r in rows]

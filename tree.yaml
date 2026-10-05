@@ -2824,12 +2824,13 @@ yc2_w27:
                   units:
                     - id: M17.C2.L-data.V0.U02
                       what: >
-                        A message fingerprint claimed by an event that no longer lives — deleted,
-                        or set aside for a re-read — does not suppress a re-landed copy: `claim`
-                        voids it and the new event becomes canonical. A claim by a live event (the
-                        screen copy) still suppresses as today. Without this, every re-read path
-                        is skipped as `seen_on_screen`: a disconnect-with-wipe and reconnect
-                        (STEP-18 B20), this category's re-read, and STEP-08's re-fetch.
+                        A message fingerprint claimed by an event that was SET ASIDE for a re-read
+                        (`outcome = 'superseded'`) is void: `claim` removes it and the re-landed copy
+                        becomes canonical. A claim by a live event (the screen copy) still suppresses
+                        as today, and a claim by an event with no row keeps today's meaning — a
+                        deletion is the deleting path's to clean up (U05). Without this, every
+                        re-read path is skipped as `seen_on_screen`: this category's re-read, the
+                        unread re-read, and STEP-08's re-fetch.
                       artifact: genios_engine/capture/screen/fingerprint.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/capture/test_a_claim_by_a_gone_event_is_void_pg.py tests/capture/test_g7_g8_g10_gates.py -q
                       depends_on: [M16.C6.L-integration.V0.U01]
@@ -2849,15 +2850,27 @@ yc2_w27:
                       depends_on: [M17.C2.L-contract.V0.U01, M17.C2.L-data.V0.U02]
             - layer: integration
               levels:
+                - level: 1
+                  units:
+                    - id: M17.C2.L-integration.V1.U05
+                      what: >
+                        ADDED IN BUILD (STEP-18 B20 proper). The disconnect-with-wipe deletes the
+                        fingerprints of the events it deletes, scoped exactly like its payload
+                        delete — as the tenant reset always has. Before, a reconnect re-synced every
+                        message straight into `seen_on_screen` and extracted nothing.
+                      artifact: genios_engine/api/routes.py
+                      verify: .venv/bin/python -m pytest tests/test_a_disconnect_takes_its_fingerprints.py tests/platform/test_a_delete_is_not_a_read.py -q
+                      depends_on: [M17.C2.L-data.V0.U02]
                 - level: 2
                   units:
                     - id: M17.C2.L-integration.V2.U04
                       what: >
                         The sweep's re-read pass takes the parked extractions through the same door
                         (`ingest_pushed_objects` -> `finalize_l1`) and settles each park:
-                        `recovered` when the extraction lands, the ladder advanced when it fails.
+                        `superseded` when a new copy replaced it, the ladder advanced when it came
+                        back, dead-lettered with its reason past the limit.
                       artifact: genios_engine/api/routes.py
-                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/capture/test_a_failed_extraction_is_read_again_pg.py tests/capture/test_unread_reread_pg.py tests/test_the_funnel_has_five_numbers.py -q
+                      verify: .venv/bin/python -m pytest tests/capture/test_reread_connection.py tests/test_the_funnel_has_five_numbers.py -q
                       depends_on: [M17.C2.L-logic.V1.U03]
 
         - id: M17.C3
