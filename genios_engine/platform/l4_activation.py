@@ -89,6 +89,14 @@ FEATURE_SITUATION_REASONER = "situation_reasoner"
 #: until L2-7's criterion 5 comparison has been run. What was unreachable was the SWITCH, which the
 #: routing step would have discovered under deadline rather than now.
 FEATURE_CARDS_FROM_SITUATIONS = "cards_from_situations"
+#: ⛔ STEP-18 B1 · the weekly calibration may APPLY what it measured. Off — the default, and the
+#: only default — it runs in SHADOW: it scores every rule and records what it would mute, recover
+#: or nudge, and changes nothing. It lives here because what it changes is Layer 4's: the rules
+#: `reason/runner` skips and the gate thresholds `legacy_pack` reads. Arming it is decision D13
+#: (speedrun008/YC-II W27/06-DECISIONS.md), and not before STEP-18 B22-B24 are fixed: once
+#: armed, any applied mute or nudge bumps the pack's authority revision and hides every open
+#: card of that pack.
+FEATURE_CALIBRATION_APPLY = "calibration_apply"
 
 #: The five features doc 07 names, in WAVE order rather than alphabetical order — the order is the
 #: only safe order to switch them on in, and a list that read `bundle, brief, critique, ranking_v2,
@@ -97,7 +105,8 @@ FEATURE_CARDS_FROM_SITUATIONS = "cards_from_situations"
 #: mode a free-text column invites and which looks exactly like an activated tenant right up until
 #: nothing happens.
 L4_FEATURES = (FEATURE_ROSTER_V2, FEATURE_RANKING_V2, FEATURE_BUNDLE, FEATURE_CRITIQUE,
-               FEATURE_BRIEF, FEATURE_SITUATION_REASONER, FEATURE_CARDS_FROM_SITUATIONS)
+               FEATURE_BRIEF, FEATURE_SITUATION_REASONER, FEATURE_CARDS_FROM_SITUATIONS,
+               FEATURE_CALIBRATION_APPLY)
 
 #: Which wave builds each feature. Carried in code rather than in a doc because it is what makes
 #: `PRECONDITIONS` checkable by eye: a feature is safe to switch on when the features its wave
@@ -110,6 +119,7 @@ FEATURE_WAVES = {
     FEATURE_CRITIQUE: "Z6",
     FEATURE_BRIEF: "Z6",
     FEATURE_CARDS_FROM_SITUATIONS: "L2-7",
+    FEATURE_CALIBRATION_APPLY: "B1",
 }
 
 #: The features that should already be live on a tenant before this one is switched on. NOT
@@ -135,6 +145,9 @@ PRECONDITIONS = {
     # Its real precondition is cross-layer and is declared below: something has to be writing
     # `signals.situation_id`, and only the compiled lane does.
     FEATURE_CARDS_FROM_SITUATIONS: (),
+    # ⛔ NONE AT THE SWITCH. Its real preconditions are not features: STEP-18 B22-B24 fixed, and
+    # Rohit's answer to D13. Neither is a row an operator can flip, so neither is listed here.
+    FEATURE_CALIBRATION_APPLY: (),
 }
 
 #: THE PRECONDITIONS THAT ARE NOT LAYER 4's. `PRECONDITIONS` above orders the five switches against
@@ -229,6 +242,12 @@ EFFECTS = {
         "it and both are counted on the same sweep (COMPARISON_KEYS) before either is retired. "
         "\u26d4 On a tenant with no L3 domain live, nothing writes signals.situation_id and EVERY "
         "card lands in the uninterpreted bucket — see CROSS_LAYER_PRECONDITIONS"),
+    FEATURE_CALIBRATION_APPLY: (
+        "the weekly calibration APPLIES what it measured for this tenant — it mutes a rule whose "
+        "precision fell below the floor and moves gate thresholds by up to 5 points a week — "
+        "instead of only recording what it would do. \u26d4 Arm it only after STEP-18 B22-B24: "
+        "an applied mute or nudge bumps the pack's authority revision, which hides every open "
+        "card of that pack, and a mute has no way to lift"),
 }
 
 #: Every column the record carries, in one place, so the reads below cannot select different shapes

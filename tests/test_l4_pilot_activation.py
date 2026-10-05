@@ -121,9 +121,14 @@ def test_the_five_features_are_the_plans_five_in_wave_order():
     False on every production pass while every one of the lane's own tests passed. Registering it
     turned this assertion red on the same run, exactly as it did for L2-5, and it was extended
     deliberately rather than loosened — the tail stays EXACT so an eighth cannot arrive quietly.
+
+    ⛔ THE EIGHTH ARRIVED ON PURPOSE, 2026-10-05: `calibration_apply` (STEP-18 B1, yc2_w27/M18), the
+    switch that lets the weekly calibration APPLY its mutes and nudges instead of only recording
+    them. It is never default-on (`intelligence_onboarding.NOT_DEFAULT_ON`).
     """
     assert ACT.L4_FEATURES[:5] == ("roster_v2", "ranking_v2", "bundle", "critique", "brief")
-    assert ACT.L4_FEATURES[5:] == ("situation_reasoner", "cards_from_situations")
+    assert ACT.L4_FEATURES[5:] == ("situation_reasoner", "cards_from_situations",
+                                   "calibration_apply")
     assert set(ACT.EFFECTS) == set(ACT.L4_FEATURES) == set(ACT.FEATURE_WAVES)
     assert set(ACT.PRECONDITIONS) == set(ACT.L4_FEATURES)
     assert ACT.FEATURE_WAVES["bundle"] == "Z4"

@@ -236,12 +236,21 @@ def _json(value, default):
 
 
 def run_calibration(store, org_id: str, *, registry=None, pack_id: str = "sales",
-                    eval_time: datetime | None = None) -> dict:
-    """Apply at most one atomic calibration for an exact pack version and UTC week.
+                    eval_time: datetime | None = None, apply: bool = False) -> dict:
+    """At most one atomic calibration for an exact pack version and UTC week.
 
     The tenant-pack row is the serialization lock. The run claim, mutes, learned config and
     nudge ledger share the same transaction; a crash therefore commits all of them or none.
     ``registry`` is retained only for API compatibility—the guarded SQL update is the sole write.
+
+    ⛔ SHADOW UNLESS ``apply`` (STEP-18 B1). It has errored on every run since 2026-09-10, so it has
+    never muted or nudged anything; the one-line fix that makes it run would, alone, have switched
+    on unattended muting. So by default it scores every rule, records what it WOULD mute, recover
+    and nudge (``would_*`` in ``calibration_runs.result``), claims the week, and writes nothing
+    else: no ``rule_mutes``, no gate offset, no authority revision, no expired signal or card. The
+    sweep passes ``apply`` from the tenant's ``calibration_apply`` L4 feature, which is never
+    default-on (decision D13). A week claimed in shadow is not re-run when the feature is armed;
+    the first applied run is the next week's.
     """
     del registry
     now = authority_time(eval_time)
@@ -324,29 +333,32 @@ def run_calibration(store, org_id: str, *, registry=None, pack_id: str = "sales"
                       "j": judgments, "pr": authority_revision,
                       "cap": stat["capability_id"], "capv": stat["capability_version"]}
             if harmful and rule_id not in active_mutes:
-                conn.execute(text(
-                    "insert into rule_mutes "
-                    "(org_id,pack_id,pack_version,rule_id,active,reason,precision,"
-                    "precision_lb,precision_ub,impressions,judgments,source_authority_revision,"
-                    "source_capability_id,source_capability_version) "
-                    "values (:o,:p,:pv,:r,true,'low_precision',:precision,:lb,:ub,:i,:j,"
-                    ":pr,:cap,:capv) "
-                    "on conflict (org_id,pack_id,pack_version,rule_id) do update set "
-                    "active=true,reason='low_precision',precision=:precision,precision_lb=:lb,"
-                    "precision_ub=:ub,impressions=:i,judgments=:j,"
-                    "source_authority_revision=:pr,source_capability_id=:cap,"
-                    "source_capability_version=:capv,muted_at=clock_timestamp()"),
-                    values)
+                if apply:
+                    conn.execute(text(
+                        "insert into rule_mutes "
+                        "(org_id,pack_id,pack_version,rule_id,active,reason,precision,"
+                        "precision_lb,precision_ub,impressions,judgments,source_authority_revision,"
+                        "source_capability_id,source_capability_version) "
+                        "values (:o,:p,:pv,:r,true,'low_precision',:precision,:lb,:ub,:i,:j,"
+                        ":pr,:cap,:capv) "
+                        "on conflict (org_id,pack_id,pack_version,rule_id) do update set "
+                        "active=true,reason='low_precision',precision=:precision,precision_lb=:lb,"
+                        "precision_ub=:ub,impressions=:i,judgments=:j,"
+                        "source_authority_revision=:pr,source_capability_id=:cap,"
+                        "source_capability_version=:capv,muted_at=clock_timestamp()"),
+                        values)
                 active_mutes.add(rule_id)
                 muted.append(rule_id)
                 audit_rows.append({"rule_id": rule_id, "param": "rule.mute",
                                    "direction": "mute", "before": 0, "after": 1,
                                    "stat": stat})
             elif rule_id in active_mutes and recovered_enough:
-                conn.execute(text(
-                    "update rule_mutes set active=false,precision=:precision,precision_lb=:lb,"
-                    "precision_ub=:ub,impressions=:i,judgments=:j "
-                    "where org_id=:o and pack_id=:p and pack_version=:pv and rule_id=:r"), values)
+                if apply:
+                    conn.execute(text(
+                        "update rule_mutes set active=false,precision=:precision,"
+                        "precision_lb=:lb,precision_ub=:ub,impressions=:i,judgments=:j "
+                        "where org_id=:o and pack_id=:p and pack_version=:pv and rule_id=:r"),
+                        values)
                 active_mutes.remove(rule_id)
                 recovered.append(rule_id)
                 audit_rows.append({"rule_id": rule_id, "param": "rule.mute",
@@ -386,7 +398,7 @@ def run_calibration(store, org_id: str, *, registry=None, pack_id: str = "sales"
             scoring["rule_offsets"] = offsets
             lvl3["scoring_defaults"] = scoring
         new_authority_revision = authority_revision
-        if audit_rows:
+        if apply and audit_rows:
             bumped = conn.execute(text(
                 "update tenant_packs set lvl3_config=cast(:cfg as jsonb), "
                 "authority_revision=authority_revision+1,updated_at=clock_timestamp() "
@@ -398,7 +410,7 @@ def run_calibration(store, org_id: str, *, registry=None, pack_id: str = "sales"
             if bumped is None:
                 raise RuntimeError("tenant pack authority changed while calibration row was locked")
             new_authority_revision = int(bumped.authority_revision)
-        if muted:
+        if apply and muted:
             # A newly harmful rule must stop being actionable in the same commit as its mute.
             # The pack epoch bump revokes every old projection; explicit lifecycle closure makes
             # that revocation visible even to historical/non-authority UI surfaces.
@@ -417,7 +429,7 @@ def run_calibration(store, org_id: str, *, registry=None, pack_id: str = "sales"
                     "and signal_id=any(:ids) and status='open'"),
                     {"o": org_id, "ids": signal_ids})
 
-        for item in audit_rows:
+        for item in (audit_rows if apply else ()):
             stat = item["stat"]
             nudge_id = stable_id("nudge", {
                 "run_id": run_id, "rule_id": item["rule_id"], "param": item["param"]})
@@ -436,13 +448,18 @@ def run_calibration(store, org_id: str, *, registry=None, pack_id: str = "sales"
                  "i": stat["impressions"], "j": stat["judgments"],
                  "run": run_id, "period": period_start, "pr": authority_revision})
 
+        # In shadow the would_* lists are the whole output: nothing above wrote them anywhere.
         result = {"org_id": org_id, "pack_id": pack_id, "pack_version": pack_version,
+                  "mode": "apply" if apply else "shadow",
                   "source_authority_revision": authority_revision,
                   "resulting_authority_revision": new_authority_revision,
                   "run_id": run_id, "period_start": period_start.isoformat(),
-                  "rules_scored": len(stats), "muted": muted, "recovered": recovered,
+                  "rules_scored": len(stats),
+                  "muted": muted if apply else [], "recovered": recovered if apply else [],
+                  "nudges": nudges if apply else [],
+                  "would_mute": muted, "would_recover": recovered, "would_nudge": nudges,
                   "ambiguous_lineages_held": sorted(ambiguous_lineages),
-                  "nudges": nudges, "applied": True, "already_ran": False,
+                  "applied": apply, "already_ran": False,
                   "window_days": WINDOW_DAYS}
         conn.execute(text(
             "update calibration_runs set status='completed',result=cast(:result as jsonb),"

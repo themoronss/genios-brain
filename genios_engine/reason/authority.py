@@ -329,7 +329,10 @@ AUDITED_CARD_JUDGMENTS_CTES = (
     "), canonical_judgments as ("
     "select pack_id, pack_version, authority_pack_revision, "
     "capability_id, capability_version, "
-    "rule_id, play, card_id, cause, detail, occurred_at, id "
+    # ⛔ `card_level` — STEP-18 B1. cd7f85d7 carried it into `audited_cards` and `judgment_events`
+    # and not here, so `calibrate`'s precision denominator named a column this CTE never projected
+    # and every weekly run raised `UndefinedColumn` on PostgreSQL from 2026-09-10.
+    "rule_id, play, card_id, card_level, cause, detail, occurred_at, id "
     "from ranked_judgments where judgment_position=1"
     ")"
 )

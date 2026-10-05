@@ -46,7 +46,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from genios_engine.platform.l4_activation import (FEATURE_CARDS_FROM_SITUATIONS,
+from genios_engine.platform.l4_activation import (FEATURE_CALIBRATION_APPLY,
+                                                  FEATURE_CARDS_FROM_SITUATIONS,
                                                   FEATURE_SITUATION_REASONER, L4_FEATURES)
 from genios_engine.platform.logging import get_logger
 
@@ -171,6 +172,11 @@ NOT_DEFAULT_ON = {
         "either is retired, and switching it on at provisioning would mean no tenant ever ran the "
         "comparison. ⛔ It also needs an L3 domain live or every card reads UNINTERPRETED "
         "(`l4_activation.CROSS_LAYER_PRECONDITIONS`).",
+    FEATURE_CALIBRATION_APPLY:
+        "it lets the weekly calibration MUTE rules and MOVE gate thresholds with nobody "
+        "approving the change, and once it applies anything every open card of the pack is "
+        "hidden (STEP-18 B22-B24). Unattended autonomy is the founder's call (D13), armed per "
+        "tenant; until then calibration runs in shadow and only records what it would do.",
 }
 
 #: Layer 4's default features in wave order — `L4_FEATURES` minus the declared exclusions above.

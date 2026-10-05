@@ -1452,9 +1452,14 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
                     packs = [r[0] for r in c.execute(text(
                         "select pack_id from tenant_packs where org_id=:o and state='active'"),
                         {"o": org})]
+                # ⛔ SHADOW UNLESS ARMED (STEP-18 B1, decision D13): `calibration_apply` is never
+                # default-on, and `is_l4_activated` fails closed — no row, no mute.
+                from genios_engine.platform.l4_activation import (FEATURE_CALIBRATION_APPLY,
+                                                                  is_l4_activated)
+                armed = is_l4_activated(_graph.engine, org, FEATURE_CALIBRATION_APPLY)
                 for pid in (packs or ["sales"]):
                     result = run_calibration(_graph, org, registry=_registry, pack_id=pid,
-                                             eval_time=now)
+                                             eval_time=now, apply=armed)
                     runs += int(bool(result.get("applied")))
                     already_ran += int(bool(result.get("already_ran")))
             except Exception:                                # noqa: BLE001 — one org's failure ≠ the rest
