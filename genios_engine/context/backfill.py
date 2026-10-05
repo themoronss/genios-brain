@@ -29,6 +29,7 @@ situations are rebuilt from scratch every time.
 from __future__ import annotations
 
 import json
+from datetime import datetime
 
 from sqlalchemy import bindparam, text
 
@@ -373,8 +374,12 @@ def _release_stale_correlations(store, org_id: str, event_ids: set[str]) -> int:
 
 
 def backfill_layer2(store, org_id: str, *, limit: int | None = None,
-                    rebuild: bool = False) -> dict:
-    """The whole of Layer 2 applied to existing history, in the only order that works."""
+                    rebuild: bool = False, eval_time: datetime | None = None) -> dict:
+    """The whole of Layer 2 applied to existing history, in the only order that works.
+
+    `eval_time` is the instant the situations are judged at — `None`, as every production caller
+    passes, is now. A caller replaying history at a pinned instant passes it, or a situation seeded
+    more than `DORMANT_AFTER_DAYS` earlier is judged dormant against the wall clock."""
     aliases = backfill_aliases(store, org_id)
     # BEFORE correlations, and that ordering is as non-negotiable as the alias one above it.
     # `correlate_event` chooses an anchor from the node types an event touched, and `deal` is
@@ -386,7 +391,7 @@ def backfill_layer2(store, org_id: str, *, limit: int | None = None,
     # between the pass reporting success and the pass changing anything.
     correlations = backfill_correlations(
         store, org_id, limit=limit, rebuild=rebuild or bool(deals["deal_nodes_created"]))
-    situations = refresh_situations(store, org_id)
+    situations = refresh_situations(store, org_id, eval_time=eval_time)
     return {**aliases, **deals, **correlations, "situations_written": situations}
 
 

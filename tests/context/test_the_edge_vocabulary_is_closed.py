@@ -11,7 +11,7 @@ because there was no vocabulary to violate.
 """
 from __future__ import annotations
 
-import re
+import ast
 from pathlib import Path
 
 import pytest
@@ -19,6 +19,118 @@ import pytest
 from genios_engine.context.graph_store import EDGE_TYPES, FORBIDDEN_EDGE_TYPES, GraphStore
 
 _ROOT = Path(__file__).resolve().parents[2] / "genios_engine"
+
+#: ⛔ THE ONE WRITE SITE WHOSE EDGE TYPE IS DATA, NOT CODE. The structured committer writes
+#: `rel["edge_type"]` for every relation a structured mapping declares, so its types are the
+#: `RelationMap(...)` literals the collector reads separately — and a config-driven mapping
+#: (`registry.mapping_from_dict`, `RelationMap(**r)`) brings its own, which is data and is checked
+#: when it is written. Any OTHER site the collector cannot resolve fails the build.
+_RESOLVED_THROUGH_RELATION_MAPS = frozenset({"context/structured.py"})
+
+
+def _module_constants(tree: ast.Module) -> dict[str, str]:
+    """Module-level `NAME = "string"` assignments — how `documents.py` names `EDGE_EDITED`."""
+    out: dict[str, str] = {}
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and isinstance(node.value, ast.Constant) \
+                and isinstance(node.value.value, str):
+            for target in node.targets:
+                if isinstance(target, ast.Name):
+                    out[target.id] = node.value.value
+    return out
+
+
+def _string_at(element: ast.AST, position: int, consts: dict[str, str]) -> set[str] | None:
+    """The string at `position` of one literal tuple, or None when it is not a literal."""
+    if isinstance(element, ast.Tuple) and len(element.elts) > position:
+        value = element.elts[position]
+        if isinstance(value, ast.Constant) and isinstance(value.value, str):
+            return {value.value}
+        if isinstance(value, ast.Name) and value.id in consts:
+            return {consts[value.id]}
+    return None
+
+
+def _strings_in(iterable: ast.AST, position: int, consts: dict[str, str]) -> set[str] | None:
+    """Every string a `for a, b, verb in <iterable>` binds to position `position`, if the iterable
+    is literal: a tuple or list of tuples, a concatenation of those, or a comprehension."""
+    if isinstance(iterable, (ast.Tuple, ast.List)):
+        found: set[str] = set()
+        for element in iterable.elts:
+            strings = _string_at(element, position, consts)
+            if strings is None:
+                return None
+            found |= strings
+        return found
+    if isinstance(iterable, ast.BinOp) and isinstance(iterable.op, ast.Add):
+        left = _strings_in(iterable.left, position, consts)
+        right = _strings_in(iterable.right, position, consts)
+        return None if left is None or right is None else left | right
+    if isinstance(iterable, (ast.ListComp, ast.GeneratorExp)):
+        return _string_at(iterable.elt, position, consts)
+    return None
+
+
+def _collect(tree: ast.Module, where: str) -> tuple[set[str], list[str]]:
+    """(edge types written, write sites that could not be resolved) for one module.
+
+    ⛔ READ FROM THE AST, NOT THE TEXT. The first version of this guard was a regex for
+    `edge_type="…"`, and four writers passed straight under it — a loop over literal tuples
+    (`context/pipeline.py`, `context/backfill.py`), a module constant (`context/documents.py`) and
+    a structured relation (`capture/structured/`). The vocabulary then raised on all four at runtime,
+    and the guard that existed to prevent exactly that stayed green.
+    """
+    consts = _module_constants(tree)
+    parents = {child: node for node in ast.walk(tree) for child in ast.iter_child_nodes(node)}
+    written: set[str] = set()
+    unresolved: list[str] = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        name = getattr(node.func, "attr", None) or getattr(node.func, "id", None)
+        if name == "RelationMap":
+            value = node.args[2] if len(node.args) > 2 else next(
+                (k.value for k in node.keywords if k.arg == "edge_type"), None)
+            if isinstance(value, ast.Constant) and isinstance(value.value, str):
+                written.add(value.value)
+            elif not any(k.arg is None for k in node.keywords):     # `RelationMap(**r)` is data
+                unresolved.append(f"{where}:{node.lineno} RelationMap")
+            continue
+        if name != "write_edge":
+            continue
+        value = next((k.value for k in node.keywords if k.arg == "edge_type"), None)
+        site = f"{where}:{node.lineno}"
+        if isinstance(value, ast.Constant) and isinstance(value.value, str):
+            written.add(value.value)
+        elif isinstance(value, ast.Name) and value.id in consts:
+            written.add(consts[value.id])
+        elif isinstance(value, ast.Name):
+            strings, scope = None, node
+            while scope in parents:
+                scope = parents[scope]
+                if isinstance(scope, ast.For) and isinstance(scope.target, ast.Tuple):
+                    names = [t.id if isinstance(t, ast.Name) else None for t in scope.target.elts]
+                    if value.id in names:
+                        strings = _strings_in(scope.iter, names.index(value.id), consts)
+                        break
+            if strings is None:
+                unresolved.append(f"{site} edge_type={value.id}")
+            else:
+                written |= strings
+        else:
+            unresolved.append(f"{site} edge_type=<{type(value).__name__}>")
+    return written, unresolved
+
+
+def _engine_edge_writes() -> tuple[set[str], list[str]]:
+    written: set[str] = set()
+    unresolved: list[str] = []
+    for py in sorted(_ROOT.rglob("*.py")):
+        rel = py.relative_to(_ROOT).as_posix()
+        found, missing = _collect(ast.parse(py.read_text(encoding="utf-8")), rel)
+        written |= found
+        unresolved += missing
+    return written, unresolved
 
 
 def _write(edge_type: str):
@@ -96,12 +208,40 @@ def test_the_two_sets_never_overlap():
 # 3 · ⛔ TOTALITY, BOTH DIRECTIONS
 # =================================================================================================
 
+def test_the_collector_sees_every_write_path():
+    """⛔ THE GUARD'S OWN TEST. Each shape a writer has actually used, and one it cannot read — which
+    must come back UNRESOLVED, never silently skipped. Then the engine: the only site it cannot
+    resolve is the structured committer, whose types are the `RelationMap` literals."""
+    sample = ast.parse(
+        "EDGE_X = 'from_a_constant'\n"
+        "def f(store, a, b, s):\n"
+        "    store.write_edge(c, edge_type='a_literal')\n"
+        "    store.write_edge(c, edge_type=EDGE_X)\n"
+        "    for frm, to, verb in ((a, b, 'loop_one'), (b, a, 'loop_two')):\n"
+        "        store.write_edge(c, edge_type=verb)\n"
+        "    for frm, to, verb in [(a, b, 'listed')] + [(b, x, 'comprehended') for x in s]:\n"
+        "        store.write_edge(c, edge_type=verb)\n"
+        "    for person, kind in ((a, EDGE_X), (b, 'paired')):\n"
+        "        store.write_edge(c, edge_type=kind)\n"
+        "    store.write_edge(c, edge_type=pick())\n"
+        "RelationMap('f', 'person', 'positional', 'in', 'email')\n"
+        "RelationMap('f', 'person', edge_type='keyword')\n")
+    written, unresolved = _collect(sample, "sample.py")
+    assert written == {"a_literal", "from_a_constant", "loop_one", "loop_two", "listed",
+                       "comprehended", "paired", "positional", "keyword"}
+    assert unresolved == ["sample.py:11 edge_type=<Call>"], unresolved
+
+    _, engine_unresolved = _engine_edge_writes()
+    assert {site.split(":")[0] for site in engine_unresolved} == _RESOLVED_THROUGH_RELATION_MAPS, (
+        f"write sites the collector cannot resolve: {engine_unresolved}. Resolve the new one (a "
+        "literal, a constant, a loop over literal tuples) or declare why it is data.")
+    assert len(engine_unresolved) == 1
+
+
 def test_every_declared_type_is_actually_written_somewhere():
     """A declared relation nobody writes is a promise the graph does not keep — a reader can query
     it for ever and get nothing, with no way to tell that from "there are none"."""
-    written = set()
-    for py in _ROOT.rglob("*.py"):
-        written |= set(re.findall(r'edge_type=["\']([a-z_]+)["\']', py.read_text()))
+    written, _ = _engine_edge_writes()
     unwritten = set(EDGE_TYPES) - written
     assert not unwritten, (
         f"declared but never written: {sorted(unwritten)}. Either something stopped writing it — "
@@ -111,10 +251,12 @@ def test_every_declared_type_is_actually_written_somewhere():
 def test_every_written_type_is_declared():
     """The other half, and the one the raise enforces at runtime. Here it is enforced at build
     time, so a new writer is caught before a tenant hits it."""
-    for py in _ROOT.rglob("*.py"):
-        for found in re.findall(r'edge_type=["\']([a-z_]+)["\']', py.read_text()):
-            assert found in EDGE_TYPES, (
-                f"{py.relative_to(_ROOT)} writes edge_type={found!r}, which is not declared")
+    written, _ = _engine_edge_writes()
+    undeclared = written - set(EDGE_TYPES)
+    assert not undeclared, (
+        f"written but not declared: {sorted(undeclared)} — `write_edge` will raise on each of them "
+        "at runtime and roll the whole event back. Declare it with what it means, or use the one "
+        "that fits.")
 
 
 def test_every_type_says_what_it_means_and_what_it_does_not():

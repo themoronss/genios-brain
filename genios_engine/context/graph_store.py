@@ -165,7 +165,7 @@ NODE_TYPES: dict[str, str] = {
 # with a totality guard in both directions — `LAYERS`, `PRECEDENCE`, `ANCHOR_FAMILIES`,
 # `SYNC_HEALTHS` — and that is what this is.
 
-#: Every relation the graph may assert, with what it means. A seventh entry is a decision: it means
+#: Every relation the graph may assert, with what it means. A new entry is a decision: it means
 #: something new is claimable about how two entities relate, and every reader that walks edges has
 #: to be asked whether it should see it.
 EDGE_TYPES: dict[str, str] = {
@@ -175,6 +175,22 @@ EDGE_TYPES: dict[str, str] = {
     "concerns":           "deal|situation -> subject. What a thing is ABOUT, deliberately weak.",
     "raised_in":          "commitment|topic -> thread. Where something was first said.",
     "corresponded_with":  "person -> person. They exchanged mail. NOT a relationship strength.",
+    # ⛔ THE FOUR THAT WERE WRITTEN ALL ALONG. When the set was closed (L3-09) the guard read only
+    # `edge_type="…"` literals, and these four reach `write_edge` another way — a loop over literal
+    # tuples, a module constant, a structured `RelationMap`. So they were never declared, and from
+    # that day `write_edge` raised on every one of them: every deal-shaped fact, every document
+    # edit, every assignee and every product-usage user rolled its whole event back. Found on
+    # 2026-10-05, when the database suite first ran on this branch (27 of its 50 failures).
+    "involves":           "deal -> person. Someone on the deal: a CRM deal's contact, or the "
+                          "counterparty whose mail made it a deal. The CRM lane writes it "
+                          "person -> deal, so readers walk it both ways. NOT a role, decision "
+                          "power or a seat on a buying committee.",
+    "edited":             "person -> document. The file store's last editor. NOT the owner, the "
+                          "author or an approver — the accountable person is `owns`.",
+    "assigned":           "person -> task. The assignee a work tracker reports. NOT who will do "
+                          "the work, nor who is accountable for it.",
+    "used":               "person -> product_usage_event. The tenant's own instrumentation saw this "
+                          "person do it. NOT a seat, a licence or a buyer.",
 }
 
 #: ⛔ RELATIONS THIS GRAPH MAY NOT ASSERT, AND WHY. Each of these is a conclusion wearing an edge's

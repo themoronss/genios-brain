@@ -2570,7 +2570,7 @@ yc2_w27:
                         its direction and what it does not mean.
                       artifact: genios_engine/context/graph_store.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_the_edge_vocabulary_is_closed.py tests/test_account_rollup_reaches_the_company.py tests/test_deal_node_from_correspondence.py tests/test_document_register.py tests/test_l2_db_e2e.py -q
-                      depends_on: [M16.C1.L-contract.V0.U01]
+                      depends_on: [M16.C1.L-contract.V0.U01, M16.C3.L-integration.V1.U06]
 
         - id: M16.C2
           name: The reachability report reads the counts it is given (5 tests)
@@ -2590,7 +2590,7 @@ yc2_w27:
                       depends_on: []
 
         - id: M16.C3
-          name: Test clocks that cannot expire (3 time bombs — 6 tests)
+          name: Test clocks that cannot expire (4 time bombs — 7 tests; the 4th found in build)
           layers:
             - layer: data
               levels:
@@ -2629,6 +2629,31 @@ yc2_w27:
                       artifact: tests/reason/adapters/test_roster_reaches_the_audit.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/reason/adapters/test_roster_reaches_the_audit.py tests/test_admin_support_packs.py -q
                       depends_on: [M16.C3.L-data.V0.U01]
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M16.C3.L-logic.V0.U05
+                      what: >
+                        ADDED IN BUILD, 2026-10-05. `backfill_layer2` takes the caller's instant
+                        (`eval_time=None` means now, as today) and passes it to `refresh_situations`,
+                        which already accepts one. The re-anchor test seeds on 2026-08-01, and the
+                        backfill refreshed at the wall clock, so its situation was dormant by
+                        mid-September — hidden until B2 stopped raising first.
+                      artifact: genios_engine/context/backfill.py
+                      verify: .venv/bin/python -m pytest tests/test_backfill_chains_l2_replay.py -q
+                      depends_on: []
+            - layer: integration
+              levels:
+                - level: 1
+                  units:
+                    - id: M16.C3.L-integration.V1.U06
+                      what: >
+                        ADDED IN BUILD, 2026-10-05. The re-anchor test runs its backfill at the
+                        instant it seeded at.
+                      artifact: tests/test_deal_node_from_correspondence.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/test_deal_node_from_correspondence.py -q
+                      depends_on: [M16.C3.L-logic.V0.U05]
 
         - id: M16.C4
           name: Fixtures that follow the code (premises the code outgrew — 6 tests)
@@ -2730,6 +2755,7 @@ yc2_w27:
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q -p no:cacheprovider && .venv/bin/python -m pytest -q -p no:cacheprovider
                       depends_on: [M16.C1.L-contract.V1.U02, M16.C2.L-logic.V0.U01,
                                    M16.C3.L-data.V1.U04, M16.C3.L-data.V0.U02,
+                                   M16.C3.L-integration.V1.U06,
                                    M16.C3.L-data.V0.U03, M16.C4.L-data.V0.U01,
                                    M16.C4.L-data.V0.U02, M16.C4.L-data.V0.U03,
                                    M16.C4.L-data.V0.U04, M16.C4.L-data.V0.U06,
