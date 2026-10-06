@@ -6,11 +6,14 @@ the entire engine was a manual ``POST /parked/{event_id}/recover`` that requires
 already know the event id. ``DOC-05``'s own comment in ``gate/rules.py`` says *"retryable, never
 silent"* and nothing ever retried it.
 
-It also covers JUDGED DROPS. A drop the model made on judgment is exactly as re-adjudicable as
-a park — the difference was never in the evidence, only in how confident the gate happened to
+It also covers JUDGED STOPS. A mail the model took out on judgment is exactly as re-adjudicable
+as a park — the difference was never in the evidence, only in how confident the gate happened to
 be — and 657 dropped events with no retained payload made "did we lose anything real?"
-permanently unanswerable. Deterministic drops (a provider SPAM label) stay out: those are facts,
-not opinions, and L1 is a filter rather than a warehouse.
+permanently unanswerable. Since STEP-03 the gate ARCHIVES that mail rather than dropping it, and
+the drain reads the archive exactly as it read the drop (03 F55: on every heartbeat, without
+re-running the gate); a judged drop written before the deploy is still read until it ages out.
+A RULE's stop (a provider SPAM label, an unsubscribe header) stays out: those are facts, not
+opinions — archived, kept, and not re-admitted here.
 
 Two classes of park, and the honest thing is to treat them differently:
 
@@ -117,10 +120,11 @@ def drain_parked(engine, *, org_id: str | None = None, limit: int = 200,
         params["o"] = org_id
 
     with engine.begin() as c:
-        # Parked events AND judged drops. A drop the model made on judgment is exactly as
+        # Parked events AND judged stops. A mail the model took out on judgment is exactly as
         # re-adjudicable as a park — the difference was never in the evidence, only in how
         # confident the gate happened to be — and treating drops as out of scope is what made a
         # "we improved the filter" claim unverifiable against the mail it had already deleted.
+        # ARCHIVED since STEP-03 (`archive` in the trace); DROPPED before it (`drop`) — both read.
         rows = c.execute(text(
             "select pe.event_id, pe.org_id, pe.reason_code, pe.created_at, "
             "       (rp.event_id is not null) as has_payload "
@@ -131,8 +135,9 @@ def drain_parked(engine, *, org_id: str | None = None, limit: int = 200,
             "select se.event_id, se.org_id, et.reason_code, se.captured_at, true "
             "from source_events se "
             "join raw_payloads rp on rp.event_id = se.event_id and rp.org_id = se.org_id "
-            "join event_trace et on et.event_id = se.event_id and et.action = 'drop' "
-            f"where se.outcome='dropped' and et.reason_code = any(:judged)"
+            "join event_trace et on et.event_id = se.event_id "
+            "     and et.action in ('drop', 'archive') "
+            f"where se.outcome in ('dropped', 'archived') and et.reason_code = any(:judged)"
             + (" and se.org_id=:o" if org_id else "") +
             " order by 4 asc limit :lim"),
             {**params, "judged": sorted(RE_ADJUDICABLE)}).fetchall()
@@ -194,15 +199,24 @@ def drain_parked(engine, *, org_id: str | None = None, limit: int = 200,
             # "low-signal / digest / backfill", which is what a row that has been sitting in a
             # park queue actually is. Understating is the safe direction — the event is still
             # extracted, it simply does not jump ahead of live mail.
+            # ATTENTION FOLLOWS THE READ (STEP-03). A re-admitted stop is about to be read, so
+            # its tier becomes `deep` and its reason says why — `readmitted:<code>` — rather than
+            # leaving an emitted row that still says nobody reads it. A parked row is already
+            # `deep`, waiting; it keeps its park code. (Postgres evaluates the CASEs on the old
+            # row, so `outcome` there is the stop being undone.)
             flipped = c.execute(text(
                 "update source_events set outcome='emitted', "
                 "route = coalesce(route, 'needs_extraction'), "
-                "triage_lane = coalesce(triage_lane, 'P3') "
-                "where org_id=:o and event_id=:e and outcome in ('parked', 'dropped')"),
-                {"o": r.org_id, "e": r.event_id}).rowcount
+                "triage_lane = coalesce(triage_lane, 'P3'), "
+                "attention = case when outcome in ('archived', 'dropped') then 'deep' "
+                "                 else attention end, "
+                "attention_reason = case when outcome in ('archived', 'dropped') "
+                "                        then 'readmitted:' || :code else attention_reason end "
+                "where org_id=:o and event_id=:e and outcome in ('parked', 'dropped', 'archived')"),
+                {"o": r.org_id, "e": r.event_id, "code": r.reason_code}).rowcount
             if flipped:
-                # Only a real parked row has a status to update; a re-admitted drop has none,
-                # and inventing one would put a row in the park queue that was never parked.
+                # Only a real parked row has a status to update; a re-admitted drop or archive has
+                # none, and inventing one would put a row in the park queue that was never parked.
                 c.execute(text("update parked_events set status='recovered' where event_id=:e"),
                           {"e": r.event_id})
                 out["reinjected"] += 1
