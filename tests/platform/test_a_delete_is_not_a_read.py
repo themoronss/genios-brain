@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 2_948, (
+    assert r["statements"] == 2_942, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -236,6 +236,15 @@ def test_the_statement_count_did_NOT_move():
     # — seven SELECTs (our nodes, the org's names, threads, a thread's parties, open signals, open
     # cards, situations) and four writes (the rename, the signal expiry, the card retirement, its
     # card_event). Eleven statements, each a literal at its own call.
+    # ⛔ MOVED 2,948 → 2,942 by yc2_w27_s04 C2 (STEP-04, eighteen callers ask ONE answer), each
+    # measured on its own branch and the sum re-measured on the merge: −1 `context/runner.
+    # _internal_emails` (U01, its inline union); −2 `context/backfill` (U09, the rebuild's and the
+    # deal backfill's seat reads) +1 (U18, the naming sweep's candidates query replacing its party
+    # subquery); −1 `context/support_situations` (U10, its `orgs` read); −1 each `reason/runner`
+    # (U02), `packs/brains/org_discovery` (U04), `deliver/pipeline` (U05), `reason/moments/
+    # engagement` (U11) — inline unions gone; U06/U07/U08 replaced one statement with one; U03's
+    # union was a subquery inside one statement. +1 `context/pipeline` (U20): the anchor pool asked
+    # once more by each node's own key. Removing SQL that re-derived "us" is the point of the step.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

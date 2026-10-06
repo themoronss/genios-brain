@@ -3989,6 +3989,46 @@ yc2_w27_s04:
                       artifact: genios_engine/context/backfill.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_the_naming_sweep_skips_us.py -q
                       depends_on: [M22.C1.L-data.V1.U03]
+                    # ── added 2026-10-06 from the C2 builders' own reports: each closes a gap in a
+                    #    claim a unit above made ("in any event", "live and rebuild agree", "once
+                    #    per sweep"). Minted, not folded in: those units were built and verified.
+                    - id: M22.C2.L-logic.V2.U20
+                      what: >
+                        `context/pipeline` — nothing of ours enters the anchor pool, whichever door it
+                        came through: a company named in prose, a person known only by name, a claim's
+                        subject and a transcript speaker reach `touched` as existing nodes with no
+                        address in hand, so the pool is asked once more by each node's own key before
+                        `correlate_event`; and a `deal.*` claim whose subject is ours is re-targeted by
+                        `_deal_for` to the one outside company in the event, never minted on us.
+                        Found by U16's probe (a Gmail founder's pitch naming his own company anchored on it).
+                      artifact: genios_engine/context/pipeline.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_nothing_of_ours_enters_the_anchor_pool.py -q
+                      depends_on: [M22.C1.L-data.V1.U03, M22.C2.L-logic.V2.U16]
+                    - id: M22.C2.L-logic.V2.U21
+                      what: >
+                        `scripts/rebuild_graph.py` replays with the whole identity — `self_identity`
+                        handed to `_safe_process_one`, the declared domains included — as the live drain
+                        does since U16; it replayed with the addresses alone. Found by U16's report.
+                      artifact: scripts/rebuild_graph.py
+                      verify: .venv/bin/python -m pytest tests/scripts/test_rebuild_graph_hands_down_who_we_are.py -q
+                      depends_on: [M22.C1.L-data.V1.U03, M22.C2.L-logic.V2.U16]
+                    - id: M22.C2.L-logic.V2.U22
+                      what: >
+                        `context/backfill.backfill_correlations` — the rebuild keeps GeniOS's own mail
+                        domain (`settings.platform_domains`) out of the anchors, as the live path's
+                        `is_platform_sender` does for every tenant; it asked only who the tenant is.
+                        Found by U09's report.
+                      artifact: genios_engine/context/backfill.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_the_rebuild_keeps_the_product_out.py -q
+                      depends_on: [M22.C1.L-data.V1.U03, M22.C2.L-logic.V2.U09]
+                    - id: M22.C2.L-logic.V2.U23
+                      what: >
+                        `reason/domain_shadow.shadow_compile` reads who we are once per sweep and hands it
+                        to every `gather_members` — it read it once per situation since U14. Found by
+                        U14's report.
+                      artifact: genios_engine/reason/domain_shadow.py
+                      verify: .venv/bin/python -m pytest tests/reason/test_the_shadow_reads_who_we_are_once.py -q
+                      depends_on: [M22.C1.L-data.V1.U03, M22.C2.L-logic.V2.U14]
             - layer: integration
               levels:
                 - level: 3
@@ -4002,7 +4042,7 @@ yc2_w27_s04:
                         not the text.
                       artifact: tests/platform/test_one_answer_to_who_is_us.py
                       verify: .venv/bin/python -m pytest tests/platform/test_one_answer_to_who_is_us.py -q
-                      depends_on: [M22.C2.L-logic.V2.U01, M22.C2.L-logic.V2.U02, M22.C2.L-logic.V2.U03, M22.C2.L-logic.V2.U04, M22.C2.L-logic.V2.U05, M22.C2.L-logic.V2.U06, M22.C2.L-logic.V2.U07, M22.C2.L-logic.V2.U08, M22.C2.L-logic.V2.U09, M22.C2.L-logic.V2.U10, M22.C2.L-logic.V2.U11, M22.C2.L-logic.V2.U12, M22.C2.L-logic.V2.U13, M22.C2.L-logic.V2.U14, M22.C2.L-logic.V2.U15, M22.C2.L-logic.V2.U16, M22.C2.L-logic.V2.U17, M22.C2.L-logic.V2.U18]
+                      depends_on: [M22.C2.L-logic.V2.U01, M22.C2.L-logic.V2.U02, M22.C2.L-logic.V2.U03, M22.C2.L-logic.V2.U04, M22.C2.L-logic.V2.U05, M22.C2.L-logic.V2.U06, M22.C2.L-logic.V2.U07, M22.C2.L-logic.V2.U08, M22.C2.L-logic.V2.U09, M22.C2.L-logic.V2.U10, M22.C2.L-logic.V2.U11, M22.C2.L-logic.V2.U12, M22.C2.L-logic.V2.U13, M22.C2.L-logic.V2.U14, M22.C2.L-logic.V2.U15, M22.C2.L-logic.V2.U16, M22.C2.L-logic.V2.U17, M22.C2.L-logic.V2.U18, M22.C2.L-logic.V2.U20, M22.C2.L-logic.V2.U21, M22.C2.L-logic.V2.U22, M22.C2.L-logic.V2.U23]
         - id: M22.C3
           name: The card
           layers:
