@@ -1424,7 +1424,7 @@ def read_meetings_for_dispatch(rows: dict, now: datetime, employers: dict) -> li
     """The meeting follow-through reading, in the shape the dispatch loop hands every reader.
 
     `_gather` stamps the meetings onto `rows` under `_meetings` — a list, not one entry per node —
-    because `meeting_touch._MEETINGS` returns its own row shape and these facts live on the
+    because `meeting_touch.meeting_rows` returns its own row shape and these facts live on the
     meeting node rather than in the `thread.*` map the outreach readings share. Same reserved-key
     route `_conditions`, `_organizations` and `_campaigns` take.
     """
@@ -1704,11 +1704,12 @@ def _gather(store, org_id: str, *, now: datetime | None = None,
         held["_mailbox_owner"] = _optional(
             c, "mailbox owner", lambda: _mailbox_owner(c, org_id), None)
         # THE MEETINGS, through the query that already knows how to find them. `meeting_touch.
-        # _MEETINGS` joins the `attended` edge, excludes retired attendances, excludes our own
-        # seats and keeps EVERY external attendee rather than one picked by sort order — three
-        # corrections its comments record, each of which this reading would otherwise have had to
-        # learn again. Guarded like `_mailbox_owner`: the query uses `#>>` and `array_agg`, so a
-        # driver without them is a gap in what this sweep can read, never a crash.
+        # meeting_rows` joins the `attended` edge, excludes retired attendances, leaves out a
+        # meeting of only us (who is us asked of `identity_for`, STEP-04) and keeps EVERY external
+        # attendee rather than one picked by sort order — corrections its comments record, each of
+        # which this reading would otherwise have had to learn again. Guarded like
+        # `_mailbox_owner`: the query uses `#>>` and `jsonb_agg`, so a driver without them is a
+        # gap in what this sweep can read, never a crash.
         # IMPORTED, not referenced from thin air. This read `_MEETINGS` as a bare name that no
         # import in this module ever bound, so the lambda raised `NameError` on every sweep,
         # `_optional` caught it, logged "gather meetings unavailable; the reading it feeds is
@@ -1716,10 +1717,10 @@ def _gather(store, org_id: str, *, now: datetime | None = None,
         # and `meeting_follow_through` produced ZERO cards — not on this tenant, on every tenant,
         # since the line was written. The guard made a crash survivable and made the outage quiet;
         # the same shape as `correlation_dependency.event_parties` calling an un-imported `text`.
-        from genios_engine.context.meeting_touch import _MEETINGS as _MEETING_ROWS
+        from genios_engine.context.meeting_touch import meeting_rows
+        from genios_engine.platform.self_identity import identity_for
         held["_meetings"] = _optional(
-            c, "meetings", lambda: [dict(r._mapping)
-                                    for r in c.execute(text(_MEETING_ROWS), {"o": org_id})], [])
+            c, "meetings", lambda: meeting_rows(c, org_id, identity_for(c, org_id)), [])
         # The counterparty organisations, under the same reserved-key route. Computed over the
         # WHOLE tenant rather than over `held`: `works_at` membership is what makes two people one
         # firm, and a firm's size — "two of the two partners we know are silent" — is only true if
