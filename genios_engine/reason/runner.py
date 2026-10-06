@@ -20,6 +20,7 @@ from genios_engine.packs.wiring import (DEFAULT_PACK_ID, ensure_default, ensure_
 from genios_engine.platform.config import get_settings, l1_seam_enabled
 from genios_engine.platform.funnel import CAPABILITY_RESOLVED, DECISION_EMITTED, NO_CAPABILITY
 from genios_engine.platform.ids import new_id
+from genios_engine.platform.self_identity import identity_for
 
 from .baselines import build_baselines, load_node_metrics
 from .adapters import (legacy_capability_manifest, reason_legacy_rule,
@@ -1000,18 +1001,10 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
         # Every address that is US, not just `orgs.email`. A single-address check leaves the
         # owner's other identities — a second seat, the connected mailbox, an alias — reasoned
         # about as though they were counterparties, which produces cards telling the founder to
-        # chase himself. Same source of truth L2 uses, so the two layers cannot disagree about
-        # who the tenant is.
-        self_keys = {
-            (k or "").strip().lower()
-            for (k,) in c.execute(text(
-                "select lower(email) from orgs where id=:o and email is not null "
-                "union select lower(email) from org_seats "
-                "where org_id=:o and active and email is not null "
-                "union select lower(external_account_id) from connections "
-                "where org_id=:o and external_account_id like '%@%'"), {"o": org_id})
-            if k
-        }
+        # chase himself. The one answer (STEP-04): a declared address, an address at a declared
+        # domain and the company whose domain is ours are us too, and every caller asks the same
+        # `identity_for`, so no two layers can disagree about who the tenant is.
+        us = identity_for(c, org_id)
     # Pre-load the whole org's facts + observations in TWO org-wide queries instead of two per
     # node. The per-node reads were the runner's dominant cost (N×2 round-trips against a networked
     # pooler). Same data, same shape → identical NodeContext per node, so signals are unchanged.
@@ -1042,7 +1035,7 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
     gate = _LaneGate.load(store, org_id, effective["pack_id"], effective["version"])
     out["gate_ready"] = int(gate.ready)
     for nd in nodes:
-        if (nd.canonical_key or "").strip().lower() in self_keys:
+        if us.is_us_node(nd.node_type, nd.canonical_key):
             out["self_excluded"] += 1                       # never reason about the account owner
             continue
         rules = rules_for_scope(all_rules, nd.node_type)
