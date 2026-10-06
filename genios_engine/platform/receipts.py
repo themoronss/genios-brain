@@ -1013,8 +1013,16 @@ _CARD_ABOUT_US_SQL = (
     "select count(*) from cards c where c.state in "
     "('queued', 'surfaced', 'snoozed', 'claimed', 'delivered') "
     "and c.business_subject is not null and ("
-    "  exists (select 1 from orgs o where o.id = c.org_id and ("
+    "  exists (select 1 from orgs o "
+    # `orgs.name` is the person's FULL name at signup, with or without a title ("Mr Rohit
+    # Swerashi"): a subject that holds it, untitled, is about us — "Send Rohit Swerashi your
+    # traction metrics". A one-word name only exactly (`platform/self_identity.names_us`).
+    "    cross join lateral (select regexp_replace(lower(btrim(coalesce(o.name, ''))), "
+    "        '^(mr|mrs|ms|miss|dr|prof|shri|smt)[.]? +', '') as full_name) n "
+    "   where o.id = c.org_id and ("
     "      lower(c.business_subject) = lower(o.name) "
+    "   or (position(' ' in n.full_name) > 0 "
+    "       and lower(c.business_subject) like '%' || n.full_name || '%') "
     "   or (o.first_name is not null and o.last_name is not null "
     "       and lower(c.business_subject) like '%' || lower(o.first_name || ' ' || o.last_name) || '%'))) "
     # Every address and declared domain of ours, from the identity's own SQL correlated per card

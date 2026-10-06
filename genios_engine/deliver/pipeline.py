@@ -234,10 +234,17 @@ def _tenant_identities(graph, org_id: str) -> tuple[str, ...]:
             row = c.execute(text(
                 "select name, first_name, last_name, company from orgs where id=:o"),
                 {"o": org_id}).first()
+            # And what the mail calls us: the display name each address of ours carries in the
+            # graph ("Mr Rohit Swerashi", from his own From header) — the name a card's subject
+            # chain actually meets (STEP-04).
+            shown = [r[0] for r in c.execute(text(
+                "select distinct display_name from graph_nodes where org_id=:o and valid_to is null "
+                "and node_type in ('person', 'service') and canonical_key = any(:a)"),
+                {"o": org_id, "a": sorted(us.addresses)}) if r[0] and "@" not in r[0]]
     except Exception:      # noqa: BLE001 — grounding is an enrichment, never a reason to fail
         return ()
     names = () if row is None else (row.name, row.first_name, row.last_name, row.company)
-    parts = [*names, *sorted(us.addresses)]
+    parts = [*names, *sorted(shown), *sorted(us.addresses)]
     return tuple(str(p).strip() for p in parts if p and str(p).strip())
 
 

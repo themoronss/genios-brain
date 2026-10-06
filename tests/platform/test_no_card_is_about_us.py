@@ -102,3 +102,17 @@ def test_a_closed_card_or_a_counterparty_is_not(engine):
     _card(engine, "c_gone", "Mr Rohit Swerashi", state="dismissed")
     _card(engine, "c_them", "Rohit Sharma")          # another Rohit is somebody else
     assert _count(engine) == 0
+
+
+@pytest.mark.pg
+@pytest.mark.parametrize("stored, subject", [("Mr Arjun Rao", "Send Arjun Rao your traction metrics"),
+                                             ("Arjun Rao", "Mr Arjun Rao")])
+def test_the_founders_full_name_is_us_titled_or_not(engine, stored, subject):
+    """Signup stores the person's full name in `orgs.name` (first and last are legacy columns, often
+    empty): a subject holding it, with or without a title, is about us."""
+    with engine.begin() as c:
+        c.execute(text("update orgs set name = :n, first_name = null, last_name = null where id = :o"),
+                  {"n": stored, "o": ORG})
+    _card(engine, "c_named", subject)
+    _card(engine, "c_other", "Arjun Mehta (Lattice)")
+    assert _count(engine) == 1

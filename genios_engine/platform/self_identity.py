@@ -81,6 +81,10 @@ class SelfIdentity:
         return kind == "tenant"
 
 
+#: Titles that come before a name and are not part of it.
+_HONORIFICS = frozenset({"mr", "mrs", "ms", "miss", "dr", "prof", "shri", "smt"})
+
+
 def names_us(text: str | None, us: SelfIdentity, names: Iterable[str | None] = ()) -> bool:
     """Whether a SUBJECT written as text — a card's `business_subject`, a thread label's who — is
     one of us.
@@ -101,6 +105,12 @@ def names_us(text: str | None, us: SelfIdentity, names: Iterable[str | None] = (
         return True
     for raw in names:
         name = " ".join(str(raw or "").split()).lower()
+        # A title is not part of the name: signup stores "Mr Rohit Swerashi" as readily as
+        # "Rohit Swerashi", and a subject may carry either.
+        words = name.split()
+        while len(words) > 2 and words[0].rstrip(".") in _HONORIFICS:
+            words = words[1:]
+        name = " ".join(words)
         if len(name) < 3 or "@" in name:
             continue
         if " " in name:
