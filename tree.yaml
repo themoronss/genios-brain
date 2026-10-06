@@ -3747,10 +3747,12 @@ yc2_w27_s03:
 # yc2_w27_s04 · STEP-04 who is us — speedrun008/YC-II W27/STEP-04-TO-BUILD-who-is-us.md
 # ═══════════════════════════════════════════════════════════════════════════════════════════════
 yc2_w27_s04:
-  status: proposed
+  status: approved_in_progress
   confirmed: >
-    Not yet — written on Rohit's ask (2026-10-06, "Step 4 ka detailed plan kar do tab tak... taki
-    complete hote hi hm aage badhenge"), while STEP-03's QA ran. Waits for his go.
+    Rohit, 2026-10-06 — "Haan bhai, please ab best tareeke se step 4 karo ... thoda jaldi karo taaki
+    saari ki saari cheezein perfectly kaam kar sakein." Planned while STEP-03's QA ran (a80d4c5a).
+    D6's declared list explained to him (ceo@thegenios.com and thegenios.com: why); the default holds
+    unless he says one of them is not his.
   source: >
     speedrun008/YC-II W27/STEP-04 §1–§3, re-checked claim by claim against speedrun008 @ 81857ce2
     (STEP-04 §8) by two read-only passes, spot-checked by hand, and measured on the golden set: 0 of

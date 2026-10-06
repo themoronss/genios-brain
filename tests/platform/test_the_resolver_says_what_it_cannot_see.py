@@ -436,5 +436,9 @@ def test_the_resolver_change_moved_no_coverage_verdict():
     # reference is the same reset `delete` list. Again an engine change, not a resolver change; the
     # nine write-only members above did not move, and the table's reader and writer
     # (`reason/fingerprint_store.py`) are the next unit.
-    assert len(TC.table_usage()) == 188
-    assert len(TC._known_tables()) == 190
+    # ⛔ RE-PINNED 188 → 189 and 190 → 191 on 2026-10-06 by migration `0193_org_self_identities`
+    # (YC-II W27 STEP-04, `yc2_w27_s04/M22.C1.L-contract.V0.U01`): one new table, read by
+    # `platform/self_identity.identity_for`. An engine change, not a resolver change; the nine
+    # write-only members above did not move.
+    assert len(TC.table_usage()) == 189
+    assert len(TC._known_tables()) == 191
