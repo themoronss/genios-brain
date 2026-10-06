@@ -1002,6 +1002,27 @@ def _ILLEGAL_TRANSITION_SQL(org: str | None) -> str:
             f"{_org_filter(org, 't')}")
 
 
+#: ⛔ STEP-04 · AN OPEN CARD WHOSE SUBJECT IS THE TENANT ITSELF. Production carried *"Send Mr Rohit
+#: Swerashi your traction metrics"* and an offer card naming `ceo@thegenios.com` and the founder as
+#: "waiting longest" (`speedrun008/YC-II W27/` STEP-04 §8.2). Who "us" is comes from the same four
+#: sources `platform/self_identity.identity_for` reads — the founder's full name and the company's
+#: name on `orgs`, its address, the active seats, and what the tenant declared — in SQL, because a
+#: receipt is one scalar. A first name alone is not us: another Rohit is somebody else.
+_CARD_ABOUT_US_SQL = (
+    "select count(*) from cards c where c.state in "
+    "('queued', 'surfaced', 'snoozed', 'claimed', 'delivered') "
+    "and c.business_subject is not null and ("
+    "  exists (select 1 from orgs o where o.id = c.org_id and ("
+    "      lower(c.business_subject) = lower(o.name) "
+    "   or lower(c.business_subject) like '%' || lower(o.email) || '%' "
+    "   or (o.first_name is not null and o.last_name is not null "
+    "       and lower(c.business_subject) like '%' || lower(o.first_name || ' ' || o.last_name) || '%'))) "
+    "  or exists (select 1 from org_seats s where s.org_id = c.org_id and s.active "
+    "      and s.email is not null and lower(c.business_subject) like '%' || lower(s.email) || '%') "
+    "  or exists (select 1 from org_self_identities i where i.org_id = c.org_id "
+    "      and lower(c.business_subject) like '%' || i.value || '%'))")
+
+
 def receipts(org: str | None) -> list[Receipt]:
     # THE DORMANCY WINDOW IS THE THRESHOLD, and it is imported rather than restated. L2 decides a
     # situation has ended after `DORMANT_AFTER_DAYS` of silence, so a tenant that has been fed
@@ -1408,6 +1429,14 @@ def receipts(org: str | None) -> list[Receipt]:
                 lambda n: n == 0,
                 "a card with no lane at all was written by a path that never read the signal's "
                 "routing -- the founder cannot tell a decision from a thing to watch"),
+
+        Receipt("L5", "no open card's subject is one of us",
+                _CARD_ABOUT_US_SQL + _org_filter(org, "c"),
+                lambda n: n == 0,
+                "a card's subject is the counterparty, always — one about the tenant tells the "
+                "founder to act on himself (\"Send Mr Rohit Swerashi your traction metrics\"). A "
+                "non-zero count after STEP-04's repair is a card built by a path that does not ask "
+                "`platform/self_identity`; read its `business_subject` and its signal's subject node"),
 
         Receipt("L5", "no card outlives its own window in a live state",
                 _CARD_OUTLIVED_ITS_WINDOW_SQL + _org_filter(org),

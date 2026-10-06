@@ -164,6 +164,9 @@ RECEIPT_PACKAGE: dict[str, tuple[str, str]] = {
     # ── deliver/ · render, gate, send, track ───────────────────────────────────────────────
     "every delivered card carries a lane, or is labelled unrouted": (
         "deliver", "`cards.output_lane`. ⛔ ERRORs until migrations `0189`/`0190` are applied"),
+    "no open card's subject is one of us": (
+        "deliver", "STEP-04: `cards.business_subject` is the counterparty by contract — the card "
+                   "builder's subject chain and its refusal are this package's"),
     "no card outlives its own window in a live state": (
         "deliver", "The 12-hour grace is derived from a measured 6.0-hour sweep interval"),
     "a card parked for want of a channel is revived when one appears": (

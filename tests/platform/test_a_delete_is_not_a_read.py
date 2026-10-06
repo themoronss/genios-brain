@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 2_936, (
+    assert r["statements"] == 2_937, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -230,6 +230,8 @@ def test_the_statement_count_did_NOT_move():
     # `platform/self_identity.identity_for` — the four sources of who we are, ONE statement.
     # ⛔ MOVED 2,935 → 2,936 by yc2_w27_s04/M22.C1.L-interface.V2.U04: `scripts/declare_self_identity.py`
     # — the one INSERT a tenant's declaration is, a literal.
+    # ⛔ MOVED 2,936 → 2,937 by yc2_w27_s04/M22.C6.L-logic.V2.U02: the receipt "no open card's
+    # subject is one of us" (`platform/receipts._CARD_ABOUT_US_SQL`), one literal.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():
