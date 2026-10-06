@@ -3,8 +3,9 @@
 **Written for:** everyone. **Measured:** 2026-10-05, `speedrun008` @ `2dc61dac` and production
 (read-only, metadata). **Re-measured the same day after the merge** (`8a472b81`, the `STEP-00`
 re-do): F26–F29, E8, and the corrections to F24 and E4. **Root-caused the same day** on scratch
-databases, for tree `yc2_w27`: F30–F37, E9–E11. A finding is never deleted; a correction
-is a new line that says what it corrects.
+databases, for tree `yc2_w27`: F30–F37, E9–E11. **Measured 2026-10-06 by the golden set**
+(`STEP-01`, `yc2_w27/M19`) on a scratch database: F38–F49 and §F.1, the before-score. A finding is
+never deleted; a correction is a new line that says what it corrects.
 
 ---
 
@@ -50,6 +51,18 @@ is a new line that says what it corrects.
 | F35 | Three Python versions — production 3.11, CI 3.12, local 3.13 — and one guard answered differently on 3.13 | `[CODE]` `Dockerfile:33`; `.github/workflows/ci.yml:17`; `tests/test_l1_seam_activation.py:191-192` | `yc2_w27/M16.C5`; `STEP-17` §3.1 runs CI on 3.11 |
 | F36 | The scripts' `--json` output is not pure JSON — two `[db]` lines go to stdout first | `[CODE]` `scripts/_db.py:159-160` | a small unit, not in `yc2_w27` |
 | F37 | In the three sweeps that built cards, the funnel counted fewer decisions than cards: 4 → 15, 2 → 3, 1 → 3 | `[PROD]` `pipeline_counters`, 3–4 Oct | `STEP-18` B17 → `yc2_w27/M17.C1` |
+| F38 | Two identical runs give the same card with its WHY lines in a different order — the evidence a decision binds is ordered by a minted id, not by content | `[TEST]` `tests/replays/test_engine_runner.py` (`_comparable` compares the card unordered for this reason) | not fixed — `STEP-17` (determinism) |
+| F39 | The narrator was asked two different questions about one situation: the quotes of one message (one instant) came back in the database's physical order, and the card's facts in dict insertion order | `[TEST]` found when a recorded case would not replay | ✅ fixed — `yc2_w27/M19.C3.L-logic.V1.U02` (`e730720d`), `V1.U03` (`64110e92`) |
+| F40 | A statement nobody could resolve was anchored on a person chosen by random node id — and on the founder's own sent mail it could pick the founder, the account holder shown as the counterparty of his own words | `[CODE]` `context/correlation_dependency.event_parties`; `[TEST]` golden case F25 | ✅ fixed — `yc2_w27/M19.C3.L-logic.V1.U04` (`9e5cede8`) |
+| F41 | One case runs two ways: the engine orders by minted ids in places, and its capture and L2 thread pools interleave — on F29 one situation was built from 2 or from 4 evidence spans, and which of two same-day meetings won one counterparty's reading (marked `rebooked: true` though it was held) changed between runs | `[TEST]` 4 runs of F29, prompts diffed | the golden runner pins ids and workers (`engine_runner.pinned_world`); the engine is unchanged — `STEP-17`; the two-meeting collapse is replay 03 m07 |
+| F42 | The relevance page asks the model about every calendar event, with *"(no readable text)"* as the item — a paid call per event about nothing | `[CODE]` `capture/esqe/relevance._item_block`, `capture/pipeline.prime_relevance_page` (a calendar event has a `summary`, not a `subject`) | not fixed — a small unit |
+| F43 | The domain proposer is wired nowhere: `capture/pipeline.py` calls `tag_domains` without a proposer, so `capture/domain/proposer.py` spends nothing | `[CODE]` | recorded in `tests/replays/model_sites.py`; a product question, not a defect |
+| F44 | **The qualification floor is where the founder set dies.** Of the 18 failing must-detect cases, 9 are lost before memory — every one at the floor (importance 840–2,280 against 2,500): introduced contacts' replies, investors' questions, a partner's dated proposal, a programme's deadline. 5 more die at the gate (N-02 unsubscribe header, N-03 no-reply, N-06 Promotions) | `[TEST]` golden set, `qualification_drops` per case | `STEP-03`, `STEP-04`, `STEP-05` |
+| F45 | L2's fixpoint does not converge on 3 of 40 cases — the founder's own sent updates, his outreach wave, a portal's no-reply notices — logged `l2_convergence_exceeded` on every sweep | `[TEST]` golden cases F14, F15, F23 | not fixed — `STEP-17` |
+| F46 | A signal's evidence quotes the sender's NAME: `deadline_stated` and `opportunity_signal` reach the narrator as *"Mohit Sethi"*, not as the date or the ask | `[TEST]` every narrator prompt of the golden set | not fixed — `STEP-13` (check every claim) |
+| F47 | Accelerators and partners are framed as INVESTOR relationships (sales `investor_relationship`, with investor plays) and an incubator's report as a support ticket (`first_response_overdue`) — no play offered fits what was asked | `[TEST]` golden cases F17, F19, F24, F29 | `STEP-09`, `STEP-11` |
+| F48 | The meeting follow-through narrator is told the meeting *happened* and asked for a recap — for meetings nobody confirmed took place | `[CODE]` the `meeting_follow_through` guidance in the card templates; `[TEST]` golden cases F07, F29, F40 | `STEP-14`; contradicts Atlas replay 05 |
+| F49 | One ask makes several cards: the company's account-admin card, the person's unanswered-email card, and the meeting's | `[TEST]` golden cases F27 (2), F29 (3), F07 (2) | `STEP-09` (one file per workstream) |
 
 ## B · False alarms — things that looked wrong and are not
 
@@ -145,6 +158,7 @@ Every number below was measured on 2026-10-05 against production, read-only; *sn
 | L3 domains on | admin | `l3_activation` |
 | unclassified observations | 118, 0 reviewed | `unclassified_observations` |
 | golden replays | 153 mutations · 150 xfail · 3 "runnable" | `[TEST]` `pytest tests/replays -q` → 33 passed, 150 xfailed |
+| golden replays — **corrected 2026-10-06** | the line above measured a harness that never called the engine (F23). Replays 01–07 are now judged on it: 7 of 80 mutations driven through a founder case, 73 not expressible yet — see §F.1 | `pytest tests/replays -q` on a scratch database → 350 passed, 100 xfailed, 0 skipped |
 | branch divergence | 13 / 28 → merged | `git rev-list --left-right --count origin/harsh/mvp...speedrun008`; `STEP-00` |
 | `pipeline_health` on production | **7 / 7 pass** | `baseline/2026-10-05/pipeline_health.txt` |
 | inbound mail by fate | 365 = 15 reached reasoning · 18 read, no signal · 67 junked · 258 deleted · 7 kept unread | `baseline/2026-10-05/workstream_funnel.txt` (`scripts/workstream_funnel.py`) |
@@ -155,3 +169,30 @@ Every number below was measured on 2026-10-05 against production, read-only; *sn
 | per-sweep decider calls per UTC day | 718 · 477 · 1,204 · 306 (2–5 Oct; 5 Oct to 13:51) | `@model_calls_by_day` |
 | resolution calls vs audited model runs | equal hour by hour since the 3 Oct reset; the 24 unaudited calls (3 Oct 06:00–08:59 UTC) predate it | `llm_costs` vs `l2_model_runs`, read-only, 2026-10-05 |
 | the database suite on the merged branch | see `STEP-00` §4.2 | `baseline/2026-10-05/suite_with_database.txt` |
+
+### F.1 · The golden board — the before-score (`STEP-01`)
+
+Measured 2026-10-06 at `7caed608`, on a scratch database, by `python scripts/golden_score.py`:
+forty synthetic founder cases (one per row of `golden-labels.md`) and the Atlas replays 01–07,
+replayed through the real chain — the production sync door, the floor, `_run_l2_chain` — with the
+ideal reader's recorded answers (cassettes recorded at `b47239c9`, `06-DECISIONS` D12c: no model
+spend). `scripts/golden_score.py --assert-recorded` holds the two lines below to every later run.
+
+```
+founder golden set   must-detect  4/30 (8 not expressible)   must-abstain  5/10 (2 not exercised)   forbidden outputs  4
+atlas replays 01–07  passing  0/80   blocked  7/80   not expressible  73
+```
+
+| | |
+|---|---|
+| must-detect that pass | F12 (an investor's question before a booked call), F13 (an investor's ask, not pinned on the founder), F25 (one offer, one card), F28 (a partner's ask before a call) |
+| must-detect lost at the gate · 5 | F01, F02 (a portal's mail on Promotions and no-reply), F03, F09 (the connector's unsubscribe header), F16 (a bounce from an automated sender) |
+| must-detect lost before memory · 9 | F04, F05, F06, F07, F10, F11, F19, F24, F26 — every one dropped at the qualification floor (F44) |
+| must-detect lost in reasoning · 3 | F17 (an accelerator framed as an investor), F27 and F29 (one ask, several cards) |
+| must-detect with no stage to read · 1 | F15 (the founder's outreach wave, typed `anomaly` and dropped at the floor) |
+| not expressible · 8 | F08, F14, F18, F20–F23 (`brief only` — `STEP-15`), F30 (the screen door) |
+| must-abstain that pass · 5 | F32, F33, F34 (newsletters, receipts and digests archived), F35 (no payment claimed), F37 (the connector never the target) |
+| must-abstain not exercised · 2 | F36, F39 — the founder's own sent mail never reaches memory, so the decision not to card it is never made |
+| must-abstain that fail · 3 | F31 (the assignment never becomes the one card a cohort session leaves), F38 (an answer on another channel never closes the ask), F40 (a meeting nobody confirmed, recapped) |
+| forbidden outputs · 4 | *"happened"* — the follow-through narrator told a meeting took place (F07, F29 ×2, F40; F48) |
+| what the numbers judge | the ENGINE, given a faithful reader of every prompt. The model's own mistakes — production junked the real investor mails — are the live evaluation's to measure (`scripts/golden_eval.py --live`, ≈ $0.63 a pass on Haiku 4.5) |
