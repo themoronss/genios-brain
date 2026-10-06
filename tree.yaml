@@ -3264,3 +3264,217 @@ yc2_w27:
                       artifact: .github/workflows/ci.yml
                       verify: .venv/bin/python -m pytest tests/test_ci_runs_the_golden_set_on_postgres.py -q
                       depends_on: [M19.C5.L-integration.V5.U03]
+
+# ═══════════════════════════════════════════════════════════════════════════════════════════════
+# yc2_w27_s02 · STEP-02 the change gate — speedrun008/YC-II W27/STEP-02-TO-BUILD-the-change-gate.md
+# ═══════════════════════════════════════════════════════════════════════════════════════════════
+yc2_w27_s02:
+  status: proposed_awaiting_confirmation
+  source: >
+    speedrun008/YC-II W27/STEP-02 §1–§3, re-checked claim by claim against speedrun008 @ 56528ddb
+    on 2026-10-06 (STEP-02 §8), and measured on the golden runner: today an unchanged sweep pays
+    the decider and R-1 again for every subject — F13 2 calls, F12/F25/F28 4, F07 5, F29 12 — and
+    production's decider + R-1 ran 1,213 / 759 / 1,887 calls on 2 / 3 / 4 Oct (baseline
+    @model_calls_by_day).
+  vision: >
+    A sweep that brings a subject nothing new pays no model for it: the decider and R-1 run only
+    when what the decision depends on changed, or when its standing card is about to lose its
+    authority. The decision itself is unchanged — the same model decides, on the same prompt, when
+    it runs. A DEFER keeps the card it found. Every skip is recorded, so a subject re-decided on an
+    unchanged fingerprint is visible.
+  order_note: >
+    C1 (the fingerprint) and C2 (its store) first; C3 the gate's rule; C5 the DEFER fix before
+    C4, because the legacy lane replays a skipped subject's last outcome and a DEFER must replay as
+    indeterminate. C6 last: the counter, the health check, and the golden acceptance — an
+    unchanged sweep costs 0 model calls on every founder case. Not in this block, by the check:
+    "no model for shadow" (it would break replay, which must not vary by mode — the gate covers
+    shadow rows' unchanged sweeps instead) and renewing a standing signal's authority (cards are
+    replaced at expiry today; STEP-14).
+  milestones:
+    - id: M20
+      name: The change gate (STEP-02)
+      ships: >
+        On the golden runner, a sweep 15 minutes after a case's last one, bringing nothing new,
+        makes 0 decider and 0 R-1 calls on every founder case — and every case's cards and board
+        verdict are what they were. A DEFER keeps the card. In production, after the deploy,
+        l4_llm_decision + l4_llm_r1 fall from ~760–1,890 a day to under 100.
+      categories:
+        - id: M20.C1
+          name: The material fingerprint
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M20.C1.L-contract.V0.U01
+                      what: >
+                        `MaterialInputs` — everything a decision may depend on that its
+                        NodeContext does not carry: open loops of the anchor (loop_id, status,
+                        ask_count), L1 conflicts (id, resolution), human verdicts on the subject's
+                        cards ((feedback_id, verdict_version) and `human.*` card_events), the
+                        pack's authority_revision — and the clock ladders: deadline hours on
+                        timeline_unit.URGENCY_LADDER, day counts on a days ladder.
+                      artifact: genios_engine/reason/fingerprint.py
+                      verify: .venv/bin/python -m pytest tests/reason/test_material_inputs_contract.py -q
+                      depends_on: []
+            - layer: data
+              levels:
+                - level: 1
+                  units:
+                    - id: M20.C1.L-data.V1.U02
+                      what: >
+                        Reads a subject's MaterialInputs in one round trip: open loops by node,
+                        conflicts, verdicts joined card → signal → situation / (rule, node), the
+                        tenant pack's authority_revision. System card_events (card.surfaced,
+                        window.lapsed) are not verdicts.
+                      artifact: genios_engine/reason/fingerprint_inputs.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/reason/test_fingerprint_inputs.py -q
+                      depends_on: [M20.C1.L-contract.V0.U01]
+            - layer: logic
+              levels:
+                - level: 1
+                  units:
+                    - id: M20.C1.L-logic.V1.U03
+                      what: >
+                        `material_fingerprint(capability_key, context, inputs)` — a canonical hash
+                        of the capability (id, version), the situation (type, status, anchor,
+                        member event ids), the context's facts as (field, value) with every
+                        timestamp and fact_version_id out, clocks bucketed, floats quantised, and
+                        org-wide period.* facts out; observations by kind and id; MaterialInputs.
+                        Sorted before hashing (3f8d51e0). Never evaluation_time.
+                      artifact: genios_engine/reason/fingerprint.py
+                      verify: .venv/bin/python -m pytest tests/reason/test_material_fingerprint.py -q
+                      depends_on: [M20.C1.L-contract.V0.U01]
+        - id: M20.C2
+          name: The store
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M20.C2.L-contract.V0.U01
+                      what: >
+                        `0191_reasoning_fingerprints.sql` — one row per (org_id, subject_key):
+                        lane, fingerprint, the run it was decided by, the outcome (emitted /
+                        standing / deferred / suppressed / shadow), decided_at, last_checked_at,
+                        skips. subject_key = situation_id + capability (compiled) or
+                        rule_id:node_id (legacy, native). supersedes_run_id is NOT used — it is
+                        part of input_hash and the replay check.
+                      artifact: migrations/0191_reasoning_fingerprints.sql
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/test_migration_0191_reasoning_fingerprints.py -q
+                      depends_on: []
+            - layer: data
+              levels:
+                - level: 1
+                  units:
+                    - id: M20.C2.L-data.V1.U02
+                      what: >
+                        `last(conn, org, subject_key)`, `record_decided(...)`, `record_skipped(...)`
+                        — the upsert after a run, and the skip receipt (last_checked_at, skips + 1).
+                      artifact: genios_engine/reason/fingerprint_store.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/reason/test_fingerprint_store.py -q
+                      depends_on: [M20.C2.L-contract.V0.U01]
+        - id: M20.C3
+          name: The gate, and the compiled lane
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M20.C3.L-logic.V0.U01
+                      what: >
+                        `should_skip(stored, fingerprint, standing, eval_time)` — skip only when
+                        the fingerprint is the stored one AND, for a subject that had a live
+                        signal, that signal is still open and keeps its authority past eval_time +
+                        24 h; a shadow row skips on the fingerprint alone. Anything else runs, and
+                        says why (new, changed, expiring, no standing signal).
+                      artifact: genios_engine/reason/change_gate.py
+                      verify: .venv/bin/python -m pytest tests/reason/test_change_gate.py -q
+                      depends_on: []
+            - layer: integration
+              levels:
+                - level: 2
+                  units:
+                    - id: M20.C3.L-integration.V2.U02
+                      what: >
+                        The compiled lane (reason/domain_shadow.py) asks the gate just before
+                        reason_native_capability — after the pack, manifest and anchor are known —
+                        for live and shadow rows alike; a skip costs zero model calls and writes
+                        the skip receipt; a run records its fingerprint and outcome.
+                      artifact: genios_engine/reason/domain_shadow.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/reason/test_the_compiled_lane_skips_an_unchanged_subject.py -q
+                      depends_on: [M20.C1.L-data.V1.U02, M20.C1.L-logic.V1.U03, M20.C2.L-data.V1.U02,
+                                   M20.C3.L-logic.V0.U01]
+        - id: M20.C4
+          name: The legacy and native lanes
+          layers:
+            - layer: integration
+              levels:
+                - level: 3
+                  units:
+                    - id: M20.C4.L-integration.V3.U01
+                      what: >
+                        reason/runner.py asks the gate before reason_legacy_rule and before a
+                        native capability is reasoned, keyed rule_id:node_id. A skip replays the
+                        last outcome's bookkeeping — a standing signal stays in `fired`, a DEFER or
+                        a failed evaluation stays `indeterminate` — so the lifecycle pass resolves
+                        nothing a skip did not look at.
+                      artifact: genios_engine/reason/runner.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/reason/test_the_legacy_lane_skips_an_unchanged_subject.py -q
+                      depends_on: [M20.C1.L-data.V1.U02, M20.C1.L-logic.V1.U03, M20.C2.L-data.V1.U02,
+                                   M20.C3.L-logic.V0.U01, M20.C5.L-logic.V0.U01]
+        - id: M20.C5
+          name: A DEFER keeps the card
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M20.C5.L-logic.V0.U01
+                      what: >
+                        A live, deliverable run whose outcome is DEFER — the model's, the
+                        formula's (below_confidence_floor, abstain_on_conflict) or an unavailable
+                        model (llm_decision_unavailable:*, daily_call_cap included) — joins
+                        `indeterminate` and is counted `deferred`, not `shadow`; the lifecycle
+                        pass never expires a card on it. A shadow run still keeps nothing alive.
+                      artifact: genios_engine/reason/runner.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/reason/test_a_defer_keeps_the_card.py -q
+                      depends_on: []
+        - id: M20.C6
+          name: Counted, checked, and held by the golden set
+          layers:
+            - layer: interface
+              levels:
+                - level: 4
+                  units:
+                    - id: M20.C6.L-interface.V4.U01
+                      what: >
+                        `skipped_unchanged` and `deferred` on run_all's outcomes, every lane, zero
+                        included — beside `no_new_evidence`, not a funnel stage (STAGES is closed,
+                        migration 0188).
+                      artifact: genios_engine/reason/runner.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/reason/test_the_gate_is_counted.py -q
+                      depends_on: [M20.C3.L-integration.V2.U02, M20.C4.L-integration.V3.U01]
+                    - id: M20.C6.L-interface.V4.U02
+                      what: >
+                        A pipeline_health check that fails when a subject was re-decided while its
+                        stored fingerprint was unchanged and its signal still stood — read from
+                        reasoning_fingerprints, read-only.
+                      artifact: scripts/pipeline_health.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/scripts/test_pipeline_health_change_gate.py -q
+                      depends_on: [M20.C2.L-data.V1.U02]
+            - layer: integration
+              levels:
+                - level: 5
+                  units:
+                    - id: M20.C6.L-integration.V5.U03
+                      what: >
+                        The acceptance, on the golden runner: every founder case, run with one
+                        more sweep 15 minutes after its last that brings nothing new — that sweep
+                        makes 0 decider and 0 R-1 calls, and the cards and the board verdict are
+                        what they were (today: F13 2 calls, F12/F25/F28 4, F07 5, F29 12). Then
+                        the board is re-measured and any move recorded in 03-FINDINGS §F.1.
+                      artifact: tests/replays/test_an_unchanged_sweep_costs_nothing.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest tests/replays/test_an_unchanged_sweep_costs_nothing.py -q
+                      depends_on: [M20.C3.L-integration.V2.U02, M20.C4.L-integration.V3.U01,
+                                   M20.C5.L-logic.V0.U01]
