@@ -247,7 +247,9 @@ def test_a_case_is_driven_through_the_production_door_and_replays_exactly():
     run = replayed_run
     outcomes = {(x.object_id, x.source_object_id.endswith("::att1")): x for x in run.landed}
     assert outcomes[("ask", False)].outcome == "emitted"
-    assert outcomes[("digest", False)].outcome == "dropped" and outcomes[("digest", False)].reason
+    # STEP-03: the gate ARCHIVES the digest — kept, read by no model — where it used to drop it, and
+    # still names the rule that stopped it.
+    assert outcomes[("digest", False)].outcome == "archived" and outcomes[("digest", False)].reason
     stub = outcomes[("ask", True)]
     assert stub.outcome == "parked" and stub.reason == "DOC-05", (
         "a refused attachment lands as the fetch_failed stub production gets")
