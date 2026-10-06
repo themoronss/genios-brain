@@ -31,7 +31,7 @@ is one branch, `speedrun008`, and the units are block `yc2_w27` of `tree.yaml`.
 | Phase | Steps | Status |
 |---|---|---|
 | 0 · Ground truth | `STEP-00` one branch · `STEP-01` the golden set | both **PENDING — Harsh** (deploy). Claude's part done, pushed |
-| 1 · Remember everything | `STEP-02` change gate · `03` the gate keeps everything · `04` who is us · `05` every item enters memory · `06` nothing lost silently | `02` and `03` **PENDING — Rohit (push), Harsh (deploy)**: `02` built, QA green (§6b); `03` built, QA ⏳ (§6c). `04`–`06` TO BUILD |
+| 1 · Remember everything | `STEP-02` change gate · `03` the gate keeps everything · `04` who is us · `05` every item enters memory · `06` nothing lost silently | `02` and `03` **PENDING — Rohit (push), Harsh (deploy)**: built, QA green (§6b, §6c). `04`–`06` TO BUILD |
 | 2 · The expert's desk | `STEP-07` company brief · `08` the re-sync · `09` workstreams · `10` history, patterns, analytics | `08` **PENDING — Harsh** (after 03–07 are live); the rest TO BUILD |
 | 3 · Expertise | `STEP-11` founder playbooks | TO BUILD |
 | 4 · The expert thinks | `STEP-12` the expert pass · `13` check every claim | TO BUILD |
@@ -139,6 +139,10 @@ content gone → **0**; the same 33 archived with the same code; every one of th
 exactly as before; the board matches. Found while building: an archive with prepared text is read by
 the resolution model (F37) — so an archive keeps its payload only; and the pipeline emitted any gate
 verb it did not know.
+
+**QA:** green at `81857ce2` (`baseline/yc2w27-s03-qa/qa_record.txt`) — the units 21 / 0 / 0; the database suite
+17,434 passed, 0 failed; the golden lane 442 passed, 0 skipped; the board matches; the hermetic job
+16,166 passed. Run 1 (`ef011cb0`) was red on one database-only test that still expected a drop.
 
 **Still owed:** the push; Harsh's deploy, which applies migration `0192` (with `0191`) at boot; then
 the production number — new mail with its content deleted at the gate, 258 of 395 → 0, read by

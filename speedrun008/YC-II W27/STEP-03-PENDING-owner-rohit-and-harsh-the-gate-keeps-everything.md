@@ -7,7 +7,7 @@ tier and the reason for it.
 
 ---
 
-✅ **Built 2026-10-06 — tree block `yc2_w27_s03`, 17 units green; QA ⏳ (§9.4).** On the golden set,
+✅ **Built 2026-10-06 — tree block `yc2_w27_s03`, 17 units green, QA green (§9.4).** On the golden set,
 0 of 86 mail objects are dropped: the 33 the gate used to delete are archived, each with its rule as
 the reason and its encrypted payload kept; every one of the 40 cases is marked exactly as before.
 **Pending:** Rohit's push; Harsh's deploy; then the production number (§9.5).
@@ -213,7 +213,11 @@ Before: a worktree at `4d1ad2fe`, the gate as it was (`baseline/yc2w27-s03-qa/ga
 
 ### 9.4 · QA
 
-`baseline/yc2w27-s03-qa/qa_record.txt` — see that file for the run's lines, verbatim.
+`baseline/yc2w27-s03-qa/qa_record.txt`, at `81857ce2`, an empty scratch database: the units 21 / 0 / 0;
+the whole database suite 17,434 passed, 0 failed (the same four optional skips as every run); the
+golden lane 442 passed, 100 xfailed, 0 skipped; the board matches; the hermetic job 16,166 passed.
+Run 1, at `ef011cb0`, was red on one line — the golden runner's own database-only test still
+expected the digest dropped (`fae773db`); the whole tier was run again.
 
 ### 9.5 · The deploy
 

@@ -1,0 +1,43 @@
+yc2_w27_s03 QA record · STEP-03, the gate keeps everything · deterministic-qa · speedrun008 @ 81857ce2 (clean tree) · 2026-10-06 10:33–11:23 UTC
+scratch Postgres 17 in Docker, the database recreated EMPTY before every check that uses it;
+GENIOS_TEST_DATABASE_URL=postgresql+psycopg://…  Exit codes only; every command verbatim from
+tree.yaml (block yc2_w27_s03) and .github/workflows/ci.yml.
+
+1 · the tree, and every unit's own verify — 17 units                       exit 0
+      21 pass / 0 fail / 0 skip          (4 tree checks + 17 units)
+
+2 · the whole suite on the database                                        exit 0
+      17434 passed, 4 skipped, 102 xfailed in 1675.56s
+      The 4 skips, listed with -rs after the run: python-docx not installed
+      (tests/capture/transcripts/test_transcript_units.py), an empty parameter set
+      (tests/contracts/test_l1_contracts.py), a declared exception, 0080
+      (tests/platform/test_the_code_can_always_be_rolled_back.py), internal auth not wired in this
+      harness (tests/test_health_memory.py) — the same four every database run has carried since M16.
+
+3 · the golden-pg lane, as CI runs it (GENIOS_GOLDEN_REQUIRED=1)            exit 0
+      pytest -q tests/replays tests/test_golden_labels_sheet.py
+      442 passed, 100 xfailed in 324.08s — 0 skipped
+      (398 after STEP-02, plus STEP-03's acceptance: 40 founder cases + its measurement check, and
+      the new unit tests in tests/replays)
+
+4 · the board, held to 03-FINDINGS.md §F.1                                 exit 0
+      matches the board recorded in speedrun008/YC-II W27/03-FINDINGS.md — archiving moved no verdict
+      golden tenants left in the database afterwards: 0
+
+5 · the hermetic job, as CI runs it                                         exit 0
+      pytest -q -m "not golden"
+      16166 passed, 1170 skipped, 128 deselected, 72 xfailed in 815.37s
+      The 1170 skips are the database tests; tier 2 ran them on Postgres.
+
+Against QA run 1, at ef011cb0 (10:01 UTC the same morning): tier 1 green, tier 2 red on one line —
+  FAILED tests/replays/test_engine_runner.py::test_a_case_is_driven_through_the_production_door_and_replays_exactly
+  E       AssertionError: assert ('archived' == 'dropped'
+— the golden runner's own test, database-only, still expected the gate to drop its digest mail.
+Fixed in fae773db (the expectation moved to `archived`, the rule still named); the run was stopped
+there and this one is the whole tier again, not the one test.
+
+THE ACCEPTANCE, in tier 3: on all 40 founder cases no mail object is dropped; the 33 the gate used to
+delete (measured on a worktree at 4d1ad2fe: N-02 16, N-03 8, N-06 4, llm_junk 4, N-07 1 —
+gate_before_4d1ad2fe.json) are archived with the same code, each with its encrypted payload and no
+prepared text; every case is marked exactly as before. Its first run, before QA, found the
+resolution model reading an archived introduction on F37 (fixed in ff4ba758).
