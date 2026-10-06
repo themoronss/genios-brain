@@ -589,6 +589,9 @@ def _notify_sync_failure(*, org_id: str, source: str, error: str) -> None:
 #: The L2 outcomes that mean a message ENTERED THE GRAPH. Only these are billable: the customer
 #: pays for what they got, and `parked_low_relevance` (the junk gate's verdict), `skipped_no_llm`
 #: and `no_op` gave them nothing however much work we did.
+#: ⛔ NOT `committed_metadata` (STEP-05, `06` D21): an archived mail's names and dates entered
+#: memory and no model read it — only what a model read is billed. A mail below the floor IS
+#: billed: Layer 1's model read it, and it enters as `committed` with its words (D20).
 _BILLABLE_L2_OUTCOMES = ("committed", "committed_structured", "committed_structural",
                          "committed_facts", "committed_observation")
 _SCREEN_SOURCE = "screen_session"
