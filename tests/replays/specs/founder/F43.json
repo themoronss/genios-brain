@@ -1,0 +1,118 @@
+{
+ "case_id": "F43",
+ "title": "Your own pitch names the thread after the investor, never after you",
+ "kind": "must_abstain",
+ "label_row": 43,
+ "labelled_by": "claude",
+ "replays": [],
+ "founder": {
+  "name": "Meera Iyer",
+  "email": "meera.iyer@gmail.com",
+  "company": "Kitebird",
+  "timezone": "Asia/Kolkata",
+  "also": [
+   "ceo@kitebird.test"
+  ],
+  "domains": [
+   "kitebird.test"
+  ]
+ },
+ "sweeps": [
+  "2026-08-11T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "pitch",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-11T05:00:00Z",
+   "from": "Meera Iyer <meera.iyer@gmail.com>",
+   "to": [
+    "ira@northwind.test"
+   ],
+   "subject": "Kitebird - seed round",
+   "thread": "t-pitch",
+   "labels": [
+    "SENT"
+   ],
+   "body": "Hi Ira,\n\nKitebird is raising a seed round to bring AI scheduling to small clinics - 14 are live. Would you take a look at our deck this week?\n\nMeera",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "positive",
+     "topics": [
+      "seed round"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Ira",
+       "entity_type": "person",
+       "quote": "Ira"
+      },
+      {
+       "surface_form": "Kitebird",
+       "entity_type": "organization",
+       "quote": "Kitebird"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Take a look at the deck this week",
+       "asked_by": "Meera Iyer",
+       "asked_of": "Ira",
+       "quote": "Would you take a look at our deck this week?"
+      }
+     ],
+     "business_facts": [
+      {
+       "field": "thread.objective",
+       "subject": "thread",
+       "value": "seed round pitch to Northwind",
+       "standing": "judgement",
+       "quote": "Kitebird is raising a seed round"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "a seed round pitch"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "cards": [
+   {
+    "about": [
+     "Ira",
+     "Northwind"
+    ],
+    "min": 0,
+    "max": 0
+   }
+  ]
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "Meera Iyer -"
+  ]
+ },
+ "witness": {
+  "stage": "memory",
+  "objects": [
+   "pitch"
+  ]
+ },
+ "not_expressible": {},
+ "notes": "STEP-04. Production: the founder's own pitch threads were named '<the founder> - <the pitch>' (the business claim's sender, whatever the direction) and never renamed. The acceptance checks the thread's name.",
+ "blocked_on": "the founder's own sent mail is captured but yields no signal, so it never reaches memory and the decision not to card it is never made — STEP-05"
+}

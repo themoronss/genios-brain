@@ -73,6 +73,19 @@ or it counts as *not exercised*, never as a pass.
 | 39 | Your own availability proposal · 4 Aug → 5 Oct | `no` | | `claude` |
 | 40 | A meeting nobody confirmed took place · 13 Aug | `no` | | `claude` |
 
+## Who is us — 4 items (`STEP-04`, added 2026-10-06)
+
+The same mailbox seen from the other side: each row is something that went wrong because the engine
+did not know your second address, your company's domain, or your name. Rows 42 and 13 are the same
+real mail — 13 asks whether it reaches you, 42 whether the card is about Manik and not about you.
+
+| # | Item — sender · date | Claude's answer | Your answer | Labelled by |
+|---|---|---|---|---|
+| 41 | Your own company address, copied on your mail · 4 Aug → 5 Oct | `no` | | `claude` |
+| 42 | Manik (Titan Capital), the ask that names you · 8 Aug | `yes` | | `claude` |
+| 43 | Your own pitch, and what its thread is called · 11 Aug | `no` | | `claude` |
+| 44 | An investor writing from a Gmail address · 4 Aug → 5 Oct | `yes` | | `claude` |
+
 ---
 
 ## Why I answered as I did
@@ -85,6 +98,9 @@ or it counts as *not exercised*, never as a pass.
   files they are about (30).
 - **`no`** for 31–40: each is a shape GeniOS has already got wrong on your account (`04` §2,
   `STEP-01` §4).
+- **41–44** (`STEP-04`): your company address is never someone you wait on (41); an ask that names
+  you is about the person asking (42); your own pitch is named after the investor, never after you
+  (43); an investor at gmail.com is an outside person, even though you are at gmail.com too (44).
 
 A `brief only` answer is scored as *not expressible* until `STEP-15` builds the morning brief —
 the board counts it apart rather than as a pass or a fail.

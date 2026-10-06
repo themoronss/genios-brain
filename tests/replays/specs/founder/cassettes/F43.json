@@ -1,0 +1,122 @@
+{
+ "case_id": "F43",
+ "source": "ideal_reader",
+ "recorded_at": "26591638",
+ "answers": {
+  "5a4783937bb25b3339cb10e8352c4eecd0d862457cc7be7dbd6c0637b60ba3b7": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Kitebird - seed round",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Kitebird - seed round\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 553,
+   "output_tokens": 39,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "d8179c10c5fb6257cd8242408efd59589b1390576d9db8135ea9a433641dfb14": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 422,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "f8989b9bc5b715317cb63392cc0a72e0cc58eaea05b465b7dfd4d311a92bab0c": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "request",
+    "stance": "positive",
+    "topics": [
+     "seed round"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Ira",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Ira",
+        "start_offset": 26,
+        "end_offset": 29
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Kitebird",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Kitebird",
+        "start_offset": 0,
+        "end_offset": 8
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "Take a look at the deck this week",
+      "asked_by": "Meera Iyer",
+      "asked_of": "Ira",
+      "evidence": [
+       {
+        "quote": "Would you take a look at our deck this week?",
+        "start_offset": 120,
+        "end_offset": 164
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "business_facts": [
+     {
+      "field": "thread.objective",
+      "subject": "thread",
+      "value": "seed round pitch to Northwind",
+      "standing": "judgement",
+      "evidence": [
+       {
+        "quote": "Kitebird is raising a seed round",
+        "start_offset": 32,
+        "end_offset": 64
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "a seed round pitch"
+    }
+   },
+   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"seed round\"], \"entity_mentions\": [{\"surface_form\": \"Ira\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Ira\", \"start_offset\": 26, \"end_offset\": 29}], \"confidence_bp\": 9000}, {\"surface_form\": \"Kitebird\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Kitebird\", \"start_offset\": 0, \"end_offset\": 8}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Take a look at the deck this week\", \"asked_by\": \"Meera Iyer\", \"asked_of\": \"Ira\", \"evidence\": [{\"quote\": \"Would you take a look at our deck this week?\", \"start_offset\": 120, \"end_offset\": 164}], \"confidence_bp\": 9000}], \"business_facts\": [{\"field\": \"thread.objective\", \"subject\": \"thread\", \"value\": \"seed round pitch to Northwind\", \"standing\": \"judgement\", \"evidence\": [{\"quote\": \"Kitebird is raising a seed round\", \"start_offset\": 32, \"end_offset\": 64}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"a seed round pitch\"}}",
+   "input_tokens": 4892,
+   "output_tokens": 278,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

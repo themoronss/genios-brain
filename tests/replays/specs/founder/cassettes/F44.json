@@ -1,0 +1,95 @@
+{
+ "case_id": "F44",
+ "source": "ideal_reader",
+ "recorded_at": "26591638",
+ "answers": {
+  "5475b43fadc54b0d9677d9d7e3f67a0743c9ed1c286060224357f65553522dff": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 422,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "68a9686446c42455058dfd03d75594de9e5aa3210d0789455d9bd494fb06f65a": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "request",
+    "stance": "positive",
+    "topics": [
+     "deck",
+     "angel investment"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Kavita Rao",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Kavita Rao",
+        "start_offset": 159,
+        "end_offset": 169
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "Send the deck and a time to talk this week",
+      "asked_by": "Kavita Rao",
+      "asked_of": "Meera Iyer",
+      "evidence": [
+       {
+        "quote": "Could you send your deck and a time to talk this week?",
+        "start_offset": 103,
+        "end_offset": 157
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "the deck and a time to talk"
+    }
+   },
+   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"deck\", \"angel investment\"], \"entity_mentions\": [{\"surface_form\": \"Kavita Rao\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Kavita Rao\", \"start_offset\": 159, \"end_offset\": 169}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Send the deck and a time to talk this week\", \"asked_by\": \"Kavita Rao\", \"asked_of\": \"Meera Iyer\", \"evidence\": [{\"quote\": \"Could you send your deck and a time to talk this week?\", \"start_offset\": 103, \"end_offset\": 157}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"the deck and a time to talk\"}}",
+   "input_tokens": 4890,
+   "output_tokens": 190,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "f4086060099de66de2cb9ce7e521d06283e57c7520dda30bdfff5d71f108e58a": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Kitebird deck?",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Kitebird deck?\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 553,
+   "output_tokens": 37,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

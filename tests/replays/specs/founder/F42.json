@@ -1,0 +1,196 @@
+{
+ "case_id": "F42",
+ "title": "An investor's ask that names the founder is about the investor",
+ "kind": "must_detect",
+ "label_row": 42,
+ "labelled_by": "claude",
+ "replays": [],
+ "founder": {
+  "name": "Meera Iyer",
+  "email": "meera.iyer@gmail.com",
+  "company": "Kitebird",
+  "timezone": "Asia/Kolkata",
+  "also": [
+   "ceo@kitebird.test"
+  ],
+  "domains": [
+   "kitebird.test"
+  ]
+ },
+ "sweeps": [
+  "2026-08-08T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "ask",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-08T06:30:00Z",
+   "from": "Manav Rao <manav@lumenvc.test>",
+   "to": [
+    "meera.iyer@gmail.com"
+   ],
+   "subject": "Kitebird - traction metrics?",
+   "thread": "t-lumen",
+   "labels": [
+    "INBOX",
+    "IMPORTANT"
+   ],
+   "body": "Hi Meera,\n\nGood to meet you last week. Before our Monday partners' meeting, could you share your current traction metrics - clinics live, revenue run-rate and the pilot pipeline? I told the partners Meera Iyer would send a one-pager.\n\nThanks,\nManav Rao\nPartner, Lumen Ventures",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "positive",
+     "topics": [
+      "traction metrics",
+      "seed round"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Meera Iyer",
+       "entity_type": "person",
+       "quote": "Meera Iyer"
+      },
+      {
+       "surface_form": "Manav Rao",
+       "entity_type": "person",
+       "quote": "Manav Rao"
+      },
+      {
+       "surface_form": "Lumen Ventures",
+       "entity_type": "organization",
+       "quote": "Lumen Ventures"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Share the current traction metrics: clinics live, revenue run-rate and the pilot pipeline",
+       "asked_by": "Manav Rao",
+       "asked_of": "Meera Iyer",
+       "quote": "could you share your current traction metrics"
+      }
+     ],
+     "dates_mentioned": [
+      {
+       "as_written": "Monday",
+       "earliest": "2026-08-10T00:00:00+05:30",
+       "latest": "2026-08-10T23:59:59+05:30",
+       "certainty": "relative",
+       "resolved_against": "2026-08-08T06:30:00Z",
+       "quote": "Monday"
+      }
+     ],
+     "business_facts": [
+      {
+       "field": "person.title",
+       "subject": "Manav Rao",
+       "value": "Partner",
+       "standing": "observed",
+       "quote": "Partner, Lumen Ventures"
+      },
+      {
+       "field": "thread.objective",
+       "subject": "thread",
+       "value": "traction metrics before the partners' meeting",
+       "standing": "judgement",
+       "quote": "could you share your current traction metrics"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "traction metrics before the partners' meeting"
+     },
+     "implied_actions": [
+      "share the current traction metrics before Monday"
+     ]
+    }
+   }
+  }
+ ],
+ "expected": {
+  "gate": {
+   "ask": "emitted"
+  },
+  "memory": {
+   "ask": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Manav",
+     "Lumen"
+    ],
+    "min": 1,
+    "max": 1,
+    "mentions": [
+     "traction"
+    ]
+   }
+  ]
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "Send Meera",
+   "Ms Meera"
+  ]
+ },
+ "witness": null,
+ "not_expressible": {},
+ "notes": "STEP-04. Production: 'Send <the founder> your traction metrics' - the card's subject resolved to the first person NAMED in the quotes, the founder himself. Built with the founder's real identity shape; the extraction names her first.",
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "account admin",
+     "lumenvc.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "A company wrote today and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "lumenvc.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "fifteen_minute_account_brief": 5600
+     },
+     "confidence_bp": 5000,
+     "rationale": "An investor asked us something; know the fund before replying.",
+     "missing": []
+    }
+   }
+  ],
+  "narrator": [
+   {
+    "when": [
+     "account_admin",
+     "lumenvc.test"
+    ],
+    "answer": {
+     "headline": "Share traction metrics with Lumen Ventures",
+     "situation": "Manav at lumenvc.test asked for your current traction metrics before Monday's partners' meeting. The next move is ours.",
+     "artifact": "Hi Manav, sharing our current traction metrics as you asked - one page attached."
+    }
+   }
+  ]
+ }
+}

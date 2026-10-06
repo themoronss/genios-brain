@@ -1,0 +1,135 @@
+{
+ "case_id": "F41",
+ "title": "Your own company address is never someone you wait on",
+ "kind": "must_abstain",
+ "label_row": 41,
+ "labelled_by": "claude",
+ "replays": [],
+ "founder": {
+  "name": "Meera Iyer",
+  "email": "meera.iyer@gmail.com",
+  "company": "Kitebird",
+  "timezone": "Asia/Kolkata",
+  "also": [
+   "ceo@kitebird.test"
+  ],
+  "domains": [
+   "kitebird.test"
+  ]
+ },
+ "sweeps": [
+  "2026-09-02T12:00:00Z",
+  "2026-09-12T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "update",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-01T05:00:00Z",
+   "from": "Meera Iyer <meera.iyer@gmail.com>",
+   "to": [
+    "dev@harbourvc.test",
+    "ceo@kitebird.test"
+   ],
+   "subject": "Kitebird - August update",
+   "thread": "t-update",
+   "labels": [
+    "SENT"
+   ],
+   "body": "Hi Dev,\n\nAs promised, the August update: 14 clinics are live, revenue is up 30% month on month, and the scheduling assistant now books 61% of appointments without staff.\n\nMeera",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "positive",
+     "topics": [
+      "investor update"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Dev",
+       "entity_type": "person",
+       "quote": "Dev"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "high",
+      "motive": "the promised August update"
+     }
+    }
+   }
+  },
+  {
+   "id": "note",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-02T04:00:00Z",
+   "from": "Meera Iyer <meera.iyer@gmail.com>",
+   "to": [
+    "ceo@kitebird.test"
+   ],
+   "subject": "Notes for the board pack",
+   "thread": "t-notes",
+   "labels": [
+    "SENT"
+   ],
+   "body": "Notes for the board pack: hiring plan for two engineers, runway of 14 months, and the pilot list.",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "neutral",
+     "topics": [
+      "board pack"
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "low",
+      "motive": "notes for the board pack"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "cards": [
+   {
+    "about": [
+     "ceo@kitebird.test"
+    ],
+    "min": 0,
+    "max": 0
+   }
+  ]
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "waiting longest",
+   "waiting on ceo"
+  ]
+ },
+ "witness": {
+  "stage": "memory",
+  "objects": [
+   "update"
+  ]
+ },
+ "not_expressible": {},
+ "notes": "STEP-04. Production: the founder's company address only ever receives his own mail; not known as his, it was typed a service, waited on forever and listed as 'waiting longest'. Built with the founder's real identity shape: a Gmail address, that second address, the company domain.",
+ "blocked_on": "the founder's own sent mail is captured but yields no signal, so it never reaches memory and the decision not to card it is never made — STEP-05"
+}

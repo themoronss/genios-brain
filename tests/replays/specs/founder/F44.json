@@ -1,0 +1,144 @@
+{
+ "case_id": "F44",
+ "title": "An investor writing from Gmail is not one of us",
+ "kind": "must_detect",
+ "label_row": 44,
+ "labelled_by": "claude",
+ "replays": [],
+ "founder": {
+  "name": "Meera Iyer",
+  "email": "meera.iyer@gmail.com",
+  "company": "Kitebird",
+  "timezone": "Asia/Kolkata",
+  "also": [
+   "ceo@kitebird.test"
+  ],
+  "domains": [
+   "kitebird.test"
+  ]
+ },
+ "sweeps": [
+  "2026-09-18T12:00:00Z",
+  "2026-09-21T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "ask",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-18T06:00:00Z",
+   "from": "Kavita Rao <kavita.rao.vc@gmail.com>",
+   "to": [
+    "meera.iyer@gmail.com"
+   ],
+   "subject": "Kitebird deck?",
+   "thread": "t-kavita",
+   "labels": [
+    "INBOX",
+    "IMPORTANT"
+   ],
+   "body": "Hi Meera,\n\nI'm an angel investor in health tech and loved your clinic scheduling demo. Could you send your deck and a time to talk this week?\n\nKavita Rao",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "positive",
+     "topics": [
+      "deck",
+      "angel investment"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Kavita Rao",
+       "entity_type": "person",
+       "quote": "Kavita Rao"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Send the deck and a time to talk this week",
+       "asked_by": "Kavita Rao",
+       "asked_of": "Meera Iyer",
+       "quote": "Could you send your deck and a time to talk this week?"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "the deck and a time to talk"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "gate": {
+   "ask": "emitted"
+  },
+  "memory": {
+   "ask": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Kavita"
+    ],
+    "min": 1,
+    "max": 2,
+    "mentions": [
+     "deck"
+    ]
+   }
+  ]
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "Send Meera"
+  ]
+ },
+ "witness": null,
+ "not_expressible": {},
+ "notes": "STEP-04. Production: the founder writes from Gmail, and the support lane took the domain of orgs.email as ours, so every gmail.com sender was one of us - an investor writing from Gmail could never be answered late. Built with the founder's real identity shape.",
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "unanswered email",
+     "Kavita Rao"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "reply": 6500
+     },
+     "confidence_bp": 5500,
+     "rationale": "A direct question is waiting on us.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "Kavita Rao"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   }
+  ]
+ },
+ "blocked_on": "the investor's ask passes every L1 stage and publishes no qualified signal, so L2 never reads it — memory is gated on a qualified signal (F03) — STEP-05"
+}

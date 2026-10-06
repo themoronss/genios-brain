@@ -1,0 +1,237 @@
+{
+ "case_id": "F42",
+ "source": "ideal_reader",
+ "recorded_at": "26591638",
+ "answers": {
+  "46438dcd29bd83c9d9f81361d57f10d430157053d899895fabc23e91d7a40387": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "request",
+    "stance": "positive",
+    "topics": [
+     "traction metrics",
+     "seed round"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Meera Iyer",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Meera Iyer",
+        "start_offset": 229,
+        "end_offset": 239
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Manav Rao",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Manav Rao",
+        "start_offset": 273,
+        "end_offset": 282
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Lumen Ventures",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Lumen Ventures",
+        "start_offset": 292,
+        "end_offset": 306
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "Share the current traction metrics: clinics live, revenue run-rate and the pilot pipeline",
+      "asked_by": "Manav Rao",
+      "asked_of": "Meera Iyer",
+      "evidence": [
+       {
+        "quote": "could you share your current traction metrics",
+        "start_offset": 106,
+        "end_offset": 151
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "dates_mentioned": [
+     {
+      "as_written": "Monday",
+      "earliest": "2026-08-10T00:00:00+05:30",
+      "latest": "2026-08-10T23:59:59+05:30",
+      "certainty": "relative",
+      "resolved_against": "2026-08-08T06:30:00Z",
+      "evidence": [
+       {
+        "quote": "Monday",
+        "start_offset": 80,
+        "end_offset": 86
+       }
+      ]
+     }
+    ],
+    "business_facts": [
+     {
+      "field": "person.title",
+      "subject": "Manav Rao",
+      "value": "Partner",
+      "standing": "observed",
+      "evidence": [
+       {
+        "quote": "Partner, Lumen Ventures",
+        "start_offset": 283,
+        "end_offset": 306
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "field": "thread.objective",
+      "subject": "thread",
+      "value": "traction metrics before the partners' meeting",
+      "standing": "judgement",
+      "evidence": [
+       {
+        "quote": "could you share your current traction metrics",
+        "start_offset": 106,
+        "end_offset": 151
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "traction metrics before the partners' meeting"
+    },
+    "implied_actions": [
+     "share the current traction metrics before Monday"
+    ]
+   },
+   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"traction metrics\", \"seed round\"], \"entity_mentions\": [{\"surface_form\": \"Meera Iyer\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera Iyer\", \"start_offset\": 229, \"end_offset\": 239}], \"confidence_bp\": 9000}, {\"surface_form\": \"Manav Rao\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Manav Rao\", \"start_offset\": 273, \"end_offset\": 282}], \"confidence_bp\": 9000}, {\"surface_form\": \"Lumen Ventures\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Lumen Ventures\", \"start_offset\": 292, \"end_offset\": 306}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Share the current traction metrics: clinics live, revenue run-rate and the pilot pipeline\", \"asked_by\": \"Manav Rao\", \"asked_of\": \"Meera Iyer\", \"evidence\": [{\"quote\": \"could you share your current traction metrics\", \"start_offset\": 106, \"end_offset\": 151}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"Monday\", \"earliest\": \"2026-08-10T00:00:00+05:30\", \"latest\": \"2026-08-10T23:59:59+05:30\", \"certainty\": \"relative\", \"resolved_against\": \"2026-08-08T06:30:00Z\", \"evidence\": [{\"quote\": \"Monday\", \"start_offset\": 80, \"end_offset\": 86}]}], \"business_facts\": [{\"field\": \"person.title\", \"subject\": \"Manav Rao\", \"value\": \"Partner\", \"standing\": \"observed\", \"evidence\": [{\"quote\": \"Partner, Lumen Ventures\", \"start_offset\": 283, \"end_offset\": 306}], \"confidence_bp\": 9000}, {\"field\": \"thread.objective\", \"subject\": \"thread\", \"value\": \"traction metrics before the partners' meeting\", \"standing\": \"judgement\", \"evidence\": [{\"quote\": \"could you share your current traction metrics\", \"start_offset\": 106, \"end_offset\": 151}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"traction metrics before the partners' meeting\"}, \"implied_actions\": [\"share the current traction metrics before Monday\"]}",
+   "input_tokens": 4927,
+   "output_tokens": 499,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "486004ff8e2a9724f5f61dd6b3310ad6c3a48d9f91d9f307e4e9145122615d3e": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Kitebird - traction metrics?",
+    "start_offset": 0,
+    "end_offset": 28,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Kitebird - traction metrics?\", \"start_offset\": 0, \"end_offset\": 28, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 934,
+   "output_tokens": 44,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "4aaf170e3f5efbd63120a636b615cd8c2f1e4b020896afb83ea3b1ffd9b6d0a1": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 437,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "5d0905f13102471938102810150387af7a9810b4cdd19250ab9a243b505fabeb": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 412,
+   "output_tokens": 51,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "6fb0d8490ea56abacd59cd8a212a4f169de7ea06fb6b58cbb0ecee99bd846bc5": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Share traction metrics with Lumen Ventures",
+    "situation": "Manav at lumenvc.test asked for your current traction metrics before Monday's partners' meeting. The next move is ours.",
+    "artifact": "Hi Manav, sharing our current traction metrics as you asked - one page attached."
+   },
+   "raw": "{\"headline\": \"Share traction metrics with Lumen Ventures\", \"situation\": \"Manav at lumenvc.test asked for your current traction metrics before Monday's partners' meeting. The next move is ours.\", \"artifact\": \"Hi Manav, sharing our current traction metrics as you asked - one page attached.\"}",
+   "input_tokens": 1585,
+   "output_tokens": 72,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "7b3e53440279249fa20ba4bec57eac0de9da9a9a23d85472d71241402c500937": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4526,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 4582,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 6200
+    },
+    "confidence_bp": 5000,
+    "rationale": "A company wrote today and the ball is in our court.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4526, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4582, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 6200}, \"confidence_bp\": 5000, \"rationale\": \"A company wrote today and the ball is in our court.\", \"missing\": []}",
+   "input_tokens": 2467,
+   "output_tokens": 85,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "b9f0cdf1c58822493800a5529406419632c71f02129aaad017bf9856b6609984": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Kitebird - traction metrics?",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Kitebird - traction metrics?\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 587,
+   "output_tokens": 40,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}
