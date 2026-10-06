@@ -25,6 +25,7 @@ from sqlalchemy import text
 from genios_engine.platform.org_readiness_sql import COUNT_SQL as _RD_SQL
 from genios_engine.platform.org_readiness_sql import COUNT_SQL_FLEET as _RD_SQL_FLEET
 from genios_engine.platform import org_readiness_sql as _RD
+from genios_engine.platform.self_identity import identity_sql
 
 @dataclass(frozen=True)
 class Receipt:
@@ -1014,13 +1015,13 @@ _CARD_ABOUT_US_SQL = (
     "and c.business_subject is not null and ("
     "  exists (select 1 from orgs o where o.id = c.org_id and ("
     "      lower(c.business_subject) = lower(o.name) "
-    "   or lower(c.business_subject) like '%' || lower(o.email) || '%' "
     "   or (o.first_name is not null and o.last_name is not null "
     "       and lower(c.business_subject) like '%' || lower(o.first_name || ' ' || o.last_name) || '%'))) "
-    "  or exists (select 1 from org_seats s where s.org_id = c.org_id and s.active "
-    "      and s.email is not null and lower(c.business_subject) like '%' || lower(s.email) || '%') "
-    "  or exists (select 1 from org_self_identities i where i.org_id = c.org_id "
-    "      and lower(c.business_subject) like '%' || i.value || '%'))")
+    # Every address and declared domain of ours, from the identity's own SQL correlated per card
+    # (`platform/self_identity.identity_sql`) — one list of sources, not a second copy of it that
+    # forgot the connected account.
+    "  or exists (select 1 from (" + identity_sql("c.org_id") + ") us "
+    "      where lower(c.business_subject) like '%' || us.value || '%'))")
 
 
 def receipts(org: str | None) -> list[Receipt]:

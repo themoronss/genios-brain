@@ -60,9 +60,13 @@ def engine(live_db_url):
         c.execute(text("insert into org_self_identities (org_id, kind, value, declared_by) values "
                        "(:o, 'address', 'ceo@thegenios.test', 'test'), (:o, 'domain', 'thegenios.test', 'test')"),
                   {"o": ORG})
+        # The connected mailbox — a source the receipt's first cut did not read (M22.C6.L-logic.V2.U03).
+        c.execute(text("insert into connections (connection_id, org_id, external_account_id) "
+                       "values ('conn_card_about_us', :o, 'founder.mailbox@example.test')"), {"o": ORG})
     yield eng
     with eng.begin() as c:
         c.execute(text("delete from cards where org_id = :o"), {"o": ORG})
+        c.execute(text("delete from connections where org_id = :o"), {"o": ORG})
         c.execute(text("delete from orgs where id = :o"), {"o": ORG})
 
 
@@ -85,7 +89,8 @@ def _count(eng) -> int:
 
 @pytest.mark.pg
 @pytest.mark.parametrize("subject", ["Mr Rohit Swerashi", "GeniOS Labs", "founder@example.test",
-                                     "ceo@thegenios.test", "invite@thegenios.test — awaiting reply"])
+                                     "ceo@thegenios.test", "invite@thegenios.test — awaiting reply",
+                                     "founder.mailbox@example.test"])
 def test_an_open_card_about_us_is_counted(engine, subject):
     _card(engine, "c_us", subject)
     _card(engine, "c_them", "Manik (Titan Capital)")

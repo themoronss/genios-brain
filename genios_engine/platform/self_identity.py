@@ -81,15 +81,23 @@ class SelfIdentity:
         return kind == "tenant"
 
 
-#: The four sources, in ONE statement — every caller pays one round trip. A deactivated seat is no
-#: longer us; a connected account counts whatever the connection's state (the address stays ours).
-_IDENTITY_SQL = (
-    "select 'address' as kind, lower(email) as value from org_seats "
-    " where org_id = :o and active and email is not null "
-    "union select 'address', lower(email) from orgs where id = :o and email is not null "
-    "union select 'address', lower(external_account_id) from connections "
-    " where org_id = :o and external_account_id like '%@%' "
-    "union select kind, value from org_self_identities where org_id = :o")
+def identity_sql(org: str = ":o") -> str:
+    """The four sources of who `org` is, as ONE union of `(kind, value)` rows — the only place the
+    engine names them. `org` is the SQL expression for the tenant: `:o` for one tenant
+    (`identity_for`), or a column — `c.org_id` — where a statement must correlate per row, as a
+    receipt over every tenant does (`platform/receipts`). A deactivated seat is no longer us; a
+    connected account counts whatever the connection's state (the address stays ours)."""
+    return (
+        "select 'address' as kind, lower(email) as value from org_seats "
+        f" where org_id = {org} and active and email is not null "
+        f"union select 'address', lower(email) from orgs where id = {org} and email is not null "
+        "union select 'address', lower(external_account_id) from connections "
+        f" where org_id = {org} and external_account_id like '%@%' "
+        f"union select kind, value from org_self_identities where org_id = {org}")
+
+
+#: For one tenant, in ONE statement — every caller pays one round trip.
+_IDENTITY_SQL = identity_sql()
 
 
 def identity_for(source, org_id: str) -> SelfIdentity:
