@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 2_923, (
+    assert r["statements"] == 2_925, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -206,6 +206,9 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 2,920 → 2,923 by yc2_w27_s02/M20.C2.L-data.V1.U02 (STEP-02, the change gate):
     # `reason/fingerprint_store.py` — a tenant's rows, the run's upsert and the skip's update.
     # Three statements, each a literal at its own call.
+    # ⛔ MOVED 2,923 → 2,925 by yc2_w27_s02/M20.C1.L-data.V1.U02 (STEP-02): `reason/fingerprint_inputs.py`
+    # — a tenant's pack revisions, and its card verdicts joined to the signal each is about. Two
+    # SELECTs, each a literal at its own call.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

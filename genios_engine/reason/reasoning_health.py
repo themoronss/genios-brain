@@ -39,9 +39,9 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "⛔ BUILT BOTTOM-UP, NOT YET WIRED (STEP-02, `yc2_w27_s02/M20.C1.L-logic.V1.U03`). The fingerprint of one decision's inputs — its own request with time taken out, clocks on their rungs. Measured before wiring: on all 40 golden cases, 375 requests repeated on a sweep that brought nothing new, 375 identical fingerprints, no error",
         "MOVES WITH `fingerprint_store.load_all` — the lanes that read the store compute this, in the same two units"),
 
-    "fingerprint.verdict_key": (
-        "⛔ BUILT BOTTOM-UP, NOT YET WIRED (STEP-02, `yc2_w27_s02/M20.C1.L-contract.V0.U01`). How a human verdict enters a fingerprint — which feedback, at which version — so a verdict that lands re-decides its subject. Its caller is the inputs reader, the next unit of the same category",
-        "⛔ MOVES WHEN `yc2_w27_s02/M20.C1.L-data.V1.U02` (`reason/fingerprint_inputs.py`) reads a tenant's verdicts through it — then this entry must be deleted"),
+    "fingerprint_inputs.read_inputs": (
+        "⛔ BUILT BOTTOM-UP, NOT YET WIRED (STEP-02, `yc2_w27_s02/M20.C1.L-data.V1.U02`). A tenant's pack revisions and card verdicts, by the subject each is about, in two statements per sweep — the half of a fingerprint that sits outside the decision's request. Its callers are the lanes, later units of the same block",
+        "MOVES WITH `fingerprint_store.load_all` — the lanes read the store and these inputs together, in the same two units"),
 
     "change_gate.should_skip": (
         "⛔ BUILT BOTTOM-UP, NOT YET WIRED (STEP-02, the change gate, `yc2_w27_s02/M20.C3.L-logic.V0.U01`). The one rule that decides whether a subject's decision may be skipped — same fingerprint, and for a live card an open signal with more than a day of authority left. Pure, and its callers are the lanes, which are later units of the same block",
