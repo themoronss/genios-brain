@@ -4331,9 +4331,10 @@ yc2_w27_s05:
                         `context/qes_adapter.adapt_qes_extraction` projects an extraction that crossed
                         no floor — the same claims, every one at `BELOW_FLOOR_CONFIDENCE_BP` (3,000) as
                         its relevance, under the pipeline's ranking floor, and an `l1.below_floor`
-                        observation naming the event — with no model call (D20). Corrected while
-                        building: "the confidence it scored" does not exist for a floor refusal —
-                        ALG-13 composes confidence at publish, after the floor (`03` F69).
+                        observation naming the event (removed by U06: it read as a quote) — with no
+                        model call (D20). Corrected while building: "the confidence it scored" does
+                        not exist for a floor refusal — ALG-13 composes confidence at publish, after
+                        the floor (`03` F69).
                       artifact: genios_engine/context/qes_adapter.py
                       verify: .venv/bin/python -m pytest tests/context/test_a_mail_below_the_floor_keeps_its_words.py -q
                       depends_on: [M23.C1.L-contract.V0.U01]
@@ -4370,6 +4371,19 @@ yc2_w27_s05:
                       artifact: genios_engine/api/routes.py
                       verify: .venv/bin/python -m pytest tests/test_a_metadata_write_is_not_billed.py -q
                       depends_on: [M23.C3.L-logic.V2.U03]
+                    - id: M23.C3.L-logic.V2.U06
+                      what: >
+                        Added while re-recording the golden set (C5.U01): U01's `l1.below_floor`
+                        observation carried the extraction's first span as its evidence — on five
+                        cases a bare name — and the card narrator was handed it as something the
+                        counterparty wrote ("[l1.below_floor] kiran@… wrote: 'Kiran Agnihotri'").
+                        The mark is what the tree first said it was: every claim's relevance, under
+                        the ranking floor. The observation, and the adapter's `below_floor` flag that
+                        wrote it, are removed; a below-floor projection is a signal's at the
+                        below-floor confidence with no signal type.
+                      artifact: genios_engine/context/qes_adapter.py
+                      verify: .venv/bin/python -m pytest tests/context/test_a_mail_below_the_floor_keeps_its_words.py -q
+                      depends_on: [M23.C3.L-logic.V2.U01, M23.C3.L-logic.V2.U03]
         - id: M23.C4
           name: Every recovery is a re-read
           layers:

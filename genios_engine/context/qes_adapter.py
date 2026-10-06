@@ -50,7 +50,8 @@ def _relevance(confidence_bp: int) -> float:
 
 #: The confidence a mail BELOW the qualification floor enters memory at (STEP-05, `06` D20): under the
 #: pipeline's ranking floor (`context/pipeline.RELEVANCE_FLOOR`, 0.35), so it is stored, queryable and
-#: ranked low — never a gate, as relevance never is.
+#: ranked low — never a gate, as relevance never is. This relevance, on every claim, IS the mark: an
+#: observation saying "below the floor" was tried and read as a quote (`yc2_w27_s05 · M23.C3 U06`).
 BELOW_FLOOR_CONFIDENCE_BP = 3000
 
 
@@ -60,7 +61,6 @@ def adapt_qes_extraction(
     confidence_bp: int,
     domain_hints: Sequence[Any] = (),
     signal_types: Sequence[str] = (),
-    below_floor: bool = False,
 ) -> Extraction:
     """Project Layer 1's cached extraction into the existing deterministic graph committer.
 
@@ -69,9 +69,8 @@ def adapt_qes_extraction(
     open lanes pass through as data, commitments keep their resolved due bound, and a signal type
     becomes an observation rather than a fabricated fact.
 
-    `below_floor` — the extraction of a mail Layer 1 READ and the floor did not publish (STEP-05):
-    the same claims, at the caller's below-the-floor confidence, and an `l1.below_floor` observation
-    saying so, so nobody downstream mistakes it for a published signal.
+    A mail Layer 1 READ and the floor did not publish (STEP-05) is projected the same way, at the
+    caller's `BELOW_FLOOR_CONFIDENCE_BP` and with no signal type: nothing marks it but that.
     """
     result = (payload if isinstance(payload, ExtractionResult)
               else ExtractionResult.model_validate(dict(payload)))
@@ -139,8 +138,6 @@ def adapt_qes_extraction(
     default_quote = _span_quote(result.all_evidence)
     for kind in sorted({str(value).strip() for value in signal_types if str(value).strip()}):
         observations.append({"kind": kind, "evidence_text": default_quote})
-    if below_floor:
-        observations.append({"kind": "l1.below_floor", "evidence_text": default_quote})
     for item in result.unclassified_observations:
         observations.append({"kind": item.proposed_kind,
                              "evidence_text": _span_quote(item.evidence),

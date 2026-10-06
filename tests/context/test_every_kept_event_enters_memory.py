@@ -151,10 +151,10 @@ def test_below_the_floor_its_words_enter_ranked_low(drained):
         store, "select created_by_event_id as event, max(relevance) as relevance from graph_facts "
                "where org_id = :o and relevance is not null group by created_by_event_id")}
     assert relevance["e_below"] < RELEVANCE_FLOOR <= relevance["e_signal"], relevance
-    marked = {r.created_by_event_id for r in _rows(
-        store, "select created_by_event_id from graph_observations "
-               "where org_id = :o and kind = 'l1.below_floor'")}
-    assert marked == {"e_below"}
+    # The relevance is the whole mark (U06): nothing the mail did not say is filed as if said.
+    invented = _rows(store, "select kind from graph_observations where org_id = :o "
+                            "and created_by_event_id = 'e_below' and kind like 'l1.%'")
+    assert not invented, invented
 
 
 def test_an_archive_enters_with_its_names_and_without_its_words(drained):

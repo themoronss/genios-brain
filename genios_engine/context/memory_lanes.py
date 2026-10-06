@@ -7,8 +7,8 @@ publish, an archived mail and a calendar event whose deadline signal had expired
 
   signal        an active qualified signal — as before: the signal's extraction, at its confidence;
   below_floor   no signal, but its L1 extraction exists — the mail WAS read, and the floor only judged
-                it not worth an alert. That extraction, at the confidence it scored, marked below the
-                floor, with no model call (`06` D20);
+                it not worth an alert. That extraction, every claim ranked under the floor, with no
+                model call (`06` D20);
   metadata      archived — the gate called it noise. Who wrote to whom, when, in which thread, from the
                 ledger's own columns: no text (`03` F37, F57), no ball-in-court, no correlation;
   calendar      a structured mapping — always, whatever its signal: a meeting is a meeting, not a

@@ -172,8 +172,8 @@ def _process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozens
     recipients = [e for e in ((raw.get("to") or []) + (raw.get("cc") or [])) if e]
     if lane is Lane.BELOW_FLOOR:
         # Layer 1 READ this mail and the floor did not publish it: its own extraction, every claim
-        # ranked below the floor and the event marked so — no signal, so no signal metadata
-        # (`06` D20; there is no confidence to carry, `03` F69).
+        # ranked below the floor — that relevance is the whole mark — and no signal, so no signal
+        # metadata (`06` D20; there is no confidence to carry, `03` F69).
         qes_output, confidence_bp = row.own_output, BELOW_FLOOR_CONFIDENCE_BP
         domain_hints, signal_types = (), ()
     else:
@@ -191,7 +191,7 @@ def _process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozens
     qes_output = graded_extraction(qes_output, getattr(row, "prepared_text", None), row.event_id)
     qualified = adapt_qes_extraction(
         qes_output, confidence_bp=confidence_bp, domain_hints=domain_hints,
-        signal_types=signal_types, below_floor=lane is Lane.BELOW_FLOOR,
+        signal_types=signal_types,
     )
     res = process_event(org_id=org_id, event_id=row.event_id, source=row.source, content=content,
                         sender_email=row.sender, recipient_emails=recipients,
