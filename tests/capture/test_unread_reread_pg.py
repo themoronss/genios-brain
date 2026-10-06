@@ -1,7 +1,12 @@
-"""Mail captured while a tenant's L1 was off is found, rebuilt and set aside safely — real Postgres.
+"""Mail captured while a tenant's L1 was off is queued, rebuilt and set aside safely — real Postgres.
 
     GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres@localhost:5433/<scratch> \\
         pytest tests/capture/test_unread_reread_pg.py -q
+
+RESTATED (STEP-05, `yc2_w27_s05 · M23.C4.L-integration.V3.U03`). `find_unread` was this mail's door: it
+is the same population as every other kept mail nothing read (`queue_unread`, `M23.C4.L-logic.V2.U01`),
+so it now joins the one re-read ladder and `find_unread` is gone. Each claim below is held as before,
+asked of the queue and the ladder instead.
 """
 
 from __future__ import annotations
@@ -39,8 +44,8 @@ def org(engine):
                        "values (:o, :at, 'test')"), {"o": org_id, "at": NOW})
     yield org_id
     with engine.begin() as c:
-        for table in ("raw_payloads", "l2_processing_runs", "source_events",
-                      "l1_semantic_activation"):
+        for table in ("parked_events", "l1_extraction_results", "raw_payloads",
+                      "l2_processing_runs", "source_events", "l1_semantic_activation"):
             c.execute(text(f"delete from {table} where org_id = :o"), {"o": org_id})
         c.execute(text("delete from orgs where id = :o"), {"o": org_id})
 
@@ -71,7 +76,17 @@ def _event(engine, org_id, mid, *, captured_at, payload=None, source="gmail",
     return event_id
 
 
+def _due(engine, org) -> list:
+    """Queue what nothing read, then the ladder's due rows — the pass `_reread_unread` makes."""
+    unread.queue_unread(engine, org)
+    return unread.find_parked_extractions(engine, org)
+
+
 def test_only_mail_captured_before_the_switch_and_never_read_is_found(engine, org):
+    """Restated: m2 (captured at switch-on, still inside the grace — a capture that may still be
+    reading it) and the versioned object are left out as before; m3 was read — by Layer 2's own
+    legacy extraction (its row carries no profile), which is what an L2 run with no L1 extraction
+    meant here. A done L2 run alone no longer means read: an archive's metadata write is one."""
     before = _event(engine, org, "m1", captured_at=NOW - timedelta(hours=2))
     _event(engine, org, "m2", captured_at=NOW + timedelta(minutes=1))       # after switch-on
     read = _event(engine, org, "m3", captured_at=NOW - timedelta(hours=2))
@@ -80,18 +95,22 @@ def test_only_mail_captured_before_the_switch_and_never_read_is_found(engine, or
     with engine.begin() as c:
         c.execute(text("insert into l2_processing_runs (org_id, event_id, status) "
                        "values (:o, :e, 'done')"), {"o": org, "e": read})
+        c.execute(text("insert into l1_extraction_results (processing_key, org_id, event_id, "
+                       "output) values (:k, :o, :e, cast('{}' as jsonb))"),
+                  {"k": f"l2_{read}", "o": org, "e": read})
 
-    assert [r.event_id for r in unread.find_unread(engine, org)] == [before]
+    assert [r.event_id for r in _due(engine, org)] == [before]
 
 
 def test_the_raw_object_is_rebuilt_from_what_was_stored(engine, org):
     _event(engine, org, "m1", captured_at=NOW - timedelta(hours=2),
            payload={"subject": "Pricing", "body": "Send the quote"})
-    row = unread.find_unread(engine, org)[0]
+    row = _due(engine, org)[0]
 
     raw = unread.to_raw_object(row, KEY)
 
     assert (raw.source, raw.object_type, raw.source_object_id) == ("gmail", "email_message", "m1")
+    assert raw.rereading == unread.EXTRACTION_NEVER_RAN       # kept already: the gate reads it
     assert raw.raw == {"subject": "Pricing", "body": "Send the quote"}
     assert (raw.actor_email, raw.actor_name) == ("a@x.com", "Ann")
     assert raw.recipients == ("me@co.com",)
@@ -100,7 +119,7 @@ def test_the_raw_object_is_rebuilt_from_what_was_stored(engine, org):
 
 def test_a_wrong_key_is_a_skip_not_a_crash(engine, org):
     _event(engine, org, "m1", captured_at=NOW - timedelta(hours=2))
-    row = unread.find_unread(engine, org)[0]
+    row = _due(engine, org)[0]
 
     assert unread.to_raw_object(row, Fernet.generate_key().decode()) is None
 
@@ -119,7 +138,7 @@ def test_set_aside_frees_the_key_and_restore_returns_only_what_did_not_land(engi
                                    "where org_id = :o and event_id in (:a, :b)"),
                               {"o": org, "a": landed, "b": failed}).fetchall())
     assert rows == {landed: "superseded", failed: "emitted"}
-    assert unread.find_unread(engine, org)[0].event_id == failed      # tried again next pass
+    assert [r.event_id for r in _due(engine, org)] == [failed]        # tried again next pass
 
 
 def test_a_pass_killed_before_restore_is_recovered_by_the_next_pass(engine, org):
@@ -129,10 +148,10 @@ def test_a_pass_killed_before_restore_is_recovered_by_the_next_pass(engine, org)
     unread.set_aside(engine, org, [landed, orphan])
     _event(engine, org, "m1", captured_at=NOW + timedelta(minutes=1))   # m1 re-landed, then death
 
-    assert unread.find_unread(engine, org) == []                       # the orphan is invisible
+    assert _due(engine, org) == []                                     # the orphan is invisible
     assert unread.recover_orphans(engine, org) == 1
 
-    assert [r.event_id for r in unread.find_unread(engine, org)] == [orphan]
+    assert [r.event_id for r in _due(engine, org)] == [orphan]
     with engine.connect() as c:
         assert c.execute(text("select outcome from source_events where event_id = :e"),
                          {"e": landed}).scalar() == "superseded"

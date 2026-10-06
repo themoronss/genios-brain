@@ -1,4 +1,4 @@
-"""Mail captured while a tenant's Layer 1 was switched off, read again once it is on.
+"""Every kept mail Layer 1 has not read, read again — whatever left it unread, whenever captured.
 
 MEASURED ON PRODUCTION 2026-09-13. A tenant signed up, connected Gmail and synced two months:
 375 events were emitted and none was ever extracted, because `l1_semantic_activation` had no row
@@ -6,10 +6,12 @@ for it. Switching the tenant on afterwards changed nothing for that mail. A re-s
 same messages, `land_raw_object` finds their dedup keys already in the ledger and returns
 `duplicate` before the semantic lane is reached — so the only way back was wiping the org.
 
-THIS MODULE IS THE WAY BACK, FROM WHAT IS ALREADY STORED. An event qualifies when it was emitted
-BEFORE the tenant's L1 was switched on and nothing downstream ever touched it: no extraction, no
-active qualified signal, no L2 run. Its payload is decrypted and rebuilt into the `RawObject` it
-arrived as, and the caller captures that object again through the ordinary door.
+THIS MODULE IS THE WAY BACK, FROM WHAT IS ALREADY STORED. It began with that mail (`find_unread`,
+mail emitted before the tenant's L1 was switched on); STEP-18 B18 added mail whose extraction
+PARKED, under a bounded ladder; STEP-05 made the ladder the one door — every kept mail nothing read
+(a recovery's, a promotion's, the switched-off tenant's) is queued into it (`queue_unread`). A row's
+payload is decrypted and rebuilt into the `RawObject` it arrived as, marked as a re-read, and the
+caller captures that object again through the ordinary door.
 
 STORE, DON'T DELETE. The old row is not removed. `set_aside` marks it `superseded` and moves its
 dedup key out of the way so the new capture can land; `restore` puts back every row whose object
@@ -34,26 +36,6 @@ logger = get_logger(__name__)
 SUPERSEDED = "superseded"
 _MARK = "#superseded:"
 
-_FIND = text(
-    "select se.event_id, se.connection_id, se.source, se.object_type, se.source_object_id, "
-    "       se.parent_object_id, se.dedup_key, se.actor, se.recipients, se.internal_kind, "
-    "       se.occurred_at, rp.enc_content "
-    "  from source_events se "
-    "  join l1_semantic_activation a on a.org_id = se.org_id and a.disabled_at is null "
-    "  join raw_payloads rp on rp.event_id = se.event_id and rp.org_id = se.org_id "
-    " where se.org_id = :o and se.outcome = 'emitted' "
-    "   and se.captured_at < a.enabled_at "
-    "   and (rp.expires_at is null or rp.expires_at > now()) "
-    "   and not exists (select 1 from l1_extraction_results x "
-    "                    where x.org_id = se.org_id and x.event_id = se.event_id) "
-    "   and not exists (select 1 from qualified_signals q "
-    "                    where q.org_id = se.org_id and q.event_id = se.event_id "
-    "                      and q.state = 'active') "
-    "   and not exists (select 1 from l2_processing_runs r "
-    "                    where r.org_id = se.org_id and r.event_id = se.event_id) "
-    " order by se.occurred_at desc "
-    " limit :lim")
-
 _SET_ASIDE = text(
     "update source_events set outcome = :sup, dedup_key = dedup_key || :mark || event_id "
     " where org_id = :o and outcome = 'emitted' and event_id in :ids"
@@ -71,7 +53,7 @@ _RESTORE = text(
 
 
 # A pass that died between `set_aside` and `restore` (a deploy, a crash) leaves rows `superseded`
-# with their original key still free, and `find_unread` only reads `emitted` — so without this they
+# with their original key still free, and the queue only reads `emitted` — so without this they
 # would never be read again. The chain holds the org's run lease, so when a pass STARTS no other
 # re-read for the org is in flight and every such row is an orphan.
 _RECOVER = text(
@@ -87,19 +69,6 @@ def recover_orphans(engine, org_id: str) -> int:
     start of a pass, under the org's run lease. Returns how many."""
     with engine.begin() as c:
         return c.execute(_RECOVER, {"o": org_id, "sup": SUPERSEDED, "mark": _MARK}).rowcount
-
-
-def find_unread(engine, org_id: str, *, limit: int = 200) -> list[Any]:
-    """Events emitted while this tenant's L1 was off that nothing downstream has read yet.
-
-    An event whose dedup key carries a content version (a calendar event, a CRM record) is left
-    out: rebuilding it without that version would land it under a different key, and the next poll
-    would land it a third time.
-    """
-    with engine.connect() as c:
-        rows = c.execute(_FIND, {"o": org_id, "lim": int(limit)}).fetchall()
-    return [r for r in rows
-            if compute_dedup_key(r.source, r.object_type, r.source_object_id, None) == r.dedup_key]
 
 
 def to_raw_object(row: Any, crypto_key: str) -> RawObject | None:
@@ -241,7 +210,7 @@ def find_parked_extractions(engine, org_id: str, *, limit: int = 50,
         if not_before > now:
             continue
         if compute_dedup_key(r.source, r.object_type, r.source_object_id, None) != r.dedup_key:
-            continue                                      # a versioned object: see find_unread
+            continue                                      # a versioned object: see queue_unread
         due.append(r)
     return due
 
@@ -305,15 +274,16 @@ def settle_parked_extractions(engine, org_id: str, event_ids: list[str], *,
 # re-opens the `recovered` park its recovery left, the old code kept in the park's trace — and the
 # ladder re-lands it like any parked extraction, carrying why (`RawObject.rereading`), so the gate
 # reads it instead of judging it out again. Mail captured while the tenant's L1 was off is the same
-# population; `find_unread` is the door it had before.
+# population; `find_unread`, the door it had before, is gone.
 #
 # ⛔ ONLY WHAT A RE-READ CAN READ. Layer 1 must be on for the tenant (a re-read with it off lands
 # unread and would be queued again, for ever); the payload must still be kept; a calendar or CRM
 # record is never read by a model (the structured lane); a screen item is not mail; an object whose
-# key carries a version cannot be rebuilt under the same key (see `find_unread`); a mail whose own
-# signal waits for its extraction row is Layer 2's hold, not this; a park another drain still owns
-# (`pending`) or one given up (`dead_letter`) is left to it. And a mail captured in the last
-# `UNREAD_GRACE` may still be being read by the capture that landed it.
+# key carries a version cannot be rebuilt under the same key (it would land under a different one,
+# and the next poll would land it a third time); a mail whose own signal waits for its extraction
+# row is Layer 2's hold, not this; a park another drain still owns (`pending`) or one given up
+# (`dead_letter`) is left to it. And a mail captured in the last `UNREAD_GRACE` may still be being
+# read by the capture that landed it.
 
 #: How long after capture a mail with no extraction is taken as unread rather than being read.
 UNREAD_GRACE = timedelta(minutes=15)
@@ -376,5 +346,5 @@ def queue_unread(engine, org_id: str, *, now: datetime | None = None) -> int:
 
 __all__ = ["EXTRACTION_NEVER_RAN", "EXTRACTION_RETRY_BASE", "MAX_EXTRACTION_ATTEMPTS",
            "PARK_SUPERSEDED", "SUPERSEDED", "UNREAD_GRACE", "find_parked_extractions",
-           "find_unread", "give_up_parked_extractions", "queue_unread", "recover_orphans",
+           "give_up_parked_extractions", "queue_unread", "recover_orphans",
            "restore", "set_aside", "settle_parked_extractions", "to_raw_object"]

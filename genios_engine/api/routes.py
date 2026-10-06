@@ -1705,15 +1705,15 @@ def _reread_connection(org_id: str, row, seen: dict):
     return seen[k]
 
 
-#: Parked extractions read again per pass — small, because each one is a model call again.
-_PARKED_REREAD_LIMIT = 20
-
-
 def _reread_unread(org_id: str, *, limit: int = 200) -> int:
-    """Read again, through the push door, the mail L2 could not pull: mail this tenant captured
-    while its L1 was switched off, and mail whose extraction PARKED (`capture/landing/unread.py`,
-    STEP-18 B18 — bounded by its own ladder). Bounded per call; the rest follows on the next pass.
-    Returns how many objects were handed to capture. Never raises."""
+    """Read again, through the push door, every KEPT mail Layer 1 has not read: what a recovery
+    left emitted and unread — a park the drain re-admitted, a manual recover, a refetch, a
+    recapture, a promotion out of the archive (STEP-05) — mail captured while the tenant's L1 was
+    switched off, and mail whose extraction PARKED (STEP-18 B18). ONE ladder
+    (`capture/landing/unread.py`): queued, read, retried with backoff or given up with its reason,
+    and each object carries why it is read again, so the gate reads it instead of judging it out
+    (W-06). Bounded per call — one bound, each read a model call — and the rest follows on the
+    next pass. Returns how many objects were handed to capture. Never raises."""
     if _graph is None or _connections is None:
         return 0
     from genios_engine.capture.landing import unread
@@ -1730,10 +1730,13 @@ def _reread_unread(org_id: str, *, limit: int = 200) -> int:
         if given_up:
             _log.info("re-read: %s parked extractions given up after their ladder org=%s",
                       given_up, org_id)
-        rows = unread.find_unread(eng, org_id, limit=limit)
-        parked = unread.find_parked_extractions(eng, org_id, limit=_PARKED_REREAD_LIMIT)
-        parked_ids = [r.event_id for r in parked]
-        rows = list(rows) + list(parked)
+        # Every kept mail nothing read joins the ladder first — no model, idempotent (STEP-05).
+        queued = unread.queue_unread(eng, org_id)
+        if queued:
+            _log.info("re-read: %s kept mails nothing had read joined the ladder org=%s",
+                      queued, org_id)
+        rows = unread.find_parked_extractions(eng, org_id, limit=limit)
+        parked_ids = [r.event_id for r in rows]
         if not rows:
             return 0
         if _llm_over_daily_cap(org_id):
@@ -1793,7 +1796,7 @@ def _reread_unread(org_id: str, *, limit: int = 200) -> int:
         except Exception:      # noqa: BLE001
             _log.exception("re-read: settling parked extractions failed org=%s", org_id)
     if handed:
-        _log.info("re-read %s objects (unread and parked extractions) org=%s", handed, org_id)
+        _log.info("re-read %s kept objects org=%s", handed, org_id)
     return handed
 
 
