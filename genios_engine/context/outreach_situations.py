@@ -1331,7 +1331,9 @@ def read_conditions_for_dispatch(rows: dict, now: datetime, employers: dict) -> 
     # Stamped under its own reserved key by `_gather`, and `or {}` is the whole failure handling
     # it needs: a build with no angle layer, a sweep that made no calls, and a tenant whose queue
     # the model refused all arrive here as an empty map and produce exactly today's flat queue.
-    return read_conditions_in_review(queue, now, owner, rows.get("_condition_verdicts") or {})
+    # `_us` — who we are, stamped by `_gather` (STEP-04) — answers an actor that is an address.
+    return read_conditions_in_review(queue, now, owner, rows.get("_condition_verdicts") or {},
+                                     us=rows.get("_us"))
 
 
 from genios_engine.context.attention_situations import ANCHOR_UNREPORTED
@@ -1419,7 +1421,7 @@ def read_conditions_met_for_dispatch(rows: dict, now: datetime, employers: dict)
 
     met = rows.get("_conditions_met") or {}
     owner = rows.get("_mailbox_owner")
-    return read_conditions_satisfied(met, now, owner)
+    return read_conditions_satisfied(met, now, owner, us=rows.get("_us"))
 
 
 #: The dormant-condition review queue, read from its own store rather than from `_gather`'s
