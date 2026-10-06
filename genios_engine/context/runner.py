@@ -209,32 +209,59 @@ _L2_OWN_EXTRACTIONS = ("select event_id from l1_extraction_results "
 
 
 def _pull(store: GraphStore, org_id: str, limit: int):
-    """Pull only events that crossed Layer 1's QES publication boundary.
+    """Pull every kept event that has a road into memory (STEP-05, `context/memory_lanes`).
 
-    One event may publish several signals; the lateral fold chooses its highest-importance live
-    signal for confidence/domain metadata and retains every signal type.  All signals for one
-    event point at the same cached extraction, so the expensive artifact is joined once.
+    It used to pull only events that crossed Layer 1's QES publication boundary — an inner join on
+    an ACTIVE qualified signal and on the payload, `outcome = 'emitted'` only — so memory held ~27
+    of 395 mails and 2 of 34 meetings: a mail the floor did not publish, an archived mail and a
+    calendar event whose deadline signal had expired never reached Layer 2. Now a kept event is
+    pulled when it has one of the four roads:
+
+      * a signal — as before: one event may publish several; the lateral fold chooses its
+        highest-importance live signal for confidence/domain metadata and retains every type;
+      * below the floor — no live signal, but its own L1 extraction exists (`own_output`): the mail
+        WAS read, the floor only judged it not worth an alert (`06` D20);
+      * metadata — `archived`: the gate called it noise; read for its names and dates only;
+      * calendar — a structured record (`registry.mapped_kinds`), whatever its signal.
+
+    A screen session never takes the last three: a screen never creates memory of a person on its
+    own (`06` D22). `has_signal` keeps "no signal" apart from "a signal whose extraction row is
+    missing", which the drain still holds, as before.
     """
     with store.engine.connect() as c:
         return c.execute(text(
-            "select se.event_id, se.source, se.object_type, se.actor->>'email' as sender, "
-            "se.actor->>'name' as sender_name, "
+            "select se.event_id, se.source, se.object_type, se.outcome, "
+            "se.actor->>'email' as sender, se.actor->>'name' as sender_name, se.recipients, "
             "se.occurred_at, se.source_object_id, se.triage_lane, se.internal_kind, "
             "se.parent_object_id, se.domain_hints, "
             "q.qes_confidence_bp, q.qes_signal_types, q.qes_domain_hints, "
+            "(q.qes_extraction_ref is not null) as has_signal, "
             "xr.output as qes_output, "
-            "rp.enc_content, "
+            "own.output as own_output, "
+            # AN ARCHIVE'S PAYLOAD NEVER LEAVES THE DATABASE ON THIS ROAD: its memory is the
+            # ledger's own columns, with no decryption (STEP-05 §8.3; `03` F37, F57).
+            "case when se.outcome = 'archived' then null else rp.enc_content end as enc_content, "
             "pc.clean_text as prepared_text "
+            + PENDING_FROM +
+            "order by coalesce(se.triage_lane, 'P3') asc, se.occurred_at asc "
+            "limit :lim"), {**pending_params(org_id), "lim": limit}).fetchall()
+
+
+#: WHAT IS KEPT AND NOT YET IN MEMORY — the drain's question, in ONE spelling: `_pull` selects its
+#: columns over it and `api/routes._pending_count` counts it, so the progress bar and the drain cannot
+#: disagree (they did twice before; see `_L2_OWN_EXTRACTIONS`). Bound by `pending_params`.
+PENDING_FROM = (
             "from source_events se "
             # SCOPED, like the `prepared_content` join on the very next line. This one was not, and the
             # two are the same shape of lookup on the same event: a payload belongs to a tenant,
             # and a join that does not say so relies on `new_id("evt")` never colliding across
             # orgs to stay correct. It also cannot use `raw_payloads_org_event_idx`, which leads
             # on `org_id` — measured 2026-09-17, the per-event lookup went 351ms -> 2.9ms with
-            # the org in hand and stays a sequential scan without it.
-            "join raw_payloads rp on rp.event_id = se.event_id and rp.org_id = se.org_id "
+            # the org in hand and stays a sequential scan without it. LEFT since STEP-05: an
+            # event whose payload has expired still has its names and dates.
+            "left join raw_payloads rp on rp.event_id = se.event_id and rp.org_id = se.org_id "
             "left join prepared_content pc on pc.event_id = se.event_id and pc.org_id = se.org_id "
-            "join lateral ("
+            "left join lateral ("
             "  select max(qs.confidence_bp)::int as qes_confidence_bp, "
             "         array_agg(distinct qs.signal_type order by qs.signal_type) as qes_signal_types, "
             "         (array_agg(qs.domain_hints order by qs.importance_bp desc, qs.signal_id))[1] "
@@ -244,10 +271,26 @@ def _pull(store: GraphStore, org_id: str, limit: int):
             "  from qualified_signals qs "
             "  where qs.org_id = se.org_id and qs.event_id = se.event_id "
             "    and qs.state = 'active'"
-            ") q on q.qes_extraction_ref is not null "
+            ") q on true "
             "left join l1_extraction_results xr on xr.org_id = se.org_id "
             "     and xr.processing_key = q.qes_extraction_ref "
-            "where se.org_id=:o and se.outcome='emitted' "
+            # BELOW THE FLOOR: the event's own L1 extraction, the newest one, read only when no live
+            # signal points at one. `profile_id` is set by Layer 1's writer and null on L2's own
+            # cache rows (see `_L2_OWN_EXTRACTIONS`).
+            "left join lateral ("
+            "  select x.output from l1_extraction_results x "
+            "  where x.org_id = se.org_id and x.event_id = se.event_id and x.profile_id is not null "
+            "  order by x.created_at desc limit 1"
+            ") own on q.qes_extraction_ref is null "
+            # THE ROADS of `context/memory_lanes.lane_for`, spelled for SQL; the pull test seeds every
+            # combination, so the two spellings cannot drift. A screen item is never archived into
+            # memory, signal or not.
+            "where se.org_id=:o and se.outcome = any(:kept) "
+            "and not (se.source = :screen and se.outcome = 'archived') "
+            "and (q.qes_extraction_ref is not null "
+            "     or (se.source || ':' || se.object_type) = any(:structured) "
+            "     or se.outcome = 'archived' "
+            "     or (se.source <> :screen and own.output is not null)) "
             # RESTORED. The QES rewrite of this query dropped this clause and left the constant,
             # its eighteen-line rationale and the other consumer (`api/routes._pending_count`)
             # standing — so the drain and the progress bar disagreed again, which is the exact
@@ -258,9 +301,17 @@ def _pull(store: GraphStore, org_id: str, limit: int):
             # for one message on every sweep, for ever.
             f"and se.event_id not in ({_L2_OWN_EXTRACTIONS}) "
             "and se.event_id not in (select event_id from l2_processing_runs "
-            "                        where org_id=:o and status in ('done','parked')) "
-            "order by coalesce(se.triage_lane, 'P3') asc, se.occurred_at asc "
-            "limit :lim"), {"o": org_id, "lim": limit}).fetchall()
+            "                        where org_id=:o and status in ('done','parked')) ")
+
+
+def pending_params(org_id: str) -> dict:
+    """The parameters `PENDING_FROM` binds — the tenant, what is kept, which kinds are structured, and
+    the screen's source name (`context/memory_lanes`)."""
+    from genios_engine.capture.structured.registry import mapped_kinds
+    from genios_engine.context.memory_lanes import KEPT_OUTCOMES, SCREEN_SOURCE
+
+    return {"o": org_id, "kept": list(KEPT_OUTCOMES), "structured": list(mapped_kinds()),
+            "screen": SCREEN_SOURCE}
 
 
 def _record_done(store, org_id: str, event_id: str) -> None:

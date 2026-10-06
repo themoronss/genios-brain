@@ -138,6 +138,12 @@ def has_mapping(source: str, object_type: str) -> bool:
     return (source, object_type) in _REGISTRY
 
 
+def mapped_kinds() -> tuple[str, ...]:
+    """Every kind a structured mapping exists for, as `"source:object_type"` — the calendar road into
+    memory takes these whatever their signal (`context/memory_lanes`, STEP-05)."""
+    return tuple(sorted(f"{source}:{object_type}" for source, object_type in _REGISTRY))
+
+
 def all_mappings() -> list[StructuredMapping]:
     return list(_REGISTRY.values())
 

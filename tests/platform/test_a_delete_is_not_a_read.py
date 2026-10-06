@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 2_945, (
+    assert r["statements"] == 2_946, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -256,6 +256,12 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 2,944 → 2,945 by yc2_w27_s04/M22.C3: `deliver/pipeline._tenant_identities` reads the
     # display name each address of ours carries in the graph — the name a card's subject chain
     # meets ("Mr Rohit Swerashi"). One SELECT, a literal (measured per file: 14 → 15).
+    # ⛔ MOVED 2,945 → 2,946 by yc2_w27_s05/M23.C2.L-data.V1.U01 (STEP-05, every kept item enters
+    # memory): `context/runner._pull` is now `"select …" + PENDING_FROM + "order by …"` — the
+    # drain's question spelled once, which `api/routes._pending_count` puts its own count in front
+    # of. ONE statement, counted three times by the template walk (once per prefix) where its
+    # f-string was counted twice; the count's statement replaced one with one (measured per file:
+    # runner 13 → 14, routes 124 → 124).
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():
