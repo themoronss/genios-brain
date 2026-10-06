@@ -114,10 +114,22 @@ class Founder:
     email: str
     company: str
     timezone: str
+    #: STEP-04. The founder's other addresses and the company's own domains, declared as the tenant's
+    #: — production's shape: the design partner writes from Gmail, has a second address that only
+    #: ever receives his own mail, and a company domain. The golden founder had ONE address and it
+    #: was `orgs.email`, which is why the set showed none of the "who is us" defects. The runner
+    #: declares them the way `scripts/declare_self_identity.py` does (`org_self_identities`).
+    also: tuple[str, ...] = ()
+    domains: tuple[str, ...] = ()
 
     @property
     def domain(self) -> str:
         return self.email.rsplit("@", 1)[-1]
+
+    @property
+    def addresses(self) -> tuple[str, ...]:
+        """Every address of the founder's, the primary first."""
+        return (self.email, *self.also)
 
 
 @dataclass(frozen=True)
@@ -365,9 +377,22 @@ def parse_case(raw: dict[str, Any], *, source: str = "") -> FounderCase:
         raise CaseError(f"{where}: a case needs a title")
 
     f = raw.get("founder") or {}
-    _no_unknown(f, {"name", "email", "company", "timezone"}, f"{where}.founder")
+    _no_unknown(f, {"name", "email", "company", "timezone", "also", "domains"}, f"{where}.founder")
+    also = tuple(str(a).strip().lower() for a in f.get("also") or ())
+    for address in also:
+        if not _EMAIL.fullmatch(address):
+            raise CaseError(f"{where}.founder.also: {address!r} is not an address")
+    domains = tuple(str(d).strip().lower().lstrip("@").strip(".") for d in f.get("domains") or ())
+    from genios_engine.platform.self_identity import PUBLIC_MAIL_DOMAINS
+    for domain in domains:
+        if not domain or "." not in domain or "@" in domain:
+            raise CaseError(f"{where}.founder.domains: {domain!r} is not a domain")
+        if domain in PUBLIC_MAIL_DOMAINS:
+            raise CaseError(f"{where}.founder.domains: {domain} is a public mail domain — never "
+                            "the company's own")
     founder = Founder(name=str(f.get("name", "")), email=str(f.get("email", "")).lower(),
-                      company=str(f.get("company", "")), timezone=str(f.get("timezone", "UTC")))
+                      company=str(f.get("company", "")), timezone=str(f.get("timezone", "UTC")),
+                      also=also, domains=domains)
     if not (founder.name and _EMAIL.fullmatch(founder.email) and founder.company):
         raise CaseError(f"{where}: the founder needs a name, an address and a company")
 

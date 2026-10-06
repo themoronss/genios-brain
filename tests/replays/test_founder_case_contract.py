@@ -246,6 +246,39 @@ def test_a_case_can_expect_a_mail_archived_with_its_rule():
     assert "archived" in fc.GATE_OUTCOMES
 
 
+def test_a_founder_can_have_other_addresses_and_declared_company_domains():
+    """STEP-04 (`yc2_w27_s04/M22.C5.L-contract.V0.U01`): production's founder writes from Gmail, has a
+    second address that only ever receives (`ceo@<company>`), and a company domain — the shape the
+    golden set did not have, which is why it showed none of the "who is us" defects."""
+    raw = _case()
+    raw["founder"] = {"name": "Meera Iyer", "email": "Meera.Iyer@gmail.com", "company": "Kitebird",
+                      "timezone": "Asia/Kolkata", "also": ["CEO@kitebird.test"],
+                      "domains": ["Kitebird.test"]}
+    raw["objects"][0]["to"] = ["meera.iyer@gmail.com"]
+    founder = _parse(raw).founder
+    assert (founder.email, founder.also, founder.domains) == (
+        "meera.iyer@gmail.com", ("ceo@kitebird.test",), ("kitebird.test",))
+    assert founder.addresses == ("meera.iyer@gmail.com", "ceo@kitebird.test")
+
+
+def test_a_founder_without_them_has_none():
+    founder = _parse(_case()).founder
+    assert (founder.also, founder.domains) == ((), ())
+    assert founder.addresses == ("arjun@nimbuslabs.test",)
+
+
+@pytest.mark.parametrize("field, value, message", [
+    ("also", ["not-an-address"], "address"),
+    ("domains", ["gmail.com"], "public"),
+    ("domains", ["@"], "domain"),
+])
+def test_a_bad_identity_declaration_is_refused(field, value, message):
+    raw = _case()
+    raw["founder"][field] = value
+    with pytest.raises(fc.CaseError, match=message):
+        _parse(raw)
+
+
 # =================================================================================================
 # 3 · the set: its own folder, never read by the Atlas loader, and never empty
 # =================================================================================================
