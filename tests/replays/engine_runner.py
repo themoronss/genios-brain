@@ -141,7 +141,10 @@ def _where(url: Any) -> tuple[Any, ...]:
 def production_switches(llm: Any) -> Iterator[None]:
     """Hand `llm` to every door in `model_sites.DOORS`, refuse the real transport, and set
     production's switches — all restored on exit, whatever happens inside."""
-    import anthropic
+    try:
+        import anthropic
+    except ImportError:            # not installed: nothing can build a raw client to refuse
+        anthropic = None
 
     from genios_engine.api import routes
     from genios_engine.context.llm import client as llm_client
@@ -177,7 +180,7 @@ def production_switches(llm: Any) -> Iterator[None]:
         (llm_sites, "make_site_client", lambda tier: llm),
         (llm_client.LLMClient, "call", refuse_call),
         (llm_decision_maker.DecisionClient, "call", refuse_call),
-        (anthropic, "Anthropic", _RefusedAnthropic),
+        *(((anthropic, "Anthropic", _RefusedAnthropic),) if anthropic is not None else ()),
         *((settings, name, value) for name, value in PRODUCTION_SWITCHES.items()),
     ]
     saved = [(target, name, getattr(target, name)) for target, name, _ in patches]
