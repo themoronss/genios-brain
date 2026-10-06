@@ -370,13 +370,17 @@ KNOWN_COUNTERPARTY_SQL = (
 #: suite runs this resolver against SQLite. One combined query made the whole set unreadable
 #: there — including the graph half, which SQLite can answer perfectly well. Two statements let
 #: the half that CAN be answered always be answered.
+#:
+#: SENT BY ANY OF US (STEP-04). `:ours` is every address of ours from the one answer,
+#: `platform/self_identity.identity_for` — the active seats, `orgs.email`, the connected accounts
+#: and what the tenant declared. It read the seats alone, active or not, so whoever the founder
+#: wrote to from his own address stayed a stranger, and a seat that left still vouched for people.
 KNOWN_FROM_SENT_SQL = (
     "select distinct lower(recipient) as canonical_key "
     "  from source_events e, unnest(e.recipients) as recipient "
     " where e.org_id = :o and e.recipients is not null "
-    "   and lower(e.actor ->> 'email') in ("
-    "       select lower(s.email) from org_seats s where s.org_id = :o and s.email is not null"
-    "   ) and nullif(trim(recipient), '') is not null"
+    "   and lower(e.actor ->> 'email') = any(:ours) "
+    "   and nullif(trim(recipient), '') is not null"
 )
 
 
@@ -388,6 +392,8 @@ def known_counterparty_keys(connection, org_id: str) -> frozenset[str]:
     """
     from sqlalchemy import text
 
+    from genios_engine.platform.self_identity import identity_for
+
     rows = connection.execute(text(KNOWN_COUNTERPARTY_SQL), {"o": org_id}).fetchall()
     keys = {(r.canonical_key or "").strip().lower() for r in rows if r.canonical_key}
     # ⛔ THE SENT FOLDER, AND WHY ITS FAILURE MAY NOT TAKE THE GRAPH WITH IT.
@@ -398,7 +404,11 @@ def known_counterparty_keys(connection, org_id: str) -> frozenset[str]:
     # cold start this half exists to fix. Degrading to today's behaviour is the safe direction,
     # and it is logged rather than silent.
     try:
-        sent = connection.execute(text(KNOWN_FROM_SENT_SQL), {"o": org_id}).fetchall()
+        # Who "us" is, read inside the same guard: an identity that cannot be read loses the
+        # sent half only, never the graph half.
+        ours = sorted(identity_for(connection, org_id).addresses)
+        sent = connection.execute(text(KNOWN_FROM_SENT_SQL),
+                                  {"o": org_id, "ours": ours}).fetchall()
         keys |= {(r.canonical_key or "").strip().lower() for r in sent if r.canonical_key}
     except Exception:      # noqa: BLE001 — see above; never lose the graph half
         _log.debug("sent-folder counterparties unavailable for org=%s; graph half only", org_id)
