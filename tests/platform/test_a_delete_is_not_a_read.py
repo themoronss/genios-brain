@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 2_927, (
+    assert r["statements"] == 2_930, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -215,6 +215,9 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 2,926 → 2,927 by yc2_w27_s02/M20.C4.L-integration.V3.U01 (STEP-02): the legacy lane's
     # gate reads, once per pass, which open signals still have a card showing
     # (`reason/runner._LEGACY_STANDING`). One SELECT, a literal.
+    # ⛔ MOVED 2,927 → 2,930 by yc2_w27_s02/M20.C6.L-interface.V4.U02 (STEP-02): the health check that
+    # the change gate runs and saves (`scripts/pipeline_health.check_the_change_gate_skips_what_did_not_change`)
+    # — sweeps in the window, subjects looked at, subjects skipped. Three SELECTs, each a literal.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

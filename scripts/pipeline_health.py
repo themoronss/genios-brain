@@ -207,12 +207,52 @@ def check_cards_reach_the_app(conn, org: str) -> Check:
     )
 
 
+def check_the_change_gate_skips_what_did_not_change(conn, org: str) -> Check:
+    """⛔ STEP-02 (`yc2_w27_s02/M20.C6`). Every sweep used to re-decide every subject: on the golden
+    runner one more sweep with nothing new cost F13 2 model calls and F29 12, and production's decider
+    and R-1 ran 760-1,890 calls a day. The change gate skips a subject whose decision inputs did not
+    move, and records each subject it looks at in `reasoning_fingerprints`. Its two failure modes:
+
+      * NOT RUNNING — sweeps ran in the window and the gate recorded nothing;
+      * SAVING NOTHING — four or more sweeps ran and not one subject was skipped. That is what a
+        fingerprint carrying an input that moves every sweep looks like (STEP-02 §7, risk 2).
+    """
+    sweeps = _scalar(conn, "select count(distinct sweep_id) from pipeline_counters "
+                           "where org_id = :o and sweep_at > now() - interval '6 hours'", o=org)
+    name = "the change gate skips what did not change"
+    if not sweeps:
+        return Check(name=name, ok=True, measured="no sweep in the last 6 hours",
+                     expected="skipped — nothing to judge", fix="")
+    looked = _scalar(conn, "select count(*) from reasoning_fingerprints where org_id = :o "
+                           "and last_checked_at > now() - interval '6 hours'", o=org)
+    if not looked:
+        return Check(name=name, ok=False,
+                     measured=f"{sweeps} sweeps in 6 h and the gate recorded nothing",
+                     expected="every decided or skipped subject has a reasoning_fingerprints row",
+                     fix="the gate fails open — check the sweep log for 'change gate unavailable' "
+                         "or 'could not record'; reason/domain_shadow._CompiledGate, "
+                         "reason/runner._LaneGate")
+    skipping = _scalar(conn, "select count(*) from reasoning_fingerprints where org_id = :o "
+                             "and last_checked_at > now() - interval '6 hours' and skips > 0",
+                       o=org)
+    ok = skipping > 0 or sweeps < 4
+    return Check(
+        name=name, ok=ok,
+        measured=f"{skipping} of {looked} subjects looked at in 6 h were skipped, over {sweeps} "
+                 "sweeps",
+        expected=">0 once 4 sweeps have run — a steady tenant has subjects nothing happened to",
+        fix="an input of reason/fingerprint.material_fingerprint moves every sweep: run the golden "
+            "probe (tests/replays/test_an_unchanged_sweep_costs_nothing.py) and diff two "
+            "fingerprints of one subject")
+
+
 CHECKS = (
     check_every_emitted_event_is_routed,
     check_parked_errors_are_readable,
     check_the_known_sender_set_is_not_empty,
     check_a_selected_signal_can_be_carded,
     check_cards_reach_the_app,
+    check_the_change_gate_skips_what_did_not_change,
 )
 
 

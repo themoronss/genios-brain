@@ -3476,9 +3476,13 @@ yc2_w27_s02:
                       depends_on: [M20.C3.L-integration.V2.U02, M20.C4.L-integration.V3.U01]
                     - id: M20.C6.L-interface.V4.U02
                       what: >
-                        A pipeline_health check that fails when a subject was re-decided while its
-                        stored fingerprint was unchanged and its signal still stood — read from
-                        reasoning_fingerprints, read-only.
+                        A pipeline_health check that the change gate is running and saving: it
+                        fails when sweeps ran in the last 6 hours and the gate recorded nothing,
+                        or when 4 or more sweeps ran and it skipped no subject at all — the
+                        fingerprint carrying an input that moves every sweep (STEP-02 §7). Read
+                        from reasoning_fingerprints and pipeline_counters, read-only. CORRECTED IN
+                        BUILD: the first wording (a subject re-decided on an unchanged
+                        fingerprint) is not readable from a store that keeps one row per subject.
                       artifact: scripts/pipeline_health.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/scripts/test_pipeline_health_change_gate.py -q
                       depends_on: [M20.C2.L-data.V1.U02]
