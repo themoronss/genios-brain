@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 2_952, (
+    assert r["statements"] == 2_955, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -275,6 +275,9 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 2,953 → 2,952 by yc2_w27_s05/M23.C4.L-integration.V3.U03: `capture/landing/unread.
     # find_unread` is gone with its one SELECT — mail captured while L1 was off joins the one ladder
     # through `queue_unread` (measured per file: unread 12 → 11).
+    # ⛔ MOVED 2,952 → 2,955 by yc2_w27_s05/M23.C6.L-interface.V3.U02: `scripts/pipeline_health.
+    # check_every_kept_event_entered_memory` — the receipt's population split by cause, the calendar
+    # events with no meeting, the ladder's backlog. Three SELECTs, each a literal (19 → 22).
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

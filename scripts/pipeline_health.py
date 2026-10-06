@@ -339,6 +339,78 @@ def check_we_are_never_the_subject(conn, org: str) -> Check:
                + [f"thread {t}: {d!r}" for t, d in threads[:5]])
 
 
+def check_every_kept_event_entered_memory(conn, org: str) -> Check:
+    """⛔ STEP-05 (`yc2_w27_s05/M23.C6`). Memory held ~27 of the design partner's 395 mails and 2 of
+    its 34 meetings: Layer 2 took only events with a live signal, and nothing said so. STEP-05 gives
+    every kept event a road into memory and every recovery a re-read. The promise is the receipt's —
+    kept events a day old with no settled L2 run, 0 (`platform/receipts` "every kept event has
+    entered memory", the same population, held equal by the test) — split here by what holds each
+    one, so a failure names its lever; and every calendar event is a meeting. The re-read ladder's
+    backlog is measured either way: mail waiting a pass or two is normal, a number that only grows
+    is not.
+    """
+    from genios_engine.capture.parked.drain import NEEDS_REEXTRACTION
+    from genios_engine.context.memory_lanes import KEPT_OUTCOMES, SCREEN_SOURCE
+
+    name = "every kept event entered memory, every calendar event is a meeting"
+    reread = sorted(NEEDS_REEXTRACTION)
+    rows = conn.execute(sql(
+        "select case "
+        "  when r.status is not null then 'its L2 run is ' || r.status "
+        "  when pe.status = 'pending' and pe.reason_code = any(:reread) "
+        "       then 'waiting for its re-read' "
+        "  when pe.status = 'dead_letter' and pe.reason_code = any(:reread) "
+        "       then 'given up by the re-read ladder' "
+        "  when se.outcome = 'emitted' and not exists ("
+        "         select 1 from l1_extraction_results x where x.org_id = se.org_id "
+        "            and x.event_id = se.event_id) "
+        "       and not exists (select 1 from qualified_signals q where q.org_id = se.org_id "
+        "            and q.event_id = se.event_id and q.state = 'active') "
+        "       then 'never read, and not in the ladder' "
+        "  else 'never taken by the drain' end as why, count(*) as n "
+        "  from source_events se "
+        "  left join l2_processing_runs r on r.org_id = se.org_id and r.event_id = se.event_id "
+        "  left join parked_events pe on pe.event_id = se.event_id "
+        " where se.org_id = :o and se.outcome = any(:kept) "
+        "   and se.captured_at < now() - interval '1 day' "
+        "   and not (se.source = :screen and not exists (select 1 from qualified_signals q "
+        "            where q.org_id = se.org_id and q.event_id = se.event_id "
+        "              and q.state = 'active')) "
+        "   and (r.status is null or r.status <> 'done') "
+        " group by 1 order by 2 desc, 1"),
+        {"o": org, "kept": list(KEPT_OUTCOMES), "screen": SCREEN_SOURCE,
+         "reread": reread}).fetchall()
+    outside = sum(int(r.n) for r in rows)
+    meetings = _scalar(
+        conn,
+        "select count(distinct se.source_object_id) from source_events se "
+        " where se.org_id = :o and se.source = 'gcal' and se.object_type = 'calendar_event' "
+        "   and se.outcome = 'emitted' and se.captured_at < now() - interval '1 day' "
+        "   and not exists (select 1 from graph_nodes n where n.org_id = se.org_id "
+        "                   and n.node_type = 'meeting' and n.valid_to is null "
+        "                   and n.canonical_key = 'gcal:' || se.source_object_id)", o=org)
+    waiting = _scalar(
+        conn,
+        "select count(*) from parked_events pe join source_events se "
+        "    on se.org_id = pe.org_id and se.event_id = pe.event_id and se.outcome = 'emitted' "
+        " where pe.org_id = :o and pe.status = 'pending' and pe.reason_code = any(:reread)",
+        o=org, reread=reread)
+    return Check(
+        name=name, ok=outside == 0 and meetings == 0,
+        measured=(f"{outside} kept event(s) a day old outside memory, {meetings} calendar "
+                  f"event(s) with no meeting; {waiting} kept mail(s) waiting for their re-read"),
+        expected="0 and 0 — every kept event enters memory within a day (STEP-05)",
+        fix=("read the split: 'never taken by the drain' — the L2 drain is not running for this "
+             "tenant, or `context/runner._pull` and `context/memory_lanes.lane_for` disagree; 'its "
+             "L2 run is …' — read `l2_processing_runs.last_error`; 'waiting for its re-read' — the "
+             "chain's re-read (`api/routes._reread_unread`) has not reached it: is the tenant's "
+             "Layer 1 on, is it under the LLM cap?; 'given up' — `parked_events.refetch_last_error`; "
+             "'never read, and not in the ladder' — Layer 1 is off, or the payload is gone; a "
+             "missing meeting — walk the calendar event with `capture/journey.event_journey`"),
+        detail=[f"{r.why}: {int(r.n)}" for r in rows]
+               + ([f"calendar events with no meeting node: {meetings}"] if meetings else []))
+
+
 CHECKS = (
     check_every_emitted_event_is_routed,
     check_parked_errors_are_readable,
@@ -348,6 +420,7 @@ CHECKS = (
     check_the_change_gate_skips_what_did_not_change,
     check_nothing_was_deleted_at_the_gate,
     check_we_are_never_the_subject,
+    check_every_kept_event_entered_memory,
 )
 
 
