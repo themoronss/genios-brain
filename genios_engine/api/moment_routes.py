@@ -35,6 +35,7 @@ from genios_engine.platform import devices as D
 from genios_engine.platform.auth import check_org_kill, jwt_decode, verify_bearer
 from genios_engine.platform.config import get_settings
 from genios_engine.platform.logging import get_logger
+from genios_engine.platform.self_identity import identity_for
 from genios_engine.reason.moments import guards as G
 from genios_engine.reason.moments import recall as R
 from genios_engine.reason.moments import slice as S
@@ -118,12 +119,6 @@ def _stored(c, *, moment_id: str, org_id: str, seat_id: str) -> dict | None:
     return {k: out[k] for k in keys}
 
 
-def _seat_emails(c, org_id: str) -> frozenset[str]:
-    return frozenset(r.e for r in c.execute(text(
-        "select lower(email) as e from org_seats where org_id = :o and email is not null"),
-        {"o": org_id}))
-
-
 @router.post("/v1/moments/evaluate")
 def evaluate(body: EvaluateRequest, request: Request):
     started = time.perf_counter()
@@ -169,7 +164,7 @@ def evaluate(body: EvaluateRequest, request: Request):
                                  entities=body.features.entities, seat_email=p.email)
         if not subjects:
             return Response(status_code=_NO_CONTENT)
-        seat_emails = _seat_emails(c, p.org_id)
+        us = identity_for(c, p.org_id)            # who is us, once (STEP-04)
         for subj in subjects[:3]:
             version = R.subject_version(c, org_id=p.org_id, node_ids=[subj.node_id])
             # "last touch N d ago" changes daily, so the day is part of the trigger.
@@ -180,7 +175,7 @@ def evaluate(body: EvaluateRequest, request: Request):
             if hit is not None and hit.get("displayed"):      # only a SHOWN twin is a duplicate
                 return {**M._public(hit), "display": False, "reason": G.DUPLICATE}
             content = R.compose(R.read(c, org_id=p.org_id, subject=subj, me=me, viewer=viewer,
-                                       seat_emails=seat_emails, now=now), now=now)
+                                       us=us, now=now), now=now)
             if content is not None:
                 chosen = (subj, key, content)
                 break

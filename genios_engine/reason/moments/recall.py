@@ -20,6 +20,7 @@ from datetime import datetime
 from sqlalchemy import text
 
 from genios_engine.platform.identity import norm_email, norm_linkedin_url, person_name_key
+from genios_engine.platform.self_identity import SelfIdentity
 from genios_engine.reason.moments.common import (VISIBLE_EVENT_SQL, VISIBLE_FACT_SQL, aware,
                                                  fact_rows_to_map, iso, parse_ts, text_of)
 
@@ -121,7 +122,7 @@ def subject_version(conn, *, org_id: str, node_ids) -> str:
 
 
 def read(conn, *, org_id: str, subject: Subject, me: str | None, viewer: str | None,
-         seat_emails: frozenset[str], now: datetime) -> SubjectRead:
+         us: SelfIdentity, now: datetime) -> SubjectRead:
     """The one-hop read for one subject (≈ 6 statements)."""
     from genios_engine.reason.authority import (AUTHORITATIVE_REASON_CODE_SQL,
                                                 AUTHORITATIVE_SIGNAL_JOINS,
@@ -145,7 +146,10 @@ def read(conn, *, org_id: str, subject: Subject, me: str | None, viewer: str | N
         {"o": org_id, "ids": sorted(hood | mine)}).fetchall()
     for r in rows:
         out.nodes[r.node_id] = (r.node_type, r.display_name)
-        if r.node_id == subject.node_id and seat_emails & {e.lower() for e in (r.emails or ())}:
+        # One of us is not somebody we need recalling for us (STEP-04): asked of
+        # `platform/self_identity`, where it was the seats' addresses alone — so the founder's own
+        # declared second address, or a colleague at the company's domain, read as an outsider.
+        if r.node_id == subject.node_id and any(us.is_us(e) for e in (r.emails or ())):
             out.internal = True
     companies = [n for n in sorted(hood) if out.nodes.get(n, ("",))[0] == "company"
                  and n != subject.node_id]
