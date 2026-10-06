@@ -279,8 +279,14 @@ def _connectors():
 # =================================================================================================
 # the run
 # =================================================================================================
-def run_case(case: FounderCase, llm: Any, *, org_id: str | None = None) -> CaseRun:
-    """Run every sweep of `case` through the real chain with `llm` as the model; report it."""
+def run_case(case: FounderCase, llm: Any, *, org_id: str | None = None,
+             keep: bool = False) -> CaseRun:
+    """Run every sweep of `case` through the real chain with `llm` as the model; report it.
+
+    The tenant is REMOVED once the report is read, unless `keep`: the scratch database is shared
+    by the whole suite, and a golden tenant left switched on turned up in another test's list of
+    every activated org (QA, 2026-10-06). `keep=True` is for a reader who wants to look at the
+    rows a run left — and then calls `remove_tenant`."""
     pin_scratch_database()
     from genios_engine.api import routes
     from genios_engine.platform.intelligence_onboarding import provision_intelligence
@@ -302,28 +308,53 @@ def run_case(case: FounderCase, llm: Any, *, org_id: str | None = None) -> CaseR
     chain_ok: list[bool] = []
     funnel: list[dict[str, int]] = []
     open_after: list[set[str]] = []
-    with production_switches(llm), pinned_world(f"golden:{case.case_id}"):
-        provision_intelligence(engine, org)
-        routes._ensure_tenant_live(org)
-        for sweep, at in enumerate(case.sweeps):
-            objects = case.objects_in(sweep)
-            mail = [o for o in objects if o.source == "gmail"]
-            events = [o for o in objects if o.source == "gcal"]
-            if mail:
-                landed += _land(routes, case, org, sweep, at, mailbox_cls(mail), "gmail")
-            if events:
-                landed += _land(routes, case, org, sweep, at,
-                                calendar_cls(events, _internal(routes, org)), "gcal")
-            chain_ok.append(bool(routes._run_l2_chain(org, eval_time=at)))
-            funnel.append(_funnel(engine, org, at))
-            open_after.append(_open_cards(engine, org))
-    calls = tuple(getattr(llm, "calls", ()) or ())
-    misses = tuple(getattr(llm, "misses", ()) or ())
-    return CaseRun(case_id=case.case_id, org_id=org, landed=tuple(landed),
-                   memory=_memory(engine, org, case, landed),
-                   situations=_situations(engine, org),
-                   cards=_cards(engine, org, open_after), funnel=tuple(funnel),
-                   chain_ok=tuple(chain_ok), model_calls=calls, misses=misses)
+    try:
+        with production_switches(llm), pinned_world(f"golden:{case.case_id}"):
+            provision_intelligence(engine, org)
+            routes._ensure_tenant_live(org)
+            for sweep, at in enumerate(case.sweeps):
+                objects = case.objects_in(sweep)
+                mail = [o for o in objects if o.source == "gmail"]
+                events = [o for o in objects if o.source == "gcal"]
+                if mail:
+                    landed += _land(routes, case, org, sweep, at, mailbox_cls(mail), "gmail")
+                if events:
+                    landed += _land(routes, case, org, sweep, at,
+                                    calendar_cls(events, _internal(routes, org)), "gcal")
+                chain_ok.append(bool(routes._run_l2_chain(org, eval_time=at)))
+                funnel.append(_funnel(engine, org, at))
+                open_after.append(_open_cards(engine, org))
+        calls = tuple(getattr(llm, "calls", ()) or ())
+        misses = tuple(getattr(llm, "misses", ()) or ())
+        report = CaseRun(case_id=case.case_id, org_id=org, landed=tuple(landed),
+                         memory=_memory(engine, org, case, landed),
+                         situations=_situations(engine, org),
+                         cards=_cards(engine, org, open_after), funnel=tuple(funnel),
+                         chain_ok=tuple(chain_ok), model_calls=calls, misses=misses)
+    finally:
+        # On EVERY exit — a cassette miss included — or the tenant stays switched on.
+        if not keep:
+            remove_tenant(engine, org)
+    return report
+
+
+def remove_tenant(engine: Any, org: str) -> None:
+    """Erase a golden tenant the way account deletion does — the `/reset` list, then the org row,
+    whose foreign keys cascade the rest (activation rows among them) — and forget it in-process."""
+    from sqlalchemy import text
+
+    from genios_engine.api import routes
+    from genios_engine.api.account_routes import _wipe
+    if not str(org).startswith(ORG_PREFIX):
+        raise RunnerRefused(f"refusing to remove {org}: not a golden tenant")
+    with engine.begin() as conn:
+        _wipe(conn, org)
+        for table in ("context_correlation_members", "context_situations",
+                      "context_correlations"):
+            conn.execute(text(f"delete from {table} where org_id = :o"), {"o": org})
+        conn.execute(text("delete from orgs where id = :o"), {"o": org})
+    routes._LIVE_ORGS.discard(org)
+    routes._take_signals_published(org)
 
 
 def _land(routes: Any, case: FounderCase, org: str, sweep: int, at: datetime, connector: Any,

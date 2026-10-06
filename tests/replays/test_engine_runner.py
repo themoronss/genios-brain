@@ -282,9 +282,38 @@ def test_the_world_is_pinned_for_a_run_and_released_after():
 
 @pytest.mark.pg
 @needs_db
+def test_a_run_leaves_the_shared_database_as_it_found_it():
+    """The scratch database is shared by the whole suite, and some tests read a table whole: a
+    golden tenant left switched on after its run turned up in another test's list of activations
+    (found by QA, 2026-10-06 — 42 golden tenants in `test_l1_pilot_activation`). A run removes its
+    tenant; `keep=True` is for a reader who wants to look at what the run left."""
+    from sqlalchemy import text
+
+    from genios_engine.api import routes
+
+    case = _parse(CASE)
+    er.run_case(case, CassetteRecorder(IdealReader(case)))
+    with routes._graph.engine.connect() as c:
+        left = {table: c.execute(text(f"select count(*) from {table} where org_id = :o"),
+                                 {"o": "org_golden_f97"}).scalar()
+                for table in ("l1_semantic_activation", "l2_v2_activation", "l3_activation",
+                              "l4_activation", "source_events", "cards")}
+        org = c.execute(text("select count(*) from orgs where id = 'org_golden_f97'")).scalar()
+    assert org == 0 and not any(left.values()), (org, left)
+    assert "org_golden_f97" not in routes._LIVE_ORGS
+
+
+@pytest.mark.pg
+@needs_db
 def test_a_cassette_miss_fails_the_case_loudly():
+    from sqlalchemy import text
+
+    from genios_engine.api import routes
     with pytest.raises(CassetteMiss):
         er.run_case(_parse(CASE), RecordedLLM({}))
+    with routes._graph.engine.connect() as c:
+        assert c.execute(text("select count(*) from orgs where id = 'org_golden_f97'")).scalar() == 0, (
+            "a run that raised left its tenant behind")
 
 
 @pytest.mark.pg
@@ -318,6 +347,7 @@ def test_the_card_reader_reads_what_the_founder_sees(pg_store):
     finally:
         with pg_store.engine.begin() as c:
             c.execute(text("delete from cards where org_id = :o"), {"o": org})
+            c.execute(text("delete from orgs where id = :o"), {"o": org})
 
 
 # =================================================================================================
@@ -332,14 +362,22 @@ def test_the_e2e_mail_yields_no_card_at_the_production_floor():
     from genios_engine.capture.esqe.qualification import DEFAULT_FLOOR_BP, PostgresFloorStore
 
     case = _parse(E2E)
-    _recorder, run = _record(case)
+    run = er.run_case(case, CassetteRecorder(IdealReader(case)), keep=True)
+    try:
+        _the_floor_was_productions(run, routes, text, DEFAULT_FLOOR_BP, PostgresFloorStore)
+    finally:
+        er.remove_tenant(routes._graph.engine, run.org_id)
+
+
+def _the_floor_was_productions(run, routes, text, DEFAULT_FLOOR_BP, PostgresFloorStore):
     assert isinstance(routes._floor_store, PostgresFloorStore), "the runner swapped the floor"
     assert routes._floor_store.get(run.org_id) is None, (
         f"the tenant has a floor row; production's untuned tenant reads {DEFAULT_FLOOR_BP}")
     with routes._graph.engine.connect() as c:
         floors = set(c.execute(text("select floor_bp from qualification_drops where org_id = :o"),
                                {"o": run.org_id}).scalars())
-    assert floors <= {DEFAULT_FLOOR_BP}, floors
+    assert floors == {DEFAULT_FLOOR_BP}, (
+        f"the e2e mail's signals are dropped at the production floor, so the floor is read: {floors}")
     assert run.chain_ok == (True,)
     assert run.cards == (), (
         "the e2e mail now yields a card at the production floor — the engine moved; record it "
