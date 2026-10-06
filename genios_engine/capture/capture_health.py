@@ -38,6 +38,10 @@ _ENGINE = _PKG.parent
 #: that is now called is as much a lie as a function that is unreached and undeclared. One direction
 #: alone is how `mcp/` escaped the import ratchet in L3-01.
 UNREACHED: dict[str, tuple[str, str]] = {
+    "attention.attention_for": (
+        "⛔ BUILT BOTTOM-UP, NOT YET WIRED (STEP-03, the gate keeps everything, `yc2_w27_s03/M21.C1.L-contract.V0.U03`). The one place a gate verdict becomes an attention tier — archive with the rule that archived it, deep with what let it through or the park that holds it. Its caller is the capture pipeline, a later unit of the same block",
+        "⛔ MOVES WHEN `yc2_w27_s03/M21.C3.L-logic.V3.U03` makes `capture/pipeline.py` write the tier it returns — then this entry must be deleted, or the stale-declaration guard fails"),
+
     # ── the benchmark harness · 15 test callers between them ─────────────────────────────────
     "benchmark.score_benchmark": (
         "⛔ A HARNESS, AND ITS CALLER IS A PERSON ASKING HOW GOOD THIS LAYER IS. *'Score every "
