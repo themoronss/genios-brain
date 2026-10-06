@@ -293,15 +293,54 @@ def test_our_own_attendees_never_anchor_a_meeting() -> None:
     assert 'rel["node_type"] == "person" and key in internal' in source
 
 
+def _noise_skips_grouping(source: str) -> bool:
+    """`process_event` calls `correlate_event` exactly once, as the else-branch of a conditional
+    whose test is `is_noise` (alone, or one operand of an `or`) and whose skip branch is `[]`."""
+    import ast
+    import textwrap
+
+    tree = ast.parse(textwrap.dedent(source))
+    calls = [n for n in ast.walk(tree) if isinstance(n, ast.Call)
+             and getattr(n.func, "id", None) == "correlate_event"]
+    guarded = [n for n in ast.walk(tree) if isinstance(n, ast.IfExp) and n.orelse in calls]
+    if len(calls) != 1 or len(guarded) != 1:
+        return False
+    skip, test = guarded[0].body, guarded[0].test
+    operands = (test.values if isinstance(test, ast.BoolOp) and isinstance(test.op, ast.Or)
+                else [test])
+    return (isinstance(skip, ast.List) and not skip.elts
+            and any(isinstance(o, ast.Name) and o.id == "is_noise" for o in operands))
+
+
 def test_a_newsletter_never_joins_a_customers_situation() -> None:
     """A marketing blast naming one of your contacts must not become evidence in a live
     deal. The mention still creates the node and keeps every fact — only the grouping is
-    skipped, matching how noise already gets no network edges."""
+    skipped, matching how noise already gets no network edges.
+
+    RESTATED BY THE AST (STEP-05, `yc2_w27_s05 · M23.C3.L-logic.V2.U02`). This held the exact text
+    `[] if is_noise else correlate_event(`; an archive now skips the grouping too
+    (`is_noise or metadata_only`), so the spelling grew an operand and the claim did not. It now
+    holds what the text meant — and more: the call is the ONLY `correlate_event` in the function,
+    so a second, unguarded one fails it. The control below proves it still fails without the skip.
+    """
+    import inspect
+
+    from genios_engine.context.pipeline import process_event
+    assert _noise_skips_grouping(inspect.getsource(process_event))
+
+
+def test_the_restated_pin_fails_without_the_noise_skip() -> None:
+    """The negative control: the live source with `is_noise` taken out of the skip — and with
+    the skip gone altogether — must both fail the pin."""
     import inspect
 
     from genios_engine.context.pipeline import process_event
     source = inspect.getsource(process_event)
-    assert "[] if is_noise else correlate_event(" in source
+    live = "[] if (is_noise or metadata_only) else correlate_event("
+    assert source.count(live) == 1, "the live spelling moved; restate this control"
+    assert not _noise_skips_grouping(source.replace(
+        live, "[] if metadata_only else correlate_event("))
+    assert not _noise_skips_grouping(source.replace(live, "correlate_event("))
 
 
 def test_a_person_is_lifted_to_their_company_before_anchoring() -> None:

@@ -489,6 +489,22 @@ def _thread_node(store, conn, *, org_id: str, thread_id: str | None, event_id: s
         display_name=label[:120], event_id=event_id)
 
 
+def _joined_thread(store, conn, *, org_id: str, thread_id: str | None, event_id: str, node: str,
+                   counterparty: str, occurred_at: datetime | None, source: str) -> int:
+    """`node` took part in this conversation: the thread and the participant edge the state legs
+    write, and NO state on either — an archived mail's place in its thread (STEP-05,
+    `metadata_only`), so nothing reads it as somebody waiting or owed. Returns edges written."""
+    tnode = _thread_node(store, conn, org_id=org_id, thread_id=thread_id, event_id=event_id,
+                         counterparty=counterparty)
+    if not tnode:
+        return 0
+    return int(bool(store.write_edge(conn, org_id=org_id, edge_type="corresponded_with",
+                                     from_node_id=node, to_node_id=tnode, confidence=0.95,
+                                     occurred_at=occurred_at, event_id=event_id,
+                                     evidence={"derived": "thread participant"},
+                                     source=source, authority_rank=2)))
+
+
 def _is_a_promise(cm: dict) -> bool:
     """Deterministic post-gate on a commitment candidate.
 
@@ -852,7 +868,12 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                   effective: dict | None = None,
                   qualified_extraction: Extraction | None = None,
                   availability_marker: str | None = None,
-                  self_identity: SelfIdentity | None = None) -> L2Result:
+                  self_identity: SelfIdentity | None = None,
+                  metadata_only: bool = False) -> L2Result:
+    # `metadata_only` (STEP-05) — an ARCHIVED mail: the gate called it noise and no model read it.
+    # It writes the people, their companies, the thread and who wrote to whom — and no relevance
+    # observation, no ball-in-court or waiting fact, no correlation; its words stay unreadable
+    # (`03` F37, F57). Outcome `committed_metadata`.
     # replay cache — identical content+prompt → reuse, no re-call, deterministic. The key is
     # ORG-SCOPED (org_id in the hash) so tenant A's cached extraction can never be served to
     # tenant B on byte-identical content (e.g. the same newsletter) — the cross-tenant leak fix.
@@ -1261,8 +1282,8 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                 # for noise (an outbound auto-reply doesn't count as answering).
                 # Confidence is deterministic (rank 2 = grounded event): whether WE replied is a
                 # fact of the mailbox, not a function of how interesting the LLM found the email.
-                if (not is_inbound and not is_noise and occurred_at is not None
-                        and rn_email not in internal_set):
+                if (not is_inbound and not is_noise and not metadata_only
+                        and occurred_at is not None and rn_email not in internal_set):
                     # …and the reply CLOSES this thread's open loops for this person. The
                     # ball_in_court flip below says whose turn it is; the ledger says which
                     # requests this reply REACHED — one row each, never the whole person.
@@ -1330,6 +1351,12 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                                              evidence={"derived": "we replied",
                                                        "thread": thread_id},
                                              source=source, authority_rank=2)
+                elif metadata_only and not is_inbound and rn_email not in internal_set:
+                    # AN ARCHIVE STILL BELONGS TO ITS CONVERSATION (STEP-05): the thread and who
+                    # was in it, without the state above.
+                    edge_n += _joined_thread(store, conn, org_id=org_id, thread_id=thread_id,
+                                             event_id=event_id, node=rnode, counterparty=rn_email,
+                                             occurred_at=occurred_at, source=source)
 
         # B5 resolve — P1 anchor rule. A mention becomes a NODE only when it is a person WITH an
         # email (deterministic anchor). Anchorless mentions (companies/products/tools/systems, or
@@ -1748,7 +1775,8 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         # claim about the MESSAGE — how relevant it scored, which noise class it fell in — and
         # the address that delivered it is the honest subject of that. A relay's own delivery
         # record belongs to the relay.
-        if sender_node:
+        # AN ARCHIVE WAS READ BY NO MODEL (STEP-05, `metadata_only`): there is no relevance to record.
+        if sender_node and not metadata_only:
             store.write_observation(
                 conn, org_id=org_id, subject_node_id=sender_node,
                 kind=(("email_noise:" + ("auto_reply" if auto_reply else ex.noise_type))
@@ -1774,7 +1802,7 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         # A relay that names nobody writes neither fact rather than writing them against itself:
         # no card beats a card telling a founder to answer a mailing service.
         if (is_inbound and speaker_node and occurred_at is not None and not is_noise
-                and sender_norm not in internal_set):
+                and not metadata_only and sender_norm not in internal_set):
             # THEIR REPLY CLOSES WHAT WE ASKED THEM. The mirror of the outbound leg's
             # `close_loops_for_reply`, and until now the ledger had no such verb: a question we
             # put to somebody opened a loop on our own node that nothing could ever shut, so
@@ -1815,6 +1843,14 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                                      occurred_at=occurred_at, event_id=event_id,
                                      evidence={"derived": "inbound event", "thread": thread_id},
                                      source=source, authority_rank=2)
+        elif (metadata_only and is_inbound and speaker_node and not is_noise
+                and sender_norm not in internal_set):
+            # AN ARCHIVE STILL BELONGS TO ITS CONVERSATION (STEP-05): the thread and who wrote in
+            # it, without the state above.
+            edge_n += _joined_thread(store, conn, org_id=org_id, thread_id=thread_id,
+                                     event_id=event_id, node=speaker_node,
+                                     counterparty=sender_norm, occurred_at=occurred_at,
+                                     source=source)
 
         node_roles: dict[str, str] = {}
         # A machine sender is plumbing whatever the model says, so seed it deterministically —
@@ -2092,7 +2128,7 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         # mention loop still creates the node and keeps every fact — this skips only the
         # grouping, so nothing is lost, it just stops a marketing blast from becoming
         # evidence in a live deal.
-        correlations = [] if is_noise else correlate_event(
+        correlations = [] if (is_noise or metadata_only) else correlate_event(
             conn, org_id=org_id, event_id=event_id, occurred_at=occurred_at,
             thread_id=thread_id,
             node_types={n: t for n, t in touched.items() if n not in internal_nodes},
@@ -2118,7 +2154,9 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
 
     # Everything readable is stored (facts tagged with relevance as confidence); nothing is
     # deleted by a relevance score. Ranking happens downstream (L3/queries), not by dropping here.
-    return L2Result(event_id, "committed", ex.relevance, nodes=nodes, facts=fact_n,
+    # A metadata write is its own outcome: it is done, and no model read it (`06` D21 — not billed).
+    return L2Result(event_id, "committed_metadata" if metadata_only else "committed", ex.relevance,
+                    nodes=nodes, facts=fact_n,
                     observations=obs_n, input_tokens=ex.input_tokens,
                     output_tokens=ex.output_tokens, graph_version=version, cached=is_cached,
                     primary_node=sender_node, correlations=len(correlations))
