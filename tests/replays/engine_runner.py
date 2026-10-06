@@ -424,12 +424,16 @@ def _fresh_tenant(engine: Any, org: str, case: FounderCase) -> None:
         conn.execute(text("update orgs set email = null where lower(email) = :e and id <> :o "
                           "and id like :p"),
                      {"e": case.founder.email, "o": org, "p": ORG_PREFIX + "%"})
+        # AS SIGNUP STORES IT (`api/auth_routes`): `orgs.name` is the PERSON's full name and
+        # `orgs.company` the workspace. This runner put the company in `name` and no person
+        # anywhere, so nothing in a golden tenant knew what the founder is called — and "a card
+        # whose subject is the founder" could not be asked by name (STEP-04, U10's control).
         conn.execute(text(
-            "insert into orgs (id, name, email, timezone) values (:o, :n, :e, :tz) "
-            "on conflict (id) do update set name = excluded.name, email = excluded.email, "
-            "timezone = excluded.timezone"),
-            {"o": org, "n": case.founder.company, "e": case.founder.email,
-             "tz": case.founder.timezone})
+            "insert into orgs (id, name, company, email, timezone) values (:o, :n, :co, :e, :tz) "
+            "on conflict (id) do update set name = excluded.name, company = excluded.company, "
+            "email = excluded.email, timezone = excluded.timezone"),
+            {"o": org, "n": case.founder.name, "co": case.founder.company,
+             "e": case.founder.email, "tz": case.founder.timezone})
         _wipe(conn, org)
         # Not on the `/reset` list (migration 0037 erases them on account deletion only).
         for table in ("context_correlation_members", "context_situations",
