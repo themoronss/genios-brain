@@ -260,6 +260,11 @@ class FounderCase:
     #: Case-level answers for sites that read a situation rather than one object (the decider,
     #: R-1, the narrator, resolution). Served by `ideal_reader.py`.
     model: Mapping[str, Any] = field(default_factory=dict)
+    #: Why the engine fails this case today — a finding or a step, named. Set only after the case
+    #: was measured, and never an edit to what the case expects: the case still expects the right
+    #: card. `test_founder_cases` turns it into a strict xfail, so the day the gap closes the case
+    #: passes, the xfail fails, and this line has to go.
+    blocked_on: str = ""
     source: str = field(default="", compare=False)
 
     def expressible(self, key: str) -> bool:
@@ -327,7 +332,7 @@ class CaseRun:
 # =================================================================================================
 _CASE_KEYS = {"case_id", "title", "kind", "label_row", "labelled_by", "replays", "founder",
               "sweeps", "objects", "expected", "forbidden", "witness", "not_expressible",
-              "model", "notes"}
+              "model", "notes", "blocked_on"}
 _GMAIL_KEYS = {"id", "source", "sweep", "occurred_at", "from", "to", "cc", "thread", "subject",
                "body", "labels", "headers", "attachments", "read"}
 _GCAL_KEYS = {"id", "source", "sweep", "occurred_at", "summary", "start", "end", "organizer",
@@ -435,6 +440,10 @@ def parse_case(raw: dict[str, Any], *, source: str = "") -> FounderCase:
     model = raw.get("model") or {}
     if not isinstance(model, dict):
         raise CaseError(f"{where}: model must be a mapping of site to answers")
+    blocked_on = str(raw.get("blocked_on") or "").strip()
+    if raw.get("blocked_on") is not None and len(blocked_on) < 20:
+        raise CaseError(f"{where}: blocked_on names the finding or step that blocks the case, in "
+                        "a sentence")
 
     return FounderCase(
         case_id=case_id, title=title, kind=kind, label_row=label_row, labelled_by=labelled_by,
@@ -442,7 +451,7 @@ def parse_case(raw: dict[str, Any], *, source: str = "") -> FounderCase:
         objects=objects, expected_gate=gate, expected_memory=memory, cards=cards,
         expected_other=other, forbidden_names=tuple(forbidden.get("names") or ()),
         forbidden_phrases=tuple(forbidden.get("phrases") or ()), witness=witness,
-        not_expressible=not_expressible, model=model, source=source)
+        not_expressible=not_expressible, model=model, blocked_on=blocked_on, source=source)
 
 
 def load_cases(folder: Path = FOUNDER_DIR) -> tuple[FounderCase, ...]:

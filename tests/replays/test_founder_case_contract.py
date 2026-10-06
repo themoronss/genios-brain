@@ -269,3 +269,9 @@ def test_the_founder_folder_is_not_read_by_the_atlas_loader():
     assert fc.FOUNDER_DIR.parent.name == "specs"
     assert all(s.source and "/" not in s.source for s in load_specs())
     assert len(load_specs()) == 12
+
+
+def test_a_known_gap_is_named_in_a_sentence():
+    assert _parse(_case(blocked_on="F04 — a meeting becomes a deadline that expires")).blocked_on
+    with pytest.raises(fc.CaseError, match="blocked_on"):
+        _parse(_case(blocked_on="todo"))
