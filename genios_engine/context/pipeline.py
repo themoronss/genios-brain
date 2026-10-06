@@ -1548,10 +1548,18 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                 if not subj:
                     continue
                 if claim.field.startswith("deal."):
-                    row = conn.execute(text("select node_type from graph_nodes where org_id=:o "
-                        "and node_id=:n and valid_to is null"), {"o":org_id,"n":subj}).first()
+                    row = conn.execute(text("select node_type, canonical_key from graph_nodes "
+                        "where org_id=:o and node_id=:n and valid_to is null"),
+                        {"o":org_id,"n":subj}).first()
                     if not row:
                         continue
+                    # A CLAIM ABOUT US IS NOT A DEAL ON US (STEP-04). An investor's "a term sheet
+                    # for <our company>" resolves its subject to our own company node, and
+                    # `_deal_for` minted "<our company> — deal" on it. Marked ours here, the subject
+                    # is what `_deal_for` already handles for an internal company: the deal goes to
+                    # the one outside company in the event — the investor's — or to nobody.
+                    if us.is_us_node(row[0], row[1]):
+                        internal_nodes.add(subj)
                     touched[subj] = row[0]
                     if row[0] != "deal":
                         # A named account/person must have its own company, never an arbitrary CC.
@@ -2052,6 +2060,21 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                                      evidence={"derived": "soonest open commitment"},
                                      source=source, authority_rank=2)
 
+        # NOTHING OF OURS ENTERS THE ANCHOR POOL, WHICHEVER DOOR IT CAME THROUGH (STEP-04). `_person`
+        # and `_works_at` ask who we are as they make a node, because they hold an address. A
+        # company named in prose (`resolve_company_mention`), a person known only by name, a
+        # claim's subject and a transcript speaker reach `touched` as an EXISTING node, with no
+        # address in hand — and asked nobody: a Gmail founder's pitch that named his own company
+        # anchored the thread on it. So the pool is asked once more, by each node's own key.
+        unchecked = [n for n in touched if n not in internal_nodes]
+        if us and unchecked:
+            from sqlalchemy import bindparam
+            for r in conn.execute(text(
+                    "select node_id, node_type, canonical_key from graph_nodes "
+                    " where org_id = :o and node_id in :ids and valid_to is null").bindparams(
+                        bindparam("ids", expanding=True)), {"o": org_id, "ids": unchecked}):
+                if us.is_us_node(r.node_type, r.canonical_key):
+                    internal_nodes.add(r.node_id)
         # CORRELATION — the last thing in the same transaction, because a situation must
         # never reference nodes that rolled back. Anchors are the COUNTERPARTY only: our
         # own seats and our own company are removed, or every outbound email would file
