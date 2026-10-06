@@ -21,6 +21,8 @@ from zoneinfo import ZoneInfo
 
 from sqlalchemy import text
 
+from genios_engine.platform.self_identity import identity_for
+
 #: Candidate zones, not offsets — a fixed offset would get India's :30 wrong and drop DST
 #: entirely, so a message polite in January would wake somebody in July. Deliberately a
 #: shortlist of business zones rather than all ~600: with a few hundred events the histogram
@@ -173,14 +175,19 @@ def outbound_timestamps(conn, org_id: str, limit: int = 2000) -> list[datetime]:
 
     Outbound only. Inbound mail is when the rest of the world is awake, which is a histogram of
     everyone else's timezone and would pull every org toward whoever mails them most.
+
+    "Our people" is the one answer (`platform/self_identity`, STEP-04): mail sent by ANY address
+    of ours — the active seats, the org's own, the connected accounts and what the tenant
+    declared. A seat that left no longer sets the org's working day.
     """
+    ours = sorted(identity_for(conn, org_id).addresses)
+    if not ours:
+        return []
     rows = conn.execute(text(
         "select se.occurred_at from source_events se "
         "where se.org_id = :o and se.occurred_at is not null "
-        "  and lower(se.actor->>'email') in ("
-        "     select lower(email) from org_seats where org_id = :o and email is not null "
-        "     union select lower(email) from orgs where id = :o and email is not null) "
-        "order by se.occurred_at desc limit :l"), {"o": org_id, "l": limit}).all()
+        "  and lower(se.actor->>'email') = any(:ours) "
+        "order by se.occurred_at desc limit :l"), {"o": org_id, "ours": ours, "l": limit}).all()
     return [r[0] for r in rows if r[0] is not None]
 
 
