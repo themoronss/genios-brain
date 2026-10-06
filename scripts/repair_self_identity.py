@@ -33,7 +33,6 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import re
 import sys
 from dataclasses import dataclass, field
 
@@ -71,14 +70,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def _names_us(text: str | None, names: set[str], us) -> bool:
-    """A subject that IS one of us: one of our full names, an address of ours, or a declared domain."""
-    value = " ".join(str(text or "").split()).lower()
-    if not value:
-        return False
-    if any(re.search(rf"(?<![0-9a-z]){re.escape(n)}(?![0-9a-z])", value) for n in names):
-        return True
-    words = re.findall(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+|[a-z0-9-]+(?:\.[a-z0-9-]+)+", value)
-    return any(us.is_us(w) if "@" in w else us.is_us_domain(w) for w in words)
+    """A subject that IS one of us — the one test the card builder also refuses by
+    (`platform/self_identity.names_us`): an address of ours, a declared domain, or one of our names."""
+    from genios_engine.platform.self_identity import names_us
+
+    return names_us(text, us, names)
 
 
 def plan(conn, org_id: str) -> Plan:
