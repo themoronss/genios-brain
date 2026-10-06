@@ -1,7 +1,7 @@
 # ═════════════════════════════════════════════════════════════════════════════════════════════
 # ⛔ HOW A UNIT ID IS ADDRESSED — read this before quoting one.
 #
-# This file holds SIX programme blocks, and three of them number their milestones from M8:
+# This file holds SEVEN programme blocks, and three of them number their milestones from M8:
 #
 #   <root>                            M1  … M7    retired in place
 #   persona_brain_and_layer_repair    M8  … M12
@@ -11,6 +11,8 @@
 #                                                   block, so it adds no collision
 #   yc2_w27_s02                       M20         ← YC-II W27 STEP-02, the change gate (2026-10-06);
 #                                                   numbered past every other block for the same reason
+#   yc2_w27_s03                       M21         ← YC-II W27 STEP-03, the gate keeps everything
+#                                                   (2026-10-06); past every other block again
 #
 # So `M11` is AMBIGUOUS on its own: it names "The remaining Layer 3 losses" in one block and
 # "L2 Reasoning" in another, and `M11.C1.L-logic.V0.U01` exists twice with different meanings.
@@ -3508,3 +3510,225 @@ yc2_w27_s02:
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest tests/replays/test_an_unchanged_sweep_costs_nothing.py -q
                       depends_on: [M20.C3.L-integration.V2.U02, M20.C4.L-integration.V3.U01,
                                    M20.C5.L-logic.V0.U01]
+
+# ═══════════════════════════════════════════════════════════════════════════════════════════════
+# yc2_w27_s03 · STEP-03 the gate keeps everything — speedrun008/YC-II W27/STEP-03-TO-BUILD-the-gate-keeps-everything.md
+# ═══════════════════════════════════════════════════════════════════════════════════════════════
+yc2_w27_s03:
+  status: approved_in_progress
+  confirmed: >
+    Rohit, 2026-10-06 — "Thik hai step 3 start karo fully... Perfectly hme complete karna hai."
+  source: >
+    speedrun008/YC-II W27/STEP-03 §1–§3, re-checked claim by claim against speedrun008 @ aaca7e67
+    (STEP-03 §8) and measured on the golden set: of 86 mail objects, 33 are dropped with their
+    content gone — N-02 16, N-03 8, N-06 4, llm_junk 4, N-07 1.
+  vision: >
+    L1 never deletes a mail. A mail the noise rules or the AI filter would have dropped is ARCHIVED
+    — its encrypted payload and its prepared text kept for 180 days (06 D4), never read by a model —
+    with the rule that archived it as its reason, and every mail carries an attention tier. Nothing
+    the founder sees changes yet: an archived mail is promoted and read by STEP-05 and STEP-07.
+  order_note: >
+    C1, the vocabulary and the store, first; then the gate (C2) and the pipeline (C3); then every
+    reader of `dropped` (C4); the golden set (C5) and the production check (C6) last. Not in this
+    block, by the check: the AI filter reading the company brief and a connector list (STEP-07);
+    promotion out of archive (STEP-05); the founder's seat in the golden runner (STEP-04 — it is
+    "who is us", and measuring STEP-03 cleanly means not moving W-01 in the same block). S0
+    `out_of_scope` stays a drop: it is a scope exclusion, and no caller passes it today. An archived
+    `llm_junk` mail is re-admitted by the parked drain exactly as a dropped one was (03 F55).
+  milestones:
+    - id: M21
+      name: Nothing is deleted at the gate (STEP-03)
+      ships: >
+        On the golden set 0 of 86 mail objects are dropped: the 33 the gate dropped are archived,
+        each with its rule as the reason and its payload and prepared text stored; no must-abstain
+        case gains a card and the board does not move. In production, after the deploy, new mail
+        with its content deleted at the gate goes from 258 of 395 to 0.
+      categories:
+        - id: M21.C1
+          name: The vocabulary and the store
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M21.C1.L-contract.V0.U01
+                      what: >
+                        `0192_attention_and_archive.sql` — `source_events.attention` (deep · skim ·
+                        archive, or null for a dropped non-mail object), `attention_reason`, and
+                        `l1_sync_runs.archived`. `skim` is declared for STEP-07; this block writes
+                        deep and archive.
+                      artifact: migrations/0192_attention_and_archive.sql
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/test_migration_0192_attention_and_archive.py -q
+                      depends_on: []
+                    - id: M21.C1.L-contract.V0.U02
+                      what: >
+                        The trace's stage actions gain `archive` — the gate's verb for "kept, and
+                        not read" — so a trace can say what happened instead of `drop`.
+                      artifact: genios_engine/contracts/trace.py
+                      verify: .venv/bin/python -m pytest tests/contracts/test_archive_is_a_stage_action.py -q
+                      depends_on: []
+                    - id: M21.C1.L-contract.V0.U03
+                      what: >
+                        `capture/attention.py` — DEEP, SKIM, ARCHIVE, and `attention_for(outcome,
+                        gate)`: archived → archive with the rule's code; emitted or parked → deep with
+                        the whitelist code, the park code or the route; dropped → none.
+                      artifact: genios_engine/capture/attention.py
+                      verify: .venv/bin/python -m pytest tests/capture/test_attention.py -q
+                      depends_on: []
+            - layer: data
+              levels:
+                - level: 1
+                  units:
+                    - id: M21.C1.L-data.V1.U04
+                      what: >
+                        `capture/journey.py` — `archive` joins the actions that STOP an event, so the
+                        per-event walk and the funnel report say where an archived mail ended.
+                      artifact: genios_engine/capture/journey.py
+                      verify: .venv/bin/python -m pytest tests/capture/test_an_event_that_stopped_says_where.py tests/capture/test_why_did_i_never_see_this_one.py -q
+                      depends_on: [M21.C1.L-contract.V0.U02]
+        - id: M21.C2
+          name: The gate
+          layers:
+            - layer: logic
+              levels:
+                - level: 1
+                  units:
+                    - id: M21.C2.L-logic.V1.U01
+                      what: >
+                        `capture/gate/gate.py` — every drop a rule or the model makes on a mail
+                        (N-01…N-10 at S1, `llm_junk` at S2) becomes `archive` with its code; a
+                        whitelist still bypasses the noise rules; S0 `out_of_scope` stays a drop.
+                      artifact: genios_engine/capture/gate/gate.py
+                      verify: .venv/bin/python -m pytest tests/capture/gate/test_the_gate_never_deletes_mail.py -q
+                      depends_on: [M21.C1.L-contract.V0.U02]
+        - id: M21.C3
+          name: Keep the content
+          layers:
+            - layer: data
+              levels:
+                - level: 2
+                  units:
+                    - id: M21.C3.L-data.V2.U01
+                      what: >
+                        The repository interface and its in-memory store carry `attention` and
+                        `attention_reason` on `add`.
+                      artifact: genios_engine/capture/landing/repository.py
+                      verify: .venv/bin/python -m pytest tests/capture/test_the_repository_keeps_attention.py -q
+                      depends_on: [M21.C1.L-contract.V0.U03]
+                    - id: M21.C3.L-data.V2.U02
+                      what: >
+                        The Postgres repository writes `attention` and `attention_reason`.
+                      artifact: genios_engine/capture/landing/pg_repository.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/capture/test_the_repository_keeps_attention.py -q
+                      depends_on: [M21.C1.L-contract.V0.U01, M21.C3.L-data.V2.U01]
+            - layer: logic
+              levels:
+                - level: 3
+                  units:
+                    - id: M21.C3.L-logic.V3.U03
+                      what: >
+                        `capture/pipeline.py` — an `archive` verdict lands as outcome `archived`: its
+                        encrypted payload and its prepared text are stored for 180 days (D4), its
+                        attention and reason written, and it stops before the semantic lane — no
+                        model reads it. The emitted payload TTL goes from 30 days to 180, so `_pull`
+                        stops stranding an event not drained within a month.
+                      artifact: genios_engine/capture/pipeline.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/capture/test_an_archived_mail_keeps_its_content.py -q
+                      depends_on: [M21.C2.L-logic.V1.U01, M21.C3.L-data.V2.U01, M21.C3.L-data.V2.U02]
+        - id: M21.C4
+          name: Every reader of `dropped`
+          layers:
+            - layer: interface
+              levels:
+                - level: 4
+                  units:
+                    - id: M21.C4.L-interface.V4.U01
+                      what: >
+                        `SyncSummary.archived`, counted like every other outcome — `run_sync` raises on
+                        an outcome with no field — and carried through the backfill totals and the
+                        sync analytics event.
+                      artifact: genios_engine/capture/acquire/sync_runner.py
+                      verify: .venv/bin/python -m pytest tests/capture/test_a_sync_counts_what_it_archived.py -q
+                      depends_on: [M21.C3.L-logic.V3.U03]
+                    - id: M21.C4.L-interface.V4.U02
+                      what: >
+                        `api/routes.py` — the run ledger writes `archived` (`l1_sync_runs`), and the
+                        cross-org sync totals carry it.
+                      artifact: genios_engine/api/routes.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/test_the_run_ledger_counts_archived.py -q
+                      depends_on: [M21.C1.L-contract.V0.U01, M21.C4.L-interface.V4.U01]
+                    - id: M21.C4.L-logic.V4.U03
+                      what: >
+                        `capture/parked/drain.py` — an archived `llm_junk` mail is re-admitted exactly
+                        as a dropped one was (judged codes, payload present); a rule-archived mail is
+                        not touched.
+                      artifact: genios_engine/capture/parked/drain.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/capture/parked/test_the_drain_reads_archived_judgments.py -q
+                      depends_on: [M21.C3.L-logic.V3.U03]
+                    - id: M21.C4.L-logic.V4.U04
+                      what: >
+                        `platform/receipts.py` — "every judged drop is reviewable" asks the archived
+                        judged mail too; and a rule-archived mail must carry its payload.
+                      artifact: genios_engine/platform/receipts.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/platform/test_an_archived_mail_is_reviewable.py -q
+                      depends_on: [M21.C3.L-logic.V3.U03]
+                    - id: M21.C4.L-interface.V4.U05
+                      what: >
+                        `scripts/workstream_funnel.py` — archived mail is counted apart: kept, unread,
+                        with its rule.
+                      artifact: scripts/workstream_funnel.py
+                      verify: .venv/bin/python -m pytest tests/scripts/test_workstream_funnel.py -q
+                      depends_on: [M21.C3.L-logic.V3.U03]
+        - id: M21.C5
+          name: The golden set
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M21.C5.L-contract.V0.U01
+                      what: >
+                        `GATE_OUTCOMES` gains `archived`, so a case can say what the gate did with a
+                        mail it kept but did not read.
+                      artifact: tests/replays/founder_case.py
+                      verify: .venv/bin/python -m pytest tests/replays/test_founder_case_contract.py -q
+                      depends_on: []
+            - layer: logic
+              levels:
+                - level: 4
+                  units:
+                    - id: M21.C5.L-logic.V4.U02
+                      what: >
+                        `marking.py` — an archived must-detect mail is lost at the gate exactly as a
+                        dropped one was (unread), and the reason names the rule; the board moves only
+                        if the engine does.
+                      artifact: tests/replays/marking.py
+                      verify: .venv/bin/python -m pytest tests/replays/test_marking.py -q
+                      depends_on: [M21.C5.L-contract.V0.U01]
+            - layer: integration
+              levels:
+                - level: 5
+                  units:
+                    - id: M21.C5.L-integration.V5.U03
+                      what: >
+                        The acceptance, on the real chain: across all 40 founder cases, 0 mail objects
+                        are dropped; every object the gate dropped before is archived with the same
+                        code, with its payload and prepared text stored; no must-abstain case gains a
+                        card; `golden_score.py --assert-recorded` still matches.
+                      artifact: tests/replays/test_the_gate_deletes_nothing.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest tests/replays/test_the_gate_deletes_nothing.py -q
+                      depends_on: [M21.C3.L-logic.V3.U03, M21.C4.L-interface.V4.U01, M21.C5.L-logic.V4.U02]
+        - id: M21.C6
+          name: The production check
+          layers:
+            - layer: interface
+              levels:
+                - level: 5
+                  units:
+                    - id: M21.C6.L-interface.V5.U01
+                      what: >
+                        A pipeline_health check: no mail captured in the last 24 hours was dropped at
+                        the gate (S0 `out_of_scope` excepted) — read-only.
+                      artifact: scripts/pipeline_health.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/scripts/test_pipeline_health_no_mail_deleted.py -q
+                      depends_on: [M21.C3.L-logic.V3.U03]

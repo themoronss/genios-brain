@@ -6,6 +6,13 @@ attention tier and the reason for it.
 
 ---
 
+⚠️ **Re-checked against the code on 2026-10-06, claim by claim, and measured on the golden set** (§8).
+Every drop the draft named is real, and three more exist; two claims are wrong in production; and
+the parts that need the company brief wait for `STEP-07`. **What is being built is §8.3** — tree
+block `yc2_w27_s03`, 17 units, on Rohit's go (*"step 3 start karo fully"*).
+
+---
+
 ## 1 · What is true now
 
 | | Evidence |
@@ -76,3 +83,70 @@ An expert cannot reason over what was thrown away. The Atlas says it as a rule (
 | Keeping marketing mail longer than before | encrypted, unread by any model, expiring; D4 is yours |
 | Too much reaches `deep` and the reading bill rises | the S2 budget stays; the golden noise cases gate precision; the tier is visible per mail, so drift is measurable |
 | A connector list that grows by accident | it is a line in the brief, which you confirm (`STEP-07`) |
+
+## 8 · The check of 2026-10-06 — what the first draft got right, and wrong
+
+Every claim was re-read against `speedrun008` @ `aaca7e67` by two read-only passes, verified at the
+cited lines, and the gate was measured on the golden set (all 40 founder cases, recorded answers).
+
+### 8.1 · Measured — what the gate does to the golden set today
+
+86 mail objects across the 40 cases: **51 emitted, 2 parked, 33 dropped with their content gone** —
+`N-02` 16, `N-03` 8, `N-06` 4, `llm_junk` 4, `N-07` 1.
+
+| Where it hurts | Objects dropped | Code |
+|---|---|---|
+| Boardy's intros and nudges (F03–F09) | 13 | `N-02` (the unsubscribe header) |
+| Government portals (F01, F02, F23) | 7 | `N-06` (Promotions), `N-03` (no-reply) |
+| A bounce report (F16) | 1 | `N-03` |
+| Brief-only programme mail (F18, F21, F22) | 4 | `llm_junk`, `N-02` |
+| Newsletters, receipts, digests (F32–F34, F37) — must not become cards | 8 | `N-02`, `N-03`, `N-06`, `N-07` |
+
+**Found measuring it:** in F09 the founder had replied to Boardy and Boardy's answer was still
+dropped. `sender_known`'s sent-folder half (`api/routes.KNOWN_FROM_SENT_SQL`) counts only mail sent by
+an address in `org_seats`, and the golden tenant has no seat — so W-01 never fires on the golden set.
+In production it holds only if the seat's address is the connected mailbox; that is `STEP-04`'s
+question ("who is us"), and the runner gains a seat there.
+
+### 8.2 · The claims
+
+| Claim | Verdict |
+|---|---|
+| every noise rule is a drop | ✅ — N-01/02/03/04/06/07/08/09 each `return (code, "drop")`. ⚠️ Three more drops the draft missed: N-10 (empty body), S0 `out_of_scope`, S2 `llm_junk`. N-05 no longer drops |
+| a drop keeps no body | ✅ — only kept mail and the one judged drop (`llm_junk`) keep a payload; ⚠️ and much dropped mail never had a body to keep: the connector fetches only the list snippet for N-09/06/07/03 and confident `llm_junk` (`composio.py:454-507`) — so keeping content is a connector change too |
+| a dropped mail can never come back | ✅ for N-code drops (dedup ignores outcome; no payload). ⚠️ `llm_junk` drops DO come back: `drain_parked` flips judged drops to `emitted` on every heartbeat without re-running the gate (`capture/parked/drain.py:131-201`) |
+| the 30-day emitted TTL strands events | ✅ — `_pull` inner-joins `raw_payloads`; after the purge the row stays `emitted` and is never drained; `_pending_count` counts it forever |
+| the S2 park reason is thrown away | ❌ in production — the model's parks are `llm_junk_unconfident` and keep their reason; `low_relevance` (no reason) is reachable only with the rule-based classifier |
+| Boardy can never be an agent | ✅ — `actor_type="external_contact"` is hard-coded (`composio.py:364, 609, 696`). ⚠️ And stamping it would not be enough: only `sender_known` skips the AI filter, whose prompt still lists "automated matchmaking" as a drop class |
+| no tenant allow-list exists | ✅ — `approved_sender`, `sender_blocked` are read and written nowhere; the comment "fed by tenant config" is false |
+| the relay detector says an address introduces people | ❌ — it decides whether a From address relayed a message, and runs only after the gate (`context/pipeline.py:1101-1107`) |
+| the AI filter decides existence, blind | ✅, blinder than drafted — no company context and not even the sender's name or address in the prompt; it answers keep/drop only |
+| promotion through `STEP-05`'s re-process path | ❌ — no path selects "joined a workstream"; `find_unread` reads only `emitted` rows; `STEP-05` §3.5 is unbuilt |
+| a new outcome value is cheap | ⚠️ — `sync_runner` does `setattr(summary, outcome, …)`: an outcome with no `SyncSummary` field raises; nine readers of `dropped` (receipts, scripts, six test files) |
+
+### 8.3 · What is being built — tree block `yc2_w27_s03`, before `STEP-07`
+
+The parts that need the company brief (the AI filter reading with context; a connector list) wait for
+`STEP-07`; promotion out of archive waits for `STEP-05`; the founder's seat in the golden runner moves
+to `STEP-04` (it is "who is us", and measuring STEP-03 cleanly means not moving W-01 in the same
+block). What is built now is the whole of "never delete":
+
+| # | Unit | Where | What |
+|---|---|---|---|
+| 1 | `M21.C1.L-contract.V0.U01` | `migrations/0192_attention_and_archive.sql` | `source_events.attention` (deep · skim · archive) and `attention_reason`; `l1_sync_runs.archived` |
+| 2 | `M21.C1.L-contract.V0.U02` | `contracts/trace.py` | `archive` is a stage action |
+| 3 | `M21.C1.L-contract.V0.U03` | `capture/attention.py` | the tiers, and which one an outcome gets, with its reason |
+| 4 | `M21.C1.L-data.V1.U04` | `capture/journey.py` | `archive` stops an event — the per-event walk says where |
+| 5 | `M21.C2.L-logic.V1.U01` | `capture/gate/gate.py` | every mail drop (N-01…N-10, S2 `llm_junk`) becomes `archive` with its code; S0 `out_of_scope` stays a drop |
+| 6–7 | `M21.C3.L-data.V2.U01–U02` | `capture/landing/repository.py`, `pg_repository.py` | the attention columns written |
+| 8 | `M21.C3.L-logic.V3.U03` | `capture/pipeline.py` | an archived mail keeps its payload and prepared text for 180 days and is read by no model; the emitted TTL goes 30 → 180 days |
+| 9–13 | `M21.C4.*` | `sync_runner`, `api/routes`, `parked/drain`, `platform/receipts`, `scripts/workstream_funnel` | every reader of `dropped` learns `archived`; the drain treats an archived `llm_junk` exactly as it treated a dropped one (F55) |
+| 14–16 | `M21.C5.*` | the golden set | `archived` in the case contract; the marking; **the acceptance: 0 drops across all 40 cases** |
+| 17 | `M21.C6.L-interface.V5.U01` | `scripts/pipeline_health.py` | no mail captured in a day was dropped |
+
+**Decided here, with the reason:** S0 `out_of_scope` stays a drop — it is a scope exclusion, and no
+caller passes it today. `skim` is declared and not written: it is the tier the brief assigns
+(`STEP-07`). Parked mail is `deep` — it is waiting to be read.
+
+The production number, after the deploy: new mail with its content deleted at the gate, 258 of 395
+→ **0** (`select count(*) from source_events where org_id = :o and outcome = 'dropped' and captured_at > :deploy`).

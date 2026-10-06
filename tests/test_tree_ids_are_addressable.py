@@ -60,10 +60,10 @@ def test_the_tree_parses():
     assert yaml.safe_load(_TREE.read_text()) is not None
 
 
-def test_the_six_programme_blocks_are_present():
+def test_the_seven_programme_blocks_are_present():
     assert set(_blocks()) == {"<root>", "persona_brain_and_layer_repair",
                              "l1_signal_quality_seam", "atlas_v2_alignment", "yc2_w27",
-                             "yc2_w27_s02"}
+                             "yc2_w27_s02", "yc2_w27_s03"}
 
 
 def test_the_ycw27_block_is_the_one_this_programme_builds():
@@ -124,18 +124,19 @@ def test_the_rule_names_the_precedent_it_follows():
 # =================================================================================================
 # 4 · ⛔ a new block may not widen the collision
 # =================================================================================================
-def test_no_seventh_block_has_appeared_without_updating_this_guard():
+def test_no_eighth_block_has_appeared_without_updating_this_guard():
     """⛔ THE FORWARD HALF. Four blocks already collide and that is now documented; a new block added
     silently would collide again with nobody having decided to accept it. Adding one is fine — update
     this test on purpose, and say in the tree why the ids were chosen. The fifth, `yc2_w27`
     (2026-10-05), was added that way: numbered from M16, past every other block. The sixth,
-    `yc2_w27_s02` (2026-10-06, STEP-02), the same way: M20."""
-    assert len(_blocks()) == 6, (
+    `yc2_w27_s02` (2026-10-06, STEP-02), the same way: M20. The seventh, `yc2_w27_s03` (STEP-03),
+    again: M21."""
+    assert len(_blocks()) == 7, (
         "a programme block was added or removed — update the header note in tree.yaml and this test, "
         "deliberately")
 
 
-@pytest.mark.parametrize("block", ["yc2_w27", "yc2_w27_s02"])
+@pytest.mark.parametrize("block", ["yc2_w27", "yc2_w27_s02", "yc2_w27_s03"])
 def test_the_newest_blocks_widen_no_collision(block):
     """⛔ The reason `yc2_w27` and `yc2_w27_s02` could be added: their milestone ids appear in no other
     block. If a later edit gives one an id another block already uses, this fails before the
