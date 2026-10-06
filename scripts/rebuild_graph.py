@@ -27,7 +27,8 @@ from datetime import datetime, timezone
 from sqlalchemy import create_engine, text
 
 from genios_engine.capture.structured.registry import get_mapping
-from genios_engine.context.runner import _internal_emails, _safe_process_one
+from genios_engine.context.runner import _safe_process_one
+from genios_engine.platform.self_identity import identity_for
 from genios_engine.platform.config import get_settings
 from genios_engine.platform.wiring import make_graph_store, make_llm_client
 
@@ -134,7 +135,11 @@ def main() -> None:
     llm = make_llm_client()
 
     with eng.begin() as c:
-        internal = _internal_emails(store, org)
+        # WHO IS US, as the drain reads it (STEP-04): the addresses AND the declared domains. With
+        # the addresses alone a replay never knew our company's domain, so a rebuilt graph anchored
+        # the situations the live drain keeps out.
+        us = identity_for(store, org)
+        internal = us.addresses
         print(f"\n1) BACKUP → *_bak_{ts} (org rows only)")
         for tbl in _GRAPH_TABLES:
             c.execute(text(f"create table if not exists {tbl}_bak_{ts} as "
@@ -155,7 +160,8 @@ def main() -> None:
 
     def _one(r):
         outcome, _node, _err = _safe_process_one(
-            r, org_id=org, store=store, llm=llm, crypto_key=s.crypto_key, internal_emails=internal)
+            r, org_id=org, store=store, llm=llm, crypto_key=s.crypto_key, internal_emails=internal,
+            self_identity=us)
         return outcome
 
     with ThreadPoolExecutor(max_workers=workers) as ex:
