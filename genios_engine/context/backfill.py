@@ -73,6 +73,22 @@ def backfill_aliases(store, org_id: str) -> dict:
     return {"nodes_registered": registered, "merge_proposals_raised": proposals}
 
 
+def _is_the_product(node_type: str | None, canonical_key: str | None) -> bool:
+    """GeniOS's own mail domain (`settings.platform_domains`), as the live pipeline sees it.
+
+    `pipeline._works_at` keeps the company of a platform address out of the anchors in every event
+    (`is_platform_sender`), whoever the tenant is; the rebuild asked only who the TENANT is, so on a
+    rebuild the product's onboarding mail anchored a situation on `thegenios.com` for every tenant
+    that had not declared it — the disagreement STEP-04 removes (`yc2_w27_s04 · U22`).
+    """
+    key = str(canonical_key or "").strip().lower()
+    if node_type == "company":
+        return is_platform_sender("x@" + key)
+    if node_type in ("person", "service"):
+        return is_platform_sender(key)
+    return False
+
+
 def backfill_correlations(store, org_id: str, *, limit: int | None = None,
                           rebuild: bool = False) -> dict:
     """Group historical events into situations.
@@ -144,8 +160,9 @@ def backfill_correlations(store, org_id: str, *, limit: int | None = None,
                 "  where n.org_id = :o and n.valid_to is null "
                 "    and n.created_by_event_id is not null"
                 ") reached"), {"o": org_id}):
-            if us.is_us_node(row.node_type, row.canonical_key):
-                continue                       # one of us, or our company, never anchors
+            if us.is_us_node(row.node_type, row.canonical_key) or _is_the_product(
+                    row.node_type, row.canonical_key):
+                continue           # one of us, our company, or the product itself never anchors
             touched.setdefault(row.ev, {})[row.node_id] = row.node_type
 
     correlated = 0
