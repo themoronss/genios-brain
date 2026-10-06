@@ -88,6 +88,24 @@ def test_a_mail_dropped_at_the_gate_is_lost_at_the_gate():
     assert gate.verdict == FAIL and "dropped" in gate.reason and "N-06" in gate.reason
 
 
+def test_a_mail_archived_at_the_gate_is_lost_at_the_gate_and_says_it_was_kept():
+    """STEP-03 (`yc2_w27_s03/M21.C5.L-logic.V4.U02`): the gate archives what it used to drop. For the
+    founder nothing changes — the mail was not read, so the case is lost at the gate exactly as
+    before — but the check must name the rule and say the mail is KEPT: an archived must-detect
+    mail is the one STEP-05 can still promote, a dropped one is gone."""
+    mark = judge(_case(), _run(outcome="archived", reason="N-02", facts=0))
+    assert mark.verdict == FAIL and mark.lost_at == "gate"
+    gate = next(c for c in mark.checks if c.name == "gate:ask")
+    assert gate.verdict == FAIL and "archived:N-02" in gate.reason
+    assert "kept, read by no model" in gate.reason
+
+
+def test_a_dropped_mail_is_not_said_to_be_kept():
+    gate = next(c for c in judge(_case(), _run(outcome="dropped", reason="N-06", facts=0)).checks
+                if c.name == "gate:ask")
+    assert "kept" not in gate.reason
+
+
 def test_a_mail_kept_but_never_in_memory_is_lost_before_memory():
     mark = judge(_case(), _run(facts=0))
     assert mark.verdict == FAIL and mark.lost_at == "memory"

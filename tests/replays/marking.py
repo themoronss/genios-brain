@@ -4,7 +4,9 @@
 is about what the founder sees: the cards it expects (about whom, how many over every sweep, saying
 what), the cards it forbids, and the names and phrases no card may carry. The stage checks — what
 Layer 1 did with each object, whether it reached memory — are reported beside the verdict as
-`lost_at`, because "where was it lost" is what the next step needs; they never decide it.
+`lost_at`, because "where was it lost" is what the next step needs; they never decide it. A mail
+the gate ARCHIVED (STEP-03) is lost at the gate exactly as a dropped one was — nobody read it — and
+its check says it was kept, because an archived must-detect mail is the one STEP-05 can promote.
 
 Four verdicts:
 
@@ -151,6 +153,8 @@ def _stage_checks(case: FounderCase, run: CaseRun) -> list[Check]:
             out.append(Check(f"gate:{oid}", FAIL, "never reached the gate"))
             continue
         got = landed.outcome + (f":{landed.reason}" if landed.reason else "")
+        if landed.outcome == "archived":
+            got += " — kept, read by no model"
         ok = landed.outcome == want and (not code or landed.reason == code)
         out.append(Check(f"gate:{oid}", PASS if ok else FAIL,
                          f"{got} (expected {expected})"))
