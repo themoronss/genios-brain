@@ -21,7 +21,7 @@ from genios_engine.reason.authority import (
 from genios_engine.contracts.abstention import downgrade_to_observation, is_actionable
 from genios_engine.contracts.outcomes import interrupts, project
 from genios_engine.deliver.render import state_not_command
-from .card_builder import BUILDER_VERSION, build_draft, load_evidence_quotes
+from .card_builder import BUILDER_VERSION, SubjectIsUs, build_draft, load_evidence_quotes
 from .render import render_copy
 from .router import budget_full
 
@@ -328,6 +328,9 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
     out = {"built": 0, "refreshed": 0, "already_built": 0, "build_in_progress": 0,
            "llm": 0, "raw_slot": 0, "unrouted": 0,
            "absorbed_by_cohort": 0,
+           # A card whose subject is one of us, refused by `build_draft` (STEP-04) — zeroed so a
+           # pass that refused nothing says so.
+           "refused_subject_is_us": 0,
            "over_budget_no_push": 0,
            "not_pushed_abstained": 0, "not_pushed_reason_saturated": 0,
            "pushed": 0, "agent_pushed": 0,
@@ -349,6 +352,13 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
     # somebody, and the tenth copy carries no information the first did not.
     surfaced_by_reason: dict[str, int] = {}
     identities = _tenant_identities(graph, org_id)   # once per org, not per card
+    # WHO IS US, for the subject check (STEP-04): the identity and the tenant's own names, once per
+    # pass. A card whose subject is one of us is refused below and counted, never built.
+    try:
+        us = identity_for(graph, org_id)
+    except Exception:      # noqa: BLE001 — unreadable: nothing is refused, as before STEP-04
+        us = None
+    our_names = tuple(i for i in identities if "@" not in i)
     signals = _open_signals_without_cards(graph, org_id, eval_time)
 
     # ⛔ L2-7 · THE COLLAPSE RATIO, READ ON EVERY SWEEP. One extra grouped SELECT, no writes, and
@@ -456,8 +466,16 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
             # kinds come from the same evidence the renderer now receives, so the gate and the
             # copy are reasoning about one set of facts rather than two.
             sig = {**sig, "observations": [{"kind": q.get("kind")} for q in quotes]}
-            draft = build_draft(graph, org_id, sig, effective, eval_time,   # E0
-                                quotes=quotes)
+            try:
+                draft = build_draft(graph, org_id, sig, effective, eval_time,   # E0
+                                    quotes=quotes, us=us, our_names=our_names)
+            except SubjectIsUs as refused:
+                # Counted and said, never silent, and never the end of the pass (STEP-04).
+                out["refused_subject_is_us"] += 1
+                import logging
+
+                logging.getLogger(__name__).warning("card refused for org=%s: %s", org_id, refused)
+                continue
             copy = render_copy(                                                    # E1
                 reason_code=draft["_reason_code"], template=draft["_template"],
                 facts=draft["_facts"], slots=draft["_slots"], llm=llm,

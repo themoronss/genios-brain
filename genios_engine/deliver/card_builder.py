@@ -14,6 +14,7 @@ from genios_engine.contracts.learning_attribution import (ALL_REASONS as _WRONG_
                                                           reasons_for_layer as _reasons_for_layer)
 from .router import co_recipients_for, resolve_assignee
 from .slots import _fval, compute_slots
+from genios_engine.platform.self_identity import SelfIdentity, names_us
 
 # E0 · Card Builder (§5.10). Compose the card.v1 draft deterministically from a signal + play +
 # template — NO LLM here (that is E1). Attaches band (E2), owner (E3), the evidence chain (≥2,
@@ -624,7 +625,7 @@ def _visible_quotes(quotes, seat_id, *, store, org_id: str, co_seats=()) -> list
     return kept
 
 
-def resolved_person_name(quotes: list[dict], fallback: str) -> str:
+def resolved_person_name(quotes: list[dict], fallback: str, is_us=None) -> str:
     """The human name for a node keyed on an email address.
 
     35 of 38 person cards named an address in the headline. The real name was already extracted —
@@ -643,9 +644,17 @@ def resolved_person_name(quotes: list[dict], fallback: str) -> str:
     ⛔ Called from `build_draft`'s subject chain, LAST and only for `node_type == "person"`. On a
     company node the quotes are its people's observations, so resolving there would rename the card
     after whichever of them spoke first.
+
+    ⛔ NEVER ONE OF US (STEP-04). A `mention:person` lands on the SENDER for every person named in
+    their mail — so an investor's "Rohit, can you send your traction metrics?" put the founder's
+    name first in the investor's own quotes, and the card read "Send Mr Rohit Swerashi your
+    traction metrics". `is_us` — `platform/self_identity.names_us` over the tenant — skips such a
+    name; the next one, or the fallback, names the card.
     """
     for q in quotes:
         if q.get("kind") == "mention:person" and q.get("name"):
+            if is_us is not None and is_us(q["name"]):
+                continue
             return q["name"]
     return fallback
 
@@ -866,11 +875,24 @@ def _context_tags(node_type: str, attrs: dict, facts: dict, sources: set[str]) -
     return sorted(tags)
 
 
+class SubjectIsUs(Exception):
+    """A card whose subject is one of us is not built (STEP-04). The pipeline counts it under
+    `refused_subject_is_us` and logs the reason; the rest of the pass goes on."""
+
+
 def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
-                quotes: list[dict] | None = None) -> dict:
-    """E0 output — a complete card.v1 minus the rendered copy (E1) and persisted state."""
+                quotes: list[dict] | None = None, us: SelfIdentity | None = None,
+                our_names: tuple[str, ...] = ()) -> dict:
+    """E0 output — a complete card.v1 minus the rendered copy (E1) and persisted state.
+
+    `us` and `our_names` — who the tenant is (`platform/self_identity`) and its own names — are read
+    once per pass by the caller; without them nothing is refused and no mention is skipped."""
     node_id = signal["subject_node_id"]
     name, node_type, attrs, facts = load_node(store, org_id, node_id)
+    us = us if us is not None else SelfIdentity()
+
+    def is_us(text: str | None) -> bool:
+        return names_us(text, us, our_names)
     # A SYNTHETIC ANCHOR'S DISPLAY NAME IS NOT THE CARD'S SUBJECT.
     #
     # `context/outreach_situations.py` names its nodes "Investor A — awaiting reply" so a person
@@ -903,7 +925,14 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
     # anchors are already handled by the two facts above; extending this to them is a separate
     # decision nobody has asked for, and it is recorded in STEP-08 rather than taken here.
     name = (_fval(facts, "outreach.counterparty") or _fval(facts, "commitment.owed_to")
-            or (resolved_person_name(quotes or [], name) if node_type == "person" else name))
+            or (resolved_person_name(quotes or [], name, is_us) if node_type == "person" else name))
+    # ⛔ WE ARE NEVER A CARD'S SUBJECT (STEP-04). A card's subject is the counterparty, always; one
+    # about the tenant tells the founder to act on himself. Whatever chain produced the name — a
+    # fact, an observation, the node's own label — a subject that is one of us is refused here,
+    # with its reason, not printed. `7075014c` still holds: our own words may GROUND a
+    # `dependency_stated` card (`_GROUNDED_BY_OUR_OWN_WORDS`); we are never the one it is about.
+    if is_us(name):
+        raise SubjectIsUs(f"signal {signal.get('signal_id')}: the subject {name!r} is one of us")
     sources = _real_sources(store, org_id, node_id)
     reason_code = signal["reason_code"]
     _lane = describe_lane(signal.get("output_lane"), signal.get("lane_reason"))

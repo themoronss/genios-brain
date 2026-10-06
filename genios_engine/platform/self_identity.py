@@ -81,6 +81,36 @@ class SelfIdentity:
         return kind == "tenant"
 
 
+def names_us(text: str | None, us: SelfIdentity, names: Iterable[str | None] = ()) -> bool:
+    """Whether a SUBJECT written as text — a card's `business_subject`, a thread label's who — is
+    one of us.
+
+    An address in it is asked of `us` (`is_us`), a bare domain of `us.is_us_domain`; a name of ours
+    — the founder's full name, the company's name, the display name of a node of ours — matches as
+    whole words when it has two words or more ("Mr Rohit Swerashi" holds "Rohit Swerashi"), and
+    only exactly when it is one word, so a one-word company name cannot claim every subject that
+    contains it, and a first name alone claims nothing ("Rohit Sharma" is somebody else).
+    """
+    import re
+
+    value = " ".join(str(text or "").split()).lower()
+    if not value:
+        return False
+    tokens = re.findall(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+|[a-z0-9-]+(?:\.[a-z0-9-]+)+", value)
+    if any(us.is_us(t) if "@" in t else us.is_us_domain(t) for t in tokens):
+        return True
+    for raw in names:
+        name = " ".join(str(raw or "").split()).lower()
+        if len(name) < 3 or "@" in name:
+            continue
+        if " " in name:
+            if re.search(rf"(?<![0-9a-z]){re.escape(name)}(?![0-9a-z])", value):
+                return True
+        elif value == name:
+            return True
+    return False
+
+
 def identity_sql(org: str = ":o") -> str:
     """The four sources of who `org` is, as ONE union of `(kind, value)` rows — the only place the
     engine names them. `org` is the SQL expression for the tenant: `:o` for one tenant
