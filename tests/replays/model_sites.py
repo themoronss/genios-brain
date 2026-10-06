@@ -1,11 +1,11 @@
 """Every model site the engine has, and what a golden run does with it.
 
-`speedrun008/YC-II W27/STEP-01-NEXT-the-golden-set.md` §3.2. A golden case runs the real chain
-with the model's answers recorded. That is only honest if every site the chain can reach is
-handed the RECORDED model — a site that quietly built its own client would, in a test process
-with no key, return nothing and skip itself, and the case would be judged on a chain production
-does not run. The junk filter is the sharpest instance: with no key (the tests' default) it never
-runs, so a mail production junked would pass.
+`speedrun008/YC-II W27/STEP-01-PENDING-owner-rohit-and-harsh-the-golden-set.md` §3.2. A golden case
+runs the real chain with the model's answers recorded. That is only honest if every site the chain
+can reach is handed the RECORDED model — a site that quietly built its own client would, in a test
+process with no key, return nothing and skip itself, and the case would be judged on a chain
+production does not run. The junk filter is the sharpest instance: with no key (the tests' default)
+it never runs, so a mail production junked would pass.
 
 So the register below is held equal to `tests/test_every_llm_call_site_is_metered._SITES` — the
 complete list of modules that invoke a model — in both directions. A new site cannot run in a

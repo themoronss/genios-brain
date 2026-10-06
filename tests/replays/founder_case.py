@@ -1,9 +1,9 @@
 """The founder case — STEP-01's second exam, as a type, a loader, and the report a run of it makes.
 
-`speedrun008/YC-II W27/STEP-01-NEXT-the-golden-set.md` §3.1. The twelve Atlas replays
-(`harness.py`) are specifications of decisions; a founder case is an INPUT the real chain is run
-on: the founder's mail and calendar as the providers would hand them over, the instants the
-sweeps run at, and what a correct GeniOS shows after each sweep — and must never show.
+`speedrun008/YC-II W27/STEP-01-PENDING-owner-rohit-and-harsh-the-golden-set.md` §3.1. The twelve
+Atlas replays (`harness.py`) are specifications of decisions; a founder case is an INPUT the real
+chain is run on: the founder's mail and calendar as the providers would hand them over, the instants
+the sweeps run at, and what a correct GeniOS shows after each sweep — and must never show.
 
 **Synthetic, always.** A case is modelled on a real item by sender and date only
 (`golden-labels.md`); every name, address and line of text in it is invented. `REAL_NAMES` is the

@@ -5,7 +5,7 @@
     GENIOS_TEST_DATABASE_URL=… GENIOS_GOLDEN_LIVE_KEY=sk-… python scripts/golden_eval.py \\
         --live --model claude-haiku-4-5-20251001 --spend-ok [--record] [F03 …]
 
-`speedrun008/YC-II W27/STEP-01-NEXT-the-golden-set.md` §3.9.
+`speedrun008/YC-II W27/STEP-01-PENDING-owner-rohit-and-harsh-the-golden-set.md` §3.9.
 
   --dry-run   Reads the cases and their cassettes and prints, per case, what wrote the cassette,
               how many model calls it holds, and what replaying them against a live model would

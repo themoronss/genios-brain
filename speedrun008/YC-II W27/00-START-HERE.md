@@ -1,6 +1,6 @@
 # 00 · Start here — the steps, their order, their owners
 
-**Written for:** everyone. **Status as of:** 2026-10-05. Read `04` and `05` first if you have not
+**Written for:** everyone. **Status as of:** 2026-10-06. Read `04` and `05` first if you have not
 — this page assumes you know *why*.
 
 ---
@@ -31,7 +31,7 @@ flip-flopping and most of the model spend disappears — and it depends on nothi
 | Step | Status | Owner | What it does | The number that must move |
 |---|---|---|---|---|
 | [`STEP-00`](STEP-00-PENDING-owner-rohit-and-harsh-one-branch.md) | **PENDING** | Rohit (push, batched) · Harsh (deploy) | one branch, one measured baseline — ✅ merged; both suites run, every failure attributed; production baseline committed with its SQL (5 Oct) | `harsh/mvp` vs `speedrun008`: 13 / 28 → 0 / N ✅ · pushed ⏳ batched · deployed ⏳ |
-| [`STEP-01`](STEP-01-NEXT-the-golden-set.md) | **NEXT** — after `yc2_w27` M16–M18 | Claude · Rohit labels | your mailbox becomes the exam: ~50 must-detect / must-abstain cases, a replay scorer | a measured before-score |
+| [`STEP-01`](STEP-01-PENDING-owner-rohit-and-harsh-the-golden-set.md) | **PENDING** | Rohit (push, batched; labels) · Harsh (deploy) | your mailbox becomes the exam — ✅ 40 founder cases and the Atlas replays 01–07 driven through the real chain on Postgres; the before-score committed (6 Oct) | a measured before-score ✅ must-detect 4/30 · must-abstain 5/10 · forbidden outputs 4 · Atlas 0/80 · pushed ⏳ batched · `golden-pg` ⏳ first push |
 | [`STEP-02`](STEP-02-TO-BUILD-the-change-gate.md) | TO BUILD | Claude | no new evidence → no new decision, zero model calls | `l4_llm_decision` ~870/day → < 50; cards stop flipping |
 | [`STEP-03`](STEP-03-TO-BUILD-the-gate-keeps-everything.md) | TO BUILD | Claude | the gate sets attention, never deletes | mails with content deleted: 258 → 0 |
 | [`STEP-04`](STEP-04-TO-BUILD-who-is-us.md) | TO BUILD | Claude · Rohit (D6) | one answer to "who is us", used everywhere | cards with you as the subject: ≥ 3 → 0 |
@@ -71,21 +71,31 @@ flip-flopping and most of the model spend disappears — and it depends on nothi
 
 *"Database ka part, B1, B17, B18, B19, aur phir step 01 golden set — perfectly align karo."* Every
 item was root-caused against the code on scratch databases before it became a unit. The block is in
-`tree.yaml` as `yc2_w27` — 43 units, each with one artifact and one verify command — and it is
-**proposed, awaiting Rohit's go**.
+`tree.yaml` as `yc2_w27` — proposed with 43 units, each with one artifact and one verify command.
 
-| # | Milestone | What it ships | Units |
-|---|---|---|---|
-| 1 | `M16` the database suite is green | 50 failed → 0. 27 are one live bug (B2, the edge vocabulary). The other 23 are test-side: a script, three expiring test clocks, six outgrown fixtures, two text guards. No engine change outside B2 | 16 |
-| 2 | `M17` nothing captured is lost silently | B17 — the funnel writes its zeros, in every lane. B18 — a failed extraction is read again; first, a fingerprint claimed by an event that is gone stops blocking its re-landed copy (that also fixes B20). B19 — Gmail attachments are fetched; Harsh records one live response shape first | 10 |
-| 3 | `M18` calibration runs, and only proposes | B1 — the shadow switch lands before the one-line fix, because the fix alone arms unattended muting (`06` D13) | 5 |
-| 4 | `M19` the golden set drives the engine | `STEP-01`, rewritten from its claim-by-claim check: `finalize_l1`, one clock, recorded model answers, a witness for every must-abstain case | 12 |
+✅ **Built on Rohit's go of 2026-10-05** (*"go start karo, best tareeke se karke complete karo"*):
+**53 units — 51 green, 1 retired, 1 blocked.** Where contact with the code showed a gap, the build
+drew a new unit rather than widening an old one; each is in `tree.yaml`.
+
+| # | Milestone | What it ships | Units proposed | Built |
+|---|---|---|---|---|
+| 1 | `M16` the database suite is green | 50 failed → 0. 27 are one live bug (B2, the edge vocabulary). The other 23 are test-side: a script, three expiring test clocks, six outgrown fixtures, two text guards. No engine change outside B2 | 16 | ✅ 18 of 18 — 16,736 passed, 0 failed (`baseline/m16-green/`) |
+| 2 | `M17` nothing captured is lost silently | B17 — the funnel writes its zeros, in every lane. B18 — a failed extraction is read again; first, a fingerprint claimed by an event that is gone stops blocking its re-landed copy (that also fixes B20). B19 — Gmail attachments are fetched; Harsh records one live response shape first | 10 | ✅ 10 green · 1 retired · ⛔ 1 blocked: `M17.C3.L-integration.V2.U04`, pinning the Composio toolkits, needs the SDK the production image runs — Harsh |
+| 3 | `M18` calibration runs, and only proposes | B1 — the shadow switch lands before the one-line fix, because the fix alone arms unattended muting (`06` D13) | 5 | ✅ 5 of 5 — it completes on Postgres and mutes nothing until a tenant is armed |
+| 4 | `M19` the golden set drives the engine | `STEP-01`, rewritten from its claim-by-claim check: `finalize_l1`, one clock, recorded model answers, a witness for every must-abstain case | 12 | ✅ 18 of 18 — the before-score, `03` §F.1 |
 
 Every milestone after `M16` depends on it, because its verify runs on the scratch database.
 `M17`, `M18` and `M19` do not depend on each other; Rohit's order sequences them. The critical path
 is 8 units (`M16.C1` → `M16.C6` → `M18`).
 
-Nothing here is pushed. Rohit pushes the batch (`06` D10).
+Nothing here is pushed. Rohit pushes the batch (`06` D10). **After the deploy** (Harsh):
+
+1. re-queue the attachments the `file_name` refusal dead-lettered —
+   `scripts/requeue_refused_attachments.py --org <org> --database-url … --apply`, run only once the
+   connector fix is live (before it, every row is refused five more times);
+2. read the first `refetch_last_error` that comes back — the connector now names the shape of a
+   response it cannot read (`STEP-18` B19);
+3. pin the Composio toolkits — `M17.C3.L-integration.V2.U04`.
 
 ## Where this meets the other work
 

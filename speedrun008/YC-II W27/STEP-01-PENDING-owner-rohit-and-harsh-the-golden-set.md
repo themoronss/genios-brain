@@ -1,4 +1,4 @@
-# STEP-01 · NEXT · the golden set — your mailbox becomes the exam
+# STEP-01 · PENDING — owner: Rohit (push, batched; labels) and Harsh (deploy) · the golden set — your mailbox becomes the exam
 
 **Owner:** Claude builds · Rohit labels (`06-DECISIONS.md` D12). **Depends on:** the database suite
 green — tree `yc2_w27/M16`: the runner runs on Postgres, and on a red suite no case's verify can be
@@ -8,6 +8,24 @@ against it.
 
 ⚠️ **Re-checked against the code on 2026-10-05, claim by claim** (§9). The runner described in the
 first draft would have flattered the engine; §3 is rewritten from what the check found.
+
+✅ **Everything that is Claude's is done** — 2026-10-06, tree `yc2_w27/M19`, all 18 units green (§10):
+
+- 40 synthetic founder cases, each with its cassette, replayed through the real chain on Postgres
+  and marked; each of the 23 that cannot pass yet is a strict xfail that names its gap;
+- the Atlas replays 01–07 judged on the engine's output, no longer on their own strings;
+- the board (`scripts/golden_score.py`), the live evaluation (`scripts/golden_eval.py` — not run,
+  `06` D12c) and a `golden-pg` CI job;
+- the before-score in `03-FINDINGS.md` §F.1, which `golden_score.py --assert-recorded` holds every
+  later run to.
+
+⏳ **What is left, and whose:**
+
+- **Rohit** — push the batch (`06` D10). The `golden-pg` job runs for the first time on that push.
+- **Rohit** — the forty labels are mine, every row marked as mine (`06` D12a, the default). Correct
+  any row of `golden-labels.md`: a changed row fails `tests/replays/test_founder_cases.py` until its
+  case is rewritten to match, so a label can never silently disagree with its case.
+- **Harsh** — deploy. Three engine fixes the golden set found (§10) ship with the batch.
 
 ---
 
@@ -124,11 +142,35 @@ atlas replays 01–07    passing      __/80    blocked       __/80    not expres
 The blanks are filled by this step's run. They are the **before** numbers. Every later step file
 quotes this board before and after, and none is DONE while its target rows have not moved.
 
+✅ **Filled 2026-10-06** — measured at `7caed608` and recorded in `03-FINDINGS.md` §F.1, where it is
+explained case by case:
+
+```
+founder golden set   must-detect  4/30 (8 not expressible)   must-abstain  5/10 (2 not exercised)   forbidden outputs  4
+atlas replays 01–07  passing  0/80   blocked  7/80   not expressible  73
+must-detect cases lost at:  gate 5  memory 9  reasoning 3
+```
+
+The board gained two counts this plan did not have, both so that nothing passes on nothing: a
+must-detect case that cannot be judged yet (a *brief only* answer before `STEP-15`, the screen door)
+is counted apart, not as a pass or a fail; and a must-abstain case whose witness never reached the
+decision it is about is **not exercised** — not a pass.
+
 ## 6 · Expected
 
 - ≥ 40 founder specs committed, each with `expected` and `forbidden`.
 - The before-score written into `03-FINDINGS.md` §F, with the commit it was measured at.
 - `golden-labels.md` filled in by you — or by me, every row marked as mine.
+
+**What happened (2026-10-06):**
+
+- ✅ 40 specs, `tests/replays/specs/founder/F01–F40.json`, each with the cards it expects and a
+  witness for every must-abstain case. ⚠️ 23 of the 40 forbid nothing (`forbidden` is empty), so
+  their verdict rests on the expected cards alone — a follow-up, §10.
+- ✅ the before-score in `03-FINDINGS.md` §F.1, measured at `7caed608` from cassettes recorded at
+  `b47239c9`.
+- ✅ `golden-labels.md` labelled by me, all 40 rows marked `claude` (22 *yes*, 8 *brief only*,
+  10 *no*) — the D12a default, until you correct them.
 
 ## 7 · Verify
 
@@ -141,6 +183,17 @@ GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/g
 
 The runner refuses to start without a scratch database — a golden set that skips is the
 *"a pass over an empty table"* defect this repository already paid for once.
+
+As built, the `golden-pg` CI job runs exactly this, with the skip turned into a failure:
+
+```
+GENIOS_TEST_DATABASE_URL=… GENIOS_GOLDEN_REQUIRED=1 \
+  .venv/bin/python -m pytest -q tests/replays tests/test_golden_labels_sheet.py
+GENIOS_TEST_DATABASE_URL=… .venv/bin/python scripts/golden_score.py \
+  --assert-recorded "speedrun008/YC-II W27/03-FINDINGS.md"     # exit 1 if the board moved unrecorded
+```
+
+and the hermetic job leaves the set out: `pytest -q -m "not golden"`.
 
 ## 8 · Risks
 
@@ -174,3 +227,76 @@ is fixed — that is what a before-score is for:
 - **F14** (Boardy can never be an agent sender) and the N-02 drop on its unsubscribe header: 3–9, 37;
 - **B2** and **B19** are fixed before this step (`yc2_w27/M16`, `M17`); before those fixes they would
   have blocked 10–15 and 25–29, and 17, 22, 24 and 25 `[inference]`.
+
+## 10 · Built — 2026-10-06 (`yc2_w27/M19`, 18 units green)
+
+**How to run it.**
+
+```
+export GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test
+GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest tests/replays -q   # the set — it never skips
+.venv/bin/python scripts/golden_score.py                               # the board
+.venv/bin/python scripts/golden_eval.py --dry-run     # what one live pass would cost; no database
+.venv/bin/python scripts/golden_eval.py --record F07  # re-record a case's cassette after a prompt change
+```
+
+`--dry-run` today: 288 model calls, 493,738 tokens in, 27,638 out — **≈ $0.63** for one live pass
+on Haiku 4.5 at list price (the token counts are the ideal reader's estimates).
+
+**What each piece is.**
+
+| Piece | Where |
+|---|---|
+| a case: provider-shaped mail and calendar, the sweep instants, what must and must never show, a witness, the declared gaps | `tests/replays/founder_case.py`; the 40 in `tests/replays/specs/founder/` |
+| the recorded model, keyed by the prompt's hash — fence nonces and minted ids normalised, nothing else | `tests/replays/harness.py` |
+| every model site, recorded or off with its reason, held equal to `_SITES` | `tests/replays/model_sites.py` |
+| the ideal reader that wrote the cassettes — a faithful reading of each prompt as written | `tests/replays/ideal_reader.py` |
+| a case's cassette: written once, replayed exactly, never carrying a real name | `tests/replays/cassettes.py`; `tests/replays/specs/founder/cassettes/` |
+| the runner — the production sync door, `finalize_l1`, `_run_l2_chain` at the case's instants, the model doors, a pinned world, the tenant removed on every exit | `tests/replays/engine_runner.py` |
+| the marking — pass, fail, not exercised, not expressible; and where a case was lost | `tests/replays/marking.py` |
+| the Atlas mutations a case drives, and why the rest cannot be driven yet | `tests/replays/atlas_expression.py` |
+| CI | the `golden-pg` job in `.github/workflows/ci.yml` — it first runs when you push the batch |
+
+**What the numbers judge.** The ENGINE, given a faithful reader of every prompt — not the model.
+Where production's model went wrong (it junked the real investor mails; it wrote *"Send Mr Rohit
+Swerashi…"*), a case passes or fails here on the engine alone. The model's half is
+`golden_eval.py --live` — your call (`06` D12c).
+
+**What the build found, and fixed on the way** — each a unit of `yc2_w27/M19.C3`:
+
+- the narrator was asked two different questions about one situation on identical runs — the
+  quotes of one message and the card's facts came back in a different order (`03` F39;
+  `M19.C3.L-logic.V1.U02`, `V1.U03`);
+- a statement nobody could resolve was anchored on a person chosen by random node id — on the
+  founder's own sent mail, the founder, shown as the counterparty of the founder's own words
+  (`03` F40; `M19.C3.L-logic.V1.U04`).
+
+**What it found and left for its step** (`03-FINDINGS.md` F38, F41–F49): the floor (2,500) is where
+the founder set dies — 9 of the 18 failing must-detect cases are lost before memory, every one at
+the floor; a paid relevance call on every calendar event; the domain proposer wired nowhere; L2's
+fixpoint not converging on 3 cases; evidence that quotes the sender's name; accelerators framed as
+investors; a follow-through narrator told a meeting happened; one ask making several cards; and the
+engine's own nondeterminism, which the runner pins and `STEP-17` must remove.
+
+**Added in build** (each in `tree.yaml`): `M19.C1.L-logic.V1.U04` the ideal reader, `V1.U05` the
+marking, `M19.C4.L-data.V2.U04` the cassette file, `M19.C3.L-logic.V1.U02–U04` the three engine
+fixes.
+
+**Follow-ups — proposed, not yet units.** Found by the crosscheck of the build; none blocks the push.
+
+| | What | Proposed |
+|---|---|---|
+| a | the set drives the 6-hourly sweep door only. The first-connect door (`api/routes._process_and_reason_unlocked`) is a second chain with its own order, and no case runs it | a runner mode for it — `yc2_w27/M19.C3.L-integration.V3.U05` |
+| b | 23 of the 40 cases forbid nothing, so their verdict rests on the expected cards alone | a forbidden list per case (the founder as the person to reply to, a payment nobody stated) — `yc2_w27/M19.C4.L-data.V3.U06` |
+| c | the forbidden phrase *happened* is matched as a substring: a card saying *"nothing happened"* would trip it | match the forbidden claim, not the word |
+| d | the engine's own nondeterminism (`03` F38, F41) is pinned by the runner, not removed | `STEP-17`; its probe is every case run twice unpinned, prompts compared |
+
+**Unknowns.**
+
+- Production's `GENIOS_L4_LLM_DECISION_MAKER` today. The runner switches the decider on, as
+  `speedrun008/YCW27/STATUS.md` records production; `YCW27` decision R1
+  (`19-PENDING-who-owns-what.md`) recommended `false`. If production runs it off, the golden set
+  runs a decider production does not — one look at the deploy's environment (Rohit or Harsh).
+- Whether `golden-pg` is green on GitHub — Python 3.12 there, against cassettes recorded on 3.13.
+  Known at the first push.
+- What the real model answers to these prompts — the live evaluation, not run (D12c).

@@ -16,8 +16,8 @@ default holds, and the step that depends on it says so in its own file.
 | **D9** | Where and when the morning brief arrives | **Dashboard, 08:00 IST** | `STEP-15` |
 | **D10** | One branch before building | ✅ **Merged 2026-10-05, on your instruction.** You push the whole batch at once, later; Harsh deploys after | `STEP-00` |
 | **D11** | The current per-sweep LLM Decision Maker until the expert replaces it | **Keep it, behind the change gate** | `STEP-02` |
-| **D12** | Ten minutes of labels for the golden set | **Yes** | `STEP-01` |
-| **D13** | Once calibration runs again, may it mute a rule or move a threshold on your account without your approval? | **No** — shadow: it logs what it would do; you arm it per tenant, after `STEP-18` B22–B24 | `yc2_w27/M18` (shadow, not blocked) · arming |
+| **D12** | Ten minutes of labels for the golden set | **Yes** — ⏳ until you answer, the defaults hold: applied 2026-10-06 | `STEP-01` (built on the defaults; not blocked) |
+| **D13** | Once calibration runs again, may it mute a rule or move a threshold on your account without your approval? | **No** — shadow: it logs what it would do; you arm it per tenant, after `STEP-18` B22–B24 | `yc2_w27/M18` (shadow — ✅ built 2026-10-06, not deployed) · arming ⏳ |
 
 ---
 
@@ -160,6 +160,19 @@ default, so none blocks the build:
 | d | Score *"in the morning brief only"* as not expressible until `STEP-15` builds the brief? | yes |
 | e | May a case file carry a production `event_id` (an opaque id, no content)? | no — synthetic ids only |
 
+✅ **The defaults were applied on 2026-10-06, when `STEP-01` was built** — every one can still be
+changed, and nothing waits on it:
+
+- **a** — all 40 rows of `golden-labels.md` carry my answer and say `claude` (22 *yes*, 8 *brief
+  only*, 10 *no*). Change a row and its case must follow: `tests/replays/test_founder_cases.py`
+  fails until it does.
+- **b** — each row is a sender and a date; no subject, no text.
+- **c** — no spend. All 40 cassettes say `ideal_reader`: a faithful reading of each prompt, written
+  by me. One live pass would cost **≈ $0.63** on Haiku 4.5 at list price (288 calls,
+  `scripts/golden_eval.py --dry-run`); it runs only with a key and `--spend-ok`.
+- **d** — the 8 *brief only* rows are counted *not expressible* until `STEP-15`.
+- **e** — synthetic ids only.
+
 ## D13 · Once calibration runs again, may it mute or move a threshold without you?
 
 **What it is.** The weekly calibration (`feedback/calibrate.py`) scores each rule from your "wrong"
@@ -181,3 +194,8 @@ B22–B24):
 | B · Let it apply | not before B22–B24 are fixed |
 
 **Default:** A.
+
+✅ **A is built** (`yc2_w27/M18`, `184269a0`, 2026-10-06; not yet deployed): calibration completes on
+Postgres and records what it would mute or nudge; it applies nothing unless `calibration_apply` is
+switched on for a tenant, and that switch is on for no one by default. ⏳ **Your decision** is
+only the arming — per tenant, and not before `STEP-18` B22–B24.

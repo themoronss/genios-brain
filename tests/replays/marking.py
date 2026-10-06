@@ -1,10 +1,10 @@
 """How a founder case is marked — one rule, read by the founder test and by the board.
 
-`speedrun008/YC-II W27/STEP-01-NEXT-the-golden-set.md` §5. A case's VERDICT is about what the
-founder sees: the cards it expects (about whom, how many over every sweep, saying what), the cards
-it forbids, and the names and phrases no card may carry. The stage checks — what Layer 1 did with
-each object, whether it reached memory — are reported beside the verdict as `lost_at`, because
-"where was it lost" is what the next step needs; they never decide it.
+`speedrun008/YC-II W27/STEP-01-PENDING-owner-rohit-and-harsh-the-golden-set.md` §5. A case's VERDICT
+is about what the founder sees: the cards it expects (about whom, how many over every sweep, saying
+what), the cards it forbids, and the names and phrases no card may carry. The stage checks — what
+Layer 1 did with each object, whether it reached memory — are reported beside the verdict as
+`lost_at`, because "where was it lost" is what the next step needs; they never decide it.
 
 Four verdicts:
 

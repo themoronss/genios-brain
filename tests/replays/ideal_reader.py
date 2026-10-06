@@ -1,10 +1,11 @@
 """The ideal reader — a founder case's answers, served to the real prompts so they can be recorded.
 
-`speedrun008/YC-II W27/STEP-01-NEXT-the-golden-set.md` §3.2. A golden case is replayed with the
-model's answers recorded (`harness.RecordedLLM`). Something has to give those answers the first
-time, and spend on the live model is the founder's call (`06-DECISIONS.md` D12). So each case
-writes them down — per object in `read`, per situation in `model` — and this reader serves them to
-the prompts the real chain builds, through `harness.CassetteRecorder`, into the case's cassette.
+`speedrun008/YC-II W27/STEP-01-PENDING-owner-rohit-and-harsh-the-golden-set.md` §3.2. A golden case
+is replayed with the model's answers recorded (`harness.RecordedLLM`). Something has to give those
+answers the first time, and spend on the live model is the founder's call (`06-DECISIONS.md` D12).
+So each case writes them down — per object in `read`, per situation in `model` — and this reader
+serves them to the prompts the real chain builds, through `harness.CassetteRecorder`, into the
+case's cassette.
 
 **What an answer is.** What a faithful model answers to the prompt AS WRITTEN, given the case's
 synthetic text — never the answer the founder wishes the model gave. A prompt that tells the junk

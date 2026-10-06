@@ -2513,7 +2513,10 @@ atlas_v2_alignment:
 # (M16.C4.U05, M16.C5.U02): never build those in parallel.
 # ═════════════════════════════════════════════════════════════════════════════════════════════
 yc2_w27:
-  status: proposed_awaiting_confirmation
+  status: approved_in_progress
+  confirmed: >
+    Rohit, 2026-10-05 — "Go Bhojli ke go start karo, best tareeke se karke complete karo." Built
+    2026-10-05/06, local commits only; Rohit pushes the batch (06-DECISIONS D10).
   source: >
     speedrun008/YC-II W27/ — STEP-00 §4.2 (the database suite), STEP-18 B1/B2/B17/B18/B19, STEP-01;
     the root causes measured on 2026-10-05 against speedrun008 @ e96787d8 and a scratch Postgres 17.
