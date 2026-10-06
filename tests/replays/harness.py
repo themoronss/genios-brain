@@ -61,15 +61,25 @@ class NoLLM:
 # once, into a cassette, and replayed by the prompt's own hash.
 
 #: A recorded answer is found by the hash of the prompt it answered, after removing only what the
-#: engine mints at random for every call. Today that is one thing: the injection fence's nonce
-#: (`capture/semantic/injection.fence` — 64 fresh bits per prompt, by design). Anything added here
-#: must be minted per call, never content: a rule that forgave content would let a changed prompt
-#: replay an old answer, which is the stale cassette this key exists to catch.
+#: engine mints at random. Two things, both measured by running one case twice and diffing every
+#: prompt:
+#:
+#:   * the injection fence's nonce (`capture/semantic/injection.fence` — 64 fresh bits per prompt,
+#:     by design);
+#:   * an id `platform/ids.new_id` minted for this run — `sit_<24 hex>` and the like. The
+#:     resolution prompt names its situation by one, and a fresh tenant mints a fresh one.
+#:
+#: Ids are RENUMBERED, not erased: each distinct id becomes `<prefix>_#<n>` in order of first
+#: appearance, so a prompt about two situations never reads the same as one about one situation
+#: twice. Anything added here must be minted, never content: a rule that forgave content would let
+#: a changed prompt replay an old answer, which is the stale cassette this key exists to catch.
 _VOLATILE: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(rf"{re.escape(_inj.FENCE_LEAD)}({_inj.OPEN_LABEL}|{_inj.CLOSE_LABEL})_"
                 rf"[0-9a-f]{{{_inj.NONCE_CHARS}}}{re.escape(_inj.FENCE_TAIL)}"),
      rf"{_inj.FENCE_LEAD}\1_{'0' * _inj.NONCE_CHARS}{_inj.FENCE_TAIL}"),
 )
+#: `new_id(prefix)` = `<prefix>_` + 24 hex characters (`platform/ids.py`).
+_MINTED_ID = re.compile(r"(?<![0-9A-Za-z_])([a-z]+)_([0-9a-f]{24})(?![0-9A-Za-z])")
 
 #: How a prompt says which model site wrote it: (site, module under `genios_engine/`, the phrase
 #: its prompt opens with). `test_recorded_llm` holds each phrase to its module, so a reworded
@@ -105,10 +115,20 @@ SITE_MARKERS: tuple[tuple[str, str, str], ...] = (
 
 
 def normalise_prompt(prompt: str) -> str:
-    """The prompt with every per-call random token replaced by a fixed one (`_VOLATILE`)."""
+    """The prompt with every random token replaced by a fixed one (`_VOLATILE`) and every minted
+    id renumbered in order of first appearance (`_MINTED_ID`)."""
     for pattern, replacement in _VOLATILE:
         prompt = pattern.sub(replacement, prompt)
-    return prompt
+    seen: dict[str, str] = {}
+
+    def renumber(match: re.Match[str]) -> str:
+        token = match.group(0)
+        if token not in seen:
+            prefix = match.group(1)
+            seen[token] = f"{prefix}_#{sum(1 for t in seen if t.startswith(prefix + '_')) + 1}"
+        return seen[token]
+
+    return _MINTED_ID.sub(renumber, prompt)
 
 
 def cassette_key(prompt: str) -> str:

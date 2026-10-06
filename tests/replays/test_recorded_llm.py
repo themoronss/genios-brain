@@ -58,6 +58,17 @@ def test_the_fence_nonce_is_the_only_thing_the_key_forgives():
     assert "0123456789abcdef" not in normalise_prompt(a)
 
 
+def test_a_minted_id_is_renumbered_never_erased():
+    """A fresh tenant mints a fresh `sit_…` for the same situation; two situations stay two."""
+    a1, a2, b1 = ("sit_" + c * 24 for c in "abc")
+    one = f"SITUATION SUBJECT: situation {a1}\n- situation: {a1}\n"
+    same = f"SITUATION SUBJECT: situation {a2}\n- situation: {a2}\n"
+    two = f"SITUATION SUBJECT: situation {a1}\n- situation: {b1}\n"
+    assert cassette_key(one) == cassette_key(same)
+    assert cassette_key(one) != cassette_key(two)
+    assert normalise_prompt(two).endswith("situation: sit_#2\n")
+
+
 def test_the_key_is_the_engines_own_hash_of_the_normalised_prompt():
     from genios_engine.context.llm.client import LLMClient
     prompt = _prompt("x", "0123456789abcdef")
