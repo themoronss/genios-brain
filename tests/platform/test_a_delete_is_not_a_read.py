@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 2_941, (
+    assert r["statements"] == 2_944, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -250,6 +250,9 @@ def test_the_statement_count_did_NOT_move():
     # (U25, `_seat_emails`), +1 `platform/self_identity` (C6.U03: the union became `identity_sql`, an
     # f-string the template walk counts at two prefixes), ±0 `platform/receipts` (its literal now
     # embeds `identity_sql("c.org_id")` instead of restating the sources).
+    # ⛔ MOVED 2,941 → 2,944 by yc2_w27_s04/M22.C6.L-interface.V3.U01: `scripts/pipeline_health.
+    # check_we_are_never_the_subject` — the org's names, its open cards, its thread labels. Three
+    # SELECTs, each a literal at its own call (measured per file: 16 → 19).
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

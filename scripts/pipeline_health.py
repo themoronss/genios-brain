@@ -31,7 +31,7 @@ from dataclasses import dataclass, field
 
 sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parents[1]))
 
-from genios_engine.platform.self_identity import identity_for          # noqa: E402
+from genios_engine.platform.self_identity import identity_for, names_us  # noqa: E402
 from scripts._db import add_database_argument, resolve_database_url   # noqa: E402
 from scripts._gate import read_only_connection, sql                   # noqa: E402
 
@@ -168,7 +168,9 @@ def check_the_known_sender_set_is_not_empty(conn, org: str) -> Check:
         ok=known > 0,
         measured=f"{known} known counterparties from {outbound} outbound events",
         expected=">0 — an empty set turns W-01 off and hands the N-codes the whole mailbox",
-        fix="check org_seats carries the mailbox owner's address; the whitelist reads it",
+        fix=("check `platform/self_identity.identity_for` holds the mailbox owner's address — a "
+             "seat, `orgs.email`, a connected account or a declaration "
+             "(`scripts/declare_self_identity.py`); the whitelist reads exactly that"),
     )
 
 
@@ -295,6 +297,48 @@ def check_nothing_was_deleted_at_the_gate(conn, org: str) -> Check:
         detail=[f"{r.code}: {int(r.n)} deleted" for r in rows])
 
 
+#: `CardStore.OPEN_STATES` — a card in any of these is still in front of somebody.
+_OPEN_CARD_STATES = ("queued", "surfaced", "snoozed", "claimed", "delivered")
+#: The separator `context/graph_store.thread_label` writes between who and what.
+_DASH = " — "
+
+
+def check_we_are_never_the_subject(conn, org: str) -> Check:
+    """⛔ STEP-04 (`yc2_w27_s04/M22.C6`). Production carried *"Send Mr Rohit Swerashi your traction
+    metrics"* and threads frozen as *"Mr Rohit Swerashi — <the pitch>"*: the founder as the subject
+    of his own cards and the name of his own threads. STEP-04 stops new ones (one answer to who is
+    us, `platform/self_identity`) and `scripts/repair_self_identity.py` removes the old. So the
+    promise is two numbers, by the same test the card builder refuses by (`names_us`): open cards
+    whose subject is one of us — 0; threads named after one of us — 0.
+    """
+    name = "we are never a card's subject or a thread's name"
+    us = identity_for(conn, org)
+    row = conn.execute(sql("select name, first_name, last_name, company from orgs where id = :o"),
+                       {"o": org}).first()
+    names = () if row is None else (
+        row.name, row.company,
+        f"{row.first_name} {row.last_name}" if row.first_name and row.last_name else None)
+    cards = [(r.card_id, r.business_subject) for r in conn.execute(sql(
+        "select card_id, business_subject from cards where org_id = :o and state = any(:open) "
+        "   and business_subject is not null order by card_id"),
+        {"o": org, "open": list(_OPEN_CARD_STATES)})
+        if names_us(r.business_subject, us, names)]
+    threads = [(r.node_id, r.display_name) for r in conn.execute(sql(
+        "select node_id, display_name from graph_nodes where org_id = :o and valid_to is null "
+        "   and node_type = 'thread' and display_name like '%' || :dash || '%' order by node_id"),
+        {"o": org, "dash": _DASH})
+        if names_us(str(r.display_name).partition(_DASH)[0], us, names)]
+    return Check(
+        name=name, ok=not cards and not threads,
+        measured=f"{len(cards)} open card(s) about us, {len(threads)} thread(s) named after us",
+        expected="0 and 0 — after STEP-04's repair",
+        fix=("before the repair this is the old defect: run `scripts/repair_self_identity.py` dry, "
+             "let Rohit read the list (06 D14), then `--apply`. After it, a card here was built by a "
+             "path that did not ask `platform/self_identity` — read its signal's subject node"),
+        detail=[f"card {c}: {s!r}" for c, s in cards[:5]]
+               + [f"thread {t}: {d!r}" for t, d in threads[:5]])
+
+
 CHECKS = (
     check_every_emitted_event_is_routed,
     check_parked_errors_are_readable,
@@ -303,6 +347,7 @@ CHECKS = (
     check_cards_reach_the_app,
     check_the_change_gate_skips_what_did_not_change,
     check_nothing_was_deleted_at_the_gate,
+    check_we_are_never_the_subject,
 )
 
 
