@@ -116,6 +116,58 @@ def test_a_counterparty_is_still_reasoned_about(swept):
     assert "nd_s04_priya" in evaluated, evaluated
 
 
+MEETING_ORG = "s04_runner_meeting"
+MEETING_OWNER = "Founder.S04Meeting@gmail.com"
+
+
+@pytest.fixture(scope="module")
+def meeting_swept(pg_store):
+    """One real sweep of the `general` pack — it carries a meeting rule, so a meeting node reaches
+    `_meeting_facts` — returning every `internal` set the meeting facts were computed against."""
+    from genios_engine.packs.wiring import ensure_defaults, make_registry
+    from genios_engine.reason import runner
+    from tests.test_e2e_all_layers import _fresh_tenant, _seed_org
+
+    _seed_org(pg_store, MEETING_ORG)
+    _fresh_tenant(pg_store, MEETING_ORG)
+    with pg_store.engine.begin() as c:
+        c.execute(text("update orgs set email = :e where id = :o"),
+                  {"o": MEETING_ORG, "e": MEETING_OWNER})
+        for table in ("org_seats", "connections", "org_self_identities"):   # kept by /reset
+            c.execute(text(f"delete from {table} where org_id = :o"), {"o": MEETING_ORG})
+        c.execute(text("insert into org_self_identities (org_id, kind, value, declared_by) "
+                       "values (:o, 'address', 'ceo@thegenios.com', 'test')"), {"o": MEETING_ORG})
+        c.execute(text("insert into graph_nodes (org_id, node_id, node_type, canonical_key) "
+                       "values (:o, 'nd_s04_meeting', 'meeting', 'meeting:s04-board-prep')"),
+                  {"o": MEETING_ORG})
+
+    registry = make_registry(os.environ["GENIOS_TEST_DATABASE_URL"])
+    ensure_defaults(registry, MEETING_ORG)
+    internal_sets: list[frozenset] = []
+    original = runner._meeting_facts
+
+    def _recording(node_id, nbr_adj, nbr_node_types, nbr_fact_idx, internal, obs, eval_time):
+        internal_sets.append(frozenset(internal))
+        return original(node_id, nbr_adj, nbr_node_types, nbr_fact_idx, internal, obs, eval_time)
+
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(runner, "_meeting_facts", _recording)
+        runner.run(org_id=MEETING_ORG, store=pg_store, eval_time=NOW, registry=registry,
+                   pack_id="general")
+    with pg_store.engine.begin() as c:          # release the unique address for the next run
+        c.execute(text("update orgs set email = null where id = :o"), {"o": MEETING_ORG})
+    return internal_sets
+
+
+def test_a_meeting_counts_every_address_of_ours_as_internal(meeting_swept):
+    """A meeting's attendees are external unless they are us — the declared address included, so
+    a meeting of only us is never an external open loop. (The meeting must be reached at all: the
+    lifecycle facts are where a self check that is not wired through would raise.)"""
+    assert meeting_swept, "the meeting node never reached its lifecycle facts"
+    assert all({"founder.s04meeting@gmail.com", "ceo@thegenios.com"} <= internal
+               for internal in meeting_swept), meeting_swept
+
+
 def test_the_runner_asks_the_one_answer_and_keeps_no_copy_of_it():
     """`run` reads who we are from `identity_for`; the seats/orgs/connections union is not written
     again here, so the runner and every other caller cannot disagree about who the tenant is."""

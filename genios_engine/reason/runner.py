@@ -1094,7 +1094,7 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
             # somebody waiting on me" got "the event was not cancelled" and shipped a recap card
             # for a twenty-person cohort workshop.
             ctx.facts.update(_meeting_facts(nd.node_id, nbr_adj, nbr_node_types, nbr_fact_idx,
-                                            self_keys, ctx.obs, eval_time))
+                                            us.addresses, ctx.obs, eval_time))
         if need_neighbors:
             ctx.edge_count, ctx.neighbor_obs, ctx.neighbor_facts = \
                 _neighborhood(nd.node_id, nbr_adj, nbr_obs_idx, nbr_fact_idx)
