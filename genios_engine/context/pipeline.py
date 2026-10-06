@@ -27,6 +27,7 @@ from genios_engine.context.extract.envelope import Envelope
 from genios_engine.context.extract.extractor import Extraction, extract
 from genios_engine.context.graph_store import GraphStore
 from genios_engine.platform.config import get_settings
+from genios_engine.platform.self_identity import SelfIdentity
 from genios_engine.context.guard import _norm, annotate_grounding, keep_grounded
 from genios_engine.context.fact_visibility import strict_private_evidence
 from genios_engine.capture.documents.base import UNKNOWN_SPEAKER
@@ -850,7 +851,8 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                   canon_meta: dict | None = None,
                   effective: dict | None = None,
                   qualified_extraction: Extraction | None = None,
-                  availability_marker: str | None = None) -> L2Result:
+                  availability_marker: str | None = None,
+                  self_identity: SelfIdentity | None = None) -> L2Result:
     # replay cache — identical content+prompt → reuse, no re-call, deterministic. The key is
     # ORG-SCOPED (org_id in the hash) so tenant A's cached extraction can never be served to
     # tenant B on byte-identical content (e.g. the same newsletter) — the cross-tenant leak fix.
@@ -1011,7 +1013,11 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             if label != email and label == sender_name:
                 store.name_person_node(conn, org_id=org_id, node_id=node, name=label)
             touched[node] = ntype
-            if key in internal_set:
+            # One of us never anchors — and that includes a colleague we know only by a declared
+            # domain (STEP-04): `correlate_event` lifts every person left in the pool to the
+            # company of their address's domain, so leaving them in would anchor the situation on
+            # our own company after `_works_at` had kept it out.
+            if key in internal_set or us.is_us(key):
                 internal_nodes.add(node)
             return node
 
@@ -1044,6 +1050,12 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             # (is_platform_sender) — and the answer to either one means this is not a counterparty.
             if (_norm_email(email) or "") in internal_set or is_platform_sender(email):
                 internal_nodes.add(company)
+            # STEP-04 · AND A DOMAIN WE DECLARED IS OURS IN EVERY EVENT, whichever address reached
+            # it. It used to be ours only when the address was in the self set, so a Gmail founder
+            # copying a colleague the engine did not know by address filed the thread under his own
+            # company.
+            if us.is_us_domain(dom):
+                internal_nodes.add(company)
             if store.write_edge(conn, org_id=org_id, edge_type="works_at",
                                 from_node_id=person_node, to_node_id=company, confidence=0.9,
                                 occurred_at=occurred_at, event_id=event_id,
@@ -1053,6 +1065,11 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
 
         sender_norm = _norm_email(sender_email) or (sender_email or "").strip().lower()
         internal_set = internal_emails or frozenset()
+        # WHO IS US beyond an address (STEP-04). The drain reads `platform/self_identity` once per
+        # sweep and hands it down beside the self set: it carries the domains the tenant DECLARED,
+        # which a set of addresses cannot. A caller that hands down only addresses is answered with
+        # exactly those.
+        us = self_identity if self_identity is not None else SelfIdentity.of(addresses=internal_set)
         # WHICH ASKS THIS MESSAGE ACTUALLY ANSWERS, computed once and handed to both closers.
         # Normalised through `norm_obs_kind` exactly as the observation loop below does, so the
         # kind this consults and the kind that reaches the graph cannot be different strings.

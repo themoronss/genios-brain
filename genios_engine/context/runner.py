@@ -123,7 +123,7 @@ def graded_extraction(qes_output, source_text: str | None, event_id: str = "?"):
 
 
 def _process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozenset(),
-                 effective=None):
+                 effective=None, self_identity=None):
     """Route + process ONE event. Returns (outcome, affected_node_id | None)."""
     raw = json.loads(decrypt(bytes(row.enc_content), crypto_key)) if row.enc_content else {}
     mapping = get_mapping(row.source, row.object_type)
@@ -180,7 +180,9 @@ def _process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozens
                         # The tenant's own pack vocabulary. Without it the extractor runs one
                         # hardcoded B2B-SaaS ontology for everyone, and a rule reading
                         # `deal.status` is dead because the model was never told the name.
-                        effective=effective, qualified_extraction=qualified)
+                        effective=effective, qualified_extraction=qualified,
+                        # Who is us, with the domains the tenant declared (STEP-04).
+                        self_identity=self_identity)
     return res.outcome, res.primary_node
 
 
@@ -462,11 +464,12 @@ def _record_convergence(store: GraphStore, org_id: str, *, before: str | None, a
 
 
 def _safe_process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozenset(),
-                      effective=None):
+                      effective=None, self_identity=None):
     """Isolation wrapper: ONE event's failure never aborts the batch (§L2 'drain every event')."""
     try:
         outcome, node = _process_one(row, org_id=org_id, store=store, llm=llm, crypto_key=crypto_key,
-                                     internal_emails=internal_emails, effective=effective)
+                                     internal_emails=internal_emails, effective=effective,
+                                     self_identity=self_identity)
         return outcome, node, None
     except Exception as e:      # noqa: BLE001 — quarantine this event, keep the batch alive
         return "error", None, str(e)[:400]
@@ -525,7 +528,11 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
     affected: set[str] = set()
     seen: set[str] = set()                            # attempted THIS call → no intra-call re-pull
     done = 0
-    internal_emails = _internal_emails(store, org_id)  # once per drain, not per event
+    # Who is us, once per drain, not per event (STEP-04: `platform/self_identity`). The addresses
+    # are exactly what `_internal_emails` returns; the identity travels beside them so the pipeline
+    # also knows the domains the tenant declared.
+    self_identity = identity_for(store, org_id)
+    internal_emails = self_identity.addresses
     # The tenant's pack vocabulary, resolved ONCE per drain for the same reason. A tenant is
     # bound to several packs (sales + general) and the extractor must see the union: a field
     # named by one pack and missed because only the other was consulted is the same silent loss
@@ -541,7 +548,8 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
                 lambda r: _safe_process_one(r, org_id=org_id, store=store, llm=llm,
                                             crypto_key=crypto_key,
                                             internal_emails=internal_emails,
-                                            effective=effective), rows))
+                                            effective=effective,
+                                            self_identity=self_identity), rows))
         for row, (outcome, node, err) in zip(rows, results):
             seen.add(row.event_id)
             out[outcome] += 1
