@@ -246,6 +246,51 @@ def check_the_change_gate_skips_what_did_not_change(conn, org: str) -> Check:
             "fingerprints of one subject")
 
 
+def check_nothing_was_deleted_at_the_gate(conn, org: str) -> Check:
+    """⛔ STEP-03 (`yc2_w27_s03/M21.C6`). Before it, 258 of the design partner's 395 mails were deleted
+    at the first gate with their content gone — every noise rule and the AI filter's confident junk
+    was a DROP. The gate now ARCHIVES what it calls noise (kept, read by no model) and the only drop
+    left is S0's scope exclusion, `out_of_scope`. So the promise is a number: objects captured in
+    the last 24 hours with outcome `dropped` and no scope exclusion in their trace — 0.
+
+    The window starts no earlier than the tenant's first archived mail, so on the deploy day the
+    mail the OLD gate dropped that morning is history, not this gate's deletion. A tenant that has
+    never archived anything and still drops is running the gate from before STEP-03.
+    """
+    name = "nothing captured was deleted at the gate"
+    archiving_since = conn.execute(sql(
+        "select min(captured_at) from source_events where org_id = :o and outcome = 'archived'"),
+        {"o": org}).scalar()
+    rows = conn.execute(sql(
+        "select coalesce(et.reason_code, 'no trace') as code, count(*) as n "
+        "  from source_events se "
+        "  left join event_trace et on et.org_id = se.org_id and et.event_id = se.event_id "
+        "       and et.action = 'drop' "
+        " where se.org_id = :o and se.outcome = 'dropped' "
+        "   and se.captured_at > now() - interval '24 hours' "
+        "   and (cast(:since as timestamptz) is null or se.captured_at >= cast(:since as timestamptz)) "
+        "   and not exists (select 1 from event_trace s0 where s0.org_id = se.org_id "
+        "                   and s0.event_id = se.event_id and s0.reason_code = 'out_of_scope') "
+        " group by 1 order by 2 desc, 1"), {"o": org, "since": archiving_since}).fetchall()
+    deleted = sum(int(r.n) for r in rows)
+    window = ("the last 24 h" if archiving_since is None
+              else "the last 24 h, since this tenant's first archived mail")
+    if archiving_since is None:
+        fix = ("nothing has ever been archived here, and mail is still dropped: the gate is the one "
+               "from before STEP-03 — is STEP-03 deployed, with migration 0192 applied? Then read "
+               "the codes below against `capture/gate/gate._never_delete`")
+    else:
+        fix = ("the archiving gate runs and something still drops: walk one event with "
+               "`capture/journey.event_journey` — every drop verdict should reach "
+               "`capture/gate/gate._never_delete`, and only S0 `out_of_scope` may stay a drop")
+    return Check(
+        name=name, ok=deleted == 0,
+        measured=f"{deleted} object(s) captured in {window} were deleted at the gate",
+        expected="0 — the gate archives what it calls noise; only S0's scope exclusion drops",
+        fix=fix,
+        detail=[f"{r.code}: {int(r.n)} deleted" for r in rows])
+
+
 CHECKS = (
     check_every_emitted_event_is_routed,
     check_parked_errors_are_readable,
@@ -253,6 +298,7 @@ CHECKS = (
     check_a_selected_signal_can_be_carded,
     check_cards_reach_the_app,
     check_the_change_gate_skips_what_did_not_change,
+    check_nothing_was_deleted_at_the_gate,
 )
 
 

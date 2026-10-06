@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 2_932, (
+    assert r["statements"] == 2_934, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -223,6 +223,9 @@ def test_the_statement_count_did_NOT_move():
     # ONE statement, counted twice: the template walk records both prefixes of its
     # `"…" f"…" "…" + _org_filter(org, "se")` concatenation, exactly as it counts the judged-drop
     # receipt beside it.
+    # ⛔ MOVED 2,932 → 2,934 by yc2_w27_s03/M21.C6.L-interface.V5.U01 (STEP-03): the health check
+    # that nothing was deleted at the gate (`scripts/pipeline_health.check_nothing_was_deleted_at_the_gate`)
+    # — the tenant's first archived mail, and the drops since by code. Two SELECTs, each a literal.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():
