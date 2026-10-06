@@ -1214,6 +1214,24 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                     out["situation_dormant"] += 1
                     continue
             if not reasoned.execution.authorizes_delivery:
+                # ⛔ A DEFER IS NOT A SHADOW RUN (STEP-02, `yc2_w27_s02/M20.C5.L-logic.V0.U01`). A live,
+                # deliverable run that could not decide — the model's DEFER, the formula's
+                # (`below_confidence_floor`, `abstain_on_conflict`), or a model that was not there
+                # (`llm_decision_unavailable:*`, the daily cap included) — fails
+                # `authorizes_delivery` exactly as a shadow run does, and was suppressed as one:
+                # out of `fired`, out of `indeterminate`, so the lifecycle pass below resolved its
+                # open signal and expired the card. "I cannot decide this time" deleted what the
+                # founder had already been shown. It is indeterminate: the card stands.
+                _execution = reasoned.execution
+                if (_execution.request.mode == ExecutionMode.LIVE
+                        and _execution.request.capability.live_delivery_enabled
+                        and _execution.decision.outcome == DecisionOutcome.DEFER):
+                    _suppress(store, org_id, rule.id, nd.node_id, "deferred", eval_time,
+                              {"reasoning_run_id": reasoning_run_id,
+                               "uncertainty": list(_execution.decision.uncertainty)})
+                    indeterminate.add((rule.id, nd.node_id))
+                    out["deferred"] += 1
+                    continue
                 _suppress(store, org_id, rule.id, nd.node_id, "shadow", eval_time,
                           {"reasoning_run_id": reasoning_run_id,
                            "execution_mode": reasoned.execution.request.mode.value,
