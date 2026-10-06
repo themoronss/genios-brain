@@ -975,7 +975,16 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             # (a billing notice is real), but it must never enter the person graph where the
             # relationship rules live. `service` has no rule scope, which is exactly right —
             # nobody is in a business relationship with their own tooling.
-            ntype = ("service" if (_is_automated_sender(email) or is_platform_sender(email))
+            #
+            # STEP-04 · BUT AN ADDRESS OF OURS IS A PERSON. `platform_domains` is GeniOS's own
+            # product domain, and for the design partner it is also his company's, so
+            # `ceo@thegenios.com` — his own second address — was typed a service, and stayed one
+            # (`find_or_create_node` never re-types). An exact address of ours — a seat, the owner,
+            # a connected account, a declared address: the self set the drain hands down,
+            # `runner._internal_emails` — is never a service. Only the exact address: the product's
+            # own mail at a declared domain (`invite@thegenios.com`) stays a service (§8.5).
+            ntype = ("service" if key not in internal_set and (
+                         _is_automated_sender(email) or is_platform_sender(email))
                      else "person")
             # NAME THE PERSON IF THE SOURCE NAMED THEM. Only the SENDER's name is known here —
             # recipients arrive as bare addresses in To/Cc — so this applies to the one address
