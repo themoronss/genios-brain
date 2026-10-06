@@ -10,8 +10,9 @@ A skip spends nothing, so the rule is written from the side of what a skip must 
   * a decision on inputs that changed — the fingerprint is the decision's inputs, so a different
     one always runs;
   * a card that quietly loses its authority — nothing renews a signal's `authority_expires_at`
-    today (a re-run after expiry replaces the card), so a live subject is re-decided while its
-    standing signal still has more than `RENEW_MARGIN` left, and never skipped once it has less;
+    today, and a re-run after expiry is what replaces the card, so a live subject is skipped only
+    while its standing signal's authority has not lapsed (`RENEW_MARGIN` is zero, measured: a day's
+    margin re-decided every sweep of a card's last 24 hours and renewed nothing);
   * a card the gate thinks is standing and is not — a live subject that emitted or kept a signal
     skips only while that signal is still open;
   * a retry — an outcome recorded as `indeterminate` (the evaluation failed, the model was
@@ -56,17 +57,23 @@ def test_a_live_card_with_its_authority_good_for_days_is_skipped(outcome):
     assert _gate(_stored(outcome)) == cg.GateVerdict(skip=True, reason=cg.UNCHANGED)
 
 
-@pytest.mark.parametrize("left", [timedelta(hours=23), timedelta(hours=24), timedelta(0),
-                                  -timedelta(hours=1)])
-def test_a_live_card_about_to_lose_its_authority_is_re_decided(left):
-    """At or inside the margin — and past it — the subject runs, so a still-true card is replaced
-    while it is still showing, not after it has gone."""
+@pytest.mark.parametrize("left", [timedelta(0), -timedelta(minutes=1), -timedelta(hours=1)])
+def test_a_live_card_whose_authority_has_lapsed_is_re_decided(left):
+    """At the instant it lapses, or after: the lane replaces the signal on this run, as it does
+    today without the gate."""
     assert _gate(_stored(STANDING), expires=NOW + left) == cg.GateVerdict(skip=False,
                                                                           reason=cg.EXPIRING)
 
 
-def test_just_outside_the_margin_still_skips():
-    assert _gate(_stored(EMITTED), expires=NOW + cg.RENEW_MARGIN + timedelta(minutes=1)).skip
+@pytest.mark.parametrize("left", [timedelta(minutes=1), timedelta(hours=6), timedelta(hours=23)])
+def test_a_live_card_with_any_authority_left_is_skipped(left):
+    """⛔ Not re-decided inside its last day: a re-run then renews nothing (the compiled lane
+    answers `standing`, the expiry stays), so it would be paid for on every remaining sweep."""
+    assert _gate(_stored(EMITTED), expires=NOW + left).skip
+
+
+def test_the_margin_is_zero():
+    assert cg.RENEW_MARGIN == timedelta(0)
 
 
 def test_a_live_card_that_is_no_longer_open_is_re_decided():

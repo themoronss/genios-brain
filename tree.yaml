@@ -3390,8 +3390,10 @@ yc2_w27_s02:
                       what: >
                         `should_skip(stored, fingerprint, standing, eval_time)` — skip only when
                         the fingerprint is the stored one AND, for a subject that had a live
-                        signal, that signal is still open and keeps its authority past eval_time +
-                        24 h; a shadow row skips on the fingerprint alone. Anything else runs, and
+                        signal, that signal is still open and its authority has not lapsed; a
+                        shadow row skips on the fingerprint alone. CORRECTED BY MEASUREMENT: the
+                        first margin was 24 h, and a re-run before expiry renews nothing, so it
+                        re-decided every sweep of a card's last day (F27, the golden acceptance). Anything else runs, and
                         says why (new, changed, expiring, no standing signal).
                       artifact: genios_engine/reason/change_gate.py
                       verify: .venv/bin/python -m pytest tests/reason/test_change_gate.py -q

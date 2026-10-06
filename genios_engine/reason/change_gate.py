@@ -11,8 +11,8 @@ What a skip must never cost:
 
   * a decision on changed inputs — a different fingerprint always runs;
   * a card that quietly loses its authority — nothing renews `authority_expires_at` today, and a
-    re-run after expiry replaces the card, so a live subject is re-decided while its standing
-    signal still has more than `RENEW_MARGIN` left and never skipped once it has less;
+    re-run after expiry is what replaces the card, so a live subject is skipped only while its
+    standing signal's authority has not lapsed, and decided on the first sweep after it has;
   * a card that is not standing — a live subject that emitted or kept a signal skips only while
     that signal is still open;
   * a retry — `indeterminate` (the evaluation failed, the model was unavailable, or the outcome
@@ -28,9 +28,14 @@ from datetime import datetime, timedelta, timezone
 from genios_engine.reason.fingerprint_store import (DEFERRED, EMITTED, INDETERMINATE, STANDING,
                                                     SUPPRESSED, StoredFingerprint)
 
-#: A live card is re-decided once its signal has this much authority left, or less. A day: the
-#: re-run happens on a sweep while the card is still showing, never after it has gone.
-RENEW_MARGIN = timedelta(hours=24)
+#: A live card is re-decided once its signal has this much authority left, or less — ZERO: once it
+#: has lapsed. ⛔ CORRECTED BY MEASUREMENT (2026-10-06). The first value was a day, so the re-run
+#: would happen while the card still showed. But a re-run before expiry renews nothing — the
+#: compiled lane answers "standing" and the expiry stays put — so a day's margin re-decided the
+#: subject on every sweep of its last 24 hours: ~96 decider and R-1 pairs per card per week, found
+#: by the golden acceptance on F27. On the first sweep after the authority lapses the lane replaces
+#: the signal, which is what it does today without the gate.
+RENEW_MARGIN = timedelta(0)
 
 NEW = "new"                    # never decided
 CHANGED = "changed"            # what the decision depends on moved
