@@ -237,6 +237,15 @@ def test_a_gate_expectation_uses_the_capture_vocabulary():
         _parse(raw)
 
 
+def test_a_case_can_expect_a_mail_archived_with_its_rule():
+    """STEP-03 (`yc2_w27_s03/M21.C5.L-contract.V0.U01`): the gate archives what it used to drop — kept,
+    read by no model — so a case can say exactly that, with the rule (`archived:N-02`)."""
+    raw = _case()
+    raw["expected"]["gate"] = {"ask": "archived:N-02"}
+    assert _parse(raw).expected_gate == {"ask": "archived:N-02"}
+    assert "archived" in fc.GATE_OUTCOMES
+
+
 # =================================================================================================
 # 3 · the set: its own folder, never read by the Atlas loader, and never empty
 # =================================================================================================

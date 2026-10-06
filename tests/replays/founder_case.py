@@ -44,9 +44,10 @@ LABELLERS = ("claude", "rohit")
 #: The providers a case can hand the chain. `gcal` is the calendar connector's own source name.
 SOURCES = ("gmail", "gcal")
 #: `CaptureResult.outcome` — what Layer 1 did with an object, as `capture/pipeline.py` writes it
-#: (`{"drop": "dropped", "park": "parked"}`, else `emitted`; plus `duplicate` and `quarantined`).
-#: An expectation may add the reason code after a colon (`dropped:N-02`, `parked:DOC-05`).
-GATE_OUTCOMES = ("emitted", "dropped", "parked", "duplicate", "quarantined")
+#: (`{"drop": "dropped", "park": "parked", "archive": "archived"}`, else `emitted`; plus `duplicate` and
+#: `quarantined`). `archived` is STEP-03's: a mail the gate used to delete, kept and read by no model.
+#: An expectation may add the reason code after a colon (`archived:N-02`, `parked:DOC-05`).
+GATE_OUTCOMES = ("emitted", "dropped", "parked", "archived", "duplicate", "quarantined")
 #: Where a must-abstain case proves the engine was exercised. Each is a stage the runner reports.
 WITNESS_STAGES = ("gate", "memory", "situation", "card")
 #: The sites a case may script per object (`read`) — the ideal reader serves them.
