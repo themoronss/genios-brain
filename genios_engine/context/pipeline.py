@@ -968,6 +968,9 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         # outbound email under one enormous "us" group and correlate nothing.
         touched: dict[str, str] = {}
         internal_nodes: set[str] = set()
+        # The nodes whose door held an address or a domain and asked who we are there (`_person`,
+        # `_works_at`). The pool check before correlation asks only about the others (STEP-04).
+        asked: set[str] = set()
 
         def _person(email: str) -> str:
             key = _person_key(email) or email.strip().lower()
@@ -1019,6 +1022,7 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             # our own company after `_works_at` had kept it out.
             if key in internal_set or us.is_us(key):
                 internal_nodes.add(node)
+            asked.add(node)
             return node
 
         employer: dict[str, str] = {}
@@ -1056,6 +1060,7 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             # company.
             if us.is_us_domain(dom):
                 internal_nodes.add(company)
+            asked.add(company)
             if store.write_edge(conn, org_id=org_id, edge_type="works_at",
                                 from_node_id=person_node, to_node_id=company, confidence=0.9,
                                 occurred_at=occurred_at, event_id=event_id,
@@ -2066,7 +2071,10 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         # claim's subject and a transcript speaker reach `touched` as an EXISTING node, with no
         # address in hand — and asked nobody: a Gmail founder's pitch that named his own company
         # anchored the thread on it. So the pool is asked once more, by each node's own key.
-        unchecked = [n for n in touched if n not in internal_nodes]
+        # Only the kinds that can be us (`SelfIdentity.is_us_node`), and only nodes no door asked about.
+        unchecked = [n for n, kind in touched.items()
+                     if n not in internal_nodes and n not in asked
+                     and kind in ("person", "service", "company", "tenant")]
         if us and unchecked:
             from sqlalchemy import bindparam
             for r in conn.execute(text(
