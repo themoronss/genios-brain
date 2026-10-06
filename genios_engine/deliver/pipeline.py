@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from sqlalchemy import text
 
 from genios_engine.packs.wiring import ensure_default, make_registry
+from genios_engine.platform.self_identity import identity_for
 from .lane_display import TALLY_KEYS, tally_lane
 from .lane_recall import recall_verdict
 from genios_engine.reason.authority import (
@@ -221,20 +222,22 @@ def _tenant_identities(graph, org_id: str) -> tuple[str, ...]:
     Signing a draft "Best, Rohit" is not a claim the facts have to support — it is the sender
     naming himself. The corpus was built from the card SUBJECT's facts only, so the founder's own
     name read as an invented person and the entire card fell back to an empty template stub.
+
+    The ADDRESSES are every address of ours, from the one answer (`platform/self_identity`,
+    STEP-04): the active seats, the org's own, the connected accounts and what the tenant
+    declared. Quote attribution (`from_counterparty`) reads them, so a sentence written from any
+    of them is never printed as the counterparty's.
     """
     try:
         with graph.engine.connect() as c:
+            us = identity_for(c, org_id)
             row = c.execute(text(
-                "select name, first_name, last_name, email, company from orgs where id=:o"),
+                "select name, first_name, last_name, company from orgs where id=:o"),
                 {"o": org_id}).first()
-            seats = [r[0] for r in c.execute(text(
-                "select email from org_seats where org_id=:o and active and email is not null"),
-                {"o": org_id})]
     except Exception:      # noqa: BLE001 — grounding is an enrichment, never a reason to fail
         return ()
-    if row is None:
-        return tuple(seats)
-    parts = [row.name, row.first_name, row.last_name, row.email, row.company, *seats]
+    names = () if row is None else (row.name, row.first_name, row.last_name, row.company)
+    parts = [*names, *sorted(us.addresses)]
     return tuple(str(p).strip() for p in parts if p and str(p).strip())
 
 
