@@ -93,6 +93,7 @@ from genios_engine.platform.l4_activation import (
     missing_cross_layer_preconditions,
 )
 from genios_engine.platform.ids import new_id
+from genios_engine.platform.self_identity import identity_for
 from genios_engine.reason.adapters.expertise import expertise_capability_manifest
 from genios_engine.reason.adapters.native import native_context_snapshot, reason_native_capability
 from genios_engine.reason.interpretation import make_interpreter
@@ -852,6 +853,9 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                                   {"o": org_id, "lim": limit}).mappings().all()
         gate = _CompiledGate.load(conn, org_id)
         counts["gate_ready"] = int(gate.ready)
+        # WHO IS US, once for the sweep (STEP-04): `gather_members` leaves us out of a situation's
+        # members, and read per situation that was one more statement for every situation.
+        us = identity_for(conn, org_id)
         l1_by_correlation = gather_l1_signals_bulk(
             conn, org_id,
             [str(row["correlation_id"]) for row in situations if row["correlation_id"]])
@@ -1109,7 +1113,7 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                                    neighbor_facts=dict(neighbor[2]))
                 signal_ids, evidence = gather_evidence_and_signals(
                     conn, org_id, row["correlation_id"], str(row["situation_id"]))
-                members = gather_members(conn, org_id, row["correlation_id"])
+                members = gather_members(conn, org_id, row["correlation_id"], us=us)
                 situation_visibility = gather_visibility(conn, org_id, row["correlation_id"])
                 # WHAT LAYER 1 PUBLISHED about these same events. Read on the same connection as
                 # every other gather, and handed to the builder rather than re-derived: the score,
