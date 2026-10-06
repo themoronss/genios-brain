@@ -23,8 +23,11 @@ one mail be counted twice and make the funnel look healthier than it is.
     parked              still in the park queue
     reached_reasoning   carries an ACTIVE qualified signal — what L2 pulls today
     read_no_signal      extracted, but no box fitted, so it never entered memory
+    archived            kept, unread: the gate archived it (a noise rule or the AI filter's
+                        confident junk — STEP-03, which stopped the gate deleting mail); the rule
+                        that archived it is counted beside the table
     junked              the S2 model filter called it junk (confident or not)
-    deleted             no content stored anywhere — a rule dropped it
+    deleted             no content stored anywhere — a rule dropped it (before STEP-03)
     kept_unread         content kept, never read (e.g. a bulk-header short circuit)
 
 READ-ONLY BY CONSTRUCTION. One connection from `scripts/_gate.read_only_connection`, whose first
@@ -46,7 +49,8 @@ from scripts._db import add_database_argument, resolve_database_url   # noqa: E4
 from scripts._gate import read_only_connection, sql                   # noqa: E402
 
 #: The fate columns, in the order `fate_of` tests them. Exclusive by construction.
-FATES = ("parked", "reached_reasoning", "read_no_signal", "junked", "deleted", "kept_unread")
+FATES = ("parked", "reached_reasoning", "read_no_signal", "archived", "junked", "deleted",
+         "kept_unread")
 
 #: Where a mail nobody's pattern matched is counted. Never silently dropped.
 OTHER = "other"
@@ -63,6 +67,10 @@ class GroupRow:
     name: str
     mails: int = 0
     fates: dict[str, int] = field(default_factory=lambda: {f: 0 for f in FATES})
+    #: The `archived` column, split by the rule that archived each mail — `attention_reason`, as
+    #: the gate wrote it. A Boardy introduction under N-02 and a newsletter under N-02 look the same
+    #: here; a portal update under N-06 does not look like either.
+    archived_by_rule: dict[str, int] = field(default_factory=dict)
 
 
 def load_groups(path: str | Path) -> tuple[Group, ...]:
@@ -108,6 +116,8 @@ def fate_of(*, outcome: str, active_signal: bool, extracted: bool, junked: bool,
         return "reached_reasoning"
     if extracted:
         return "read_no_signal"
+    if outcome == "archived":
+        return "archived"
     if junked:
         return "junked"
     if not has_content:
@@ -122,9 +132,13 @@ def tally(rows, groups: tuple[Group, ...]) -> list[GroupRow]:
     for r in rows:
         row = out[group_of(r["sender"], groups)]
         row.mails += 1
-        row.fates[fate_of(outcome=r["outcome"], active_signal=bool(r["active_signal"]),
-                          extracted=bool(r["extracted"]), junked=bool(r["junked"]),
-                          has_content=bool(r["has_content"]))] += 1
+        fate = fate_of(outcome=r["outcome"], active_signal=bool(r["active_signal"]),
+                       extracted=bool(r["extracted"]), junked=bool(r["junked"]),
+                       has_content=bool(r["has_content"]))
+        row.fates[fate] += 1
+        if fate == "archived":
+            rule = r.get("rule") or "unknown"
+            row.archived_by_rule[rule] = row.archived_by_rule.get(rule, 0) + 1
     return [out[g.name] for g in groups] + [out[OTHER]]
 
 
@@ -132,6 +146,7 @@ def inbound_mail(conn, org: str) -> list[dict]:
     """One row per inbound message — the tenant's own seats excluded, re-reads excluded."""
     result = conn.execute(sql(
         "select lower(se.actor ->> 'email') as sender, se.outcome, "
+        "       se.attention_reason as rule, "
         "       exists (select 1 from qualified_signals qs where qs.org_id = se.org_id "
         "                and qs.event_id = se.event_id and qs.state = 'active') as active_signal, "
         "       exists (select 1 from l1_extraction_results l where l.org_id = se.org_id "
@@ -200,6 +215,13 @@ def render(table: list[GroupRow], extra: dict[str, list[tuple]], *, days: int) -
             total.fates[f] += row.fates[f]
     lines.append("─" * len(header))
     lines.append(f"{total.name:<28}{total.mails:>6}" + "".join(f"{total.fates[f]:>19}" for f in FATES))
+    archived = [row for row in table if row.archived_by_rule]
+    if archived:
+        lines += ["", "archived — kept, unread — by the rule that archived it"]
+        lines += [f"  {row.name:<26}" + " · ".join(f"{rule} {n}" for rule, n in
+                                                  sorted(row.archived_by_rule.items(),
+                                                         key=lambda kv: (-kv[1], kv[0])))
+                  for row in archived]
     (gcal, meetings), = extra["calendar"]
     lines += ["", f"calendar events {gcal} → meeting nodes {meetings}"]
     lines += ["", "screen follow-ups (kind · total · open)"]

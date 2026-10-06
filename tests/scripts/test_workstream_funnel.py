@@ -116,7 +116,8 @@ def test_a_bad_groups_file_is_refused(tmp_path, payload):
 def test_every_mail_lands_in_exactly_one_column():
     """Total and exclusive: every combination of facts yields exactly one known fate."""
     for outcome, active, extracted, junked, content in itertools.product(
-            ("emitted", "dropped", "parked"), (True, False), (True, False), (True, False), (True, False)):
+            ("emitted", "dropped", "parked", "archived"), (True, False), (True, False), (True, False),
+            (True, False)):
         fate = wf.fate_of(outcome=outcome, active_signal=active, extracted=extracted,
                           junked=junked, has_content=content)
         assert fate in wf.FATES
@@ -128,6 +129,7 @@ def test_the_fates_are_tested_in_the_documented_order():
     assert f(outcome="parked", active_signal=True, extracted=True, junked=True, has_content=True) == "parked"
     assert f(outcome="emitted", active_signal=True, extracted=True, junked=True, has_content=True) == "reached_reasoning"
     assert f(outcome="emitted", active_signal=False, extracted=True, junked=True, has_content=True) == "read_no_signal"
+    assert f(outcome="archived", active_signal=False, extracted=False, junked=True, has_content=True) == "archived"
     assert f(outcome="emitted", active_signal=False, extracted=False, junked=True, has_content=False) == "junked"
     assert f(outcome="dropped", active_signal=False, extracted=False, junked=False, has_content=False) == "deleted"
     assert f(outcome="emitted", active_signal=False, extracted=False, junked=False, has_content=True) == "kept_unread"
@@ -153,3 +155,29 @@ def test_a_groups_columns_add_up_to_its_mails(tmp_path):
     investors = table[0]
     assert (investors.fates["deleted"], investors.fates["junked"],
             investors.fates["reached_reasoning"]) == (1, 1, 1)
+
+
+def test_an_archived_mail_is_counted_apart_with_the_rule_that_archived_it(tmp_path):
+    """STEP-03 (`yc2_w27_s03/M21.C4.L-interface.V4.U05`): the gate archives what it used to delete.
+    Counted as `kept_unread` it would hide among the bulk-header short circuits, and counted as
+    `deleted` it would be a lie — so it has its own column, and the rule that archived it."""
+    groups = _groups(tmp_path, {"groups": [{"name": "boardy", "patterns": [r"@boardy\.test$"]}]})
+    base = {"active_signal": False, "extracted": False, "junked": False, "has_content": True}
+    rows = [
+        {**base, "sender": "intros@boardy.test", "outcome": "archived", "rule": "N-02"},
+        {**base, "sender": "intros@boardy.test", "outcome": "archived", "rule": "N-02"},
+        {**base, "sender": "hello@boardy.test", "outcome": "archived", "rule": "llm_junk",
+         "junked": True},
+        {**base, "sender": "old@boardy.test", "outcome": "dropped", "rule": None,
+         "has_content": False},
+    ]
+    boardy = wf.tally(rows, groups)[0]
+    assert (boardy.mails, boardy.fates["archived"], boardy.fates["deleted"]) == (4, 3, 1)
+    assert boardy.archived_by_rule == {"N-02": 2, "llm_junk": 1}
+    assert sum(boardy.fates.values()) == boardy.mails
+
+
+def test_the_probe_reads_the_rule_off_the_ledger_row():
+    """The rule is `source_events.attention_reason` — what the gate wrote — not re-derived here."""
+    inbound = next(s for s in _sql_literals() if "from source_events se" in s)
+    assert "se.attention_reason" in inbound
