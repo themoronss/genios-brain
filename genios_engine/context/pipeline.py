@@ -1495,6 +1495,23 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                     edge_n += 1
             return node
 
+        # WHO A CONVERSATION IS NAMED AFTER (STEP-04): its OTHER side — the first party of this
+        # message who is not us. The name is written once, below, from the message that carries
+        # what the thread is for, and never replaced (`name_thread_node` replaces only a label it
+        # generated), so taking the SENDER whatever the direction named the founder's own pitch
+        # after the founder, for good. Inbound, the other side is the sender, by the name the From
+        # header gives; outbound, the first recipient who is not one of us. Nobody but us: None,
+        # and `thread_label` names the conversation by what it is for alone.
+        def _ours(address: str) -> bool:
+            return ((_norm_email(address) or address.strip().lower()) in internal_set
+                    or us.is_us(address))
+
+        if sender_email and not _ours(sender_email):
+            other_side = sender_name or sender_email
+        else:
+            other_side = next((_norm_email(r) or r.strip().lower()
+                               for r in (recipient_emails or []) if r and not _ours(r)), None)
+
         for f in facts:
             from typing import get_args
             from genios_engine.contracts.extraction import BusinessField
@@ -1520,11 +1537,12 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                         # AND NAME IT, now that we know what it is for. This is the one moment the
                         # objective and the conversation are both in hand; before this line a
                         # thread was called after a hex fragment for the rest of its life, and 31
-                        # live cards on the pilot are anchored on one.
+                        # live cards on the pilot are anchored on one. After its OTHER side, never
+                        # after us — see `other_side` above.
                         if isinstance(claim.value, str):
                             store.name_thread_node(conn, org_id=org_id, node_id=subj,
                                                    objective=claim.value,
-                                                   counterparty=sender_name or sender_email)
+                                                   counterparty=other_side)
                 else:
                     subj = _business_subject(conn, org_id=org_id, name=claim.subject, field=claim.field)
                 if not subj:
