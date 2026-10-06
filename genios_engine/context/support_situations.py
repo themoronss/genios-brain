@@ -78,6 +78,7 @@ from genios_engine.context.situations import (  # noqa: I001
 )
 from genios_engine.context.situations import merge_pressure as read_merge_pressure
 from genios_engine.platform.ids import new_id
+from genios_engine.platform.self_identity import SelfIdentity, identity_for
 
 # ── anchors ──────────────────────────────────────────────────────────────────────────────────
 #
@@ -1352,26 +1353,20 @@ def desk_domains() -> tuple[str, ...]:
 
 # ── gather ───────────────────────────────────────────────────────────────────────────────────
 
-def _internal(conn, org_id: str) -> tuple[frozenset[str], frozenset[str]]:
-    """Who WE are — addresses and mail domains.
+def _internal(conn, org_id: str) -> SelfIdentity:
+    """Who WE are — addresses and domains, asked of `platform/self_identity` (STEP-04).
 
-    `runner._internal_emails` answers the address half and is reused rather than restated. The
-    DOMAIN half is added here because this module asks a question that one does not:
+    The DOMAIN half matters here because this module asks a question address lists do not:
     `org_seats` is empty on a self-serve tenant, so a colleague replying on a customer's thread
-    reads as an inbound stranger — which would make every escalation acceptance invisible and
+    would read as an inbound stranger — which would make every escalation acceptance invisible and
     every answered thread read as unanswered.
+
+    ⛔ THE DECLARED DOMAINS ONLY. This used to add the domain of `orgs.email`, with no exception
+    for public mail — so a Gmail founder made `gmail.com` ours, every customer writing from Gmail
+    read as a colleague, and their requests as already answered. A domain is ours when the tenant
+    declared it, and a public mail domain never is; an exact address of ours still is.
     """
-    from genios_engine.context.runner import _internal_emails
-
-    class _Shim:                       # `_internal_emails` wants a store; it only uses .engine
-        def __init__(self, engine):
-            self.engine = engine
-
-    emails = _internal_emails(_Shim(conn.engine), org_id)
-    owner = conn.execute(text("select lower(email) from orgs where id=:o and email is not null"),
-                         {"o": org_id}).scalar()
-    domains = {owner.split("@", 1)[1]} if owner and "@" in owner else set()
-    return frozenset(emails), frozenset(d for d in domains if d and "." in d)
+    return identity_for(conn, org_id)
 
 
 def gather(store, org_id: str, *, now: datetime, policy: ResponsePolicy) -> Desk:
@@ -1379,8 +1374,8 @@ def gather(store, org_id: str, *, now: datetime, policy: ResponsePolicy) -> Desk
     shape `refresh_situations` and `refresh_attention` already keep, for the same reason."""
     since = now - timedelta(days=LOOKBACK_DAYS)
     with store.engine.connect() as c:
-        internal, internal_domains = _internal(c, org_id)
-        addresses = sorted(internal)
+        us = _internal(c, org_id)
+        addresses = sorted(us.addresses)
 
         # The thread ENVELOPE, deliberately unbounded by date. Two columns per thread, so it is
         # cheap, and both answers are wrong if it is windowed: a backlog item older than the
@@ -1419,10 +1414,9 @@ def gather(store, org_id: str, *, now: datetime, policy: ResponsePolicy) -> Desk
         messages = []
         for r in rows:
             sender = (r.sender or "").strip()
-            domain = sender.split("@", 1)[1] if "@" in sender else ""
             messages.append(Message(
                 event_id=r.event_id, thread_id=r.thread_id, at=r.occurred_at, sender=sender,
-                internal=bool(sender) and (sender in internal or domain in internal_domains),
+                internal=us.is_us(sender),
                 recipients=tuple(e.lower() for e in (r.recipients or []) if e),
                 head=r.head or ""))
 
@@ -1484,7 +1478,7 @@ def gather(store, org_id: str, *, now: datetime, policy: ResponsePolicy) -> Desk
         merge_pressure = read_merge_pressure(c, org_id)
 
     return Desk(org_id=org_id, now=now, internal=frozenset(addresses),
-                internal_domains=internal_domains, messages=tuple(messages),
+                internal_domains=us.domains, messages=tuple(messages),
                 thread_first=thread_first, thread_conn=thread_conn,
                 thread_node=thread_node, thread_facts=thread_facts,
                 person_node=person_node, company_of=company_of,
