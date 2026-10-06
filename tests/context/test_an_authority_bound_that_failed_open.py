@@ -129,6 +129,11 @@ def graph():
         c.execute(text("create table org_seats (org_id text, email text, active boolean)"))
         c.execute(text("create table orgs (id text, email text)"))
         c.execute(text("create table connections (org_id text, external_account_id text)"))
+        # ...and `org_self_identities` (migrations/0193): since STEP-04 "is this name one of us" is
+        # `platform/self_identity.identity_for`, which reads it with the three tables above. Without
+        # it the identity is unreadable, so EVERY name was refused — the None tests below passed for
+        # that reason, not theirs, and our own Arjun stopped resolving.
+        c.execute(text("create table org_self_identities (org_id text, kind text, value text)"))
         for node, email in (("n-buyer", "arjun@bigcustomer.com"),
                             ("n-staff", "arjun@acme.test")):
             c.execute(text("insert into graph_nodes values (:o, :n, 'person', :e, 'Arjun', null)"),

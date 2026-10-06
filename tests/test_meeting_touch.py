@@ -59,14 +59,22 @@ def test_only_meetings_with_an_outside_party_are_touches():
     So the assertion passed while the lane it guarded returned nothing for every customer since
     it shipped, which is the exact failure mode of testing for a mechanism instead of an outcome.
 
-    The outcome is enforced by the two clauses below, from data that exists: an attendee is
-    external when they are not one of our seats, not the account owner and not a connected
-    mailbox, and a meeting left with nobody external falls out of the `having`.
+    RESTATED BY STEP-04 (`yc2_w27_s04 · M22.C2.L-logic.V2.U03`), the same lesson again: this then
+    pinned the inline rule (`org_seats`, `connections`) and the `having`. Who is us is now
+    `platform/self_identity`: `meeting_rows` asks `is_us_node` of every attendee and leaves out a
+    meeting with nobody outside — the outcome is
+    `tests/context/test_a_join_on_a_fact_that_never_existed.py::test_a_meeting_with_nobody_external_is_not_a_touch`
+    and `tests/context/test_a_meeting_of_us_is_not_a_touch.py`. What stays a clause of the query is
+    checked here.
     """
-    assert "org_seats" in mt._MEETINGS, "our own seats are not excluded from the attendees"
-    assert "connections" in mt._MEETINGS, "the connected mailbox is not excluded"
-    assert "having count(distinct att.node_id) > 0" in mt._MEETINGS, (
-        "a meeting with nobody external is not filtered out")
+    import ast
+    import inspect
+
+    tree = ast.parse(inspect.getsource(mt.meeting_rows))
+    called = {n.func.attr if isinstance(n.func, ast.Attribute) else getattr(n.func, "id", None)
+              for n in ast.walk(tree) if isinstance(n, ast.Call)}
+    assert "is_us_node" in called, "our own people are not excluded from the attendees"
+    assert "org_seats" not in mt._MEETINGS, "the query re-derives who we are inline again"
     assert "e.valid_to is null" in mt._MEETINGS, "a retired attendance still counts"
 
 

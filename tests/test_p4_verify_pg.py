@@ -311,6 +311,13 @@ def test_duplicate_outreach_fires_for_org_visible_touches_only(client, store):
     team = _team(client)
     org = team["org"]
     o_mail, m_mail = team["owner"]["email"].lower(), team["member"]["email"].lower()
+    # THE TEAM DECLARED ITS DOMAIN (STEP-04). Our domains are the declared ones only
+    # (`platform/self_identity`); they used to be inferred from the seats' addresses, which made
+    # gmail.com "ours" for a Gmail founder. Undeclared, the team's own company is a counterparty
+    # here and fires a duplicate-outreach moment about itself.
+    with _engine().begin() as c:
+        c.execute(text("insert into org_self_identities (org_id, kind, value, declared_by) "
+                       "values (:o, 'domain', :d, 'test')"), {"o": org, "d": o_mail.split("@", 1)[1]})
     _touch(store, team, f"evt_o_{uuid.uuid4().hex[:8]}", seat_mail=o_mail,
            at=NOW - timedelta(days=2))
     _touch(store, team, f"evt_m_{uuid.uuid4().hex[:8]}", seat_mail=m_mail,
