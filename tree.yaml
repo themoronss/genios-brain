@@ -3252,3 +3252,15 @@ yc2_w27:
                       artifact: speedrun008/YC-II W27/03-FINDINGS.md
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py --assert-recorded "speedrun008/YC-II W27/03-FINDINGS.md"
                       depends_on: [M19.C5.L-interface.V4.U01]
+                    - id: M19.C5.L-integration.V5.U05
+                      what: >
+                        ADDED AFTER THE PUSH, 2026-10-06. The hermetic CI job installs production's
+                        dependency set (`requirements.txt`) before the dev extras, so a test that
+                        needs a package production ships runs in CI instead of dying at its import.
+                        With the job's own install (`.[dev]` alone) on Python 3.12, seven tests fail:
+                        the six of tests/test_office_extraction.py (openpyxl, python-pptx — failing
+                        that way since the file came in on 2026-09-10, `[inference]`: the install
+                        line never changed) and the runner's door test (anthropic).
+                      artifact: .github/workflows/ci.yml
+                      verify: .venv/bin/python -m pytest tests/test_ci_runs_the_golden_set_on_postgres.py -q
+                      depends_on: [M19.C5.L-integration.V5.U03]

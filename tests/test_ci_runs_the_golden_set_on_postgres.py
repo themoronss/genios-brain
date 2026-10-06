@@ -28,6 +28,18 @@ def test_the_hermetic_job_deselects_the_golden_set():
     assert pytest_runs and all('-m "not golden"' in r for r in pytest_runs), pytest_runs
 
 
+def test_the_hermetic_job_installs_production_dependencies():
+    """A test that needs a package production ships must run in CI, not die at its import.
+
+    The job installed `.[dev]` alone. On Python 3.12 with that install — the job's own — seven tests
+    fail at an import of a package `requirements.txt` ships: the six of
+    `tests/test_office_extraction.py` (openpyxl, python-pptx; the file came in on 2026-09-10) and
+    the runner's door test in `tests/replays/test_engine_runner.py` (anthropic).
+    """
+    runs = _runs(_workflow()["jobs"]["test"])
+    assert any("requirements.txt" in r for r in runs), runs
+
+
 def test_a_golden_job_runs_on_a_postgres_17_service():
     job = _workflow()["jobs"]["golden-pg"]
     service = job["services"]["postgres"]
