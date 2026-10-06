@@ -25,6 +25,11 @@ alter table source_events drop constraint if exists source_events_attention_chec
 alter table source_events add constraint source_events_attention_check
     check (attention is null or attention in ('deep', 'skim', 'archive'));
 
+-- The trace's verbs, documented where the column's readers look for them. 0001 wrote the list
+-- inline (`pass | drop | park | emit | short_circuit`) and an applied migration is immutable, so the
+-- new verb is documented here, on the column itself.
+comment on column event_trace.action is 'pass | drop | park | emit | short_circuit | archive';
+
 -- A sync run says what it archived, beside what it emitted, dropped and parked. NOT NULL with a
 -- zero: a run written before this column existed archived nothing, because nothing archived.
 alter table l1_sync_runs add column if not exists archived integer not null default 0;

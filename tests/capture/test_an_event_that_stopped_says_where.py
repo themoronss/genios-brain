@@ -77,9 +77,16 @@ def test_the_action_vocabulary_matches_what_the_column_documents():
     sql = "\n".join(p.read_text(encoding="utf-8")
                     for p in sorted((pathlib.Path(__file__).resolve().parents[2]
                                      / "migrations").glob("*.sql")))
-    comment = re.search(r"action\s+text not null,\s*--\s*([a-z |_]+)", sql)
-    assert comment, "the action column's documented vocabulary is gone"
-    documented = {w.strip() for w in comment.group(1).split("|") if w.strip()}
+    # The NEWEST documentation of the column wins: 0001 wrote it inline, and a migration that adds
+    # a verb documents it with `comment on column` (0192 added `archive`, STEP-03) — an applied
+    # migration is immutable, so the inline comment can never be edited.
+    later = re.findall(r"comment on column event_trace\.action is '([a-z |_]+)'", sql)
+    comment = later[-1] if later else None
+    if comment is None:
+        inline = re.search(r"action\s+text not null,\s*--\s*([a-z |_]+)", sql)
+        assert inline, "the action column's documented vocabulary is gone"
+        comment = inline.group(1)
+    documented = {w.strip() for w in comment.split("|") if w.strip()}
     assert documented == set(TRACE_ADVANCING) | set(TRACE_STOPPING), (
         f"the column documents {sorted(documented)} and the module partitions "
         f"{sorted(set(TRACE_ADVANCING) | set(TRACE_STOPPING))}")
@@ -171,3 +178,9 @@ def test_the_sibling_drop_receipt_still_asks_its_narrower_question():
     assert "raw_payloads" in sibling[0].sql, (
         "the sibling stopped being about a deleted body; if it has widened into this receipt's "
         "question, one of the two is now redundant")
+
+
+def test_an_archived_mail_stopped_at_the_gate():
+    """STEP-03 (`yc2_w27_s03/M21.C1.L-data.V1.U04`): the gate archives what it used to drop — kept, read by
+    no model. The walk must say the mail stopped there, not that it is still in flight."""
+    assert "archive" in TRACE_STOPPING and "archive" not in TRACE_ADVANCING

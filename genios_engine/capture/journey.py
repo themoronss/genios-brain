@@ -43,11 +43,13 @@ from sqlalchemy import text
 TRACE_ADVANCING = frozenset({"pass", "emit"})
 
 #: The event stopped HERE. The other three, and the reason each carries is the answer this whole
-#: module is for.
-TRACE_STOPPING = frozenset({"drop", "park", "short_circuit"})
+#: module is for. `archive` joined them with STEP-03 (`yc2_w27_s03`): the gate keeps what it used to
+#: drop — read by no model — so an archived mail stopped at the gate as surely as a dropped one did,
+#: and the walk must not report it as still in flight.
+TRACE_STOPPING = frozenset({"drop", "park", "short_circuit", "archive"})
 
 #: MEASUREMENT: `select distinct action from event_trace` returns five values, and the two sets
-#: above partition them exactly. MOVES WHEN a sixth appears — a new stage verb, a rename — at
+#: above partition them exactly — six from STEP-03 on, `archive` documented by migration 0192. MOVES WHEN a sixth appears — a new stage verb, a rename — at
 #: which point `unclassified_actions` starts returning it and `stopped_by` reports the step as
 #: `advancing: null` instead of guessing. A partition that silently classified an unknown verb as
 #: "advancing" would report an event as still in flight for the one reason it was actually lost,
