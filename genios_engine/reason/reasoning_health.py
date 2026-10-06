@@ -35,6 +35,10 @@ _ENGINE = _PKG.parent
 #:
 #: CLOSED, and checked in BOTH directions by `tests/reason/test_the_reasoning_layer_says_what_it_does_not_call.py`.
 UNREACHED: dict[str, tuple[str, str]] = {
+    "fingerprint.material_fingerprint": (
+        "⛔ BUILT BOTTOM-UP, NOT YET WIRED (STEP-02, `yc2_w27_s02/M20.C1.L-logic.V1.U03`). The fingerprint of one decision's inputs — its own request with time taken out, clocks on their rungs. Measured before wiring: on all 40 golden cases, 375 requests repeated on a sweep that brought nothing new, 375 identical fingerprints, no error",
+        "MOVES WITH `fingerprint_store.load_all` — the lanes that read the store compute this, in the same two units"),
+
     "fingerprint.verdict_key": (
         "⛔ BUILT BOTTOM-UP, NOT YET WIRED (STEP-02, `yc2_w27_s02/M20.C1.L-contract.V0.U01`). How a human verdict enters a fingerprint — which feedback, at which version — so a verdict that lands re-decides its subject. Its caller is the inputs reader, the next unit of the same category",
         "⛔ MOVES WHEN `yc2_w27_s02/M20.C1.L-data.V1.U02` (`reason/fingerprint_inputs.py`) reads a tenant's verdicts through it — then this entry must be deleted"),
