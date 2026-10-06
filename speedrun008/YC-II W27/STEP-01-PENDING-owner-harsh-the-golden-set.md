@@ -1,4 +1,4 @@
-# STEP-01 · PENDING — owner: Rohit (push, batched; labels) and Harsh (deploy) · the golden set — your mailbox becomes the exam
+# STEP-01 · PENDING — owner: Harsh (deploy) · the golden set — your mailbox becomes the exam
 
 **Owner:** Claude builds · Rohit labels (`06-DECISIONS.md` D12). **Depends on:** the database suite
 green — tree `yc2_w27/M16`: the runner runs on Postgres, and on a red suite no case's verify can be
@@ -22,7 +22,8 @@ first draft would have flattered the engine; §3 is rewritten from what the chec
 ⏳ **What is left, and whose:**
 
 - **Rohit** — push the batch (`06` D10). The `golden-pg` job runs for the first time on that push.
-- **Rohit** — the forty labels are mine, every row marked as mine (`06` D12a, the default). Correct
+  ✅ **Pushed 2026-10-06**, `77aba10e` — the CI run on it: `07-WHAT-IS-DONE.md` §7.
+- **Rohit**, optional — the forty labels are mine, every row marked as mine (`06` D12a, the default). Correct
   any row of `golden-labels.md`: a changed row fails `tests/replays/test_founder_cases.py` until its
   case is rewritten to match, so a label can never silently disagree with its case.
 - **Harsh** — deploy. Three engine fixes the golden set found (§10) ship with the batch.
@@ -302,5 +303,6 @@ fixes.
   (`19-PENDING-who-owns-what.md`) recommended `false`. If production runs it off, the golden set
   runs a decider production does not — one look at the deploy's environment (Rohit or Harsh).
 - Whether `golden-pg` is green on GitHub — Python 3.12 there, against cassettes recorded on 3.13.
-  Known at the first push.
+  Known at the first push. ✅ **Known 2026-10-06: green** — the first push's run (`37407196202`), 03:03–03:10 UTC,
+  on Python 3.12 and Postgres 17.
 - What the real model answers to these prompts — the live evaluation, not run (D12c).

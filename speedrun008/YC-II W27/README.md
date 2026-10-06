@@ -50,6 +50,8 @@ only) or read in the code, and says which.
 | 2 | [`05-HOW-THE-EXPERT-THINKS.md`](05-HOW-THE-EXPERT-THINKS.md) | **How it will work** — patterns, history, analytics, scenarios; who does what; four worked examples from your mailbox | Rohit, then everyone |
 | 3 | [`06-DECISIONS.md`](06-DECISIONS.md) | the thirteen decisions only you can make, each with a recommendation and a default | Rohit |
 | 4 | [`00-START-HERE.md`](00-START-HERE.md) | the step table — status, owner, order, what each step moves | everyone |
+| 4a | [`07-WHAT-IS-DONE.md`](07-WHAT-IS-DONE.md) | **what is finished, with its proof, and what is still owed** — the push, each finished step, Harsh's list after the deploy | everyone |
+| 4b | [`08-FOR-HARSH-deploy-and-after.md`](08-FOR-HARSH-deploy-and-after.md) | **the deploy and what to run after** — what changes at runtime, the re-queue, the toolkit pin, the probes, what not to do | Harsh |
 | 5 | [`01-CROSSCHECK.md`](01-CROSSCHECK.md) | what is actually true, measured, before planning — production, code, the Atlas, Harsh's branch | Harsh, coding agent |
 | 6 | [`02-PLAN.md`](02-PLAN.md) | the plan: sections → functions → components → units, each with expected · true · how · why · outcome · verify | Harsh, coding agent |
 | 7 | [`03-FINDINGS.md`](03-FINDINGS.md) | defects, false alarms, already built, genuinely missing, open questions, numbers with sources | everyone |

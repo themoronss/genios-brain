@@ -1,6 +1,6 @@
 """Every model site the engine has, and what a golden run does with it.
 
-`speedrun008/YC-II W27/STEP-01-PENDING-owner-rohit-and-harsh-the-golden-set.md` §3.2. A golden case
+`speedrun008/YC-II W27/` STEP-01 §3.2. A golden case
 runs the real chain with the model's answers recorded. That is only honest if every site the chain
 can reach is handed the RECORDED model — a site that quietly built its own client would, in a test
 process with no key, return nothing and skip itself, and the case would be judged on a chain

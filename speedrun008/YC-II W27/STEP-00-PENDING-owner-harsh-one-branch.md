@@ -1,4 +1,4 @@
-# STEP-00 · PENDING — owner: Rohit (push, batched) and Harsh (deploy) · one branch, one baseline
+# STEP-00 · PENDING — owner: Harsh (deploy) · one branch, one baseline
 
 **Depends on:** nothing. **Blocks:** every code step from `STEP-02` on. **Moves:**
 `origin/harsh/mvp` vs this branch, **13 / 28 → 0 / N**. It also leaves a measured baseline,
@@ -13,6 +13,10 @@ committed together with the SQL that produced it.
 
 ⏳ **Two actions remain, both deliberately later.** Rohit pushes the whole batch at once, when the
 steps are done (`06` D10). Harsh deploys after that.
+
+✅ **Pushed 2026-10-06** — `origin/speedrun008` = `77aba10e`, the batch of 88 commits. ⏳ **One
+action remains: Harsh deploys.** `origin/harsh/mvp` is 75 commits behind this branch and 0 ahead,
+so it fast-forwards; no migration (both at `0190`). What is done and owed: `07-WHAT-IS-DONE.md`.
 
 ---
 
@@ -55,7 +59,7 @@ green on a base that no longer exists.
 | 3 | Claude | the database suite — the 1,068 tests that skip without Postgres | ✅ run for the first time on this branch: **16,683 passed, 50 failed, 0 errors, 4 skipped**. **None of the failures is caused by the merge** (§4.2) |
 | 4 | Claude | the production baseline, read-only, with its statements committed | ✅ `baseline/production_state.sql` → `baseline/2026-10-05/` (§4.3) |
 | 5 | Claude | the per-workstream probe as a script | ✅ `scripts/workstream_funnel.py`, `f7784a9f` — 15 tests, **6 of 6 mutations rejected** |
-| 6 | **Rohit** | push — **batched**: everything at once, when the steps are done | ⏳ his decision, 2026-10-05 |
+| 6 | **Rohit** | push — **batched**: everything at once, when the steps are done | ⏳ his decision, 2026-10-05 · ✅ pushed 2026-10-06, `77aba10e` |
 | 7 | **Harsh** | deploy the pushed branch, with a **writable** database. No migration is needed today — production and this branch are both at `0190`; a later step that adds one says so | ⏳ after the push |
 
 ## 4 · The evidence
@@ -183,7 +187,7 @@ That is the floor `STEP-02` onward is measured from.
 - the hermetic suite green — ✅;
 - the database suite run, every failure attributed — ✅. Making it green is its own work (§7);
 - the baseline committed with its statements — ✅;
-- pushed and deployed — ⏳ batched, by Rohit's decision.
+- pushed and deployed — ⏳ batched, by Rohit's decision. ✅ pushed 2026-10-06 (`77aba10e`); deployed ⏳ Harsh.
 
 **Re-checked 2026-10-05, 21:40 IST** (`git fetch origin`): `origin/harsh/mvp` is still `2c42722d`,
 and no other remote branch has moved — this branch is **0 behind, 33 ahead**. Nothing new to

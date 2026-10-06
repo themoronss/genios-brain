@@ -4,7 +4,7 @@
     … python scripts/golden_score.py --json scores.json          # also write it, machine-readable
     … python scripts/golden_score.py --assert-recorded "speedrun008/YC-II W27/03-FINDINGS.md"
 
-`speedrun008/YC-II W27/STEP-01-PENDING-owner-rohit-and-harsh-the-golden-set.md` §5. Every founder
+`speedrun008/YC-II W27/` STEP-01 §5. Every founder
 case is replayed from its cassette through the real chain (`tests/replays/engine_runner.py`) and
 marked (`tests/replays/marking.py`); every Atlas mutation a founder case drives is checked on that
 case's run (`tests/replays/atlas_expression.py`). The board:

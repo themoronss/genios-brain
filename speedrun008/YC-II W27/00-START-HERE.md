@@ -30,8 +30,8 @@ flip-flopping and most of the model spend disappears — and it depends on nothi
 
 | Step | Status | Owner | What it does | The number that must move |
 |---|---|---|---|---|
-| [`STEP-00`](STEP-00-PENDING-owner-rohit-and-harsh-one-branch.md) | **PENDING** | Rohit (push, batched) · Harsh (deploy) | one branch, one measured baseline — ✅ merged; both suites run, every failure attributed; production baseline committed with its SQL (5 Oct) | `harsh/mvp` vs `speedrun008`: 13 / 28 → 0 / N ✅ · pushed ⏳ batched · deployed ⏳ |
-| [`STEP-01`](STEP-01-PENDING-owner-rohit-and-harsh-the-golden-set.md) | **PENDING** | Rohit (push, batched; labels) · Harsh (deploy) | your mailbox becomes the exam — ✅ 40 founder cases and the Atlas replays 01–07 driven through the real chain on Postgres; the before-score committed (6 Oct) | a measured before-score ✅ must-detect 4/30 · must-abstain 5/10 · forbidden outputs 4 · Atlas 0/80 · pushed ⏳ batched · `golden-pg` ⏳ first push |
+| [`STEP-00`](STEP-00-PENDING-owner-harsh-one-branch.md) | **PENDING** | Harsh (deploy) — Rohit's push ✅ 6 Oct | one branch, one measured baseline — ✅ merged; both suites run, every failure attributed; production baseline committed with its SQL (5 Oct) | `harsh/mvp` vs `speedrun008`: 13 / 28 → 0 / N ✅ · pushed ✅ `77aba10e` · deployed ⏳ |
+| [`STEP-01`](STEP-01-PENDING-owner-harsh-the-golden-set.md) | **PENDING** | Harsh (deploy) — Rohit's push ✅ 6 Oct; labels optional | your mailbox becomes the exam — ✅ 40 founder cases and the Atlas replays 01–07 driven through the real chain on Postgres; the before-score committed (6 Oct) | a measured before-score ✅ must-detect 4/30 · must-abstain 5/10 · forbidden outputs 4 · Atlas 0/80 · pushed ✅ `77aba10e` · `golden-pg` on GitHub: `07` §7 |
 | [`STEP-02`](STEP-02-TO-BUILD-the-change-gate.md) | TO BUILD | Claude | no new evidence → no new decision, zero model calls | `l4_llm_decision` ~870/day → < 50; cards stop flipping |
 | [`STEP-03`](STEP-03-TO-BUILD-the-gate-keeps-everything.md) | TO BUILD | Claude | the gate sets attention, never deletes | mails with content deleted: 258 → 0 |
 | [`STEP-04`](STEP-04-TO-BUILD-who-is-us.md) | TO BUILD | Claude · Rohit (D6) | one answer to "who is us", used everywhere | cards with you as the subject: ≥ 3 → 0 |
@@ -61,8 +61,10 @@ flip-flopping and most of the model spend disappears — and it depends on nothi
 3. A step is **DONE** only when its number moved on production and its `verify` command exits 0
    with no skips. The file is then renamed `-DONE-` and its title updated in the same commit.
    **The push is batched** (`06` D10): a step finished and green locally is renamed
-   `-PENDING-owner-rohit-and-harsh-` — push, deploy, then its production number — exactly as
-   `STEP-00` is, and becomes `-DONE-` only after that.
+   `-PENDING-owner-rohit-and-harsh-` — push, deploy, then its production number — and, once
+   pushed, `-PENDING-owner-harsh-`, as `STEP-00` and `STEP-01` are now; it becomes `-DONE-` only
+   after that. Code cites a step by its number and folder, never by its file name, so a rename
+   touches no code.
 4. Anything noticed on the way that is not this step becomes a line in `03-FINDINGS.md` §E — never
    a silent fix.
 5. Claim before editing, release after (`trace-claim.sh`). One writer per file.
@@ -93,7 +95,9 @@ on an empty scratch database, the whole suite with and without it, the `golden-p
 and the hermetic job: **55 pass / 1 fail / 0 skip**. The one fail is the blocked unit above
 (`M17.C3.L-integration.V2.U04`, *no tests ran*); every other check exits 0.
 
-Nothing here is pushed. Rohit pushes the batch (`06` D10). **After the deploy** (Harsh):
+Nothing here is pushed. Rohit pushes the batch (`06` D10). ✅ **Pushed 2026-10-06** (`77aba10e`) — what
+is done and what is owed, step by step: `07-WHAT-IS-DONE.md`; Harsh's notes, with every command:
+`08-FOR-HARSH-deploy-and-after.md`. **After the deploy** (Harsh):
 
 1. re-queue the attachments the `file_name` refusal dead-lettered —
    `scripts/requeue_refused_attachments.py --org <org> --database-url … --apply`, run only once the

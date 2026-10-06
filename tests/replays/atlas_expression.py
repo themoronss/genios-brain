@@ -1,6 +1,6 @@
 """Which Atlas mutations the founder set already drives — and, for the rest, why not yet.
 
-`speedrun008/YC-II W27/STEP-01-PENDING-owner-rohit-and-harsh-the-golden-set.md` §3.7. A replay
+`speedrun008/YC-II W27/` STEP-01 §3.7. A replay
 mutation is a sentence: "change this input, and the decision must change this way". It becomes a
 check on the engine only where a founder case IS that input — then its pass condition is written
 below as predicates over the case's run (`engine_runner.run_case`), and the mutation's own

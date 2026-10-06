@@ -1,6 +1,6 @@
 """The founder case — STEP-01's second exam, as a type, a loader, and the report a run of it makes.
 
-`speedrun008/YC-II W27/STEP-01-PENDING-owner-rohit-and-harsh-the-golden-set.md` §3.1. The twelve
+`speedrun008/YC-II W27/` STEP-01 §3.1. The twelve
 Atlas replays (`harness.py`) are specifications of decisions; a founder case is an INPUT the real
 chain is run on: the founder's mail and calendar as the providers would hand them over, the instants
 the sweeps run at, and what a correct GeniOS shows after each sweep — and must never show.

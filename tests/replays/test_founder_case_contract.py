@@ -2,11 +2,10 @@
 
     pytest tests/replays/test_founder_case_contract.py -q
 
-The founder set is the second exam
-(`speedrun008/YC-II W27/STEP-01-PENDING-owner-rohit-and-harsh-the-golden-set.md` §1). Its cases are
-synthetic — invented names and text, modelled on the real items by sender and date only — and each
-one is judged against the real chain. These tests hold the contract the cases are written against,
-on cases built here, so the rules are proven before a single case is authored:
+The founder set is the second exam (`speedrun008/YC-II W27/` STEP-01 §1). Its cases are synthetic —
+invented names and text, modelled on the real items by sender and date only — and each one is judged
+against the real chain. These tests hold the contract the cases are written against, on cases built
+here, so the rules are proven before a single case is authored:
 
   * a must-abstain case carries a WITNESS. Today nothing gets a card, so an abstain case without
     one would pass on nothing — the "a pass over an empty table is not a pass" defect;

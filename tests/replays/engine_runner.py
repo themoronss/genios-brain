@@ -1,6 +1,6 @@
 """Runs a founder case through the REAL chain, on the scratch database, the way production does.
 
-`speedrun008/YC-II W27/STEP-01-PENDING-owner-rohit-and-harsh-the-golden-set.md` §3.4. The Atlas
+`speedrun008/YC-II W27/` STEP-01 §3.4. The Atlas
 harness never called the engine; this does. For each sweep instant of a case:
 
   1. the case's mail and calendar are handed to the production sync door — `run_sync`, with the
