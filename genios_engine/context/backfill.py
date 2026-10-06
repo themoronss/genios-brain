@@ -37,6 +37,7 @@ from genios_engine.context.correlation import correlate_event
 from genios_engine.context.identity import register_node_identity
 from genios_engine.context.pipeline import _normalise_deal_status, is_platform_sender
 from genios_engine.context.situations import refresh_situations
+from genios_engine.platform.self_identity import identity_for
 
 # Events per transaction. Small enough that a failure costs little and a long backfill
 # does not hold one transaction open across a tenant's entire history.
@@ -80,9 +81,14 @@ def backfill_correlations(store, org_id: str, *, limit: int | None = None,
     fact, observation and node it created. That is the same material the live path uses
     — it just reads it back out of the graph instead of holding it in memory.
 
-    Our own seats are excluded here exactly as in the live path. Without it, every
+    Our own people are excluded here exactly as in the live path. Without it, every
     outbound email in the tenant's history would anchor on our own company and the
     backfill would build one situation containing the entire business.
+
+    STEP-04: "our own" is the one answer, `platform/self_identity.identity_for` — a person of ours
+    by address or declared domain, a company by a declared domain. It used to be the active seats
+    alone, so a rebuild anchored situations on the founder (`orgs.email`, not a seat) and on our own
+    company, both of which the live pipeline keeps out.
 
     `rebuild` re-derives the WHOLE set instead of only correlating what is not yet grouped.
 
@@ -104,9 +110,7 @@ def backfill_correlations(store, org_id: str, *, limit: int | None = None,
                           "context_correlations"):
                 conn.execute(text(f"delete from {table} where org_id = :o"), {"o": org_id})
     with store.engine.connect() as conn:
-        internal = frozenset(r.e for r in conn.execute(text(
-            "select lower(email) as e from org_seats "
-            "where org_id = :o and active and email is not null"), {"o": org_id}) if r.e)
+        us = identity_for(conn, org_id)
 
         events = conn.execute(text(
             "select se.event_id, se.occurred_at, se.parent_object_id, se.domain_hints "
@@ -140,8 +144,8 @@ def backfill_correlations(store, org_id: str, *, limit: int | None = None,
                 "  where n.org_id = :o and n.valid_to is null "
                 "    and n.created_by_event_id is not null"
                 ") reached"), {"o": org_id}):
-            if (row.canonical_key or "").lower() in internal:
-                continue                       # our own people never anchor a situation
+            if us.is_us_node(row.node_type, row.canonical_key):
+                continue                       # one of us, or our company, never anchors
             touched.setdefault(row.ev, {})[row.node_id] = row.node_type
 
     correlated = 0
@@ -229,14 +233,16 @@ def backfill_deal_nodes(store, org_id: str) -> dict:
         # and the platform's own address (is this us, the product?) — and a backfill that skips
         # them produces `thegenios.com — deal`: a card advising a founder about a negotiation with
         # his own vendor's website. It appeared on the first live run of this pass.
-        seat_domains = {e.rsplit("@", 1)[1] for e in (
-            (r.e or "") for r in conn.execute(text(
-                "select lower(email) as e from org_seats where org_id=:o and active "
-                "and email is not null"), {"o": org_id})) if "@" in e}
+        #
+        # STEP-04: which company is OURS is the identity's answer — a domain the tenant declared,
+        # or a subdomain of one (`SelfIdentity.is_us_node`) — the same answer the live pipeline
+        # now keeps out of the anchors in every event. It was the domains of the active seats,
+        # which never included a declared domain.
+        us = identity_for(conn, org_id)
         internal = {r.node_id for r in conn.execute(text(
             "select node_id, canonical_key from graph_nodes where org_id=:o "
             "and node_type='company' and valid_to is null"), {"o": org_id})
-            if (r.canonical_key or "").lower() in seat_domains
+            if us.is_us_node("company", r.canonical_key)
             or is_platform_sender("x@" + (r.canonical_key or ""))}
 
     orphaned = sum(1 for r in rows if not r.company_id or r.company_id in internal)
