@@ -48,12 +48,19 @@ def _relevance(confidence_bp: int) -> float:
     return confidence_bp / 10_000
 
 
+#: The confidence a mail BELOW the qualification floor enters memory at (STEP-05, `06` D20): under the
+#: pipeline's ranking floor (`context/pipeline.RELEVANCE_FLOOR`, 0.35), so it is stored, queryable and
+#: ranked low — never a gate, as relevance never is.
+BELOW_FLOOR_CONFIDENCE_BP = 3000
+
+
 def adapt_qes_extraction(
     payload: Mapping[str, Any] | ExtractionResult,
     *,
     confidence_bp: int,
     domain_hints: Sequence[Any] = (),
     signal_types: Sequence[str] = (),
+    below_floor: bool = False,
 ) -> Extraction:
     """Project Layer 1's cached extraction into the existing deterministic graph committer.
 
@@ -61,6 +68,10 @@ def adapt_qes_extraction(
     typed L1 claim and carries that claim's exact quote.  In particular, role and relationship
     open lanes pass through as data, commitments keep their resolved due bound, and a signal type
     becomes an observation rather than a fabricated fact.
+
+    `below_floor` — the extraction of a mail Layer 1 READ and the floor did not publish (STEP-05):
+    the same claims, at the caller's below-the-floor confidence, and an `l1.below_floor` observation
+    saying so, so nobody downstream mistakes it for a published signal.
     """
     result = (payload if isinstance(payload, ExtractionResult)
               else ExtractionResult.model_validate(dict(payload)))
@@ -128,6 +139,8 @@ def adapt_qes_extraction(
     default_quote = _span_quote(result.all_evidence)
     for kind in sorted({str(value).strip() for value in signal_types if str(value).strip()}):
         observations.append({"kind": kind, "evidence_text": default_quote})
+    if below_floor:
+        observations.append({"kind": "l1.below_floor", "evidence_text": default_quote})
     for item in result.unclassified_observations:
         observations.append({"kind": item.proposed_kind,
                              "evidence_text": _span_quote(item.evidence),
@@ -184,4 +197,4 @@ def adapt_qes_extraction(
     )
 
 
-__all__ = ["adapt_qes_extraction"]
+__all__ = ["BELOW_FLOOR_CONFIDENCE_BP", "adapt_qes_extraction"]
