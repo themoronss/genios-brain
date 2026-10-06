@@ -154,7 +154,9 @@ labels; ideal-reader cassettes; real names never appear in the cases.
   - an external event with no follow-up in 7 days (cohort sessions excluded, as F31);
   - weeks of zero outbound while people wait.
 
-Owner: Claude. Size: one tree block, about nine cases. It lands as STEP-08's acceptance.
+Owner: Claude. Size: one tree block, about nine cases. It is built **right after STEP-04**: synthetic cases need no
+production history, so every later step is measured against them from the start. STEP-08's acceptance adds the
+production half — the real threads (the introducer reply, the July promises, the 2 Apr deferral) are back in memory.
 
 **G2 · No step re-runs the benchmark.**
 
@@ -166,7 +168,7 @@ There is also no surface that answers a question. `POST /v1/intelligence/query`
 (`api/intelligence_routes.py:343`) exists. It is the older graph-facts Q&A: module `sales` by
 default, and it does not read workstreams or timelines.
 
-*Fix — a new STEP-19, after STEP-10, small:*
+*Fix — a new STEP-19, after STEP-16 (the cards come first; this step proves them against an LLM):*
 
 - five ledgers as read views over the data STEP-09 and STEP-10 already build:
   - relationships and reciprocity;
@@ -213,6 +215,8 @@ The plan follows D1. Anyone grading the build with Sole Mate's text would fail i
 - add one must-detect case (a renewal with a price rise);
 - keep F33: a plain receipt stays archived.
 
+The case joins G1's batch right after STEP-04; the kind itself is built in STEP-09.
+
 A domain or workspace renewal is real for a founder too. Size: small, inside STEP-09 and STEP-11.
 
 **G6 · Done means done — no case proves it, and no scorecard shows it.**
@@ -224,6 +228,9 @@ A domain or workspace renewal is real for a founder too. Size: small, inside STE
 - a receipt for the verified-outcome rate;
 - the weekly scorecard the pilot promises: usefulness per lane, what was held back and why,
   coverage, outcomes. All four already exist as data.
+
+The end-to-end case joins G1's batch right after STEP-04 (it fails until STEP-13 and STEP-16 land);
+the receipt and the scorecard are built in STEP-16.
 
 **G7 · Sole Mate is a different product shape. It is not in YC-II W27.**
 
@@ -253,9 +260,9 @@ partner's consent).
 
 | # | Question | Default if he says nothing |
 |---|---|---|
-| D15 | Add the benchmark cases to the golden set (G1), as STEP-08's acceptance? | yes |
+| D15 | Add the benchmark cases to the golden set (G1), right after STEP-04? | yes |
 | D16 | D5 = 365 days instead of 180 (G3)? | **365** — 180 loses the 3one4 deferral |
-| D17 | A new STEP-19, the benchmark re-run with five ledgers (G2)? | yes, after STEP-10 |
+| D17 | A new STEP-19, the benchmark re-run with five ledgers (G2)? | yes, after STEP-16 |
 | D18 | `vendor` as a workstream kind (G5), and G6's case and scorecard in STEP-16? | yes |
 | D19 | Sole Mate (G7) as the next block after YC-II W27, not inside it? | yes |
 | — | Update Atlas V.5 and Sole Mate's engine section to D1 (G4) | Rohit's own edit; Claude drafts |
@@ -275,3 +282,24 @@ The shape Rohit asked for on 2026-10-05 is the shape of STEP-07 → STEP-15:
 
 None of the gaps above asks for a re-design. They are what the plan must add to be measured against
 the documents.
+
+## 6 · Where each addition lands in the order
+
+*Added 2026-10-06, after Rohit asked "before STEP-04, inside it, or after?"* Nothing is added before or
+inside STEP-04; it stays the 37 units of `yc2_w27_s04`. STEP-05 waits for STEP-04: it depends on it
+(`STEP-05` header), its skeleton path writes a person, a company and a thread for every kept mail —
+without one answer to "who is us" that would multiply the defect across every archived mail — and it
+edits `context/runner.py`, which STEP-04 is editing.
+
+| When | What lands | Gap |
+|---|---|---|
+| STEP-04 (now) | unchanged | — |
+| right after STEP-04, before STEP-05 is built | about eleven new golden cases: the benchmark's patterns (G1), a renewal with a price rise (G5), an ask closed by verified evidence and never raised again (G6). They fail today; the board re-recorded with them is the honest before-score | G1, G5, G6 |
+| STEP-05, STEP-06, STEP-07 | unchanged | — |
+| STEP-08 | the window is 365 days, and the acceptance checks the real threads are back in memory | G3, G1 |
+| STEP-09 | the `vendor` workstream kind | G5 |
+| STEP-10 to STEP-15 | unchanged | — |
+| STEP-16 | the verified-outcome receipt and the weekly scorecard | G6 |
+| STEP-19 (new) | the five ledgers, the question surface, and the blind re-run of P1–P5 | G2 |
+| after YC-II W27 | Sole Mate: a team, documents, more connectors | G7 |
+| any time, Rohit | the two doctrine lines (G4); a second, high-volume mailbox before the STEP-19 run (G8) | G4, G8 |
