@@ -35,6 +35,10 @@ _ENGINE = _PKG.parent
 #:
 #: CLOSED, and checked in BOTH directions by `tests/reason/test_the_reasoning_layer_says_what_it_does_not_call.py`.
 UNREACHED: dict[str, tuple[str, str]] = {
+    "change_gate.should_skip": (
+        "⛔ BUILT BOTTOM-UP, NOT YET WIRED (STEP-02, the change gate, `yc2_w27_s02/M20.C3.L-logic.V0.U01`). The one rule that decides whether a subject's decision may be skipped — same fingerprint, and for a live card an open signal with more than a day of authority left. Pure, and its callers are the lanes, which are later units of the same block",
+        "MOVES WITH `fingerprint_store.load_all` — the same two units wire the store and the rule, in the same lanes"),
+
     "fingerprint_store.load_all": (
         "⛔ BUILT BOTTOM-UP, NOT YET WIRED (STEP-02, the change gate, `yc2_w27_s02/M20.C2.L-data.V1.U02`). The sweep's ONE read of a tenant's `reasoning_fingerprints` rows — what each subject's last decision was made on — for `change_gate.should_skip` to compare against. Its callers are the lanes, which are later units of the same block",
         "⛔ MOVES WHEN `yc2_w27_s02/M20.C3.L-integration.V2.U02` wires the compiled lane to the gate (and `M20.C4.L-integration.V3.U01` the legacy and native lanes) — then this entry must be deleted, or the stale-declaration guard fails"),
