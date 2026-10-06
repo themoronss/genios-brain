@@ -14,6 +14,8 @@ from __future__ import annotations
 
 import copy
 
+import pytest
+
 from tests.replays import founder_case as fc
 from tests.replays.marking import (FAIL, NOT_EXERCISED, NOT_EXPRESSIBLE, PASS, judge)
 
@@ -51,9 +53,9 @@ def _abstain() -> fc.FounderCase:
     return fc.parse_case(raw, source="t.json")
 
 
-def _card(card_id: str, text: str, sweeps=(0, 1)) -> fc.CardView:
+def _card(card_id: str, text: str, sweeps=(0, 1), subject: str | None = None) -> fc.CardView:
     return fc.CardView(card_id=card_id, state="queued", level="prescriptive", text=text,
-                       output_lane=None, sweeps=tuple(sweeps))
+                       output_lane=None, sweeps=tuple(sweeps), subject=subject)
 
 
 def _run(*, cards=(), outcome="emitted", reason=None, facts=3, situations=(), chain_ok=(True, True),
@@ -176,3 +178,45 @@ def test_silence_without_its_witness_is_not_exercised():
 def test_the_card_that_must_not_exist_fails_whatever_the_witness():
     mark = judge(_abstain(), _run(facts=0, cards=[_card("c1", "Recap for Kavya")]))
     assert mark.verdict == FAIL
+
+
+# =================================================================================================
+# STEP-04 · we are never the subject of a card
+# =================================================================================================
+def _gmail_founder() -> fc.FounderCase:
+    raw = copy.deepcopy(BASE)
+    raw["founder"] = {"name": "Meera Iyer", "email": "meera.iyer@gmail.com", "company": "Kitebird",
+                      "timezone": "Asia/Kolkata", "also": ["ceo@kitebird.test"],
+                      "domains": ["kitebird.test"]}
+    raw["objects"][0]["to"] = ["meera.iyer@gmail.com"]
+    raw["forbidden"] = {"names": [], "phrases": []}
+    raw["expected"]["cards"] = [{"about": ["Kavya"], "min": 1, "max": 1, "mentions": ["deck"]}]
+    return fc.parse_case(raw, source="t.json")
+
+
+@pytest.mark.parametrize("subject", ["Meera Iyer", "meera.iyer@gmail.com", "CEO@kitebird.test",
+                                     "kitebird.test", "Ms Meera Iyer — waiting on you"])
+def test_a_card_whose_subject_is_the_founder_fails_whatever_else_it_says(subject):
+    """STEP-04 (`yc2_w27_s04/M22.C5.L-logic.V1.U03`): production showed *"Send Mr Rohit Swerashi your
+    traction metrics"* — a card telling the founder to act on himself. Its subject was the founder; a
+    card's subject is the counterparty, always."""
+    case = _gmail_founder()
+    run = _run(cards=[_card("c1", "Kavya Menon asked for the deck", subject="Kavya Menon"),
+                      _card("c2", "Send the deck — Kavya asked", subject=subject)])
+    mark = judge(case, run)
+    assert mark.verdict == FAIL
+    assert "subject is the founder" in mark.reason and "c2" in mark.reason
+
+
+def test_a_card_about_the_counterparty_that_quotes_the_founder_passes():
+    """Our words may be on the card (`7075014c` — a stated dependency is grounded on them); we may
+    never be the one it is about."""
+    case = _gmail_founder()
+    run = _run(cards=[_card("c1", "Kavya Menon: 'Hi Meera, send the deck'", subject="Kavya Menon")])
+    assert judge(case, run).verdict == PASS
+
+
+def test_a_card_with_no_subject_is_not_judged_on_it():
+    case = _gmail_founder()
+    run = _run(cards=[_card("c1", "Kavya Menon asked for the deck", subject=None)])
+    assert judge(case, run).verdict == PASS

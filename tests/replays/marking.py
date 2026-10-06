@@ -73,6 +73,10 @@ def judge(case: FounderCase, run: CaseRun) -> Mark:
     if hits:
         checks.append(Check("forbidden", FAIL,
                             "; ".join(f"{card} says {term!r}" for card, term in hits)))
+    ours = sorted(_about_us(case, run))
+    if ours:
+        checks.append(Check("forbidden:us", FAIL, "; ".join(
+            f"card {card}'s subject is the founder ({subject!r})" for card, subject in ours)))
 
     witness = None
     if case.kind == "must_abstain" and case.witness is not None:
@@ -134,6 +138,23 @@ def _forbidden(case: FounderCase, run: CaseRun):
         for phrase in case.forbidden_phrases:
             if phrase.lower() in card.text.lower():
                 yield card.card_id, phrase
+
+
+def _about_us(case: FounderCase, run: CaseRun):
+    """STEP-04: cards whose SUBJECT is the founder — his name, any of his addresses, or a domain of
+    the company's. Our words may be on a card (`7075014c`); we may never be what it is about."""
+    from genios_engine.platform.self_identity import PUBLIC_MAIL_DOMAINS
+
+    f = case.founder
+    domains = {d for d in (*f.domains, f.domain) if d and d not in PUBLIC_MAIL_DOMAINS}
+    for card in run.cards:
+        subject = (card.subject or "").strip()
+        if not subject:
+            continue
+        low = subject.lower()
+        if (says(subject, f.name) or any(a in low for a in f.addresses)
+                or any(re.search(rf"(?<![0-9a-z.-]){re.escape(d)}(?![0-9a-z-])", low) for d in domains)):
+            yield card.card_id, subject
 
 
 def _primary(run: CaseRun, case: FounderCase, object_id: str):

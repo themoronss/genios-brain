@@ -324,6 +324,9 @@ class CardView:
     text: str
     output_lane: str | None
     sweeps: tuple[int, ...]                     # the sweeps after which the card existed
+    #: STEP-04. Who the card is about — `cards.business_subject`, the counterparty by contract. Kept
+    #: apart from `text` because our own words may be on a card and we may never be its subject.
+    subject: str | None = None
 
 
 @dataclass(frozen=True)
