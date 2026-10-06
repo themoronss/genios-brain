@@ -3440,6 +3440,20 @@ yc2_w27_s02:
                       artifact: genios_engine/reason/runner.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/reason/test_a_defer_keeps_the_card.py -q
                       depends_on: []
+            - layer: interface
+              levels:
+                - level: 1
+                  units:
+                    - id: M20.C5.L-interface.V1.U02
+                      what: >
+                        ADDED IN BUILD, 2026-10-06. `why_not` says what a `deferred` suppression is
+                        — GeniOS could not decide this time, and the card it already showed stands.
+                        Before M20.C5.U01 a DEFER was logged as `shadow` and explained as "the pack
+                        is in shadow mode", which was false; a new code with no text would read as
+                        a bare token.
+                      artifact: genios_engine/executive/explain.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/executive/test_why_not_explains_a_defer.py -q
+                      depends_on: [M20.C5.L-logic.V0.U01]
         - id: M20.C6
           name: Counted, checked, and held by the golden set
           layers:
