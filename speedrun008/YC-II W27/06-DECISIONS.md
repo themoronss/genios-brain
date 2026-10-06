@@ -8,7 +8,7 @@ default holds, and the step that depends on it says so in its own file.
 | **D1** | Does the expert's judgment decide **what matters**? | **Yes** — an amendment to the Atlas's RULE 02 | `STEP-12`, `STEP-13` |
 | **D2** | Are your founder workstreams in scope now, beyond "Admin only"? | **Yes** — one "Founder Office" domain | `STEP-09`, `STEP-11` |
 | **D3** | Before you review a playbook, may the expert still advise? | **Yes, labelled** — your org only | `STEP-12` |
-| **D4** | How long is low-attention mail kept? | **180 days, encrypted** | `STEP-03` |
+| **D4** | How long is low-attention mail kept? | ✅ **180 days, encrypted** — on Rohit's go on STEP-03 (6 Oct), whose plan said 180 | `STEP-03` (✅ built) |
 | **D5** | How far back does the re-sync go? | **180 days** | `STEP-08` |
 | **D6** | Who is "us" | ✅ **Answered 2026-10-05:** `mrrohitswerashi@gmail.com` — the connected Gmail and Calendar | `STEP-04` |
 | **D7** | Which model thinks, and the daily cap | **Sonnet-class; Opus-class for high stakes; $5/day** | `STEP-12` |
@@ -74,6 +74,11 @@ gate; mail judged low-attention is kept **encrypted and unread**, so it can be r
 turns out to matter — the way the intro from Pankaj mattered.
 
 **Options:** 30 · 90 · **180 days (recommended)** · 365. **Default:** 90.
+
+✅ **Taken as 180 days, 2026-10-06.** Rohit's go on STEP-03 (*"Thik hai step 3 start karo fully"*)
+came on the plan that said *"content 180 din rakha jaayega"*. Built that way: an archived mail keeps
+its encrypted payload 180 days (`capture/pipeline.ARCHIVED_PAYLOAD_TTL_DAYS`), and an emitted
+mail's body the same 180. If you meant another number, it is that one constant.
 
 ## D5 · How far back does the re-sync go?
 

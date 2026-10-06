@@ -11,9 +11,10 @@ or the command it came from.
 1. **Deploy `speedrun008`**, at `77aba10e` or later. `origin/harsh/mvp` (`2c42722d`, 4 Oct) is
    **75 commits behind it and 0 ahead** — it fast-forwards, no merge, no conflict. **No migration**:
    the newest is still `0190`, which production has.
-   ⛔ **CORRECTED 2026-10-06, for the NEXT push:** it carries STEP-02 (§1.4) and with it **migration
-   `0191_reasoning_fingerprints`** — the first since `0190`. `main.py` applies it at boot when the
-   database is writable; check the boot log says so (§2).
+   ⛔ **CORRECTED 2026-10-06, for the NEXT push:** it carries STEP-02 (§1.4) and STEP-03 (§1.5), and
+   with them **two migrations — `0191_reasoning_fingerprints` and `0192_attention_and_archive`** —
+   the first since `0190`. `main.py` applies them at boot when the database is writable; check the
+   boot log names both (§2).
 2. After the deploy, **re-queue the attachments** the `file_name` refusal dead-lettered (§3.1).
 3. **Read the first `refetch_last_error`** that comes back (§3.2).
 4. **Pin the Composio toolkits** — the one unit of this block that is yours (§3.3).
@@ -65,6 +66,21 @@ who owns what: `speedrun008/YCW27/19-PENDING-who-owns-what.md` and `21-PLAN-TO-P
 The probe after the deploy: `@model_calls_by_day` in `baseline/production_state.sql` — 1,213 · 759 ·
 1,887 a day on 2–4 Oct; the target is under 100.
 
+### 1.5 · STEP-03, the gate keeps everything — in the next push
+
+| | What changes at runtime |
+|---|---|
+| the gate | a mail a noise rule (N-01…N-10) or the AI filter's confident junk (`llm_junk`) used to **drop** is now **archived** — outcome `archived`, its encrypted payload kept 180 days, **no prepared text**, read by no model. Only S0 `out_of_scope` still drops, and no caller passes it |
+| every row | `source_events.attention` (`deep` · `skim` · `archive`) and `attention_reason` — the rule that archived it, or what let it through. Rows from before the deploy stay null |
+| payload TTL | an **emitted** mail's body is kept 180 days, not 30 — `_pull` inner-joins it, so a 30-day body stranded any event not drained in a month. More `raw_payloads` rows, all encrypted |
+| the sync | `SyncSummary.archived`, `l1_sync_runs.archived`, `/ingest/all` totals carry `archived` |
+| the drain | an archived `llm_junk` mail is re-admitted on the heartbeat exactly as a dropped one was (`03` F55, unchanged on purpose); its tier becomes `deep`, `readmitted:llm_junk` |
+| a new receipt | *every archived mail can still be read* — `/readiness` shows it |
+| a new health check | `scripts/pipeline_health.py` — *nothing captured was deleted at the gate* |
+| a new outcome value | a gate verb the pipeline does not know now **raises** (the sweep quarantines that object) instead of being emitted |
+
+What the founder sees does not change: on the golden set every case is marked exactly as before.
+
 ### 1.3 · How it was tested before the push
 
 `baseline/yc2w27-qa/qa_record.txt`, at `83dd87f3`, every check on an **empty** scratch Postgres 17:
@@ -86,8 +102,13 @@ git checkout harsh/mvp && git merge --ff-only origin/speedrun008    # 75 commits
 git push origin harsh/mvp
 ```
 
-No migration in the push of `77aba10e`. ⛔ **The next push carries `0191`**: `main.py` applies pending
-migrations at boot, and the boot log says `migrations applied at boot: ['0191_reasoning_fingerprints.sql']`.
+No migration in the push of `77aba10e`. ⛔ **The next push carries `0191` and `0192`**: `main.py`
+applies pending migrations at boot, and the boot log says
+`migrations applied at boot: ['0191_reasoning_fingerprints.sql', '0192_attention_and_archive.sql']`.
+`0192` adds two nullable columns to `source_events`, a check on one of them, a column comment, and
+`l1_sync_runs.archived integer not null default 0` — no rewrite, no index. The new capture code
+writes the new columns, so it must not serve on a schema without `0192`; a migration that fails
+crashes the boot (fail fast) rather than serving broken SQL.
 If it says `DEGRADED BOOT — database is read-only` instead, the change gate fails open (every subject
 is decided, as today — nothing lost, nothing saved) and `/reset` fails until `0191` is applied, because
 the reset now wipes `reasoning_fingerprints`. No new environment variable. One value we need from the
@@ -166,6 +187,27 @@ select max(evaluation_time), count(*) from calibration_runs;                    
 select count(*) from event_trace where reason_code = 'seen_on_screen';                           -- B20: after a reconnect, against events that no longer exist
 ```
 
+### 4.1 · STEP-03 — after the deploy, after the first sync
+
+```
+-- the gate's verdicts since the deploy, by tier and rule — `archived` appears, `dropped` does not
+select outcome, attention, attention_reason, count(*) from source_events
+ where org_id = 'org_e97e86f858ad48b2bbf64b8a' and captured_at > '<deploy instant>'
+ group by 1, 2, 3 order by 4 desc;
+-- STEP-03's number: 0
+select count(*) from source_events
+ where org_id = 'org_e97e86f858ad48b2bbf64b8a' and captured_at > '<deploy instant>' and outcome = 'dropped';
+```
+
+```
+python scripts/pipeline_health.py --org org_e97e86f858ad48b2bbf64b8a --database-url "$URL"
+```
+
+*Nothing captured was deleted at the gate* must pass. ⛔ **On the deploy day** its window starts at the
+tenant's first archived mail: until one noise mail has been archived, mail the old gate dropped in
+the previous 24 hours fails it, and the fix it prints asks whether STEP-03 is deployed. Run it after
+the first sync. `scripts/workstream_funnel.py` reads `attention_reason` — run it only after `0192`.
+
 ## 5 · Do not
 
 - switch **`calibration_apply`** on for any tenant. It is Rohit's decision (`06` D13), and not
@@ -196,5 +238,5 @@ it is still red after that push, the log is yours to open.
 | the bugs, with seams and probes | `STEP-18-TO-BUILD-known-bugs.md` |
 | the golden set — what it is, how to run it | `STEP-01-PENDING-owner-harsh-the-golden-set.md` §10 |
 | the before-score and the twelve findings it measured | `03-FINDINGS.md` §F.1, F38–F49 |
-| the QA record | `baseline/yc2w27-qa/qa_record.txt` |
+| the QA record | `baseline/yc2w27-qa/qa_record.txt` (STEP-00/01), `baseline/yc2w27-s02-qa/`, `baseline/yc2w27-s03-qa/` |
 | the units | `tree.yaml`, block `yc2_w27` |

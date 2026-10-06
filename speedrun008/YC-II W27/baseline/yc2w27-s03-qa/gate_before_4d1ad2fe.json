@@ -1,0 +1,928 @@
+{
+ "cases": {
+  "F01": {
+   "cards": 0,
+   "kind": "must_detect",
+   "landed": [
+    {
+     "object_id": "status",
+     "outcome": "dropped",
+     "reason": "N-06",
+     "source_object_id": "f01-status",
+     "sweep": 0
+    }
+   ],
+   "lost_at": "gate",
+   "verdict": "fail"
+  },
+  "F02": {
+   "cards": 0,
+   "kind": "must_detect",
+   "landed": [
+    {
+     "object_id": "locker",
+     "outcome": "dropped",
+     "reason": "N-03",
+     "source_object_id": "f02-locker",
+     "sweep": 0
+    },
+    {
+     "object_id": "ask",
+     "outcome": "dropped",
+     "reason": "N-06",
+     "source_object_id": "f02-ask",
+     "sweep": 1
+    },
+    {
+     "object_id": "granted",
+     "outcome": "dropped",
+     "reason": "N-03",
+     "source_object_id": "f02-granted",
+     "sweep": 2
+    },
+    {
+     "object_id": "received",
+     "outcome": "dropped",
+     "reason": "llm_junk",
+     "source_object_id": "f02-received",
+     "sweep": 2
+    }
+   ],
+   "lost_at": "gate",
+   "verdict": "fail"
+  },
+  "F03": {
+   "cards": 0,
+   "kind": "must_detect",
+   "landed": [
+    {
+     "object_id": "intro",
+     "outcome": "dropped",
+     "reason": "N-02",
+     "source_object_id": "f03-intro",
+     "sweep": 0
+    },
+    {
+     "object_id": "nudge1",
+     "outcome": "dropped",
+     "reason": "N-02",
+     "source_object_id": "f03-nudge1",
+     "sweep": 1
+    },
+    {
+     "object_id": "nudge2",
+     "outcome": "dropped",
+     "reason": "N-02",
+     "source_object_id": "f03-nudge2",
+     "sweep": 2
+    }
+   ],
+   "lost_at": "gate",
+   "verdict": "fail"
+  },
+  "F04": {
+   "cards": 0,
+   "kind": "must_detect",
+   "landed": [
+    {
+     "object_id": "reply",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f04-reply",
+     "sweep": 0
+    },
+    {
+     "object_id": "intro",
+     "outcome": "dropped",
+     "reason": "N-02",
+     "source_object_id": "f04-intro",
+     "sweep": 0
+    }
+   ],
+   "lost_at": "memory",
+   "verdict": "fail"
+  },
+  "F05": {
+   "cards": 0,
+   "kind": "must_detect",
+   "landed": [
+    {
+     "object_id": "intro",
+     "outcome": "dropped",
+     "reason": "N-02",
+     "source_object_id": "f05-intro",
+     "sweep": 0
+    },
+    {
+     "object_id": "reply",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f05-reply",
+     "sweep": 1
+    }
+   ],
+   "lost_at": "memory",
+   "verdict": "fail"
+  },
+  "F06": {
+   "cards": 0,
+   "kind": "must_detect",
+   "landed": [
+    {
+     "object_id": "intro",
+     "outcome": "dropped",
+     "reason": "N-02",
+     "source_object_id": "f06-intro",
+     "sweep": 0
+    },
+    {
+     "object_id": "reply",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f06-reply",
+     "sweep": 1
+    }
+   ],
+   "lost_at": "memory",
+   "verdict": "fail"
+  },
+  "F07": {
+   "cards": 2,
+   "kind": "must_detect",
+   "landed": [
+    {
+     "object_id": "reply",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f07-reply",
+     "sweep": 0
+    },
+    {
+     "object_id": "intro",
+     "outcome": "dropped",
+     "reason": "N-02",
+     "source_object_id": "f07-intro",
+     "sweep": 0
+    },
+    {
+     "object_id": "call",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f07-call",
+     "sweep": 0
+    },
+    {
+     "object_id": "before",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f07-before",
+     "sweep": 1
+    }
+   ],
+   "lost_at": "memory",
+   "verdict": "fail"
+  },
+  "F08": {
+   "cards": 0,
+   "kind": "must_detect",
+   "landed": [
+    {
+     "object_id": "simon",
+     "outcome": "dropped",
+     "reason": "N-02",
+     "source_object_id": "f08-simon",
+     "sweep": 0
+    },
+    {
+     "object_id": "omar",
+     "outcome": "dropped",
+     "reason": "N-02",
+     "source_object_id": "f08-omar",
+     "sweep": 1
+    }
+   ],
+   "lost_at": null,
+   "verdict": "not_expressible"
+  },
+  "F09": {
+   "cards": 0,
+   "kind": "must_detect",
+   "landed": [
+    {
+     "object_id": "ask",
+     "outcome": "dropped",
+     "reason": "N-02",
+     "source_object_id": "f09-ask",
+     "sweep": 0
+    },
+    {
+     "object_id": "mine",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f09-mine",
+     "sweep": 0
+    }
+   ],
+   "lost_at": "gate",
+   "verdict": "fail"
+  },
+  "F10": {
+   "cards": 0,
+   "kind": "must_detect",
+   "landed": [
+    {
+     "object_id": "ask",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f10-ask",
+     "sweep": 0
+    },
+    {
+     "object_id": "ask",
+     "outcome": "parked",
+     "reason": "DOC-05",
+     "source_object_id": "f10-ask::att1",
+     "sweep": 0
+    },
+    {
+     "object_id": "ask",
+     "outcome": "parked",
+     "reason": "DOC-05",
+     "source_object_id": "f10-ask::att2",
+     "sweep": 0
+    }
+   ],
+   "lost_at": "memory",
+   "verdict": "fail"
+  },
+  "F11": {
+   "cards": 0,
+   "kind": "must_detect",
+   "landed": [
+    {
+     "object_id": "ask",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f11-ask",
+     "sweep": 0
+    }
+   ],
+   "lost_at": "memory",
+   "verdict": "fail"
+  },
+  "F12": {
+   "cards": 1,
+   "kind": "must_detect",
+   "landed": [
+    {
+     "object_id": "note",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f12-note",
+     "sweep": 0
+    },
+    {
+     "object_id": "call",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f12-call",
+     "sweep": 0
+    }
+   ],
+   "lost_at": null,
+   "verdict": "pass"
+  },
+  "F13": {
+   "cards": 1,
+   "kind": "must_detect",
+   "landed": [
+    {
+     "object_id": "ask",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f13-ask",
+     "sweep": 0
+    }
+   ],
+   "lost_at": null,
+   "verdict": "pass"
+  },
+  "F14": {
+   "cards": 0,
+   "kind": "must_detect",
+   "landed": [
+    {
+     "object_id": "tara",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f14-tara",
+     "sweep": 0
+    },
+    {
+     "object_id": "u3",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f14-u3",
+     "sweep": 1
+    },
+    {
+     "object_id": "u2",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f14-u2",
+     "sweep": 1
+    },
+    {
+     "object_id": "u1",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f14-u1",
+     "sweep": 1
+    }
+   ],
+   "lost_at": null,
+   "verdict": "not_expressible"
+  },
+  "F15": {
+   "cards": 0,
+   "kind": "must_detect",
+   "landed": [
+    {
+     "object_id": "to5",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f15-to5",
+     "sweep": 0
+    },
+    {
+     "object_id": "to4",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f15-to4",
+     "sweep": 0
+    },
+    {
+     "object_id": "to3",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f15-to3",
+     "sweep": 0
+    },
+    {
+     "object_id": "to2",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f15-to2",
+     "sweep": 0
+    },
+    {
+     "object_id": "to1",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f15-to1",
+     "sweep": 0
+    }
+   ],
+   "lost_at": null,
+   "verdict": "fail"
+  },
+  "F16": {
+   "cards": 0,
+   "kind": "must_detect",
+   "landed": [
+    {
+     "object_id": "bounce",
+     "outcome": "dropped",
+     "reason": "N-03",
+     "source_object_id": "f16-bounce",
+     "sweep": 0
+    },
+    {
+     "object_id": "sent",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f16-sent",
+     "sweep": 0
+    }
+   ],
+   "lost_at": "gate",
+   "verdict": "fail"
+  },
+  "F17": {
+   "cards": 0,
+   "kind": "must_detect",
+   "landed": [
+    {
+     "object_id": "mine",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f17-mine",
+     "sweep": 0
+    },
+    {
+     "object_id": "next",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f17-next",
+     "sweep": 1
+    }
+   ],
+   "lost_at": "reasoning",
+   "verdict": "fail"
+  },
+  "F18": {
+   "cards": 0,
+   "kind": "must_detect",
+   "landed": [
+    {
+     "object_id": "round",
+     "outcome": "dropped",
+     "reason": "llm_junk",
+     "source_object_id": "f18-round",
+     "sweep": 0
+    }
+   ],
+   "lost_at": null,
+   "verdict": "not_expressible"
+  },
+  "F19": {
+   "cards": 1,
+   "kind": "must_detect",
+   "landed": [
+    {
+     "object_id": "report",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f19-report",
+     "sweep": 0
+    },
+    {
+     "object_id": "agreement",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f19-agreement",
+     "sweep": 0
+    },
+    {
+     "object_id": "invoice",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f19-invoice",
+     "sweep": 1
+    }
+   ],
+   "lost_at": "memory",
+   "verdict": "fail"
+  },
+  "F20": {
+   "cards": 0,
+   "kind": "must_detect",
+   "landed": [
+    {
+     "object_id": "note",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f20-note",
+     "sweep": 0
+    }
+   ],
+   "lost_at": null,
+   "verdict": "not_expressible"
+  },
+  "F21": {
+   "cards": 0,
+   "kind": "must_detect",
+   "landed": [
+    {
+     "object_id": "one",
+     "outcome": "dropped",
+     "reason": "llm_junk",
+     "source_object_id": "f21-one",
+     "sweep": 0
+    },
+    {
+     "object_id": "two",
+     "outcome": "dropped",
+     "reason": "llm_junk",
+     "source_object_id": "f21-two",
+     "sweep": 1
+    }
+   ],
+   "lost_at": null,
+   "verdict": "not_expressible"
+  },
+  "F22": {
+   "cards": 0,
+   "kind": "must_detect",
+   "landed": [
+    {
+     "object_id": "grant",
+     "outcome": "dropped",
+     "reason": "N-02",
+     "source_object_id": "f22-grant",
+     "sweep": 0
+    }
+   ],
+   "lost_at": null,
+   "verdict": "not_expressible"
+  },
+  "F23": {
+   "cards": 0,
+   "kind": "must_detect",
+   "landed": [
+    {
+     "object_id": "a",
+     "outcome": "dropped",
+     "reason": "N-03",
+     "source_object_id": "f23-a",
+     "sweep": 0
+    },
+    {
+     "object_id": "c",
+     "outcome": "dropped",
+     "reason": "N-03",
+     "source_object_id": "f23-c",
+     "sweep": 1
+    },
+    {
+     "object_id": "b",
+     "outcome": "dropped",
+     "reason": "N-03",
+     "source_object_id": "f23-b",
+     "sweep": 1
+    },
+    {
+     "object_id": "d",
+     "outcome": "dropped",
+     "reason": "N-03",
+     "source_object_id": "f23-d",
+     "sweep": 2
+    }
+   ],
+   "lost_at": null,
+   "verdict": "not_expressible"
+  },
+  "F24": {
+   "cards": 2,
+   "kind": "must_detect",
+   "landed": [
+    {
+     "object_id": "assignment",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f24-assignment",
+     "sweep": 0
+    },
+    {
+     "object_id": "review",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f24-review",
+     "sweep": 1
+    }
+   ],
+   "lost_at": "memory",
+   "verdict": "fail"
+  },
+  "F25": {
+   "cards": 1,
+   "kind": "must_detect",
+   "landed": [
+    {
+     "object_id": "offer",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f25-offer",
+     "sweep": 0
+    },
+    {
+     "object_id": "reply",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f25-reply",
+     "sweep": 1
+    }
+   ],
+   "lost_at": null,
+   "verdict": "pass"
+  },
+  "F26": {
+   "cards": 0,
+   "kind": "must_detect",
+   "landed": [
+    {
+     "object_id": "propose",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f26-propose",
+     "sweep": 0
+    },
+    {
+     "object_id": "intro",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f26-intro",
+     "sweep": 0
+    }
+   ],
+   "lost_at": "memory",
+   "verdict": "fail"
+  },
+  "F27": {
+   "cards": 2,
+   "kind": "must_detect",
+   "landed": [
+    {
+     "object_id": "note",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f27-note",
+     "sweep": 0
+    },
+    {
+     "object_id": "call",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f27-call",
+     "sweep": 0
+    }
+   ],
+   "lost_at": "reasoning",
+   "verdict": "fail"
+  },
+  "F28": {
+   "cards": 1,
+   "kind": "must_detect",
+   "landed": [
+    {
+     "object_id": "ask",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f28-ask",
+     "sweep": 0
+    },
+    {
+     "object_id": "call",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f28-call",
+     "sweep": 0
+    }
+   ],
+   "lost_at": null,
+   "verdict": "pass"
+  },
+  "F29": {
+   "cards": 3,
+   "kind": "must_detect",
+   "landed": [
+    {
+     "object_id": "plan",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f29-plan",
+     "sweep": 0
+    },
+    {
+     "object_id": "product",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f29-product",
+     "sweep": 0
+    },
+    {
+     "object_id": "pricing",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f29-pricing",
+     "sweep": 0
+    }
+   ],
+   "lost_at": "reasoning",
+   "verdict": "fail"
+  },
+  "F30": {
+   "cards": 0,
+   "kind": "must_detect",
+   "landed": [
+    {
+     "object_id": "mine",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f30-mine",
+     "sweep": 0
+    }
+   ],
+   "lost_at": null,
+   "verdict": "not_expressible"
+  },
+  "F31": {
+   "cards": 0,
+   "kind": "must_abstain",
+   "landed": [
+    {
+     "object_id": "homework",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f31-homework",
+     "sweep": 0
+    },
+    {
+     "object_id": "session",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f31-session",
+     "sweep": 0
+    }
+   ],
+   "lost_at": null,
+   "verdict": "fail"
+  },
+  "F32": {
+   "cards": 0,
+   "kind": "must_abstain",
+   "landed": [
+    {
+     "object_id": "social",
+     "outcome": "dropped",
+     "reason": "N-02",
+     "source_object_id": "f32-social",
+     "sweep": 0
+    },
+    {
+     "object_id": "forum",
+     "outcome": "dropped",
+     "reason": "N-06",
+     "source_object_id": "f32-forum",
+     "sweep": 0
+    },
+    {
+     "object_id": "nirmaan",
+     "outcome": "dropped",
+     "reason": "N-02",
+     "source_object_id": "f32-nirmaan",
+     "sweep": 0
+    }
+   ],
+   "lost_at": null,
+   "verdict": "pass"
+  },
+  "F33": {
+   "cards": 0,
+   "kind": "must_abstain",
+   "landed": [
+    {
+     "object_id": "update",
+     "outcome": "dropped",
+     "reason": "N-02",
+     "source_object_id": "f33-update",
+     "sweep": 0
+    },
+    {
+     "object_id": "promo",
+     "outcome": "dropped",
+     "reason": "N-06",
+     "source_object_id": "f33-promo",
+     "sweep": 0
+    },
+    {
+     "object_id": "receipt",
+     "outcome": "dropped",
+     "reason": "N-03",
+     "source_object_id": "f33-receipt",
+     "sweep": 0
+    }
+   ],
+   "lost_at": null,
+   "verdict": "pass"
+  },
+  "F34": {
+   "cards": 0,
+   "kind": "must_abstain",
+   "landed": [
+    {
+     "object_id": "fellows",
+     "outcome": "dropped",
+     "reason": "N-02",
+     "source_object_id": "f34-fellows",
+     "sweep": 0
+    },
+    {
+     "object_id": "match",
+     "outcome": "dropped",
+     "reason": "N-07",
+     "source_object_id": "f34-match",
+     "sweep": 0
+    }
+   ],
+   "lost_at": null,
+   "verdict": "pass"
+  },
+  "F35": {
+   "cards": 0,
+   "kind": "must_abstain",
+   "landed": [
+    {
+     "object_id": "review",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f35-review",
+     "sweep": 0
+    }
+   ],
+   "lost_at": null,
+   "verdict": "pass"
+  },
+  "F36": {
+   "cards": 0,
+   "kind": "must_abstain",
+   "landed": [
+    {
+     "object_id": "sent",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f36-sent",
+     "sweep": 0
+    }
+   ],
+   "lost_at": null,
+   "verdict": "not_exercised"
+  },
+  "F37": {
+   "cards": 1,
+   "kind": "must_abstain",
+   "landed": [
+    {
+     "object_id": "reply",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f37-reply",
+     "sweep": 0
+    },
+    {
+     "object_id": "intro",
+     "outcome": "dropped",
+     "reason": "N-02",
+     "source_object_id": "f37-intro",
+     "sweep": 0
+    }
+   ],
+   "lost_at": null,
+   "verdict": "pass"
+  },
+  "F38": {
+   "cards": 1,
+   "kind": "must_abstain",
+   "landed": [
+    {
+     "object_id": "done",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f38-done",
+     "sweep": 0
+    },
+    {
+     "object_id": "ask",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f38-ask",
+     "sweep": 0
+    }
+   ],
+   "lost_at": null,
+   "verdict": "fail"
+  },
+  "F39": {
+   "cards": 0,
+   "kind": "must_abstain",
+   "landed": [
+    {
+     "object_id": "proposal",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f39-proposal",
+     "sweep": 0
+    }
+   ],
+   "lost_at": null,
+   "verdict": "not_exercised"
+  },
+  "F40": {
+   "cards": 2,
+   "kind": "must_abstain",
+   "landed": [
+    {
+     "object_id": "call",
+     "outcome": "emitted",
+     "reason": null,
+     "source_object_id": "f40-call",
+     "sweep": 0
+    }
+   ],
+   "lost_at": null,
+   "verdict": "fail"
+  }
+ },
+ "engine": "a git worktree at 4d1ad2fe (the gate before STEP-03), genios_engine imported from it",
+ "measured": "2026-10-06, scratch Postgres 17, every founder case replayed from its cassette (measure_gate_by_object.py)"
+}

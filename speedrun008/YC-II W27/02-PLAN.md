@@ -127,6 +127,8 @@ STEP-17 real tests and STEP-18 known bugs run alongside, inside the step whose f
 - **U-S1-06** a DEFER keeps the card · `reason/runner.py:1116-1125`
 - **U-S1-07** counter and health check · `platform/funnel.py`, `scripts/pipeline_health.py`
 - *outcome* `l4_llm_decision` + `l4_llm_r1` ~1,400/day → < 100
+- ✅ *built 2026-10-06* as tree block `yc2_w27_s02` (13 units, `STEP-02` §9). Not built: U-S1-05 —
+  a shadow row skips when nothing changed, but still pays the model when its inputs do (§9.6)
 
 ### F1.2 · The gate keeps everything — `STEP-03`
 
@@ -138,6 +140,11 @@ STEP-17 real tests and STEP-18 known bugs run alongside, inside the step whose f
 - **U-S1-13** keep the S2 reason · `capture/gate/gate.py:133-135`
 - **U-S1-14** promotion of archived mail · `capture/pipeline.py` + F1.4's re-run
 - *outcome* new mail with its content deleted: 258 → 0
+- ✅ *built 2026-10-06* as tree block `yc2_w27_s03` (17 units, `STEP-03` §9): U-S1-08 and U-S1-10
+  built (an archive keeps its payload, **not** its prepared text — F57); U-S1-09 in part — the
+  N-codes are now the archive's reason, `light_junk` still decides how much is fetched; U-S1-13 was
+  already true in production (`llm_junk_unconfident` keeps its reason, `STEP-03` §8.2). Moved:
+  U-S1-11 → `STEP-04`/`07`, U-S1-12 → `STEP-07`, U-S1-14 → `STEP-05`
 
 ### F1.3 · Who is us — `STEP-04`
 

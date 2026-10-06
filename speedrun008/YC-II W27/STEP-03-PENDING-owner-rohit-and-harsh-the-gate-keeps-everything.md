@@ -1,15 +1,25 @@
-# STEP-03 · TO BUILD · the gate sets attention, it never deletes
+# STEP-03 · PENDING · the gate sets attention, it never deletes
 
-**Owner:** Claude. **Depends on:** `STEP-00`. **Decision:** `06` D4 (how long low-attention mail is
-kept). **Moves:** new mail with its content deleted at the gate **258 → 0**; every mail carries an
-attention tier and the reason for it.
+**Owner:** Claude (built) · **Rohit** (the push, batched) · **Harsh** (the deploy — migration `0192`,
+with STEP-02's `0191`). **Depends on:** `STEP-00`. **Decision:** `06` D4 — 180 days, on Rohit's go.
+**Moves:** new mail with its content deleted at the gate **258 → 0**; every mail carries an attention
+tier and the reason for it.
 
 ---
 
+✅ **Built 2026-10-06 — tree block `yc2_w27_s03`, 17 units green; QA ⏳ (§9.4).** On the golden set,
+0 of 86 mail objects are dropped: the 33 the gate used to delete are archived, each with its rule as
+the reason and its encrypted payload kept; every one of the 40 cases is marked exactly as before.
+**Pending:** Rohit's push; Harsh's deploy; then the production number (§9.5).
+
+⛔ **One correction to the plan below, made by measurement (§9.3):** an archive keeps its encrypted
+payload and **no prepared text**. §3.3 and §6 said "payload and prepared text"; the golden
+acceptance showed that stored text is read — by the resolution model, on F37.
+
 ⚠️ **Re-checked against the code on 2026-10-06, claim by claim, and measured on the golden set** (§8).
 Every drop the draft named is real, and three more exist; two claims are wrong in production; and
-the parts that need the company brief wait for `STEP-07`. **What is being built is §8.3** — tree
-block `yc2_w27_s03`, 17 units, on Rohit's go (*"step 3 start karo fully"*).
+the parts that need the company brief wait for `STEP-07`. **What was built is §8.3** — tree block
+`yc2_w27_s03`, 17 units, on Rohit's go (*"step 3 start karo fully"*).
 
 ---
 
@@ -38,7 +48,7 @@ An expert cannot reason over what was thrown away. The Atlas says it as a rule (
 |---|---|---|---|
 | 3.1 | the attention tier | migration (next free number) | `source_events.attention` ∈ `deep` · `skim` · `archive`, plus `attention_reason`. `dropped` stops being written for mail |
 | 3.2 | noise becomes a feature | `capture/gate/rules.py` `noise_rule`, `light_junk` | the N-codes still compute — they become the *reason* for `archive`, never a drop. `light_junk` (`composio.py:406-422`) decides how much to fetch (skim: headers and snippet), never whether the mail exists |
-| 3.3 | keep the content | `capture/pipeline.py:1609-1631`; TTLs `:179-187` | every kept tier stores the encrypted payload **and** the prepared text, expiring after D4 (recommended 180 days). The 30-day emitted TTL goes too: `_pull` inner-joins `raw_payloads` (`context/runner.py:242`), so a 30-day TTL quietly strands any event not drained in a month |
+| 3.3 | keep the content | `capture/pipeline.py:1609-1631`; TTLs `:179-187` | every kept tier stores the encrypted payload **and** the prepared text (⛔ corrected in build: an archive keeps the payload only — §9.3), expiring after D4 (recommended 180 days). The 30-day emitted TTL goes too: `_pull` inner-joins `raw_payloads` (`context/runner.py:242`), so a 30-day TTL quietly strands any event not drained in a month |
 | 3.4 | known people and connectors get attention | `rules.py:269-284`; `composio.py:575` | a known counterparty (with `48768ca7`'s sent-folder widening) → `deep`. An address the brief names as a **connector** (Boardy) is stamped `actor_type="agent"` → W-03 → `deep`. Until `STEP-07` exists, the bootstrap is: *the account has written to this address, and the relay detector (`rules.py:121-190`) says it introduces people* |
 | 3.5 | the AI filter decides attention, with context | `capture/gate/relevance.py:65-122, 233-268` | **after `STEP-07`:** the prompt carries the brief's excerpt — the company, its live workstreams, a watchlist of programs, funds and government portals — and the sender's history with you. It returns a tier and a reason, not keep/drop. The *"automated matchmaking"* clause goes; a matchmaking agent you use is named in the brief |
 | 3.6 | keep the reason | `capture/gate/gate.py:133-135` | the classifier's own reason code is stored, not collapsed into `low_relevance` |
@@ -67,7 +77,7 @@ An expert cannot reason over what was thrown away. The Atlas says it as a rule (
 
 ```
 .venv/bin/python -m pytest tests/capture/gate -q
-#   every N-code lands as archive with payload and prepared text, never dropped — one mutation per code
+#   every N-code lands as archive with its payload (⛔ and no prepared text — §9.3), never dropped — one mutation per code
 #   a connector address is stamped agent and reaches W-03
 #   the S2 reason survives to the trace
 .venv/bin/python -m pytest tests/replays -q          # founder cases 1–3, 10–11, 17–23 reach deep; 32–34 archive
@@ -139,7 +149,7 @@ block). What is built now is the whole of "never delete":
 | 4 | `M21.C1.L-data.V1.U04` | `capture/journey.py` | `archive` stops an event — the per-event walk says where |
 | 5 | `M21.C2.L-logic.V1.U01` | `capture/gate/gate.py` | every mail drop (N-01…N-10, S2 `llm_junk`) becomes `archive` with its code; S0 `out_of_scope` stays a drop |
 | 6–7 | `M21.C3.L-data.V2.U01–U02` | `capture/landing/repository.py`, `pg_repository.py` | the attention columns written |
-| 8 | `M21.C3.L-logic.V3.U03` | `capture/pipeline.py` | an archived mail keeps its payload and prepared text for 180 days and is read by no model; the emitted TTL goes 30 → 180 days |
+| 8 | `M21.C3.L-logic.V3.U03` | `capture/pipeline.py` | an archived mail keeps its payload (⛔ and, corrected in build, no prepared text — §9.3) for 180 days and is read by no model; the emitted TTL goes 30 → 180 days |
 | 9–13 | `M21.C4.*` | `sync_runner`, `api/routes`, `parked/drain`, `platform/receipts`, `scripts/workstream_funnel` | every reader of `dropped` learns `archived`; the drain treats an archived `llm_junk` exactly as it treated a dropped one (F55) |
 | 14–16 | `M21.C5.*` | the golden set | `archived` in the case contract; the marking; **the acceptance: 0 drops across all 40 cases** |
 | 17 | `M21.C6.L-interface.V5.U01` | `scripts/pipeline_health.py` | no mail captured in a day was dropped |
@@ -150,3 +160,107 @@ caller passes it today. `skim` is declared and not written: it is the tier the b
 
 The production number, after the deploy: new mail with its content deleted at the gate, 258 of 395
 → **0** (`select count(*) from source_events where org_id = :o and outcome = 'dropped' and captured_at > :deploy`).
+
+---
+
+## 9 · Built — 2026-10-06 (`yc2_w27_s03`, 17 units green)
+
+### 9.1 · What was built
+
+| Unit | Where | What it does |
+|---|---|---|
+| the vocabulary | `migrations/0192_attention_and_archive.sql`, `contracts/trace.py`, `capture/attention.py`, `capture/journey.py` | `source_events.attention` (deep · skim · archive, closed by a check) and `attention_reason`; `l1_sync_runs.archived`; `archive` is a trace verb that stops an event; `attention_for` is the one place an outcome becomes a tier |
+| the gate | `capture/gate/gate.py` | every drop a rule or the model makes — N-01…N-10 at S1, confident `llm_junk` at S2 — is `archive` with its code. A whitelist still bypasses the noise rules; unconfident junk and an unreadable attachment still park; S0 `out_of_scope` still drops (no caller passes it) |
+| the ledger | `capture/landing/repository.py`, `pg_repository.py` | the tier and its reason are written on every row; the in-memory store refuses a typo as Postgres does |
+| the pipeline | `capture/pipeline.py` | `archive` lands as outcome `archived`: the encrypted payload kept 180 days, **no prepared text**, no triage lane, and it stops before the structured lane, the extraction model and S4. The emitted payload TTL is 180 days, not 30. A gate verb the pipeline does not know is refused, never emitted |
+| every reader of `dropped` | `sync_runner`, `api/routes`, `parked/drain`, `platform/receipts`, `scripts/workstream_funnel` | `SyncSummary.archived` (the sweep raised without it); the run ledger and `/ingest/all` say what was archived; the drain re-admits an archived `llm_junk` exactly as it re-admitted a dropped one (F55), and its tier becomes `deep`, `readmitted:llm_junk`; a receipt *"every archived mail can still be read"*; the funnel counts archived mail apart, by rule |
+| the golden set | `tests/replays/founder_case.py`, `marking.py`, `test_the_gate_deletes_nothing.py` | a case can expect `archived`; an archived must-detect mail is lost at the gate as before and its check says *kept, read by no model*; **the acceptance** |
+| the production check | `scripts/pipeline_health.py` | *nothing captured was deleted at the gate* — fails on one drop since the tenant's first archive |
+
+### 9.2 · Measured — on the golden set, the same replay before and after
+
+Before: a worktree at `4d1ad2fe`, the gate as it was (`baseline/yc2w27-s03-qa/gate_before_4d1ad2fe.json`).
+
+| | Before | After |
+|---|---|---|
+| mail objects dropped, content gone | **33** of 86 — N-02 16, N-03 8, N-06 4, `llm_junk` 4, N-07 1 | **0** |
+| archived, with the same code, payload kept | — | **the same 33**, and nothing else |
+| emitted · parked | 51 · 2 | 51 · 2 |
+| each case's verdict, where it was lost, its card count | `BOARD_BEFORE` | **identical on all 40** — no must-abstain case gains a card |
+| the board (`03-FINDINGS.md` §F.1) | 4/30 · 5/10 · 4 forbidden; atlas 0/80 | **matches** |
+| production: new mail with its content deleted at the gate | 258 of 395 | ⏳ after the deploy — target **0** |
+
+### 9.3 · Found and fixed while building — each a measurement, not a guess
+
+- **⛔ An archive with prepared text is read.** The acceptance's first run missed its cassette on F37
+  at the *resolution* site. The prompt diff, before and after, showed the resolution model handed
+  Introly's archived introduction as a third message. The cause was not new: a reading
+  (`context/support_situations`, *first response overdue*) makes every event of a thread a
+  correlation member **whatever its outcome** — the dropped intro was a member before STEP-03 too —
+  and every reader of a message's words (`context/lifecycle/store`, `situation_bso`,
+  `deliver/card_builder`, `document_register`, `backfill`, `feedback/org_rule_ingest`) selects text
+  by membership. A dropped mail had no prepared text and was skipped **by absence**. So an archive
+  keeps its encrypted payload and nothing those readers can reach; the text is re-derived from the
+  payload (`preprocess`, no model) when a mail is promoted — `STEP-05`.
+- **The pipeline emitted any gate verb it did not know.** `{"drop": …, "park": …}.get(action,
+  "emitted")` would have published every archived Boardy nudge as founder mail. The verb table is
+  closed now; an unknown verb raises and the sweep quarantines the object.
+- **`run_sync` would have raised on the first archived mail** — it counts with
+  `setattr(summary, outcome, …)`. The three units (gate, pipeline, summary) were committed together,
+  so no commit is red.
+- **Three test assertions had become vacuous** — `!= "dropped"` passes for an archived mail; they
+  now assert `== "emitted"`. Five comments that said the gate deletes were corrected.
+
+### 9.4 · QA
+
+`baseline/yc2w27-s03-qa/qa_record.txt` — see that file for the run's lines, verbatim.
+
+### 9.5 · The deploy
+
+Migration **`0192`** ships, with STEP-02's `0191`. `main.py` applies both at boot when the database
+is writable; the boot log lists them. What `0192` does: adds `source_events.attention` and
+`attention_reason` (nullable — every existing row stays null), a check that closes the tier
+vocabulary, a column comment on `event_trace.action`, and `l1_sync_runs.archived integer not null
+default 0`. Nothing is rewritten; no index; it is quick. A migration that fails crashes the boot
+(fail fast, `genios_engine/main.py`); on a read-only database the boot is degraded and every write
+fails until the lock is lifted — as for any migration. The new capture code names the new columns,
+so it must not serve against a schema without `0192`; the boot guarantees that.
+
+After the deploy, read-only:
+
+```
+select outcome, attention, attention_reason, count(*) from source_events
+ where org_id = :o and captured_at > :deploy group by 1, 2, 3 order by 4 desc;   -- archived appears, by rule
+select count(*) from source_events
+ where org_id = :o and captured_at > :deploy and outcome = 'dropped';            -- 0
+python scripts/pipeline_health.py --org <org>    # "nothing captured was deleted at the gate"
+```
+
+The health check's window starts at the tenant's first archived mail. On the deploy day, until one
+noise mail has been archived, mail the OLD gate dropped in the previous 24 hours fails it — with a
+fix that asks whether STEP-03 is deployed. Run it after the first sync. `scripts/workstream_funnel.py`
+reads `attention_reason`, so against production it runs only after `0192`.
+
+### 9.6 · What it does not do yet — said plainly
+
+- **The AI filter's archive is undone in production.** On every heartbeat the parked drain flips an
+  archived `llm_junk` mail to `emitted`, and it is read — exactly as every judged drop was before
+  (`03` F55). STEP-03 preserved that on purpose: it changes what the gate keeps, not what is read.
+  *Read by no model* holds for what the **rules** archive. Whether the filter's verdict should stand
+  belongs with `STEP-07`, when the filter reads the company brief.
+- **An archive from the connector's fast path holds the list snippet.** For N-09/N-06/N-07/N-03
+  settled from list fields, and for confident `llm_junk`, the connector never fetched the body
+  (`connectors/composio.py`). The archive keeps what was fetched and the message id; promotion
+  (`STEP-05`) and the re-fetch (`STEP-08`) must re-fetch it.
+- **Archiving reaches every source the noise rules read, not only mail** — a Slack bot message, an
+  empty screen page. On your org the only sources are Gmail and Calendar (`06` D6), so today it is mail.
+- **Promotion out of archive** — `STEP-05`. **`skim`** — declared, written by nothing until
+  `STEP-07`. **The founder's seat in the golden runner** (W-01 never fires there) — `STEP-04`.
+- **Membership still ignores outcome.** An archive is kept out of reasoning by the absence of its
+  text; two tests assert that absence. A reader that asks the outcome is the durable fix — `STEP-05`/`06`.
+
+### 9.7 · Decisions
+
+`06` **D4** — how long low-attention mail is kept: **180 days**, encrypted. Rohit's go on this step
+(*"Thik hai step 3 start karo fully"*) came on the plan that said 180 days. It is one constant,
+`capture/pipeline.ARCHIVED_PAYLOAD_TTL_DAYS`; the emitted body's TTL is the same 180.

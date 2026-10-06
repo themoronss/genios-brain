@@ -31,7 +31,7 @@ is one branch, `speedrun008`, and the units are block `yc2_w27` of `tree.yaml`.
 | Phase | Steps | Status |
 |---|---|---|
 | 0 · Ground truth | `STEP-00` one branch · `STEP-01` the golden set | both **PENDING — Harsh** (deploy). Claude's part done, pushed |
-| 1 · Remember everything | `STEP-02` change gate · `03` the gate keeps everything · `04` who is us · `05` every item enters memory · `06` nothing lost silently | `02` **PENDING — Rohit (push), Harsh (deploy)**: built, QA green (§6b). `03`–`06` TO BUILD |
+| 1 · Remember everything | `STEP-02` change gate · `03` the gate keeps everything · `04` who is us · `05` every item enters memory · `06` nothing lost silently | `02` and `03` **PENDING — Rohit (push), Harsh (deploy)**: `02` built, QA green (§6b); `03` built, QA ⏳ (§6c). `04`–`06` TO BUILD |
 | 2 · The expert's desk | `STEP-07` company brief · `08` the re-sync · `09` workstreams · `10` history, patterns, analytics | `08` **PENDING — Harsh** (after 03–07 are live); the rest TO BUILD |
 | 3 · Expertise | `STEP-11` founder playbooks | TO BUILD |
 | 4 · The expert thinks | `STEP-12` the expert pass · `13` check every claim | TO BUILD |
@@ -39,8 +39,8 @@ is one branch, `speedrun008`, and the units are block `yc2_w27` of `tree.yaml`.
 | 6 · Learning from you | `STEP-16` | TO BUILD |
 | Across all phases | `STEP-17` real tests · `18` known bugs | TO BUILD — six of `STEP-18`'s bugs are fixed in code and pushed (§5) |
 
-**19 steps: 3 finished by Claude (`00`, `01` pushed; `02` waiting for the push), 1 waiting on Harsh
-from the start (`08`), 15 to build.** The next is `STEP-03`.
+**19 steps: 4 finished by Claude (`00`, `01` pushed; `02`, `03` waiting for the push), 1 waiting on
+Harsh from the start (`08`), 14 to build.** The next is `STEP-04`.
 
 ## 4 · STEP-00 · one branch, one baseline
 
@@ -125,6 +125,25 @@ calls** (before: F13 2 … F29 12), the cards are the same, and the board did no
 **Still owed:** the push; Harsh's deploy, which applies migration `0191` at boot; then production's
 `@model_calls_by_day` before and after — 760–1,890 a day today, under 100 the target.
 
+## 6c · STEP-03 · the gate keeps everything
+
+**What was built** (`STEP-03-PENDING-owner-rohit-and-harsh-the-gate-keeps-everything.md` §9): the
+gate no longer deletes a mail. What a noise rule or the AI filter's confident junk verdict used to
+drop is **archived** — its encrypted payload kept 180 days (`06` D4), read by no model — with the
+rule as its reason; every mail carries an attention tier (`deep` · `skim` · `archive`). Every reader
+of `dropped` learned `archived`: the sync summary, the run ledger, the drain, a new receipt, the
+funnel, the golden marking, and a health check.
+
+**Measured:** on the golden set, the same replay before and after — 33 of 86 mails dropped with their
+content gone → **0**; the same 33 archived with the same code; every one of the 40 cases marked
+exactly as before; the board matches. Found while building: an archive with prepared text is read by
+the resolution model (F37) — so an archive keeps its payload only; and the pipeline emitted any gate
+verb it did not know.
+
+**Still owed:** the push; Harsh's deploy, which applies migration `0192` (with `0191`) at boot; then
+the production number — new mail with its content deleted at the gate, 258 of 395 → 0, read by
+`scripts/pipeline_health.py`.
+
 ## 7 · CI on the push
 
 | Job | Run `37407196202`, on `77aba10e` |
@@ -142,7 +161,8 @@ with Rohit's next push.
 
 The full notes, with commands, expected outputs and what not to do: **`08-FOR-HARSH-deploy-and-after.md`**.
 
-1. Deploy `speedrun008` @ `77aba10e` or later. No migration.
+1. Deploy `speedrun008` @ `77aba10e` or later. ⛔ The next push carries migrations `0191` (STEP-02)
+   and `0192` (STEP-03); the boot applies them.
 2. Re-queue the attachments the `file_name` refusal dead-lettered — dry run, then `--apply`.
 3. Read the first `refetch_last_error` that comes back — it now names the response's shape.
 4. Pin the Composio toolkits — `yc2_w27/M17.C3.L-integration.V2.U04`.
