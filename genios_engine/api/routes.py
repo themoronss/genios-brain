@@ -496,18 +496,23 @@ def _run_ledger(*, org_id: str, connection_id: str, source: str, mode: str, summ
         with _graph.engine.begin() as c:
             c.execute(text(
                 "insert into l1_sync_runs (run_id, org_id, connection_id, source, mode, "
-                "scanned, emitted, dropped, parked, duplicate, quarantined, error, started_at, "
+                "scanned, emitted, dropped, parked, archived, duplicate, quarantined, error, "
+                "started_at, "
                 # L1.2.x · COMPLETENESS (step 5, migration 0178). Named in the INSERT and not
                 # only in the migration, because `started_at` is the cautionary tale: the column
                 # existed from the day the table did, the insert never mentioned it, and every
                 # row in production recorded a finish with no start. A column no writer names is
                 # a column that is null in every row.
                 "cursor_exhausted, page_budget_spent, claimed_total, claimed_is_estimate) "
-                "values (:r,:o,:c,:s,:m,:sc,:em,:dr,:pa,:du,:qu,:err,:start,"
+                "values (:r,:o,:c,:s,:m,:sc,:em,:dr,:pa,:ar,:du,:qu,:err,:start,"
                 ":cx,:pbs,:ct,:cie)"),
                 {"r": new_id("run"), "o": org_id, "c": connection_id, "s": source, "m": mode,
                  "sc": getattr(summary, "scanned", 0), "em": getattr(summary, "emitted", 0),
                  "dr": getattr(summary, "dropped", 0), "pa": getattr(summary, "parked", 0),
+                 # STEP-03 (migration 0192): what the gate kept and no model read. Named here for
+                 # `started_at`'s reason — a column no writer names is a zero in every row, and a
+                 # run that archived 33 mails would read as one that saw no noise at all.
+                 "ar": getattr(summary, "archived", 0),
                  "du": getattr(summary, "duplicate", 0), "qu": getattr(summary, "quarantined", 0),
                  # `getattr` with a None default throughout, matching every other field here: a
                  # caller reporting a TOTAL failure passes `summary=None`, and "we do not know
@@ -1562,7 +1567,8 @@ def ingest_all(background_tasks: BackgroundTasks, mode: str = "incremental",
     rc = make_relevance_classifier()
     conns = _connections.list_active()          # every source type, every org
     activated = _semantic_activated_orgs()      # once for the whole cross-org run
-    totals = {"scanned": 0, "emitted": 0, "dropped": 0, "parked": 0, "duplicate": 0}
+    totals = {"scanned": 0, "emitted": 0, "dropped": 0, "parked": 0, "archived": 0,
+              "duplicate": 0}
     per = []
     for conn in conns:
         _bind_gate_costs(rc, conn.org_id, getattr(conn, "seat_id", None))
@@ -1590,7 +1596,7 @@ def ingest_all(background_tasks: BackgroundTasks, mode: str = "incremental",
             totals[k] += getattr(summary, k)
         per.append({"org_id": conn.org_id, "source": conn.source_type,
                     "emitted": summary.emitted, "dropped": summary.dropped,
-                    "parked": summary.parked})
+                    "parked": summary.parked, "archived": summary.archived})
     if auto_l2 and _graph is not None:              # L2 runs in the background per org
         for org in {c.org_id for c in conns}:
             background_tasks.add_task(_run_l2, org)
