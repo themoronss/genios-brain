@@ -100,6 +100,9 @@ RECEIPT_PACKAGE: dict[str, tuple[str, str]] = {
         "a sixth table entering the merge loop enters this receipt without an edit"),
     "the sweep settles instead of chasing itself": (
         "context", "`l2_convergence` is this package's own convergence ledger"),
+    "every kept event has entered memory": (
+        "context", "STEP-05: the drain gives every kept event a road into memory "
+                   "(`context/memory_lanes`, `context/runner`) — the promise is this package's"),
 
     # ── packs/ · domain expertise, a plane ─────────────────────────────────────────────────
     "compiled expertise packages exist": (

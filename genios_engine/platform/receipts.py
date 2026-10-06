@@ -1032,6 +1032,22 @@ _CARD_ABOUT_US_SQL = (
     "      where lower(c.business_subject) like '%' || us.value || '%'))")
 
 
+def _KEPT_OUTSIDE_MEMORY_SQL() -> str:
+    """Kept events a day old with no settled L2 run — the outcomes and the screen's source name are
+    `context/memory_lanes`'s own, inlined because `evaluate()` binds one parameter. A screen item is
+    not owed: it enters memory only on a signal (`06` D22)."""
+    from genios_engine.context.memory_lanes import KEPT_OUTCOMES, SCREEN_SOURCE
+
+    kept = ", ".join(f"'{outcome}'" for outcome in KEPT_OUTCOMES)
+    return ("select count(*) from source_events se "
+            f"where se.outcome in ({kept}) and se.captured_at < now() - interval '1 day' "
+            f"and not (se.source = '{SCREEN_SOURCE}' and not exists ("
+            "    select 1 from qualified_signals q where q.org_id = se.org_id "
+            "       and q.event_id = se.event_id and q.state = 'active')) "
+            "and not exists (select 1 from l2_processing_runs r where r.org_id = se.org_id "
+            "                and r.event_id = se.event_id and r.status = 'done')")
+
+
 def receipts(org: str | None) -> list[Receipt]:
     # THE DORMANCY WINDOW IS THE THRESHOLD, and it is imported rather than restated. L2 decides a
     # situation has ended after `DORMANT_AFTER_DAYS` of silence, so a tenant that has been fed
@@ -1235,6 +1251,18 @@ def receipts(org: str | None) -> list[Receipt]:
                 f"a sweep that never settles re-derives the same situations up to {MAX_PASSES} "
                 "times and then gives up mid-pass, so the tenant's picture is whatever the last "
                 "partial pass left — and `detail` names the situations that were still moving"),
+
+        # ⛔ STEP-05 · EVERY KEPT EVENT HAS ENTERED MEMORY. Memory held ~27 of the design partner's
+        # 395 mails and 2 of its 34 meetings, and no reader could see it: an event no drain ever
+        # took leaves no row behind. STEP-05 gives every kept event a road (`context/memory_lanes`);
+        # this counts the ones a day old with no settled run.
+        Receipt("L2", "every kept event has entered memory",
+                _KEPT_OUTSIDE_MEMORY_SQL() + _org_filter(org, "se"),
+                lambda n: n == 0,
+                "a kept mail, archive or calendar event a day old that never entered memory: one no "
+                "drain took (it has no road — waiting for its re-read, or given up by the ladder), "
+                "or one whose run is held, failed or parked. `scripts/pipeline_health` splits them; "
+                "walk one with `journey.event_journey`"),
 
         # ── L3 domain expertise ───────────────────────────────────────────────────────
         Receipt("L3", "compiled expertise packages exist",
