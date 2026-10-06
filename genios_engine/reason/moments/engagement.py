@@ -8,7 +8,7 @@ never a touch here, by construction of the one query below:
   * a screen event (`source='screen_session'`) — what a seat saw on its screen is its own;
   * any PRIVATE event (`visibility_scope='private'`) — a personal upload, a private connection.
 So another seat's screen activity can never show up in `other_seats` nor fire P-13.
-Our own company (a seat's email domain) is never a counterparty.
+Our own company (a domain the tenant declared — `platform/self_identity`) is never a counterparty.
 
 P-13: when a SECOND seat touches a company another seat touched within 7 days, the second seat
 gets one server moment naming the first. Deterministic, no LLM, idempotent per episode (the moment
@@ -22,6 +22,7 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import text
 
+from genios_engine.platform.self_identity import identity_for
 from genios_engine.reason.moments.common import aware, iso
 
 TOUCH_DAYS = 7
@@ -66,11 +67,11 @@ _TOUCHES = text(
 
 
 def internal_domains(conn, org_id: str) -> list[str]:
-    """Our own company's domains: every seat's and the workspace owner's email domain."""
-    return sorted({r.d for r in conn.execute(text(
-        "select lower(split_part(email, '@', 2)) as d from org_seats where org_id = :o "
-        "and email like '%@%' union select lower(split_part(email, '@', 2)) from orgs "
-        "where id = :o and email like '%@%'"), {"o": org_id}) if r.d})
+    """Our own company's domains: the ones the tenant DECLARED, from the one answer
+    (`platform/self_identity`, STEP-04) — never a public mail domain. Every seat's mail domain
+    used to stand in for them, so a Gmail founder's company was `gmail.com` and its real domain a
+    counterparty that "several of us touched"."""
+    return sorted(identity_for(conn, org_id).domains)
 
 
 def touches(conn, org_id: str, *, now: datetime, company_ids=None,
