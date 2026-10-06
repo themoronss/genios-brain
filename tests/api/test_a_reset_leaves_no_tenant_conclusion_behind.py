@@ -51,6 +51,9 @@ SURVIVES_RESET: dict[str, str] = {
     "capture_policies": "what the admin allowed to be captured — a decision, not a conclusion",
     "seat_capture_settings": "same, per seat",
     "org_seats": "the people; wiping them would lock the tenant out",
+    "org_self_identities": "who the tenant IS — its declared addresses and domains (STEP-04, 0193): "
+                           "authored, like the seats; a reset that forgot them would make the "
+                           "founder's second address an outside person again",
     "org_members": "same",
     "org_invites": "an invite in flight",
     "seat_profiles": "the person's own profile",
