@@ -4,8 +4,9 @@
 (read-only, metadata). **Re-measured the same day after the merge** (`8a472b81`, the `STEP-00`
 re-do): F26–F29, E8, and the corrections to F24 and E4. **Root-caused the same day** on scratch
 databases, for tree `yc2_w27`: F30–F37, E9–E11. **Measured 2026-10-06 by the golden set**
-(`STEP-01`, `yc2_w27/M19`) on a scratch database: F38–F49 and §F.1, the before-score. A finding is
-never deleted; a correction is a new line that says what it corrects.
+(`STEP-01`, `yc2_w27/M19`) on a scratch database: F38–F49 and §F.1, the before-score. **Found
+2026-10-06 building STEP-02** (`yc2_w27_s02`) **and checking STEP-03**: F50–F55. A finding is never
+deleted; a correction is a new line that says what it corrects.
 
 ---
 
@@ -63,6 +64,12 @@ never deleted; a correction is a new line that says what it corrects.
 | F47 | Accelerators and partners are framed as INVESTOR relationships (sales `investor_relationship`, with investor plays) and an incubator's report as a support ticket (`first_response_overdue`) — no play offered fits what was asked | `[TEST]` golden cases F17, F19, F24, F29 | `STEP-09`, `STEP-11` |
 | F48 | The meeting follow-through narrator is told the meeting *happened* and asked for a recap — for meetings nobody confirmed took place | `[CODE]` the `meeting_follow_through` guidance in the card templates; `[TEST]` golden cases F07, F29, F40 | `STEP-14`; contradicts Atlas replay 05 |
 | F49 | One ask makes several cards: the company's account-admin card, the person's unanswered-email card, and the meeting's | `[TEST]` golden cases F27 (2), F29 (3), F07 (2) | `STEP-09` (one file per workstream) |
+| F50 | `run_all` threw the compiled pass's whole result away, so nothing the compiled lane counted reached the sweep's outcomes | `[CODE]` `reason/runner.run_all`, found building STEP-02 | ✅ fixed — `yc2_w27_s02/M20.C6.L-interface.V4.U01` (`a08dd148`) |
+| F51 | A live DEFER was suppressed as `shadow`, stayed out of `fired` and `indeterminate`, and the lifecycle pass expired the card — and `why_not` told the founder "the pack is in shadow mode" | `[TEST]` `tests/reason/test_a_defer_keeps_the_card.py` (red on the old code: `resolved: 1`) | ✅ fixed — `M20.C5.L-logic.V0.U01` (`07933472`), `M20.C5.L-interface.V1.U02` (`829f405b`) |
+| F52 | A re-run before a compiled signal's authority expires renews nothing — the lane answers "standing" — so a card is replaced at expiry, never renewed | `[CODE]` `reason/domain_shadow._emit_capability_signal`; `[TEST]` the STEP-02 acceptance on F27 | open — `STEP-14` (one living card). The gate decides on the first sweep after the lapse (`RENEW_MARGIN` = 0) |
+| F53 | A legacy signal kept open by `no_new_evidence` outlives its authority and is decided every sweep after the lapse | `[CODE]` `reason/runner.py` (no path renews legacy authority on unchanged evidence) | open — `STEP-14`; no worse than before the gate |
+| F54 | `sender_known`'s sent-folder half counts only mail sent by an `org_seats` address: the golden tenant has no seat, so W-01 never fires on the golden set — and in production it holds only if the seat's address is the connected mailbox | `[CODE]` `api/routes.KNOWN_FROM_SENT_SQL`; `[TEST]` golden F09 (the founder replied to Boardy; Boardy's answer was dropped `N-02`) | `STEP-04` (who is us); the golden runner gains the founder's seat in `STEP-03` |
+| F55 | An `llm_junk` drop is not a drop: `drain_parked` re-admits every judged drop with a payload as `emitted` on each heartbeat, without the gate. The mails deleted for good are the N-code drops, which keep no payload | `[CODE]` `capture/parked/drain.py:120-205` | `STEP-03` — the 258 are N-code drops |
 
 ## B · False alarms — things that looked wrong and are not
 

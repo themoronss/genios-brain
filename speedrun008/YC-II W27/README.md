@@ -56,7 +56,7 @@ only) or read in the code, and says which.
 | 6 | [`02-PLAN.md`](02-PLAN.md) | the plan: sections → functions → components → units, each with expected · true · how · why · outcome · verify | Harsh, coding agent |
 | 7 | [`03-FINDINGS.md`](03-FINDINGS.md) | defects, false alarms, already built, genuinely missing, open questions, numbers with sources | everyone |
 | 8 | `STEP-nn-*.md` | one per step — what, why, how, what will happen, expected, verify, depends on, owner | whoever builds it |
-| 9 | `../../tree.yaml`, block `yc2_w27` | the block as addressable units — proposed as 43, ✅ built as 53 (51 green, 1 retired, 1 blocked on Harsh), each with one artifact and one verify command; `00-START-HERE.md` summarises it | whoever builds it |
+| 9 | `../../tree.yaml`, block `yc2_w27` | the blocks as addressable units — `yc2_w27`: proposed as 43, ✅ built as 53 (51 green, 1 retired, 1 blocked on Harsh); `yc2_w27_s02` (STEP-02): ✅ 13 built, QA green — each with one artifact and one verify command; `00-START-HERE.md` summarises them | whoever builds it |
 | 10 | `baseline/` | `production_state.sql` — every production statement behind the baseline, read-only — and the dated outputs | Harsh, whoever re-measures |
 
 ## Conventions (the same as `../YCW27/`)

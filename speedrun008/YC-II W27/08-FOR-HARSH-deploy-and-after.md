@@ -11,6 +11,9 @@ or the command it came from.
 1. **Deploy `speedrun008`**, at `77aba10e` or later. `origin/harsh/mvp` (`2c42722d`, 4 Oct) is
    **75 commits behind it and 0 ahead** — it fast-forwards, no merge, no conflict. **No migration**:
    the newest is still `0190`, which production has.
+   ⛔ **CORRECTED 2026-10-06, for the NEXT push:** it carries STEP-02 (§1.4) and with it **migration
+   `0191_reasoning_fingerprints`** — the first since `0190`. `main.py` applies it at boot when the
+   database is writable; check the boot log says so (§2).
 2. After the deploy, **re-queue the attachments** the `file_name` refusal dead-lettered (§3.1).
 3. **Read the first `refetch_last_error`** that comes back (§3.2).
 4. **Pin the Composio toolkits** — the one unit of this block that is yours (§3.3).
@@ -49,6 +52,19 @@ titles: `902284c8` the delivery findings (gate, outbox, push, pipeline, `card_bu
 situations accepted and live. The rest are receipts, declarations and audits. Their record, with
 who owns what: `speedrun008/YCW27/19-PENDING-who-owns-what.md` and `21-PLAN-TO-PRODUCTION.md`.
 
+### 1.4 · STEP-02, the change gate — in the next push
+
+| | What changes at runtime |
+|---|---|
+| the gate | before the decider and R-1 are asked, each lane (compiled, legacy, native) fingerprints the request and skips a subject whose inputs did not move while its card keeps its authority — fewer `l4_llm_decision` and `l4_llm_r1` calls, the same cards |
+| a DEFER | a live DEFER no longer expires the card it found; its suppression says `deferred` |
+| new outcomes | `run_all` reports `skipped_unchanged`, `skipped_unchanged_compiled`, `deferred` every sweep |
+| new table | `reasoning_fingerprints` (migration `0191`), wiped by the tenant reset |
+| new health check | `scripts/pipeline_health.py` — *the change gate skips what did not change* |
+
+The probe after the deploy: `@model_calls_by_day` in `baseline/production_state.sql` — 1,213 · 759 ·
+1,887 a day on 2–4 Oct; the target is under 100.
+
 ### 1.3 · How it was tested before the push
 
 `baseline/yc2w27-qa/qa_record.txt`, at `83dd87f3`, every check on an **empty** scratch Postgres 17:
@@ -70,7 +86,12 @@ git checkout harsh/mvp && git merge --ff-only origin/speedrun008    # 75 commits
 git push origin harsh/mvp
 ```
 
-No migration; no new environment variable. One value we need from the deploy's environment:
+No migration in the push of `77aba10e`. ⛔ **The next push carries `0191`**: `main.py` applies pending
+migrations at boot, and the boot log says `migrations applied at boot: ['0191_reasoning_fingerprints.sql']`.
+If it says `DEGRADED BOOT — database is read-only` instead, the change gate fails open (every subject
+is decided, as today — nothing lost, nothing saved) and `/reset` fails until `0191` is applied, because
+the reset now wipes `reasoning_fingerprints`. No new environment variable. One value we need from the
+deploy's environment:
 **`GENIOS_L4_LLM_DECISION_MAKER`** — on or off? The golden set runs the LLM decider on, as
 `speedrun008/YCW27/STATUS.md` records production; `YCW27` decision R1 recommended off. Tell
 Rohit which it is.

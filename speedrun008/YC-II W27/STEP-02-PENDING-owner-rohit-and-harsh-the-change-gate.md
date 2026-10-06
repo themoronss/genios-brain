@@ -1,4 +1,4 @@
-# STEP-02 · TO BUILD · the change gate — no new evidence, no new decision
+# STEP-02 · PENDING — owner: Rohit (push, batched) and Harsh (deploy, with migration 0191) · the change gate — no new evidence, no new decision
 
 **Owner:** Claude. **Depends on:** `STEP-00` (one branch). **Decision:** `06` D11 (recommended: keep
 the current decider, behind this gate). **Moves:** `l4_llm_decision` + `l4_llm_r1` **~1,400 calls a
@@ -10,6 +10,15 @@ day → under 100**; cards stop appearing and vanishing; a DEFER stops expiring 
 (§8). Every claim in §1 holds; three of the seven units in §3 would have broken something as
 drafted. **What will be built is §8.3** — tree block `yc2_w27_s02`, 12 units, proposed and
 awaiting Rohit's go.
+
+✅ **Everything that is Claude's is done** — 2026-10-06, on Rohit's go (*"Haan, ab step 2 start
+karo"*), tree `yc2_w27_s02`, 13 units, each red before and green after, and the whole QA tier green
+at `aaca7e67` (§9): on all 40 founder cases a sweep that brings nothing new now makes **0 decider and
+0 R-1 calls** — F29 made 12 — with the same cards and every verdict unchanged.
+
+⏳ **What is left, and whose:** **Rohit** — push the batch (`06` D10). **Harsh** — deploy; it carries
+migration `0191`, applied at boot when the database is writable (§9.5). Then the production number:
+`@model_calls_by_day` before and after.
 
 ---
 
@@ -145,3 +154,65 @@ the deploy. Not in this block: renewing a standing card's authority (replaced at
 
 **The production number** (after the deploy, read-only): `baseline/production_state.sql`
 `@model_calls_by_day` — `l4_llm_decision` + `l4_llm_r1` from ~760–1,890 a day to **under 100**.
+
+## 9 · Built — 2026-10-06 (`yc2_w27_s02`, 13 units green)
+
+### 9.1 · What was built
+
+| Unit | Where | What it does |
+|---|---|---|
+| the store | `migrations/0191_reasoning_fingerprints.sql`, `reason/fingerprint_store.py` | one row per subject: the fingerprint its last decision was made on, the run, the outcome, the skips |
+| the fingerprint | `reason/fingerprint.py`, `reason/fingerprint_inputs.py` | the decision's **own request** — capability and context snapshot — with time taken out, clocks on their rungs, plus the pack's revision, the human verdicts and who decides |
+| the rule | `reason/change_gate.py` | skip only on the same fingerprint, and for a live card only while its authority has not lapsed |
+| the compiled lane | `reason/domain_shadow.py` | asks the gate just before `reason_native_capability`, live and shadow rows alike |
+| the legacy and native lanes | `reason/runner.py` | ask the gate before a rule or a native capability is reasoned; a skip replays the skipped decision's bookkeeping |
+| a DEFER keeps the card | `reason/runner.py`, `executive/explain.py` | a live DEFER is indeterminate — the card stands — and `why_not` says *"could not decide"*, not *"shadow mode"* |
+| counted and checked | `reason/runner.run_all`; `scripts/pipeline_health.py` | `skipped_unchanged`, `skipped_unchanged_compiled`, `deferred` on every sweep; a health check that the gate runs and saves |
+| the acceptance | `tests/replays/test_an_unchanged_sweep_costs_nothing.py` | the 40 founder cases, in the `golden-pg` CI job |
+
+### 9.2 · Measured
+
+| | Before | After |
+|---|---|---|
+| model calls on a sweep that brings nothing new — golden set | F13 2 · F12/F25/F28 4 · F07 5 · F29 12 | **0 on all 40** |
+| the cards after that sweep | the same | the same |
+| the golden board | §F.1 | **unchanged** — the gate moved no verdict |
+| production `l4_llm_decision` + `l4_llm_r1` | 1,213 · 759 · 1,887 a day (2–4 Oct) | ⏳ after the deploy — target under 100 |
+
+### 9.3 · Found and fixed while building — each a measurement, not a guess
+
+- **who decides is an input.** A test that switched the LLM decider on between two sweeps was
+  skipped as unchanged; in production, flipping `GENIOS_L4_LLM_DECISION_MAKER` would have kept every
+  old decision. The fingerprint carries the decider.
+- **a re-run before expiry renews nothing.** The rule's first margin was a day, so a card was
+  re-decided on every sweep of its last day — about 96 decider and R-1 pairs per card per week —
+  found by the acceptance on F27. The margin is zero.
+- **the fingerprint would have raised on any decimal** (hashing a canonical payload twice), and
+  **dropping `occurred_at` threw away a source fact's age** — both caught by the fingerprint's own
+  mutation check, before wiring.
+- **`run_all` threw the compiled pass's result away**, so nothing the compiled lane counted reached
+  the sweep.
+- **a DEFER was logged as `shadow`** and explained to the founder as "the pack is in shadow mode".
+
+### 9.4 · QA
+
+`baseline/yc2w27-s02-qa/qa_record.txt`, at `aaca7e67`, an empty scratch database: the units 17 / 0 / 0;
+the whole database suite 17,290 passed, 0 failed; the golden lane 398 passed, 100 xfailed, 0
+skipped; the board matches; the hermetic job 16,087 passed. The first run, at `ac021462`, failed three
+repo-wide guards; they were fixed and the whole tier re-run.
+
+### 9.5 · The deploy
+
+Migration `0191` ships. `main.py` applies pending migrations at boot when the database is writable.
+On a read-only database the boot is degraded: the gate then fails open — every subject is decided,
+as before, so nothing is lost but nothing is saved — and `/reset` fails until `0191` is applied,
+because the reset now wipes `reasoning_fingerprints`.
+
+### 9.6 · What it does not do yet
+
+- renew a standing card's authority — it is replaced at expiry, as it was before (`STEP-14`);
+- a legacy signal kept open by `no_new_evidence` past its authority is decided every sweep after the
+  lapse, as it was before;
+- a shadow row still pays the model when its inputs do change;
+- the fingerprint takes time out by name — a new field re-stamped every sweep would make the gate save
+  nothing, which the health check and the acceptance both catch.

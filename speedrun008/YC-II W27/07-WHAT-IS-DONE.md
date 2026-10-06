@@ -31,7 +31,7 @@ is one branch, `speedrun008`, and the units are block `yc2_w27` of `tree.yaml`.
 | Phase | Steps | Status |
 |---|---|---|
 | 0 · Ground truth | `STEP-00` one branch · `STEP-01` the golden set | both **PENDING — Harsh** (deploy). Claude's part done, pushed |
-| 1 · Remember everything | `STEP-02` change gate · `03` the gate keeps everything · `04` who is us · `05` every item enters memory · `06` nothing lost silently | TO BUILD |
+| 1 · Remember everything | `STEP-02` change gate · `03` the gate keeps everything · `04` who is us · `05` every item enters memory · `06` nothing lost silently | `02` **PENDING — Rohit (push), Harsh (deploy)**: built, QA green (§6b). `03`–`06` TO BUILD |
 | 2 · The expert's desk | `STEP-07` company brief · `08` the re-sync · `09` workstreams · `10` history, patterns, analytics | `08` **PENDING — Harsh** (after 03–07 are live); the rest TO BUILD |
 | 3 · Expertise | `STEP-11` founder playbooks | TO BUILD |
 | 4 · The expert thinks | `STEP-12` the expert pass · `13` check every claim | TO BUILD |
@@ -39,8 +39,8 @@ is one branch, `speedrun008`, and the units are block `yc2_w27` of `tree.yaml`.
 | 6 · Learning from you | `STEP-16` | TO BUILD |
 | Across all phases | `STEP-17` real tests · `18` known bugs | TO BUILD — six of `STEP-18`'s bugs are fixed in code and pushed (§5) |
 
-**19 steps: 2 finished by Claude and pushed (`00`, `01`), 1 waiting on Harsh from the start (`08`),
-16 to build.** The next is `STEP-02`.
+**19 steps: 3 finished by Claude (`00`, `01` pushed; `02` waiting for the push), 1 waiting on Harsh
+from the start (`08`), 15 to build.** The next is `STEP-03`.
 
 ## 4 · STEP-00 · one branch, one baseline
 
@@ -109,6 +109,21 @@ xfailed, 0 skipped; the board matches §F.1; the hermetic job 16,018 passed.
 
 **Still owed:** the deploy (the three engine fixes); the labels are mine until Rohit corrects
 them (`06` D12a — optional, nothing waits on it).
+
+## 6b · STEP-02 · the change gate
+
+**What was built** (`STEP-02-PENDING-owner-rohit-and-harsh-the-change-gate.md` §9): before the
+decider and R-1 are asked, each lane fingerprints the request it is about to send — its own
+capability and context, with time taken out — and skips a subject whose fingerprint is the one its
+last decision was made on, while the card that decision left still has its authority. A DEFER keeps
+the card it found. Every skip is counted, and a health check fails when the gate saves nothing.
+
+**Measured:** on all 40 founder cases, a sweep that brings nothing new makes **0 decider and 0 R-1
+calls** (before: F13 2 … F29 12), the cards are the same, and the board did not move. QA green at
+`aaca7e67` (`baseline/yc2w27-s02-qa/qa_record.txt`).
+
+**Still owed:** the push; Harsh's deploy, which applies migration `0191` at boot; then production's
+`@model_calls_by_day` before and after — 760–1,890 a day today, under 100 the target.
 
 ## 7 · CI on the push
 
