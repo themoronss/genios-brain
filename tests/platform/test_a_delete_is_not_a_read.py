@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 2_920, (
+    assert r["statements"] == 2_923, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -203,6 +203,9 @@ def test_the_statement_count_did_NOT_move():
     # read and update, and the give-up update. Five statements, each a literal.
     # ⛔ MOVED 2,918 → 2,920 by yc2_w27/M17.C3.U03 (STEP-18 B19): `scripts/requeue_refused_attachments.py`
     # — the SELECT of the refused dead letters and the UPDATE that re-queues them.
+    # ⛔ MOVED 2,920 → 2,923 by yc2_w27_s02/M20.C2.L-data.V1.U02 (STEP-02, the change gate):
+    # `reason/fingerprint_store.py` — a tenant's rows, the run's upsert and the skip's update.
+    # Three statements, each a literal at its own call.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

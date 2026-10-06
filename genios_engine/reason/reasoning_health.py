@@ -35,6 +35,18 @@ _ENGINE = _PKG.parent
 #:
 #: CLOSED, and checked in BOTH directions by `tests/reason/test_the_reasoning_layer_says_what_it_does_not_call.py`.
 UNREACHED: dict[str, tuple[str, str]] = {
+    "fingerprint_store.load_all": (
+        "⛔ BUILT BOTTOM-UP, NOT YET WIRED (STEP-02, the change gate, `yc2_w27_s02/M20.C2.L-data.V1.U02`). The sweep's ONE read of a tenant's `reasoning_fingerprints` rows — what each subject's last decision was made on — for `change_gate.should_skip` to compare against. Its callers are the lanes, which are later units of the same block",
+        "⛔ MOVES WHEN `yc2_w27_s02/M20.C3.L-integration.V2.U02` wires the compiled lane to the gate (and `M20.C4.L-integration.V3.U01` the legacy and native lanes) — then this entry must be deleted, or the stale-declaration guard fails"),
+
+    "fingerprint_store.record_decided": (
+        "⛔ BUILT BOTTOM-UP, NOT YET WIRED (STEP-02, `yc2_w27_s02/M20.C2.L-data.V1.U02`). The upsert after a run: the fingerprint the decision saw, the run, the outcome a later skip replays, the instant — and the skips zeroed. A lane calls it after every decision it pays for",
+        "MOVES WITH `fingerprint_store.load_all` — the same two units wire both, in the same lanes"),
+
+    "fingerprint_store.record_skipped": (
+        "⛔ BUILT BOTTOM-UP, NOT YET WIRED (STEP-02, `yc2_w27_s02/M20.C2.L-data.V1.U02`). The skip receipt: `last_checked_at` and `skips + 1`, so a skipped subject still shows the sweep looked and a subject re-decided on an unchanged fingerprint is visible to `scripts/pipeline_health.py`",
+        "MOVES WITH `fingerprint_store.load_all` — the same two units wire both, in the same lanes"),
+
     "baselines.load_baselines": (
         "⛔ *'Back-compat: just the reply_cadence baseline used by `{baseline}` threshold resolution'* — and NOTHING is compatible with it any more: no callers, no tests, not even a script. ⛔ **A back-compat shim is wanted only while something old still calls it**, and the thing it was kept for is gone. L4's `STEP-08` worked on `build_baselines` next door and did not need this",
         "⛔ MOVES WHEN it is deleted. It is the clearest delete candidate in this table, and it is left declared rather than removed because deleting a public function is a boundary change nobody asked for"),
