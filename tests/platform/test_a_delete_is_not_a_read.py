@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 2_942, (
+    assert r["statements"] == 2_941, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -245,6 +245,11 @@ def test_the_statement_count_did_NOT_move():
     # engagement` (U11) — inline unions gone; U06/U07/U08 replaced one statement with one; U03's
     # union was a subquery inside one statement. +1 `context/pipeline` (U20): the anchor pool asked
     # once more by each node's own key. Removing SQL that re-derived "us" is the point of the step.
+    # ⛔ MOVED 2,942 → 2,941, measured per file against the commit before (scratchpad
+    # `stmt_per_file.py`): −1 `reason/meetings/prep` (U24, its seats read), −1 `api/moment_routes`
+    # (U25, `_seat_emails`), +1 `platform/self_identity` (C6.U03: the union became `identity_sql`, an
+    # f-string the template walk counts at two prefixes), ±0 `platform/receipts` (its literal now
+    # embeds `identity_sql("c.org_id")` instead of restating the sources).
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

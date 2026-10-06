@@ -4029,6 +4029,22 @@ yc2_w27_s04:
                       artifact: genios_engine/reason/domain_shadow.py
                       verify: .venv/bin/python -m pytest tests/reason/test_the_shadow_reads_who_we_are_once.py -q
                       depends_on: [M22.C1.L-data.V1.U03, M22.C2.L-logic.V2.U14]
+                    - id: M22.C2.L-logic.V2.U24
+                      what: >
+                        `reason/meetings/prep.read` — an attendee is internal by `identity_for(...).is_us`;
+                        it read every seat's address (active or not) and nothing else, so the founder's
+                        declared second address was someone he was meeting. Found writing U19.
+                      artifact: genios_engine/reason/meetings/prep.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/reason/meetings/test_prep_knows_who_we_are.py -q
+                      depends_on: [M22.C1.L-data.V1.U03]
+                    - id: M22.C2.L-logic.V2.U25
+                      what: >
+                        `reason/moments/recall.read` takes the identity (`us`) and asks `is_us` of the
+                        subject's addresses; its one caller, `api/moment_routes`, reads it once instead of
+                        `_seat_emails` (the seats' addresses alone). Found writing U19.
+                      artifact: genios_engine/reason/moments/recall.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/reason/moments/test_recall_knows_who_we_are.py -q
+                      depends_on: [M22.C1.L-data.V1.U03]
             - layer: integration
               levels:
                 - level: 3
@@ -4042,7 +4058,7 @@ yc2_w27_s04:
                         not the text.
                       artifact: tests/platform/test_one_answer_to_who_is_us.py
                       verify: .venv/bin/python -m pytest tests/platform/test_one_answer_to_who_is_us.py -q
-                      depends_on: [M22.C2.L-logic.V2.U01, M22.C2.L-logic.V2.U02, M22.C2.L-logic.V2.U03, M22.C2.L-logic.V2.U04, M22.C2.L-logic.V2.U05, M22.C2.L-logic.V2.U06, M22.C2.L-logic.V2.U07, M22.C2.L-logic.V2.U08, M22.C2.L-logic.V2.U09, M22.C2.L-logic.V2.U10, M22.C2.L-logic.V2.U11, M22.C2.L-logic.V2.U12, M22.C2.L-logic.V2.U13, M22.C2.L-logic.V2.U14, M22.C2.L-logic.V2.U15, M22.C2.L-logic.V2.U16, M22.C2.L-logic.V2.U17, M22.C2.L-logic.V2.U18, M22.C2.L-logic.V2.U20, M22.C2.L-logic.V2.U21, M22.C2.L-logic.V2.U22, M22.C2.L-logic.V2.U23]
+                      depends_on: [M22.C2.L-logic.V2.U01, M22.C2.L-logic.V2.U02, M22.C2.L-logic.V2.U03, M22.C2.L-logic.V2.U04, M22.C2.L-logic.V2.U05, M22.C2.L-logic.V2.U06, M22.C2.L-logic.V2.U07, M22.C2.L-logic.V2.U08, M22.C2.L-logic.V2.U09, M22.C2.L-logic.V2.U10, M22.C2.L-logic.V2.U11, M22.C2.L-logic.V2.U12, M22.C2.L-logic.V2.U13, M22.C2.L-logic.V2.U14, M22.C2.L-logic.V2.U15, M22.C2.L-logic.V2.U16, M22.C2.L-logic.V2.U17, M22.C2.L-logic.V2.U18, M22.C2.L-logic.V2.U20, M22.C2.L-logic.V2.U21, M22.C2.L-logic.V2.U22, M22.C2.L-logic.V2.U23, M22.C2.L-logic.V2.U24, M22.C2.L-logic.V2.U25]
         - id: M22.C3
           name: The card
           layers:
@@ -4185,6 +4201,15 @@ yc2_w27_s04:
                       artifact: genios_engine/platform/receipts.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/platform/test_no_card_is_about_us.py -q
                       depends_on: [M22.C1.L-data.V1.U03]
+                    - id: M22.C6.L-logic.V2.U03
+                      what: >
+                        The receipt reads who is us from the identity's own SQL —
+                        `platform/self_identity.identity_sql(org)`, the one union of the four sources,
+                        correlated per card (`c.org_id`) — where U02 restated the sources and forgot the
+                        connected account. Found writing U19, whose rules flagged U02's literal.
+                      artifact: genios_engine/platform/receipts.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/platform/test_no_card_is_about_us.py tests/platform/test_identity_for.py -q
+                      depends_on: [M22.C1.L-data.V1.U03, M22.C6.L-logic.V2.U02]
             - layer: interface
               levels:
                 - level: 3
