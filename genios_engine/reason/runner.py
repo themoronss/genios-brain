@@ -1753,11 +1753,14 @@ def run_all(*, org_id: str, store: GraphStore, eval_time: datetime | None = None
     # the failure mode is a tenant that compiles exactly as it does today.
     from genios_engine.platform.l3_activation import activated_domains
     l3_domains = activated_domains(engine, org_id)
+    compiled: dict = {}
     if live_compile or l3_domains or l1_seam_enabled(engine, org_id):
         try:
             from genios_engine.reason.domain_shadow import shadow_compile
-            shadow_compile(store=store, org_id=org_id, eval_time=eval_time, live=live_compile,
-                           live_domains=l3_domains)
+            # ⛔ THE PASS'S RESULT WAS THROWN AWAY HERE: nothing the compiled lane counted reached
+            # the sweep. Kept now for the change gate's counts below (STEP-02).
+            compiled = shadow_compile(store=store, org_id=org_id, eval_time=eval_time,
+                                      live=live_compile, live_domains=l3_domains) or {}
         except Exception:
             logger.exception("domain-compiler pass failed org=%s live=%s domains=%s",
                              org_id, live_compile, sorted(l3_domains))
@@ -1788,6 +1791,17 @@ def run_all(*, org_id: str, store: GraphStore, eval_time: datetime | None = None
                 combined[k] = max(combined[k], v)
             else:
                 combined[k] += v
+    # ── STEP-02 · THE CHANGE GATE, COUNTED EVERY SWEEP IN EVERY LANE — ZERO INCLUDED
+    # (`yc2_w27_s02/M20.C6.L-interface.V4.U01`). `skipped_unchanged` is every subject a lane did
+    # not re-decide because nothing it depends on moved — legacy and native from `run` above, the
+    # compiled lane from its pass — and the compiled share is named on its own. `deferred` is a live
+    # DEFER that kept the card it found (the legacy lane; a compiled DEFER never touched its card).
+    # Not funnel stages: `platform/funnel.STAGES` is closed, and `no_new_evidence` sits here too.
+    compiled_skips = int(compiled.get("skipped_unchanged", 0) or 0) \
+        if isinstance(compiled, dict) else 0
+    combined["skipped_unchanged"] += compiled_skips
+    combined["skipped_unchanged_compiled"] = compiled_skips
+    combined["deferred"] += 0
     # ── Z4 / L4.5 · THE VOICE. Give the decisions this sweep just published their narrative.
     #
     # LAST, AND DELIBERATELY SO. Doc 05 §7 and doc 11 guard 5: a bundle is generated AFTER
