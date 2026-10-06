@@ -15,10 +15,12 @@ from genios_engine.capture.structured.apply import (apply_mapping, apply_relatio
                                                     calendar_availability)
 from genios_engine.capture.structured.registry import get_mapping
 from genios_engine.capture.validate.spans import apply_verdicts
+from genios_engine.context.extract.extractor import Extraction
 from genios_engine.context.graph_store import GraphStore
 from genios_engine.context.llm.client import LLMClient
+from genios_engine.context.memory_lanes import Lane, lane_for
 from genios_engine.context.pipeline import process_event
-from genios_engine.context.qes_adapter import adapt_qes_extraction
+from genios_engine.context.qes_adapter import BELOW_FLOOR_CONFIDENCE_BP, adapt_qes_extraction
 from genios_engine.context.read_models import build_entity_360
 from genios_engine.context.structured import commit_structured
 from genios_engine.contracts.extraction import ExtractionResult
@@ -51,7 +53,8 @@ _MAX_ATTEMPTS = 3          # transient extract failures retry up to this, then p
 # outcomes that mean "this event needs no more work" → written to the run ledger as terminal
 _DONE_OUTCOMES = {"committed_structured", "committed", "committed_structural",
                   "parked_low_relevance", "skipped_no_llm",
-                  "no_op", "committed_facts", "committed_observation"}
+                  "no_op", "committed_facts", "committed_observation",
+                  "committed_metadata"}          # an archive's road (STEP-05)
 
 
 def _clean_for_llm(raw: dict, event_id: str, prepared_text: str | None = None) -> str:
@@ -124,10 +127,23 @@ def graded_extraction(qes_output, source_text: str | None, event_id: str = "?"):
 
 def _process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozenset(),
                  effective=None, self_identity=None):
-    """Route + process ONE event. Returns (outcome, affected_node_id | None)."""
-    raw = json.loads(decrypt(bytes(row.enc_content), crypto_key)) if row.enc_content else {}
+    """Route + process ONE event by the road it takes into memory (STEP-05,
+    `context/memory_lanes`). Returns (outcome, affected_node_id | None). No road calls a model."""
     mapping = get_mapping(row.source, row.object_type)
-    if mapping is not None:                          # structured lane (B1, no LLM)
+    # A caller with its own row shape (`scripts/rebuild_graph`) selects none of the road columns:
+    # its rows are emitted events with a signal, which every pulled row was before STEP-05.
+    lane = lane_for(outcome=getattr(row, "outcome", "emitted"), source=row.source,
+                    structured=mapping is not None, has_signal=getattr(row, "has_signal", True),
+                    has_extraction=getattr(row, "own_output", None) is not None)
+    if lane is None:
+        # The pull admits exactly what `lane_for` gives a road — its test seeds every combination —
+        # so this is a caller's row, never the drain's: loud, and parked after three tries.
+        raise ValueError(f"event {row.event_id} has no road into memory")
+    if lane is Lane.METADATA:
+        return _commit_metadata(row, org_id=org_id, store=store, internal_emails=internal_emails,
+                                self_identity=self_identity)
+    raw = json.loads(decrypt(bytes(row.enc_content), crypto_key)) if row.enc_content else {}
+    if lane is Lane.CALENDAR:                        # structured lane (B1, no LLM)
         fields = apply_mapping(mapping, raw)
         display_name = fields.get(mapping.name_field) if mapping.name_field else None
         relations = apply_relations(mapping, raw)    # attendees/participants → graph edges
@@ -150,20 +166,28 @@ def _process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozens
     is_inbound = "SENT" not in (raw.get("labelIds") or [])   # direction → thread state
     # recipients (To + Cc, captured in L1) → sender↔recipient correspondence edges in L2
     recipients = [e for e in ((raw.get("to") or []) + (raw.get("cc") or [])) if e]
-    qes_output = getattr(row, "qes_output", None)
-    if qes_output is None:
-        # A QES whose extraction pointer cannot be resolved is incomplete input, not permission
-        # for Layer 2 to reinterpret the raw message.  Leave it retryable: cache repair or an L1
-        # replay can fill the pointer and the next drain will pick it up.
-        return "held_missing_qes_extraction", None
+    if lane is Lane.BELOW_FLOOR:
+        # Layer 1 READ this mail and the floor did not publish it: its own extraction, every claim
+        # ranked below the floor and the event marked so — no signal, so no signal metadata
+        # (`06` D20; there is no confidence to carry, `03` F69).
+        qes_output, confidence_bp = row.own_output, BELOW_FLOOR_CONFIDENCE_BP
+        domain_hints, signal_types = (), ()
+    else:
+        qes_output = getattr(row, "qes_output", None)
+        if qes_output is None:
+            # A QES whose extraction pointer cannot be resolved is incomplete input, not permission
+            # for Layer 2 to reinterpret the raw message.  Leave it retryable: cache repair or an
+            # L1 replay can fill the pointer and the next drain will pick it up.
+            return "held_missing_qes_extraction", None
+        confidence_bp = int(getattr(row, "qes_confidence_bp", 0) or 0)
+        domain_hints = getattr(row, "qes_domain_hints", None) or ()
+        signal_types = getattr(row, "qes_signal_types", None) or ()
     if not isinstance(qes_output, dict):
         qes_output = json.loads(qes_output)
     qes_output = graded_extraction(qes_output, getattr(row, "prepared_text", None), row.event_id)
     qualified = adapt_qes_extraction(
-        qes_output,
-        confidence_bp=int(getattr(row, "qes_confidence_bp", 0) or 0),
-        domain_hints=getattr(row, "qes_domain_hints", None) or (),
-        signal_types=getattr(row, "qes_signal_types", None) or (),
+        qes_output, confidence_bp=confidence_bp, domain_hints=domain_hints,
+        signal_types=signal_types, below_floor=lane is Lane.BELOW_FLOOR,
     )
     res = process_event(org_id=org_id, event_id=row.event_id, source=row.source, content=content,
                         sender_email=row.sender, recipient_emails=recipients,
@@ -183,6 +207,28 @@ def _process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozens
                         effective=effective, qualified_extraction=qualified,
                         # Who is us, with the domains the tenant declared (STEP-04).
                         self_identity=self_identity)
+    return res.outcome, res.primary_node
+
+
+def _commit_metadata(row, *, org_id, store, internal_emails, self_identity):
+    """An archive's road into memory (STEP-05): the ledger's own columns — who wrote to whom,
+    when, in which thread — with no payload, no text and no model (`process_event`'s
+    `metadata_only`). The pull never hands this road the payload, and nothing here asks for it."""
+    sender = row.sender
+    ours = (self_identity.is_us(sender) if self_identity is not None
+            else str(sender or "").strip().lower() in internal_emails)
+    res = process_event(org_id=org_id, event_id=row.event_id, source=row.source, content="",
+                        sender_email=sender, recipient_emails=list(row.recipients or ()),
+                        sender_name=getattr(row, "sender_name", None),
+                        occurred_at=row.occurred_at, llm=None, store=store,
+                        # Who sent it, not the mail's labels: those are in the payload.
+                        is_inbound=not ours, internal_emails=internal_emails,
+                        thread_id=getattr(row, "parent_object_id", None),
+                        domain_hints=getattr(row, "domain_hints", None),
+                        qualified_extraction=Extraction(
+                            relevance=0.0, noise_type="none", domains=[], entity_mentions=[],
+                            fact_candidates=[], commitments=[], questions=[], observations=[]),
+                        self_identity=self_identity, metadata_only=True)
     return res.outcome, res.primary_node
 
 

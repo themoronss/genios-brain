@@ -34,9 +34,6 @@ _ENGINE = _PKG.parent
 #:
 #: CLOSED, and checked in BOTH directions by `tests/context/test_the_context_layer_says_what_it_does_not_call.py`.
 UNREACHED: dict[str, tuple[str, str]] = {
-    "memory_lanes.lane_for": (
-        "STEP-05's one decision about which road a kept event takes into memory (`yc2_w27_s05 · M23.C1`). Built first, on purpose: the pull (C2) and the drain's dispatch (C3) are written against it, so it exists one unit before its caller",
-        "MOVES WITH `yc2_w27_s05 · M23.C3.L-logic.V2.U03` — `context/runner._process_one` dispatches by it; this entry is deleted in that unit, and the guard's other direction fails if it is not"),
     "evidence_need_store.read_open_needs": (
         "⛔⛔ THE BEST ENTRY IN THIS WHOLE LEVEL, AND THE CODEBASE ALREADY WROTE IT DOWN. *'The executor's queue: this tenant's open needs, oldest first.'* The executor EXISTS — `capture/acquire/need_executor.py` — and its own header says: *'`context/evidence_need_store.py` files needs. `evidence_need.execute()` works ONE need. Nothing ran'*, with a second note at `:125` naming this function and adding **'which this layer may not import.'** `capture/` is PRODUCT layer 1 and `context/` is 2, so the executor cannot read its own queue. ⛔ **The gap is STRUCTURAL and declared, not an oversight** — and it is the same shape as the problem that moved `reachability.py` into `platform/` three steps ago",
         "⛔ MOVES WHEN SOMEBODY TAKES THE SEAM DECISION, and there are exactly two shapes: lift the queue read into `platform/` (where layer 1 may reach it, which is what the reachability machinery did), or invert it so `context/` pushes needs down. **Nobody has taken it**, and the Atlas listed EvidenceNeed as VERIFIED MISSING at the start of this programme — it was built since and never connected"),
