@@ -1,7 +1,7 @@
 # ═════════════════════════════════════════════════════════════════════════════════════════════
 # ⛔ HOW A UNIT ID IS ADDRESSED — read this before quoting one.
 #
-# This file holds SEVEN programme blocks, and three of them number their milestones from M8:
+# This file holds EIGHT programme blocks, and three of them number their milestones from M8:
 #
 #   <root>                            M1  … M7    retired in place
 #   persona_brain_and_layer_repair    M8  … M12
@@ -13,6 +13,8 @@
 #                                                   numbered past every other block for the same reason
 #   yc2_w27_s03                       M21         ← YC-II W27 STEP-03, the gate keeps everything
 #                                                   (2026-10-06); past every other block again
+#   yc2_w27_s04                       M22         ← YC-II W27 STEP-04, who is us (proposed 2026-10-06);
+#                                                   past every other block again
 #
 # So `M11` is AMBIGUOUS on its own: it names "The remaining Layer 3 losses" in one block and
 # "L2 Reasoning" in another, and `M11.C1.L-logic.V0.U01` exists twice with different meanings.
@@ -3740,3 +3742,415 @@ yc2_w27_s03:
                       artifact: scripts/pipeline_health.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/scripts/test_pipeline_health_no_mail_deleted.py -q
                       depends_on: [M21.C3.L-logic.V3.U03]
+
+# ═══════════════════════════════════════════════════════════════════════════════════════════════
+# yc2_w27_s04 · STEP-04 who is us — speedrun008/YC-II W27/STEP-04-TO-BUILD-who-is-us.md
+# ═══════════════════════════════════════════════════════════════════════════════════════════════
+yc2_w27_s04:
+  status: proposed
+  confirmed: >
+    Not yet — written on Rohit's ask (2026-10-06, "Step 4 ka detailed plan kar do tab tak... taki
+    complete hote hi hm aage badhenge"), while STEP-03's QA ran. Waits for his go.
+  source: >
+    speedrun008/YC-II W27/STEP-04 §1–§3, re-checked claim by claim against speedrun008 @ 81857ce2
+    (STEP-04 §8) by two read-only passes, spot-checked by hand, and measured on the golden set: 0 of
+    18 cards, 0 situations and 0 threads put the founder in a counterparty's place — because the
+    golden founder has one address and it is orgs.email. Production's shape (a Gmail address, a
+    second address that only ever receives, a company domain that is also GeniOS's platform domain)
+    is what fails, and the heartbeat's naming pass, which the runner never calls.
+  vision: >
+    Every question "is this us?" in the engine is answered by one function,
+    `platform/self_identity.identity_for` — seats, `orgs.email`, connected accounts and a list the
+    tenant declares (addresses and domains, never a public mail domain). The founder is never a
+    card's subject, a thread's name, a party someone waits on, or an outside company; a Gmail
+    founder no longer makes every gmail.com sender one of us. On the golden set — with four
+    production-shaped founder cases — the acceptance shows it, and the board is re-recorded with
+    every moved case explained. In production, after the deploy and the repair, cards with Rohit as
+    the subject go from at least 3 to 0, and threads named after him to 0.
+  order_note: >
+    C1, the answer, first. Then C2, every caller — `context/runner._internal_emails` first, because
+    ten callers read it — and the AST guard last in C2. Then the card (C3), the golden runner's seat
+    and the board re-record (C5.U01–U03: the seat moves W-01, so the board moves before anything else
+    of this block can be measured against it), the cases and the marking (C5), the repair (C4), the
+    production check (C6), and the acceptance last. Not in this block, by the check: L1's direction
+    and capture-time thread reconstruction keep one owner per connection
+    (`api/routes._mailbox_owner_for`) — direction needs the mailbox owner, not the tenant's identity
+    — declared in the guard; who owns what across several seats (STEP-09); a UI to declare
+    identities (the script does it until STEP-07's brief can carry it).
+  milestones:
+    - id: M22
+      name: One answer to who is us (STEP-04)
+      ships: >
+        Every module that asks whether an address, a person, a company or a domain is the tenant
+        reads `identity_for`, and an AST guard holds it. On the golden set, across every case, 0
+        cards have us as the subject, 0 situations are anchored on us, 0 threads are named after us
+        (the heartbeat's naming pass run), and none of us is waited on; the board is re-recorded with
+        every moved case explained. In production after the repair: 0 open cards about Rohit, 0
+        threads named after him.
+      categories:
+        - id: M22.C1
+          name: The answer
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M22.C1.L-contract.V0.U01
+                      what: >
+                        `0193_org_self_identities.sql` — what a tenant declares is its own: `(org_id,
+                        kind address|domain, value, declared_by, declared_at)`, the kind closed by a
+                        check, one row per value, cascading with the org. Configuration, like a seat:
+                        not wiped by `/reset`, erased with the account.
+                      artifact: migrations/0193_org_self_identities.sql
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/test_migration_0193_org_self_identities.py -q
+                      depends_on: []
+                    - id: M22.C1.L-contract.V0.U02
+                      what: >
+                        `platform/self_identity.py` — `SelfIdentity(addresses, domains)` and the two
+                        questions every caller asks: `is_us(email)` (an exact address, or a declared
+                        domain) and `is_us_node(node_type, canonical_key)` (a person or service by its
+                        address, a company by its domain). A public mail domain (one list —
+                        `capture/validate/canonical.CONSUMER_EMAIL_DOMAINS`) is never us as a domain,
+                        only as an exact address. Pure.
+                      artifact: genios_engine/platform/self_identity.py
+                      verify: .venv/bin/python -m pytest tests/platform/test_self_identity.py -q
+                      depends_on: []
+            - layer: data
+              levels:
+                - level: 1
+                  units:
+                    - id: M22.C1.L-data.V1.U03
+                      what: >
+                        `identity_for(conn, org_id)` — active seats, `orgs.email`, connected accounts
+                        (`connections.external_account_id`, empty today, read so the day it is written
+                        it counts) and the declared list, in one statement; addresses normalised the
+                        way node keys are (`platform/identity`); a declared public domain refused
+                        and logged, never applied.
+                      artifact: genios_engine/platform/self_identity.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/platform/test_identity_for.py -q
+                      depends_on: [M22.C1.L-contract.V0.U01, M22.C1.L-contract.V0.U02]
+            - layer: interface
+              levels:
+                - level: 2
+                  units:
+                    - id: M22.C1.L-interface.V2.U04
+                      what: >
+                        `scripts/declare_self_identity.py --org … --address … --domain …` — dry run by
+                        default, `--apply` writes; refuses a public mail domain; Harsh runs it with
+                        06 D6's three values for the design partner.
+                      artifact: scripts/declare_self_identity.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/scripts/test_declare_self_identity.py -q
+                      depends_on: [M22.C1.L-data.V1.U03]
+        - id: M22.C2
+          name: Every caller reads it
+          note: >
+            Every caller depends on the answer alone — no caller on another. Units that share a file
+            (`context/pipeline.py` U15–U17, `context/backfill.py` U09 and U18) are built one after
+            the other, never in parallel: one writer per file.
+          layers:
+            - layer: logic
+              levels:
+                - level: 2
+                  units:
+                    - id: M22.C2.L-logic.V2.U01
+                      what: >
+                        `context/runner._internal_emails` returns `identity_for(...).addresses` — so
+                        the ten callers that read it (the pipeline's anchor exclusion, its outbound and
+                        inbound facts, the structured lane, the lifecycle, the calendar's actor type,
+                        the document register, the dependency party, the resolution) see a declared
+                        address as us at once.
+                      artifact: genios_engine/context/runner.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_internal_emails_reads_the_identity.py -q
+                      depends_on: [M22.C1.L-data.V1.U03]
+                    - id: M22.C2.L-logic.V2.U02
+                      what: >
+                        `reason/runner` — the self exclusion (`:996-1047`) is `identity.is_us_node`: a
+                        declared address, and a company whose domain is ours, are never reasoned about
+                        as a counterparty (it re-wrote the SQL and matched the address key only).
+                      artifact: genios_engine/reason/runner.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/reason/test_the_runner_never_reasons_about_us.py -q
+                      depends_on: [M22.C1.L-data.V1.U03]
+                    - id: M22.C2.L-logic.V2.U03
+                      what: >
+                        `context/meeting_touch` — a meeting of only us is not a channel touch (its
+                        inline SQL replaced).
+                      artifact: genios_engine/context/meeting_touch.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_a_meeting_of_us_is_not_a_touch.py -q
+                      depends_on: [M22.C1.L-data.V1.U03]
+                    - id: M22.C2.L-logic.V2.U04
+                      what: >
+                        `packs/brains/org_discovery._names_one_of_us` reads the identity (an approver
+                        must be one of us).
+                      artifact: genios_engine/packs/brains/org_discovery.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/packs/test_an_approver_is_one_of_us.py -q
+                      depends_on: [M22.C1.L-data.V1.U03]
+                    - id: M22.C2.L-logic.V2.U05
+                      what: >
+                        `deliver/pipeline._tenant_identities` — quote attribution (`from_counterparty`)
+                        counts every address of ours, not only `orgs` and seats; the names it adds stay.
+                      artifact: genios_engine/deliver/pipeline.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/deliver/test_quote_attribution_reads_the_identity.py -q
+                      depends_on: [M22.C1.L-data.V1.U03]
+                    - id: M22.C2.L-logic.V2.U06
+                      what: >
+                        `deliver/timezone_infer` — the send-hour histogram reads mail sent by any of us.
+                      artifact: genios_engine/deliver/timezone_infer.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/deliver/test_timezone_reads_what_we_sent.py -q
+                      depends_on: [M22.C1.L-data.V1.U03]
+                    - id: M22.C2.L-logic.V2.U07
+                      what: >
+                        `api/routes.KNOWN_FROM_SENT_SQL` — W-01's sent-folder half counts the
+                        recipients of mail sent by any of us (it read seats only, active or not).
+                      artifact: genios_engine/api/routes.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/test_known_senders_are_who_we_wrote_to.py -q
+                      depends_on: [M22.C1.L-data.V1.U03]
+                    - id: M22.C2.L-logic.V2.U08
+                      what: >
+                        `scripts/pipeline_health` — its copy of the known-sender query reads the same
+                        identity, so the check and W-01 cannot disagree.
+                      artifact: scripts/pipeline_health.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/scripts/test_pipeline_health_known_senders.py -q
+                      depends_on: [M22.C1.L-data.V1.U03]
+                    - id: M22.C2.L-logic.V2.U09
+                      what: >
+                        `context/backfill` — the correlation rebuild's anchor exclusion and the deal
+                        backfill's company exclusion read the identity (active seats only, and seat
+                        domains, before) — live and rebuild stop disagreeing about our company.
+                      artifact: genios_engine/context/backfill.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_backfill_reads_the_identity.py -q
+                      depends_on: [M22.C1.L-data.V1.U03]
+                    - id: M22.C2.L-logic.V2.U10
+                      what: >
+                        ⛔ `context/support_situations._internal` — the domain half is the DECLARED
+                        domains only. It took the domain of `orgs.email` with no public-mail guard, so a
+                        Gmail founder made every gmail.com sender one of us in the support lane.
+                      artifact: genios_engine/context/support_situations.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_a_gmail_founder_does_not_make_gmail_us.py -q
+                      depends_on: [M22.C1.L-data.V1.U03]
+                    - id: M22.C2.L-logic.V2.U11
+                      what: >
+                        `reason/moments/engagement` — "several of us touched one company" counts our
+                        declared domains, never a public one.
+                      artifact: genios_engine/reason/moments/engagement.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/reason/moments/test_engagement_reads_the_identity.py -q
+                      depends_on: [M22.C1.L-data.V1.U03]
+                    - id: M22.C2.L-logic.V2.U12
+                      what: >
+                        `context/outreach_situations` — none of us, and no `service` node, is ever a
+                        party someone waits on (`_WAITING_ROWS`, `read_awaiting_response`,
+                        `read_organization_silence`); the overdue-commitment owner is any of us, not
+                        the one sending address (`_mailbox_owner` went None at the second).
+                      artifact: genios_engine/context/outreach_situations.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_we_are_never_waited_on.py -q
+                      depends_on: [M22.C1.L-data.V1.U03]
+                    - id: M22.C2.L-logic.V2.U13
+                      what: >
+                        `context/condition_situations._is_owner` — "the actor is us" by the identity's
+                        addresses, the name match kept as the fallback it is.
+                      artifact: genios_engine/context/condition_situations.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_a_condition_owner_is_one_of_us.py -q
+                      depends_on: [M22.C1.L-data.V1.U03]
+                    - id: M22.C2.L-logic.V2.U14
+                      what: >
+                        `context/situation_bso` — the founder is not an external member, and our
+                        domains are not external domains (it had no self test at all).
+                      artifact: genios_engine/context/situation_bso.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_we_are_not_an_external_member.py -q
+                      depends_on: [M22.C1.L-data.V1.U03]
+                    - id: M22.C2.L-logic.V2.U15
+                      what: >
+                        `context/pipeline._person` — a declared address of ours is typed `person`,
+                        never `service`: `ceo@thegenios.com` was a service because the platform domain
+                        is also the design partner's company domain.
+                      artifact: genios_engine/context/pipeline.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_our_address_is_never_a_service.py -q
+                      depends_on: [M22.C1.L-data.V1.U03]
+                    - id: M22.C2.L-logic.V2.U16
+                      what: >
+                        `context/pipeline` — a company whose domain is ours never anchors, in any event
+                        (it was ours only for the platform domain, or when the address was in the set).
+                      artifact: genios_engine/context/pipeline.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_our_company_never_anchors.py -q
+                      depends_on: [M22.C1.L-data.V1.U03]
+                    - id: M22.C2.L-logic.V2.U17
+                      what: >
+                        ⛔ `context/pipeline` (`:1494-1501`) — a thread is named after its OTHER side:
+                        the business claim's sender was used whatever the direction, so the founder's
+                        own pitch named the thread after him, and the label is never renamed.
+                      artifact: genios_engine/context/pipeline.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_a_thread_is_named_after_the_other_side.py -q
+                      depends_on: [M22.C1.L-data.V1.U03]
+                    - id: M22.C2.L-logic.V2.U18
+                      what: >
+                        `context/backfill.name_thread_nodes` — the naming sweep's party is never one of
+                        us (it filtered on `node_type = 'person'` only).
+                      artifact: genios_engine/context/backfill.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_the_naming_sweep_skips_us.py -q
+                      depends_on: [M22.C1.L-data.V1.U03]
+            - layer: integration
+              levels:
+                - level: 3
+                  units:
+                    - id: M22.C2.L-integration.V3.U19
+                      what: >
+                        The AST guard: no module outside `platform/self_identity.py` builds its own
+                        set of our addresses or domains — a SQL literal that reads tenant emails from
+                        `orgs`, `org_seats` or `connections` for a self test fails it; the seat-routing
+                        lookups and the mailbox owner are declared, each with its reason. Check the AST,
+                        not the text.
+                      artifact: tests/platform/test_one_answer_to_who_is_us.py
+                      verify: .venv/bin/python -m pytest tests/platform/test_one_answer_to_who_is_us.py -q
+                      depends_on: [M22.C2.L-logic.V2.U01, M22.C2.L-logic.V2.U02, M22.C2.L-logic.V2.U03, M22.C2.L-logic.V2.U04, M22.C2.L-logic.V2.U05, M22.C2.L-logic.V2.U06, M22.C2.L-logic.V2.U07, M22.C2.L-logic.V2.U08, M22.C2.L-logic.V2.U09, M22.C2.L-logic.V2.U10, M22.C2.L-logic.V2.U11, M22.C2.L-logic.V2.U12, M22.C2.L-logic.V2.U13, M22.C2.L-logic.V2.U14, M22.C2.L-logic.V2.U15, M22.C2.L-logic.V2.U16, M22.C2.L-logic.V2.U17, M22.C2.L-logic.V2.U18]
+        - id: M22.C3
+          name: The card
+          layers:
+            - layer: logic
+              levels:
+                - level: 3
+                  units:
+                    - id: M22.C3.L-logic.V3.U01
+                      what: >
+                        `deliver/card_builder` — the subject chain never resolves to us
+                        (`resolved_person_name` took the first person NAMED in the quotes, so "Rohit,
+                        can you send…" titled the card after Rohit); a card whose subject is still one
+                        of us is refused, with the reason. `7075014c` kept: our own words may ground a
+                        `dependency_stated` card; we are never the one to chase.
+                      artifact: genios_engine/deliver/card_builder.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/deliver/test_we_are_never_a_cards_subject.py -q
+                      depends_on: [M22.C1.L-data.V1.U03, M22.C2.L-logic.V2.U05]
+        - id: M22.C4
+          name: The repair
+          layers:
+            - layer: interface
+              levels:
+                - level: 4
+                  units:
+                    - id: M22.C4.L-interface.V4.U01
+                      what: >
+                        `scripts/repair_self_identity.py` (written by Claude, run by Harsh) — dry run by
+                        default: the nodes of ours typed `service` or an outside `company`, the threads
+                        named after us, and the open cards and signals whose subject is us, listed; the
+                        list goes to Rohit (06 D14); `--apply` re-types, renames by the other side, and
+                        retires each card with a `card_event` naming its cause.
+                      artifact: scripts/repair_self_identity.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/scripts/test_repair_self_identity.py -q
+                      depends_on: [M22.C1.L-data.V1.U03, M22.C2.L-logic.V2.U15, M22.C2.L-logic.V2.U17, M22.C3.L-logic.V3.U01]
+        - id: M22.C5
+          name: The golden set
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M22.C5.L-contract.V0.U01
+                      what: >
+                        `founder_case.Founder` gains the founder's other addresses and the domains the
+                        case declares as the company's — a case can be shaped like production (a Gmail
+                        address, a second address that only receives, a company domain).
+                      artifact: tests/replays/founder_case.py
+                      verify: .venv/bin/python -m pytest tests/replays/test_founder_case_contract.py -q
+                      depends_on: []
+            - layer: logic
+              levels:
+                - level: 1
+                  units:
+                    - id: M22.C5.L-logic.V1.U03
+                      what: >
+                        `marking.py` — a card whose subject is the founder (any address, the name, the
+                        company's domain) fails the case, whatever else it says.
+                      artifact: tests/replays/marking.py
+                      verify: .venv/bin/python -m pytest tests/replays/test_marking.py -q
+                      depends_on: [M22.C5.L-contract.V0.U01]
+                - level: 2
+                  units:
+                    - id: M22.C5.L-logic.V2.U02
+                      what: >
+                        The golden runner creates the tenant as signup does — with its owner seat
+                        (`platform/seats.ensure_owner_seat`, F54) — and declares the case's identities
+                        as the D6 script would. ⛔ W-01 then fires as in production: the board moves.
+                      artifact: tests/replays/engine_runner.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/replays/test_engine_runner.py -q
+                      depends_on: [M22.C5.L-contract.V0.U01, M22.C1.L-data.V1.U03]
+            - layer: integration
+              levels:
+                - level: 3
+                  units:
+                    - id: M22.C5.L-integration.V3.U04
+                      what: >
+                        STEP-03's acceptance restated for the seated runner: `DROPPED_BEFORE` and
+                        `BOARD_BEFORE` re-measured on the same replay, and every object or case that
+                        moved listed with why (W-01 now whitelisting a correspondent).
+                      artifact: tests/replays/test_the_gate_deletes_nothing.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest tests/replays/test_the_gate_deletes_nothing.py -q
+                      depends_on: [M22.C5.L-logic.V2.U02]
+                    - id: M22.C5.L-integration.V3.U05
+                      what: >
+                        The board re-recorded in `03-FINDINGS.md` §F.1 for the seated runner, with the
+                        moved cases named; `golden_score.py --assert-recorded` matches it.
+                      artifact: speedrun008/YC-II W27/03-FINDINGS.md
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py --assert-recorded "speedrun008/YC-II W27/03-FINDINGS.md"
+                      depends_on: [M22.C5.L-logic.V2.U02]
+                    - id: M22.C5.L-integration.V3.U06
+                      what: >
+                        F41 — the founder writes from Gmail and copies his company address, which never
+                        replies: nobody of ours is "waiting", the company is not an outside company.
+                        Spec, cassette (the ideal reader, no spend) and its labels row.
+                      artifact: tests/replays/specs/founder/F41.json
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest tests/replays/test_founder_cases.py -q -k F41
+                      depends_on: [M22.C5.L-logic.V2.U02, M22.C5.L-logic.V1.U03]
+                    - id: M22.C5.L-integration.V3.U07
+                      what: >
+                        F42 — an investor names the founder in his ask ("Arjun, can you send your
+                        traction metrics?"): the card's subject is the investor.
+                      artifact: tests/replays/specs/founder/F42.json
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest tests/replays/test_founder_cases.py -q -k F42
+                      depends_on: [M22.C5.L-logic.V2.U02, M22.C5.L-logic.V1.U03]
+                    - id: M22.C5.L-integration.V3.U08
+                      what: >
+                        F43 — the founder's own pitch, with an objective: the thread is named after the
+                        investor and what it is for, never after the founder.
+                      artifact: tests/replays/specs/founder/F43.json
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest tests/replays/test_founder_cases.py -q -k F43
+                      depends_on: [M22.C5.L-logic.V2.U02, M22.C5.L-logic.V1.U03]
+                    - id: M22.C5.L-integration.V3.U09
+                      what: >
+                        F44 — a Gmail founder, and a customer writing from gmail.com in a support
+                        thread: the customer is an outside person, and the first-response clock runs.
+                      artifact: tests/replays/specs/founder/F44.json
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest tests/replays/test_founder_cases.py -q -k F44
+                      depends_on: [M22.C5.L-logic.V2.U02, M22.C5.L-logic.V1.U03]
+                - level: 4
+                  units:
+                    - id: M22.C5.L-integration.V4.U10
+                      what: >
+                        The acceptance, on the real chain: across every founder case — the heartbeat's
+                        naming passes run after the last sweep — 0 cards whose subject is us, 0
+                        situations anchored on a node of ours, 0 threads named after us, 0 of us waited
+                        on; F41–F44 marked as expected; the board recorded.
+                      artifact: tests/replays/test_we_are_never_the_subject.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest tests/replays/test_we_are_never_the_subject.py -q
+                      depends_on: [M22.C2.L-integration.V3.U19, M22.C3.L-logic.V3.U01, M22.C5.L-integration.V3.U05, M22.C5.L-integration.V3.U06, M22.C5.L-integration.V3.U07, M22.C5.L-integration.V3.U08, M22.C5.L-integration.V3.U09]
+        - id: M22.C6
+          name: The production check
+          layers:
+            - layer: logic
+              levels:
+                - level: 2
+                  units:
+                    - id: M22.C6.L-logic.V2.U02
+                      what: >
+                        `platform/receipts` — "no open card's subject is one of us", for /readiness.
+                      artifact: genios_engine/platform/receipts.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/platform/test_no_card_is_about_us.py -q
+                      depends_on: [M22.C1.L-data.V1.U03]
+            - layer: interface
+              levels:
+                - level: 3
+                  units:
+                    - id: M22.C6.L-interface.V3.U01
+                      what: >
+                        `pipeline_health` — no open card's subject is one of us; no thread is named
+                        after us (read-only; after the repair both are 0).
+                      artifact: scripts/pipeline_health.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/scripts/test_pipeline_health_we_are_never_the_subject.py -q
+                      depends_on: [M22.C1.L-data.V1.U03, M22.C2.L-logic.V2.U08]

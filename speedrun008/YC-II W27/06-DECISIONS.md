@@ -18,6 +18,7 @@ default holds, and the step that depends on it says so in its own file.
 | **D11** | The current per-sweep LLM Decision Maker until the expert replaces it | **Keep it, behind the change gate** | `STEP-02` |
 | **D12** | Ten minutes of labels for the golden set | **Yes** — ⏳ until you answer, the defaults hold: applied 2026-10-06 | `STEP-01` (built on the defaults; not blocked) |
 | **D13** | Once calibration runs again, may it mute a rule or move a threshold on your account without your approval? | **No** — shadow: it logs what it would do; you arm it per tenant, after `STEP-18` B22–B24 | `yc2_w27/M18` (shadow — ✅ built 2026-10-06, not deployed) · arming ⏳ |
+| **D14** | When STEP-04's repair retires the cards whose subject is you, do you read its list first? | **Yes** — Harsh runs the dry run, you read the list, then `--apply`; every retirement is a `card_event` | `STEP-04` |
 
 ---
 
@@ -204,3 +205,18 @@ B22–B24):
 Postgres and records what it would mute or nudge; it applies nothing unless `calibration_apply` is
 switched on for a tenant, and that switch is on for no one by default. ⏳ **Your decision** is
 only the arming — per tenant, and not before `STEP-18` B22–B24.
+
+## D14 · STEP-04's repair — do you read the list before it retires your cards?
+
+STEP-04 stops the engine making you the subject of a card, a thread or a "waiting" line. The ones
+already in production stay until something retires them: `scripts/repair_self_identity.py`. By
+default it only **lists** what it would change — the nodes of yours typed as a service or an outside
+company, the threads named after you, the open cards and signals whose subject is you.
+
+| Option | |
+|---|---|
+| **A · You read the dry run, then Harsh applies it** — each retired card gets a `card_event` saying why, so it can be audited and rebuilt | ✅ **Recommended** |
+| B · Harsh applies it straight after the deploy | faster; a card you still wanted is retired without you seeing the list |
+
+**Default:** A. Nothing blocks the build — the decision is needed only at the repair, after the deploy.
+
