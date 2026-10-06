@@ -1,7 +1,7 @@
 # ═════════════════════════════════════════════════════════════════════════════════════════════
 # ⛔ HOW A UNIT ID IS ADDRESSED — read this before quoting one.
 #
-# This file holds FIVE programme blocks, and three of them number their milestones from M8:
+# This file holds SIX programme blocks, and three of them number their milestones from M8:
 #
 #   <root>                            M1  … M7    retired in place
 #   persona_brain_and_layer_repair    M8  … M12
@@ -9,6 +9,8 @@
 #   atlas_v2_alignment                M8  … M14   ← the YCW27 work
 #   yc2_w27                           M16 … M19   ← YC-II W27; numbered past every other
 #                                                   block, so it adds no collision
+#   yc2_w27_s02                       M20         ← YC-II W27 STEP-02, the change gate (2026-10-06);
+#                                                   numbered past every other block for the same reason
 #
 # So `M11` is AMBIGUOUS on its own: it names "The remaining Layer 3 losses" in one block and
 # "L2 Reasoning" in another, and `M11.C1.L-logic.V0.U01` exists twice with different meanings.

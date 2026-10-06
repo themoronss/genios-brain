@@ -29,8 +29,12 @@ LANES: tuple[str, ...] = ("compiled", "legacy", "native")
 
 #: What a decision came to — the bookkeeping a skip replays (migration 0191 says what each means).
 #: Closed, and held equal to the migration's check constraint by `tests/reason/test_fingerprint_store.py`.
-EMITTED, STANDING, DEFERRED, INDETERMINATE, SUPPRESSED, SHADOW = (
-    "emitted", "standing", "deferred", "indeterminate", "suppressed", "shadow")
+EMITTED = "emitted"
+STANDING = "standing"
+DEFERRED = "deferred"
+INDETERMINATE = "indeterminate"
+SUPPRESSED = "suppressed"
+SHADOW = "shadow"
 OUTCOMES: tuple[str, ...] = (EMITTED, STANDING, DEFERRED, INDETERMINATE, SUPPRESSED, SHADOW)
 
 
