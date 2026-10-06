@@ -31,6 +31,7 @@ from dataclasses import dataclass, field
 
 sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parents[1]))
 
+from genios_engine.platform.self_identity import identity_for          # noqa: E402
 from scripts._db import add_database_argument, resolve_database_url   # noqa: E402
 from scripts._gate import read_only_connection, sql                   # noqa: E402
 
@@ -153,12 +154,15 @@ def check_the_known_sender_set_is_not_empty(conn, org: str) -> Check:
                      measured="no outbound mail captured yet",
                      expected="skipped — nothing has been sent, so nobody can be known",
                      fix="")
+    # W-01's own statement shape (`api/routes.KNOWN_FROM_SENT_SQL`), on the same one answer to who
+    # "us" is (`platform/self_identity`, STEP-04) — so this check and W-01 cannot disagree. Not
+    # imported from `api/routes`: that module builds a graph store from settings at import.
+    ours = sorted(identity_for(conn, org).addresses)
     known = _scalar(conn,
                     "select count(distinct lower(r)) from source_events e, unnest(e.recipients) r "
                     " where e.org_id = :o and e.recipients is not null "
-                    "   and lower(e.actor ->> 'email') in "
-                    "       (select lower(s.email) from org_seats s "
-                    "         where s.org_id = :o and s.email is not null)", o=org)
+                    "   and lower(e.actor ->> 'email') = any(:ours) "
+                    "   and nullif(trim(r), '') is not null", o=org, ours=ours)
     return Check(
         name="the tenant knows who it has written to",
         ok=known > 0,
