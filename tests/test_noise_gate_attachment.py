@@ -8,7 +8,8 @@ from genios_engine.capture.pipeline import capture_event
 
 # A vendor invoice/receipt routinely arrives from noreply@ or with a List-Unsubscribe header — the
 # noise gate used to hard-drop it on those bulk signals, silently losing the invoice. Now a message
-# carrying a real attachment survives those signals (relevance/L2 decides); without one it still drops.
+# carrying a real attachment survives those signals (relevance/L2 decides); without one it is still
+# stopped — archived since STEP-03, kept and unread, never deleted.
 
 
 def _mail(*, has_attachment: bool, sender: str = "noreply@vendor.com") -> RawObject:
@@ -26,9 +27,10 @@ def _capture(raw: RawObject):
 
 def test_noreply_with_attachment_is_not_dropped():
     res = _capture(_mail(has_attachment=True))
-    assert res.outcome != "dropped"          # invoice PDF survives → routed to L2
+    assert res.outcome == "emitted"          # invoice PDF survives → routed to L2 (`== emitted`:
+                                             # an archived mail would pass `!= "dropped"`)
 
 
-def test_noreply_without_attachment_still_drops():
+def test_noreply_without_attachment_is_still_stopped():
     res = _capture(_mail(has_attachment=False))
-    assert res.outcome == "dropped"          # plain bulk/no-reply mail is still noise
+    assert res.outcome == "archived"         # plain bulk/no-reply mail is still noise — kept, unread

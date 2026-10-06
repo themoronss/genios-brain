@@ -7,11 +7,27 @@ from .context import GateContext, GateResult
 from .relevance import DROP_BELOW_RELEVANCE, RelevanceClassifier
 from .rules import availability_marker, content_integrity_rule, noise_rule, whitelist
 
+#: What the gate does with a mail a rule or the model would have DELETED (STEP-03, the gate keeps
+#: everything). Every noise rule (N-01 … N-10) and the model's confident junk (`llm_junk`) was a
+#: drop, and a drop kept no body: on the golden set 33 of 86 mails — Boardy's introductions, the
+#: government portal's updates, a bounce report — were gone for good, and in production 258 of 395
+#: (`speedrun008/YC-II W27/` STEP-03 §8.1). The Atlas, RULE 04: uncertainty routes, it never
+#: deletes. The rule's verdict is unchanged — it still says "noise", with its code — and the gate
+#: is the one place that turns that verdict into what happens to the mail: kept, encrypted, and
+#: read by no model (`capture/attention.ARCHIVE`).
+ARCHIVE = "archive"
+
+
+def _never_delete(action: str) -> str:
+    """A rule's `drop` is the gate's `archive`; every other verdict (`park`) stands."""
+    return ARCHIVE if action == "drop" else action
+
 
 def run_gate(ctx: GateContext, trace: EventTrace,
              relevance: RelevanceClassifier | None = None) -> GateResult:
     """Deterministic gate + optional S2 relevance classifier. Records each stage into
-    the trace. Terminal: drop / park / short_circuit(structured) / route(needs_extraction)."""
+    the trace. Terminal: archive / park / short_circuit(structured) / route(needs_extraction),
+    and drop for S0 alone — a scope exclusion, not a judgment about the mail."""
 
     # S0 — scope
     if not ctx.in_scope:
@@ -85,10 +101,11 @@ def run_gate(ctx: GateContext, trace: EventTrace,
     # review an unreadable attachment more carefully, never to wave it through with an empty body.
     if integrity:
         code, action = integrity
+        action = _never_delete(action)           # N-10, the empty mail: archived, not deleted
         trace.record("S1", action, reason_code=code)
         return GateResult(action=action, reason_code=code)
 
-    # S1b — unstructured noise: whitelist first, then the destructive N-codes
+    # S1b — unstructured noise: whitelist first, then the N-codes, each ARCHIVED with its code
     wl = whitelist(ctx)
     if wl:
         trace.record("S1", "pass", whitelist=wl)
@@ -96,6 +113,7 @@ def run_gate(ctx: GateContext, trace: EventTrace,
         hit = noise_rule(ctx)
         if hit:
             code, action = hit
+            action = _never_delete(action)
             trace.record("S1", action, reason_code=code)
             return GateResult(action=action, reason_code=code)
         trace.record("S1", "pass")
@@ -111,25 +129,28 @@ def run_gate(ctx: GateContext, trace: EventTrace,
         return GateResult(action="route", route="needs_extraction", whitelist_code=wl,
                           availability=marker)
 
-    # S2 — relevance classifier. The LLM junk-gate is the ONE filter allowed to DROP on
-    # judgment (keeps noise out of the graph); the deterministic classifier only parks.
-    # `disposition` decides: "drop" (LLM-confident junk), "park" (low relevance, recoverable),
-    # else route to extraction. Empty disposition falls back to the legacy relevant→route rule.
+    # S2 — relevance classifier. The LLM junk-gate is the ONE filter allowed to take a mail out
+    # of the working set on judgment (keeps noise out of the graph); the deterministic classifier
+    # only parks. `disposition` decides: "drop" (LLM-confident junk — ARCHIVED, STEP-03), "park"
+    # (low relevance, recoverable), else route to extraction. Empty disposition falls back to the
+    # legacy relevant→route rule.
     if relevance is not None:
         v = relevance.classify(ctx, ctx.prepared)
         disp = v.disposition or ("keep" if v.relevant else "park")
         if disp == "drop":
-            # A "drop" verdict is a proposal, not an authorisation. Deleting is irreversible —
-            # the body is never stored — so the model's own confidence has to clear a named
-            # threshold. Above it we still remove the mail from the working set, but as a PARK,
-            # which keeps a payload and can be re-adjudicated when the gate improves.
+            # A "drop" verdict is a proposal, not an authorisation, so the model's own
+            # confidence has to clear a named threshold. Above it the mail is PARKED, which
+            # keeps a payload and can be re-adjudicated when the gate improves. Below it the mail
+            # is ARCHIVED — kept and unread, never deleted — and the parked drain re-admits an
+            # archived `llm_junk` mail exactly as it re-admitted a dropped one (03 F55).
             if v.relevance is not None and v.relevance >= DROP_BELOW_RELEVANCE:
                 trace.record("S2", "park", reason_code="llm_junk_unconfident",
                              relevance=v.relevance, reason=v.reason)
                 return GateResult(action="park", reason_code="llm_junk_unconfident",
                                   whitelist_code=wl)
-            trace.record("S2", "drop", reason_code="llm_junk", relevance=v.relevance, reason=v.reason)
-            return GateResult(action="drop", reason_code="llm_junk", whitelist_code=wl)
+            trace.record("S2", ARCHIVE, reason_code="llm_junk", relevance=v.relevance,
+                         reason=v.reason)
+            return GateResult(action=ARCHIVE, reason_code="llm_junk", whitelist_code=wl)
         if disp == "park":
             trace.record("S2", "park", reason_code="low_relevance", relevance=v.relevance)
             return GateResult(action="park", reason_code="low_relevance", whitelist_code=wl)

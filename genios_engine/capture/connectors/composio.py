@@ -434,7 +434,8 @@ class ComposioGmailConnector:
                                                          for m in messages]
             # DETERMINISTIC PRE-FILTER — the cheap rules run BEFORE the LLM, not after. Gmail's own
             # PROMOTIONS/SOCIAL/SPAM labels and clearly-automated senders are high-confidence junk we
-            # can drop from the LIST fields alone, so they never cost an S2 gate call. On a real inbox
+            # can settle from the LIST fields alone, so they never cost an S2 gate call (the gate
+            # ARCHIVES them since STEP-03 — kept with these list fields, never deleted). On a real inbox
             # this is most of the volume. Header-only bulk signals (List-Unsubscribe) still need the
             # full body → they stay on the LLM path. Flag-guarded (GENIOS_L1_DET_JUNK) for rollback.
             det_junk: set[int] = set()
@@ -446,8 +447,9 @@ class ComposioGmailConnector:
                     # PROMOTIONS-labelled message carrying a signed contract is junk MAIL with a
                     # real document inside it, and dropping it here costs the document: the light
                     # pass never fetched the MIME payload, so `_walk` found no attachment parts
-                    # and no attachment event was ever built. The email itself is still dropped —
-                    # the pipeline gate applies the same N-06 rule to the full-fetched message —
+                    # and no attachment event was ever built. The email itself is still stopped —
+                    # archived since STEP-03; the pipeline gate applies the same N-06 rule to the
+                    # full-fetched message —
                     # but the attachment reaches the gate as its own event and survives.
                     if attachment_overrides_junk(m, objs, ocr_enabled=self._ocr is not None):
                         continue
@@ -464,7 +466,8 @@ class ComposioGmailConnector:
                 pass
             # A "drop" verdict is NOT sufficient to skip the body fetch.
             #
-            # The gate only DELETES on a drop the model was confident about; below
+            # The gate only takes a mail out (ARCHIVES it, since STEP-03 — it used to delete it)
+            # on a drop the model was confident about; below
             # DROP_BELOW_RELEVANCE it parks instead, and its own comment promises the park
             # "keeps a payload and can be re-adjudicated when the gate improves". That promise
             # was empty on this path: the fetch decision here ran FIRST and keyed on
@@ -493,8 +496,9 @@ class ComposioGmailConnector:
                        if id(m) not in det_junk and not _skip_body(m, objs)]
             drops = {id(m) for m, _ in light} - {id(m) for m in keepers}
             # full-fetch keepers concurrently; CONFIDENT junk keeps its light (snippet) object —
-            # the pipeline gate re-reads the SAME primed verdict and drops it without another
-            # call. Unconfident drops are fetched in full so the park they become is recoverable.
+            # the pipeline gate re-reads the SAME primed verdict and archives it without another
+            # call, so its archive holds the list fields, not the body (the message id re-fetches
+            # it). Unconfident drops are fetched in full so the park they become is recoverable.
             fetched: dict[int, list[RawObject]] = {}
             if keepers:
                 workers = min(_FETCH_WORKERS, len(keepers))
@@ -545,7 +549,7 @@ class ComposioGmailConnector:
 
         # Full-fetch policy. For keepers we pull the FULL MIME message (a signal can sit anywhere in
         # the body); for a LIGHT pass (fetch_full=False) we use only the cheap list snippet so the
-        # gate can drop obvious junk WITHOUT paying ~2000 per-message fetches. Legacy (None) keeps the
+        # gate can settle obvious junk WITHOUT paying ~2000 per-message fetches. Legacy (None) keeps the
         # old need_full behaviour so nothing else changes.
         list_body = m.get("messageText") or m.get("body") or ""
         list_body = list_body if isinstance(list_body, str) else ""
@@ -730,7 +734,8 @@ class ComposioGmailConnector:
 #
 # The rule the spec states is absolute and it is the right one: **attachment presence overrides
 # junk confidence.** Note what it does NOT do — it does not keep the email. The message still
-# meets the pipeline gate with the same verdict and is still dropped; all this buys is the FETCH,
+# meets the pipeline gate with the same verdict and is still stopped (archived since STEP-03);
+# all this buys is the FETCH,
 # which is what turns the attachment into its own event that can be judged on its own merits.
 #
 # The extractable-mime qualifier is load-bearing in the other direction. Overriding on ANY named

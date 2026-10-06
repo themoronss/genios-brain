@@ -38,26 +38,27 @@ class _DropClassifier:
         return RelevanceVerdict(False, 0.1, disposition="drop", reason="marketing")
 
 
-def test_dead_sender_dropped_at_s1():
-    # bounce / mailer-daemon carries no business signal ever → still a hard S1 drop (N-03).
+def test_dead_sender_archived_at_s1():
+    # bounce / mailer-daemon carries no business signal ever → still stopped at S1 (N-03). STEP-03:
+    # stopped means ARCHIVED — kept, unread — never deleted (`capture/gate/gate.ARCHIVE`).
     ctx = GateContext(event=_event("mailer-daemon@newsletter.com"),
                       raw={"subject": "Delivery failed", "snippet": "..."})
     tr = _trace()
     res = run_gate(ctx, tr)
-    assert res.action == "drop" and res.reason_code == "N-03"
-    assert tr.records[-1].stage == "S1" and tr.records[-1].action.value == "drop"
+    assert res.action == "archive" and res.reason_code == "N-03"
+    assert tr.records[-1].stage == "S1" and tr.records[-1].action.value == "archive"
 
 
-def test_plain_no_reply_dropped_at_s1():
+def test_plain_no_reply_archived_at_s1():
     # DESIGN CHANGE (rules-first junk removal): a no-reply/newsletter sender with NO attachment is
-    # now deterministically dropped at S1 (N-03), so obvious bulk mail never costs an S2 LLM gate
-    # call. The old concern — a receipt/invoice also comes from noreply@ — is preserved by the
+    # now deterministically stopped at S1 (N-03) — archived since STEP-03 — so obvious bulk mail
+    # never costs an S2 LLM gate call. The old concern — a receipt/invoice also comes from noreply@ — is preserved by the
     # has_attachment exemption (see test_no_reply_with_attachment_survives_s1), not by sending every
     # no-reply to the LLM.
     ctx = GateContext(event=_event("no-reply@newsletter.com"),
                       raw={"subject": "Weekly digest", "snippet": "..."})
     res = run_gate(ctx, _trace())
-    assert res.action == "drop" and res.reason_code == "N-03"
+    assert res.action == "archive" and res.reason_code == "N-03"
 
 
 def test_no_reply_with_attachment_survives_s1():
@@ -70,15 +71,16 @@ def test_no_reply_with_attachment_survives_s1():
     assert res.action == "route"
 
 
-def test_llm_gate_drops_marketing_at_s2():
-    # The S2 LLM junk-gate is the one filter allowed to drop on JUDGMENT. Use a NON-automated sender
+def test_llm_gate_archives_marketing_at_s2():
+    # The S2 LLM junk-gate is the one filter allowed to take a mail out on JUDGMENT — archived, kept
+    # and unread, since STEP-03. Use a NON-automated sender
     # so it passes S1's deterministic rules and actually reaches S2 (an automated no-reply sender is
     # now dropped at S1 by N-03 before the LLM ever runs).
     ctx = GateContext(event=_event("sales@brightco.com"),
                       raw={"subject": "Sale!", "snippet": "50% off this week"})
     tr = _trace()
     res = run_gate(ctx, tr, relevance=_DropClassifier())
-    assert res.action == "drop" and res.reason_code == "llm_junk"
+    assert res.action == "archive" and res.reason_code == "llm_junk"
     assert tr.records[-1].stage == "S2"
 
 
@@ -169,12 +171,13 @@ def test_an_unconfident_junk_verdict_parks_instead_of_deleting():
     assert res.action == "park" and res.reason_code == "llm_junk_unconfident"
 
 
-def test_a_confident_junk_verdict_still_drops():
-    """The threshold must not turn the junk gate off."""
+def test_a_confident_junk_verdict_is_still_archived():
+    """The threshold must not turn the junk gate off: confident junk still leaves the working
+    set — archived since STEP-03, so "off" would look like a route, not like a kept mail."""
     ctx = GateContext(event=_event("promo@newsletter.io"),
                       raw={"subject": "50% off", "snippet": "Limited time offer!"})
     res = run_gate(ctx, _trace(), relevance=_Verdict("drop", 0.02))
-    assert res.action == "drop" and res.reason_code == "llm_junk"
+    assert res.action == "archive" and res.reason_code == "llm_junk"
 
 
 def test_a_missing_relevance_score_never_authorises_a_delete():

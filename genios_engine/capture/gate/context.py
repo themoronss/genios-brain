@@ -28,7 +28,7 @@ class GateContext:
 
 @dataclass
 class GateResult:
-    action: str                          # route | drop | park | short_circuit
+    action: str                          # route | archive | park | short_circuit | drop (S0 only)
     reason_code: str | None = None
     route: str | None = None             # needs_extraction | structured
     whitelist_code: str | None = None

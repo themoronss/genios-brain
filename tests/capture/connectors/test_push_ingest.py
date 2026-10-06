@@ -150,17 +150,22 @@ def test_a_poisoned_payload_with_no_parked_store_still_reports_rather_than_raisi
     assert out.results == () and out.quarantined == ("msg_1",) and out.primary is None
 
 
-def test_a_gate_park_is_filed_so_the_push_door_leaves_a_recoverable_record():
+def test_a_gate_stop_leaves_a_recoverable_record_at_the_push_door():
     """"Any park outcome is recorded nowhere" was the third limb of the defect. A real capture,
-    not a stub: the object carries no body, so the gate parks it as empty."""
-    parked = InMemoryParkedStore()
+    not a stub: the object carries no body, so the gate stops it as empty (N-10) — ARCHIVED since
+    STEP-03, which keeps its payload: the ledger row and the body are the recoverable record. A
+    gate PARK is still filed to the parked store (the sweep's bookkeeping, shared)."""
+    from genios_engine.capture.payload_store import InMemoryRawPayloadStore
+
+    parked, payloads = InMemoryParkedStore(), InMemoryRawPayloadStore()
     empty = RawObject(source="gmail", object_type="email_message", source_object_id="msg_empty",
                       occurred_at=AT, actor_email="stranger@example.com", raw={})
     out = ingest_pushed_objects((empty,), org_id=ORG, connection_id=CONNECTION,
-                                wiring=_wiring(parked_store=parked))
-    assert out.results[0].outcome in ("parked", "dropped")
-    if out.results[0].outcome == "parked":
-        assert parked.list(ORG), "a parked event with no parked row is a lost event"
+                                wiring=_wiring(parked_store=parked, payload_store=payloads))
+    res = out.results[0]
+    assert res.outcome == "archived"
+    assert res.event.payload_ref in payloads.payloads, "an archived event with no body is a lost event"
+    assert parked.list(ORG) == [], "an archive is not a review item"
 
 
 def test_an_s2_extraction_park_is_filed_even_though_the_event_itself_emitted(monkeypatch):

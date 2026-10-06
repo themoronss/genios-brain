@@ -10,7 +10,8 @@ from genios_engine.capture.pipeline import (_EMITTED_PAYLOAD_TTL_DAYS,
 
 # #7 — a PARKED event waits in the human-review queue for weeks; before this its body expired at the
 # default 30 days, so /recover after a month re-emitted an EMPTY event. Parked payloads now get a long
-# TTL, emitted ones keep the short one.
+# TTL. Emitted ones were kept 30 days until STEP-03, which made it 180: `_pull` inner-joins the body,
+# so a purged one stranded its event.
 # #8 — a transient connector fetch failure (429/network) used to throw out of run_sync, freezing the
 # watermark so every following sync died on the same page. _fetch_page retries with backoff.
 
@@ -48,10 +49,10 @@ def test_parked_payload_gets_long_ttl_so_recover_works():
     assert store.ttls[res.event.payload_ref] == _PARKED_PAYLOAD_TTL_DAYS
 
 
-def test_emitted_payload_keeps_short_ttl():
+def test_emitted_payload_keeps_the_emitted_ttl():
     res, store = _capture(_email("Hi, can we meet Friday about the proposal? Details attached."))
     assert res.outcome == "emitted"
-    assert store.ttls[res.event.payload_ref] == _EMITTED_PAYLOAD_TTL_DAYS
+    assert store.ttls[res.event.payload_ref] == _EMITTED_PAYLOAD_TTL_DAYS == 180
 
 
 class _FlakyConnector:

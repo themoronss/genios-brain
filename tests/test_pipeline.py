@@ -44,10 +44,11 @@ class _DropClassifier:
         return RelevanceVerdict(False, 0.1, disposition="drop", reason="marketing")
 
 
-def test_noise_dropped_before_extraction():
-    # Rules-first junk removal: an automated/bulk no-reply sender with no attachment is dropped
+def test_noise_archived_before_extraction():
+    # Rules-first junk removal: an automated/bulk no-reply sender with no attachment is stopped
     # deterministically at S1 (N-03) BEFORE L2, so it never costs an LLM gate or extraction call.
-    # A receipt/invoice from noreply@ carries a PDF and is exempted by has_attachment.
+    # A receipt/invoice from noreply@ carries a PDF and is exempted by has_attachment. Since
+    # STEP-03 the stop is an ARCHIVE — kept, unread — not a delete.
     raw = RawObject(source="gmail", object_type="email_message",
                     source_object_id="m_noise",
                     occurred_at=datetime(2026, 7, 28, tzinfo=timezone.utc),
@@ -56,7 +57,7 @@ def test_noise_dropped_before_extraction():
     repo = InMemorySourceEventRepository()
     res = capture_event(raw, org_id="o", connection_id="c", repo=repo,
                         relevance=_DropClassifier())
-    assert res.outcome == "dropped"
+    assert res.outcome == "archived"
     assert res.gated is None
     assert res.trace.records[-1].reason_code == "N-03"
 

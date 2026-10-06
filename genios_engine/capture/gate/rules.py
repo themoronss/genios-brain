@@ -218,8 +218,8 @@ def addressed_to_a_list(raw: dict | None, *, sender_email: str | None = None) ->
 
 def light_junk(labels, sender_email: str, has_attachment: bool) -> str | None:
     """High-confidence deterministic junk from LIST-time fields ONLY (Gmail labels + sender local-
-    part) — lets the connector drop obvious junk BEFORE the S2 LLM prime ever runs, so it costs no
-    model call. Header-based bulk signals (List-Unsubscribe/Precedence) need the full fetch and stay
+    part) — lets the connector skip the full fetch of obvious junk BEFORE the S2 LLM prime ever
+    runs, so it costs no model call (the gate archives it with those list fields, STEP-03). Header-based bulk signals (List-Unsubscribe/Precedence) need the full fetch and stay
     on the LLM path. Mirrors hard_rule exactly so the pipeline gate reaches the SAME verdict."""
     labs = set(labels or [])
     if labs & {"SPAM", "TRASH"}:
@@ -333,7 +333,10 @@ def content_integrity_rule(ctx: GateContext) -> tuple[str, str] | None:
 
 
 def noise_rule(ctx: GateContext) -> tuple[str, str] | None:
-    """Sender/traffic-shape rules. These a whitelist MAY bypass — that is what it is for."""
+    """Sender/traffic-shape rules. These a whitelist MAY bypass — that is what it is for.
+
+    A rule's `drop` is its verdict — "this is noise", with its code — not what happens to the mail:
+    since STEP-03 the gate ARCHIVES it (kept, read by no model; `gate.ARCHIVE`)."""
     email = ctx.event.actor.email or ""
     subject = ctx.raw.get("subject") or ""
     hdrs: dict = ctx.raw.get("headers") or {}

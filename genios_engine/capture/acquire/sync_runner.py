@@ -211,6 +211,11 @@ class SyncSummary:
     emitted: int = 0
     dropped: int = 0
     parked: int = 0
+    #: Kept and unread: what the gate's noise rules and the AI filter's confident junk would once
+    #: have DROPPED (STEP-03, the gate keeps everything). A field per outcome is not optional —
+    #: the loop below counts with `setattr(summary, outcome, …)`, so an outcome with no field
+    #: raises and takes the sweep with it.
+    archived: int = 0
     duplicate: int = 0
     quarantined: int = 0
     next_cursor: str | None = None
@@ -862,6 +867,7 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
             "source": source, "mode": mode,
             "scanned": getattr(summary, "scanned", 0), "emitted": getattr(summary, "emitted", 0),
             "dropped": getattr(summary, "dropped", 0), "parked": getattr(summary, "parked", 0),
+            "archived": getattr(summary, "archived", 0),
         })
     except Exception:           # noqa: BLE001
         pass
@@ -899,7 +905,7 @@ def backfill_drain(connector: SourceConnector, *, org_id: str, connection_id: st
         summary = run_sync(connector, org_id=org_id, connection_id=connection_id, repo=repo,
                            mode="backfill", cursor=cursor, limit=limit, source=source,
                            cursor_store=None, max_pages=take, **kw)
-        for f in ("scanned", "emitted", "dropped", "parked", "duplicate", "quarantined",
+        for f in ("scanned", "emitted", "dropped", "parked", "archived", "duplicate", "quarantined",
                   "domain_tagged", "domain_fallback_only",
                   "intent_unread", "intent_read_attempts", "intent_disagreements"):
             setattr(total, f, getattr(total, f) + getattr(summary, f))

@@ -24,7 +24,8 @@ class _JunkGate:
 
 
 class MixedConnector:
-    """Two business emails + one no-reply newsletter → 2 emitted, 1 dropped (by the S2 gate)."""
+    """Two business emails + one no-reply newsletter → 2 emitted, 1 stopped at the gate — ARCHIVED
+    since STEP-03 (kept, unread), so it counts under `archived`, not `dropped`."""
     source = "gmail"
 
     def _objs(self):
@@ -51,7 +52,7 @@ def test_sync_counts_and_cursor():
 
     assert s.scanned == 3
     assert s.emitted == 2
-    assert s.dropped == 1
+    assert (s.archived, s.dropped) == (1, 0)
     assert len(s.gated) == 2
     assert s.next_cursor == "cur_2"
 
@@ -62,7 +63,7 @@ def test_resync_is_idempotent():
     run_sync(conn, org_id="o", connection_id="c", repo=repo, relevance=_JunkGate())
     s2 = run_sync(conn, org_id="o", connection_id="c", repo=repo, relevance=_JunkGate())   # same batch again
     # every event was already SEEN on the first sync (landed for dedup+audit, even the
-    # one that was gate-dropped), so the whole re-sync is duplicates — nothing reprocessed.
+    # one the gate archived), so the whole re-sync is duplicates — nothing reprocessed.
     assert s2.emitted == 0
     assert s2.duplicate == 3
     assert repo.count() == 3      # stable; never double-counted
