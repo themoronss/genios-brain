@@ -20,6 +20,24 @@ from sqlalchemy import text
 from genios_engine.reason.fingerprint import MaterialInputs, verdict_key
 
 
+def decider_identity(org_id: str) -> str:
+    """Who decides this tenant's subjects: the formula, or the LLM decider and the model it runs.
+
+    `llm_decision_maker.enabled_for` is the switch every lane reads; R-1 runs on the same switch in
+    the orchestrator, so one word covers both. A caller that also hands R-1 to a lane (the compiled
+    lane's interpreter) adds `+r1` itself.
+    """
+    from genios_engine.platform.config import get_settings
+    from genios_engine.reason import llm_decision_maker
+
+    if not llm_decision_maker.enabled_for(org_id):
+        return "formula"
+    settings = get_settings()
+    model = (str(getattr(settings, "l4_llm_decision_model", "") or "").strip()
+             or str(getattr(settings, "anthropic_model", "") or ""))
+    return f"llm:{model}"
+
+
 @dataclass(frozen=True)
 class InputsIndex:
     """One tenant's MaterialInputs, ready to hand out per subject."""
@@ -27,14 +45,18 @@ class InputsIndex:
     revisions: Mapping[str, int] = field(default_factory=dict)
     by_rule: Mapping[tuple[str, str], tuple[str, ...]] = field(default_factory=dict)
     by_situation: Mapping[tuple[str, str], tuple[str, ...]] = field(default_factory=dict)
+    decider: str = "formula"
 
     def for_rule(self, pack_id: str, rule_id: str, node_id: str) -> MaterialInputs:
         return MaterialInputs(authority_revision=self.revisions.get(pack_id),
-                              verdicts=self.by_rule.get((rule_id, node_id), ()))
+                              verdicts=self.by_rule.get((rule_id, node_id), ()),
+                              decider=self.decider)
 
-    def for_situation(self, pack_id: str, situation_id: str, capability_id: str) -> MaterialInputs:
+    def for_situation(self, pack_id: str, situation_id: str, capability_id: str, *,
+                      interpreted: bool = False) -> MaterialInputs:
         return MaterialInputs(authority_revision=self.revisions.get(pack_id),
-                              verdicts=self.by_situation.get((situation_id, capability_id), ()))
+                              verdicts=self.by_situation.get((situation_id, capability_id), ()),
+                              decider=self.decider + ("+r1" if interpreted else ""))
 
 
 def read_inputs(conn, org_id: str) -> InputsIndex:
@@ -57,4 +79,5 @@ def read_inputs(conn, org_id: str) -> InputsIndex:
             by_situation[(r.situation_id, r.capability_id)].append(key)
     return InputsIndex(revisions=revisions,
                        by_rule={k: tuple(sorted(v)) for k, v in by_rule.items()},
-                       by_situation={k: tuple(sorted(v)) for k, v in by_situation.items()})
+                       by_situation={k: tuple(sorted(v)) for k, v in by_situation.items()},
+                       decider=decider_identity(org_id))

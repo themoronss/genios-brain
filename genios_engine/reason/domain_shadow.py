@@ -635,7 +635,7 @@ class _CompiledGate:
             return cls()
 
     def check(self, *, org_id: str, situation_id: str, manifest, node_ctx, projection, pack,
-              live: bool, eval_time, graph_version):
+              live: bool, eval_time, graph_version, interpreted: bool = False):
         """(subject key, fingerprint, verdict) — or a None fingerprint when the gate cannot judge."""
         from genios_engine.reason.change_gate import should_skip
         from genios_engine.reason.fingerprint import material_fingerprint
@@ -652,7 +652,8 @@ class _CompiledGate:
                 manifest, snapshot,
                 config_snapshot_id=(pack["snapshot_id"] if pack else None),
                 mode=ExecutionMode.LIVE if live else ExecutionMode.SHADOW,
-                inputs=self.inputs.for_situation(pack_id, situation_id, manifest.capability_id))
+                inputs=self.inputs.for_situation(pack_id, situation_id, manifest.capability_id,
+                                                 interpreted=interpreted))
         except Exception:      # noqa: BLE001 — unfingerprintable: decide it
             logger.exception("change gate could not fingerprint %s for org=%s", key, org_id)
             return key, None, None
@@ -1306,7 +1307,8 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                     gate_key, gate_fp, gate_verdict = gate.check(
                         org_id=org_id, situation_id=str(row["situation_id"]), manifest=manifest,
                         node_ctx=node_ctx, projection=projection, pack=pack, live=live_row,
-                        eval_time=eval_time, graph_version=graph_version)
+                        eval_time=eval_time, graph_version=graph_version,
+                        interpreted=interpreter is not None)
                     if gate_verdict is not None and gate_verdict.skip:
                         counts["skipped_unchanged"] += 1
                         gate.skipped.add(gate_key)

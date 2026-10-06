@@ -3309,8 +3309,9 @@ yc2_w27_s02:
                     - id: M20.C1.L-contract.V0.U01
                       what: >
                         `MaterialInputs` — what can change the right answer without touching the
-                        decision's request: the pack's authority_revision and the human verdicts
-                        on the subject's cards (verdict_key = feedback id : version) — and the
+                        decision's request: the pack's authority_revision, the human verdicts
+                        on the subject's cards (verdict_key = feedback id : version), and who
+                        decides (formula, or llm:<model>, +r1 — found wiring M20.C4) — and the
                         clock ladders: deadline hours on timeline_unit.URGENCY_LADDER, elapsed
                         days on DAY_LADDER. NARROWED IN BUILD, by measurement: open loops and L1
                         conflicts were planned here, but on all 40 golden cases the request itself
@@ -3360,9 +3361,9 @@ yc2_w27_s02:
                       what: >
                         `0191_reasoning_fingerprints.sql` — one row per (org_id, subject_key):
                         lane, fingerprint, the run it was decided by, the outcome (emitted /
-                        standing / deferred / suppressed / shadow), decided_at, last_checked_at,
-                        skips. subject_key = situation_id + capability (compiled) or
-                        rule_id:node_id (legacy, native). supersedes_run_id is NOT used — it is
+                        standing / deferred / indeterminate / suppressed / shadow), decided_at,
+                        last_checked_at, skips. subject_key = situation|capability (compiled),
+                        legacy|pack|rule|node, native|pack|capability|node. supersedes_run_id is NOT used — it is
                         part of input_hash and the replay check.
                       artifact: migrations/0191_reasoning_fingerprints.sql
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/test_migration_0191_reasoning_fingerprints.py -q

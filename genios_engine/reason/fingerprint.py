@@ -14,9 +14,12 @@ read as a rung relative to the evaluation instant, a re-stamp to "now" never mov
 each evidence item's `evidence_id` (and so the evidence list's order), and the compiled capability's
 derived `version` and `expertise_id`. With those out, every repeated request was identical.
 
-TWO THINGS CAN CHANGE THE RIGHT ANSWER WITHOUT TOUCHING THE REQUEST, and `MaterialInputs` carries them:
-the pack's `authority_revision` (a calibration, a pack change) and the human verdicts on the
-subject's cards.
+THREE THINGS CAN CHANGE THE RIGHT ANSWER WITHOUT TOUCHING THE REQUEST, and `MaterialInputs` carries
+them: the pack's `authority_revision` (a calibration, a pack change), the human verdicts on the
+subject's cards, and WHO DECIDES — the formula, or the LLM decider and its model, and whether R-1
+reads the request first. The third was found wiring the legacy lane: a test that switches the decider
+on between two sweeps was skipped as unchanged, so switching `GENIOS_L4_LLM_DECISION_MAKER` in
+production would have kept every old decision until some other input moved.
 
 A CLOCK IS COMPARED BY ITS RUNG. A deadline or an elapsed time is read relative to the evaluation
 instant and reduced to its rung on a ladder — deadline hours on Layer 4's own urgency ladder, elapsed
@@ -49,10 +52,12 @@ class MaterialInputs:
 
     `authority_revision` — `tenant_packs.authority_revision` of the pack the decision runs under.
     `verdicts` — `verdict_key`s of the human verdicts on the subject's cards, held in one order.
+    `decider` — who decides: `"formula"`, or `"llm:<model>"`, with `"+r1"` when R-1 reads first.
     """
 
     authority_revision: int | None = None
     verdicts: tuple[str, ...] = field(default_factory=tuple)
+    decider: str = "formula"
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "verdicts", tuple(sorted(set(self.verdicts))))
@@ -202,7 +207,7 @@ def material_fingerprint(capability, snapshot, *, config_snapshot_id: str | None
                "context": context, "config_snapshot_id": config_snapshot_id,
                "mode": getattr(mode, "value", mode),
                "inputs": {"authority_revision": inputs.authority_revision,
-                          "verdicts": list(inputs.verdicts)}}
+                          "verdicts": list(inputs.verdicts), "decider": inputs.decider}}
     # ⛔ NOT `semantic_hash(payload)`. The payload is ALREADY canonical — its decimals, dates and
     # instants are the tagged scalars `canonicalize` emits — and canonicalizing it again refuses
     # every one of them as a reserved key. A snapshot holding one decimal value (they do: the golden

@@ -19,10 +19,11 @@
 create table if not exists reasoning_fingerprints (
     org_id          text        not null references orgs (id) on delete cascade,
 
-    --: Which subject, in which lane:
+    --: Which subject, in which lane (the pack is in the key: the legacy pass runs once per pack, and
+    --: two packs may share a rule id):
     --:   compiled   '<situation_id>|<capability_id>'
-    --:   legacy     'legacy|<rule_id>|<node_id>'
-    --:   native     'native|<capability_id>|<node_id>'
+    --:   legacy     'legacy|<pack_id>|<rule_id>|<node_id>'
+    --:   native     'native|<pack_id>|<capability_id>|<node_id>'
     subject_key     text        not null,
     lane            text        not null,
 

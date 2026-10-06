@@ -24,6 +24,8 @@ from genios_engine.platform.ids import new_id
 from .baselines import build_baselines, load_node_metrics
 from .adapters import (legacy_capability_manifest, reason_legacy_rule,
                        reason_native_capability)
+from .adapters.legacy_context import legacy_context_snapshot
+from .adapters.native import native_context_snapshot
 from .audit import persist_execution
 from .authority import (AUTHORITATIVE_SIGNAL_JOINS, AUTHORITATIVE_SIGNAL_PREDICATE,
                         projected_score)
@@ -631,6 +633,130 @@ def _graph_version_guard(store, org_id: str, expected: int, *, pack_id: str | No
 _supp_batch = threading.local()
 
 
+# =================================================================================================
+# STEP-02 · THE CHANGE GATE, LEGACY AND NATIVE LANES (`yc2_w27_s02/M20.C4.L-integration.V3.U01`)
+#
+# The compiled lane's gate (`reason/domain_shadow._CompiledGate`) for the two lanes this module runs:
+# fingerprint the request a rule or a native capability is about to send, and skip it when
+# `reason/change_gate.should_skip` says nothing it depends on moved. A skip REPLAYS the last
+# decision's bookkeeping, so the lifecycle pass below resolves nothing a skip did not look at:
+#
+#   standing / emitted   the subject stays in `fired` — its open signal is kept
+#   deferred             it stays `indeterminate` — the card it found stands (M20.C5)
+#   suppressed / shadow  nothing — it kept nothing alive when it was decided either
+#
+# ⛔ A LEGACY CARD IS "STANDING" ONLY WHILE IT IS STILL SHOWING. A loop-gated rule whose card expired
+# from view while the ask is still open is re-surfaced by the regeneration path below once its
+# cooldown passes ("they asked, we never answered, and silence is not resolution"). The gate must not
+# skip that subject, so the open-signal index counts a signal as standing only while its card is in a
+# showing state.
+#
+# Fails open, as the compiled gate does: a gate that cannot load or fingerprint decides the subject.
+# =================================================================================================
+_LEGACY_STANDING = (
+    "select s.rule_id, s.subject_node_id, max(s.authority_expires_at) as expires_at "
+    "  from signals s join cards c on c.org_id = s.org_id and c.signal_id = s.signal_id "
+    " where s.org_id = :o and s.pack_id = :p and s.pack_version = :pv and s.status = 'open' "
+    "   and c.state in ('queued','surfaced','snoozed','claimed','delivered') "
+    " group by 1, 2")
+
+
+class _LaneGate:
+    """One legacy pass's change gate: loaded once, consulted per subject, written once."""
+
+    def __init__(self, *, stored=None, inputs=None, standing=None, ready: bool = False) -> None:
+        from genios_engine.reason.fingerprint_inputs import InputsIndex
+
+        self.stored = stored or {}
+        self.inputs = inputs or InputsIndex()
+        self.standing = standing or {}
+        self.ready = ready
+        self.decided: dict[str, tuple[str, str, str, str | None]] = {}
+        self.skipped: set[str] = set()
+
+    @classmethod
+    def load(cls, store, org_id: str, pack_id: str, pack_version: str) -> "_LaneGate":
+        from genios_engine.reason.fingerprint_inputs import read_inputs
+        from genios_engine.reason.fingerprint_store import load_all
+
+        try:
+            with store.engine.connect() as c:
+                standing = {(r.rule_id, r.subject_node_id): r.expires_at
+                            for r in c.execute(text(_LEGACY_STANDING),
+                                               {"o": org_id, "p": pack_id, "pv": pack_version})}
+                return cls(stored=load_all(c, org_id), inputs=read_inputs(c, org_id),
+                           standing=standing, ready=True)
+        except Exception:      # noqa: BLE001 — the gate fails open: every subject is decided
+            logger.exception("change gate unavailable for org=%s pack=%s — deciding every subject",
+                             org_id, pack_id)
+            return cls()
+
+    def check(self, *, key: str, rule_id: str, node_id: str, pack_id: str, capability, snapshot,
+              config_snapshot_id, mode, live: bool, eval_time):
+        """(fingerprint, verdict), or (None, None) when the gate cannot judge."""
+        from genios_engine.reason.change_gate import should_skip
+        from genios_engine.reason.fingerprint import material_fingerprint
+
+        if not self.ready:
+            return None, None
+        try:
+            fingerprint = material_fingerprint(
+                capability, snapshot(), config_snapshot_id=config_snapshot_id, mode=mode,
+                inputs=self.inputs.for_rule(pack_id, rule_id, node_id))
+        except Exception:      # noqa: BLE001 — unfingerprintable: decide it
+            logger.exception("change gate could not fingerprint %s", key)
+            return None, None
+        verdict = should_skip(self.stored.get(key), fingerprint, live=live,
+                              standing_expires_at=self.standing.get((rule_id, node_id)) if live
+                              else None, eval_time=eval_time)
+        return fingerprint, verdict
+
+    def replay(self, key: str, subject: tuple[str, str], fired: set, indeterminate: set) -> None:
+        """A skip does what the decision it skips did to the lifecycle's two sets."""
+        from genios_engine.reason import fingerprint_store as fs
+
+        outcome = self.stored[key].outcome
+        if outcome in (fs.STANDING, fs.EMITTED):
+            fired.add(subject)
+        elif outcome == fs.DEFERRED:
+            indeterminate.add(subject)
+        self.skipped.add(key)
+
+    def record(self, key: str, lane: str, fingerprint: str | None, outcome: str,
+               run_id: str | None = None) -> None:
+        if fingerprint is not None:
+            self.decided[key] = (lane, fingerprint, outcome, run_id)
+
+    def flush(self, *, store, org_id: str, eval_time, out) -> None:
+        from genios_engine.reason import fingerprint_store as fs
+
+        if not (self.decided or self.skipped):
+            return
+        try:
+            with store.engine.begin() as c:
+                for key, (lane, fingerprint, outcome, run_id) in self.decided.items():
+                    fs.record_decided(c, org_id=org_id, subject_key=key, lane=lane,
+                                      fingerprint=fingerprint, outcome=outcome, run_id=run_id,
+                                      decided_at=eval_time)
+                for key in self.skipped:
+                    fs.record_skipped(c, org_id=org_id, subject_key=key, checked_at=eval_time)
+        except Exception:      # noqa: BLE001 — a lost memory costs one re-decision next sweep
+            out["gate_write_failed"] += 1
+            logger.exception("change gate could not record the pass for org=%s", org_id)
+
+
+def _deferred_outcome(decision) -> str:
+    """A live run's DEFER, in the store's words: the decider's verdict may be skipped on unchanged
+    inputs; an unavailable decider (`llm_decision_unavailable:*`, the cap included) must be asked
+    again."""
+    from genios_engine.reason import fingerprint_store as fs
+    from genios_engine.reason.llm_decision_maker import LLM_UNAVAILABLE_REASON
+
+    unavailable = any(str(u).startswith(LLM_UNAVAILABLE_REASON)
+                      for u in (decision.uncertainty or ()))
+    return fs.INDETERMINATE if unavailable else fs.DEFERRED
+
+
 def _suppress(store, org_id, rule_id, node_id, reason, eval_time, detail=None) -> None:
     row = {"o": org_id, "r": rule_id, "n": node_id, "rc": reason,
            "d": json.dumps(detail or {}, default=str), "e": eval_time}
@@ -913,6 +1039,8 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
     with store.engine.connect() as _olc:
         open_loops_by_subject = open_loop_counts(_olc, org_id)
     _supp_batch.rows = []            # buffer suppressions for this sweep; one bulk INSERT at the end
+    gate = _LaneGate.load(store, org_id, effective["pack_id"], effective["version"])
+    out["gate_ready"] = int(gate.ready)
     for nd in nodes:
         if (nd.canonical_key or "").strip().lower() in self_keys:
             out["self_excluded"] += 1                       # never reason about the account owner
@@ -999,6 +1127,19 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
             break
         for capability in node_capabilities:
             native_rule = native_rule_id(capability.capability_id)
+            native_key = f"native|{effective['pack_id']}|{capability.capability_id}|{nd.node_id}"
+            native_fp, native_verdict = gate.check(
+                key=native_key, rule_id=native_rule, node_id=nd.node_id,
+                pack_id=effective["pack_id"], capability=capability,
+                snapshot=lambda: native_context_snapshot(
+                    org_id=org_id, context=ctx, capability=capability,
+                    evaluation_time=eval_time, graph_version=graph_version),
+                config_snapshot_id=snapshot_id, mode=ExecutionMode.SHADOW, live=False,
+                eval_time=eval_time)
+            if native_verdict is not None and native_verdict.skip:
+                gate.replay(native_key, (native_rule, nd.node_id), fired, indeterminate)
+                out["skipped_unchanged"] += 1
+                continue
             try:
                 native_execution = reason_native_capability(
                     org_id=org_id,
@@ -1033,6 +1174,7 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                 # previous claim must not be retired as though it had cleared.
                 indeterminate.add((native_rule, nd.node_id))
                 out["native_failed"] += 1
+                gate.record(native_key, "native", native_fp, "indeterminate")
                 continue
             out[f"native_{native_execution.decision.outcome.value}"] += 1
             native_run_id = persisted_native["run"]["run_id"]
@@ -1044,6 +1186,7 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                            "outcome": native_execution.decision.outcome.value,
                            "uncertainty": list(native_execution.decision.uncertainty)})
                 indeterminate.add((native_rule, nd.node_id))
+                gate.record(native_key, "native", native_fp, "indeterminate", native_run_id)
                 continue
             publication = build_native_publication(
                 execution=native_execution, audit_bundle=persisted_native)
@@ -1058,10 +1201,14 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                            "execution_mode": native_execution.request.mode.value,
                            "live_delivery_enabled": capability.live_delivery_enabled})
                 out["native_suppressed"] += 1
+                gate.record(native_key, "native", native_fp, "shadow", native_run_id)
                 continue
             # An authorized decision keeps its subject alive for lifecycle even if budget or
             # cooldown stops it publishing this sweep — the claim is still true.
             fired.add((native_rule, nd.node_id))
+            # The native lane is pinned to SHADOW, so this is unreached today; when it opens, an
+            # authorized native decision is decided every sweep until its own gate is measured.
+            gate.record(native_key, "native", native_fp, "indeterminate", native_run_id)
             if _recent_signal(store, org_id, native_rule, nd.node_id,
                               publication.cooldown_hours, eval_time, snapshot_id,
                               effective["pack_id"], effective["version"]):
@@ -1075,6 +1222,22 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
         for rule in rules:
             if rule.id in muted:                          # L6 auto-mute — rule is harmful, silence it
                 out["muted"] += 1
+                continue
+            legacy_key = f"legacy|{effective['pack_id']}|{rule.id}|{nd.node_id}"
+            legacy_capability = legacy_capabilities[rule.id]
+            legacy_fp, legacy_verdict = gate.check(
+                key=legacy_key, rule_id=rule.id, node_id=nd.node_id,
+                pack_id=effective["pack_id"], capability=legacy_capability,
+                snapshot=lambda: legacy_context_snapshot(
+                    org_id=org_id, context=ctx, rule=rule, evaluation_time=eval_time,
+                    graph_version=graph_version),
+                config_snapshot_id=snapshot_id, mode=execution_mode,
+                live=(execution_mode == ExecutionMode.LIVE
+                      and legacy_capability.live_delivery_enabled),
+                eval_time=eval_time)
+            if legacy_verdict is not None and legacy_verdict.skip:
+                gate.replay(legacy_key, (rule.id, nd.node_id), fired, indeterminate)
+                out["skipped_unchanged"] += 1
                 continue
             try:
                 reasoned = reason_legacy_rule(
@@ -1099,6 +1262,7 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                           {"error_type": type(exc).__name__})
                 indeterminate.add((rule.id, nd.node_id))
                 out["reasoning_input_invalid"] += 1
+                gate.record(legacy_key, "legacy", legacy_fp, "indeterminate")
                 continue
             # P2 + P2b: only pay for the full ~9-row audit bundle (its own transaction) when something
             # downstream actually reads it. The bundle's run_id is just the in-memory trace run id, so:
@@ -1157,9 +1321,11 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                                "trace_run_id": reasoned.execution.trace.run_id})
                     indeterminate.add((rule.id, nd.node_id))
                     out["audit_failed"] += 1
+                    gate.record(legacy_key, "legacy", legacy_fp, "indeterminate")
                     continue
             else:
                 out["no_op_skipped"] += 1
+                gate.record(legacy_key, "legacy", legacy_fp, "suppressed")
                 continue
             if reasoned.execution.decision.outcome in {
                     DecisionOutcome.FAILED, DecisionOutcome.INSUFFICIENT_CONTEXT}:
@@ -1170,6 +1336,7 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                            "run_id": reasoned.execution.trace.run_id})
                 indeterminate.add((rule.id, nd.node_id))
                 out[outcome] += 1
+                gate.record(legacy_key, "legacy", legacy_fp, "indeterminate", reasoning_run_id)
                 continue
             if reasoned.execution.decision.outcome == DecisionOutcome.BLOCKED:
                 _suppress(store, org_id, rule.id, nd.node_id, "reasoning_blocked", eval_time,
@@ -1179,8 +1346,10 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                                       for check in candidate.checks
                                       if check.outcome.value == "eliminate"]})
                 out["below_gate"] += 1
+                gate.record(legacy_key, "legacy", legacy_fp, "suppressed", reasoning_run_id)
                 continue
             if not reasoned.matched:
+                gate.record(legacy_key, "legacy", legacy_fp, "suppressed", reasoning_run_id)
                 continue
             out["detected"] += 1
             S, inputs = reasoned.score, reasoned.score_inputs
@@ -1212,6 +1381,7 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                                "last_seen_at": str(sit.get("last_seen_at") or ""),
                                "reasoning_run_id": reasoning_run_id})
                     out["situation_dormant"] += 1
+                    gate.record(legacy_key, "legacy", legacy_fp, "suppressed", reasoning_run_id)
                     continue
             if not reasoned.execution.authorizes_delivery:
                 # ⛔ A DEFER IS NOT A SHADOW RUN (STEP-02, `yc2_w27_s02/M20.C5.L-logic.V0.U01`). A live,
@@ -1231,6 +1401,8 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                                "uncertainty": list(_execution.decision.uncertainty)})
                     indeterminate.add((rule.id, nd.node_id))
                     out["deferred"] += 1
+                    gate.record(legacy_key, "legacy", legacy_fp,
+                                _deferred_outcome(_execution.decision), reasoning_run_id)
                     continue
                 _suppress(store, org_id, rule.id, nd.node_id, "shadow", eval_time,
                           {"reasoning_run_id": reasoning_run_id,
@@ -1238,6 +1410,7 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                            "live_delivery_enabled":
                                reasoned.execution.request.capability.live_delivery_enabled})
                 out["shadow"] += 1
+                gate.record(legacy_key, "legacy", legacy_fp, "shadow", reasoning_run_id)
                 continue
             # ── the loop is open, or the card merely expired ─────────────────────────────
             #
@@ -1275,12 +1448,14 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                     # Still true, only not re-said: it keeps its open signal through lifecycle
                     # retirement below, which resolves any (rule, subject) missing from `fired`.
                     fired.add((rule.id, nd.node_id))
+                    gate.record(legacy_key, "legacy", legacy_fp, "standing", reasoning_run_id)
                     continue
 
             selected = reasoned.execution.selected_candidate
             if selected is None:
                 indeterminate.add((rule.id, nd.node_id))
                 out["authority_invalid"] += 1
+                gate.record(legacy_key, "legacy", legacy_fp, "indeterminate", reasoning_run_id)
                 continue
             S = projected_score(selected.utility_bp)
             # A shadow or non-deliverable run must not keep a prior live signal alive.  Only a
@@ -1290,7 +1465,11 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                 _suppress(store, org_id, rule.id, nd.node_id, "cooldown", eval_time,
                           {"reasoning_run_id": reasoning_run_id})
                 out["cooldown"] += 1
+                gate.record(legacy_key, "legacy", legacy_fp, "standing", reasoning_run_id)
                 continue
+            # Ranked and spent after the loop. Recorded as emitted: a skip still needs the card it
+            # left to be open and showing, so a candidate the budget stopped is decided again.
+            gate.record(legacy_key, "legacy", legacy_fp, "emitted", reasoning_run_id)
             evidence = [{"field": f, "value": (ctx.facts.get(f) or {}).get("value")}
                         for f in rule.evidence_fields]
             # The DecisionObject's own content, captured HERE — the last point it exists in
@@ -1322,6 +1501,11 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
             ))
         if graph_drifted:
             break
+
+    # STEP-02 · the gate's memory for this pass, written once (see `_LaneGate`). Before the drift
+    # check on purpose: a drifted sweep publishes nothing, and a fingerprint recorded for it is safe
+    # — a skip needs the card the decision left to be open and showing.
+    gate.flush(store=store, org_id=org_id, eval_time=eval_time, out=out)
 
     if not graph_drifted and _graph_version(store, org_id) != graph_version:
         graph_drifted = True

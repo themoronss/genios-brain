@@ -20,10 +20,11 @@ from datetime import datetime
 
 from sqlalchemy import text
 
-#: The lanes a subject is decided in, and what its key is made of:
+#: The lanes a subject is decided in, and what its key is made of (the legacy pass runs once per
+#: pack, and two packs may share a rule id, so the pack is in the key):
 #:   compiled  '<situation_id>|<capability_id>'
-#:   legacy    'legacy|<rule_id>|<node_id>'
-#:   native    'native|<capability_id>|<node_id>'
+#:   legacy    'legacy|<pack_id>|<rule_id>|<node_id>'
+#:   native    'native|<pack_id>|<capability_id>|<node_id>'
 LANES: tuple[str, ...] = ("compiled", "legacy", "native")
 
 #: What a decision came to — the bookkeeping a skip replays (migration 0191 says what each means).

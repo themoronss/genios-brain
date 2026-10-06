@@ -46,7 +46,8 @@ def test_material_inputs_are_frozen_and_hold_their_verdicts_in_one_order():
 
 
 def test_no_inputs_is_a_value_too():
-    assert fp.MaterialInputs() == fp.MaterialInputs(authority_revision=None, verdicts=())
+    assert fp.MaterialInputs() == fp.MaterialInputs(authority_revision=None, verdicts=(),
+                                                    decider="formula")
 
 
 def test_a_verdict_key_is_a_feedback_id_and_its_version():

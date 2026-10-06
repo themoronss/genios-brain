@@ -138,6 +138,8 @@ def test_the_capabilitys_content_changes_the_fingerprint():
     {"mode": ExecutionMode.SHADOW},
     {"inputs": MaterialInputs(authority_revision=2)},
     {"inputs": MaterialInputs(verdicts=(verdict_key("fb_1", 1),))},
+    {"inputs": MaterialInputs(decider="llm:claude-haiku-4-5-20251001")},
+    {"inputs": MaterialInputs(decider="formula+r1")},
 ])
 def test_what_sits_beside_the_request_changes_the_fingerprint(change):
     assert _fp(**change) != BASE
