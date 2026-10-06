@@ -49,13 +49,16 @@ def test_prepared_text_is_persisted_for_kept_events():
     assert prepared.get_text(org_id="org_b", event_id=res.event.event_id) is None
 
 
-def test_archived_noise_keeps_its_content_and_gets_no_lane():
-    # STEP-03 inverted this test. It was "dropped noise persists no content" — and 258 of 395 mails
-    # on the design partner's account went with no body. Noise is now ARCHIVED: kept, unread.
+def test_archived_noise_keeps_its_body_but_no_text_and_gets_no_lane():
+    # STEP-03 inverted half of this test. It was "dropped noise persists no content" — and 258 of
+    # 395 mails on the design partner's account went with no body. Noise is now ARCHIVED: its
+    # encrypted payload kept, unread. The other half stands: no PREPARED text, because every reader
+    # of a message's words selects by correlation membership and would read it (F37).
     res, repo, prepared = _capture(_raw(oid="m2", raw_extra=None,
                                         body="x", labelIds=["SPAM"]))
     assert res.outcome == "archived"
-    assert res.event.event_id in prepared.rows       # its masked text is kept
+    assert res.event.payload_ref                      # its body is kept, encrypted
+    assert prepared.rows == {}                        # and no reader of words can reach it
     dec = repo._decision[("org_a", res.event.dedup_key)]
     assert dec["triage_lane"] is None                # lane is for emitted events only
     assert (dec["attention"], dec["attention_reason"]) == ("archive", "N-09")

@@ -1629,10 +1629,10 @@ def capture_event(raw: RawObject, *, org_id: str, connection_id: str,
     # ARCHIVED (STEP-03) = what a noise rule or the model's confident junk verdict once DELETED:
     # 258 of 395 mails on the design partner's account went with no body, so "did we lose anything
     # real?" was permanently unanswerable — and the answer was yes (Boardy's introductions, a
-    # government portal's updates). It keeps its body and its prepared text, and no model reads
-    # it. Only a scope drop (S0) stores nothing. What the body is, is what the connector fetched:
-    # for list-time junk (N-09/N-06/N-07/N-03) and confident `llm_junk` that is the list snippet
-    # and headers (`connectors/composio.py`'s fast path); the message id re-fetches the rest.
+    # government portal's updates). It keeps its encrypted body, and no model reads it. Only a
+    # scope drop (S0) stores nothing. What the body is, is what the connector fetched: for
+    # list-time junk (N-09/N-06/N-07/N-03) and confident `llm_junk` that is the list snippet and
+    # headers (`connectors/composio.py`'s fast path); the message id re-fetches the rest.
     if kept and payload_store is not None:
         event.payload_ref = new_id("pay")
     repo.add(event, outcome=outcome, route=gate.route, triage_lane=lane,
@@ -1647,7 +1647,18 @@ def capture_event(raw: RawObject, *, org_id: str, connection_id: str,
                           ttl_days=(_PARKED_PAYLOAD_TTL_DAYS if outcome == "parked"
                                     else ARCHIVED_PAYLOAD_TTL_DAYS if outcome == ARCHIVED
                                     else _EMITTED_PAYLOAD_TTL_DAYS))
-    if kept and prepared is not None and prepared_store is not None:
+    # ⛔ NOT FOR AN ARCHIVED MAIL — corrected by measurement, STEP-03's golden acceptance
+    # (2026-10-06). The prepared text is what every reader of a message's words selects:
+    # `context/lifecycle/store.unexamined_messages` (the resolution model), `situation_bso`,
+    # `deliver/card_builder`, `support_situations`, `document_register`. They select by
+    # CORRELATION MEMBERSHIP, and a reading makes every event of a thread a member whatever its
+    # outcome — the gate's dropped mail was a member too. A dropped mail had no prepared text, so it
+    # was skipped by ABSENCE. Stored for an archived mail, it was read: on founder case F37 the
+    # resolution model was handed Introly's archived introduction as a third message. So an
+    # archive keeps its encrypted payload and nothing a reader of words can reach; the prepared
+    # text is re-derived from the payload — `preprocess`, no model — when a mail is promoted
+    # (STEP-05).
+    if outcome in ("emitted", "parked") and prepared is not None and prepared_store is not None:
         # the PII-masked, replayable form + offset map — retained longer than the raw payload
         # `direction` PASSED, NOT RE-DERIVED. `_envelope_direction` is the one place that decides
         # inbound/outbound/internal, and it REFUSES with None when no rule can name it — a second

@@ -7,8 +7,9 @@
 -- says it as a rule (RULE 04): uncertainty routes, it never deletes.
 --
 -- From this migration the gate ARCHIVES what it would have dropped: the mail is kept — its
--- encrypted payload and its prepared text, for 180 days (06 D4) — and read by no model, and the rule
--- that archived it is its reason. Every kept mail carries an attention tier:
+-- encrypted payload, for 180 days (06 D4), and no prepared text, which every reader of a message's
+-- words could reach — and read by no model, and the rule that archived it is its reason. Every kept
+-- mail carries an attention tier:
 --
 --   deep      read — emitted, or parked waiting to be read
 --   skim      declared for STEP-07, which assigns it from the company brief; nothing writes it yet

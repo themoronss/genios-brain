@@ -3524,8 +3524,13 @@ yc2_w27_s03:
     content gone — N-02 16, N-03 8, N-06 4, llm_junk 4, N-07 1.
   vision: >
     L1 never deletes a mail. A mail the noise rules or the AI filter would have dropped is ARCHIVED
-    — its encrypted payload and its prepared text kept for 180 days (06 D4), never read by a model —
-    with the rule that archived it as its reason, and every mail carries an attention tier. Nothing
+    — its encrypted payload kept for 180 days (06 D4), never read by a model — with the rule that
+    archived it as its reason, and every mail carries an attention tier. ⛔ CORRECTED BY MEASUREMENT
+    (2026-10-06, the golden acceptance on F37): an archive keeps NO prepared text. Every reader of a
+    message's words selects by correlation membership, a reading makes every thread event a member
+    whatever its outcome, and a dropped mail had been skipped only because it had no prepared text —
+    stored, the resolution model read Introly's archived introduction. It is re-derived at promotion
+    (STEP-05). Nothing
     the founder sees changes yet: an archived mail is promoted and read by STEP-05 and STEP-07.
   order_note: >
     C1, the vocabulary and the store, first; then the gate (C2) and the pipeline (C3); then every
@@ -3540,7 +3545,7 @@ yc2_w27_s03:
       name: Nothing is deleted at the gate (STEP-03)
       ships: >
         On the golden set 0 of 86 mail objects are dropped: the 33 the gate dropped are archived,
-        each with its rule as the reason and its payload and prepared text stored; no must-abstain
+        each with its rule as the reason and its payload stored (no prepared text); no must-abstain
         case gains a card and the board does not move. In production, after the deploy, new mail
         with its content deleted at the gate goes from 258 of 395 to 0.
       categories:
@@ -3628,7 +3633,8 @@ yc2_w27_s03:
                     - id: M21.C3.L-logic.V3.U03
                       what: >
                         `capture/pipeline.py` — an `archive` verdict lands as outcome `archived`: its
-                        encrypted payload and its prepared text are stored for 180 days (D4), its
+                        encrypted payload is stored for 180 days (D4) — ⛔ and NO prepared text,
+                        corrected by the acceptance (F37, see the vision) — its
                         attention and reason written, and it stops before the semantic lane — no
                         model reads it. The emitted payload TTL goes from 30 days to 180, so `_pull`
                         stops stranding an event not drained within a month.
@@ -3713,7 +3719,7 @@ yc2_w27_s03:
                       what: >
                         The acceptance, on the real chain: across all 40 founder cases, 0 mail objects
                         are dropped; every object the gate dropped before is archived with the same
-                        code, with its payload and prepared text stored; no must-abstain case gains a
+                        code, with its payload stored and no prepared text; no must-abstain case gains a
                         card; `golden_score.py --assert-recorded` still matches.
                       artifact: tests/replays/test_the_gate_deletes_nothing.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest tests/replays/test_the_gate_deletes_nothing.py -q
