@@ -632,6 +632,13 @@ def name_thread_nodes(store, org_id: str | None = None, *, limit: int = _NAME_BA
 
     Safe to re-run: `name_thread_node` promotes only over a label this module generated, so a
     thread named by anything better is left alone and a second pass writes nothing.
+
+    NEVER AFTER US (STEP-04). The party is the oldest correspondent who is NOT one of us, by the
+    identity of the thread's own tenant (`platform/self_identity.identity_for`, once per tenant per
+    pass). The pipeline writes these edges only for addresses outside the self set at write time,
+    so an address declared later — or a colleague known only by a declared domain — is a
+    correspondent, and the oldest one named the conversation after us. With nobody else in it, the
+    thread is named by what it is for alone.
     """
     scope = "" if org_id is None else " and t.org_id = :org"
     rows = store.engine.connect().execute(text(
@@ -640,25 +647,18 @@ def name_thread_nodes(store, org_id: str | None = None, *, limit: int = _NAME_BA
         "       (select f.value from graph_facts f "
         "         where f.org_id = t.org_id and f.subject_node_id = t.node_id "
         "           and f.field = 'thread.objective' and f.status = 'active' "
-        "           and f.valid_to is null limit 1) as objective, "
-        # OLDEST EDGE WINS — see the docstring. `min(created_at)` rather than any row, so the
-        # answer does not depend on which correspondent the planner happened to return first.
-        "       (select p.display_name from graph_edges e "
-        "          join graph_nodes p on p.org_id = e.org_id and p.node_id = e.from_node_id "
-        "                            and p.node_type = 'person' and p.valid_to is null "
-        "         where e.org_id = t.org_id and e.to_node_id = t.node_id "
-        "           and e.edge_type = 'corresponded_with' and e.valid_to is null "
-        "         order by e.created_at, p.node_id limit 1) as party "
+        "           and f.valid_to is null limit 1) as objective "
         "  from graph_nodes t "
         " where t.node_type = 'thread' and t.valid_to is null"
         f"{scope} order by t.node_id limit :limit"),
         {"limit": int(limit), **({} if org_id is None else {"org": org_id})}).mappings().all()
+    parties = _oldest_party_not_us(store, rows)
 
     renamed = 0
     with store.engine.begin() as conn:
         for row in rows:
             objective = str(row["objective"] or "").strip().strip('"')
-            party = str(row["party"] or "").strip()
+            party = str(parties.get((row["org_id"], row["node_id"])) or "").strip()
             # An address is not a name. It is still better than a hex fragment, so it is kept as
             # the counterparty rather than dropped — `index_person_names` will improve it the day
             # the graph learns what this person is called.
@@ -666,6 +666,45 @@ def name_thread_nodes(store, org_id: str | None = None, *, limit: int = _NAME_BA
                                       objective=objective or None, counterparty=party or None):
                 renamed += 1
     return renamed
+
+
+def _oldest_party_not_us(store, threads) -> dict[tuple[str, str], str | None]:
+    """(org, thread) → the display name of its oldest correspondent who is not one of us.
+
+    OLDEST EDGE WINS — see `name_thread_nodes`: `created_at`, then node id, so the answer does not
+    depend on which correspondent the planner happens to return first. One of us is skipped, never
+    chosen; who is us is read once per tenant in the batch, never per row.
+    """
+    if not threads:
+        return {}
+    from sqlalchemy import inspect as sa_inspect
+
+    from genios_engine.platform.self_identity import SelfIdentity
+    with store.engine.connect() as c:
+        # A store that keeps no identity tables — the graph-only doubles the unit suite builds —
+        # records nobody as us. Every database the engine runs on has them (migration 0193).
+        known = sa_inspect(c).has_table("org_self_identities")
+        us = {org: identity_for(c, org) if known else SelfIdentity()
+              for org in sorted({t["org_id"] for t in threads})}
+        candidates = c.execute(text(
+            "select e.org_id as org_id, e.to_node_id as thread_id, p.display_name as name, "
+            "       p.canonical_key as canonical_key "
+            "  from graph_edges e "
+            "  join graph_nodes p on p.org_id = e.org_id and p.node_id = e.from_node_id "
+            "                    and p.node_type = 'person' and p.valid_to is null "
+            " where e.to_node_id in :threads and e.edge_type = 'corresponded_with' "
+            "   and e.valid_to is null "
+            " order by e.to_node_id, e.created_at, p.node_id").bindparams(
+                bindparam("threads", expanding=True)),
+            {"threads": [t["node_id"] for t in threads]}).all()
+    parties: dict[tuple[str, str], str | None] = {}
+    for p in candidates:
+        key = (p.org_id, p.thread_id)
+        if key in parties or p.org_id not in us:
+            continue
+        if not us[p.org_id].is_us_node("person", p.canonical_key):
+            parties[key] = p.name
+    return parties
 
 
 def best_person_name(rows) -> dict[tuple[str, str], tuple[int, str]]:
