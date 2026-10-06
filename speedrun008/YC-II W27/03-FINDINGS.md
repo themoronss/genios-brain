@@ -190,20 +190,28 @@ ideal reader's recorded answers (cassettes recorded at `b47239c9`, `06-DECISIONS
 spend). `scripts/golden_score.py --assert-recorded` holds the two lines below to every later run.
 
 ```
-founder golden set   must-detect  4/30 (8 not expressible)   must-abstain  5/10 (2 not exercised)   forbidden outputs  4
+founder golden set   must-detect  5/32 (8 not expressible)   must-abstain  5/12 (4 not exercised)   forbidden outputs  4
 atlas replays 01–07  passing  0/80   blocked  7/80   not expressible  73
 ```
 
+**Re-recorded 2026-10-06 by `STEP-04`** (`yc2_w27_s04 · M22.C5.L-integration.V3.U05`), with the runner
+seating the tenant as signup does and declaring the case's own addresses, and every STEP-04 change in
+the engine. The forty cases above did not move — the before-score stands: must-detect **4/30**,
+must-abstain **5/10** at `7caed608`. The board grew by STEP-04's four cases (rows 41–44): **F42**
+passes (an ask that names the founder is carded about the investor's firm); **F44** is lost before
+memory (a Gmail investor's ask publishes no qualified signal — F03, `STEP-05`); **F41** and **F43**
+are not exercised (the founder's own sent mail never reaches memory — `STEP-05`, as F36 and F39).
+
 | | |
 |---|---|
-| must-detect that pass | F12 (an investor's question before a booked call), F13 (an investor's ask, not pinned on the founder), F25 (one offer, one card), F28 (a partner's ask before a call) |
+| must-detect that pass | F12 (an investor's question before a booked call), F13 (an investor's ask, not pinned on the founder), F25 (one offer, one card), F28 (a partner's ask before a call), F42 (an ask that names the founder, carded about the investor — STEP-04) |
 | must-detect lost at the gate · 5 | F01, F02 (a portal's mail on Promotions and no-reply), F03, F09 (the connector's unsubscribe header), F16 (a bounce from an automated sender) |
-| must-detect lost before memory · 9 | F04, F05, F06, F07, F10, F11, F19, F24, F26 — every one dropped at the qualification floor (F44) |
+| must-detect lost before memory · 10 | F04, F05, F06, F07, F10, F11, F19, F24, F26 — every one dropped at the qualification floor (finding F44); case F44 (STEP-04's Gmail investor — no qualified signal, finding F03) |
 | must-detect lost in reasoning · 3 | F17 (an accelerator framed as an investor), F27 and F29 (one ask, several cards) |
 | must-detect with no stage to read · 1 | F15 (the founder's outreach wave, typed `anomaly` and dropped at the floor) |
 | not expressible · 8 | F08, F14, F18, F20–F23 (`brief only` — `STEP-15`), F30 (the screen door) |
 | must-abstain that pass · 5 | F32, F33, F34 (newsletters, receipts and digests archived), F35 (no payment claimed), F37 (the connector never the target) |
-| must-abstain not exercised · 2 | F36, F39 — the founder's own sent mail never reaches memory, so the decision not to card it is never made |
+| must-abstain not exercised · 4 | F36, F39, F41, F43 — the founder's own sent mail never reaches memory, so the decision not to card it is never made (F41, F43: STEP-04's own address copied, own pitch named) |
 | must-abstain that fail · 3 | F31 (the assignment never becomes the one card a cohort session leaves), F38 (an answer on another channel never closes the ask), F40 (a meeting nobody confirmed, recapped) |
 | forbidden outputs · 4 | *"happened"* — the follow-through narrator told a meeting took place (F07, F29 ×2, F40; F48) |
 | what the numbers judge | the ENGINE, given a faithful reader of every prompt. The model's own mistakes — production junked the real investor mails — are the live evaluation's to measure (`scripts/golden_eval.py --live`, ≈ $0.63 a pass on Haiku 4.5) |
