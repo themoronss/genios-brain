@@ -221,3 +221,48 @@ def test_an_item_with_no_text_is_answered_as_a_model_answers_nothing():
     verdict = _reader().call(_PROMPT_HEAD + _item_block(1, Candidate())).parsed["verdicts"][0]
     assert verdict["item"] == 1 and verdict["business"] is False
     assert verdict["category"] == "unknown" and verdict["asks_for_reply"] is None
+
+
+def test_a_message_that_states_no_completion_is_read_as_not_resolved():
+    prompt = ("You read ONE message that landed on an open business situation and answer ONE "
+              "question:\n<<<CONTENT_0123456789abcdef>>>\nHi Arjun,\n\nCould you share the "
+              "metrics before Monday?\n\nThanks\n<<<END_0123456789abcdef>>>\n")
+    answer = _reader().call(prompt).parsed
+    message = prompt.split("<<<CONTENT_0123456789abcdef>>>\n")[1].split("\n<<<END")[0]
+    assert answer["verdict"] == "NOT_RESOLVED" and answer["certainty"] == "INTENT_ONLY"
+    assert answer["quote"] == "Could you share the metrics before Monday?"
+    assert message[answer["start_offset"]:answer["end_offset"]] == answer["quote"]
+    assert answer["scope"] == []
+
+
+def test_a_completion_the_case_knows_about_is_authored_and_located():
+    case = copy.deepcopy(CASE)
+    case["model"] = {"resolution": [{"when": ["sorting this"], "answer": {
+        "verdict": "RESOLVED", "certainty": "EXPLICIT_COMPLETION", "scope": ["situation"],
+        "quote": "Thanks for sorting this on the call yesterday"}}]}
+    prompt = ("You read ONE message that landed on an open business situation and answer ONE "
+              "question:\n<<<CONTENT_0123456789abcdef>>>\nThanks for sorting this on the call "
+              "yesterday — all good from our side.\n<<<END_0123456789abcdef>>>\n")
+    answer = _reader(case).call(prompt).parsed
+    assert answer["verdict"] == "RESOLVED" and answer["scope"] == ["situation"]
+    assert answer["start_offset"] == 0 and answer["quote"].startswith("Thanks for sorting")
+
+
+def test_the_decider_scores_exactly_the_plays_its_template_names():
+    """`parse_answer` refuses any other set: an ineligible play the prompt lists is not scored."""
+    case = copy.deepcopy(CASE)
+    case["model"] = {"decider": [{"when": ["Lotus Ventures"], "answer": {
+        "outcome": "defer", "confidence_bp": 4000}}]}
+    prompt = DECIDER + ('Answer with ONLY this JSON object, no prose around it:\n{"outcome": '
+                        '"decision | defer", "scores": {"admin.pb.briefing.one_page_brief": '
+                        '"<int 0-10000>"}, "confidence_bp": "<int 0-10000>"}')
+    assert _reader(case).call(prompt).parsed["scores"] == {"admin.pb.briefing.one_page_brief": 4701}
+
+
+def test_a_refused_answer_is_an_authoring_error_never_a_second_recording():
+    case = copy.deepcopy(CASE)
+    case["model"] = {"decider": [{"when": ["Lotus Ventures"], "answer": {
+        "outcome": "defer", "confidence_bp": 4000}}]}
+    prompt = DECIDER + "\nCORRECTION — your previous answer was refused. scores must have exactly"
+    with pytest.raises(IdealReaderError, match="refused"):
+        _reader(case).call(prompt)

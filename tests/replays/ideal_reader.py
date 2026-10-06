@@ -115,11 +115,18 @@ class IdealReader:
         authored = self._authored(site, prompt)
         if site == "r1":
             return authored if authored is not None else read_stances(prompt)
+        if site == "resolution":
+            return resolve_message(prompt, authored, self.case.case_id)
         if site == "bundle_narrator":
             if "CORRECTION" in prompt or "was refused" in prompt:
                 raise IdealReaderError(f"{self.case.case_id}: the bundle narration was refused by "
                                        f"the gauntlet — {_excerpt(prompt[-1500:])}")
             return authored if authored is not None else narrate_decision(prompt)
+        if _REFUSED in prompt:
+            # The site rejected an answer this reader gave and is asking again. A recording must
+            # never hold a refused answer, so the authoring error surfaces here.
+            raise IdealReaderError(f"{self.case.case_id}: the {site} site refused the answer it "
+                                   f"was given — {prompt[prompt.find(_REFUSED):][:400]!r}")
         if authored is None:
             raise IdealReaderError(
                 f"{self.case.case_id}: the case gives the {site} site no answer for this prompt "
@@ -307,6 +314,12 @@ def read_stances(prompt: str) -> dict[str, Any]:
 
 # ── the decider: the formula's utilities, moved only where the case says why ────────────────────
 _PLAY = re.compile(r"^- play_id=([^ |]+) \|.*formula utility (\d+)", re.M)
+#: The answer template names exactly the plays the decider must score (`parse_answer` refuses any
+#: other set): the ELIGIBLE ones, which can be fewer than the plays the prompt lists.
+_TEMPLATE_SCORES = re.compile(r'"scores": \{(.*?)\}, "confidence_bp"', re.S)
+_TEMPLATE_KEY = re.compile(r'"([^"]+)": "<int 0-10000>"')
+#: How every situation-level site asks again after refusing an answer.
+_REFUSED = "CORRECTION — your previous answer was refused"
 
 
 def decide_from_formula(prompt: str, authored: dict[str, Any], case_id: str) -> dict[str, Any]:
@@ -314,9 +327,16 @@ def decide_from_formula(prompt: str, authored: dict[str, Any], case_id: str) -> 
     a utility for EVERY eligible play the prompt lists — the formula's own, as the prompt says to
     start from, moved only where the case names the play in `move`. A move naming no listed play is
     an authoring error, not a play to invent."""
-    plays = {pid: int(n) for pid, n in _PLAY.findall(prompt)}
-    if not plays:
+    listed = {pid: int(n) for pid, n in _PLAY.findall(prompt)}
+    template = _TEMPLATE_SCORES.search(prompt)
+    required = _TEMPLATE_KEY.findall(template.group(1)) if template else list(listed)
+    if not required:
         raise IdealReaderError(f"{case_id}: a decider prompt listing no eligible play")
+    unpriced = [pid for pid in required if pid not in listed]
+    if unpriced:
+        raise IdealReaderError(f"{case_id}: plays to score with no formula utility shown: "
+                               f"{unpriced}")
+    plays = {pid: listed[pid] for pid in required}
     scores = dict(plays)
     for name, utility in (authored.get("move") or {}).items():
         hits = [pid for pid in plays if pid == name or pid.endswith("." + name)]
@@ -383,3 +403,39 @@ def narrate_decision(prompt: str) -> dict[str, str]:
                                          "{runner_up_score_pct} percent and lost to the "
                                          "recommendation.")
     return out
+
+
+# ── resolution: does the message SAY an obligation is complete? ─────────────────────────────────
+_ASKS = re.compile(r"\?|\b(could|can|would|will) you\b|\bplease\b|\blet me know\b|\bi'?ll\b|"
+                   r"\bwe'?ll\b|\bwill\b|\bplan\b", re.I)
+
+
+def resolve_message(prompt: str, authored: dict[str, Any] | None, case_id: str) -> dict[str, Any]:
+    """The resolution site's answer. A case that knows a message reports completion authors it
+    (`model.resolution`: verdict, certainty, scope and a `quote`, whose offsets are found here);
+    otherwise the message is read as stating no completion — NOT_RESOLVED, quoting its first ask or
+    question as INTENT_ONLY, or its first line as AMBIGUOUS. The prompt's own rule: "If you cannot
+    point at a sentence, the verdict is NOT_RESOLVED"."""
+    fenced = _FENCED.findall(prompt)
+    if len(fenced) != 1:
+        raise IdealReaderError(f"{case_id}: a resolution prompt holds {len(fenced)} messages")
+    message = fenced[0]
+    if authored is not None:
+        span = re.search(r"\s+".join(re.escape(w) for w in str(authored["quote"]).split()), message)
+        if span is None:
+            raise IdealReaderError(f"{case_id}: resolution quote {authored['quote']!r} is not in "
+                                   "the message")
+        return {"verdict": authored["verdict"], "certainty": authored["certainty"],
+                "scope": list(authored.get("scope") or ()), "quote": span.group(0),
+                "start_offset": span.start(), "end_offset": span.end(),
+                "speaker_role_said": authored.get("speaker_role_said", "unknown")}
+    sentences = [m for m in re.finditer(r"[^\n.?!]+[.?!]?", message) if m.group(0).strip()]
+    if not sentences:
+        raise IdealReaderError(f"{case_id}: a resolution prompt with an empty message")
+    ask = next((m for m in sentences if _ASKS.search(m.group(0))), None)
+    chosen = ask or sentences[0]
+    start = chosen.start() + (len(chosen.group(0)) - len(chosen.group(0).lstrip()))
+    end = chosen.start() + len(chosen.group(0).rstrip())
+    return {"verdict": "NOT_RESOLVED", "certainty": "INTENT_ONLY" if ask else "AMBIGUOUS",
+            "scope": [], "quote": message[start:end], "start_offset": start, "end_offset": end,
+            "speaker_role_said": "unknown"}

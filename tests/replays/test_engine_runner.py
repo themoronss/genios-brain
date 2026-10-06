@@ -242,6 +242,8 @@ def test_a_case_is_driven_through_the_production_door_and_replays_exactly():
     assert _comparable(replayed_run) == _comparable(recorded_run), (
         "the replay differs from the run it replays")
 
+    assert [x.event_id for x in replayed_run.landed] == [x.event_id for x in recorded_run.landed], (
+        "the pinned world mints the same ids on every run of a case")
     run = replayed_run
     outcomes = {(x.object_id, x.source_object_id.endswith("::att1")): x for x in run.landed}
     assert outcomes[("ask", False)].outcome == "emitted"
@@ -256,6 +258,26 @@ def test_a_case_is_driven_through_the_production_door_and_replays_exactly():
     assert {s.situation_type for s in run.situations}, "no situation read back"
     sites = {site for site, _key in run.model_calls}
     assert {"junk_gate_batch", "relevance", "extraction"} <= sites, sites
+
+
+def test_the_world_is_pinned_for_a_run_and_released_after():
+    from genios_engine.capture.acquire import sync_runner
+    from genios_engine.context import runner as l2_runner
+    from genios_engine.platform.ids import new_id
+
+    before = (sync_runner._CAPTURE_WORKERS, l2_runner._MAX_WORKERS)
+    with er.pinned_world("golden:F97"):
+        first = [new_id("evt"), new_id("node")]
+        assert (sync_runner._CAPTURE_WORKERS, l2_runner._MAX_WORKERS) == (1, 1)
+    with er.pinned_world("golden:F97"):
+        again = [new_id("evt"), new_id("node")]
+    with er.pinned_world("golden:F98"):
+        other = [new_id("evt"), new_id("node")]
+    assert first == again, "one case mints one sequence of ids"
+    assert set(first).isdisjoint(other), "two cases never mint the same id"
+    assert all(len(i.split("_", 1)[1]) == 24 for i in first), "the id keeps new_id's shape"
+    assert (sync_runner._CAPTURE_WORKERS, l2_runner._MAX_WORKERS) == before
+    assert new_id("evt") not in first, "outside a run, ids are random again"
 
 
 @pytest.mark.pg

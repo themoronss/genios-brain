@@ -22,6 +22,13 @@ this chain: the LLM decider is on for every org (`GENIOS_L4_LLM_DECISION_MAKER=t
 `speedrun008/YCW27/STATUS.md`). A placeholder key is set so every factory behaves as it does with
 a key; the transport refusal guarantees it reaches nothing.
 
+**The world, pinned — like the clock.** Two things the engine draws at random would otherwise make
+one case run two ways: the ids it mints (`platform/ids.new_id`), which it then ORDERS by in places
+— which person a statement anchors on, which situation an anchor shows — and the interleaving of
+its thread pools (capture, the L2 drain), on which a situation's evidence depended. A golden run
+mints ids from a per-case sequence and runs those pools with one worker, so a case replays
+exactly. Both are findings about the engine in `03-FINDINGS.md`, not features of the runner.
+
 **The scratch database, pinned first.** `api.routes` binds its stores at import, so the database
 is pinned BEFORE it is imported, and the runner refuses to start without a scratch URL or with a
 production host — a golden set that skipped would be "a pass over an empty table" again.
@@ -183,6 +190,43 @@ def production_switches(llm: Any) -> Iterator[None]:
             setattr(target, name, value)
 
 
+class _PinnedUuid:
+    """Stands in for the `uuid` module inside `platform/ids` for one run: the n-th id a case mints
+    is the same every run, and no two cases mint the same one."""
+
+    def __init__(self, seed: str) -> None:
+        import threading
+        self._seed, self._n, self._lock = seed, 0, threading.Lock()
+
+    def uuid4(self):
+        import hashlib
+        import uuid
+        with self._lock:
+            self._n += 1
+            n = self._n
+        return uuid.UUID(hashlib.sha256(f"{self._seed}:{n}".encode()).hexdigest()[:32])
+
+
+@contextmanager
+def pinned_world(seed: str) -> Iterator[None]:
+    """Mint ids from a per-case sequence and run the chain's thread pools with one worker, for the
+    duration of one run — restored on exit."""
+    from genios_engine.capture.acquire import sync_runner
+    from genios_engine.context import runner as l2_runner
+    from genios_engine.platform import ids
+
+    patches = [(ids, "uuid", _PinnedUuid(seed)), (sync_runner, "_CAPTURE_WORKERS", 1),
+               (l2_runner, "_MAX_WORKERS", 1)]
+    saved = [(target, name, getattr(target, name)) for target, name, _ in patches]
+    try:
+        for target, name, value in patches:
+            setattr(target, name, value)
+        yield
+    finally:
+        for target, name, value in reversed(saved):
+            setattr(target, name, value)
+
+
 # =================================================================================================
 # the providers — the connectors' own mappings, fed the case's objects
 # =================================================================================================
@@ -255,7 +299,7 @@ def run_case(case: FounderCase, llm: Any, *, org_id: str | None = None) -> CaseR
     chain_ok: list[bool] = []
     funnel: list[dict[str, int]] = []
     open_after: list[set[str]] = []
-    with production_switches(llm):
+    with production_switches(llm), pinned_world(f"golden:{case.case_id}"):
         provision_intelligence(engine, org)
         routes._ensure_tenant_live(org)
         for sweep, at in enumerate(case.sweeps):

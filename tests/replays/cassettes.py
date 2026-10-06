@@ -84,6 +84,18 @@ def replay(case: FounderCase, folder: Path = CASSETTE_DIR) -> CaseRun:
     return run_case(case, RecordedLLM(load(case, folder)))
 
 
+#: One replay per case per process. The founder test and the Atlas replays judge the SAME run of a
+#: case — replaying it twice would cost minutes and could only ever agree (a replay is exact).
+_REPLAYED: dict[str, CaseRun] = {}
+
+
+def replayed(case: FounderCase) -> CaseRun:
+    """`replay(case)`, once per process."""
+    if case.case_id not in _REPLAYED:
+        _REPLAYED[case.case_id] = replay(case)
+    return _REPLAYED[case.case_id]
+
+
 def _commit() -> str:
     try:
         return subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=_REPO, check=True,
