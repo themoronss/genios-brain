@@ -94,7 +94,7 @@ from genios_engine.platform.l4_activation import (
 )
 from genios_engine.platform.ids import new_id
 from genios_engine.reason.adapters.expertise import expertise_capability_manifest
-from genios_engine.reason.adapters.native import reason_native_capability
+from genios_engine.reason.adapters.native import native_context_snapshot, reason_native_capability
 from genios_engine.reason.interpretation import make_interpreter
 from genios_engine.reason.adapters.situation_projection import project_situation
 from genios_engine.reason.audit import persist_execution
@@ -561,6 +561,132 @@ def l3_domain_for(l2_domain: Any) -> str | None:
     return _L2_TO_L3_DOMAIN.get(str(l2_domain or "").strip().lower())
 
 
+# =================================================================================================
+# STEP-02 · THE CHANGE GATE, COMPILED LANE (`yc2_w27_s02/M20.C3.L-integration.V2.U02`)
+#
+# Every sweep re-decided every situation, and on a sweep that brought nothing new it paid the decider
+# and R-1 again for the same answer — on the golden runner F13 2 calls, F29 12, no card changed
+# (`speedrun008/YC-II W27/` STEP-02 §8.1). The gate asks, just before `reason_native_capability`,
+# whether what this decision depends on is what the last decision saw (`reason/fingerprint`), and
+# skips it when `reason/change_gate.should_skip` says it may. Live and shadow rows alike: a shadow
+# row's model calls were the same spend, discarded.
+#
+# ⛔ IT FAILS OPEN, EVERYWHERE. A gate that cannot load, a request that cannot be fingerprinted, a
+# store write that fails — each costs the saving, never the decision: the subject is decided as if
+# the gate did not exist. And its memory is written once, after the pass, in one transaction, so a
+# pass that dies half way leaves the rows it did not reach to be decided next sweep.
+# =================================================================================================
+_OPEN_SIGNAL_EXPIRY = (
+    "select pack_id, pack_version, rule_id, subject_node_id, "
+    "       max(authority_expires_at) as expires_at "
+    "  from signals where org_id = :o and status = 'open' group by 1, 2, 3, 4")
+
+
+def _gate_outcome(execution, persisted: str | None) -> str:
+    """What a live compiled row came to, in the store's vocabulary (`reason/fingerprint_store`)."""
+    from genios_engine.contracts.reasoning import DecisionOutcome
+    from genios_engine.reason import fingerprint_store as fs
+    from genios_engine.reason.llm_decision_maker import LLM_UNAVAILABLE_REASON
+
+    if persisted == "emitted":
+        return fs.EMITTED
+    if persisted == "standing":
+        return fs.STANDING
+    if persisted in ("nothing_to_emit", "rule_id_collision"):
+        decision = getattr(execution, "decision", None)
+        if decision is not None and decision.outcome == DecisionOutcome.DEFER:
+            unavailable = any(str(u).startswith(LLM_UNAVAILABLE_REASON)
+                              for u in (decision.uncertainty or ()))
+            return fs.INDETERMINATE if unavailable else fs.DEFERRED
+        return fs.SUPPRESSED
+    return fs.INDETERMINATE          # race_lost, an error, a cap, anything unnamed: decide again
+
+
+class _CompiledGate:
+    """One pass's view of the change gate: loaded once, consulted per row, written once."""
+
+    def __init__(self, *, stored=None, inputs=None, expiries=None, ready: bool = False) -> None:
+        from genios_engine.reason.fingerprint_inputs import InputsIndex
+
+        self.stored = stored or {}
+        self.inputs = inputs or InputsIndex()
+        self.expiries = expiries or {}
+        self.ready = ready
+        self.decided: dict[str, tuple[str, str, str | None]] = {}
+        self.skipped: set[str] = set()
+
+    @classmethod
+    def load(cls, conn, org_id: str) -> "_CompiledGate":
+        from genios_engine.reason.fingerprint_inputs import read_inputs
+        from genios_engine.reason.fingerprint_store import load_all
+
+        try:
+            expiries = {(r.pack_id, r.pack_version, r.rule_id, r.subject_node_id): r.expires_at
+                        for r in conn.execute(text(_OPEN_SIGNAL_EXPIRY), {"o": org_id})}
+            return cls(stored=load_all(conn, org_id), inputs=read_inputs(conn, org_id),
+                       expiries=expiries, ready=True)
+        except Exception:      # noqa: BLE001 — the gate fails open: every row is decided
+            logger.exception("change gate unavailable for org=%s — deciding every situation",
+                             org_id)
+            try:
+                conn.rollback()
+            except Exception:      # noqa: BLE001
+                pass
+            return cls()
+
+    def check(self, *, org_id: str, situation_id: str, manifest, node_ctx, projection, pack,
+              live: bool, eval_time, graph_version):
+        """(subject key, fingerprint, verdict) — or a None fingerprint when the gate cannot judge."""
+        from genios_engine.reason.change_gate import should_skip
+        from genios_engine.reason.fingerprint import material_fingerprint
+
+        key = f"{situation_id}|{manifest.capability_id}"
+        if not self.ready:
+            return key, None, None
+        try:
+            snapshot = native_context_snapshot(
+                org_id=org_id, context=node_ctx, capability=manifest,
+                evaluation_time=eval_time, graph_version=graph_version, projection=projection)
+            pack_id = pack["pack_id"] if pack else manifest.domain
+            fingerprint = material_fingerprint(
+                manifest, snapshot,
+                config_snapshot_id=(pack["snapshot_id"] if pack else None),
+                mode=ExecutionMode.LIVE if live else ExecutionMode.SHADOW,
+                inputs=self.inputs.for_situation(pack_id, situation_id, manifest.capability_id))
+        except Exception:      # noqa: BLE001 — unfingerprintable: decide it
+            logger.exception("change gate could not fingerprint %s for org=%s", key, org_id)
+            return key, None, None
+        standing = None
+        if live and pack:
+            rule_id = str(manifest.capability_id).rsplit(".", 1)[-1]
+            standing = self.expiries.get((pack["pack_id"], pack["version"], rule_id,
+                                          node_ctx.node_id))
+        verdict = should_skip(self.stored.get(key), fingerprint, live=live,
+                              standing_expires_at=standing, eval_time=eval_time)
+        return key, fingerprint, verdict
+
+    def record(self, key: str, fingerprint: str | None, outcome: str, run_id: str | None) -> None:
+        if fingerprint is not None:
+            self.decided[key] = (fingerprint, outcome, run_id)
+
+    def flush(self, *, store, org_id: str, eval_time, counts) -> None:
+        from genios_engine.reason import fingerprint_store as fs
+
+        if not (self.decided or self.skipped):
+            return
+        try:
+            with store.engine.begin() as conn:
+                for key, (fingerprint, outcome, run_id) in self.decided.items():
+                    fs.record_decided(conn, org_id=org_id, subject_key=key, lane="compiled",
+                                      fingerprint=fingerprint, outcome=outcome, run_id=run_id,
+                                      decided_at=eval_time)
+                for key in self.skipped:
+                    fs.record_skipped(conn, org_id=org_id, subject_key=key, checked_at=eval_time)
+        except Exception:      # noqa: BLE001 — a lost memory costs one re-decision next sweep
+            counts["gate_write_failed"] += 1
+            logger.exception("change gate could not record the pass for org=%s", org_id)
+
+
 def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None = None,
                    limit: int = 200, live: bool = False, registry=None,
                    live_domains: frozenset[str] | Iterable[str] = ()) -> dict:
@@ -723,6 +849,8 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
     with store.engine.connect() as conn:
         situations = conn.execute(text(_ACTIVE_SITUATIONS),
                                   {"o": org_id, "lim": limit}).mappings().all()
+        gate = _CompiledGate.load(conn, org_id)
+        counts["gate_ready"] = int(gate.ready)
         l1_by_correlation = gather_l1_signals_bulk(
             conn, org_id,
             [str(row["correlation_id"]) for row in situations if row["correlation_id"]])
@@ -1175,6 +1303,15 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                             # nothing can grant the decision authority. Counted, never guessed.
                             counts["no_tenant_pack"] += 1
                             continue
+                    gate_key, gate_fp, gate_verdict = gate.check(
+                        org_id=org_id, situation_id=str(row["situation_id"]), manifest=manifest,
+                        node_ctx=node_ctx, projection=projection, pack=pack, live=live_row,
+                        eval_time=eval_time, graph_version=graph_version)
+                    if gate_verdict is not None and gate_verdict.skip:
+                        counts["skipped_unchanged"] += 1
+                        gate.skipped.add(gate_key)
+                        continue
+                    counts[f"gate_{gate_verdict.reason if gate_verdict else 'unjudged'}"] += 1
                     execution = reason_native_capability(
                         org_id=org_id, context=node_ctx, capability=manifest,
                         evaluation_time=eval_time, graph_version=graph_version,
@@ -1186,10 +1323,13 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                         # no interpretation hashes to exactly what it hashed to before this seam.
                         interpreter=interpreter)
                     counts["reasoned"] += 1
+                    _run_id = getattr(getattr(execution, "trace", None), "run_id", None)
                     if execution.decision is None:
+                        gate.record(gate_key, gate_fp, "indeterminate", _run_id)
                         continue
                     counts["decided"] += 1
                     if not live_row:
+                        gate.record(gate_key, gate_fp, "shadow", _run_id)
                         continue
                     # ── THE DAILY CAP, WHICH THIS LANE HAS NEVER OBEYED ────────────────
                     #
@@ -1219,6 +1359,9 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                             # Counted, never silent: a lane that stops publishing for a reason
                             # nobody can see is indistinguishable from one that had nothing to say.
                             counts["budget_exhausted"] += 1
+                            # Tomorrow's budget may publish it: a clock the fingerprint does not
+                            # carry, so the gate must decide it again.
+                            gate.record(gate_key, gate_fp, "indeterminate", _run_id)
                             continue
                     try:
                         # ⛔ L2-7 · CARRY THE SITUATION. `row["situation_id"]` is read four times
@@ -1232,6 +1375,7 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                             eval_time=eval_time, pack=pack,
                             situation_id=str(row["situation_id"]))
                         counts[outcome] += 1
+                        gate.record(gate_key, gate_fp, _gate_outcome(execution, outcome), _run_id)
                         # Only a row that actually reached a human's queue spends the budget.
                         # `standing` left yesterday's advice alone and `nothing_to_emit` concluded
                         # no action — neither put a card in front of anybody.
@@ -1301,6 +1445,8 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                 # than guarded on a flag we would have to keep correct.
                 conn.rollback()
 
+    # STEP-02 · the gate's memory, written once for the whole pass (see `_CompiledGate`).
+    gate.flush(store=store, org_id=org_id, eval_time=eval_time, counts=counts)
     result = dict(counts)
     result["no_route_by_reason"] = dict(sorted(no_route_by_reason.items()))
     result["no_route_by_type"] = dict(sorted(no_route_by_type.items()))

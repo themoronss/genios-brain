@@ -35,30 +35,6 @@ _ENGINE = _PKG.parent
 #:
 #: CLOSED, and checked in BOTH directions by `tests/reason/test_the_reasoning_layer_says_what_it_does_not_call.py`.
 UNREACHED: dict[str, tuple[str, str]] = {
-    "fingerprint.material_fingerprint": (
-        "⛔ BUILT BOTTOM-UP, NOT YET WIRED (STEP-02, `yc2_w27_s02/M20.C1.L-logic.V1.U03`). The fingerprint of one decision's inputs — its own request with time taken out, clocks on their rungs. Measured before wiring: on all 40 golden cases, 375 requests repeated on a sweep that brought nothing new, 375 identical fingerprints, no error",
-        "MOVES WITH `fingerprint_store.load_all` — the lanes that read the store compute this, in the same two units"),
-
-    "fingerprint_inputs.read_inputs": (
-        "⛔ BUILT BOTTOM-UP, NOT YET WIRED (STEP-02, `yc2_w27_s02/M20.C1.L-data.V1.U02`). A tenant's pack revisions and card verdicts, by the subject each is about, in two statements per sweep — the half of a fingerprint that sits outside the decision's request. Its callers are the lanes, later units of the same block",
-        "MOVES WITH `fingerprint_store.load_all` — the lanes read the store and these inputs together, in the same two units"),
-
-    "change_gate.should_skip": (
-        "⛔ BUILT BOTTOM-UP, NOT YET WIRED (STEP-02, the change gate, `yc2_w27_s02/M20.C3.L-logic.V0.U01`). The one rule that decides whether a subject's decision may be skipped — same fingerprint, and for a live card an open signal with more than a day of authority left. Pure, and its callers are the lanes, which are later units of the same block",
-        "MOVES WITH `fingerprint_store.load_all` — the same two units wire the store and the rule, in the same lanes"),
-
-    "fingerprint_store.load_all": (
-        "⛔ BUILT BOTTOM-UP, NOT YET WIRED (STEP-02, the change gate, `yc2_w27_s02/M20.C2.L-data.V1.U02`). The sweep's ONE read of a tenant's `reasoning_fingerprints` rows — what each subject's last decision was made on — for `change_gate.should_skip` to compare against. Its callers are the lanes, which are later units of the same block",
-        "⛔ MOVES WHEN `yc2_w27_s02/M20.C3.L-integration.V2.U02` wires the compiled lane to the gate (and `M20.C4.L-integration.V3.U01` the legacy and native lanes) — then this entry must be deleted, or the stale-declaration guard fails"),
-
-    "fingerprint_store.record_decided": (
-        "⛔ BUILT BOTTOM-UP, NOT YET WIRED (STEP-02, `yc2_w27_s02/M20.C2.L-data.V1.U02`). The upsert after a run: the fingerprint the decision saw, the run, the outcome a later skip replays, the instant — and the skips zeroed. A lane calls it after every decision it pays for",
-        "MOVES WITH `fingerprint_store.load_all` — the same two units wire both, in the same lanes"),
-
-    "fingerprint_store.record_skipped": (
-        "⛔ BUILT BOTTOM-UP, NOT YET WIRED (STEP-02, `yc2_w27_s02/M20.C2.L-data.V1.U02`). The skip receipt: `last_checked_at` and `skips + 1`, so a skipped subject still shows the sweep looked and a subject re-decided on an unchanged fingerprint is visible to `scripts/pipeline_health.py`",
-        "MOVES WITH `fingerprint_store.load_all` — the same two units wire both, in the same lanes"),
-
     "baselines.load_baselines": (
         "⛔ *'Back-compat: just the reply_cadence baseline used by `{baseline}` threshold resolution'* — and NOTHING is compatible with it any more: no callers, no tests, not even a script. ⛔ **A back-compat shim is wanted only while something old still calls it**, and the thing it was kept for is gone. L4's `STEP-08` worked on `build_baselines` next door and did not need this",
         "⛔ MOVES WHEN it is deleted. It is the clearest delete candidate in this table, and it is left declared rather than removed because deleting a public function is a boundary change nobody asked for"),
