@@ -168,7 +168,7 @@ def test_a_lane_nobody_declared_is_counted_as_unrouted_not_dropped():
 
 # ── the receipt ───────────────────────────────────────────────────────────────────────────────
 
-def test_the_l5_receipt_count_is_five_and_they_are_the_measured_five():
+def test_the_l5_receipt_count_is_six_and_they_are_the_measured_six():
     """⛔ L4's OWN DOCSTRING PROMISED THIS GUARD EXISTED HERE, AND IT DID NOT.
 
     `tests/platform/test_activation_changes_the_pass.py` argues for per-layer receipt counts
@@ -190,18 +190,29 @@ def test_the_l5_receipt_count_is_five_and_they_are_the_measured_five():
     card delivered on an adapter-less channel is impossible because `outbox.py:935` parks it first.
     **A receipt that cannot fail is not a gate.**
 
-    ⛔ SCOPED TO L5, like L4's. A sixth means something was added without a decision.
+    ⛔ FIVE -> SIX ON 2026-10-06, a decision: STEP-04 (`yc2_w27_s04 · M22.C6.L-logic.V2.U02`,
+    `speedrun008/YC-II W27/STEP-04` §8.4 C6) —
+
+        no open card's subject is one of us                                 STEP-04
+
+    and it can fail: `tests/platform/test_no_card_is_about_us.py` seeds an open card whose subject is
+    the founder's name, the org's name, `orgs.email`, a declared address, or an address at a declared
+    domain, and the receipt counts each. The count moved in the same session as the receipt and was caught by the next whole run,
+    not by the commit that added it — recorded so the next receipt moves this line in its own diff.
+
+    ⛔ SCOPED TO L5, like L4's. A seventh means something was added without a decision.
     """
     from genios_engine.platform import receipts as R
 
     l5 = [r.claim for r in R.receipts(None) if r.layer == "L5"]
-    assert len(l5) == 5, f"L5 receipt count moved: {l5}"
+    assert len(l5) == 6, f"L5 receipt count moved: {l5}"
     assert set(l5) == {
         "every delivered card carries a lane, or is labelled unrouted",
         "decisions become tracked commitments",
         "no delivery attempt is left unsettled long enough to be ambiguous",
         "no card outlives its own window in a live state",
         "a card parked for want of a channel is revived when one appears",
+        "no open card's subject is one of us",
     }
 
 
