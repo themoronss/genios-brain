@@ -282,15 +282,47 @@ def test_the_structured_lane_correlates_before_committing() -> None:
     assert source.index("correlate_event(") < source.index("store.write_change(")
 
 
-def test_our_own_attendees_never_anchor_a_meeting() -> None:
-    """A calendar invite lists US as attendees. Anchoring on our own people would file
-    every meeting in the company into one enormous situation."""
-    import inspect
+def _handed_to_correlation(monkeypatch, **identity) -> set[str]:
+    """What `commit_structured` hands `correlate_event` for one invite, the store faked."""
+    from contextlib import nullcontext
+    from types import SimpleNamespace
 
-    from genios_engine.context.structured import commit_structured
-    source = inspect.getsource(commit_structured)
-    assert "internal_emails" in source
-    assert 'rel["node_type"] == "person" and key in internal' in source
+    from genios_engine.context import structured
+
+    handed: dict = {}
+    monkeypatch.setattr(structured, "correlate_event",
+                        lambda *_a, **kw: handed.update(kw["node_types"]) or [])
+    store = SimpleNamespace(
+        engine=SimpleNamespace(begin=lambda: nullcontext(None)),
+        bump_version=lambda *_a: 1, map_identity=lambda *_a, **_k: None,
+        find_or_create_node=lambda *_a, **kw: kw["canonical_key"],
+        write_fact=lambda *_a, **_k: None, write_edge=lambda *_a, **_k: None,
+        write_event_presence=lambda *_a, **_k: 0, write_change=lambda *_a, **_k: None)
+    people = ["founder@gmail.test", "ops@kitebird.test", "ira@northwind.test"]
+    structured.commit_structured(
+        store, org_id="o", event_id="e", source="gcal", source_object_id="m1",
+        structured_fields={}, node_type="meeting", occurred_at=NOW,
+        relations=[{"node_type": "person", "canonical_key": p, "edge_type": "attended"}
+                   for p in people], **identity)
+    return set(handed) - {"gcal:m1"}
+
+
+def test_our_own_attendees_never_anchor_a_meeting(monkeypatch) -> None:
+    """A calendar invite lists US as attendees. Anchoring on our own people would file
+    every meeting in the company into one enormous situation.
+
+    RESTATED AS BEHAVIOUR (STEP-05, `yc2_w27_s05 · M23.C3.L-logic.V2.U04`). This pinned the text
+    `rel["node_type"] == "person" and key in internal`; who is us is now the identity's answer, a
+    colleague at a declared domain included (`03` F70), so the claim is held by what reaches
+    correlation — and the second call is its control: with the exact addresses alone, the
+    colleague at our domain gets through, which is the gap this closed."""
+    from genios_engine.platform.self_identity import SelfIdentity
+
+    us = SelfIdentity.of(addresses=["founder@gmail.test"], domains=["kitebird.test"])
+    assert _handed_to_correlation(monkeypatch, self_identity=us,
+                                  internal_emails=us.addresses) == {"ira@northwind.test"}
+    assert _handed_to_correlation(monkeypatch, internal_emails=us.addresses) == {
+        "ops@kitebird.test", "ira@northwind.test"}
 
 
 def _noise_skips_grouping(source: str) -> bool:

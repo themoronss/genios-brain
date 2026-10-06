@@ -209,6 +209,8 @@ register(StructuredMapping(
             FieldMap("status", "meeting.status", "enum"),
             FieldMap("description", "meeting.description", "string"),
             FieldMap("location", "meeting.location", "string"),
+            # STEP-05 · whose meeting it is — an investor's invite and our own are different work.
+            FieldMap("organizer", "meeting.organizer", "string"),
             # P5 · how a Drive transcript Doc finds its meeting (capture/transcripts/link.py).
             FieldMap("conferenceId", "meeting.conference_id", "string"),
             FieldMap("attachment_file_ids", "meeting.attachment_file_ids", "string")],

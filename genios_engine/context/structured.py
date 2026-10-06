@@ -7,6 +7,7 @@ from genios_engine.context.availability import retire_source_windows, write_avai
 from genios_engine.context.correlation import correlate_event
 from genios_engine.context.graph_store import GraphStore
 from genios_engine.platform.identity import norm_email
+from genios_engine.platform.self_identity import SelfIdentity
 
 # B1 — Structured lane. Structured events (calendar / CRM / client-DB) already carry typed
 # fields (L1 mapped them via the registry). We write them straight to the graph — NO LLM,
@@ -33,6 +34,24 @@ class StructuredResult:
     observations: int = 0
 
 
+def version_time(updated) -> datetime | None:
+    """When the source last changed an object — gcal's `updated` — as an aware instant, or None.
+
+    A structured object's facts are filed at THIS time, not at the time the object is about. Every
+    edit of a calendar event is its own event, captured at the meeting's start (STEP-05): filed
+    there, a meeting moved EARLIER looked older than its own previous version and lost to it, in
+    whichever order the two drained — `write_fact` files an older statement as history. A leave
+    block was already filed this way (`_commit_availability`)."""
+    if isinstance(updated, datetime):
+        return updated
+    if isinstance(updated, str) and updated.strip():
+        try:
+            return datetime.fromisoformat(updated.strip().replace("Z", "+00:00"))
+        except ValueError:
+            return None
+    return None
+
+
 def commit_structured(store: GraphStore, *, org_id: str, event_id: str, source: str,
                       source_object_id: str, structured_fields: dict, node_type: str,
                       occurred_at: datetime | None,
@@ -40,7 +59,14 @@ def commit_structured(store: GraphStore, *, org_id: str, event_id: str, source: 
                       relations: list[dict] | None = None,
                       internal_emails: frozenset[str] | None = None,
                       domain_hints: list | None = None,
-                      availability: dict | None = None) -> StructuredResult:
+                      availability: dict | None = None,
+                      version_at: datetime | None = None,
+                      self_identity: SelfIdentity | None = None) -> StructuredResult:
+    # `version_at` — when the source said this version (`version_time`); the facts are filed at it,
+    # while presence and correlation keep `occurred_at`, the time the object is about.
+    # `self_identity` — who is us (STEP-04), so correlation leaves out a colleague known only by a
+    # declared domain too (`03` F70); without it, the exact addresses in `internal_emails`.
+    fact_at = version_at or occurred_at
     with store.engine.begin() as conn:
         version = store.bump_version(conn, org_id)
         node = store.find_or_create_node(
@@ -56,7 +82,7 @@ def commit_structured(store: GraphStore, *, org_id: str, event_id: str, source: 
                 continue
             wrote = store.write_fact(
                 conn, org_id=org_id, subject_node_id=node, field=field, value=value,
-                value_type="string", confidence=1.0, occurred_at=occurred_at,
+                value_type="string", confidence=1.0, occurred_at=fact_at,
                 event_id=event_id,
                 evidence={"source_field": field, "source_object": source_object_id},
                 source=source, authority_rank=3)      # R3 system-of-record
@@ -75,7 +101,7 @@ def commit_structured(store: GraphStore, *, org_id: str, event_id: str, source: 
         bulk_attendees = len(attendee_keys) > _BULK_ATTENDEES
         if bulk_attendees and store.write_fact(
                 conn, org_id=org_id, subject_node_id=node, field="attendees", value=attendee_keys,
-                value_type="string", confidence=1.0, occurred_at=occurred_at, event_id=event_id,
+                value_type="string", confidence=1.0, occurred_at=fact_at, event_id=event_id,
                 evidence={"derived": "bulk attendee list", "count": len(attendee_keys)},
                 source=source, authority_rank=3):
             fact_n += 1
@@ -120,13 +146,18 @@ def commit_structured(store: GraphStore, *, org_id: str, event_id: str, source: 
         #
         # The event's OWN node anchors when it is a business object (a deal); otherwise
         # the counterparties do (a meeting is not a situation — it is evidence within
-        # one). Our own seats are removed: a calendar invite lists us as attendees, and
-        # anchoring on ourselves files every meeting into one company-wide group.
+        # one). We are removed — every one of us the identity knows, a colleague at a declared
+        # domain too (`03` F70): a calendar invite lists us as attendees, and anchoring on
+        # ourselves files every meeting into one company-wide group.
         internal = internal_emails or frozenset()
+
+        def _ours(key: str) -> bool:
+            return self_identity.is_us(key) if self_identity is not None else key in internal
+
         touched = {node: node_type}
         for rel in (relations or []):
             key = (rel.get("canonical_key") or "").strip().lower()
-            if rel["node_type"] == "person" and key in internal:
+            if rel["node_type"] == "person" and _ours(key):
                 continue
             related = related_nodes.get(rel["canonical_key"])
             if related:

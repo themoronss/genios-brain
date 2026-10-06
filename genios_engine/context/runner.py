@@ -22,7 +22,7 @@ from genios_engine.context.memory_lanes import Lane, lane_for
 from genios_engine.context.pipeline import process_event
 from genios_engine.context.qes_adapter import BELOW_FLOOR_CONFIDENCE_BP, adapt_qes_extraction
 from genios_engine.context.read_models import build_entity_360
-from genios_engine.context.structured import commit_structured
+from genios_engine.context.structured import commit_structured, version_time
 from genios_engine.contracts.extraction import ExtractionResult
 from genios_engine.platform.crypto import decrypt
 from genios_engine.platform.self_identity import identity_for
@@ -156,7 +156,11 @@ def _process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozens
                                 # an outOfOffice event / all-day "Leave" block → its owner's
                                 # availability window (no LLM; the calendar is the record)
                                 availability=(calendar_availability(raw)
-                                              if mapping.node_type == "meeting" else None))
+                                              if mapping.node_type == "meeting" else None),
+                                # every edit drains (STEP-05): its facts are filed at when the
+                                # calendar said them, so the newest edit wins in any order
+                                version_at=version_time(raw.get("updated")),
+                                self_identity=self_identity)
         store.cache_set(processing_key=f"struct:{row.event_id}", org_id=org_id,
                         event_id=row.event_id, output={"structured": True},
                         input_tokens=0, output_tokens=0, model="structured")
