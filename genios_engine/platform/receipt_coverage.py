@@ -72,6 +72,9 @@ RECEIPT_PACKAGE: dict[str, tuple[str, str]] = {
         "the trace and the park are all its own"),
     "every drop we might be wrong about can still be reviewed": (
         "capture", "The gate's drops keep their payload and trace — `capture/`'s own contract"),
+    "every archived mail can still be read": (
+        "capture", "STEP-03: the gate archives what it used to delete, and the archive keeps its "
+                   "body — `capture/pipeline.py` writes it, `capture/` owns the promise"),
     "the tenant is still being fed": (
         "capture", "No recent `source_events` means the connectors stopped, which is `capture/`'s"),
     "attachments carry readable text": (

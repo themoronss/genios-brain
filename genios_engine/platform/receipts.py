@@ -1008,7 +1008,7 @@ def receipts(org: str | None) -> list[Receipt]:
     # nothing for that long has, provably, no working set left — whatever the other receipts say.
     # Picking any other number here would invent a second opinion about when quiet becomes empty.
     # Imported inside the function, the way `platform/wiring.py` already reaches into `context`.
-    from genios_engine.capture.pipeline import (JUDGED_DROP_CODES,
+    from genios_engine.capture.pipeline import (ARCHIVED_PAYLOAD_TTL_DAYS, JUDGED_DROP_CODES,
                                                 JUDGED_DROP_PAYLOAD_TTL_DAYS)
     from genios_engine.api.account_routes import RETAINED_AFTER_ERASURE
     from genios_engine.context.runner import MAX_PASSES
@@ -1083,7 +1083,29 @@ def receipts(org: str | None) -> list[Receipt]:
                 lambda n: n == 0,
                 "a provider's SPAM label is a fact and needs no second look; a model saying "
                 "\"this looks like junk\" is a JUDGMENT, and judgments improve. Without the body "
-                "\"we improved the filter\" is an assertion about mail that no longer exists"),
+                "\"we improved the filter\" is an assertion about mail that no longer exists. "
+                "⛔ Since STEP-03 the gate no longer drops on judgment — it archives — so this asks "
+                "only about drops written before the deploy, and clears itself as they age out; "
+                "the archive has its own receipt below"),
+        # ⛔⛔ STEP-03 · THE GATE'S PROMISE, HELD. The gate ARCHIVES what a noise rule or the AI
+        # filter calls noise — 258 of the design partner's 395 mails were deleted before it — and
+        # an archive is worth exactly as much as its body: Boardy's introduction to an angel, a
+        # government portal's update, read the day they turn out to matter. An archived row with
+        # no body is a deletion that says it is not one. EVERY archived mail is asked about,
+        # whichever rule or judgment stopped it — unlike the judged-drop receipt above, there is
+        # no class of archive that is designed to keep nothing — inside the archive's own window,
+        # so one past `ARCHIVED_PAYLOAD_TTL_DAYS` is expected to have none.
+        Receipt("L1", "every archived mail can still be read",
+                "select count(*) from source_events se where se.outcome = 'archived' "
+                f"and se.captured_at > now() - interval '{ARCHIVED_PAYLOAD_TTL_DAYS} days' "
+                "and not exists (select 1 from raw_payloads rp where rp.event_id=se.event_id "
+                "                and rp.org_id=se.org_id)"
+                + _org_filter(org, "se"),
+                lambda n: n == 0,
+                "the gate keeps what it used to delete — encrypted, read by no model — so the mail "
+                "can be read when it turns out to matter. A non-zero count is archived mail whose "
+                "body is gone inside its window: a capture door with no payload store, or a purge "
+                "that ignored the archive's clock. Walk one with `journey.event_journey`"),
         Receipt("L1", "the tenant is still being fed",
                 # `captured_at`, not `occurred_at`: this asks whether OUR pipeline is receiving,
                 # and a backfill of last quarter's mail is healthy ingestion of old messages.

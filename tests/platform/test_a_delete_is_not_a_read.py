@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 2_930, (
+    assert r["statements"] == 2_932, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -218,6 +218,11 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 2,927 → 2,930 by yc2_w27_s02/M20.C6.L-interface.V4.U02 (STEP-02): the health check that
     # the change gate runs and saves (`scripts/pipeline_health.check_the_change_gate_skips_what_did_not_change`)
     # — sweeps in the window, subjects looked at, subjects skipped. Three SELECTs, each a literal.
+    # ⛔ MOVED 2,930 → 2,932 by yc2_w27_s03/M21.C4.L-logic.V4.U04 (STEP-03, the gate keeps
+    # everything): the receipt "every archived mail can still be read" in `platform/receipts.py`.
+    # ONE statement, counted twice: the template walk records both prefixes of its
+    # `"…" f"…" "…" + _org_filter(org, "se")` concatenation, exactly as it counts the judged-drop
+    # receipt beside it.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():
