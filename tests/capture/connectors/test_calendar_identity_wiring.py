@@ -15,6 +15,10 @@ def identities(monkeypatch):
             "create table orgs (id text, email text)",
             "create table org_seats (org_id text, email text, active boolean)",
             "create table connections (org_id text, external_account_id text)",
+            # migrations/0193: since STEP-04 the identity is `platform/self_identity.identity_for`,
+            # which reads the declarations with the three tables above. Without it the read fails
+            # and the factory falls back to treating everyone as internal.
+            "create table org_self_identities (org_id text, kind text, value text)",
         ):
             conn.execute(text(ddl))
         conn.execute(text("insert into orgs values ('o','owner@example.com'), ('other','foreign@example.net')"))
