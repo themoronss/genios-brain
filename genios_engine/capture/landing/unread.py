@@ -121,7 +121,10 @@ def to_raw_object(row: Any, crypto_key: str) -> RawObject | None:
         occurred_at=occurred, actor_email=actor.get("email"), actor_name=actor.get("name"),
         actor_type=actor.get("type") or "external_contact",
         parent_object_id=row.parent_object_id, internal_kind=row.internal_kind,
-        recipients=tuple(row.recipients or ()), raw=payload)
+        recipients=tuple(row.recipients or ()), raw=payload,
+        # Every row read again here was KEPT already, so the gate reads it and never judges it
+        # out again (STEP-05) — and the trace says which ladder rung or recovery it was.
+        rereading=getattr(row, "reason_code", None) or "unread")
 
 
 def set_aside(engine, org_id: str, event_ids: list[str]) -> int:
@@ -161,7 +164,8 @@ def restore(engine, org_id: str, event_ids: list[str]) -> int:
 # that path is bounded too.
 
 #: The extractor's park codes — the drain's `NEEDS_REEXTRACTION`, kept in one place.
-from genios_engine.capture.parked.drain import NEEDS_REEXTRACTION  # noqa: E402
+from genios_engine.capture.parked.drain import (EXTRACTION_NEVER_RAN,  # noqa: E402
+                                                NEEDS_REEXTRACTION)
 
 #: How many times a message's extraction may park before it is given up.
 MAX_EXTRACTION_ATTEMPTS = 3
@@ -173,7 +177,7 @@ PARK_SUPERSEDED = "superseded"
 _FIND_PARKED = text(
     "select se.event_id, se.connection_id, se.source, se.object_type, se.source_object_id, "
     "       se.parent_object_id, se.dedup_key, se.actor, se.recipients, se.internal_kind, "
-    "       se.occurred_at, rp.enc_content, pe.created_at as parked_at, "
+    "       se.occurred_at, rp.enc_content, pe.reason_code, pe.created_at as parked_at, "
     "       pe.refetch_attempts as row_attempts, pe.refetch_next_attempt_at as next_attempt_at, "
     "       (select count(*) from parked_events p2 "
     "          join source_events s2 on s2.org_id = p2.org_id and s2.event_id = p2.event_id "
@@ -286,7 +290,91 @@ def settle_parked_extractions(engine, org_id: str, event_ids: list[str], *,
     return {"superseded": int(superseded or 0), "advanced": advanced}
 
 
-__all__ = ["EXTRACTION_RETRY_BASE", "MAX_EXTRACTION_ATTEMPTS", "PARK_SUPERSEDED", "SUPERSEDED",
-           "find_parked_extractions", "find_unread", "give_up_parked_extractions",
-           "recover_orphans", "restore", "set_aside", "settle_parked_extractions",
-           "to_raw_object"]
+# =================================================================================================
+# STEP-05 · EVERY KEPT MAIL NEVER READ JOINS THE LADDER — whatever recovered it, whenever captured
+# =================================================================================================
+#
+# Every recovery path only flips `outcome` back to `emitted`: the parked drain's re-admission, a
+# manual recover, an attachment refetch, a recapture — and now a promotion out of the archive. L1
+# extraction runs only inline at capture, so the recovered mail got no extraction and no signal and
+# `_pull` never took it (`speedrun008/YC-II W27/` STEP-05 §8.2: no code read the `route` a recovery
+# set). On the design partner's org 77 re-admitted parks and 69 re-admitted junk verdicts sat emitted
+# and unread.
+#
+# `queue_unread` files each one into THIS ladder as an `extraction_never_ran` park, due now — or
+# re-opens the `recovered` park its recovery left, the old code kept in the park's trace — and the
+# ladder re-lands it like any parked extraction, carrying why (`RawObject.rereading`), so the gate
+# reads it instead of judging it out again. Mail captured while the tenant's L1 was off is the same
+# population; `find_unread` is the door it had before.
+#
+# ⛔ ONLY WHAT A RE-READ CAN READ. Layer 1 must be on for the tenant (a re-read with it off lands
+# unread and would be queued again, for ever); the payload must still be kept; a calendar or CRM
+# record is never read by a model (the structured lane); a screen item is not mail; an object whose
+# key carries a version cannot be rebuilt under the same key (see `find_unread`); a mail whose own
+# signal waits for its extraction row is Layer 2's hold, not this; a park another drain still owns
+# (`pending`) or one given up (`dead_letter`) is left to it. And a mail captured in the last
+# `UNREAD_GRACE` may still be being read by the capture that landed it.
+
+#: How long after capture a mail with no extraction is taken as unread rather than being read.
+UNREAD_GRACE = timedelta(minutes=15)
+
+_NEVER_READ = text(
+    "select se.event_id, se.source, se.object_type, se.source_object_id, se.dedup_key, "
+    "       pe.reason_code as park_code "
+    "  from source_events se "
+    "  join l1_semantic_activation a on a.org_id = se.org_id and a.disabled_at is null "
+    "  join raw_payloads rp on rp.event_id = se.event_id and rp.org_id = se.org_id "
+    "  left join parked_events pe on pe.event_id = se.event_id "
+    " where se.org_id = :o and se.outcome = 'emitted' and se.source <> :screen "
+    "   and (se.source || ':' || se.object_type) <> all(:structured) "
+    "   and se.captured_at < :settled "
+    "   and (rp.expires_at is null or rp.expires_at > :now) "
+    "   and (pe.event_id is null or pe.status = 'recovered') "
+    "   and not exists (select 1 from l1_extraction_results x "
+    "                    where x.org_id = se.org_id and x.event_id = se.event_id) "
+    "   and not exists (select 1 from qualified_signals q "
+    "                    where q.org_id = se.org_id and q.event_id = se.event_id "
+    "                      and q.state = 'active')")
+
+_FILE_NEVER_READ = text(
+    "insert into parked_events (event_id, org_id, source, reason_code, stage, trace, status, "
+    " created_at, refetch_next_attempt_at) "
+    "values (:e, :o, :src, :code, 'reread', cast('[]' as jsonb), 'pending', :now, :now) "
+    "on conflict (event_id) do nothing")
+
+_REOPEN_RECOVERED = text(
+    "update parked_events set reason_code = :code, status = 'pending', stage = 'reread', "
+    "       refetch_next_attempt_at = :now, "
+    "       trace = coalesce(trace, '[]'::jsonb) || jsonb_build_array(jsonb_build_object("
+    "           'requeued_from', reason_code, 'at', cast(:now as text))) "
+    " where org_id = :o and event_id = :e and status = 'recovered'")
+
+
+def queue_unread(engine, org_id: str, *, now: datetime | None = None) -> int:
+    """File every kept mail nothing ever read into the re-read ladder; returns how many. Idempotent:
+    a queued mail holds a `pending` park, which this never selects again."""
+    from genios_engine.capture.screen.render import SOURCE as SCREEN_SOURCE
+    from genios_engine.capture.structured.registry import mapped_kinds
+
+    now = now or datetime.now(timezone.utc)
+    with engine.connect() as c:
+        rows = c.execute(_NEVER_READ, {"o": org_id, "now": now, "settled": now - UNREAD_GRACE,
+                                       "screen": SCREEN_SOURCE,
+                                       "structured": list(mapped_kinds())}).fetchall()
+    rows = [r for r in rows
+            if compute_dedup_key(r.source, r.object_type, r.source_object_id, None) == r.dedup_key]
+    if not rows:
+        return 0
+    queued = 0
+    with engine.begin() as c:
+        for r in rows:
+            statement = _FILE_NEVER_READ if r.park_code is None else _REOPEN_RECOVERED
+            queued += c.execute(statement, {"e": r.event_id, "o": org_id, "src": r.source,
+                                            "code": EXTRACTION_NEVER_RAN, "now": now}).rowcount
+    return queued
+
+
+__all__ = ["EXTRACTION_NEVER_RAN", "EXTRACTION_RETRY_BASE", "MAX_EXTRACTION_ATTEMPTS",
+           "PARK_SUPERSEDED", "SUPERSEDED", "UNREAD_GRACE", "find_parked_extractions",
+           "find_unread", "give_up_parked_extractions", "queue_unread", "recover_orphans",
+           "restore", "set_aside", "settle_parked_extractions", "to_raw_object"]

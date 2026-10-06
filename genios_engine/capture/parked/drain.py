@@ -87,11 +87,18 @@ NEEDS_REFETCH: frozenset[str] = frozenset({
 #: So flipping ``outcome`` — this drain's own recovery — would change nothing. They are read again
 #: through the door `_reread_unread` uses (`capture/landing/unread.find_parked_extractions`), under
 #: a bounded ladder; here they are counted, so the backlog is visible to every surface that reads it.
+#: STEP-05 · a KEPT mail nothing ever read — what every recovery path used to leave behind (a
+#: re-admitted park, a manual recover, a refetch, a recapture, a promotion out of the archive) and
+#: mail captured while the tenant's Layer 1 was off. Filed by the re-read queue
+#: (`capture/landing/unread.queue_unread`), not the extractor, and read by the same ladder.
+EXTRACTION_NEVER_RAN = "extraction_never_ran"
+
 NEEDS_REEXTRACTION: frozenset[str] = frozenset({
     "extraction_call_failed",      # the model call itself failed
     "extraction_parse_failed",     # the answer was not parseable, even after one repair
     "extraction_schema_failed",    # parseable, but not the schema the profile asked for
     "extraction_total_loss",       # every claim in the answer was dropped as unusable
+    EXTRACTION_NEVER_RAN,          # STEP-05: kept and never read — see above
 })
 
 #: How old a pending park has to be before it is worth an operator's attention.
