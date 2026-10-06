@@ -23,6 +23,7 @@ from genios_engine.context.read_models import build_entity_360
 from genios_engine.context.structured import commit_structured
 from genios_engine.contracts.extraction import ExtractionResult
 from genios_engine.platform.crypto import decrypt
+from genios_engine.platform.self_identity import identity_for
 
 _grade_log = logging.getLogger(__name__)
 
@@ -82,26 +83,16 @@ def _internal_emails(store: GraphStore, org_id: str) -> frozenset[str]:
     Gmail has, by construction, told us which address it owns. Deriving from the connection
     makes "who are we" a property of the integration rather than of a table someone has to
     remember to populate.
+
+    STEP-04: the ADDRESSES of `platform/self_identity.identity_for`, the one answer every module
+    asks. That answer reads the same three sources this function used to re-write inline — active
+    seats, `orgs.email`, the connected accounts — plus what the tenant DECLARED
+    (`org_self_identities`): `ceo@thegenios.com`, which only ever receives the founder's own mail,
+    was none of the three, so all ten callers took it for an outside person. Normalised the way
+    person keys are (`platform/identity.norm_email`). Domains are not addresses; a caller that
+    needs them asks the identity itself.
     """
-    with store.engine.connect() as c:
-        rows = c.execute(text(
-            # 1) explicitly configured seats — correct when populated, empty on self-serve
-            "select lower(email) as e from org_seats "
-            "where org_id=:o and active and email is not null "
-            "union "
-            # 2) the account owner. The one identity that always exists, because signup
-            #    collected it: for the design partner this alone covers 57 outbound messages
-            #    that were being read as mail from a stranger.
-            "select lower(email) from orgs where id=:o and email is not null "
-            "union "
-            # 3) the connected mailbox, once the connector records which address it holds.
-            #    `external_account_id` is the right home for it and is not yet populated by
-            #    every provider path, so this contributes nothing today rather than failing —
-            #    the union degrades, it does not break.
-            "select lower(external_account_id) from connections "
-            "where org_id=:o and external_account_id is not null "
-            "and external_account_id like '%@%'"), {"o": org_id}).fetchall()
-    return frozenset(r.e for r in rows if r.e)
+    return identity_for(store, org_id).addresses
 
 
 def graded_extraction(qes_output, source_text: str | None, event_id: str = "?"):
