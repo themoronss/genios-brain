@@ -1,0 +1,569 @@
+{
+ "case_id": "F19",
+ "title": "An incubation cell: three people, three asks",
+ "kind": "must_detect",
+ "label_row": 19,
+ "labelled_by": "claude",
+ "replays": [],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-09-08T18:00:00Z",
+  "2026-09-24T18:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "agreement",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-07T05:00:00Z",
+   "from": "Naveen Gupta <naveen@ditincubator.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Incubation agreement",
+   "body": "Hi Arjun,\n\nPlease share the signed incubation agreement so we can activate your seat.\n\nNaveen Gupta\nIncubation Cell",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-agreement",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "neutral",
+     "topics": [
+      "incubation"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Naveen Gupta",
+       "entity_type": "person",
+       "quote": "Naveen Gupta"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Share the signed incubation agreement",
+       "asked_by": "Naveen Gupta",
+       "asked_of": "Arjun Rao",
+       "quote": "Please share the signed incubation agreement"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "Share the signed incubation agreement"
+     }
+    }
+   }
+  },
+  {
+   "id": "report",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-07T06:00:00Z",
+   "from": "Ritika Sharma <ritika@ditincubator.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Monthly report due 15 Sep",
+   "body": "Hi Arjun,\n\nYour monthly progress report is due on 15 Sep. Please submit it on the portal.\n\nRitika Sharma\nIncubation Cell",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-report",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "neutral",
+     "topics": [
+      "incubation"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Ritika Sharma",
+       "entity_type": "person",
+       "quote": "Ritika Sharma"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Submit the monthly progress report by 15 Sep",
+       "asked_by": "Ritika Sharma",
+       "asked_of": "Arjun Rao",
+       "quote": "Your monthly progress report is due on 15 Sep."
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "Submit the monthly progress report by 15 Sep"
+     },
+     "dates_mentioned": [
+      {
+       "as_written": "15 Sep",
+       "earliest": "2026-09-15T00:00:00+05:30",
+       "latest": "2026-09-15T23:59:59+05:30",
+       "certainty": "range",
+       "resolved_against": "2026-09-07T06:00:00Z",
+       "quote": "15 Sep"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "invoice",
+   "source": "gmail",
+   "sweep": 1,
+   "occurred_at": "2026-09-24T09:00:00Z",
+   "from": "Ekta Bhalla <ekta@ditincubator.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Co-working seats - invoice",
+   "body": "Hi Arjun,\n\nThe invoice for your two co-working seats is due on 30 Sep. Could you confirm the billing name?\n\nEkta Bhalla\nIncubation Cell",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-invoice",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "neutral",
+     "topics": [
+      "incubation"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Ekta Bhalla",
+       "entity_type": "person",
+       "quote": "Ekta Bhalla"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Confirm the billing name for the co-working invoice",
+       "asked_by": "Ekta Bhalla",
+       "asked_of": "Arjun Rao",
+       "quote": "Could you confirm the billing name?"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "Confirm the billing name for the co-working invoice"
+     },
+     "dates_mentioned": [
+      {
+       "as_written": "30 Sep",
+       "earliest": "2026-09-30T00:00:00+05:30",
+       "latest": "2026-09-30T23:59:59+05:30",
+       "certainty": "range",
+       "resolved_against": "2026-09-24T09:00:00Z",
+       "quote": "30 Sep"
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "expected": {
+  "gate": {
+   "agreement": "emitted",
+   "report": "emitted",
+   "invoice": "emitted"
+  },
+  "memory": {
+   "agreement": true,
+   "report": true,
+   "invoice": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Naveen"
+    ],
+    "min": 1,
+    "max": 1
+   },
+   {
+    "about": [
+     "Ritika"
+    ],
+    "min": 1,
+    "max": 1
+   },
+   {
+    "about": [
+     "Ekta"
+    ],
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "workstream": "program — who wants what from you"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": []
+ },
+ "witness": null,
+ "not_expressible": {
+  "workstream": "STEP-09 — the engine forms no workstream; nothing to compare against"
+ },
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "unanswered email",
+     "Naveen Gupta"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "reply": 6500
+     },
+     "confidence_bp": 5500,
+     "rationale": "A direct question is waiting on us.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "Naveen Gupta"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "ditincubator.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "opportunity",
+     "ditincubator.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "ditincubator.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "Someone at this company asked us something and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "ditincubator.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "This is not an investor conversation, and neither offered play fits what was asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "opportunity",
+     "Incubation Cell"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "Incubation Cell"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "Someone at this company asked us something and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "Incubation Cell"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "This is not an investor conversation, and neither offered play fits what was asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "unanswered email",
+     "Ritika Sharma"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "reply": 6500
+     },
+     "confidence_bp": 5500,
+     "rationale": "A direct question is waiting on us.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "Ritika Sharma"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "ditincubator.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "opportunity",
+     "ditincubator.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "ditincubator.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "Someone at this company asked us something and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "ditincubator.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "This is not an investor conversation, and neither offered play fits what was asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "unanswered email",
+     "Ekta Bhalla"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "reply": 6500
+     },
+     "confidence_bp": 5500,
+     "rationale": "A direct question is waiting on us.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "Ekta Bhalla"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "ditincubator.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "opportunity",
+     "ditincubator.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "ditincubator.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "Someone at this company asked us something and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "ditincubator.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "This is not an investor conversation, and neither offered play fits what was asked.",
+     "missing": []
+    }
+   }
+  ],
+  "narrator": [
+   {
+    "when": [
+     "unanswered_email",
+     "Ritika Sharma"
+    ],
+    "answer": {
+     "headline": "Send Ritika Sharma the monthly progress report",
+     "situation": "Ritika Sharma has waited 17 days: your monthly progress report is due on 15 Sep.",
+     "artifact": "Hi Ritika, the monthly progress report is submitted on the portal. Thanks, Arjun"
+    }
+   },
+   {
+    "when": [
+     "account_admin",
+     "ditincubator.test"
+    ],
+    "answer": {
+     "headline": "Submit your monthly report to ditincubator.test",
+     "situation": "Ritika at ditincubator.test says your monthly progress report is due on 15 Sep. The next move is ours.",
+     "artifact": "Hi Ritika, the monthly progress report is submitted on the portal. Thanks, Arjun"
+    }
+   }
+  ]
+ },
+ "notes": "None of the four real people reached memory.",
+ "blocked_on": "two of the three asks never reach memory (the qualification floor (2,500)); the one that does becomes the incubation cell's card, not the person's — STEP-05, STEP-09"
+}

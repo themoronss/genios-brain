@@ -1,0 +1,231 @@
+{
+ "case_id": "F10",
+ "title": "An investor follows up after a demo day and asks for the data room",
+ "kind": "must_detect",
+ "label_row": 10,
+ "labelled_by": "claude",
+ "replays": [],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-09-18T18:00:00Z",
+  "2026-09-21T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "ask",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-18T07:45:00Z",
+   "from": "Kiran Agnihotri <kiran@banyanseed.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Nimbus Labs - data room?",
+   "body": "Hi Arjun,\n\nFollowing up on our chat at the demo day. We'd like to understand Nimbus Labs better: could you share your data-room link and the current cap table? I've attached our term-sheet FAQ and a short portfolio note for context.\n\nKiran Agnihotri\nPrincipal, Banyan Seed Fund",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-banyan",
+   "attachments": [
+    {
+     "filename": "banyan-term-sheet-faq.pdf",
+     "mime": "application/pdf",
+     "fetch": "refused"
+    },
+    {
+     "filename": "banyan-portfolio-note.pdf",
+     "mime": "application/pdf",
+     "fetch": "refused"
+    }
+   ],
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "positive",
+     "topics": [
+      "fundraising",
+      "data room"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Kiran Agnihotri",
+       "entity_type": "person",
+       "quote": "Kiran Agnihotri"
+      },
+      {
+       "surface_form": "Banyan Seed Fund",
+       "entity_type": "organization",
+       "quote": "Banyan Seed Fund"
+      },
+      {
+       "surface_form": "Nimbus Labs",
+       "entity_type": "organization",
+       "quote": "Nimbus Labs"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Share the data-room link and the current cap table",
+       "asked_by": "Kiran Agnihotri",
+       "asked_of": "Arjun Rao",
+       "quote": "could you share your data-room link and the current cap table?"
+      }
+     ],
+     "business_facts": [
+      {
+       "field": "person.title",
+       "subject": "Kiran Agnihotri",
+       "value": "Principal",
+       "standing": "observed",
+       "quote": "Principal, Banyan Seed Fund"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "diligence after the demo day"
+     },
+     "implied_actions": [
+      "send Kiran the data-room link and the cap table"
+     ]
+    }
+   }
+  }
+ ],
+ "expected": {
+  "gate": {
+   "ask": "emitted"
+  },
+  "memory": {
+   "ask": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Kiran",
+     "Banyan"
+    ],
+    "min": 1,
+    "max": 1,
+    "mentions": [
+     "cap table"
+    ]
+   }
+  ],
+  "workstream": "investor — diligence after a demo day"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": []
+ },
+ "witness": null,
+ "not_expressible": {
+  "workstream": "STEP-09 — the engine forms no workstream; nothing to compare against"
+ },
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "unanswered email",
+     "Kiran Agnihotri"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "reply": 6500
+     },
+     "confidence_bp": 5500,
+     "rationale": "A direct question is waiting on us.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "Kiran Agnihotri"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "banyanseed.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "opportunity",
+     "banyanseed.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "banyanseed.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "Someone at this company asked us something and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "banyanseed.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "fifteen_minute_account_brief": 5600
+     },
+     "confidence_bp": 5000,
+     "rationale": "An investor asked us something; know the fund before replying.",
+     "missing": []
+    }
+   }
+  ]
+ },
+ "notes": "Production's AI filter called the real mail junk and parked both attachments. The synthetic text is a personal note a faithful reader keeps; the model's own drop is for the live evaluation to measure.",
+ "blocked_on": "the investor's follow-up is captured but dropped at the qualification floor (2,500): an opportunity_signal at 1,040 never reaches memory — STEP-05"
+}

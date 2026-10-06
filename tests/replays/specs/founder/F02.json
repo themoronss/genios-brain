@@ -1,0 +1,178 @@
+{
+ "case_id": "F02",
+ "title": "One application across four mails: the same card updates",
+ "kind": "must_detect",
+ "label_row": 2,
+ "labelled_by": "claude",
+ "replays": [],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-09-23T18:00:00Z",
+  "2026-09-29T18:00:00Z",
+  "2026-09-30T18:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "locker",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-23T09:10:00Z",
+   "from": "DigiVault <no-reply@digivault.gov.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Document issued to your DigiVault",
+   "body": "A Certificate of Incorporation for Nimbus Labs Private Limited has been issued to your DigiVault account. Sign in to view it.",
+   "labels": [
+    "INBOX",
+    "CATEGORY_UPDATES"
+   ],
+   "read": {
+    "gate": "drop",
+    "relevance": "not_business"
+   }
+  },
+  {
+   "id": "ask",
+   "source": "gmail",
+   "sweep": 1,
+   "occurred_at": "2026-09-29T06:00:00Z",
+   "from": "StartupSetu <updates@startupsetu.gov.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Application SSR-2026-48213: clarification required",
+   "body": "Dear Applicant,\n\nThe examiner requires a board resolution authorising the applicant. Upload it on the StartupSetu portal within 7 days, or the application will be closed.\n\nRegards,\nStartupSetu Team",
+   "labels": [
+    "INBOX",
+    "CATEGORY_PROMOTIONS"
+   ],
+   "read": {
+    "gate": "drop",
+    "relevance": {
+     "business": true,
+     "category": "transactional",
+     "human_authored": false,
+     "asks_for_reply": true
+    },
+    "extraction": {
+     "intent": "request",
+     "stance": "neutral",
+     "topics": [
+      "startup recognition"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "StartupSetu",
+       "entity_type": "organization",
+       "quote": "StartupSetu"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Upload a board resolution authorising the applicant",
+       "asked_by": "StartupSetu",
+       "asked_of": "Arjun Rao",
+       "quote": "Upload it on the StartupSetu portal within 7 days"
+      }
+     ],
+     "dates_mentioned": [
+      {
+       "as_written": "within 7 days",
+       "earliest": "2026-09-29T06:00:00Z",
+       "latest": "2026-10-06T18:29:59Z",
+       "certainty": "range",
+       "resolved_against": "2026-09-29T06:00:00Z",
+       "quote": "within 7 days"
+      }
+     ],
+     "exchange_intent": {
+      "category": "transactional",
+      "tone": "neutral",
+      "formality": "templated",
+      "addressed_personally": false,
+      "human_authored": false,
+      "asks_for_reply": true,
+      "engagement": "high"
+     }
+    }
+   }
+  },
+  {
+   "id": "received",
+   "source": "gmail",
+   "sweep": 2,
+   "occurred_at": "2026-09-30T06:09:00Z",
+   "from": "StartupSetu <support@startupsetu.gov.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Application SSR-2026-48213: document received",
+   "body": "Dear Applicant,\n\nWe have received the board resolution you uploaded. The examiner will review it and update the application.\n\nRegards,\nStartupSetu Support",
+   "labels": [
+    "INBOX"
+   ],
+   "read": {
+    "gate": "drop",
+    "relevance": "business"
+   }
+  },
+  {
+   "id": "granted",
+   "source": "gmail",
+   "sweep": 2,
+   "occurred_at": "2026-09-30T07:03:00Z",
+   "from": "StartupSetu <no-reply@startupsetu.gov.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Recognition granted: SSR-2026-48213",
+   "body": "Congratulations. Nimbus Labs Private Limited is recognised under the StartupSetu programme. Certificate number SSR-CERT-2026-11872 is available on the portal.",
+   "labels": [
+    "INBOX"
+   ],
+   "read": {
+    "gate": "drop",
+    "relevance": "business"
+   }
+  }
+ ],
+ "expected": {
+  "gate": {
+   "ask": "emitted",
+   "granted": "emitted"
+  },
+  "memory": {
+   "ask": true,
+   "granted": true
+  },
+  "cards": [
+   {
+    "about": [
+     "StartupSetu",
+     "SSR-2026-48213"
+    ],
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "workstream": "compliance — the startup recognition application",
+  "stage": "recognised"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": []
+ },
+ "witness": null,
+ "not_expressible": {
+  "workstream": "STEP-09 — the engine forms no workstream; nothing to compare against",
+  "stage": "STEP-09 — no stage is derived for a workstream"
+ },
+ "notes": "Three of the four real mails were dropped by the rules (Promotions N-06, no-reply N-03); the fourth passed them and the AI filter called it junk, which is also the faithful answer to an automated acknowledgement.",
+ "blocked_on": "the gate drops the application's mails (N-06 Promotions, N-03 no-reply) and the AI filter faithfully junks the automated acknowledgement — STEP-03, STEP-04"
+}

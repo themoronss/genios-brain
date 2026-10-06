@@ -1,0 +1,166 @@
+{
+ "case_id": "F10",
+ "source": "ideal_reader",
+ "recorded_at": "b47239c9",
+ "answers": {
+  "1b2b466b4412dbaa8b891d937021e0799faba7cd56b92ae86bd013ea1ba9aa38": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "request",
+    "stance": "positive",
+    "topics": [
+     "fundraising",
+     "data room"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Kiran Agnihotri",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Kiran Agnihotri",
+        "start_offset": 260,
+        "end_offset": 275
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Banyan Seed Fund",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Banyan Seed Fund",
+        "start_offset": 287,
+        "end_offset": 303
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Nimbus Labs",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Nimbus Labs",
+        "start_offset": 0,
+        "end_offset": 11
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "Share the data-room link and the current cap table",
+      "asked_by": "Kiran Agnihotri",
+      "asked_of": "Arjun Rao",
+      "evidence": [
+       {
+        "quote": "could you share your data-room link and the current cap table?",
+        "start_offset": 123,
+        "end_offset": 185
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "business_facts": [
+     {
+      "field": "person.title",
+      "subject": "Kiran Agnihotri",
+      "value": "Principal",
+      "standing": "observed",
+      "evidence": [
+       {
+        "quote": "Principal, Banyan Seed Fund",
+        "start_offset": 276,
+        "end_offset": 303
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "diligence after the demo day"
+    },
+    "implied_actions": [
+     "send Kiran the data-room link and the cap table"
+    ]
+   },
+   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\", \"data room\"], \"entity_mentions\": [{\"surface_form\": \"Kiran Agnihotri\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Kiran Agnihotri\", \"start_offset\": 260, \"end_offset\": 275}], \"confidence_bp\": 9000}, {\"surface_form\": \"Banyan Seed Fund\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Banyan Seed Fund\", \"start_offset\": 287, \"end_offset\": 303}], \"confidence_bp\": 9000}, {\"surface_form\": \"Nimbus Labs\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Nimbus Labs\", \"start_offset\": 0, \"end_offset\": 11}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Share the data-room link and the current cap table\", \"asked_by\": \"Kiran Agnihotri\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"could you share your data-room link and the current cap table?\", \"start_offset\": 123, \"end_offset\": 185}], \"confidence_bp\": 9000}], \"business_facts\": [{\"field\": \"person.title\", \"subject\": \"Kiran Agnihotri\", \"value\": \"Principal\", \"standing\": \"observed\", \"evidence\": [{\"quote\": \"Principal, Banyan Seed Fund\", \"start_offset\": 276, \"end_offset\": 303}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"diligence after the demo day\"}, \"implied_actions\": [\"send Kiran the data-room link and the cap table\"]}",
+   "input_tokens": 4926,
+   "output_tokens": 362,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "5462abdebb7bfff3b5e015081e69c8d27189b7626cf9da54bb5562c4d987bce7": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 1,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 2,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 2, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 452,
+   "output_tokens": 72,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "9126cf417e2700b6904a82b9fc591d8fac75144367694aa749fc8bc6499a7d25": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Nimbus Labs - data room?",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     },
+     {
+      "item": 2,
+      "business": true,
+      "description": "Nimbus Labs - data room?",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     },
+     {
+      "item": 3,
+      "business": true,
+      "description": "Nimbus Labs - data room?",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Nimbus Labs - data room?\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 2, \"business\": true, \"description\": \"Nimbus Labs - data room?\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 3, \"business\": true, \"description\": \"Nimbus Labs - data room?\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 633,
+   "output_tokens": 112,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

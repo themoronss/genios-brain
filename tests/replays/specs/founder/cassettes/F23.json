@@ -1,0 +1,115 @@
+{
+ "case_id": "F23",
+ "source": "ideal_reader",
+ "recorded_at": "b47239c9",
+ "answers": {
+  "14ba3f99c95930df3a1269b6e263dc1cd5fc5e9183737c8f879440398f4005d2": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": false,
+      "description": "Your registration",
+      "category": "automated",
+      "human_authored": false,
+      "asks_for_reply": false
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"Your registration\", \"category\": \"automated\", \"human_authored\": false, \"asks_for_reply\": false}]}",
+   "input_tokens": 552,
+   "output_tokens": 39,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "41e4eabb1cddaf02f136c133095b3abcb0b0fbefa6f8bdda8f9777516d93adf4": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "drop",
+     "relevance": 0.05,
+     "reason": "automated, nobody waits on a reply"
+    },
+    {
+     "i": 1,
+     "disposition": "drop",
+     "relevance": 0.05,
+     "reason": "automated, nobody waits on a reply"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}, {\"i\": 1, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}]",
+   "input_tokens": 435,
+   "output_tokens": 50,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "615a329700493fc98009e28dc12694dd56324f9180ac8602914ab341ee0d14ee": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": false,
+      "description": "Monthly bulletin",
+      "category": "automated",
+      "human_authored": false,
+      "asks_for_reply": false
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"Monthly bulletin\", \"category\": \"automated\", \"human_authored\": false, \"asks_for_reply\": false}]}",
+   "input_tokens": 539,
+   "output_tokens": 39,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "7bacd2c7f8ae648719f2d69705e69237305743bce6f10892c6b1dc09e5b96649": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "drop",
+     "relevance": 0.05,
+     "reason": "automated, nobody waits on a reply"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}]",
+   "input_tokens": 408,
+   "output_tokens": 25,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "b890d667686aba13a41196aa08462ad43973c76c458872c109053b4f10af5b1f": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "drop",
+     "relevance": 0.05,
+     "reason": "automated, nobody waits on a reply"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}]",
+   "input_tokens": 421,
+   "output_tokens": 25,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "e6d4a3dd6cd39345d6d4e8320d86d0230b37d544d947e6b6215fcf0e9e2fd426": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": false,
+      "description": "Monthly bulletin",
+      "category": "automated",
+      "human_authored": false,
+      "asks_for_reply": false
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"Monthly bulletin\", \"category\": \"automated\", \"human_authored\": false, \"asks_for_reply\": false}]}",
+   "input_tokens": 537,
+   "output_tokens": 39,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

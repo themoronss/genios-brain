@@ -1,0 +1,121 @@
+{
+ "case_id": "F01",
+ "title": "A government portal moves the founder's live application",
+ "kind": "must_detect",
+ "label_row": 1,
+ "labelled_by": "claude",
+ "replays": [],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-09-24T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "status",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-24T05:20:00Z",
+   "from": "StartupSetu <updates@startupsetu.gov.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Application SSR-2026-48213: status updated",
+   "body": "Dear Applicant,\n\nYour application SSR-2026-48213 for recognition under the StartupSetu programme has moved to the stage: Under Examination. You will be notified when the examination is complete. Track the status on the StartupSetu portal.\n\nRegards,\nStartupSetu Team",
+   "labels": [
+    "INBOX",
+    "CATEGORY_PROMOTIONS"
+   ],
+   "read": {
+    "gate": "drop",
+    "relevance": {
+     "business": true,
+     "category": "transactional",
+     "human_authored": false,
+     "asks_for_reply": false
+    },
+    "extraction": {
+     "intent": "inform",
+     "stance": "neutral",
+     "topics": [
+      "startup recognition",
+      "application status"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "StartupSetu",
+       "entity_type": "organization",
+       "quote": "StartupSetu"
+      },
+      {
+       "surface_form": "SSR-2026-48213",
+       "entity_type": "document",
+       "quote": "SSR-2026-48213"
+      }
+     ],
+     "decision_states": [
+      {
+       "subject": "recognition application SSR-2026-48213",
+       "state": "pending",
+       "owner": "StartupSetu",
+       "quote": "has moved to the stage: Under Examination"
+      }
+     ],
+     "business_facts": [
+      {
+       "field": "thread.objective",
+       "subject": "thread",
+       "value": "startup recognition application",
+       "standing": "judgement",
+       "quote": "Your application SSR-2026-48213 for recognition"
+      }
+     ],
+     "exchange_intent": {
+      "category": "transactional",
+      "tone": "neutral",
+      "formality": "templated",
+      "addressed_personally": false,
+      "human_authored": false,
+      "asks_for_reply": false,
+      "engagement": "medium"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "gate": {
+   "status": "emitted"
+  },
+  "memory": {
+   "status": true
+  },
+  "cards": [
+   {
+    "about": [
+     "StartupSetu",
+     "SSR-2026-48213"
+    ],
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "workstream": "compliance — the startup recognition application",
+  "stage": "under examination"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": []
+ },
+ "witness": null,
+ "not_expressible": {
+  "workstream": "STEP-09 — the engine forms no workstream; nothing to compare against",
+  "stage": "STEP-09 — no stage is derived for a workstream"
+ },
+ "notes": "The faithful junk-filter answer to an automated portal notice is drop: the prompt says to drop automated, self-service notices, and nothing in it says the founder has a live application. That gap is the engine's (STEP-03, STEP-04).",
+ "blocked_on": "the gate drops a live application's status mail on Gmail's Promotions label (N-06); nothing tells it the founder has a live application — STEP-03, STEP-04"
+}

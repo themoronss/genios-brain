@@ -1,0 +1,391 @@
+{
+ "case_id": "F27",
+ "source": "ideal_reader",
+ "recorded_at": "b47239c9",
+ "answers": {
+  "03ae012332ff3739227454af95d93772fa959612c775c065e04735c0af0d019d": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "question",
+    "stance": "positive",
+    "topics": [
+     "integration",
+     "webhooks"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Varun Iyer",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Varun Iyer",
+        "start_offset": 260,
+        "end_offset": 270
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Cleanwave",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Cleanwave",
+        "start_offset": 0,
+        "end_offset": 9
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "Can the Nimbus agent read Cleanwave's webhook events?",
+      "asked_by": "Varun Iyer",
+      "asked_of": "Arjun Rao",
+      "evidence": [
+       {
+        "quote": "Could you confirm whether your agent can read our webhook events before we meet?",
+        "start_offset": 130,
+        "end_offset": 210
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "dates_mentioned": [
+     {
+      "as_written": "Thursday 9 Oct, 4 pm IST",
+      "earliest": "2026-10-09T10:30:00Z",
+      "latest": "2026-10-09T10:30:00Z",
+      "certainty": "exact",
+      "resolved_against": "2026-09-30T11:05:00Z",
+      "evidence": [
+       {
+        "quote": "Thursday 9 Oct, 4 pm IST",
+        "start_offset": 225,
+        "end_offset": 249
+       }
+      ]
+     }
+    ],
+    "scheduling_proposals": [
+     {
+      "proposer": "Varun Iyer",
+      "text": "a call on Thursday 9 Oct, 4 pm IST",
+      "evidence_text": "I have booked Thursday 9 Oct, 4 pm IST."
+     }
+    ],
+    "business_facts": [
+     {
+      "field": "person.title",
+      "subject": "Varun Iyer",
+      "value": "Founder",
+      "standing": "observed",
+      "evidence": [
+       {
+        "quote": "Founder, Cleanwave",
+        "start_offset": 271,
+        "end_offset": 289
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "field": "relationship.nature",
+      "subject": "Cleanwave",
+      "value": "integration partner",
+      "standing": "judgement",
+      "evidence": [
+       {
+        "quote": "Could you confirm whether your agent can read our webhook events",
+        "start_offset": 130,
+        "end_offset": 194
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "confirm the webhook integration before the call"
+    },
+    "implied_actions": [
+     "confirm whether the agent can read Cleanwave's webhook events"
+    ]
+   },
+   "raw": "{\"intent\": \"question\", \"stance\": \"positive\", \"topics\": [\"integration\", \"webhooks\"], \"entity_mentions\": [{\"surface_form\": \"Varun Iyer\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Varun Iyer\", \"start_offset\": 260, \"end_offset\": 270}], \"confidence_bp\": 9000}, {\"surface_form\": \"Cleanwave\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Cleanwave\", \"start_offset\": 0, \"end_offset\": 9}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Can the Nimbus agent read Cleanwave's webhook events?\", \"asked_by\": \"Varun Iyer\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Could you confirm whether your agent can read our webhook events before we meet?\", \"start_offset\": 130, \"end_offset\": 210}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"Thursday 9 Oct, 4 pm IST\", \"earliest\": \"2026-10-09T10:30:00Z\", \"latest\": \"2026-10-09T10:30:00Z\", \"certainty\": \"exact\", \"resolved_against\": \"2026-09-30T11:05:00Z\", \"evidence\": [{\"quote\": \"Thursday 9 Oct, 4 pm IST\", \"start_offset\": 225, \"end_offset\": 249}]}], \"scheduling_proposals\": [{\"proposer\": \"Varun Iyer\", \"text\": \"a call on Thursday 9 Oct, 4 pm IST\", \"evidence_text\": \"I have booked Thursday 9 Oct, 4 pm IST.\"}], \"business_facts\": [{\"field\": \"person.title\", \"subject\": \"Varun Iyer\", \"value\": \"Founder\", \"standing\": \"observed\", \"evidence\": [{\"quote\": \"Founder, Cleanwave\", \"start_offset\": 271, \"end_offset\": 289}], \"confidence_bp\": 9000}, {\"field\": \"relationship.nature\", \"subject\": \"Cleanwave\", \"value\": \"integration partner\", \"standing\": \"judgement\", \"evidence\": [{\"quote\": \"Could you confirm whether your agent can read our webhook events\", \"start_offset\": 130, \"end_offset\": 194}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"confirm the webhook integration before the call\"}, \"implied_actions\": [\"confirm whether the agent can read Cleanwave's webhook events\"]}",
+   "input_tokens": 4926,
+   "output_tokens": 503,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "137428e37a0245d3b4c25c29a1bfc3fbf44d50dd3121b05a09aab4ff2780a127": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 518,
+   "output_tokens": 74,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "160a3ed0fa608c77dfe6f0998a89f129fa08087537bc2d46083d262e627408e8": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Triage to five outcomes",
+    "situation_summary": "The triage to five outcomes is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The triage to five outcomes ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the triage to five outcomes shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
+    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
+   },
+   "raw": "{\"headline\": \"Triage to five outcomes\", \"situation_summary\": \"The triage to five outcomes is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The triage to five outcomes ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the triage to five outcomes shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
+   "input_tokens": 3042,
+   "output_tokens": 188,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "1692321113a36e6db471e5a378a704a74ad65fbd6a20cc49e9a3fd5c8da246d3": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Cleanwave x Nimbus - webhook question",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Cleanwave x Nimbus - webhook question\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 583,
+   "output_tokens": 43,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "32293692b03d0e10cd5d6764e6e29ea4651cea5020157630e90f1289596146b1": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Confirm webhook support for Cleanwave",
+    "situation": "Varun at Cleanwave asked whether our agent can read their webhook events before you meet. The next move is ours.",
+    "artifact": "Hi Varun, thanks for the docs. On whether our agent can read your webhook events: [our answer]. We can go through it when we meet."
+   },
+   "raw": "{\"headline\": \"Confirm webhook support for Cleanwave\", \"situation\": \"Varun at Cleanwave asked whether our agent can read their webhook events before you meet. The next move is ours.\", \"artifact\": \"Hi Varun, thanks for the docs. On whether our agent can read your webhook events: [our answer]. We can go through it when we meet.\"}",
+   "input_tokens": 1564,
+   "output_tokens": 82,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "554852040924baea24dc682d08563e5bffc25ba474051b5c2b204b7fdff36112": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "reply": 6500,
+     "wait_unanswered_email": 5200
+    },
+    "confidence_bp": 5500,
+    "rationale": "Varun asked a direct question a week ago and the call he booked is on 9 Oct; the reply is ours.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5200}, \"confidence_bp\": 5500, \"rationale\": \"Varun asked a direct question a week ago and the call he booked is on 9 Oct; the reply is ours.\", \"missing\": []}",
+   "input_tokens": 1536,
+   "output_tokens": 57,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "78010f39c3945882fb950913efd778dd711926d23a3b4dda69535b74f7b029b9": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Reply",
+    "situation_summary": "The reply is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
+    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
+   },
+   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
+   "input_tokens": 2362,
+   "output_tokens": 166,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "781154ab3ac68d81f9a2961ff991bb53e2d538011024cf66d2c03c060746e592": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 440,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "7b18fba3714acc67e7637d6a57f4dbdbb3daae779ae6f9bfc81ec804a22cbedc": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Reply",
+    "situation_summary": "The reply is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
+    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
+   },
+   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
+   "input_tokens": 2321,
+   "output_tokens": 166,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "7ba44991ff2a759899f39578b223d22a5870b3ae89d9c16a25e6823cd13c5c26": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4515,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 4571,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 6200
+    },
+    "confidence_bp": 5000,
+    "rationale": "Cleanwave wrote today and the ball is in our court.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4515, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4571, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 6200}, \"confidence_bp\": 5000, \"rationale\": \"Cleanwave wrote today and the ball is in our court.\", \"missing\": []}",
+   "input_tokens": 2448,
+   "output_tokens": 85,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "827f1e09f6699bd275efae7f669ac36cad225e22494012d0a2335d7a14423872": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Triage to five outcomes",
+    "situation_summary": "The triage to five outcomes is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The triage to five outcomes ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the triage to five outcomes shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
+    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
+   },
+   "raw": "{\"headline\": \"Triage to five outcomes\", \"situation_summary\": \"The triage to five outcomes is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The triage to five outcomes ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the triage to five outcomes shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
+   "input_tokens": 3158,
+   "output_tokens": 188,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "a46a279395e75f13c7129a00c92c6ad5f03ca5cec76b4e220566b1dd23d0998b": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Answer Varun's webhook question",
+    "situation": "Varun Iyer asked 7 days ago whether our agent can read Cleanwave's webhook events. The reply is ours.",
+    "artifact": "Hi Varun, on your question about your webhook events: [our answer]. Talk soon."
+   },
+   "raw": "{\"headline\": \"Answer Varun's webhook question\", \"situation\": \"Varun Iyer asked 7 days ago whether our agent can read Cleanwave's webhook events. The reply is ours.\", \"artifact\": \"Hi Varun, on your question about your webhook events: [our answer]. Talk soon.\"}",
+   "input_tokens": 1820,
+   "output_tokens": 64,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "b860a1afafba82a13cd494e352041984063dd79ad251b620ba0ce78ed54d9310": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": false,
+      "description": "no readable text",
+      "category": "unknown",
+      "human_authored": null,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"no readable text\", \"category\": \"unknown\", \"human_authored\": null, \"asks_for_reply\": null}]}",
+   "input_tokens": 515,
+   "output_tokens": 38,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "e7b75dcf56234fe65b79121bf6505a01fcb395069cf609015420cd36dfad9164": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 412,
+   "output_tokens": 51,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "f4532cd58a10f7319a855b9fabc3fbac4b5968a558be32629331854d4ea91e67": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4969,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 5025,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 6200
+    },
+    "confidence_bp": 5000,
+    "rationale": "Cleanwave wrote today and the ball is in our court.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4969, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 5025, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 6200}, \"confidence_bp\": 5000, \"rationale\": \"Cleanwave wrote today and the ball is in our court.\", \"missing\": []}",
+   "input_tokens": 2450,
+   "output_tokens": 85,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "fe02ed9b56481fa4d8f1c621f63c95dc9aa9cc1d5c189f2e922de37c4416ec7e": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Could you confirm whether your agent can read our webhook events before we meet?",
+    "start_offset": 130,
+    "end_offset": 210,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Could you confirm whether your agent can read our webhook events before we meet?\", \"start_offset\": 130, \"end_offset\": 210, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 930,
+   "output_tokens": 58,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

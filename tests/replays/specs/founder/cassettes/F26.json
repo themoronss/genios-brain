@@ -1,0 +1,183 @@
+{
+ "case_id": "F26",
+ "source": "ideal_reader",
+ "recorded_at": "b47239c9",
+ "answers": {
+  "21734c77f73fa6facc8d6418a80452739c518f089abffcbb0dde93ab48043dfd": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 1,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 453,
+   "output_tokens": 48,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "25aae3ca401a5fc145ff6f0a2dd2e3c26b140855b522b56f13b7a89e6bb424d1": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "schedule",
+    "stance": "positive",
+    "topics": [
+     "integration call"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Neha",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Neha",
+        "start_offset": 113,
+        "end_offset": 117
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "Does Tuesday 30 Sep, 11 am IST work for a call?",
+      "asked_by": "Neha Kapoor",
+      "asked_of": "Arjun Rao",
+      "evidence": [
+       {
+        "quote": "Would Tuesday 30 Sep, 11 am IST work for you?",
+        "start_offset": 66,
+        "end_offset": 111
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "scheduling_proposals": [
+     {
+      "proposer": "Neha Kapoor",
+      "text": "a call on Tuesday 30 Sep, 11 am IST",
+      "evidence_text": "Would Tuesday 30 Sep, 11 am IST work for you?"
+     }
+    ],
+    "dates_mentioned": [
+     {
+      "as_written": "Tuesday 30 Sep, 11 am IST",
+      "earliest": "2026-09-30T05:30:00Z",
+      "latest": "2026-09-30T05:30:00Z",
+      "certainty": "exact",
+      "resolved_against": "2026-09-22T07:00:00Z",
+      "evidence": [
+       {
+        "quote": "Tuesday 30 Sep, 11 am IST",
+        "start_offset": 72,
+        "end_offset": 97
+       }
+      ]
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "book the call"
+    },
+    "implied_actions": [
+     "confirm or decline Tuesday 30 Sep, 11 am IST"
+    ]
+   },
+   "raw": "{\"intent\": \"schedule\", \"stance\": \"positive\", \"topics\": [\"integration call\"], \"entity_mentions\": [{\"surface_form\": \"Neha\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Neha\", \"start_offset\": 113, \"end_offset\": 117}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Does Tuesday 30 Sep, 11 am IST work for a call?\", \"asked_by\": \"Neha Kapoor\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Would Tuesday 30 Sep, 11 am IST work for you?\", \"start_offset\": 66, \"end_offset\": 111}], \"confidence_bp\": 9000}], \"scheduling_proposals\": [{\"proposer\": \"Neha Kapoor\", \"text\": \"a call on Tuesday 30 Sep, 11 am IST\", \"evidence_text\": \"Would Tuesday 30 Sep, 11 am IST work for you?\"}], \"dates_mentioned\": [{\"as_written\": \"Tuesday 30 Sep, 11 am IST\", \"earliest\": \"2026-09-30T05:30:00Z\", \"latest\": \"2026-09-30T05:30:00Z\", \"certainty\": \"exact\", \"resolved_against\": \"2026-09-22T07:00:00Z\", \"evidence\": [{\"quote\": \"Tuesday 30 Sep, 11 am IST\", \"start_offset\": 72, \"end_offset\": 97}]}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"book the call\"}, \"implied_actions\": [\"confirm or decline Tuesday 30 Sep, 11 am IST\"]}",
+   "input_tokens": 4879,
+   "output_tokens": 315,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "5b07e1e0da105f4c13435ad120bb7f843299e8c7dc9fd48c8a7a1cac8d72c474": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Re: Orbitly x Nimbus Labs",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     },
+     {
+      "item": 2,
+      "business": true,
+      "description": "Orbitly x Nimbus Labs",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Orbitly x Nimbus Labs\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 2, \"business\": true, \"description\": \"Orbitly x Nimbus Labs\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 600,
+   "output_tokens": 75,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "e9718658a014043606ad80414e0ab8016a7d2137b834c90e980f3b53d006f33b": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "introduce",
+    "stance": "positive",
+    "topics": [
+     "integration"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Neha Kapoor",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Neha Kapoor",
+        "start_offset": 150,
+        "end_offset": 161
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Orbitly",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Orbitly",
+        "start_offset": 0,
+        "end_offset": 7
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "high"
+    }
+   },
+   "raw": "{\"intent\": \"introduce\", \"stance\": \"positive\", \"topics\": [\"integration\"], \"entity_mentions\": [{\"surface_form\": \"Neha Kapoor\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Neha Kapoor\", \"start_offset\": 150, \"end_offset\": 161}], \"confidence_bp\": 9000}, {\"surface_form\": \"Orbitly\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Orbitly\", \"start_offset\": 0, \"end_offset\": 7}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
+   "input_tokens": 4892,
+   "output_tokens": 150,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

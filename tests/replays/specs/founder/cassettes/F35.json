@@ -1,0 +1,169 @@
+{
+ "case_id": "F35",
+ "source": "ideal_reader",
+ "recorded_at": "b47239c9",
+ "answers": {
+  "06b2a73b16d3358c255cab60bfa0cc0e453b55389c3ab47804cd8bdc4b2c2e88": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "sales.pb.account_research.fifteen_minute_account_brief": 4299,
+     "sales.pb.investor_relations.reopen_after_a_pass": 4597
+    },
+    "confidence_bp": 4000,
+    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.account_research.fifteen_minute_account_brief\": 4299, \"sales.pb.investor_relations.reopen_after_a_pass\": 4597}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
+   "input_tokens": 2231,
+   "output_tokens": 70,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "4d84f8f1c6e30d920ae8b1c36ec2717cc9d04ca4d2fbf4a20ccd4679712328fe": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 424,
+   "output_tokens": 74,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "50ae136f482aec7d29e3385da0ae6b25aff3e034cb9426486f3ab457acf6cab5": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Phase-1 review: logistics",
+    "start_offset": 0,
+    "end_offset": 25,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Phase-1 review: logistics\", \"start_offset\": 0, \"end_offset\": 25, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 911,
+   "output_tokens": 43,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "6633551b28bfb7200fb0764eff9dcab5780500a7a0e05eba5dd1a93012097c7a": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Phase-1 review: logistics",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Phase-1 review: logistics\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 564,
+   "output_tokens": 40,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "b6a3f013bbfd444c6ec77317c7d3d2d07487dce1eb6b5eac921a25a3d18b7e23": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "neutral",
+    "topics": [
+     "phase-1 review",
+     "logistics"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Divya Raman",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Divya Raman",
+        "start_offset": 169,
+        "end_offset": 180
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Lakshya Accelerator",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Lakshya Accelerator",
+        "start_offset": 197,
+        "end_offset": 216
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "dates_mentioned": [
+     {
+      "as_written": "30 Sep",
+      "earliest": "2026-09-30T00:00:00+05:30",
+      "latest": "2026-09-30T23:59:59+05:30",
+      "certainty": "range",
+      "resolved_against": "2026-09-20T05:00:00Z",
+      "evidence": [
+       {
+        "quote": "30 Sep",
+        "start_offset": 61,
+        "end_offset": 67
+       }
+      ]
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "high"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"neutral\", \"topics\": [\"phase-1 review\", \"logistics\"], \"entity_mentions\": [{\"surface_form\": \"Divya Raman\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Divya Raman\", \"start_offset\": 169, \"end_offset\": 180}], \"confidence_bp\": 9000}, {\"surface_form\": \"Lakshya Accelerator\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Lakshya Accelerator\", \"start_offset\": 197, \"end_offset\": 216}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"30 Sep\", \"earliest\": \"2026-09-30T00:00:00+05:30\", \"latest\": \"2026-09-30T23:59:59+05:30\", \"certainty\": \"range\", \"resolved_against\": \"2026-09-20T05:00:00Z\", \"evidence\": [{\"quote\": \"30 Sep\", \"start_offset\": 61, \"end_offset\": 67}]}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
+   "input_tokens": 4904,
+   "output_tokens": 227,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "ebaafd0211eca145ea81bbc55da85f7978ef0e8dd969fbc611bf2948440ef245": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 433,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

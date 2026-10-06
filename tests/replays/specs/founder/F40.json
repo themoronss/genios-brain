@@ -1,0 +1,153 @@
+{
+ "case_id": "F40",
+ "title": "A meeting nobody confirmed took place is never recapped",
+ "kind": "must_abstain",
+ "label_row": 40,
+ "labelled_by": "claude",
+ "replays": [
+  "05"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-08-12T18:00:00Z",
+  "2026-08-15T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "call",
+   "source": "gcal",
+   "sweep": 0,
+   "occurred_at": "2026-08-05T06:00:00Z",
+   "summary": "Tallgrass x Nimbus Labs",
+   "start": "2026-08-13T10:00:00Z",
+   "end": "2026-08-13T10:30:00Z",
+   "organizer": "arjun@nimbuslabs.test",
+   "attendees": [
+    "arjun@nimbuslabs.test",
+    "meera@tallgrass.test"
+   ]
+  }
+ ],
+ "expected": {
+  "cards": [
+   {
+    "about": [
+     "Meera",
+     "Tallgrass",
+     "meera@tallgrass.test"
+    ],
+    "min": 0,
+    "max": 0
+   }
+  ]
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "recap",
+   "Recap",
+   "happened"
+  ]
+ },
+ "witness": {
+  "stage": "memory",
+  "objects": [
+   "call"
+  ]
+ },
+ "not_expressible": {},
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "admin contact",
+     "meera@tallgrass.test",
+     "evaluated at: 2026-08-12"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "one_page_brief_before_every_external_meeting": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "A confirmed external meeting is coming.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "admin contact",
+     "meera@tallgrass.test",
+     "evaluated at: 2026-08-15"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "the_follow_through_relay": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "The meeting was on the calendar; what, if anything, was promised is open.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "channel touch",
+     "meera@tallgrass.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "A sales opener or demo script does not fit a founder's meeting.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "meeting follow through",
+     "meera@tallgrass.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "the_follow_through_relay": 6400
+     },
+     "confidence_bp": 5000,
+     "rationale": "Nothing since the meeting says what was agreed; ask what was promised.",
+     "missing": []
+    }
+   }
+  ],
+  "narrator": [
+   {
+    "when": [
+     "admin_contact",
+     "meera@tallgrass.test"
+    ],
+    "answer": {
+     "headline": "Meeting with meera@tallgrass.test is clear",
+     "situation": "Nothing open is on record with meera@tallgrass.test.",
+     "artifact": "Nothing is missing on record; confirm the agenda."
+    }
+   },
+   {
+    "when": [
+     "meeting_follow_through",
+     "meera@tallgrass.test"
+    ],
+    "answer": {
+     "headline": "Meeting with meera@tallgrass.test, 2 days ago",
+     "situation": "The meeting with meera@tallgrass.test happened 2 days ago. No follow-through is visible.",
+     "artifact": "Recap: [what was discussed - yours to fill]. Next step: [one specific step, with a date]."
+    }
+   }
+  ]
+ },
+ "blocked_on": "a meeting nobody confirmed becomes two cards, and the follow-through narrator is told it 'happened' and asked for a recap — STEP-14, replay 05"
+}

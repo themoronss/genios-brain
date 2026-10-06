@@ -1,0 +1,147 @@
+{
+ "case_id": "F06",
+ "source": "ideal_reader",
+ "recorded_at": "b47239c9",
+ "answers": {
+  "0d8537e503175108ff74b4e6622172e81293d3aa4807a3c8c21300ff1da2cd3f": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "schedule",
+    "stance": "positive",
+    "topics": [
+     "intro call"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Nikhil Bose",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Nikhil Bose",
+        "start_offset": 13,
+        "end_offset": 24
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Quillstack",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Quillstack",
+        "start_offset": 26,
+        "end_offset": 36
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "Is Arjun free on Thursday for a 30-minute call, or what times work next week?",
+      "asked_by": "Nikhil Bose",
+      "asked_of": "Arjun Rao",
+      "evidence": [
+       {
+        "quote": "Are you around on Thursday for a 30-minute call?",
+        "start_offset": 72,
+        "end_offset": 120
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "scheduling_proposals": [
+     {
+      "proposer": "Nikhil Bose",
+      "text": "a 30-minute call on Thursday",
+      "evidence_text": "Are you around on Thursday for a 30-minute call?"
+     }
+    ],
+    "business_facts": [
+     {
+      "field": "person.title",
+      "subject": "Nikhil Bose",
+      "value": "CTO",
+      "standing": "observed",
+      "evidence": [
+       {
+        "quote": "CTO, Quillstack",
+        "start_offset": 177,
+        "end_offset": 192
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "find a time to talk"
+    },
+    "implied_actions": [
+     "answer Nikhil with a time for the call"
+    ]
+   },
+   "raw": "{\"intent\": \"schedule\", \"stance\": \"positive\", \"topics\": [\"intro call\"], \"entity_mentions\": [{\"surface_form\": \"Nikhil Bose\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Nikhil Bose\", \"start_offset\": 13, \"end_offset\": 24}], \"confidence_bp\": 9000}, {\"surface_form\": \"Quillstack\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Quillstack\", \"start_offset\": 26, \"end_offset\": 36}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Is Arjun free on Thursday for a 30-minute call, or what times work next week?\", \"asked_by\": \"Nikhil Bose\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Are you around on Thursday for a 30-minute call?\", \"start_offset\": 72, \"end_offset\": 120}], \"confidence_bp\": 9000}], \"scheduling_proposals\": [{\"proposer\": \"Nikhil Bose\", \"text\": \"a 30-minute call on Thursday\", \"evidence_text\": \"Are you around on Thursday for a 30-minute call?\"}], \"business_facts\": [{\"field\": \"person.title\", \"subject\": \"Nikhil Bose\", \"value\": \"CTO\", \"standing\": \"observed\", \"evidence\": [{\"quote\": \"CTO, Quillstack\", \"start_offset\": 177, \"end_offset\": 192}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"find a time to talk\"}, \"implied_actions\": [\"answer Nikhil with a time for the call\"]}",
+   "input_tokens": 4902,
+   "output_tokens": 345,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "48c096a2538a81497e86217bd8e83fea3ecdda524997c198749537a1012c4e51": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "drop",
+     "relevance": 0.4,
+     "reason": "automated introduction service"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.4, \"reason\": \"automated introduction service\"}]",
+   "input_tokens": 437,
+   "output_tokens": 23,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "adf98236ca0e612cb178637ba1c8694af496dcbecc3974606574ec8592497f53": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Re: Arjun <> Nikhil Bose (Quillstack)",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Arjun <> Nikhil Bose (Quillstack)\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 558,
+   "output_tokens": 43,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "ed6497c974f729612965419de4e960fb94d9278549e6ed34c50a06de7f865959": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 427,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

@@ -1,0 +1,75 @@
+{
+ "case_id": "F21",
+ "source": "ideal_reader",
+ "recorded_at": "b47239c9",
+ "answers": {
+  "02c69f2c61e79eb26eda15206237d0d2c003ccabbd03de9f60ec352590092dfc": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "drop",
+     "relevance": 0.05,
+     "reason": "automated, nobody waits on a reply"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}]",
+   "input_tokens": 417,
+   "output_tokens": 25,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "3df5ebbfef34122197fef8f350ac835e7600283c8cd83f9b37f0cb38b0ae346d": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": false,
+      "description": "Pre-incubation programme: applications open",
+      "category": "automated",
+      "human_authored": false,
+      "asks_for_reply": false
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"Pre-incubation programme: applications open\", \"category\": \"automated\", \"human_authored\": false, \"asks_for_reply\": false}]}",
+   "input_tokens": 558,
+   "output_tokens": 45,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "c0ff6aad421e33298500ac32bac247ac715d31ac8d0ce8118868519b54b6306a": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "drop",
+     "relevance": 0.05,
+     "reason": "automated, nobody waits on a reply"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}]",
+   "input_tokens": 427,
+   "output_tokens": 25,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "ef221602064b54e5eacc4fe962ad7c895f9d05a5002e3db41a7cc44764a493d0": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": false,
+      "description": "Reminder: pre-incubation programme",
+      "category": "automated",
+      "human_authored": false,
+      "asks_for_reply": false
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"Reminder: pre-incubation programme\", \"category\": \"automated\", \"human_authored\": false, \"asks_for_reply\": false}]}",
+   "input_tokens": 548,
+   "output_tokens": 43,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

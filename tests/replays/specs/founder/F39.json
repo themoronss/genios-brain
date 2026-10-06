@@ -1,0 +1,99 @@
+{
+ "case_id": "F39",
+ "title": "The founder's own availability proposal is not a deliverable",
+ "kind": "must_abstain",
+ "label_row": 39,
+ "labelled_by": "claude",
+ "replays": [
+  "03"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-09-10T18:00:00Z",
+  "2026-09-12T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "proposal",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-10T08:00:00Z",
+   "from": "Arjun Rao <arjun@nimbuslabs.test>",
+   "to": [
+    "rohan@castlerock.test"
+   ],
+   "subject": "Re: Quick call",
+   "body": "Hi Rohan,\n\nI'm free Thursday 3 pm or Friday 11 am IST, whichever suits you.\n\nArjun",
+   "labels": [
+    "SENT"
+   ],
+   "thread": "t-castlerock",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "schedule",
+     "stance": "positive",
+     "topics": [
+      "call"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Rohan",
+       "entity_type": "person",
+       "quote": "Rohan"
+      }
+     ],
+     "scheduling_proposals": [
+      {
+       "proposer": "Arjun Rao",
+       "text": "Thursday 3 pm or Friday 11 am IST",
+       "evidence_text": "I'm free Thursday 3 pm or Friday 11 am IST"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "cards": [
+   {
+    "about": [
+     "Rohan",
+     "Castlerock"
+    ],
+    "min": 0,
+    "max": 0
+   }
+  ]
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "You promised",
+   "Deliver"
+  ]
+ },
+ "witness": {
+  "stage": "memory",
+  "objects": [
+   "proposal"
+  ]
+ },
+ "not_expressible": {},
+ "blocked_on": "the founder's own availability proposal yields no signal and never reaches memory; the decision to wait is never made — STEP-05, replay 03"
+}

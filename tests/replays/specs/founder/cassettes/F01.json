@@ -1,0 +1,41 @@
+{
+ "case_id": "F01",
+ "source": "ideal_reader",
+ "recorded_at": "b47239c9",
+ "answers": {
+  "124680169bbf30fe5b7fcfe3c07339467962ab78d3c64e1d563a22f09b0ff248": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "description": "Application SSR-2026-48213: status updated",
+      "business": true,
+      "category": "transactional",
+      "human_authored": false,
+      "asks_for_reply": false
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"description\": \"Application SSR-2026-48213: status updated\", \"business\": true, \"category\": \"transactional\", \"human_authored\": false, \"asks_for_reply\": false}]}",
+   "input_tokens": 588,
+   "output_tokens": 46,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "c9b32423e7dcde71052043d6ca04145b8acf2d335e1689a286e7bd118007eb31": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "drop",
+     "relevance": 0.05,
+     "reason": "automated, nobody waits on a reply"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}]",
+   "input_tokens": 441,
+   "output_tokens": 25,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

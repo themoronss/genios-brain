@@ -1,0 +1,84 @@
+{
+ "case_id": "F09",
+ "source": "ideal_reader",
+ "recorded_at": "b47239c9",
+ "answers": {
+  "79479c5d8aab256291d6460a085373b733b147e9b65c7fb18b99bb064bbae612": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "positive",
+    "topics": [
+     "introductions"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Arjun",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Arjun",
+        "start_offset": 103,
+        "end_offset": 108
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "high"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"introductions\"], \"entity_mentions\": [{\"surface_form\": \"Arjun\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Arjun\", \"start_offset\": 103, \"end_offset\": 108}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
+   "input_tokens": 4875,
+   "output_tokens": 108,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "afe723d0dcc9ce4b4876505ba0f97d74a90afd6d168a1b7cf05fec8735260a44": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "drop",
+     "relevance": 0.35,
+     "reason": "automated assistant reply"
+    },
+    {
+     "i": 1,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.35, \"reason\": \"automated assistant reply\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 448,
+   "output_tokens": 46,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "fb6ee1d59f82981eec1892e3beec547d50ffd14a176cb89ad6b78fcfa318cab1": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Re: your intros",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: your intros\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 537,
+   "output_tokens": 37,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

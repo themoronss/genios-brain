@@ -1,0 +1,138 @@
+{
+ "case_id": "F04",
+ "source": "ideal_reader",
+ "recorded_at": "b47239c9",
+ "answers": {
+  "1922b54d888fae705372020eb88747c17203d81a6a925f3def1a59bb8d384eaf": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "request",
+    "stance": "positive",
+    "topics": [
+     "product demo"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Sofia Brandt",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Sofia Brandt",
+        "start_offset": 13,
+        "end_offset": 25
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Brandt Labs",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Brandt Labs",
+        "start_offset": 27,
+        "end_offset": 38
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "Can Arjun show Sofia the product for 20 minutes next week?",
+      "asked_by": "Sofia Brandt",
+      "asked_of": "Arjun Rao",
+      "evidence": [
+       {
+        "quote": "Would you have 20 minutes next week to show me the product?",
+        "start_offset": 83,
+        "end_offset": 142
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "scheduling_proposals": [
+     {
+      "proposer": "Sofia Brandt",
+      "text": "Tuesday or Wednesday afternoon next week",
+      "evidence_text": "Tuesday or Wednesday afternoon works for me."
+     }
+    ],
+    "business_facts": [
+     {
+      "field": "person.title",
+      "subject": "Sofia Brandt",
+      "value": "Head of Operations",
+      "standing": "observed",
+      "evidence": [
+       {
+        "quote": "Head of Operations, Brandt Labs",
+        "start_offset": 208,
+        "end_offset": 239
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "see the product next week"
+    },
+    "implied_actions": [
+     "offer Sofia a 20-minute slot next week"
+    ]
+   },
+   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"product demo\"], \"entity_mentions\": [{\"surface_form\": \"Sofia Brandt\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Sofia Brandt\", \"start_offset\": 13, \"end_offset\": 25}], \"confidence_bp\": 9000}, {\"surface_form\": \"Brandt Labs\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Brandt Labs\", \"start_offset\": 27, \"end_offset\": 38}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Can Arjun show Sofia the product for 20 minutes next week?\", \"asked_by\": \"Sofia Brandt\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Would you have 20 minutes next week to show me the product?\", \"start_offset\": 83, \"end_offset\": 142}], \"confidence_bp\": 9000}], \"scheduling_proposals\": [{\"proposer\": \"Sofia Brandt\", \"text\": \"Tuesday or Wednesday afternoon next week\", \"evidence_text\": \"Tuesday or Wednesday afternoon works for me.\"}], \"business_facts\": [{\"field\": \"person.title\", \"subject\": \"Sofia Brandt\", \"value\": \"Head of Operations\", \"standing\": \"observed\", \"evidence\": [{\"quote\": \"Head of Operations, Brandt Labs\", \"start_offset\": 208, \"end_offset\": 239}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"see the product next week\"}, \"implied_actions\": [\"offer Sofia a 20-minute slot next week\"]}",
+   "input_tokens": 4914,
+   "output_tokens": 356,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "7c3b33d56428fbb46c6b145094639ef754517780b1ff8a2384d583e93937bfc0": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 1,
+     "disposition": "drop",
+     "relevance": 0.4,
+     "reason": "automated introduction service"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"drop\", \"relevance\": 0.4, \"reason\": \"automated introduction service\"}]",
+   "input_tokens": 500,
+   "output_tokens": 47,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "bcff62be76ae7e6d6dbfce05c24b612471b2cc172d58bec8e8c69d2bee99cf1c": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Re: Arjun <> Sofia Brandt (Brandt Labs)",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Arjun <> Sofia Brandt (Brandt Labs)\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 570,
+   "output_tokens": 43,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

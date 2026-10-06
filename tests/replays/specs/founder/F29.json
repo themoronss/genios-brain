@@ -1,0 +1,485 @@
+{
+ "case_id": "F29",
+ "title": "Two calls with a partner in one day: prep before, follow-up after",
+ "kind": "must_detect",
+ "label_row": 29,
+ "labelled_by": "claude",
+ "replays": [
+  "03"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-09-27T18:00:00Z",
+  "2026-10-04T12:00:00Z",
+  "2026-10-06T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "plan",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-27T08:00:00Z",
+   "from": "Aman Verma <aman@memloop.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Two calls on 5 Oct",
+   "body": "Hi Arjun,\n\nTwo calls on 5 Oct: product at 11 am and pricing at 4 pm IST. Could you share your API pricing sheet before the second one?\n\nAman Verma\nFounder, Memloop",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-memloop",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "positive",
+     "topics": [
+      "pricing",
+      "partnership"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Aman Verma",
+       "entity_type": "person",
+       "quote": "Aman Verma"
+      },
+      {
+       "surface_form": "Memloop",
+       "entity_type": "organization",
+       "quote": "Memloop"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Share the API pricing sheet before the pricing call",
+       "asked_by": "Aman Verma",
+       "asked_of": "Arjun Rao",
+       "quote": "Could you share your API pricing sheet before the second one?"
+      }
+     ],
+     "dates_mentioned": [
+      {
+       "as_written": "5 Oct",
+       "earliest": "2026-10-05T00:00:00+05:30",
+       "latest": "2026-10-05T23:59:59+05:30",
+       "certainty": "range",
+       "resolved_against": "2026-09-27T08:00:00Z",
+       "quote": "5 Oct"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "pricing before the second call"
+     },
+     "implied_actions": [
+      "share the API pricing sheet before the 4 pm call"
+     ]
+    }
+   }
+  },
+  {
+   "id": "product",
+   "source": "gcal",
+   "sweep": 0,
+   "occurred_at": "2026-09-27T08:05:00Z",
+   "summary": "Memloop x Nimbus - product",
+   "start": "2026-10-05T05:30:00Z",
+   "end": "2026-10-05T06:15:00Z",
+   "organizer": "aman@memloop.test",
+   "attendees": [
+    "aman@memloop.test",
+    "arjun@nimbuslabs.test"
+   ]
+  },
+  {
+   "id": "pricing",
+   "source": "gcal",
+   "sweep": 0,
+   "occurred_at": "2026-09-27T08:06:00Z",
+   "summary": "Memloop x Nimbus - pricing",
+   "start": "2026-10-05T10:30:00Z",
+   "end": "2026-10-05T11:00:00Z",
+   "organizer": "aman@memloop.test",
+   "attendees": [
+    "aman@memloop.test",
+    "arjun@nimbuslabs.test"
+   ]
+  }
+ ],
+ "expected": {
+  "gate": {
+   "plan": "emitted"
+  },
+  "memory": {
+   "plan": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Aman",
+     "Memloop"
+    ],
+    "min": 1,
+    "max": 2,
+    "mentions": [
+     "pricing"
+    ]
+   }
+  ],
+  "workstream": "partner — prep, then follow-up"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "recap",
+   "happened"
+  ]
+ },
+ "witness": null,
+ "not_expressible": {
+  "workstream": "STEP-09 — the engine forms no workstream; nothing to compare against"
+ },
+ "model": {
+  "narrator": [
+   {
+    "when": [
+     "unanswered_email",
+     "Aman Verma"
+    ],
+    "answer": {
+     "headline": "Send Aman Verma your API pricing sheet",
+     "situation": "Aman Verma asked 7 days ago for your API pricing sheet before the second call.",
+     "artifact": "Hi Aman, attaching our API pricing sheet ahead of the pricing call. Thanks, Arjun"
+    }
+   },
+   {
+    "when": [
+     "account_admin",
+     "Memloop"
+    ],
+    "answer": {
+     "headline": "Send Memloop your API pricing sheet",
+     "situation": "Aman at Memloop asked for your API pricing sheet before the second call. The next move is ours.",
+     "artifact": "Hi Aman, attaching our API pricing sheet. Thanks, Arjun"
+    }
+   },
+   {
+    "when": [
+     "admin_contact",
+     "aman@memloop.test"
+    ],
+    "answer": {
+     "headline": "Before meeting aman@memloop.test: the pricing sheet",
+     "situation": "Aman asked for your API pricing sheet before the second call; it is still open.",
+     "artifact": "Send the API pricing sheet before the pricing call."
+    }
+   },
+   {
+    "when": [
+     "meeting_follow_through",
+     "Aman Verma"
+    ],
+    "answer": {
+     "headline": "Meeting with Aman Verma, 1 day ago",
+     "situation": "The meeting with Aman Verma happened 1 day ago. No follow-through is visible.",
+     "artifact": "Recap: [what was discussed - yours to fill]. Next step: [one specific step, with a date]."
+    }
+   }
+  ],
+  "decider": [
+   {
+    "when": [
+     "unanswered email",
+     "Aman Verma"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "reply": 6500
+     },
+     "confidence_bp": 5500,
+     "rationale": "A direct question is waiting on us.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "Aman Verma"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "memloop.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "opportunity",
+     "memloop.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "memloop.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "Someone at this company asked us something and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "memloop.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "This is not an investor conversation, and neither offered play fits what was asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "opportunity",
+     "Memloop"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "Memloop"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "Someone at this company asked us something and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "Memloop"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "This is not an investor conversation, and neither offered play fits what was asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "admin contact",
+     "aman@memloop.test",
+     "evaluated at: 2026-09-27"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "one_page_brief_before_every_external_meeting": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "A confirmed external meeting is coming.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "admin contact",
+     "aman@memloop.test",
+     "evaluated at: 2026-10-04"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "one_page_brief_before_every_external_meeting": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "A confirmed external meeting is coming.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "admin contact",
+     "aman@memloop.test",
+     "evaluated at: 2026-10-06"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "the_follow_through_relay": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "The meeting was on the calendar; what, if anything, was promised is open.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "channel touch",
+     "aman@memloop.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "A sales opener or demo script does not fit a founder's meeting.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "meeting follow through",
+     "aman@memloop.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "the_follow_through_relay": 6400
+     },
+     "confidence_bp": 5000,
+     "rationale": "Nothing since the meeting says what was agreed; ask what was promised.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "admin contact",
+     "Aman Verma",
+     "evaluated at: 2026-09-27"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "one_page_brief_before_every_external_meeting": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "A confirmed external meeting is coming.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "admin contact",
+     "Aman Verma",
+     "evaluated at: 2026-10-04"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "one_page_brief_before_every_external_meeting": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "A confirmed external meeting is coming.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "admin contact",
+     "Aman Verma",
+     "evaluated at: 2026-10-06"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "the_follow_through_relay": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "The meeting was on the calendar; what, if anything, was promised is open.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "channel touch",
+     "Aman Verma"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "A sales opener or demo script does not fit a founder's meeting.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "meeting follow through",
+     "Aman Verma"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "the_follow_through_relay": 6400
+     },
+     "confidence_bp": 5000,
+     "rationale": "Nothing since the meeting says what was agreed; ask what was promised.",
+     "missing": []
+    }
+   }
+  ]
+ },
+ "blocked_on": "one partner gets three cards, and the follow-through narrator is told a call 'happened' and asked for a recap — STEP-09, STEP-14, replay 05"
+}

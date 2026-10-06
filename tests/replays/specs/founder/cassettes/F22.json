@@ -1,0 +1,22 @@
+{
+ "case_id": "F22",
+ "source": "ideal_reader",
+ "recorded_at": "b47239c9",
+ "answers": {
+  "faf15fb1c555073ad54d4d862b859f8d563ddc7ff6c195bef7664eed4b2e26f9": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "drop",
+     "relevance": 0.05,
+     "reason": "automated, nobody waits on a reply"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}]",
+   "input_tokens": 424,
+   "output_tokens": 25,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

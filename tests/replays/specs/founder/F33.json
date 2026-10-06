@@ -1,0 +1,112 @@
+{
+ "case_id": "F33",
+ "title": "Vendor receipts and marketing are archived, never a card",
+ "kind": "must_abstain",
+ "label_row": 33,
+ "labelled_by": "claude",
+ "replays": [],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-09-12T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "receipt",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-12T03:00:00Z",
+   "from": "Cloudhaven Billing <no-reply@cloudhaven.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Your Cloudhaven receipt for September",
+   "body": "Thanks for your payment. Plan: Team, billed monthly. View your invoice in the billing console. This is an automated message; please do not reply.",
+   "labels": [
+    "INBOX",
+    "CATEGORY_UPDATES"
+   ],
+   "read": {
+    "gate": "drop",
+    "relevance": "not_business"
+   }
+  },
+  {
+   "id": "promo",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-12T04:00:00Z",
+   "from": "Payflux <news@payflux.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Payflux Week: 3 features to grow revenue",
+   "body": "New this week: smart retries, a revenue dashboard and instant payouts. Upgrade today and save on your first quarter. Unsubscribe from these updates any time.",
+   "labels": [
+    "INBOX",
+    "CATEGORY_PROMOTIONS"
+   ],
+   "headers": {
+    "List-Unsubscribe": "<mailto:leave@payflux.test>",
+    "Precedence": "bulk"
+   },
+   "read": {
+    "gate": "drop",
+    "relevance": "not_business"
+   }
+  },
+  {
+   "id": "update",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-12T05:00:00Z",
+   "from": "Docspace Team <team@docspace.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "What's new in Docspace this month",
+   "body": "Linked databases are here, along with faster search and a refreshed editor. Read the release notes on our blog. You are receiving this because you have a Docspace account.",
+   "labels": [
+    "INBOX",
+    "CATEGORY_UPDATES"
+   ],
+   "headers": {
+    "List-Unsubscribe": "<https://docspace.test/unsubscribe>"
+   },
+   "read": {
+    "gate": "drop",
+    "relevance": "not_business"
+   }
+  }
+ ],
+ "expected": {
+  "cards": [
+   {
+    "about": [
+     "Cloudhaven",
+     "Payflux",
+     "Docspace"
+    ],
+    "min": 0,
+    "max": 0
+   }
+  ]
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": []
+ },
+ "witness": {
+  "stage": "gate",
+  "objects": [
+   "receipt",
+   "promo",
+   "update"
+  ]
+ },
+ "not_expressible": {}
+}

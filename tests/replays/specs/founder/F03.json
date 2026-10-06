@@ -1,0 +1,206 @@
+{
+ "case_id": "F03",
+ "title": "A connector introduces an investor, then nudges twice",
+ "kind": "must_detect",
+ "label_row": 3,
+ "labelled_by": "claude",
+ "replays": [
+  "02"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-09-03T18:00:00Z",
+  "2026-09-04T18:00:00Z",
+  "2026-09-07T18:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "intro",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-03T08:15:00Z",
+   "from": "Introly <hello@introly.test>",
+   "to": [
+    "arjun@nimbuslabs.test",
+    "rahul@kestrelcap.test"
+   ],
+   "subject": "Arjun <> Rahul (Kestrel Capital)",
+   "body": "Arjun, meet Rahul Menon, a partner at Kestrel Capital who invests in early-stage AI infrastructure. Rahul, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I think you two should talk. I'll let you take it from here.\n\nIntroly",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-introly-rahul",
+   "headers": {
+    "List-Unsubscribe": "<mailto:unsubscribe@introly.test>"
+   },
+   "read": {
+    "gate": {
+     "disposition": "drop",
+     "relevance": 0.4,
+     "reason": "automated introduction service"
+    },
+    "relevance": "business",
+    "extraction": {
+     "intent": "introduce",
+     "stance": "positive",
+     "topics": [
+      "introduction",
+      "fundraising"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Rahul Menon",
+       "entity_type": "person",
+       "quote": "Rahul Menon"
+      },
+      {
+       "surface_form": "Kestrel Capital",
+       "entity_type": "organization",
+       "quote": "Kestrel Capital"
+      },
+      {
+       "surface_form": "Introly",
+       "entity_type": "organization",
+       "quote": "Introly"
+      }
+     ],
+     "roles": [
+      {
+       "party": "Introly",
+       "role": "connector",
+       "quote": "I think you two should talk"
+      },
+      {
+       "party": "Rahul Menon",
+       "role": "investor",
+       "quote": "a partner at Kestrel Capital who invests in early-stage AI infrastructure"
+      }
+     ],
+     "relationships": [
+      {
+       "party": "Rahul Menon",
+       "nature": "introduced investor",
+       "direction": "inbound",
+       "evidence_text": "Arjun, meet Rahul Menon"
+      }
+     ],
+     "business_facts": [
+      {
+       "field": "person.title",
+       "subject": "Rahul Menon",
+       "value": "Partner",
+       "standing": "observed",
+       "quote": "a partner at Kestrel Capital"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": false,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "introduce an investor"
+     },
+     "implied_actions": [
+      "reply to Rahul Menon to take the introduction forward"
+     ]
+    }
+   }
+  },
+  {
+   "id": "nudge1",
+   "source": "gmail",
+   "sweep": 1,
+   "occurred_at": "2026-09-04T08:00:00Z",
+   "from": "Introly <hello@introly.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Did you see my intro to Rahul?",
+   "body": "Just checking you saw my introduction to Rahul at Kestrel Capital. He is keen to hear about Nimbus Labs.\n\nIntroly",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-introly-nudges",
+   "headers": {
+    "List-Unsubscribe": "<mailto:unsubscribe@introly.test>"
+   },
+   "read": {
+    "gate": {
+     "disposition": "drop",
+     "relevance": 0.3,
+     "reason": "automated reminder"
+    },
+    "relevance": "not_business"
+   }
+  },
+  {
+   "id": "nudge2",
+   "source": "gmail",
+   "sweep": 2,
+   "occurred_at": "2026-09-07T08:00:00Z",
+   "from": "Introly <hello@introly.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Rahul is still waiting",
+   "body": "A reminder that Rahul at Kestrel Capital is waiting to hear from you. Introductions work best when answered within two days.\n\nIntroly",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-introly-nudges",
+   "headers": {
+    "List-Unsubscribe": "<mailto:unsubscribe@introly.test>"
+   },
+   "read": {
+    "gate": {
+     "disposition": "drop",
+     "relevance": 0.3,
+     "reason": "automated reminder"
+    },
+    "relevance": "not_business"
+   }
+  }
+ ],
+ "expected": {
+  "gate": {
+   "intro": "emitted"
+  },
+  "memory": {
+   "intro": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Rahul",
+     "Kestrel"
+    ],
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "workstream": "intro — an investor introduced by a connector",
+  "lane": "investigation — is Kestrel Capital a fund that fits?"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "Reply to Introly",
+   "reply to Introly"
+  ]
+ },
+ "witness": null,
+ "not_expressible": {
+  "workstream": "STEP-09 — the engine forms no workstream; nothing to compare against",
+  "lane": "F10 — cards.output_lane is written NULL on the decided path"
+ },
+ "notes": "Every real mail from the connector carried an unsubscribe header (N-02); the one that reached the AI filter was 'junk, not sure', which is the faithful answer to a prompt that says to drop automated matchmaking.",
+ "blocked_on": "the gate drops every connector mail on its unsubscribe header (N-02): the connector can never be an agent sender — F14, STEP-03"
+}

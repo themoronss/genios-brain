@@ -1,0 +1,183 @@
+{
+ "case_id": "F05",
+ "title": "The introduced contact replied five days later; the reply is owed",
+ "kind": "must_detect",
+ "label_row": 5,
+ "labelled_by": "claude",
+ "replays": [
+  "02"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-08-06T18:00:00Z",
+  "2026-08-11T18:00:00Z",
+  "2026-08-13T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "intro",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-06T07:30:00Z",
+   "from": "Introly <hello@introly.test>",
+   "to": [
+    "arjun@nimbuslabs.test",
+    "marco@altavia.test"
+   ],
+   "subject": "Arjun <> Marco Ruiz (Altavia Partners)",
+   "body": "Arjun, meet Marco Ruiz, who backs B2B software at Altavia Partners. Marco, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I'll let you two take it from here.\n\nIntroly",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-intro",
+   "headers": {
+    "List-Unsubscribe": "<mailto:unsubscribe@introly.test>"
+   },
+   "read": {
+    "gate": {
+     "disposition": "drop",
+     "relevance": 0.4,
+     "reason": "automated introduction service"
+    },
+    "relevance": "business",
+    "extraction": {
+     "intent": "introduce",
+     "stance": "positive",
+     "topics": [
+      "introduction"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Marco Ruiz",
+       "entity_type": "person",
+       "quote": "Marco Ruiz"
+      },
+      {
+       "surface_form": "Altavia Partners",
+       "entity_type": "organization",
+       "quote": "Altavia Partners"
+      }
+     ],
+     "relationships": [
+      {
+       "party": "Marco Ruiz",
+       "nature": "introduced contact",
+       "direction": "inbound",
+       "evidence_text": "Arjun, meet Marco Ruiz"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": false,
+      "asks_for_reply": true,
+      "engagement": "medium",
+      "motive": "introduce a contact"
+     }
+    }
+   }
+  },
+  {
+   "id": "reply",
+   "source": "gmail",
+   "sweep": 1,
+   "occurred_at": "2026-08-11T09:20:00Z",
+   "from": "Marco Ruiz <marco@altavia.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Re: Arjun <> Marco Ruiz (Altavia Partners)",
+   "body": "Hi Arjun,\n\nSorry for the slow reply. I'd like to understand how Nimbus handles investor pipelines. Could you send a short deck before we set up a call?\n\nMarco Ruiz\nAltavia Partners",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-intro",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "positive",
+     "topics": [
+      "deck",
+      "investor pipelines"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Marco Ruiz",
+       "entity_type": "person",
+       "quote": "Marco Ruiz"
+      },
+      {
+       "surface_form": "Altavia Partners",
+       "entity_type": "organization",
+       "quote": "Altavia Partners"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Send a short deck before setting up a call",
+       "asked_by": "Marco Ruiz",
+       "asked_of": "Arjun Rao",
+       "quote": "Could you send a short deck before we set up a call?"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "a deck before a call"
+     },
+     "implied_actions": [
+      "send Marco a short deck"
+     ]
+    }
+   }
+  }
+ ],
+ "expected": {
+  "gate": {
+   "reply": "emitted"
+  },
+  "memory": {
+   "reply": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Marco",
+     "Altavia"
+    ],
+    "min": 1,
+    "max": 1,
+    "mentions": [
+     "deck"
+    ]
+   }
+  ],
+  "workstream": "intro — the contact is waiting on the founder"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "Reply to Introly",
+   "reply to Introly"
+  ]
+ },
+ "witness": null,
+ "not_expressible": {
+  "workstream": "STEP-09 — the engine forms no workstream; nothing to compare against"
+ },
+ "blocked_on": "the contact's reply is captured but dropped at the qualification floor (2,500): an opportunity_signal at 1,360 never reaches memory — STEP-05"
+}

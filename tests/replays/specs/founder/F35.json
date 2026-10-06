@@ -1,0 +1,234 @@
+{
+ "case_id": "F35",
+ "title": "A review notice that says no fee applies is never a payment card",
+ "kind": "must_abstain",
+ "label_row": 35,
+ "labelled_by": "claude",
+ "replays": [],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-09-20T18:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "review",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-20T05:00:00Z",
+   "from": "Divya Raman <divya@lakshya.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Phase-1 review: logistics",
+   "body": "Hi Arjun,\n\nPhase-1 reviews are on 30 Sep at the Lakshya campus. There is no fee for the review; the programme fee is waived for this cohort.\n\nDivya Raman\nProgramme Lead, Lakshya Accelerator",
+   "labels": [
+    "INBOX"
+   ],
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "neutral",
+     "topics": [
+      "phase-1 review",
+      "logistics"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Divya Raman",
+       "entity_type": "person",
+       "quote": "Divya Raman"
+      },
+      {
+       "surface_form": "Lakshya Accelerator",
+       "entity_type": "organization",
+       "quote": "Lakshya Accelerator"
+      }
+     ],
+     "dates_mentioned": [
+      {
+       "as_written": "30 Sep",
+       "earliest": "2026-09-30T00:00:00+05:30",
+       "latest": "2026-09-30T23:59:59+05:30",
+       "certainty": "range",
+       "resolved_against": "2026-09-20T05:00:00Z",
+       "quote": "30 Sep"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "high"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "cards": [
+   {
+    "about": [
+     "payment"
+    ],
+    "min": 0,
+    "max": 0
+   }
+  ]
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "payment obligation",
+   "payment is due",
+   "fee is due"
+  ]
+ },
+ "witness": {
+  "stage": "memory",
+  "objects": [
+   "review"
+  ]
+ },
+ "not_expressible": {},
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "unanswered email",
+     "Divya Raman"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "reply": 6500
+     },
+     "confidence_bp": 5500,
+     "rationale": "A direct question is waiting on us.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "Divya Raman"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "lakshya.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "opportunity",
+     "lakshya.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "lakshya.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "Someone at this company asked us something and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "lakshya.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "This is not an investor conversation, and neither offered play fits what was asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "opportunity",
+     "Lakshya Accelerator"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "Lakshya Accelerator"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "Someone at this company asked us something and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "Lakshya Accelerator"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "This is not an investor conversation, and neither offered play fits what was asked.",
+     "missing": []
+    }
+   }
+  ]
+ }
+}

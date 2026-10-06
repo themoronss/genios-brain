@@ -1,0 +1,336 @@
+{
+ "case_id": "F14",
+ "title": "An investor who asked for real news only — the right move is to wait",
+ "kind": "must_detect",
+ "label_row": 14,
+ "labelled_by": "claude",
+ "replays": [
+  "01",
+  "06"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-08-07T18:00:00Z",
+  "2026-08-26T18:00:00Z",
+  "2026-09-20T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "tara",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-07T09:00:00Z",
+   "from": "Tara Lindqvist <tara@fjordvp.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Re: Nimbus Labs",
+   "body": "Thanks Arjun. It's too early for us right now, but keep me posted. If you hit a real milestone, I'd be happy to look again.\n\nTara Lindqvist\nFjord Venture Partners",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-fjord",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "cautious",
+     "topics": [
+      "fundraising"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Tara Lindqvist",
+       "entity_type": "person",
+       "quote": "Tara Lindqvist"
+      },
+      {
+       "surface_form": "Fjord Venture Partners",
+       "entity_type": "organization",
+       "quote": "Fjord Venture Partners"
+      }
+     ],
+     "decision_states": [
+      {
+       "subject": "investment in Nimbus Labs",
+       "state": "deferred",
+       "owner": "Tara Lindqvist",
+       "quote": "It's too early for us right now"
+      }
+     ],
+     "commitments": [
+      {
+       "actor": "Tara Lindqvist",
+       "action": "look again if Nimbus Labs hits a real milestone",
+       "is_conditional": true,
+       "condition_text": "if you hit a real milestone",
+       "quote": "If you hit a real milestone, I'd be happy to look again."
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "high"
+     }
+    }
+   }
+  },
+  {
+   "id": "u1",
+   "source": "gmail",
+   "sweep": 1,
+   "occurred_at": "2026-08-12T09:00:00Z",
+   "from": "Arjun Rao <arjun@nimbuslabs.test>",
+   "to": [
+    "tara@fjordvp.test"
+   ],
+   "subject": "Nimbus Labs - update #1",
+   "body": "Hi Tara,\n\nUpdate #1 from Nimbus Labs: we onboarded two more pilot teams and shipped calendar sync.\n\nArjun",
+   "labels": [
+    "SENT"
+   ],
+   "thread": "t-fjord",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "positive",
+     "topics": [
+      "investor update"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Tara",
+       "entity_type": "person",
+       "quote": "Tara"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "high"
+     }
+    }
+   }
+  },
+  {
+   "id": "u2",
+   "source": "gmail",
+   "sweep": 1,
+   "occurred_at": "2026-08-19T09:00:00Z",
+   "from": "Arjun Rao <arjun@nimbuslabs.test>",
+   "to": [
+    "tara@fjordvp.test"
+   ],
+   "subject": "Nimbus Labs - update #2",
+   "body": "Hi Tara,\n\nUpdate #2 from Nimbus Labs: we onboarded two more pilot teams and shipped calendar sync.\n\nArjun",
+   "labels": [
+    "SENT"
+   ],
+   "thread": "t-fjord",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "positive",
+     "topics": [
+      "investor update"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Tara",
+       "entity_type": "person",
+       "quote": "Tara"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "high"
+     }
+    }
+   }
+  },
+  {
+   "id": "u3",
+   "source": "gmail",
+   "sweep": 1,
+   "occurred_at": "2026-08-26T09:00:00Z",
+   "from": "Arjun Rao <arjun@nimbuslabs.test>",
+   "to": [
+    "tara@fjordvp.test"
+   ],
+   "subject": "Nimbus Labs - update #3",
+   "body": "Hi Tara,\n\nUpdate #3 from Nimbus Labs: we onboarded two more pilot teams and shipped calendar sync.\n\nArjun",
+   "labels": [
+    "SENT"
+   ],
+   "thread": "t-fjord",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "positive",
+     "topics": [
+      "investor update"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Tara",
+       "entity_type": "person",
+       "quote": "Tara"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "high"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "cards": [
+   {
+    "about": [
+     "Tara",
+     "Fjord"
+    ],
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "brief": "a wait line: send only on a material milestone"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "last chance",
+   "rejected",
+   "checking in"
+  ]
+ },
+ "witness": null,
+ "not_expressible": {
+  "cards": "brief only — the founder's answer is a line in the morning brief, not a card (D12d)",
+  "brief": "STEP-15 — there is no morning brief to appear in"
+ },
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "unanswered email",
+     "Tara Lindqvist"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "reply": 6500
+     },
+     "confidence_bp": 5500,
+     "rationale": "A direct question is waiting on us.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "Tara Lindqvist"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "fjordvp.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "opportunity",
+     "fjordvp.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "fjordvp.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "Someone at this company asked us something and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "fjordvp.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "fifteen_minute_account_brief": 5600
+     },
+     "confidence_bp": 5000,
+     "rationale": "An investor asked us something; know the fund before replying.",
+     "missing": []
+    }
+   }
+  ]
+ }
+}

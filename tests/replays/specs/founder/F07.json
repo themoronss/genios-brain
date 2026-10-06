@@ -1,0 +1,344 @@
+{
+ "case_id": "F07",
+ "title": "After a call with an introduced contact: was anything promised?",
+ "kind": "must_detect",
+ "label_row": 7,
+ "labelled_by": "claude",
+ "replays": [
+  "02",
+  "05"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-08-12T18:00:00Z",
+  "2026-08-13T18:00:00Z",
+  "2026-08-15T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "intro",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-12T05:00:00Z",
+   "from": "Introly <hello@introly.test>",
+   "to": [
+    "arjun@nimbuslabs.test",
+    "leela@ferngrove.test"
+   ],
+   "subject": "Arjun <> Leela Krishnan (Ferngrove)",
+   "body": "Arjun, meet Leela Krishnan, who leads product at Ferngrove. Leela, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I'll let you two take it from here.\n\nIntroly",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-intro",
+   "headers": {
+    "List-Unsubscribe": "<mailto:unsubscribe@introly.test>"
+   },
+   "read": {
+    "gate": {
+     "disposition": "drop",
+     "relevance": 0.4,
+     "reason": "automated introduction service"
+    },
+    "relevance": "business",
+    "extraction": {
+     "intent": "introduce",
+     "stance": "positive",
+     "topics": [
+      "introduction"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Leela Krishnan",
+       "entity_type": "person",
+       "quote": "Leela Krishnan"
+      },
+      {
+       "surface_form": "Ferngrove",
+       "entity_type": "organization",
+       "quote": "Ferngrove"
+      }
+     ],
+     "relationships": [
+      {
+       "party": "Leela Krishnan",
+       "nature": "introduced contact",
+       "direction": "inbound",
+       "evidence_text": "Arjun, meet Leela Krishnan"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": false,
+      "asks_for_reply": true,
+      "engagement": "medium",
+      "motive": "introduce a contact"
+     }
+    }
+   }
+  },
+  {
+   "id": "reply",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-12T09:30:00Z",
+   "from": "Leela Krishnan <leela@ferngrove.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Re: Arjun <> Leela Krishnan (Ferngrove)",
+   "body": "Hi Arjun, happy to connect. I've sent you an invite for tomorrow at 3 pm IST.\n\nLeela",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-intro",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "schedule",
+     "stance": "positive",
+     "topics": [
+      "intro call"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Leela",
+       "entity_type": "person",
+       "quote": "Leela"
+      }
+     ],
+     "scheduling_proposals": [
+      {
+       "proposer": "Leela Krishnan",
+       "text": "a call tomorrow at 3 pm IST",
+       "evidence_text": "I've sent you an invite for tomorrow at 3 pm IST."
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "high",
+      "motive": "set up the call"
+     }
+    }
+   }
+  },
+  {
+   "id": "call",
+   "source": "gcal",
+   "sweep": 0,
+   "occurred_at": "2026-08-12T09:35:00Z",
+   "summary": "Ferngrove x Nimbus Labs",
+   "start": "2026-08-13T09:30:00Z",
+   "end": "2026-08-13T10:00:00Z",
+   "organizer": "leela@ferngrove.test",
+   "attendees": [
+    "leela@ferngrove.test",
+    "arjun@nimbuslabs.test"
+   ]
+  },
+  {
+   "id": "before",
+   "source": "gmail",
+   "sweep": 1,
+   "occurred_at": "2026-08-13T08:00:00Z",
+   "from": "Leela Krishnan <leela@ferngrove.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Re: Arjun <> Leela Krishnan (Ferngrove)",
+   "body": "Looking forward to it. I'll bring our current onboarding flow so you can see where we lose people.\n\nLeela",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-intro",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "commit",
+     "stance": "positive",
+     "topics": [
+      "onboarding"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Leela",
+       "entity_type": "person",
+       "quote": "Leela"
+      }
+     ],
+     "commitments": [
+      {
+       "actor": "Leela Krishnan",
+       "action": "bring the current onboarding flow to the call",
+       "beneficiary": "Arjun Rao",
+       "is_conditional": false,
+       "quote": "I'll bring our current onboarding flow"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "high"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "gate": {
+   "reply": "emitted",
+   "call": "emitted"
+  },
+  "memory": {
+   "reply": true,
+   "call": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Leela",
+     "Ferngrove"
+    ],
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "workstream": "intro → meeting; after the call, ask what was promised"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "recap",
+   "happened",
+   "thanks for the call"
+  ]
+ },
+ "witness": null,
+ "not_expressible": {
+  "workstream": "STEP-09 — the engine forms no workstream; nothing to compare against"
+ },
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "admin contact",
+     "leela@ferngrove.test",
+     "evaluated at: 2026-08-12"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "one_page_brief_before_every_external_meeting": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "A confirmed call with an introduced contact is tomorrow.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "admin contact",
+     "leela@ferngrove.test",
+     "evaluated at: 2026-08-13"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "the_follow_through_relay": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "The call was on the calendar for today; what, if anything, was promised is open.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "admin contact",
+     "leela@ferngrove.test",
+     "evaluated at: 2026-08-15"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "the_follow_through_relay": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "The call was on the calendar two days ago; what, if anything, was promised is open.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "channel touch",
+     "leela@ferngrove.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "A sales opener, a demo script or market sizing does not fit a founder's call with an introduced contact; nothing here is for the founder to do.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "meeting follow through",
+     "leela@ferngrove.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "the_follow_through_relay": 6400
+     },
+     "confidence_bp": 5000,
+     "rationale": "The call with an introduced contact was two days ago and nothing since says what was agreed; ask what, if anything, was promised.",
+     "missing": []
+    }
+   }
+  ],
+  "narrator": [
+   {
+    "when": [
+     "admin_contact",
+     "leela@ferngrove.test"
+    ],
+    "answer": {
+     "headline": "Meeting with leela@ferngrove.test is clear",
+     "situation": "Nothing open is on record with leela@ferngrove.test.",
+     "artifact": "Nothing is missing on record; confirm the agenda."
+    }
+   },
+   {
+    "when": [
+     "meeting_follow_through",
+     "leela@ferngrove.test"
+    ],
+    "answer": {
+     "headline": "Meeting with leela@ferngrove.test, 2 days ago",
+     "situation": "The meeting with leela@ferngrove.test happened 2 days ago. No follow-through is visible.",
+     "artifact": "Recap: [what was discussed - yours to fill]. Next step: [one specific step, with a date]."
+    }
+   }
+  ]
+ },
+ "blocked_on": "the contact's mails are dropped at the qualification floor (2,500) (a commitment_made at 1,000); the meeting makes two cards; the follow-through narrator is told the call 'happened' and asked for a recap nobody confirmed — STEP-05, STEP-14, replay 05"
+}

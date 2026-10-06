@@ -1,0 +1,84 @@
+{
+ "case_id": "F16",
+ "source": "ideal_reader",
+ "recorded_at": "b47239c9",
+ "answers": {
+  "004d3c7ba1b324477475709cfa2d2ec901a9e116776da14e716c8e97bdf51a0f": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Nimbus Labs - raising our seed round",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Nimbus Labs - raising our seed round\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 542,
+   "output_tokens": 42,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "0951075016cdb54878a2ca59615fb3a768ffdd896cab9af2e2bfa22ca0303c65": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "drop",
+     "relevance": 0.05,
+     "reason": "automated, nobody waits on a reply"
+    },
+    {
+     "i": 1,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 470,
+   "output_tokens": 49,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "3afbf3eb55c4ab2488609a60e5fa5c6e856f4fe7e87126143afd59f902bf184d": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "request",
+    "stance": "positive",
+    "topics": [
+     "fundraising"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Lattice",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Lattice",
+        "start_offset": 41,
+        "end_offset": 48
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high"
+    }
+   },
+   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Lattice\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Lattice\", \"start_offset\": 41, \"end_offset\": 48}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\"}}",
+   "input_tokens": 4887,
+   "output_tokens": 110,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

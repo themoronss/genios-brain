@@ -1,0 +1,129 @@
+{
+ "case_id": "F31",
+ "source": "ideal_reader",
+ "recorded_at": "b47239c9",
+ "answers": {
+  "2935ea76e9a4be2e2c1cba180966011fcb648dc2032bd7fdfaddea047ecce340": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 423,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "4e44ae5c80bd4364d70c9990dae6868077d7c529c341615f0a84e12c6e5e82ef": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Assignment 4: pricing page teardown",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Assignment 4: pricing page teardown\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 554,
+   "output_tokens": 42,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "a2b4bf25be0962c0a7b716048d7ad7ea933f2d0f2ccef55b1452d63264368736": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "request",
+    "stance": "neutral",
+    "topics": [
+     "assignment"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Divya Raman",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Divya Raman",
+        "start_offset": 128,
+        "end_offset": 139
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "Submit Assignment 4, the pricing page teardown, by 17 Sep",
+      "asked_by": "Divya Raman",
+      "asked_of": "Arjun Rao",
+      "evidence": [
+       {
+        "quote": "Assignment 4 (a teardown of your pricing page) is due on 17 Sep, 11:59 pm IST.",
+        "start_offset": 48,
+        "end_offset": 126
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "dates_mentioned": [
+     {
+      "as_written": "17 Sep, 11:59 pm IST",
+      "earliest": "2026-09-17T18:29:00Z",
+      "latest": "2026-09-17T18:29:00Z",
+      "certainty": "exact",
+      "resolved_against": "2026-09-09T06:00:00Z",
+      "evidence": [
+       {
+        "quote": "17 Sep, 11:59 pm IST",
+        "start_offset": 105,
+        "end_offset": 125
+       }
+      ]
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "assignment deadline"
+    }
+   },
+   "raw": "{\"intent\": \"request\", \"stance\": \"neutral\", \"topics\": [\"assignment\"], \"entity_mentions\": [{\"surface_form\": \"Divya Raman\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Divya Raman\", \"start_offset\": 128, \"end_offset\": 139}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Submit Assignment 4, the pricing page teardown, by 17 Sep\", \"asked_by\": \"Divya Raman\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Assignment 4 (a teardown of your pricing page) is due on 17 Sep, 11:59 pm IST.\", \"start_offset\": 48, \"end_offset\": 126}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"17 Sep, 11:59 pm IST\", \"earliest\": \"2026-09-17T18:29:00Z\", \"latest\": \"2026-09-17T18:29:00Z\", \"certainty\": \"exact\", \"resolved_against\": \"2026-09-09T06:00:00Z\", \"evidence\": [{\"quote\": \"17 Sep, 11:59 pm IST\", \"start_offset\": 105, \"end_offset\": 125}]}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"assignment deadline\"}}",
+   "input_tokens": 4896,
+   "output_tokens": 267,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "b860a1afafba82a13cd494e352041984063dd79ad251b620ba0ce78ed54d9310": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": false,
+      "description": "no readable text",
+      "category": "unknown",
+      "human_authored": null,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"no readable text\", \"category\": \"unknown\", \"human_authored\": null, \"asks_for_reply\": null}]}",
+   "input_tokens": 515,
+   "output_tokens": 38,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

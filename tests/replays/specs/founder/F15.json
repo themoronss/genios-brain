@@ -1,0 +1,310 @@
+{
+ "case_id": "F15",
+ "title": "The founder's outreach to five funds, eight weeks without a reply",
+ "kind": "must_detect",
+ "label_row": 15,
+ "labelled_by": "claude",
+ "replays": [],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-08-11T18:00:00Z",
+  "2026-08-25T12:00:00Z",
+  "2026-10-06T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "to1",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-11T01:00:00Z",
+   "from": "Arjun Rao <arjun@nimbuslabs.test>",
+   "to": [
+    "partners@cobaltpeak.test"
+   ],
+   "subject": "Nimbus Labs - raising our seed round",
+   "body": "Hi Cobalt Peak team,\n\nNimbus Labs is raising a seed round to build an AI chief of staff for founders. Our deck is attached; could we find 20 minutes in the next two weeks?\n\nArjun Rao\nFounder, Nimbus Labs",
+   "labels": [
+    "SENT"
+   ],
+   "thread": "t-wave-1",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "positive",
+     "topics": [
+      "fundraising"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Cobalt Peak",
+       "entity_type": "organization",
+       "quote": "Cobalt Peak"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Find 20 minutes in the next two weeks",
+       "asked_by": "Arjun Rao",
+       "asked_of": "Cobalt Peak",
+       "quote": "could we find 20 minutes in the next two weeks?"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "seed round outreach"
+     }
+    }
+   }
+  },
+  {
+   "id": "to2",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-11T02:00:00Z",
+   "from": "Arjun Rao <arjun@nimbuslabs.test>",
+   "to": [
+    "hello@juniperridge.test"
+   ],
+   "subject": "Nimbus Labs - raising our seed round",
+   "body": "Hi Juniper Ridge team,\n\nNimbus Labs is raising a seed round to build an AI chief of staff for founders. Our deck is attached; could we find 20 minutes in the next two weeks?\n\nArjun Rao\nFounder, Nimbus Labs",
+   "labels": [
+    "SENT"
+   ],
+   "thread": "t-wave-2",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "positive",
+     "topics": [
+      "fundraising"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Juniper Ridge",
+       "entity_type": "organization",
+       "quote": "Juniper Ridge"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Find 20 minutes in the next two weeks",
+       "asked_by": "Arjun Rao",
+       "asked_of": "Juniper Ridge",
+       "quote": "could we find 20 minutes in the next two weeks?"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "seed round outreach"
+     }
+    }
+   }
+  },
+  {
+   "id": "to3",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-11T03:00:00Z",
+   "from": "Arjun Rao <arjun@nimbuslabs.test>",
+   "to": [
+    "deals@latticecap.test"
+   ],
+   "subject": "Nimbus Labs - raising our seed round",
+   "body": "Hi Lattice Capital team,\n\nNimbus Labs is raising a seed round to build an AI chief of staff for founders. Our deck is attached; could we find 20 minutes in the next two weeks?\n\nArjun Rao\nFounder, Nimbus Labs",
+   "labels": [
+    "SENT"
+   ],
+   "thread": "t-wave-3",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "positive",
+     "topics": [
+      "fundraising"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Lattice Capital",
+       "entity_type": "organization",
+       "quote": "Lattice Capital"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Find 20 minutes in the next two weeks",
+       "asked_by": "Arjun Rao",
+       "asked_of": "Lattice Capital",
+       "quote": "could we find 20 minutes in the next two weeks?"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "seed round outreach"
+     }
+    }
+   }
+  },
+  {
+   "id": "to4",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-11T04:00:00Z",
+   "from": "Arjun Rao <arjun@nimbuslabs.test>",
+   "to": [
+    "team@meridianseed.test"
+   ],
+   "subject": "Nimbus Labs - raising our seed round",
+   "body": "Hi Meridian Seed team,\n\nNimbus Labs is raising a seed round to build an AI chief of staff for founders. Our deck is attached; could we find 20 minutes in the next two weeks?\n\nArjun Rao\nFounder, Nimbus Labs",
+   "labels": [
+    "SENT"
+   ],
+   "thread": "t-wave-4",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "positive",
+     "topics": [
+      "fundraising"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Meridian Seed",
+       "entity_type": "organization",
+       "quote": "Meridian Seed"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Find 20 minutes in the next two weeks",
+       "asked_by": "Arjun Rao",
+       "asked_of": "Meridian Seed",
+       "quote": "could we find 20 minutes in the next two weeks?"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "seed round outreach"
+     }
+    }
+   }
+  },
+  {
+   "id": "to5",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-11T05:00:00Z",
+   "from": "Arjun Rao <arjun@nimbuslabs.test>",
+   "to": [
+    "invest@northstarangels.test"
+   ],
+   "subject": "Nimbus Labs - raising our seed round",
+   "body": "Hi Northstar Angels team,\n\nNimbus Labs is raising a seed round to build an AI chief of staff for founders. Our deck is attached; could we find 20 minutes in the next two weeks?\n\nArjun Rao\nFounder, Nimbus Labs",
+   "labels": [
+    "SENT"
+   ],
+   "thread": "t-wave-5",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "positive",
+     "topics": [
+      "fundraising"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Northstar Angels",
+       "entity_type": "organization",
+       "quote": "Northstar Angels"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Find 20 minutes in the next two weeks",
+       "asked_by": "Arjun Rao",
+       "asked_of": "Northstar Angels",
+       "quote": "could we find 20 minutes in the next two weeks?"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "seed round outreach"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "cards": [
+   {
+    "about": [
+     "Cobalt Peak",
+     "Juniper Ridge",
+     "Lattice Capital",
+     "Meridian Seed",
+     "Northstar Angels"
+    ],
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "workstream": "investor wave — who to follow up, with what, who to close"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "contract renewal",
+   "renewal"
+  ]
+ },
+ "witness": null,
+ "not_expressible": {
+  "workstream": "STEP-09 — the engine forms no workstream; nothing to compare against"
+ },
+ "notes": "Production typed most of the real wave as contract_renewal, the nearest of its 16 boxes, and never raised a follow-up.",
+ "blocked_on": "the founder's outreach wave is typed as an anomaly and dropped at the qualification floor (2,500) (1,520 each); no follow-up decision is ever formed — STEP-05, STEP-10"
+}

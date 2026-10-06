@@ -1,0 +1,197 @@
+{
+ "case_id": "F13",
+ "title": "An investor asks for traction metrics before his partners' meeting",
+ "kind": "must_detect",
+ "label_row": 13,
+ "labelled_by": "claude",
+ "replays": [
+  "01"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-08-08T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "ask",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-08T06:30:00Z",
+   "from": "Mohit Sethi <mohit@tuskercap.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Nimbus Labs - traction metrics?",
+   "body": "Hi Arjun,\n\nGood to connect last week. Before our Monday partners' meeting, could you share your current traction metrics — monthly active teams, revenue run-rate and the pilot pipeline? A one-pager is fine.\n\nThanks,\nMohit Sethi\nPartner, Tusker Capital",
+   "labels": [
+    "INBOX",
+    "IMPORTANT",
+    "CATEGORY_PERSONAL"
+   ],
+   "thread": "t-tusker",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "positive",
+     "topics": [
+      "traction metrics",
+      "seed round"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Mohit Sethi",
+       "entity_type": "person",
+       "quote": "Mohit Sethi"
+      },
+      {
+       "surface_form": "Tusker Capital",
+       "entity_type": "organization",
+       "quote": "Tusker Capital"
+      },
+      {
+       "surface_form": "Nimbus Labs",
+       "entity_type": "organization",
+       "quote": "Nimbus Labs"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Share the current traction metrics: monthly active teams, revenue run-rate and the pilot pipeline",
+       "asked_by": "Mohit Sethi",
+       "asked_of": "Arjun Rao",
+       "quote": "could you share your current traction metrics"
+      }
+     ],
+     "dates_mentioned": [
+      {
+       "as_written": "Monday",
+       "earliest": "2026-08-10T00:00:00+05:30",
+       "latest": "2026-08-10T23:59:59+05:30",
+       "certainty": "relative",
+       "resolved_against": "2026-08-08T06:30:00Z",
+       "quote": "Monday"
+      }
+     ],
+     "business_facts": [
+      {
+       "field": "person.title",
+       "subject": "Mohit Sethi",
+       "value": "Partner",
+       "standing": "observed",
+       "quote": "Partner, Tusker Capital"
+      },
+      {
+       "field": "thread.objective",
+       "subject": "thread",
+       "value": "traction metrics before the partners' meeting",
+       "standing": "judgement",
+       "quote": "could you share your current traction metrics"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "traction metrics before the partners' meeting"
+     },
+     "implied_actions": [
+      "share the current traction metrics before Monday"
+     ]
+    }
+   }
+  }
+ ],
+ "expected": {
+  "gate": {
+   "ask": "emitted"
+  },
+  "memory": {
+   "ask": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Mohit",
+     "Tusker"
+    ],
+    "min": 1,
+    "max": 1,
+    "mentions": [
+     "traction"
+    ]
+   }
+  ],
+  "workstream": "investor — a fund's partner asking for metrics",
+  "lane": "decision"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "Send Arjun",
+   "Mr Arjun"
+  ]
+ },
+ "witness": null,
+ "not_expressible": {
+  "workstream": "STEP-09 — the engine forms no workstream; nothing to compare against",
+  "lane": "F10 — cards.output_lane is written NULL on the decided path"
+ },
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "account admin",
+     "tuskercap.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "A company wrote today and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "tuskercap.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "fifteen_minute_account_brief": 5600
+     },
+     "confidence_bp": 5000,
+     "rationale": "An investor asked us something; know the fund before replying.",
+     "missing": []
+    }
+   }
+  ],
+  "narrator": [
+   {
+    "when": [
+     "account_admin",
+     "tuskercap.test"
+    ],
+    "answer": {
+     "headline": "Share traction metrics with Tusker Capital",
+     "situation": "Mohit at tuskercap.test asked for your current traction metrics. The next move is ours; no date is on the request.",
+     "artifact": "Hi Mohit, sharing our current traction metrics as you asked - one page attached."
+    }
+   }
+  ]
+ }
+}

@@ -1,0 +1,194 @@
+{
+ "case_id": "F04",
+ "title": "The introduced contact replied the same day; the reply is owed",
+ "kind": "must_detect",
+ "label_row": 4,
+ "labelled_by": "claude",
+ "replays": [
+  "02"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-08-06T18:00:00Z",
+  "2026-08-08T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "intro",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-06T07:00:00Z",
+   "from": "Introly <hello@introly.test>",
+   "to": [
+    "arjun@nimbuslabs.test",
+    "sofia@brandtlabs.test"
+   ],
+   "subject": "Arjun <> Sofia Brandt (Brandt Labs)",
+   "body": "Arjun, meet Sofia Brandt, who runs operations at Brandt Labs. Sofia, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I'll let you two take it from here.\n\nIntroly",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-intro",
+   "headers": {
+    "List-Unsubscribe": "<mailto:unsubscribe@introly.test>"
+   },
+   "read": {
+    "gate": {
+     "disposition": "drop",
+     "relevance": 0.4,
+     "reason": "automated introduction service"
+    },
+    "relevance": "business",
+    "extraction": {
+     "intent": "introduce",
+     "stance": "positive",
+     "topics": [
+      "introduction"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Sofia Brandt",
+       "entity_type": "person",
+       "quote": "Sofia Brandt"
+      },
+      {
+       "surface_form": "Brandt Labs",
+       "entity_type": "organization",
+       "quote": "Brandt Labs"
+      }
+     ],
+     "relationships": [
+      {
+       "party": "Sofia Brandt",
+       "nature": "introduced contact",
+       "direction": "inbound",
+       "evidence_text": "Arjun, meet Sofia Brandt"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": false,
+      "asks_for_reply": true,
+      "engagement": "medium",
+      "motive": "introduce a contact"
+     }
+    }
+   }
+  },
+  {
+   "id": "reply",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-06T11:40:00Z",
+   "from": "Sofia Brandt <sofia@brandtlabs.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Re: Arjun <> Sofia Brandt (Brandt Labs)",
+   "body": "Hi Arjun,\n\nLovely to meet you over email. Would you have 20 minutes next week to show me the product? Tuesday or Wednesday afternoon works for me.\n\nBest,\nSofia Brandt\nHead of Operations, Brandt Labs",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-intro",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "positive",
+     "topics": [
+      "product demo"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Sofia Brandt",
+       "entity_type": "person",
+       "quote": "Sofia Brandt"
+      },
+      {
+       "surface_form": "Brandt Labs",
+       "entity_type": "organization",
+       "quote": "Brandt Labs"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Can Arjun show Sofia the product for 20 minutes next week?",
+       "asked_by": "Sofia Brandt",
+       "asked_of": "Arjun Rao",
+       "quote": "Would you have 20 minutes next week to show me the product?"
+      }
+     ],
+     "scheduling_proposals": [
+      {
+       "proposer": "Sofia Brandt",
+       "text": "Tuesday or Wednesday afternoon next week",
+       "evidence_text": "Tuesday or Wednesday afternoon works for me."
+      }
+     ],
+     "business_facts": [
+      {
+       "field": "person.title",
+       "subject": "Sofia Brandt",
+       "value": "Head of Operations",
+       "standing": "observed",
+       "quote": "Head of Operations, Brandt Labs"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "see the product next week"
+     },
+     "implied_actions": [
+      "offer Sofia a 20-minute slot next week"
+     ]
+    }
+   }
+  }
+ ],
+ "expected": {
+  "gate": {
+   "reply": "emitted"
+  },
+  "memory": {
+   "reply": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Sofia",
+     "Brandt"
+    ],
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "workstream": "intro — the contact is waiting on the founder"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "Reply to Introly",
+   "reply to Introly"
+  ]
+ },
+ "witness": null,
+ "not_expressible": {
+  "workstream": "STEP-09 — the engine forms no workstream; nothing to compare against"
+ },
+ "blocked_on": "the contact's reply is captured but dropped at the qualification floor (2,500): an opportunity_signal at 1,360 never reaches memory — STEP-05"
+}

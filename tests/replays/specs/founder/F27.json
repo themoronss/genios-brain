@@ -1,0 +1,224 @@
+{
+ "case_id": "F27",
+ "title": "A partner's open question before a booked call",
+ "kind": "must_detect",
+ "label_row": 27,
+ "labelled_by": "claude",
+ "replays": [
+  "03"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-09-30T18:00:00Z",
+  "2026-10-07T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "note",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-30T11:05:00Z",
+   "from": "Varun Iyer <varun@cleanwave.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Cleanwave x Nimbus - webhook question",
+   "body": "Hi Arjun,\n\nGreat chatting at the meetup. As discussed, our API docs are at the link below. Could you confirm whether your agent can read our webhook events before we meet? I have booked Thursday 9 Oct, 4 pm IST.\n\nCheers,\nVarun Iyer\nFounder, Cleanwave",
+   "labels": [
+    "INBOX",
+    "CATEGORY_PERSONAL"
+   ],
+   "thread": "t-cleanwave",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "question",
+     "stance": "positive",
+     "topics": [
+      "integration",
+      "webhooks"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Varun Iyer",
+       "entity_type": "person",
+       "quote": "Varun Iyer"
+      },
+      {
+       "surface_form": "Cleanwave",
+       "entity_type": "organization",
+       "quote": "Cleanwave"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Can the Nimbus agent read Cleanwave's webhook events?",
+       "asked_by": "Varun Iyer",
+       "asked_of": "Arjun Rao",
+       "quote": "Could you confirm whether your agent can read our webhook events before we meet?"
+      }
+     ],
+     "dates_mentioned": [
+      {
+       "as_written": "Thursday 9 Oct, 4 pm IST",
+       "earliest": "2026-10-09T10:30:00Z",
+       "latest": "2026-10-09T10:30:00Z",
+       "certainty": "exact",
+       "resolved_against": "2026-09-30T11:05:00Z",
+       "quote": "Thursday 9 Oct, 4 pm IST"
+      }
+     ],
+     "scheduling_proposals": [
+      {
+       "proposer": "Varun Iyer",
+       "text": "a call on Thursday 9 Oct, 4 pm IST",
+       "evidence_text": "I have booked Thursday 9 Oct, 4 pm IST."
+      }
+     ],
+     "business_facts": [
+      {
+       "field": "person.title",
+       "subject": "Varun Iyer",
+       "value": "Founder",
+       "standing": "observed",
+       "quote": "Founder, Cleanwave"
+      },
+      {
+       "field": "relationship.nature",
+       "subject": "Cleanwave",
+       "value": "integration partner",
+       "standing": "judgement",
+       "quote": "Could you confirm whether your agent can read our webhook events"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "confirm the webhook integration before the call"
+     },
+     "implied_actions": [
+      "confirm whether the agent can read Cleanwave's webhook events"
+     ]
+    }
+   }
+  },
+  {
+   "id": "call",
+   "source": "gcal",
+   "sweep": 0,
+   "occurred_at": "2026-09-30T11:10:00Z",
+   "summary": "Cleanwave x Nimbus Labs",
+   "start": "2026-10-09T10:30:00Z",
+   "end": "2026-10-09T11:00:00Z",
+   "organizer": "varun@cleanwave.test",
+   "attendees": [
+    "varun@cleanwave.test",
+    "arjun@nimbuslabs.test"
+   ]
+  }
+ ],
+ "expected": {
+  "gate": {
+   "note": "emitted",
+   "call": "emitted"
+  },
+  "memory": {
+   "note": true,
+   "call": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Varun",
+     "Cleanwave"
+    ],
+    "min": 1,
+    "max": 1,
+    "mentions": [
+     "webhook"
+    ]
+   }
+  ],
+  "workstream": "partner — an integration being explored",
+  "lane": "decision"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": []
+ },
+ "witness": null,
+ "not_expressible": {
+  "workstream": "STEP-09 — the engine forms no workstream; nothing to compare against",
+  "lane": "F10 — cards.output_lane is written NULL on the decided path"
+ },
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "account admin",
+     "Cleanwave"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "Cleanwave wrote today and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "unanswered email",
+     "Varun Iyer"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "reply": 6500
+     },
+     "confidence_bp": 5500,
+     "rationale": "Varun asked a direct question a week ago and the call he booked is on 9 Oct; the reply is ours.",
+     "missing": []
+    }
+   }
+  ],
+  "narrator": [
+   {
+    "when": [
+     "account_admin",
+     "Cleanwave"
+    ],
+    "answer": {
+     "headline": "Confirm webhook support for Cleanwave",
+     "situation": "Varun at Cleanwave asked whether our agent can read their webhook events before you meet. The next move is ours.",
+     "artifact": "Hi Varun, thanks for the docs. On whether our agent can read your webhook events: [our answer]. We can go through it when we meet."
+    }
+   },
+   {
+    "when": [
+     "unanswered_email",
+     "Varun Iyer"
+    ],
+    "answer": {
+     "headline": "Answer Varun's webhook question",
+     "situation": "Varun Iyer asked 7 days ago whether our agent can read Cleanwave's webhook events. The reply is ours.",
+     "artifact": "Hi Varun, on your question about your webhook events: [our answer]. Talk soon."
+    }
+   }
+  ]
+ },
+ "blocked_on": "one ask makes two cards — the company's account-admin card and the person's unanswered-email card — STEP-09"
+}

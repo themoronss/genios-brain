@@ -1,0 +1,118 @@
+{
+ "case_id": "F23",
+ "title": "A state startup mission writes four times",
+ "kind": "must_detect",
+ "label_row": 23,
+ "labelled_by": "claude",
+ "replays": [],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-09-05T18:00:00Z",
+  "2026-09-25T18:00:00Z",
+  "2026-10-05T18:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "a",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-05T05:00:00Z",
+   "from": "State Startup Mission <no-reply@statestartup.gov.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Monthly bulletin",
+   "body": "Dear Startup,\n\nThis month: new incubators empanelled and a policy update.\n\nState Startup Mission",
+   "labels": [
+    "INBOX"
+   ],
+   "read": {
+    "gate": "drop",
+    "relevance": "not_business"
+   }
+  },
+  {
+   "id": "b",
+   "source": "gmail",
+   "sweep": 1,
+   "occurred_at": "2026-09-15T05:00:00Z",
+   "from": "State Startup Mission <no-reply@statestartup.gov.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Scheme update",
+   "body": "Dear Startup,\n\nThe sustenance allowance scheme has been extended to March.\n\nState Startup Mission",
+   "labels": [
+    "INBOX"
+   ],
+   "read": {
+    "gate": "drop",
+    "relevance": "not_business"
+   }
+  },
+  {
+   "id": "c",
+   "source": "gmail",
+   "sweep": 1,
+   "occurred_at": "2026-09-25T05:00:00Z",
+   "from": "State Startup Mission <no-reply@statestartup.gov.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Monthly bulletin",
+   "body": "Dear Startup,\n\nThis month: demo day results and upcoming workshops.\n\nState Startup Mission",
+   "labels": [
+    "INBOX"
+   ],
+   "read": {
+    "gate": "drop",
+    "relevance": "not_business"
+   }
+  },
+  {
+   "id": "d",
+   "source": "gmail",
+   "sweep": 2,
+   "occurred_at": "2026-10-05T05:00:00Z",
+   "from": "State Startup Mission <no-reply@statestartup.gov.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Your registration",
+   "body": "Dear Startup,\n\nYour registration on the State Startup Mission portal is complete. Your registration number is SSM-2026-3381.\n\nState Startup Mission",
+   "labels": [
+    "INBOX"
+   ],
+   "read": {
+    "gate": "drop",
+    "relevance": "not_business"
+   }
+  }
+ ],
+ "expected": {
+  "cards": [
+   {
+    "about": [
+     "State Startup Mission"
+    ],
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "brief": "one line: your registration is complete (SSM-2026-3381)"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": []
+ },
+ "witness": null,
+ "not_expressible": {
+  "cards": "brief only — the founder's answer is a line in the morning brief, not a card (D12d)",
+  "brief": "STEP-15 — there is no morning brief to appear in"
+ }
+}

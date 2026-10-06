@@ -1,0 +1,297 @@
+{
+ "case_id": "F37",
+ "source": "ideal_reader",
+ "recorded_at": "b47239c9",
+ "answers": {
+  "11c59dd743ce4d49f8a6d2e2bcacfc9899fd472d688cca4fe235d9664e45a7c7": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "reply": 6500,
+     "wait_unanswered_email": 5600
+    },
+    "confidence_bp": 5500,
+    "rationale": "A direct question is waiting on us.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5600}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
+   "input_tokens": 1467,
+   "output_tokens": 42,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "1b898e26c752f8bfb5ede0276e227c7c909bddd6a08b2007930ee21f1a776f0d": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "request",
+    "stance": "positive",
+    "topics": [
+     "deck"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Farah Qureshi",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Farah Qureshi",
+        "start_offset": 13,
+        "end_offset": 26
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Kitepath",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Kitepath",
+        "start_offset": 28,
+        "end_offset": 36
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "Send the deck by Friday 12 Sep",
+      "asked_by": "Farah Qureshi",
+      "asked_of": "Arjun Rao",
+      "evidence": [
+       {
+        "quote": "Can you send your deck by Friday 12 Sep?",
+        "start_offset": 72,
+        "end_offset": 112
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "dates_mentioned": [
+     {
+      "as_written": "Friday 12 Sep",
+      "earliest": "2026-09-12T00:00:00+05:30",
+      "latest": "2026-09-12T23:59:59+05:30",
+      "certainty": "range",
+      "resolved_against": "2026-09-08T09:00:00Z",
+      "evidence": [
+       {
+        "quote": "Friday 12 Sep",
+        "start_offset": 98,
+        "end_offset": 111
+       }
+      ]
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "the deck by Friday"
+    }
+   },
+   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"deck\"], \"entity_mentions\": [{\"surface_form\": \"Farah Qureshi\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Farah Qureshi\", \"start_offset\": 13, \"end_offset\": 26}], \"confidence_bp\": 9000}, {\"surface_form\": \"Kitepath\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Kitepath\", \"start_offset\": 28, \"end_offset\": 36}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Send the deck by Friday 12 Sep\", \"asked_by\": \"Farah Qureshi\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Can you send your deck by Friday 12 Sep?\", \"start_offset\": 72, \"end_offset\": 112}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"Friday 12 Sep\", \"earliest\": \"2026-09-12T00:00:00+05:30\", \"latest\": \"2026-09-12T23:59:59+05:30\", \"certainty\": \"range\", \"resolved_against\": \"2026-09-08T09:00:00Z\", \"evidence\": [{\"quote\": \"Friday 12 Sep\", \"start_offset\": 98, \"end_offset\": 111}]}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"the deck by Friday\"}}",
+   "input_tokens": 4887,
+   "output_tokens": 288,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "2b8eac1356bea2af4f8133783e77597d64c8e17afc665a155f2b63e2ee93bd92": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Re: Arjun <> Farah Qureshi (Kitepath)",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Arjun <> Farah Qureshi (Kitepath)\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 544,
+   "output_tokens": 43,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "3366120a29b93f0f93d37ee818b2e41aadc9f278c3ccbd509e1030b7fcff2750": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 1,
+     "disposition": "drop",
+     "relevance": 0.4,
+     "reason": "automated introduction service"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"drop\", \"relevance\": 0.4, \"reason\": \"automated introduction service\"}]",
+   "input_tokens": 473,
+   "output_tokens": 47,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "3776240b5da49b7a50ea4cbd55272f699372b98ac6f7a8abcf8f08744c63283a": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Reply",
+    "situation_summary": "The reply is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
+    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
+   },
+   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
+   "input_tokens": 2321,
+   "output_tokens": 166,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "3f24d7eca385cbb1d4d0df7f43a4c7b5093c62556d4a0bfd8399b96eee739930": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 424,
+   "output_tokens": 74,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "3f3f6085e776f911dbaffda43ca5d302fc65cfef0437f1d627d9bca31e9ea873": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Reply",
+    "situation_summary": "The reply is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
+    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
+   },
+   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
+   "input_tokens": 2361,
+   "output_tokens": 166,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "468cd350d528e54a03d32718a85280d2de0a86932818371544880686056494b4": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Send Farah Qureshi your deck",
+    "situation": "Farah Qureshi asked 2 days ago for your deck by Friday 12 Sep.",
+    "artifact": "Hi Farah, here is our deck. Thanks, Arjun"
+   },
+   "raw": "{\"headline\": \"Send Farah Qureshi your deck\", \"situation\": \"Farah Qureshi asked 2 days ago for your deck by Friday 12 Sep.\", \"artifact\": \"Hi Farah, here is our deck. Thanks, Arjun\"}",
+   "input_tokens": 1608,
+   "output_tokens": 45,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "62534e04d83891a4aab306844dbd3d692706ce7ee09d84e168ee82eca3a12c9b": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "sales.pb.account_research.fifteen_minute_account_brief": 4330,
+     "sales.pb.investor_relations.reopen_after_a_pass": 4627
+    },
+    "confidence_bp": 4000,
+    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.account_research.fifteen_minute_account_brief\": 4330, \"sales.pb.investor_relations.reopen_after_a_pass\": 4627}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
+   "input_tokens": 2230,
+   "output_tokens": 70,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "8d33a54ed6d312446eab262a87a05c5a817772fb19bff73a502c6e3276eca733": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "sales.pb.account_research.fifteen_minute_account_brief": 4447,
+     "sales.pb.investor_relations.reopen_after_a_pass": 4745
+    },
+    "confidence_bp": 4000,
+    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.account_research.fifteen_minute_account_brief\": 4447, \"sales.pb.investor_relations.reopen_after_a_pass\": 4745}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
+   "input_tokens": 2224,
+   "output_tokens": 70,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "b6800bccc7fb08c625c3b2da221f0778a24000c3b79be3ffaf910f7524845693": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Can you send your deck by Friday 12 Sep?",
+    "start_offset": 72,
+    "end_offset": 112,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Can you send your deck by Friday 12 Sep?\", \"start_offset\": 72, \"end_offset\": 112, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 891,
+   "output_tokens": 48,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "fc8942b0ae618273c6c5bd701970c6bdb9d04a561dc188be440dceb85b441986": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 511,
+   "output_tokens": 74,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

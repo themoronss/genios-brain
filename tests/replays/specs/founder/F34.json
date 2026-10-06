@@ -1,0 +1,85 @@
+{
+ "case_id": "F34",
+ "title": "Co-founder matching digests and a fellowship newsletter are archived",
+ "kind": "must_abstain",
+ "label_row": 34,
+ "labelled_by": "claude",
+ "replays": [],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-09-10T18:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "match",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-10T03:00:00Z",
+   "from": "FounderMatch <matches@foundermatch.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "You have 6 new co-founder matches",
+   "body": "6 founders match your profile this week. Review their profiles and send an invite.",
+   "labels": [
+    "INBOX",
+    "CATEGORY_SOCIAL"
+   ],
+   "read": {
+    "gate": "drop",
+    "relevance": "not_business"
+   }
+  },
+  {
+   "id": "fellows",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-10T04:00:00Z",
+   "from": "Launch Fellows <news@launchfellows.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Launch Fellows: applications for winter",
+   "body": "Our winter fellowship opens next month. Read about last cohort's founders.",
+   "labels": [
+    "INBOX"
+   ],
+   "headers": {
+    "List-Unsubscribe": "<mailto:leave@launchfellows.test>"
+   },
+   "read": {
+    "gate": "drop",
+    "relevance": "not_business"
+   }
+  }
+ ],
+ "expected": {
+  "cards": [
+   {
+    "about": [
+     "FounderMatch",
+     "Launch Fellows"
+    ],
+    "min": 0,
+    "max": 0
+   }
+  ]
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": []
+ },
+ "witness": {
+  "stage": "gate",
+  "objects": [
+   "match",
+   "fellows"
+  ]
+ },
+ "not_expressible": {}
+}

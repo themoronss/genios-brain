@@ -67,4 +67,9 @@ markers = [
   # month of a tenant's events. Split out so the inner loop stays fast enough to be run on
   # every save, because a suite nobody runs is a suite that protects nothing.
   "slow: minutes, not seconds — golden corpus and distribution replays",
+  # STEP-01: the founder golden set and the Atlas replays, driven through the REAL chain on the
+  # scratch database with recorded model answers. Deselected by the hermetic job and run by the
+  # `golden-pg` job, where GENIOS_GOLDEN_REQUIRED=1 turns a missing database into a FAILURE —
+  # a golden set that skips is "a pass over an empty table" (tests/replays/test_founder_cases.py).
+  "golden: the golden set, through the real chain on the scratch database — never skipped in its own job",
 ]

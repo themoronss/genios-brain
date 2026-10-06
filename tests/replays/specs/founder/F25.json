@@ -1,0 +1,325 @@
+{
+ "case_id": "F25",
+ "title": "One job offer: one file and one card, not six",
+ "kind": "must_detect",
+ "label_row": 25,
+ "labelled_by": "claude",
+ "replays": [
+  "06"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-08-05T18:00:00Z",
+  "2026-08-07T18:00:00Z",
+  "2026-08-10T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "offer",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-05T10:00:00Z",
+   "from": "Arjun Rao <arjun@nimbuslabs.test>",
+   "to": [
+    "kavitha.nair@inboxmail.test"
+   ],
+   "subject": "Offer: Founding AI Engineer, Nimbus Labs",
+   "body": "Hi Kavitha,\n\nDelighted to offer you the Founding AI Engineer role at Nimbus Labs: the salary we discussed and 0.8% in ESOPs vesting over four years, subject to the board approving the ESOP pool. Please confirm your acceptance by 12 Aug; the engagement documents will follow once the board approves.\n\nArjun",
+   "labels": [
+    "SENT"
+   ],
+   "thread": "t-offer",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "commit",
+     "stance": "positive",
+     "topics": [
+      "hiring",
+      "offer",
+      "ESOP"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Kavitha",
+       "entity_type": "person",
+       "quote": "Kavitha"
+      },
+      {
+       "surface_form": "Nimbus Labs",
+       "entity_type": "organization",
+       "quote": "Nimbus Labs"
+      }
+     ],
+     "commitments": [
+      {
+       "actor": "Arjun Rao",
+       "action": "send the engagement documents once the board approves",
+       "beneficiary": "Kavitha",
+       "is_conditional": true,
+       "condition_text": "once the board approves",
+       "quote": "the engagement documents will follow once the board approves"
+      }
+     ],
+     "decision_states": [
+      {
+       "subject": "ESOP pool",
+       "state": "pending",
+       "blocked_on": "board approval",
+       "owner": "the board",
+       "quote": "subject to the board approving the ESOP pool"
+      },
+      {
+       "subject": "Kavitha's acceptance",
+       "state": "pending",
+       "owner": "Kavitha",
+       "quote": "Please confirm your acceptance by 12 Aug"
+      }
+     ],
+     "dependencies": [
+      {
+       "blocker": "board approval of the ESOP pool",
+       "blocked": "engagement documents",
+       "dependency_type": "approval",
+       "quote": "the engagement documents will follow once the board approves"
+      }
+     ],
+     "dates_mentioned": [
+      {
+       "as_written": "12 Aug",
+       "earliest": "2026-08-12T00:00:00+05:30",
+       "latest": "2026-08-12T23:59:59+05:30",
+       "certainty": "range",
+       "resolved_against": "2026-08-05T10:00:00Z",
+       "quote": "12 Aug"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "a job offer"
+     }
+    }
+   }
+  },
+  {
+   "id": "reply",
+   "source": "gmail",
+   "sweep": 1,
+   "occurred_at": "2026-08-07T08:00:00Z",
+   "from": "Kavitha Nair <kavitha.nair@inboxmail.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Re: Offer: Founding AI Engineer, Nimbus Labs",
+   "body": "Hi Arjun,\n\nThank you! I'm excited. I'll confirm by the 12th once I've read the documents.\n\nKavitha",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-offer",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "commit",
+     "stance": "positive",
+     "topics": [
+      "offer"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Kavitha",
+       "entity_type": "person",
+       "quote": "Kavitha"
+      }
+     ],
+     "commitments": [
+      {
+       "actor": "Kavitha",
+       "action": "confirm the offer by 12 Aug",
+       "beneficiary": "Arjun Rao",
+       "is_conditional": true,
+       "condition_text": "once she has read the documents",
+       "quote": "I'll confirm by the 12th once I've read the documents."
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "high"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "cards": [
+   {
+    "about": [
+     "Kavitha",
+     "ESOP",
+     "offer",
+     "engagement documents"
+    ],
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "workstream": "hiring — one offer, waiting on her acceptance and the board"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "waiting longest"
+  ]
+ },
+ "witness": null,
+ "not_expressible": {
+  "workstream": "STEP-09 — the engine forms no workstream; nothing to compare against"
+ },
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "unanswered email",
+     "Kavitha Nair"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "reply": 6500
+     },
+     "confidence_bp": 5500,
+     "rationale": "A direct question is waiting on us.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "Kavitha Nair"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "inboxmail.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "opportunity",
+     "inboxmail.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "inboxmail.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "Someone at this company asked us something and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "inboxmail.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "This is not an investor conversation, and neither offered play fits what was asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "dependency stated",
+     "engagement documents"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "the_executive_s_promise_ledger": 6000
+     },
+     "confidence_bp": 5000,
+     "rationale": "We promised her the engagement documents once the board approves; that promise is ours to keep.",
+     "missing": []
+    }
+   }
+  ],
+  "narrator": [
+   {
+    "when": [
+     "account_admin",
+     "inboxmail.test"
+    ],
+    "answer": {
+     "headline": "Waiting on inboxmail.test: the next move is theirs",
+     "situation": "You wrote to Kavitha at inboxmail.test; nothing on record dates what is still open.",
+     "artifact": "Hi Kavitha, could you confirm when you expect to get back to us?"
+    }
+   },
+   {
+    "when": [
+     "dependency_stated",
+     "engagement documents"
+    ],
+    "answer": {
+     "headline": "Engagement documents wait on board approval of the ESOP pool",
+     "situation": "Stated in the Kavitha thread: engagement documents, waiting on board approval of the ESOP pool.",
+     "artifact": "Who moves the board approval of the ESOP pool, and by when?"
+    }
+   }
+  ]
+ },
+ "notes": "Production made six separate cards from the real thread — ESOP allocation, board approval, fundraising completion, the acceptance, the documents, the formal offer."
+}

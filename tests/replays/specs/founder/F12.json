@@ -1,0 +1,422 @@
+{
+ "case_id": "F12",
+ "title": "An investor's question before a booked call — a prep card a day ahead",
+ "kind": "must_detect",
+ "label_row": 12,
+ "labelled_by": "claude",
+ "replays": [
+  "03",
+  "05"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-09-27T18:00:00Z",
+  "2026-10-06T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "note",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-27T10:00:00Z",
+   "from": "Neeraj Joshi <neeraj@harborpoint.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Re: Nimbus Labs update",
+   "body": "Hi Arjun,\n\nThanks for the update. Before our call on 8 Oct, it would help to see how retention looks for your first three pilot customers.\n\nNeeraj Joshi\nHarbor Point Partners",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-harbor",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "positive",
+     "topics": [
+      "retention",
+      "fundraising"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Neeraj Joshi",
+       "entity_type": "person",
+       "quote": "Neeraj Joshi"
+      },
+      {
+       "surface_form": "Harbor Point Partners",
+       "entity_type": "organization",
+       "quote": "Harbor Point Partners"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Show retention for the first three pilot customers before the call",
+       "asked_by": "Neeraj Joshi",
+       "asked_of": "Arjun Rao",
+       "quote": "it would help to see how retention looks for your first three pilot customers"
+      }
+     ],
+     "dates_mentioned": [
+      {
+       "as_written": "8 Oct",
+       "earliest": "2026-10-08T00:00:00+05:30",
+       "latest": "2026-10-08T23:59:59+05:30",
+       "certainty": "range",
+       "resolved_against": "2026-09-27T10:00:00Z",
+       "quote": "8 Oct"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "retention before the call"
+     },
+     "implied_actions": [
+      "send retention for the first three pilots before 8 Oct"
+     ]
+    }
+   }
+  },
+  {
+   "id": "call",
+   "source": "gcal",
+   "sweep": 0,
+   "occurred_at": "2026-09-27T10:05:00Z",
+   "summary": "Harbor Point x Nimbus Labs",
+   "start": "2026-10-08T09:00:00Z",
+   "end": "2026-10-08T09:45:00Z",
+   "organizer": "neeraj@harborpoint.test",
+   "attendees": [
+    "neeraj@harborpoint.test",
+    "arjun@nimbuslabs.test"
+   ]
+  }
+ ],
+ "expected": {
+  "gate": {
+   "note": "emitted",
+   "call": "emitted"
+  },
+  "memory": {
+   "note": true,
+   "call": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Neeraj",
+     "Harbor Point"
+    ],
+    "min": 1,
+    "max": 1,
+    "mentions": [
+     "retention"
+    ]
+   }
+  ],
+  "workstream": "investor — a call on 8 Oct",
+  "lane": "decision"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": []
+ },
+ "witness": null,
+ "not_expressible": {
+  "workstream": "STEP-09 — the engine forms no workstream; nothing to compare against",
+  "lane": "F10 — cards.output_lane is written NULL on the decided path"
+ },
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "unanswered email",
+     "Neeraj Joshi"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "reply": 6500
+     },
+     "confidence_bp": 5500,
+     "rationale": "A direct question is waiting on us.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "Neeraj Joshi"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "harborpoint.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "opportunity",
+     "harborpoint.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "harborpoint.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "Someone at this company asked us something and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "harborpoint.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "fifteen_minute_account_brief": 5600
+     },
+     "confidence_bp": 5000,
+     "rationale": "An investor asked us something; know the fund before replying.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "opportunity",
+     "Harbor Point Partners"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "Harbor Point Partners"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "Someone at this company asked us something and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "Harbor Point Partners"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "fifteen_minute_account_brief": 5600
+     },
+     "confidence_bp": 5000,
+     "rationale": "An investor asked us something; know the fund before replying.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "admin contact",
+     "neeraj@harborpoint.test",
+     "evaluated at: 2026-09-27"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "one_page_brief_before_every_external_meeting": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "A confirmed external meeting is coming.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "admin contact",
+     "neeraj@harborpoint.test",
+     "evaluated at: 2026-10-06"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "one_page_brief_before_every_external_meeting": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "A confirmed external meeting is coming.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "channel touch",
+     "neeraj@harborpoint.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "A sales opener or demo script does not fit a founder's meeting.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "meeting follow through",
+     "neeraj@harborpoint.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "the_follow_through_relay": 6400
+     },
+     "confidence_bp": 5000,
+     "rationale": "Nothing since the meeting says what was agreed; ask what was promised.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "admin contact",
+     "Neeraj Joshi",
+     "evaluated at: 2026-09-27"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "one_page_brief_before_every_external_meeting": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "A confirmed external meeting is coming.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "admin contact",
+     "Neeraj Joshi",
+     "evaluated at: 2026-10-06"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "one_page_brief_before_every_external_meeting": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "A confirmed external meeting is coming.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "channel touch",
+     "Neeraj Joshi"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "A sales opener or demo script does not fit a founder's meeting.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "meeting follow through",
+     "Neeraj Joshi"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "the_follow_through_relay": 6400
+     },
+     "confidence_bp": 5000,
+     "rationale": "Nothing since the meeting says what was agreed; ask what was promised.",
+     "missing": []
+    }
+   }
+  ],
+  "narrator": [
+   {
+    "when": [
+     "account_admin",
+     "harborpoint.test"
+    ],
+    "answer": {
+     "headline": "Send Harbor Point Partners your pilot retention",
+     "situation": "Neeraj at harborpoint.test asked to see retention for your first three pilot customers. The next move is ours.",
+     "artifact": "Hi Neeraj, here is retention for our first three pilot customers: [figures]."
+    }
+   },
+   {
+    "when": [
+     "unanswered_email",
+     "Neeraj Joshi"
+    ],
+    "answer": {
+     "headline": "Send Neeraj Joshi your pilot retention",
+     "situation": "Neeraj Joshi has waited 9 days to see retention for your first three pilot customers.",
+     "artifact": "Hi Neeraj, here is retention for our first three pilot customers: [figures]."
+    }
+   }
+  ]
+ },
+ "notes": "Production read the real mail but no signal type fitted, so it never entered memory — and the call was stored as a deadline that expires (F04)."
+}

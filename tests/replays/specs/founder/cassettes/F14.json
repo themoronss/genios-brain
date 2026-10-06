@@ -1,0 +1,294 @@
+{
+ "case_id": "F14",
+ "source": "ideal_reader",
+ "recorded_at": "b47239c9",
+ "answers": {
+  "137343deb8a9154e5e0d09d1b6aaa323465423e249031be565a1a9a9e04f4755": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "cautious",
+    "topics": [
+     "fundraising"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Tara Lindqvist",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Tara Lindqvist",
+        "start_offset": 142,
+        "end_offset": 156
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Fjord Venture Partners",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Fjord Venture Partners",
+        "start_offset": 157,
+        "end_offset": 179
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "decision_states": [
+     {
+      "subject": "investment in Nimbus Labs",
+      "state": "deferred",
+      "owner": "Tara Lindqvist",
+      "evidence": [
+       {
+        "quote": "It's too early for us right now",
+        "start_offset": 31,
+        "end_offset": 62
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "commitments": [
+     {
+      "actor": "Tara Lindqvist",
+      "action": "look again if Nimbus Labs hits a real milestone",
+      "is_conditional": true,
+      "condition_text": "if you hit a real milestone",
+      "evidence": [
+       {
+        "quote": "If you hit a real milestone, I'd be happy to look again.",
+        "start_offset": 84,
+        "end_offset": 140
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "high"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"cautious\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Tara Lindqvist\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Tara Lindqvist\", \"start_offset\": 142, \"end_offset\": 156}], \"confidence_bp\": 9000}, {\"surface_form\": \"Fjord Venture Partners\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Fjord Venture Partners\", \"start_offset\": 157, \"end_offset\": 179}], \"confidence_bp\": 9000}], \"decision_states\": [{\"subject\": \"investment in Nimbus Labs\", \"state\": \"deferred\", \"owner\": \"Tara Lindqvist\", \"evidence\": [{\"quote\": \"It's too early for us right now\", \"start_offset\": 31, \"end_offset\": 62}], \"confidence_bp\": 9000}], \"commitments\": [{\"actor\": \"Tara Lindqvist\", \"action\": \"look again if Nimbus Labs hits a real milestone\", \"is_conditional\": true, \"condition_text\": \"if you hit a real milestone\", \"evidence\": [{\"quote\": \"If you hit a real milestone, I'd be happy to look again.\", \"start_offset\": 84, \"end_offset\": 140}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
+   "input_tokens": 4892,
+   "output_tokens": 299,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "2a184c439de7cd91212752a21e24afe8bbf1c4a87ade37c5eca2d27e5fae8693": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 1,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 2,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 2, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 479,
+   "output_tokens": 72,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "3a0d0bf48c5b89eef5f8a9917207b21215b42850634425f87ba081ae57f62b86": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Nimbus Labs - update #3",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     },
+     {
+      "item": 2,
+      "business": true,
+      "description": "Nimbus Labs - update #2",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     },
+     {
+      "item": 3,
+      "business": true,
+      "description": "Nimbus Labs - update #1",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Nimbus Labs - update #3\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 2, \"business\": true, \"description\": \"Nimbus Labs - update #2\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 3, \"business\": true, \"description\": \"Nimbus Labs - update #1\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 641,
+   "output_tokens": 111,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "50ad45441a08ffa0ec68389cec71adf869e49d0e42d751fd7d99eb8843facb9d": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "positive",
+    "topics": [
+     "investor update"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Tara",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Tara",
+        "start_offset": 28,
+        "end_offset": 32
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "high"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"investor update\"], \"entity_mentions\": [{\"surface_form\": \"Tara\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Tara\", \"start_offset\": 28, \"end_offset\": 32}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
+   "input_tokens": 4882,
+   "output_tokens": 108,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "93e1522951f7b46adc0f89aff73dd35ba0ac5dd11ebcc51e9ceba3b5291dfa3c": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "positive",
+    "topics": [
+     "investor update"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Tara",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Tara",
+        "start_offset": 28,
+        "end_offset": 32
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "high"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"investor update\"], \"entity_mentions\": [{\"surface_form\": \"Tara\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Tara\", \"start_offset\": 28, \"end_offset\": 32}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
+   "input_tokens": 4882,
+   "output_tokens": 108,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "95fa463f961db15ca773d3e0ab9eec02b0f5b138da1f6f2cc664777b15f09df1": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 424,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "ac76989d17ee6720e186c574071dad742d2000fe503ddbd9f6ee5533193e3e16": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Re: Nimbus Labs",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Nimbus Labs\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 555,
+   "output_tokens": 37,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "addea852cd34fa3aaadc59a1a9bc604dddb74efbb0806d76d7cb7c924de4b5a8": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "positive",
+    "topics": [
+     "investor update"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Tara",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Tara",
+        "start_offset": 28,
+        "end_offset": 32
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "high"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"investor update\"], \"entity_mentions\": [{\"surface_form\": \"Tara\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Tara\", \"start_offset\": 28, \"end_offset\": 32}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
+   "input_tokens": 4882,
+   "output_tokens": 108,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

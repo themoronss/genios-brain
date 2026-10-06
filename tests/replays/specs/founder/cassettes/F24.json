@@ -1,0 +1,471 @@
+{
+ "case_id": "F24",
+ "source": "ideal_reader",
+ "recorded_at": "b47239c9",
+ "answers": {
+  "04d050dfe839d601bba00e1a2775c5cd8d9389db6ebef4f1440bdd95d04b086e": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "request",
+    "stance": "neutral",
+    "topics": [
+     "assignment",
+     "unit economics"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Divya Raman",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Divya Raman",
+        "start_offset": 153,
+        "end_offset": 164
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Lakshya Accelerator",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Lakshya Accelerator",
+        "start_offset": 181,
+        "end_offset": 200
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "Upload Assignment 3, the unit economics sheet, by 15 Sep",
+      "asked_by": "Divya Raman",
+      "asked_of": "Arjun Rao",
+      "evidence": [
+       {
+        "quote": "Assignment 3 (the unit economics sheet) is due on 15 Sep, 11:59 pm IST.",
+        "start_offset": 41,
+        "end_offset": 112
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "dates_mentioned": [
+     {
+      "as_written": "15 Sep, 11:59 pm IST",
+      "earliest": "2026-09-15T18:29:00Z",
+      "latest": "2026-09-15T18:29:00Z",
+      "certainty": "exact",
+      "resolved_against": "2026-09-01T06:00:00Z",
+      "evidence": [
+       {
+        "quote": "15 Sep, 11:59 pm IST",
+        "start_offset": 91,
+        "end_offset": 111
+       }
+      ]
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "assignment deadline"
+    },
+    "implied_actions": [
+     "upload Assignment 3 by 15 Sep"
+    ]
+   },
+   "raw": "{\"intent\": \"request\", \"stance\": \"neutral\", \"topics\": [\"assignment\", \"unit economics\"], \"entity_mentions\": [{\"surface_form\": \"Divya Raman\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Divya Raman\", \"start_offset\": 153, \"end_offset\": 164}], \"confidence_bp\": 9000}, {\"surface_form\": \"Lakshya Accelerator\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Lakshya Accelerator\", \"start_offset\": 181, \"end_offset\": 200}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Upload Assignment 3, the unit economics sheet, by 15 Sep\", \"asked_by\": \"Divya Raman\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Assignment 3 (the unit economics sheet) is due on 15 Sep, 11:59 pm IST.\", \"start_offset\": 41, \"end_offset\": 112}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"15 Sep, 11:59 pm IST\", \"earliest\": \"2026-09-15T18:29:00Z\", \"latest\": \"2026-09-15T18:29:00Z\", \"certainty\": \"exact\", \"resolved_against\": \"2026-09-01T06:00:00Z\", \"evidence\": [{\"quote\": \"15 Sep, 11:59 pm IST\", \"start_offset\": 91, \"end_offset\": 111}]}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"assignment deadline\"}, \"implied_actions\": [\"upload Assignment 3 by 15 Sep\"]}",
+   "input_tokens": 4901,
+   "output_tokens": 328,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "345e3b0dc1d72ed4458d4547c2073c815b2898568c5991e37aa599b70beef42c": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "sales.pb.account_research.fifteen_minute_account_brief": 4296,
+     "sales.pb.investor_relations.reopen_after_a_pass": 4594
+    },
+    "confidence_bp": 4000,
+    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.account_research.fifteen_minute_account_brief\": 4296, \"sales.pb.investor_relations.reopen_after_a_pass\": 4594}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
+   "input_tokens": 2231,
+   "output_tokens": 70,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "471ad2010966094c2e4f8b76b89367f2a966cfa9933f84cb4dac15d65747dfe4": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Assignment 3: unit economics",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Assignment 3: unit economics\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 560,
+   "output_tokens": 40,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "4fe5dcaea1155b7e1ac97383c301397e1b9fa46e09da7e4ef3e620181818275e": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "request",
+    "stance": "neutral",
+    "topics": [
+     "phase-1 review"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Divya Raman",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Divya Raman",
+        "start_offset": 124,
+        "end_offset": 135
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Lakshya Accelerator",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Lakshya Accelerator",
+        "start_offset": 152,
+        "end_offset": 171
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "Upload the Phase-1 review deck by 28 Sep",
+      "asked_by": "Divya Raman",
+      "asked_of": "Arjun Rao",
+      "evidence": [
+       {
+        "quote": "Please upload your review deck by 28 Sep.",
+        "start_offset": 81,
+        "end_offset": 122
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "dates_mentioned": [
+     {
+      "as_written": "28 Sep",
+      "earliest": "2026-09-28T00:00:00+05:30",
+      "latest": "2026-09-28T23:59:59+05:30",
+      "certainty": "range",
+      "resolved_against": "2026-09-13T05:00:00Z",
+      "evidence": [
+       {
+        "quote": "28 Sep",
+        "start_offset": 115,
+        "end_offset": 121
+       }
+      ]
+     },
+     {
+      "as_written": "30 Sep",
+      "earliest": "2026-09-30T00:00:00+05:30",
+      "latest": "2026-09-30T23:59:59+05:30",
+      "certainty": "range",
+      "resolved_against": "2026-09-13T05:00:00Z",
+      "evidence": [
+       {
+        "quote": "30 Sep",
+        "start_offset": 18,
+        "end_offset": 24
+       }
+      ]
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "review deadline"
+    },
+    "implied_actions": [
+     "upload the review deck by 28 Sep"
+    ]
+   },
+   "raw": "{\"intent\": \"request\", \"stance\": \"neutral\", \"topics\": [\"phase-1 review\"], \"entity_mentions\": [{\"surface_form\": \"Divya Raman\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Divya Raman\", \"start_offset\": 124, \"end_offset\": 135}], \"confidence_bp\": 9000}, {\"surface_form\": \"Lakshya Accelerator\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Lakshya Accelerator\", \"start_offset\": 152, \"end_offset\": 171}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Upload the Phase-1 review deck by 28 Sep\", \"asked_by\": \"Divya Raman\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Please upload your review deck by 28 Sep.\", \"start_offset\": 81, \"end_offset\": 122}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"28 Sep\", \"earliest\": \"2026-09-28T00:00:00+05:30\", \"latest\": \"2026-09-28T23:59:59+05:30\", \"certainty\": \"range\", \"resolved_against\": \"2026-09-13T05:00:00Z\", \"evidence\": [{\"quote\": \"28 Sep\", \"start_offset\": 115, \"end_offset\": 121}]}, {\"as_written\": \"30 Sep\", \"earliest\": \"2026-09-30T00:00:00+05:30\", \"latest\": \"2026-09-30T23:59:59+05:30\", \"certainty\": \"range\", \"resolved_against\": \"2026-09-13T05:00:00Z\", \"evidence\": [{\"quote\": \"30 Sep\", \"start_offset\": 18, \"end_offset\": 24}]}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"review deadline\"}, \"implied_actions\": [\"upload the review deck by 28 Sep\"]}",
+   "input_tokens": 4892,
+   "output_tokens": 370,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "5efbbac0334a1227efd07e4f892bb3f730e14aaf0cc3eff2deb2807ef851a784": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 518,
+   "output_tokens": 74,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "5fc1da4d6211b1d7e1ac5867c2210622d031ac477df96ff47526021594015e37": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Phase-1 review on 30 Sep",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Phase-1 review on 30 Sep\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 553,
+   "output_tokens": 39,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "6a3339ac60a6e9d75232804ebcb7559bf0e4a18a5df2bd329755e5720ffabfc7": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Please upload it to the cohort folder.",
+    "start_offset": 113,
+    "end_offset": 151,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Please upload it to the cohort folder.\", \"start_offset\": 113, \"end_offset\": 151, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 907,
+   "output_tokens": 47,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "799f71c938627d1c71b3934c2b0026455dc5217c7146ca6dbd30a94ea8b226ce": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "reply": 6500,
+     "wait_unanswered_email": 4300
+    },
+    "confidence_bp": 5500,
+    "rationale": "A direct question is waiting on us.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 4300}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
+   "input_tokens": 1492,
+   "output_tokens": 42,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "94ff9f4fa649b6d4f307f3972a81beab5cd985550e9d67e40352d6e5513583e4": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Reply",
+    "situation_summary": "The reply is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
+    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
+   },
+   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
+   "input_tokens": 2369,
+   "output_tokens": 166,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "9e8a6fefd167b032c675a3252e145058e5f5b41033441e76043942bfca95e028": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Reply",
+    "situation_summary": "The reply is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
+    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
+   },
+   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
+   "input_tokens": 2399,
+   "output_tokens": 166,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "a86c056b24e968e8fdd521b167a05c8a3770cab0895893ec3da0a25fda64c1de": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "reply": 6500,
+     "wait_unanswered_email": 4800
+    },
+    "confidence_bp": 5500,
+    "rationale": "A direct question is waiting on us.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 4800}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
+   "input_tokens": 1492,
+   "output_tokens": 42,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "ab5f4e3ad74489177db3b551aad94d8e414183fa83f517d75cb0d808cd166c7c": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 429,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "b0c50a19b8ae7a346114bdab0d2090404b63e4ddd485a1793dec905129906c37": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Reply",
+    "situation_summary": "The reply is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
+    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
+   },
+   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
+   "input_tokens": 2359,
+   "output_tokens": 166,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "b5178c6a3f8e6d3970a3d49f76c3f00986ba73a89934860ecf1f06b021478d5f": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Send Divya Raman Assignment 3, the unit economics sheet",
+    "situation": "Divya Raman wrote 12 days ago: Assignment 3 (the unit economics sheet) is due on 15 Sep, 11:59 pm IST.",
+    "artifact": "Hi Divya, attaching Assignment 3, the unit economics sheet. Thanks, Arjun"
+   },
+   "raw": "{\"headline\": \"Send Divya Raman Assignment 3, the unit economics sheet\", \"situation\": \"Divya Raman wrote 12 days ago: Assignment 3 (the unit economics sheet) is due on 15 Sep, 11:59 pm IST.\", \"artifact\": \"Hi Divya, attaching Assignment 3, the unit economics sheet. Thanks, Arjun\"}",
+   "input_tokens": 1632,
+   "output_tokens": 69,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "ca5bf8ceddae5c97e5cdba17a840e99e0bc232cc2be9299db20959e4018847cd": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 424,
+   "output_tokens": 74,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "d60aef4845a94dd096feb186234feec0db5c2c6a5eb96e7317e83a620c27ff97": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Reply",
+    "situation_summary": "The reply is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
+    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
+   },
+   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
+   "input_tokens": 2409,
+   "output_tokens": 166,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "df01c0920a3256a16da7ee0af0b583b11d0e5e13949b55a7cf2b41cd85619bde": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Send Divya Raman Assignment 3, the unit economics sheet",
+    "situation": "Divya Raman wrote 12 days ago: Assignment 3 (the unit economics sheet) is due on 15 Sep, 11:59 pm IST.",
+    "artifact": "Hi Divya, attaching Assignment 3, the unit economics sheet. Thanks, Arjun"
+   },
+   "raw": "{\"headline\": \"Send Divya Raman Assignment 3, the unit economics sheet\", \"situation\": \"Divya Raman wrote 12 days ago: Assignment 3 (the unit economics sheet) is due on 15 Sep, 11:59 pm IST.\", \"artifact\": \"Hi Divya, attaching Assignment 3, the unit economics sheet. Thanks, Arjun\"}",
+   "input_tokens": 1887,
+   "output_tokens": 69,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "e72b0b61d4514e4359cfef1ea3de5ac7a0df07ce50601cbf45334ea70b2228a3": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 422,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

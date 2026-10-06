@@ -1,0 +1,307 @@
+{
+ "case_id": "F26",
+ "title": "A partner proposes a call time, then confirms it",
+ "kind": "must_detect",
+ "label_row": 26,
+ "labelled_by": "claude",
+ "replays": [
+  "03"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-09-22T18:00:00Z",
+  "2026-09-29T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "intro",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-16T06:00:00Z",
+   "from": "Neha Kapoor <neha@orbitly.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Orbitly x Nimbus Labs",
+   "body": "Hi Arjun,\n\nLoved your post on founder workflows. We build scheduling infrastructure and would like to explore an integration.\n\nNeha Kapoor\nCEO, Orbitly",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-orbitly",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "introduce",
+     "stance": "positive",
+     "topics": [
+      "integration"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Neha Kapoor",
+       "entity_type": "person",
+       "quote": "Neha Kapoor"
+      },
+      {
+       "surface_form": "Orbitly",
+       "entity_type": "organization",
+       "quote": "Orbitly"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "high"
+     }
+    }
+   }
+  },
+  {
+   "id": "propose",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-22T07:00:00Z",
+   "from": "Neha Kapoor <neha@orbitly.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Re: Orbitly x Nimbus Labs",
+   "body": "Hi Arjun,\n\nCan we do a call next week? Would Tuesday 30 Sep, 11 am IST work for you?\n\nNeha",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-orbitly",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "schedule",
+     "stance": "positive",
+     "topics": [
+      "integration call"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Neha",
+       "entity_type": "person",
+       "quote": "Neha"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Does Tuesday 30 Sep, 11 am IST work for a call?",
+       "asked_by": "Neha Kapoor",
+       "asked_of": "Arjun Rao",
+       "quote": "Would Tuesday 30 Sep, 11 am IST work for you?"
+      }
+     ],
+     "scheduling_proposals": [
+      {
+       "proposer": "Neha Kapoor",
+       "text": "a call on Tuesday 30 Sep, 11 am IST",
+       "evidence_text": "Would Tuesday 30 Sep, 11 am IST work for you?"
+      }
+     ],
+     "dates_mentioned": [
+      {
+       "as_written": "Tuesday 30 Sep, 11 am IST",
+       "earliest": "2026-09-30T05:30:00Z",
+       "latest": "2026-09-30T05:30:00Z",
+       "certainty": "exact",
+       "resolved_against": "2026-09-22T07:00:00Z",
+       "quote": "Tuesday 30 Sep, 11 am IST"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "book the call"
+     },
+     "implied_actions": [
+      "confirm or decline Tuesday 30 Sep, 11 am IST"
+     ]
+    }
+   }
+  }
+ ],
+ "expected": {
+  "gate": {
+   "propose": "emitted"
+  },
+  "memory": {
+   "propose": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Neha",
+     "Orbitly"
+    ],
+    "min": 1,
+    "max": 1,
+    "mentions": [
+     "30 Sep"
+    ]
+   }
+  ],
+  "workstream": "partner — confirm the call time"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "You promised",
+   "Deliver"
+  ]
+ },
+ "witness": null,
+ "not_expressible": {
+  "workstream": "STEP-09 — the engine forms no workstream; nothing to compare against"
+ },
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "unanswered email",
+     "Neha Kapoor"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "reply": 6500
+     },
+     "confidence_bp": 5500,
+     "rationale": "A direct question is waiting on us.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "Neha Kapoor"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "orbitly.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "opportunity",
+     "orbitly.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "orbitly.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "Someone at this company asked us something and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "orbitly.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "This is not an investor conversation, and neither offered play fits what was asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "opportunity",
+     "Orbitly"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "Orbitly"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "Someone at this company asked us something and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "Orbitly"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "This is not an investor conversation, and neither offered play fits what was asked.",
+     "missing": []
+    }
+   }
+  ]
+ },
+ "blocked_on": "the partner's dated proposal is dropped at the qualification floor (2,500) (2,240 and 2,280) and never reaches memory — STEP-05"
+}

@@ -1,0 +1,196 @@
+{
+ "case_id": "F06",
+ "title": "The introduced contact asks when to meet",
+ "kind": "must_detect",
+ "label_row": 6,
+ "labelled_by": "claude",
+ "replays": [
+  "02",
+  "03"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-08-06T18:00:00Z",
+  "2026-08-09T18:00:00Z",
+  "2026-08-11T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "intro",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-06T08:00:00Z",
+   "from": "Introly <hello@introly.test>",
+   "to": [
+    "arjun@nimbuslabs.test",
+    "nikhil@quillstack.test"
+   ],
+   "subject": "Arjun <> Nikhil Bose (Quillstack)",
+   "body": "Arjun, meet Nikhil Bose, the CTO of Quillstack. Nikhil, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I'll let you two take it from here.\n\nIntroly",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-intro",
+   "headers": {
+    "List-Unsubscribe": "<mailto:unsubscribe@introly.test>"
+   },
+   "read": {
+    "gate": {
+     "disposition": "drop",
+     "relevance": 0.4,
+     "reason": "automated introduction service"
+    },
+    "relevance": "business",
+    "extraction": {
+     "intent": "introduce",
+     "stance": "positive",
+     "topics": [
+      "introduction"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Nikhil Bose",
+       "entity_type": "person",
+       "quote": "Nikhil Bose"
+      },
+      {
+       "surface_form": "Quillstack",
+       "entity_type": "organization",
+       "quote": "Quillstack"
+      }
+     ],
+     "relationships": [
+      {
+       "party": "Nikhil Bose",
+       "nature": "introduced contact",
+       "direction": "inbound",
+       "evidence_text": "Arjun, meet Nikhil Bose"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": false,
+      "asks_for_reply": true,
+      "engagement": "medium",
+      "motive": "introduce a contact"
+     }
+    }
+   }
+  },
+  {
+   "id": "reply",
+   "source": "gmail",
+   "sweep": 1,
+   "occurred_at": "2026-08-09T10:05:00Z",
+   "from": "Nikhil Bose <nikhil@quillstack.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Re: Arjun <> Nikhil Bose (Quillstack)",
+   "body": "Hi Arjun,\n\nThanks for the intro. Are you around on Thursday for a 30-minute call? If not, what times work for you next week?\n\nNikhil Bose\nCTO, Quillstack",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-intro",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "schedule",
+     "stance": "positive",
+     "topics": [
+      "intro call"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Nikhil Bose",
+       "entity_type": "person",
+       "quote": "Nikhil Bose"
+      },
+      {
+       "surface_form": "Quillstack",
+       "entity_type": "organization",
+       "quote": "Quillstack"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Is Arjun free on Thursday for a 30-minute call, or what times work next week?",
+       "asked_by": "Nikhil Bose",
+       "asked_of": "Arjun Rao",
+       "quote": "Are you around on Thursday for a 30-minute call?"
+      }
+     ],
+     "scheduling_proposals": [
+      {
+       "proposer": "Nikhil Bose",
+       "text": "a 30-minute call on Thursday",
+       "evidence_text": "Are you around on Thursday for a 30-minute call?"
+      }
+     ],
+     "business_facts": [
+      {
+       "field": "person.title",
+       "subject": "Nikhil Bose",
+       "value": "CTO",
+       "standing": "observed",
+       "quote": "CTO, Quillstack"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "find a time to talk"
+     },
+     "implied_actions": [
+      "answer Nikhil with a time for the call"
+     ]
+    }
+   }
+  }
+ ],
+ "expected": {
+  "gate": {
+   "reply": "emitted"
+  },
+  "memory": {
+   "reply": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Nikhil",
+     "Quillstack"
+    ],
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "workstream": "intro — the contact proposed a time"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "You promised",
+   "Deliver"
+  ]
+ },
+ "witness": null,
+ "not_expressible": {
+  "workstream": "STEP-09 — the engine forms no workstream; nothing to compare against"
+ },
+ "blocked_on": "the contact's scheduling question is dropped at the qualification floor (2,500): an opportunity_signal at 1,360 never reaches memory — STEP-05"
+}

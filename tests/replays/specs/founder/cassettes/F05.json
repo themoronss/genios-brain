@@ -1,0 +1,125 @@
+{
+ "case_id": "F05",
+ "source": "ideal_reader",
+ "recorded_at": "b47239c9",
+ "answers": {
+  "06d5ca7688db8c52d55d3a9a2d7853799810a6d8fc0898a1a96836f4b67ce60e": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "drop",
+     "relevance": 0.4,
+     "reason": "automated introduction service"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.4, \"reason\": \"automated introduction service\"}]",
+   "input_tokens": 440,
+   "output_tokens": 23,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "1afa1de94e054089ed368f5612861f96651d4241f9522a7c2d9459d9b7a60ccb": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Re: Arjun <> Marco Ruiz (Altavia Partners)",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Arjun <> Marco Ruiz (Altavia Partners)\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 566,
+   "output_tokens": 44,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "25d95f54a20bd7bafe165ca82608c4f4f6a5f1012048414e17d2db18763b7e16": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 435,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "57decbf80198ec597c28a8764015d0530a53a7b9239da68282eed494338b9578": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "request",
+    "stance": "positive",
+    "topics": [
+     "deck",
+     "investor pipelines"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Marco Ruiz",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Marco Ruiz",
+        "start_offset": 13,
+        "end_offset": 23
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Altavia Partners",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Altavia Partners",
+        "start_offset": 25,
+        "end_offset": 41
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "Send a short deck before setting up a call",
+      "asked_by": "Marco Ruiz",
+      "asked_of": "Arjun Rao",
+      "evidence": [
+       {
+        "quote": "Could you send a short deck before we set up a call?",
+        "start_offset": 143,
+        "end_offset": 195
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "a deck before a call"
+    },
+    "implied_actions": [
+     "send Marco a short deck"
+    ]
+   },
+   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"deck\", \"investor pipelines\"], \"entity_mentions\": [{\"surface_form\": \"Marco Ruiz\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Marco Ruiz\", \"start_offset\": 13, \"end_offset\": 23}], \"confidence_bp\": 9000}, {\"surface_form\": \"Altavia Partners\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Altavia Partners\", \"start_offset\": 25, \"end_offset\": 41}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Send a short deck before setting up a call\", \"asked_by\": \"Marco Ruiz\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Could you send a short deck before we set up a call?\", \"start_offset\": 143, \"end_offset\": 195}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"a deck before a call\"}, \"implied_actions\": [\"send Marco a short deck\"]}",
+   "input_tokens": 4910,
+   "output_tokens": 244,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

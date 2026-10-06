@@ -1,0 +1,259 @@
+{
+ "case_id": "F20",
+ "title": "A foundation sends its newsletter and a meetup invite",
+ "kind": "must_detect",
+ "label_row": 20,
+ "labelled_by": "claude",
+ "replays": [],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-09-13T18:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "note",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-13T06:00:00Z",
+   "from": "Sameer Rana <sameer@techbridge.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "TechBridge founders meetup, 27 Sep",
+   "body": "Hello Arjun,\n\nSharing our accelerator's newsletter and an invite to the TechBridge founders meetup on 27 Sep. Do drop in if you are around.\n\nSameer Rana\nTechBridge Foundation",
+   "labels": [
+    "INBOX"
+   ],
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "positive",
+     "topics": [
+      "newsletter",
+      "meetup"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Sameer Rana",
+       "entity_type": "person",
+       "quote": "Sameer Rana"
+      },
+      {
+       "surface_form": "TechBridge Foundation",
+       "entity_type": "organization",
+       "quote": "TechBridge Foundation"
+      }
+     ],
+     "dates_mentioned": [
+      {
+       "as_written": "27 Sep",
+       "earliest": "2026-09-27T00:00:00+05:30",
+       "latest": "2026-09-27T23:59:59+05:30",
+       "certainty": "range",
+       "resolved_against": "2026-09-13T06:00:00Z",
+       "quote": "27 Sep"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "low"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "cards": [
+   {
+    "about": [
+     "TechBridge",
+     "Sameer"
+    ],
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "brief": "one line: a meetup on 27 Sep"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": []
+ },
+ "witness": null,
+ "not_expressible": {
+  "cards": "brief only — the founder's answer is a line in the morning brief, not a card (D12d)",
+  "brief": "STEP-15 — there is no morning brief to appear in"
+ },
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "account admin",
+     "techbridge.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Nothing here asks anything of the founder.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "techbridge.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Nothing here asks anything of the founder.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "unanswered email",
+     "techbridge.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Nothing here asks anything of the founder.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "techbridge.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Nothing here asks anything of the founder.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "TechBridge Foundation"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Nothing here asks anything of the founder.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "TechBridge Foundation"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Nothing here asks anything of the founder.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "unanswered email",
+     "TechBridge Foundation"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Nothing here asks anything of the founder.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "TechBridge Foundation"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Nothing here asks anything of the founder.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "Sameer Rana"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Nothing here asks anything of the founder.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "Sameer Rana"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Nothing here asks anything of the founder.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "unanswered email",
+     "Sameer Rana"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Nothing here asks anything of the founder.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "Sameer Rana"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Nothing here asks anything of the founder.",
+     "missing": []
+    }
+   }
+  ]
+ }
+}

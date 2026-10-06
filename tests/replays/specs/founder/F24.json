@@ -1,0 +1,355 @@
+{
+ "case_id": "F24",
+ "title": "An accelerator's assignment and review — each due date seen two days ahead",
+ "kind": "must_detect",
+ "label_row": 24,
+ "labelled_by": "claude",
+ "replays": [
+  "05"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-09-01T18:00:00Z",
+  "2026-09-13T12:00:00Z",
+  "2026-09-26T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "assignment",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-01T06:00:00Z",
+   "from": "Divya Raman <divya@lakshya.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Assignment 3: unit economics",
+   "body": "Hi Arjun,\n\nAssignment 3 (the unit economics sheet) is due on 15 Sep, 11:59 pm IST. Please upload it to the cohort folder.\n\nDivya Raman\nProgramme Lead, Lakshya Accelerator",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-lakshya-a3",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "neutral",
+     "topics": [
+      "assignment",
+      "unit economics"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Divya Raman",
+       "entity_type": "person",
+       "quote": "Divya Raman"
+      },
+      {
+       "surface_form": "Lakshya Accelerator",
+       "entity_type": "organization",
+       "quote": "Lakshya Accelerator"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Upload Assignment 3, the unit economics sheet, by 15 Sep",
+       "asked_by": "Divya Raman",
+       "asked_of": "Arjun Rao",
+       "quote": "Assignment 3 (the unit economics sheet) is due on 15 Sep, 11:59 pm IST."
+      }
+     ],
+     "dates_mentioned": [
+      {
+       "as_written": "15 Sep, 11:59 pm IST",
+       "earliest": "2026-09-15T18:29:00Z",
+       "latest": "2026-09-15T18:29:00Z",
+       "certainty": "exact",
+       "resolved_against": "2026-09-01T06:00:00Z",
+       "quote": "15 Sep, 11:59 pm IST"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "assignment deadline"
+     },
+     "implied_actions": [
+      "upload Assignment 3 by 15 Sep"
+     ]
+    }
+   }
+  },
+  {
+   "id": "review",
+   "source": "gmail",
+   "sweep": 1,
+   "occurred_at": "2026-09-13T05:00:00Z",
+   "from": "Divya Raman <divya@lakshya.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Phase-1 review on 30 Sep",
+   "body": "Hi Arjun,\n\nPhase-1 review presentations are on 30 Sep. Please upload your review deck by 28 Sep.\n\nDivya Raman\nProgramme Lead, Lakshya Accelerator",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-lakshya-review",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "neutral",
+     "topics": [
+      "phase-1 review"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Divya Raman",
+       "entity_type": "person",
+       "quote": "Divya Raman"
+      },
+      {
+       "surface_form": "Lakshya Accelerator",
+       "entity_type": "organization",
+       "quote": "Lakshya Accelerator"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Upload the Phase-1 review deck by 28 Sep",
+       "asked_by": "Divya Raman",
+       "asked_of": "Arjun Rao",
+       "quote": "Please upload your review deck by 28 Sep."
+      }
+     ],
+     "dates_mentioned": [
+      {
+       "as_written": "28 Sep",
+       "earliest": "2026-09-28T00:00:00+05:30",
+       "latest": "2026-09-28T23:59:59+05:30",
+       "certainty": "range",
+       "resolved_against": "2026-09-13T05:00:00Z",
+       "quote": "28 Sep"
+      },
+      {
+       "as_written": "30 Sep",
+       "earliest": "2026-09-30T00:00:00+05:30",
+       "latest": "2026-09-30T23:59:59+05:30",
+       "certainty": "range",
+       "resolved_against": "2026-09-13T05:00:00Z",
+       "quote": "30 Sep"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "review deadline"
+     },
+     "implied_actions": [
+      "upload the review deck by 28 Sep"
+     ]
+    }
+   }
+  }
+ ],
+ "expected": {
+  "gate": {
+   "assignment": "emitted",
+   "review": "emitted"
+  },
+  "memory": {
+   "assignment": true,
+   "review": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Assignment 3",
+     "unit economics"
+    ],
+    "min": 1,
+    "max": 1
+   },
+   {
+    "about": [
+     "Phase-1",
+     "review deck"
+    ],
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "workstream": "program — the accelerator's deadlines"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": []
+ },
+ "witness": null,
+ "not_expressible": {
+  "workstream": "STEP-09 — the engine forms no workstream; nothing to compare against"
+ },
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "unanswered email",
+     "Divya Raman"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "reply": 6500
+     },
+     "confidence_bp": 5500,
+     "rationale": "A direct question is waiting on us.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "Divya Raman"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "lakshya.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "opportunity",
+     "lakshya.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "lakshya.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "Someone at this company asked us something and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "lakshya.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "This is not an investor conversation, and neither offered play fits what was asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "opportunity",
+     "Lakshya Accelerator"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "Lakshya Accelerator"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "Someone at this company asked us something and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "Lakshya Accelerator"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "This is not an investor conversation, and neither offered play fits what was asked.",
+     "missing": []
+    }
+   }
+  ],
+  "narrator": [
+   {
+    "when": [
+     "unanswered_email",
+     "Divya Raman"
+    ],
+    "answer": {
+     "headline": "Send Divya Raman Assignment 3, the unit economics sheet",
+     "situation": "Divya Raman wrote 12 days ago: Assignment 3 (the unit economics sheet) is due on 15 Sep, 11:59 pm IST.",
+     "artifact": "Hi Divya, attaching Assignment 3, the unit economics sheet. Thanks, Arjun"
+    }
+   }
+  ]
+ },
+ "notes": "Production junked ten of the real programme lead's mails and parked 22 attachments.",
+ "blocked_on": "the review mail is dropped at the qualification floor (2,500) (a deadline_stated at 2,200); the overdue assignment makes a second card after the first expired — STEP-05, STEP-14"
+}

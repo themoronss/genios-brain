@@ -6,12 +6,22 @@ time, and spend on the live model is the founder's call (`06-DECISIONS.md` D12).
 writes them down — per object in `read`, per situation in `model` — and this reader serves them to
 the prompts the real chain builds, through `harness.CassetteRecorder`, into the case's cassette.
 
-**What an answer is.** What a faithful model answers to the prompt AS WRITTEN: production's own
-verdict where `04-NOW-VS-SHOULD-VS-EXPECTED.md` §2 records it (the AI filter junked the 30 Sep
-portal mail; Boardy's one mail was "junk, not sure"), and a careful reading of the prompt
-otherwise. Never the answer the founder wishes the model gave. A prompt that tells the junk filter
-to drop automated mail drops a government portal's mail, and when that loses a live application
-the failure is the engine's — the exam has to show it, not answer around it.
+**What an answer is.** What a faithful model answers to the prompt AS WRITTEN, given the case's
+synthetic text — never the answer the founder wishes the model gave. A prompt that tells the junk
+filter to drop automated mail drops a government portal's notice, and when that loses a live
+application the failure is the engine's: the exam has to show it, not answer around it. Where
+`04-NOW-VS-SHOULD-VS-EXPECTED.md` §2 records what production's model did with the real item, the
+case says so in its `notes` — sometimes the same (the portal's automated acknowledgement was
+junked), sometimes not (the real investor mails were junked; the synthetic ones are personal notes
+a faithful reader keeps). Measuring the model's own mistakes is the live evaluation's job
+(`scripts/golden_eval.py --live`, decision D12c), not this reader's.
+
+**Situation-level sites** read what the chain shows them, so their answers are written from the
+prompt alone: R-1 by its own prompt's word lists (`read_stances`); the decider from the formula's
+utilities, moved only where a case says why (`decide_from_formula`); the bundle narrator from the
+fixed decision's own material (`narrate_decision`); resolution as "no completion stated" unless a
+case authors the completion it knows of (`resolve_message`); the card narrator always authored per
+case, in its guidance's own terms.
 
 **It refuses to guess.** A prompt about no object of the case, a site the case gives no answer
 for, a quote the content does not contain, an extraction the schema rejects — each raises

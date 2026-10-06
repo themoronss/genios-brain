@@ -1,0 +1,79 @@
+{
+ "case_id": "F21",
+ "title": "A management school's enterprise centre writes twice",
+ "kind": "must_detect",
+ "label_row": 21,
+ "labelled_by": "claude",
+ "replays": [],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-09-16T18:00:00Z",
+  "2026-09-21T18:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "one",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-16T05:00:00Z",
+   "from": "Awadh Enterprise Centre <eic@awadhec.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Pre-incubation programme: applications open",
+   "body": "Dear Founder,\n\nApplications for our pre-incubation programme are open. The programme runs for twelve weeks from November.\n\nAwadh Enterprise Centre",
+   "labels": [
+    "INBOX"
+   ],
+   "read": {
+    "gate": "drop",
+    "relevance": "not_business"
+   }
+  },
+  {
+   "id": "two",
+   "source": "gmail",
+   "sweep": 1,
+   "occurred_at": "2026-09-21T05:00:00Z",
+   "from": "Awadh Enterprise Centre <eic@awadhec.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Reminder: pre-incubation programme",
+   "body": "Dear Founder,\n\nA reminder that applications for the pre-incubation programme close soon.\n\nAwadh Enterprise Centre",
+   "labels": [
+    "INBOX"
+   ],
+   "read": {
+    "gate": "drop",
+    "relevance": "not_business"
+   }
+  }
+ ],
+ "expected": {
+  "cards": [
+   {
+    "about": [
+     "Awadh"
+    ],
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "brief": "one line: a programme you could apply to"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": []
+ },
+ "witness": null,
+ "not_expressible": {
+  "cards": "brief only — the founder's answer is a line in the morning brief, not a card (D12d)",
+  "brief": "STEP-15 — there is no morning brief to appear in"
+ }
+}

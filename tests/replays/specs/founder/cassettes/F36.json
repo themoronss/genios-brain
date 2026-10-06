@@ -1,0 +1,78 @@
+{
+ "case_id": "F36",
+ "source": "ideal_reader",
+ "recorded_at": "b47239c9",
+ "answers": {
+  "17c8ac8e74a3d6de17fd14707463c0f503e046d16e9d4ec73c79b6fb0f5440ab": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "positive",
+    "topics": [
+     "integration"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Ravi",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Ravi",
+        "start_offset": 20,
+        "end_offset": 24
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "high"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"integration\"], \"entity_mentions\": [{\"surface_form\": \"Ravi\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Ravi\", \"start_offset\": 20, \"end_offset\": 24}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
+   "input_tokens": 4875,
+   "output_tokens": 107,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "39945a3c92dd6e0c9d90eb58b7ece66aad61338424bc71b2e90be3afd0450dd4": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Integration doc",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Integration doc\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 538,
+   "output_tokens": 37,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "d8b107bdd2a0518e2ba318bb92a08731d1d0f97acd716615a70816bf86d465e0": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 407,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

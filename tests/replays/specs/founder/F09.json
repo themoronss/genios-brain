@@ -1,0 +1,153 @@
+{
+ "case_id": "F09",
+ "title": "The connector answers the founder's reply with its own ask",
+ "kind": "must_detect",
+ "label_row": 9,
+ "labelled_by": "claude",
+ "replays": [
+  "02"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-09-29T18:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "mine",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-29T10:00:00Z",
+   "from": "Arjun Rao <arjun@nimbuslabs.test>",
+   "to": [
+    "hello@introly.test"
+   ],
+   "subject": "Re: your intros",
+   "body": "Thanks for the introductions so far. I'm especially keen on investors in AI tooling.\n\nArjun",
+   "labels": [
+    "SENT"
+   ],
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "positive",
+     "topics": [
+      "introductions"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Arjun",
+       "entity_type": "person",
+       "quote": "Arjun"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "high"
+     }
+    }
+   }
+  },
+  {
+   "id": "ask",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-29T10:00:38Z",
+   "from": "Introly <hello@introly.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Re: your intros",
+   "body": "Got it. To match you better, which stage are you raising at, and how much? Reply with one line and I'll line up the next introductions.\n\nIntroly",
+   "labels": [
+    "INBOX"
+   ],
+   "headers": {
+    "List-Unsubscribe": "<mailto:unsubscribe@introly.test>"
+   },
+   "read": {
+    "gate": {
+     "disposition": "drop",
+     "relevance": 0.35,
+     "reason": "automated assistant reply"
+    },
+    "relevance": "business",
+    "extraction": {
+     "intent": "question",
+     "stance": "positive",
+     "topics": [
+      "fundraising",
+      "introductions"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Introly",
+       "entity_type": "organization",
+       "quote": "Introly"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Which stage is Nimbus Labs raising at, and how much?",
+       "asked_by": "Introly",
+       "asked_of": "Arjun Rao",
+       "quote": "which stage are you raising at, and how much?"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": false,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "match the founder to investors"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "gate": {
+   "ask": "emitted"
+  },
+  "memory": {
+   "ask": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Introly"
+    ],
+    "min": 1,
+    "max": 1,
+    "mentions": [
+     "stage"
+    ]
+   }
+  ],
+  "workstream": "connector — the connector as the one asking"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": []
+ },
+ "witness": null,
+ "not_expressible": {
+  "workstream": "STEP-09 — the engine forms no workstream; nothing to compare against"
+ },
+ "notes": "Replay 02 m04: when the connector makes a bounded ask, it is a separate item with its own card — never merged into an introduced contact's.",
+ "blocked_on": "the gate drops the connector's own ask on its unsubscribe header (N-02) — F14, STEP-03"
+}

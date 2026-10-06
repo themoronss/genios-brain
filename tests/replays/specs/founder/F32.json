@@ -1,0 +1,109 @@
+{
+ "case_id": "F32",
+ "title": "Program newsletters are archived, never a card",
+ "kind": "must_abstain",
+ "label_row": 32,
+ "labelled_by": "claude",
+ "replays": [],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-09-14T18:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "nirmaan",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-14T04:00:00Z",
+   "from": "Nirmaan Incubator <news@nirmaan.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Nirmaan monthly: founder stories",
+   "body": "This month: three founder stories, a workshop on GTM and our upcoming demo day. Read online.",
+   "labels": [
+    "INBOX"
+   ],
+   "headers": {
+    "List-Unsubscribe": "<mailto:leave@nirmaan.test>"
+   },
+   "read": {
+    "gate": "drop",
+    "relevance": "not_business"
+   }
+  },
+  {
+   "id": "forum",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-14T05:00:00Z",
+   "from": "Impact Forum <digest@impactforum.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Impact Forum digest",
+   "body": "The week in impact investing: five reads and two events.",
+   "labels": [
+    "INBOX",
+    "CATEGORY_PROMOTIONS"
+   ],
+   "read": {
+    "gate": "drop",
+    "relevance": "not_business"
+   }
+  },
+  {
+   "id": "social",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-14T06:00:00Z",
+   "from": "Lakshya Community <community@lakshya.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Friday founders' social",
+   "body": "Join us for the Friday founders' social at the Lakshya campus. Snacks on us.",
+   "labels": [
+    "INBOX"
+   ],
+   "headers": {
+    "List-Unsubscribe": "<mailto:leave@lakshya.test>"
+   },
+   "read": {
+    "gate": "drop",
+    "relevance": "not_business"
+   }
+  }
+ ],
+ "expected": {
+  "cards": [
+   {
+    "about": [
+     "Nirmaan",
+     "Impact Forum",
+     "founders' social"
+    ],
+    "min": 0,
+    "max": 0
+   }
+  ]
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": []
+ },
+ "witness": {
+  "stage": "gate",
+  "objects": [
+   "nirmaan",
+   "forum",
+   "social"
+  ]
+ },
+ "not_expressible": {}
+}

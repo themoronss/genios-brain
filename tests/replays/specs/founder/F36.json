@@ -1,0 +1,91 @@
+{
+ "case_id": "F36",
+ "title": "The founder's own sent mail is never 'awaiting reply' from him",
+ "kind": "must_abstain",
+ "label_row": 36,
+ "labelled_by": "claude",
+ "replays": [],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-09-02T18:00:00Z",
+  "2026-09-09T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "sent",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-02T09:00:00Z",
+   "from": "Arjun Rao <arjun@nimbuslabs.test>",
+   "to": [
+    "ravi@partnerco.test"
+   ],
+   "subject": "Integration doc",
+   "body": "Hi Ravi,\n\nHere's the integration doc you asked for. Let me know if anything's unclear.\n\nArjun",
+   "labels": [
+    "SENT"
+   ],
+   "thread": "t-partnerco",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "positive",
+     "topics": [
+      "integration"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Ravi",
+       "entity_type": "person",
+       "quote": "Ravi"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "high"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "cards": [
+   {
+    "about": [
+     "Arjun Rao",
+     "arjun@nimbuslabs.test"
+    ],
+    "min": 0,
+    "max": 0
+   }
+  ]
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "Reply to Arjun",
+   "reply to Arjun",
+   "awaiting reply"
+  ]
+ },
+ "witness": {
+  "stage": "memory",
+  "objects": [
+   "sent"
+  ]
+ },
+ "not_expressible": {},
+ "blocked_on": "the founder's own sent mail is captured but yields no signal, so it never reaches memory and the decision not to card it is never made — STEP-05"
+}

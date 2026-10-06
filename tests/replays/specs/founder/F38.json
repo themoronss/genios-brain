@@ -1,0 +1,333 @@
+{
+ "case_id": "F38",
+ "title": "A question answered on another channel is not owed again",
+ "kind": "must_abstain",
+ "label_row": 38,
+ "labelled_by": "claude",
+ "replays": [
+  "04"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-09-04T18:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "ask",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-02T07:00:00Z",
+   "from": "Pooja Iyer <pooja@greenleaf.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Pilot start date",
+   "body": "Hi Arjun,\n\nCan you confirm the pilot start date by Thursday 4 Sep?\n\nPooja Iyer\nGreenleaf",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-greenleaf",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "question",
+     "stance": "neutral",
+     "topics": [
+      "pilot"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Pooja Iyer",
+       "entity_type": "person",
+       "quote": "Pooja Iyer"
+      },
+      {
+       "surface_form": "Greenleaf",
+       "entity_type": "organization",
+       "quote": "Greenleaf"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Confirm the pilot start date by Thursday 4 Sep",
+       "asked_by": "Pooja Iyer",
+       "asked_of": "Arjun Rao",
+       "quote": "Can you confirm the pilot start date by Thursday 4 Sep?"
+      }
+     ],
+     "dates_mentioned": [
+      {
+       "as_written": "Thursday 4 Sep",
+       "earliest": "2026-09-04T00:00:00+05:30",
+       "latest": "2026-09-04T23:59:59+05:30",
+       "certainty": "range",
+       "resolved_against": "2026-09-02T07:00:00Z",
+       "quote": "Thursday 4 Sep"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "the pilot start date"
+     }
+    }
+   }
+  },
+  {
+   "id": "done",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-04T06:00:00Z",
+   "from": "Pooja Iyer <pooja@greenleaf.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Re: Pilot start date",
+   "body": "Thanks for confirming on WhatsApp yesterday - we're all set for 15 Sep.\n\nPooja",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-greenleaf",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "acknowledge",
+     "stance": "positive",
+     "topics": [
+      "pilot"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Pooja",
+       "entity_type": "person",
+       "quote": "Pooja"
+      }
+     ],
+     "decision_states": [
+      {
+       "subject": "pilot start date",
+       "state": "made",
+       "quote": "we're all set for 15 Sep"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "high"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "cards": [
+   {
+    "about": [
+     "Pooja",
+     "Greenleaf"
+    ],
+    "min": 0,
+    "max": 0
+   }
+  ]
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": []
+ },
+ "witness": {
+  "stage": "memory",
+  "objects": [
+   "done"
+  ]
+ },
+ "not_expressible": {},
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "unanswered email",
+     "Pooja Iyer"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "reply": 6500
+     },
+     "confidence_bp": 5500,
+     "rationale": "A direct question is waiting on us.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "Pooja Iyer"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "greenleaf.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "opportunity",
+     "greenleaf.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "greenleaf.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "Someone at this company asked us something and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "greenleaf.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "This is not an investor conversation, and neither offered play fits what was asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "opportunity",
+     "Greenleaf"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "Greenleaf"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "Someone at this company asked us something and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "Greenleaf"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "This is not an investor conversation, and neither offered play fits what was asked.",
+     "missing": []
+    }
+   }
+  ],
+  "narrator": [
+   {
+    "when": [
+     "account_admin",
+     "Greenleaf"
+    ],
+    "answer": {
+     "headline": "Confirm the pilot start date to Greenleaf",
+     "situation": "Pooja at Greenleaf asked you to confirm the pilot start date by Thursday 4 Sep. The next move is ours.",
+     "artifact": "Hi Pooja, confirming the pilot start date: [date]."
+    }
+   },
+   {
+    "when": [
+     "unanswered_email",
+     "Pooja Iyer"
+    ],
+    "answer": {
+     "headline": "Confirm the pilot start date to Pooja Iyer",
+     "situation": "Pooja Iyer asked you to confirm the pilot start date by Thursday 4 Sep.",
+     "artifact": "Hi Pooja, confirming the pilot start date: [date]."
+    }
+   }
+  ],
+  "resolution": [
+   {
+    "when": [
+     "Thanks for confirming on WhatsApp"
+    ],
+    "answer": {
+     "verdict": "RESOLVED",
+     "certainty": "EXPLICIT_COMPLETION",
+     "scope": [
+      "situation"
+     ],
+     "quote": "Thanks for confirming on WhatsApp yesterday",
+     "speaker_role_said": "external"
+    }
+   }
+  ]
+ },
+ "blocked_on": "the counterparty's 'all set' is dropped at the qualification floor (2,500) (a decision_made at 920), so the answer given on another channel never closes the ask — STEP-05, replay 04"
+}

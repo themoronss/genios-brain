@@ -1,0 +1,408 @@
+{
+ "case_id": "F25",
+ "source": "ideal_reader",
+ "recorded_at": "b47239c9",
+ "answers": {
+  "0588cba483e616c4c6f06c14b4c73fe1130fc453081921449ebb6a2fbe1262b6": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Please confirm your acceptance by 12 Aug; the engagement documents will follow once the board approves.",
+    "start_offset": 237,
+    "end_offset": 340,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Please confirm your acceptance by 12 Aug; the engagement documents will follow once the board approves.\", \"start_offset\": 237, \"end_offset\": 340, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 944,
+   "output_tokens": 64,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "17a739ef5be218d5b26984ea1540ed3467e1d318a013657c01b3fa77f9b7a058": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "commit",
+    "stance": "positive",
+    "topics": [
+     "hiring",
+     "offer",
+     "ESOP"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Kavitha",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Kavitha",
+        "start_offset": 45,
+        "end_offset": 52
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Nimbus Labs",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Nimbus Labs",
+        "start_offset": 29,
+        "end_offset": 40
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "commitments": [
+     {
+      "actor": "Arjun Rao",
+      "action": "send the engagement documents once the board approves",
+      "beneficiary": "Kavitha",
+      "is_conditional": true,
+      "condition_text": "once the board approves",
+      "evidence": [
+       {
+        "quote": "the engagement documents will follow once the board approves",
+        "start_offset": 279,
+        "end_offset": 339
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "decision_states": [
+     {
+      "subject": "ESOP pool",
+      "state": "pending",
+      "blocked_on": "board approval",
+      "owner": "the board",
+      "evidence": [
+       {
+        "quote": "subject to the board approving the ESOP pool",
+        "start_offset": 191,
+        "end_offset": 235
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "subject": "Kavitha's acceptance",
+      "state": "pending",
+      "owner": "Kavitha",
+      "evidence": [
+       {
+        "quote": "Please confirm your acceptance by 12 Aug",
+        "start_offset": 237,
+        "end_offset": 277
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "dependencies": [
+     {
+      "blocker": "board approval of the ESOP pool",
+      "blocked": "engagement documents",
+      "dependency_type": "approval",
+      "evidence": [
+       {
+        "quote": "the engagement documents will follow once the board approves",
+        "start_offset": 279,
+        "end_offset": 339
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "dates_mentioned": [
+     {
+      "as_written": "12 Aug",
+      "earliest": "2026-08-12T00:00:00+05:30",
+      "latest": "2026-08-12T23:59:59+05:30",
+      "certainty": "range",
+      "resolved_against": "2026-08-05T10:00:00Z",
+      "evidence": [
+       {
+        "quote": "12 Aug",
+        "start_offset": 271,
+        "end_offset": 277
+       }
+      ]
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "a job offer"
+    }
+   },
+   "raw": "{\"intent\": \"commit\", \"stance\": \"positive\", \"topics\": [\"hiring\", \"offer\", \"ESOP\"], \"entity_mentions\": [{\"surface_form\": \"Kavitha\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Kavitha\", \"start_offset\": 45, \"end_offset\": 52}], \"confidence_bp\": 9000}, {\"surface_form\": \"Nimbus Labs\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Nimbus Labs\", \"start_offset\": 29, \"end_offset\": 40}], \"confidence_bp\": 9000}], \"commitments\": [{\"actor\": \"Arjun Rao\", \"action\": \"send the engagement documents once the board approves\", \"beneficiary\": \"Kavitha\", \"is_conditional\": true, \"condition_text\": \"once the board approves\", \"evidence\": [{\"quote\": \"the engagement documents will follow once the board approves\", \"start_offset\": 279, \"end_offset\": 339}], \"confidence_bp\": 9000}], \"decision_states\": [{\"subject\": \"ESOP pool\", \"state\": \"pending\", \"blocked_on\": \"board approval\", \"owner\": \"the board\", \"evidence\": [{\"quote\": \"subject to the board approving the ESOP pool\", \"start_offset\": 191, \"end_offset\": 235}], \"confidence_bp\": 9000}, {\"subject\": \"Kavitha's acceptance\", \"state\": \"pending\", \"owner\": \"Kavitha\", \"evidence\": [{\"quote\": \"Please confirm your acceptance by 12 Aug\", \"start_offset\": 237, \"end_offset\": 277}], \"confidence_bp\": 9000}], \"dependencies\": [{\"blocker\": \"board approval of the ESOP pool\", \"blocked\": \"engagement documents\", \"dependency_type\": \"approval\", \"evidence\": [{\"quote\": \"the engagement documents will follow once the board approves\", \"start_offset\": 279, \"end_offset\": 339}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"12 Aug\", \"earliest\": \"2026-08-12T00:00:00+05:30\", \"latest\": \"2026-08-12T23:59:59+05:30\", \"certainty\": \"range\", \"resolved_against\": \"2026-08-05T10:00:00Z\", \"evidence\": [{\"quote\": \"12 Aug\", \"start_offset\": 271, \"end_offset\": 277}]}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"a job offer\"}}",
+   "input_tokens": 4943,
+   "output_tokens": 501,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "18834df331d9b25bd8d503317a653a0266582597c1f40c4420f2625df6e31d74": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 399,
+   "output_tokens": 27,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "2640262375403c55d831f1aac036c42ad4b22a37e956507875ecd30c838f8590": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Engagement documents wait on board approval of the ESOP pool",
+    "situation": "Stated in the Kavitha thread: engagement documents, waiting on board approval of the ESOP pool.",
+    "artifact": "Who moves the board approval of the ESOP pool, and by when?"
+   },
+   "raw": "{\"headline\": \"Engagement documents wait on board approval of the ESOP pool\", \"situation\": \"Stated in the Kavitha thread: engagement documents, waiting on board approval of the ESOP pool.\", \"artifact\": \"Who moves the board approval of the ESOP pool, and by when?\"}",
+   "input_tokens": 847,
+   "output_tokens": 65,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "2bb16f0bffd2fa1fc8c3ed13a72712490d5e587b88e83746af90c77cfc96b866": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4543,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 4599,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 4791
+    },
+    "confidence_bp": 4000,
+    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4543, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4599, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 4791}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
+   "input_tokens": 2426,
+   "output_tokens": 91,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "2f03a14765687ebe6c0182c1436440fad78f1b57085c32025a018f02144398e9": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 440,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "30d0834c8d3c022f173a1acba93e388a1d951ecbccf198c70215db5b1ae2cef7": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4543,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 4599,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 4791
+    },
+    "confidence_bp": 4000,
+    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4543, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4599, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 4791}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
+   "input_tokens": 2426,
+   "output_tokens": 91,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "39b560c11be4a84b6154b37c39349f8e566aadd662bb21a64257e9912816f5fb": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Re: Offer: Founding AI Engineer, Nimbus Labs",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Offer: Founding AI Engineer, Nimbus Labs\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 546,
+   "output_tokens": 44,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "5978e199530509b2af7638ec1ff070d9b2b0744db9338f8c8b30162b73df8103": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4543,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 4599,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 4791
+    },
+    "confidence_bp": 4000,
+    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4543, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4599, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 4791}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
+   "input_tokens": 2426,
+   "output_tokens": 91,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "5c922a35f8605f3eaf7ba0d056e51f44cb42e1ef44e553f5cb6fbd257b81a6f5": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "commit",
+    "stance": "positive",
+    "topics": [
+     "offer"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Kavitha",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Kavitha",
+        "start_offset": 137,
+        "end_offset": 144
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "commitments": [
+     {
+      "actor": "Kavitha",
+      "action": "confirm the offer by 12 Aug",
+      "beneficiary": "Arjun Rao",
+      "is_conditional": true,
+      "condition_text": "once she has read the documents",
+      "evidence": [
+       {
+        "quote": "I'll confirm by the 12th once I've read the documents.",
+        "start_offset": 81,
+        "end_offset": 135
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "high"
+    }
+   },
+   "raw": "{\"intent\": \"commit\", \"stance\": \"positive\", \"topics\": [\"offer\"], \"entity_mentions\": [{\"surface_form\": \"Kavitha\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Kavitha\", \"start_offset\": 137, \"end_offset\": 144}], \"confidence_bp\": 9000}], \"commitments\": [{\"actor\": \"Kavitha\", \"action\": \"confirm the offer by 12 Aug\", \"beneficiary\": \"Arjun Rao\", \"is_conditional\": true, \"condition_text\": \"once she has read the documents\", \"evidence\": [{\"quote\": \"I'll confirm by the 12th once I've read the documents.\", \"start_offset\": 81, \"end_offset\": 135}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
+   "input_tokens": 4893,
+   "output_tokens": 190,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "91ac183b214ef051bb21e23119c6ef5ee5e56e6c9706c1990788fd57fc43ec60": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 6000,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 5031
+    },
+    "confidence_bp": 5000,
+    "rationale": "We promised her the engagement documents once the board approves; that promise is ours to keep.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 6000, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 5031}, \"confidence_bp\": 5000, \"rationale\": \"We promised her the engagement documents once the board approves; that promise is ours to keep.\", \"missing\": []}",
+   "input_tokens": 2143,
+   "output_tokens": 80,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "9ee6c31b92a75c6b2a6c4d0da28e2e7819448d3cb94650d42de6c91ec5bb7d4c": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 415,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "a725e02ba6f1c9b7cda1b240ea33a7895f7d128d5a22481e20e788119aac9c92": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 6000,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 5031
+    },
+    "confidence_bp": 5000,
+    "rationale": "We promised her the engagement documents once the board approves; that promise is ours to keep.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 6000, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 5031}, \"confidence_bp\": 5000, \"rationale\": \"We promised her the engagement documents once the board approves; that promise is ours to keep.\", \"missing\": []}",
+   "input_tokens": 2143,
+   "output_tokens": 80,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "e35101dc85d534bd9db572f0f88594c2d1d7380c75d0fa5504c816800589d585": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 6000,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 5031
+    },
+    "confidence_bp": 5000,
+    "rationale": "We promised her the engagement documents once the board approves; that promise is ours to keep.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 6000, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 5031}, \"confidence_bp\": 5000, \"rationale\": \"We promised her the engagement documents once the board approves; that promise is ours to keep.\", \"missing\": []}",
+   "input_tokens": 2143,
+   "output_tokens": 80,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "f5bcd19bafc6f9a990f2d35dff78023c397aaaa8a589d1b5f36c50828fa6a3de": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Offer: Founding AI Engineer, Nimbus Labs",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Offer: Founding AI Engineer, Nimbus Labs\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 597,
+   "output_tokens": 43,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

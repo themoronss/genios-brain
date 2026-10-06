@@ -1,0 +1,37 @@
+{
+ "case_id": "F08",
+ "source": "ideal_reader",
+ "recorded_at": "b47239c9",
+ "answers": {
+  "1d2fc4bd464038ee8564e86878a1f50dc27a628eeb572b08b8eabe4a1577a530": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "drop",
+     "relevance": 0.4,
+     "reason": "automated introduction service"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.4, \"reason\": \"automated introduction service\"}]",
+   "input_tokens": 438,
+   "output_tokens": 23,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "99d9d3077acce3baa4eb559b1eae081f58ca137f13b138449d19f344b6bc1c92": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "drop",
+     "relevance": 0.4,
+     "reason": "automated introduction service"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.4, \"reason\": \"automated introduction service\"}]",
+   "input_tokens": 438,
+   "output_tokens": 23,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

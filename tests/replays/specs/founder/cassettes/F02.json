@@ -1,0 +1,115 @@
+{
+ "case_id": "F02",
+ "source": "ideal_reader",
+ "recorded_at": "b47239c9",
+ "answers": {
+  "0738e3ca82e8ffd32a02d2545f255fa727c0c7cd0bffc4b5786c098129070ca1": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "drop",
+     "relevance": 0.05,
+     "reason": "automated, nobody waits on a reply"
+    },
+    {
+     "i": 1,
+     "disposition": "drop",
+     "relevance": 0.05,
+     "reason": "automated, nobody waits on a reply"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}, {\"i\": 1, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}]",
+   "input_tokens": 480,
+   "output_tokens": 50,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "0a15dc9ef1ea19991c448be0f23b7e1502e64a4e19ceb7c557728453f42937bd": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": false,
+      "description": "Document issued to your DigiVault",
+      "category": "automated",
+      "human_authored": false,
+      "asks_for_reply": false
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"Document issued to your DigiVault\", \"category\": \"automated\", \"human_authored\": false, \"asks_for_reply\": false}]}",
+   "input_tokens": 550,
+   "output_tokens": 43,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "22ab63db58c7ac51846b382460664a0e3c0b6be0d8dfee1f3ced948c670177fb": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "drop",
+     "relevance": 0.05,
+     "reason": "automated, nobody waits on a reply"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}]",
+   "input_tokens": 420,
+   "output_tokens": 25,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "b9048c482f8f287b447b1628153c0f877ef1830cd80a456716bcb86d9acc2b64": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "description": "Application SSR-2026-48213: clarification required",
+      "business": true,
+      "category": "transactional",
+      "human_authored": false,
+      "asks_for_reply": true
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"description\": \"Application SSR-2026-48213: clarification required\", \"business\": true, \"category\": \"transactional\", \"human_authored\": false, \"asks_for_reply\": true}]}",
+   "input_tokens": 573,
+   "output_tokens": 48,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "c9b60c06c30e333bd0267c6352cd00f352a796625cca3751aed74d4c206cb2de": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "drop",
+     "relevance": 0.05,
+     "reason": "automated, nobody waits on a reply"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}]",
+   "input_tokens": 442,
+   "output_tokens": 25,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "fdc91b855e1458d68a8714c78a941277b13b165817a30e46301621980d6d2f7b": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Application SSR-2026-48213: document received",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Application SSR-2026-48213: document received\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 561,
+   "output_tokens": 45,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

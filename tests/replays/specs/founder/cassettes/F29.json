@@ -1,0 +1,621 @@
+{
+ "case_id": "F29",
+ "source": "ideal_reader",
+ "recorded_at": "b47239c9",
+ "answers": {
+  "10a51a2dacbdf26db160f83ef69bb9b45fe01cf6fae99c87733a06f349848a49": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4894,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 4950,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 5142
+    },
+    "confidence_bp": 4000,
+    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4894, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4950, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 5142}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
+   "input_tokens": 2460,
+   "output_tokens": 91,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "13cbcbbbd759d8314436521541137ba5893e792868edfa1920cc83f27b974b12": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Reply",
+    "situation_summary": "The reply is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
+    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
+   },
+   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
+   "input_tokens": 2398,
+   "output_tokens": 166,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "146dd7298db088d427d1483ae140e9f4989959eaf1c517c55772a1f6b28cfd63": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Meeting with Aman Verma, 1 day ago",
+    "situation": "The meeting with Aman Verma happened 1 day ago. No follow-through is visible.",
+    "artifact": "Recap: [what was discussed - yours to fill]. Next step: [one specific step, with a date]."
+   },
+   "raw": "{\"headline\": \"Meeting with Aman Verma, 1 day ago\", \"situation\": \"The meeting with Aman Verma happened 1 day ago. No follow-through is visible.\", \"artifact\": \"Recap: [what was discussed - yours to fill]. Next step: [one specific step, with a date].\"}",
+   "input_tokens": 648,
+   "output_tokens": 62,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "16ce30483b189e53608551fd49dd9d9a373723591690d6b210efece10be2cde7": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "DECISION_MADE",
+      "confidence_bp": 6000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"DECISION_MADE\", \"confidence_bp\": 6000}]}",
+   "input_tokens": 411,
+   "output_tokens": 50,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "193bed9c89adb6ab6738c6919c9829a7526b8363a2e794f7cfdc5ced7d6bb805": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4894,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 4950,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 5142
+    },
+    "confidence_bp": 4000,
+    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4894, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4950, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 5142}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
+   "input_tokens": 2460,
+   "output_tokens": 91,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "1b3238b82c9c4886b13a128ebb93750e26eecc6b5ef5d77c11792f3ae7891d3d": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 424,
+   "output_tokens": 74,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "2d238a731adb2e2e368cb27d6eb8d1b8651d8565905bf090753a0d02285a558d": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "sales.pb.cold_calling.permission_based_opener": 3718,
+     "sales.pb.demo.discovery_anchored_demo": 3648,
+     "sales.pb.linkedin_outreach.comment_first_linkedin_approach": 3585,
+     "sales.pb.tam_sam_som.bottom_up_market_sizing": 3669
+    },
+    "confidence_bp": 4000,
+    "rationale": "A sales opener or demo script does not fit a founder's meeting.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.cold_calling.permission_based_opener\": 3718, \"sales.pb.demo.discovery_anchored_demo\": 3648, \"sales.pb.linkedin_outreach.comment_first_linkedin_approach\": 3585, \"sales.pb.tam_sam_som.bottom_up_market_sizing\": 3669}, \"confidence_bp\": 4000, \"rationale\": \"A sales opener or demo script does not fit a founder's meeting.\", \"missing\": []}",
+   "input_tokens": 2378,
+   "output_tokens": 93,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "311a9050c9b3a6c41922cdef4533b48aa87bdc15208379f571e69ef45d3d9c87": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Two calls on 5 Oct",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Two calls on 5 Oct\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 556,
+   "output_tokens": 38,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "4217a8eabba88bc2ca9c141138c4be7241b8d2768e287d9b8617bdb28dad45c9": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Send Aman Verma your API pricing sheet",
+    "situation": "Aman Verma asked 7 days ago for your API pricing sheet before the second call.",
+    "artifact": "Hi Aman, attaching our API pricing sheet ahead of the pricing call. Thanks, Arjun"
+   },
+   "raw": "{\"headline\": \"Send Aman Verma your API pricing sheet\", \"situation\": \"Aman Verma asked 7 days ago for your API pricing sheet before the second call.\", \"artifact\": \"Hi Aman, attaching our API pricing sheet ahead of the pricing call. Thanks, Arjun\"}",
+   "input_tokens": 1806,
+   "output_tokens": 61,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "499bd2fcee03fd844eeb21a4465c6cfa99bb099cde57b398f7ec76924c19dd78": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "The follow through relay",
+    "situation_summary": "The the follow through relay is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The the follow through relay ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the the follow through relay shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
+    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
+   },
+   "raw": "{\"headline\": \"The follow through relay\", \"situation_summary\": \"The the follow through relay is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The the follow through relay ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the the follow through relay shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
+   "input_tokens": 3156,
+   "output_tokens": 189,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "4ffea7c74a10bde1760ff7e6cfbc052dc1e4665a39e87bda4fc9ba4ce1873fe3": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "sales.pb.account_research.fifteen_minute_account_brief": 5333,
+     "sales.pb.icp_definition.checkable_from_a_domain_name": 5499,
+     "sales.pb.icp_definition.drift_review_on_a_cadence": 5499,
+     "sales.pb.icp_definition.negative_list_first": 5499,
+     "sales.pb.icp_definition.retrofit_the_open_pipeline": 5499,
+     "sales.pb.icp_definition.tri_cohort_analysis": 5499,
+     "sales.pb.lead_generation.source_quality_ledger": 5452,
+     "sales.pb.lead_qualification.bant_budget_authority_need_timing_older": 5499,
+     "sales.pb.lead_qualification.disqualify_early_the_cheapest_action_available": 5499,
+     "sales.pb.lead_qualification.meddicc_metrics_economic_buyer_decision_criteria": 5499,
+     "sales.pb.meeting_booking.frictionless_scheduling": 5953
+    },
+    "confidence_bp": 4000,
+    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.account_research.fifteen_minute_account_brief\": 5333, \"sales.pb.icp_definition.checkable_from_a_domain_name\": 5499, \"sales.pb.icp_definition.drift_review_on_a_cadence\": 5499, \"sales.pb.icp_definition.negative_list_first\": 5499, \"sales.pb.icp_definition.retrofit_the_open_pipeline\": 5499, \"sales.pb.icp_definition.tri_cohort_analysis\": 5499, \"sales.pb.lead_generation.source_quality_ledger\": 5452, \"sales.pb.lead_qualification.bant_budget_authority_need_timing_older\": 5499, \"sales.pb.lead_qualification.disqualify_early_the_cheapest_action_available\": 5499, \"sales.pb.lead_qualification.meddicc_metrics_economic_buyer_decision_criteria\": 5499, \"sales.pb.meeting_booking.frictionless_scheduling\": 5953}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
+   "input_tokens": 3878,
+   "output_tokens": 218,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "5579de749ee09b627b4426253c7ae932adf48fd8f0552b4264a92b6d9770baf7": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Could you share your API pricing sheet before the second one?",
+    "start_offset": 93,
+    "end_offset": 154,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Could you share your API pricing sheet before the second one?\", \"start_offset\": 93, \"end_offset\": 154, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 903,
+   "output_tokens": 53,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "55d31d3f933a3a5e83c0365e5fb4499989bbdbba02b073652771447472887119": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "admin.pb.action_item_tracking.one_register_across_meetings": 4854,
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4843,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 6400,
+     "admin.pb.minutes_and_documentation.decisions_and_actions_same_day": 4735
+    },
+    "confidence_bp": 5000,
+    "rationale": "Nothing since the meeting says what was agreed; ask what was promised.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.action_item_tracking.one_register_across_meetings\": 4854, \"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4843, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 6400, \"admin.pb.minutes_and_documentation.decisions_and_actions_same_day\": 4735}, \"confidence_bp\": 5000, \"rationale\": \"Nothing since the meeting says what was agreed; ask what was promised.\", \"missing\": []}",
+   "input_tokens": 2511,
+   "output_tokens": 109,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "6142bf6fa8b760b98addbe41dd18de0c27745539c34d271cc04ca0984af7654d": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "sales.pb.account_research.fifteen_minute_account_brief": 5333,
+     "sales.pb.icp_definition.checkable_from_a_domain_name": 5499,
+     "sales.pb.icp_definition.drift_review_on_a_cadence": 5499,
+     "sales.pb.icp_definition.negative_list_first": 5499,
+     "sales.pb.icp_definition.retrofit_the_open_pipeline": 5499,
+     "sales.pb.icp_definition.tri_cohort_analysis": 5499,
+     "sales.pb.lead_generation.source_quality_ledger": 5452,
+     "sales.pb.lead_qualification.bant_budget_authority_need_timing_older": 5499,
+     "sales.pb.lead_qualification.disqualify_early_the_cheapest_action_available": 5499,
+     "sales.pb.lead_qualification.meddicc_metrics_economic_buyer_decision_criteria": 5499,
+     "sales.pb.meeting_booking.frictionless_scheduling": 5953
+    },
+    "confidence_bp": 4000,
+    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.account_research.fifteen_minute_account_brief\": 5333, \"sales.pb.icp_definition.checkable_from_a_domain_name\": 5499, \"sales.pb.icp_definition.drift_review_on_a_cadence\": 5499, \"sales.pb.icp_definition.negative_list_first\": 5499, \"sales.pb.icp_definition.retrofit_the_open_pipeline\": 5499, \"sales.pb.icp_definition.tri_cohort_analysis\": 5499, \"sales.pb.lead_generation.source_quality_ledger\": 5452, \"sales.pb.lead_qualification.bant_budget_authority_need_timing_older\": 5499, \"sales.pb.lead_qualification.disqualify_early_the_cheapest_action_available\": 5499, \"sales.pb.lead_qualification.meddicc_metrics_economic_buyer_decision_criteria\": 5499, \"sales.pb.meeting_booking.frictionless_scheduling\": 5953}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
+   "input_tokens": 3878,
+   "output_tokens": 218,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "6a152b26391b6aa8c0dcebd2034d871542358790560919fd2091881d38b09d52": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "DECISION_MADE",
+      "confidence_bp": 6000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"DECISION_MADE\", \"confidence_bp\": 6000}]}",
+   "input_tokens": 411,
+   "output_tokens": 50,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "7061c9a4eb46dee4f38304ed2863a4f27bc84bd6b76eb4e308fb25dea0b6304a": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "sales.pb.cold_calling.permission_based_opener": 3718,
+     "sales.pb.demo.discovery_anchored_demo": 3648,
+     "sales.pb.linkedin_outreach.comment_first_linkedin_approach": 3585,
+     "sales.pb.tam_sam_som.bottom_up_market_sizing": 3669
+    },
+    "confidence_bp": 4000,
+    "rationale": "A sales opener or demo script does not fit a founder's meeting.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.cold_calling.permission_based_opener\": 3718, \"sales.pb.demo.discovery_anchored_demo\": 3648, \"sales.pb.linkedin_outreach.comment_first_linkedin_approach\": 3585, \"sales.pb.tam_sam_som.bottom_up_market_sizing\": 3669}, \"confidence_bp\": 4000, \"rationale\": \"A sales opener or demo script does not fit a founder's meeting.\", \"missing\": []}",
+   "input_tokens": 2378,
+   "output_tokens": 93,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "75f3959f93535b82289ab2d7b84aa95048891c723c95f8f306d8deccdd10c2a9": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 425,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "8c2a8beed33c487c867d9b3a5804b460599ae2e2cb4838f8173ae5997db08539": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "admin.pb.action_item_tracking.one_register_across_meetings": 4854,
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4843,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 6400,
+     "admin.pb.minutes_and_documentation.decisions_and_actions_same_day": 4735
+    },
+    "confidence_bp": 5000,
+    "rationale": "Nothing since the meeting says what was agreed; ask what was promised.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.action_item_tracking.one_register_across_meetings\": 4854, \"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4843, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 6400, \"admin.pb.minutes_and_documentation.decisions_and_actions_same_day\": 4735}, \"confidence_bp\": 5000, \"rationale\": \"Nothing since the meeting says what was agreed; ask what was promised.\", \"missing\": []}",
+   "input_tokens": 2511,
+   "output_tokens": 109,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "8cd52444b396fef3a490d94249479d6af281899246ef57f074b36d2cf0859973": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Meeting with Aman Verma, 1 day ago",
+    "situation": "The meeting with Aman Verma happened 1 day ago. No follow-through is visible.",
+    "artifact": "Recap: [what was discussed - yours to fill]. Next step: [one specific step, with a date]."
+   },
+   "raw": "{\"headline\": \"Meeting with Aman Verma, 1 day ago\", \"situation\": \"The meeting with Aman Verma happened 1 day ago. No follow-through is visible.\", \"artifact\": \"Recap: [what was discussed - yours to fill]. Next step: [one specific step, with a date].\"}",
+   "input_tokens": 648,
+   "output_tokens": 62,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "931073041988ba7902cae913459d212416e18e3ae44978c2c74046578a3c5077": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": false,
+      "description": "no readable text",
+      "category": "unknown",
+      "human_authored": null,
+      "asks_for_reply": null
+     },
+     {
+      "item": 2,
+      "business": false,
+      "description": "no readable text",
+      "category": "unknown",
+      "human_authored": null,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"no readable text\", \"category\": \"unknown\", \"human_authored\": null, \"asks_for_reply\": null}, {\"item\": 2, \"business\": false, \"description\": \"no readable text\", \"category\": \"unknown\", \"human_authored\": null, \"asks_for_reply\": null}]}",
+   "input_tokens": 537,
+   "output_tokens": 72,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "b405607f34e6ef8d26e044d3cd0163c4766a7b20c76e5f2313f10762ebedba1c": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4451,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 4507,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 4700
+    },
+    "confidence_bp": 4000,
+    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4451, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4507, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 4700}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
+   "input_tokens": 2466,
+   "output_tokens": 91,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "b53d6c1ad4fde98af209399e61d35679b747d2b3dd7b58751aee224df12267a5": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 412,
+   "output_tokens": 51,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "b8f3273b0f63d9481ba8c43e60f865f7c4ab48a349a4a84e17e3a677e51280e4": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 518,
+   "output_tokens": 74,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "c1eb453fe8355085ef0beba7880d91fc19b19881a1a3a706afd34f1ed6e307b0": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "reply": 6500,
+     "wait_unanswered_email": 5100
+    },
+    "confidence_bp": 5500,
+    "rationale": "A direct question is waiting on us.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5100}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
+   "input_tokens": 1494,
+   "output_tokens": 42,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "c93489aa2c7307e0937930ae905bbfdbb6ad22a438e9c6508b79a044110616dd": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "reply": 6500,
+     "wait_unanswered_email": 5200
+    },
+    "confidence_bp": 5500,
+    "rationale": "A direct question is waiting on us.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5200}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
+   "input_tokens": 1494,
+   "output_tokens": 42,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "dec150a746c181889035f03f682d1c1e6d901f86abf12d5265b08a5b770ea5a5": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "request",
+    "stance": "positive",
+    "topics": [
+     "pricing",
+     "partnership"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Aman Verma",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Aman Verma",
+        "start_offset": 156,
+        "end_offset": 166
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Memloop",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Memloop",
+        "start_offset": 176,
+        "end_offset": 183
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "Share the API pricing sheet before the pricing call",
+      "asked_by": "Aman Verma",
+      "asked_of": "Arjun Rao",
+      "evidence": [
+       {
+        "quote": "Could you share your API pricing sheet before the second one?",
+        "start_offset": 93,
+        "end_offset": 154
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "dates_mentioned": [
+     {
+      "as_written": "5 Oct",
+      "earliest": "2026-10-05T00:00:00+05:30",
+      "latest": "2026-10-05T23:59:59+05:30",
+      "certainty": "range",
+      "resolved_against": "2026-09-27T08:00:00Z",
+      "evidence": [
+       {
+        "quote": "5 Oct",
+        "start_offset": 13,
+        "end_offset": 18
+       }
+      ]
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "pricing before the second call"
+    },
+    "implied_actions": [
+     "share the API pricing sheet before the 4 pm call"
+    ]
+   },
+   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"pricing\", \"partnership\"], \"entity_mentions\": [{\"surface_form\": \"Aman Verma\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Aman Verma\", \"start_offset\": 156, \"end_offset\": 166}], \"confidence_bp\": 9000}, {\"surface_form\": \"Memloop\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Memloop\", \"start_offset\": 176, \"end_offset\": 183}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Share the API pricing sheet before the pricing call\", \"asked_by\": \"Aman Verma\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Could you share your API pricing sheet before the second one?\", \"start_offset\": 93, \"end_offset\": 154}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"5 Oct\", \"earliest\": \"2026-10-05T00:00:00+05:30\", \"latest\": \"2026-10-05T23:59:59+05:30\", \"certainty\": \"range\", \"resolved_against\": \"2026-09-27T08:00:00Z\", \"evidence\": [{\"quote\": \"5 Oct\", \"start_offset\": 13, \"end_offset\": 18}]}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"pricing before the second call\"}, \"implied_actions\": [\"share the API pricing sheet before the 4 pm call\"]}",
+   "input_tokens": 4894,
+   "output_tokens": 319,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "f7cadc587b2a5c365b5b0fa8654894e9d3646369d194dee1bdc19d83fdd6db69": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "sales.pb.account_research.fifteen_minute_account_brief": 4591,
+     "sales.pb.icp_definition.checkable_from_a_domain_name": 4757,
+     "sales.pb.icp_definition.drift_review_on_a_cadence": 4757,
+     "sales.pb.icp_definition.negative_list_first": 4757,
+     "sales.pb.icp_definition.retrofit_the_open_pipeline": 4757,
+     "sales.pb.icp_definition.tri_cohort_analysis": 4757,
+     "sales.pb.lead_generation.source_quality_ledger": 4710,
+     "sales.pb.lead_qualification.bant_budget_authority_need_timing_older": 4757,
+     "sales.pb.lead_qualification.disqualify_early_the_cheapest_action_available": 4757,
+     "sales.pb.lead_qualification.meddicc_metrics_economic_buyer_decision_criteria": 4757
+    },
+    "confidence_bp": 4000,
+    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.account_research.fifteen_minute_account_brief\": 4591, \"sales.pb.icp_definition.checkable_from_a_domain_name\": 4757, \"sales.pb.icp_definition.drift_review_on_a_cadence\": 4757, \"sales.pb.icp_definition.negative_list_first\": 4757, \"sales.pb.icp_definition.retrofit_the_open_pipeline\": 4757, \"sales.pb.icp_definition.tri_cohort_analysis\": 4757, \"sales.pb.lead_generation.source_quality_ledger\": 4710, \"sales.pb.lead_qualification.bant_budget_authority_need_timing_older\": 4757, \"sales.pb.lead_qualification.disqualify_early_the_cheapest_action_available\": 4757, \"sales.pb.lead_qualification.meddicc_metrics_economic_buyer_decision_criteria\": 4757}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
+   "input_tokens": 3328,
+   "output_tokens": 204,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "f7f0e70e2e3f698872c36b428c4d01d69c9180feb30f25d983d61bbbd79219ae": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Reply",
+    "situation_summary": "The reply is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
+    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
+   },
+   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
+   "input_tokens": 2358,
+   "output_tokens": 166,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

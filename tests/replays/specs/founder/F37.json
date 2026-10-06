@@ -1,0 +1,338 @@
+{
+ "case_id": "F37",
+ "title": "The connector is never the person to reply to",
+ "kind": "must_abstain",
+ "label_row": 37,
+ "labelled_by": "claude",
+ "replays": [
+  "02"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-09-08T18:00:00Z",
+  "2026-09-10T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "intro",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-08T05:00:00Z",
+   "from": "Introly <hello@introly.test>",
+   "to": [
+    "arjun@nimbuslabs.test",
+    "farah@kitepath.test"
+   ],
+   "subject": "Arjun <> Farah Qureshi (Kitepath)",
+   "body": "Arjun, meet Farah Qureshi, who leads investments at Kitepath. Farah, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I'll let you two take it from here.\n\nIntroly",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-intro",
+   "headers": {
+    "List-Unsubscribe": "<mailto:unsubscribe@introly.test>"
+   },
+   "read": {
+    "gate": {
+     "disposition": "drop",
+     "relevance": 0.4,
+     "reason": "automated introduction service"
+    },
+    "relevance": "business",
+    "extraction": {
+     "intent": "introduce",
+     "stance": "positive",
+     "topics": [
+      "introduction"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Farah Qureshi",
+       "entity_type": "person",
+       "quote": "Farah Qureshi"
+      },
+      {
+       "surface_form": "Kitepath",
+       "entity_type": "organization",
+       "quote": "Kitepath"
+      }
+     ],
+     "relationships": [
+      {
+       "party": "Farah Qureshi",
+       "nature": "introduced contact",
+       "direction": "inbound",
+       "evidence_text": "Arjun, meet Farah Qureshi"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": false,
+      "asks_for_reply": true,
+      "engagement": "medium",
+      "motive": "introduce a contact"
+     }
+    }
+   }
+  },
+  {
+   "id": "reply",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-08T09:00:00Z",
+   "from": "Farah Qureshi <farah@kitepath.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Re: Arjun <> Farah Qureshi (Kitepath)",
+   "body": "Hi Arjun,\n\nIntroly connected us. Can you send your deck by Friday 12 Sep?\n\nFarah Qureshi\nKitepath",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-intro",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "positive",
+     "topics": [
+      "deck"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Farah Qureshi",
+       "entity_type": "person",
+       "quote": "Farah Qureshi"
+      },
+      {
+       "surface_form": "Kitepath",
+       "entity_type": "organization",
+       "quote": "Kitepath"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Send the deck by Friday 12 Sep",
+       "asked_by": "Farah Qureshi",
+       "asked_of": "Arjun Rao",
+       "quote": "Can you send your deck by Friday 12 Sep?"
+      }
+     ],
+     "dates_mentioned": [
+      {
+       "as_written": "Friday 12 Sep",
+       "earliest": "2026-09-12T00:00:00+05:30",
+       "latest": "2026-09-12T23:59:59+05:30",
+       "certainty": "range",
+       "resolved_against": "2026-09-08T09:00:00Z",
+       "quote": "Friday 12 Sep"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "the deck by Friday"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "cards": [
+   {
+    "about": [
+     "Introly"
+    ],
+    "min": 0,
+    "max": 0
+   }
+  ]
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "Reply to Introly",
+   "reply to Introly"
+  ]
+ },
+ "witness": {
+  "stage": "memory",
+  "objects": [
+   "reply"
+  ]
+ },
+ "not_expressible": {},
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "unanswered email",
+     "Farah Qureshi"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "reply": 6500
+     },
+     "confidence_bp": 5500,
+     "rationale": "A direct question is waiting on us.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "Farah Qureshi"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "kitepath.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "opportunity",
+     "kitepath.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "kitepath.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "Someone at this company asked us something and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "kitepath.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "fifteen_minute_account_brief": 5600
+     },
+     "confidence_bp": 5000,
+     "rationale": "An investor asked us something; know the fund before replying.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "opportunity",
+     "Kitepath"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "Kitepath"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "Someone at this company asked us something and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "Kitepath"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "fifteen_minute_account_brief": 5600
+     },
+     "confidence_bp": 5000,
+     "rationale": "An investor asked us something; know the fund before replying.",
+     "missing": []
+    }
+   }
+  ],
+  "narrator": [
+   {
+    "when": [
+     "unanswered_email",
+     "Farah Qureshi"
+    ],
+    "answer": {
+     "headline": "Send Farah Qureshi your deck",
+     "situation": "Farah Qureshi asked 2 days ago for your deck by Friday 12 Sep.",
+     "artifact": "Hi Farah, here is our deck. Thanks, Arjun"
+    }
+   },
+   {
+    "when": [
+     "account_admin",
+     "Kitepath"
+    ],
+    "answer": {
+     "headline": "Send Kitepath your deck",
+     "situation": "Farah at Kitepath asked for your deck by Friday 12 Sep. The next move is ours.",
+     "artifact": "Hi Farah, here is our deck. Thanks, Arjun"
+    }
+   }
+  ]
+ }
+}

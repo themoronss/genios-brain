@@ -1,0 +1,100 @@
+{
+ "case_id": "F30",
+ "title": "The founder's own promises on WhatsApp belong in their files",
+ "kind": "must_detect",
+ "label_row": 30,
+ "labelled_by": "claude",
+ "replays": [],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-09-20T18:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "mine",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-20T09:00:00Z",
+   "from": "Arjun Rao <arjun@nimbuslabs.test>",
+   "to": [
+    "gaurav@stackfield.test"
+   ],
+   "subject": "Pilot proposal",
+   "body": "Hi Gaurav,\n\nAs I said on WhatsApp, I'll send the pilot proposal by Friday.\n\nArjun",
+   "labels": [
+    "SENT"
+   ],
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "commit",
+     "stance": "positive",
+     "topics": [
+      "pilot"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Gaurav",
+       "entity_type": "person",
+       "quote": "Gaurav"
+      }
+     ],
+     "commitments": [
+      {
+       "actor": "Arjun Rao",
+       "action": "send the pilot proposal",
+       "beneficiary": "Gaurav",
+       "is_conditional": false,
+       "due": {
+        "as_written": "by Friday",
+        "earliest": "2026-09-25T00:00:00+05:30",
+        "latest": "2026-09-25T23:59:59+05:30",
+        "certainty": "relative",
+        "resolved_against": "2026-09-20T09:00:00Z",
+        "quote": "by Friday"
+       },
+       "quote": "I'll send the pilot proposal by Friday."
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "high"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "cards": [
+   {
+    "about": [
+     "Gaurav",
+     "pilot proposal"
+    ],
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "brief": "your open promises, each in the file it belongs to"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": []
+ },
+ "witness": null,
+ "not_expressible": {
+  "cards": "the screen door — WhatsApp promises arrive through the screen, which the runner does not drive; and the founder's answer is a brief line (D12d)",
+  "brief": "STEP-15 — there is no morning brief to appear in"
+ }
+}

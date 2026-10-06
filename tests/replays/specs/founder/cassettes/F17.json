@@ -1,0 +1,290 @@
+{
+ "case_id": "F17",
+ "source": "ideal_reader",
+ "recorded_at": "b47239c9",
+ "answers": {
+  "02622bab776dee6c025acad279b51fb18a8d4ae2f7cc1b77a75ba1fda5c4e66a": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "request",
+    "stance": "positive",
+    "topics": [
+     "accelerator application",
+     "interview"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Amira Saleh",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Amira Saleh",
+        "start_offset": 166,
+        "end_offset": 177
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Gulf Launchpad",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Gulf Launchpad",
+        "start_offset": 0,
+        "end_offset": 14
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "decision_states": [
+     {
+      "subject": "Gulf Launchpad cohort 9 application",
+      "state": "pending",
+      "owner": "Gulf Launchpad",
+      "evidence": [
+       {
+        "quote": "Your application has moved to the interview stage.",
+        "start_offset": 48,
+        "end_offset": 98
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "Book a 30-minute interview slot by 10 Oct",
+      "asked_by": "Amira Saleh",
+      "asked_of": "Arjun Rao",
+      "evidence": [
+       {
+        "quote": "Please book a 30-minute slot using the scheduling link by 10 Oct.",
+        "start_offset": 99,
+        "end_offset": 164
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "dates_mentioned": [
+     {
+      "as_written": "10 Oct",
+      "earliest": "2026-10-10T00:00:00+05:30",
+      "latest": "2026-10-10T23:59:59+05:30",
+      "certainty": "range",
+      "resolved_against": "2026-10-01T07:30:00Z",
+      "evidence": [
+       {
+        "quote": "10 Oct",
+        "start_offset": 157,
+        "end_offset": 163
+       }
+      ]
+     }
+    ],
+    "business_facts": [
+     {
+      "field": "person.title",
+      "subject": "Amira Saleh",
+      "value": "Programme Manager",
+      "standing": "observed",
+      "evidence": [
+       {
+        "quote": "Programme Manager, Gulf Launchpad",
+        "start_offset": 178,
+        "end_offset": 211
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "book the interview"
+    },
+    "implied_actions": [
+     "book an interview slot by 10 Oct"
+    ]
+   },
+   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"accelerator application\", \"interview\"], \"entity_mentions\": [{\"surface_form\": \"Amira Saleh\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Amira Saleh\", \"start_offset\": 166, \"end_offset\": 177}], \"confidence_bp\": 9000}, {\"surface_form\": \"Gulf Launchpad\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Gulf Launchpad\", \"start_offset\": 0, \"end_offset\": 14}], \"confidence_bp\": 9000}], \"decision_states\": [{\"subject\": \"Gulf Launchpad cohort 9 application\", \"state\": \"pending\", \"owner\": \"Gulf Launchpad\", \"evidence\": [{\"quote\": \"Your application has moved to the interview stage.\", \"start_offset\": 48, \"end_offset\": 98}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Book a 30-minute interview slot by 10 Oct\", \"asked_by\": \"Amira Saleh\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Please book a 30-minute slot using the scheduling link by 10 Oct.\", \"start_offset\": 99, \"end_offset\": 164}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"10 Oct\", \"earliest\": \"2026-10-10T00:00:00+05:30\", \"latest\": \"2026-10-10T23:59:59+05:30\", \"certainty\": \"range\", \"resolved_against\": \"2026-10-01T07:30:00Z\", \"evidence\": [{\"quote\": \"10 Oct\", \"start_offset\": 157, \"end_offset\": 163}]}], \"business_facts\": [{\"field\": \"person.title\", \"subject\": \"Amira Saleh\", \"value\": \"Programme Manager\", \"standing\": \"observed\", \"evidence\": [{\"quote\": \"Programme Manager, Gulf Launchpad\", \"start_offset\": 178, \"end_offset\": 211}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"book the interview\"}, \"implied_actions\": [\"book an interview slot by 10 Oct\"]}",
+   "input_tokens": 4907,
+   "output_tokens": 446,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "15b590e307adca6ccdcd90f2a368e301b38e927ede74a6ed6058cdeba7df1e04": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Gulf Launchpad cohort 9 - interview",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Gulf Launchpad cohort 9 - interview\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 563,
+   "output_tokens": 42,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "27319b5692aaa6900e6a56d6676b3112eb7556b51663977fc92be0ec6c325d6c": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 403,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "43ac604ce132567e678ac03db63c4888b64a5ed3093395bcc6b4a5dbdadb9ec3": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Please book a 30-minute slot using the scheduling link by 10 Oct.",
+    "start_offset": 99,
+    "end_offset": 164,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Please book a 30-minute slot using the scheduling link by 10 Oct.\", \"start_offset\": 99, \"end_offset\": 164, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 910,
+   "output_tokens": 54,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "45cb0c7be77d48673d049ac6776a95310039b406ad1a897a9fd8f36a39dd8245": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 432,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "6152d59aa9446f93c904039db71129fab1b1cb08240b535a2bee5daa498e0927": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "positive",
+    "topics": [
+     "accelerator application"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Amira",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Amira",
+        "start_offset": 32,
+        "end_offset": 37
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "high"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"accelerator application\"], \"entity_mentions\": [{\"surface_form\": \"Amira\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Amira\", \"start_offset\": 32, \"end_offset\": 37}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
+   "input_tokens": 4875,
+   "output_tokens": 110,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "87db8d030691af48ae55e6783361f4c81601b169b72183529bd87487a722aa3a": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 424,
+   "output_tokens": 74,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "c544350cde9e0af4e106f58b615c6b1d38670c604fd08413b07225227d9d8ab8": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "sales.pb.account_research.fifteen_minute_account_brief": 4296,
+     "sales.pb.investor_relations.reopen_after_a_pass": 4594
+    },
+    "confidence_bp": 4000,
+    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.account_research.fifteen_minute_account_brief\": 4296, \"sales.pb.investor_relations.reopen_after_a_pass\": 4594}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
+   "input_tokens": 2232,
+   "output_tokens": 70,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "cd4b1256062da75224434e155d2f2249b4e2e7b3dabb18bb59b73e90ed429d97": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Re: Gulf Launchpad cohort 9",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Gulf Launchpad cohort 9\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 534,
+   "output_tokens": 40,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

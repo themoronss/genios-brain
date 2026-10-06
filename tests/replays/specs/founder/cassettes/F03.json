@@ -1,0 +1,52 @@
+{
+ "case_id": "F03",
+ "source": "ideal_reader",
+ "recorded_at": "b47239c9",
+ "answers": {
+  "e739e301443db7af31ee38b7d4f34120c2dabace4fa10e8a321df3e4f7b182be": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "drop",
+     "relevance": 0.4,
+     "reason": "automated introduction service"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.4, \"reason\": \"automated introduction service\"}]",
+   "input_tokens": 438,
+   "output_tokens": 23,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "f3c0d6aed919516d0c5461fed2f46d66f0406d2a2a80c0fcfe61640b8cd8f239": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "drop",
+     "relevance": 0.3,
+     "reason": "automated reminder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.3, \"reason\": \"automated reminder\"}]",
+   "input_tokens": 419,
+   "output_tokens": 20,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "fcecbc34204e4f7b8645ef0357f3e8f600c10705a6efadccb859f57dbf2e58c7": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "drop",
+     "relevance": 0.3,
+     "reason": "automated reminder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.3, \"reason\": \"automated reminder\"}]",
+   "input_tokens": 416,
+   "output_tokens": 20,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

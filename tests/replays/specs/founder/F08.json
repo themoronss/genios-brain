@@ -1,0 +1,177 @@
+{
+ "case_id": "F08",
+ "title": "Two introductions nobody answered",
+ "kind": "must_detect",
+ "label_row": 8,
+ "labelled_by": "claude",
+ "replays": [
+  "02"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-08-04T18:00:00Z",
+  "2026-08-07T18:00:00Z",
+  "2026-08-20T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "simon",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-04T06:00:00Z",
+   "from": "Introly <hello@introly.test>",
+   "to": [
+    "arjun@nimbuslabs.test",
+    "simon@lumenpath.test"
+   ],
+   "subject": "Arjun <> Simon Hart (Lumenpath)",
+   "body": "Arjun, meet Simon Hart, who runs partnerships at Lumenpath. Simon, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I'll let you two take it from here.\n\nIntroly",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-simon",
+   "headers": {
+    "List-Unsubscribe": "<mailto:unsubscribe@introly.test>"
+   },
+   "read": {
+    "gate": {
+     "disposition": "drop",
+     "relevance": 0.4,
+     "reason": "automated introduction service"
+    },
+    "relevance": "business",
+    "extraction": {
+     "intent": "introduce",
+     "stance": "positive",
+     "topics": [
+      "introduction"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Simon Hart",
+       "entity_type": "person",
+       "quote": "Simon Hart"
+      },
+      {
+       "surface_form": "Lumenpath",
+       "entity_type": "organization",
+       "quote": "Lumenpath"
+      }
+     ],
+     "relationships": [
+      {
+       "party": "Simon Hart",
+       "nature": "introduced contact",
+       "direction": "inbound",
+       "evidence_text": "Arjun, meet Simon Hart"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": false,
+      "asks_for_reply": true,
+      "engagement": "medium",
+      "motive": "introduce a contact"
+     }
+    }
+   }
+  },
+  {
+   "id": "omar",
+   "source": "gmail",
+   "sweep": 1,
+   "occurred_at": "2026-08-06T06:00:00Z",
+   "from": "Introly <hello@introly.test>",
+   "to": [
+    "arjun@nimbuslabs.test",
+    "omar@tidewell.test"
+   ],
+   "subject": "Arjun <> Omar Haddad (Tidewell)",
+   "body": "Arjun, meet Omar Haddad, a founder building in developer tools. Omar, meet Arjun Rao, the founder of Nimbus Labs, who is building an AI chief of staff for founders. I'll let you two take it from here.\n\nIntroly",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-omar",
+   "headers": {
+    "List-Unsubscribe": "<mailto:unsubscribe@introly.test>"
+   },
+   "read": {
+    "gate": {
+     "disposition": "drop",
+     "relevance": 0.4,
+     "reason": "automated introduction service"
+    },
+    "relevance": "business",
+    "extraction": {
+     "intent": "introduce",
+     "stance": "positive",
+     "topics": [
+      "introduction"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Omar Haddad",
+       "entity_type": "person",
+       "quote": "Omar Haddad"
+      },
+      {
+       "surface_form": "Tidewell",
+       "entity_type": "organization",
+       "quote": "Tidewell"
+      }
+     ],
+     "relationships": [
+      {
+       "party": "Omar Haddad",
+       "nature": "introduced contact",
+       "direction": "inbound",
+       "evidence_text": "Arjun, meet Omar Haddad"
+      }
+     ],
+     "exchange_intent": {
+      "category": "relational",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": false,
+      "asks_for_reply": true,
+      "engagement": "medium",
+      "motive": "introduce a contact"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "cards": [
+   {
+    "about": [
+     "Simon",
+     "Omar",
+     "Lumenpath",
+     "Tidewell"
+    ],
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "brief": "a monitor line, then closed with a reason after two weeks of silence"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": []
+ },
+ "witness": null,
+ "not_expressible": {
+  "cards": "brief only — the founder's answer is a line in the morning brief, not a card (D12d)",
+  "brief": "STEP-15 — there is no morning brief to appear in"
+ }
+}

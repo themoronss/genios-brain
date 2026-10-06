@@ -1,0 +1,85 @@
+{
+ "case_id": "F39",
+ "source": "ideal_reader",
+ "recorded_at": "b47239c9",
+ "answers": {
+  "296eb70595c9639b6a4082bce6e9393a066325c830b212f9478b464c1d0c4539": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Re: Quick call",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Quick call\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 535,
+   "output_tokens": 37,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "676e356a7d324823933a5c3bd8a3ec5b81123da89e34a44ea57f98a54db7c822": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "schedule",
+    "stance": "positive",
+    "topics": [
+     "call"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Rohan",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Rohan",
+        "start_offset": 19,
+        "end_offset": 24
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "scheduling_proposals": [
+     {
+      "proposer": "Arjun Rao",
+      "text": "Thursday 3 pm or Friday 11 am IST",
+      "evidence_text": "I'm free Thursday 3 pm or Friday 11 am IST"
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high"
+    }
+   },
+   "raw": "{\"intent\": \"schedule\", \"stance\": \"positive\", \"topics\": [\"call\"], \"entity_mentions\": [{\"surface_form\": \"Rohan\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Rohan\", \"start_offset\": 19, \"end_offset\": 24}], \"confidence_bp\": 9000}], \"scheduling_proposals\": [{\"proposer\": \"Arjun Rao\", \"text\": \"Thursday 3 pm or Friday 11 am IST\", \"evidence_text\": \"I'm free Thursday 3 pm or Friday 11 am IST\"}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\"}}",
+   "input_tokens": 4872,
+   "output_tokens": 147,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "c6c19e75fca54249035bbd64c2898604c200dc871b6a8aed5db685b306602e1a": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 404,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

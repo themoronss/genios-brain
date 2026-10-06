@@ -1,0 +1,63 @@
+{
+ "case_id": "F22",
+ "title": "A university startup cell announces a seed grant",
+ "kind": "must_detect",
+ "label_row": 22,
+ "labelled_by": "claude",
+ "replays": [],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-09-07T18:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "grant",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-07T05:00:00Z",
+   "from": "University Startup Cell <grants@unistartupcell.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Seed grant applications close 30 Sep",
+   "body": "Dear Founder,\n\nApplications for the university seed grant close on 30 Sep. Startups incubated on campus may apply.\n\nUniversity Startup Cell",
+   "labels": [
+    "INBOX"
+   ],
+   "headers": {
+    "List-Unsubscribe": "<mailto:leave@unistartupcell.test>"
+   },
+   "read": {
+    "gate": "drop",
+    "relevance": "not_business"
+   }
+  }
+ ],
+ "expected": {
+  "cards": [
+   {
+    "about": [
+     "seed grant",
+     "Startup Cell"
+    ],
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "brief": "one line: a grant closing 30 Sep, if you are eligible"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": []
+ },
+ "witness": null,
+ "not_expressible": {
+  "cards": "brief only — the founder's answer is a line in the morning brief, not a card (D12d)",
+  "brief": "STEP-15 — there is no morning brief to appear in"
+ }
+}

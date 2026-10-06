@@ -1,0 +1,59 @@
+{
+ "case_id": "F18",
+ "title": "A state innovation fund opens a round — read and triaged",
+ "kind": "must_detect",
+ "label_row": 18,
+ "labelled_by": "claude",
+ "replays": [],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-10-01T18:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "round",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-10-01T05:00:00Z",
+   "from": "Sabarmati Innovation Hub <investments@sabarmatihub.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Seed Support round open until 31 Oct",
+   "body": "Dear Founder,\n\nApplications for the Sabarmati Seed Support round are open until 31 Oct. Eligible startups may apply for up to INR 25 lakh. See the portal for the criteria.\n\nSabarmati Innovation Hub",
+   "labels": [
+    "INBOX"
+   ],
+   "read": {
+    "gate": "drop",
+    "relevance": "not_business"
+   }
+  }
+ ],
+ "expected": {
+  "cards": [
+   {
+    "about": [
+     "Sabarmati"
+    ],
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "brief": "one line: a round you could apply to, closing 31 Oct"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": []
+ },
+ "witness": null,
+ "not_expressible": {
+  "cards": "brief only — the founder's answer is a line in the morning brief, not a card (D12d)",
+  "brief": "STEP-15 — there is no morning brief to appear in"
+ }
+}

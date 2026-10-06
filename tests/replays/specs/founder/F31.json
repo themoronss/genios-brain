@@ -1,0 +1,351 @@
+{
+ "case_id": "F31",
+ "title": "A cohort session of fifty founders: no recap, only the assignment",
+ "kind": "must_abstain",
+ "label_row": 31,
+ "labelled_by": "claude",
+ "replays": [
+  "05"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-09-09T18:00:00Z",
+  "2026-09-11T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "session",
+   "source": "gcal",
+   "sweep": 0,
+   "occurred_at": "2026-09-02T06:00:00Z",
+   "summary": "Lakshya Cohort 7 - Session 4: Pricing",
+   "start": "2026-09-10T09:00:00Z",
+   "end": "2026-09-10T11:00:00Z",
+   "organizer": "divya@lakshya.test",
+   "attendees": [
+    "divya@lakshya.test",
+    "arjun@nimbuslabs.test",
+    "founder01@cohort7.test",
+    "founder02@cohort7.test",
+    "founder03@cohort7.test",
+    "founder04@cohort7.test",
+    "founder05@cohort7.test",
+    "founder06@cohort7.test",
+    "founder07@cohort7.test",
+    "founder08@cohort7.test",
+    "founder09@cohort7.test",
+    "founder10@cohort7.test",
+    "founder11@cohort7.test",
+    "founder12@cohort7.test",
+    "founder13@cohort7.test",
+    "founder14@cohort7.test",
+    "founder15@cohort7.test",
+    "founder16@cohort7.test",
+    "founder17@cohort7.test",
+    "founder18@cohort7.test",
+    "founder19@cohort7.test",
+    "founder20@cohort7.test",
+    "founder21@cohort7.test",
+    "founder22@cohort7.test",
+    "founder23@cohort7.test",
+    "founder24@cohort7.test",
+    "founder25@cohort7.test",
+    "founder26@cohort7.test",
+    "founder27@cohort7.test",
+    "founder28@cohort7.test",
+    "founder29@cohort7.test",
+    "founder30@cohort7.test",
+    "founder31@cohort7.test",
+    "founder32@cohort7.test",
+    "founder33@cohort7.test",
+    "founder34@cohort7.test",
+    "founder35@cohort7.test",
+    "founder36@cohort7.test",
+    "founder37@cohort7.test",
+    "founder38@cohort7.test",
+    "founder39@cohort7.test",
+    "founder40@cohort7.test",
+    "founder41@cohort7.test",
+    "founder42@cohort7.test",
+    "founder43@cohort7.test",
+    "founder44@cohort7.test",
+    "founder45@cohort7.test",
+    "founder46@cohort7.test",
+    "founder47@cohort7.test",
+    "founder48@cohort7.test"
+   ],
+   "recurringEventId": "lakshya-cohort7-weekly"
+  },
+  {
+   "id": "homework",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-09T06:00:00Z",
+   "from": "Divya Raman <divya@lakshya.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Assignment 4: pricing page teardown",
+   "body": "Hi Arjun,\n\nAssignment 4 (a teardown of your pricing page) is due on 17 Sep, 11:59 pm IST.\n\nDivya Raman\nProgramme Lead, Lakshya Accelerator",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-lakshya-a4",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "neutral",
+     "topics": [
+      "assignment"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Divya Raman",
+       "entity_type": "person",
+       "quote": "Divya Raman"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Submit Assignment 4, the pricing page teardown, by 17 Sep",
+       "asked_by": "Divya Raman",
+       "asked_of": "Arjun Rao",
+       "quote": "Assignment 4 (a teardown of your pricing page) is due on 17 Sep, 11:59 pm IST."
+      }
+     ],
+     "dates_mentioned": [
+      {
+       "as_written": "17 Sep, 11:59 pm IST",
+       "earliest": "2026-09-17T18:29:00Z",
+       "latest": "2026-09-17T18:29:00Z",
+       "certainty": "exact",
+       "resolved_against": "2026-09-09T06:00:00Z",
+       "quote": "17 Sep, 11:59 pm IST"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "assignment deadline"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "cards": [
+   {
+    "about": [
+     "Session 4",
+     "Cohort 7"
+    ],
+    "min": 0,
+    "max": 0
+   },
+   {
+    "about": [
+     "Assignment 4"
+    ],
+    "min": 1,
+    "max": 1
+   }
+  ]
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "recap",
+   "Recap"
+  ]
+ },
+ "witness": {
+  "stage": "memory",
+  "objects": [
+   "session"
+  ]
+ },
+ "not_expressible": {},
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "unanswered email",
+     "Divya Raman"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "reply": 6500
+     },
+     "confidence_bp": 5500,
+     "rationale": "A direct question is waiting on us.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "Divya Raman"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "lakshya.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "opportunity",
+     "lakshya.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "lakshya.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "Someone at this company asked us something and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "lakshya.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "This is not an investor conversation, and neither offered play fits what was asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "opportunity",
+     "Lakshya Accelerator"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "Lakshya Accelerator"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "Someone at this company asked us something and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "Lakshya Accelerator"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "This is not an investor conversation, and neither offered play fits what was asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "admin contact",
+     "divya@lakshya.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "A fifty-person cohort session needs no brief and no recap.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "meeting follow through",
+     "divya@lakshya.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "A fifty-person cohort session owes no follow-through; only the assignment matters.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "channel touch",
+     "divya@lakshya.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "A cohort session is not a sales touch.",
+     "missing": []
+    }
+   }
+  ]
+ },
+ "blocked_on": "the assignment's deadline is dropped at the qualification floor (2,500) (2,280), so the one card the session should leave behind never forms — STEP-05"
+}

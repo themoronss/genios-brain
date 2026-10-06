@@ -1,0 +1,318 @@
+{
+ "case_id": "F17",
+ "title": "An accelerator moves the founder's application to interview",
+ "kind": "must_detect",
+ "label_row": 17,
+ "labelled_by": "claude",
+ "replays": [
+  "12"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-08-26T18:00:00Z",
+  "2026-10-01T18:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "mine",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-26T08:00:00Z",
+   "from": "Arjun Rao <arjun@nimbuslabs.test>",
+   "to": [
+    "amira@gulflaunchpad.test"
+   ],
+   "subject": "Re: Gulf Launchpad cohort 9",
+   "body": "Hi Amira,\n\nThanks - we've submitted the application form.\n\nArjun",
+   "labels": [
+    "SENT"
+   ],
+   "thread": "t-gulf",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "positive",
+     "topics": [
+      "accelerator application"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Amira",
+       "entity_type": "person",
+       "quote": "Amira"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "high"
+     }
+    }
+   }
+  },
+  {
+   "id": "next",
+   "source": "gmail",
+   "sweep": 1,
+   "occurred_at": "2026-10-01T07:30:00Z",
+   "from": "Amira Saleh <amira@gulflaunchpad.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Gulf Launchpad cohort 9 - interview",
+   "body": "Hi Arjun,\n\nYour application has moved to the interview stage. Please book a 30-minute slot using the scheduling link by 10 Oct.\n\nAmira Saleh\nProgramme Manager, Gulf Launchpad",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-gulf",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "positive",
+     "topics": [
+      "accelerator application",
+      "interview"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Amira Saleh",
+       "entity_type": "person",
+       "quote": "Amira Saleh"
+      },
+      {
+       "surface_form": "Gulf Launchpad",
+       "entity_type": "organization",
+       "quote": "Gulf Launchpad"
+      }
+     ],
+     "decision_states": [
+      {
+       "subject": "Gulf Launchpad cohort 9 application",
+       "state": "pending",
+       "owner": "Gulf Launchpad",
+       "quote": "Your application has moved to the interview stage."
+      }
+     ],
+     "questions": [
+      {
+       "text": "Book a 30-minute interview slot by 10 Oct",
+       "asked_by": "Amira Saleh",
+       "asked_of": "Arjun Rao",
+       "quote": "Please book a 30-minute slot using the scheduling link by 10 Oct."
+      }
+     ],
+     "dates_mentioned": [
+      {
+       "as_written": "10 Oct",
+       "earliest": "2026-10-10T00:00:00+05:30",
+       "latest": "2026-10-10T23:59:59+05:30",
+       "certainty": "range",
+       "resolved_against": "2026-10-01T07:30:00Z",
+       "quote": "10 Oct"
+      }
+     ],
+     "business_facts": [
+      {
+       "field": "person.title",
+       "subject": "Amira Saleh",
+       "value": "Programme Manager",
+       "standing": "observed",
+       "quote": "Programme Manager, Gulf Launchpad"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "book the interview"
+     },
+     "implied_actions": [
+      "book an interview slot by 10 Oct"
+     ]
+    }
+   }
+  }
+ ],
+ "expected": {
+  "gate": {
+   "next": "emitted"
+  },
+  "memory": {
+   "next": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Gulf Launchpad",
+     "Amira"
+    ],
+    "min": 1,
+    "max": 1,
+    "mentions": [
+     "interview"
+    ]
+   }
+  ],
+  "workstream": "application — interview stage",
+  "stage": "interview"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": []
+ },
+ "witness": null,
+ "not_expressible": {
+  "workstream": "STEP-09 — the engine forms no workstream; nothing to compare against",
+  "stage": "STEP-09 — no stage is derived for a workstream"
+ },
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "unanswered email",
+     "Amira Saleh"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "reply": 6500
+     },
+     "confidence_bp": 5500,
+     "rationale": "A direct question is waiting on us.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "Amira Saleh"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "first response overdue",
+     "gulflaunchpad.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "answer_first_then_everything_else": 5600
+     },
+     "confidence_bp": 4500,
+     "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "opportunity",
+     "gulflaunchpad.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "gulflaunchpad.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "Someone at this company asked us something and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "gulflaunchpad.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "This is not an investor conversation, and neither offered play fits what was asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "opportunity",
+     "Gulf Launchpad"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "Gulf Launchpad"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "Someone at this company asked us something and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "investor relationship",
+     "Gulf Launchpad"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "This is not an investor conversation, and neither offered play fits what was asked.",
+     "missing": []
+    }
+   }
+  ]
+ },
+ "notes": "Production's AI filter called the real 1 Oct mail junk.",
+ "blocked_on": "the interview request reaches memory but is framed only as an investor relationship, whose plays fit neither an application nor an interview, and the faithful decider defers — STEP-09, STEP-11"
+}
