@@ -19,6 +19,9 @@ default holds, and the step that depends on it says so in its own file.
 | **D12** | Ten minutes of labels for the golden set | **Yes** — ⏳ until you answer, the defaults hold: applied 2026-10-06 | `STEP-01` (built on the defaults; not blocked) |
 | **D13** | Once calibration runs again, may it mute a rule or move a threshold on your account without your approval? | **No** — shadow: it logs what it would do; you arm it per tenant, after `STEP-18` B22–B24 | `yc2_w27/M18` (shadow — ✅ built 2026-10-06, not deployed) · arming ⏳ |
 | **D14** | When STEP-04's repair retires the cards whose subject is you, do you read its list first? | **Yes** — Harsh runs the dry run, you read the list, then `--apply`; every retirement is a `card_event` | `STEP-04` |
+| **D20** | A kept mail with no signal — does it enter memory with its L1 extraction (its words), or as names and dates only? | **With its extraction** — it was already read, so no model call; the asks the expert needs are in it. Default applied 2026-10-06 (*"step 5 start karo"*) | `STEP-05` |
+| **D21** | Is a memory write with no model read (an archived mail's metadata) billed as a message read? | **No** — only what a model read is billed. Default applied 2026-10-06 | `STEP-05` |
+| **D22** | STEP-05's draft 3.7 — a screen item creates a person the graph does not have? | **No, dropped** — nodes are listed org-wide and a private WhatsApp contact must not appear to the rest of the org (`reason/moments/screen_memory.py:10-15`); revisit with seat-private nodes in `STEP-09`. Default applied 2026-10-06 | `STEP-05` |
 
 ---
 
@@ -219,4 +222,15 @@ company, the threads named after you, the open cards and signals whose subject i
 | B · Harsh applies it straight after the deploy | faster; a card you still wanted is retired without you seeing the list |
 
 **Default:** A. Nothing blocks the build — the decision is needed only at the repair, after the deploy.
+
+## D20–D22 · STEP-05 — what enters memory, what is billed, who the screen may create
+
+Asked 2026-10-06 with STEP-05's check (`STEP-05` §8); Rohit's reply was *"step 5 start karo"*, so the
+defaults hold until he says otherwise.
+
+| | Options | Default |
+|---|---|---|
+| D20 | A · with its L1 extraction, at the confidence it scored, marked below the floor · B · names, dates and thread only (the draft's skeleton) | **A** — Neel Jain's question and Manik's traction ask are in the extraction; B would put the names in memory and leave the asks out |
+| D21 | A · not billed · B · billed as a message read | **A** — no model read it |
+| D22 | A · drop 3.7 · B · a screen item creates a weak person node, visible org-wide | **A** — B breaks a written privacy rule; graph nodes have no visibility of their own |
 

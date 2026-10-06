@@ -15,6 +15,9 @@ or the command it came from.
    with them **two migrations — `0191_reasoning_fingerprints` and `0192_attention_and_archive`** —
    the first since `0190`. `main.py` applies them at boot when the database is writable; check the
    boot log names both (§2).
+   ⛔ **And STEP-04 (§1.6) adds a third, `0193_org_self_identities`** — the tenant's declared addresses
+   and domains. After the deploy: **declare** the design partner's identity, then the **repair**, dry
+   run first, its list to Rohit, `--apply` only after he reads it (§3.4).
 2. After the deploy, **re-queue the attachments** the `file_name` refusal dead-lettered (§3.1).
 3. **Read the first `refetch_last_error`** that comes back (§3.2).
 4. **Pin the Composio toolkits** — the one unit of this block that is yours (§3.3).
@@ -81,6 +84,26 @@ The probe after the deploy: `@model_calls_by_day` in `baseline/production_state.
 
 What the founder sees does not change: on the golden set every case is marked exactly as before.
 
+### 1.6 · STEP-04, who is us — in the next push
+
+| | What changes at runtime |
+|---|---|
+| one answer | every module that asks "is this address, person or company one of us?" asks `platform/self_identity.identity_for` — the active seats, `orgs.email`, the connected accounts, and what the tenant **declared** (new table `org_self_identities`, migration `0193`). Twenty places used to decide it on their own (`03` F59) |
+| `ceo@thegenios.com` | once declared: a **person**, never a `service`; never on a "waiting longest" line; never a card's subject |
+| `thegenios.com` | once declared: our company in every event — never an anchor, never a deal, never "an outside company" |
+| a Gmail founder | gmail.com is **never** ours as a domain — an investor writing from Gmail is an outside person (the support lane counted every Gmail sender as a colleague) |
+| threads | a new thread is named after its **other** side — never "Mr Rohit Swerashi — <the pitch>". Old labels stay until the repair renames them |
+| cards | a card whose subject is one of us is **refused** — counted per pass as `refused_subject_is_us`, logged, never built; an investor's "Rohit, can you send…" is carded about the investor |
+| a new receipt | *no open card's subject is one of us* — `/readiness` shows it; it reads **red until the repair** has run |
+| a new health check | `scripts/pipeline_health.py` — *we are never a card's subject or a thread's name* (0 and 0, after the repair) |
+| `/reset` | keeps the declarations (they are who the tenant is, like the seats) |
+| two scripts | `scripts/declare_self_identity.py` (declares), `scripts/repair_self_identity.py` (removes what was built before — dry run by default) |
+
+⛔ **Domains are declared, never inferred.** The support lane, the deal backfill and engagement used to
+take our domain from `orgs.email` or the seats — which is how gmail.com became ours. Now a domain is
+ours only when declared. **Any other live tenant whose people share a company domain must declare
+it** (`03` F62), or that company reads as a counterparty in those three places.
+
 ### 1.3 · How it was tested before the push
 
 `baseline/yc2w27-qa/qa_record.txt`, at `83dd87f3`, every check on an **empty** scratch Postgres 17:
@@ -91,6 +114,7 @@ What the founder sees does not change: on the golden set every case is marked ex
 | the whole suite, with the database and without it | exit 0 — first fully green database run on this branch was `e151a7db`: 16,736 passed, 0 failed |
 | the golden set (`golden-pg`, as CI runs it) | 357 passed, 100 xfailed, 0 skipped |
 | on GitHub, the first push | `golden-pg` ✅ passed (run `37407196202`, Python 3.12, Postgres 17); `test` — see §6 |
+| ⛔ STEP-04, in the next push (`baseline/yc2w27-s04-qa/qa_record.txt`) | units 48 / 0 / 0; the database suite 17,696 passed, 0 failed; the golden set 520 passed, 103 xfailed, 0 skipped, the board matches; the hermetic job 16,259 passed, 0 failed (run 2 — run 1 was red on one gate test, fixed in `78d7b4fd`) |
 
 ## 2 · Deploy
 
@@ -109,6 +133,13 @@ applies pending migrations at boot, and the boot log says
 `l1_sync_runs.archived integer not null default 0` — no rewrite, no index. The new capture code
 writes the new columns, so it must not serve on a schema without `0192`; a migration that fails
 crashes the boot (fail fast) rather than serving broken SQL.
+⛔ **STEP-04 adds `0193_org_self_identities`** — one table, a primary key, two checks (`kind` is
+`address` or `domain`; a value is trimmed, lowercased, non-empty), `on delete cascade` from `orgs`.
+Every module that asks "is this us?" reads it through `platform/self_identity.identity_for`, the L2
+drain included — so, like `0192`, the new code must not serve without it: the boot log must name
+`0193_org_self_identities.sql`. It starts empty: until §3.4 declares, who is us is the seats,
+`orgs.email` and the connected accounts — `ceo@thegenios.com` and `thegenios.com` become ours from
+the declaration on.
 If it says `DEGRADED BOOT — database is read-only` instead, the change gate fails open (every subject
 is decided, as today — nothing lost, nothing saved) and `/reset` fails until `0191` is applied, because
 the reset now wipes `reasoning_fingerprints`. No new environment variable. One value we need from the
@@ -164,6 +195,32 @@ reader needs a change.
 | verify | `.venv/bin/python -m pytest tests/capture/connectors/test_composio_toolkits_are_pinned.py -q` — the test does not exist yet; it is part of the unit (today that command exits 4, *no tests ran* — the QA's one red line) |
 | why you | it needs the Composio SDK the production image runs, and the versions confirmed against it; the SDK in the dev environment is not that one |
 
+### 3.4 · STEP-04 — declare who the design partner is, then repair, in this order
+
+`06` D6 (Rohit, 2026-10-05) and D14. `0193` must be applied (the boot log names it).
+
+```
+# 1 · declare — dry run, then the same with --apply
+python scripts/declare_self_identity.py --org org_e97e86f858ad48b2bbf64b8a \
+    --address ceo@thegenios.com --domain thegenios.com --by "06 D6" --database-url "$URL"
+python scripts/declare_self_identity.py --org org_e97e86f858ad48b2bbf64b8a \
+    --address ceo@thegenios.com --domain thegenios.com --by "06 D6" --database-url "$URL" --apply
+
+# 2 · the repair — DRY RUN ONLY. Send its whole output to Rohit.
+python scripts/repair_self_identity.py --org org_e97e86f858ad48b2bbf64b8a --database-url "$URL"
+```
+
+The dry run lists the threads it would rename, the open signals and cards about us it would retire,
+and the situations anchored on us (listed only — the correlation rebuild re-derives them). **Rohit
+reads the list (D14).** Only then:
+
+```
+python scripts/repair_self_identity.py --org org_e97e86f858ad48b2bbf64b8a --database-url "$URL" --apply
+```
+
+Every card it retires writes a `card_events` row (`card.retired`, cause `subject_is_us`), so it can be
+audited and rebuilt. A second run writes nothing.
+
 ## 4 · The probes — send the outputs
 
 Read-only, from `speedrun008/YC-II W27/baseline/production_state.sql`:
@@ -207,6 +264,16 @@ python scripts/pipeline_health.py --org org_e97e86f858ad48b2bbf64b8a --database-
 tenant's first archived mail: until one noise mail has been archived, mail the old gate dropped in
 the previous 24 hours fails it, and the fix it prints asks whether STEP-03 is deployed. Run it after
 the first sync. `scripts/workstream_funnel.py` reads `attention_reason` — run it only after `0192`.
+
+### 4.2 · STEP-04 — after the declaration and the repair
+
+```
+python scripts/pipeline_health.py --org org_e97e86f858ad48b2bbf64b8a --database-url "$URL"
+```
+
+*We are never a card's subject or a thread's name* must read **0 and 0**, and `/readiness` must show
+*no open card's subject is one of us* green. Before the repair both are red by design — they are
+counting what the repair removes. The read-only SQL behind them is `STEP-04` §8.6.
 
 ## 5 · Do not
 

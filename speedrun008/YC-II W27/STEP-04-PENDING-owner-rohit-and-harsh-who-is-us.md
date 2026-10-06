@@ -1,4 +1,6 @@
-# STEP-04 · TO BUILD · who is us — one answer, used everywhere
+# STEP-04 · PENDING — owner Rohit (push) and Harsh (deploy) · who is us — one answer, used everywhere
+
+**✅ Built 2026-10-06** — tree block `yc2_w27_s04`, 44 units, crosscheck *ship*, QA §9.4. **Pending:** Rohit's push; Harsh's deploy (migration `0193`), the declaration, the repair after Rohit reads it (D14), and the production number (§9.5).
 
 **Owner:** Claude. **Depends on:** `STEP-00`. **Decision:** `06` D6 — ✅ answered 2026-10-05:
 `mrrohitswerashi@gmail.com`, the source of Gmail and Calendar. **Must land before `STEP-05`**, because putting every mail
@@ -179,3 +181,71 @@ select count(*) from cards where org_id = :o
 ```
 
 After the repair, the last two read **0**.
+
+Added 2026-10-06 (the crosscheck's open question) — the names the card builder and the receipt match a
+subject against: `select name, company, first_name, last_name from orgs where id = :o;`
+
+## 9 · Built — 2026-10-06 (`yc2_w27_s04`, 44 units green)
+
+### 9.1 · What was built
+
+| | Where | What it does |
+|---|---|---|
+| the one answer | `migrations/0193_org_self_identities.sql`, `platform/self_identity.py` | `org_self_identities` (address · domain, a public mail domain refused); `SelfIdentity` — `is_us(email)`, `is_us_domain`, `is_us_node(type, key)`; `identity_for(source, org)` — seats, `orgs.email`, connected accounts and the declarations, in ONE statement (`identity_sql`); `names_us(text, us, names)` — is this SUBJECT one of us |
+| twenty callers | L3 `context/runner`, `pipeline` (U15–U17, U20), `backfill` (U09, U18, U22), `meeting_touch`, `support_situations`, `outreach_situations`, `condition_situations`, `situation_bso`; L2 `reason/runner`, `moments/engagement`, `meetings/prep`, `moments/recall`, `domain_shadow`, `packs/brains/org_discovery`; L5 `deliver/pipeline`, `timezone_infer`; `api/routes` (W-01), `api/moment_routes`; `scripts/pipeline_health`, `rebuild_graph` | each asks the identity instead of building its own set. Eighteen were planned (§8.2); two more (meeting prep, screen recall) were found writing the guard (`03` F59) |
+| the guard | `tests/platform/test_one_answer_to_who_is_us.py` | by the AST over `genios_engine/` and `scripts/`: a union of the sources, an inline seat exclusion, a connected account read as ours, a listing of every seat's address, or a read of the declarations fails it outside `platform/self_identity`, unless declared with its reason (five are). On `f0ee8225` it flags the fourteen sites STEP-04 replaced |
+| the card | `deliver/card_builder.py`, `deliver/pipeline.py` | the subject chain skips a name of ours (`resolved_person_name` took the first person NAMED in the quotes); a card whose subject is still one of us is refused — `refused_subject_is_us`, logged, its lease released, never the end of the pass. Our names: `orgs.name` (signup stores the person's full name), the company, the display name each address of ours carries, matched without a title |
+| the repair | `scripts/declare_self_identity.py`, `scripts/repair_self_identity.py` | declare (dry run, then `--apply`); repair — threads named after us renamed after their other side, open signals and cards about us retired (a `card_events` row each), situations anchored on us listed |
+| the checks | `platform/receipts.py`, `scripts/pipeline_health.py` | *no open card's subject is one of us* (a receipt, on the identity's own SQL); *we are never a card's subject or a thread's name* (0 and 0) |
+| the golden set | `tests/replays/` | the runner seats the tenant and stores the founder as signup does, and declares the case's identities; four production-shaped cases (rows 41–44); the acceptance on every case |
+
+### 9.2 · Measured
+
+| | Before | After |
+|---|---|---|
+| places that decide "is this us" on their own | 20 | 0 outside `platform/self_identity` (the guard) |
+| a Gmail founder: is an investor at gmail.com one of us? (support lane) | yes | no |
+| `ceo@thegenios.com` (declared) | a `service`; "waiting longest" | a person; never waited on |
+| the founder's own pitch thread | "<founder> — <pitch>" | "<investor> — <pitch>" |
+| an investor's ask that names the founder first | carded with the founder as subject | carded about the investor; a card about us is refused |
+| golden board (`03` §F.1) | 4/30 · 5/10 | 5/32 · 5/12 — the forty did not move; F42 passes; F41, F43, F44 wait on `STEP-05` |
+| the acceptance, 44 cases | — | 0 cards about us, 0 cards naming us as a party, 0 situations anchored on us, 0 threads named after us; three planted defects each turn it red |
+| production: open cards about the founder · threads named after him | ≥ 3 · unknown (§8.6) | ⏳ after deploy, declaration and repair — target **0 · 0** |
+
+### 9.3 · Found while building — each a measurement
+
+- **Twenty places, not eighteen** (`03` F59): meeting prep and screen recall read seat addresses only.
+- **Seven units minted from the builders' own reports**, each closing a gap in a claim a built unit
+  made: the anchor pool (U20 — a Gmail founder's pitch naming his own company anchored on it), the
+  rebuild script (U21), the rebuild's platform domain (U22), once per sweep (U23), prep (U24), recall
+  (U25), and the receipt on the identity's own SQL (C6.U03 — the first cut forgot the connected account).
+- **U20's first cut failed 25 SQLite-backed pipeline tests** — a per-event read their stores cannot
+  serve; it now asks only about nodes no door already asked about. Found by the whole-suite sweep.
+- **The acceptance was blind to the founder's name** until a planted card proved it: the golden runner
+  stored the company in `orgs.name`. Signup stores the person there. Fixed in the runner, and the
+  builder and receipt now match a name without its title.
+- **Six pins held the old inline SQL** (`org_seats`, `connections`, `array_agg`): restated on the new
+  mechanism, each red under its own mutation. A reset now keeps the declarations, with its reason.
+- **Domains are declared, never inferred** (`03` F62): the inference made gmail.com ours. A team that
+  never declared its company domain reads its own company as a counterparty in three readings.
+- Not fixed, recorded: F60, F61 (L1 public-domain labels nobody reads yet), F63 (`+tag`), F64 (an
+  outbound thread named by an address), F65 (a connection left open), F66 (outreach "us" partial),
+  F67 (an intermittent warm-lane test), F68 (the golden set's single-address founder).
+
+### 9.4 · QA
+
+`baseline/yc2w27-s04-qa/qa_record.txt` — run 1 at `c0e24f00`, a database created for every check: the units 48 / 0 / 0; the whole database suite 17,696 passed, 0 failed (the same four optional skips); the golden lane 520 passed, 103 xfailed, 0 skipped; the board matches; 0 golden tenants left; the hermetic job **red on one line** — the H0 gate read four new context tests' skip message as a placeholder (fixed in `78d7b4fd`). Run 2, the hermetic tier whole at `78d7b4fd`: 16259 passed, 1286 skipped, 184 deselected, 72 xfailed, 1595 warnings in 730.67s (0:12:10).
+
+### 9.5 · The deploy, and what comes after
+
+Migration **`0193`** ships with `0191` and `0192`; `main.py` applies it at boot, and the new code must
+not serve without it (every "is this us?" reads it). Then, in order — `08-FOR-HARSH` §3.4 and §4.2:
+
+1. **declare** the design partner (D6): `ceo@thegenios.com`, `thegenios.com`;
+2. **the repair, dry run** — its whole output to Rohit;
+3. **Rohit reads it** (D14); then `--apply`;
+4. **the health check** — *we are never a card's subject or a thread's name* reads 0 and 0, and
+   `/readiness` shows *no open card's subject is one of us* green.
+
+Add to §8.6, read-only: `select name, company, first_name, last_name from orgs where id = :o;` — the
+names the builder and the receipt match a subject against.

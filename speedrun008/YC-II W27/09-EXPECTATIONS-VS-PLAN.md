@@ -241,8 +241,15 @@ It needs:
   attachments (fetch fixed in M17 B19) and Admin's `document.*` vocabulary (Atlas P1·10);
 - the connectors it names: Slack, Notion, Jira, HubSpot.
 
-One cheap source is already in Gmail. Out-of-office auto-replies say *who is away until when, and
-who covers*. STEP-03 now keeps them; nothing reads them.
+~~One cheap source is already in Gmail. Out-of-office auto-replies say *who is away until when, and
+who covers*. STEP-03 now keeps them; nothing reads them.~~
+
+**Corrected 2026-10-06, the same day, by reading the gate:** the absence half already exists in L1.
+The gate routes an out-of-office, leave or auto-reply mail to extraction with an availability
+marker (`capture/gate/gate.py` S1c, N-05 — its own comment cites *"Anisha is on leave 15–22 and her
+audit docs are due on the 19th"*), and the extractor has an availability lane
+(`contracts/extraction.AvailabilityWindow`, detected as `AVAILABILITY_CHANGE`). What Sole Mate still
+lacks is the other half: who owns what, and who may cover (the organisation brain).
 
 *Fix.* A separate block after YC-II W27, built on a team tenant, with a Sole Mate-shaped golden set.
 Not before the founder path shows verified outcomes (the Possibility Atlas's own order: *"the other

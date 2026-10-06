@@ -148,6 +148,28 @@ verb it did not know.
 the production number — new mail with its content deleted at the gate, 258 of 395 → 0, read by
 `scripts/pipeline_health.py`.
 
+## 6d · STEP-04 · who is us
+
+**What was built** (`STEP-04-PENDING-owner-rohit-and-harsh-who-is-us.md` §9): one answer to *"is this
+address, person or company one of us?"* — `platform/self_identity.identity_for`: the active seats,
+`orgs.email`, the connected accounts, and what the tenant **declared** (new table, migration `0193`).
+Twenty places used to decide it on their own; every one asks it now, and a guard fails the build if a
+module builds its own set again. A card whose subject is one of us is refused and counted; a thread
+is named after its other side; a Gmail founder no longer makes every Gmail sender a colleague. Two
+scripts: declare the tenant's addresses and domain; repair what was built before (dry run first).
+
+**Measured:** across all 44 golden cases — 0 cards about us, 0 cards naming us as a party, 0
+situations anchored on us, 0 threads named after us; three planted defects each turn that check red.
+The board: must-detect 5/32, must-abstain 5/12 — the forty cases did not move; four production-shaped
+cases were added (F42 passes; F41, F43, F44 wait on `STEP-05`).
+
+**QA:** `baseline/yc2w27-s04-qa/qa_record.txt` — run 1 at `c0e24f00`, a database created for every check: the units 48 / 0 / 0; the whole database suite 17,696 passed, 0 failed (the same four optional skips); the golden lane 520 passed, 103 xfailed, 0 skipped; the board matches; 0 golden tenants left; the hermetic job **red on one line** — the H0 gate read four new context tests' skip message as a placeholder (fixed in `78d7b4fd`). Run 2, the hermetic tier whole at `78d7b4fd`: 16259 passed, 1286 skipped, 184 deselected, 72 xfailed, 1595 warnings in 730.67s (0:12:10).
+
+**Still owed:** the push; Harsh's deploy with migration `0193`; the declaration of `ceo@thegenios.com`
+and `thegenios.com` (D6); the repair's dry run, **read by Rohit (D14)**, then `--apply`; the production
+number — open cards about the founder → 0, threads named after him → 0
+(`08-FOR-HARSH` §3.4, §4.2).
+
 ## 7 · CI on the push
 
 | Job | Run `37407196202`, on `77aba10e` |
@@ -171,6 +193,9 @@ The full notes, with commands, expected outputs and what not to do: **`08-FOR-HA
 3. Read the first `refetch_last_error` that comes back — it now names the response's shape.
 4. Pin the Composio toolkits — `yc2_w27/M17.C3.L-integration.V2.U04`.
 5. Re-run the probes and send the outputs; each bug is closed on its own probe.
+6. ⛔ STEP-04: the next push also carries migration `0193`. Then declare the design partner's
+   identity, run the repair DRY, send its list to Rohit, and `--apply` only after he reads it (D14);
+   the health check must read 0 and 0 (`08` §3.4, §4.2).
 
 ## 9 · Decisions still open — none blocks the next step
 

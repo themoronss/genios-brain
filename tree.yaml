@@ -13,8 +13,10 @@
 #                                                   numbered past every other block for the same reason
 #   yc2_w27_s03                       M21         ← YC-II W27 STEP-03, the gate keeps everything
 #                                                   (2026-10-06); past every other block again
-#   yc2_w27_s04                       M22         ← YC-II W27 STEP-04, who is us (proposed 2026-10-06);
+#   yc2_w27_s04                       M22         ← YC-II W27 STEP-04, who is us (built 2026-10-06);
 #                                                   past every other block again
+#   yc2_w27_s05                       M23         ← YC-II W27 STEP-05, every kept item enters memory
+#                                                   (2026-10-06); past every other block again
 #
 # So `M11` is AMBIGUOUS on its own: it names "The remaining Layer 3 losses" in one block and
 # "L2 Reasoning" in another, and `M11.C1.L-logic.V0.U01` exists twice with different meanings.
@@ -3744,10 +3746,15 @@ yc2_w27_s03:
                       depends_on: [M21.C3.L-logic.V3.U03]
 
 # ═══════════════════════════════════════════════════════════════════════════════════════════════
-# yc2_w27_s04 · STEP-04 who is us — speedrun008/YC-II W27/STEP-04-TO-BUILD-who-is-us.md
+# yc2_w27_s04 · STEP-04 who is us — speedrun008/YC-II W27/STEP-04-PENDING-owner-rohit-and-harsh-who-is-us.md
 # ═══════════════════════════════════════════════════════════════════════════════════════════════
 yc2_w27_s04:
-  status: approved_in_progress
+  status: built
+  built: >
+    2026-10-06 — 44 units (37 planned, 7 minted from the builders' reports), crosscheck ship, QA green
+    (speedrun008/YC-II W27/baseline/yc2w27-s04-qa/qa_record.txt: run 1 at c0e24f00, the hermetic tier
+    re-run whole at 78d7b4fd). Pending: Rohit's push; Harsh's deploy (0193), the declaration, the repair
+    after Rohit reads it (D14), and the production number.
   confirmed: >
     Rohit, 2026-10-06 — "Haan bhai, please ab best tareeke se step 4 karo ... thoda jaldi karo taaki
     saari ki saari cheezein perfectly kaam kar sakein." Planned while STEP-03's QA ran (a80d4c5a).
@@ -4221,3 +4228,246 @@ yc2_w27_s04:
                       artifact: scripts/pipeline_health.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/scripts/test_pipeline_health_we_are_never_the_subject.py -q
                       depends_on: [M22.C1.L-data.V1.U03, M22.C2.L-logic.V2.U08]
+
+# ═══════════════════════════════════════════════════════════════════════════════════════════════
+# yc2_w27_s05 · STEP-05 every kept item enters memory — speedrun008/YC-II W27/STEP-05-TO-BUILD-every-item-enters-memory.md
+# ═══════════════════════════════════════════════════════════════════════════════════════════════
+yc2_w27_s05:
+  status: approved_in_progress
+  confirmed: >
+    Rohit, 2026-10-06 — "As usual first [Harsh] ke liye notes likho, step 5 start karo", after the
+    STEP-05 check (§8) and its three decisions were put to him; D20–D22 hold at their defaults
+    (with its extraction; a metadata write is not billed; screen creates no person).
+  source: >
+    speedrun008/YC-II W27/STEP-05 §1–§3, re-checked claim by claim against speedrun008 @ c0e24f00
+    (STEP-05 §8) by a read-only pass, the decisive claims by hand: `_pull` inner-joins an active
+    signal and a payload and takes `emitted` only; no code reads the `route` a recovery sets; a kept
+    mail with no signal already has its L1 extraction; archived mail must expose no text (F37, F57);
+    screen never creating a person is a written privacy rule. On the golden set: 10 of 32
+    must-detect cases are lost before memory, 4 of 12 must-abstain cases are not exercised.
+  vision: >
+    Every kept mail and every calendar event enters memory within two sweeps. A mail with a signal
+    enters as today; a mail with none enters with the L1 extraction it already has — its words, at
+    the confidence it scored, marked below the floor, with no model call; an archived mail enters
+    as metadata only — who wrote to whom, when, in which thread — with no text, no ball-in-court and
+    no correlation; a calendar event is a meeting node whatever its signal, its newest version
+    winning. Every recovery path ends in a re-read, and an archived mail can be promoted out of the
+    archive by the same re-read. Screen still creates no person. On the golden set the cases lost
+    before memory reach it and the board is re-recorded with every move named; in production the
+    share of kept events with an L2 run goes from ~7% to at least 95%, and meeting nodes from 2 to
+    every calendar event.
+  order_note: >
+    C1 (the lane decision, pure) first; then C2, the pull and its pending count, which unlock every
+    later unit; then C3, the writers per lane, the meeting and billing; then C4, recovery and
+    promotion; then C6, the production checks; the golden set last (C5) — its cassettes, its board
+    and the acceptance — because every unit above moves it. Not in this block, by the check: the
+    meeting ↔ thread link (no writer exists; STEP-09 groups them); screen-made people (D22);
+    `poison_quarantine` (nothing stored to re-read — a connector re-fetch, STEP-08).
+  milestones:
+    - id: M23
+      name: Every kept item enters memory (STEP-05)
+      ships: >
+        `_pull` admits every kept event; each takes one road into memory (signal, below the floor,
+        metadata, calendar) decided in one place; every recovery is a re-read; on the golden set
+        every kept mail has an L2 run, every calendar event is a meeting, no archived mail's words
+        are readable and no screen contact became a person — and the board is re-recorded.
+      categories:
+        - id: M23.C1
+          name: The road into memory
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M23.C1.L-contract.V0.U01
+                      what: >
+                        New `context/memory_lanes.py` — which road a kept event takes into memory,
+                        in one pure function: `signal` (an active qualified signal, as today),
+                        `below_floor` (no signal, its own L1 extraction exists), `metadata` (archived:
+                        the ledger's columns only), `calendar` (a structured mapping — always), and
+                        none for a screen session or an event with nothing to read yet.
+                      artifact: genios_engine/context/memory_lanes.py
+                      verify: .venv/bin/python -m pytest tests/context/test_memory_lanes.py -q
+                      depends_on: []
+        - id: M23.C2
+          name: The pull
+          layers:
+            - layer: data
+              levels:
+                - level: 1
+                  units:
+                    - id: M23.C2.L-data.V1.U01
+                      what: >
+                        `context/runner._pull` admits every kept event: the signal join and the
+                        payload join become left joins, `archived` is admitted, `se.outcome`,
+                        `se.recipients` and the event's own latest L1 extraction are selected; a
+                        screen session stays out of every road but the signal's; a run already
+                        settled is never re-pulled, so a re-pullable row cannot starve the drain.
+                      artifact: genios_engine/context/runner.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_every_kept_event_is_pulled.py -q
+                      depends_on: [M23.C1.L-contract.V0.U01]
+                    - id: M23.C2.L-data.V1.U02
+                      what: >
+                        `api/routes._pending_count` asks the same question as `_pull` — what is kept
+                        and not yet in memory — so the funnel's "waiting" number cannot disagree
+                        with what the drain takes.
+                      artifact: genios_engine/api/routes.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/test_the_pending_count_is_the_pull.py -q
+                      depends_on: [M23.C2.L-data.V1.U01]
+        - id: M23.C3
+          name: The writers, per road
+          layers:
+            - layer: logic
+              levels:
+                - level: 2
+                  units:
+                    - id: M23.C3.L-logic.V2.U01
+                      what: >
+                        `context/qes_adapter.adapt_qes_extraction` projects an extraction that crossed
+                        no floor — at the confidence it scored, marked `below_floor` on every claim it
+                        carries — with no model call (D20).
+                      artifact: genios_engine/context/qes_adapter.py
+                      verify: .venv/bin/python -m pytest tests/context/test_a_mail_below_the_floor_keeps_its_words.py -q
+                      depends_on: [M23.C1.L-contract.V0.U01]
+                    - id: M23.C3.L-logic.V2.U02
+                      what: >
+                        `context/pipeline.process_event(metadata_only=True)` — an archived mail writes
+                        the people, their companies, the thread and `corresponded_with`, and nothing
+                        else: no text, no observation, no ball-in-court or waiting fact, no
+                        correlation (F37, F57: an archive's words must stay unreadable).
+                      artifact: genios_engine/context/pipeline.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_an_archived_mail_is_metadata_only.py -q
+                      depends_on: [M23.C1.L-contract.V0.U01]
+                    - id: M23.C3.L-logic.V2.U03
+                      what: >
+                        `context/runner._process_one` dispatches by road: `below_floor` through the
+                        adapter with the event's own extraction; `metadata` with empty content, the
+                        ledger's recipients and the direction from `platform/self_identity`, outcome
+                        `committed_metadata`; `calendar` to the structured lane whatever its signal.
+                      artifact: genios_engine/context/runner.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_every_kept_event_enters_memory.py -q
+                      depends_on: [M23.C2.L-data.V1.U01, M23.C3.L-logic.V2.U01, M23.C3.L-logic.V2.U02]
+                    - id: M23.C3.L-logic.V2.U04
+                      what: >
+                        `context/structured.commit_structured` — a meeting keeps its organizer, and an
+                        older version of a calendar event never overwrites a newer one (every version
+                        is its own event, and without the signal filter every version drains).
+                      artifact: genios_engine/context/structured.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_a_meeting_is_always_a_meeting.py -q
+                      depends_on: [M23.C1.L-contract.V0.U01]
+                    - id: M23.C3.L-logic.V2.U05
+                      what: >
+                        `api/routes._BILLABLE_L2_OUTCOMES` — a metadata write is not billed as a
+                        message read (D21): no model read it.
+                      artifact: genios_engine/api/routes.py
+                      verify: .venv/bin/python -m pytest tests/test_a_metadata_write_is_not_billed.py -q
+                      depends_on: [M23.C3.L-logic.V2.U03]
+        - id: M23.C4
+          name: Every recovery is a re-read
+          layers:
+            - layer: logic
+              levels:
+                - level: 2
+                  units:
+                    - id: M23.C4.L-logic.V2.U01
+                      what: >
+                        `capture/landing/unread.py` finds every kept mail with no L1 extraction —
+                        a re-admitted park, a refetch, a recapture, a promotion — whenever it was
+                        captured, and hands it to the re-read ladder B18 built (attempts, backoff,
+                        give-up with a reason). No code read the `route` a recovery set, so every
+                        recovery path used to end where it began.
+                      artifact: genios_engine/capture/landing/unread.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/capture/test_a_recovered_mail_is_read_again_pg.py -q
+                      depends_on: []
+                    - id: M23.C4.L-logic.V2.U02
+                      what: >
+                        New `capture/landing/promote.py` — promotion out of the archive (the half
+                        STEP-03 handed to this step): one tenant's archived mail, by the rule that
+                        archived it and optionally its sender's domain, goes back to the ledger as
+                        kept and is read again by the ladder; never a model's guess, always a named
+                        rule or an operator.
+                      artifact: genios_engine/capture/landing/promote.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/capture/test_promotion_out_of_archive_pg.py -q
+                      depends_on: [M23.C4.L-logic.V2.U01]
+            - layer: integration
+              levels:
+                - level: 3
+                  units:
+                    - id: M23.C4.L-integration.V3.U03
+                      what: >
+                        The heartbeat's re-read (`api/routes._reread_unread`) asks the new finder
+                        each beat, bounded as today, so a recovered or promoted mail is read without
+                        anyone running a script.
+                      artifact: genios_engine/api/routes.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/test_the_heartbeat_reads_what_was_recovered_pg.py -q
+                      depends_on: [M23.C4.L-logic.V2.U01, M23.C2.L-data.V1.U02]
+            - layer: interface
+              levels:
+                - level: 4
+                  units:
+                    - id: M23.C4.L-interface.V4.U04
+                      what: >
+                        `scripts/promote_archived.py` — one tenant, by rule (and sender domain), dry
+                        run by default; `--apply` promotes and the heartbeat reads them. For Boardy's
+                        introductions, archived on their unsubscribe header (N-02) — once Rohit says.
+                      artifact: scripts/promote_archived.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/scripts/test_promote_archived.py -q
+                      depends_on: [M23.C4.L-logic.V2.U02]
+        - id: M23.C6
+          name: The production check
+          layers:
+            - layer: logic
+              levels:
+                - level: 2
+                  units:
+                    - id: M23.C6.L-logic.V2.U01
+                      what: >
+                        `platform/receipts` — "every kept event has entered memory": a kept event older
+                        than a day with no L2 run, counted; 0 is the promise.
+                      artifact: genios_engine/platform/receipts.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/platform/test_every_kept_event_entered_memory.py -q
+                      depends_on: [M23.C3.L-logic.V2.U03]
+            - layer: interface
+              levels:
+                - level: 3
+                  units:
+                    - id: M23.C6.L-interface.V3.U02
+                      what: >
+                        `scripts/pipeline_health.py` — every kept mail entered memory, every calendar
+                        event is a meeting, and how many kept mails still wait for a re-read.
+                      artifact: scripts/pipeline_health.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/scripts/test_pipeline_health_memory.py -q
+                      depends_on: [M23.C3.L-logic.V2.U03, M23.C3.L-logic.V2.U04, M23.C4.L-logic.V2.U01]
+        - id: M23.C5
+          name: The golden set
+          layers:
+            - layer: integration
+              levels:
+                - level: 4
+                  units:
+                    - id: M23.C5.L-integration.V4.U01
+                      what: >
+                        The cases whose chain now reaches new model sites get the ideal reader's
+                        answers (authored per case, never a guess) and their cassettes re-recorded,
+                        no spend; every case's `blocked_on` restated where its gap moved.
+                      artifact: tests/replays/specs/founder
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest tests/replays/test_founder_cases.py -q
+                      depends_on: [M23.C3.L-logic.V2.U03, M23.C3.L-logic.V2.U04]
+                    - id: M23.C5.L-integration.V4.U02
+                      what: >
+                        The board re-recorded in `03-FINDINGS.md` §F.1, every moved case named; the
+                        STEP-03 and STEP-04 acceptances restated where a case's run moved.
+                      artifact: speedrun008/YC-II W27/03-FINDINGS.md
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py --assert-recorded "speedrun008/YC-II W27/03-FINDINGS.md"
+                      depends_on: [M23.C5.L-integration.V4.U01]
+                - level: 5
+                  units:
+                    - id: M23.C5.L-integration.V5.U03
+                      what: >
+                        The acceptance, on the real chain, every founder case: every kept mail has an
+                        L2 run, every calendar event is a meeting node, no archived mail's words are
+                        readable by any reader, and no screen contact became a person; and a planted
+                        miss of each turns it red.
+                      artifact: tests/replays/test_every_kept_item_enters_memory.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest tests/replays/test_every_kept_item_enters_memory.py -q
+                      depends_on: [M23.C5.L-integration.V4.U02, M23.C6.L-logic.V2.U01]
