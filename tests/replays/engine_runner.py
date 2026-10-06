@@ -435,6 +435,20 @@ def _fresh_tenant(engine: Any, org: str, case: FounderCase) -> None:
         for table in ("context_correlation_members", "context_situations",
                       "context_correlations"):
             conn.execute(text(f"delete from {table} where org_id = :o"), {"o": org})
+        # STEP-04 (F54) — AS SIGNUP DOES: the owner's seat, from `orgs.email`. Without it the
+        # sent-folder half of the W-01 whitelist never fired here while it does in production,
+        # so the golden set measured a gate harsher than the one the founder has.
+        from genios_engine.platform.seats import ensure_owner_seat
+        ensure_owner_seat(conn, org)
+        # And what the tenant declared as its own, the way `scripts/declare_self_identity.py`
+        # does for the design partner: the founder's other addresses, the company's domains.
+        conn.execute(text("delete from org_self_identities where org_id = :o"), {"o": org})
+        for kind, values in (("address", case.founder.also), ("domain", case.founder.domains)):
+            for value in values:
+                conn.execute(text(
+                    "insert into org_self_identities (org_id, kind, value, declared_by) "
+                    "values (:o, :k, :v, 'golden case') on conflict do nothing"),
+                    {"o": org, "k": kind, "v": value})
 
 
 def _funnel(engine: Any, org: str, at: datetime) -> dict[str, int]:
@@ -482,6 +496,7 @@ def _cards(engine: Any, org: str, open_after: list[set[str]]) -> tuple[CardView,
                  r.unresolved_item, r.why_now]
         out.append(CardView(card_id=r.card_id, state=r.state, level=r.level,
                             text="\n".join(str(p) for p in parts if p),
+                            subject=r.business_subject,
                             output_lane=r.output_lane,
                             sweeps=tuple(i for i, ids in enumerate(open_after) if r.card_id in ids)))
     return tuple(out)

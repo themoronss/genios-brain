@@ -346,10 +346,44 @@ def test_the_card_reader_reads_what_the_founder_sees(pg_store):
         for said in ("Reply to Kavya", "asked for the deck", "partners meet Monday",
                      "Send the deck", "the deck is attached", "Lotus Ventures"):
             assert said in card.text, said
+        # STEP-04: who the card is about, apart from what it says — the marking judges it.
+        assert card.subject == "Lotus Ventures"
     finally:
         with pg_store.engine.begin() as c:
             c.execute(text("delete from cards where org_id = :o"), {"o": org})
             c.execute(text("delete from orgs where id = :o"), {"o": org})
+
+
+@pytest.mark.pg
+@needs_db
+def test_a_tenant_is_created_as_signup_creates_it_with_its_owner_seat_and_declarations(pg_store):
+    """STEP-04 (`yc2_w27_s04/M22.C5.L-logic.V2.U02`, F54). Signup gives a tenant its owner seat
+    (`platform/seats.ensure_owner_seat`) and the golden runner did not — so the sent-folder half of
+    the W-01 whitelist never fired on the golden set while it does in production. And a case shaped
+    like production declares the founder's other addresses and the company's domains, the way
+    `scripts/declare_self_identity.py` does for the design partner."""
+    from sqlalchemy import text
+
+    from genios_engine.platform.self_identity import identity_for
+    raw = copy.deepcopy(CASE)
+    raw["founder"] = {**FOUNDER, "also": ["ceo@nimbuslabs.test"], "domains": ["nimbuslabs.test"]}
+    case = _parse(raw)
+    org = "org_golden_seat_probe"
+    try:
+        er._fresh_tenant(pg_store.engine, org, case)
+        er._fresh_tenant(pg_store.engine, org, case)          # a re-run is a fresh tenant again
+        with pg_store.engine.connect() as c:
+            seats = c.execute(text("select seat_id, email, active from org_seats where org_id = :o"),
+                              {"o": org}).fetchall()
+            us = identity_for(c, org)
+        assert [(r.seat_id, r.email, r.active) for r in seats] == [
+            ("seat_owner", "arjun@nimbuslabs.test", True)]
+        assert us.is_us("ceo@nimbuslabs.test") and us.is_us("anyone@nimbuslabs.test")
+    finally:
+        er.remove_tenant(pg_store.engine, org)
+    with pg_store.engine.connect() as c:
+        assert c.execute(text("select count(*) from org_self_identities where org_id = :o"),
+                         {"o": org}).scalar() == 0
 
 
 # =================================================================================================
