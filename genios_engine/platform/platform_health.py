@@ -34,6 +34,13 @@ _ENGINE = _PKG.parent
 #:
 #: CLOSED, and checked in BOTH directions by `tests/platform/test_the_platform_layer_says_what_it_does_not_call.py`.
 UNREACHED: dict[str, tuple[str, str]] = {
+    "self_identity.identity_for": (
+        "⛔ BUILT BOTTOM-UP, NOT YET WIRED (STEP-04, who is us, `yc2_w27_s04/M22.C1.L-data.V1.U03`). The "
+        "one answer to 'is this one of us?' — seats, `orgs.email`, connected accounts and the tenant's "
+        "own declarations, in one statement. Its callers are the eighteen modules that each built their "
+        "own set, rewired one unit at a time in the same block",
+        "⛔ MOVES WHEN `yc2_w27_s04/M22.C2.L-logic.V2.U01` makes `context/runner._internal_emails` call "
+        "it — then this entry must be deleted, or the stale-declaration guard fails"),
     # ───────────────────────────────── receipt_coverage · guards per package as DATA (7)
     # ⛔ ALL SEVEN ARE BUILD-TIME REPORT FUNCTIONS over the checked-in receipt list. They take no
     # production data, so their answer cannot differ between two runs of the same build — the

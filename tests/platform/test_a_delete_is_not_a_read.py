@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 2_934, (
+    assert r["statements"] == 2_936, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -226,6 +226,10 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 2,932 → 2,934 by yc2_w27_s03/M21.C6.L-interface.V5.U01 (STEP-03): the health check
     # that nothing was deleted at the gate (`scripts/pipeline_health.check_nothing_was_deleted_at_the_gate`)
     # — the tenant's first archived mail, and the drops since by code. Two SELECTs, each a literal.
+    # ⛔ MOVED 2,934 → 2,935 by yc2_w27_s04/M22.C1.L-data.V1.U03 (STEP-04, who is us):
+    # `platform/self_identity.identity_for` — the four sources of who we are, ONE statement.
+    # ⛔ MOVED 2,935 → 2,936 by yc2_w27_s04/M22.C1.L-interface.V2.U04: `scripts/declare_self_identity.py`
+    # — the one INSERT a tenant's declaration is, a literal.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():
