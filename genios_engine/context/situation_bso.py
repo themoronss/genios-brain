@@ -68,6 +68,7 @@ from genios_engine.contracts.situation_evidence import (
 from genios_engine.contracts.visibility import Visibility, narrowest
 from genios_engine.platform.canonical import canonical_dumps
 from genios_engine.platform.logging import get_logger
+from genios_engine.platform.self_identity import SelfIdentity, identity_for
 
 _log = get_logger("genios.context.situation_bso")
 
@@ -1111,7 +1112,8 @@ def gather_visibility(conn, org_id: str, correlation_id: str | None) -> Visibili
                       excluded_subjects=merged.excluded_subjects)
 
 
-def gather_members(conn, org_id: str, correlation_id: str | None) -> tuple[Mapping[str, Any], ...]:
+def gather_members(conn, org_id: str, correlation_id: str | None, *,
+                   us: SelfIdentity | None = None) -> tuple[Mapping[str, Any], ...]:
     """The DISTINCT real counterparties actually correlated onto this situation.
 
     `build_business_situation` used to build `entities` as a one-element tuple from
@@ -1123,9 +1125,17 @@ def gather_members(conn, org_id: str, correlation_id: str | None) -> tuple[Mappi
     This is "real member evidence" in the sense the gap asks for: derived from the actor on each
     correlated event, not synthesised or defaulted. Grouped by email so the same person across
     several events is one entity, not one per message.
+
+    WE ARE NOT A MEMBER (STEP-04). The mail connector types every actor `external_contact`, the
+    founder's own outbound included, so this named the founder — and every other address of ours
+    — a counterparty of his own situations, and `_distinct_external_domains` counted our domains
+    toward `split_required`. An actor who is one of us (`platform/self_identity`) is left out. A
+    caller that read who we are once for its sweep hands it in as `us`; otherwise it is read here.
     """
     if not correlation_id:
         return ()
+    if us is None:
+        us = identity_for(conn, org_id)
     rows = conn.execute(text(
         "select se.actor->>'email' as email, se.actor->>'type' as actor_type, "
         "min(se.occurred_at) as first_seen, count(*) as n "
@@ -1139,7 +1149,7 @@ def gather_members(conn, org_id: str, correlation_id: str | None) -> tuple[Mappi
         "type": str(r["actor_type"] or "unknown"),
         "name": str(r["email"]),
         "event_count": int(r["n"]),
-    } for r in rows)
+    } for r in rows if not us.is_us(r["email"]))
 
 
 def gather_brain_subject_keys(conn, org_id: str, situation: Mapping[str, Any],
