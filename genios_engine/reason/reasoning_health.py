@@ -35,6 +35,10 @@ _ENGINE = _PKG.parent
 #:
 #: CLOSED, and checked in BOTH directions by `tests/reason/test_the_reasoning_layer_says_what_it_does_not_call.py`.
 UNREACHED: dict[str, tuple[str, str]] = {
+    "fingerprint.verdict_key": (
+        "⛔ BUILT BOTTOM-UP, NOT YET WIRED (STEP-02, `yc2_w27_s02/M20.C1.L-contract.V0.U01`). How a human verdict enters a fingerprint — which feedback, at which version — so a verdict that lands re-decides its subject. Its caller is the inputs reader, the next unit of the same category",
+        "⛔ MOVES WHEN `yc2_w27_s02/M20.C1.L-data.V1.U02` (`reason/fingerprint_inputs.py`) reads a tenant's verdicts through it — then this entry must be deleted"),
+
     "change_gate.should_skip": (
         "⛔ BUILT BOTTOM-UP, NOT YET WIRED (STEP-02, the change gate, `yc2_w27_s02/M20.C3.L-logic.V0.U01`). The one rule that decides whether a subject's decision may be skipped — same fingerprint, and for a live card an open signal with more than a day of authority left. Pure, and its callers are the lanes, which are later units of the same block",
         "MOVES WITH `fingerprint_store.load_all` — the same two units wire the store and the rule, in the same lanes"),

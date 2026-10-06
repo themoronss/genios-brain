@@ -3308,12 +3308,14 @@ yc2_w27_s02:
                   units:
                     - id: M20.C1.L-contract.V0.U01
                       what: >
-                        `MaterialInputs` — everything a decision may depend on that its
-                        NodeContext does not carry: open loops of the anchor (loop_id, status,
-                        ask_count), L1 conflicts (id, resolution), human verdicts on the subject's
-                        cards ((feedback_id, verdict_version) and `human.*` card_events), the
-                        pack's authority_revision — and the clock ladders: deadline hours on
-                        timeline_unit.URGENCY_LADDER, day counts on a days ladder.
+                        `MaterialInputs` — what can change the right answer without touching the
+                        decision's request: the pack's authority_revision and the human verdicts
+                        on the subject's cards (verdict_key = feedback id : version) — and the
+                        clock ladders: deadline hours on timeline_unit.URGENCY_LADDER, elapsed
+                        days on DAY_LADDER. NARROWED IN BUILD, by measurement: open loops and L1
+                        conflicts were planned here, but on all 40 golden cases the request itself
+                        carries what the decision reads (a new ask or reply is a new event in the
+                        context), so only the two inputs outside it are carried.
                       artifact: genios_engine/reason/fingerprint.py
                       verify: .venv/bin/python -m pytest tests/reason/test_material_inputs_contract.py -q
                       depends_on: []
@@ -3323,10 +3325,10 @@ yc2_w27_s02:
                   units:
                     - id: M20.C1.L-data.V1.U02
                       what: >
-                        Reads a subject's MaterialInputs in one round trip: open loops by node,
-                        conflicts, verdicts joined card → signal → situation / (rule, node), the
-                        tenant pack's authority_revision. System card_events (card.surfaced,
-                        window.lapsed) are not verdicts.
+                        Reads every subject's MaterialInputs for a tenant in one round trip each:
+                        the human verdicts on its cards, joined card → signal → (rule, node) or
+                        situation, and the tenant pack's authority_revision. Narrowed with
+                        M20.C1.L-contract.V0.U01.
                       artifact: genios_engine/reason/fingerprint_inputs.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/reason/test_fingerprint_inputs.py -q
                       depends_on: [M20.C1.L-contract.V0.U01]
@@ -3336,12 +3338,14 @@ yc2_w27_s02:
                   units:
                     - id: M20.C1.L-logic.V1.U03
                       what: >
-                        `material_fingerprint(capability_key, context, inputs)` — a canonical hash
-                        of the capability (id, version), the situation (type, status, anchor,
-                        member event ids), the context's facts as (field, value) with every
-                        timestamp and fact_version_id out, clocks bucketed, floats quantised, and
-                        org-wide period.* facts out; observations by kind and id; MaterialInputs.
-                        Sorted before hashing (3f8d51e0). Never evaluation_time.
+                        `material_fingerprint(capability, snapshot, config_snapshot_id, mode,
+                        inputs)` — a hash of the decision's own request with time taken out:
+                        evaluation_time, graph_version, every record's occurred_at,
+                        fact_version_id and evidence_id, and the compiled capability's derived
+                        version and expertise_id; evidence as a set; every timestamp and clock
+                        fact reduced to its rung relative to the evaluation instant; plus
+                        MaterialInputs. Prototyped on all 40 golden cases first: every repeated
+                        request identical across an unchanged sweep. Never evaluation_time.
                       artifact: genios_engine/reason/fingerprint.py
                       verify: .venv/bin/python -m pytest tests/reason/test_material_fingerprint.py -q
                       depends_on: [M20.C1.L-contract.V0.U01]
