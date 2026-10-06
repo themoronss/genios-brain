@@ -14,7 +14,8 @@ _INSERT = text(
        source_object_id, parent_object_id, dedup_key, actor, occurred_at, captured_at,
        sync_mode, payload_ref, capture_confidence, schema_version, outcome,
        route, triage_lane, domain_hints, linkage_hints, internal_kind, recipients,
-       visibility_scope, visibility_principals, visibility_derived_from)
+       visibility_scope, visibility_principals, visibility_derived_from,
+       attention, attention_reason)
     values
       (:event_id, :org_id, :connection_id, :source, :source_family, :object_type,
        :source_object_id, :parent_object_id, :dedup_key, cast(:actor as jsonb),
@@ -22,7 +23,8 @@ _INSERT = text(
        :schema_version, :outcome,
        :route, :triage_lane, cast(:domain_hints as jsonb), cast(:linkage_hints as jsonb),
        :internal_kind, :recipients,
-       :visibility_scope, :visibility_principals, :visibility_derived_from)
+       :visibility_scope, :visibility_principals, :visibility_derived_from,
+       :attention, :attention_reason)
     on conflict (org_id, dedup_key) do nothing
     """
 )
@@ -61,7 +63,8 @@ class PostgresSourceEventRepository:
 
     def add(self, event: SourceEvent, outcome: str | None = None, *,
             route: str | None = None, triage_lane: str | None = None,
-            domain_hints: list | None = None, linkage_hints: list | None = None) -> None:
+            domain_hints: list | None = None, linkage_hints: list | None = None,
+            attention: str | None = None, attention_reason: str | None = None) -> None:
         with self._engine.begin() as conn:
             conn.execute(_INSERT, {
                 "event_id": event.event_id, "org_id": event.org_id,
@@ -88,4 +91,7 @@ class PostgresSourceEventRepository:
                                           if event.visibility else None),
                 "visibility_derived_from": (event.visibility.derived_from
                                             if event.visibility else None),
+                # The mail's tier and why (STEP-03). The vocabulary is closed by 0192's check, so
+                # a typo is a refused write, never a fourth tier nobody reads.
+                "attention": attention, "attention_reason": attention_reason,
             })
