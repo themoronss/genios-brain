@@ -3529,14 +3529,13 @@ def _pending_count(org_id: str) -> int:
         return 0
     from sqlalchemy import text
 
-    from genios_engine.context.runner import _L2_OWN_EXTRACTIONS
+    # STEP-05: the drain's whole question, not a copy of half of it — every kept event with a road
+    # into memory (`context/runner.PENDING_FROM`). This counted every emitted event and nothing
+    # archived, while the drain took signalled events only: the two disagreed in both directions.
+    from genios_engine.context.runner import PENDING_FROM, pending_params
     with _graph.engine.connect() as c:
-        return int(c.execute(text(
-            "select count(*) from source_events se where se.org_id=:o and se.outcome='emitted' "
-            f"and se.event_id not in ({_L2_OWN_EXTRACTIONS}) "
-            "and se.event_id not in (select event_id from l2_processing_runs "
-            "                        where org_id=:o and status in ('done','parked'))"),
-            {"o": org_id}).scalar() or 0)
+        return int(c.execute(text("select count(*) " + PENDING_FROM),
+                             pending_params(org_id)).scalar() or 0)
 
 
 def _saved_connection_config(org_id: str, source_type: str) -> dict:
