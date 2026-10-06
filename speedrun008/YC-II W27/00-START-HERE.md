@@ -88,6 +88,11 @@ Every milestone after `M16` depends on it, because its verify runs on the scratc
 `M17`, `M18` and `M19` do not depend on each other; Rohit's order sequences them. The critical path
 is 8 units (`M16.C1` → `M16.C6` → `M18`).
 
+**QA, 2026-10-06 at `83dd87f3`** (`baseline/yc2w27-qa/qa_record.txt`) — every unit's own verify
+on an empty scratch database, the whole suite with and without it, the `golden-pg` lane, the board
+and the hermetic job: **55 pass / 1 fail / 0 skip**. The one fail is the blocked unit above
+(`M17.C3.L-integration.V2.U04`, *no tests ran*); every other check exits 0.
+
 Nothing here is pushed. Rohit pushes the batch (`06` D10). **After the deploy** (Harsh):
 
 1. re-queue the attachments the `file_name` refusal dead-lettered —

@@ -195,6 +195,10 @@ GENIOS_TEST_DATABASE_URL=… .venv/bin/python scripts/golden_score.py \
 
 and the hermetic job leaves the set out: `pytest -q -m "not golden"`.
 
+✅ **Run 2026-10-06 at `83dd87f3`, on an empty scratch database** (`baseline/yc2w27-qa/qa_record.txt`):
+the golden lane exit 0 — **357 passed, 100 xfailed, 0 skipped**; the board exit 0 — it matches
+`03` §F.1; no golden tenant left behind; the hermetic job exit 0 — 16,018 passed, 47 deselected.
+
 ## 8 · Risks
 
 | Risk | Guard |
