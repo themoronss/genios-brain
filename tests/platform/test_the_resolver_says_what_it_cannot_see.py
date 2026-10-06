@@ -431,5 +431,10 @@ def test_the_resolver_change_moved_no_coverage_verdict():
     # `signal_bundles` gained its first reference — the tenant reset's `delete` list
     # (`api/account_routes.py`, `50c50073`). An engine change, not a resolver change; the nine
     # write-only members above did not move.
-    assert len(TC.table_usage()) == 187
-    assert len(TC._known_tables()) == 189
+    # ⛔ RE-PINNED 187 → 188 and 189 → 190 on 2026-10-06 by migration `0191_reasoning_fingerprints`
+    # (YC-II W27 STEP-02, `yc2_w27_s02/M20.C2.L-contract.V0.U01`): one new table, whose first
+    # reference is the same reset `delete` list. Again an engine change, not a resolver change; the
+    # nine write-only members above did not move, and the table's reader and writer
+    # (`reason/fingerprint_store.py`) are the next unit.
+    assert len(TC.table_usage()) == 188
+    assert len(TC._known_tables()) == 190

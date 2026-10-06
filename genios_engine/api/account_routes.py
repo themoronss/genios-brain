@@ -652,6 +652,9 @@ _ORG_SCOPED_TABLES = [
     "delivery_outbox", "agent_claims", "card_build_claims", "card_feedback_revisions",
     # migration 0135: who else a card reached by declared responsibility — named staff
     "card_feedback_verdicts", "card_events", "card_recipients", "cards", "signals",
+    # migration 0191: what each subject's last decision was made on — the change gate's memory.
+    # Runtime state: a reset tenant is decided afresh, so nothing may skip on a pre-reset row.
+    "reasoning_fingerprints",
     # Layer 4 deletion order is load-bearing: signals reference runs; runs reference context +
     # config; context references capability. Payloads are explicit as defense in depth even though
     # the context FK also cascades them.
