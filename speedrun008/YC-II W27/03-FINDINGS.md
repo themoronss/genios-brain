@@ -6,7 +6,7 @@ re-do): F26–F29, E8, and the corrections to F24 and E4. **Root-caused the same
 databases, for tree `yc2_w27`: F30–F37, E9–E11. **Measured 2026-10-06 by the golden set**
 (`STEP-01`, `yc2_w27/M19`) on a scratch database: F38–F49 and §F.1, the before-score. **Found
 2026-10-06 building STEP-02** (`yc2_w27_s02`) **and checking STEP-03**: F50–F55. **Found 2026-10-06
-building STEP-04** (`yc2_w27_s04`): F59–F68. A finding is never deleted; a correction is a new line that
+building STEP-04** (`yc2_w27_s04`): F59–F68. **Found 2026-10-06 building STEP-05** (`yc2_w27_s05`): F69–F70. A finding is never deleted; a correction is a new line that
 says what it corrects.
 
 ---
@@ -84,6 +84,8 @@ says what it corrects.
 | F66 | "Us" in three outreach readings is still partial: `cohort.contacted`/`replied` and `organization.contacted` can count one of us, and `read_unanswered_replies` relies on the pipeline's ADDRESS set — a colleague known only by a declared domain can be "owed a reply" | `[CODE]` `context/outreach_situations.py` (U12's report) | open — `STEP-09`, who owns what on a team |
 | F67 | `tests/platform/test_warm_lane_pg.py::test_a_burst_coalesces_into_one_chain_run` fails intermittently (≈4 of 11 runs, also alone): it marks rows done by comparing two database `now()` values taken in different transactions | `[TEST]` U01–U18 builder's runs | open — `STEP-17` |
 | F68 | The golden set could not show the defect STEP-04 fixed: its founder has ONE address and it is `orgs.email`, and the runner stored the company in `orgs.name` and the founder's name nowhere. Rows 41–44 are production-shaped; F41, F43 and F44 wait on `STEP-05` (sent mail and a Gmail investor's ask never reach memory) | `[TEST]` `tests/replays/engine_runner.py`; §F.1 | partly — the runner now stores the founder as signup does; the rest is `STEP-05` |
+| F69 | D20 says a mail below the floor enters memory *"at the confidence it scored"* — and no such confidence exists. ALG-13 composes a signal's confidence at **publish**, after the floor (`conflicts → qualify → lifecycle → publish`), so a floor refusal has an `importance_bp` and no confidence; and a mail whose extraction proposed no signal at all has neither. A below-floor mail enters at one fixed relevance, `BELOW_FLOOR_CONFIDENCE_BP` = 3,000 — under the ranking floor (0.35), stored and queryable, never a gate — and an `l1.below_floor` observation says where it came from. Its `importance_bp` is not a confidence and is not used | `[CODE]` `capture/esqe/review_candidates.py:15-23`, `capture/esqe/finalize.py`; `context/qes_adapter.BELOW_FLOOR_CONFIDENCE_BP` | by design — `STEP-10` may rank below-floor items by what they scored once confidence is composed before the floor |
+| F70 | A calendar event's correlation leaves out only our exact ADDRESSES (`internal_emails`): a colleague known only by a declared domain is an outside attendee, so they can anchor a meeting's situation. STEP-04's anchor-pool check (U20) runs in `context/pipeline.process_event` — the mail road — and never reached `context/structured.commit_structured` | `[CODE]` `context/structured.py` (`key in internal`) | `STEP-05` C3.U04 — the structured lane asks `platform/self_identity` |
 
 
 ## B · False alarms — things that looked wrong and are not

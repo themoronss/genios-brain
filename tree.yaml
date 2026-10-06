@@ -4301,8 +4301,13 @@ yc2_w27_s05:
                         `context/runner._pull` admits every kept event: the signal join and the
                         payload join become left joins, `archived` is admitted, `se.outcome`,
                         `se.recipients` and the event's own latest L1 extraction are selected; a
-                        screen session stays out of every road but the signal's; a run already
-                        settled is never re-pulled, so a re-pullable row cannot starve the drain.
+                        screen session stays out of every road but the signal's and is never
+                        archived into memory; a run already settled is never re-pulled; and the pull
+                        admits an event exactly when `memory_lanes.lane_for` gives it a road, every
+                        combination seeded (corrected while building: the plan's "a re-pullable row
+                        cannot starve the drain" was not what this unit guarantees — a `held` row is
+                        re-pullable, as before; what it guarantees is that no row without a road is
+                        admitted).
                       artifact: genios_engine/context/runner.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_every_kept_event_is_pulled.py -q
                       depends_on: [M23.C1.L-contract.V0.U01]
@@ -4324,8 +4329,11 @@ yc2_w27_s05:
                     - id: M23.C3.L-logic.V2.U01
                       what: >
                         `context/qes_adapter.adapt_qes_extraction` projects an extraction that crossed
-                        no floor — at the confidence it scored, marked `below_floor` on every claim it
-                        carries — with no model call (D20).
+                        no floor — the same claims, every one at `BELOW_FLOOR_CONFIDENCE_BP` (3,000) as
+                        its relevance, under the pipeline's ranking floor, and an `l1.below_floor`
+                        observation naming the event — with no model call (D20). Corrected while
+                        building: "the confidence it scored" does not exist for a floor refusal —
+                        ALG-13 composes confidence at publish, after the floor (`03` F69).
                       artifact: genios_engine/context/qes_adapter.py
                       verify: .venv/bin/python -m pytest tests/context/test_a_mail_below_the_floor_keeps_its_words.py -q
                       depends_on: [M23.C1.L-contract.V0.U01]
@@ -4333,7 +4341,7 @@ yc2_w27_s05:
                       what: >
                         `context/pipeline.process_event(metadata_only=True)` — an archived mail writes
                         the people, their companies, the thread and `corresponded_with`, and nothing
-                        else: no text, no observation, no ball-in-court or waiting fact, no
+                        else: no text, no relevance observation, no ball-in-court or waiting fact, no
                         correlation (F37, F57: an archive's words must stay unreadable).
                       artifact: genios_engine/context/pipeline.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_an_archived_mail_is_metadata_only.py -q
