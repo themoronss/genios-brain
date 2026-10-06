@@ -4375,6 +4375,22 @@ yc2_w27_s05:
           layers:
             - layer: logic
               levels:
+                - level: 1
+                  units:
+                    - id: M23.C4.L-logic.V1.U05
+                      what: >
+                        Added while building C4 (the plan's §3.5 "a recovery flag the gate
+                        honours" had no unit): a re-read is of a mail ALREADY KEPT, so the gate
+                        reads it and never judges it out again. `RawObject.rereading` carries why
+                        it is read again into `GateContext`; `capture/gate.run_gate` skips its two
+                        JUDGMENTS for it — the noise rules (S1b) and the relevance classifier (S2)
+                        — and keeps every other check (scope, version, provenance, structured,
+                        content integrity, the availability notice); a re-read is never primed for
+                        S2 either. Without it a re-admitted park was re-parked and a promoted
+                        archive re-archived by the very rule that archived it.
+                      artifact: genios_engine/capture/gate/gate.py
+                      verify: .venv/bin/python -m pytest tests/capture/gate/test_a_reread_is_never_judged_out_again.py -q
+                      depends_on: []
                 - level: 2
                   units:
                     - id: M23.C4.L-logic.V2.U01
@@ -4382,11 +4398,15 @@ yc2_w27_s05:
                         `capture/landing/unread.py` finds every kept mail with no L1 extraction —
                         a re-admitted park, a refetch, a recapture, a promotion — whenever it was
                         captured, and hands it to the re-read ladder B18 built (attempts, backoff,
-                        give-up with a reason). No code read the `route` a recovery set, so every
-                        recovery path used to end where it began.
+                        give-up with a reason): `queue_unread` files it as an
+                        `extraction_never_ran` park (or re-opens the `recovered` park a recovery
+                        left), and every row the ladder re-lands carries `rereading`. It absorbs
+                        `find_unread` (mail captured while L1 was off is the same population, minus
+                        the ladder). No code read the `route` a recovery set, so every recovery
+                        path used to end where it began.
                       artifact: genios_engine/capture/landing/unread.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/capture/test_a_recovered_mail_is_read_again_pg.py -q
-                      depends_on: []
+                      depends_on: [M23.C4.L-logic.V1.U05]
                     - id: M23.C4.L-logic.V2.U02
                       what: >
                         New `capture/landing/promote.py` — promotion out of the archive (the half

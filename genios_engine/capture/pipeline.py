@@ -1391,6 +1391,9 @@ def prime_relevance_page(objects, semantic, sender_resolver=None) -> None:
     `capture_event`, which falls back to the per-event path.
     """
     page = getattr(semantic, "relevance_page", None)
+    # A re-read never reaches S2 (STEP-05: the gate does not judge a kept mail again), so it is no
+    # candidate: priming it would buy a model call nothing reads.
+    objects = [raw for raw in (objects or ()) if not getattr(raw, "rereading", None)]
     if page is None or not objects:
         return
     try:
@@ -1579,7 +1582,7 @@ def capture_event(raw: RawObject, *, org_id: str, connection_id: str,
     ctx = GateContext(event=event, prepared=prepared, raw=raw.raw,
                       content_version=raw.content_version,
                       is_structured=is_structured, structured_fields=structured_fields,
-                      sender_known=sender_known, in_scope=in_scope)
+                      sender_known=sender_known, in_scope=in_scope, rereading=raw.rereading)
     gate = run_gate(ctx, trace, relevance=relevance)
 
     # Decision-first ledger: write the lightweight source_events row (metadata + the

@@ -108,7 +108,9 @@ def run_gate(ctx: GateContext, trace: EventTrace,
     # S1b — unstructured noise: whitelist first, then the N-codes, each ARCHIVED with its code
     wl = whitelist(ctx)
     if wl:
-        trace.record("S1", "pass", whitelist=wl)
+        # A re-read (W-06) names why it is read again, so the trace says which recovery it was.
+        trace.record("S1", "pass", whitelist=wl,
+                     **({"rereading": ctx.rereading} if ctx.rereading else {}))
     else:
         hit = noise_rule(ctx)
         if hit:
@@ -134,7 +136,10 @@ def run_gate(ctx: GateContext, trace: EventTrace,
     # only parks. `disposition` decides: "drop" (LLM-confident junk — ARCHIVED, STEP-03), "park"
     # (low relevance, recoverable), else route to extraction. Empty disposition falls back to the
     # legacy relevant→route rule.
-    if relevance is not None:
+    # NOT FOR A RE-READ (STEP-05). The classifier's question — keep this mail or not — was
+    # answered when the mail was kept: a park re-admitted for `low_relevance` met the very
+    # classifier that parked it, and was parked again. A re-read is routed to be read.
+    if relevance is not None and not ctx.rereading:
         v = relevance.classify(ctx, ctx.prepared)
         disp = v.disposition or ("keep" if v.relevant else "park")
         if disp == "drop":

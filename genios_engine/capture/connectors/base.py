@@ -73,6 +73,11 @@ class RawObject:
     #: `private` to that seat, where the `upload` rule would say `org`. None (every connector) =
     #: derive it from the source's rule, exactly as before.
     visibility: Any = None
+    #: WHY THIS OBJECT IS BEING READ AGAIN — set only by the re-read (`capture/landing/unread`):
+    #: `extraction_never_ran`, an extraction park's code, `readmitted:<code>`, `promoted:<rule>`.
+    #: The mail was KEPT already, so the gate reads it and never judges it out again (STEP-05).
+    #: None (every connector) = a first read, judged exactly as before.
+    rereading: str | None = None
 
     @property
     def watermark_at(self) -> datetime:

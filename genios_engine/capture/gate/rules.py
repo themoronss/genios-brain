@@ -235,7 +235,7 @@ def light_junk(labels, sender_email: str, has_attachment: bool) -> str | None:
 # Human-readable label per reason code — shown in traces/logs so a drop is legible.
 REASON_LABELS = {
     "W-01": "known_sender", "W-02": "starred_important", "W-03": "agent_event",
-    "W-04": "important_attachment", "W-05": "deliberate_source",
+    "W-04": "important_attachment", "W-05": "deliberate_source", "W-06": "reread_of_kept_mail",
     "N-01": "machine_ack", "N-02": "bulk_campaign_unsub", "N-03": "no_reply_sender",
     "N-04": "bulk_precedence", "N-05": "out_of_office", "N-06": "gmail_promotions",
     "N-07": "gmail_social", "N-08": "tenant_blocklisted", "N-09": "provider_spam",
@@ -269,6 +269,8 @@ REASON_LABELS = {
 def whitelist(ctx: GateContext) -> str | None:
     """Return a W-code if the event bypasses destructive drops, else None."""
     labels = set(ctx.raw.get("labelIds") or [])
+    if ctx.rereading:
+        return "W-06"                            # a re-read of a mail already kept (STEP-05)
     if ctx.sender_known:
         return "W-01"                            # known customer/prospect/vendor
     if "STARRED" in labels or ctx.raw.get("approved_sender"):
