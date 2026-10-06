@@ -100,7 +100,9 @@ def test_the_sweep_hands_the_reading_who_we_are():
 
     url = os.environ.get("GENIOS_TEST_DATABASE_URL")
     if not url:
-        pytest.skip("needs GENIOS_TEST_DATABASE_URL pointing at a scratch database")
+        # conftest's own words: tests/contracts/test_h0_gate.py reads any other
+        # skip in tests/context as a placeholder that names no gate.
+        pytest.skip("GENIOS_TEST_DATABASE_URL not set — real-Postgres L2 tests skipped")
     org = "condition_owner_org"
     eng = create_engine(url)
     try:
