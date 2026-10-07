@@ -348,6 +348,22 @@ class SyncSummary:
     #: is read once by `api/routes._run_ledger`, and it comes from the SAME `_now` seam the poll
     #: decision uses so a test can freeze it rather than race it.
     started_at: datetime | None = None
+    # ------------------------------------------------------------------------------------------
+    # STEP-10 · WHAT THIS RUN READ AND WHEN IT ENDED (`yc2_w27_s10 · M29.C5.L-data.V0.U01`)
+    #
+    # The publisher files every signal's coverage under the sweep's `source`, over the window
+    # `started_at` → `finished_at` (`capture/esqe/publisher._coverage_of`), and this summary had
+    # neither name: per-signal coverage was NULL on 28 of 28 golden signals (`STEP-18` B5), while
+    # the publisher's own test passed on a stand-in that carried both.
+    # ------------------------------------------------------------------------------------------
+    #: The source this run read — set where the run starts, the same resolution its cursor is
+    #: keyed on (the connector's own `source`). None only on a summary no run produced.
+    source: str | None = None
+    #: WHEN THIS RUN FINISHED — off the clock seam `started_at` came from, after the last page,
+    #: before the ledger row is written. `l1_sync_runs.finished_at` records it instead of the
+    #: database's `now()`, so a replay frozen at a case's instant reads its runs at that instant
+    #: (STEP-10 N8). None on a poll the cadence declined: it never ran, so it never finished.
+    finished_at: datetime | None = None
 
     @property
     def skipped_not_due(self) -> bool:
@@ -588,8 +604,10 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
     # doesn't move it) — anything the primary sync missed lands; dupes drop at dedup.
     since = None
     # The run's own start, taken once, from the injectable seam rather than a bare clock so the
-    # ledger row and the cadence decision below cannot disagree about when "now" was.
-    started_at = (_now or (lambda: datetime.now(timezone.utc)))()
+    # ledger row and the cadence decision below cannot disagree about when "now" was. Its finish
+    # is read off the same seam at the end (STEP-10).
+    clock = _now or (lambda: datetime.now(timezone.utc))
+    started_at = clock()
     # STEP-07 · the junk filter learns who the company brief names before the first page is
     # listed, so neither its batch (here) nor the connector's snippet gate (the fast path, which
     # holds the same classifier) spends a call on a sender the gate will whitelist as W-07.
@@ -625,7 +643,8 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
                       "(cadence %ss, origin=%s)", org_id, connection_id, source,
                       decision.next_run_at.isoformat(), decision.cadence.interval_seconds,
                       decision.cadence.origin)
-            return SyncSummary(next_cursor=cursor, poll=decision, started_at=started_at)
+            return SyncSummary(next_cursor=cursor, poll=decision, started_at=started_at,
+                               source=source)
         if decision.is_catch_up:
             # An outage is paid for in PAGES, once, resuming from the stored watermark — never by
             # re-reading history the watermark already covers.
@@ -643,7 +662,7 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
                 since = decision.catch_up.since
 
     sync_mode = SyncMode.backfill if mode == "backfill" else SyncMode.incremental
-    summary = SyncSummary(poll=decision, started_at=started_at)
+    summary = SyncSummary(poll=decision, started_at=started_at, source=source)
     watermark = since
     page_cursor = cursor
     # PREFETCH the next page while this one is being captured.
@@ -861,6 +880,9 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
     # this decides whether those things agree.
     summary.conflicts = _detect_conflicts(summary.results, groups=summary.claim_groups,
                                           detected_at=_detected_at(semantic))
+    # STEP-10 · the run is over: its finish, off its own clock, BEFORE the ledger hook — which
+    # writes the row and publishes the sweep's signals, and both read it.
+    summary.finished_at = clock()
     if run_ledger is not None:                    # l1_sync_runs — observability, never fatal
         try:
             run_ledger(org_id=org_id, connection_id=connection_id, source=source,
@@ -927,6 +949,9 @@ def backfill_drain(connector: SourceConnector, *, org_id: str, connection_id: st
         # The FIRST round's start is the backfill's start; later rounds would report the last
         # page's, which is the one number a duration cannot be computed from.
         total.started_at = total.started_at or summary.started_at
+        # STEP-10 · and the LAST round's finish is its finish; every round read one source.
+        total.source = total.source or summary.source
+        total.finished_at = summary.finished_at
         total.gated.extend(summary.gated)
         total.results.extend(summary.results)
         cursor = summary.next_cursor

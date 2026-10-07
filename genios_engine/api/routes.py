@@ -529,14 +529,20 @@ def _run_ledger(*, org_id: str, connection_id: str, source: str, mode: str, summ
             c.execute(text(
                 "insert into l1_sync_runs (run_id, org_id, connection_id, source, mode, "
                 "scanned, emitted, dropped, parked, archived, duplicate, quarantined, error, "
-                "started_at, "
+                "started_at, finished_at, "
                 # L1.2.x · COMPLETENESS (step 5, migration 0178). Named in the INSERT and not
                 # only in the migration, because `started_at` is the cautionary tale: the column
                 # existed from the day the table did, the insert never mentioned it, and every
                 # row in production recorded a finish with no start. A column no writer names is
                 # a column that is null in every row.
                 "cursor_exhausted, page_budget_spent, claimed_total, claimed_is_estimate) "
+                # STEP-10 (`yc2_w27_s10 · M29.C5.L-data.V0.U01`) · `finished_at` was the other
+                # unnamed column: it took the default `now()`, the wall clock, so a replay frozen
+                # at a case's instant filed its runs at the hour it ran and no window read could
+                # find them (N8). The run's own finish now; `now()` only for a TOTAL failure, which
+                # has no summary and no clock — and the column is NOT NULL.
                 "values (:r,:o,:c,:s,:m,:sc,:em,:dr,:pa,:ar,:du,:qu,:err,:start,"
+                "coalesce(cast(:fin as timestamptz), now()),"
                 ":cx,:pbs,:ct,:cie)"),
                 {"r": new_id("run"), "o": org_id, "c": connection_id, "s": source, "m": mode,
                  "sc": getattr(summary, "scanned", 0), "em": getattr(summary, "emitted", 0),
@@ -561,7 +567,8 @@ def _run_ledger(*, org_id: str, connection_id: str, source: str, mode: str, summ
                  # one. `run_sync` now carries its own start; a caller reporting a TOTAL failure
                  # has no summary and writes NULL, which is the honest answer for a run that
                  # never started.
-                 "err": error, "start": getattr(summary, "started_at", None)})
+                 "err": error, "start": getattr(summary, "started_at", None),
+                 "fin": getattr(summary, "finished_at", None)})
     except Exception:      # noqa: BLE001 — a ledger hiccup must not break the caller
         _log.exception("l1_sync_runs write failed org=%s conn=%s", org_id, connection_id)
     # (The conflict filing this hook is also responsible for happens at the TOP of the function
