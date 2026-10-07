@@ -18,6 +18,7 @@ from datetime import timedelta
 
 import pytest
 
+from genios_engine.capture.gate.rules import AUTO_REPLY
 from genios_engine.context.backfill import backfill_correlations
 from genios_engine.platform import company_brief, company_brief_store
 
@@ -91,6 +92,27 @@ def test_a_rebuild_files_every_mail_where_the_drain_did(store):
     out = backfill_correlations(store, ORG, rebuild=True)
     assert out["events_correlated"] == len(WORLD)
     assert {event_id: anchors(store, ORG, event_id) for event_id in live} == live
+
+
+@pytest.mark.parametrize("rebuild", [False, True], ids=["the replay after a drain", "a rebuild"])
+def test_the_replay_files_nothing_the_drain_kept_out(store, rebuild):
+    """A newsletter, the connector's own mailing that names Rahul, an out-of-office: the drain reads
+    all three and files none. The history replay `api/routes._replay_l2_history` runs after every backfill
+    drain (STEP-08's re-sync among them), and the rebuild after new deal nodes — neither may file
+    them (`03` F101)."""
+    _drain(store)
+    brief = company_brief.current(store, ORG)
+    process(store, ORG, event_id="evt_news", sender="editor@letters.test", thread="t_news",
+            company_brief=brief, at=later(8), noise_type="newsletter")
+    process(store, ORG, event_id="evt_digest", sender=CONNECTOR, thread="t_digest",
+            headers=UNSUBSCRIBE, mentions=(mention("Rahul"),), company_brief=brief, at=later(9),
+            noise_type="newsletter")
+    process(store, ORG, event_id="evt_away", sender="priya@northwind.test", thread="t_away",
+            company_brief=brief, at=later(10), availability_marker=AUTO_REPLY)
+    kept_out = ("evt_news", "evt_digest", "evt_away")
+    assert [anchors(store, ORG, e) for e in kept_out] == [set(), set(), set()]
+    backfill_correlations(store, ORG, rebuild=rebuild)
+    assert [anchors(store, ORG, e) for e in kept_out] == [set(), set(), set()]
 
 
 def test_a_rebuild_never_anchors_the_connector_on_an_introduction(store):

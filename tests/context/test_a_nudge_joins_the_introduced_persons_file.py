@@ -80,6 +80,22 @@ def test_a_nudge_naming_two_people_joins_both_files(store):
         "kestrelcap.test", "kitepath.test"}
 
 
+def test_a_connectors_mailing_that_names_a_person_is_no_nudge(store):
+    """Introly's newsletter names Rahul among its success stories: a mailing, read and filed nowhere
+    — and recorded on nobody, or a rebuild would file it into his (`03` crosscheck X1)."""
+    from sqlalchemy import text
+    store, b = store
+    process(store, ORG, event_id="evt_digest", sender=CONNECTOR, sender_name="Introly",
+            thread="t_digest", headers=UNSUBSCRIBE, mentions=(mention("Rahul"),), company_brief=b,
+            at=later(2), noise_type="newsletter")
+    assert anchors(store, ORG, "evt_digest") == set()
+    with store.engine.connect() as c:
+        assert c.execute(text(
+            "select count(*) from graph_observations where org_id = :o "
+            "   and created_by_event_id = 'evt_digest' and kind = 'event_presence'"),
+            {"o": ORG}).scalar() == 0
+
+
 def test_a_name_another_connector_introduced_is_not_this_ones(store):
     """Rahul was introduced by Introly; Matchmaker naming him is not a nudge about its own intro."""
     store, b = store

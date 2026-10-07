@@ -5586,7 +5586,8 @@ yc2_w27_s09:
                         person it introduced (a nudge: "Rahul is still waiting") joins that person's
                         file — each person's, when it names several; one that names none is the
                         connector's own ask and stays its own. Recorded on each person named (an
-                        event-presence receipt), so a rebuild files it the same way.
+                        event-presence receipt), so a rebuild files it the same way. Only mail read as
+                        correspondence is a nudge — the connector's mailing never is (crosscheck X1).
                       artifact: genios_engine/context/pipeline.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_a_nudge_joins_the_introduced_persons_file.py -q
                       depends_on: [M27.C1.L-data.V0.U01, M27.C1.L-logic.V0.U01, M27.C1.L-logic.V0.U02]
@@ -5596,7 +5597,8 @@ yc2_w27_s09:
                         rebuild passes correlation the brief's connectors as introducers, from the one
                         answer the drain reads (`introductions.connector_roles`), so every file it
                         rebuilds is the file the drain wrote; it passed no roles, and re-filed every
-                        introduction under the intro network.
+                        introduction under the intro network. Nor does it — or the replay after every
+                        backfill drain — file what the drain called noise (03 F101, crosscheck X2).
                       artifact: genios_engine/context/backfill.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_a_rebuild_files_as_the_drain_did.py -q
                       depends_on: [M27.C1.L-data.V0.U01, M27.C1.L-logic.V0.U01]

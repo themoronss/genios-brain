@@ -110,7 +110,9 @@ def backfill_correlations(store, org_id: str, *, limit: int | None = None,
 
     STEP-09: a connector the founder's company brief names is an introducer here exactly as in the
     drain (`introductions.connector_roles`, the one answer both read). The rebuild passed no roles,
-    so every introduction filed under its person was filed again under the intro network.
+    so every introduction filed under its person was filed again under the intro network. And what
+    the drain called noise is never filed here: it filed every newsletter the drain kept out — on
+    the replay after every backfill drain, and on every rebuild (`03` F101).
 
     `rebuild` re-derives the WHOLE set instead of only correlating what is not yet grouped.
 
@@ -140,6 +142,13 @@ def backfill_correlations(store, org_id: str, *, limit: int | None = None,
             "where se.org_id = :o and se.outcome = 'emitted' "
             "  and se.event_id not in ("
             "    select event_id from context_correlation_members where org_id = :o) "
+            # WHAT THE DRAIN CALLED NOISE IS NO FILE HERE EITHER (`03` F101). The drain never
+            # correlates a newsletter, spam or an auto-reply, and records its verdict as an
+            # `email_noise:*` observation the event created; the replay recovers an event's nodes
+            # from what it created and, without this, filed every one of them.
+            "  and not exists (select 1 from graph_observations o "
+            "                   where o.org_id = se.org_id and o.created_by_event_id = se.event_id "
+            "                     and o.kind like 'email_noise:%') "
             "order by se.occurred_at asc nulls last" +
             (" limit :lim" if limit else "")),
             {"o": org_id, **({"lim": limit} if limit else {})}).all()

@@ -583,9 +583,11 @@ def check_every_named_counterparty_has_a_file(conn, org: str) -> Check:
         name=name, ok=not unfiled and not misfiled, measured=measured,
         expected=("every named counterparty whose mail was read has that mail in a file, and every "
                   "introduction a connector made is in the file of the person introduced"),
-        fix=("re-read the named counterparty's mail with the brief in force — "
-             "`scripts/rebuild_graph.py --org …` files mail read before the founder named it; mail "
-             "read after it and still unfiled is a filing defect: run "
+        fix=("re-read the named counterparty's mail with the brief in force, in this order: "
+             "`scripts/rebuild_graph.py --org … --apply` reads every event again (the people a "
+             "connector introduced, their turns), then `POST /api/org/{org}/situations/backfill?"
+             "rebuild=true` re-derives every file from it — the graph rebuild alone keeps the old "
+             "files; mail read after the brief and still unfiled is a filing defect: run "
              "`tests/replays/test_every_piece_of_work_has_a_file.py`"),
         detail=[f"{n.named} — \"{n.line}\": {n.mail} mail read, none filed" for n in unfiled]
                + [f"{n.named} — \"{n.line}\": {n.misfiled} introduction(s) filed under the "

@@ -93,7 +93,9 @@ def test_it_fails_on_a_portal_read_before_it_was_named_and_names_it(store):
     check = _check(store)
     assert not check.ok
     assert check.detail == [f"watchlist:{LATE} — \"watchlist: {LATE}\": 1 mail read, none filed"]
-    assert "rebuild_graph.py" in check.fix
+    assert "rebuild_graph.py" in check.fix and "situations/backfill?rebuild=true" in check.fix
+    assert check.fix.index("rebuild_graph.py") < check.fix.index("situations/backfill"), (
+        "the graph first — the correlation rebuild re-derives the files from it")
 
 
 def test_it_fails_on_introductions_filed_under_the_connector_and_names_them(store):

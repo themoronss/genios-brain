@@ -1504,7 +1504,10 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                                             name=given.organisation)
             # The reply an introduction calls for is owed to the people introduced.
             turn_subjects = [rnode for rnode, _a in introduced]
-        elif connector_mail and sender_node:
+        elif connector_mail and sender_node and not is_noise:
+            # Only mail read as correspondence can be a nudge: the connector's newsletter naming
+            # someone it introduced is a mailing, filed nowhere — and recorded on nobody, or a
+            # rebuild would file it into their file.
             prior = introductions_by(conn, org_id=org_id, connector_node=sender_node)
             about = named_in(ents, prior)
             if about:

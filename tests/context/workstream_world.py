@@ -67,8 +67,8 @@ def mention(name: str, kind: str = "person") -> dict:
     return {"type": kind, "name": name, "email": None, "evidence_text": name}
 
 
-def extraction(mentions=()) -> Extraction:
-    return Extraction(ok=True, relevance=0.9, noise_type="none", domains=[],
+def extraction(mentions=(), noise_type: str = "none") -> Extraction:
+    return Extraction(ok=True, relevance=0.9, noise_type=noise_type, domains=[],
                       entity_mentions=list(mentions), fact_candidates=[], commitments=[],
                       questions=[], observations=[])
 
@@ -92,7 +92,8 @@ def ledger(store, org: str, *, event_id: str, sender: str, thread: str | None,
 def process(store, org: str, *, event_id: str, sender: str, recipients=(FOUNDER,),
             sender_name: str | None = None, thread: str | None = None, headers=None,
             mentions=(), company_brief: CompanyBrief | None = None,
-            at: datetime = T0, content: str | None = None, availability_marker: str | None = None):
+            at: datetime = T0, content: str | None = None, availability_marker: str | None = None,
+            noise_type: str = "none"):
     """One mail through the pipeline, as `context/runner` hands it: who is us read once, the
     company brief beside it, the stored payload as `canon_meta`. The text names every mention —
     a mention the text does not carry is ungrounded and never reaches the graph."""
@@ -105,7 +106,8 @@ def process(store, org: str, *, event_id: str, sender: str, recipients=(FOUNDER,
         sender_name=sender_name, recipient_emails=list(recipients), occurred_at=at,
         llm=None, store=store, is_inbound=sender != FOUNDER,
         internal_emails=us.addresses, self_identity=us, thread_id=thread,
-        canon_meta={"headers": dict(headers or {})}, qualified_extraction=extraction(mentions),
+        canon_meta={"headers": dict(headers or {})},
+        qualified_extraction=extraction(mentions, noise_type),
         company_brief=company_brief, availability_marker=availability_marker)
 
 
