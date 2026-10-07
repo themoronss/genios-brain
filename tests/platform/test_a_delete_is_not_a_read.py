@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_017, (
+    assert r["statements"] == 3_019, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -359,6 +359,9 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 3,015 → 3,017 by yc2_w27_s10/M29.C3.L-logic.V2.U03 (a bounce ends the wait):
     # `context/waiting` — the latest bounce filed on each node, and who our last mail in a bounced
     # thread went to — two literal SELECTs (3 → 5).
+    # ⛔ MOVED 3,017 → 3,019 by yc2_w27_s10/M29.C2.L-logic.V2.U04 (the file's numbers):
+    # `context/workstream_numbers` — the file's people, and the numbers written on them and on the
+    # tenant — two literal SELECTs (0 → 2). `waiting._TIMELINE` gained two columns, not a statement.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

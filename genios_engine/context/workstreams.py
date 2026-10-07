@@ -112,6 +112,9 @@ class WorkFile:
     introductions: Measured | None = None   # the people it introduced, each once
     replied: Measured | None = None         # of them, the share who then wrote to us themselves
     calls: Measured | None = None           # of them, the share on a meeting that starts after it
+    # STEP-10 · the file's people (node ids): the anchor when it is a person, everyone who works at
+    # it when it is a company — whose numbers the file shows (`context/workstream_numbers`).
+    people: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -350,7 +353,7 @@ def files_for(conn, org_id: str, *, now: datetime,
                     owed_by="them" if r.awaited_from_node_id in mine else "us",
                     thread_id=r.thread_id, opened_at=r.opened_at)
                 for r in asks if r.subject_node_id in mine or r.awaited_from_node_id in mine),
-            introductions=rate[0], replied=rate[1], calls=rate[2]))
+            introductions=rate[0], replied=rate[1], calls=rate[2], people=tuple(sorted(mine))))
     files.sort(key=lambda f: (f.last_touch is None, -(f.last_touch.timestamp())
                               if f.last_touch else 0, f.file_id))
     return Workstreams(files=tuple(files),

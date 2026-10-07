@@ -119,6 +119,12 @@ MUST_BE_READ: dict[str, str] = {
     "commitment.status": "context/outreach_situations.py, read_overdue_commitments",
     "requires_complete_coverage": "context/situation_publisher.py, _preflight",
     "contradicted_by": "context/situation_publisher.py, _preflight",
+    # STEP-10 (tree `yc2_w27_s10`) — each was registered in KNOWN_UNREAD in the commit that wrote
+    # it, its reader being a later unit of the same tree; read since M29.C2.L-logic.V2.U04.
+    "party.reply_cadence_n": "context/workstream_numbers.py, numbers_for — their normal's n",
+    "party.our_reply_days": "context/workstream_numbers.py, numbers_for — your normal with them",
+    "derived.our_reply_days": "context/workstream_numbers.py, numbers_for — your normal overall",
+    "delivery.status": "context/workstream_numbers.py, numbers_for — the person's bounce",
 }
 
 #: Written on purpose and read by nothing YET. Each says why it is not a defect to fix today and
@@ -191,39 +197,6 @@ KNOWN_UNREAD: dict[str, str] = {
         "lifting either changes card VOLUME by an amount nobody has measured against a real "
         "tenant. MOVES WHEN: the effect on live card counts is measured and the ball-in-court "
         "half is decided with it.",
-    # STEP-10 (tree `yc2_w27_s10`) — registered in the commits that write them, because the reader
-    # is a later unit of the same tree and the gap between the two is exactly what this file is for.
-    "party.reply_cadence_n":
-        "How many replies their reply time rests on, written beside `party.reply_cadence_days` and "
-        "`…_basis` by `context/waiting.compute_waiting` since M29.C1.L-logic.V1.U02, so that no "
-        "reader can call one reply a habit — the golden set's only two normals each rested on ONE "
-        "reply counted twice. Nothing reads the n yet: the cadence's readers compare days only. "
-        "MOVES WHEN: the file route (`GET /v1/workstreams/{file_id}`, "
-        "M29.C2.L-interface.V3.U02) serves the cadence as a `Measured` beside the file's timeline "
-        "(`context/workstream_timeline`, which holds touches and gaps, not reply times), and this "
-        "moves to MUST_BE_READ.",
-    "party.our_reply_days":
-        "Your reply time with one counterparty — from a mail they wrote to our next mail to them, "
-        "the median of at least `NORMAL_AT` answers, `party.our_reply_n` beside it — written by "
-        "`context/waiting.compute_waiting` (M29.C1.L-logic.V2.U03). It existed nowhere before, and "
-        "`outreach_situations` uses a fixed two days for a reply owed for want of it. Nothing reads "
-        "it yet. MOVES WHEN: the file route (`GET /v1/workstreams/{file_id}`, "
-        "M29.C2.L-interface.V3.U02) shows it beside their reply time, with its n, and this moves "
-        "to MUST_BE_READ.",
-    "delivery.status":
-        "A bounce on the address it is about (`context/delivery`, M29.C3.L-logic.V1.U02, `06` "
-        "D38): `failed` on the node of the address a delivery report says could not be reached. "
-        "The wait it ends is read from the `delivery_failure` observation beside it "
-        "(`context/waiting`), so the fact itself has no reader yet. MOVES WHEN: the file route "
-        "(`GET /v1/workstreams/{file_id}`, M29.C2.L-interface.V3.U02) shows a file's bounces from "
-        "it, and this moves to MUST_BE_READ.",
-    "derived.our_reply_days":
-        "Your reply time across every counterparty, pooled on the tenant node at `NORMAL_AT` "
-        "answers or more with `derived.our_reply_n` beside it, retired below — written by "
-        "`context/waiting._our_overall` (M29.C1.L-logic.V2.U03). Nothing reads it yet. MOVES WHEN: "
-        "the file route (`GET /v1/workstreams/{file_id}`, M29.C2.L-interface.V3.U02) serves it as "
-        "the founder's own normal, or a reply-owed threshold is measured from it instead of the "
-        "fixed two days, and this moves to MUST_BE_READ.",
 }
 
 

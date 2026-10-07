@@ -118,6 +118,8 @@ def test_every_touch_both_ways_in_order_with_who_and_its_evidence(store):
         (9.0, "meeting", "meeting", FOUNDER, f"{ORG}_call_1"),
         (12.0, "mail", "out", FOUNDER, f"{ORG}_out_2")]
     assert {t.thread for t in tl.touches if t.kind == "mail"} == {"t_np"}
+    assert [t.mailbox for t in tl.touches] == ["con_x", "con_x", "con_x", "con_cal", "con_x"], (
+        "each touch names the connection it came through")
 
 
 def test_the_gaps_and_the_usual_gap_say_their_n(store):
@@ -255,7 +257,8 @@ def test_the_timeline_reads_as_json(store):
         body = as_dict(timeline_for(c, ORG, _file(store, PRIYA), now=T0 + timedelta(days=40)))
     assert body["touches"][0] == {"at": T0.isoformat(), "kind": "mail", "direction": "in",
                                   "who": PRIYA, "who_name": None,
-                                  "event_id": f"{ORG}_in_1", "thread": "t_np"}
+                                  "event_id": f"{ORG}_in_1", "thread": "t_np",
+                                  "mailbox": "con_x"}
     assert [t["event_id"] for t in body["upcoming"]] == ["evt_next_call"]
     assert body["gaps_days"] == [2.0, 3.0, 4.0, 3.0]
     assert body["usual_gap"] == Measured(value=3.0, n=4, basis="file", unit="days").as_dict()

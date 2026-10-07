@@ -59,6 +59,7 @@ class Touch:
     who_name: str | None
     event_id: str                      # the evidence
     thread: str | None                 # the mail's conversation; None for a meeting
+    mailbox: str | None = None         # the connection it came through — what a coverage receipt is about
 
 
 @dataclass(frozen=True, slots=True)
@@ -76,7 +77,7 @@ class FileTimeline:
 
 _TOUCHES = text(
     "select distinct se.event_id, se.source, se.object_type, se.source_object_id, "
-    "       se.parent_object_id, se.occurred_at, se.captured_at, "
+    "       se.parent_object_id, se.occurred_at, se.captured_at, se.connection_id, "
     "       lower(se.actor->>'email') as who, se.actor->>'name' as who_name "
     "  from context_correlations k "
     "  join context_correlation_members m on m.org_id = k.org_id "
@@ -122,10 +123,11 @@ def timeline_for(conn, org_id: str, file_id: str, *, now: datetime) -> FileTimel
             touches.append(Touch(at=r.occurred_at, kind="mail",
                                  direction="out" if us.is_us(r.who) else "in", who=r.who,
                                  who_name=r.who_name, event_id=r.event_id,
-                                 thread=r.parent_object_id))
+                                 thread=r.parent_object_id, mailbox=r.connection_id))
         elif newest.get(r.source_object_id) is r and r.source_object_id not in cancelled:
             meeting = Touch(at=r.occurred_at, kind="meeting", direction="meeting", who=r.who,
-                            who_name=r.who_name, event_id=r.event_id, thread=None)
+                            who_name=r.who_name, event_id=r.event_id, thread=None,
+                            mailbox=r.connection_id)
             (touches if r.occurred_at <= now else upcoming).append(meeting)
     touches.sort(key=lambda t: (t.at, t.event_id))
     upcoming.sort(key=lambda t: (t.at, t.event_id))
@@ -144,7 +146,8 @@ def as_dict(tl: FileTimeline) -> dict:
     """The timeline as JSON — what `GET /v1/workstreams/{file_id}` serves."""
     def touch(t: Touch) -> dict:
         return {"at": t.at.isoformat(), "kind": t.kind, "direction": t.direction, "who": t.who,
-                "who_name": t.who_name, "event_id": t.event_id, "thread": t.thread}
+                "who_name": t.who_name, "event_id": t.event_id, "thread": t.thread,
+                "mailbox": t.mailbox}
     return {"file_id": tl.file_id, "as_of": tl.as_of.isoformat(),
             "touches": [touch(t) for t in tl.touches],
             "upcoming": [touch(t) for t in tl.upcoming],
