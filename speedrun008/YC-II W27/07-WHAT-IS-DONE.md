@@ -31,7 +31,7 @@ is one branch, `speedrun008`, and the units are block `yc2_w27` of `tree.yaml`.
 | Phase | Steps | Status |
 |---|---|---|
 | 0 · Ground truth | `STEP-00` one branch · `STEP-01` the golden set | both **PENDING — Harsh** (deploy). Claude's part done, pushed |
-| 1 · Remember everything | `STEP-02` change gate · `03` the gate keeps everything · `04` who is us · `05` every item enters memory · `06` nothing lost silently | `02` and `03` **PENDING — Rohit (push), Harsh (deploy)**: built, QA green (§6b, §6c). `04`–`06` TO BUILD |
+| 1 · Remember everything | `STEP-02` change gate · `03` the gate keeps everything · `04` who is us · `05` every item enters memory · `06` nothing lost silently | `02`–`05` **PENDING — Rohit (push), Harsh (deploy)**: built, QA green (§6b–§6e). `06` TO BUILD |
 | 2 · The expert's desk | `STEP-07` company brief · `08` the re-sync · `09` workstreams · `10` history, patterns, analytics | `08` **PENDING — Harsh** (after 03–07 are live); the rest TO BUILD |
 | 3 · Expertise | `STEP-11` founder playbooks | TO BUILD |
 | 4 · The expert thinks | `STEP-12` the expert pass · `13` check every claim | TO BUILD |
@@ -39,8 +39,8 @@ is one branch, `speedrun008`, and the units are block `yc2_w27` of `tree.yaml`.
 | 6 · Learning from you | `STEP-16` | TO BUILD |
 | Across all phases | `STEP-17` real tests · `18` known bugs | TO BUILD — six of `STEP-18`'s bugs are fixed in code and pushed (§5) |
 
-**19 steps: 4 finished by Claude (`00`, `01` pushed; `02`, `03` waiting for the push), 1 waiting on
-Harsh from the start (`08`), 14 to build.** The next is `STEP-04`.
+**19 steps: 6 finished by Claude (`00`, `01` pushed; `02`–`05` waiting for the push), 1 waiting on
+Harsh from the start (`08`), 12 to build.** The next is `STEP-06` (nothing lost silently).
 
 ## 4 · STEP-00 · one branch, one baseline
 
@@ -170,6 +170,27 @@ and `thegenios.com` (D6); the repair's dry run, **read by Rohit (D14)**, then `-
 number — open cards about the founder → 0, threads named after him → 0
 (`08-FOR-HARSH` §3.4, §4.2).
 
+## 6e · STEP-05 · every kept item enters memory
+
+**What was built** (`STEP-05-PENDING-owner-rohit-and-harsh-every-item-enters-memory.md` §9): every kept
+event takes one road into memory, decided in one place — a signal (as before); **below the floor**, its
+own L1 extraction, every claim ranked low, no model call (D20); an **archive** as names and dates only —
+who wrote to whom, their companies, the thread — from the ledger's columns, never decrypted, not billed
+(D21); every **calendar** event a meeting, keeping its organizer, its newest edit winning. Every
+recovery — a re-admitted park, a refetch, a recapture, a promotion — is read again by the B18 ladder,
+and the gate never judges a re-read out. Promotion out of the archive by a named rule, dry run first.
+A receipt and a health check hold it.
+
+**Measured:** on the golden set, lost before memory 10 → 0; must-detect 5/32 → 11/32 (F04, F05, F06,
+F10, F26, F44 pass; F07, F11, F19, F24 now lost in reasoning); must-abstain 5/12 → 11/12, nothing
+unexercised; Atlas replays 0 → 4 passing. The acceptance on every case: every kept event in memory,
+every calendar event a meeting, no archive's words readable — a planted miss of each kind named.
+
+**QA:** `baseline/yc2w27-s05-qa/qa_record.txt` — run 1 at `4909f718`, green on every tier, a database created for every check: the units 23 / 0 / 0 (4 tree checks + 19 units); the whole database suite 17,843 passed, 0 failed (the same four optional skips, re-listed with their reasons); the golden lane 584 passed, 87 xfailed, 0 skipped; the board matches (must-detect 11/32, must-abstain 11/12, Atlas 4/80); 0 golden tenants left; the hermetic job 16,300 passed, 1,328 skipped (the database tests, run in tier 2), 232 deselected, 72 xfailed in 721.47s (0:12:01).
+
+**Still owed:** the push; Harsh's deploy (no migration); the first pass's numbers (`08` §3.5, §4.3);
+Boardy's introductions promoted only after Rohit reads the dry run (D23).
+
 ## 7 · CI on the push
 
 | Job | Run `37407196202`, on `77aba10e` |
@@ -196,6 +217,9 @@ The full notes, with commands, expected outputs and what not to do: **`08-FOR-HA
 6. ⛔ STEP-04: the next push also carries migration `0193`. Then declare the design partner's
    identity, run the repair DRY, send its list to Rohit, and `--apply` only after he reads it (D14);
    the health check must read 0 and 0 (`08` §3.4, §4.2).
+7. ⛔ STEP-05: no migration. Watch the first chain pass (heavy, model-free) and read the two numbers a
+   day later; the promotion of Boardy's introductions — dry run, Rohit reads it (D23), then `--apply`
+   (`08` §3.5, §4.3).
 
 ## 9 · Decisions still open — none blocks the next step
 

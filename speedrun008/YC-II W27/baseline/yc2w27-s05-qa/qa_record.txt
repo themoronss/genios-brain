@@ -1,0 +1,57 @@
+yc2_w27_s05 QA record · STEP-05, every kept item enters memory · deterministic-qa · speedrun008 · 2026-10-07 00:23–01:20 UTC
+scratch Postgres 17 in Docker. Every check that uses a database runs on a database CREATED for it
+(genios_qa_<run>_<n>) — auto mode refuses to drop databases, and a database nobody has used is as
+empty as a recreated one. Exit codes only; every command verbatim from tree.yaml (block
+yc2_w27_s05) and .github/workflows/ci.yml, the unit verifies pointed at their own fresh database
+(`/genios_test ` → `/genios_qa_<run>_<n> `). Driver: run_s05.sh and qa_block_nodrop.py, beside this file.
+
+RUN 1 · at 4909f718 (clean tree), 00:23–01:20 UTC
+
+1 · the tree, and every unit's own verify — 19 units                       exit 0
+      23 pass / 0 fail / 0 skip          (4 tree checks + 19 units; 0 retired, not run)
+      report: .trace/reports/qa-yc2_w27_s05-units-20261007T002304Z.json
+
+2 · the whole suite on the database                                        exit 0
+      17843 passed, 4 skipped, 89 xfailed, 1595 warnings in 1685.54s (0:28:05)
+      db=genios_qa_full_002304. This run printed no skip reasons (-q without -rs). Listed afterwards
+      with -rs on a database of its own (genios_qa_skips_*), the four files that carried STEP-04's
+      four skips skip exactly four, for the same reasons: could not import 'docx'
+      (tests/capture/transcripts/test_transcript_units.py), an empty parameter set
+      (tests/contracts/test_l1_contracts.py), 0080 a declared exception
+      (tests/platform/test_the_code_can_always_be_rolled_back.py), internal auth not wired in this
+      harness (403) (tests/test_health_memory.py) — 331 passed, 4 skipped.
+
+3 · the golden-pg lane, as CI runs it (GENIOS_GOLDEN_REQUIRED=1)            exit 0
+      pytest -q -rs tests/replays tests/test_golden_labels_sheet.py
+      584 passed, 87 xfailed in 551.82s (0:09:11) — 0 skipped
+      db=genios_qa_golden_002304. (520 after STEP-04; + STEP-05's acceptance on every case, its
+      planted controls, and the 22 re-recorded cases' moves.)
+
+4 · the board, held to 03-FINDINGS.md §F.1                                 exit 0
+      scripts/golden_score.py --assert-recorded "speedrun008/YC-II W27/03-FINDINGS.md"
+      matches the board recorded in speedrun008/YC-II W27/03-FINDINGS.md
+      founder golden set   must-detect  11/32 (8 not expressible)   must-abstain  11/12 (0 not exercised)   forbidden outputs  4
+      atlas replays 01–07  passing  4/80   blocked  3/80   not expressible  73
+      golden tenants left in the database afterwards: 0
+
+5 · the hermetic job, as CI runs it (no database)                           exit 0
+      pytest -q -m "not golden"
+      16300 passed, 1328 skipped, 232 deselected, 72 xfailed, 1595 warnings in 721.47s (0:12:01)
+      Its skips are the tests that need a database; tier 2 ran every one of them.
+
+THE ACCEPTANCE, in tier 3 (tests/replays/test_every_kept_item_enters_memory.py): on every founder
+case — every kept event in memory, every calendar event a meeting, no archive's words readable by any
+reader, no screen contact a person. Its negative control is in the same file
+(test_a_planted_miss_of_each_kind_is_named): one miss of each kind planted into a real run's rows,
+each named. The two restated text pins carry their controls in their own file, and ran in tier 2:
+tests/test_correlation.py::test_the_restated_pin_fails_without_the_noise_skip, and the second call
+of test_our_own_attendees_never_anchor_a_meeting. The pull's agreement with lane_for is seeded on
+all 48 combinations (tests/context/test_every_kept_event_is_pulled.py), also tier 2.
+
+Before this run: every unit was committed after its guards passed on databases created for them. One
+root run lost 4 tests of tests/test_recode_parked_documents.py to a pre-existing flake (a random
+Fernet key beginning with '-', which argparse refuses) — green on the rerun, written in C4.U02's
+commit (d262ebc2), recorded as 03 F71, not fixed.
+
+Crosscheck: .trace/reports/crosscheck-yc2_w27_s05-20261007T002320Z.md — verdict ship. It was
+finished while this run was under way (the report says so); it changed no code, so the run stands.

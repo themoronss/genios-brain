@@ -4230,10 +4230,17 @@ yc2_w27_s04:
                       depends_on: [M22.C1.L-data.V1.U03, M22.C2.L-logic.V2.U08]
 
 # ═══════════════════════════════════════════════════════════════════════════════════════════════
-# yc2_w27_s05 · STEP-05 every kept item enters memory — speedrun008/YC-II W27/STEP-05-TO-BUILD-every-item-enters-memory.md
+# yc2_w27_s05 · STEP-05 every kept item enters memory — speedrun008/YC-II W27/STEP-05-PENDING-owner-rohit-and-harsh-every-item-enters-memory.md
 # ═══════════════════════════════════════════════════════════════════════════════════════════════
 yc2_w27_s05:
-  status: approved_in_progress
+  status: built
+  built: >
+    2026-10-07 — 19 units (17 planned; C4.U05, the gate's re-read flag, and C3.U06, the below-floor
+    mark that read as a quote, added while building), crosscheck ship
+    (.trace/reports/crosscheck-yc2_w27_s05-20261007T002320Z.md), QA green
+    (speedrun008/YC-II W27/baseline/yc2w27-s05-qa/qa_record.txt, at 4909f718). Golden board 5/32 · 5/12 →
+    11/32 · 11/12, lost before memory 10 → 0. Pending: Rohit's push; Harsh's deploy (no migration); the
+    first pass's numbers; Boardy's promotion after Rohit reads it (D23).
   confirmed: >
     Rohit, 2026-10-06 — "As usual first [Harsh] ke liye notes likho, step 5 start karo", after the
     STEP-05 check (§8) and its three decisions were put to him; D20–D22 hold at their defaults

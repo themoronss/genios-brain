@@ -1,6 +1,6 @@
 # 08 · For Harsh — deploying the batch, and what to run after
 
-**Written for:** Harsh. **As of:** 2026-10-06. **From:** the `yc2_w27` build (Claude), pushed by
+**Written for:** Harsh. **As of:** 2026-10-07. **From:** the `yc2_w27` build (Claude), pushed by
 Rohit. Everything here can be checked against the repository; every number below names the file
 or the command it came from.
 
@@ -18,6 +18,10 @@ or the command it came from.
    ⛔ **And STEP-04 (§1.6) adds a third, `0193_org_self_identities`** — the tenant's declared addresses
    and domains. After the deploy: **declare** the design partner's identity, then the **repair**, dry
    run first, its list to Rohit, `--apply` only after he reads it (§3.4).
+   ⛔ **And STEP-05 (§1.7) adds no migration** — every kept mail and calendar event enters memory, and
+   every recovery is read again. The **first chain pass after the deploy is heavy** (§3.5); read its
+   numbers (§4.3). Boardy's archived introductions are promoted only after Rohit reads the dry run
+   (`06` D23).
 2. After the deploy, **re-queue the attachments** the `file_name` refusal dead-lettered (§3.1).
 3. **Read the first `refetch_last_error`** that comes back (§3.2).
 4. **Pin the Composio toolkits** — the one unit of this block that is yours (§3.3).
@@ -104,6 +108,19 @@ take our domain from `orgs.email` or the seats — which is how gmail.com became
 ours only when declared. **Any other live tenant whose people share a company domain must declare
 it** (`03` F62), or that company reads as a counterparty in those three places.
 
+### 1.7 · STEP-05, every kept item enters memory — in the next push
+
+| | What changes at runtime |
+|---|---|
+| the drain (`context/runner`) | takes every kept event with a road into memory, not only those with a live signal: a mail **below the floor** with its own L1 extraction (no model call; every claim ranked under the floor); an **archived** mail as names and dates only — who wrote to whom, their companies, the thread — read from the ledger's columns, its payload never decrypted, no thread state, no correlation (`committed_metadata`); every **calendar** event as a meeting, whatever its signal |
+| meetings | keep their organizer; their facts are filed at the calendar's own edit time, so the newest edit wins; a colleague at a declared domain never anchors one |
+| recoveries | every kept mail nothing read — a park the drain re-admitted, a manual recover, a refetch, a recapture, a promotion — joins the re-read ladder (`extraction_never_ran` in `parked_events`) and is read through the capture door on the next chain pass, up to **200 a pass, each one L1 extraction**, under the daily LLM cap. The gate whitelists a re-read (`W-06`) and never judges it out again |
+| billing | a metadata write is **not** billed; a mail below the floor **is** (Layer 1's model read it) — expect one larger `message_read` row on the first pass |
+| the progress bar | `_pending_count` counts exactly what the drain will take |
+| a new receipt | *every kept event has entered memory* — may read red for the first day, until the drain and the ladder catch up |
+| a new health check | `scripts/pipeline_health.py` — *every kept event entered memory, every calendar event is a meeting*, split by cause, with the ladder's backlog |
+| promotion | `scripts/promote_archived.py` — dry run by default; nothing is promoted until Rohit says (`06` D23) |
+
 ### 1.3 · How it was tested before the push
 
 `baseline/yc2w27-qa/qa_record.txt`, at `83dd87f3`, every check on an **empty** scratch Postgres 17:
@@ -115,6 +132,7 @@ it** (`03` F62), or that company reads as a counterparty in those three places.
 | the golden set (`golden-pg`, as CI runs it) | 357 passed, 100 xfailed, 0 skipped |
 | on GitHub, the first push | `golden-pg` ✅ passed (run `37407196202`, Python 3.12, Postgres 17); `test` — see §6 |
 | ⛔ STEP-04, in the next push (`baseline/yc2w27-s04-qa/qa_record.txt`) | units 48 / 0 / 0; the database suite 17,696 passed, 0 failed; the golden set 520 passed, 103 xfailed, 0 skipped, the board matches; the hermetic job 16,259 passed, 0 failed (run 2 — run 1 was red on one gate test, fixed in `78d7b4fd`) |
+| ⛔ STEP-05, in the next push (`baseline/yc2w27-s05-qa/qa_record.txt`, at `4909f718`) | units 23 / 0 / 0; the database suite 17,843 passed, 0 failed; the golden set 584 passed, 87 xfailed, 0 skipped, the board matches; the hermetic job 16,300 passed, 0 failed — green on the first run |
 
 ## 2 · Deploy
 
@@ -221,6 +239,28 @@ python scripts/repair_self_identity.py --org org_e97e86f858ad48b2bbf64b8a --data
 Every card it retires writes a `card_events` row (`card.retired`, cause `subject_is_us`), so it can be
 audited and rebuilt. A second run writes nothing.
 
+### 3.5 · STEP-05 — the first pass, and Boardy's introductions
+
+**No migration.** Watch the **first chain pass** after the deploy: every archive (metadata), every mail
+below the floor and every calendar event drains at once — hundreds of L2 runs, serial under the
+graph-version lock. In the log: `stage=l2.process_pending … processed=<n>`. Then the re-read ladder
+reads what recoveries left, up to 200 a pass.
+
+Boardy's introductions stay archived until Rohit has read the list (`06` D23):
+
+```
+# DRY RUN ONLY — send its output to Rohit (event ids, dates, sender domains; never a body)
+python scripts/promote_archived.py --org org_e97e86f858ad48b2bbf64b8a --rule N-02 \
+    --sender-domain boardy.com --database-url "$URL"
+# after Rohit says
+python scripts/promote_archived.py --org org_e97e86f858ad48b2bbf64b8a --rule N-02 \
+    --sender-domain boardy.com --database-url "$URL" --apply
+```
+
+The next chain pass reads them. ⛔ Two meeting nodes production holds from before were filed at their
+meetings' start (`03` F73): an edit made before such a meeting lands as history until the meeting
+passes. Nothing to do unless a reschedule of one of them must show sooner.
+
 ## 4 · The probes — send the outputs
 
 Read-only, from `speedrun008/YC-II W27/baseline/production_state.sql`:
@@ -274,6 +314,27 @@ python scripts/pipeline_health.py --org org_e97e86f858ad48b2bbf64b8a --database-
 *We are never a card's subject or a thread's name* must read **0 and 0**, and `/readiness` must show
 *no open card's subject is one of us* green. Before the repair both are red by design — they are
 counting what the repair removes. The read-only SQL behind them is `STEP-04` §8.6.
+
+### 4.3 · STEP-05 — a day after the deploy
+
+```
+python scripts/pipeline_health.py --org org_e97e86f858ad48b2bbf64b8a --database-url "$URL"
+```
+
+*Every kept event entered memory, every calendar event is a meeting* should read **0 and 0**; if not,
+its split names what holds each one (never taken by the drain · an L2 run held, failed or parked ·
+waiting for its re-read · given up by the ladder · never read and not in the ladder). The two numbers
+STEP-05 moves, read-only (`STEP-05` §8.6):
+
+```
+-- kept events with an L2 run, share (was ~7%; target ≥ 95%)
+select count(*) filter (where r.event_id is not null)::float / nullif(count(*), 0)
+  from source_events se left join l2_processing_runs r on r.org_id = se.org_id and r.event_id = se.event_id
+ where se.org_id = 'org_e97e86f858ad48b2bbf64b8a' and se.outcome in ('emitted', 'archived');
+-- meeting nodes vs calendar events (was 2 of 34; target equal)
+select (select count(*) from graph_nodes where org_id = 'org_e97e86f858ad48b2bbf64b8a' and node_type = 'meeting' and valid_to is null),
+       (select count(distinct source_object_id) from source_events where org_id = 'org_e97e86f858ad48b2bbf64b8a' and source = 'gcal');
+```
 
 ## 5 · Do not
 

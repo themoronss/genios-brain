@@ -1,4 +1,6 @@
-# STEP-05 · TO BUILD · every kept mail, meeting and screen item enters memory
+# STEP-05 · PENDING — owner Rohit (push) and Harsh (deploy) · every kept mail, meeting and screen item enters memory
+
+**✅ Built 2026-10-07** — tree block `yc2_w27_s05`, 19 units (17 planned, 2 added while building), crosscheck *ship*, QA §9.4. **Pending:** Rohit's push; Harsh's deploy (no migration), the first pass's numbers (§9.5, §8.6), and the promotion of Boardy's introductions after Rohit reads its list (`06` D23).
 
 **Owner:** Claude. **Depends on:** `STEP-03` (nothing is deleted any more) and `STEP-04` (who is
 us). **Moves:** items in memory **~27 of 395 mails · 2 of 34 meetings → ≥ 95%**.
@@ -169,3 +171,86 @@ select count(*) filter (where r.event_id is not null)::float / nullif(count(*), 
 select (select count(*) from graph_nodes where org_id = :o and node_type = 'meeting' and valid_to is null),
        (select count(distinct source_object_id) from source_events where org_id = :o and source = 'gcal');
 ```
+
+---
+
+## 9 · Built — 2026-10-07 (`yc2_w27_s05`, 19 units green)
+
+### 9.1 · What was built
+
+| | Where | What it does |
+|---|---|---|
+| one road per kept event | `context/memory_lanes.py` | `lane_for` — **signal** (as before), **below the floor** (its own L1 extraction), **metadata** (an archive), **calendar** (a structured record, whatever its signal) — or none: a screen item without a signal (D22), an event with nothing to read yet |
+| the pull | `context/runner._pull`, `PENDING_FROM` | admits a kept event exactly when `lane_for` gives it a road (every combination seeded in its test); an archive's payload is not even selected; the progress count (`api/routes._pending_count`) asks the same question in the same spelling |
+| below the floor | `context/qes_adapter.py`, `context/runner.py` | the mail Layer 1 READ and the floor did not publish enters with its own extraction — its words, every claim ranked under the floor (3,000), no model call (D20). No observation marks it: that was tried and read as a quote (U06) |
+| metadata only | `context/pipeline.process_event(metadata_only=True)`, `runner._commit_metadata` | an archive writes the people, their companies, who wrote to whom and the thread — from the ledger's own columns, never decrypting the payload; no text, no relevance observation, no ball-in-court, no correlation; outcome `committed_metadata`, not billed (D21) |
+| meetings | `context/structured.py`, the gcal mapping | every calendar event is a meeting; it keeps its organizer; its facts are filed at the calendar's own edit time, so the newest edit wins in any order (a meeting moved earlier lost to its own old version); our colleagues at a declared domain never anchor it (`03` F70) |
+| every recovery is a re-read | `capture/landing/unread.queue_unread`, `capture/gate` (W-06), `api/routes._reread_unread` | every kept mail nothing read — a re-admitted park, a manual recover, a refetch, a recapture, a promotion, mail captured while Layer 1 was off — joins the B18 ladder (`extraction_never_ran`) and is read through the capture door; the gate reads a re-read and never judges it out again (it skips the noise rules and the classifier, keeps scope, provenance and integrity). One door: `find_unread` is gone |
+| promotion | `capture/landing/promote.py`, `scripts/promote_archived.py` | one tenant's mail archived by one rule (optionally one sender domain) back to kept, dry run first, never a subject or a body in the listing; the next chain pass reads it |
+| the checks | `platform/receipts.py`, `scripts/pipeline_health.py` | *every kept event has entered memory* (a receipt, 0 is the promise); the health check splits it by cause, counts calendar events with no meeting and the re-read backlog |
+| the golden set | `tests/replays/` | 22 cases re-recorded (the ideal reader, no spend); the acceptance on every case — every kept event in memory, every calendar event a meeting, no archive's words readable, no screen contact a person — with a planted miss of each kind |
+
+### 9.2 · Measured
+
+| | Before | After |
+|---|---|---|
+| a kept mail with no live signal | never enters memory | enters with its own extraction (below the floor) or as metadata (an archive) |
+| a calendar event whose deadline signal expired | gone from memory | a meeting node, newest edit winning |
+| a recovered mail (re-admitted, refetched, promoted) | flagged `emitted` and never read | read by the ladder within a pass |
+| golden board, must-detect | 5/32 — 10 lost before memory | **11/32** — 0 lost before memory; six pass (F04, F05, F06, F10, F26, F44), four now lost in reasoning (F07, F11, F19, F24) |
+| golden board, must-abstain | 5/12 — 4 not exercised | **11/12** — all exercised; F31, F36, F38, F39, F41, F43 pass; F40 still fails |
+| Atlas replays 01–07 | 0/80 passing, 7 blocked | **4/80**, 3 blocked — each because its input now reaches memory (`03` §F.1 names what is still not built) |
+| production: kept events with an L2 run · meeting nodes | ~7% · 2 of 34 (§8.6) | ⏳ after the deploy — target ≥ 95% · every calendar event |
+
+### 9.3 · Found while building — each a measurement
+
+- **The pull admitted an archived screen item with a signal** that `lane_for` gives no road — found by
+  the test that seeds every combination; fixed in the predicate before it shipped.
+- **The thread was never written for an archive**: the thread node and its participant edge were
+  written only inside the two thread-STATE legs, which an archive skips. `_joined_thread` writes them
+  with no state.
+- **A meeting moved earlier lost to its own old version**, in both drain orders: its facts were filed
+  at the meeting's start. Now at the calendar's edit time (`03` F73: the two meeting nodes production
+  already holds keep their old dates until the meeting passes).
+- **The structured lane ignored declared domains** (`03` F70) — a colleague at our domain anchored a
+  meeting on our own company. Red first on the test, then fixed.
+- **A recovery the gate undid**: re-reading a re-admitted park ran the classifier that parked it. The
+  plan's "recovery flag the gate honours" had no unit; it is `M23.C4.L-logic.V1.U05`.
+- **The below-floor mark read as a quote** (U06): its evidence was the extraction's first span, a bare
+  name, and the card narrator was handed it as something the contact wrote. Removed. The same shape
+  is older and still live for signal types (`03` F72).
+- **"At the confidence it scored" has nothing to read** (`03` F69): a floor refusal's confidence is
+  never composed.
+- **One golden answer corrected**: F25's unanswered-email decider entry (STEP-01, never reached
+  before) said a question was waiting; Kavitha's mail asks nothing. Answered as written, F25 stays one
+  card.
+- Restated, each with its reason: the statement pin (2,945 → 2,955, measured per file at every move),
+  two text pins on `context/structured` and `context/pipeline` (now the AST and behaviour, each with a
+  negative control), the park-code class guard (the queue's code joins the extractor's), the five
+  `find_unread` tests and the two re-read call-sequence tests, and the STEP-03 acceptance
+  (`MOVED_AFTER` — thirteen cases, each by the step that moved it).
+- Not fixed, recorded: F71 (a flaky key in a test), F72 (signal-type observations read as quotes),
+  F73 (the two old meeting nodes).
+
+### 9.4 · QA
+
+`baseline/yc2w27-s05-qa/qa_record.txt` — run 1 at `4909f718`, green on every tier, a database created for every check: the units 23 / 0 / 0 (4 tree checks + 19 units); the whole database suite 17,843 passed, 0 failed (the same four optional skips, re-listed with their reasons); the golden lane 584 passed, 87 xfailed, 0 skipped; the board matches (must-detect 11/32, must-abstain 11/12, Atlas 4/80); 0 golden tenants left; the hermetic job 16,300 passed, 1,328 skipped (the database tests, run in tier 2), 232 deselected, 72 xfailed in 721.47s (0:12:01).
+
+### 9.5 · The deploy, and what comes after
+
+**No migration.** STEP-05 changes code only; it ships with `0191`–`0193` in the same push.
+
+What happens on the first chain pass after the deploy, and what to read — `08-FOR-HARSH` §1.7, §3.5,
+§4.3:
+
+1. **The first pass is heavy and model-free**: every archived mail (metadata), every mail below the
+   floor (its own extraction) and every calendar event drains — hundreds of L2 runs, bounded by the
+   pass's own limit, serial under the graph-version lock.
+2. **The ladder reads what recoveries left** — up to 200 mails a pass, each one L1 extraction (a model
+   call), under the daily cap.
+3. **The receipt** *every kept event has entered memory* and the health check may read red for the
+   first day; the health check names what holds each one.
+4. **Boardy's introductions stay archived until Rohit says** (`06` D23): the promotion's dry run, its
+   list to Rohit, then `--apply`.
+
+The production numbers to read are §8.6's.

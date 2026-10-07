@@ -83,7 +83,7 @@ Every row below was checked against the plan files in this folder and, where it 
 | P2·12 attribution, "Wrong because…" | STEP-16 §3.1–3.2 | ⚠️ reasons are kept; the layer that failed is not named |
 | P2·13 bounded bitemporal read | STEP-12 §3.1 uses `context/bounded_read.py` | ✅ |
 | P2·14 re-home 59 capabilities | — | not in scope (Admin-only, founder first) |
-| P2·15 Screen into the graph | STEP-05 §3.7, STEP-09 §3.2, STEP-14 §3.6 | ✅ |
+| P2·15 Screen into the graph | ~~STEP-05 §3.7~~ (⛔ dropped by `06` D22, 7 Oct: a screen item creates no person org-wide — revisit with seat-private nodes), STEP-09 §3.2, STEP-14 §3.6 | ⚠️ partly — screen follow-ups attach to people who exist; new people wait for STEP-09 |
 | P2·17 reach beyond 60 days, **exit: P3 and P4 answered** | STEP-08, D5 = 180 | ⚠️ P3 yes, P4 no (G3) |
 | V.4 benchmark re-run, P1–P5 + Recall@10 | — | ❌ (G2) |
 
