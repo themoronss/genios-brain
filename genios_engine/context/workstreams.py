@@ -38,6 +38,21 @@ are), and how much of that is in one. A named counterparty with such mail and no
 people introduced is `misfiled`. Either means its mail was read before the founder named it (or the
 filing failed), and the health check names it
 (`scripts/pipeline_health.check_every_named_counterparty_has_a_file`).
+
+A CONNECTOR'S RATE (STEP-10, `yc2_w27_s10 · M29.C4.L-logic.V0.U02`). On the golden set Introly's rate
+— 8 introductions, 5 contacts replied, 1 call booked — could be counted by SQL over the ledger and not
+from memory (`STEP-10` §8.1). Its introductions are memory now (STEP-09's `introduced` edges), so a
+connector's file carries three numbers, each a `Measured` at the connector (`contracts/measured`):
+  `introductions` — the people its addresses introduced, each once;
+  `replied`       — of them, the share who wrote to us THEMSELVES after their introduction: the
+                    mail's actor, never the turn memory keeps on them, which since STEP-09 the
+                    connector's own mail writes (`STEP-10` N3); a responder, a mailing or spam is
+                    not them;
+  `calls`         — of them, the share on a calendar meeting that starts after it: booked, not
+                    necessarily held.
+A rate of nobody is no rate: a connector that introduced no one rests on nothing and says "not
+measured", never 0%. Nothing a seat captured privately counts — not the introduction, the answer or
+the meeting.
 """
 from __future__ import annotations
 
@@ -49,6 +64,7 @@ from sqlalchemy import text
 
 from genios_engine.context.introductions import connector_roles
 from genios_engine.contracts.company_brief import CompanyBrief
+from genios_engine.contracts.measured import Measured, rate_of
 from genios_engine.platform.self_identity import identity_for
 
 #: The brief's kinds of file, in the order that decides when several lines stand behind one.
@@ -57,6 +73,9 @@ KINDS: tuple[str, ...] = ("connector", "watched", "person", "intro")
 #: How memory records mail that is never a file (`context/pipeline`'s noise record).
 NEVER_A_FILE: tuple[str, ...] = ("email_noise:newsletter", "email_noise:spam",
                                  "email_noise:auto_reply")
+
+#: STEP-10 · the level a connector's numbers are measured at (`contracts/measured`).
+CONNECTOR_BASIS = "connector"
 
 
 
@@ -89,6 +108,10 @@ class WorkFile:
     days_quiet: float | None
     whose_move: str | None             # "ours" | "theirs" | None — nobody's turn is written
     open_asks: tuple[Ask, ...]
+    # STEP-10 · a connector's file only; None on every other kind.
+    introductions: Measured | None = None   # the people it introduced, each once
+    replied: Measured | None = None         # of them, the share who then wrote to us themselves
+    calls: Measured | None = None           # of them, the share on a meeting that starts after it
 
 
 @dataclass(frozen=True, slots=True)
@@ -153,6 +176,35 @@ _INTRODUCED = text(
     "       and n.valid_to is null "
     " where e.org_id = :o and e.edge_type = 'introduced' and e.valid_to is null "
     "   and e.from_node_id = any(:ids)")
+
+#: STEP-10 · everyone a connector introduced — unless the introduction was captured privately —
+#: and whether, after it, they wrote to us themselves and were on a calendar meeting. Who WROTE is
+#: the ledger's actor; the edge keeps the introduction's time (`graph_store.write_edge`).
+_CONNECTOR_RATE = text(
+    "select e.from_node_id, e.to_node_id, "
+    "       exists (select 1 from source_events m "
+    "                where m.org_id = e.org_id and m.object_type = 'email_message' "
+    "                  and lower(m.actor->>'email') = lower(p.canonical_key) "
+    "                  and m.occurred_at > e.valid_from "
+    "                  and m.visibility_scope is distinct from 'private' "
+    "                  and not exists (select 1 from graph_observations ob "
+    "                                   where ob.org_id = m.org_id "
+    "                                     and ob.created_by_event_id = m.event_id "
+    "                                     and ob.kind = any(:never))) as replied, "
+    "       exists (select 1 from source_events c "
+    "                where c.org_id = e.org_id and c.object_type = 'calendar_event' "
+    "                  and c.occurred_at > e.valid_from "
+    "                  and c.visibility_scope is distinct from 'private' "
+    "                  and lower(p.canonical_key) = any(select lower(a) "
+    "                                                     from unnest(c.recipients) a)) "
+    "       as called "
+    "  from graph_edges e "
+    "  join graph_nodes p on p.org_id = e.org_id and p.node_id = e.to_node_id "
+    "       and p.valid_to is null "
+    "  left join source_events se on se.org_id = e.org_id "
+    "       and se.event_id = e.created_by_event_id "
+    " where e.org_id = :o and e.edge_type = 'introduced' and e.valid_to is null "
+    "   and e.from_node_id = any(:ids) and se.visibility_scope is distinct from 'private'")
 
 _NAMED_MAIL = text(
     "select lower(se.actor->>'email') as sender, "
@@ -247,6 +299,11 @@ def files_for(conn, org_id: str, *, now: datetime,
     connectors = connector_roles(conn, org_id=org_id, company_brief=brief)
     introduced_by = {r.to_node_id: r.canonical_key
                      for r in conn.execute(_INTRODUCED, {"o": org_id, "ids": sorted(connectors)})}
+    # STEP-10 · connector → person introduced → (wrote to us since, on a meeting since).
+    since: dict[str, dict[str, tuple[bool, bool]]] = defaultdict(dict)
+    for r in conn.execute(_CONNECTOR_RATE, {"o": org_id, "ids": sorted(connectors),
+                                            "never": list(NEVER_A_FILE)}):
+        since[r.from_node_id][r.to_node_id] = (bool(r.replied), bool(r.called))
 
     files: list[WorkFile] = []
     for a in anchors:
@@ -271,6 +328,8 @@ def files_for(conn, org_id: str, *, now: datetime,
                 kinds.setdefault("intro", lines.get(f"connector:{introduced_by[p]}"))
         kind = next((k for k in KINDS if k in kinds), None)
         moves = {turns[p] for p in mine if p in turns}
+        rate = (_connector_rate(since, [p for p in mine if p in connectors])
+                if kind == "connector" else (None, None, None))
 
         events = sorted(grouped[a]["events"].items(),
                         key=lambda e: (e[1] is not None, e[1] or now, e[0]))
@@ -290,11 +349,29 @@ def files_for(conn, org_id: str, *, now: datetime,
                 Ask(loop_id=r.loop_id, kind=r.kind, asked_by=r.subject_node_id,
                     owed_by="them" if r.awaited_from_node_id in mine else "us",
                     thread_id=r.thread_id, opened_at=r.opened_at)
-                for r in asks if r.subject_node_id in mine or r.awaited_from_node_id in mine)))
+                for r in asks if r.subject_node_id in mine or r.awaited_from_node_id in mine),
+            introductions=rate[0], replied=rate[1], calls=rate[2]))
     files.sort(key=lambda f: (f.last_touch is None, -(f.last_touch.timestamp())
                               if f.last_touch else 0, f.file_id))
     return Workstreams(files=tuple(files),
                        named=_named_counterparties(conn, org_id, brief, lines, connectors))
+
+
+def _connector_rate(since: dict[str, dict[str, tuple[bool, bool]]],
+                    connector_nodes: list[str]) -> tuple[Measured, Measured, Measured]:
+    """The people the file's connector addresses introduced, each once, and of them the share who
+    then wrote to us and who met us. Introduced twice, a person answered or met us after either
+    introduction — the earliest is theirs."""
+    people: dict[str, tuple[bool, bool]] = {}
+    for node in connector_nodes:
+        for person, (replied, called) in since.get(node, {}).items():
+            was = people.get(person, (False, False))
+            people[person] = (was[0] or replied, was[1] or called)
+    k = len(people)
+    # A count rests on what it counts: none rests on nothing (`Measured` — no value without n).
+    return (Measured(value=k or None, n=k, basis=CONNECTOR_BASIS, unit="count"),
+            rate_of(sum(r for r, _c in people.values()), k, basis=CONNECTOR_BASIS),
+            rate_of(sum(c for _r, c in people.values()), k, basis=CONNECTOR_BASIS))
 
 
 def _named_counterparties(conn, org_id: str, brief: CompanyBrief | None, lines: dict[str, str],
@@ -328,6 +405,9 @@ def as_dict(ws: Workstreams, *, now: datetime) -> dict:
     """The read model as JSON — what `GET /v1/workstreams` returns."""
     def iso(at):
         return at.isoformat() if at else None
+
+    def said(measured):
+        return measured.as_dict() if measured is not None else None
     return {
         "as_of": now.isoformat(),
         "files": [{
@@ -342,6 +422,8 @@ def as_dict(ws: Workstreams, *, now: datetime) -> dict:
             "open_asks": [{"loop_id": a.loop_id, "kind": a.kind, "asked_by": a.asked_by,
                            "owed_by": a.owed_by, "thread_id": a.thread_id,
                            "opened_at": iso(a.opened_at)} for a in f.open_asks],
+            "introductions": said(f.introductions), "replied": said(f.replied),
+            "calls": said(f.calls),
         } for f in ws.files],
         "named": [{"named": n.named, "line": n.line, "mail": n.mail, "filed": n.filed,
                    "misfiled": n.misfiled} for n in ws.named],
