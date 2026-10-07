@@ -6,7 +6,7 @@ re-do): F26–F29, E8, and the corrections to F24 and E4. **Root-caused the same
 databases, for tree `yc2_w27`: F30–F37, E9–E11. **Measured 2026-10-06 by the golden set**
 (`STEP-01`, `yc2_w27/M19`) on a scratch database: F38–F49 and §F.1, the before-score. **Found
 2026-10-06 building STEP-02** (`yc2_w27_s02`) **and checking STEP-03**: F50–F55. **Found 2026-10-06
-building STEP-04** (`yc2_w27_s04`): F59–F68. **Found 2026-10-06 building STEP-05** (`yc2_w27_s05`): F69–F73. **Found 2026-10-07 checking STEP-06**: F74–F77. A finding is never deleted; a correction is a new line that
+building STEP-04** (`yc2_w27_s04`): F59–F68. **Found 2026-10-06 building STEP-05** (`yc2_w27_s05`): F69–F73. **Found 2026-10-07 checking STEP-06**: F74–F77. **Found 2026-10-07 checking STEP-07 and STEP-08**: F78–F79. A finding is never deleted; a correction is a new line that
 says what it corrects.
 
 ---
@@ -93,6 +93,8 @@ says what it corrects.
 | F75 | History shows a card's last reason only for the kinds in `CardStore._OUTCOME_KINDS`; `card.resolved` (the team lane's) and `card.retired` (STEP-04's repair) are written and never shown | `[CODE]` `deliver/store.py:566`; `reason/team/emit.py:164`; `scripts/repair_self_identity.py:170` | ✅ fixed — `STEP-06` `yc2_w27_s06/M24.C1.L-interface.V2.U02` |
 | F76 | The acted rate counts a card replaced by a newer one as a card nobody acted on: acted ÷ (acted + dismissed + expired), and an expiry carries no cause | `[CODE]` `api/benchmarks_routes.py:72` | `STEP-16`, once STEP-06 records why each card expired |
 | F77 | 126 of the golden set's 227 active situations — every shadow (`sales`, `support`) and unroutable (`fundraising`) one that was never reasoned — have no record anywhere of how they ended. Their end is a fact of activation that nothing names | `[TEST]` `baseline/yc2w27-s06-check/summary.txt` | ✅ fixed — `STEP-06` `yc2_w27_s06/M24.C2.L-logic.V2.U02` (`reason/situation_end`); on the golden set 126 → 0 |
+| F78 | The AI filter's single-email prompt prepends the RAW subject: `content = f"Subject: {subject}\n{body}"` with `subject = ctx.raw.get("subject")`, while `body` is the prepared text, which already begins with the MASKED subject — so a subject line's PII reaches the model unmasked, the leak `capture/pipeline.py:1567-1568` warns against. The batch path sends the masked text only | `[CODE]` `capture/gate/relevance.py:239-241`; runs when a page's batch verdict is missing — an agent sender (the batch skips it, `:187`) or a failed batch. Found by the STEP-07 check's gate trace | `STEP-07` (the filter's prompt is rebuilt there) |
+| F79 | The junk filter's batch is primed on EVERY object of a page — duplicates, known senders, and mail the noise rules then archive — so its verdicts are bought for mail nothing reads: a re-listing of an already-synced window pays the batch again for every message in it | `[CODE]` `capture/acquire/sync_runner.py:720-727`; `[TEST]` the F01 and F03 cassettes hold batch answers for mail archived at N-06 and N-02 | `STEP-07` skips known and brief-named senders; duplicates → `STEP-18` |
 
 
 ## B · False alarms — things that looked wrong and are not

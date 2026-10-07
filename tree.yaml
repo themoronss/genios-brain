@@ -1,7 +1,7 @@
 # ═════════════════════════════════════════════════════════════════════════════════════════════
 # ⛔ HOW A UNIT ID IS ADDRESSED — read this before quoting one.
 #
-# This file holds TEN programme blocks, and three of them number their milestones from M8:
+# This file holds ELEVEN programme blocks, and three of them number their milestones from M8:
 #
 #   <root>                            M1  … M7    retired in place
 #   persona_brain_and_layer_repair    M8  … M12
@@ -19,6 +19,9 @@
 #                                                   (2026-10-06); past every other block again
 #   yc2_w27_s06                       M24         ← YC-II W27 STEP-06, nothing is lost silently
 #                                                   (proposed 2026-10-07); past every other block again
+#   yc2_w27_s08                       M26         ← YC-II W27 STEP-08, the deleted mail comes back
+#                                                   (proposed 2026-10-07); M25 is kept for STEP-07,
+#                                                   the company brief, whose block follows
 #
 # So `M11` is AMBIGUOUS on its own: it names "The remaining Layer 3 losses" in one block and
 # "L2 Reasoning" in another, and `M11.C1.L-logic.V0.U01` exists twice with different meanings.
@@ -4855,3 +4858,136 @@ yc2_w27_s06:
                       artifact: tests/replays/test_nothing_ends_silently.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest tests/replays/test_nothing_ends_silently.py -q
                       depends_on: [M24.C2.L-logic.V2.U02, M24.C3.L-logic.V1.U01, M24.C4.L-interface.V4.U01, M24.C5.L-data.V1.U01, M24.C5.L-data.V1.U02]
+
+yc2_w27_s08:
+  status: proposed
+  source: >
+    speedrun008/YC-II W27/STEP-08 §1–§4, re-checked claim by claim against speedrun008 @ 18b41f0f
+    (STEP-08 §8) by hand, by a read-only trace of the capture gate, and by a measurement on the
+    golden set (speedrun008/YC-II W27/baseline/yc2w27-s08-check/): six cases' noise mail rewritten to
+    the shape production holds for the 258 deleted mails. Listed again as the code is today, 15 of 15
+    land as duplicate; unread.set_aside frees none (it matches emitted only); a deleted row set aside
+    that way and met by recover_orphans comes back emitted with no payload (six of six); with the key
+    freed and the outcome kept, 13 of 13 land again through today's gate with their payload; the
+    finish supersedes 13; a second listing lands nothing; 0 cassette misses. Without the company
+    brief all 13 come back archived, not read.
+  vision: >
+    Every Gmail message the old gate deleted is back, with its content, inside the window Rohit
+    names (D5/D16): its key freed while its row stays dropped, landed again through today's gate by
+    the existing backfill drain together with the older history, and its old row superseded with a
+    pointer to the event that replaced it — or, when Gmail no longer lists it, left dropped with
+    that reason. An attachment comes back once. A health check counts the messages in the window
+    with no content and no reason, and it reads zero after the run. Nothing the founder has —
+    cards, verdicts, the brief — is reset.
+  order_note: >
+    C1 (the ledger) first; C2 (attachments) beside it; C3 (the script) after C1; C4 (the journey)
+    and C5 (the health check) after C1; the golden acceptance (C6) last. STEP-07 is independent of
+    this block in code; in production STEP-08 runs after the brief is accepted (D26).
+  milestones:
+    - id: M26
+      name: The deleted mail comes back (STEP-08)
+      ships: >
+        A dry run that says how many deleted messages there are, by rule, sender domain and month,
+        the oldest, and the window it needs; an apply that frees their keys without changing their
+        outcome; the existing backfill drain lands them again through today's gate; a finish that
+        supersedes what landed and reports what did not; no attachment twice; a health check at
+        zero; on the golden set, the six measured cases plus a not-listed and an attachment control.
+      categories:
+        - id: M26.C1
+          name: The resync ledger
+          layers:
+            - layer: data
+              levels:
+                - level: 0
+                  units:
+                    - id: M26.C1.L-data.V0.U01
+                      what: >
+                        New `capture/landing/resync.py` — `free_deleted(engine, org_id, *, days, now)`:
+                        Gmail rows with outcome `dropped` and no payload, occurred inside the window,
+                        get their dedup key marked `#resync:<event_id>`; the outcome stays `dropped`
+                        (never `superseded` before the new capture lands — `recover_orphans` would
+                        forge it emitted); one `event_trace` row each. `finish(engine, org_id)`:
+                        a freed row whose original key a new row now holds becomes `superseded`, its
+                        trace naming the new event; the rest are counted as not listed. Both idempotent.
+                      artifact: genios_engine/capture/landing/resync.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/capture/test_resync_frees_and_finishes.py -q
+                      depends_on: []
+        - id: M26.C2
+          name: Attachments come back once
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M26.C2.L-logic.V0.U01
+                      what: >
+                        `capture/landing/reread.drop_reread_attachments` — a listing's attachment copy
+                        is dropped when an attachment of the same message already landed kept, not
+                        only when the message's own key exists; it lands when the earlier copy was
+                        deleted with its message. A freed parent key no longer duplicates an
+                        attachment that survived its deleted message.
+                      artifact: genios_engine/capture/landing/reread.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/capture/test_an_attachment_comes_back_once.py -q
+                      depends_on: []
+        - id: M26.C3
+          name: The script
+          layers:
+            - layer: interface
+              levels:
+                - level: 1
+                  units:
+                    - id: M26.C3.L-interface.V1.U01
+                      what: >
+                        New `scripts/resync_deleted_mail.py --org … [--days N] [--apply | --finish]` —
+                        a dry run by default: the deleted messages by rule, sender domain and month, the
+                        oldest, the window it needs and what a given window leaves out; `--apply` frees
+                        the keys (C1); `--finish` supersedes and reports. Every database door through
+                        `scripts/_db` (the production guard).
+                      artifact: scripts/resync_deleted_mail.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/scripts/test_resync_deleted_mail.py -q
+                      depends_on: [M26.C1.L-data.V0.U01]
+        - id: M26.C4
+          name: What the founder and Harsh can read
+          layers:
+            - layer: logic
+              levels:
+                - level: 1
+                  units:
+                    - id: M26.C4.L-logic.V1.U01
+                      what: >
+                        `capture/journey` — a superseded deleted row's end names the event that
+                        replaced it (from its resync trace), and the new event's walk names the row it
+                        replaced.
+                      artifact: genios_engine/capture/journey.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/capture/test_a_resynced_mail_names_its_replacement.py -q
+                      depends_on: [M26.C1.L-data.V0.U01]
+            - layer: interface
+              levels:
+                - level: 1
+                  units:
+                    - id: M26.C4.L-interface.V1.U02
+                      what: >
+                        `scripts/pipeline_health.py` — *every Gmail message in the window has its
+                        content, or a stated reason*: fails while a dropped message with no payload
+                        sits inside the connection's window, unfreed or freed and not finished; names
+                        how many and the oldest.
+                      artifact: scripts/pipeline_health.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/scripts/test_pipeline_health_resync.py -q
+                      depends_on: [M26.C1.L-data.V0.U01]
+        - id: M26.C5
+          name: The golden set
+          layers:
+            - layer: integration
+              levels:
+                - level: 2
+                  units:
+                    - id: M26.C5.L-integration.V2.U01
+                      what: >
+                        The acceptance — STEP-08 §8.1 as a test, through the real sync door with the
+                        cassettes: F01 F02 F03 F09 F16 F32 rewritten to the deleted shape come back with
+                        their payload and their old rows superseded; a message the mailbox no longer
+                        lists is reported, not superseded; an attachment that survived its message is
+                        not landed twice; a second run changes nothing; 0 cassette misses.
+                      artifact: tests/replays/test_the_deleted_mail_comes_back.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest tests/replays/test_the_deleted_mail_comes_back.py -q
+                      depends_on: [M26.C1.L-data.V0.U01, M26.C2.L-logic.V0.U01, M26.C3.L-interface.V1.U01, M26.C4.L-logic.V1.U01, M26.C4.L-interface.V1.U02]
