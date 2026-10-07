@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_014, (
+    assert r["statements"] == 3_015, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -353,6 +353,9 @@ def test_the_statement_count_did_NOT_move():
     # — one mailbox's `connections` row and its sync runs (1 → 3); `context/coverage_receipt` — the
     # tenant's connections and a mailbox's last sync (0 → 2). Each a literal SELECT; measured per
     # file against the commit before them. `sync_runner` 0 → 0, `api/routes` 124 → 124.
+    # ⛔ MOVED 3,014 → 3,015 by yc2_w27_s10/M29.C3.L-logic.V1.U02 (a bounce on the file):
+    # `context/delivery._SENT_IN_THREAD` — the mail we sent in the report's thread — one literal
+    # SELECT (0 → 1). `capture/gate/rules` and `context/pipeline` unchanged in count.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

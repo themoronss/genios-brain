@@ -39,14 +39,30 @@ class _DropClassifier:
 
 
 def test_dead_sender_archived_at_s1():
-    # bounce / mailer-daemon carries no business signal ever → still stopped at S1 (N-03). STEP-03:
+    # A mail daemon's own notice carries no business signal → still stopped at S1 (N-03). STEP-03:
     # stopped means ARCHIVED — kept, unread — never deleted (`capture/gate/gate.ARCHIVE`).
+    # ⛔ NOT ITS DELIVERY REPORT, since STEP-10 (`06` D38): "Delivery failed" from a daemon is a
+    # report the parser reads, and a bounce belongs on the file it is about
+    # (`tests/capture/gate/test_a_bounce_is_kept.py`). This test pinned that report as noise and
+    # is restated, not dropped: the daemon's own notice is still archived here, and the report is
+    # asserted kept below.
     ctx = GateContext(event=_event("mailer-daemon@newsletter.com"),
-                      raw={"subject": "Delivery failed", "snippet": "..."})
+                      raw={"subject": "Your mailbox is 95% full",
+                           "snippet": "Please delete old messages."})
     tr = _trace()
     res = run_gate(ctx, tr)
     assert res.action == "archive" and res.reason_code == "N-03"
     assert tr.records[-1].stage == "S1" and tr.records[-1].action.value == "archive"
+
+
+def test_a_dead_senders_delivery_report_is_not_archived_at_s1():
+    """The input the test above used to pin, as `06` D38 reads it: a delivery report S1 keeps."""
+    ctx = GateContext(event=_event("mailer-daemon@newsletter.com"),
+                      raw={"subject": "Delivery failed", "snippet": "..."})
+    tr = _trace()
+    run_gate(ctx, tr)
+    s1 = [r for r in tr.records if r.stage == "S1"]
+    assert s1 and all(r.action.value != "archive" for r in s1), "S1 archived a delivery report"
 
 
 def test_plain_no_reply_archived_at_s1():

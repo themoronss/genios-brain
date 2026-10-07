@@ -7,7 +7,7 @@ failed and on the original's thread.
 `yc2_w27_s10 · M29.C3.L-logic.V1.U02`, `06` D38). The founder's pitch to a fund bounced (golden F16) and
 memory filed what it learned on the SENDER — the mail daemon's `service` node, noise for the network —
 so nothing on the fund's file said the mail never arrived, and the pitch still read "waiting". Now a
-report `capture/delivery_status` reads as FAILED writes a `delivery_failed` observation on the address
+report `capture/delivery_status` reads as FAILED writes a `delivery_failure` observation on the address
 that failed and on the original's thread, and `delivery.status = failed` on that address — the fact
 `context/waiting` can retire their waiting by. The original is the latest mail WE sent in the same
 Gmail thread with that address among its recipients; with none, the address still carries it. A delay,
@@ -92,7 +92,7 @@ def row(store, event_id: str, *, parent: str, at, recipients, source: str = "gma
 
 
 def bounced_on(store, key: str) -> list[dict]:
-    """The evidence of every `delivery_failed` observation on the node keyed `key`."""
+    """The evidence of every `delivery_failure` observation on the node keyed `key`."""
     with store.engine.connect() as c:
         rows = c.execute(text(
             "select r.evidence from graph_observations o "
@@ -100,16 +100,16 @@ def bounced_on(store, key: str) -> list[dict]:
             "       and n.valid_to is null "
             "  left join graph_source_refs r on r.org_id = o.org_id "
             "       and r.observation_id = o.observation_id "
-            " where o.org_id = :o and n.canonical_key = :k and o.kind = 'delivery_failed'"),
+            " where o.org_id = :o and n.canonical_key = :k and o.kind = 'delivery_failure'"),
             {"o": ORG, "k": key}).fetchall()
     return [r.evidence if isinstance(r.evidence, dict) else json.loads(r.evidence) for r in rows]
 
 
 def anything_bounced(store) -> tuple[int, int]:
-    """(`delivery_failed` observations, `delivery.status` facts) anywhere in the tenant."""
+    """(`delivery_failure` observations, `delivery.status` facts) anywhere in the tenant."""
     with store.engine.connect() as c:
         return (c.execute(text("select count(*) from graph_observations where org_id = :o "
-                               "and kind = 'delivery_failed'"), {"o": ORG}).scalar_one(),
+                               "and kind = 'delivery_failure'"), {"o": ORG}).scalar_one(),
                 c.execute(text("select count(*) from graph_facts where org_id = :o "
                                "and field = 'delivery.status'"), {"o": ORG}).scalar_one())
 

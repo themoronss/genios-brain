@@ -11,7 +11,7 @@ come (`speedrun008/YC-II W27/` STEP-10 §8.1).
 
 WHAT IS TRUE NOW. When `pipeline.process_event` meets a report the parser reads as FAILED, this
 writes, inside the event's own transaction:
-  * a `delivery_failed` observation on the node of the address that failed, and on the original's
+  * a `delivery_failure` observation on the node of the address that failed, and on the original's
     thread node (`thread:<parent_object_id>`, made by `pipeline._thread_node`) when the original
     is found — evidence: the report's event id, the original's (None when not found), the
     address, the report's own reason;
@@ -48,10 +48,12 @@ from sqlalchemy import text
 from genios_engine.capture.delivery_status import read_delivery_status
 from genios_engine.platform.identity import norm_email
 
-#: The observation on the address and on the thread. Its meaning is that of L1's
-#: `delivery_failure` kind (`observations/kinds.yaml`: neutral, not an ask, not progress), which
-#: `qes_adapter` files on the report's SENDER; this is the same failure, on the file it is about.
-KIND = "delivery_failed"
+#: The observation on the address and on the thread: L1's own `delivery_failure` kind
+#: (`observations/kinds.yaml`: neutral, not an ask, not progress), which `qes_adapter` files on the
+#: report's SENDER — the same failure, filed here on the file it is about. ONE name for one meaning:
+#: drawn as `delivery_failed`, a second spelling with no row would have read as weightless and as
+#: a different thing (lead's integration, STEP-10).
+KIND = "delivery_failure"
 #: The fact on the address, and its one value.
 FIELD = "delivery.status"
 FAILED = "failed"

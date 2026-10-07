@@ -144,6 +144,13 @@ NODE_TYPES: dict[str, str] = {
     "document":           "anchored by content address. See `context.documents.DOCUMENT_NODE_TYPE`.",
     "product_usage_event": "anchored by the source system's event id — the EVENT, not the account; "
                            "its facts describe the usage. See `PRODUCT_USAGE_NODE_TYPE`.",
+    # ⛔ THE THIRD MINTED THROUGH A VARIABLE, found by STEP-10 (`yc2_w27_s10 · M29.C3`):
+    # `context.pipeline._person` has typed a machine address `service` since L3-0A, through a
+    # variable the guard's literal scan cannot see, so the vocabulary never listed it. Its readers
+    # were already many (`backfill`, `outreach_situations`, `platform/self_identity`); the first
+    # LITERAL spelling, `context.delivery`, is what made the omission visible.
+    "service":            "anchored by email address — a machine sender (a mail daemon, a no-reply "
+                          "or platform address): plumbing, never a person, never a file's anchor.",
 }
 
 
