@@ -482,6 +482,7 @@ def _company_brief(request: Any):
     `platform/company_brief.current` holds it a minute per process and fails open to the empty
     brief, so a brief that cannot be read changes nothing — the prompt goes without it, exactly as
     it did before STEP-07, and the decision is never lost to it. No database means no brief.
+    R-1's test-mode reader (`reason/llm_interpretation.py`) reads the brief through this too.
     """
     from genios_engine.contracts.company_brief import CompanyBrief
     from genios_engine.platform.company_brief import current

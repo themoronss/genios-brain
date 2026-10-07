@@ -119,11 +119,17 @@ def candidate_items(request: ReasoningRequest, business: Sequence[str]) -> list[
     return items[:MAX_ITEMS]
 
 
-def build_prompt(items: Sequence[Mapping[str, Any]], feedback: str | None = None) -> str:
+def build_prompt(items: Sequence[Mapping[str, Any]], feedback: str | None = None, *,
+                 company_brief: str = "") -> str:
     options = "\n".join(f"  {name} — {CLASSIFICATION_MEANINGS[name]}" for name in CLASSIFICATIONS)
     listing = "\n".join(
         f"{number}. [{item['field']}{' — THE RECORD DISAGREES ABOUT THIS' if item['conflict'] else ''}]"
         f" {item['text']}" for number, item in enumerate(items, 1))
+    # STEP-07 (`speedrun008/YC-II W27/STEP-07-TO-BUILD-the-company-brief.md` §8.3) · the company
+    # brief, as its own paragraph after the opening one and before the items, so a counterparty's
+    # words are read knowing the company they were written to. Without a brief this is empty, and
+    # the prompt is byte for byte the one it was before.
+    company_brief_paragraph = company_brief.rstrip("\n") + "\n\n" if company_brief else ""
     prompt = (
         "You are R1, the reader inside GeniOS's reasoning layer. Below are numbered items: facts "
         "written in words, disagreements the record could not settle, and summaries of a "
@@ -137,7 +143,8 @@ def build_prompt(items: Sequence[Mapping[str, Any]], feedback: str | None = None
         "you are of the stance.\n"
         "You are not advising anyone and you are not judging importance, urgency or risk. If an "
         "item carries no stance, answer NOT_INTERPRETABLE — do not guess.\n\n"
-        f"ITEMS:\n{listing}\n\n"
+        + company_brief_paragraph
+        + f"ITEMS:\n{listing}\n\n"
         "Answer with ONLY this JSON, one entry per item:\n"
         '{"readings": [{"item": <number>, "ambiguous": true|false, '
         '"classification": "<one of the names above>", "confidence_bp": <integer>}]}')
@@ -173,13 +180,32 @@ def parse_readings(parsed: Any, count: int) -> list[dict[str, Any]]:
     return out
 
 
+def _cache_key(request: ReasoningRequest, items: Sequence[Mapping[str, Any]], model: str, *,
+               company_brief_version: str = "") -> str:
+    """What one reading is about: the prompt version, the model, the tenant, the snapshot, the items.
+
+    The company brief is shown too, so its version is keyed (STEP-07 §8.2: this cache keys on a
+    version string, not the prompt, and would otherwise answer a changed brief with the reading made
+    under the old one). It joins the key ONLY when the tenant has a brief, so a tenant without one
+    keys exactly as before and nothing already cached for it is invalidated.
+    """
+    material = {"prompt": PROMPT_VERSION, "model": model, "org": str(request.org_id),
+                "context": request.context.context_snapshot_id, "items": list(items)}
+    if company_brief_version:
+        material["company_brief"] = company_brief_version
+    return semantic_hash(material)
+
+
 def _consult(request: ReasoningRequest, items: Sequence[Mapping[str, Any]], llm: Any
              ) -> tuple[list[dict[str, Any]] | None, dict[str, Any]]:
     from genios_engine.reason import llm_decision_maker as llm_dm
 
     model = str(getattr(llm, "model", "") or "unknown")
-    key = semantic_hash({"prompt": PROMPT_VERSION, "model": model, "org": str(request.org_id),
-                         "context": request.context.context_snapshot_id, "items": list(items)})
+    # STEP-07 · the tenant's company brief, read once for this reading, through the decider's own
+    # read: its block goes into both attempts' prompts, and its version into the key.
+    company_brief = llm_dm._company_brief(request)
+    company_brief_block = company_brief.prompt_block()
+    key = _cache_key(request, items, model, company_brief_version=company_brief.version)
     meta: dict[str, Any] = {"model": model, "key": key, "input_tokens": 0, "output_tokens": 0}
     with _lock:
         hit = _cache.get(key)
@@ -191,7 +217,7 @@ def _consult(request: ReasoningRequest, items: Sequence[Mapping[str, Any]], llm:
     subject_ref = f"node:{request.context.root_entity_id}"
     feedback: str | None = None
     for attempt in range(2):
-        prompt = build_prompt(items, feedback)
+        prompt = build_prompt(items, feedback, company_brief=company_brief_block)
         try:
             res = llm.call(prompt, max_tokens=_MAX_TOKENS)
         except Exception as exc:      # noqa: BLE001 — no reading is the honest fallback
