@@ -109,12 +109,6 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "⛔ MOVES WHEN somebody who knows whether `snapshot` is supposed to consult it writes one "
         "line above it. Flagged in `HANDOFF-CODING-AGENT.md` rather than guessed at here"),
 
-    "measured.rate_of": (
-        "STEP-10's contract, frozen before its callers: `hits` of `total` as a ratio resting on "
-        "`total` observations — the connector's rate (introductions made, people who replied, calls "
-        "booked) is its first caller, built in a parallel worktree against this frozen shape.",
-        "MOVES WHEN the connector's rate (`yc2_w27_s10 · M29.C4.L-logic.V0.U02`, "
-        "`context/workstreams.py`) lands on this branch"),
 }
 
 
