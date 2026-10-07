@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 2_946, (
+    assert r["statements"] == 2_947, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -288,6 +288,8 @@ def test_the_statement_count_did_NOT_move():
     # insert). Measured per file against HEAD.
     # ⛔ MOVED 2,944 → 2,946 by yc2_w27_s06/M24.C2.L-data.V1.U01: `reason/situation_outcome_store` —
     # the upsert of a situation's end and the unchanged pass's clock, two literals in a new file.
+    # ⛔ MOVED 2,946 → 2,947 by yc2_w27_s06/M24.C2.L-logic.V2.U02: `reason/situation_end` — the one
+    # read of every active situation with its admission, its outcome, its gate rows and its cards.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():
