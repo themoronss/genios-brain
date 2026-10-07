@@ -6,7 +6,7 @@ re-do): F26–F29, E8, and the corrections to F24 and E4. **Root-caused the same
 databases, for tree `yc2_w27`: F30–F37, E9–E11. **Measured 2026-10-06 by the golden set**
 (`STEP-01`, `yc2_w27/M19`) on a scratch database: F38–F49 and §F.1, the before-score. **Found
 2026-10-06 building STEP-02** (`yc2_w27_s02`) **and checking STEP-03**: F50–F55. **Found 2026-10-06
-building STEP-04** (`yc2_w27_s04`): F59–F68. **Found 2026-10-06 building STEP-05** (`yc2_w27_s05`): F69–F70. A finding is never deleted; a correction is a new line that
+building STEP-04** (`yc2_w27_s04`): F59–F68. **Found 2026-10-06 building STEP-05** (`yc2_w27_s05`): F69–F73. A finding is never deleted; a correction is a new line that
 says what it corrects.
 
 ---
@@ -85,7 +85,10 @@ says what it corrects.
 | F67 | `tests/platform/test_warm_lane_pg.py::test_a_burst_coalesces_into_one_chain_run` fails intermittently (≈4 of 11 runs, also alone): it marks rows done by comparing two database `now()` values taken in different transactions | `[TEST]` U01–U18 builder's runs | open — `STEP-17` |
 | F68 | The golden set could not show the defect STEP-04 fixed: its founder has ONE address and it is `orgs.email`, and the runner stored the company in `orgs.name` and the founder's name nowhere. Rows 41–44 are production-shaped; F41, F43 and F44 wait on `STEP-05` (sent mail and a Gmail investor's ask never reach memory) | `[TEST]` `tests/replays/engine_runner.py`; §F.1 | partly — the runner now stores the founder as signup does; the rest is `STEP-05` |
 | F69 | D20 says a mail below the floor enters memory *"at the confidence it scored"* — and no such confidence exists. ALG-13 composes a signal's confidence at **publish**, after the floor (`conflicts → qualify → lifecycle → publish`), so a floor refusal has an `importance_bp` and no confidence; and a mail whose extraction proposed no signal at all has neither. A below-floor mail enters at one fixed relevance, `BELOW_FLOOR_CONFIDENCE_BP` = 3,000 — under the ranking floor (0.35), stored and queryable, never a gate — and an `l1.below_floor` observation says where it came from. Its `importance_bp` is not a confidence and is not used | `[CODE]` `capture/esqe/review_candidates.py:15-23`, `capture/esqe/finalize.py`; `context/qes_adapter.BELOW_FLOOR_CONFIDENCE_BP` | by design — `STEP-10` may rank below-floor items by what they scored once confidence is composed before the floor |
-| F70 | A calendar event's correlation leaves out only our exact ADDRESSES (`internal_emails`): a colleague known only by a declared domain is an outside attendee, so they can anchor a meeting's situation. STEP-04's anchor-pool check (U20) runs in `context/pipeline.process_event` — the mail road — and never reached `context/structured.commit_structured` | `[CODE]` `context/structured.py` (`key in internal`) | `STEP-05` C3.U04 — the structured lane asks `platform/self_identity` |
+| F70 | A calendar event's correlation leaves out only our exact ADDRESSES (`internal_emails`): a colleague known only by a declared domain is an outside attendee, so they can anchor a meeting's situation. STEP-04's anchor-pool check (U20) runs in `context/pipeline.process_event` — the mail road — and never reached `context/structured.commit_structured` | `[CODE]` `context/structured.py` (`key in internal`) | ✅ fixed — `STEP-05` C3.U04 (`e1ff99af`): the structured lane asks `platform/self_identity`; red first on the golden-shaped test |
+| F71 | `tests/test_recode_parked_documents.py` fails all four of its tests about one run in 64: its module-level Fernet key is random, and when it begins with `-` argparse refuses it as the value of `--crypto-key` (*"expected one argument"*) | `[TEST]` STEP-05's C4.U02 guard run (4 failed; green on the rerun) and the refusal shown in isolation | open — `STEP-17`: pass `--crypto-key=<key>`, or draw the key until it does not start with `-` |
+| F72 | A signal type becomes an observation whose evidence is the extraction's FIRST span — often a bare name — and every reader of quotes shows it as something said; on outbound mail it is mirrored onto each recipient. The card narrator was handed *"[received:approval_requested] the account holder wrote: 'Kavitha'"* three times (golden F25). STEP-05's own below-floor mark had the same shape and was removed (C3.U06) | `[CODE]` `context/qes_adapter.py` (`signal_types` → observations, `default_quote`); `deliver/card_builder._QUOTES_SQL` | open — `STEP-13` (check every claim) or `STEP-14` (the card): a mark is not a quote |
+| F73 | The two meeting nodes production held before STEP-05 filed their facts at the meeting's START; STEP-05 files them at the calendar's own edit time (C3.U04). Until such a meeting passes, an edit made before its start lands as history against them | `[CODE]` `graph_store.fact_write_action` (an older `occurred_at` is filed as history); `[PROD]` 2 of 34 meetings in memory (STEP-05 §1) | by design — self-clearing; `08-FOR-HARSH` says how to re-date them if a reschedule must land sooner |
 
 
 ## B · False alarms — things that looked wrong and are not
@@ -203,9 +206,13 @@ ideal reader's recorded answers (cassettes recorded at `b47239c9`, `06-DECISIONS
 spend). `scripts/golden_score.py --assert-recorded` holds the two lines below to every later run.
 
 ```
-founder golden set   must-detect  5/32 (8 not expressible)   must-abstain  5/12 (4 not exercised)   forbidden outputs  4
-atlas replays 01–07  passing  0/80   blocked  7/80   not expressible  73
+founder golden set   must-detect  11/32 (8 not expressible)   must-abstain  11/12 (0 not exercised)   forbidden outputs  4
+atlas replays 01–07  passing  4/80   blocked  3/80   not expressible  73
 ```
+
+The two lines above are the board as it stands — every step that moves it re-records them here, and
+the history is the paragraphs below. Before STEP-05 they read *must-detect 5/32 (8 not expressible),
+must-abstain 5/12 (4 not exercised), forbidden outputs 4; atlas 0/80 passing, 7/80 blocked*.
 
 **Re-recorded 2026-10-06 by `STEP-04`** (`yc2_w27_s04 · M22.C5.L-integration.V3.U05`), with the runner
 seating the tenant as signup does and declaring the case's own addresses, and every STEP-04 change in
@@ -215,16 +222,35 @@ passes (an ask that names the founder is carded about the investor's firm); **F4
 memory (a Gmail investor's ask publishes no qualified signal — F03, `STEP-05`); **F41** and **F43**
 are not exercised (the founder's own sent mail never reaches memory — `STEP-05`, as F36 and F39).
 
+**Re-recorded 2026-10-07 by `STEP-05`** (`yc2_w27_s05 · M23.C5`), every kept item entering memory. The
+ten must-detect cases lost **before memory** all reached it — six now pass, four are lost in reasoning
+— and every must-abstain case is exercised. Twenty-two cases' chains reached new model questions; the
+ideal reader answered them (no spend), by the set's own conventions where one existed, and from the
+prompt as written where one did not. One correction to an earlier answer, named: F25's
+*"unanswered email — Kavitha Nair"* decider entry (authored at STEP-01, never reached before) said "a
+direct question is waiting on us"; Kavitha's mail asks nothing (*"I'll confirm by the 12th once I've
+read the documents"*), so the faithful answer is defer — taken with it, F25 stays one offer, one card.
+
+| moved by STEP-05 | from → to |
+|---|---|
+| F04, F05, F06, F10, F26, F44 | lost before memory → **pass** (the contact's reply, scheduling question or investor ask, below the floor, now in memory with its words) |
+| F07, F11, F19, F24 | lost before memory → **lost in reasoning** (`blocked_on` restated in each case: F07 two cards and *"happened"*; F11 no situation reaches the decider; F19 no card names Ekta; F24 no card names the review deck) |
+| F36, F39, F41, F43 | not exercised → **pass** (the founder's own sent mail reaches memory, and the decision not to card it is made) |
+| F31, F38 | fail → **pass** (the assignment's deadline and the "all set" reach memory) |
+| atlas replays | passing 0 → 4, blocked 7 → 3: replay 03 m00 on F26 (the counterparty's proposed time, carded for the founder to answer) and m01 on F39 (the founder's own proposal, not carded), 04 m01 on F38 ("all set" on another channel, no card) and 06 m04 on F14 (a deferred, conditional investor, no card) — each because its input now reaches memory. ⛔ What each mutation's old `blocked_on` named (a typed role model, an abstention vocabulary, a cross-channel matcher, a conditional-deferral state) is still not built: its golden EXPRESSION — the card a founder sees and what memory holds — is what holds, and it is weaker than the mutation's words. The four are marked `possible_today` in their replay specs |
+
+The table below is the board's state now.
+
 | | |
 |---|---|
-| must-detect that pass | F12 (an investor's question before a booked call), F13 (an investor's ask, not pinned on the founder), F25 (one offer, one card), F28 (a partner's ask before a call), F42 (an ask that names the founder, carded about the investor — STEP-04) |
-| must-detect lost at the gate · 5 | F01, F02 (a portal's mail on Promotions and no-reply), F03, F09 (the connector's unsubscribe header), F16 (a bounce from an automated sender) |
-| must-detect lost before memory · 10 | F04, F05, F06, F07, F10, F11, F19, F24, F26 — every one dropped at the qualification floor (finding F44); case F44 (STEP-04's Gmail investor — no qualified signal, finding F03) |
-| must-detect lost in reasoning · 3 | F17 (an accelerator framed as an investor), F27 and F29 (one ask, several cards) |
-| must-detect with no stage to read · 1 | F15 (the founder's outreach wave, typed `anomaly` and dropped at the floor) |
+| must-detect that pass · 11 | F04, F05, F06 (an introduced contact's reply owed — STEP-05), F10 (an investor's follow-up — STEP-05), F12, F13, F25 (one offer, one card), F26 (a partner's dated proposal — STEP-05), F28, F42, F44 (a Gmail investor's ask — STEP-05) |
+| must-detect lost at the gate · 5 | F01, F02 (a portal's mail on Promotions and no-reply), F03, F09 (the connector's unsubscribe header — archived; promotion is `STEP-05`'s, by Rohit's word), F16 (a bounce from an automated sender) |
+| must-detect lost before memory · 0 | — (ten before STEP-05) |
+| must-detect lost in reasoning · 7 | F07 (two cards and *"happened"*), F11 (no situation reaches the decider), F17 (an accelerator framed as an investor), F19 (no card names Ekta), F24 (no card names the review deck), F27 and F29 (one ask, several cards) |
+| must-detect with no stage to read · 1 | F15 (the founder's outreach wave, typed `anomaly`) |
 | not expressible · 8 | F08, F14, F18, F20–F23 (`brief only` — `STEP-15`), F30 (the screen door) |
-| must-abstain that pass · 5 | F32, F33, F34 (newsletters, receipts and digests archived), F35 (no payment claimed), F37 (the connector never the target) |
-| must-abstain not exercised · 4 | F36, F39, F41, F43 — the founder's own sent mail never reaches memory, so the decision not to card it is never made (F41, F43: STEP-04's own address copied, own pitch named) |
-| must-abstain that fail · 3 | F31 (the assignment never becomes the one card a cohort session leaves), F38 (an answer on another channel never closes the ask), F40 (a meeting nobody confirmed, recapped) |
+| must-abstain that pass · 11 | F31 (the assignment), F32, F33, F34 (archived), F35, F36, F37, F38 (an answer elsewhere closes the ask), F39, F41, F43 (the founder's own mail, in memory, not carded) |
+| must-abstain not exercised · 0 | — (four before STEP-05) |
+| must-abstain that fail · 1 | F40 (a meeting nobody confirmed, recapped) |
 | forbidden outputs · 4 | *"happened"* — the follow-through narrator told a meeting took place (F07, F29 ×2, F40; F48) |
 | what the numbers judge | the ENGINE, given a faithful reader of every prompt. The model's own mistakes — production junked the real investor mails — are the live evaluation's to measure (`scripts/golden_eval.py --live`, ≈ $0.63 a pass on Haiku 4.5) |

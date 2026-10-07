@@ -25,6 +25,12 @@ as signup does — with its owner seat — and declares the case's own addresses
 2026-10-06 under it, with every STEP-04 change, no case moved: `BOARD_BEFORE` stands as measured. The
 four cases STEP-04 added (`ADDED_AFTER`) have no "before STEP-03" — the gate's promise is held on
 them too (nothing dropped, an archive carries no prepared text), and their marking is the board's.
+
+RESTATED BY STEP-05 (`yc2_w27_s05 · M23.C5.L-integration.V4.U02`). STEP-05 gives every kept event a
+road into memory, so thirteen cases moved — every one of them from "lost before memory" or "not
+exercised" — and each is held to its new marking in `MOVED_AFTER`, by the step that moved it.
+`BOARD_BEFORE` stays the measurement it was. The gate's own promise did not move on any case: nothing
+dropped, every archive the same, and no archive with prepared text.
 """
 from __future__ import annotations
 
@@ -65,6 +71,24 @@ DROPPED_BEFORE: dict[str, dict[str, str]] = {
 #: Cases added after STEP-03 measured the set, each by the step that added it.
 ADDED_AFTER: dict[str, str] = {"F41": "STEP-04", "F42": "STEP-04", "F43": "STEP-04",
                                "F44": "STEP-04"}
+
+#: Cases a later step moved, with their marking after it — (step, (kind, verdict, lost_at, cards)).
+#: STEP-05: a mail below the floor, the founder's own sent mail and an archive now enter memory.
+MOVED_AFTER: dict[str, tuple[str, tuple[str, str, str | None, int]]] = {
+    "F04": ("STEP-05", ("must_detect", "pass", None, 1)),
+    "F05": ("STEP-05", ("must_detect", "pass", None, 1)),
+    "F06": ("STEP-05", ("must_detect", "pass", None, 1)),
+    "F07": ("STEP-05", ("must_detect", "fail", "reasoning", 2)),
+    "F10": ("STEP-05", ("must_detect", "pass", None, 1)),
+    "F11": ("STEP-05", ("must_detect", "fail", "reasoning", 0)),
+    "F19": ("STEP-05", ("must_detect", "fail", "reasoning", 2)),
+    "F24": ("STEP-05", ("must_detect", "fail", "reasoning", 1)),
+    "F26": ("STEP-05", ("must_detect", "pass", None, 1)),
+    "F31": ("STEP-05", ("must_abstain", "pass", None, 1)),
+    "F36": ("STEP-05", ("must_abstain", "pass", None, 0)),
+    "F38": ("STEP-05", ("must_abstain", "pass", None, 0)),
+    "F39": ("STEP-05", ("must_abstain", "pass", None, 0)),
+}
 
 #: The same measurement: (kind, verdict, lost_at, cards over every sweep) per case.
 BOARD_BEFORE: dict[str, tuple[str, str, str | None, int]] = {
@@ -127,6 +151,9 @@ def test_the_measurement_is_the_one_section_8_recorded():
     assert set(BOARD_BEFORE) | set(ADDED_AFTER) == {c.case_id for c in CASES}
     assert not set(BOARD_BEFORE) & set(ADDED_AFTER)
     assert set(DROPPED_BEFORE) <= set(BOARD_BEFORE)
+    assert set(MOVED_AFTER) <= set(BOARD_BEFORE), "a moved case needs a before to move from"
+    assert all(after != BOARD_BEFORE[c] for c, (_step, after) in MOVED_AFTER.items()), (
+        "a case listed as moved did not move")
 
 
 @pytest.mark.pg
@@ -176,5 +203,9 @@ def test_the_gate_deletes_nothing_and_the_case_is_marked_as_before(case):
         return                 # no "before STEP-03" to compare with — the board records it
     mark = judge(case, run)
     after = (case.kind, mark.verdict, mark.lost_at, len(run.cards))
+    if case.case_id in MOVED_AFTER:
+        step, moved = MOVED_AFTER[case.case_id]
+        assert after == moved, f"{case.case_id}: marked {after}, after {step} {moved}"
+        return
     assert after == BOARD_BEFORE[case.case_id], (
         f"{case.case_id}: marked {after}, before STEP-03 {BOARD_BEFORE[case.case_id]}")
