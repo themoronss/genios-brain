@@ -118,3 +118,23 @@ def test_without_a_prepared_text_the_snippet_is_masked_too(monkeypatch):
     ctx = _ctx("Invoice for card 4111 1111 1111 1111", "Please pay by Friday.")
     gate.classify(GateContext(event=ctx.event, raw=ctx.raw), None)
     assert "4111 1111 1111 1111" not in model.prompts[0]
+
+
+def test_the_sweeps_shared_filter_reads_each_tenants_brief_as_it_is_rebound(monkeypatch):
+    """⛔ The scheduled sweep and `/ingest/all` build ONE classifier with no tenant and re-bind it per
+    connection (`api/routes._bind_gate_costs`). That re-bind bound the cost sink only, so on the
+    sweep — production's main door — the filter's prompts never carried a brief at all. It now binds
+    the brief's source with the tenant, as `platform/wiring.make_relevance_classifier` does."""
+    from genios_engine.api import routes
+
+    graph = SimpleNamespace(record_cost=lambda **_row: None, engine=object())
+    monkeypatch.setattr(routes, "_graph", graph)
+    seen = []
+    monkeypatch.setattr("genios_engine.platform.company_brief.current",
+                        lambda source, org: seen.append((source, org)) or BRIEF)
+    gate = R.LLMRelevanceClassifier(_Model({"disposition": "keep", "relevance": 0.9, "reason": "x"}))
+    routes._bind_gate_costs(gate, "org_a", "seat_1")
+    assert gate._brief_block() == BRIEF.prompt_block() and seen == [(graph, "org_a")]
+    routes._bind_gate_costs(gate, "org_b")
+    gate._brief_block()
+    assert seen[-1] == (graph, "org_b")

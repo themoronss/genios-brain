@@ -125,9 +125,14 @@ def _l1_stores() -> L1Stores:
 def _bind_gate_costs(gate, org_id: str, seat_id: str | None = None) -> None:
     """Point a shared relevance gate's cost recording at the tenant — and the SEAT — currently
     being synced. Cross-org sweeps reuse one classifier; without this every gate call would be
-    billed to the first org in the loop, and (since 0175) to the first person in it."""
+    billed to the first org in the loop, and (since 0175) to the first person in it.
+
+    STEP-07 · and where that tenant's company brief is read from, in the same act: the sweep's one
+    classifier is built with no tenant, so this re-bind is the only place its prompts can learn the
+    tenant's brief — bound here, the scheduled sweep and `/ingest/all` ask what every other door asks
+    (`platform/wiring.make_relevance_classifier`)."""
     if gate is not None and _graph is not None and hasattr(gate, "bind_costs"):
-        gate.bind_costs(_graph.record_cost, org_id, seat_id)
+        gate.bind_costs(_graph.record_cost, org_id, seat_id, brief_source=_graph)
 
 
 @router.get("/health")
