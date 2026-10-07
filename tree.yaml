@@ -4782,6 +4782,14 @@ yc2_w27_s06:
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/platform/test_every_admitted_situation_has_an_end_receipt.py -q
                       depends_on: [M24.C2.L-logic.V2.U01, M24.C4.L-integration.V3.U01]
                     - id: M24.C4.L-integration.V3.U03
+                      status: retired
+                      retired: >
+                        2026-10-07, while building: two receipts already hold it. Receipt 44, *every
+                        captured event that reached no signal says where it stopped*, is the journey's
+                        own join (`platform/receipts._UNEXPLAINED_EVENT_SQL`), and STEP-05's *every kept
+                        event has entered memory* holds every kept event; the journey's `end` (C3) is
+                        what names each one. A third receipt over the same population would answer the
+                        same question twice. The STEP-06 check (§8.3.5) missed receipt 44.
                       what: >
                         Receipt *every event has an end* — an event two days old with no memory run, no
                         park, no stopping trace and not superseded: 0 — the journey's own predicate.
@@ -4800,7 +4808,7 @@ yc2_w27_s06:
                         receipt).
                       artifact: scripts/pipeline_health.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/scripts/test_pipeline_health_ends.py -q
-                      depends_on: [M24.C4.L-integration.V3.U03, M24.C2.L-logic.V2.U02]
+                      depends_on: [M24.C4.L-integration.V3.U02, M24.C2.L-logic.V2.U02]
         - id: M24.C5
           name: The drains
           layers:

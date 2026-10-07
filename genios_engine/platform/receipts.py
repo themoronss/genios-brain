@@ -1048,6 +1048,45 @@ def _KEPT_OUTSIDE_MEMORY_SQL() -> str:
             "                and r.event_id = se.event_id and r.status = 'done')")
 
 
+#: STEP-06's deploy, as the schema records it: the migration that shipped with it. Cards that expired
+#: before it carry no reason and are not backfilled (`06` D24); every card created since leaves with
+#: one, and admissions since then have their end recorded.
+_STEP_06_APPLIED = ("(select coalesce(min(applied_at), now()) from schema_migrations "
+                    " where filename = '0194_situation_outcomes.sql')")
+
+
+def _EXPIRED_WITHOUT_A_REASON_SQL() -> str:
+    """Cards created since STEP-06 that left the queue `expired` with no event saying why.
+
+    The kinds are `platform/card_lifecycle.KINDS` — the one writer of `expired` writes exactly these —
+    inlined because `evaluate()` binds one parameter.
+    """
+    from genios_engine.platform.card_lifecycle import KINDS
+
+    kinds = ", ".join(f"'{kind}'" for kind in sorted(KINDS))
+    return ("select count(*) from cards c "
+            "where c.state = 'expired' "
+            f"and c.created_at >= {_STEP_06_APPLIED} "
+            "and not exists (select 1 from card_events e where e.org_id = c.org_id "
+            f"                and e.card_id = c.card_id and e.kind in ({kinds}))")
+
+
+def _ADMITTED_WITHOUT_AN_END_SQL() -> str:
+    """Active situations whose latest admission, a day old and made since STEP-06, is `admit` — and
+    nothing recorded what came of it (`situation_outcomes`, 0194). Admission is recorded on the live
+    lane only, so every row here was live."""
+    return ("select count(*) from situation_admission_decisions d "
+            "where d.outcome = 'admit' and d.decided_at < now() - interval '1 day' "
+            f"and d.decided_at >= {_STEP_06_APPLIED} "
+            "and d.decision_id = (select x.decision_id from situation_admission_decisions x "
+            "     where x.org_id = d.org_id and x.situation_id = d.situation_id "
+            "     order by x.decided_at desc, x.decision_id desc limit 1) "
+            "and exists (select 1 from context_situations s where s.org_id = d.org_id "
+            "     and s.situation_id = d.situation_id and s.status in ('active', 'partial')) "
+            "and not exists (select 1 from situation_outcomes o where o.org_id = d.org_id "
+            "     and o.decision_id = d.decision_id)")
+
+
 def receipts(org: str | None) -> list[Receipt]:
     # THE DORMANCY WINDOW IS THE THRESHOLD, and it is imported rather than restated. L2 decides a
     # situation has ended after `DORMANT_AFTER_DAYS` of silence, so a tenant that has been fed
@@ -1263,6 +1302,20 @@ def receipts(org: str | None) -> list[Receipt]:
                 "drain took (it has no road — waiting for its re-read, or given up by the ladder), "
                 "or one whose run is held, failed or parked. `scripts/pipeline_health` splits them; "
                 "walk one with `journey.event_journey`"),
+
+        # ── STEP-06 · nothing is lost silently ─────────────────────────────────────────
+        Receipt("L4", "every admitted situation has a recorded end",
+                _ADMITTED_WITHOUT_AN_END_SQL() + _org_filter(org, "d"),
+                lambda n: n == 0,
+                "an admitted live situation a day old with no `situation_outcomes` row: the compiled "
+                "pass stopped somewhere it does not note, or its write failed (`outcome_write_failed` "
+                "in the pass's log line). `scripts/situation_ends.py` names every situation's end"),
+        Receipt("L5", "every expired card says why",
+                _EXPIRED_WITHOUT_A_REASON_SQL() + _org_filter(org, "c"),
+                lambda n: n == 0,
+                "a card created since STEP-06 left the queue `expired` with no event saying why: "
+                "something set the state without `platform/card_lifecycle` "
+                "(`tests/platform/test_one_way_to_expire_a_card.py` should have refused it)"),
 
         # ── L3 domain expertise ───────────────────────────────────────────────────────
         Receipt("L3", "compiled expertise packages exist",

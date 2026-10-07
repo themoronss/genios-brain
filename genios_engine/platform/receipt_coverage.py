@@ -103,6 +103,12 @@ RECEIPT_PACKAGE: dict[str, tuple[str, str]] = {
     "every kept event has entered memory": (
         "context", "STEP-05: the drain gives every kept event a road into memory "
                    "(`context/memory_lanes`, `context/runner`) — the promise is this package's"),
+    "every admitted situation has a recorded end": (
+        "reason", "STEP-06: the compiled lane (`reason/domain_shadow`) records what came of every "
+                  "admitted live candidate in `situation_outcomes` — the promise is this package's"),
+    "every expired card says why": (
+        "platform", "STEP-06: `platform/card_lifecycle` is the one writer of a card's `expired` "
+                    "state and always writes the event — the promise is this package's"),
 
     # ── packs/ · domain expertise, a plane ─────────────────────────────────────────────────
     "compiled expertise packages exist": (

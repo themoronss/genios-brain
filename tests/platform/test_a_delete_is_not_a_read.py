@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 2_951, (
+    assert r["statements"] == 2_955, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -297,6 +297,9 @@ def test_the_statement_count_did_NOT_move():
     # the ladder gives up on, a whole statement of their own now that the due read leaves them out.
     # ⛔ MOVED 2,950 → 2,951 by yc2_w27_s06/M24.C3.L-logic.V1.U01: `capture/journey` — the event's
     # memory run, the one hop past Layer 1 the walk did not read.
+    # ⛔ MOVED 2,951 → 2,955 by yc2_w27_s06/M24.C4.L-integration.V3.U01-U02: `platform/receipts` — the
+    # two STEP-06 receipts' queries, each an f-string the resolver reads twice (its hole and the
+    # literal before it).
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():
