@@ -220,7 +220,10 @@ def light_junk(labels, sender_email: str, has_attachment: bool) -> str | None:
     """High-confidence deterministic junk from LIST-time fields ONLY (Gmail labels + sender local-
     part) — lets the connector skip the full fetch of obvious junk BEFORE the S2 LLM prime ever
     runs, so it costs no model call (the gate archives it with those list fields, STEP-03). Header-based bulk signals (List-Unsubscribe/Precedence) need the full fetch and stay
-    on the LLM path. Mirrors hard_rule exactly so the pipeline gate reaches the SAME verdict."""
+    on the LLM path. Mirrors hard_rule exactly so the pipeline gate reaches the SAME verdict — but
+    for a delivery report (STEP-10), which needs the subject this call is not given: a daemon's
+    report settled N-03 here reaches the pipeline gate as its list object, whose noise rules
+    keep it."""
     labs = set(labels or [])
     if labs & {"SPAM", "TRASH"}:
         return "N-09"
@@ -368,6 +371,23 @@ def noise_rule(ctx: GateContext) -> tuple[str, str] | None:
     # decide. High-confidence noise (SPAM/TRASH, Gmail PROMOTIONS/SOCIAL) above still drops regardless.
     att = bool(ctx.raw.get("has_attachment"))
     machine = bool(_DEAD_SENDER.search(email) or _automated_sender(email))
+    # STEP-10 · A DELIVERY REPORT IS KEPT AND READ (`yc2_w27_s10 · M29.C3.L-logic.V0.U01`, `06`
+    # D38). A founder's pitch to a fund bounced and the report never reached the parser that reads
+    # it: the golden set's comes from a daemon with no attachment (N-03), and Gmail sends
+    # production's with `Auto-Submitted: auto-replied` (N-01) — 0 `DELIVERY_FAILURE` signals, and
+    # the pitch still read "waiting" (STEP-10 §8.1). `capture/delivery_status` is the one reader of
+    # the question and BOTH its conditions hold here: a delivery daemon sent it AND it reads as a
+    # delivery report. A person forwarding a bounce, or `postmaster@`'s own notice, is neither, and
+    # meets the rules below as before. The same three inputs `capture/pipeline._delivery_status`
+    # hands the parser, so the gate keeps exactly what the detector reads. A delay notice is kept
+    # too: whether delivery FAILED is the reader's question (`context/delivery`), not the gate's.
+    # Below the provider's own verdicts — a report filed as spam is backscatter, not our outbound.
+    # Its attached original is untouched: the connector lands each attachment as an event of its
+    # own, with no headers and `has_attachment` set, so N-01 … N-04 never fire on one.
+    from genios_engine.capture.delivery_status import is_delivery_status
+    if is_delivery_status(sender=email, subject=subject,
+                          text=str(ctx.raw.get("body") or ctx.raw.get("snippet") or "")):
+        return None
     # N-05 — an availability notice from a real sender passes every traffic-shape rule below: a
     # vacation responder carries Auto-Submitted (N-01) and often Precedence: bulk (N-04), which
     # would otherwise drop the one message that says who is away. A machine sender still drops —
