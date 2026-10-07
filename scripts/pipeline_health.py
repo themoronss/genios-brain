@@ -489,6 +489,68 @@ def check_the_company_brief_exists_and_is_current(conn, org: str) -> Check:
                + [f"left out by the budget: {line_id}" for line_id in brief.truncated])
 
 
+def check_every_gmail_message_in_the_window_has_its_content(conn, org: str, *,
+                                                            now=None) -> Check:
+    """⛔ STEP-08 (`yc2_w27_s08/M26.C4`). Before STEP-03 the gate DELETED what a noise rule or the AI
+    filter called noise, and the body went with it: 258 of the design partner's 395 Gmail messages are a
+    ledger row, outcome `dropped`, with no content — Boardy's introductions and the portal's notices
+    among them. The re-sync frees their keys, the backfill drain lands each again through today's gate,
+    and its finish supersedes the old row or says why the mail did not come back
+    (`capture/landing/resync`). So the promise is a number: Gmail messages inside the connection's
+    window with no content and no stated reason — 0. A stated reason is a scope exclusion
+    (`out_of_scope`) or the re-sync's own `resync_not_listed`; a message older than the window is
+    counted beside the number, never in it. It fails until STEP-08 has run, by design. `now` is for a
+    replay that pins the clock; the deploy gate reads the database's.
+    """
+    from collections import Counter
+
+    from genios_engine.capture.landing.resync import window_days
+
+    name = "every Gmail message in the window has its content, or a stated reason"
+    days = window_days(conn, org)
+    rows = conn.execute(sql(
+        "select se.event_id, se.occurred_at, position('#resync:' in se.dedup_key) > 0 as freed, "
+        "       se.occurred_at >= coalesce(cast(:now as timestamptz), now()) "
+        "                         - make_interval(days => :days) as inside, "
+        "       coalesce((select x.reason_code from event_trace x where x.org_id = se.org_id "
+        "                  and x.event_id = se.event_id and x.action = 'drop' "
+        "                  order by x.at desc, x.id desc limit 1), 'no trace') as rule "
+        "  from source_events se "
+        " where se.org_id = :o and se.source = 'gmail' and se.object_type = 'email_message' "
+        "   and se.outcome = 'dropped' "
+        "   and not exists (select 1 from raw_payloads rp where rp.org_id = se.org_id "
+        "                    and rp.event_id = se.event_id "
+        "                    and rp.expires_at > coalesce(cast(:now as timestamptz), now())) "
+        "   and not exists (select 1 from event_trace t where t.org_id = se.org_id "
+        "                    and t.event_id = se.event_id "
+        "                    and t.reason_code in ('out_of_scope', 'resync_not_listed')) "
+        " order by se.occurred_at, se.event_id"), {"o": org, "now": now, "days": days}).fetchall()
+    inside = [r for r in rows if r.inside]
+    older = len(rows) - len(inside)
+    never = Counter(r.rule for r in inside if not r.freed)
+    freed = sum(1 for r in inside if r.freed)
+    measured = (f"{len(inside)} Gmail message(s) inside the {days}-day window have no content and "
+                "no stated reason"
+                + (f", the oldest {inside[0].occurred_at.date().isoformat()}" if inside else "")
+                + (f"; {older} more older than the window" if older else ""))
+    detail = []
+    if never:
+        detail.append(f"never freed: {sum(never.values())} — by the rule that deleted them: "
+                      + " · ".join(f"{code} {n}" for code, n in
+                                   sorted(never.items(), key=lambda kv: (-kv[1], kv[0]))))
+    if freed:
+        detail.append(f"freed, not yet back or finished: {freed} — run the backfill drain again "
+                      "while it says TRUNCATED, then --finish")
+    return Check(
+        name=name, ok=not inside, measured=measured,
+        expected=("0 — each came back with its content and its old row is superseded, or says why "
+                  "not: Gmail no longer lists it, it is older than the window, a scope exclusion"),
+        fix=("STEP-08 §8.6: `scripts/resync_deleted_mail.py --org …` (the dry run) → Rohit names the "
+             "window → `PATCH /connections/{gmail}/backfill-window` → `--apply --days N` → "
+             "`POST /connections/{gmail}/backfill` → `--finish`"),
+        detail=detail)
+
+
 CHECKS = (
     check_every_emitted_event_is_routed,
     check_parked_errors_are_readable,
@@ -501,6 +563,7 @@ CHECKS = (
     check_every_kept_event_entered_memory,
     check_every_situation_and_card_says_how_it_ended,
     check_the_company_brief_exists_and_is_current,
+    check_every_gmail_message_in_the_window_has_its_content,
 )
 
 

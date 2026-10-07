@@ -38,6 +38,8 @@ from typing import Any, Mapping
 
 from sqlalchemy import text
 
+from genios_engine.capture.landing.resync import FREED, NOT_LISTED, REPLACED, STAGE as RESYNC
+
 #: The event moved ON. Measured across every `event_trace` row in every org, not assumed: the
 #: column holds exactly five values and these two are the ones that mean "and then".
 TRACE_ADVANCING = frozenset({"pass", "emit"})
@@ -154,6 +156,11 @@ def event_journey(engine, *, org_id: str, event_id: str) -> dict:
         # STEP-06: the memory run, the one hop past Layer 1 this walk did not read.
         runs = _rows(c, ("select status, attempts, last_error, updated_at from l2_processing_runs "
                          " where org_id=:o and event_id=:e"), params)
+        # STEP-08: the deleted row this event replaced, from that row's own re-sync trace.
+        replaced = _rows(c, ("select event_id from event_trace where org_id=:o and stage=:stage "
+                             "   and reason_code=:code and detail ->> 'replaced_by' = :e "
+                             " order by at, id"),
+                         {**params, "stage": RESYNC, "code": REPLACED})
 
     event = ({k: _jsonable(v) for k, v in events[0]._mapping.items()} if events else None)
     memory = ({k: _jsonable(v) for k, v in runs[0]._mapping.items()} if runs else None)
@@ -168,6 +175,8 @@ def event_journey(engine, *, org_id: str, event_id: str) -> dict:
         "memory": memory,
         # STEP-06 · exactly one end for the event — see `_end`.
         "end": _end(event, steps, ledgers, memory),
+        # STEP-08 · what the re-sync did with it — see `_resync`.
+        "resync": _resync(steps, [r.event_id for r in replaced]),
         # Named so a caller can tell "this deployment has no such table" from "this event has no
         # such row" — the distinction a support answer lives or dies on.
         "unclassified_actions": sorted({s["stage"] + ":" + s["action"] for s in steps
@@ -220,6 +229,25 @@ def _stopped_by(steps: list[dict], ledgers: Mapping[str, list[dict]]) -> dict | 
     return last
 
 
+def _resync(steps: list[dict], replaced: list[str]) -> dict | None:
+    """STEP-08 · the re-sync, in both directions (`capture/landing/resync`). A deleted row it freed says
+    so, and then either names the event that replaced it or why its mail did not come back; the event
+    that replaced one names it. None for every event the re-sync never touched. Read from the trace each
+    side wrote — the old row's own steps, and the old row's trace naming this event."""
+    out: dict = {}
+    for s in steps:
+        detail = s["detail"] if isinstance(s["detail"], dict) else {}
+        if s["reason_code"] == FREED:
+            out["freed"] = s["at"]
+        elif s["reason_code"] == REPLACED:
+            out["replaced_by"] = detail.get("replaced_by")
+        elif s["reason_code"] == NOT_LISTED:
+            out["not_listed"] = detail
+    if replaced:
+        out["replaces"] = replaced[-1]
+    return out or None
+
+
 #: Every end an event can have — exactly one each (STEP-06, `yc2_w27_s06 · M24.C3.L-logic.V1.U01`).
 ENDS = ("not_captured", "superseded", "in_memory", "failed", "parked", "waiting", "archived",
         "stopped", "none")
@@ -243,7 +271,10 @@ def _end(event: Mapping[str, Any] | None, steps: list[dict], ledgers: Mapping[st
         return {"end": "not_captured"}
     outcome = event.get("outcome")
     if outcome == "superseded":
-        return {"end": "superseded"}
+        # STEP-08: a deleted mail the re-sync brought back names the event that replaced it.
+        by = [s["detail"].get("replaced_by") for s in steps
+              if s["reason_code"] == REPLACED and isinstance(s["detail"], dict)]
+        return {"end": "superseded", **({"replaced_by": by[-1]} if by and by[-1] else {})}
     if memory and memory.get("status") == "done":
         return {"end": "in_memory", "attention": event.get("attention"),
                 "attempts": memory.get("attempts")}

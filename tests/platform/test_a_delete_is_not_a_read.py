@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 2_990, (
+    assert r["statements"] == 2_995, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -324,6 +324,12 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 2,989 → 2,990 by yc2_w27_s08/M26.C2.L-data.V0.U01: `capture/landing/pg_repository.
     # kept_child_exists` — has an attachment of this message landed kept? One SELECT, a literal
     # (measured per file: 2 → 3).
+    # ⛔ MOVED 2,990 → 2,995 by yc2_w27_s08/M26.C3.L-interface.V1.U01 and M26.C4 (V1.U01, V1.U02):
+    # `scripts/resync_deleted_mail.py` — the deleted messages it can free, what the re-sync has done
+    # so far, and the attachments of the deleted messages (0 → 3); `capture/journey` — the deleted row
+    # an event replaced, read from that row's re-sync trace (7 → 8); `scripts/pipeline_health.
+    # check_every_gmail_message_in_the_window_has_its_content` — the messages in the window with no
+    # content and no stated reason (23 → 24). Each a literal; measured per file against HEAD.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():
