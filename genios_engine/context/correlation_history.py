@@ -21,7 +21,8 @@ stays findable instead of overwritten"* — and that is true, the chain is alrea
 missing is a READER, which is the shape this branch has found ten times over: a capability
 exists and nothing consumes it at the point that needs it.
 
-WHAT THIS PUBLISHES, and the line each one refuses to cross:
+WHAT THIS PUBLISHES — per (anchor, domain), each name below qualified by its domain (`@<domain>`,
+WHERE EACH PAST IS KEPT below) — and the line each one refuses to cross:
 
   derived.history.times_seen          how many generations this anchor has had in this domain.
                                       A COUNT, not a judgment: three visits may be three
@@ -53,6 +54,33 @@ anchor whose prior generation exists but whose execution was never recorded is U
 do not know how it ended. Collapsing those two would let "no record of last time" read as "there
 was no last time", which is exactly the inversion the publication gate exists to prevent, so the
 two are published as different values rather than as one missing field.
+
+WHERE EACH PAST IS KEPT (STEP-10, `yc2_w27_s10 · M29.C2.L-logic.V0.U03`). The past is computed per
+(anchor, domain) — the vocabulary declares `derived.history.times_seen` as the generations "of this
+anchor in this domain" — and was published per ANCHOR: a fact's id is prefix + node + field
+(`analytic/publish.derived_fact_version_id`), so an anchor in two domains wrote both pasts onto one
+row per fact and kept whichever domain sorted last (`STEP-10` §8.1, golden F29). A file — one anchor
+in every domain — showed one past, and its two domains rewrote each other's rows on every sweep.
+`graph_facts` holds ONE current value per (org, subject, field): no index enforces it
+(`graph_facts_current` is not unique), every reader assumes it. So the domain had to go into the
+subject, the value or the field:
+
+  * the SUBJECT stays the anchor. A fact's subject is a node — a merge repoints it, the file reads
+    by it (`context/workstreams`) — and no node stands for an (anchor, domain) pair; one minted per
+    pair is a node no merge, erasure or as-of read knows about;
+  * the VALUE stays the declared scalar. `times_seen` is a count a predicate compares (`> 1`); a map
+    of domains would turn every such comparison into a type error;
+  * so the FIELD carries the domain: `derived.history.<fact>@<domain>` (`history_field`). The
+    declared path is its stem, so the family is still exactly the four names of
+    `packs/substrate_demand.HISTORY_FIELDS`, and the corpus measure still finds each one.
+
+The bare paths are no longer written. No single domain answers "this domain" for an anchor in two,
+and a bare value that is right only while the anchor stays in one domain is the same defect waiting
+for a second domain. Nothing reads them (zero corpus readers, `packs/substrate_demand`); the first
+reader resolves a declared path in the domain it is evaluating — its situation's. What a sweep did
+not write is closed (`analytic/publish.close_derived_facts`): the per-anchor rows the old shape left,
+and the past of a pair the chain no longer holds. Closed, never deleted — an as-of read of last week
+still answers.
 """
 
 from __future__ import annotations
@@ -63,7 +91,7 @@ from datetime import datetime
 
 from sqlalchemy import bindparam, text
 
-from genios_engine.context.analytic.publish import publish_derived_fact
+from genios_engine.context.analytic.publish import close_derived_facts, publish_derived_fact
 
 #: Every fact this module writes. One prefix so `publish_derived_fact` can only ever close its
 #: own rows — an open row on the same field written by another writer is left exactly alone.
@@ -74,6 +102,14 @@ VERSION_PREFIX = "fv_history:"
 UNKNOWN_OUTCOME = "unrecorded"
 #: There IS no prior. Not a gap — a finding: this anchor has never been here before.
 NO_PRIOR = "first_time"
+
+#: What joins a declared path to the domain its value was measured in (`history_field`).
+DOMAIN_MARK = "@"
+
+
+def history_field(path: str, domain: str) -> str:
+    """The field one domain's past is published under: `derived.history.times_seen@admin`."""
+    return f"{path}{DOMAIN_MARK}{domain}"
 
 
 @dataclass(frozen=True)
@@ -267,7 +303,9 @@ def _rows(conn, statement, params) -> Sequence:
 
 
 def publish_histories(conn, org_id: str, *, eval_time: datetime) -> int:
-    """Write each anchor's past as `derived.history.*` facts. Returns the number written.
+    """Write each anchor's past in each of its domains as `derived.history.*@<domain>` facts, and
+    close the history facts this sweep did not write. Returns the rows it changed: written and
+    closed.
 
     PUBLISHED FOR EVERY ANCHOR, INCLUDING FIRST-TIMERS, deliberately. A rule that asks "is this
     a recurrence?" must get FALSE on a first visit, not UNKNOWN — and it only can if the fact is
@@ -276,6 +314,7 @@ def publish_histories(conn, org_id: str, *, eval_time: datetime) -> int:
     sentinels exist to prevent one level down.
     """
     written = 0
+    kept: list[str] = []
     for history in read_histories(conn, org_id):
         for field, value, value_type in (
             ("derived.history.times_seen", history.times_seen, "count"),
@@ -289,11 +328,17 @@ def publish_histories(conn, org_id: str, *, eval_time: datetime) -> int:
                 continue
             published = publish_derived_fact(
                 conn, org_id=org_id, subject_node_id=history.anchor_node_id,
-                field=field, value=value, eval_time=eval_time, value_type=value_type,
-                visibility_scope="org", version_prefix=VERSION_PREFIX)
+                field=history_field(field, history.domain), value=value, eval_time=eval_time,
+                value_type=value_type, visibility_scope="org", version_prefix=VERSION_PREFIX)
+            # The id the publisher RETURNED: an unchanged fact keeps the id of its first period.
+            kept.append(published.version_id)
             written += int(published.wrote)
-    return written
+    # WHAT THIS SWEEP DID NOT WRITE IS NO LONGER TRUE: a per-anchor row of the old shape (the
+    # last-sorted domain's past), the past of a pair a merge moved or retention pruned, a gap that
+    # can no longer be measured. Closed, never deleted.
+    return written + close_derived_facts(conn, org_id=org_id, version_prefix=VERSION_PREFIX,
+                                         keep=kept, eval_time=eval_time)
 
 
-__all__ = ["NO_PRIOR", "UNKNOWN_OUTCOME", "VERSION_PREFIX", "AnchorHistory",
-           "publish_histories", "read_histories"]
+__all__ = ["DOMAIN_MARK", "NO_PRIOR", "UNKNOWN_OUTCOME", "VERSION_PREFIX", "AnchorHistory",
+           "history_field", "publish_histories", "read_histories"]
