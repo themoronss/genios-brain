@@ -191,6 +191,10 @@ EDGE_TYPES: dict[str, str] = {
                           "the work, nor who is accountable for it.",
     "used":               "person -> product_usage_event. The tenant's own instrumentation saw this "
                           "person do it. NOT a seat, a licence or a buyer.",
+    # STEP-09 · written by `context/pipeline.process_event` for a connector the company brief names.
+    "introduced":         "person -> person. A connector the founder's company brief names "
+                          "introduced this person to us, in the thread its evidence names. NOT an "
+                          "endorsement, a relationship strength, or anything the person did.",
 }
 
 #: ⛔ RELATIONS THIS GRAPH MAY NOT ASSERT, AND WHY. Each of these is a conclusion wearing an edge's

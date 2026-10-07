@@ -12,8 +12,10 @@ The most authoritative material in the system was also the least connected.
 """
 from __future__ import annotations
 
+import ast
 import inspect
 import re
+import textwrap
 
 from genios_engine.capture.internal_knowledge import (ANCHORING_KINDS, INTERNAL_KINDS,
                                                       is_anchoring)
@@ -144,7 +146,13 @@ def test_network_edges_are_not_rerouted_to_the_document() -> None:
     policy document appear to have colleagues."""
     from genios_engine.context.pipeline import process_event
     source = inspect.getsource(process_event)
-    assert "_works_at(sender_email, sender_node)" in source
+    # BY THE AST, NOT THE TEXT (STEP-09): the call gained a keyword — `domain=` names a watched
+    # portal's organisation outright — and the property is the two positional arguments: the
+    # sender's affiliation is written on the sender's own node, never on a document's.
+    calls = [c for c in ast.walk(ast.parse(textwrap.dedent(source))) if isinstance(c, ast.Call)
+             and getattr(c.func, "id", None) == "_works_at"
+             and [getattr(a, "id", None) for a in c.args[:2]] == ["sender_email", "sender_node"]]
+    assert calls, "the sender's affiliation is no longer written on the sender's own node"
     assert "(sender_node, rnode)" in source
 
 

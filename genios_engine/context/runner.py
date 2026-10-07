@@ -25,6 +25,7 @@ from genios_engine.context.read_models import build_entity_360
 from genios_engine.context.structured import commit_structured, version_time
 from genios_engine.contracts.extraction import ExtractionResult
 from genios_engine.platform.crypto import decrypt
+from genios_engine.platform.company_brief import current as company_brief_now
 from genios_engine.platform.self_identity import identity_for
 
 _grade_log = logging.getLogger(__name__)
@@ -126,7 +127,7 @@ def graded_extraction(qes_output, source_text: str | None, event_id: str = "?"):
 
 
 def _process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozenset(),
-                 effective=None, self_identity=None):
+                 effective=None, self_identity=None, company_brief=None):
     """Route + process ONE event by the road it takes into memory (STEP-05,
     `context/memory_lanes`). Returns (outcome, affected_node_id | None). No road calls a model."""
     mapping = get_mapping(row.source, row.object_type)
@@ -141,7 +142,7 @@ def _process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozens
         raise ValueError(f"event {row.event_id} has no road into memory")
     if lane is Lane.METADATA:
         return _commit_metadata(row, org_id=org_id, store=store, internal_emails=internal_emails,
-                                self_identity=self_identity)
+                                self_identity=self_identity, company_brief=company_brief)
     raw = json.loads(decrypt(bytes(row.enc_content), crypto_key)) if row.enc_content else {}
     if lane is Lane.CALENDAR:                        # structured lane (B1, no LLM)
         fields = apply_mapping(mapping, raw)
@@ -210,11 +211,13 @@ def _process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozens
                         # `deal.status` is dead because the model was never told the name.
                         effective=effective, qualified_extraction=qualified,
                         # Who is us, with the domains the tenant declared (STEP-04).
-                        self_identity=self_identity)
+                        self_identity=self_identity,
+                        # Who the founder named — connectors, a watchlist (STEP-09).
+                        company_brief=company_brief)
     return res.outcome, res.primary_node
 
 
-def _commit_metadata(row, *, org_id, store, internal_emails, self_identity):
+def _commit_metadata(row, *, org_id, store, internal_emails, self_identity, company_brief=None):
     """An archive's road into memory (STEP-05): the ledger's own columns — who wrote to whom,
     when, in which thread — with no payload, no text and no model (`process_event`'s
     `metadata_only`). The pull never hands this road the payload, and nothing here asks for it."""
@@ -232,7 +235,8 @@ def _commit_metadata(row, *, org_id, store, internal_emails, self_identity):
                         qualified_extraction=Extraction(
                             relevance=0.0, noise_type="none", domains=[], entity_mentions=[],
                             fact_candidates=[], commitments=[], questions=[], observations=[]),
-                        self_identity=self_identity, metadata_only=True)
+                        self_identity=self_identity, metadata_only=True,
+                        company_brief=company_brief)
     return res.outcome, res.primary_node
 
 
@@ -565,12 +569,12 @@ def _record_convergence(store: GraphStore, org_id: str, *, before: str | None, a
 
 
 def _safe_process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozenset(),
-                      effective=None, self_identity=None):
+                      effective=None, self_identity=None, company_brief=None):
     """Isolation wrapper: ONE event's failure never aborts the batch (§L2 'drain every event')."""
     try:
         outcome, node = _process_one(row, org_id=org_id, store=store, llm=llm, crypto_key=crypto_key,
                                      internal_emails=internal_emails, effective=effective,
-                                     self_identity=self_identity)
+                                     self_identity=self_identity, company_brief=company_brief)
         return outcome, node, None
     except Exception as e:      # noqa: BLE001 — quarantine this event, keep the batch alive
         return "error", None, str(e)[:400]
@@ -634,6 +638,9 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
     # also knows the domains the tenant declared.
     self_identity = identity_for(store, org_id)
     internal_emails = self_identity.addresses
+    # Who the founder NAMED (STEP-09, `platform/company_brief`): connectors and a watchlist, once per
+    # drain like who is us. Empty for a tenant with no accepted line — and then nothing differs.
+    company_brief = company_brief_now(store, org_id)
     # The tenant's pack vocabulary, resolved ONCE per drain for the same reason. A tenant is
     # bound to several packs (sales + general) and the extractor must see the union: a field
     # named by one pack and missed because only the other was consulted is the same silent loss
@@ -650,7 +657,8 @@ def process_pending(*, org_id: str, store: GraphStore, llm: LLMClient | None,
                                             crypto_key=crypto_key,
                                             internal_emails=internal_emails,
                                             effective=effective,
-                                            self_identity=self_identity), rows))
+                                            self_identity=self_identity,
+                                            company_brief=company_brief), rows))
         for row, (outcome, node, err) in zip(rows, results):
             seen.add(row.event_id)
             out[outcome] += 1

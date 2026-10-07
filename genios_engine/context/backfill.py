@@ -35,8 +35,10 @@ from sqlalchemy import bindparam, text
 
 from genios_engine.context.correlation import correlate_event
 from genios_engine.context.identity import register_node_identity
+from genios_engine.context.introductions import connector_roles
 from genios_engine.context.pipeline import _normalise_deal_status, is_platform_sender
 from genios_engine.context.situations import refresh_situations
+from genios_engine.platform.company_brief import current as company_brief_now
 from genios_engine.platform.self_identity import identity_for
 
 # Events per transaction. Small enough that a failure costs little and a long backfill
@@ -106,6 +108,10 @@ def backfill_correlations(store, org_id: str, *, limit: int | None = None,
     alone, so a rebuild anchored situations on the founder (`orgs.email`, not a seat) and on our own
     company, both of which the live pipeline keeps out.
 
+    STEP-09: a connector the founder's company brief names is an introducer here exactly as in the
+    drain (`introductions.connector_roles`, the one answer both read). The rebuild passed no roles,
+    so every introduction filed under its person was filed again under the intro network.
+
     `rebuild` re-derives the WHOLE set instead of only correlating what is not yet grouped.
 
     It exists because the incremental path cannot correct an anchor. Correlation is
@@ -164,6 +170,9 @@ def backfill_correlations(store, org_id: str, *, limit: int | None = None,
                     row.node_type, row.canonical_key):
                 continue           # one of us, our company, or the product itself never anchors
             touched.setdefault(row.ev, {})[row.node_id] = row.node_type
+        # Read once, as the drain reads it once per pass — beside who is us.
+        roles = connector_roles(conn, org_id=org_id,
+                                company_brief=company_brief_now(store, org_id))
 
     correlated = 0
     for start in range(0, len(events), _BATCH):
@@ -176,7 +185,8 @@ def backfill_correlations(store, org_id: str, *, limit: int | None = None,
                                    occurred_at=event.occurred_at,
                                    thread_id=event.parent_object_id,
                                    node_types=nodes,
-                                   domain_hints=event.domain_hints):
+                                   domain_hints=event.domain_hints,
+                                   node_roles=roles):
                     correlated += 1
     return {"events_seen": len(events), "events_correlated": correlated}
 

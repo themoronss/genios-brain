@@ -541,6 +541,26 @@ def _lift_roles(conn, *, org_id: str, node_roles: dict[str, str]) -> dict[str, s
     return lifted
 
 
+def _the_parties_files(conn, *, org_id: str, correlation_ids: list[str],
+                       node_ids: set[str]) -> list[str]:
+    """In a thread that holds SEVERAL files, a reply joins only the files of the parties in it.
+
+    STEP-09. One introduction of two people opens two files on one thread — Rahul's and Farah's —
+    and thread-first inheritance then filed Farah's answer under Rahul too. So when the thread's
+    files are more than one, the reply joins those anchored on a node it touched; touching none of
+    them (a bare "thanks" to the connector) it keeps every one, as before — leaving a message out of
+    its own conversation is worse than filing it twice. One file: thread-first, untouched.
+    """
+    if len(correlation_ids) < 2:
+        return correlation_ids
+    rows = conn.execute(text(
+        "select correlation_id, anchor_node_id from context_correlations "
+        " where org_id = :o and correlation_id = any(:ids)"),
+        {"o": org_id, "ids": list(correlation_ids)}).fetchall()
+    theirs = sorted(r.correlation_id for r in rows if r.anchor_node_id in node_ids)
+    return theirs or correlation_ids
+
+
 def correlate_event(conn, *, org_id: str, event_id: str, occurred_at: datetime | None,
                     thread_id: str | None, node_types: dict[str, str],
                     domain_hints: list | None,
@@ -551,17 +571,19 @@ def correlate_event(conn, *, org_id: str, event_id: str, occurred_at: datetime |
     continues nothing belongs to no situation, and saying so is more useful than
     inventing a group about no one.
     """
+    # People → their company → that account's deal. Order matters: a person is lifted to the
+    # company first, so a message naming only a contact still reaches the deal. The domain is
+    # resolved here as well as inside `plan_correlation`; `resolve_domain` is pure and cheap,
+    # and threading it out would put a second source of truth next to the first.
+    lifted = lift_companies_to_their_deals(
+        conn, org_id=org_id, domain=resolve_domain(domain_hints),
+        node_types=lift_people_to_their_companies(conn, org_id=org_id, node_types=node_types))
     plan = plan_correlation(
-        thread_correlation_ids=thread_correlations(
-            conn, org_id=org_id, thread_id=thread_id, exclude_event_id=event_id),
-        # People → their company → that account's deal. Order matters: a person is lifted to the
-        # company first, so a message naming only a contact still reaches the deal. The domain is
-        # resolved here as well as inside `plan_correlation`; `resolve_domain` is pure and cheap,
-        # and threading it out would put a second source of truth next to the first.
-        node_types=lift_companies_to_their_deals(
-            conn, org_id=org_id, domain=resolve_domain(domain_hints),
-            node_types=lift_people_to_their_companies(conn, org_id=org_id,
-                                                      node_types=node_types)),
+        thread_correlation_ids=_the_parties_files(
+            conn, org_id=org_id, node_ids=set(lifted),
+            correlation_ids=thread_correlations(
+                conn, org_id=org_id, thread_id=thread_id, exclude_event_id=event_id)),
+        node_types=lifted,
         # A person's role carries to the company they were lifted to: an introduction bot's
         # company is the introduction service, and it must not anchor either.
         node_roles=_lift_roles(conn, org_id=org_id, node_roles=node_roles or {}),

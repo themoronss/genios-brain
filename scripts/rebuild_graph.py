@@ -28,6 +28,7 @@ from sqlalchemy import create_engine, text
 
 from genios_engine.capture.structured.registry import get_mapping
 from genios_engine.context.runner import _safe_process_one
+from genios_engine.platform.company_brief import current as company_brief_now
 from genios_engine.platform.self_identity import identity_for
 from genios_engine.platform.config import get_settings
 from genios_engine.platform.wiring import make_graph_store, make_llm_client
@@ -140,6 +141,8 @@ def main() -> None:
         # the situations the live drain keeps out.
         us = identity_for(store, org)
         internal = us.addresses
+        # Who the founder named — connectors, a watchlist — read once, as the drain does (STEP-09).
+        brief = company_brief_now(store, org)
         print(f"\n1) BACKUP → *_bak_{ts} (org rows only)")
         for tbl in _GRAPH_TABLES:
             c.execute(text(f"create table if not exists {tbl}_bak_{ts} as "
@@ -161,7 +164,7 @@ def main() -> None:
     def _one(r):
         outcome, _node, _err = _safe_process_one(
             r, org_id=org, store=store, llm=llm, crypto_key=s.crypto_key, internal_emails=internal,
-            self_identity=us)
+            self_identity=us, company_brief=brief)
         return outcome
 
     with ThreadPoolExecutor(max_workers=workers) as ex:
