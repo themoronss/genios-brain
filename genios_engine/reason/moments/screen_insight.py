@@ -6,10 +6,12 @@ screen after the person has stayed on a chat / email / document for a few second
 judges it, and its answer is used four ways — follow-up, memory, brief and (rarely) a popup:
 
     daily cap          per seat per UTC day in `rate_counters` (`screen_insight_daily_cap`);
-    inputs             who the manager is (seat email + its person's name), the seat's local
-                       date/time + the next 14 days, the manager's meetings in the next 2 days,
-                       open follow-ups about this thread or the people on screen, graph facts
-                       about known participants, the seat's last ≤ 5 "not useful" notes;
+    inputs             who the manager is (seat email + its person's name), the company brief
+                       the founder accepted (STEP-07; nothing at all when there is none), the
+                       seat's local date/time + the next 14 days, the manager's meetings in the
+                       next 2 days, open follow-ups about this thread or the people on screen,
+                       graph facts about known participants, the seat's last ≤ 5 "not useful"
+                       notes;
     JSON v4            {work, remember, items[0..3]{kind, text, who, due, quote, confidence},
                        adds, note} — `adds` is a CANDIDATE: `verify_adds` checks it against the
                        seat's open items and meetings, and an unverifiable one shows no popup;
@@ -348,13 +350,20 @@ SCREEN: Vendor B: lead time for this order is 45 days from the PO date
 
 #: THE PER-SCREEN HALF — everything that changes. It must stay AFTER the rulebook: one byte
 #: moving into the prefix invalidates the cache for every seat.
+#:
+#: `{company_brief}` is the tenant's company brief (`speedrun008/YC-II W27/` STEP-07 §8.3): its own
+#: paragraph after who the manager is and when, before anything about this screen. It lives HERE and
+#: never in the rulebook, because the rulebook is the one prefix every seat's calls read from the
+#: cache for an hour: a brief inside it would split that prefix into one per tenant, and every
+#: change to a brief would pay to write it again. Empty when the founder has accepted no line, and
+#: this half is then byte for byte what it was.
 _TASK = """
 --- THIS SCREEN ---
 App: {app}
 The manager whose screen this is: {me}
 About the manager (GeniOS's weekly notes; may be empty): {profile}
 For the manager it is now {now_local}.
-This chat so far (GeniOS's earlier summary; may be empty):
+{company_brief}This chat so far (GeniOS's earlier summary; may be empty):
 {summary}
 Open items GeniOS already holds for the manager (may be empty):
 {open_items}
@@ -1028,8 +1037,14 @@ def build_prompt(*, app: str | None, screen: str, facts: list[dict], now_local: 
                  me: list[str] | None = None,
                  open_items: list[dict] | None = None, meetings: list[dict] | None = None,
                  thread_key: str | None = None, tz_name: str | None = None,
-                 summary: str | None = None, profile: str | None = None) -> str:
+                 summary: str | None = None, profile: str | None = None,
+                 company_brief: str = "") -> str:
+    """The rulebook, then this screen. `company_brief` is the tenant's
+    `CompanyBrief.prompt_block()` (STEP-07): a paragraph of the per-screen half, never of the
+    cached rulebook; "" — no accepted line — leaves the prompt exactly as it was."""
+    brief = (company_brief or "").strip()
     return _RULEBOOK + _TASK.format(
+        company_brief=f"\n{brief}\n\n" if brief else "",
         profile=" ".join((profile or "").split())[:600] or "(none)",
         summary=" ".join((summary or "").split())[:500] or "(none)",
         app=app or "an app", me=", ".join(m for m in (me or []) if m) or "(unknown)",
@@ -1062,7 +1077,7 @@ def llm_insight(engine, *, org_id: str, app: str | None, screen: str, facts: lis
                 me: list[str] | None = None, open_items: list[dict] | None = None,
                 meetings: list[dict] | None = None, thread_key: str | None = None,
                 tz_name: str | None = None, summary: str | None = None,
-                profile: str | None = None) -> dict | None:
+                profile: str | None = None, company_brief: str = "") -> dict | None:
     """One Haiku call → the parsed JSON, or None (no model, time short, failure).
 
     It goes through `context/llm/client.LLMClient`, not a raw `Anthropic()`, for three reasons:
@@ -1082,7 +1097,7 @@ def llm_insight(engine, *, org_id: str, app: str | None, screen: str, facts: lis
                           dates=dates,
                           not_useful=not_useful, useful=useful, me=me, open_items=open_items,
                           meetings=meetings, thread_key=thread_key, tz_name=tz_name,
-                          summary=summary, profile=profile)
+                          summary=summary, profile=profile, company_brief=company_brief)
     res = _client(settings.anthropic_api_key, model).call(
         prompt, max_tokens=MAX_OUTPUT_TOKENS, cache_prefix_chars=RULEBOOK_CHARS,
         cache_ttl=CACHE_TTL, timeout_s=max(0.5, remaining), max_retries=0)
@@ -1117,7 +1132,7 @@ def _compute(engine, *, org_id: str, email: str | None, app: str | None, partici
              open_items: list[dict] | None = None, meetings: list[dict] | None = None,
              thread_key: str | None = None, tz_name: str | None = None,
              today: date | None = None, summary: str | None = None,
-             profile: str | None = None) -> dict | None:
+             profile: str | None = None, company_brief: str = "") -> dict | None:
     sids: list[str] = []
     facts: list[dict] = []
     try:
@@ -1138,7 +1153,8 @@ def _compute(engine, *, org_id: str, email: str | None, app: str | None, partici
                       now_local=now_local, dates=dates, not_useful=not_useful,
                       useful=useful, me=me,
                       open_items=open_items, meetings=meetings, thread_key=thread_key,
-                      tz_name=tz_name, summary=summary, profile=profile)
+                      tz_name=tz_name, summary=summary, profile=profile,
+                      company_brief=company_brief)
     if raw is None:
         return None
     judged = judge(raw, screen, me=me, today=today, said=said, meetings=meetings,
@@ -1155,9 +1171,11 @@ def insight(engine, *, org_id: str, email: str | None, app: str | None, particip
             open_items: list[dict] | None = None, meetings: list[dict] | None = None,
             thread_key: str | None = None, tz_name: str | None = None,
             today: date | None = None, summary: str | None = None,
-            profile: str | None = None) -> dict | None:
+            profile: str | None = None, company_brief: str = "") -> dict | None:
     """`{"subject_ids", "work", "memory", "judged"}` — `judged` is `judge()`'s answer, `work` /
-    `memory` the model's judgements or None — or None (no answer: no model, time ran out)."""
+    `memory` the model's judgements or None — or None (no answer: no model, time ran out).
+
+    `company_brief` is the tenant's brief block, read once by the caller (STEP-07)."""
     deadline = time.monotonic() + timeout_s
     fut = _POOL.submit(_compute, engine, org_id=org_id, email=email, app=app,
                        participants=participants, entities=entities, screen=screen,
@@ -1165,7 +1183,8 @@ def insight(engine, *, org_id: str, email: str | None, app: str | None, particip
                        not_useful=not_useful,
                        useful=useful, said=said, me=me,
                        open_items=open_items, meetings=meetings, thread_key=thread_key,
-                       tz_name=tz_name, today=today, summary=summary, profile=profile)
+                       tz_name=tz_name, today=today, summary=summary, profile=profile,
+                       company_brief=company_brief)
     try:
         return fut.result(timeout=max(0.0, deadline - time.monotonic()))
     except FutureTimeout:
