@@ -411,6 +411,51 @@ def check_every_kept_event_entered_memory(conn, org: str) -> Check:
                + ([f"calendar events with no meeting node: {meetings}"] if meetings else []))
 
 
+def check_every_situation_and_card_says_how_it_ended(conn, org: str) -> Check:
+    """⛔ STEP-06 (`yc2_w27_s06/M24.C4`). A silent loss looks exactly like "there was nothing there":
+    nine of twelve places that expired a card wrote nothing, and 126 of the golden set's 227 active
+    situations had no record of how they ended. Every situation now names one end
+    (`reason/situation_end`) and every expiry its reason (`platform/card_lifecycle`). This check
+    fails on the two things that are wrong whenever they are non-zero — a live situation nothing
+    explains, a card created since STEP-06 that expired with no event (the receipt's own SQL) — and
+    names, without failing, every live situation type with no open card, with the histogram of its
+    ends: a type can be right to stay silent (`06` D25), and the histogram says which kind of silent.
+    """
+    from collections import Counter
+
+    from genios_engine.platform.receipts import _EXPIRED_WITHOUT_A_REASON_SQL
+    from genios_engine.reason.situation_end import CARDED, NO_CORPUS, NOT_LIVE, UNRECORDED
+    from genios_engine.reason.situation_end import situation_ends
+
+    name = "every situation and every card says how it ended"
+    ends = situation_ends(conn, org)
+    unrecorded = [e.situation_id for e in ends if e.end == UNRECORDED]
+    silent_cards = _scalar(conn, _EXPIRED_WITHOUT_A_REASON_SQL() + " and c.org_id = :o", o=org)
+    by_type: dict[str, Counter] = {}
+    for e in ends:
+        if e.end not in (NO_CORPUS, NOT_LIVE):
+            by_type.setdefault(f"{e.domain}:{e.situation_type}", Counter())[e.end] += 1
+    silent_types = {kind: counts for kind, counts in sorted(by_type.items())
+                    if counts.get(CARDED, 0) == 0}
+    return Check(
+        name=name, ok=not unrecorded and silent_cards == 0,
+        measured=(f"{len(unrecorded)} live situation(s) with no recorded end, {silent_cards} "
+                  f"card(s) expired with no reason; {len(silent_types)} live situation type(s) "
+                  "with no open card"),
+        expected="0 and 0 — every situation and every expired card says how it ended (STEP-06)",
+        fix=("an unrecorded situation — `scripts/situation_ends.py --org … --verbose` names it, and "
+             "the compiled pass's log line (`outcome_write_failed`, `no_anchor`) says why nothing "
+             "was noted; an expiry with no reason — something set a card `expired` outside "
+             "`platform/card_lifecycle` (the guard `tests/platform/test_one_way_to_expire_a_card.py` "
+             "should have refused it)"),
+        detail=([f"unrecorded: {', '.join(unrecorded[:10])}"
+                 + (f" (+{len(unrecorded) - 10} more)" if len(unrecorded) > 10 else "")]
+                if unrecorded else [])
+               + [f"no open card — {kind}: "
+                  + ", ".join(f"{end} {n}" for end, n in sorted(counts.items()))
+                  for kind, counts in silent_types.items()])
+
+
 CHECKS = (
     check_every_emitted_event_is_routed,
     check_parked_errors_are_readable,
@@ -421,6 +466,7 @@ CHECKS = (
     check_nothing_was_deleted_at_the_gate,
     check_we_are_never_the_subject,
     check_every_kept_event_entered_memory,
+    check_every_situation_and_card_says_how_it_ended,
 )
 
 
