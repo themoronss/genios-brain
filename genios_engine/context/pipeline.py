@@ -37,6 +37,7 @@ from genios_engine.context.introductions import (assign_names, connector_roles, 
                                                  named_in)
 from genios_engine.context.canon import register_canon_node, resolve_canon_mention
 from genios_engine.context.documents import register_document_node, resolve_owner_node
+from genios_engine.context.delivery import record_delivery_failure
 from genios_engine.context.identity import (observe_company_name, observe_person_name,
                                             resolve_company_mention, resolve_person_name)
 from genios_engine.context.llm.client import LLMClient
@@ -2027,6 +2028,14 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
                                      event_id=event_id, node=speaker_node,
                                      counterparty=sender_norm, occurred_at=occurred_at,
                                      source=source)
+
+        # STEP-10 · A BOUNCE IS ON THE FILE (`context/delivery`, `06` D38): a delivery report that
+        # says FAILED is written on the address that failed and on the original's thread.
+        obs_n, fact_n = record_delivery_failure(
+            store, conn, org_id=org_id, event_id=event_id, source=source,
+            sender_email=sender_email, canon_meta=canon_meta, thread_id=thread_id,
+            occurred_at=occurred_at, ours=_ours, internal_emails=internal_set,
+            metadata_only=metadata_only, counted=(obs_n, fact_n))
 
         node_roles: dict[str, str] = {}
         # A machine sender is plumbing whatever the model says, so seed it deterministically —
