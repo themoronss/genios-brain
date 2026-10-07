@@ -27,14 +27,28 @@ the other, and conflating them is how *"we can see email"* becomes *"we read the
 
 PURE-ish: no clock. `since` and `until` are parameters, so a caller pins the window and a test can
 pin the boundary rather than race the wall clock.
+
+STEP-10 · PER MAILBOX, AND NEVER MORE READ THAN EXISTS (`yc2_w27_s10 · M29.C5.L-logic.V1.U02`).
+Two things were wrong with the read above, and both showed on the golden set. It was per SOURCE —
+two Gmail mailboxes were one window, over an interval the caller chose — when the question a file
+asks is about ONE mailbox over the window that mailbox was set to sweep. And its measure summed what
+every run read against the LARGEST total any single run had been told: right for the rounds of one
+backfill, which each re-count the same query, wrong for an incremental sweep, whose total counts only
+its own new mail — so F14's two sweeps, 1 of 1 and then 3 of 3, said *"read 4 of about 3"*. Now each
+run is measured against its own total (`_measure`), and `coverage_for_connection` reads one mailbox
+— one `connections` row — over its own `backfill_days`, as of an instant.
 """
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 
 from sqlalchemy import text
+
+from genios_engine.capture.connectors.backfill import backfill_window_for
+from genios_engine.contracts.connection import Connection
 
 
 class SyncHealth(str, Enum):
@@ -91,8 +105,9 @@ class WindowCoverage:
     runs: int
     #: What we actually landed across those runs.
     indexed: int
-    #: What the provider said exists. ⛔ `None` means the provider gave us NO COUNT — not zero, and
-    #: not everything.
+    #: What the provider said exists — each run's own count, summed (`_measure`), and never below
+    #: what was read. ⛔ `None` means we were given NO COUNT for what was read — not zero, and not
+    #: everything.
     claimed_total: int | None
     #: Gmail's `resultSizeEstimate` is an estimate and Google named it that. An estimate stored
     #: without its label becomes a fact at the first reader.
@@ -103,6 +118,13 @@ class WindowCoverage:
     #: The first error text recorded in the window, when there was one. Kept because "it failed"
     #: without "how" sends an operator to the wrong place.
     error: str | None = None
+    #: STEP-10 · set when this is ONE MAILBOX's window (`coverage_for_connection`): its
+    #: `connections` row, the address that row names (`external_account_id`, when written and an
+    #: address — Composio does not report it today), and the window it is set to sweep, in days
+    #: (`capture_scope.backfill_days`, default 60). `None` window days: the setting cannot be read.
+    connection_id: str | None = None
+    address: str | None = None
+    window_days: int | None = None
 
     @property
     def completeness_bp(self) -> int | None:
@@ -182,30 +204,141 @@ def coverage_for_window(conn, *, org_id: str, source: str,
     """
     try:
         rows = conn.execute(text(
-            "select scanned, claimed_total, claimed_is_estimate, cursor_exhausted, "
-            "       page_budget_spent, error "
+            "select connection_id, mode, scanned, claimed_total, claimed_is_estimate, "
+            "       cursor_exhausted, page_budget_spent, error "
             "  from l1_sync_runs "
             " where org_id = :o and source = :s "
             "   and finished_at >= :since and finished_at < :until"),
             {"o": org_id, "s": source, "since": since, "until": until}).fetchall()
     except Exception:                       # noqa: BLE001 — absent table, absent columns, no rows
         rows = []
+    return _window_of(rows, source=source, since=since, until=until)
 
-    indexed = sum(int(r.scanned or 0) for r in rows)
-    # THE DENOMINATOR IS A MAX, NOT A SUM. Consecutive sweeps of one source each report the
-    # provider's total for the same corpus; adding them would multiply the mailbox by the number of
-    # times we looked at it. `None` when no run supplied one — and `None` is not zero.
-    claims = [int(r.claimed_total) for r in rows if r.claimed_total is not None]
-    claimed_total = max(claims) if claims else None
-    # An estimate anywhere makes the whole figure an estimate. The label may only ever widen.
-    is_estimate = any(bool(r.claimed_is_estimate) for r in rows)
+
+def coverage_for_connection(conn, *, org_id: str, connection_id: str,
+                            now: datetime) -> WindowCoverage | None:
+    """STEP-10 · ONE MAILBOX, over the window it is set to sweep, as of `now`.
+
+    One mailbox is one `connections` row, and only this tenant's: another tenant's id reads as no
+    connection, never as theirs. Its window is the row's own `backfill_days`
+    (`connectors/backfill.backfill_window_for`, sixty days unless an admin set it), measured back
+    from `now`. The runs counted are this connection's that finished after the window opened and
+    no later than `now` — AS OF an instant, so a replay asked at its case's instant counts the sweep
+    that finished at it and none that came after.
+
+    ⛔ A WINDOW SETTING THAT CANNOT BE READ IS AN UNKNOWN WINDOW. The connector refuses such a
+    setting loudly at construction; a coverage read that fell back to sixty days would vouch for a
+    window nobody configured. No run is counted and the health is `UNKNOWN`.
+
+    `None` when the tenant has no such connection, or the row cannot be read.
+    """
+    try:
+        row = conn.execute(text(
+            "select source_type, external_account_id, capture_scope "
+            "  from connections where org_id = :o and connection_id = :c"),
+            {"o": org_id, "c": connection_id}).first()
+    except Exception:                       # noqa: BLE001 — absent table: no mailbox is known
+        return None
+    if row is None:
+        return None
+    window = _backfill_window(row, org_id=org_id, connection_id=connection_id)
+    mailbox = dict(connection_id=connection_id, address=_address(row.external_account_id),
+                   window_days=window.days if window is not None else None)
+    if window is None:
+        return _window_of([], source=row.source_type, since=None, until=now, **mailbox)
+    since = window.since(now)
+    try:
+        rows = conn.execute(text(
+            "select mode, scanned, claimed_total, claimed_is_estimate, "
+            "       cursor_exhausted, page_budget_spent, error "
+            "  from l1_sync_runs "
+            " where org_id = :o and connection_id = :c "
+            "   and finished_at > :since and finished_at <= :now"),
+            {"o": org_id, "c": connection_id, "since": since, "now": now}).fetchall()
+    except Exception:                       # noqa: BLE001 — absent table: no run vouches for it
+        rows = []
+    return _window_of(rows, source=row.source_type, since=since, until=now, **mailbox)
+
+
+def _backfill_window(row, *, org_id: str, connection_id: str):
+    """The window this connection's row is set to sweep, or None when the setting cannot be read.
+
+    Through `backfill_window_for`, the one reader of the setting, so this cannot drift from what
+    the connector actually sweeps. `capture_scope` is read straight off the row: the only thing a
+    store adds is decrypting secret fields, and `backfill_days` is not one.
+    """
+    scope = row.capture_scope
+    try:
+        if isinstance(scope, str):          # a driver that hands jsonb back as text
+            scope = json.loads(scope)
+        return backfill_window_for(Connection(connection_id=connection_id, org_id=org_id,
+                                              source_type=row.source_type,
+                                              config=dict(scope or {})))
+    except (TypeError, ValueError):         # a typo'd setting, a scope that is not an object
+        return None
+
+
+def _address(value) -> str | None:
+    """The row's `external_account_id` as an address — trimmed, lowercase, the way every address of
+    ours is compared — or None: unwritten, or not an address at all (an account id is not one)."""
+    address = str(value or "").strip().lower()
+    return address if "@" in address else None
+
+
+def _window_of(rows, *, source: str, since: datetime | None, until: datetime | None,
+               **mailbox) -> WindowCoverage:
+    """A window's runs, as one `WindowCoverage` — the per-source read and the per-mailbox read
+    measure the same way."""
+    indexed, claimed_total, is_estimate = _measure(rows)
     # EVERY run must have finished for the window to be finished. `None` counts as not exhausted:
     # a run written before 0178 cannot vouch for itself, and treating silence as completion is the
     # fabricated 100% in a different costume.
     exhausted = bool(rows) and all(bool(r.cursor_exhausted) for r in rows)
     error = next((r.error for r in rows if r.error), None)
-
     return WindowCoverage(
         source=source, window_start=since, window_end=until, runs=len(rows),
         indexed=indexed, claimed_total=claimed_total, is_estimate=is_estimate,
-        cursor_exhausted=exhausted, health=_health_of(list(rows), exhausted, indexed), error=error)
+        cursor_exhausted=exhausted, health=_health_of(list(rows), exhausted, indexed), error=error,
+        **mailbox)
+
+
+def _measure(rows) -> tuple[int, int | None, bool]:
+    """`(indexed, claimed_total, is_estimate)` — STEP-10: every run against its OWN count.
+
+    ⛔ A RUN'S COUNT IS OF ITS OWN QUERY. The rounds of one backfill each re-count the SAME query —
+    the connection's whole window — so their reads add up and their counts do not: one corpus,
+    its largest count (adding them would multiply the mailbox by the rounds it took). Every other
+    run — an incremental sweep, a recovery re-scan — was told how much matched ITS query, its own
+    slice, so its count adds to the others'. Taking the largest of those as the window's total
+    is what said *"read 4 of about 3"* over F14's two sweeps, 1 of 1 and then 3 of 3. A run that
+    does not say its mode is read as a backfill round: the rule every row was read by before.
+
+    ⛔ NEVER MORE READ THAN COUNTED. A count below what was read from it is no longer the
+    provider's number — an estimate that ran low, or a message and its attachment landing as two
+    objects against one counted message — so it is raised to what was read, and the figure is
+    an estimate. A slice that read mail and was given no count, or a count of none, leaves the
+    WINDOW without a total: its mail would sit in the numerator over a total that never counted
+    it. A slice that read nothing adds nothing either way. `None` is not zero, throughout.
+    """
+    corpora: dict[tuple, list] = {}
+    for i, r in enumerate(rows):
+        mode = getattr(r, "mode", None)
+        key = (("round", getattr(r, "connection_id", None)) if mode in (None, "backfill")
+               else ("run", i))
+        corpus = corpora.setdefault(key, [0, None])          # [read, count]
+        corpus[0] += int(r.scanned or 0)
+        if r.claimed_total is not None:
+            corpus[1] = max(int(r.claimed_total), corpus[1] or 0)
+    indexed = sum(read for read, _ in corpora.values())
+    # An estimate anywhere makes the whole figure an estimate. The label may only ever widen.
+    is_estimate = any(bool(r.claimed_is_estimate) for r in rows)
+    total, counted = 0, False
+    for read, count in corpora.values():
+        if read and not count:
+            return indexed, None, is_estimate
+        if count is None:
+            continue
+        counted = True
+        is_estimate = is_estimate or read > count
+        total += max(count, read)
+    return indexed, (total if counted else None), is_estimate
