@@ -132,12 +132,35 @@ def drain_parked(engine, *, org_id: str | None = None, limit: int = 200,
         # confident the gate happened to be — and treating drops as out of scope is what made a
         # "we improved the filter" claim unverifiable against the mail it had already deleted.
         # ARCHIVED since STEP-03 (`archive` in the trace); DROPPED before it (`drop`) — both read.
+        # ⛔ STEP-06 (`yc2_w27_s06 · M24.C5.L-data.V1.U01`). The limit used to cover every pending
+        # park, and the rows another drain owns (refetch, recapture, re-extraction) were counted
+        # and skipped where they stood: 200 of them older than a re-admittable row starved it every
+        # tick. The limited read takes only what THIS drain re-admits; the rest are counted below,
+        # with no limit, so the report still says what every class holds.
+        for r in c.execute(text(
+                "select pe.reason_code, count(*) as n, "
+                "       count(*) filter (where pe.created_at < :stale_before) as stale "
+                "from parked_events pe "
+                f"where pe.status='pending'{where_org} and not (pe.reason_code = any(:judged)) "
+                "group by pe.reason_code"),
+                {**params, "judged": sorted(RE_ADJUDICABLE),
+                 "stale_before": now - STALE_AFTER}).fetchall():
+            out["examined"] += r.n
+            out["stale"] += r.stale
+            out["by_reason"].setdefault(r.reason_code, {"seen": 0, "reinjected": 0})["seen"] += r.n
+            if r.reason_code in NEEDS_REFETCH:
+                out["needs_refetch"] += r.n
+            elif r.reason_code in NEEDS_RECAPTURE:
+                out["needs_recapture"] += r.n
+            elif r.reason_code in NEEDS_REEXTRACTION:
+                out["needs_reextraction"] += r.n
+
         rows = c.execute(text(
             "select pe.event_id, pe.org_id, pe.reason_code, pe.created_at, "
             "       (rp.event_id is not null) as has_payload "
             "from parked_events pe "
             "left join raw_payloads rp on rp.event_id = pe.event_id and rp.org_id = pe.org_id "
-            f"where pe.status='pending'{where_org} "
+            f"where pe.status='pending'{where_org} and pe.reason_code = any(:judged) "
             "union all "
             "select se.event_id, se.org_id, et.reason_code, se.captured_at, true "
             "from source_events se "
