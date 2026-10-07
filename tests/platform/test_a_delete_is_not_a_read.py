@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_008, (
+    assert r["statements"] == 3_010, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -346,6 +346,9 @@ def test_the_statement_count_did_NOT_move():
     # wrote to us and met us — one SELECT, a literal (8 → 9). The rest of STEP-10 so far adds none:
     # `context/waiting` 3 → 3 (the timeline's join and the reply time reuse its statements),
     # `context/correlation_history` 3 → 3, `contracts/measured` 0. Measured per file against 567049fc.
+    # ⛔ MOVED 3,008 → 3,010 by yc2_w27_s10/M29.C2.L-logic.V2.U01: `context/workstream_timeline` —
+    # a file's touches (its correlations' mail and meetings) and which of its meetings the calendar
+    # now says are cancelled: two SELECTs, each a literal (0 → 2).
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

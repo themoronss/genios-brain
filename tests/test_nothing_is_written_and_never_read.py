@@ -198,15 +198,18 @@ KNOWN_UNREAD: dict[str, str] = {
         "`…_basis` by `context/waiting.compute_waiting` since M29.C1.L-logic.V1.U02, so that no "
         "reader can call one reply a habit — the golden set's only two normals each rested on ONE "
         "reply counted twice. Nothing reads the n yet: the cadence's readers compare days only. "
-        "MOVES WHEN: the file's read model (`context/workstream_timeline.py`, "
-        "M29.C2.L-logic.V2.U01) wraps the cadence in a `Measured`, and this moves to MUST_BE_READ.",
+        "MOVES WHEN: the file route (`GET /v1/workstreams/{file_id}`, "
+        "M29.C2.L-interface.V3.U02) serves the cadence as a `Measured` beside the file's timeline "
+        "(`context/workstream_timeline`, which holds touches and gaps, not reply times), and this "
+        "moves to MUST_BE_READ.",
     "party.our_reply_days":
         "Your reply time with one counterparty — from a mail they wrote to our next mail to them, "
         "the median of at least `NORMAL_AT` answers, `party.our_reply_n` beside it — written by "
         "`context/waiting.compute_waiting` (M29.C1.L-logic.V2.U03). It existed nowhere before, and "
         "`outreach_situations` uses a fixed two days for a reply owed for want of it. Nothing reads "
-        "it yet. MOVES WHEN: the file's read model (M29.C2.L-logic.V2.U01) shows it beside their "
-        "reply time, with its n, and this moves to MUST_BE_READ.",
+        "it yet. MOVES WHEN: the file route (`GET /v1/workstreams/{file_id}`, "
+        "M29.C2.L-interface.V3.U02) shows it beside their reply time, with its n, and this moves "
+        "to MUST_BE_READ.",
     "derived.our_reply_days":
         "Your reply time across every counterparty, pooled on the tenant node at `NORMAL_AT` "
         "answers or more with `derived.our_reply_n` beside it, retired below — written by "
