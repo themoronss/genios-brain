@@ -341,19 +341,26 @@ class Interpretation:
                             "it cannot raise confidence and it decides nothing")}
 
 
-def _prompt(flag: AmbiguityFlag) -> str:
+def _prompt(flag: AmbiguityFlag, *, company_brief: str = "") -> str:
     """The whole prompt. Closed enum in, one JSON object out, and no room to volunteer a verdict.
 
     Note what is absent: the situation, the candidate plays, the score, the decision. The model is
     shown ONE sentence and asked what stance it takes — it cannot recommend, rank or prioritise
     because it is not told there is anything to recommend, rank or prioritise about.
+
+    The one addition is the company brief (STEP-07, `speedrun008/YC-II W27/` §8.3), when the tenant
+    has one: who the sentence was written to, as its own paragraph after the opening and before the
+    sentence. It says who we are and what we are doing, and nothing about this run — no situation,
+    play, score or decision. Without a brief the prompt is byte for byte what it was.
     """
     options = "\n".join(f"  {name} — {CLASSIFICATION_MEANINGS[name]}" for name in CLASSIFICATIONS)
+    company_brief_paragraph = company_brief.rstrip("\n") + "\n\n" if company_brief else ""
     return (
         "You are reading ONE sentence written by a business counterparty and classifying the "
         "stance it takes. You are not advising anyone and you are not assessing importance, "
         "urgency or risk.\n\n"
-        f"FIELD: {flag.field}\n"
+        + company_brief_paragraph
+        + f"FIELD: {flag.field}\n"
         f"TEXT: {flag.span}\n\n"
         "Choose exactly one classification:\n"
         f"{options}\n\n"
@@ -385,18 +392,30 @@ def _parse(payload: Mapping[str, Any]) -> Mapping[str, Any]:
 
 
 def interpret(flag: AmbiguityFlag, *, org_id: str, gate: Any = None, cache: Any = None,
-              subject_ref: str | None = None) -> Interpretation | None:
+              subject_ref: str | None = None, company_brief: Any = None) -> Interpretation | None:
     """One flag through the gate. `None` when no reading was obtained, for ANY reason.
 
     None rather than a neutral classification, deliberately: a default reading would be a fact the
     model never stated, injected into the evidence layer where the formula would weigh it. The
     fallback for an interpretation is silence — the run proceeds exactly as it would have without
     R-1, which is also why the doctrine test passes with this site force-failed.
+
+    `company_brief` is the tenant's `CompanyBrief` (STEP-07), or None. Its block is shown before
+    the sentence, and its version joins the seed the R-site cache is keyed on — the cache keys on
+    the seed, not the prompt, and would otherwise answer a changed brief with the old reading
+    (STEP-07 §8.2). Only a non-empty version joins it, so every reading made without a brief keeps
+    the key it always had.
     """
+    seed = {"digest": flag.digest, "kind": flag.kind}
+    block = company_brief.prompt_block() if company_brief is not None else ""
+    version = company_brief.version if company_brief is not None else ""
+    if version:
+        seed["company_brief"] = version
     result = run_site(
-        site=SITE_R1, org_id=org_id, seed={"digest": flag.digest, "kind": flag.kind},
+        site=SITE_R1, org_id=org_id, seed=seed,
         precondition=True,
-        build_prompt=lambda feedback: with_correction(_prompt(flag), feedback), parse=_parse,
+        build_prompt=lambda feedback: with_correction(_prompt(flag, company_brief=block),
+                                                      feedback), parse=_parse,
         fallback=dict,                    # silence: no reading, no fact, no evidence
         gate=gate, cache=cache, subject_ref=subject_ref)
     if result.fell_back or not result.payload:
@@ -504,18 +523,34 @@ class AmbiguityInterpreter:
     #: answered as "no model": the run proceeds uninterpreted rather than unpermitted.
     gate: Any = None
     cache: Any = None
+    #: The tenant's engine, which the company brief (STEP-07) is read through. `None` means no brief:
+    #: every prompt and every cache key is then exactly what it was before STEP-07.
+    engine: Any = None
 
     def readings(self, request: ReasoningRequest, *,
                  plan: Any = None) -> tuple[Interpretation, ...]:
         flags = find_ambiguities(request, plan=plan)
+        # STEP-07 · the company brief, read once for this run's flags — and only when there is a
+        # flag, so a situation with nothing ambiguous to read still costs nothing at all.
+        company_brief = self._company_brief() if flags else None
         out: list[Interpretation] = []
         for flag in flags:
             reading = interpret(
                 flag, org_id=self.org_id, gate=self.gate, cache=self.cache,
-                subject_ref=f"node:{request.context.root_entity_id}")
+                subject_ref=f"node:{request.context.root_entity_id}",
+                company_brief=company_brief)
             if reading is not None:
                 out.append(reading)
         return tuple(out)
+
+    def _company_brief(self) -> Any:
+        """The tenant's brief, through `platform/company_brief.current` — held a minute per process
+        and EMPTY on any failure, so a brief that cannot be read costs the prompt nothing and never
+        the reading. No engine bound, no read."""
+        if self.engine is None:
+            return None
+        from genios_engine.platform.company_brief import current
+        return current(self.engine, self.org_id)
 
     def __call__(self, request: ReasoningRequest, *, plan: Any = None) -> ReasoningRequest:
         return augment(request, self.readings(request, plan=(plan or _plan_for(request))))
@@ -558,7 +593,8 @@ def make_interpreter(*, org_id: str, engine: Any, record_cost: Any = None,
         gate=make_gate(org_id=org_id, engine=engine, record_cost=record_cost,
                        client=(client if client is not None
                                else make_site_client(tier_for(SITE_R1)))),
-        cache=PostgresSiteCache(engine=engine))
+        cache=PostgresSiteCache(engine=engine),
+        engine=engine)
 
 
 __all__ = ["AMBIGUITY_CONFLICT", "AMBIGUITY_HEDGED", "AMBIGUITY_KINDS", "AmbiguityFlag",
