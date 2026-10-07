@@ -62,15 +62,8 @@ def _lines(conn, org_id: str) -> list[dict]:
 
 def _promote_named(org_id: str, *, address: str | None, domain: str | None) -> int:
     """Promote what the gate archived from a sender the brief now names. Returns how many."""
-    from genios_engine.capture.landing.promote import ARCHIVE_CODES, promote_archived
-    from genios_engine.platform.self_identity import PUBLIC_MAIL_DOMAINS
-
-    named = domain or (address.rsplit("@", 1)[1] if address and "@" in address else None)
-    if not named or named in PUBLIC_MAIL_DOMAINS:
-        return 0
-    engine = _engine()
-    return sum(promote_archived(engine, org_id, rule=rule, sender_domain=named, apply=True).promoted
-               for rule in sorted(ARCHIVE_CODES))
+    from genios_engine.capture.landing.promote import promote_named_sender
+    return promote_named_sender(_engine(), org_id, address=address, domain=domain)
 
 
 def _refuse(exc: Exception):
@@ -82,14 +75,15 @@ def _refuse(exc: Exception):
 
 @router.get("/v1/company-brief")
 def get_company_brief(org_id: str = Depends(get_current_org)) -> dict:
-    """The brief as the models read it, the lines it is made of, and what waits for a decision."""
-    from genios_engine.platform.company_brief import brief_for
+    """The brief as the models read it, the lines it is made of, what waits for a decision, and when
+    the weekly review last looked for what it is missing."""
+    from genios_engine.platform.company_brief import brief_for, last_review
 
     with _engine().connect() as c:
         brief = brief_for(c, org_id)
         return {"version": brief.version or None, "text": brief.prompt_block(),
                 "truncated": list(brief.truncated), "lines": _lines(c, org_id),
-                "proposals": store.pending(c, org_id)}
+                "proposals": store.pending(c, org_id), "last_review": last_review(c, org_id)}
 
 
 @router.post("/v1/company-brief/lines", status_code=201)

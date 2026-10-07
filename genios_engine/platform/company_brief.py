@@ -89,10 +89,24 @@ def invalidate(org_id: str | None = None) -> None:
             _CACHE.pop(org_id, None)
 
 
+def last_review(conn, org_id: str) -> dict | None:
+    """The tenant's latest weekly review (`reason/brief_review`): its ISO week, when it started and
+    finished, what came of it and how many lines it proposed — None before the first. What the
+    confirm screen and `scripts/pipeline_health.py` say about whether the brief is being kept current."""
+    row = conn.execute(text(
+        "select week_key, started_at, finished_at, outcome, proposed from company_brief_reviews "
+        " where org_id = :o order by started_at desc, week_key desc limit 1"), {"o": org_id}).first()
+    if row is None:
+        return None
+    return {"week": row.week_key, "started_at": row.started_at.isoformat(),
+            "finished_at": row.finished_at.isoformat() if row.finished_at else None,
+            "outcome": row.outcome, "proposed": int(row.proposed)}
+
+
 def named_sender(source, org_id: str, email: str | None) -> str | None:
     """Whether the tenant's brief names this sender, and why — `connector:…`, `person:…`,
     `watchlist:…` — or None. Fails open to None, like `current`."""
     return current(source, org_id).named_sender(email)
 
 
-__all__ = ["TTL_SECONDS", "brief_for", "current", "invalidate", "named_sender"]
+__all__ = ["TTL_SECONDS", "brief_for", "current", "invalidate", "last_review", "named_sender"]

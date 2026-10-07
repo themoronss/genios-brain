@@ -34,13 +34,6 @@ _ENGINE = _PKG.parent
 #:
 #: CLOSED, and checked in BOTH directions by `tests/platform/test_the_platform_layer_says_what_it_does_not_call.py`.
 UNREACHED: dict[str, tuple[str, str]] = {
-    # ───────────────────────────────── STEP-07 · the company brief — one entry, and it is temporary
-    "company_brief_store.propose": (
-        "STEP-07's drafter is this function's only caller, and it lands in the same block "
-        "(`yc2_w27_s07/M25.C3.L-logic.V3.U02`, `reason/brief_drafter`). The founder's own lines go "
-        "through `add`, accepted at once, so until the drafter is wired nothing proposes a line.",
-        "MOVES WHEN `reason/brief_drafter` writes its first proposal — the entry is then the lie, and "
-        "this guard's second direction removes it"),
     # ───────────────────────────────── receipt_coverage · guards per package as DATA (7)
     # ⛔ ALL SEVEN ARE BUILD-TIME REPORT FUNCTIONS over the checked-in receipt list. They take no
     # production data, so their answer cannot differ between two runs of the same build — the

@@ -92,6 +92,10 @@ _SITES: dict[str, dict[str, object]] = {
     "reason/bundle/gate.py": {"records": True, "purpose": ("l4_bundle",)},
     "reason/llm_decision_maker.py": {"records": True, "purpose": ("l4_llm_decision",)},
     "reason/llm_interpretation.py": {"records": True, "purpose": ("l4_llm_decision",)},
+    # STEP-07 · the company brief's drafter: one Sonnet-class call that PROPOSES lines from memory
+    # patterns, run by `scripts/draft_company_brief.py` and the weekly review in the heavy tick.
+    # A tenant's background work — no seat.
+    "reason/brief_drafter.py": {"records": True, "purpose": ("company_brief_draft",)},
 
     # ── moments (per-seat by construction — these always know the person) ────────────────
     "reason/moments/screen_insight.py": {

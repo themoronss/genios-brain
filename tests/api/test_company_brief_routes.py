@@ -71,6 +71,7 @@ def test_the_brief_and_its_proposals_are_read(monkeypatch, engine):
     body = _client(monkeypatch, engine, ADMIN).get("/v1/company-brief").json()
     assert body["version"] is None and body["text"] == "" and body["lines"] == []
     assert [p["line_id"] for p in body["proposals"]] == [pending]
+    assert body["last_review"] is None                     # the weekly review has never run
 
 
 def test_the_owner_accepts_and_the_brief_exists(monkeypatch, engine):

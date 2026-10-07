@@ -65,6 +65,10 @@ CHAIN_SITES: dict[str, tuple[str, str, tuple[str, ...]]] = {
     "reason/bundle/gate.py": ("recorded", "llm_sites.make_site_client", ("bundle_narrator",)),
     "reason/llm_decision_maker.py": ("recorded", "llm_decision_maker.client", ("decider",)),
     "reason/llm_interpretation.py": ("recorded", "llm_decision_maker.client", ("r1",)),
+    "reason/brief_drafter.py": (
+        "off", "the company brief's drafter runs from scripts/draft_company_brief.py and the weekly "
+               "review in the heavy tick, neither of which a case drives; a case's brief is seeded "
+               "as the founder accepted it", ()),
     # ── moments — the screen door ───────────────────────────────────────────────────────────
     "reason/moments/screen_insight.py": ("off", _SCREEN, ()),
     "reason/moments/screen_memory_batch.py": ("off", _SCREEN, ()),

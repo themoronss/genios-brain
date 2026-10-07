@@ -451,5 +451,11 @@ def test_the_resolver_change_moved_no_coverage_verdict():
     # is the weekly review's (`M25.C3.L-integration.V4.U04`), so `table_usage` moves by one and
     # the known tables by two. An engine change, not a resolver change; the nine write-only
     # members above did not move.
-    assert len(TC.table_usage()) == 191
+    # ⛔ RE-PINNED 191 → 192 on 2026-10-07 by the weekly review (YC-II W27 STEP-07,
+    # `yc2_w27_s07/M25.C3.L-integration.V4.U04`): `company_brief_reviews` gained its first references
+    # — the claim and the finish (`reason/brief_review.py`) and the one reader of the latest review
+    # (`platform/company_brief.last_review`, which the confirm route and `scripts/pipeline_health.py`
+    # show). An engine change, not a resolver change; read as well as written, so the nine
+    # write-only members above did not move.
+    assert len(TC.table_usage()) == 192
     assert len(TC._known_tables()) == 194

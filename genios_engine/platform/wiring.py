@@ -281,6 +281,16 @@ def make_llm_client():
     return LLMClient(api_key=s.anthropic_api_key, model=s.anthropic_model)
 
 
+def make_company_brief_client():
+    """The company brief's drafter client (`reason/brief_drafter`, Sonnet-class — `06` D28), or None
+    with no key: then neither the script nor the weekly review calls a model at all."""
+    s = get_settings()
+    if not s.use_real_llm:
+        return None
+    from genios_engine.context.llm.client import LLMClient
+    return LLMClient(api_key=s.anthropic_api_key, model=s.company_brief_model or s.anthropic_model)
+
+
 def make_graph_store():
     """L2 context-graph store (Postgres). None in pure in-memory dev (needs the DB)."""
     s = get_settings()

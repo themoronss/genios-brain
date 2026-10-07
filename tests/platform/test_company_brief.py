@@ -127,3 +127,18 @@ def test_named_sender_reads_the_current_brief(engine):
     assert cb.named_sender(engine, ORG, "updates@startupsetu.gov.test") == \
         "watchlist:startupsetu.gov.test"
     assert cb.named_sender(engine, ORG, "someone@else.test") is None
+
+
+def test_last_review_is_the_latest_week_or_none(engine):
+    with engine.connect() as c:
+        assert cb.last_review(c, ORG) is None
+    with engine.begin() as c:
+        for week, start, outcome, n in (("2026-W40", AT - timedelta(days=7), "proposed", 2),
+                                        ("2026-W41", AT, "no_patterns", 0)):
+            c.execute(text("insert into company_brief_reviews (org_id, week_key, started_at, "
+                           " finished_at, outcome, proposed) values (:o, :w, :s, :s, :out, :n)"),
+                      {"o": ORG, "w": week, "s": start, "out": outcome, "n": n})
+    with engine.connect() as c:
+        assert cb.last_review(c, ORG) == {"week": "2026-W41", "started_at": AT.isoformat(),
+                                          "finished_at": AT.isoformat(), "outcome": "no_patterns",
+                                          "proposed": 0}

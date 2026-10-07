@@ -1,9 +1,14 @@
-"""The two fingerprint inputs outside a decision's request, read once per sweep (STEP-02).
+"""The fingerprint inputs outside a decision's request, read once per sweep (STEP-02, STEP-07).
 
 `reason/fingerprint.MaterialInputs` carries what can change the right answer without touching the
-request the decider is handed: the pack's `authority_revision`, and the human verdicts on the
-subject's cards. This reads both for a whole tenant in two statements, so a sweep pays two round
-trips for every subject it fingerprints, not two per subject.
+request the decider is handed: the pack's `authority_revision`, the human verdicts on the subject's
+cards, and the company brief's version. This reads them for a whole tenant once, so a sweep pays the
+same few round trips however many subjects it fingerprints.
+
+THE BRIEF IS READ WHERE THE PROMPTS READ IT — `platform/company_brief.current`, the per-process copy.
+That copy only moves forward in time, so a sweep's fingerprint can name an OLDER brief than the one
+its decider's prompt read — and then the next sweep decides once more, the harmless direction — but
+never a newer one, which would record a decision as made under a brief it never saw.
 
 A verdict is about the subject its card's signal names — the legacy lane's (rule, node), or the
 compiled lane's (situation, capability). Keyed both ways, because a compiled signal also carries the
@@ -46,21 +51,25 @@ class InputsIndex:
     by_rule: Mapping[tuple[str, str], tuple[str, ...]] = field(default_factory=dict)
     by_situation: Mapping[tuple[str, str], tuple[str, ...]] = field(default_factory=dict)
     decider: str = "formula"
+    brief: str = ""
 
     def for_rule(self, pack_id: str, rule_id: str, node_id: str) -> MaterialInputs:
         return MaterialInputs(authority_revision=self.revisions.get(pack_id),
                               verdicts=self.by_rule.get((rule_id, node_id), ()),
-                              decider=self.decider)
+                              decider=self.decider, brief=self.brief)
 
     def for_situation(self, pack_id: str, situation_id: str, capability_id: str, *,
                       interpreted: bool = False) -> MaterialInputs:
         return MaterialInputs(authority_revision=self.revisions.get(pack_id),
                               verdicts=self.by_situation.get((situation_id, capability_id), ()),
-                              decider=self.decider + ("+r1" if interpreted else ""))
+                              decider=self.decider + ("+r1" if interpreted else ""),
+                              brief=self.brief)
 
 
 def read_inputs(conn, org_id: str) -> InputsIndex:
-    """Every pack revision and every card verdict of one tenant, by the subject it is about."""
+    """Every pack revision and every card verdict of one tenant, by the subject it is about, and the
+    version of the company brief its prompts read."""
+    from genios_engine.platform.company_brief import current
     revisions = {r.pack_id: int(r.authority_revision) for r in conn.execute(text(
         "select pack_id, authority_revision from tenant_packs where org_id = :o"), {"o": org_id})}
     by_rule: dict[tuple[str, str], list[str]] = defaultdict(list)
@@ -80,4 +89,5 @@ def read_inputs(conn, org_id: str) -> InputsIndex:
     return InputsIndex(revisions=revisions,
                        by_rule={k: tuple(sorted(v)) for k, v in by_rule.items()},
                        by_situation={k: tuple(sorted(v)) for k, v in by_situation.items()},
-                       decider=decider_identity(org_id))
+                       decider=decider_identity(org_id),
+                       brief=current(getattr(conn, "engine", conn), org_id).version)

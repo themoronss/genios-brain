@@ -86,6 +86,10 @@ class Settings(BaseSettings):
     l4_llm_decision_maker_orgs: str = ""
     l4_llm_decision_model: str = ""
     l4_llm_decision_max_calls_per_org_day: int = 400
+    # STEP-07 · the company brief's drafter (`reason/brief_drafter.py`): one Sonnet-class call that
+    # PROPOSES the brief's lines from memory patterns, and one a week for what it is missing (`06`
+    # D28). Empty = the engine's `anthropic_model`.
+    company_brief_model: str = "claude-sonnet-5"
     # OUR OWN domains — the product's transactional mail, not anybody's counterparty.
     #
     # A customer's inbox contains our onboarding, invite and billing mail. Without this the

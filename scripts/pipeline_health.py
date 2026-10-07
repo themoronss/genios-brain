@@ -456,6 +456,39 @@ def check_every_situation_and_card_says_how_it_ended(conn, org: str) -> Check:
                   for kind, counts in silent_types.items()])
 
 
+def check_the_company_brief_exists_and_is_current(conn, org: str) -> Check:
+    """⛔ STEP-07 (`yc2_w27_s07/M25.C6`). Every judging and reading prompt carries the company brief —
+    once the founder has accepted a line of it. Until then no prompt names the company, its goals, its
+    people or a watchlist, the portal's and the intro agent's mail stays "unknown sender" at all four
+    gate stages, and the engine judges the mailbox as a stranger would. So this fails while no line is
+    accepted, and says what waits: the brief's version, the proposals the founder has not decided,
+    the lines its budget left out, and when the weekly review last looked for what it is missing.
+    """
+    from genios_engine.platform.company_brief import brief_for, last_review
+
+    name = "the company brief exists and is current"
+    brief = brief_for(conn, org)
+    pending = conn.execute(sql(
+        "select line_id, section, text from company_brief_lines "
+        " where org_id = :o and status = 'proposed' order by proposed_at, line_id"), {"o": org}
+    ).mappings().all()
+    review = last_review(conn, org)
+    reviewed = (f"last weekly review {review['week']} ({review['outcome'] or 'unfinished'}, "
+                f"{review['proposed']} proposed)" if review else "no weekly review yet")
+    return Check(
+        name=name, ok=bool(brief),
+        measured=((f"version {brief.version}, {len(brief.lines)} accepted line(s), "
+                   f"{len(brief.truncated)} left out by the budget" if brief
+                   else "no accepted line — no prompt carries a brief")
+                  + f"; {len(pending)} proposal(s) waiting; {reviewed}"),
+        expected="at least one accepted line — every judging and reading prompt then carries it",
+        fix=("draft it — `scripts/draft_company_brief.py --org … --patterns`, then the dry run, then "
+             "`--apply` — and have the founder accept, edit or reject each proposal "
+             "(`scripts/company_brief.py --org … show`, then `accept` / `reject`)"),
+        detail=[f"waiting: {p['line_id']} [{p['section']}] {p['text']}" for p in pending[:20]]
+               + [f"left out by the budget: {line_id}" for line_id in brief.truncated])
+
+
 CHECKS = (
     check_every_emitted_event_is_routed,
     check_parked_errors_are_readable,
@@ -467,6 +500,7 @@ CHECKS = (
     check_we_are_never_the_subject,
     check_every_kept_event_entered_memory,
     check_every_situation_and_card_says_how_it_ended,
+    check_the_company_brief_exists_and_is_current,
 )
 
 

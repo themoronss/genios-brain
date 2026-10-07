@@ -21,6 +21,11 @@ reads the request first. The third was found wiring the legacy lane: a test that
 on between two sweeps was skipped as unchanged, so switching `GENIOS_L4_LLM_DECISION_MAKER` in
 production would have kept every old decision until some other input moved.
 
+AND, SINCE STEP-07, WHAT THE FOUNDER SAID THE COMPANY IS. Every judging prompt carries the tenant's
+company brief, so a changed brief can change the right answer: its version (`cb-<12 hex>`) is a fourth
+input — in the payload only when the tenant HAS a brief, so every fingerprint of a tenant without one
+is exactly what it was, and a changed brief re-decides each subject once.
+
 A CLOCK IS COMPARED BY ITS RUNG. A deadline or an elapsed time is read relative to the evaluation
 instant and reduced to its rung on a ladder — deadline hours on Layer 4's own urgency ladder, elapsed
 days on `DAY_LADDER` — so a wait crossing from 6 to 7 days re-decides, and 15 minutes never does.
@@ -53,11 +58,13 @@ class MaterialInputs:
     `authority_revision` — `tenant_packs.authority_revision` of the pack the decision runs under.
     `verdicts` — `verdict_key`s of the human verdicts on the subject's cards, held in one order.
     `decider` — who decides: `"formula"`, or `"llm:<model>"`, with `"+r1"` when R-1 reads first.
+    `brief` — the company brief's version (STEP-07), or `""` for a tenant with none.
     """
 
     authority_revision: int | None = None
     verdicts: tuple[str, ...] = field(default_factory=tuple)
     decider: str = "formula"
+    brief: str = ""
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "verdicts", tuple(sorted(set(self.verdicts))))
@@ -203,11 +210,13 @@ def material_fingerprint(capability, snapshot, *, config_snapshot_id: str | None
     if isinstance(manifest.get("metadata"), dict):
         manifest["metadata"] = {key: item for key, item in manifest["metadata"].items()
                                 if key not in _DROP_FROM_CAPABILITY_METADATA}
+    material_inputs = {"authority_revision": inputs.authority_revision,
+                       "verdicts": list(inputs.verdicts), "decider": inputs.decider}
+    if inputs.brief:          # absent, not empty, with no brief: those fingerprints do not move
+        material_inputs["brief"] = inputs.brief
     payload = {"fingerprint_version": FINGERPRINT_VERSION, "capability": manifest,
                "context": context, "config_snapshot_id": config_snapshot_id,
-               "mode": getattr(mode, "value", mode),
-               "inputs": {"authority_revision": inputs.authority_revision,
-                          "verdicts": list(inputs.verdicts), "decider": inputs.decider}}
+               "mode": getattr(mode, "value", mode), "inputs": material_inputs}
     # ⛔ NOT `semantic_hash(payload)`. The payload is ALREADY canonical — its decimals, dates and
     # instants are the tagged scalars `canonicalize` emits — and canonicalizing it again refuses
     # every one of them as a reserved key. A snapshot holding one decimal value (they do: the golden

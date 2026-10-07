@@ -86,4 +86,21 @@ def promote_archived(engine, org_id: str, *, rule: str, sender_domain: str | Non
                                   for r in readable[:SAMPLE]))
 
 
-__all__ = ["ARCHIVE_CODES", "Promotion", "promote_archived"]
+def promote_named_sender(engine, org_id: str, *, address: str | None = None,
+                         domain: str | None = None, now: datetime | None = None) -> int:
+    """STEP-07 · the promotion this module waited for: a sender the company brief now names — a
+    connector's or a key person's address, a watchlist domain — gets back everything the gate
+    archived from its domain, under every archiving rule. A public mail host is never promoted by
+    domain: anyone can write from it. Returns how many mails went back to the ledger as kept."""
+    from genios_engine.platform.self_identity import PUBLIC_MAIL_DOMAINS
+
+    named = (domain or (address.rsplit("@", 1)[1] if address and "@" in address else "")
+             ).strip().lower().lstrip("@")
+    if not named or named in PUBLIC_MAIL_DOMAINS:
+        return 0
+    return sum(promote_archived(engine, org_id, rule=rule, sender_domain=named, apply=True,
+                                now=now).promoted
+               for rule in sorted(ARCHIVE_CODES))
+
+
+__all__ = ["ARCHIVE_CODES", "Promotion", "promote_archived", "promote_named_sender"]

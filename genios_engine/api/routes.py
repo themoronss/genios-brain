@@ -1524,6 +1524,22 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
         except Exception:                                    # noqa: BLE001 — never kill the beat
             _log.exception("learning sweep failed")
             learning = {"error": True}
+    # STEP-07 · THE WEEKLY COMPANY-BRIEF REVIEW — what each tenant's brief is missing, proposed once
+    # per ISO week (`reason/brief_review`, claimed in `company_brief_reviews`), so it is safe on every
+    # heavy tick and on every replica. Its own block and its own transactions, never inside the
+    # learning pass's: the drafter makes a network call. No model, no call; nothing it proposes counts
+    # until the founder accepts it.
+    company_brief_review = None
+    if _graph is not None:
+        try:
+            from genios_engine.platform.wiring import make_company_brief_client
+            from genios_engine.reason.brief_review import run_company_brief_reviews
+            company_brief_review = run_company_brief_reviews(
+                _graph.engine, now=now, llm=make_company_brief_client(),
+                cost_sink=_graph.record_cost)
+        except Exception:                                    # noqa: BLE001 — never kill the beat
+            _log.exception("company brief review failed")
+            company_brief_review = {"error": True}
     # L2 GRAPH MAINTENANCE — entity lifecycle + a health measurement, per org.
     #
     # Here rather than in the L2 drain because both are O(graph), not O(event): running
@@ -1568,6 +1584,7 @@ def run_maintenance_sweep(mode: str = "incremental", limit: int | None = None) -
             "seats": seats,
             "executive": executive, "distribution": distribution,
             "calibration": calibration, "learning": learning,
+            "company_brief_review": company_brief_review,
             "graph_maintenance": graph_maintenance}
 
 

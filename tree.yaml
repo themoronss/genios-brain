@@ -5290,6 +5290,23 @@ yc2_w27_s07:
             - M25.C2.L-interface.V2.U01
             - M25.C3.L-integration.V4.U04
             - M25.C4.L-logic.V2.U04
+    - id: M25.C8
+      name: Found while building
+      layers:
+      - layer: integration
+        levels:
+        - level: 0
+          units:
+          - id: M25.C8.L-integration.V0.U01
+            what: '`tests/test_recode_parked_documents.py` draws a random Fernet key and passes it as
+              `--crypto-key KEY`; one key in 64 begins with a dash, and argparse then reads it as an
+              option — the four tests failed in guard run s07f on the draw alone (`03` F80). The key
+              is now always one that begins with a dash, passed as `--crypto-key=KEY`: the edge is the
+              standing case, never a one-in-64 surprise.'
+            artifact: tests/test_recode_parked_documents.py
+            verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test
+              .venv/bin/python -m pytest tests/test_recode_parked_documents.py -q
+            depends_on: []
 
 yc2_w27_s08:
   status: proposed

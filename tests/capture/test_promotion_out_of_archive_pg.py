@@ -134,3 +134,25 @@ def test_a_rule_the_gate_never_archives_with_is_refused(engine, org):
     for rule in ("N-05", "W-01", "low_relevance", ""):
         with pytest.raises(ValueError, match="archives with"):
             promote.promote_archived(engine, org[0], rule=rule, now=NOW)
+
+
+# ── STEP-07 · a sender the company brief names (`promote_named_sender`) ─────────────────────────
+
+def test_a_named_sender_gets_back_its_archive_under_every_rule(engine, org, mailbox):
+    """The connector's address names its domain: the N-02 intro and nudge AND the N-06 mail come
+    back; another sender's, and an archive past its keep window, stay archived."""
+    assert promote.promote_named_sender(engine, org[0], address="hello@boardy.test", now=NOW) == 3
+    rows = _rows(engine, org)
+    assert {rows[mailbox[n]][2] for n in ("intro", "nudge", "other_rule")} == {
+        "promoted:N-02", "promoted:N-06"}
+    for name in ("expired", "other_sender"):
+        assert rows[mailbox[name]][0] == "archived", name
+
+
+def test_a_public_mail_host_is_never_promoted_by_domain(engine, org):
+    _archived(engine, org, sender="someone@gmail.com")
+    before = _rows(engine, org)
+    assert promote.promote_named_sender(engine, org[0], address="friend@gmail.com", now=NOW) == 0
+    assert promote.promote_named_sender(engine, org[0], domain="gmail.com", now=NOW) == 0
+    assert promote.promote_named_sender(engine, org[0], now=NOW) == 0
+    assert _rows(engine, org) == before
