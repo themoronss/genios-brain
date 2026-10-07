@@ -1,6 +1,6 @@
 """STEP-07 · the company brief — what a chief of staff knows on day one, as a contract.
 
-    pytest tests/contracts/test_company_brief.py -q
+    pytest tests/contracts/test_the_company_brief_contract.py -q
 
 Tree `yc2_w27_s07 · M25.C1.L-contract.V0.U01`. No prompt carried any company context (`speedrun008/
 YC-II W27/` STEP-07 §8.1: 0 of 368 golden prompts). The brief is composed from lines the founder

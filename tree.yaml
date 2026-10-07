@@ -4903,7 +4903,7 @@ yc2_w27_s07:
               — rendered under ~800 tokens with what was cut reported, a version `cb-<12 hex>` over what
               the model sees, and `prompt_block()` — empty when no line is accepted.
             artifact: genios_engine/contracts/company_brief.py
-            verify: .venv/bin/python -m pytest tests/contracts/test_company_brief.py -q
+            verify: .venv/bin/python -m pytest tests/contracts/test_the_company_brief_contract.py -q
             depends_on: []
           - id: M25.C1.L-contract.V0.U02
             what: '`migrations/0195_company_brief.sql` — `company_brief_lines` (org, line, section, text,
@@ -5307,6 +5307,15 @@ yc2_w27_s07:
             artifact: tests/test_recode_parked_documents.py
             verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test
               .venv/bin/python -m pytest tests/test_recode_parked_documents.py -q
+            depends_on: []
+          - id: M25.C8.L-integration.V0.U02
+            what: '`tests/contracts/test_company_brief.py` and `tests/platform/test_company_brief.py` shared
+              a basename in two folders with no `__init__.py`, so the whole suite in one process (CI''s
+              hermetic job, QA tier 2) stopped at collection while every per-folder guard run was green.
+              The contract test is renamed `test_the_company_brief_contract.py` (`M25.C1.L-contract.V0.U01`''s
+              verify follows it), and a guard computes every test file''s import name the way pytest does.'
+            artifact: tests/test_no_two_test_modules_share_an_import_name.py
+            verify: .venv/bin/python -m pytest tests/test_no_two_test_modules_share_an_import_name.py -q
             depends_on: []
 
 yc2_w27_s08:
