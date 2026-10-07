@@ -19,6 +19,13 @@ CADENCE can come from.
 
 Deterministic and LLM-free, like `derived.py`: these are arithmetic over timestamps already
 committed, so the same graph yields the same numbers on every run.
+
+STEP-10 (`yc2_w27_s10 · M29.C1`). A reply is counted ONCE: the pipeline writes `thread.last_*` on the
+person AND on the *"Thread with …"* node, so the cadence pools person nodes only — on the golden set every
+"normal" that existed was one reply counted twice. A message is the person's only when they wrote it:
+since STEP-09 an introduction writes our turn on the person introduced, and the connector's mail is no
+reply of theirs and no "heard from". And "normal" needs `contracts/measured.NORMAL_AT` replies at the
+level used (`06` D37), with the n written beside the days and the basis.
 """
 from __future__ import annotations
 
@@ -33,6 +40,7 @@ from statistics import median
 from sqlalchemy import bindparam, text
 
 from genios_engine.context.derived import _write_fact, retire_facts
+from genios_engine.contracts.measured import NORMAL_AT
 
 #: How far back the timeline is reconstructed.  A follow-up count is about the CURRENT exchange,
 #: and `situations.DORMANT_AFTER_DAYS` already declares that a conversation older than 45 days has
@@ -64,12 +72,25 @@ _ASK_KINDS_FALLBACK: frozenset[str] = frozenset({
 _ASK_KINDS: frozenset[str] = kinds_where(is_ask=True) or _ASK_KINDS_FALLBACK
 
 _TIMELINE = (
-    "select f.subject_node_id as node_id, f.field as field, se.occurred_at as at "
+    "select f.subject_node_id as node_id, f.field as field, se.occurred_at as at, "
+    "       n.node_type as node_type "
     "from graph_source_refs r "
     "join graph_facts f on f.fact_version_id = r.fact_version_id and f.org_id = r.org_id "
     "join source_events se on se.event_id = r.event_id "
+    "join graph_nodes n on n.org_id = f.org_id and n.node_id = f.subject_node_id "
+    "     and n.valid_to is null "
     "where r.org_id = :o and f.field in ('thread.last_outbound', 'thread.last_inbound') "
-    "and se.occurred_at >= :since"
+    "and se.occurred_at >= :since "
+    # STEP-10 · NOT THEIR MESSAGE. An introduction writes our turn on the person it introduces
+    # (STEP-09), from the CONNECTOR's mail: an inbound written by a connector that introduced this
+    # node is not this node speaking — no reply, no "heard from".
+    "and not (f.field = 'thread.last_inbound' and exists ("
+    "     select 1 from graph_edges ie "
+    "       join graph_nodes cn on cn.org_id = ie.org_id and cn.node_id = ie.from_node_id "
+    "            and cn.valid_to is null "
+    "      where ie.org_id = f.org_id and ie.edge_type = 'introduced' and ie.valid_to is null "
+    "        and ie.to_node_id = f.subject_node_id "
+    "        and cn.canonical_key = lower(se.actor->>'email')))"
 )
 
 #: AN ASK WE MADE, not an ask that mentions them. The distinction is the whole point of
@@ -182,9 +203,14 @@ CADENCE_FIRM = "firm"
 CADENCE_TENANT = "tenant"
 CADENCE_FLOOR = "floor"
 
-#: The minimum gaps that describe a HABIT rather than an anecdote. Unchanged, and applied at every
-#: level: a firm median built from one reply is the same invented normal as a person's.
-MIN_GAPS_FOR_CADENCE = 2
+#: The minimum gaps that describe a HABIT rather than an anecdote, applied at every level: a firm
+#: median built from one reply is the same invented normal as a person's. STEP-10 raised it from 2
+#: to the contract's `NORMAL_AT` (`06` D37): two gaps were met by ONE reply counted twice.
+MIN_GAPS_FOR_CADENCE = NORMAL_AT
+
+#: STEP-10 · the cadence facts, retired together when the evidence no longer carries a normal.
+CADENCE_FIELDS: tuple[str, ...] = (
+    "party.reply_cadence_days", "party.reply_cadence_basis", "party.reply_cadence_n")
 
 #: Used only when nothing above it exists. Deliberately NOT a plausible reply time — it is the
 #: value that says "no evidence", and `party.reply_cadence_basis` says so out loud so a reading
@@ -193,15 +219,16 @@ CADENCE_FLOOR_DAYS = 3.0
 
 
 def cadence_for(node_id: str, gaps_by_node: Mapping[str, list[float]],
-                firm_of: Mapping[str, str]) -> tuple[float, str]:
-    """`(days, basis)` for one counterparty — person, then firm, then tenant, then floor.
+                firm_of: Mapping[str, str]) -> tuple[float, str, int]:
+    """`(days, basis, n)` for one counterparty — person, then firm, then tenant, then floor; `n` is
+    how many replies the level that answered rests on (0 for the floor).
 
     PURE, so the cascade can be read and tested without a database, and so the rule lives in one
     place rather than in each caller's idea of a fallback.
     """
     own = gaps_by_node.get(node_id) or []
     if len(own) >= MIN_GAPS_FOR_CADENCE:
-        return round(median(own), 2), CADENCE_PERSON
+        return round(median(own), 2), CADENCE_PERSON, len(own)
 
     firm = firm_of.get(node_id)
     if firm:
@@ -209,12 +236,12 @@ def cadence_for(node_id: str, gaps_by_node: Mapping[str, list[float]],
         # even when there are too few to describe the person.
         pooled = [g for other, gs in gaps_by_node.items() if firm_of.get(other) == firm for g in gs]
         if len(pooled) >= MIN_GAPS_FOR_CADENCE:
-            return round(median(pooled), 2), CADENCE_FIRM
+            return round(median(pooled), 2), CADENCE_FIRM, len(pooled)
 
     everyone = [g for gs in gaps_by_node.values() for g in gs]
     if len(everyone) >= MIN_GAPS_FOR_CADENCE:
-        return round(median(everyone), 2), CADENCE_TENANT
-    return CADENCE_FLOOR_DAYS, CADENCE_FLOOR
+        return round(median(everyone), 2), CADENCE_TENANT, len(everyone)
+    return CADENCE_FLOOR_DAYS, CADENCE_FLOOR, 0
 
 
 def reply_gaps_of(timeline: list[tuple[str, datetime]]) -> list[float]:
@@ -287,7 +314,9 @@ def compute_waiting(store, org_id: str, *, now: datetime | None = None) -> int:
             {"o": org_id, "kinds": sorted(_ASK_KINDS)}).all()}
 
         per_node: dict[str, list[tuple[str, datetime]]] = {}
-        for node_id, field, at in rows:
+        node_type: dict[str, str] = {}
+        for node_id, field, at, ntype in rows:
+            node_type[str(node_id)] = str(ntype)
             direction = _DIRECTION_FIELD.get(str(field))
             if direction is None or at is None:
                 continue
@@ -306,19 +335,26 @@ def compute_waiting(store, org_id: str, *, now: datetime | None = None) -> int:
 
         written = 0
         # POOLED BEFORE ANYTHING IS WRITTEN, because the cascade needs every counterparty's gaps
-        # to answer for the one that has none of its own.
-        gaps_by_node = {node_id: reply_gaps_of(timeline) for node_id, timeline in per_node.items()}
+        # to answer for the one that has none of its own. PEOPLE ONLY (STEP-10): a thread node's
+        # facts are the same messages again, and pooling both counted every reply twice.
+        gaps_by_node = {node_id: reply_gaps_of(timeline) for node_id, timeline in per_node.items()
+                        if node_type.get(node_id) == "person"}
         firm_of = _firms(c, org_id)
 
         for node_id, timeline in per_node.items():
             state = _state(timeline, now)
-            days, basis = cadence_for(node_id, gaps_by_node, firm_of)
+            days, basis, n = cadence_for(node_id, gaps_by_node, firm_of)
             # THE FLOOR IS NOT A CADENCE and is not written as one. A number with no evidence
             # behind it would be indistinguishable from a measured one the moment it left this
-            # function, and every reading downstream compares against it.
-            if basis != CADENCE_FLOOR:
+            # function, and every reading downstream compares against it. Nor is a thread node a
+            # counterparty with a habit (STEP-10). What an earlier pass wrote and the evidence no
+            # longer carries is retired, not left standing as a measurement.
+            if basis != CADENCE_FLOOR and node_type.get(node_id) == "person":
                 state["party.reply_cadence_days"] = days
                 state["party.reply_cadence_basis"] = basis
+                state["party.reply_cadence_n"] = n
+            else:
+                written += retire_facts(c, org_id, node_id, CADENCE_FIELDS, now)
             if "thread.days_waiting" not in state:
                 # THEY ANSWERED, or we never wrote to them. Either way the waiting facts are no
                 # longer true and must be retired rather than left standing — see
@@ -356,5 +392,5 @@ def compute_waiting(store, org_id: str, *, now: datetime | None = None) -> int:
 
 
 __all__ = [
-    "CADENCE_FIRM", "CADENCE_FLOOR", "CADENCE_FLOOR_DAYS", "CADENCE_PERSON",
+    "CADENCE_FIELDS", "CADENCE_FIRM", "CADENCE_FLOOR", "CADENCE_FLOOR_DAYS", "CADENCE_PERSON",
     "CADENCE_TENANT", "MIN_GAPS_FOR_CADENCE", "cadence_for", "reply_gaps_of","WAITING_ONLY_FIELDS", "compute_waiting"]

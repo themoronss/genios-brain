@@ -19,48 +19,54 @@ is never written as one.
 `party.reply_cadence_basis` IS WHAT KEEPS IT HONEST, and most of this file is about that. "They
 usually reply in two days" and "people at this firm usually do" are different claims. A card
 holding only the number will make the first on the evidence of the second.
+
+RESTATED BY STEP-10 (`yc2_w27_s10 · M29.C1.L-logic.V1.U02`, `06` D36/D37). Two gaps were met by ONE
+reply counted twice (the person node and the thread node), so the habit now needs
+`contracts/measured.NORMAL_AT` (5) replies at the level used, and the cascade says how many its answer
+rests on. The examples below are those of the first cut, each grown to five.
 """
 import pytest
 
 from genios_engine.context.waiting import (CADENCE_FIRM, CADENCE_FLOOR, CADENCE_FLOOR_DAYS,
                                            CADENCE_PERSON, CADENCE_TENANT, MIN_GAPS_FOR_CADENCE,
                                            cadence_for)
+from genios_engine.contracts.measured import NORMAL_AT
 
 
 def test_a_person_with_a_habit_keeps_their_own_number() -> None:
-    days, basis = cadence_for("p", {"p": [2.0, 4.0], "q": [30.0, 30.0]}, {})
-    assert (days, basis) == (3.0, CADENCE_PERSON)
+    days, basis, n = cadence_for("p", {"p": [1.0, 2.0, 3.0, 4.0, 5.0], "q": [30.0, 30.0]}, {})
+    assert (days, basis, n) == (3.0, CADENCE_PERSON, 5)
 
 
 def test_one_reply_is_still_an_anecdote() -> None:
     """The original rule, unchanged. What changes is that failing it no longer means silence."""
-    _days, basis = cadence_for("p", {"p": [9.0]}, {})
+    _days, basis, _n = cadence_for("p", {"p": [9.0]}, {})
     assert basis != CADENCE_PERSON
 
 
 def test_a_firm_answers_for_somebody_who_has_not_replied_twice() -> None:
-    """THE CASE THAT UNBLOCKS THE FUNDRAISE. Two partners at one fund, one reply each — neither
-    describes a habit alone, together they describe the firm's."""
-    gaps = {"harshita": [4.0], "vidushi": [6.0]}
+    """THE CASE THAT UNBLOCKS THE FUNDRAISE. Two partners at one fund, three replies and two —
+    neither describes a habit alone, together they describe the firm's."""
+    gaps = {"harshita": [4.0, 4.0, 5.0], "vidushi": [6.0, 6.0]}
     firms = {"harshita": "peakxv", "vidushi": "peakxv"}
-    assert cadence_for("harshita", gaps, firms) == (5.0, CADENCE_FIRM)
-    assert cadence_for("vidushi", gaps, firms) == (5.0, CADENCE_FIRM)
+    assert cadence_for("harshita", gaps, firms) == (5.0, CADENCE_FIRM, 5)
+    assert cadence_for("vidushi", gaps, firms) == (5.0, CADENCE_FIRM, 5)
 
 
 def test_a_firm_with_one_reply_between_everyone_is_still_an_anecdote() -> None:
     """Pooling is not a way around the habit test — it is a way to satisfy it honestly."""
-    _days, basis = cadence_for("solo", {"solo": [7.0]}, {"solo": "tinyco"})
+    _days, basis, _n = cadence_for("solo", {"solo": [7.0]}, {"solo": "tinyco"})
     assert basis != CADENCE_FIRM
 
 
 def test_a_stranger_falls_to_the_tenants_own_median() -> None:
-    gaps = {"a": [2.0], "b": [6.0], "stranger": []}
-    assert cadence_for("stranger", gaps, {"a": "x", "b": "y"}) == (4.0, CADENCE_TENANT)
+    gaps = {"a": [2.0, 2.0, 2.0], "b": [6.0, 6.0], "stranger": []}
+    assert cadence_for("stranger", gaps, {"a": "x", "b": "y"}) == (2.0, CADENCE_TENANT, 5)
 
 
 def test_a_tenant_with_no_replies_at_all_gets_the_floor() -> None:
-    days, basis = cadence_for("anyone", {}, {})
-    assert (days, basis) == (CADENCE_FLOOR_DAYS, CADENCE_FLOOR)
+    days, basis, n = cadence_for("anyone", {}, {})
+    assert (days, basis, n) == (CADENCE_FLOOR_DAYS, CADENCE_FLOOR, 0)
 
 
 def test_the_floor_is_never_written_as_a_cadence() -> None:
@@ -84,8 +90,8 @@ def test_the_floor_is_never_written_as_a_cadence() -> None:
 
 def test_the_person_is_not_excluded_from_their_own_firm() -> None:
     """Their one reply is evidence about the firm even when it cannot describe them."""
-    gaps = {"a": [10.0], "b": [10.0]}
-    assert cadence_for("a", gaps, {"a": "f", "b": "f"}) == (10.0, CADENCE_FIRM)
+    gaps = {"a": [10.0], "b": [10.0, 10.0, 10.0, 10.0]}
+    assert cadence_for("a", gaps, {"a": "f", "b": "f"}) == (10.0, CADENCE_FIRM, 5)
 
 
 @pytest.mark.parametrize("basis", [CADENCE_PERSON, CADENCE_FIRM, CADENCE_TENANT, CADENCE_FLOOR])
@@ -95,8 +101,9 @@ def test_every_basis_is_a_distinct_named_level(basis: str) -> None:
 
 
 def test_the_habit_floor_is_shared_by_every_level() -> None:
-    """A firm median built from one reply would be the same invented normal as a person's."""
-    assert MIN_GAPS_FOR_CADENCE == 2
+    """A firm median built from one reply would be the same invented normal as a person's — and
+    since STEP-10 every level needs the contract's five (`06` D37)."""
+    assert MIN_GAPS_FOR_CADENCE == NORMAL_AT == 5
 
 
 def test_the_card_carries_which_level_answered() -> None:
