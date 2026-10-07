@@ -5,7 +5,8 @@ from genios_engine.contracts.trace import EventTrace
 
 from .context import GateContext, GateResult
 from .relevance import DROP_BELOW_RELEVANCE, RelevanceClassifier
-from .rules import availability_marker, content_integrity_rule, noise_rule, whitelist
+from .rules import (availability_marker, content_integrity_rule, is_a_delivery_report, noise_rule,
+                    whitelist)
 
 #: What the gate does with a mail a rule or the model would have DELETED (STEP-03, the gate keeps
 #: everything). Every noise rule (N-01 … N-10) and the model's confident junk (`llm_junk`) was a
@@ -145,7 +146,14 @@ def run_gate(ctx: GateContext, trace: EventTrace,
     # NOR FOR A SENDER THE COMPANY BRIEF NAMES (STEP-07, W-07): the founder said this sender's mail
     # matters — the portal of a live application, the agent that introduces them — and the
     # classifier's question, "is a specific human writing?", is the one that got it wrong.
-    if relevance is not None and not ctx.rereading and wl != "W-07":
+    # NOR FOR A DELIVERY REPORT (STEP-10, `yc2_w27_s10 · M29.C3.L-logic.V0.U04`, `06` D38): S1
+    # keeps one the parser recognises so it can be READ, and the classifier's prompt drops
+    # automated mail — it archived golden F16's report as `llm_junk`, production's called all five
+    # real bounces junk, and `context/delivery` never saw one. Asked by the function S1 asks, so
+    # the rule that keeps a report and the step that reads it cannot disagree; a person
+    # forwarding a bounce is not a report, and is judged as before.
+    report = is_a_delivery_report(ctx.raw, sender_email=ctx.event.actor.email)
+    if relevance is not None and not ctx.rereading and wl != "W-07" and not report:
         v = relevance.classify(ctx, ctx.prepared)
         disp = v.disposition or ("keep" if v.relevant else "park")
         if disp == "drop":
@@ -168,6 +176,8 @@ def run_gate(ctx: GateContext, trace: EventTrace,
         trace.record("S2", "pass", relevance=v.relevance, reason=v.reason)
         return GateResult(action="route", route="needs_extraction", whitelist_code=wl)
 
-    # S2 default — route unstructured candidate to L2's combined relevance+extraction call
-    trace.record("S2", "pass", route="needs_extraction")
+    # S2 default — route unstructured candidate to L2's combined relevance+extraction call. A
+    # report says so on the trace, which would otherwise read like a gate with no classifier wired.
+    trace.record("S2", "pass", route="needs_extraction",
+                 **({"delivery_report": True} if report else {}))
     return GateResult(action="route", route="needs_extraction", whitelist_code=wl)

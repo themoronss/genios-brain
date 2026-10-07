@@ -216,6 +216,25 @@ def addressed_to_a_list(raw: dict | None, *, sender_email: str | None = None) ->
     return is_automated_sender(sender_email)
 
 
+def is_a_delivery_report(raw: dict | None, *, sender_email: str | None) -> bool:
+    """Is this mail a delivery report the parser reads? The ONE way Layer 1 asks it of a mail.
+
+    STEP-10 (`yc2_w27_s10 · M29.C3.L-logic.V0.U04`, `06` D38). `capture/delivery_status.
+    is_delivery_status` — a delivery daemon sent it AND it reads as a delivery report — handed the
+    three inputs `capture/pipeline._delivery_status` hands the parser: the sender, the subject, the
+    body else the snippet. S1 keeps a report on it (`noise_rule`) and S2 never judges one
+    (`gate.run_gate`). Each asking with inputs of its own, a report kept by one step was judged out
+    by the next — the first cut's was kept at S1 and archived as `llm_junk` at S2. One function is
+    how the two cannot disagree.
+
+    The sender is required, never defaulted: half of the question is who sent it.
+    """
+    from genios_engine.capture.delivery_status import is_delivery_status
+    raw = raw if isinstance(raw, dict) else {}
+    return is_delivery_status(sender=sender_email or "", subject=str(raw.get("subject") or ""),
+                              text=str(raw.get("body") or raw.get("snippet") or ""))
+
+
 def light_junk(labels, sender_email: str, has_attachment: bool) -> str | None:
     """High-confidence deterministic junk from LIST-time fields ONLY (Gmail labels + sender local-
     part) — lets the connector skip the full fetch of obvious junk BEFORE the S2 LLM prime ever
@@ -348,7 +367,6 @@ def noise_rule(ctx: GateContext) -> tuple[str, str] | None:
     A rule's `drop` is its verdict — "this is noise", with its code — not what happens to the mail:
     since STEP-03 the gate ARCHIVES it (kept, read by no model; `gate.ARCHIVE`)."""
     email = ctx.event.actor.email or ""
-    subject = ctx.raw.get("subject") or ""
     hdrs: dict = ctx.raw.get("headers") or {}
     labels = set(ctx.raw.get("labelIds") or [])   # source-provided category signals
 
@@ -379,14 +397,13 @@ def noise_rule(ctx: GateContext) -> tuple[str, str] | None:
     # the question and BOTH its conditions hold here: a delivery daemon sent it AND it reads as a
     # delivery report. A person forwarding a bounce, or `postmaster@`'s own notice, is neither, and
     # meets the rules below as before. The same three inputs `capture/pipeline._delivery_status`
-    # hands the parser, so the gate keeps exactly what the detector reads. A delay notice is kept
+    # hands the parser, so the gate keeps exactly what the detector reads — asked through
+    # `is_a_delivery_report`, which S2 asks too (U04). A delay notice is kept
     # too: whether delivery FAILED is the reader's question (`context/delivery`), not the gate's.
     # Below the provider's own verdicts — a report filed as spam is backscatter, not our outbound.
     # Its attached original is untouched: the connector lands each attachment as an event of its
     # own, with no headers and `has_attachment` set, so N-01 … N-04 never fire on one.
-    from genios_engine.capture.delivery_status import is_delivery_status
-    if is_delivery_status(sender=email, subject=subject,
-                          text=str(ctx.raw.get("body") or ctx.raw.get("snippet") or "")):
+    if is_a_delivery_report(ctx.raw, sender_email=email):
         return None
     # N-05 — an availability notice from a real sender passes every traffic-shape rule below: a
     # vacation responder carries Auto-Submitted (N-01) and often Precedence: bulk (N-04), which
