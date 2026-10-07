@@ -30,7 +30,11 @@ from genios_engine.platform.db import get_engine
 from scripts import recode_parked_documents as script
 
 ORG = "org_recode"
-KEY = generate_key()
+#: ⛔ A Fernet key that BEGINS WITH A DASH. One key in 64 does, and argparse then reads
+#: `--crypto-key -…` as two options: all four tests here failed on 2026-10-07 for nothing but the
+#: draw (`speedrun008/YC-II W27/03-FINDINGS.md` F80). Always drawing such a key makes that edge the
+#: standing case, and `_run` passes it as `--crypto-key=…`, the one spelling argparse cannot split.
+KEY = next(key for key in iter(generate_key, None) if key.startswith("-"))
 NOW = datetime(2026, 6, 1, tzinfo=timezone.utc)
 
 #: (event id, filename, mime) — one of each class the script has to tell apart.
@@ -91,7 +95,7 @@ def seeded(pg_url):
 def _run(pg_url: str, *extra: str) -> None:
     import sys
     argv = ["recode_parked_documents.py", "--database-url", pg_url, "--org", ORG,
-            "--crypto-key", KEY, *extra]
+            f"--crypto-key={KEY}", *extra]
     old = sys.argv
     sys.argv = argv
     try:
