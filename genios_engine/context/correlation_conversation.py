@@ -79,7 +79,7 @@ from sqlalchemy import bindparam, text
 from genios_engine.context.delivery import FAILED as DELIVERY_FAILED
 from genios_engine.context.delivery import FIELD as DELIVERY_FIELD
 from genios_engine.context.workstreams import NEVER_A_FILE
-from genios_engine.contracts.measured import Measured, rate_of
+from genios_engine.contracts.measured import Measured, count_of, rate_of
 from genios_engine.platform.identity import norm_email
 from genios_engine.platform.self_identity import SelfIdentity, identity_for
 
@@ -382,8 +382,8 @@ def wave_id_for(*, org_id: str, subject: str, opened_at: datetime) -> str:
 
 
 def _count(k: int) -> Measured:
-    """How many, resting on what it counts: none rests on nothing (`Measured`)."""
-    return Measured(value=k or None, n=k, basis=WAVE_BASIS, unit="count")
+    """How many — a count is what it counts, exact (`contracts/measured.count_of`)."""
+    return count_of(k, basis=WAVE_BASIS)
 
 
 @dataclass(frozen=True, slots=True)

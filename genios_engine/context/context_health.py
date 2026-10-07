@@ -122,6 +122,10 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "*'Every lens one entity appears in.'* One test caller. The multi-lens view of a node, and every live reader asks for one lens at a time",
         "MOVES WHEN a surface shows one entity across lenses — an entity page is the obvious caller and does not exist"),
 
+    "correlation_conversation.find_waves": (
+        "STEP-10's wave (`yc2_w27_s10 · M29.C4.L-logic.V2.U01`): one outreach to several outside people as one object — recognised by the sentence a qualified signal quoted, else by its subject within seven days to three or more outside addresses — with who it went to, who wrote back, whose address bounced, whom we wrote to again and the days since its last send. A read model built before the card that shows it, so it is unreached between this unit and that one",
+        "MOVES WHEN a card for a wave reads it — `outreach_situations._gather` stamping waves beside `_campaigns` (STEP-14)"),
+
 }
 
 

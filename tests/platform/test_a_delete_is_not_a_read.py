@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_020, (
+    assert r["statements"] == 3_022, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -366,6 +366,10 @@ def test_the_statement_count_did_NOT_move():
     # check_every_normal_says_its_n` — the normals written on a tenant's nodes, one literal SELECT
     # (24 → 25). Its failure line was first worded " with no n", which this counter took for a CTE
     # (`03` F100, again) — reworded rather than counted.
+    # ⛔ MOVED 3,020 → 3,022 by yc2_w27_s10/M29.C4.L-logic.V2.U01 (a wave is one object):
+    # `context/correlation_conversation` `_MAIL` (our sends, their subjects and recipients) and
+    # `_FAILED_DELIVERIES` — two literal SELECTs (1 → 3). The gate and connector units (C3 U04, U05)
+    # add none.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():
