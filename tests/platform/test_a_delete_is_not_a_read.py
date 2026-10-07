@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 2_949, (
+    assert r["statements"] == 2_950, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -293,6 +293,8 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 2,947 → 2,949 by yc2_w27_s06/M24.C5.L-data.V1.U01: `capture/parked/drain` — the unlimited
     # count of the rows another drain owns: one f-string, which the resolver reads twice (its
     # `{where_org}` hole and the literal before it), as it already reads `parked_aging`'s.
+    # ⛔ MOVED 2,949 → 2,950 by yc2_w27_s06/M24.C5.L-data.V1.U02: `capture/landing/unread` — the rows
+    # the ladder gives up on, a whole statement of their own now that the due read leaves them out.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

@@ -143,7 +143,17 @@ EXTRACTION_RETRY_BASE = timedelta(hours=1)
 #: The park status for the row whose event a later copy replaced.
 PARK_SUPERSEDED = "superseded"
 
+#: ⛔ STEP-06 (`yc2_w27_s06 · M24.C5.L-data.V1.U02`, 03 F74). The newest `limit` rows used to be taken
+#: and only THEN filtered, in Python, for being due — so 200 newer rows waiting out their backoff hid
+#: every older row that was due, and the ladder read nothing until the burst came due. The due test
+#: is here now, so the limit counts only due rows; `find_parked_extractions` still reads it again in
+#: Python, and `tests/capture/test_the_ladder_never_starves_pg.py` holds the two equal.
+#: ⛔ TWO WHOLE LITERALS, SAME INNER SELECT. `_OVER_THE_LIMIT` reads the rows this one now leaves
+#: out; built from a shared fragment, the SQL resolver would read each `+` as a statement with a hole
+#: (`platform/table_coverage`), so the inner select is spelled twice and the ladder's test holds the
+#: two copies identical.
 _FIND_PARKED = text(
+    "select * from ("
     "select se.event_id, se.connection_id, se.source, se.object_type, se.source_object_id, "
     "       se.parent_object_id, se.dedup_key, se.actor, se.recipients, se.internal_kind, "
     "       se.occurred_at, rp.enc_content, pe.reason_code, pe.created_at as parked_at, "
@@ -161,8 +171,36 @@ _FIND_PARKED = text(
     "   and (rp.expires_at is null or rp.expires_at > :now) "
     "   and not exists (select 1 from l1_extraction_results x "
     "                    where x.org_id = se.org_id and x.event_id = se.event_id) "
-    " order by se.occurred_at desc "
+    ") due "
+    " where due.message_parks + coalesce(due.row_attempts, 0) < :max_attempts "
+    "   and coalesce(due.next_attempt_at, due.parked_at + :base * power(2, greatest(0, "
+    "                due.message_parks + coalesce(due.row_attempts, 0) - 1))) <= :now "
+    " order by due.occurred_at desc "
     " limit :lim").bindparams(bindparam("codes", expanding=True))
+
+#: The rows the ladder gives up on — over the limit, which `_FIND_PARKED` above no longer returns.
+_OVER_THE_LIMIT = text(
+    "select * from ("
+    "select se.event_id, se.connection_id, se.source, se.object_type, se.source_object_id, "
+    "       se.parent_object_id, se.dedup_key, se.actor, se.recipients, se.internal_kind, "
+    "       se.occurred_at, rp.enc_content, pe.reason_code, pe.created_at as parked_at, "
+    "       pe.refetch_attempts as row_attempts, pe.refetch_next_attempt_at as next_attempt_at, "
+    "       (select count(*) from parked_events p2 "
+    "          join source_events s2 on s2.org_id = p2.org_id and s2.event_id = p2.event_id "
+    "         where p2.org_id = se.org_id and s2.source = se.source "
+    "           and s2.source_object_id = se.source_object_id "
+    "           and p2.reason_code in :codes) as message_parks "
+    "  from source_events se "
+    "  join parked_events pe on pe.org_id = se.org_id and pe.event_id = se.event_id "
+    "  join raw_payloads rp on rp.event_id = se.event_id and rp.org_id = se.org_id "
+    " where se.org_id = :o and se.outcome = 'emitted' "
+    "   and pe.status = 'pending' and pe.reason_code in :codes "
+    "   and (rp.expires_at is null or rp.expires_at > :now) "
+    "   and not exists (select 1 from l1_extraction_results x "
+    "                    where x.org_id = se.org_id and x.event_id = se.event_id) "
+    ") spent "
+    " where spent.message_parks + coalesce(spent.row_attempts, 0) >= :max_attempts"
+).bindparams(bindparam("codes", expanding=True))
 
 _SUPERSEDE_PARK = text(
     "update parked_events pe set status = :status "
@@ -198,7 +236,9 @@ def find_parked_extractions(engine, org_id: str, *, limit: int = 50,
     now = now or datetime.now(timezone.utc)
     with engine.connect() as c:
         rows = c.execute(_FIND_PARKED, {"o": org_id, "lim": int(limit), "now": now,
-                                        "codes": sorted(NEEDS_REEXTRACTION)}).fetchall()
+                                        "codes": sorted(NEEDS_REEXTRACTION),
+                                        "max_attempts": MAX_EXTRACTION_ATTEMPTS + 1,
+                                        "base": EXTRACTION_RETRY_BASE}).fetchall()
     due = []
     for r in rows:
         attempts = int(r.message_parks or 0) + int(r.row_attempts or 0)
@@ -220,8 +260,9 @@ def give_up_parked_extractions(engine, org_id: str, *, now: datetime | None = No
     Returns how many. A message given up is visible as such — never left `pending` for ever."""
     now = now or datetime.now(timezone.utc)
     with engine.connect() as c:
-        rows = c.execute(_FIND_PARKED, {"o": org_id, "lim": 10_000, "now": now,
-                                        "codes": sorted(NEEDS_REEXTRACTION)}).fetchall()
+        rows = c.execute(_OVER_THE_LIMIT, {"o": org_id, "now": now,
+                                           "codes": sorted(NEEDS_REEXTRACTION),
+                                           "max_attempts": MAX_EXTRACTION_ATTEMPTS + 1}).fetchall()
     over = [r for r in rows
             if int(r.message_parks or 0) + int(r.row_attempts or 0) >= MAX_EXTRACTION_ATTEMPTS + 1]
     if not over:
