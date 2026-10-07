@@ -144,7 +144,7 @@ states:
     - {name: unknown, description: No advocate identified.}
     - {name: identified, description: A candidate is responsive and positive.}
     - {name: engaged, description: "Two-way, sustained, faster than their own baseline.", entered_when: [
-        {fn: days_since, path: thread.last_inbound, op: "<=", value: {baseline: reply_cadence, mult:
+        {fn: days_since, path: thread.last_inbound, op: "<=", value: {baseline: write_interval, mult:
               1.0, floor: 1}}]}
     - {name: active, description: Has taken an internal action on our behalf., entered_when: [has_obs:
             introduction]}
@@ -200,7 +200,7 @@ inference_patterns:
       statement: "Replies materially faster than this contact's own learned reply cadence."
       status: executable
       when:
-        - {fn: days_since, path: thread.last_inbound, op: "<=", value: {baseline: reply_cadence, mult: 0.5,
+        - {fn: days_since, path: thread.last_inbound, op: "<=", value: {baseline: write_interval, mult: 0.5,
             floor: 1}}
       yields: {confidence_bp: 6800, attribute: null}
       note: >

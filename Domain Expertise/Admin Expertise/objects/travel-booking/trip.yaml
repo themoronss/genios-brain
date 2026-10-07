@@ -724,7 +724,7 @@ inference_patterns:
       when:
         - {path: thread.ball_in_court, op: "=", value: them}
         - {fn: days_since, path: thread.last_inbound, op: ">=",
-           value: {baseline: reply_cadence, mult: 2, floor: 2}}
+           value: {baseline: write_interval, mult: 2, floor: 2}}
       yields: {confidence_bp: 8000, attribute: state, value: overdue}
       evidence_fields: [thread.ball_in_court, thread.last_inbound]
       false_positive: The approver is themselves travelling, which is the specific irony this object cannot yet detect.

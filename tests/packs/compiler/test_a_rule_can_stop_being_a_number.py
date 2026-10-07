@@ -152,15 +152,15 @@ def test_a_plain_literal_still_works():
 
 def test_the_baseline_form_still_works():
     a = adapter(facts={"outreach.days_waiting": 10})
-    a.baselines = {"reply_cadence": {"value": 4}}
+    a.baselines = {"write_interval": {"value": 4}}
 
     cond = {"path": "outreach.days_waiting", "op": ">",
-            "value": {"baseline": "reply_cadence", "mult": 2}}
+            "value": {"baseline": "write_interval", "mult": 2}}
 
     assert state(a, cond) is PredicateState.TRUE          # 10 > 4 * 2
 
     slower = adapter(facts={"outreach.days_waiting": 7})
-    slower.baselines = {"reply_cadence": {"value": 4}}
+    slower.baselines = {"write_interval": {"value": 4}}
     assert state(slower, cond) is PredicateState.FALSE    # 7 is not > 8
 
 

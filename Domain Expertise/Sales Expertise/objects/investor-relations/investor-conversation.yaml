@@ -333,7 +333,7 @@ inference_patterns:
         has no reason to announce a loss of interest and every reason not to.
       status: executable
       when:
-        - {path: derived.engagement, op: "<=", value: {baseline: reply_cadence, mult: 0.5,
+        - {path: derived.engagement, op: "<=", value: {baseline: write_interval, mult: 0.5,
                                                        floor: 0.3}}
       yields: {attribute: stage, value: dormant, confidence_bp: 4500}
       evidence_fields: [derived.engagement]

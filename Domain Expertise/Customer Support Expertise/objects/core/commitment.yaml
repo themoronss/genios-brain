@@ -1017,7 +1017,7 @@ inference_patterns:
         - {fn: hours_since, path: commitment.due_at, op: ">", value: 0}
         - {path: thread.ball_in_court, op: "=", value: us}
         - {fn: days_since, path: thread.last_inbound, op: ">=",
-           value: {baseline: reply_cadence, mult: 2, floor: 1}}
+           value: {baseline: write_interval, mult: 2, floor: 1}}
       yields:
         confidence_bp: 6000
         value: severe
@@ -1744,7 +1744,7 @@ actions:
     preconditions:
       - {path: thread.ball_in_court, op: "=", value: them}
       - {fn: days_since, path: thread.last_inbound, op: ">=",
-         value: {baseline: reply_cadence, mult: 2, floor: 2}}
+         value: {baseline: write_interval, mult: 2, floor: 2}}
     cost: trivial
     reversible: true
     effect: >

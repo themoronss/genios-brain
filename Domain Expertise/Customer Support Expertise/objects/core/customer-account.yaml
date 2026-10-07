@@ -545,7 +545,7 @@ inference_patterns:
       when:
         - {path: thread.ball_in_court, op: "=", value: us}
         - {fn: days_since, path: thread.last_inbound, op: ">=",
-           value: {baseline: reply_cadence, mult: 2.0, floor: 2}}
+           value: {baseline: write_interval, mult: 2.0, floor: 2}}
       yields:
         confidence_bp: 8000
         attribute: engagement_trend
@@ -688,7 +688,7 @@ inference_patterns:
       when:
         - {path: thread.ball_in_court, op: "=", value: nobody}
         - {fn: days_since, path: thread.last_inbound, op: ">=",
-           value: {baseline: reply_cadence, mult: 3.0, floor: 21}}
+           value: {baseline: write_interval, mult: 3.0, floor: 21}}
         - {no_obs: negative_reply}
       yields:
         confidence_bp: 5500

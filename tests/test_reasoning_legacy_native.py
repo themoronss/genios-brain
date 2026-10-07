@@ -71,9 +71,9 @@ def _legacy_context(*, status: str = "open", fact_order: str = "normal") -> Node
             {"kind": "pricing_discussed", "occurred_at": NOW - timedelta(days=3)},
         ],
         baselines=(
-            {"reply_cadence": 2.5, "historical_engagement": 0.75}
+            {"write_interval": 2.5, "historical_engagement": 0.75}
             if fact_order == "normal"
-            else {"historical_engagement": 0.75, "reply_cadence": 2.5}
+            else {"historical_engagement": 0.75, "write_interval": 2.5}
         ),
         edge_count=2,
         neighbor_obs=(

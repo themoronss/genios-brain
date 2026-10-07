@@ -389,7 +389,7 @@ inference_patterns:
       status: executable
       when:
         - {path: thread.ball_in_court, op: "=", value: us}
-        - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 2,
+        - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: write_interval, mult: 2,
             floor: 3}}
       yields: {confidence_bp: 7500, attribute: action_state, value: overdue}
       evidence_fields: [thread.ball_in_court, thread.last_inbound]

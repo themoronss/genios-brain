@@ -371,7 +371,7 @@ inference_patterns:
       status: executable
       when:
         - {has_obs: proposal_sent}
-        - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 3,
+        - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: write_interval, mult: 3,
             floor: 7}}
       yields: {confidence_bp: 7800, attribute: response_state, value: none}
       evidence_fields: [thread.last_inbound]
@@ -573,7 +573,7 @@ events:
   - {id: pr.sent, name: Proposal Sent, emitted_when: [has_obs: proposal_sent], payload: [version,
         total_value, sent_at]}
   - {id: pr.went_quiet, name: Proposal Went Quiet, emitted_when: [has_obs: proposal_sent, {fn:
-          days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 3,
+          days_since, path: thread.last_inbound, op: ">=", value: {baseline: write_interval, mult: 3,
             floor: 7}}], payload: [sent_at, last_recipient_activity_at], description: "The most common terminal
       state of a losing deal, and the one with the longest window in which it is still recoverable."}
   - {id: pr.objected, name: Price Objection Raised, emitted_when: [has_obs: objection_price],

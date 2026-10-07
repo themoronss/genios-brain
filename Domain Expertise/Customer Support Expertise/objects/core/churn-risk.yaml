@@ -1211,7 +1211,7 @@ inference_patterns:
           path: thread.last_inbound
           op: '>='
           value:
-            baseline: reply_cadence
+            baseline: write_interval
             mult: 3
             floor: 7
       yields:
@@ -2111,7 +2111,7 @@ events:
         path: thread.last_inbound
         op: '>='
         value:
-          baseline: reply_cadence
+          baseline: write_interval
           mult: 3
           floor: 7
     payload: [days_since_last_contact, contact_rate_baseline, account_ref]

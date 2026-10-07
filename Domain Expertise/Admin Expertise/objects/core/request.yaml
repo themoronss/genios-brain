@@ -828,7 +828,7 @@ inference_patterns:
         - {exists: thread.last_inbound}
         - {path: thread.ball_in_court, op: "=", value: us}
         - {fn: hours_since, path: thread.last_inbound, op: ">",
-           value: {baseline: reply_cadence, mult: 2, floor: 24}}
+           value: {baseline: write_interval, mult: 2, floor: 24}}
       yields: {confidence_bp: 7000, attribute: acknowledged, value: false}
       evidence_fields: [thread.last_inbound, thread.ball_in_court]
       false_positive: >

@@ -18,7 +18,7 @@ class NodeContext:
     node_type: str
     facts: dict[str, dict] = field(default_factory=dict)   # field -> {value, confidence, authority_rank}
     obs: list[dict] = field(default_factory=list)          # [{kind, occurred_at}]
-    baselines: dict[str, float] = field(default_factory=dict)   # e.g. {"reply_cadence": 2.1}
+    baselines: dict[str, float] = field(default_factory=dict)   # e.g. {"write_interval": 2.1}
     # cross-entity substrate (C1) — the 1-hop neighbourhood over graph_edges, so a rule on a deal can
     # read the account's contacts/competitor-obs (single-threaded / competitor-in-account reasoning).
     edge_count: int = 0                                    # number of current edges on this node

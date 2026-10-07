@@ -295,7 +295,7 @@ states:
       description: Silent past three times their own reply cadence. Intent has expired even if the
         record has not.
       entered_when: [{fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline:
-              reply_cadence, mult: 3.0, floor: 21}}]
+              write_interval, mult: 3.0, floor: 21}}]
     - name: disqualified
       description: Verdict disqualified, with a reason recorded. A terminal state and a valuable one.
     - name: converted
@@ -307,9 +307,9 @@ states:
     - {from: contacted, to: engaged, when: [{path: thread.ball_in_court, op: "=", value: us}]}
     - {from: engaged, to: qualified}
     - {from: engaged, to: dormant, when: [{fn: days_since, path: thread.last_inbound, op: ">=", value: {
-            baseline: reply_cadence, mult: 3.0, floor: 21}}]}
+            baseline: write_interval, mult: 3.0, floor: 21}}]}
     - {from: contacted, to: dormant, when: [{fn: days_since, path: thread.last_inbound, op: ">=", value: {
-            baseline: reply_cadence, mult: 3.0, floor: 21}}]}
+            baseline: write_interval, mult: 3.0, floor: 21}}]}
     - {from: dormant, to: engaged, when: [{path: thread.ball_in_court, op: "=", value: us}]}
     - {from: qualified, to: converted}
     - {from: identified, to: disqualified}
@@ -564,7 +564,7 @@ business_rules:
       Silence past three times the contact's own reply cadence, floored at twenty-one days, expires
       the intent claim. The lead moves to dormant and stops counting as pipeline; it does not become
       disqualified, because the person is still perfectly good and only the moment has passed.
-    when: [{fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult:
+    when: [{fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: write_interval, mult:
             3.0, floor: 21}}]
     then: expire_intent_and_flag_dormant
     severity: warning
@@ -665,7 +665,7 @@ events:
       description: "The event whose timing predicts inbound conversion better than anything else on this
       object, and which nothing can currently emit."}
   - {id: lead.intent_expired, name: Intent Expired, emitted_when: [{fn: days_since, path: thread.last_inbound,
-        op: ">=", value: {baseline: reply_cadence, mult: 3.0, floor: 21}}], payload: [
+        op: ">=", value: {baseline: write_interval, mult: 3.0, floor: 21}}], payload: [
         intent_recency_days, last_inbound_at]}
   - {id: lead.disqualified, name: Lead Disqualified, emitted_when: [has_obs: closed_lost_mention],
       payload: [disqualify_reason, intent_strength_bp, fit_score_bp]}

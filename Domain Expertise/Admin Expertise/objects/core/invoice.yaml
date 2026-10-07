@@ -770,7 +770,7 @@ inference_patterns:
       status: executable
       when:
         - {path: thread.ball_in_court, op: "=", value: them}
-        - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 2, floor: 7}}
+        - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: write_interval, mult: 2, floor: 7}}
       yields: {confidence_bp: 7500, attribute: ball_in_court, value: vendor, corroborates: [inv.resolution_promised_and_overdue]}
       evidence_fields: [thread.ball_in_court, thread.last_inbound]
       false_positive: >

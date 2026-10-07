@@ -469,7 +469,7 @@ inference_patterns:
       status: executable
       when:
         - {has_obs: proposal_sent}
-        - {fn: days_since, path: deal.last_inbound, op: ">", value: {baseline: reply_cadence, mult: 3, floor:
+        - {fn: days_since, path: deal.last_inbound, op: ">", value: {baseline: write_interval, mult: 3, floor:
               7}}
       yields: {confidence_bp: 6500, attribute: is_stated, value: false}
       evidence_fields: [deal.last_inbound]
@@ -606,7 +606,7 @@ business_rules:
       something that will not happen.
     when:
       - {has_obs: proposal_sent}
-      - {fn: days_since, path: deal.last_inbound, op: ">", value: {baseline: reply_cadence, mult: 3, floor:
+      - {fn: days_since, path: deal.last_inbound, op: ">", value: {baseline: write_interval, mult: 3, floor:
             7}}
     then: open_unstated_objection
     severity: warning
@@ -704,7 +704,7 @@ events:
   - {id: obj.price_raised, name: Price Objection Raised, emitted_when: [has_obs: objection_price],
       payload: [stated_category, deal_momentum]}
   - {id: obj.inferred_from_silence, name: Unstated Objection Inferred, emitted_when: [has_obs: proposal_sent,
-      {fn: days_since, path: deal.last_inbound, op: ">", value: {baseline: reply_cadence, mult: 3,
+      {fn: days_since, path: deal.last_inbound, op: ">", value: {baseline: write_interval, mult: 3,
             floor: 7}}], payload: [is_stated, deal_momentum], description: "The event nobody is waiting
       for and everybody needs. It is the only way a silent loss becomes visible before the forecast call."}
   - {id: obj.went_dormant, name: Objection Went Dormant, emitted_when: [has_obs: objection, {path:
@@ -726,7 +726,7 @@ actions:
       authority to give it."}
   - {id: obj.surface_the_silence, name: Name the silence directly, actor: human, preconditions: [has_obs:
           proposal_sent, {fn: days_since, path: deal.last_inbound, op: ">", value: {baseline:
-            reply_cadence, mult: 3, floor: 7}}], effect: "A short message that makes it easy to say no.
+            write_interval, mult: 3, floor: 7}}], effect: "A short message that makes it easy to say no.
       Recovers the deal or ends it, and both beat the current state."}
   - {id: obj.convert_to_risk, name: Convert to a risk with an owner, actor: human, effect: "For objections\
       we cannot close. Keeps them visible instead of quietly dropped."}

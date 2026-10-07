@@ -1301,7 +1301,7 @@ inference_patterns:
       status: executable
       when:
         - {path: thread.ball_in_court, op: '=', value: them}
-        - {fn: days_since, path: thread.last_inbound, op: '>=', value: {baseline: reply_cadence, mult: 2.5, floor: 3}}
+        - {fn: days_since, path: thread.last_inbound, op: '>=', value: {baseline: write_interval, mult: 2.5, floor: 3}}
       yields:
         confidence_bp: 6800
         attribute: trajectory

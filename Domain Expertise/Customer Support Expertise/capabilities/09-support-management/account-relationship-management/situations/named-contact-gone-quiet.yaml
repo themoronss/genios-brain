@@ -68,7 +68,7 @@ matches:
     # fixed threshold necessarily gets one of the two wrong. The multiplier measures against
     # the contact's own learned rhythm; the floor stops a brand-new contact with no baseline
     # yet from firing on an ordinary fortnight of nothing happening.
-    - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 4, floor: 14}}
+    - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: write_interval, mult: 4, floor: 14}}
 
 # churn_signal_detection owns the aggregate read and this is one of its better inputs.
 # entitlement_verification because quiet and lapsed correlate more than anyone expects: an

@@ -462,7 +462,7 @@ states:
         reason this object exists. Nothing in any deployed system computes it.
       entered_when:
         - {path: thread.ball_in_court, op: "=", value: them}
-        - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 3, floor: 5}}
+        - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: write_interval, mult: 3, floor: 5}}
       implies: A business-continuity item, not a chasing item. Reminders here are wasted and slightly insulting.
     - name: expired
       description: Authority past effective_to. Still routed to, still deciding, and every decision voidable.
@@ -479,7 +479,7 @@ states:
     - {from: active, to: on_hold, trigger: delegation_recorded, reversible: true}
     - {from: on_hold, to: active, trigger: holder_returned}
     - {from: active, to: at_risk, reversible: true,
-       when: [{fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 3, floor: 5}}]}
+       when: [{fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: write_interval, mult: 3, floor: 5}}]}
     - {from: at_risk, to: active, trigger: holder_responded, reversible: true}
     - {from: at_risk, to: on_hold, trigger: delegation_recorded_late}
     - {from: active, to: expired, trigger: instrument_lapsed}
@@ -520,7 +520,7 @@ relationships:
     weight_bp: 1400
     confidence_bp: 5500
     priority: 2
-    conditions: [{fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 3, floor: 5}}]
+    conditions: [{fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: write_interval, mult: 3, floor: 5}}]
     evidence: [signed_form, hris, email]
     description: >
       Valid only while recorded and in date. An unrecorded delegation is not a lighter version of
@@ -719,7 +719,7 @@ inference_patterns:
       status: executable
       when:
         - {path: thread.ball_in_court, op: "=", value: them}
-        - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 3, floor: 5}}
+        - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: write_interval, mult: 3, floor: 5}}
       yields: {confidence_bp: 6500, attribute: availability_state, value: unknown}
       evidence_fields: [thread.last_inbound, thread.ball_in_court]
       false_positive: >
@@ -737,7 +737,7 @@ inference_patterns:
       status: executable
       when:
         - {path: derived.engagement, op: "<=", value: 0.5}
-        - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 3, floor: 5}}
+        - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: write_interval, mult: 3, floor: 5}}
       yields: {confidence_bp: 6200, attribute: null, corroborates: [apr.silent_far_past_own_cadence]}
       evidence_fields: [derived.engagement, thread.last_inbound]
       false_positive: A genuinely busy fortnight — year end, a conference, a project crunch — looks identical to leave from the outside.
@@ -997,7 +997,7 @@ business_rules:
       day one — not chased on day five.
     when:
       - {fn: edge_count, op: "<=", value: 1}
-      - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 3, floor: 5}}
+      - {fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: write_interval, mult: 3, floor: 5}}
     then: flag_single_point_of_failure
     severity: warning
 
@@ -1167,7 +1167,7 @@ events:
      invalidates: [authority_scope, approval_limit, system_entitlements],
      description: "Payload carries the entitlements deliberately: revoking the paper authority without the system rights is the default outcome and the standard finding."}
   - {id: apr.went_quiet, name: Approver Went Quiet, severity: notable,
-     emitted_when: [{fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: reply_cadence, mult: 3, floor: 5}}],
+     emitted_when: [{fn: days_since, path: thread.last_inbound, op: ">=", value: {baseline: write_interval, mult: 3, floor: 5}}],
      payload: [last_engaged_at, engagement_trend, open_approval_count]}
   - {id: apr.control_conflict_detected, name: Control Conflict Detected, severity: notable,
      payload: [segregation_conflicts, four_eyes_partner_ref, reports_to_ref],

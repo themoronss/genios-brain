@@ -8,8 +8,20 @@ from sqlalchemy import text
 from genios_engine.context.graph_store import GraphStore
 
 # C9 — Baseline Builder. Closed-form per-contact statistics from graph/event history.
-# reply_cadence = median gap (days) between a contact's messages. Cold-start fallback when
-# there isn't enough history yet. Deterministic; stored versioned for replay.
+# write_interval = median gap (days) between a contact's OWN messages — how often they write.
+# Cold-start fallback when there isn't enough history yet. Deterministic; stored versioned for
+# replay.
+#
+# ⛔ IT IS NOT A REPLY TIME, AND IT USED TO BE NAMED AS ONE (STEP-10, tree `yc2_w27_s10 ·
+# M29.C1.L-logic.V0.U04`, decision `06` D41). It was stored as `reply_cadence:<node>`, beside
+# `context/waiting.py`'s `party.reply_cadence_days` — THEIR reply latency, from our outbound to
+# their next inbound — and every rule written `{baseline: reply_cadence}` was authored by someone
+# reading this number as that one. In golden F15 the founder's own node got 0.04 days (n = 4,
+# STEP-10 §8.1): the gap between his five wave sends. One meaning now: the reply time keeps its
+# name, and this is stored, routed and asked for as `write_interval` — `runner._bulk_load_metrics`,
+# the corpus (`{baseline: write_interval}`), `packs/general_v1.champion_quiet` and the vocabulary
+# move together. An old `reply_cadence:` row is never read: a sweep rebuilds every person's row
+# before it reads one. `tests/reason/test_one_meaning_for_reply_cadence.py`.
 #
 # C1 extends it to two more per-contact metrics computed from the SAME event scan (no extra query):
 #   momentum   = median(last-3 gaps) / median(all gaps)  — >1 the contact is cooling, <1 heating up.
@@ -162,7 +174,7 @@ def build_baselines(store: GraphStore, org_id: str, eval_time: datetime | None =
         # (`aditi@noveum.ai`, `asmit@supymem.com`, `tejas@tryclean.ai`) have exactly THREE real
         # events and one future calendar instance each. Three is below MIN_SAMPLES and must be
         # `cold_start` — "we do not know this person's rhythm yet". Four crosses it, so each was
-        # given a COMPUTED `reply_cadence` derived from a gap that ends in a future year, and
+        # given a COMPUTED `write_interval` derived from a gap that ends in a future year, and
         # `cold_start` stopped being true about them. Downstream, "this relationship is going
         # cold" was judged against that number instead of the honest default.
         #
@@ -193,7 +205,7 @@ def build_baselines(store: GraphStore, org_id: str, eval_time: datetime | None =
                 built["cold_start"] += 1
                 mom = 1.0
             eng = _engagement(times, eval_time)
-            rows.append([{"o": org_id, "k": f"reply_cadence:{p.node_id}", "v": float(val), "n": n, "c": cold},
+            rows.append([{"o": org_id, "k": f"write_interval:{p.node_id}", "v": float(val), "n": n, "c": cold},
                          {"o": org_id, "k": f"momentum:{p.node_id}", "v": float(mom), "n": len(gaps), "c": cold},
                          {"o": org_id, "k": f"engagement:{p.node_id}", "v": float(eng), "n": len(times), "c": cold}])
 
@@ -227,11 +239,11 @@ def build_baselines(store: GraphStore, org_id: str, eval_time: datetime | None =
 
 
 def load_baselines(store: GraphStore, org_id: str, node_id: str) -> dict[str, float]:
-    """Back-compat: just the reply_cadence baseline used by `{baseline}` threshold resolution."""
+    """Back-compat: just the write_interval baseline used by `{baseline}` threshold resolution."""
     with store.engine.connect() as c:
         rows = c.execute(text("select key, value from baselines where org_id=:o and key=:k"),
-                         {"o": org_id, "k": f"reply_cadence:{node_id}"}).fetchall()
-    return {"reply_cadence": float(r.value) for r in rows} if rows else {}
+                         {"o": org_id, "k": f"write_interval:{node_id}"}).fetchall()
+    return {"write_interval": float(r.value) for r in rows} if rows else {}
 
 
 def load_node_metrics(store: GraphStore, org_id: str, node_id: str):
@@ -247,8 +259,8 @@ def load_node_metrics(store: GraphStore, org_id: str, node_id: str):
     for r in rows:
         metric = str(r.key).split(":", 1)[0]
         v = float(r.value)
-        if metric == "reply_cadence":
-            baselines["reply_cadence"] = v
+        if metric == "write_interval":
+            baselines["write_interval"] = v
         elif metric == "contact_rate_per_account":
             # A baseline, not a fact: the corpus asks for it as the denominator a frequency is
             # judged against (`{baseline: contact_rate_per_account}`), never as a value a rule

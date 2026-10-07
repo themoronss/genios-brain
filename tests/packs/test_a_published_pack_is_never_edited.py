@@ -27,7 +27,7 @@ pytestmark = pytest.mark.unit
 #: pack id -> (version, content address). Update BOTH halves together, never one.
 PUBLISHED = {
     "sales":            ("1.13.0", "cfg_6f98fb643fd16016"),
-    "general":          ("1.5.0",  "cfg_9a238e14b6539265"),
+    "general":          ("1.5.1",  "cfg_06b482a5abb53c64"),
     "admin":            ("1.0.1",  "cfg_d4cbc1cc822b78d8"),
     "customer_support": ("1.0.1",  "cfg_abb0167d5478c591"),
 }

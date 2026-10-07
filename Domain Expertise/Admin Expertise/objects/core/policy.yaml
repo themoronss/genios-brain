@@ -807,7 +807,7 @@ inference_patterns:
       when:
         - {path: thread.ball_in_court, op: "=", value: us}
         - {fn: days_since, path: thread.last_inbound, op: ">=",
-           value: {baseline: reply_cadence, mult: 2.5, floor: 14}}
+           value: {baseline: write_interval, mult: 2.5, floor: 14}}
       yields: {confidence_bp: 6500, attribute: null, corroborates: [pol.overdue_policy_action]}
       evidence_fields: [thread.ball_in_court, thread.last_inbound]
       false_positive: >

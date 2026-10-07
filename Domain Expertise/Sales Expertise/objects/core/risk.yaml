@@ -464,7 +464,7 @@ inference_patterns:
       status: executable
       when:
         - {has_obs: proposal_sent}
-        - {fn: days_since, path: deal.last_inbound, op: ">", value: {baseline: reply_cadence, mult: 3, floor:
+        - {fn: days_since, path: deal.last_inbound, op: ">", value: {baseline: write_interval, mult: 3, floor:
               7}}
       yields: {confidence_bp: 7000, attribute: detection_source, value: absent_signal}
       evidence_fields: [deal.last_inbound]

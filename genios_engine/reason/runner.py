@@ -376,8 +376,8 @@ def _bulk_load_metrics(store, org_id) -> dict:
         metric, node_id = parts[0], parts[1]
         baselines, derived = out.setdefault(node_id, ({}, {}))
         v = float(r.value)
-        if metric == "reply_cadence":
-            baselines["reply_cadence"] = v
+        if metric == "write_interval":
+            baselines["write_interval"] = v
         elif metric == "contact_rate_per_account":
             baselines["contact_rate_per_account"] = v
         elif metric in ("momentum", "engagement", "contact_frequency"):
