@@ -6,10 +6,10 @@ default holds, and the step that depends on it says so in its own file.
 | # | Decision | Recommendation | Blocks |
 |---|---|---|---|
 | **D1** | Does the expert's judgment decide **what matters**? | **Yes** — an amendment to the Atlas's RULE 02 | `STEP-12`, `STEP-13` |
-| **D2** | Are your founder workstreams in scope now, beyond "Admin only"? | **Yes** — one "Founder Office" domain | `STEP-09`, `STEP-11` |
+| **D2** | Are your founder workstreams in scope now, beyond "Admin only"? | **Yes** — one "Founder Office" domain. ⛔ Restated 2026-10-07 with STEP-09's check (§8.5): STEP-09's files (M27) are domain-free and build under any answer; D2 decides only whether files in a dark domain reach a card (M28) | `STEP-09` (M28), `STEP-11` |
 | **D3** | Before you review a playbook, may the expert still advise? | **Yes, labelled** — your org only | `STEP-12` |
 | **D4** | How long is low-attention mail kept? | ✅ **180 days, encrypted** — on Rohit's go on STEP-03 (6 Oct), whose plan said 180 | `STEP-03` (✅ built) |
-| **D5** | How far back does the re-sync go? | **180 days** | `STEP-08` |
+| **D5** | How far back does the re-sync go? | **365 days** — ⛔ restated 2026-10-07 by `09` D16: 180 loses the 3one4 deferral (2 Apr), and the 60-day default no longer reaches the oldest deleted mail (`STEP-08` §8.5). The run waits for your number; the script refuses `--apply` without one | `STEP-08` (✅ built 2026-10-07 — the run is Harsh's) |
 | **D6** | Who is "us" | ✅ **Answered 2026-10-05:** `mrrohitswerashi@gmail.com` — the connected Gmail and Calendar | `STEP-04` |
 | **D7** | Which model thinks, and the daily cap | **Sonnet-class; Opus-class for high stakes; $5/day** | `STEP-12` |
 | **D8** | Screen reminders out of hiding? | **Yes — in the morning brief first** | `STEP-14` |
@@ -29,6 +29,11 @@ default holds, and the step that depends on it says so in its own file.
 | **D27** | Who may accept a line of the company brief: the account owner only, or admins too? | **The owner** — the brief steers every judgment. Default applied 2026-10-07: every write route is `require_account_owner` | `STEP-07` (✅ built 2026-10-07) |
 | **D28** | The brief's drafter: which model, how often? | **Sonnet-class, one call to draft, one a week for what is missing** — about $0.05 each. Default applied 2026-10-07 (`Settings.company_brief_model = claude-sonnet-5`) | `STEP-07` (✅ built) |
 | **D29** | Now that the brief exists, should the AI filter's archive stand (end `03` F55's re-admission)? | **No** — not until a live run measures the filter with the brief (D12c). Holds | `STEP-07` |
+| **D30** | May a connector's introduction create the people it introduces? | **Yes, the brief's connectors only** — the contact is addressed in a mail to you, as any To/Cc recipient is; today an unsubscribe header drops every recipient, so the three contacts who never replied are not in memory at all (`STEP-09` §8.1) | `STEP-09` (M27.C1) |
+| **D31** | Does each in-motion line of the brief name its counterparty (a domain or an address) and its kind? | **Yes** — the drafter proposes it, you accept it; "every investor in the brief has a file" becomes measurable. Default: kinds only for connectors and the watchlist | `STEP-09` (M27.C4) |
+| **D32** | A new extraction field (`workstream_kind`, `stage_change`) now? | **Not now** — the brief gives the kind; if ever, before STEP-08 runs in production, or the mailbox is read twice (69 cassette answers re-recorded, two schema versions bumped) | `STEP-09` |
+| **D33** | How long may a file stay quiet before it is dormant? | **Per kind, as data, labelled proposed** — 90 days investor, program, compliance; 45 intro, partner — until STEP-11 authors them. Default: 45 days for every file, as today | `STEP-09`, `STEP-11` |
+| **D34** | The legacy `unanswered_email` cards, once files exist? | **Keep them until STEP-14** — they make 15 of the 23 cards on the golden set's 32 workstream cases, every passing intro among them; measure the duplicates first | `STEP-14` |
 
 ---
 

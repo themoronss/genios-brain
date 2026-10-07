@@ -79,3 +79,107 @@ GENIOS_TEST_DATABASE_URL=… .venv/bin/python -m pytest tests/context/test_works
 |---|---|
 | A wrong grouping merges two pieces of work | the split rule for intros; files are keyed on counterparty × kind, and a merge is a proposal you can undo |
 | The reader's stage guess moves a file wrongly | stage moves need a verified span; an unaccepted vocabulary stays labelled *proposed* |
+
+---
+
+## 8 · The check of 2026-10-07 — what the 5 Oct plan got right, and wrong
+
+Every claim above was re-read against `speedrun008` @ `c1cab2fc` (STEP-02 to STEP-07 built; STEP-08's
+code, built beside this check, touches none of the modules cited) — by a read-only worker, and the
+claims that decide the design again by hand. The plan was **measured on the golden set**: the 32 cases
+this step is about, each replayed from its cassette through the real chain, its rows read before the
+tenant was removed — 0 cassette misses, every verdict as `03` §F.1 records it, no spend
+(`baseline/yc2w27-s09-check/`: `measure_workstreams.py`, `table.md`). Production was not read.
+
+### 8.1 · Measured — the golden set (intros F03–F08, F37; investors F10–F15, F42, F44; programs F17–F24, F31; compliance F01, F02; hire F25; partners F26–F29)
+
+| | Result |
+|---|---|
+| introductions tracked per introduced contact (8 contacts in F03–F08, F37) | **0 of 8 split by design.** 5 are in memory as a person — exactly the ones who replied; 3 have a correlation of their own, 2 by the order the drain happened to read the mails (F04, F37) and 1 from a calendar invite (F07); 2 own files hold the introduction itself. Rahul (F03), Simon and Omar (F08) — introduced, never replied — **are not in memory at all** |
+| why the contact is missing | Introly's mail carries `List-Unsubscribe`, so `addressed_to_a_list` drops **every** To/Cc recipient (`context/pipeline.py:1243-1244`), and a person named in the text needs an address to become a node (`:1373`) |
+| why the connector anchors the intro | the extraction's role `connector` is free text the graph never reads (`03` F80), and `choose_anchors` falls back to the connector when it is the only party at its tier (`context/correlation.py:249-252`); the contact's reply then joins the connector's file by thread (`:322-325`) — F05, F06, F07 |
+| portals and programs that write from `updates@` / `no-reply@` / `support@` | become `service` nodes and **never correlate** (`context/pipeline.py:153-161, 1012-1014, 2131`): F01, F02, F23 have **no file at all**, though STEP-07 made their mail kept and read |
+| which domain the work lands in | by the words of the mail, not the kind of work: investors in Admin (F12, F13, F42 — carded) or in `fundraising` (F10, F11, F14, F15, F44 — dark: no live lane, `reason/domain_shadow.py:525`); accelerators in `fundraising` (F17, F20, F24, F31), the incubator in Admin (F19); one partner split across Sales and Admin (F29). **15 situations in 11 of these cases sit in `fundraising`** and end `no_corpus` |
+| what makes the cards today | 23 cards in these 32 cases: **15 from the legacy `unanswered_email` rule** (no situation behind them) — every passing intro card (F04, F05, F06, F37) among them — 4 `account_admin`, 3 `meeting_follow_through`, 1 `dependency_stated` |
+| open loops | 28, all `question`, none closed; `awaited_from` set only on F15's five outbound asks |
+| golden replay 02 (Boardy) | all 10 mutations `blocked_missing_capability`; only m04 is driven (on F09), a strict xfail; the other nine have no founder case to drive them. Across every driven Atlas mutation: 4 pass (03 m00, 03 m01, 04 m01, 06 m04), 3 xfail (01 m01, 02 m04, 03 m05) |
+
+### 8.2 · The claims
+
+| Claim (5 Oct) | Verdict (7 Oct) |
+|---|---|
+| correlations keyed `(anchor, domain, generation)`, situations unique on `(org, correlation)` | ✅ `migrations/0037_l2_correlation.sql:32`, `0038_l2_situations.sql:51`. ⚠️ Not in the plan: the **thread-first** join (`context/correlation.py:322-325`) and the **45-day** window (`:70`) with 45-day dormancy (`context/situations.py:87`) — F15's five fund situations are already `dormant` |
+| domains from regex hints; `fundraising` swallows programs; compliance and hiring in Admin | ✅ `capture/domain/hints.py:22-67`, ranked `:134`; F01's portal "application" is hinted `fundraising` first |
+| fundraising can never go live | ✅ `reason/domain_shadow.py:513-527`. ⚠️ The doctrine exists, in the Sales corpus: a `CANDIDATE_ROUTES` entry is declared and unarmed (`:482-497`) — one line from live, by decision, not by authoring |
+| workstream-shaped facts exist and are live | ⚠️ partly. The outreach readings (`context/outreach_situations.py:1444-1482`) are Admin's and mostly **held** at admission on the golden set (awaiting_response ×6, condition_in_review ×3, analytic_movement ×10); `waiting.py` is live; `reason/meetings/prep.py` is a desktop moment, not the mail chain |
+| the reader already proposes the right words; `thread.objective` falls back to free text | ⚠️ the fields exist (`contracts/extraction.py:436-439`), but the legacy objective list (`context/extract/prompt.py:52-62`) is **never sent in production** — L2 runs with no model (`context/runner.py:194-211`), so `objective` is always `{}` (`qes_adapter.py:187`) and `objective_of` always returns the free-text fact |
+| intro roles exist; connector ≠ target is not enforced | ✅ `_COUNTERPARTY_ROLES` (`context/pipeline.py:417-425`); 0 `party.role` facts in F03–F09, F37. Relay detection (`capture/gate/rules.py:119-184`) is about a relayed REPLY, not an introduction |
+| `ASK_KINDS` omits four asks `kinds.yaml` marks | ✅ but the two lists mean different things: `is_ask` is "we asked them" (`kinds.yaml:15-18`), `ASK_KINDS` "a counterparty waits on us" (`contracts/open_loop.py:21-23`). On the live path only `approval_requested` can occur, and adding it opens a WRONG loop on F25 (passing today: the approval awaited is the board's, not the candidate's) |
+| §3.1: a workstream is a long-lived situation of type `workstream.<kind>`, its fields on append-only interpretations | ❌ **as written.** A correlation situation's type is re-derived every refresh from (anchor type, domain) (`context/situations.py:1126, 1195`); a dotted type breaks the corpus schema (`Domain Expertise/_schema/situation.schema.json`, `^[a-z0-9_]+$`); the producible types are pinned (`tests/test_l3_route_vocabulary_contract.py:52`). `situation_interpretations` keeps one row per (situation, slice digest), has one writer and no reader, and refuses any field the situation contract does not let a model write (`context/proposal_gate.py:144-147`) — `stage`, `open_asks`, `owner`, `due` would be refused |
+| §3.3: the reader proposes `workstream_kind`, `counterparty`, `stage_change`, `open_ask`, `due`, `roles` | ⚠️ mostly there already — `questions` (asked_by / asked_of, with a span), `roles`, `commitments.due`, `decision_states`; new are only `workstream_kind` and `stage_change`. ⛔ **Cost:** two schema versions bumped by hand (`extractor.py:188`, `structured/mapper.py:143`), every extraction re-read, and **69 extraction answers in 38 of 44 cassettes** re-recorded — and if it lands after STEP-08 runs in production, the mailbox is re-read twice |
+| §3.4: a new `workstream_verify.py` | ⚠️ `context/proposal_gate.py` already is the deterministic validator (span grading, schema, the contract) — a second one would be a second answer. STEP-13 §3.3 plans the same check |
+| §3.5: stages from STEP-11 | ❌ not buildable now — STEP-11 is unbuilt, D2 and D3 unanswered |
+| §3.7: the open lane becomes a weekly source | ⚠️ built as an on-demand, staff-only tool, and its own tests refuse what §3.7 asks: nothing under `reason/` or `packs/` may import it, and it is not periodic (`tests/capture/semantic/test_open_lane.py:479, 503`) |
+| §3.8: `GET /workstreams` | ✅ nothing collides — "workstream" appears nowhere in `genios_engine/` |
+| §5: replays 02, 03, 04, 06 move from xfail to pass | ⚠️ stale: three of the four already pass; replay 02's "≥ 8 of 10" needs at least seven founder cases that do not exist, plus STEP-12/14 |
+| §5: Boardy intros 3 of 7 → 7 of 7 | ✅ the right measure — on the golden set it is **0 of 8 by design** (§8.1) |
+
+### 8.3 · What changes in the design
+
+1. **A file is a correlation the company brief can name — not a new situation type.** No
+   `workstream.<kind>` types, no fields on interpretations, no second graph. The work in motion already
+   groups by thread → person → company (`context/correlation.py`); what is missing is that the brief's
+   connectors, portals and programs take part in it.
+2. **An introduction is split per contact by the brief's connectors.** A sender the brief names as a
+   connector is an `introducer` on its own mail (never the anchor — F80), and its To/Cc recipients
+   become people, `introduced`, even under an unsubscribe header (only a connector's mail; a real
+   mailing list stays skipped). The intro then anchors on each contact, and the contact's reply joins
+   the contact's file by thread.
+3. **A watchlist domain is a file.** Mail from a service address at a domain the brief watches
+   correlates under that organisation — one file per program or portal, instead of none.
+4. **The kind comes from the brief**, never guessed from the words: a connector's file is an *intro*,
+   a watchlist domain's a *program* or *compliance* file, a counterparty an in-motion line names takes
+   that line's kind (D31). A file with no brief line behind it is listed with no kind.
+5. **The list is a read model, then an API** — `context/workstreams.py` (deterministic, no model, no
+   table) and `GET /v1/workstreams`: per file the kind, the counterparty, the evidence, the last touch,
+   the open asks and whose move it is. A health check says which named counterparty has mail and no file.
+6. **Not now:** stages (STEP-11's vocabularies); a new extraction field (D32 — and if ever, before
+   STEP-08 runs); `ASK_KINDS` (it would open wrong loops); a weekly open lane (its own rules forbid it);
+   live cards for files in a dark domain — that is D2.
+7. **The connector is never owed a reply** (`03` F81): the legacy `unanswered_email` rule skips a
+   sender the brief names as a connector — it raises Introly in six cases today; the decider defers it.
+
+### 8.4 · What will be built — tree block `yc2_w27_s09` (milestone M27), proposed
+
+| Category | Units | What |
+|---|---|---|
+| C1 · the intro, per contact | 3 | `context/pipeline` — the brief's connector is `introducer`; its recipients become `introduced` people; `context/correlation` — the intro anchors on each contact, a contact's reply stays in the contact's file |
+| C2 · a portal or program is a file | 1 | `context/pipeline` — a service sender at a watchlist domain correlates under that domain's organisation |
+| C3 · the connector is never owed a reply | 1 | the legacy `unanswered_email` rule skips the brief's connectors (F81) |
+| C4 · the files, readable | 3 | `context/workstreams.files_for`; `GET /v1/workstreams`; `pipeline_health` — *every counterparty the brief names that has mail has a file* |
+| C5 · the golden set | 2 | the cassettes whose prompts move, re-recorded deliberately; the acceptance — 8 of 8 contacts in their own file with their introduction, F01/F02/F23 one file each, the board measured, every must-abstain held |
+
+10 units, critical path 6 (`C1.U01` → `C1.U03` → `C4.U01` → `C4.U02` → the re-record → the
+acceptance). **M28 — files go live** is drawn only when D2 is answered:
+under A a Founder Office domain (with STEP-11's corpus), under B the founder's files routed into
+Admin's account situations, under C nothing more.
+
+### 8.5 · Decisions
+
+| | Question | Recommended | Default |
+|---|---|---|---|
+| D2 | Are the founder's workstreams in scope beyond Admin? | **A, in two moves** — M27 now (it is domain-free: files exist, are listed and readable, in every domain); the Founder Office domain with STEP-11's playbooks for the cards. B (fold into Admin) only if you want cards on investor and program files before STEP-11 — measured on the golden set before it ships | C — M27 still builds; the files in `fundraising` stay listed, not carded |
+| D30 | May a connector's introduction create the people it introduces? | **Yes, the brief's connectors only** — the contact is addressed in a mail to you, as any To/Cc recipient is; without it no introduction can be split | no — then intros stay merged under the connector |
+| D31 | Does each in-motion line name its counterparty (a domain or an address) and its kind? | **Yes** — "every investor in the brief has a file" becomes measurable; the drafter proposes it, you accept it | no — kinds only for connectors and the watchlist |
+| D32 | A new extraction field (`workstream_kind`, `stage_change`) now? | **Not now** — the brief gives the kind; if ever, before STEP-08 runs in production, or the mailbox is read twice | not now |
+| D33 | How long a file may stay quiet before it is dormant? | **Per kind, as data, labelled proposed** — 90 days for investor, program and compliance, 45 for intro and partner — until STEP-11 authors them | 45 days for every file, as today |
+| D34 | The legacy `unanswered_email` cards once files exist? | **Keep them until STEP-14** — they make 15 of today's 23 golden cards, every passing intro among them; measure the duplicates first | keep |
+
+### 8.6 · Risks
+
+| Risk | Guard |
+|---|---|
+| minting introduced contacts puts people in the org-wide graph | only the brief's connectors (D30); a mailing list stays skipped; no screen item creates a person (D22) |
+| splitting an intro changes what the reasoning reads — must-abstain F37 ("the connector is never the person to reply to") | the acceptance holds every must-abstain case; F81's fix keeps the connector out of the reply rule |
+| every intro, portal and program case's prompts move | re-recorded deliberately from the ideal reader (as STEP-07 did), each diff read before it is kept |
+| a brief with no accepted line changes nothing — so nothing moves in production until Rohit accepts it | by design (D26 already orders STEP-08 after the brief); the health check names what has no file |

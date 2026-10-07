@@ -60,11 +60,12 @@ def test_the_tree_parses():
     assert yaml.safe_load(_TREE.read_text()) is not None
 
 
-def test_the_twelve_programme_blocks_are_present():
+def test_the_thirteen_programme_blocks_are_present():
     assert set(_blocks()) == {"<root>", "persona_brain_and_layer_repair",
                              "l1_signal_quality_seam", "atlas_v2_alignment", "yc2_w27",
                              "yc2_w27_s02", "yc2_w27_s03", "yc2_w27_s04", "yc2_w27_s05",
-                             "yc2_w27_s06", "yc2_w27_s07", "yc2_w27_s08"}
+                             "yc2_w27_s06", "yc2_w27_s07", "yc2_w27_s08",
+                             "yc2_w27_s09"}
 
 
 def test_the_ycw27_block_is_the_one_this_programme_builds():
@@ -134,15 +135,16 @@ def test_no_tenth_block_has_appeared_without_updating_this_guard():
     again: M21. The eighth, `yc2_w27_s04` (STEP-04), M22. The ninth, `yc2_w27_s05` (STEP-05), M23. The
     tenth, `yc2_w27_s06` (STEP-06, 2026-10-07), M24. The eleventh, `yc2_w27_s08` (STEP-08, the
     re-sync, proposed 2026-10-07), M26. The twelfth, `yc2_w27_s07` (STEP-07, the company brief,
-    proposed 2026-10-07), M25."""
-    assert len(_blocks()) == 12, (
+    proposed 2026-10-07), M25. The thirteenth, `yc2_w27_s09` (STEP-09, workstreams, proposed
+    2026-10-07), M27."""
+    assert len(_blocks()) == 13, (
         "a programme block was added or removed — update the header note in tree.yaml and this test, "
         "deliberately")
 
 
 @pytest.mark.parametrize("block", ["yc2_w27", "yc2_w27_s02", "yc2_w27_s03", "yc2_w27_s04",
                                    "yc2_w27_s05", "yc2_w27_s06", "yc2_w27_s07",
-                                   "yc2_w27_s08"])
+                                   "yc2_w27_s08", "yc2_w27_s09"])
 def test_the_newest_blocks_widen_no_collision(block):
     """⛔ The reason `yc2_w27` and `yc2_w27_s02` could be added: their milestone ids appear in no other
     block. If a later edit gives one an id another block already uses, this fails before the

@@ -292,5 +292,5 @@
   "lane": "F10 — cards.output_lane is written NULL on the decided path"
  },
  "notes": "Every real mail from the connector carried an unsubscribe header (N-02); the one that reached the AI filter was 'junk, not sure', which is the faithful answer to a prompt that says to drop automated matchmaking.",
- "blocked_on": "the introduction and both nudges are kept and read now (STEP-07, W-07: the brief names Introly a connector) — but the situations they form anchor on the CONNECTOR (account_admin on Introly, first_response_overdue on its thread): the extraction's role 'connector' is free text the graph never reads as an introducer, so no card names Rahul — STEP-09, STEP-12 (03 F81)"
+ "blocked_on": "the introduction and both nudges are kept and read now (STEP-07, W-07: the brief names Introly a connector) — but the situations they form anchor on the CONNECTOR (account_admin on Introly, first_response_overdue on its thread): the extraction's role 'connector' is free text the graph never reads as an introducer, so no card names Rahul — STEP-09, STEP-12 (03 F80)"
 }

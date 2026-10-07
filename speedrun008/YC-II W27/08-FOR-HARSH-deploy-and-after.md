@@ -334,6 +334,39 @@ Accepting a connector, key person or watchlist line promotes what the gate archi
 (`boardy@boardy.ai`) IS `06` D23's promotion — skip §3.5's command if Rohit accepts that line. Then
 `STEP-08` (the re-sync), only after the brief is accepted (`06` D26).
 
+### 3.7 · STEP-08 — the mail the old gate deleted comes back (after §3.6, never before)
+
+**No migration.** The 258 Gmail messages the gate deleted before STEP-03 are ledger rows with no body;
+listed again, each lands as a duplicate. The script frees their keys, the backfill drain lands them
+through today's gate, and the finish takes the old rows out (`STEP-08` §8.6, §9). Gmail only. Nothing
+the founder has is reset. Every command on production needs `GENIOS_ALLOW_PROD_WRITE=1`, the dry run
+too (`scripts/_db.py`):
+
+```
+ORG=org_e97e86f858ad48b2bbf64b8a
+# 1 · the dry run (read-only): how many, by rule, month and sender domain; the oldest and the
+#     window that reaches it; the attachments. Send it to Rohit — he names the window (D5 / D16).
+python scripts/resync_deleted_mail.py --org $ORG --database-url "$URL"
+python scripts/resync_deleted_mail.py --org $ORG --database-url "$URL" --days 365   # what 365 reaches and leaves out
+# 2 · the connection lists that far back
+#     PATCH /connections/<gmail connection id>/backfill-window   {"days": <N>}
+# 3 · free the keys — the rows stay `dropped`; one trace row each
+python scripts/resync_deleted_mail.py --org $ORG --database-url "$URL" --apply --days <N>
+# 4 · the legacy door — every message fetched in full. NEVER /integrations/gmail/sync (it keeps
+#     rule-junk as a list snippet). Wait for "backfill drain done"; while it says TRUNCATED, run it again
+#     POST /connections/<gmail connection id>/backfill
+# 5 · supersede what came back; say why the rest did not
+python scripts/resync_deleted_mail.py --org $ORG --database-url "$URL" --finish
+```
+
+`--finish` prints how many came back and how many were not listed — older than the connection's
+window, or not listed by Gmail (deleted there, in Spam or Trash, or the drain has not reached it yet).
+Run the drain again and `--finish` again until the second number stops moving; every step is
+idempotent. A walk of any of them (`GET /events/{id}/journey`) names the event that replaced it.
+
+⛔ The bodies of mail captured before the deploy carry the old 30-day expiry (`03` F21): what was
+captured 3–5 Oct loses its body around **2–4 Nov**. Deploy before then; STEP-08 does not cover it.
+
 ## 4 · The probes — send the outputs
 
 Read-only, from `speedrun008/YC-II W27/baseline/production_state.sql`:
@@ -437,6 +470,18 @@ python scripts/pipeline_health.py --org org_e97e86f858ad48b2bbf64b8a --database-
 waiting, what the budget left out (should be none) and the last weekly review. Before Rohit accepts a
 line it FAILS — that is the check doing its job, not a broken deploy.
 
+### 4.6 · STEP-08 — after `--finish`
+
+```
+python scripts/pipeline_health.py --org org_e97e86f858ad48b2bbf64b8a --database-url "$URL"
+```
+
+*Every Gmail message in the window has its content, or a stated reason* must read **0** — the window
+is the Gmail connection's. Until STEP-08 has run it FAILS by design, naming how many and the oldest;
+its lines say which were never freed (by the rule that deleted them) and which were freed and are not
+back yet. Keep the dry run's, `--finish`'s and this output in `baseline/<date>-after-resync/`, with the
+funnel probe.
+
 ## 5 · Do not
 
 - switch **`calibration_apply`** on for any tenant. It is Rohit's decision (`06` D13), and not
@@ -444,7 +489,9 @@ line it FAILS — that is the check doing its job, not a broken deploy.
 - run the re-queue before the deploy;
 - fix anything new silently — a finding goes to `03-FINDINGS.md` §E, a bug to `STEP-18`;
 - accept, add or remove a line of the company brief that Rohit did not say — the brief steers every
-  judgment the engine makes (`06` D27).
+  judgment the engine makes (`06` D27);
+- run STEP-08's `--apply` before Rohit has named the window (D5 / D16) and accepted the brief (D26), or
+  drain the re-sync through `/integrations/gmail/sync` instead of `/connections/{id}/backfill`.
 
 ## 6 · CI
 

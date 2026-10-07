@@ -32,16 +32,16 @@ is one branch, `speedrun008`, and the units are block `yc2_w27` of `tree.yaml`.
 |---|---|---|
 | 0 · Ground truth | `STEP-00` one branch · `STEP-01` the golden set | both **PENDING — Harsh** (deploy). Claude's part done, pushed |
 | 1 · Remember everything | `STEP-02` change gate · `03` the gate keeps everything · `04` who is us · `05` every item enters memory · `06` nothing lost silently | `02`–`06` **PENDING — Rohit (push), Harsh (deploy)**: built, QA green (§6b–§6f) |
-| 2 · The expert's desk | `STEP-07` company brief · `08` the re-sync · `09` workstreams · `10` history, patterns, analytics | `07` **PENDING — Rohit (push; accept the brief), Harsh (deploy, migration `0195`; draft it)**: built, QA green (§6g) · `08` **PENDING — Harsh** (after 03–07 are live and the brief is accepted, `06` D26); its six scripts are Claude's to build · `09`, `10` TO BUILD |
+| 2 · The expert's desk | `STEP-07` company brief · `08` the re-sync · `09` workstreams · `10` history, patterns, analytics | `07` **PENDING — Rohit (push; accept the brief), Harsh (deploy, migration `0195`; draft it)**: built, QA green (§6g) · `08` **PENDING — Rohit (push; the window, D5/D16), Harsh (the run, after the brief — `06` D26)**: built, QA green (§6h) · `09` TO BUILD — checked and planned (`STEP-09` §8, tree `yc2_w27_s09`) · `10` TO BUILD |
 | 3 · Expertise | `STEP-11` founder playbooks | TO BUILD |
 | 4 · The expert thinks | `STEP-12` the expert pass · `13` check every claim | TO BUILD |
 | 5 · What you see | `STEP-14` the card · `15` the morning brief | TO BUILD |
 | 6 · Learning from you | `STEP-16` | TO BUILD |
 | Across all phases | `STEP-17` real tests · `18` known bugs | TO BUILD — six of `STEP-18`'s bugs are fixed in code and pushed (§5) |
 
-**19 steps: 8 finished by Claude (`00`, `01` pushed; `02`–`07` waiting for the push), 1 waiting on
-Harsh from the start (`08` — its scripts planned, tree `yc2_w27_s08`), 10 to build.** The next is
-`STEP-08`'s six scripts, on Rohit's go and `06` D5 (how far back), then `STEP-09` (workstreams).
+**19 steps: 9 finished by Claude (`00`, `01` pushed; `02`–`08` waiting for the push — `08`'s run is
+Harsh's), 10 to build.** The next is `STEP-09` (workstreams): checked and planned (§8, tree
+`yc2_w27_s09`, 10 units); the build starts on Rohit's go and `06` D2 / D30.
 
 ## 4 · STEP-00 · one branch, one baseline
 
@@ -225,6 +225,27 @@ the board unchanged — four cases moved from lost at the gate to lost in reason
 
 **Still owed:** the push; Harsh's deploy with `0195`; the first draft; Rohit's acceptance (`08` §3.6).
 
+## 6h · STEP-08 · the mail the old gate deleted comes back
+
+**What was built** (`STEP-08-PENDING-owner-harsh-the-resync.md` §9): `capture/landing/resync` frees the key of
+every Gmail message the old gate deleted inside Rohit's window — the row stays `dropped`, so the orphan
+recovery can never forge it into an emitted row with no body — and, after the existing backfill drain
+has landed it again through today's gate, supersedes it, naming the event that replaced it, or says
+why it did not come back; `scripts/resync_deleted_mail.py` (a read-only dry run by default; `--apply
+--days N`; `--finish`); an attachment comes back once; the walk names the replacement both ways; a
+health check. Found and fixed on the way: the re-read ladder could never read an attachment (`03` F87).
+
+**Measured:** on the golden set the thirteen mails STEP-08's check rewrote to production's deleted shape
+come back 13 of 13 with their body — the brief's ten read (W-07), three archived under their old rule —
+and are superseded; a mail Gmail no longer lists is reported, not superseded; the health check goes
+from red to green; a second run changes nothing; an attachment that survived its message is not
+landed twice.
+
+**QA:** `baseline/yc2w27-s08-qa/qa_record.txt` (§9.4).
+
+**Still owed:** the push; the deploy; the brief accepted (D26); Rohit's window (D5 / D16 — 365
+recommended); Harsh's run (`08` §3.7, §4.6).
+
 ## 7 · CI on the push
 
 | Job | Run `37407196202`, on `77aba10e` |
@@ -258,6 +279,9 @@ The full notes, with commands, expected outputs and what not to do: **`08-FOR-HA
    read the two numbers before and a day after (`08` §1.8, §4.4).
 9. ⛔ STEP-07: migration `0195_company_brief`. Then draft the company brief — patterns, the dry run to
    Rohit, `--apply` — and Rohit accepts it line by line; the health check must pass (`08` §1.9, §3.6, §4.5).
+10. ⛔ STEP-08, only after 9: the dry run to Rohit, his window (D5 / D16), `PATCH …/backfill-window`,
+    `--apply --days N`, `POST /connections/{gmail}/backfill`, `--finish`; the health check must read 0
+    (`08` §3.7, §4.6).
 
 ## 9 · Decisions still open — none blocks the next step
 
@@ -267,3 +291,5 @@ The full notes, with commands, expected outputs and what not to do: **`08-FOR-HA
 | `06` D12c | spend on a live evaluation of the golden set? | no spend; ≈ $0.63 a pass on Haiku 4.5 |
 | `06` D13 | may calibration mute or nudge on your account? | shadow — it records, applies nothing; arming not before `STEP-18` B22–B24 |
 | — | is `GENIOS_L4_LLM_DECISION_MAKER` on in production? | the golden set assumes on; one look at the deploy's environment |
+| `06` D5 / D16 | how far back does STEP-08 re-read? | nothing runs: `--apply` refuses without a number; 365 recommended |
+| `06` D2, D30 | STEP-09's scope, and may a connector's intro create the people it introduces? | M27 is drawn for A + yes; the build waits for your go |

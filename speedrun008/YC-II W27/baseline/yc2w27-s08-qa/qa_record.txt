@@ -1,0 +1,54 @@
+yc2_w27_s08 QA record · STEP-08, the deleted mail comes back · deterministic-qa · speedrun008 · 2026-10-07 13:34–14:45 UTC
+scratch Postgres 17 in Docker. Every check that uses a database runs on a database CREATED for it
+(genios_qa_<run>_<n>) — auto mode refuses to drop databases, and a database nobody has used is as
+empty as a recreated one. Exit codes only; every command verbatim from tree.yaml (block
+yc2_w27_s08) and .github/workflows/ci.yml, the unit verifies pointed at their own fresh database
+(`/genios_test ` → `/genios_qa_<run>_<n> `). Driver: run_s08.sh and qa_block_nodrop.py, beside this file.
+
+RUN 1 · at 6f4eb42e (clean tree), 13:34–14:45 UTC — green on every tier, the first run
+
+1 · the tree, and every unit's own verify — 8 units                        exit 0
+      12 pass / 0 fail / 0 skip          (4 tree checks + 8 units: 6 drawn + 2 found while building)
+      report: .trace/reports/qa-yc2_w27_s08-units-20261007T133436Z.json
+
+2 · the whole suite on the database                                        exit 0
+      18349 passed, 4 skipped, 89 xfailed, 1595 warnings in 2340.49s (0:39:00)
+      db=genios_qa_full_133435. Re-listed afterwards with -rs on a database of its own
+      (genios_qa_skips_s08), the four files that carry the known four skip exactly four, for the same
+      reasons: could not import 'docx' (tests/capture/transcripts/test_transcript_units.py), an empty
+      parameter set (tests/contracts/test_l1_contracts.py), 0080 a declared exception
+      (tests/platform/test_the_code_can_always_be_rolled_back.py), internal auth not wired in this
+      harness (403) (tests/test_health_memory.py) — 333 passed, 4 skipped.
+
+3 · the golden-pg lane, as CI runs it (GENIOS_GOLDEN_REQUIRED=1)            exit 0
+      pytest -q -rs tests/replays tests/test_golden_labels_sheet.py
+      690 passed, 87 xfailed in 901.95s (0:15:01) — 0 skipped
+      db=genios_qa_golden_133435. (682 after STEP-07; + STEP-08's acceptance, 8 tests.)
+
+4 · the board, held to 03-FINDINGS.md §F.1                                 exit 0
+      scripts/golden_score.py --assert-recorded "speedrun008/YC-II W27/03-FINDINGS.md"
+      matches the board recorded in speedrun008/YC-II W27/03-FINDINGS.md — unchanged
+      founder golden set   must-detect  11/32 (8 not expressible)   must-abstain  11/12 (0 not exercised)   forbidden outputs  4
+      atlas replays 01–07  passing  4/80   blocked  3/80   not expressible  73
+      must-detect cases lost at:  gate 1  reasoning 11
+      golden tenants left in the database afterwards: 0
+
+5 · the hermetic job, as CI runs it (no database)                           exit 0
+      pytest -q -m "not golden"
+      16520 passed, 1515 skipped, 331 deselected, 72 xfailed, 1595 warnings in 859.50s (0:14:19)
+      Its skips are the tests that need a database; tier 2 ran every one of them.
+
+THE ACCEPTANCE, in tier 3 (tests/replays/test_the_deleted_mail_comes_back.py): F01 F02 F03 F09 F16
+F32's thirteen deleted mails, rewritten to production's deleted shape, come back through the
+production sync door with their body — the ten the company brief names emitted, deep, W-07 and read,
+the three others archived under the code that deleted them — and are superseded; a mail Gmail no
+longer lists is reported and stays dropped; the health check fails before and passes after; a second
+listing lands nothing; F10's surviving attachment is not landed twice and its deleted ones come back.
+Its negative controls, run by mutation before this QA: a reverted attachment rule, a ledger that
+supersedes on freeing, a finish that reports nothing and a health check that always passes each fail
+it.
+
+Before this run: every unit was committed after its guards passed on databases created for them
+(collect, tests/*.py root, tests/platform, and the unit's own folders — tests/capture, tests/scripts,
+tests/replays for the acceptance), and each unit's tests were run against its own mutations: 14/14,
+5/5 + 5/5 + 2/2, 12/12, 7/7, 9/9 killed.

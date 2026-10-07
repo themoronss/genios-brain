@@ -1,7 +1,8 @@
 # STEP-08 · PENDING — owner: Harsh · re-read the mailbox, so the deleted mail comes back
 
 **Depends on:** `STEP-03`, `STEP-04`, `STEP-05`, `STEP-07` deployed — re-reading through the old gate
-would delete the same mail again. **Decision:** `06` D5 (how far back; recommended 180 days).
+would delete the same mail again. **Decision:** `06` D5 (how far back; ⛔ recommended **365** days
+since the check, §8.5). **✅ Built 2026-10-07 — §9; the run is Harsh's (`08` §3.7).**
 **Moves:** the 258 content-less mails come back with content; the funnel probe is re-run.
 
 ⛔ **Also depends on `STEP-18` B20** (found 2026-10-05; tree `yc2_w27/M17.C2.L-data.V0.U02`). A
@@ -210,3 +211,86 @@ The 258 have their content or a stated reason (§8.7's first query: 0 rows witho
 health check reads zero; and the threads `09` G1 names as the benchmark's production half — the
 introducer's reply, the July promises, the 2 Apr deferral — are in memory. The last needs the
 365-day window.
+
+---
+
+## 9 · Built — 2026-10-07 (`yc2_w27_s08`, 8 units green: 6 drawn + 2 found)
+
+Rohit's go, 2026-10-07: *"go.... complete at best"*. Built bottom-up, each unit test-first, each test
+run against its own mutations, the repo-wide guards before every commit. Nothing ran on production.
+
+### 9.1 · What was built
+
+| | Where | What it does |
+|---|---|---|
+| the resync ledger | `capture/landing/resync.py` | `free_deleted(engine, org, days=N)` marks the key of every Gmail message the old gate deleted inside the last N days — `<key>#resync:<event_id>` — and leaves the row `dropped`; one trace row each (stage `resync`, `pass`, `resync_freed`, with the window and the rule that deleted it). `finish(engine, org)` supersedes a freed row once a new capture holds its key — or the re-read ladder holds that capture set aside mid-read — its trace naming the new event (`resync_replaced`); every other freed row stays `dropped` and gets, once, the reason it has not come back (`drop`, `resync_not_listed`: inside or older than the connection's window). Never freed: a scope exclusion (`out_of_scope`), a row with a live body (an expired one is no content), an attachment, any source but Gmail. Both idempotent |
+| the ledger's new question | `capture/landing/pg_repository.py`, `repository.py` (minted building C2) | `kept_child_exists`: has an attachment of this message landed KEPT (emitted, parked, archived)? The in-memory twin answers exactly as Postgres does |
+| an attachment comes back once | `capture/landing/reread.drop_reread_attachments` | a listing's attachment copy is dropped when its message's key exists OR an attachment of that message landed kept; it lands when the earlier copy was deleted with its message, or never landed. The answer is per message (§9.3) |
+| the ladder's own re-read (minted) | the same function | a copy the re-read ladder rebuilt (`RawObject.rereading`) always goes through — it was dropped as a listing's copy because its message had landed (`03` F87) |
+| the operator script | `scripts/resync_deleted_mail.py` | a read-only dry run by default: the deleted messages by the rule that deleted them, by month and sender domain; the oldest and the window that reaches it; what `--days N` leaves out; the attachments (deleted with their message · survived it · split); what the re-sync has done so far — never a subject or a body. `--apply --days N` frees (the window is never a default, and it warns when the connection lists less); `--finish` supersedes and reports. Through `scripts/_db` |
+| the walk | `capture/journey.event_journey` | a superseded deleted row's end names the event that replaced it; the new event names the row it replaced (`resync.replaces`); a freed row says so; a row Gmail no longer lists stops at the re-sync with that reason. Only `pass` and `drop` — no step is unclassified |
+| the health check | `scripts/pipeline_health.py` | *every Gmail message in the window has its content, or a stated reason* — the connection's window; a scope exclusion and `resync_not_listed` are stated reasons; a message older than the window is counted beside the number. Red until the re-sync has run, by design |
+| the acceptance | `tests/replays/test_the_deleted_mail_comes_back.py`, `cassettes/resync/F10.json` | §8.1 as a test, through the production sync door with the cassettes, the clock pinned; F10's re-primed page answered by a two-answer scenario cassette recorded deliberately from the ideal reader (`python -m tests.replays.test_the_deleted_mail_comes_back --record`) |
+
+### 9.2 · Measured — the golden acceptance
+
+| | Result |
+|---|---|
+| the thirteen mails of F01 F02 F03 F09 F16 F32, rewritten to production's deleted shape (dropped, no tier, no body, no prepared text, nothing read, the old gate's trace) | across the six cases the dry run counts **13**, +1 the control; the health check **fails** on each |
+| `free_deleted` with 365 days | **14 freed**, every row still `dropped` |
+| the production sync door lists the same mailbox again | **13 land again, each with its body**; 0 duplicates among them |
+| what they land as | **10 emitted, `deep`, W-07, read** (an extraction each) — the brief's senders: StartupSetu, DigiVault, every Introly mail, Lakshya's social; **3 archived** under the code that deleted them before — F16's bounce (N-03), F32's forum (N-06) and newsletter (N-02) |
+| `finish` | **13 superseded**, each trace naming its new event; the control — a mail Gmail no longer lists — **left `dropped`**, reported once, inside the window |
+| the health check after | **passes** |
+| a second listing / a second finish | **13 duplicate** / nothing changes |
+| F10, an attachment that SURVIVED its deleted message, listed again under a fresh attachment id | **not landed twice** — and with C2's rule reverted, it lands twice (the acceptance fails: measured by mutation) |
+| F10, attachments deleted WITH their message | **both come back** with their files, under their new ids; the old attachment rows stay `dropped` (an attachment's key is never taken again — §9.3) |
+| model calls the cassettes did not hold | **0** (F10's re-primed page: two answers, in its scenario cassette) |
+
+Each unit's own tests were run against its mutations: 14/14 (the ledger), 12/12 (the two ledgers'
+question and the attachment rule), 12/12 (the script), 7/7 (the walk), 9/9 (the health check) killed
+— four survivors on the way were closed by a test, one by deleting a redundant condition. The
+acceptance kills a reverted attachment rule, a ledger that supersedes on freeing, a finish that
+reports nothing, and a health check that always passes.
+
+### 9.3 · Found while building
+
+- **The re-read ladder could never read an attachment whose message had landed** (`03` F87, fixed:
+  `M26.C2.L-logic.V0.U02`). The ladder rebuilds a kept row under its own key and hands it to the push
+  door, whose first step dropped it as a listing's re-read — so since STEP-05 a recovered, promoted or
+  parked attachment was restored, retried and given up after three tries, unread. The count in
+  production, read-only: `parked_events` given up (`dead_letter`) whose event is an
+  `email_attachment` and whose `refetch_last_error` starts `extraction parked`.
+- **An attachment deleted with its message comes back under a new key; its old row stays `dropped`**
+  (`03` F88). Gmail hands out a fresh attachment id on every read, so the old key is never taken again
+  and nothing can say which new copy replaced which old one. The health check counts messages; §8.7's
+  first query, grouped by object type, will still list those attachment rows under their old rule.
+- **A message whose attachments the old gate split** — one kept, one deleted — **gets none of the
+  deleted ones back** (`03` F89): the rule answers per message. The dry run counts such messages
+  (`… message(s) with both`); if production has any, a per-file rule is the next unit.
+- **Gmail's Spam and Trash are not listed** by the backfill (`03` F90): a mail deleted as N-09 (the
+  provider's spam label) or binned since comes back as *not listed* — the reason is right, and the
+  dry run's by-rule line says how many to expect.
+
+### 9.4 · QA
+
+Recorded in `baseline/yc2w27-s08-qa/qa_record.txt`; driver `run_s08.sh`, every database created for
+its check. Green on every tier, on the first run, at `6f4eb42e` (clean tree):
+
+| Tier | Result |
+|---|---|
+| the tree and every unit's own verify | 12 pass / 0 fail / 0 skip (4 tree checks + 8 units) |
+| the whole suite on the database | 18,349 passed, 4 skipped (the known four, re-listed with `-rs`: same files, same reasons), 89 xfailed |
+| the golden-pg lane, as CI runs it | 690 passed, 87 xfailed, 0 skipped |
+| the board, held to `03` §F.1 | matches — unchanged: must-detect 11/32, must-abstain 11/12, forbidden 4, Atlas 4/80 |
+| the hermetic job, as CI runs it | 16,520 passed (the skips are the database tests tier 2 ran), 72 xfailed |
+
+The crosscheck (`.trace/reports/crosscheck-yc2_w27_s08-20261007T133507Z.md`): **ship** — 8 of 8 units
+match by hand; F87 found and fixed; F88–F90 declared limits; four unknowns, each with what settles it.
+
+### 9.5 · The run in production — Harsh, after the deploy and after Rohit accepts the brief
+
+`08` §3.7 is the runbook (§8.6, with the script's real flags). In one line: the dry run to Rohit → his
+window (D5 / D16, recommended **365**) → `PATCH …/backfill-window` → `--apply --days N` →
+`POST /connections/{gmail}/backfill` (re-run while it says `TRUNCATED`) → `--finish` → `pipeline_health`.
+The health check must pass; `--finish` again after any later drain. Nothing the founder has is reset.

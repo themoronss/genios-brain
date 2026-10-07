@@ -1,7 +1,7 @@
 # ═════════════════════════════════════════════════════════════════════════════════════════════
 # ⛔ HOW A UNIT ID IS ADDRESSED — read this before quoting one.
 #
-# This file holds TWELVE programme blocks, and three of them number their milestones from M8:
+# This file holds THIRTEEN programme blocks, and three of them number their milestones from M8:
 #
 #   <root>                            M1  … M7    retired in place
 #   persona_brain_and_layer_repair    M8  … M12
@@ -22,6 +22,8 @@
 #   yc2_w27_s07                       M25         ← YC-II W27 STEP-07, the company brief
 #                                                   (proposed 2026-10-07); past every other block again
 #   yc2_w27_s08                       M26         ← YC-II W27 STEP-08, the deleted mail comes back
+#                                                   (built 2026-10-07); past every other block again
+#   yc2_w27_s09                       M27         ← YC-II W27 STEP-09, a file for every piece of work
 #                                                   (proposed 2026-10-07); past every other block again
 #
 # So `M11` is AMBIGUOUS on its own: it names "The remaining Layer 3 losses" in one block and
@@ -5325,7 +5327,14 @@ yc2_w27_s07:
             depends_on: []
 
 yc2_w27_s08:
-  status: proposed
+  status: built
+  built: >
+    2026-10-07 — 8 units (6 drawn + 2 found while building: C2.L-data.V0.U01, the ledger's question
+    the drawn attachment unit could not be built without; C2.L-logic.V0.U02, the re-read ladder's own
+    attachment re-read, dropped as a listing's copy since STEP-05 — `03` F87). Each unit test-first and
+    run against its own mutations; the acceptance kills a reverted attachment rule, a ledger that
+    supersedes on freeing, a silent finish and an always-green health check. QA at `6f4eb42e` green on
+    every tier, first run (`speedrun008/YC-II W27/baseline/yc2w27-s08-qa/`); crosscheck ship.
   source: >
     speedrun008/YC-II W27/STEP-08 §1–§4, re-checked claim by claim against speedrun008 @ 18b41f0f
     (STEP-08 §8) by hand, by a read-only trace of the capture gate, and by a measurement on the
@@ -5481,3 +5490,162 @@ yc2_w27_s08:
                       artifact: tests/replays/test_the_deleted_mail_comes_back.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest tests/replays/test_the_deleted_mail_comes_back.py -q
                       depends_on: [M26.C1.L-data.V0.U01, M26.C2.L-logic.V0.U01, M26.C3.L-interface.V1.U01, M26.C4.L-logic.V1.U01, M26.C4.L-interface.V1.U02]
+yc2_w27_s09:
+  status: proposed
+  source: >
+    speedrun008/YC-II W27/STEP-09 §1–§7, re-checked claim by claim against speedrun008 @ c1cab2fc
+    (STEP-09 §8) by a read-only worker and by hand, and measured on the golden set
+    (speedrun008/YC-II W27/baseline/yc2w27-s09-check/): the 32 cases the step is about replayed from
+    their cassettes, 0 misses. Introductions split per contact 0 of 8 by design — the three contacts
+    who never replied are not in memory at all, because a connector's unsubscribe header drops every
+    recipient; the connector anchors the intro; portals and programs writing from service addresses
+    have no file; 15 situations in 11 of the cases sit in the dark fundraising domain; 15 of the 23
+    cards come from the legacy unanswered_email rule. §3.1 (a workstream.<kind> situation type with
+    fields on interpretations) is refused by the corpus schema, the pinned type set and the proposal
+    gate, so a file is a correlation the company brief can name.
+  vision: >
+    Every piece of work the founder has in motion that the company brief names has a file — a
+    correlation, not a new type: each person a connector introduced has a file of their own that holds
+    the introduction and their reply, and the connector is never its anchor nor a person owed a reply;
+    each portal or program the brief watches has one file holding its notices. GET /v1/workstreams
+    lists the files with their kind (from the brief), counterparty, evidence, last touch, open asks and
+    whose move it is, and a health check names every counterparty with mail and no file. Whether a
+    file reaches a card is the domain's (D2); its stages wait for STEP-11.
+  order_note: >
+    C1 (the intro) and C2 (the watched domain) and C3 (the reply rule) are independent; C4 (the list)
+    after C1 and C2; C5 (the golden set) last — the cassettes whose prompts move are re-recorded
+    deliberately first, then the acceptance. Built on Rohit's go and D30; D2 decides M28 (not drawn).
+  milestones:
+    - id: M27
+      name: A file for every piece of work in motion (STEP-09)
+      ships: >
+        On the golden set, 8 of 8 introduced contacts in a file of their own holding their
+        introduction (0 of 8 by design today), F01 F02 F23 one file each (none today), the connector
+        never an anchor and never owed a reply, every must-abstain case held; GET /v1/workstreams and
+        a health check over the same read model.
+      categories:
+        - id: M27.C1
+          name: The introduction, per contact
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M27.C1.L-logic.V0.U01
+                      what: >
+                        `context/pipeline.process_event` — a sender the company brief names as a
+                        connector (`CompanyBrief.named_sender` → `connector:`) is typed `introducer`
+                        on its own mail, so correlation never anchors on it (03 F80).
+                      artifact: genios_engine/context/pipeline.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_a_connector_never_anchors_an_intro.py -q
+                      depends_on: []
+                    - id: M27.C1.L-logic.V0.U02
+                      what: >
+                        `context/pipeline.process_event` — a brief-named connector's mail keeps its
+                        To/Cc recipients as person nodes, role `introduced`, even under an unsubscribe
+                        header (`addressed_to_a_list`); a real mailing list stays skipped (D30).
+                      artifact: genios_engine/context/pipeline.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_a_connector_introduces_people.py -q
+                      depends_on: []
+                - level: 1
+                  units:
+                    - id: M27.C1.L-logic.V1.U03
+                      what: >
+                        `context/correlation.plan_correlation` — an introduction anchors on each
+                        contact it introduces, one file each; a contact's reply in a thread that holds
+                        several contacts' files joins only that contact's file.
+                      artifact: genios_engine/context/correlation.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_an_intro_is_a_file_per_contact.py -q
+                      depends_on: [M27.C1.L-logic.V0.U01, M27.C1.L-logic.V0.U02]
+        - id: M27.C2
+          name: A watched portal or program is a file
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M27.C2.L-logic.V0.U01
+                      what: >
+                        `context/pipeline.process_event` — mail from a service address at a domain the
+                        brief watches correlates under that domain's organisation node; other service
+                        mail stays uncorrelated, as today.
+                      artifact: genios_engine/context/pipeline.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_a_watched_domain_is_a_file.py -q
+                      depends_on: []
+        - id: M27.C3
+          name: The connector is never owed a reply
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M27.C3.L-logic.V0.U01
+                      what: >
+                        `reason/runner` — the legacy `unanswered_email` rule never takes a sender the
+                        brief names as a connector as its subject (03 F81: it raises Introly in six
+                        golden cases and the decider defers it every sweep).
+                      artifact: genios_engine/reason/runner.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/reason/test_the_connector_is_never_owed_a_reply.py -q
+                      depends_on: []
+        - id: M27.C4
+          name: The files, readable
+          layers:
+            - layer: logic
+              levels:
+                - level: 1
+                  units:
+                    - id: M27.C4.L-logic.V1.U01
+                      what: >
+                        New `context/workstreams.files_for(conn, org, *, now)` — deterministic, no
+                        model, no table: per file the kind (intro for a connector's contact, the
+                        watched domain's line, an in-motion line's kind once it names one — D31), the
+                        counterparty, the member events, the last touch, the open asks with who owes
+                        them and whose move it is; a brief-named counterparty with mail and no file is
+                        listed as such.
+                      artifact: genios_engine/context/workstreams.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_the_files_are_listed.py -q
+                      depends_on: [M27.C1.L-logic.V1.U03, M27.C2.L-logic.V0.U01]
+            - layer: interface
+              levels:
+                - level: 2
+                  units:
+                    - id: M27.C4.L-interface.V2.U02
+                      what: >
+                        New `api/workstream_routes.py` — `GET /v1/workstreams`, the read model for the
+                        signed-in member's org, nothing written.
+                      artifact: genios_engine/api/workstream_routes.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/api/test_workstream_routes.py -q
+                      depends_on: [M27.C4.L-logic.V1.U01]
+                    - id: M27.C4.L-interface.V2.U03
+                      what: >
+                        `scripts/pipeline_health.py` — *every counterparty the brief names that has
+                        mail has a file*: fails while one has none, and names it.
+                      artifact: scripts/pipeline_health.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/scripts/test_pipeline_health_files.py -q
+                      depends_on: [M27.C4.L-logic.V1.U01]
+        - id: M27.C5
+          name: The golden set
+          layers:
+            - layer: integration
+              levels:
+                - level: 3
+                  units:
+                    - id: M27.C5.L-integration.V3.U01
+                      what: >
+                        The cassettes whose prompts move (every intro, watched-portal and program case)
+                        re-recorded deliberately from the ideal reader, each diff read; the board
+                        re-scored and `03` §F.1 restated where it moved.
+                      artifact: tests/replays/specs/founder/cassettes
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py --assert-recorded "speedrun008/YC-II W27/03-FINDINGS.md"
+                      depends_on: [M27.C1.L-logic.V1.U03, M27.C2.L-logic.V0.U01, M27.C3.L-logic.V0.U01, M27.C4.L-interface.V2.U02, M27.C4.L-interface.V2.U03]
+                - level: 4
+                  units:
+                    - id: M27.C5.L-integration.V4.U02
+                      what: >
+                        The acceptance — `tests/replays/test_every_piece_of_work_has_a_file.py`: 8 of 8
+                        introduced contacts in their own file with their introduction; F01 F02 F23 one
+                        file each; the connector never an anchor, never a reply subject; every
+                        must-abstain held; the file list and the health check read the same.
+                      artifact: tests/replays/test_every_piece_of_work_has_a_file.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest tests/replays/test_every_piece_of_work_has_a_file.py -q
+                      depends_on: [M27.C5.L-integration.V3.U01]
