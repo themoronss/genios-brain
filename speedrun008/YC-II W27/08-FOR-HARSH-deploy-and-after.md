@@ -181,7 +181,8 @@ the receipt reads red). `0193` starts empty: until §3.4 declares, who is us is 
 the declaration on.
 If it says `DEGRADED BOOT — database is read-only` instead, the change gate fails open (every subject
 is decided, as today — nothing lost, nothing saved) and `/reset` fails until `0191` is applied, because
-the reset now wipes `reasoning_fingerprints`. No new environment variable. One value we need from the
+the reset now wipes `reasoning_fingerprints` — ⛔ and, from STEP-06, until `0194` is (it wipes
+`situation_outcomes`). No new environment variable. One value we need from the
 deploy's environment:
 **`GENIOS_L4_LLM_DECISION_MAKER`** — on or off? The golden set runs the LLM decider on, as
 `speedrun008/YCW27/STATUS.md` records production; `YCW27` decision R1 recommended off. Tell
@@ -363,14 +364,21 @@ select (select count(*) from graph_nodes where org_id = 'org_e97e86f858ad48b2bbf
 
 ### 4.4 · STEP-06 — before the deploy and a day after
 
+**Before the deploy:** the three read-only queries in `STEP-06` §8.6. They read only tables production
+already has: expired cards with no event (15 in the 4 Oct audit), every active situation's latest
+admission by type, and the parked drain's queue by owner.
+
+**A day after:** the two scripts. Both read `situation_outcomes`, so neither runs before `0194` is
+applied.
+
 ```
 python scripts/pipeline_health.py --org org_e97e86f858ad48b2bbf64b8a --database-url "$URL"
 python scripts/situation_ends.py --org org_e97e86f858ad48b2bbf64b8a --database-url "$URL" --verbose
 ```
 
-*Every situation and every card says how it ended* should read **0 and 0** a day after; the lines under
-it name each live situation type that has no open card, with the histogram of its ends — informational
-(`06` D25). The read-only SQL behind the two numbers is `STEP-06` §8.6.
+*Every situation and every card says how it ended* should read **0 and 0**; the lines under it name
+each live situation type that has no open card, with the histogram of its ends — informational
+(`06` D25).
 
 ## 5 · Do not
 

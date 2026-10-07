@@ -229,5 +229,6 @@ select reason_code, status, count(*) from parked_events
 Migration **`0194_situation_outcomes`** ships with `0191`–`0193`; `main.py` applies it at boot, and the
 new compiled lane writes it — the code must not serve without it (the boot log must name it). Nothing
 to run after the deploy: every expiry carries its reason from the first sweep, every admitted situation
-its end. Read §8.6's numbers before and a day after; `scripts/situation_ends.py --org …` names every
-situation's end, and `pipeline_health` holds both.
+its end. Read §8.6's numbers before the deploy. A day after, `scripts/situation_ends.py --org …` names
+every situation's end and `pipeline_health` holds both; each reads `situation_outcomes`, so neither
+runs before `0194`.
