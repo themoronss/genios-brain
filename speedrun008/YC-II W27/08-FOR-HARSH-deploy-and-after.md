@@ -30,6 +30,11 @@ or the command it came from.
    ⛔ **And STEP-07 (§1.9) adds a fifth, `0195_company_brief`** — the founder's company brief. Nothing
    changes until Rohit accepts a line. After the deploy: draft it, send the dry run to Rohit, apply his
    answers (§3.6), then the health check (§4.5).
+   ⛔ **And STEP-09 (§1.10) adds no migration** — a file for every piece of work. Nothing moves until the
+   brief names a connector or a watchlist domain. It also carries the fix for `03` F101 — the history
+   replay after every backfill drain filed every newsletter the drain kept out — so **deploy it before
+   STEP-08's re-sync** (§3.7). After Rohit accepts the brief: the health check, and re-file the history
+   if it names anything (§3.8, §4.7).
 2. After the deploy, **re-queue the attachments** the `file_name` refusal dead-lettered (§3.1).
 3. **Read the first `refetch_last_error`** that comes back (§3.2).
 4. **Pin the Composio toolkits** — the one unit of this block that is yours (§3.3).
@@ -153,6 +158,17 @@ it** (`03` F62), or that company reads as a counterparty in those three places.
 | the heavy tick | a weekly review per tenant WITH an accepted brief: one Sonnet call (≈ $0.05), proposals only — `company_brief_review` in the sweep's result |
 | new scripts | `scripts/draft_company_brief.py` (patterns / dry run / `--apply`), `scripts/company_brief.py` (show / accept / reject / remove / add) |
 | a new health check | *the company brief exists and is current* — FAILS until Rohit accepts a line (expected) |
+
+### 1.10 · STEP-09, a file for every piece of work — in the next push
+
+| | What changes at runtime |
+|---|---|
+| no migration | nothing new is stored: a file is the correlation the drain already writes, read together |
+| the L2 drain | reads the company brief once per pass (as it reads who is us). A connector the brief names is an introducer wherever it appears; the people its introduction goes to become people (`party.role introduced`, an `introduced` edge, their names), even under its unsubscribe header; each has a file of their own, and the reply it calls for is owed to them, never to the connector. A watched portal's notice is filed under the portal. **No accepted connector or watchlist line: byte for byte what it was** |
+| the history replay | `context/backfill.backfill_correlations` (after every backfill drain, and every rebuild) no longer files what the drain called noise (`03` F101) — it did, since L3-0A |
+| a new route | `GET /v1/workstreams` — read only, the tenant's files; anyone who may read the tenant (`get_current_org`) |
+| a new health check | *every counterparty the brief names that has mail has a file* — fails while a named counterparty's read mail is filed nowhere, or a connector's introductions sit in the connector's file; names each |
+| what does NOT change | no card is added for a file in a domain that is not active (`06` D2); no stage is derived (`STEP-11`) |
 
 ### 1.3 · How it was tested before the push
 
@@ -367,6 +383,45 @@ idempotent. A walk of any of them (`GET /events/{id}/journey`) names the event t
 ⛔ The bodies of mail captured before the deploy carry the old 30-day expiry (`03` F21): what was
 captured 3–5 Oct loses its body around **2–4 Nov**. Deploy before then; STEP-08 does not cover it.
 
+⛔ **Only on a deploy that carries STEP-09** (`567049fc` or later). Step 4's backfill drain runs the
+history replay over everything it brings back (`api/routes._replay_l2_history`), and before STEP-09 that
+replay filed every newsletter, connector mailing and out-of-office the drain kept out (`03` F101).
+Before the run, count what an earlier backfill drain already filed (read-only, §3.8's query).
+
+### 3.8 · STEP-09 — after Rohit accepts the brief's connectors and watchlist
+
+**No migration, nothing to run until the brief names a connector or a watched domain.** Mail read
+before the founder named them was filed the old way — an introduction under the connector, a portal's
+notice nowhere — and the drain only files NEW mail the new way. The health check says whether history
+needs re-filing (§4.7). If it names anything, re-file in this order — the graph first, because the
+correlation rebuild re-derives every file from it, and the graph rebuild alone keeps the old files
+(node ids are new; a thread rejoins its old file):
+
+```
+ORG=org_e97e86f858ad48b2bbf64b8a
+# 1 · read every event again with the brief in force (dry by default; --apply backs up every graph
+#     table first; it refuses if an uncached event would call the model). ⛔ It has no
+#     --database-url: it reads the application's own DATABASE_URL, so run it where the app runs
+python -m scripts.rebuild_graph --org $ORG
+python -m scripts.rebuild_graph --org $ORG --apply
+# 2 · re-derive every file from the rebuilt graph
+#     POST /api/org/$ORG/situations/backfill?rebuild=true
+# 3 · the health check must pass (§4.7)
+```
+
+The count for STEP-08's note above, read-only — events the drain called noise that a replay filed:
+
+```
+select count(*) from source_events se
+ where se.org_id = :org and se.outcome = 'emitted'
+   and exists (select 1 from graph_observations o where o.org_id = se.org_id
+                 and o.created_by_event_id = se.event_id and o.kind like 'email_noise:%')
+   and exists (select 1 from context_correlation_members m where m.org_id = se.org_id
+                 and m.event_id = se.event_id);
+```
+
+Not zero: the step-2 rebuild above re-derives every file without them.
+
 ## 4 · The probes — send the outputs
 
 Read-only, from `speedrun008/YC-II W27/baseline/production_state.sql`:
@@ -481,6 +536,17 @@ is the Gmail connection's. Until STEP-08 has run it FAILS by design, naming how 
 its lines say which were never freed (by the rule that deleted them) and which were freed and are not
 back yet. Keep the dry run's, `--finish`'s and this output in `baseline/<date>-after-resync/`, with the
 funnel probe.
+
+### 4.7 · STEP-09 — after Rohit accepts the brief, and after any re-file
+
+```
+python scripts/pipeline_health.py --org org_e97e86f858ad48b2bbf64b8a --database-url "$URL"
+```
+
+*Every counterparty the brief names that has mail has a file* must pass. Its measured line says how
+many named counterparties have mail, how much of it is filed, how many files the tenant has, and — if
+any — how many introductions sit in the connector's file. A failure names each counterparty; its fix
+is §3.8. Keep the output, and `GET /v1/workstreams`'s, in `baseline/<date>-after-files/`.
 
 ## 5 · Do not
 

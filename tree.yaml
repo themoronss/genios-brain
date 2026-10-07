@@ -1,7 +1,7 @@
 # ═════════════════════════════════════════════════════════════════════════════════════════════
 # ⛔ HOW A UNIT ID IS ADDRESSED — read this before quoting one.
 #
-# This file holds THIRTEEN programme blocks, and three of them number their milestones from M8:
+# This file holds FOURTEEN programme blocks, and three of them number their milestones from M8:
 #
 #   <root>                            M1  … M7    retired in place
 #   persona_brain_and_layer_repair    M8  … M12
@@ -24,7 +24,9 @@
 #   yc2_w27_s08                       M26         ← YC-II W27 STEP-08, the deleted mail comes back
 #                                                   (built 2026-10-07); past every other block again
 #   yc2_w27_s09                       M27         ← YC-II W27 STEP-09, a file for every piece of work
-#                                                   (proposed 2026-10-07); past every other block again
+#                                                   (built 2026-10-07); past every other block again
+#   yc2_w27_s10                       M29         ← YC-II W27 STEP-10, the expert's numbers (2026-10-07);
+#                                                   M28 is held for STEP-09's cards (D2), not drawn
 #
 # So `M11` is AMBIGUOUS on its own: it names "The remaining Layer 3 losses" in one block and
 # "L2 Reasoning" in another, and `M11.C1.L-logic.V0.U01` exists twice with different meanings.
@@ -5491,7 +5493,16 @@ yc2_w27_s08:
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest tests/replays/test_the_deleted_mail_comes_back.py -q
                       depends_on: [M26.C1.L-data.V0.U01, M26.C2.L-logic.V0.U01, M26.C3.L-interface.V1.U01, M26.C4.L-logic.V1.U01, M26.C4.L-interface.V1.U02]
 yc2_w27_s09:
-  status: proposed
+  status: built
+  built: >
+    2026-10-07 — 13 units (10 drawn, C3 redrawn while building from a skip in `reason/runner` to the
+    pipeline's turn; + 3 found while building: C1.L-data.V0.U01, the names an introduction uses;
+    C1.L-logic.V1.U04, a nudge joins the person it names, from golden F03 and F09; C1.L-logic.V1.U05,
+    a rebuild files as the drain did). Each unit test-first and run against its own mutations; the
+    crosscheck found three defects (X1 a connector's newsletter recorded as a nudge, X2 `03` F101 the
+    history replay filing what the drain called noise, X3 the health check's cure naming half the
+    repair), fixed in `567049fc`. QA at `567049fc` green on every tier, first run
+    (`speedrun008/YC-II W27/baseline/yc2w27-s09-qa/`); the board must-detect 11 → 12 of 32.
   source: >
     speedrun008/YC-II W27/STEP-09 §1–§7, re-checked claim by claim against speedrun008 @ c1cab2fc
     (STEP-09 §8) by a read-only worker and by hand, and measured on the golden set
@@ -5710,3 +5721,264 @@ yc2_w27_s09:
                       artifact: tests/replays/test_every_piece_of_work_has_a_file.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest tests/replays/test_every_piece_of_work_has_a_file.py -q
                       depends_on: [M27.C5.L-integration.V3.U01]
+
+yc2_w27_s10:
+  status: proposed
+  source: >
+    speedrun008/YC-II W27/STEP-10 §1–§7, re-checked claim by claim against speedrun008 @ 79d0ff54
+    (STEP-10 §8) by a read-only worker and by hand, and measured on the golden set
+    (speedrun008/YC-II W27/baseline/yc2w27-s10-check/): 25 cases replayed from their cassettes, 0
+    misses. Their reply time exists on 2 of 25 cases, each a "tenant normal" built from ONE reply
+    counted twice (the person node and the thread node); no n is written; your reply time exists
+    nowhere (the whole set holds one founder reply, n = 1); the corpus's "reply cadence" is a
+    different number (how often a person writes); a wave is no object; the bounce is archived before
+    its parser runs; coverage is NULL on every signal; stages do not exist (STEP-11).
+  vision: >
+    Every number the expert reasons with about a file is computed, exact, and says what it rests on:
+    their reply time counted once and your own, each with its n and basis, "normal" only at n >= 5
+    and "too few to say" below; the file's timeline, both directions, with who wrote and the evidence
+    id, its gaps, and whether the silence exceeds its own prior gaps; a bounce on the file it belongs
+    to; a wave as one object; the connector's rate; and a coverage receipt per mailbox, so "no reply"
+    is said only when the window covers it. GET /v1/workstreams/{file} serves it; a health check
+    holds every number to its n. Stage dwell and what-if wait (D39).
+  order_note: >
+    C1 (the contract, then the reply time) first — everything else reads it. C3 (bounces) and C5
+    (coverage) are independent of C1; C2 (the timeline) after C1; C4's wave after C3; the route after
+    C2 and C5; C6 (the golden set) last — the new cases first, then the re-record, then the
+    acceptance. Built on Rohit's go and D36–D41.
+  milestones:
+    - id: M29
+      name: The expert's numbers, exact and with their n (STEP-10)
+      ships: >
+        On the golden set: every reply time shown with its n and basis, none called normal below n = 5
+        (F17 and F25 read "too few" where they read a tenant normal); your reply time on the new
+        cases, exact; F15's wave one object; F16's bounce on the fund's file; every file's receipt
+        naming its mailbox and window; GET /v1/workstreams/{file} and a health check over the same
+        numbers; the board re-scored and recorded.
+      categories:
+        - id: M29.C1
+          name: Numbers that say their n
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M29.C1.L-contract.V0.U01
+                      what: >
+                        New `contracts/measured.py` — `Measured(value, n, basis, source, sparse)`:
+                        `source` is `measured_here` or `playbook_prior`, never absent; `sparse` is
+                        n < `NORMAL_AT` (5, D37), and a sparse number renders as what it is ("once,
+                        1.9 days"), never as a habit. Pure.
+                      artifact: genios_engine/contracts/measured.py
+                      verify: .venv/bin/python -m pytest tests/contracts/test_a_measured_number_says_its_n.py -q
+                      depends_on: []
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M29.C1.L-logic.V0.U04
+                      what: >
+                        `reason/baselines.py` — the send interval it stores as `reply_cadence` is renamed
+                        for what it is, how often they write, and every corpus rule and engine reader
+                        that resolves `{baseline: reply_cadence}` moves with it in the same unit (D41);
+                        the corpus ratchet tests hold.
+                      artifact: genios_engine/reason/baselines.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/reason/test_one_meaning_for_reply_cadence.py tests/test_the_corpus_asks_for_what_the_engine_publishes.py -q
+                      depends_on: []
+                - level: 1
+                  units:
+                    - id: M29.C1.L-logic.V1.U02
+                      what: >
+                        `context/waiting.py` — a reply is counted once: the latency timeline reads
+                        person nodes only (a thread node's facts are the same messages again), and
+                        `party.reply_cadence_n` is written beside the days and the basis as a
+                        `Measured`; the tenant and firm levels need n >= 5 to be called normal (D36,
+                        D37).
+                      artifact: genios_engine/context/waiting.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_a_reply_is_counted_once.py -q
+                      depends_on: [M29.C1.L-contract.V0.U01]
+                - level: 2
+                  units:
+                    - id: M29.C1.L-logic.V2.U03
+                      what: >
+                        `context/waiting.py` — your reply time, the mirror of theirs: from an inbound
+                        mail that someone WROTE (the event's actor — an introduction is not their mail)
+                        to our next outbound in the same conversation, per counterparty and overall,
+                        each a `Measured`; "you" is STEP-04's identity.
+                      artifact: genios_engine/context/waiting.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_your_reply_time.py -q
+                      depends_on: [M29.C1.L-logic.V1.U02]
+        - id: M29.C2
+          name: The file's timeline
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M29.C2.L-logic.V0.U03
+                      what: >
+                        `context/correlation_history.py` — history is published per (anchor, domain),
+                        so a file in two domains keeps both pasts instead of the last-sorted one's.
+                      artifact: genios_engine/context/correlation_history.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_history_per_file_and_domain.py -q
+                      depends_on: []
+                - level: 2
+                  units:
+                    - id: M29.C2.L-logic.V2.U01
+                      what: >
+                        New `context/workstream_timeline.timeline_for(conn, org, file_id, *, now)` — a
+                        read model, no table: every touch of the file in both directions (mail, and the
+                        calendar's past meetings), ordered, with who wrote (the event's actor) and the
+                        evidence id; the gaps; whether the current silence exceeds the file's own prior
+                        gaps — each number a `Measured`.
+                      artifact: genios_engine/context/workstream_timeline.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_a_file_has_a_timeline.py -q
+                      depends_on: [M29.C1.L-contract.V0.U01, M29.C1.L-logic.V1.U02]
+            - layer: interface
+              levels:
+                - level: 3
+                  units:
+                    - id: M29.C2.L-interface.V3.U02
+                      what: >
+                        `api/workstream_routes.py` — `GET /v1/workstreams/{file_id}`: the file, its
+                        timeline, their reply time and yours with n and basis, its bounces, and its
+                        coverage receipt; the tenant's own files only; nothing written.
+                      artifact: genios_engine/api/workstream_routes.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/api/test_a_file_is_readable.py -q
+                      depends_on: [M29.C2.L-logic.V2.U01, M29.C1.L-logic.V2.U03, M29.C3.L-logic.V1.U02, M29.C5.L-logic.V2.U03]
+        - id: M29.C3
+          name: A bounce on the file
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M29.C3.L-logic.V0.U01
+                      what: >
+                        `capture/gate/rules.py` — a delivery-status report the parser recognises
+                        (`capture/delivery_status.is_delivery_status`) is kept and read, never archived
+                        by N-01 or N-03, and never parked on the original it carries (D38).
+                      artifact: genios_engine/capture/gate/rules.py
+                      verify: .venv/bin/python -m pytest tests/capture/gate/test_a_bounce_is_kept.py -q
+                      depends_on: []
+                - level: 1
+                  units:
+                    - id: M29.C3.L-logic.V1.U02
+                      what: >
+                        New `context/delivery.py`, called by `context/pipeline` — a `DELIVERY_FAILURE`
+                        becomes a `delivery_failed` observation on the address that failed and the
+                        original's thread (the Gmail thread and the recipient); the waiting facts for
+                        that recipient retire. Closes `STEP-18` B6.
+                      artifact: genios_engine/context/delivery.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_a_bounce_is_on_the_file.py -q
+                      depends_on: [M29.C3.L-logic.V0.U01]
+        - id: M29.C4
+          name: Waves and the connector's rate
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M29.C4.L-logic.V0.U02
+                      what: >
+                        `context/workstreams.py` — the connector's rate on its file, from STEP-09's
+                        `introduced` edges: introductions made, people who replied, calls booked, each
+                        a `Measured`.
+                      artifact: genios_engine/context/workstreams.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_a_connectors_rate.py -q
+                      depends_on: [M29.C1.L-contract.V0.U01]
+                - level: 2
+                  units:
+                    - id: M29.C4.L-logic.V2.U01
+                      what: >
+                        `context/correlation_conversation.py` — a wave is one object without a
+                        qualified signal: the same sentence from the outbound extraction, else the same
+                        subject within 7 days to three or more outside addresses; sent, replied,
+                        bounced, followed up, days since.
+                      artifact: genios_engine/context/correlation_conversation.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_a_wave_is_one_object.py -q
+                      depends_on: [M29.C1.L-contract.V0.U01, M29.C3.L-logic.V1.U02]
+        - id: M29.C5
+          name: The coverage receipt
+          layers:
+            - layer: data
+              levels:
+                - level: 0
+                  units:
+                    - id: M29.C5.L-data.V0.U01
+                      what: >
+                        `capture/acquire/sync_runner.py` — the sync summary says its source and when it
+                        started, and the sync-run row records when it finished (N8), so per-signal
+                        coverage is written (`STEP-18` B5).
+                      artifact: genios_engine/capture/acquire/sync_runner.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/capture/test_coverage_is_written_per_signal.py -q
+                      depends_on: []
+            - layer: logic
+              levels:
+                - level: 1
+                  units:
+                    - id: M29.C5.L-logic.V1.U02
+                      what: >
+                        `capture/coverage/window.py` — coverage per connection (one mailbox), over its
+                        own window (`capture_scope.backfill_days`), with the incremental sweep's ratio
+                        fixed ("read 4 of about 3" no more).
+                      artifact: genios_engine/capture/coverage/window.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/capture/coverage/test_coverage_per_mailbox.py -q
+                      depends_on: [M29.C5.L-data.V0.U01]
+                - level: 2
+                  units:
+                    - id: M29.C5.L-logic.V2.U03
+                      what: >
+                        New `context/coverage_receipt.py` — a file's receipt: which mailboxes were read,
+                        over which window, when the last sync finished; "no reply" may be said only
+                        when the window covers the file and that sync finished.
+                      artifact: genios_engine/context/coverage_receipt.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_a_file_says_what_was_checked.py -q
+                      depends_on: [M29.C5.L-logic.V1.U02]
+        - id: M29.C6
+          name: The golden set
+          layers:
+            - layer: interface
+              levels:
+                - level: 3
+                  units:
+                    - id: M29.C6.L-interface.V3.U03
+                      what: >
+                        `scripts/pipeline_health.py` — every number a file shows carries its n and
+                        basis, and none below n = 5 is called normal; fails and names the file.
+                      artifact: scripts/pipeline_health.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/scripts/test_pipeline_health_numbers.py -q
+                      depends_on: [M29.C1.L-logic.V2.U03, M29.C2.L-logic.V2.U01]
+            - layer: integration
+              levels:
+                - level: 0
+                  units:
+                    - id: M29.C6.L-integration.V0.U01
+                      what: >
+                        New founder cases (D40) — the founder replying at several speeds (n >= 5), a
+                        production-shaped delivery report with its original attached, two mailboxes —
+                        each with its labels row and its cassette from the ideal reader.
+                      artifact: tests/replays/specs/founder
+                      verify: .venv/bin/python -m pytest tests/replays/test_founder_case_contract.py tests/test_golden_labels_sheet.py -q
+                      depends_on: []
+                - level: 4
+                  units:
+                    - id: M29.C6.L-integration.V4.U02
+                      what: >
+                        The cassettes whose prompts move, re-recorded deliberately from the ideal
+                        reader, each diff read; the board re-scored and `03` §F.1 restated.
+                      artifact: tests/replays/specs/founder/cassettes
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py --assert-recorded "speedrun008/YC-II W27/03-FINDINGS.md"
+                      depends_on: [M29.C6.L-integration.V0.U01, M29.C1.L-logic.V0.U04, M29.C2.L-interface.V3.U02, M29.C2.L-logic.V0.U03, M29.C4.L-logic.V2.U01, M29.C4.L-logic.V0.U02, M29.C6.L-interface.V3.U03]
+                - level: 5
+                  units:
+                    - id: M29.C6.L-integration.V5.U04
+                      what: >
+                        The acceptance — `tests/replays/test_every_number_says_its_n.py`: your reply
+                        time's n and median exact on the new cases; F17 and F25 "too few" where they
+                        read a tenant normal; F15 one wave; F16's bounce on the fund's file; every
+                        file's receipt names its mailbox and window; the route and the health check
+                        read the same numbers.
+                      artifact: tests/replays/test_every_number_says_its_n.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest tests/replays/test_every_number_says_its_n.py -q
+                      depends_on: [M29.C6.L-integration.V4.U02]

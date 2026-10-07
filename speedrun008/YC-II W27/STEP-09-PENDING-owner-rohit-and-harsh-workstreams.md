@@ -1,9 +1,10 @@
-# STEP-09 · TO BUILD · workstreams — a file for every piece of work in motion
+# STEP-09 · PENDING — owner Rohit (push; the brief's connectors and watchlist; D35) and Harsh (deploy, no migration; re-file history if the health check names it) · workstreams — a file for every piece of work in motion
 
 **Owner:** Claude. **Depends on:** `STEP-05` (memory), `STEP-07` (the brief seeds the list); the
 stage vocabularies come from `STEP-11` and start as *proposed* until you accept them. **Decision:**
 `06` D2 (are these workstreams in scope). **Moves:** Boardy intros tracked per contact **3 of 7 →
 7 of 7**; every investor, program, filing and hire in the brief has exactly one live file.
+**✅ Built and QA green 2026-10-07 — §9; what is left is the deploy and the brief (§9.6).**
 
 ---
 
@@ -183,3 +184,106 @@ Admin's account situations, under C nothing more.
 | splitting an intro changes what the reasoning reads — must-abstain F37 ("the connector is never the person to reply to") | the acceptance holds every must-abstain case; F81's fix keeps the connector out of the reply rule |
 | every intro, portal and program case's prompts move | re-recorded deliberately from the ideal reader (as STEP-07 did), each diff read before it is kept |
 | a brief with no accepted line changes nothing — so nothing moves in production until Rohit accepts it | by design (D26 already orders STEP-08 after the brief); the health check names what has no file |
+
+---
+
+## 9 · Built — 2026-10-07 (`yc2_w27_s09`, 13 units green: 10 drawn + 3 found)
+
+Rohit's go, 2026-10-07: *"to ab step 9 pe chalte hain, complete karte hain perfectly … lekin
+perfection aur quality ke saath"*. Built bottom-up, each unit test-first, each test run against its own
+mutations, the repo-wide guards before every commit; crosschecked, and the three findings it raised
+fixed before QA. Nothing ran on production. Commits `2c1cfbeb` (C1–C3), `2dedfdd9`, `5a28449d` (C4),
+`cebe28af`, `57a664f6` (C5), `567049fc` (the crosscheck's fixes).
+
+### 9.1 · What was built
+
+| | Where | What it does |
+|---|---|---|
+| who a connector introduced, by names (found) | `context/introductions.py` | `assign_names`: whose is each name an introduction used — a person's against the address's local part, an organisation's against its domain, the one leftover name for the one person introduced; a name that fits two people is nobody's, ours and the connector's are never a contact's; a personal mailbox names no organisation. `introductions_by`: who a connector introduced (the `introduced` edges), with their company and names. `named_in`: which of them a later mail names. `connector_roles`: every node the brief names a connector, as `introducer` — the one answer the drain and a rebuild read. Never a model |
+| the connector is an introducer | `context/pipeline.process_event`, `context/runner`, `scripts/rebuild_graph.py` | the drain reads the brief once per pass, beside who is us, and hands it down every road. A connector the brief names is an introducer wherever it appears — on the mail, or only named in its prose — with a `party.role` fact on the brief's word; alone at its tier (its own ask) it still anchors. Its declared auto-reply is no file |
+| the people it introduces | the same | its To/Cc recipients — ours and fellow connectors excepted — are people even under its unsubscribe header (D30): `party.role introduced` (by, thread, names), an `introduced` edge, named from the introduction. A real mailing list from anyone else still establishes nobody |
+| one file per person | `context/correlation._the_parties_files` | an introduction anchors on each person it introduces; in a thread holding several files, a reply joins only the files of the parties in it — every one when it names none |
+| a nudge joins their file (found) | `context/pipeline` | a connector's mail to us alone that names someone it introduced joins each named person's file, recorded on them (`connector_nudge`); naming nobody, it is the connector's own ask (golden F09); the next nudge in a thread already theirs follows it. Only mail read as correspondence — its newsletter never is (crosscheck X1) |
+| a rebuild files as the drain did (found) | `context/backfill.backfill_correlations` | passes the brief's connector roles; and neither it nor the replay after every backfill drain files what the drain called noise (`03` F101 — it did, since L3-0A) |
+| a watched portal is a file | `context/pipeline` | mail from a domain the brief watches, or a subdomain, is filed under that domain's organisation — the counterparty of every notice it sends, even beside another company the graph knows; `Auto-Submitted: auto-generated` is how a portal sends a notice, and is a file; its mailing (a list header, a bulk precedence) and an auto-reply are not, and are recorded as what they are |
+| never a reply owed to the connector | `context/pipeline` (the turn) | an introduction's `thread.last_inbound` / `ball_in_court` are written on each person it introduces; a nudge writes none; the connector's own ask keeps its turn; a portal's machine address is never owed one; the thread is named after its one person introduced |
+| the files, readable | `context/workstreams.files_for`, `api/workstream_routes.py` (`GET /v1/workstreams`) | one file per anchor (every domain, every generation): the brief's kind (`connector`, `watched`, `person`, `intro`, or none), the line behind it, who introduced it, its mail oldest first, first and last touch, days quiet, whose move (*ours* while anyone in it waits on us), its open asks and who owes them; every named counterparty with its mail, how much is filed, and its introductions filed under the connector (`misfiled`). An org-level reader: nothing a seat captured privately |
+| the health check | `scripts/pipeline_health.check_every_named_counterparty_has_a_file` | reads the same answer; fails while a named counterparty's read mail is filed nowhere, or a connector's introductions sit in its own file — names each, and the cure (§9.6) |
+| the acceptance | `tests/replays/test_every_piece_of_work_has_a_file.py` | §8.1's promises on the golden cases, through the real chain with the cassettes |
+
+### 9.2 · Measured — the golden set
+
+| | Before STEP-09 | After |
+|---|---|---|
+| people the connector introduced with a file of their own holding their introduction (F03–F08, F37) | **0 of 8**, by design (§8.1) | **8 of 8**, kind `intro`, introduced by Introly; F03's two nudges in Rahul's |
+| the connector | anchored F03's introduction; *"unanswered email — Introly"* on six cases | anchors no introduction; owed no reply in any intro case; its own ask (F09) is its own file |
+| portals and programs that wrote (F01, F02, F23) | no file at all | **one `watched` file each**, holding every notice |
+| the board (`03` §F.1) | must-detect 11/32 · must-abstain 11/12 · forbidden 4 · Atlas 4/80 | must-detect **12/32** (F03 passes: one card, *"Take Rahul Menon's introduction forward"*) · 11/12 · 4 · 4/80 |
+| the health check on every replayed case | — | 0 unfiled, 0 misfiled |
+
+Nine cassettes missed and were re-recorded from the ideal reader (no spend); the other 35 replay
+exactly. Each diff was read (`baseline/yc2w27-s09-build/cassette_diff.txt`): every answer removed is the
+connector's reply situation or an R-1 reading merged with it; every answer added is a person
+introduced, a portal's file, or the resolution site reading a notice. Four cases reached new
+questions, answered from the prompt as written (F02, F03, F07, F08); six authored answers nobody asks
+any more are retired. The acceptance kills a drain with no brief, a pipeline with no connector roles
+and one that drops the connector's recipients. Mutations, each unit against its own test: 20/20
+(names), 6/6 + 6/6 + 1/1 (the introducer, the runner, the rebuild script), 11/11 (the people), 4/5
+(the thread's files — the survivor an equivalent short-circuit), 5/5 (the nudge), 6/6 (the rebuild),
+11/11 + 11/11 (the portal), 11/12 (the turn — an equivalent short-circuit), 38/38 (the read model),
+3/3 (the route), 7/7 (the health check).
+
+### 9.3 · Decided while building
+
+- **The connector's own ask is its own file; a nudge joins the person it names.** Drawn as "the
+  connector never anchors"; golden F09 expects a card about Introly's own question, F03 forbids
+  *"Reply to Introly"* — so a mail that names no one it introduced anchors on it (minted U04).
+- **The reply rule moved into the pipeline's turn** (C3 redrawn): a skip in `reason/runner` would also
+  have silenced the connector's own ask.
+- **A watched portal is the counterparty, and a notice marked auto-generated is a file**: a portal's
+  machine address carried its "machine" role to the portal, which lost its file the moment a notice
+  named another company; and `addressed_to_a_list` reads any `Auto-Submitted` as a list.
+- **Whose move is *ours* while anyone in the file waits on us** — answering one partner at a fund
+  does not answer the other.
+- **History filed the old way is named, not hidden**: `misfiled` counts a connector's introductions in
+  its own file, so the health check fails until history is re-filed.
+
+### 9.4 · Found while building
+
+- **`03` F101 — the history replay filed what the drain called noise** (fixed, X2). Live before STEP-09,
+  on every backfill drain since L3-0A; a read-only count says how much production holds (`08` §3.8).
+- **`03` F96 — the founder's own company gets a file** when a watched notice names it and the company's
+  domain is undeclared (F02's *"Recognition granted"*). A decision: **D35**.
+- **`03` F97** — `company_brief.current(conn)` does not read through a connection (latent).
+- **`03` F98** — a rebuild loses a company a mail named in prose (pre-existing).
+- **`03` F99** — a watched portal's file reaches the decider with none of its notices' words: F02's
+  7-day ask is deferred (`STEP-12`).
+- **`03` F100** — the statement counter takes prose beginning with *"with"* for SQL.
+- **Declared, fragile:** `GET /v1/workstreams` is unpaginated; a file whose anchor was merged away
+  drops out of the list until the next correlation rebuild; a nudge matched by first name reaches
+  every introduced person of that name.
+
+### 9.5 · QA
+
+Green on every tier, the first run, at `567049fc` (`baseline/yc2w27-s09-qa/qa_record.txt`; every
+database check on a database created for it):
+
+| Tier | Result |
+|---|---|
+| the tree and the 13 units' own verifies | 17 pass / 0 fail / 0 skip |
+| the whole suite on Postgres | 18,528 passed, 4 skipped (the known four, re-listed with their reasons), 88 xfailed |
+| the golden lane, `GENIOS_GOLDEN_REQUIRED=1` | 731 passed, 86 xfailed, **0 skipped** |
+| the board against `03` §F.1 | matches — must-detect **12/32**, must-abstain 11/12, forbidden 4, Atlas 4/80 |
+| the hermetic job | 16,561 passed, 1,612 skipped (1,608 need a database; tier 2 ran them), 72 xfailed |
+
+### 9.6 · After the deploy — Rohit, then Harsh
+
+1. **Nothing moves until the brief names a connector or a watched domain** — and the drain files only
+   NEW mail the new way.
+2. Deploy before STEP-08's re-sync: it carries F101's fix (`08` §3.7).
+3. After Rohit accepts: the health check (`08` §4.7). If it names anything — mail read before the brief
+   — re-file: `scripts/rebuild_graph.py --apply`, then `POST …/situations/backfill?rebuild=true`, then
+   the check again (`08` §3.8).
+4. Decisions waiting (`06`): **D2** (files beyond Admin reach cards — M28), **D31** (an in-motion line
+   names its counterparty — gives a file its kind), **D33** (dormancy per kind), **D34** (the legacy
+   cards), **D35** (declare the company's domain — F96).

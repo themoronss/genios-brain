@@ -32,16 +32,17 @@ is one branch, `speedrun008`, and the units are block `yc2_w27` of `tree.yaml`.
 |---|---|---|
 | 0 · Ground truth | `STEP-00` one branch · `STEP-01` the golden set | both **PENDING — Harsh** (deploy). Claude's part done, pushed |
 | 1 · Remember everything | `STEP-02` change gate · `03` the gate keeps everything · `04` who is us · `05` every item enters memory · `06` nothing lost silently | `02`–`06` **PENDING — Rohit (push), Harsh (deploy)**: built, QA green (§6b–§6f) |
-| 2 · The expert's desk | `STEP-07` company brief · `08` the re-sync · `09` workstreams · `10` history, patterns, analytics | `07` **PENDING — Rohit (push; accept the brief), Harsh (deploy, migration `0195`; draft it)**: built, QA green (§6g) · `08` **PENDING — Rohit (push; the window, D5/D16), Harsh (the run, after the brief — `06` D26)**: built, QA green (§6h) · `09` TO BUILD — checked and planned (`STEP-09` §8, tree `yc2_w27_s09`) · `10` TO BUILD |
+| 2 · The expert's desk | `STEP-07` company brief · `08` the re-sync · `09` workstreams · `10` history, patterns, analytics | `07` **PENDING — Rohit (push; accept the brief), Harsh (deploy, migration `0195`; draft it)**: built, QA green (§6g) · `08` **PENDING — Rohit (push; the window, D5/D16), Harsh (the run, after the brief — `06` D26)**: built, QA green (§6h) · `09` **PENDING — Rohit (push; accept the brief's connectors and watchlist; D35), Harsh (deploy before STEP-08's run; re-file history if the health check names it)**: built, QA green (§6i) · `10` TO BUILD — building since 7 Oct (checked, `STEP-10` §8; go given with `06` D36–D41 as recommended; tree `yc2_w27_s10`) |
 | 3 · Expertise | `STEP-11` founder playbooks | TO BUILD |
 | 4 · The expert thinks | `STEP-12` the expert pass · `13` check every claim | TO BUILD |
 | 5 · What you see | `STEP-14` the card · `15` the morning brief | TO BUILD |
 | 6 · Learning from you | `STEP-16` | TO BUILD |
 | Across all phases | `STEP-17` real tests · `18` known bugs | TO BUILD — six of `STEP-18`'s bugs are fixed in code and pushed (§5) |
 
-**19 steps: 9 finished by Claude (`00`, `01` pushed; `02`–`08` waiting for the push — `08`'s run is
-Harsh's), 10 to build.** The next is `STEP-09` (workstreams): checked and planned (§8, tree
-`yc2_w27_s09`, 10 units); the build starts on Rohit's go and `06` D2 / D30.
+**19 steps: 10 finished by Claude (`00`, `01` pushed; `02`–`09` waiting for the push — `08`'s run is
+Harsh's), 9 to build.** `STEP-10` (history, patterns, analytics) is being built: checked (§8), go given
+on 7 Oct with `06` D36–D41 as recommended, tree `yc2_w27_s10` (18 units) — the contract and the reply
+times first, bounces, coverage, the connector's rate and the renamed baseline in parallel worktrees.
 
 ## 4 · STEP-00 · one branch, one baseline
 
@@ -246,6 +247,28 @@ landed twice.
 **Still owed:** the push; the deploy; the brief accepted (D26); Rohit's window (D5 / D16 — 365
 recommended); Harsh's run (`08` §3.7, §4.6).
 
+## 6i · STEP-09 · a file for every piece of work
+
+**What was built** (`STEP-09-PENDING-owner-rohit-and-harsh-workstreams.md` §9): a connector the company
+brief names is an introducer wherever it appears; the people its introduction goes to become people, even
+under its unsubscribe header (D30), each with a file of their own that holds the introduction and the
+connector's nudges about them, and the reply it calls for is owed to them, never to the connector — whose
+own ask is its own file; a portal or program the brief watches is one file, whichever address or subdomain
+wrote; a rebuild files all of it as the drain did. `GET /v1/workstreams` lists the files — the brief's kind,
+the counterparty, the mail, whose move, the open asks — and a health check reads the same answer. Found
+and fixed on the way: the history replay after every backfill drain filed what the drain called noise
+(`03` F101, live since L3-0A).
+
+**Measured:** on the golden set 8 of 8 people introduced have their own file holding their introduction
+(0 of 8 before, by design); F01, F02 and F23 one file each (none before); the board's must-detect moves
+11/32 → 12/32 (F03), nothing else moves; the health check reads 0 unfiled, 0 misfiled on every case.
+
+**QA:** `baseline/yc2w27-s09-qa/qa_record.txt` (§9.5).
+
+**Still owed:** the push; the deploy — before STEP-08's run (`08` §3.7); Rohit accepts the brief's
+connectors and watchlist; the health check, and re-filing history if it names anything (`08` §3.8, §4.7);
+D35 (declare the company's domain — `03` F96).
+
 ## 7 · CI on the push
 
 | Job | Run `37407196202`, on `77aba10e` |
@@ -279,9 +302,12 @@ The full notes, with commands, expected outputs and what not to do: **`08-FOR-HA
    read the two numbers before and a day after (`08` §1.8, §4.4).
 9. ⛔ STEP-07: migration `0195_company_brief`. Then draft the company brief — patterns, the dry run to
    Rohit, `--apply` — and Rohit accepts it line by line; the health check must pass (`08` §1.9, §3.6, §4.5).
-10. ⛔ STEP-08, only after 9: the dry run to Rohit, his window (D5 / D16), `PATCH …/backfill-window`,
-    `--apply --days N`, `POST /connections/{gmail}/backfill`, `--finish`; the health check must read 0
-    (`08` §3.7, §4.6).
+10. ⛔ STEP-08, only after 9 and only on a deploy that carries STEP-09 (`03` F101): the dry run to
+    Rohit, his window (D5 / D16), `PATCH …/backfill-window`, `--apply --days N`,
+    `POST /connections/{gmail}/backfill`, `--finish`; the health check must read 0 (`08` §3.7, §4.6).
+11. ⛔ STEP-09: no migration. After Rohit accepts the brief's connectors and watchlist, the health check;
+    if it names anything, re-file — `rebuild_graph --apply`, then `situations/backfill?rebuild=true` —
+    and the check again (`08` §1.10, §3.8, §4.7).
 
 ## 9 · Decisions still open — none blocks the next step
 
@@ -292,4 +318,6 @@ The full notes, with commands, expected outputs and what not to do: **`08-FOR-HA
 | `06` D13 | may calibration mute or nudge on your account? | shadow — it records, applies nothing; arming not before `STEP-18` B22–B24 |
 | — | is `GENIOS_L4_LLM_DECISION_MAKER` on in production? | the golden set assumes on; one look at the deploy's environment |
 | `06` D5 / D16 | how far back does STEP-08 re-read? | nothing runs: `--apply` refuses without a number; 365 recommended |
-| `06` D2, D30 | STEP-09's scope, and may a connector's intro create the people it introduces? | M27 is drawn for A + yes; the build waits for your go |
+| `06` D2 | do the founder's files reach cards beyond Admin (M28)? | the files are built and listed; a file in a dark domain is carded never |
+| `06` D31 | does an in-motion line name its counterparty? | files take their kind from connectors, the watchlist and named people only |
+| `06` D35 | may your company's own domain be declared yours? | a portal's notice naming your company also files it under you (`03` F96); no card |

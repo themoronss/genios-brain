@@ -1,0 +1,255 @@
+{
+ "runs": [
+  {
+   "case": "F03",
+   "group": "intro",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "error": null,
+   "misses": [],
+   "tenant_removed": true,
+   "seconds": 8.4
+  },
+  {
+   "case": "F04",
+   "group": "intro",
+   "verdict": "pass",
+   "lost_at": null,
+   "error": null,
+   "misses": [],
+   "tenant_removed": true,
+   "seconds": 2.4
+  },
+  {
+   "case": "F05",
+   "group": "intro",
+   "verdict": "pass",
+   "lost_at": null,
+   "error": null,
+   "misses": [],
+   "tenant_removed": true,
+   "seconds": 3.3
+  },
+  {
+   "case": "F06",
+   "group": "intro",
+   "verdict": "pass",
+   "lost_at": null,
+   "error": null,
+   "misses": [],
+   "tenant_removed": true,
+   "seconds": 3.2
+  },
+  {
+   "case": "F07",
+   "group": "intro",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "error": null,
+   "misses": [],
+   "tenant_removed": true,
+   "seconds": 4.4
+  },
+  {
+   "case": "F08",
+   "group": "intro",
+   "verdict": "not_expressible",
+   "lost_at": null,
+   "error": null,
+   "misses": [],
+   "tenant_removed": true,
+   "seconds": 2.9
+  },
+  {
+   "case": "F09",
+   "group": "intro",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "error": null,
+   "misses": [],
+   "tenant_removed": true,
+   "seconds": 1.3
+  },
+  {
+   "case": "F37",
+   "group": "intro",
+   "verdict": "pass",
+   "lost_at": null,
+   "error": null,
+   "misses": [],
+   "tenant_removed": true,
+   "seconds": 2.4
+  },
+  {
+   "case": "F10",
+   "group": "investor/wave",
+   "verdict": "pass",
+   "lost_at": null,
+   "error": null,
+   "misses": [],
+   "tenant_removed": true,
+   "seconds": 2.1
+  },
+  {
+   "case": "F11",
+   "group": "investor/wave",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "error": null,
+   "misses": [],
+   "tenant_removed": true,
+   "seconds": 1.9
+  },
+  {
+   "case": "F12",
+   "group": "investor/wave",
+   "verdict": "pass",
+   "lost_at": null,
+   "error": null,
+   "misses": [],
+   "tenant_removed": true,
+   "seconds": 2.6
+  },
+  {
+   "case": "F13",
+   "group": "investor/wave",
+   "verdict": "pass",
+   "lost_at": null,
+   "error": null,
+   "misses": [],
+   "tenant_removed": true,
+   "seconds": 1.4
+  },
+  {
+   "case": "F14",
+   "group": "investor/wave",
+   "verdict": "not_expressible",
+   "lost_at": null,
+   "error": null,
+   "misses": [],
+   "tenant_removed": true,
+   "seconds": 3.3
+  },
+  {
+   "case": "F15",
+   "group": "investor/wave",
+   "verdict": "fail",
+   "lost_at": null,
+   "error": null,
+   "misses": [],
+   "tenant_removed": true,
+   "seconds": 5.4
+  },
+  {
+   "case": "F42",
+   "group": "investor/wave",
+   "verdict": "pass",
+   "lost_at": null,
+   "error": null,
+   "misses": [],
+   "tenant_removed": true,
+   "seconds": 1.4
+  },
+  {
+   "case": "F44",
+   "group": "investor/wave",
+   "verdict": "pass",
+   "lost_at": null,
+   "error": null,
+   "misses": [],
+   "tenant_removed": true,
+   "seconds": 1.9
+  },
+  {
+   "case": "F16",
+   "group": "bounce",
+   "verdict": "fail",
+   "lost_at": "gate",
+   "error": null,
+   "misses": [],
+   "tenant_removed": true,
+   "seconds": 1.2
+  },
+  {
+   "case": "F17",
+   "group": "program",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "error": null,
+   "misses": [],
+   "tenant_removed": true,
+   "seconds": 2.2
+  },
+  {
+   "case": "F19",
+   "group": "program",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "error": null,
+   "misses": [],
+   "tenant_removed": true,
+   "seconds": 3.3
+  },
+  {
+   "case": "F24",
+   "group": "program",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "error": null,
+   "misses": [],
+   "tenant_removed": true,
+   "seconds": 3.2
+  },
+  {
+   "case": "F25",
+   "group": "hire",
+   "verdict": "pass",
+   "lost_at": null,
+   "error": null,
+   "misses": [],
+   "tenant_removed": true,
+   "seconds": 4.2
+  },
+  {
+   "case": "F26",
+   "group": "partner",
+   "verdict": "pass",
+   "lost_at": null,
+   "error": null,
+   "misses": [],
+   "tenant_removed": true,
+   "seconds": 2.2
+  },
+  {
+   "case": "F27",
+   "group": "partner",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "error": null,
+   "misses": [],
+   "tenant_removed": true,
+   "seconds": 2.7
+  },
+  {
+   "case": "F28",
+   "group": "partner",
+   "verdict": "pass",
+   "lost_at": null,
+   "error": null,
+   "misses": [],
+   "tenant_removed": true,
+   "seconds": 2.6
+  },
+  {
+   "case": "F29",
+   "group": "partner",
+   "verdict": "fail",
+   "lost_at": "reasoning",
+   "error": null,
+   "misses": [],
+   "tenant_removed": true,
+   "seconds": 4.3
+  }
+ ],
+ "golden_orgs_left": []
+}
