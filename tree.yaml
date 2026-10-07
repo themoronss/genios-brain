@@ -1,7 +1,7 @@
 # ═════════════════════════════════════════════════════════════════════════════════════════════
 # ⛔ HOW A UNIT ID IS ADDRESSED — read this before quoting one.
 #
-# This file holds ELEVEN programme blocks, and three of them number their milestones from M8:
+# This file holds TWELVE programme blocks, and three of them number their milestones from M8:
 #
 #   <root>                            M1  … M7    retired in place
 #   persona_brain_and_layer_repair    M8  … M12
@@ -19,9 +19,10 @@
 #                                                   (2026-10-06); past every other block again
 #   yc2_w27_s06                       M24         ← YC-II W27 STEP-06, nothing is lost silently
 #                                                   (proposed 2026-10-07); past every other block again
+#   yc2_w27_s07                       M25         ← YC-II W27 STEP-07, the company brief
+#                                                   (proposed 2026-10-07); past every other block again
 #   yc2_w27_s08                       M26         ← YC-II W27 STEP-08, the deleted mail comes back
-#                                                   (proposed 2026-10-07); M25 is kept for STEP-07,
-#                                                   the company brief, whose block follows
+#                                                   (proposed 2026-10-07); past every other block again
 #
 # So `M11` is AMBIGUOUS on its own: it names "The remaining Layer 3 losses" in one block and
 # "L2 Reasoning" in another, and `M11.C1.L-logic.V0.U01` exists twice with different meanings.
@@ -4858,6 +4859,437 @@ yc2_w27_s06:
                       artifact: tests/replays/test_nothing_ends_silently.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest tests/replays/test_nothing_ends_silently.py -q
                       depends_on: [M24.C2.L-logic.V2.U02, M24.C3.L-logic.V1.U01, M24.C4.L-interface.V4.U01, M24.C5.L-data.V1.U01, M24.C5.L-data.V1.U02]
+
+yc2_w27_s07:
+  status: proposed
+  source: 'speedrun008/YC-II W27/STEP-07 §1–§7, re-checked claim by claim against speedrun008 @ 18b41f0f
+    (STEP-07 §8) — by hand and by three read-only traces (every model call site; every store the plan
+    names; the capture gate end to end), their claims checked line by line. Golden: 316 of 368 recorded
+    model calls judge or read, 0 prompts carry any company context; the portal''s and the intro agent''s
+    mail are stopped by four stages keyed on ''is the sender known''. The plan''s stores cannot hold a
+    line-level brief (user_model_proposals is per-person persona JSON with no writer; canon may never
+    reach the graph; mission-critical holds organisation names only).'
+  vision: 'The founder''s company brief exists, versioned, built only from lines the founder accepted:
+    the company, the people who are us, goals, work in motion, key people, connectors, a watchlist, preferences.
+    Every model call that judges or reads carries it — and a tenant without one sees no change at all.
+    The gate keeps and reads what the brief names (W-07). A changed brief re-decides each subject once
+    and no cache serves an answer made under an older one. The drafter proposes from memory patterns and
+    a weekly diff; the founder decides. On the golden set every judge/read prompt carries the founder''s
+    brief and the board moves only where the brief''s deterministic reading moves it.'
+  order_note: 'C1 first (the contract, the table, the store, the composer). C2, C3, C4 and the thirteen
+    C5 units then depend only on C1 — C5''s site units touch one file each and can be built side by side.
+    C6 after C1. C7 last: the golden brief, the re-record, the acceptance. Not in this block: card copy
+    and the other writing sites (STEP-14); the dashboard screen (genios-dashboard); letting the AI filter''s
+    archive stand (D29, default no).'
+  milestones:
+  - id: M25
+    name: The company brief (STEP-07)
+    ships: A versioned company brief from accepted lines only; routes and a script to accept, edit, reject
+      and remove; a drafter that proposes from memory patterns and a weekly diff; the gate keeps and reads
+      the brief's senders; every judging and reading prompt carries it, guarded; a health check; on the
+      golden set the brief in every judge/read prompt and the board re-recorded.
+    categories:
+    - id: M25.C1
+      name: The company brief
+      layers:
+      - layer: contract
+        levels:
+        - level: 0
+          units:
+          - id: M25.C1.L-contract.V0.U01
+            what: New `contracts/company_brief.py` — the sections (company, goals, in motion, people,
+              connectors, watchlist, preferences; 'us' is composed, never proposed), `CompanyBriefLine`
+              (one line, ≤ 200 characters, an address for a connector, a domain for the watchlist), `CompanyBrief`
+              — rendered under ~800 tokens with what was cut reported, a version `cb-<12 hex>` over what
+              the model sees, and `prompt_block()` — empty when no line is accepted.
+            artifact: genios_engine/contracts/company_brief.py
+            verify: .venv/bin/python -m pytest tests/contracts/test_company_brief.py -q
+            depends_on: []
+          - id: M25.C1.L-contract.V0.U02
+            what: '`migrations/0195_company_brief.sql` — `company_brief_lines` (org, line, section, text,
+              address, domain, status proposed·accepted·rejected·removed, proposed by and on what evidence,
+              decided by and when, accepted and removed at) and `company_brief_reviews` (org, ISO week,
+              outcome); both on the tenant reset list.'
+            artifact: migrations/0195_company_brief.sql
+            verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test
+              .venv/bin/python -m pytest tests/test_migration_0195_company_brief.py -q
+            depends_on: []
+      - layer: data
+        levels:
+        - level: 1
+          units:
+          - id: M25.C1.L-data.V1.U03
+            what: 'New `platform/company_brief_store.py` — the one writer: propose (deduplicated against
+              pending and accepted lines; a rejected line is not proposed again for 90 days), accept (optionally
+              edited — the proposal''s own words kept), reject, remove, add (the founder''s own line,
+              accepted at once). Nothing is deleted.'
+            artifact: genios_engine/platform/company_brief_store.py
+            verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test
+              .venv/bin/python -m pytest tests/platform/test_company_brief_store.py -q
+            depends_on:
+            - M25.C1.L-contract.V0.U01
+            - M25.C1.L-contract.V0.U02
+          - id: M25.C1.L-data.V1.U04
+            what: New `platform/company_brief.py` — `brief_for(conn, org_id, at=None)` composes the brief
+              deterministically from `orgs`, `self_identity` and the lines accepted at `at`; `named_sender(brief,
+              email)` says whether and why an address is the brief's (connector, key person, watchlist
+              domain); `current(engine, org_id)` caches for a minute and the store invalidates it.
+            artifact: genios_engine/platform/company_brief.py
+            verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test
+              .venv/bin/python -m pytest tests/platform/test_company_brief.py -q
+            depends_on:
+            - M25.C1.L-contract.V0.U01
+            - M25.C1.L-data.V1.U03
+    - id: M25.C2
+      name: The founder confirms
+      layers:
+      - layer: interface
+        levels:
+        - level: 2
+          units:
+          - id: M25.C2.L-interface.V2.U01
+            what: 'New `api/company_brief_routes.py`, mounted in `main.py`: GET /v1/company-brief (the
+              brief, its version, its proposals), POST /v1/company-brief/lines (the founder''s own line),
+              POST /v1/company-brief/proposals/{id}/decide (accept, edit-and-accept, reject), DELETE /v1/company-brief/lines/{id}.
+              The account owner only (D27). Accepting a connector, key person or watchlist line promotes
+              that sender''s archived mail (`capture/landing/promote`), and the answer says how many.'
+            artifact: genios_engine/api/company_brief_routes.py
+            verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test
+              .venv/bin/python -m pytest tests/api/test_company_brief_routes.py -q
+            depends_on:
+            - M25.C1.L-data.V1.U03
+            - M25.C1.L-data.V1.U04
+          - id: M25.C2.L-interface.V2.U02
+            what: New `scripts/company_brief.py --org … [show | accept ID… | reject ID… | remove ID… |
+              add SECTION TEXT]` — the same decisions for Harsh to apply on Rohit's word until the dashboard
+              has the screen; every database door through `scripts/_db`.
+            artifact: scripts/company_brief.py
+            verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test
+              .venv/bin/python -m pytest tests/scripts/test_company_brief_script.py -q
+            depends_on:
+            - M25.C1.L-data.V1.U03
+            - M25.C1.L-data.V1.U04
+    - id: M25.C3
+      name: The drafter
+      layers:
+      - layer: logic
+        levels:
+        - level: 2
+          units:
+          - id: M25.C3.L-logic.V2.U01
+            what: 'New `reason/brief_patterns.py` — the memory patterns the drafter may read: who we write
+              to and how often, inbound and outbound by domain, government and program senders, waves
+              of outbound mail, meeting series, connectors that introduce people, deadlines by domain.
+              Counts, names, domains and dates — never a subject or a body.'
+            artifact: genios_engine/reason/brief_patterns.py
+            verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test
+              .venv/bin/python -m pytest tests/reason/test_brief_patterns.py -q
+            depends_on:
+            - M25.C1.L-data.V1.U04
+        - level: 3
+          units:
+          - id: M25.C3.L-logic.V3.U02
+            what: 'New `reason/brief_drafter.py` — one model call (Sonnet-class, D28) over the patterns
+              and the current brief; proposals only, each with its evidence; refuse-not-repair on the
+              answer; an address or domain the patterns do not hold is refused; cost recorded as `company_brief_draft`;
+              registered in the metered register and the golden site map (off: the script and the weekly
+              review).'
+            artifact: genios_engine/reason/brief_drafter.py
+            verify: .venv/bin/python -m pytest tests/reason/test_brief_drafter.py -q
+            depends_on:
+            - M25.C3.L-logic.V2.U01
+            - M25.C1.L-data.V1.U03
+      - layer: interface
+        levels:
+        - level: 4
+          units:
+          - id: M25.C3.L-interface.V4.U03
+            what: New `scripts/draft_company_brief.py --org … [--apply]` — a dry run prints the proposals
+              and what they rest on; `--apply` writes them as proposals, nothing accepted.
+            artifact: scripts/draft_company_brief.py
+            verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test
+              .venv/bin/python -m pytest tests/scripts/test_draft_company_brief.py -q
+            depends_on:
+            - M25.C3.L-logic.V3.U02
+      - layer: integration
+        levels:
+        - level: 4
+          units:
+          - id: M25.C3.L-integration.V4.U04
+            what: 'The weekly review: `reason/brief_review.run_company_brief_reviews(engine, now)` in
+              the heavy tick, its own block beside learning, claiming (org, ISO week) in `company_brief_reviews`;
+              for a tenant with an accepted brief, one drafter call in diff mode; never inside another
+              pass''s transaction; off with no model.'
+            artifact: genios_engine/reason/brief_review.py
+            verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test
+              .venv/bin/python -m pytest tests/reason/test_company_brief_review_is_weekly.py -q
+            depends_on:
+            - M25.C3.L-logic.V3.U02
+    - id: M25.C4
+      name: The gate reads it
+      layers:
+      - layer: logic
+        levels:
+        - level: 1
+          units:
+          - id: M25.C4.L-logic.V1.U01
+            what: '`capture/gate/context.py` and `rules.py` — `GateContext.named_in_brief`; `whitelist()`
+              answers W-07 (*named in the company brief*) before W-01, so the archive reason and the attention
+              reason say why.'
+            artifact: genios_engine/capture/gate/rules.py
+            verify: .venv/bin/python -m pytest tests/capture/gate/test_w07_named_in_the_company_brief.py
+              -q
+            depends_on: []
+        - level: 2
+          units:
+          - id: M25.C4.L-logic.V2.U04
+            what: '`capture/connectors/composio.py` — on the fast path, a sender the brief names (or a
+              known counterparty) is never settled from the list snippet: no rule-junk prefilter, no body
+              skip.'
+            artifact: genios_engine/capture/connectors/composio.py
+            verify: .venv/bin/python -m pytest tests/capture/test_the_fast_path_keeps_named_senders_whole.py
+              -q
+            depends_on:
+            - M25.C1.L-data.V1.U04
+          - id: M25.C4.L-logic.V2.U05
+            what: '`capture/gate/relevance.py` — both junk-filter prompts carry the block when a brief
+              exists; the batch skips known and brief-named senders (03 F79); the single prompt sends
+              the masked subject only (03 F78).'
+            artifact: genios_engine/capture/gate/relevance.py
+            verify: .venv/bin/python -m pytest tests/capture/gate/test_the_junk_filter_reads_the_company_brief.py
+              -q
+            depends_on:
+            - M25.C1.L-contract.V0.U01
+            - M25.C1.L-data.V1.U04
+      - layer: integration
+        levels:
+        - level: 2
+          units:
+          - id: M25.C4.L-integration.V2.U03
+            what: '`api/routes._sender_resolver_for` — known counterparties AND the brief''s senders (a
+              connector''s or key person''s address, a watchlist domain) are known; the resolver also
+              says which were named by the brief, and why.'
+            artifact: genios_engine/api/routes.py
+            verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test
+              .venv/bin/python -m pytest tests/test_the_sender_resolver_reads_the_company_brief.py -q
+            depends_on:
+            - M25.C1.L-data.V1.U04
+        - level: 3
+          units:
+          - id: M25.C4.L-integration.V3.U02
+            what: '`capture/pipeline.py`, `capture/acquire/sync_runner.py`, `capture/connectors/push_ingest.py`
+              — the resolver''s reason reaches `GateContext.named_in_brief` on every capture door; a brief-named
+              sender''s mail lands deep with W-07 and reaches extraction (the relevance page and the bulk
+              check see a known sender).'
+            artifact: genios_engine/capture/pipeline.py
+            verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test
+              .venv/bin/python -m pytest tests/capture/test_a_company_brief_sender_is_kept_and_read.py
+              -q
+            depends_on:
+            - M25.C4.L-logic.V1.U01
+            - M25.C4.L-integration.V2.U03
+    - id: M25.C5
+      name: Every judging and reading prompt carries it
+      layers:
+      - layer: logic
+        levels:
+        - level: 2
+          units:
+          - id: M25.C5.L-logic.V2.U01
+            what: 'extraction: the block rides in the per-call envelope (the only slot above the fence;
+              never in the cached prefix), so the extraction cache key moves with the brief''s version.
+              No accepted line → the prompt is byte for byte what it was.'
+            artifact: genios_engine/capture/semantic/extractor.py
+            verify: .venv/bin/python -m pytest tests/capture/semantic/test_extraction_reads_the_company_brief.py
+              -q
+            depends_on:
+            - M25.C1.L-contract.V0.U01
+            - M25.C1.L-data.V1.U04
+          - id: M25.C5.L-logic.V2.U02
+            what: 'the relevance page (LLM-5): the block before ITEMS — the model is told WHICH company''s
+              operation it judges. No accepted line → the prompt is byte for byte what it was.'
+            artifact: genios_engine/capture/esqe/relevance.py
+            verify: .venv/bin/python -m pytest tests/capture/esqe/test_relevance_page_reads_the_company_brief.py
+              -q
+            depends_on:
+            - M25.C1.L-contract.V0.U01
+            - M25.C1.L-data.V1.U04
+          - id: M25.C5.L-logic.V2.U03
+            what: 'resolution: the block before the message; the recorded prompt version names the brief''s
+              version. No accepted line → the prompt is byte for byte what it was.'
+            artifact: genios_engine/context/lifecycle/prompt.py
+            verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test
+              .venv/bin/python -m pytest tests/context/test_resolution_reads_the_company_brief.py -q
+            depends_on:
+            - M25.C1.L-contract.V0.U01
+            - M25.C1.L-data.V1.U04
+          - id: M25.C5.L-logic.V2.U04
+            what: 'R-1, the interpreter (R-site gate): the block in its prompt, the brief''s version in
+              its generation cache seed. No accepted line → the prompt is byte for byte what it was.'
+            artifact: genios_engine/reason/interpretation.py
+            verify: .venv/bin/python -m pytest tests/reason/test_r1_interpreter_reads_the_company_brief.py
+              -q
+            depends_on:
+            - M25.C1.L-contract.V0.U01
+            - M25.C1.L-data.V1.U04
+          - id: M25.C5.L-logic.V2.U05
+            what: 'R-6, the situation reasoner: the block in its prompt, the version in its seed. No accepted
+              line → the prompt is byte for byte what it was.'
+            artifact: genios_engine/reason/situation_reasoner.py
+            verify: .venv/bin/python -m pytest tests/reason/test_r6_reads_the_company_brief.py -q
+            depends_on:
+            - M25.C1.L-contract.V0.U01
+            - M25.C1.L-data.V1.U04
+          - id: M25.C5.L-logic.V2.U06
+            what: 'the decider: the block after its role line; the version in its in-process cache key.
+              No accepted line → the prompt is byte for byte what it was.'
+            artifact: genios_engine/reason/llm_decision_maker.py
+            verify: .venv/bin/python -m pytest tests/reason/test_decider_reads_the_company_brief.py -q
+            depends_on:
+            - M25.C1.L-contract.V0.U01
+            - M25.C1.L-data.V1.U04
+          - id: M25.C5.L-logic.V2.U07
+            what: 'the test-mode R-1 reader: the block in its prompt; the version in its cache key. No
+              accepted line → the prompt is byte for byte what it was.'
+            artifact: genios_engine/reason/llm_interpretation.py
+            verify: .venv/bin/python -m pytest tests/reason/test_llm_r1_reads_the_company_brief.py -q
+            depends_on:
+            - M25.C1.L-contract.V0.U01
+            - M25.C1.L-data.V1.U04
+          - id: M25.C5.L-logic.V2.U08
+            what: 'screen insight: the block in the per-screen task, never in the hour-cached rulebook.
+              No accepted line → the prompt is byte for byte what it was.'
+            artifact: genios_engine/reason/moments/screen_insight.py
+            verify: .venv/bin/python -m pytest tests/reason/moments/test_screen_insight_reads_the_company_brief.py
+              -q
+            depends_on:
+            - M25.C1.L-contract.V0.U01
+            - M25.C1.L-data.V1.U04
+          - id: M25.C5.L-logic.V2.U09
+            what: 'screen memory: the block beside ''The manager''. No accepted line → the prompt is byte
+              for byte what it was.'
+            artifact: genios_engine/reason/moments/screen_memory_batch.py
+            verify: .venv/bin/python -m pytest tests/reason/moments/test_screen_memory_reads_the_company_brief.py
+              -q
+            depends_on:
+            - M25.C1.L-contract.V0.U01
+            - M25.C1.L-data.V1.U04
+          - id: M25.C5.L-logic.V2.U10
+            what: 'draft review: the block before the facts it checks a draft against. No accepted line
+              → the prompt is byte for byte what it was.'
+            artifact: genios_engine/reason/moments/draft_review.py
+            verify: .venv/bin/python -m pytest tests/reason/moments/test_draft_review_reads_the_company_brief.py
+              -q
+            depends_on:
+            - M25.C1.L-contract.V0.U01
+            - M25.C1.L-data.V1.U04
+          - id: M25.C5.L-logic.V2.U11
+            what: 'org-rule extraction: the block before the document. No accepted line → the prompt is
+              byte for byte what it was.'
+            artifact: genios_engine/packs/brains/org_rule_extract.py
+            verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test
+              .venv/bin/python -m pytest tests/packs/test_org_rule_extract_reads_the_company_brief.py
+              -q
+            depends_on:
+            - M25.C1.L-contract.V0.U01
+            - M25.C1.L-data.V1.U04
+          - id: M25.C5.L-logic.V2.U12
+            what: '`reason/fingerprint.MaterialInputs` gains the company brief''s version (read once per
+              sweep in `fingerprint_inputs.read_inputs`); in the payload only when a brief exists, so
+              every fingerprint of a tenant without one is unchanged — and a changed brief re-decides
+              each subject once.'
+            artifact: genios_engine/reason/fingerprint.py
+            verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test
+              .venv/bin/python -m pytest tests/reason/test_a_changed_company_brief_decides_once.py -q
+            depends_on:
+            - M25.C1.L-data.V1.U04
+      - layer: integration
+        levels:
+        - level: 3
+          units:
+          - id: M25.C5.L-integration.V3.U13
+            what: 'The guard: `BRIEF_SITES` (judge or read) and `NO_BRIEF` (with the reason) held equal
+              to `tests/test_every_llm_call_site_is_metered._SITES`, both ways; by the AST, every BRIEF
+              site''s prompt builder takes the block and every caller passes it; a planted site without
+              it fails.'
+            artifact: tests/test_every_prompt_carries_the_company_brief.py
+            verify: .venv/bin/python -m pytest tests/test_every_prompt_carries_the_company_brief.py -q
+            depends_on:
+            - M25.C5.L-logic.V2.U01
+            - M25.C5.L-logic.V2.U02
+            - M25.C5.L-logic.V2.U03
+            - M25.C5.L-logic.V2.U04
+            - M25.C5.L-logic.V2.U05
+            - M25.C5.L-logic.V2.U06
+            - M25.C5.L-logic.V2.U07
+            - M25.C5.L-logic.V2.U08
+            - M25.C5.L-logic.V2.U09
+            - M25.C5.L-logic.V2.U10
+            - M25.C5.L-logic.V2.U11
+            - M25.C4.L-logic.V2.U05
+    - id: M25.C6
+      name: The check
+      layers:
+      - layer: interface
+        levels:
+        - level: 2
+          units:
+          - id: M25.C6.L-interface.V2.U01
+            what: '`scripts/pipeline_health.py` — *the company brief exists and is current*: fails while
+              no line is accepted; names the version, the pending proposals, what the budget cut, and
+              when the last weekly review ran.'
+            artifact: scripts/pipeline_health.py
+            verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test
+              .venv/bin/python -m pytest tests/scripts/test_pipeline_health_company_brief.py -q
+            depends_on:
+            - M25.C1.L-data.V1.U04
+    - id: M25.C7
+      name: The golden set
+      layers:
+      - layer: integration
+        levels:
+        - level: 4
+          units:
+          - id: M25.C7.L-integration.V4.U01
+            what: The golden founder's company brief — STEP-07 §4's draft in the golden world's names
+              (StartupSetu, DigiVault, Introly, Lakshya, the cases' funds, programs and partners) — in
+              `tests/replays/specs/founder/company_brief.json`, seeded as accepted lines by `engine_runner._fresh_tenant`.
+            artifact: tests/replays/engine_runner.py
+            verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test
+              GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest tests/replays/test_the_golden_founder_has_a_company_brief.py
+              -q
+            depends_on:
+            - M25.C1.L-data.V1.U03
+            - M25.C4.L-integration.V3.U02
+        - level: 5
+          units:
+          - id: M25.C7.L-integration.V5.U02
+            what: Every cassette re-recorded with the ideal reader (no spend); every object the brief
+              makes reach a reader for the first time authored (F02 locker, received, granted; F03 nudge1,
+              nudge2; any other found); the earlier steps' acceptances restated for exactly the objects
+              the brief moves.
+            artifact: tests/replays/specs/founder/cassettes
+            verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test
+              GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest tests/replays -q
+            depends_on:
+            - M25.C7.L-integration.V4.U01
+            - M25.C5.L-integration.V3.U13
+        - level: 6
+          units:
+          - id: M25.C7.L-integration.V6.U03
+            what: 'The acceptance: on every founder case every judging and reading prompt carries the
+              founder''s brief with its version and every writing prompt is unchanged; the brief''s senders
+              land W-07, deep; the board is re-recorded in 03 §F.1 with every move named.'
+            artifact: tests/replays/test_the_company_brief_is_in_every_prompt.py
+            verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test
+              GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest tests/replays/test_the_company_brief_is_in_every_prompt.py
+              -q
+            depends_on:
+            - M25.C7.L-integration.V5.U02
+            - M25.C6.L-interface.V2.U01
+            - M25.C2.L-interface.V2.U01
+            - M25.C3.L-integration.V4.U04
+            - M25.C4.L-logic.V2.U04
 
 yc2_w27_s08:
   status: proposed
