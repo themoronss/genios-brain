@@ -50,7 +50,7 @@ connector's file carries three numbers, each a `Measured` at the connector (`con
                     not them;
   `calls`         — of them, the share on a calendar meeting that starts after it: booked, not
                     necessarily held.
-A rate of nobody is no rate: a connector that introduced no one rests on nothing and says "not
+A connector that introduced no one has a count of none, and a rate of nobody is no rate — "not
 measured", never 0%. Nothing a seat captured privately counts — not the introduction, the answer or
 the meeting.
 """
@@ -64,7 +64,7 @@ from sqlalchemy import text
 
 from genios_engine.context.introductions import connector_roles
 from genios_engine.contracts.company_brief import CompanyBrief
-from genios_engine.contracts.measured import Measured, rate_of
+from genios_engine.contracts.measured import Measured, count_of, rate_of
 from genios_engine.platform.self_identity import identity_for
 
 #: The brief's kinds of file, in the order that decides when several lines stand behind one.
@@ -368,8 +368,8 @@ def _connector_rate(since: dict[str, dict[str, tuple[bool, bool]]],
             was = people.get(person, (False, False))
             people[person] = (was[0] or replied, was[1] or called)
     k = len(people)
-    # A count rests on what it counts: none rests on nothing (`Measured` — no value without n).
-    return (Measured(value=k or None, n=k, basis=CONNECTOR_BASIS, unit="count"),
+    # A count is what it counts — zero included, "none" (`contracts/measured.count_of`).
+    return (count_of(k, basis=CONNECTOR_BASIS),
             rate_of(sum(r for r, _c in people.values()), k, basis=CONNECTOR_BASIS),
             rate_of(sum(c for _r, c in people.values()), k, basis=CONNECTOR_BASIS))
 

@@ -22,7 +22,7 @@ from sqlalchemy import text
 
 from genios_engine.capture.gate.rules import AUTO_REPLY
 from genios_engine.context.workstreams import as_dict, files_for
-from genios_engine.contracts.measured import MEASURED_HERE, Measured, rate_of
+from genios_engine.contracts.measured import MEASURED_HERE, count_of, rate_of
 
 from .workstream_world import (CONNECTOR, FOUNDER, T0, UNSUBSCRIBE, brief, later, mention, process,
                                reset, tenant)
@@ -114,7 +114,7 @@ def _rate(f) -> tuple:
 def test_a_connectors_file_counts_the_people_it_introduced(store):
     introly = _files(store, _world(store))["introly.test"]
     assert introly.kind == "connector"
-    assert introly.introductions == Measured(value=3, n=3, basis="connector", unit="count")
+    assert introly.introductions == count_of(3, basis="connector")
 
 
 def test_of_them_only_those_who_wrote_to_us_themselves_after_their_introduction_replied(store):
@@ -158,7 +158,7 @@ def test_nothing_a_seat_captured_privately_is_counted(store):
     b = _world(store)
     _private(store, "evt_intro_simon", "evt_farah", "cal_farah")
     assert _rate(_files(store, b)["introly.test"]) == (
-        Measured(value=2, n=2, basis="connector", unit="count"),
+        count_of(2, basis="connector"),
         rate_of(0, 2, basis="connector"), rate_of(1, 2, basis="connector"))
 
 
@@ -173,7 +173,7 @@ def test_one_person_introduced_twice_is_one_introduction(store):
             recipients=(FOUNDER, FARAH), thread="t_team", headers=UNSUBSCRIBE,
             mentions=(mention("Farah Qureshi"),), company_brief=b, at=later(8))
     introly = _files(store, b)["introly.test"]
-    assert introly.introductions == Measured(value=3, n=3, basis="connector", unit="count")
+    assert introly.introductions == count_of(3, basis="connector")
     assert introly.replied == rate_of(1, 3, basis="connector")
 
 
@@ -186,17 +186,18 @@ def test_each_connector_counts_only_the_people_it_introduced(store):
             company_brief=b, at=later(9))
     files = _files(store, b)
     assert _rate(files["boardy.test"]) == (
-        Measured(value=1, n=1, basis="connector", unit="count"),
+        count_of(1, basis="connector"),
         rate_of(1, 1, basis="connector"), rate_of(0, 1, basis="connector"))
     assert files["introly.test"].introductions.n == 3
 
 
 def test_a_connector_that_introduced_nobody_has_measured_nothing(store):
-    """Boardy only asked. Zero introductions rest on nothing, and a rate of nobody is no rate —
-    never a 0% that reads as a measurement."""
+    """Boardy only asked. It introduced no one — a count of none, which is exact — and a rate of
+    nobody is no rate: never a 0% that reads as a measurement."""
     boardy = _files(store, _world(store))["boardy.test"]
     assert boardy.kind == "connector"
-    assert [(m.value, m.n, m.says()) for m in _rate(boardy)] == [(None, 0, "not measured")] * 3
+    assert [(m.value, m.n, m.says()) for m in _rate(boardy)] == [
+        (0, 0, "none"), (None, 0, "not measured"), (None, 0, "not measured")]
 
 
 def test_only_a_connectors_file_carries_the_rate(store):
@@ -211,10 +212,12 @@ def test_only_a_connectors_file_carries_the_rate(store):
 def test_each_number_says_what_it_rests_on(store):
     introly = _files(store, _world(store))["introly.test"]
     for m in _rate(introly):
-        assert (m.n, m.basis, m.source, m.sparse) == (3, "connector", MEASURED_HERE, True)
-    assert (introly.introductions.unit, introly.replied.unit, introly.calls.unit) == (
-        "count", "ratio", "ratio")
-    assert "usually" not in introly.replied.says(), "three introductions are too few for a habit"
+        assert (m.n, m.basis, m.source) == (3, "connector", MEASURED_HERE)
+    assert [(m.stat, m.sparse, m.says()) for m in _rate(introly)] == [
+        ("count", False, "3"), ("rate", True, "1 of 3"), ("rate", True, "2 of 3")], (
+        "a count is exact; three introductions are too few for a rate to be a habit")
+    assert (introly.replied.unit, introly.calls.unit) == ("ratio", "ratio")
+    assert "usually" not in introly.replied.says()
 
 
 def test_the_read_model_carries_the_rate(store):
@@ -223,8 +226,7 @@ def test_the_read_model_carries_the_rate(store):
         body = as_dict(files_for(c, ORG, now=NOW, company_brief=b), now=NOW)
     files = {f["counterparty"]["key"]: f for f in body["files"]}
     introly = files["introly.test"]
-    assert introly["introductions"] == Measured(value=3, n=3, basis="connector",
-                                                unit="count").as_dict()
+    assert introly["introductions"] == count_of(3, basis="connector").as_dict()
     assert introly["replied"] == rate_of(1, 3, basis="connector").as_dict()
     assert introly["calls"] == rate_of(2, 3, basis="connector").as_dict()
     assert (files["kestrelcap.test"]["introductions"], files["kestrelcap.test"]["replied"],
