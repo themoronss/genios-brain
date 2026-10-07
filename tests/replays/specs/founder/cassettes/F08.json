@@ -1,36 +1,206 @@
 {
  "case_id": "F08",
  "source": "ideal_reader",
- "recorded_at": "b47239c9",
+ "recorded_at": "fdd8b98a",
  "answers": {
-  "1d2fc4bd464038ee8564e86878a1f50dc27a628eeb572b08b8eabe4a1577a530": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "drop",
-     "relevance": 0.4,
-     "reason": "automated introduction service"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.4, \"reason\": \"automated introduction service\"}]",
-   "input_tokens": 438,
-   "output_tokens": 23,
+  "62c4a55ac2f41586c6f49c748211a33742170ef8f473faa921b6693cc61eea6a": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "I'll let you two take it from here.",
+    "start_offset": 195,
+    "end_offset": 230,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"I'll let you two take it from here.\", \"start_offset\": 195, \"end_offset\": 230, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1336,
+   "output_tokens": 47,
    "model": "claude-haiku-4-5-20251001"
   },
-  "99d9d3077acce3baa4eb559b1eae081f58ca137f13b138449d19f344b6bc1c92": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "drop",
-     "relevance": 0.4,
-     "reason": "automated introduction service"
+  "65e22e27fa4e94aeab1ecdd04da10fb6f6ba1de0fb98e3c7bb886c74c8dca5f2": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "introduce",
+    "stance": "positive",
+    "topics": [
+     "introduction"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Simon Hart",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Simon Hart",
+        "start_offset": 9,
+        "end_offset": 19
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Lumenpath",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Lumenpath",
+        "start_offset": 21,
+        "end_offset": 30
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "relationships": [
+     {
+      "party": "Simon Hart",
+      "nature": "introduced contact",
+      "direction": "inbound",
+      "evidence_text": "Arjun, meet Simon Hart"
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": false,
+     "asks_for_reply": true,
+     "engagement": "medium",
+     "motive": "introduce a contact"
     }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.4, \"reason\": \"automated introduction service\"}]",
-   "input_tokens": 438,
-   "output_tokens": 23,
+   },
+   "raw": "{\"intent\": \"introduce\", \"stance\": \"positive\", \"topics\": [\"introduction\"], \"entity_mentions\": [{\"surface_form\": \"Simon Hart\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Simon Hart\", \"start_offset\": 9, \"end_offset\": 19}], \"confidence_bp\": 9000}, {\"surface_form\": \"Lumenpath\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Lumenpath\", \"start_offset\": 21, \"end_offset\": 30}], \"confidence_bp\": 9000}], \"relationships\": [{\"party\": \"Simon Hart\", \"nature\": \"introduced contact\", \"direction\": \"inbound\", \"evidence_text\": \"Arjun, meet Simon Hart\"}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": false, \"asks_for_reply\": true, \"engagement\": \"medium\", \"motive\": \"introduce a contact\"}}",
+   "input_tokens": 5336,
+   "output_tokens": 195,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "6c59ef182e2c9ae71dd662e268abff576c1e57d5e7cc556c9bd30b836b187693": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "reply": 4700,
+     "wait_unanswered_email": 4700
+    },
+    "confidence_bp": 7000,
+    "rationale": "Introly is the founder's intro agent; its introduction asks nothing of Introly itself — the reply belongs to the person it introduced.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"reply\": 4700, \"wait_unanswered_email\": 4700}, \"confidence_bp\": 7000, \"rationale\": \"Introly is the founder's intro agent; its introduction asks nothing of Introly itself — the reply belongs to the person it introduced.\", \"missing\": []}",
+   "input_tokens": 1853,
+   "output_tokens": 66,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "7e285129327f7d38e3422660bec6e52609b192433e02486b90c39c642a99e4bf": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "introduce",
+    "stance": "positive",
+    "topics": [
+     "introduction"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Omar Haddad",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Omar Haddad",
+        "start_offset": 9,
+        "end_offset": 20
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Tidewell",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Tidewell",
+        "start_offset": 22,
+        "end_offset": 30
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "relationships": [
+     {
+      "party": "Omar Haddad",
+      "nature": "introduced contact",
+      "direction": "inbound",
+      "evidence_text": "Arjun, meet Omar Haddad"
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": false,
+     "asks_for_reply": true,
+     "engagement": "medium",
+     "motive": "introduce a contact"
+    }
+   },
+   "raw": "{\"intent\": \"introduce\", \"stance\": \"positive\", \"topics\": [\"introduction\"], \"entity_mentions\": [{\"surface_form\": \"Omar Haddad\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Omar Haddad\", \"start_offset\": 9, \"end_offset\": 20}], \"confidence_bp\": 9000}, {\"surface_form\": \"Tidewell\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Tidewell\", \"start_offset\": 22, \"end_offset\": 30}], \"confidence_bp\": 9000}], \"relationships\": [{\"party\": \"Omar Haddad\", \"nature\": \"introduced contact\", \"direction\": \"inbound\", \"evidence_text\": \"Arjun, meet Omar Haddad\"}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": false, \"asks_for_reply\": true, \"engagement\": \"medium\", \"motive\": \"introduce a contact\"}}",
+   "input_tokens": 5336,
+   "output_tokens": 196,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "d422c51755698400f8f22331f72e3cae460b4286f0d1b6135fc3691d82091c00": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 4,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 4, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 897,
+   "output_tokens": 98,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "e846cb9a11975fe2ab8c625f317625e53f38ea764d3218b7d84173ba560c28cc": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "I'll let you two take it from here.",
+    "start_offset": 198,
+    "end_offset": 233,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"I'll let you two take it from here.\", \"start_offset\": 198, \"end_offset\": 233, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1337,
+   "output_tokens": 47,
    "model": "claude-haiku-4-5-20251001"
   }
  }

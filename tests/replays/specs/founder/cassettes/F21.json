@@ -1,58 +1,9 @@
 {
  "case_id": "F21",
  "source": "ideal_reader",
- "recorded_at": "b47239c9",
+ "recorded_at": "fdd8b98a",
  "answers": {
-  "02c69f2c61e79eb26eda15206237d0d2c003ccabbd03de9f60ec352590092dfc": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "drop",
-     "relevance": 0.05,
-     "reason": "automated, nobody waits on a reply"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}]",
-   "input_tokens": 417,
-   "output_tokens": 25,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "3df5ebbfef34122197fef8f350ac835e7600283c8cd83f9b37f0cb38b0ae346d": {
-   "site": "relevance",
-   "parsed": {
-    "verdicts": [
-     {
-      "item": 1,
-      "business": false,
-      "description": "Pre-incubation programme: applications open",
-      "category": "automated",
-      "human_authored": false,
-      "asks_for_reply": false
-     }
-    ]
-   },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"Pre-incubation programme: applications open\", \"category\": \"automated\", \"human_authored\": false, \"asks_for_reply\": false}]}",
-   "input_tokens": 558,
-   "output_tokens": 45,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "c0ff6aad421e33298500ac32bac247ac715d31ac8d0ce8118868519b54b6306a": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "drop",
-     "relevance": 0.05,
-     "reason": "automated, nobody waits on a reply"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}]",
-   "input_tokens": 427,
-   "output_tokens": 25,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "ef221602064b54e5eacc4fe962ad7c895f9d05a5002e3db41a7cc44764a493d0": {
+  "127835972c6123df2c2de4c7bd581b66f3fac75bbd1cdaab2332f52976f19e77": {
    "site": "relevance",
    "parsed": {
     "verdicts": [
@@ -67,8 +18,57 @@
     ]
    },
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"Reminder: pre-incubation programme\", \"category\": \"automated\", \"human_authored\": false, \"asks_for_reply\": false}]}",
-   "input_tokens": 548,
+   "input_tokens": 967,
    "output_tokens": 43,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "4704de981ed0cad0c99e62ed202d0fa306c8a659189f5ebbd6ece7dd282b02e9": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": false,
+      "description": "Pre-incubation programme: applications open",
+      "category": "automated",
+      "human_authored": false,
+      "asks_for_reply": false
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"Pre-incubation programme: applications open\", \"category\": \"automated\", \"human_authored\": false, \"asks_for_reply\": false}]}",
+   "input_tokens": 977,
+   "output_tokens": 45,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "6c2aec6388c4e5cca89f8f723b77990bbd1d21229ce234b018e4e9291a573d28": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "drop",
+     "relevance": 0.05,
+     "reason": "automated, nobody waits on a reply"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}]",
+   "input_tokens": 846,
+   "output_tokens": 25,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "7e78c0a185d9a5c8f27554133fd16157a417f4011478b603979d4bb3c0e93d30": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "drop",
+     "relevance": 0.05,
+     "reason": "automated, nobody waits on a reply"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}]",
+   "input_tokens": 836,
+   "output_tokens": 25,
    "model": "claude-haiku-4-5-20251001"
   }
  }

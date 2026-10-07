@@ -1,7 +1,7 @@
 {
  "case_id": "F13",
  "source": "ideal_reader",
- "recorded_at": "b47239c9",
+ "recorded_at": "fdd8b98a",
  "answers": {
   "1860eae98ba05faad1d58d7266f8504996f25b8a7fa3707f8f203d35c15d8be4": {
    "site": "narrator",
@@ -15,7 +15,41 @@
    "output_tokens": 71,
    "model": "claude-haiku-4-5-20251001"
   },
-  "2c0537f13daf330da249c75797b7e69d150cc1fd39ac99ad5c24e017fa5be151": {
+  "206ab4845c1dc0292e88f778874e6661d97d02e21015085cb2973afe46e18bb8": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Nimbus Labs - traction metrics?",
+    "start_offset": 0,
+    "end_offset": 31,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Nimbus Labs - traction metrics?\", \"start_offset\": 0, \"end_offset\": 31, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1348,
+   "output_tokens": 45,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "2dfb754a9ba95b190e8a487b7e328e5291da07c1a58ca5c85f1ded3a71615597": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4481,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 4537,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 6200
+    },
+    "confidence_bp": 5000,
+    "rationale": "A company wrote today and the ball is in our court.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4481, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4537, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 6200}, \"confidence_bp\": 5000, \"rationale\": \"A company wrote today and the ball is in our court.\", \"missing\": []}",
+   "input_tokens": 2887,
+   "output_tokens": 85,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "4a810d7c8d1188b1caef7254c9188942205f06940a53cb61ad4a1df2986b6e16": {
    "site": "junk_gate_batch",
    "parsed": [
     {
@@ -26,11 +60,11 @@
     }
    ],
    "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 438,
+   "input_tokens": 857,
    "output_tokens": 24,
    "model": "claude-haiku-4-5-20251001"
   },
-  "5d0905f13102471938102810150387af7a9810b4cdd19250ab9a243b505fabeb": {
+  "508fec5f57b78d2d6465f62aadbe317a0775c4c61d366f151ffe3e3c380766fd": {
    "site": "r1",
    "parsed": {
     "readings": [
@@ -49,45 +83,30 @@
     ]
    },
    "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 412,
+   "input_tokens": 831,
    "output_tokens": 51,
    "model": "claude-haiku-4-5-20251001"
   },
-  "61800842f911bab49e11d8c3c0d07ea1981d836ad1aa7b3e33a73b22e15ece38": {
-   "site": "decider",
+  "57265e2feb1f0a1f06e807e017a5b72f0d186387f7638504eab85f6849514483": {
+   "site": "relevance",
    "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4481,
-     "admin.pb.follow_up_coordination.the_follow_through_relay": 4537,
-     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 6200
-    },
-    "confidence_bp": 5000,
-    "rationale": "A company wrote today and the ball is in our court.",
-    "missing": []
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Nimbus Labs - traction metrics?",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
    },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4481, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4537, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 6200}, \"confidence_bp\": 5000, \"rationale\": \"A company wrote today and the ball is in our court.\", \"missing\": []}",
-   "input_tokens": 2467,
-   "output_tokens": 85,
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Nimbus Labs - traction metrics?\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 1001,
+   "output_tokens": 41,
    "model": "claude-haiku-4-5-20251001"
   },
-  "65f01434825da28f666cf41dee4dc05c1c6eafb0b45619fdb827f42de5f398b4": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "Nimbus Labs - traction metrics?",
-    "start_offset": 0,
-    "end_offset": 31,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Nimbus Labs - traction metrics?\", \"start_offset\": 0, \"end_offset\": 31, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 928,
-   "output_tokens": 45,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "6c88f1167f1f7b95f929cfd70b788fb6d7b6fb2c04509c0f153f4696eb7b8597": {
+  "7044f2b5bb7f7ddb24743f4100976a0104e8b1f76245fe173191395be32264b6": {
    "site": "extraction",
    "parsed": {
     "intent": "request",
@@ -210,27 +229,8 @@
     ]
    },
    "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"traction metrics\", \"seed round\"], \"entity_mentions\": [{\"surface_form\": \"Mohit Sethi\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Mohit Sethi\", \"start_offset\": 249, \"end_offset\": 260}], \"confidence_bp\": 9000}, {\"surface_form\": \"Tusker Capital\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Tusker Capital\", \"start_offset\": 270, \"end_offset\": 284}], \"confidence_bp\": 9000}, {\"surface_form\": \"Nimbus Labs\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Nimbus Labs\", \"start_offset\": 0, \"end_offset\": 11}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Share the current traction metrics: monthly active teams, revenue run-rate and the pilot pipeline\", \"asked_by\": \"Mohit Sethi\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"could you share your current traction metrics\", \"start_offset\": 108, \"end_offset\": 153}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"Monday\", \"earliest\": \"2026-08-10T00:00:00+05:30\", \"latest\": \"2026-08-10T23:59:59+05:30\", \"certainty\": \"relative\", \"resolved_against\": \"2026-08-08T06:30:00Z\", \"evidence\": [{\"quote\": \"Monday\", \"start_offset\": 82, \"end_offset\": 88}]}], \"business_facts\": [{\"field\": \"person.title\", \"subject\": \"Mohit Sethi\", \"value\": \"Partner\", \"standing\": \"observed\", \"evidence\": [{\"quote\": \"Partner, Tusker Capital\", \"start_offset\": 261, \"end_offset\": 284}], \"confidence_bp\": 9000}, {\"field\": \"thread.objective\", \"subject\": \"thread\", \"value\": \"traction metrics before the partners' meeting\", \"standing\": \"judgement\", \"evidence\": [{\"quote\": \"could you share your current traction metrics\", \"start_offset\": 108, \"end_offset\": 153}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"traction metrics before the partners' meeting\"}, \"implied_actions\": [\"share the current traction metrics before Monday\"]}",
-   "input_tokens": 4923,
+   "input_tokens": 5342,
    "output_tokens": 504,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "9a28839e9114ecd7f831b89b6e35cb580212f5f084b6031aeff63981d62a3ba3": {
-   "site": "relevance",
-   "parsed": {
-    "verdicts": [
-     {
-      "item": 1,
-      "business": true,
-      "description": "Nimbus Labs - traction metrics?",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     }
-    ]
-   },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Nimbus Labs - traction metrics?\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "input_tokens": 581,
-   "output_tokens": 41,
    "model": "claude-haiku-4-5-20251001"
   }
  }

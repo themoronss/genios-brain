@@ -171,7 +171,9 @@ def _plant(engine, org: str, case, run, kind: str) -> None:
 @pytest.mark.pg
 @pytest.mark.golden
 @pytest.mark.parametrize("case_id, kind", [
-    ("F04", "outside memory"), ("F04", "archived words readable"),
+    # STEP-07 · F04's introduction is no longer archived — the company brief names Introly, so it
+    # is kept and read (W-07); the archive this control plants into is F32's program newsletters.
+    ("F04", "outside memory"), ("F32", "archived words readable"),
     ("F12", "calendar with no meeting"), ("F12", "screen contact made a person")])
 def test_a_planted_miss_of_each_kind_is_named(case_id, kind):
     """The negative control: each check, handed a real run with one miss planted, names it."""

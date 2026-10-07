@@ -1,26 +1,144 @@
 {
  "case_id": "F10",
  "source": "ideal_reader",
- "recorded_at": "621764b4",
+ "recorded_at": "fdd8b98a",
  "answers": {
-  "16e858ebf95b6bde97c75556cfe263b50cfa8f4fed2d320ff8f6ac8684e491e0": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "reply": 6500,
-     "wait_unanswered_email": 5600
+  "2098cd3b346dbad2abb3420f33d232d6f7c5c350f00b5b58afd3d06fce57239b": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
     },
-    "confidence_bp": 5500,
-    "rationale": "A direct question is waiting on us.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5600}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
-   "input_tokens": 1496,
-   "output_tokens": 42,
+    {
+     "i": 1,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 2,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 2, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 871,
+   "output_tokens": 72,
    "model": "claude-haiku-4-5-20251001"
   },
-  "1b2b466b4412dbaa8b891d937021e0799faba7cd56b92ae86bd013ea1ba9aa38": {
+  "219373e9738a116930b66821c48a77fcfb6092e624fd5d30f26eda6cdec5a5c1": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 937,
+   "output_tokens": 74,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "23610a0b901dcf9e56c14c804a0717772aabc908acffff34e9c09c98ce12364a": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Nimbus Labs - data room?",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     },
+     {
+      "item": 2,
+      "business": true,
+      "description": "Nimbus Labs - data room?",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     },
+     {
+      "item": 3,
+      "business": true,
+      "description": "Nimbus Labs - data room?",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Nimbus Labs - data room?\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 2, \"business\": true, \"description\": \"Nimbus Labs - data room?\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 3, \"business\": true, \"description\": \"Nimbus Labs - data room?\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 1052,
+   "output_tokens": 112,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "2cb8e5f5eee09c809b34a92fa5be875fee27990546216e53b77e75e1d38ae2c2": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Reply",
+    "situation_summary": "The reply is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
+    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
+   },
+   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
+   "input_tokens": 2361,
+   "output_tokens": 166,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "4d966458012348b3bbf6579a2af48d53a67778bc3a4dc4ab6fd96f6fde7f6063": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Reply",
+    "situation_summary": "The reply is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
+    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
+   },
+   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
+   "input_tokens": 2321,
+   "output_tokens": 166,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "5eda2bb13ff3a3240ccad0065de16dca0042a76ff48a552b3502a958e9d03833": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Send Kiran Agnihotri your data-room link and cap table",
+    "situation": "Kiran Agnihotri asked 3 days ago: \"could you share your data-room link and the current cap table?\"",
+    "artifact": "Hi Kiran, here is our data-room link: [link]. The current cap table is in the room."
+   },
+   "raw": "{\"headline\": \"Send Kiran Agnihotri your data-room link and cap table\", \"situation\": \"Kiran Agnihotri asked 3 days ago: \\\"could you share your data-room link and the current cap table?\\\"\", \"artifact\": \"Hi Kiran, here is our data-room link: [link]. The current cap table is in the room.\"}",
+   "input_tokens": 1804,
+   "output_tokens": 71,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "81e17d2d8bae97157b74883af7ead91550c90cf393571c7790087392b2d78c65": {
    "site": "extraction",
    "parsed": {
     "intent": "request",
@@ -113,146 +231,11 @@
     ]
    },
    "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\", \"data room\"], \"entity_mentions\": [{\"surface_form\": \"Kiran Agnihotri\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Kiran Agnihotri\", \"start_offset\": 260, \"end_offset\": 275}], \"confidence_bp\": 9000}, {\"surface_form\": \"Banyan Seed Fund\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Banyan Seed Fund\", \"start_offset\": 287, \"end_offset\": 303}], \"confidence_bp\": 9000}, {\"surface_form\": \"Nimbus Labs\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Nimbus Labs\", \"start_offset\": 0, \"end_offset\": 11}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Share the data-room link and the current cap table\", \"asked_by\": \"Kiran Agnihotri\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"could you share your data-room link and the current cap table?\", \"start_offset\": 123, \"end_offset\": 185}], \"confidence_bp\": 9000}], \"business_facts\": [{\"field\": \"person.title\", \"subject\": \"Kiran Agnihotri\", \"value\": \"Principal\", \"standing\": \"observed\", \"evidence\": [{\"quote\": \"Principal, Banyan Seed Fund\", \"start_offset\": 276, \"end_offset\": 303}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"diligence after the demo day\"}, \"implied_actions\": [\"send Kiran the data-room link and the cap table\"]}",
-   "input_tokens": 4926,
+   "input_tokens": 5345,
    "output_tokens": 362,
    "model": "claude-haiku-4-5-20251001"
   },
-  "2cb8e5f5eee09c809b34a92fa5be875fee27990546216e53b77e75e1d38ae2c2": {
-   "site": "bundle_narrator",
-   "parsed": {
-    "headline": "Reply",
-    "situation_summary": "The reply is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
-    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
-    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
-   },
-   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
-   "input_tokens": 2361,
-   "output_tokens": 166,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "4d966458012348b3bbf6579a2af48d53a67778bc3a4dc4ab6fd96f6fde7f6063": {
-   "site": "bundle_narrator",
-   "parsed": {
-    "headline": "Reply",
-    "situation_summary": "The reply is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
-    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
-    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
-   },
-   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
-   "input_tokens": 2321,
-   "output_tokens": 166,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "5462abdebb7bfff3b5e015081e69c8d27189b7626cf9da54bb5562c4d987bce7": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    },
-    {
-     "i": 1,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    },
-    {
-     "i": 2,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 2, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 452,
-   "output_tokens": 72,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "5eda2bb13ff3a3240ccad0065de16dca0042a76ff48a552b3502a958e9d03833": {
-   "site": "narrator",
-   "parsed": {
-    "headline": "Send Kiran Agnihotri your data-room link and cap table",
-    "situation": "Kiran Agnihotri asked 3 days ago: \"could you share your data-room link and the current cap table?\"",
-    "artifact": "Hi Kiran, here is our data-room link: [link]. The current cap table is in the room."
-   },
-   "raw": "{\"headline\": \"Send Kiran Agnihotri your data-room link and cap table\", \"situation\": \"Kiran Agnihotri asked 3 days ago: \\\"could you share your data-room link and the current cap table?\\\"\", \"artifact\": \"Hi Kiran, here is our data-room link: [link]. The current cap table is in the room.\"}",
-   "input_tokens": 1804,
-   "output_tokens": 71,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "9126cf417e2700b6904a82b9fc591d8fac75144367694aa749fc8bc6499a7d25": {
-   "site": "relevance",
-   "parsed": {
-    "verdicts": [
-     {
-      "item": 1,
-      "business": true,
-      "description": "Nimbus Labs - data room?",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     },
-     {
-      "item": 2,
-      "business": true,
-      "description": "Nimbus Labs - data room?",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     },
-     {
-      "item": 3,
-      "business": true,
-      "description": "Nimbus Labs - data room?",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     }
-    ]
-   },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Nimbus Labs - data room?\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 2, \"business\": true, \"description\": \"Nimbus Labs - data room?\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 3, \"business\": true, \"description\": \"Nimbus Labs - data room?\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "input_tokens": 633,
-   "output_tokens": 112,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "9f0bfae12475c099641c39005bf5948451b047e80c2121ab0513a22b0ae9605a": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 3,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     }
-    ]
-   },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 518,
-   "output_tokens": 74,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "a1ab7df1da7348d3d5446d70fae91709269dea1d3116b8aabc17d350a30b3671": {
+  "b4b32cea8e3c6a40cb00f874f24fe578ca882a98742e2a99483a9904617bc982": {
    "site": "resolution",
    "parsed": {
     "verdict": "NOT_RESOLVED",
@@ -264,8 +247,25 @@
     "speaker_role_said": "unknown"
    },
    "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Nimbus Labs - data room?\", \"start_offset\": 0, \"end_offset\": 24, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 933,
+   "input_tokens": 1352,
    "output_tokens": 43,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "cabb0f76c998d004a50f209817d0d4186270b3cf3b8cc324adb66676f3354c99": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "reply": 6500,
+     "wait_unanswered_email": 5600
+    },
+    "confidence_bp": 5500,
+    "rationale": "A direct question is waiting on us.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5600}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
+   "input_tokens": 1916,
+   "output_tokens": 42,
    "model": "claude-haiku-4-5-20251001"
   }
  }

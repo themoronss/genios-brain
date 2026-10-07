@@ -196,6 +196,18 @@
      "rationale": "A direct question is waiting on us.",
      "missing": []
     }
+   },
+   {
+    "when": [
+     "unanswered email",
+     "this is a person: Introly"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "confidence_bp": 7000,
+     "rationale": "Introly is the founder's intro agent; its introduction asks nothing of Introly itself — the reply belongs to the person it introduced.",
+     "missing": []
+    }
    }
   ],
   "narrator": [

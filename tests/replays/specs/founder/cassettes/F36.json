@@ -1,9 +1,9 @@
 {
  "case_id": "F36",
  "source": "ideal_reader",
- "recorded_at": "621764b4",
+ "recorded_at": "fdd8b98a",
  "answers": {
-  "17c8ac8e74a3d6de17fd14707463c0f503e046d16e9d4ec73c79b6fb0f5440ab": {
+  "45bde06ff81160dc55eea0492c7ca297c0d8d2f331f633dfca6895f61fabdf95": {
    "site": "extraction",
    "parsed": {
     "intent": "inform",
@@ -36,11 +36,42 @@
     }
    },
    "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"integration\"], \"entity_mentions\": [{\"surface_form\": \"Ravi\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Ravi\", \"start_offset\": 20, \"end_offset\": 24}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
-   "input_tokens": 4875,
+   "input_tokens": 5295,
    "output_tokens": 107,
    "model": "claude-haiku-4-5-20251001"
   },
-  "39945a3c92dd6e0c9d90eb58b7ece66aad61338424bc71b2e90be3afd0450dd4": {
+  "7274dcdacb06271bb381be49b864e1403dd71e08825736e6dbff13750bc00faf": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Let me know if anything's unclear.",
+    "start_offset": 69,
+    "end_offset": 103,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Let me know if anything's unclear.\", \"start_offset\": 69, \"end_offset\": 103, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1304,
+   "output_tokens": 46,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "d4fcfeed17cdf837299295a040ba35352c6660a82c84a96061d7166a2ee56e71": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 826,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "e9d683225268abe17b73a6a23830da116b703c127f42172c982f33c57b49f8b8": {
    "site": "relevance",
    "parsed": {
     "verdicts": [
@@ -55,39 +86,8 @@
     ]
    },
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Integration doc\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "input_tokens": 538,
+   "input_tokens": 957,
    "output_tokens": 37,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "3b399b20f98d85e9bba2e8da132da3615450d555ab72cd14ec21e3b65db534bc": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "Let me know if anything's unclear.",
-    "start_offset": 69,
-    "end_offset": 103,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Let me know if anything's unclear.\", \"start_offset\": 69, \"end_offset\": 103, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 885,
-   "output_tokens": 46,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "d8b107bdd2a0518e2ba318bb92a08731d1d0f97acd716615a70816bf86d465e0": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 407,
-   "output_tokens": 24,
    "model": "claude-haiku-4-5-20251001"
   }
  }

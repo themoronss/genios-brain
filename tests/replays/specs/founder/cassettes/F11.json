@@ -1,9 +1,28 @@
 {
  "case_id": "F11",
  "source": "ideal_reader",
- "recorded_at": "621764b4",
+ "recorded_at": "fdd8b98a",
  "answers": {
-  "06c5faaa8d656beaf9eb25cb8a56f2b2484e758bdaabf116346cf82fbba4439e": {
+  "25b29091d376b6af88c44e2888e3deabb4d69a59b1897bd5183cfabb71b8e230": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Nimbus Labs",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Nimbus Labs\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 983,
+   "output_tokens": 36,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "3ffe8a4050749ac3d8e468767e307829646da38750f27e87c8b33553cfb7bf46": {
    "site": "extraction",
    "parsed": {
     "intent": "question",
@@ -83,11 +102,11 @@
     ]
    },
    "raw": "{\"intent\": \"question\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Tom Keller\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Tom Keller\", \"start_offset\": 173, \"end_offset\": 183}], \"confidence_bp\": 9000}, {\"surface_form\": \"Northfield Ventures\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Northfield Ventures\", \"start_offset\": 193, \"end_offset\": 212}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Is Nimbus Labs raising this year?\", \"asked_by\": \"Tom Keller\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Are you raising this year?\", \"start_offset\": 119, \"end_offset\": 145}], \"confidence_bp\": 9000}], \"business_facts\": [{\"field\": \"person.title\", \"subject\": \"Tom Keller\", \"value\": \"Partner\", \"standing\": \"observed\", \"evidence\": [{\"quote\": \"Partner, Northfield Ventures\", \"start_offset\": 184, \"end_offset\": 212}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"explore an investment\"}, \"implied_actions\": [\"tell Tom whether Nimbus Labs is raising\"]}",
-   "input_tokens": 4900,
+   "input_tokens": 5319,
    "output_tokens": 298,
    "model": "claude-haiku-4-5-20251001"
   },
-  "44ee7a5ad06b6b4e17d092f705b79cdc56292564a3441ea1d809dd1b1a99e35d": {
+  "a3be0d886c1a53aa6702d8332c6162c863ca0e0f53d8a3f2657c6edc0bd6e6ce": {
    "site": "resolution",
    "parsed": {
     "verdict": "NOT_RESOLVED",
@@ -99,11 +118,11 @@
     "speaker_role_said": "unknown"
    },
    "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Are you raising this year?\", \"start_offset\": 119, \"end_offset\": 145, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 910,
+   "input_tokens": 1330,
    "output_tokens": 44,
    "model": "claude-haiku-4-5-20251001"
   },
-  "5e4a82dc9a592e00d194737bfec207aeddf610ce437da021e2e6d6bfa49a27ae": {
+  "bd87335e31d099e7e841135274cb93c7cea3ab851f9d0d3c0a368aad036b4875": {
    "site": "junk_gate_batch",
    "parsed": [
     {
@@ -114,27 +133,8 @@
     }
    ],
    "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 432,
+   "input_tokens": 852,
    "output_tokens": 24,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "778f7e438ae4317903e7e48fcf65f88d61e179d57481984ae7a27a6de6857fcc": {
-   "site": "relevance",
-   "parsed": {
-    "verdicts": [
-     {
-      "item": 1,
-      "business": true,
-      "description": "Nimbus Labs",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     }
-    ]
-   },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Nimbus Labs\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "input_tokens": 563,
-   "output_tokens": 36,
    "model": "claude-haiku-4-5-20251001"
   }
  }

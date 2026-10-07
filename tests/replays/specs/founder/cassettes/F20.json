@@ -1,9 +1,9 @@
 {
  "case_id": "F20",
  "source": "ideal_reader",
- "recorded_at": "b47239c9",
+ "recorded_at": "fdd8b98a",
  "answers": {
-  "0a44fa7b50a94ea7be76244e050c4a408bcbd634dfe8c1caf0d9a481aa9e79ff": {
+  "011355b7521c3b2f07571e9da5c1d6cd304e6f9035c931d55a082b833493a45f": {
    "site": "resolution",
    "parsed": {
     "verdict": "NOT_RESOLVED",
@@ -15,72 +15,11 @@
     "speaker_role_said": "unknown"
    },
    "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"TechBridge founders meetup, 27 Sep\", \"start_offset\": 0, \"end_offset\": 34, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 910,
+   "input_tokens": 1329,
    "output_tokens": 45,
    "model": "claude-haiku-4-5-20251001"
   },
-  "1d9c7257a95ad28944675b37d60882a7fd090774e1adc27955efa990a38f5198": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 432,
-   "output_tokens": 24,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "4b154237d2d8dd9d862816a919a6cd8f6f34353470f3b2a6605a51bedf6c35b7": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 3,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     }
-    ]
-   },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 424,
-   "output_tokens": 74,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "85d778134d6b9fe0b9663cc4a69c6e4cd7fb59511fd211eec25e073621362e65": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "sales.pb.account_research.fifteen_minute_account_brief": 4296,
-     "sales.pb.investor_relations.reopen_after_a_pass": 4594
-    },
-    "confidence_bp": 4000,
-    "rationale": "Nothing here asks anything of the founder.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.account_research.fifteen_minute_account_brief\": 4296, \"sales.pb.investor_relations.reopen_after_a_pass\": 4594}, \"confidence_bp\": 4000, \"rationale\": \"Nothing here asks anything of the founder.\", \"missing\": []}",
-   "input_tokens": 2232,
-   "output_tokens": 62,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "8a9e01641661a9362fb329281bb6dc760ef4e7c99c2c714d9bd10dfdb0d58d1f": {
+  "1b8a4c429466ac44c25ecd072ff867369651a49a455ba7f9142756341bb62e39": {
    "site": "extraction",
    "parsed": {
     "intent": "inform",
@@ -142,27 +81,54 @@
     }
    },
    "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"newsletter\", \"meetup\"], \"entity_mentions\": [{\"surface_form\": \"Sameer Rana\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Sameer Rana\", \"start_offset\": 177, \"end_offset\": 188}], \"confidence_bp\": 9000}, {\"surface_form\": \"TechBridge Foundation\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"TechBridge Foundation\", \"start_offset\": 189, \"end_offset\": 210}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"27 Sep\", \"earliest\": \"2026-09-27T00:00:00+05:30\", \"latest\": \"2026-09-27T23:59:59+05:30\", \"certainty\": \"range\", \"resolved_against\": \"2026-09-13T06:00:00Z\", \"evidence\": [{\"quote\": \"27 Sep\", \"start_offset\": 28, \"end_offset\": 34}]}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"low\"}}",
-   "input_tokens": 4906,
+   "input_tokens": 5325,
    "output_tokens": 227,
    "model": "claude-haiku-4-5-20251001"
   },
-  "8ba17381e694f082a746145ec2ce833ba7b5c2040dffcc9cb8cc9e651616305b": {
-   "site": "relevance",
+  "c16ad08e6e9893e175b7c691613f3e53bc21434f61b68c9fa6e09e50904792d5": {
+   "site": "r1",
    "parsed": {
-    "verdicts": [
+    "readings": [
      {
       "item": 1,
-      "business": true,
-      "description": "TechBridge founders meetup, 27 Sep",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
      }
     ]
    },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"TechBridge founders meetup, 27 Sep\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "input_tokens": 563,
-   "output_tokens": 42,
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 843,
+   "output_tokens": 74,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "d01de8156b542e0d9543b8e0cfd26383edd4b0cf2e4547e8586b06b87592ffb7": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "sales.pb.account_research.fifteen_minute_account_brief": 4296,
+     "sales.pb.investor_relations.reopen_after_a_pass": 4594
+    },
+    "confidence_bp": 4000,
+    "rationale": "Nothing here asks anything of the founder.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.account_research.fifteen_minute_account_brief\": 4296, \"sales.pb.investor_relations.reopen_after_a_pass\": 4594}, \"confidence_bp\": 4000, \"rationale\": \"Nothing here asks anything of the founder.\", \"missing\": []}",
+   "input_tokens": 2651,
+   "output_tokens": 62,
    "model": "claude-haiku-4-5-20251001"
   }
  }

@@ -417,6 +417,18 @@
      "rationale": "Leela's notes set up the 13 Aug call and said what Leela would bring to it; nothing asks us anything, and the call date has passed.",
      "missing": []
     }
+   },
+   {
+    "when": [
+     "unanswered email",
+     "this is a person: Introly"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "confidence_bp": 7000,
+     "rationale": "Introly is the founder's intro agent; its introduction asks nothing of Introly itself — the reply belongs to the person it introduced.",
+     "missing": []
+    }
    }
   ],
   "narrator": [

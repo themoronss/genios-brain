@@ -1,9 +1,9 @@
 {
  "case_id": "F28",
  "source": "ideal_reader",
- "recorded_at": "b47239c9",
+ "recorded_at": "fdd8b98a",
  "answers": {
-  "126bd4614b2d3a99d1607da84724a6c82898f08ae72ac12a32f3b9ca432fb2e1": {
+  "1621890eed6f0be39737f7b906bcc6c392752b9f67321106a5540bf6decaee43": {
    "site": "r1",
    "parsed": {
     "readings": [
@@ -28,64 +28,47 @@
     ]
    },
    "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 518,
+   "input_tokens": 937,
    "output_tokens": 74,
    "model": "claude-haiku-4-5-20251001"
   },
-  "4f5a00dc1f37a7182ef59a994451802b5abbf5e7399ab3b80279e2a6d67b5cfd": {
+  "3102d8da0ae641a305a00403d1b95d45a8c8711804e1364a4977041e9e180cc6": {
    "site": "relevance",
    "parsed": {
     "verdicts": [
      {
       "item": 1,
-      "business": true,
-      "description": "Before our call on 8 Oct",
-      "category": "working",
-      "human_authored": true,
+      "business": false,
+      "description": "no readable text",
+      "category": "unknown",
+      "human_authored": null,
       "asks_for_reply": null
      }
     ]
    },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Before our call on 8 Oct\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "input_tokens": 560,
-   "output_tokens": 39,
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"no readable text\", \"category\": \"unknown\", \"human_authored\": null, \"asks_for_reply\": null}]}",
+   "input_tokens": 934,
+   "output_tokens": 38,
    "model": "claude-haiku-4-5-20251001"
   },
-  "77781351c1076a7cf5da2342ad416ccdb8662a2cbb4fe0559b31d29251c00495": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "Could you send your security questionnaire answers before then?",
-    "start_offset": 63,
-    "end_offset": 126,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Could you send your security questionnaire answers before then?\", \"start_offset\": 63, \"end_offset\": 126, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 907,
-   "output_tokens": 53,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "7aaa7d4881c317da7764826acebff5e5e7635bc936e7bd1a084def1ce7931903": {
+  "3a0b4b80856b8193b1c452bccd072adfccd674fc701d33f8133f2f6b4314a28c": {
    "site": "decider",
    "parsed": {
-    "outcome": "defer",
+    "outcome": "decision",
     "scores": {
-     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4523,
-     "admin.pb.follow_up_coordination.the_follow_through_relay": 4579,
-     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 4772
+     "reply": 6500,
+     "wait_unanswered_email": 5200
     },
-    "confidence_bp": 4000,
-    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+    "confidence_bp": 5500,
+    "rationale": "A direct question is waiting on us.",
     "missing": []
    },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4523, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4579, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 4772}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
-   "input_tokens": 2448,
-   "output_tokens": 91,
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5200}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
+   "input_tokens": 1927,
+   "output_tokens": 42,
    "model": "claude-haiku-4-5-20251001"
   },
-  "8b4d673c838649502cd7a32e57777c6f5d9b4243c47627bad3977b76f1497871": {
+  "49b0534f50cd7cf901b8a77f63ac7efe2324066b7719fb2617fdd4e5c320c794": {
    "site": "r1",
    "parsed": {
     "readings": [
@@ -104,8 +87,43 @@
     ]
    },
    "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 412,
+   "input_tokens": 831,
    "output_tokens": 51,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "70575c90dd950172c417e1a1caf0f02f5ab12b5a358f475ad49f82dc84b5f3ee": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Before our call on 8 Oct",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Before our call on 8 Oct\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 979,
+   "output_tokens": 39,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "78b840a0c0a80bffbf7cf82a9e7dedf2011f8c8881ec9d41b60018d09172d91c": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Could you send your security questionnaire answers before then?",
+    "start_offset": 63,
+    "end_offset": 126,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Could you send your security questionnaire answers before then?\", \"start_offset\": 63, \"end_offset\": 126, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1326,
+   "output_tokens": 53,
    "model": "claude-haiku-4-5-20251001"
   },
   "9e67e995c6809030fec932bebd8df96c9229afe284826e151190f99c738b3527": {
@@ -124,7 +142,86 @@
    "output_tokens": 166,
    "model": "claude-haiku-4-5-20251001"
   },
-  "ad9fae695be9757471b58089b40382eae3224153fe2b5caab076c08d7b96591b": {
+  "b5d118a521a537e355837ccc1de159b7e0af3d98a4b1f2989e54deebfd675c65": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 848,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "c27c0b7935bbcae51231c40c7674b3df4a4d49c51a51c56c07ffa63a003a466f": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4969,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 5025,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 5217
+    },
+    "confidence_bp": 4000,
+    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4969, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 5025, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 5217}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
+   "input_tokens": 2869,
+   "output_tokens": 91,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "dc6da491bf9e51da7198d1a2bc845457d29550ae0c81008f94ff8850935d50f3": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Reply",
+    "situation_summary": "The reply is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
+    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
+   },
+   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
+   "input_tokens": 2358,
+   "output_tokens": 166,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "e6ec2ee79240a3ada6e66586f84abc373b1db96ff637c72678937acad6d2e753": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4523,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 4579,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 4772
+    },
+    "confidence_bp": 4000,
+    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4523, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4579, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 4772}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
+   "input_tokens": 2867,
+   "output_tokens": 91,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "fc46b2027ddc6bd217eb5828f6dd85da1b0f8df954e67f2194738e22e4482919": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Send Ishita Rao your security questionnaire answers",
+    "situation": "Ishita Rao is waiting on your security questionnaire answers.",
+    "artifact": "Hi Ishita, attaching our security questionnaire answers. Thanks, Arjun"
+   },
+   "raw": "{\"headline\": \"Send Ishita Rao your security questionnaire answers\", \"situation\": \"Ishita Rao is waiting on your security questionnaire answers.\", \"artifact\": \"Hi Ishita, attaching our security questionnaire answers. Thanks, Arjun\"}",
+   "input_tokens": 1819,
+   "output_tokens": 57,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "fd138035d6c2f9a5df6fb3d9dc0085a2c473204696661c223b6fb9c52441c977": {
    "site": "extraction",
    "parsed": {
     "intent": "request",
@@ -221,105 +318,8 @@
     ]
    },
    "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"security questionnaire\", \"partnership\"], \"entity_mentions\": [{\"surface_form\": \"Ishita Rao\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Ishita Rao\", \"start_offset\": 158, \"end_offset\": 168}], \"confidence_bp\": 9000}, {\"surface_form\": \"Novacore\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Novacore\", \"start_offset\": 191, \"end_offset\": 199}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Send the security questionnaire answers before 8 Oct\", \"asked_by\": \"Ishita Rao\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Could you send your security questionnaire answers before then?\", \"start_offset\": 63, \"end_offset\": 126}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"8 Oct\", \"earliest\": \"2026-10-08T00:00:00+05:30\", \"latest\": \"2026-10-08T23:59:59+05:30\", \"certainty\": \"range\", \"resolved_against\": \"2026-09-29T09:00:00Z\", \"evidence\": [{\"quote\": \"8 Oct\", \"start_offset\": 19, \"end_offset\": 24}]}], \"business_facts\": [{\"field\": \"person.title\", \"subject\": \"Ishita Rao\", \"value\": \"Head of Partnerships\", \"standing\": \"observed\", \"evidence\": [{\"quote\": \"Head of Partnerships, Novacore\", \"start_offset\": 169, \"end_offset\": 199}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"security review before the call\"}, \"implied_actions\": [\"send the security questionnaire answers before 8 Oct\"]}",
-   "input_tokens": 4900,
+   "input_tokens": 5319,
    "output_tokens": 388,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "b860a1afafba82a13cd494e352041984063dd79ad251b620ba0ce78ed54d9310": {
-   "site": "relevance",
-   "parsed": {
-    "verdicts": [
-     {
-      "item": 1,
-      "business": false,
-      "description": "no readable text",
-      "category": "unknown",
-      "human_authored": null,
-      "asks_for_reply": null
-     }
-    ]
-   },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"no readable text\", \"category\": \"unknown\", \"human_authored\": null, \"asks_for_reply\": null}]}",
-   "input_tokens": 515,
-   "output_tokens": 38,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "dc6da491bf9e51da7198d1a2bc845457d29550ae0c81008f94ff8850935d50f3": {
-   "site": "bundle_narrator",
-   "parsed": {
-    "headline": "Reply",
-    "situation_summary": "The reply is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
-    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
-    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
-   },
-   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
-   "input_tokens": 2358,
-   "output_tokens": 166,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "f0d2ca7b8efb69e53cd9c0e63ccae58df89b33cdc7e7d9812afba6666173c842": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4969,
-     "admin.pb.follow_up_coordination.the_follow_through_relay": 5025,
-     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 5217
-    },
-    "confidence_bp": 4000,
-    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4969, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 5025, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 5217}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
-   "input_tokens": 2449,
-   "output_tokens": 91,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "f2057a38c54546fd10b74d4ef46b8547cf55d824385830a54acc98f0c7f21a06": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "reply": 6500,
-     "wait_unanswered_email": 5200
-    },
-    "confidence_bp": 5500,
-    "rationale": "A direct question is waiting on us.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5200}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
-   "input_tokens": 1508,
-   "output_tokens": 42,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "f34b0023fc28ac1093efa8d5679b5a57c3db6928621ba2b24aa8fbc91e6e961d": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 429,
-   "output_tokens": 24,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "fc46b2027ddc6bd217eb5828f6dd85da1b0f8df954e67f2194738e22e4482919": {
-   "site": "narrator",
-   "parsed": {
-    "headline": "Send Ishita Rao your security questionnaire answers",
-    "situation": "Ishita Rao is waiting on your security questionnaire answers.",
-    "artifact": "Hi Ishita, attaching our security questionnaire answers. Thanks, Arjun"
-   },
-   "raw": "{\"headline\": \"Send Ishita Rao your security questionnaire answers\", \"situation\": \"Ishita Rao is waiting on your security questionnaire answers.\", \"artifact\": \"Hi Ishita, attaching our security questionnaire answers. Thanks, Arjun\"}",
-   "input_tokens": 1819,
-   "output_tokens": 57,
    "model": "claude-haiku-4-5-20251001"
   }
  }

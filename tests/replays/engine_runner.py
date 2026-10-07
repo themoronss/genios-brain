@@ -29,6 +29,11 @@ its thread pools (capture, the L2 drain), on which a situation's evidence depend
 mints ids from a per-case sequence and runs those pools with one worker, so a case replays
 exactly. Both are findings about the engine in `03-FINDINGS.md`, not features of the runner.
 
+**The founder's company brief.** Every case runs with the brief its founder accepted: STEP-07 §4's
+first draft in the golden world's names (`specs/founder/brief/company_brief.json`), seeded by
+`_fresh_tenant` as the founder's own lines — so every judging and reading prompt carries it, and the
+gate keeps what it names (W-07), as in a tenant whose founder has confirmed the draft.
+
 **The scratch database, pinned first.** `api.routes` binds its stores at import, so the database
 is pinned BEFORE it is imported, and the runner refuses to start without a scratch URL or with a
 production host — a golden set that skipped would be "a pass over an empty table" again.
@@ -40,12 +45,12 @@ import os
 import sys
 from collections.abc import Iterator
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from tests.replays.founder_case import (CardView, CaseObject, CaseRun, FounderCase, Landed,
-                                        SituationView)
+from tests.replays.founder_case import (FOUNDER_DIR, CardView, CaseObject, CaseRun, FounderCase,
+                                        Landed, SituationView)
 
 SCRATCH_ENV = "GENIOS_TEST_DATABASE_URL"
 #: Set as the model key for a golden run so every factory takes its production branch. It never
@@ -67,6 +72,9 @@ COLD_CACHES: tuple[tuple[str, str], ...] = (
     ("genios_engine.reason.llm_decision_maker", "_cache"),
     ("genios_engine.reason.llm_decision_maker", "_calls_by_org_day"),
     ("genios_engine.reason.llm_interpretation", "_cache"),
+    # Not a model's answers but what every prompt is built from: the tenant's company brief, held a
+    # minute per process (STEP-07). A golden tenant is re-seeded per run; a fresh process has none.
+    ("genios_engine.platform.company_brief", "_CACHE"),
 )
 
 
@@ -157,7 +165,9 @@ def production_switches(llm: Any) -> Iterator[None]:
         from genios_engine.capture.gate.relevance import LLMRelevanceClassifier
         gate = LLMRelevanceClassifier(llm)
         if org_id and routes._graph is not None:
-            gate.bind_costs(routes._graph.record_cost, org_id, seat_id)
+            # As `wiring.make_relevance_classifier` binds it: the cost sink, and where the junk
+            # filter reads the tenant's company brief from (STEP-07).
+            gate.bind_costs(routes._graph.record_cost, org_id, seat_id, brief_source=routes._graph)
         return gate
 
     def refuse_call(_self, prompt: str, *_a: Any, **_kw: Any):
@@ -453,6 +463,31 @@ def _fresh_tenant(engine: Any, org: str, case: FounderCase) -> None:
                     "insert into org_self_identities (org_id, kind, value, declared_by) "
                     "values (:o, :k, :v, 'golden case') on conflict do nothing"),
                     {"o": org, "k": kind, "v": value})
+        # STEP-07 · AND THE COMPANY BRIEF THE FOUNDER ACCEPTED. The brief survives `/reset` (it is
+        # the founder's word, not derived state), so a re-run removes this golden tenant's lines
+        # and its weekly reviews first, then seeds the brief again — line by line, the founder's
+        # own, in the file's order.
+        for table in ("company_brief_lines", "company_brief_reviews"):
+            conn.execute(text(f"delete from {table} where org_id = :o"), {"o": org})
+        seed_company_brief(conn, org)
+
+
+#: The golden founder's company brief — STEP-07 §4's first draft in the golden world's names.
+COMPANY_BRIEF = FOUNDER_DIR / "brief" / "company_brief.json"
+
+
+def seed_company_brief(conn: Any, org: str) -> None:
+    """Every line of `COMPANY_BRIEF`, accepted as the founder's own (`company_brief_store.add`), a
+    second apart from `accepted_at` so the brief's order is the file's — the composer orders lines
+    by when they were accepted, and an order left to random line ids would move the version."""
+    from genios_engine.platform import company_brief_store as store
+
+    data = json.loads(COMPANY_BRIEF.read_text(encoding="utf-8"))
+    at = datetime.fromisoformat(data["accepted_at"].replace("Z", "+00:00"))
+    for n, line in enumerate(data["lines"]):
+        store.add(conn, org_id=org, section=line["section"], words=line["text"],
+                  address=line.get("address"), domain=line.get("domain"),
+                  decided_by="the golden founder", at=at + timedelta(seconds=n))
 
 
 def _funnel(engine: Any, org: str, at: datetime) -> dict[str, int]:

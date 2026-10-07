@@ -1,9 +1,9 @@
 {
  "case_id": "F39",
  "source": "ideal_reader",
- "recorded_at": "621764b4",
+ "recorded_at": "fdd8b98a",
  "answers": {
-  "296eb70595c9639b6a4082bce6e9393a066325c830b212f9478b464c1d0c4539": {
+  "1d300415003e778b0aa86912008bb578feb5ff8126c5b8e872fdfa58ee4d24a4": {
    "site": "relevance",
    "parsed": {
     "verdicts": [
@@ -18,11 +18,26 @@
     ]
    },
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Quick call\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "input_tokens": 535,
+   "input_tokens": 954,
    "output_tokens": 37,
    "model": "claude-haiku-4-5-20251001"
   },
-  "676e356a7d324823933a5c3bd8a3ec5b81123da89e34a44ea57f98a54db7c822": {
+  "211e722c089119d6106a3cbccab67122a04dc2691bb617599f2527df1b6b140c": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 823,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "c0c73ab5774be478b46226b1aa0d6e00b52a974cd93c969a0a841fb828f6bc78": {
    "site": "extraction",
    "parsed": {
     "intent": "schedule",
@@ -62,11 +77,11 @@
     }
    },
    "raw": "{\"intent\": \"schedule\", \"stance\": \"positive\", \"topics\": [\"call\"], \"entity_mentions\": [{\"surface_form\": \"Rohan\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Rohan\", \"start_offset\": 19, \"end_offset\": 24}], \"confidence_bp\": 9000}], \"scheduling_proposals\": [{\"proposer\": \"Arjun Rao\", \"text\": \"Thursday 3 pm or Friday 11 am IST\", \"evidence_text\": \"I'm free Thursday 3 pm or Friday 11 am IST\"}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\"}}",
-   "input_tokens": 4872,
+   "input_tokens": 5291,
    "output_tokens": 147,
    "model": "claude-haiku-4-5-20251001"
   },
-  "9aa2b04583c99e310e2757d5e9a595d1757fad2e47724974c89e808f4ca47e35": {
+  "e6a56d91b24491278f1e7bb79ad45bfe0bb8e00fa199ad8e465ad92e04158d30": {
    "site": "resolution",
    "parsed": {
     "verdict": "NOT_RESOLVED",
@@ -78,23 +93,8 @@
     "speaker_role_said": "unknown"
    },
    "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Quick call\", \"start_offset\": 0, \"end_offset\": 14, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 882,
+   "input_tokens": 1301,
    "output_tokens": 40,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "c6c19e75fca54249035bbd64c2898604c200dc871b6a8aed5db685b306602e1a": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 404,
-   "output_tokens": 24,
    "model": "claude-haiku-4-5-20251001"
   }
  }

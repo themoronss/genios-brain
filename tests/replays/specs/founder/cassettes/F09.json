@@ -1,25 +1,40 @@
 {
  "case_id": "F09",
  "source": "ideal_reader",
- "recorded_at": "621764b4",
+ "recorded_at": "fdd8b98a",
  "answers": {
-  "116b05583b757eac40452a1ef1d52cb80c1d7b21c395377fa86d133964d771c7": {
+  "03b37876d683f5aef2fdc76a2f7dce9d50562edd08fe9b83ebd697656249f0cc": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 826,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "1873b523ef2a87ec2942d4ea1a4283607973fc32a12882e8b124e15b63d3df6f": {
    "site": "resolution",
    "parsed": {
     "verdict": "NOT_RESOLVED",
-    "certainty": "AMBIGUOUS",
+    "certainty": "INTENT_ONLY",
     "scope": [],
-    "quote": "Re: your intros",
-    "start_offset": 0,
-    "end_offset": 15,
+    "quote": "To match you better, which stage are you raising at, and how much?",
+    "start_offset": 25,
+    "end_offset": 91,
     "speaker_role_said": "unknown"
    },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: your intros\", \"start_offset\": 0, \"end_offset\": 15, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 884,
-   "output_tokens": 40,
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"To match you better, which stage are you raising at, and how much?\", \"start_offset\": 25, \"end_offset\": 91, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1317,
+   "output_tokens": 54,
    "model": "claude-haiku-4-5-20251001"
   },
-  "79479c5d8aab256291d6460a085373b733b147e9b65c7fb18b99bb064bbae612": {
+  "ada12d0697658e7e35b03c078ac5f1362387627b0deda76053d969dfa8ed940b": {
    "site": "extraction",
    "parsed": {
     "intent": "inform",
@@ -52,32 +67,65 @@
     }
    },
    "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"introductions\"], \"entity_mentions\": [{\"surface_form\": \"Arjun\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Arjun\", \"start_offset\": 103, \"end_offset\": 108}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
-   "input_tokens": 4875,
+   "input_tokens": 5294,
    "output_tokens": 108,
    "model": "claude-haiku-4-5-20251001"
   },
-  "afe723d0dcc9ce4b4876505ba0f97d74a90afd6d168a1b7cf05fec8735260a44": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "drop",
-     "relevance": 0.35,
-     "reason": "automated assistant reply"
-    },
-    {
-     "i": 1,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
+  "b52c07750acaceb7c49e74088145a8ed49fbb456b344a192ce29659a3dc7c008": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "question",
+    "stance": "positive",
+    "topics": [
+     "fundraising",
+     "introductions"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Introly",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Introly",
+        "start_offset": 154,
+        "end_offset": 161
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "Which stage is Nimbus Labs raising at, and how much?",
+      "asked_by": "Introly",
+      "asked_of": "Arjun Rao",
+      "evidence": [
+       {
+        "quote": "which stage are you raising at, and how much?",
+        "start_offset": 46,
+        "end_offset": 91
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": false,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "match the founder to investors"
     }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.35, \"reason\": \"automated assistant reply\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 448,
-   "output_tokens": 46,
+   },
+   "raw": "{\"intent\": \"question\", \"stance\": \"positive\", \"topics\": [\"fundraising\", \"introductions\"], \"entity_mentions\": [{\"surface_form\": \"Introly\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Introly\", \"start_offset\": 154, \"end_offset\": 161}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Which stage is Nimbus Labs raising at, and how much?\", \"asked_by\": \"Introly\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"which stage are you raising at, and how much?\", \"start_offset\": 46, \"end_offset\": 91}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": false, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"match the founder to investors\"}}",
+   "input_tokens": 5307,
+   "output_tokens": 193,
    "model": "claude-haiku-4-5-20251001"
   },
-  "fb6ee1d59f82981eec1892e3beec547d50ffd14a176cb89ad6b78fcfa318cab1": {
+  "c1811878a01ad510e54d57522be4b75e1b4ec560cbbff154e28b293057088557": {
    "site": "relevance",
    "parsed": {
     "verdicts": [
@@ -92,8 +140,24 @@
     ]
    },
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: your intros\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "input_tokens": 537,
+   "input_tokens": 957,
    "output_tokens": 37,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "e6ebdf67879664d642fdbcc3ab91a6f0660444b1adf2012d59c44204da15f276": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Re: your intros",
+    "start_offset": 0,
+    "end_offset": 15,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: your intros\", \"start_offset\": 0, \"end_offset\": 15, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1304,
+   "output_tokens": 40,
    "model": "claude-haiku-4-5-20251001"
   }
  }

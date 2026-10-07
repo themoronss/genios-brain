@@ -266,3 +266,30 @@ def test_a_refused_answer_is_an_authoring_error_never_a_second_recording():
     prompt = DECIDER + "\nCORRECTION — your previous answer was refused. scores must have exactly"
     with pytest.raises(IdealReaderError, match="refused"):
         _reader(case).call(prompt)
+
+
+# ── STEP-07 · the company brief rides in every judging prompt, and decides no match ─────────────
+
+def _brief_block(*lines) -> str:
+    from genios_engine.contracts.company_brief import CompanyBriefLine, compose
+    return compose(org_id="o", company="Nimbus Labs", founder="Arjun Rao", us=(),
+                   lines=[CompanyBriefLine(line_id=f"l{n}", **line)
+                          for n, line in enumerate(lines)]).prompt_block()
+
+
+def test_a_term_the_company_brief_names_never_matches_through_the_brief():
+    """The brief is the same in every prompt of a case. A `when` term it also names — here the
+    investor's firm, on the brief's in-motion line — must still pick out the ONE situation it was
+    written for, never every situation whose prompt carries the brief."""
+    case = copy.deepcopy(CASE)
+    case["model"] = {"decider": [{"when": ["Lotus Ventures"], "answer": {
+        "outcome": "decision", "confidence_bp": 6200,
+        "rationale": "an investor asked for the deck before a partner meeting"}}]}
+    block = _brief_block({"section": "in_motion", "text": "Fundraising — Lotus Ventures engaged"})
+    elsewhere = DECIDER.replace("Lotus Ventures", "someone else entirely")
+    with_brief = elsewhere.replace("SITUATION:", block + "\nSITUATION:", 1)
+    assert "Lotus Ventures" in with_brief
+    with pytest.raises(IdealReaderError, match="decider"):
+        _reader(case).call(with_brief)
+    named = DECIDER.replace("SITUATION:", block + "\nSITUATION:", 1)
+    assert _reader(case).call(named).parsed["outcome"] == "decision"

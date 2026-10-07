@@ -76,7 +76,31 @@
    },
    "read": {
     "gate": "drop",
-    "relevance": "not_business"
+    "relevance": "not_business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "positive",
+     "topics": [
+      "community event"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Lakshya",
+       "entity_type": "organization",
+       "quote": "Lakshya"
+      }
+     ],
+     "exchange_intent": {
+      "category": "automated",
+      "tone": "warm",
+      "formality": "templated",
+      "addressed_personally": false,
+      "human_authored": false,
+      "asks_for_reply": false,
+      "engagement": "low",
+      "motive": "invite the community to a social"
+     }
+    }
    }
   }
  ],

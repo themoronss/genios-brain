@@ -1,30 +1,9 @@
 {
  "case_id": "F41",
  "source": "ideal_reader",
- "recorded_at": "621764b4",
+ "recorded_at": "fdd8b98a",
  "answers": {
-  "376aec1fbf83ee31b9099796098840f7ea197247acb2a498bd99187d2a3af9c7": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    },
-    {
-     "i": 1,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 462,
-   "output_tokens": 48,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "41abf04dbaadf5d4fb448cb8d447187846ec8814b1c379523b3626ff9bc55640": {
+  "2adf66295ad6c179ec79d56e7931d35f89c2092a785eb0ab31a9390e1e6301c0": {
    "site": "extraction",
    "parsed": {
     "intent": "inform",
@@ -58,51 +37,11 @@
     }
    },
    "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"investor update\"], \"entity_mentions\": [{\"surface_form\": \"Dev\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Dev\", \"start_offset\": 29, \"end_offset\": 32}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\", \"motive\": \"the promised August update\"}}",
-   "input_tokens": 4905,
+   "input_tokens": 5332,
    "output_tokens": 117,
    "model": "claude-haiku-4-5-20251001"
   },
-  "6f5bcdd3514d855dd7ff6e7047c354a95d43eb5ef8c9d5cc6c5be553e16f28e5": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "inform",
-    "stance": "neutral",
-    "topics": [
-     "board pack"
-    ],
-    "exchange_intent": {
-     "category": "working",
-     "tone": "neutral",
-     "formality": "professional",
-     "addressed_personally": true,
-     "human_authored": true,
-     "asks_for_reply": false,
-     "engagement": "low",
-     "motive": "notes for the board pack"
-    }
-   },
-   "raw": "{\"intent\": \"inform\", \"stance\": \"neutral\", \"topics\": [\"board pack\"], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"low\", \"motive\": \"notes for the board pack\"}}",
-   "input_tokens": 4880,
-   "output_tokens": 74,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "8f5fdd64f820dc3410f43413dd20a869824e68b37c3c290bf44f2dfddc9be826": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "AMBIGUOUS",
-    "scope": [],
-    "quote": "Kitebird - August update",
-    "start_offset": 0,
-    "end_offset": 24,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Kitebird - August update\", \"start_offset\": 0, \"end_offset\": 24, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 908,
-   "output_tokens": 43,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "cf6dd3d1407dfcbb5d9598e11e3f15a0225d15380690582280ce028b25ce848d": {
+  "bd00a9b3db532f555cf39fe8a5dfce3ebf767f2c1a12deae3738e5c339c8a1be": {
    "site": "relevance",
    "parsed": {
     "verdicts": [
@@ -125,8 +64,69 @@
     ]
    },
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Notes for the board pack\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 2, \"business\": true, \"description\": \"Kitebird - August update\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "input_tokens": 608,
+   "input_tokens": 1036,
    "output_tokens": 76,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "da6367a66195557ef78cb867f24e92e8006fc5003e041114135ef893c849c337": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Kitebird - August update",
+    "start_offset": 0,
+    "end_offset": 24,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Kitebird - August update\", \"start_offset\": 0, \"end_offset\": 24, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1335,
+   "output_tokens": 43,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "e1f2cebd1f61219d85ff0c9fa6f08b9740b7a7dd5fa89172054d5d581c485b3b": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 1,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 890,
+   "output_tokens": 48,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "e6f1270328debaeab64379db677b78dd5585d63d9843037d8d6f1e935fbe9ea5": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "neutral",
+    "topics": [
+     "board pack"
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "low",
+     "motive": "notes for the board pack"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"neutral\", \"topics\": [\"board pack\"], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"low\", \"motive\": \"notes for the board pack\"}}",
+   "input_tokens": 5308,
+   "output_tokens": 74,
    "model": "claude-haiku-4-5-20251001"
   }
  }

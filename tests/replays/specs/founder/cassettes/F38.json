@@ -1,60 +1,30 @@
 {
  "case_id": "F38",
  "source": "ideal_reader",
- "recorded_at": "621764b4",
+ "recorded_at": "fdd8b98a",
  "answers": {
-  "0fc88c632ca59f9697ca365c28e32922ecf9632afbf8d17024ea5a35a436365d": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "acknowledge",
-    "stance": "positive",
-    "topics": [
-     "pilot"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "Pooja",
-      "entity_type": "person",
-      "evidence": [
-       {
-        "quote": "Pooja",
-        "start_offset": 95,
-        "end_offset": 100
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "decision_states": [
-     {
-      "subject": "pilot start date",
-      "state": "made",
-      "evidence": [
-       {
-        "quote": "we're all set for 15 Sep",
-        "start_offset": 68,
-        "end_offset": 92
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "exchange_intent": {
-     "category": "relational",
-     "tone": "warm",
-     "formality": "professional",
-     "addressed_personally": true,
-     "human_authored": true,
-     "asks_for_reply": false,
-     "engagement": "high"
+  "09fbcf1cc3d186a758368faf868fef52d196683deb8e2afe231e42281a1f75e6": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 1,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
     }
-   },
-   "raw": "{\"intent\": \"acknowledge\", \"stance\": \"positive\", \"topics\": [\"pilot\"], \"entity_mentions\": [{\"surface_form\": \"Pooja\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Pooja\", \"start_offset\": 95, \"end_offset\": 100}], \"confidence_bp\": 9000}], \"decision_states\": [{\"subject\": \"pilot start date\", \"state\": \"made\", \"evidence\": [{\"quote\": \"we're all set for 15 Sep\", \"start_offset\": 68, \"end_offset\": 92}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
-   "input_tokens": 4874,
-   "output_tokens": 153,
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 851,
+   "output_tokens": 48,
    "model": "claude-haiku-4-5-20251001"
   },
-  "152276f4095c9f059da902a9851d31c3f9d54352a858b144f853825bdf0bfda9": {
+  "24cdd35486df0e668b528315539359377fe72b5e4cb6d89f3743e5014eec4f80": {
    "site": "resolution",
    "parsed": {
     "verdict": "NOT_RESOLVED",
@@ -66,29 +36,61 @@
     "speaker_role_said": "unknown"
    },
    "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Can you confirm the pilot start date by Thursday 4 Sep?\", \"start_offset\": 29, \"end_offset\": 84, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 884,
+   "input_tokens": 1303,
    "output_tokens": 51,
    "model": "claude-haiku-4-5-20251001"
   },
-  "413891c7131dc870aad7924274b32a470d736dd57128dacf8474be68905056aa": {
-   "site": "decider",
+  "2f227d4698bf1635ccc9b3996a6cfabed2027dcea948501e6bd680b11db55b7b": {
+   "site": "r1",
    "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4574,
-     "admin.pb.follow_up_coordination.the_follow_through_relay": 4630,
-     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 4822
-    },
-    "confidence_bp": 4000,
-    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
-    "missing": []
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
    },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4574, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4630, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 4822}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
-   "input_tokens": 2466,
-   "output_tokens": 91,
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 831,
+   "output_tokens": 51,
    "model": "claude-haiku-4-5-20251001"
   },
-  "509929323f3255baeb04229b226079d2de657cfb5f25ba2d6fc142268fe8ce8e": {
+  "41612b0a577655053181836b9cb750ca38efe9f4c5f47f3878188ea2ad155cec": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Re: Pilot start date",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     },
+     {
+      "item": 2,
+      "business": true,
+      "description": "Pilot start date",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Pilot start date\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 2, \"business\": true, \"description\": \"Pilot start date\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 998,
+   "output_tokens": 73,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "52bf93c791b7ec2ac2d9455a439258c3dc344c3514c0b66e3143b2adc4c5f093": {
    "site": "extraction",
    "parsed": {
     "intent": "question",
@@ -165,60 +167,98 @@
     }
    },
    "raw": "{\"intent\": \"question\", \"stance\": \"neutral\", \"topics\": [\"pilot\"], \"entity_mentions\": [{\"surface_form\": \"Pooja Iyer\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Pooja Iyer\", \"start_offset\": 86, \"end_offset\": 96}], \"confidence_bp\": 9000}, {\"surface_form\": \"Greenleaf\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Greenleaf\", \"start_offset\": 97, \"end_offset\": 106}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Confirm the pilot start date by Thursday 4 Sep\", \"asked_by\": \"Pooja Iyer\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Can you confirm the pilot start date by Thursday 4 Sep?\", \"start_offset\": 29, \"end_offset\": 84}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"Thursday 4 Sep\", \"earliest\": \"2026-09-04T00:00:00+05:30\", \"latest\": \"2026-09-04T23:59:59+05:30\", \"certainty\": \"range\", \"resolved_against\": \"2026-09-02T07:00:00Z\", \"evidence\": [{\"quote\": \"Thursday 4 Sep\", \"start_offset\": 69, \"end_offset\": 83}]}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"the pilot start date\"}}",
-   "input_tokens": 4875,
+   "input_tokens": 5294,
    "output_tokens": 295,
    "model": "claude-haiku-4-5-20251001"
   },
-  "530dd426565e23dea23a5e3cbcd3d5e1d594194f1c1c4e37e91398a995bcb2a4": {
+  "800d6d4be8f49fe36e45c25de0efc234e14dd825acc2310d832cfbb0ff1aaf83": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "acknowledge",
+    "stance": "positive",
+    "topics": [
+     "pilot"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Pooja",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Pooja",
+        "start_offset": 95,
+        "end_offset": 100
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "decision_states": [
+     {
+      "subject": "pilot start date",
+      "state": "made",
+      "evidence": [
+       {
+        "quote": "we're all set for 15 Sep",
+        "start_offset": 68,
+        "end_offset": 92
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "high"
+    }
+   },
+   "raw": "{\"intent\": \"acknowledge\", \"stance\": \"positive\", \"topics\": [\"pilot\"], \"entity_mentions\": [{\"surface_form\": \"Pooja\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Pooja\", \"start_offset\": 95, \"end_offset\": 100}], \"confidence_bp\": 9000}], \"decision_states\": [{\"subject\": \"pilot start date\", \"state\": \"made\", \"evidence\": [{\"quote\": \"we're all set for 15 Sep\", \"start_offset\": 68, \"end_offset\": 92}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
+   "input_tokens": 5293,
+   "output_tokens": 153,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "8b3bd1a6f7d147bbf7bf901ded343e2b43d8c5fac12ac93c7c51e508e23bd6a8": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "RESOLVED",
+    "certainty": "EXPLICIT_COMPLETION",
+    "scope": [
+     "situation"
+    ],
+    "quote": "Thanks for confirming on WhatsApp yesterday",
+    "start_offset": 22,
+    "end_offset": 65,
+    "speaker_role_said": "external"
+   },
+   "raw": "{\"verdict\": \"RESOLVED\", \"certainty\": \"EXPLICIT_COMPLETION\", \"scope\": [\"situation\"], \"quote\": \"Thanks for confirming on WhatsApp yesterday\", \"start_offset\": 22, \"end_offset\": 65, \"speaker_role_said\": \"external\"}",
+   "input_tokens": 1302,
+   "output_tokens": 52,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "d15aa1ad8cebd9d39c6d05355d276d9df43ff90204e1f5d8b4cd69d3d031ec71": {
    "site": "decider",
    "parsed": {
-    "outcome": "decision",
+    "outcome": "defer",
     "scores": {
-     "customer_support.pb.breach_prevention.work_the_at_risk_list_hourly": 5028,
-     "customer_support.pb.expectation_setting.promise_the_process_not_the_outcome": 5224,
-     "customer_support.pb.response_drafting.answer_first_then_everything_else": 5600,
-     "customer_support.pb.ticket_triage.blast_radius_before_depth": 4970,
-     "customer_support.pb.ticket_triage.entitlement_before_complaint": 4970,
-     "customer_support.pb.ticket_triage.hand_off_with_the_assumption": 4914,
-     "customer_support.pb.ticket_triage.name_the_finishing_queue": 4942,
-     "customer_support.pb.ticket_triage.one_question_then_route": 4914,
-     "customer_support.pb.ticket_triage.state_the_coin_flip": 4914,
-     "customer_support.pb.ticket_triage.two_questions_in_order": 4970,
-     "customer_support.pb.ticket_triage.workaround_test": 4942
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4574,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 4630,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 4822
     },
-    "confidence_bp": 4500,
-    "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+    "confidence_bp": 4000,
+    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
     "missing": []
    },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"customer_support.pb.breach_prevention.work_the_at_risk_list_hourly\": 5028, \"customer_support.pb.expectation_setting.promise_the_process_not_the_outcome\": 5224, \"customer_support.pb.response_drafting.answer_first_then_everything_else\": 5600, \"customer_support.pb.ticket_triage.blast_radius_before_depth\": 4970, \"customer_support.pb.ticket_triage.entitlement_before_complaint\": 4970, \"customer_support.pb.ticket_triage.hand_off_with_the_assumption\": 4914, \"customer_support.pb.ticket_triage.name_the_finishing_queue\": 4942, \"customer_support.pb.ticket_triage.one_question_then_route\": 4914, \"customer_support.pb.ticket_triage.state_the_coin_flip\": 4914, \"customer_support.pb.ticket_triage.two_questions_in_order\": 4970, \"customer_support.pb.ticket_triage.workaround_test\": 4942}, \"confidence_bp\": 4500, \"rationale\": \"A person asked us for something; none of the support plays fits, and answering first is the closest.\", \"missing\": []}",
-   "input_tokens": 3829,
-   "output_tokens": 242,
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4574, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4630, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 4822}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
+   "input_tokens": 2885,
+   "output_tokens": 91,
    "model": "claude-haiku-4-5-20251001"
   },
-  "5e24381cd99bf61181d69a5420dbff97bb2d943b4eaa9345c3382b6dc0a7c2fc": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     }
-    ]
-   },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 412,
-   "output_tokens": 51,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "84b8ff84bdc1ca4b95a985d5faf0822bfc647a4fcbc35fde15cda9cf71a2f005": {
+  "e644e68a7762ecd2750ac221ed11cfb9ebc2c3af3bd6288f8eb82619b0381666": {
    "site": "r1",
    "parsed": {
     "readings": [
@@ -249,74 +289,34 @@
     ]
    },
    "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 4, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 612,
+   "input_tokens": 1032,
    "output_tokens": 98,
    "model": "claude-haiku-4-5-20251001"
   },
-  "b90019a72672c559a10a0de86f900d3de8dfcf2027a9b2dde4c6b3322e8b7a2c": {
-   "site": "relevance",
+  "f1d4bc0630ab12783e5804d732e2b3a7c0504ca7c45ff28e085f735c26ca554c": {
+   "site": "decider",
    "parsed": {
-    "verdicts": [
-     {
-      "item": 1,
-      "business": true,
-      "description": "Re: Pilot start date",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     },
-     {
-      "item": 2,
-      "business": true,
-      "description": "Pilot start date",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     }
-    ]
-   },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Pilot start date\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 2, \"business\": true, \"description\": \"Pilot start date\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "input_tokens": 579,
-   "output_tokens": 73,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "cf77187fbdd037d59030f518dd866ba7c876d0d713a4493e4bee54f39f72dd72": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "RESOLVED",
-    "certainty": "EXPLICIT_COMPLETION",
-    "scope": [
-     "situation"
-    ],
-    "quote": "Thanks for confirming on WhatsApp yesterday",
-    "start_offset": 22,
-    "end_offset": 65,
-    "speaker_role_said": "external"
-   },
-   "raw": "{\"verdict\": \"RESOLVED\", \"certainty\": \"EXPLICIT_COMPLETION\", \"scope\": [\"situation\"], \"quote\": \"Thanks for confirming on WhatsApp yesterday\", \"start_offset\": 22, \"end_offset\": 65, \"speaker_role_said\": \"external\"}",
-   "input_tokens": 882,
-   "output_tokens": 52,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "f7df206ce84b52451bff34aa6feb24b185b8a4865996dd66d6eacc781636fe7b": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
+    "outcome": "decision",
+    "scores": {
+     "customer_support.pb.breach_prevention.work_the_at_risk_list_hourly": 5028,
+     "customer_support.pb.expectation_setting.promise_the_process_not_the_outcome": 5224,
+     "customer_support.pb.response_drafting.answer_first_then_everything_else": 5600,
+     "customer_support.pb.ticket_triage.blast_radius_before_depth": 4970,
+     "customer_support.pb.ticket_triage.entitlement_before_complaint": 4970,
+     "customer_support.pb.ticket_triage.hand_off_with_the_assumption": 4914,
+     "customer_support.pb.ticket_triage.name_the_finishing_queue": 4942,
+     "customer_support.pb.ticket_triage.one_question_then_route": 4914,
+     "customer_support.pb.ticket_triage.state_the_coin_flip": 4914,
+     "customer_support.pb.ticket_triage.two_questions_in_order": 4970,
+     "customer_support.pb.ticket_triage.workaround_test": 4942
     },
-    {
-     "i": 1,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 432,
-   "output_tokens": 48,
+    "confidence_bp": 4500,
+    "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"customer_support.pb.breach_prevention.work_the_at_risk_list_hourly\": 5028, \"customer_support.pb.expectation_setting.promise_the_process_not_the_outcome\": 5224, \"customer_support.pb.response_drafting.answer_first_then_everything_else\": 5600, \"customer_support.pb.ticket_triage.blast_radius_before_depth\": 4970, \"customer_support.pb.ticket_triage.entitlement_before_complaint\": 4970, \"customer_support.pb.ticket_triage.hand_off_with_the_assumption\": 4914, \"customer_support.pb.ticket_triage.name_the_finishing_queue\": 4942, \"customer_support.pb.ticket_triage.one_question_then_route\": 4914, \"customer_support.pb.ticket_triage.state_the_coin_flip\": 4914, \"customer_support.pb.ticket_triage.two_questions_in_order\": 4970, \"customer_support.pb.ticket_triage.workaround_test\": 4942}, \"confidence_bp\": 4500, \"rationale\": \"A person asked us for something; none of the support plays fits, and answering first is the closest.\", \"missing\": []}",
+   "input_tokens": 4249,
+   "output_tokens": 242,
    "model": "claude-haiku-4-5-20251001"
   }
  }

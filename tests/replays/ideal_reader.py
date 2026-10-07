@@ -67,6 +67,18 @@ _RELEVANCE_ITEM = re.compile(r"^item (\d+):\n<<<CONTENT_[0-9a-f]+>>>\n(.*?)\n<<<
 _BATCH_ITEM = re.compile(r"^\[(\d+)\] ", re.M)
 
 
+#: STEP-07 · the company brief's block — the same in every prompt of a case, and about the COMPANY,
+#: never about one situation. It is taken out before a `when` term is looked for: a term naming
+#: something the brief also names (Introly, Lakshya Accelerator, Kavitha Nair) would otherwise match
+#: every prompt of the case, and the first authored answer would be served to all of them.
+_COMPANY_BRIEF = re.compile(r"COMPANY BRIEF cb-[0-9a-f]{12} — .*?\nEND OF COMPANY BRIEF\n?", re.S)
+
+
+def without_company_brief(prompt: str) -> str:
+    """The prompt with its company brief block (if any) taken out."""
+    return _COMPANY_BRIEF.sub("", prompt)
+
+
 class IdealReaderError(BaseException):
     """The case does not answer this prompt. Author the answer; never let the reader guess."""
 
@@ -149,7 +161,7 @@ class IdealReader:
     def _authored(self, site: str, prompt: str) -> Any:
         """A site that reads a situation, not one object: the first `model[site]` entry whose
         `when` terms all appear in the prompt, or None."""
-        lowered = prompt.lower()
+        lowered = without_company_brief(prompt).lower()
         for entry in self.case.model.get(site) or ():
             terms = [str(t).lower() for t in entry.get("when") or ()]
             if terms and all(t in lowered for t in terms):

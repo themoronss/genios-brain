@@ -1,47 +1,52 @@
 {
  "case_id": "F26",
  "source": "ideal_reader",
- "recorded_at": "621764b4",
+ "recorded_at": "fdd8b98a",
  "answers": {
-  "09f2fd2476c6e8ccc57c8f9f6b8c5e5b517355d79dc27c34588c516ce5f4d6ab": {
-   "site": "decider",
+  "18f8feba9468f675d118230921174330bcb578d5dd9485b5f5cfe00d38dac1ab": {
+   "site": "relevance",
    "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "reply": 6500,
-     "wait_unanswered_email": 5200
-    },
-    "confidence_bp": 5500,
-    "rationale": "A direct question is waiting on us.",
-    "missing": []
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Re: Orbitly x Nimbus Labs",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     },
+     {
+      "item": 2,
+      "business": true,
+      "description": "Orbitly x Nimbus Labs",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
    },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5200}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
-   "input_tokens": 1563,
-   "output_tokens": 42,
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Orbitly x Nimbus Labs\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 2, \"business\": true, \"description\": \"Orbitly x Nimbus Labs\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 1019,
+   "output_tokens": 75,
    "model": "claude-haiku-4-5-20251001"
   },
-  "21734c77f73fa6facc8d6418a80452739c518f089abffcbb0dde93ab48043dfd": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    },
-    {
-     "i": 1,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 453,
-   "output_tokens": 48,
+  "27b94673920a09720ff76ce97f9d241415525b805ca9a20e7df94fde48ef9d91": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Can we do a call next week?",
+    "start_offset": 38,
+    "end_offset": 65,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Can we do a call next week?\", \"start_offset\": 38, \"end_offset\": 65, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1306,
+   "output_tokens": 44,
    "model": "claude-haiku-4-5-20251001"
   },
-  "25aae3ca401a5fc145ff6f0a2dd2e3c26b140855b522b56f13b7a89e6bb424d1": {
+  "3ae9218300cccda8c5b32271b8a3b63a4a253a1738a6e6d421ed56ace968cb7f": {
    "site": "extraction",
    "parsed": {
     "intent": "schedule",
@@ -116,7 +121,7 @@
     ]
    },
    "raw": "{\"intent\": \"schedule\", \"stance\": \"positive\", \"topics\": [\"integration call\"], \"entity_mentions\": [{\"surface_form\": \"Neha\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Neha\", \"start_offset\": 113, \"end_offset\": 117}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Does Tuesday 30 Sep, 11 am IST work for a call?\", \"asked_by\": \"Neha Kapoor\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Would Tuesday 30 Sep, 11 am IST work for you?\", \"start_offset\": 66, \"end_offset\": 111}], \"confidence_bp\": 9000}], \"scheduling_proposals\": [{\"proposer\": \"Neha Kapoor\", \"text\": \"a call on Tuesday 30 Sep, 11 am IST\", \"evidence_text\": \"Would Tuesday 30 Sep, 11 am IST work for you?\"}], \"dates_mentioned\": [{\"as_written\": \"Tuesday 30 Sep, 11 am IST\", \"earliest\": \"2026-09-30T05:30:00Z\", \"latest\": \"2026-09-30T05:30:00Z\", \"certainty\": \"exact\", \"resolved_against\": \"2026-09-22T07:00:00Z\", \"evidence\": [{\"quote\": \"Tuesday 30 Sep, 11 am IST\", \"start_offset\": 72, \"end_offset\": 97}]}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"book the call\"}, \"implied_actions\": [\"confirm or decline Tuesday 30 Sep, 11 am IST\"]}",
-   "input_tokens": 4879,
+   "input_tokens": 5298,
    "output_tokens": 315,
    "model": "claude-haiku-4-5-20251001"
   },
@@ -136,50 +141,45 @@
    "output_tokens": 166,
    "model": "claude-haiku-4-5-20251001"
   },
-  "5b07e1e0da105f4c13435ad120bb7f843299e8c7dc9fd48c8a7a1cac8d72c474": {
-   "site": "relevance",
-   "parsed": {
-    "verdicts": [
-     {
-      "item": 1,
-      "business": true,
-      "description": "Re: Orbitly x Nimbus Labs",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     },
-     {
-      "item": 2,
-      "business": true,
-      "description": "Orbitly x Nimbus Labs",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     }
-    ]
-   },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Orbitly x Nimbus Labs\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 2, \"business\": true, \"description\": \"Orbitly x Nimbus Labs\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "input_tokens": 600,
-   "output_tokens": 75,
+  "4e4ce780e0c171aac39b0c1f01b5fd9bcc11abdf2c92bee23f5243784e1adfa5": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 1,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 872,
+   "output_tokens": 48,
    "model": "claude-haiku-4-5-20251001"
   },
-  "74bd383088d177c64f9e6f0716c5c6ce1f0cc509353e47a3cbc17fc8f8534c1b": {
-   "site": "resolution",
+  "5959a3208df1116405deb7afe110f3bdfa6efc0ddc5dc019063f23e965833068": {
+   "site": "decider",
    "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "Can we do a call next week?",
-    "start_offset": 38,
-    "end_offset": 65,
-    "speaker_role_said": "unknown"
+    "outcome": "decision",
+    "scores": {
+     "reply": 6500,
+     "wait_unanswered_email": 5200
+    },
+    "confidence_bp": 5500,
+    "rationale": "A direct question is waiting on us.",
+    "missing": []
    },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Can we do a call next week?\", \"start_offset\": 38, \"end_offset\": 65, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 887,
-   "output_tokens": 44,
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5200}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
+   "input_tokens": 1982,
+   "output_tokens": 42,
    "model": "claude-haiku-4-5-20251001"
   },
-  "b708b058fef8bccbe796ca02367a71b039e387b9fcdc68accfa5b759bb4692d8": {
+  "c18ecc6fc70513d4d2114827956756c5f5c90e938c70816ceb0945e437ee1014": {
    "site": "r1",
    "parsed": {
     "readings": [
@@ -210,23 +210,11 @@
     ]
    },
    "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 4, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 551,
+   "input_tokens": 971,
    "output_tokens": 98,
    "model": "claude-haiku-4-5-20251001"
   },
-  "e3f08a0726508427412a635475b36736184235bbc08d9b5717654c6a846f4616": {
-   "site": "narrator",
-   "parsed": {
-    "headline": "Confirm Tuesday 30 Sep, 11 am IST with Neha",
-    "situation": "Neha asked 7 days ago: \"Would Tuesday 30 Sep, 11 am IST work for you?\"",
-    "artifact": "Hi Neha, Tuesday 30 Sep at 11 am IST works for us. See you then."
-   },
-   "raw": "{\"headline\": \"Confirm Tuesday 30 Sep, 11 am IST with Neha\", \"situation\": \"Neha asked 7 days ago: \\\"Would Tuesday 30 Sep, 11 am IST work for you?\\\"\", \"artifact\": \"Hi Neha, Tuesday 30 Sep at 11 am IST works for us. See you then.\"}",
-   "input_tokens": 2124,
-   "output_tokens": 57,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "e9718658a014043606ad80414e0ab8016a7d2137b834c90e980f3b53d006f33b": {
+  "dc9c935ef4b9432d2699897a3895541516c1f0d3caea0af21ed5db034102c633": {
    "site": "extraction",
    "parsed": {
     "intent": "introduce",
@@ -271,8 +259,20 @@
     }
    },
    "raw": "{\"intent\": \"introduce\", \"stance\": \"positive\", \"topics\": [\"integration\"], \"entity_mentions\": [{\"surface_form\": \"Neha Kapoor\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Neha Kapoor\", \"start_offset\": 150, \"end_offset\": 161}], \"confidence_bp\": 9000}, {\"surface_form\": \"Orbitly\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Orbitly\", \"start_offset\": 0, \"end_offset\": 7}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
-   "input_tokens": 4892,
+   "input_tokens": 5311,
    "output_tokens": 150,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "e3f08a0726508427412a635475b36736184235bbc08d9b5717654c6a846f4616": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Confirm Tuesday 30 Sep, 11 am IST with Neha",
+    "situation": "Neha asked 7 days ago: \"Would Tuesday 30 Sep, 11 am IST work for you?\"",
+    "artifact": "Hi Neha, Tuesday 30 Sep at 11 am IST works for us. See you then."
+   },
+   "raw": "{\"headline\": \"Confirm Tuesday 30 Sep, 11 am IST with Neha\", \"situation\": \"Neha asked 7 days ago: \\\"Would Tuesday 30 Sep, 11 am IST work for you?\\\"\", \"artifact\": \"Hi Neha, Tuesday 30 Sep at 11 am IST works for us. See you then.\"}",
+   "input_tokens": 2124,
+   "output_tokens": 57,
    "model": "claude-haiku-4-5-20251001"
   },
   "edc14032e051e268fd718c91a1d4da1aca0cb3eb43a3700b737394b4f6389305": {

@@ -1,9 +1,30 @@
 {
  "case_id": "F32",
  "source": "ideal_reader",
- "recorded_at": "b47239c9",
+ "recorded_at": "fdd8b98a",
  "answers": {
-  "28c6f579199302cbc5aaa0eb399b7ee9024070612d00244bfe29651b96064f55": {
+  "08b6fec5be3c67536a7298003136942ebb3cc2b2ca426c37c2878cd9364ad332": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "drop",
+     "relevance": 0.05,
+     "reason": "automated, nobody waits on a reply"
+    },
+    {
+     "i": 1,
+     "disposition": "drop",
+     "relevance": 0.05,
+     "reason": "automated, nobody waits on a reply"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}, {\"i\": 1, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}]",
+   "input_tokens": 851,
+   "output_tokens": 50,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "508eb413015e5ade87ef95f7a166082b43ab4de33981ce1b80cd08be001bb868": {
    "site": "relevance",
    "parsed": {
     "verdicts": [
@@ -18,35 +39,46 @@
     ]
    },
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"Impact Forum digest\", \"category\": \"automated\", \"human_authored\": false, \"asks_for_reply\": false}]}",
-   "input_tokens": 530,
+   "input_tokens": 949,
    "output_tokens": 39,
    "model": "claude-haiku-4-5-20251001"
   },
-  "e87e3d067e25cf64bca7626687caaffcd1d8cc9de2180cc767ead8b5bb6c2ab5": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "drop",
-     "relevance": 0.05,
-     "reason": "automated, nobody waits on a reply"
-    },
-    {
-     "i": 1,
-     "disposition": "drop",
-     "relevance": 0.05,
-     "reason": "automated, nobody waits on a reply"
-    },
-    {
-     "i": 2,
-     "disposition": "drop",
-     "relevance": 0.05,
-     "reason": "automated, nobody waits on a reply"
+  "70db393b6fd8e5de2bed04c8588d0a0eda58f9409a259a820b93e7fa17317b9f": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "positive",
+    "topics": [
+     "community event"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Lakshya",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Lakshya",
+        "start_offset": 72,
+        "end_offset": 79
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "automated",
+     "tone": "warm",
+     "formality": "templated",
+     "addressed_personally": false,
+     "human_authored": false,
+     "asks_for_reply": false,
+     "engagement": "low",
+     "motive": "invite the community to a social"
     }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}, {\"i\": 1, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}, {\"i\": 2, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}]",
-   "input_tokens": 459,
-   "output_tokens": 75,
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"community event\"], \"entity_mentions\": [{\"surface_form\": \"Lakshya\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Lakshya\", \"start_offset\": 72, \"end_offset\": 79}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"automated\", \"tone\": \"warm\", \"formality\": \"templated\", \"addressed_personally\": false, \"human_authored\": false, \"asks_for_reply\": false, \"engagement\": \"low\", \"motive\": \"invite the community to a social\"}}",
+   "input_tokens": 5295,
+   "output_tokens": 121,
    "model": "claude-haiku-4-5-20251001"
   }
  }

@@ -33,7 +33,30 @@
    ],
    "read": {
     "gate": "drop",
-    "relevance": "not_business"
+    "relevance": "not_business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "neutral",
+     "topics": [
+      "programme bulletin"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "State Startup Mission",
+       "entity_type": "organization",
+       "quote": "State Startup Mission"
+      }
+     ],
+     "exchange_intent": {
+      "category": "automated",
+      "tone": "neutral",
+      "formality": "templated",
+      "addressed_personally": false,
+      "human_authored": false,
+      "asks_for_reply": false,
+      "engagement": "low"
+     }
+    }
    }
   },
   {
@@ -52,7 +75,30 @@
    ],
    "read": {
     "gate": "drop",
-    "relevance": "not_business"
+    "relevance": "not_business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "neutral",
+     "topics": [
+      "government scheme"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "State Startup Mission",
+       "entity_type": "organization",
+       "quote": "State Startup Mission"
+      }
+     ],
+     "exchange_intent": {
+      "category": "automated",
+      "tone": "neutral",
+      "formality": "templated",
+      "addressed_personally": false,
+      "human_authored": false,
+      "asks_for_reply": false,
+      "engagement": "low"
+     }
+    }
    }
   },
   {
@@ -71,7 +117,30 @@
    ],
    "read": {
     "gate": "drop",
-    "relevance": "not_business"
+    "relevance": "not_business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "neutral",
+     "topics": [
+      "programme bulletin"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "State Startup Mission",
+       "entity_type": "organization",
+       "quote": "State Startup Mission"
+      }
+     ],
+     "exchange_intent": {
+      "category": "automated",
+      "tone": "neutral",
+      "formality": "templated",
+      "addressed_personally": false,
+      "human_authored": false,
+      "asks_for_reply": false,
+      "engagement": "low"
+     }
+    }
    }
   },
   {
@@ -90,7 +159,43 @@
    ],
    "read": {
     "gate": "drop",
-    "relevance": "not_business"
+    "relevance": "not_business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "positive",
+     "topics": [
+      "startup registration"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "State Startup Mission",
+       "entity_type": "organization",
+       "quote": "State Startup Mission"
+      },
+      {
+       "surface_form": "SSM-2026-3381",
+       "entity_type": "document",
+       "quote": "SSM-2026-3381"
+      }
+     ],
+     "decision_states": [
+      {
+       "subject": "the registration on the State Startup Mission portal",
+       "state": "made",
+       "owner": "State Startup Mission",
+       "quote": "Your registration on the State Startup Mission portal is complete"
+      }
+     ],
+     "exchange_intent": {
+      "category": "transactional",
+      "tone": "neutral",
+      "formality": "templated",
+      "addressed_personally": false,
+      "human_authored": false,
+      "asks_for_reply": false,
+      "engagement": "medium"
+     }
+    }
    }
   }
  ],

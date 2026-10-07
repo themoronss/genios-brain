@@ -1,0 +1,90 @@
+{
+  "about": "STEP-07 §4's first draft — what the drafter proposes from the design partner's memory patterns alone — written in the golden world's names, and accepted by the golden founder as it stands. Every case runs with it: `tests/replays/engine_runner._fresh_tenant` seeds each line as the founder's own (`platform/company_brief_store.add`), in this order, before the case's first sweep. Real names never appear: StartupSetu is the recognition portal, DigiVault the document locker, Introly the intro agent, Lakshya the program the founder is in, Gulf Launchpad the accelerator applied to.",
+  "accepted_at": "2026-08-01T00:00:00Z",
+  "lines": [
+    {
+      "section": "company",
+      "text": "An AI chief of staff for founders · seed stage · raising the seed round"
+    },
+    {
+      "section": "goals",
+      "text": "Raise the seed round"
+    },
+    {
+      "section": "goals",
+      "text": "StartupSetu recognition for Nimbus Labs Private Limited"
+    },
+    {
+      "section": "goals",
+      "text": "Get into accelerator and incubator programs"
+    },
+    {
+      "section": "goals",
+      "text": "Hire a Founding AI Engineer"
+    },
+    {
+      "section": "goals",
+      "text": "Land design partners"
+    },
+    {
+      "section": "in_motion",
+      "text": "Fundraising — five funds written to in one wave; Banyan Seed Fund, Northfield Ventures, Harbor Point Partners, Tusker Capital, Fjord Venture Partners and Lumen Ventures engaged"
+    },
+    {
+      "section": "in_motion",
+      "text": "Programs — Lakshya Accelerator (the active cohort), Gulf Launchpad, the DIT Incubation Cell, TechBridge Foundation, Awadh Enterprise Centre, University Startup Cell, State Startup Mission"
+    },
+    {
+      "section": "in_motion",
+      "text": "Compliance — the StartupSetu recognition application, with its documents in DigiVault"
+    },
+    {
+      "section": "in_motion",
+      "text": "Hiring — Kavitha Nair, offered the Founding AI Engineer role"
+    },
+    {
+      "section": "in_motion",
+      "text": "Partners — Orbitly, Cleanwave, Novacore, Memloop"
+    },
+    {
+      "section": "connectors",
+      "text": "Introly — an AI agent that introduces the founder to people",
+      "address": "hello@introly.test"
+    },
+    {
+      "section": "watchlist",
+      "text": "StartupSetu — the startup recognition portal",
+      "domain": "startupsetu.gov.test"
+    },
+    {
+      "section": "watchlist",
+      "text": "DigiVault — the government document locker",
+      "domain": "digivault.gov.test"
+    },
+    {
+      "section": "watchlist",
+      "text": "State Startup Mission",
+      "domain": "statestartup.gov.test"
+    },
+    {
+      "section": "watchlist",
+      "text": "Gulf Launchpad — the accelerator",
+      "domain": "gulflaunchpad.test"
+    },
+    {
+      "section": "watchlist",
+      "text": "Lakshya Accelerator — the program the founder is in",
+      "domain": "lakshya.test"
+    },
+    {
+      "section": "watchlist",
+      "text": "The DIT Incubation Cell",
+      "domain": "ditincubator.test"
+    },
+    {
+      "section": "watchlist",
+      "text": "TechBridge Foundation",
+      "domain": "techbridge.test"
+    }
+  ]
+}

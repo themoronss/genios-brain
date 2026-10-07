@@ -31,6 +31,15 @@ road into memory, so thirteen cases moved — every one of them from "lost befor
 exercised" — and each is held to its new marking in `MOVED_AFTER`, by the step that moved it.
 `BOARD_BEFORE` stays the measurement it was. The gate's own promise did not move on any case: nothing
 dropped, every archive the same, and no archive with prepared text.
+
+RESTATED BY STEP-07 (`yc2_w27_s07 · M25.C7.L-integration.V5.U02`). The golden founder now holds the
+company brief STEP-07 §4 would draft, and a sender it names — the intro agent's address, a watchlist
+domain — is KEPT and read (W-07). 21 of the 33 objects the gate archived are such mail
+(`KEPT_BY_THE_BRIEF`): StartupSetu's and DigiVault's notices (F01, F02), every Introly mail (F03–F09,
+F37), the State Startup Mission's four (F23) and Lakshya's community mail (F32). Each is now emitted,
+and the other twelve are archived exactly as before. Four cases moved — F01, F02, F03 and F09, from
+lost at the gate to lost in REASONING (`MOVED_AFTER`): their mail is read now, and no situation it
+forms reaches a card yet (STEP-09's workstreams, STEP-12's expert pass).
 """
 from __future__ import annotations
 
@@ -68,6 +77,23 @@ DROPPED_BEFORE: dict[str, dict[str, str]] = {
     "F37": {"f37-intro": "N-02"},
 }
 
+#: STEP-07: the objects above that a sender the golden founder's company brief names now KEEPS —
+#: emitted, attention `deep`, reason W-07 (`test_the_company_brief_is_in_every_prompt` holds the tier).
+KEPT_BY_THE_BRIEF: dict[str, tuple[str, ...]] = {
+    "F01": ("f01-status",),
+    "F02": ("f02-ask", "f02-granted", "f02-locker", "f02-received"),
+    "F03": ("f03-intro", "f03-nudge1", "f03-nudge2"),
+    "F04": ("f04-intro",),
+    "F05": ("f05-intro",),
+    "F06": ("f06-intro",),
+    "F07": ("f07-intro",),
+    "F08": ("f08-omar", "f08-simon"),
+    "F09": ("f09-ask",),
+    "F23": ("f23-a", "f23-b", "f23-c", "f23-d"),
+    "F32": ("f32-social",),
+    "F37": ("f37-intro",),
+}
+
 #: Cases added after STEP-03 measured the set, each by the step that added it.
 ADDED_AFTER: dict[str, str] = {"F41": "STEP-04", "F42": "STEP-04", "F43": "STEP-04",
                                "F44": "STEP-04"}
@@ -88,6 +114,12 @@ MOVED_AFTER: dict[str, tuple[str, tuple[str, str, str | None, int]]] = {
     "F36": ("STEP-05", ("must_abstain", "pass", None, 0)),
     "F38": ("STEP-05", ("must_abstain", "pass", None, 0)),
     "F39": ("STEP-05", ("must_abstain", "pass", None, 0)),
+    # STEP-07: the brief keeps the portal's, the locker's and the intro agent's mail, and it is
+    # read — but no situation it forms reaches a card yet.
+    "F01": ("STEP-07", ("must_detect", "fail", "reasoning", 0)),
+    "F02": ("STEP-07", ("must_detect", "fail", "reasoning", 0)),
+    "F03": ("STEP-07", ("must_detect", "fail", "reasoning", 0)),
+    "F09": ("STEP-07", ("must_detect", "fail", "reasoning", 0)),
 }
 
 #: The same measurement: (kind, verdict, lost_at, cards over every sweep) per case.
@@ -154,6 +186,9 @@ def test_the_measurement_is_the_one_section_8_recorded():
     assert set(MOVED_AFTER) <= set(BOARD_BEFORE), "a moved case needs a before to move from"
     assert all(after != BOARD_BEFORE[c] for c, (_step, after) in MOVED_AFTER.items()), (
         "a case listed as moved did not move")
+    assert all(set(objs) <= set(DROPPED_BEFORE[c]) for c, objs in KEPT_BY_THE_BRIEF.items()), (
+        "the brief can only keep what the gate archived")
+    assert sum(len(objs) for objs in KEPT_BY_THE_BRIEF.values()) == 21
 
 
 @pytest.mark.pg
@@ -186,10 +221,16 @@ def test_the_gate_deletes_nothing_and_the_case_is_marked_as_before(case):
     dropped = [(x.source_object_id, x.reason) for x in run.landed if x.outcome == "dropped"]
     assert not dropped, f"{case.case_id}: the gate still deleted {dropped}"
 
-    expected = DROPPED_BEFORE.get(case.case_id, {})
+    kept = set(KEPT_BY_THE_BRIEF.get(case.case_id, ()))
+    expected = {oid: code for oid, code in DROPPED_BEFORE.get(case.case_id, {}).items()
+                if oid not in kept}
     archived = {x.source_object_id: x.reason for x in run.landed if x.outcome == "archived"}
     assert archived == expected, (
-        f"{case.case_id}: archived {archived}, but the gate dropped {expected} before STEP-03")
+        f"{case.case_id}: archived {archived}, but the gate dropped {expected} before STEP-03 "
+        f"(less what the company brief keeps: {sorted(kept)})")
+    landed = {x.source_object_id: x.outcome for x in run.landed}
+    assert {oid: landed.get(oid) for oid in kept} == {oid: "emitted" for oid in kept}, (
+        f"{case.case_id}: the brief's senders did not land kept")
 
     stored = {r.source_object_id: r for r in rows}
     assert set(stored) == set(expected), f"{case.case_id}: archived rows {sorted(stored)}"

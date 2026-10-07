@@ -1,9 +1,28 @@
 {
  "case_id": "F34",
  "source": "ideal_reader",
- "recorded_at": "b47239c9",
+ "recorded_at": "fdd8b98a",
  "answers": {
-  "61ccff56fa6e5d938551620cc9c6aa1a042db64cf285a86046ffa59c698c899f": {
+  "7cfaa32f018a0bead6ea9a604aae92d5b2758341d512e3c2a15689f4d61bc277": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": false,
+      "description": "You have 6 new co-founder matches",
+      "category": "automated",
+      "human_authored": false,
+      "asks_for_reply": false
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"You have 6 new co-founder matches\", \"category\": \"automated\", \"human_authored\": false, \"asks_for_reply\": false}]}",
+   "input_tokens": 959,
+   "output_tokens": 43,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "d6ad7be202e64bb9929237607cadbcdf5bf4ed731eb71f6ff3c5ebd076d999cd": {
    "site": "junk_gate_batch",
    "parsed": [
     {
@@ -20,27 +39,8 @@
     }
    ],
    "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}, {\"i\": 1, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}]",
-   "input_tokens": 439,
+   "input_tokens": 859,
    "output_tokens": 50,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "802de0056498806ff31f0fed87855aeb3c98f80439878a32b1db109d746d08b9": {
-   "site": "relevance",
-   "parsed": {
-    "verdicts": [
-     {
-      "item": 1,
-      "business": false,
-      "description": "You have 6 new co-founder matches",
-      "category": "automated",
-      "human_authored": false,
-      "asks_for_reply": false
-     }
-    ]
-   },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"You have 6 new co-founder matches\", \"category\": \"automated\", \"human_authored\": false, \"asks_for_reply\": false}]}",
-   "input_tokens": 540,
-   "output_tokens": 43,
    "model": "claude-haiku-4-5-20251001"
   }
  }

@@ -34,7 +34,41 @@
    ],
    "read": {
     "gate": "drop",
-    "relevance": "not_business"
+    "relevance": "not_business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "neutral",
+     "topics": [
+      "document locker",
+      "certificate of incorporation"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "DigiVault",
+       "entity_type": "organization",
+       "quote": "DigiVault"
+      },
+      {
+       "surface_form": "Nimbus Labs Private Limited",
+       "entity_type": "organization",
+       "quote": "Nimbus Labs Private Limited"
+      },
+      {
+       "surface_form": "Certificate of Incorporation",
+       "entity_type": "document",
+       "quote": "Certificate of Incorporation"
+      }
+     ],
+     "exchange_intent": {
+      "category": "transactional",
+      "tone": "neutral",
+      "formality": "templated",
+      "addressed_personally": false,
+      "human_authored": false,
+      "asks_for_reply": false,
+      "engagement": "medium"
+     }
+    }
    }
   },
   {
@@ -119,7 +153,39 @@
    ],
    "read": {
     "gate": "drop",
-    "relevance": "business"
+    "relevance": "business",
+    "extraction": {
+     "intent": "acknowledge",
+     "stance": "neutral",
+     "topics": [
+      "startup recognition",
+      "application status"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "StartupSetu",
+       "entity_type": "organization",
+       "quote": "StartupSetu"
+      }
+     ],
+     "decision_states": [
+      {
+       "subject": "the board resolution for the recognition application",
+       "state": "pending",
+       "owner": "StartupSetu",
+       "quote": "The examiner will review it and update the application"
+      }
+     ],
+     "exchange_intent": {
+      "category": "transactional",
+      "tone": "neutral",
+      "formality": "templated",
+      "addressed_personally": false,
+      "human_authored": false,
+      "asks_for_reply": false,
+      "engagement": "medium"
+     }
+    }
    }
   },
   {
@@ -138,7 +204,49 @@
    ],
    "read": {
     "gate": "drop",
-    "relevance": "business"
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "positive",
+     "topics": [
+      "startup recognition",
+      "application status"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "StartupSetu",
+       "entity_type": "organization",
+       "quote": "StartupSetu"
+      },
+      {
+       "surface_form": "Nimbus Labs Private Limited",
+       "entity_type": "organization",
+       "quote": "Nimbus Labs Private Limited"
+      },
+      {
+       "surface_form": "SSR-CERT-2026-11872",
+       "entity_type": "document",
+       "quote": "SSR-CERT-2026-11872"
+      }
+     ],
+     "decision_states": [
+      {
+       "subject": "recognition of Nimbus Labs Private Limited",
+       "state": "made",
+       "owner": "StartupSetu",
+       "quote": "Nimbus Labs Private Limited is recognised under the StartupSetu programme"
+      }
+     ],
+     "exchange_intent": {
+      "category": "transactional",
+      "tone": "neutral",
+      "formality": "templated",
+      "addressed_personally": false,
+      "human_authored": false,
+      "asks_for_reply": false,
+      "engagement": "high"
+     }
+    }
    }
   }
  ],
@@ -174,5 +282,5 @@
   "stage": "STEP-09 — no stage is derived for a workstream"
  },
  "notes": "Three of the four real mails were dropped by the rules (Promotions N-06, no-reply N-03); the fourth passed them and the AI filter called it junk, which is also the faithful answer to an automated acknowledgement.",
- "blocked_on": "the gate drops the application's mails (N-06 Promotions, N-03 no-reply) and the AI filter faithfully junks the automated acknowledgement — STEP-03, STEP-04"
+ "blocked_on": "all four mails are kept and read now (STEP-07, W-07: the brief's watchlist names the portal and the locker) and reach memory — but no situation forms about the application, only the period reviews; an application in motion is a workstream — STEP-09"
 }

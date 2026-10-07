@@ -1,94 +1,9 @@
 {
  "case_id": "F15",
  "source": "ideal_reader",
- "recorded_at": "621764b4",
+ "recorded_at": "fdd8b98a",
  "answers": {
-  "0eb5c20bcbaab427649635c9b11abfdaf5ca67b55a8c292f295a0ec8b2e1a1a6": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "Our deck is attached; could we find 20 minutes in the next two weeks?",
-    "start_offset": 142,
-    "end_offset": 211,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Our deck is attached; could we find 20 minutes in the next two weeks?\", \"start_offset\": 142, \"end_offset\": 211, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 918,
-   "output_tokens": 55,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "1c3c678e69f806fd7d7b26f04c50bde7ec39768e9e3a5ad6a91468496b7f79a8": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "request",
-    "stance": "positive",
-    "topics": [
-     "fundraising"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "Meridian Seed",
-      "entity_type": "organization",
-      "evidence": [
-       {
-        "quote": "Meridian Seed",
-        "start_offset": 41,
-        "end_offset": 54
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "questions": [
-     {
-      "text": "Find 20 minutes in the next two weeks",
-      "asked_by": "Arjun Rao",
-      "asked_of": "Meridian Seed",
-      "evidence": [
-       {
-        "quote": "could we find 20 minutes in the next two weeks?",
-        "start_offset": 164,
-        "end_offset": 211
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "exchange_intent": {
-     "category": "working",
-     "tone": "neutral",
-     "formality": "professional",
-     "addressed_personally": true,
-     "human_authored": true,
-     "asks_for_reply": true,
-     "engagement": "high",
-     "motive": "seed round outreach"
-    }
-   },
-   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meridian Seed\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Meridian Seed\", \"start_offset\": 41, \"end_offset\": 54}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Find 20 minutes in the next two weeks\", \"asked_by\": \"Arjun Rao\", \"asked_of\": \"Meridian Seed\", \"evidence\": [{\"quote\": \"could we find 20 minutes in the next two weeks?\", \"start_offset\": 164, \"end_offset\": 211}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"seed round outreach\"}}",
-   "input_tokens": 4915,
-   "output_tokens": 186,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "4f453ea466c2c2cfe63ced8034d2870a6e5e48f8d44f213e1f83b5654f3eef27": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "Our deck is attached; could we find 20 minutes in the next two weeks?",
-    "start_offset": 142,
-    "end_offset": 211,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Our deck is attached; could we find 20 minutes in the next two weeks?\", \"start_offset\": 142, \"end_offset\": 211, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 918,
-   "output_tokens": 55,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "5bd4dd011fc0846b3d17ce2c29f680c70cad005be9aa618d43251ffbacb5cb75": {
+  "223d7e7f6d8a4ec6a5544debf4f64d3049f4f9c7764a3d6331609d18c1134372": {
    "site": "relevance",
    "parsed": {
     "verdicts": [
@@ -135,172 +50,27 @@
     ]
    },
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Nimbus Labs - raising our seed round\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 2, \"business\": true, \"description\": \"Nimbus Labs - raising our seed round\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 3, \"business\": true, \"description\": \"Nimbus Labs - raising our seed round\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 4, \"business\": true, \"description\": \"Nimbus Labs - raising our seed round\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 5, \"business\": true, \"description\": \"Nimbus Labs - raising our seed round\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "input_tokens": 882,
+   "input_tokens": 1301,
    "output_tokens": 199,
    "model": "claude-haiku-4-5-20251001"
   },
-  "5d32662818221c22d65fec9b63c66239d1abdf1a4e86532d1f7a210804ad5536": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "request",
-    "stance": "positive",
-    "topics": [
-     "fundraising"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "Lattice Capital",
-      "entity_type": "organization",
-      "evidence": [
-       {
-        "quote": "Lattice Capital",
-        "start_offset": 41,
-        "end_offset": 56
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "questions": [
-     {
-      "text": "Find 20 minutes in the next two weeks",
-      "asked_by": "Arjun Rao",
-      "asked_of": "Lattice Capital",
-      "evidence": [
-       {
-        "quote": "could we find 20 minutes in the next two weeks?",
-        "start_offset": 166,
-        "end_offset": 213
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "exchange_intent": {
-     "category": "working",
-     "tone": "neutral",
-     "formality": "professional",
-     "addressed_personally": true,
-     "human_authored": true,
-     "asks_for_reply": true,
-     "engagement": "high",
-     "motive": "seed round outreach"
-    }
-   },
-   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Lattice Capital\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Lattice Capital\", \"start_offset\": 41, \"end_offset\": 56}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Find 20 minutes in the next two weeks\", \"asked_by\": \"Arjun Rao\", \"asked_of\": \"Lattice Capital\", \"evidence\": [{\"quote\": \"could we find 20 minutes in the next two weeks?\", \"start_offset\": 166, \"end_offset\": 213}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"seed round outreach\"}}",
-   "input_tokens": 4915,
-   "output_tokens": 187,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "9b2fd06aa500eba2a036194c4a02a283891d6987fc2404fbcd0f87e5fe0b5cc0": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    },
-    {
-     "i": 1,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    },
-    {
-     "i": 2,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    },
-    {
-     "i": 3,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    },
-    {
-     "i": 4,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 2, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 3, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 4, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 683,
-   "output_tokens": 120,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "b84cca9ac52f127cdb5919c62542925a770984011ca93c9ff72364b3fea7d8e9": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "request",
-    "stance": "positive",
-    "topics": [
-     "fundraising"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "Northstar Angels",
-      "entity_type": "organization",
-      "evidence": [
-       {
-        "quote": "Northstar Angels",
-        "start_offset": 41,
-        "end_offset": 57
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "questions": [
-     {
-      "text": "Find 20 minutes in the next two weeks",
-      "asked_by": "Arjun Rao",
-      "asked_of": "Northstar Angels",
-      "evidence": [
-       {
-        "quote": "could we find 20 minutes in the next two weeks?",
-        "start_offset": 167,
-        "end_offset": 214
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "exchange_intent": {
-     "category": "working",
-     "tone": "neutral",
-     "formality": "professional",
-     "addressed_personally": true,
-     "human_authored": true,
-     "asks_for_reply": true,
-     "engagement": "high",
-     "motive": "seed round outreach"
-    }
-   },
-   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Northstar Angels\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Northstar Angels\", \"start_offset\": 41, \"end_offset\": 57}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Find 20 minutes in the next two weeks\", \"asked_by\": \"Arjun Rao\", \"asked_of\": \"Northstar Angels\", \"evidence\": [{\"quote\": \"could we find 20 minutes in the next two weeks?\", \"start_offset\": 167, \"end_offset\": 214}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"seed round outreach\"}}",
-   "input_tokens": 4917,
-   "output_tokens": 188,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "c1bfb2f0f22de041606cca929ec6614878d2009932a9a9cc471816a57ff5b207": {
+  "2a9005ccc4796ab8592cc1d9c0fed97ed4c69a42c481bdcb9c499ca0cffe9e41": {
    "site": "resolution",
    "parsed": {
     "verdict": "NOT_RESOLVED",
     "certainty": "INTENT_ONLY",
     "scope": [],
     "quote": "Our deck is attached; could we find 20 minutes in the next two weeks?",
-    "start_offset": 145,
-    "end_offset": 214,
+    "start_offset": 140,
+    "end_offset": 209,
     "speaker_role_said": "unknown"
    },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Our deck is attached; could we find 20 minutes in the next two weeks?\", \"start_offset\": 145, \"end_offset\": 214, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 919,
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Our deck is attached; could we find 20 minutes in the next two weeks?\", \"start_offset\": 140, \"end_offset\": 209, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1337,
    "output_tokens": 55,
    "model": "claude-haiku-4-5-20251001"
   },
-  "cb64c18d2972b977ca4b0b020f3a7a0df6261ab322e0cc01d65923441bbe638b": {
+  "40fc0ee6bb781323ddae473d6293fd1c0529b919e262ae3ab93ea574c52448d3": {
    "site": "extraction",
    "parsed": {
     "intent": "request",
@@ -349,27 +119,11 @@
     }
    },
    "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Juniper Ridge\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Juniper Ridge\", \"start_offset\": 41, \"end_offset\": 54}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Find 20 minutes in the next two weeks\", \"asked_by\": \"Arjun Rao\", \"asked_of\": \"Juniper Ridge\", \"evidence\": [{\"quote\": \"could we find 20 minutes in the next two weeks?\", \"start_offset\": 164, \"end_offset\": 211}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"seed round outreach\"}}",
-   "input_tokens": 4915,
+   "input_tokens": 5334,
    "output_tokens": 186,
    "model": "claude-haiku-4-5-20251001"
   },
-  "dcd6a9bcba6e422338a182f156ba1954b68f32f521139a1a60dff561ae9fb353": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "Our deck is attached; could we find 20 minutes in the next two weeks?",
-    "start_offset": 144,
-    "end_offset": 213,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Our deck is attached; could we find 20 minutes in the next two weeks?\", \"start_offset\": 144, \"end_offset\": 213, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 919,
-   "output_tokens": 55,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "e028675f5103c7ea218af42cd3e1b134e5a136198b1140eeff4d306d5190df20": {
+  "4f72230a981c8b96cf50fc1c7c2dc63feeb2a340df48c32e4d66b0648fdbb2d4": {
    "site": "extraction",
    "parsed": {
     "intent": "request",
@@ -418,24 +172,270 @@
     }
    },
    "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Cobalt Peak\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Cobalt Peak\", \"start_offset\": 41, \"end_offset\": 52}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Find 20 minutes in the next two weeks\", \"asked_by\": \"Arjun Rao\", \"asked_of\": \"Cobalt Peak\", \"evidence\": [{\"quote\": \"could we find 20 minutes in the next two weeks?\", \"start_offset\": 162, \"end_offset\": 209}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"seed round outreach\"}}",
-   "input_tokens": 4915,
+   "input_tokens": 5334,
    "output_tokens": 184,
    "model": "claude-haiku-4-5-20251001"
   },
-  "e3c7b364b460cc895e0b2a242e5c4442cf961663babe4813b8aca6bdd9b080c4": {
+  "4fe26e452b7016dd055a5147e73cbd6d9037112d4877b2df553310cd35c04a9b": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 1,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 2,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 3,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 4,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 2, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 3, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 4, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 1103,
+   "output_tokens": 120,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "63386a5e9f02712e95fc8efc953a3ce38e6f90e65ee69f372fb21d5020ece0b3": {
    "site": "resolution",
    "parsed": {
     "verdict": "NOT_RESOLVED",
     "certainty": "INTENT_ONLY",
     "scope": [],
     "quote": "Our deck is attached; could we find 20 minutes in the next two weeks?",
-    "start_offset": 140,
-    "end_offset": 209,
+    "start_offset": 142,
+    "end_offset": 211,
     "speaker_role_said": "unknown"
    },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Our deck is attached; could we find 20 minutes in the next two weeks?\", \"start_offset\": 140, \"end_offset\": 209, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 918,
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Our deck is attached; could we find 20 minutes in the next two weeks?\", \"start_offset\": 142, \"end_offset\": 211, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1337,
    "output_tokens": 55,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "6d20994f49e47915e90c04ea92bb3ddcb30b4ff8280d7eddfca2cbf07d6ad0d2": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "request",
+    "stance": "positive",
+    "topics": [
+     "fundraising"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Lattice Capital",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Lattice Capital",
+        "start_offset": 41,
+        "end_offset": 56
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "Find 20 minutes in the next two weeks",
+      "asked_by": "Arjun Rao",
+      "asked_of": "Lattice Capital",
+      "evidence": [
+       {
+        "quote": "could we find 20 minutes in the next two weeks?",
+        "start_offset": 166,
+        "end_offset": 213
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "seed round outreach"
+    }
+   },
+   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Lattice Capital\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Lattice Capital\", \"start_offset\": 41, \"end_offset\": 56}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Find 20 minutes in the next two weeks\", \"asked_by\": \"Arjun Rao\", \"asked_of\": \"Lattice Capital\", \"evidence\": [{\"quote\": \"could we find 20 minutes in the next two weeks?\", \"start_offset\": 166, \"end_offset\": 213}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"seed round outreach\"}}",
+   "input_tokens": 5334,
+   "output_tokens": 187,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "6f61bf29a0a3e4b552c915afd06bce3f7e1aba46c7d4ebdc50d212bee4f9ad7c": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "request",
+    "stance": "positive",
+    "topics": [
+     "fundraising"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Meridian Seed",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Meridian Seed",
+        "start_offset": 41,
+        "end_offset": 54
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "Find 20 minutes in the next two weeks",
+      "asked_by": "Arjun Rao",
+      "asked_of": "Meridian Seed",
+      "evidence": [
+       {
+        "quote": "could we find 20 minutes in the next two weeks?",
+        "start_offset": 164,
+        "end_offset": 211
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "seed round outreach"
+    }
+   },
+   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meridian Seed\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Meridian Seed\", \"start_offset\": 41, \"end_offset\": 54}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Find 20 minutes in the next two weeks\", \"asked_by\": \"Arjun Rao\", \"asked_of\": \"Meridian Seed\", \"evidence\": [{\"quote\": \"could we find 20 minutes in the next two weeks?\", \"start_offset\": 164, \"end_offset\": 211}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"seed round outreach\"}}",
+   "input_tokens": 5334,
+   "output_tokens": 186,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "723c758e1fda2fb2e3bd22915d37d8e231120e36e20ef6e2a78900b525d093b2": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Our deck is attached; could we find 20 minutes in the next two weeks?",
+    "start_offset": 145,
+    "end_offset": 214,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Our deck is attached; could we find 20 minutes in the next two weeks?\", \"start_offset\": 145, \"end_offset\": 214, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1338,
+   "output_tokens": 55,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "ae81bd85c84a541c72a9510936f097531e73bb16aa41e30ca3541628442db303": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Our deck is attached; could we find 20 minutes in the next two weeks?",
+    "start_offset": 144,
+    "end_offset": 213,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Our deck is attached; could we find 20 minutes in the next two weeks?\", \"start_offset\": 144, \"end_offset\": 213, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1338,
+   "output_tokens": 55,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "c39a73b964d5d0cdfa3cf0e72116f66012eef47ecd88be660e6f13647d6d018d": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Our deck is attached; could we find 20 minutes in the next two weeks?",
+    "start_offset": 142,
+    "end_offset": 211,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Our deck is attached; could we find 20 minutes in the next two weeks?\", \"start_offset\": 142, \"end_offset\": 211, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1337,
+   "output_tokens": 55,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "df14b35a5a722f1c312e95ec286eb035db49f561e2eb5f77ed27514140100e16": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "request",
+    "stance": "positive",
+    "topics": [
+     "fundraising"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Northstar Angels",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Northstar Angels",
+        "start_offset": 41,
+        "end_offset": 57
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "Find 20 minutes in the next two weeks",
+      "asked_by": "Arjun Rao",
+      "asked_of": "Northstar Angels",
+      "evidence": [
+       {
+        "quote": "could we find 20 minutes in the next two weeks?",
+        "start_offset": 167,
+        "end_offset": 214
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "seed round outreach"
+    }
+   },
+   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Northstar Angels\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Northstar Angels\", \"start_offset\": 41, \"end_offset\": 57}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Find 20 minutes in the next two weeks\", \"asked_by\": \"Arjun Rao\", \"asked_of\": \"Northstar Angels\", \"evidence\": [{\"quote\": \"could we find 20 minutes in the next two weeks?\", \"start_offset\": 167, \"end_offset\": 214}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"seed round outreach\"}}",
+   "input_tokens": 5336,
+   "output_tokens": 188,
    "model": "claude-haiku-4-5-20251001"
   }
  }

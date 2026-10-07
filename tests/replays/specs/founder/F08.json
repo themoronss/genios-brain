@@ -173,5 +173,21 @@
  "not_expressible": {
   "cards": "brief only — the founder's answer is a line in the morning brief, not a card (D12d)",
   "brief": "STEP-15 — there is no morning brief to appear in"
+ },
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "unanswered email",
+     "this is a person: Introly"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "confidence_bp": 7000,
+     "rationale": "Introly is the founder's intro agent; its introduction asks nothing of Introly itself — the reply belongs to the person it introduced.",
+     "missing": []
+    }
+   }
+  ]
  }
 }

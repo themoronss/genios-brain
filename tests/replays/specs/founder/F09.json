@@ -149,5 +149,5 @@
   "workstream": "STEP-09 — the engine forms no workstream; nothing to compare against"
  },
  "notes": "Replay 02 m04: when the connector makes a bounded ask, it is a separate item with its own card — never merged into an introduced contact's.",
- "blocked_on": "the gate drops the connector's own ask on its unsubscribe header (N-02) — F14, STEP-03"
+ "blocked_on": "the connector's ask is kept and read now (STEP-07, W-07) — but the situation it forms (investor_relationship, anchored on Introly) is in the fundraising domain, which is not active: only Admin is (`06`) — STEP-09, STEP-12"
 }

@@ -1,40 +1,87 @@
 {
  "case_id": "F01",
  "source": "ideal_reader",
- "recorded_at": "b47239c9",
+ "recorded_at": "fdd8b98a",
  "answers": {
-  "124680169bbf30fe5b7fcfe3c07339467962ab78d3c64e1d563a22f09b0ff248": {
-   "site": "relevance",
+  "6e01f6d5a7122efb7589f77b0711b7e2036b3918ff02934bdc1a11607a26b250": {
+   "site": "extraction",
    "parsed": {
-    "verdicts": [
+    "intent": "inform",
+    "stance": "neutral",
+    "topics": [
+     "startup recognition",
+     "application status"
+    ],
+    "entity_mentions": [
      {
-      "item": 1,
-      "description": "Application SSR-2026-48213: status updated",
-      "business": true,
-      "category": "transactional",
-      "human_authored": false,
-      "asks_for_reply": false
+      "surface_form": "StartupSetu",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "StartupSetu",
+        "start_offset": 119,
+        "end_offset": 130
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "SSR-2026-48213",
+      "entity_type": "document",
+      "evidence": [
+       {
+        "quote": "SSR-2026-48213",
+        "start_offset": 12,
+        "end_offset": 26
+       }
+      ],
+      "confidence_bp": 9000
      }
-    ]
-   },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"description\": \"Application SSR-2026-48213: status updated\", \"business\": true, \"category\": \"transactional\", \"human_authored\": false, \"asks_for_reply\": false}]}",
-   "input_tokens": 588,
-   "output_tokens": 46,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "c9b32423e7dcde71052043d6ca04145b8acf2d335e1689a286e7bd118007eb31": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "drop",
-     "relevance": 0.05,
-     "reason": "automated, nobody waits on a reply"
+    ],
+    "decision_states": [
+     {
+      "subject": "recognition application SSR-2026-48213",
+      "state": "pending",
+      "owner": "StartupSetu",
+      "evidence": [
+       {
+        "quote": "has moved to the stage: Under Examination",
+        "start_offset": 141,
+        "end_offset": 182
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "business_facts": [
+     {
+      "field": "thread.objective",
+      "subject": "thread",
+      "value": "startup recognition application",
+      "standing": "judgement",
+      "evidence": [
+       {
+        "quote": "Your application SSR-2026-48213 for recognition",
+        "start_offset": 61,
+        "end_offset": 108
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "transactional",
+     "tone": "neutral",
+     "formality": "templated",
+     "addressed_personally": false,
+     "human_authored": false,
+     "asks_for_reply": false,
+     "engagement": "medium"
     }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}]",
-   "input_tokens": 441,
-   "output_tokens": 25,
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"neutral\", \"topics\": [\"startup recognition\", \"application status\"], \"entity_mentions\": [{\"surface_form\": \"StartupSetu\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"StartupSetu\", \"start_offset\": 119, \"end_offset\": 130}], \"confidence_bp\": 9000}, {\"surface_form\": \"SSR-2026-48213\", \"entity_type\": \"document\", \"evidence\": [{\"quote\": \"SSR-2026-48213\", \"start_offset\": 12, \"end_offset\": 26}], \"confidence_bp\": 9000}], \"decision_states\": [{\"subject\": \"recognition application SSR-2026-48213\", \"state\": \"pending\", \"owner\": \"StartupSetu\", \"evidence\": [{\"quote\": \"has moved to the stage: Under Examination\", \"start_offset\": 141, \"end_offset\": 182}], \"confidence_bp\": 9000}], \"business_facts\": [{\"field\": \"thread.objective\", \"subject\": \"thread\", \"value\": \"startup recognition application\", \"standing\": \"judgement\", \"evidence\": [{\"quote\": \"Your application SSR-2026-48213 for recognition\", \"start_offset\": 61, \"end_offset\": 108}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"transactional\", \"tone\": \"neutral\", \"formality\": \"templated\", \"addressed_personally\": false, \"human_authored\": false, \"asks_for_reply\": false, \"engagement\": \"medium\"}}",
+   "input_tokens": 5353,
+   "output_tokens": 296,
    "model": "claude-haiku-4-5-20251001"
   }
  }
