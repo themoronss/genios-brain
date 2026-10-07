@@ -1464,6 +1464,11 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
         #: Whose turn this mail moves — the person who spoke, unless a connector's mail says
         #: otherwise (an introduction: the people introduced; a nudge: nobody).
         turn_subjects: list[str] = [speaker_node] if speaker_node else []
+        if watched_company and _is_automated_sender(sender_email):
+            # Nor is a portal's machine address ever owed a reply. What its notice asks of the
+            # founder ("upload a board resolution within 7 days", golden F02) is an ask — an open
+            # loop on the portal's file — done on the portal, not by answering `updates@`.
+            turn_subjects = []
         for cnode in sorted(connector_nodes):      # on this mail: the brief's word, recorded
             store.write_fact(conn, org_id=org_id, subject_node_id=cnode, field="party.role",
                              value="introducer", value_type="enum",

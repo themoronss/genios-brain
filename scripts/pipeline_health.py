@@ -551,6 +551,42 @@ def check_every_gmail_message_in_the_window_has_its_content(conn, org: str, *,
         detail=detail)
 
 
+def check_every_named_counterparty_has_a_file(conn, org: str) -> Check:
+    """⛔ STEP-09 (`yc2_w27_s09/M27.C4`). Every counterparty the founder's company brief names — a
+    connector, a person, a portal or program it watches — whose mail memory read has that mail in a
+    file: each person a connector introduced in their own, a portal's notices in the portal's
+    (`context/workstreams`, the read model `GET /v1/workstreams` serves — this check reads the same
+    answer). A mailing, spam and an auto-reply are never a file and are not counted. It fails while a
+    named counterparty has such mail and nothing filed — usually mail read before the founder named
+    it, as a machine's noise — and names each. A brief that names no counterparty measures nothing,
+    and says so.
+    """
+    from datetime import datetime, timezone
+
+    from genios_engine.context.workstreams import files_for
+
+    name = "every counterparty the brief names that has mail has a file"
+    ws = files_for(conn, org, now=datetime.now(timezone.utc))
+    unfiled, partly = ws.unfiled, [n for n in ws.named if 0 < n.filed < n.mail]
+    if not ws.named:
+        measured = "not exercised — no counterparty the brief names has mail memory read"
+    else:
+        measured = (f"{len(ws.unfiled)} of {len(ws.named)} named counterparties with mail have no "
+                    f"file; {sum(n.filed for n in ws.named)} of {sum(n.mail for n in ws.named)} "
+                    f"of their mails are filed; {len(ws.files)} file(s) in all"
+                    + (f"; some of the mail of {len(partly)} is outside its file" if partly
+                       else ""))
+    return Check(
+        name=name, ok=not unfiled, measured=measured,
+        expected="every named counterparty whose mail was read has that mail in a file",
+        fix=("re-read the named counterparty's mail with the brief in force — "
+             "`scripts/rebuild_graph.py --org …` files mail read before the founder named it; mail "
+             "read after it and still unfiled is a filing defect: run "
+             "`tests/replays/test_every_piece_of_work_has_a_file.py`"),
+        detail=[f"{n.named} — \"{n.line}\": {n.mail} mail read, none filed" for n in unfiled]
+               + [f"{n.named}: {n.filed} of {n.mail} filed" for n in partly])
+
+
 CHECKS = (
     check_every_emitted_event_is_routed,
     check_parked_errors_are_readable,
@@ -564,6 +600,7 @@ CHECKS = (
     check_every_situation_and_card_says_how_it_ended,
     check_the_company_brief_exists_and_is_current,
     check_every_gmail_message_in_the_window_has_its_content,
+    check_every_named_counterparty_has_a_file,
 )
 
 

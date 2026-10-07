@@ -24,8 +24,9 @@ T0 = datetime(2026, 9, 3, 18, 0, tzinfo=timezone.utc)
 UNSUBSCRIBE = {"List-Unsubscribe": "<https://introly.test/u/abc>"}
 
 
-def brief(org: str, *, connectors=(CONNECTOR,), watchlist=(WATCHED,)) -> CompanyBrief:
-    """The brief the founder accepted: each connector by its address, each portal by its domain."""
+def brief(org: str, *, connectors=(CONNECTOR,), watchlist=(WATCHED,), people=()) -> CompanyBrief:
+    """The brief the founder accepted: each connector and person by its address, each portal by
+    its domain."""
     lines = [CompanyBriefLine(line_id=f"cbl_c{i}", section="connectors", address=a,
                               text=f"{a.split('@')[1].split('.')[0].title()} — introduces the "
                                    "founder to people")
@@ -33,6 +34,9 @@ def brief(org: str, *, connectors=(CONNECTOR,), watchlist=(WATCHED,)) -> Company
     lines += [CompanyBriefLine(line_id=f"cbl_w{i}", section="watchlist", domain=d,
                                text=f"{d.split('.')[0].title()} — a portal the founder watches")
               for i, d in enumerate(watchlist)]
+    lines += [CompanyBriefLine(line_id=f"cbl_p{i}", section="people", address=a,
+                               text=f"{a.split('@')[0].title()} — someone the founder works with")
+              for i, a in enumerate(people)]
     return compose(org_id=org, company="Nimbus Labs", founder="Arjun Rao", lines=lines)
 
 

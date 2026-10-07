@@ -5633,7 +5633,9 @@ yc2_w27_s09:
                         introduction or nudge (`thread.last_inbound`, `thread.ball_in_court`) is written
                         on each person it introduces, never on the connector, so the legacy
                         `unanswered_email` rule asks the founder to answer the person (03 F81); the
-                        connector's own ask keeps it.
+                        connector's own ask keeps it. Nor is a watched portal's machine address ever
+                        owed a reply (what its notice asks is an open ask on the portal's file); a
+                        person at a watched domain is owed one as anyone is.
                       artifact: genios_engine/context/pipeline.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_the_connector_is_never_owed_a_reply.py -q
                       depends_on: [M27.C1.L-logic.V0.U02, M27.C1.L-logic.V1.U04]
@@ -5647,11 +5649,14 @@ yc2_w27_s09:
                     - id: M27.C4.L-logic.V1.U01
                       what: >
                         New `context/workstreams.files_for(conn, org, *, now)` — deterministic, no
-                        model, no table: per file the kind (intro for a connector's contact, the
-                        watched domain's line, an in-motion line's kind once it names one — D31), the
-                        counterparty, the member events, the last touch, the open asks with who owes
-                        them and whose move it is; a brief-named counterparty with mail and no file is
-                        listed as such.
+                        model, no table: a file is one anchor's correlations (every domain, every
+                        generation); per file the kind, the brief's word (connector, watched, person,
+                        intro — an in-motion line's kind once it names a counterparty, D31), the line
+                        behind it, who introduced it, the counterparty, the member events, the first
+                        and last touch, the open asks with who owes them, and whose move it is (ours
+                        while anyone in it waits on us); every named counterparty with how much of its
+                        mail is filed — one with mail and none filed is unfiled. An org-level reader:
+                        nothing a seat captured privately.
                       artifact: genios_engine/context/workstreams.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_the_files_are_listed.py -q
                       depends_on: [M27.C1.L-logic.V1.U03, M27.C1.L-logic.V1.U04, M27.C2.L-logic.V0.U01, M27.C3.L-logic.V0.U01]
@@ -5669,7 +5674,9 @@ yc2_w27_s09:
                     - id: M27.C4.L-interface.V2.U03
                       what: >
                         `scripts/pipeline_health.py` — *every counterparty the brief names that has
-                        mail has a file*: fails while one has none, and names it.
+                        mail has a file*, read from the same answer the API serves: fails while one
+                        has mail memory read and none filed (a mailing, spam, an auto-reply are not
+                        counted), and names it; says when it measured nothing.
                       artifact: scripts/pipeline_health.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/scripts/test_pipeline_health_files.py -q
                       depends_on: [M27.C4.L-logic.V1.U01]

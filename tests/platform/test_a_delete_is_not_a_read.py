@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 2_999, (
+    assert r["statements"] == 3_006, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -335,6 +335,10 @@ def test_the_statement_count_did_NOT_move():
     # (0 → 2); `context/pipeline._in_their_files` — the anchors of a thread's files (8 → 9);
     # `context/correlation._the_parties_files` — the same, to narrow a thread of several files (10 →
     # 11). Each a literal SELECT; measured per file against HEAD.
+    # ⛔ MOVED 2,999 → 3,006 by yc2_w27_s09/M27.C4.L-logic.V1.U01: `context/workstreams` — the read
+    # model's seven SELECTs (the files' members, nodes, who works at them, their turns, their open
+    # asks, who a connector introduced, the named counterparties' mail), each a literal (0 → 7).
+    # The health check beside it reads that answer and adds none (`pipeline_health` 24 → 24).
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

@@ -15,8 +15,8 @@ from __future__ import annotations
 
 import pytest
 
-from .workstream_world import (CONNECTOR, FOUNDER, T0, UNSUBSCRIBE, brief, facts, later, mention,
-                               node, process, reset, tenant)
+from .workstream_world import (CONNECTOR, FOUNDER, T0, UNSUBSCRIBE, WATCHED, brief, facts, later,
+                               mention, node, process, reset, tenant)
 
 pytestmark = pytest.mark.pg
 
@@ -101,6 +101,21 @@ def test_the_persons_own_reply_moves_the_turn_as_ever(store):
     process(store, ORG, event_id="evt_reply", sender=RAHUL, sender_name="Rahul Menon",
             thread="t_intro", company_brief=brief(ORG), at=later(1))
     assert _turn(store, RAHUL) == ("us", later(1).isoformat())
+
+
+def test_a_watched_portals_machine_address_is_never_owed_a_reply(store):
+    """Golden F02: "upload a board resolution on the portal within 7 days" is the founder's to do —
+    on the portal. It is an ask the notice makes, never a reply `updates@` waits for."""
+    process(store, ORG, event_id="evt_notice", sender=f"updates@{WATCHED}", thread="t_notice",
+            company_brief=brief(ORG))
+    assert _turn(store, f"updates@{WATCHED}") == (None, None)
+    assert node(store, ORG, "thread:t_notice") is None
+
+
+def test_a_person_at_a_watched_domain_is_owed_a_reply_as_anyone(store):
+    process(store, ORG, event_id="evt_mail", sender=f"divya@{WATCHED}", sender_name="Divya Raman",
+            thread="t_mail", company_brief=brief(ORG))
+    assert _turn(store, f"divya@{WATCHED}") == ("us", T0.isoformat())
 
 
 def test_without_a_brief_the_turn_is_where_it_always_was(store):
