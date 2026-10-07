@@ -813,6 +813,9 @@ _ORG_SCOPED_TABLES = [
     # L2.5.8's boundary ledger contains the candidate BSO (including evidence quotes) and the
     # reason it was admitted, held or rejected.  It is tenant content even when the candidate
     # never crossed the boundary, so reset must erase it as deliberately as a published signal.
+    # STEP-06 (migration 0194): what came of each ADMITTED candidate goes first — it hangs off the
+    # admission row by foreign key, and a tenant's situation ends are tenant content like the rest.
+    "situation_outcomes",
     "situation_admission_decisions",
     # X8/H8's Layer 2 pilot switch (migration 0106). Same argument as the row above it, and the
     # same behavioural direction: it names a person (`enabled_by`) and carries free text about the

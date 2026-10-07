@@ -440,5 +440,9 @@ def test_the_resolver_change_moved_no_coverage_verdict():
     # (YC-II W27 STEP-04, `yc2_w27_s04/M22.C1.L-contract.V0.U01`): one new table, read by
     # `platform/self_identity.identity_for`. An engine change, not a resolver change; the nine
     # write-only members above did not move.
-    assert len(TC.table_usage()) == 189
-    assert len(TC._known_tables()) == 191
+    # ⛔ RE-PINNED 189 → 190 and 191 → 192 on 2026-10-07 by migration `0194_situation_outcomes`
+    # (YC-II W27 STEP-06, `yc2_w27_s06/M24.C2.L-contract.V0.U01`): one new table, whose first
+    # reference is the tenant reset's `delete` list. An engine change, not a resolver change; its
+    # writer (`reason/situation_outcome_store.py`) and its reader are the next units.
+    assert len(TC.table_usage()) == 190
+    assert len(TC._known_tables()) == 192
