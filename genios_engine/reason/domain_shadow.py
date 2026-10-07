@@ -814,6 +814,12 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
         r_site_cache = PostgresSiteCache(engine=store.engine)
     except Exception:      # noqa: BLE001 — an unbuildable gate means no reading, never no sweep
         r_site_gate, r_site_cache = None, None
+    # STEP-07 · THE COMPANY BRIEF, ONCE PER SWEEP, beside the gate and for the gate's reason: every
+    # situation R-6 reads in this pass is read under one brief. `current` reads on a connection of
+    # its own and fails open to the empty brief, which leaves R-6's prompt and seed exactly what
+    # they were — so a tenant without a brief is reasoned about as it was before STEP-07.
+    from genios_engine.platform.company_brief import current as current_company_brief
+    company_brief = current_company_brief(store.engine, org_id)
     adj, _node_types, obs_idx, fact_idx = _neighbor_index(store, org_id)
     # Every anchor's facts and observations in TWO org-wide reads instead of two per situation
     # (up to 400 round trips per sweep). The bulk loaders use the per-node load's filters and
@@ -1289,7 +1295,8 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                         # a number is how a reasoner concludes from evidence nobody chose to
                         # remove".
                         on_over_budget=lambda sentence: counts.__setitem__(
-                            "slice_over_budget", counts.get("slice_over_budget", 0) + 1))
+                            "slice_over_budget", counts.get("slice_over_budget", 0) + 1),
+                        company_brief=company_brief)     # STEP-07 · read once, beside the gate
                     counts["reasoner_unknown" if _step is ReasonerStep.UNKNOWN
                            else "reasoner_consulted"] += 1
                     # ⛔ RECORDED EITHER WAY, INCLUDING THE ONE THAT COST NOTHING. `unknown` is a
