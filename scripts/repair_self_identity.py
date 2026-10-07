@@ -31,7 +31,6 @@ The target goes through `scripts/_db.py`: no fallback to the application's datab
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import sys
 from dataclasses import dataclass, field
@@ -147,7 +146,7 @@ def apply(engine, repair: Plan) -> dict[str, int]:
     that moved meanwhile, changes nothing."""
     from sqlalchemy import text
 
-    from genios_engine.platform.ids import new_id
+    from genios_engine.platform import card_lifecycle
 
     done = {"threads": 0, "signals": 0, "cards": 0}
     org = repair.org_id
@@ -162,17 +161,13 @@ def apply(engine, repair: Plan) -> dict[str, int]:
                 "update signals set status = 'expired' where org_id = :o and signal_id = :s "
                 "   and status = 'open'"), {"o": org, "s": signal_id}).rowcount
         for card_id, subject in repair.cards:
-            changed = c.execute(text(
-                "update cards set state = 'expired' where org_id = :o and card_id = :c "
-                "   and state = any(:open)"), {"o": org, "c": card_id, "open": list(OPEN_STATES)}).rowcount
-            if changed:
-                c.execute(text(
-                    "insert into card_events (id, card_id, org_id, kind, cause, actor_id, detail) "
-                    "values (:id, :c, :o, 'card.retired', 'subject_is_us', 'repair_self_identity', "
-                    "        cast(:d as jsonb))"),
-                    {"id": new_id("cev"), "c": card_id, "o": org,
-                     "d": json.dumps({"business_subject": subject, "by": "scripts/repair_self_identity.py"})})
-                done["cards"] += changed
+            # STEP-06: through the one writer of `expired`, keeping `card.retired` / `subject_is_us`.
+            moved = card_lifecycle.expire_cards(
+                c, org_id=org, card_ids=[card_id], cause=card_lifecycle.SUBJECT_IS_US,
+                kind=card_lifecycle.RETIRED, actor="repair_self_identity",
+                detail={"business_subject": subject, "by": "scripts/repair_self_identity.py"},
+                states=OPEN_STATES)
+            done["cards"] += len(moved)
     return done
 
 

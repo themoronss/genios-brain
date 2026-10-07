@@ -19,6 +19,7 @@ from genios_engine.platform.auth import (AuthCtx, get_auth_ctx, get_current_org,
                                          require_workspace_user)
 from genios_engine.platform.cache import get_cache
 from genios_engine.platform.config import get_settings
+from genios_engine.platform import card_lifecycle
 from genios_engine.platform.canonical import stable_id
 from genios_engine.platform.ids import new_id
 from genios_engine.platform.logging import get_logger
@@ -1186,16 +1187,11 @@ def dismiss_insight(insight_id: str,
             raise HTTPException(409, "insight is no longer actionable")
         if not may_touch_card(c, ctx, insight_id, card.assignee):
             raise HTTPException(403, "insight is assigned to a different seat")
-        c.execute(text(
-            "update cards set state='expired' where card_id=:card and org_id=:o"),
-            {"card": insight_id, "o": org_id})
-        event_id = stable_id("cev", {"org_id": org_id, "card_id": insight_id,
-                                     "kind": "card.dismissed"})
-        c.execute(text(
-            "insert into card_events (id,card_id,org_id,kind,cause,actor_id,detail) "
-            "values (:id,:card,:o,'card.dismissed','extension',:actor,"
-            "'{\"via\":\"extension\"}'::jsonb) on conflict (id) do nothing"),
-            {"id": event_id, "card": insight_id, "o": org_id, "actor": actor_id})
+        # STEP-06: through the one writer of `expired`, keeping `card.dismissed` / `extension`. The
+        # locked select above proved the card open, so it moves exactly once.
+        card_lifecycle.expire_cards(c, org_id=org_id, card_ids=[insight_id],
+                                    cause=card_lifecycle.EXTENSION, kind=card_lifecycle.DISMISSED,
+                                    actor=actor_id, detail={"via": "extension"})
     return {"ok": True, "dismissed": True}
 
 

@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 2_958, (
+    assert r["statements"] == 2_944, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -281,6 +281,11 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 2,955 → 2,958 by yc2_w27_s06/M24.C1.L-contract.V0.U01: `platform/card_lifecycle` — the
     # one writer of a card's `expired` state: the targeted update, the lapse sweep's update and the
     # `card_events` insert, three literals (a new file: 0 → 3).
+    # ⛔ MOVED 2,958 → 2,944 by yc2_w27_s06/M24.C1 (V1.U01–V2.U03): the twelve expiries now call that
+    # writer, so their own SQL is gone — `reason/runner` −2, `reason/composer` −4, `reason/publication`
+    # −1, `reason/domain_shadow` −1, `feedback/calibrate` −1, `deliver/store` −1 (the lapse update),
+    # `api/intelligence_routes` −2 and `scripts/repair_self_identity` −2 (each an update and its event
+    # insert). Measured per file against HEAD.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

@@ -36,6 +36,7 @@ from typing import Any
 from sqlalchemy import text
 
 from genios_engine.contracts.reasoning import DecisionOutcome
+from genios_engine.platform import card_lifecycle
 from genios_engine.platform.ids import new_id
 
 from .authority import projected_score
@@ -269,10 +270,9 @@ def publish_native_signal(store, *, org_id: str, publication: NativePublication,
             {"o": org_id, "r": publication.rule_id, "n": publication.subject_node_id,
              "p": pack_id, "pv": pack_version}).fetchall()
         if retired:
-            conn.execute(text(
-                "update cards set state='expired' where org_id=:o and signal_id=any(:ids) "
-                "and state in ('queued','surfaced','snoozed','claimed','delivered')"),
-                {"o": org_id, "ids": [item.signal_id for item in retired]})
+            # STEP-06: a newer claim replaces this subject's last one — its cards say so.
+            card_lifecycle.expire_cards(conn, org_id=org_id, cause=card_lifecycle.REPLACED,
+                                        signal_ids=[item.signal_id for item in retired])
         row = conn.execute(text(
             "insert into signals (signal_id, org_id, pack_id, pack_version, rule_id, "
             "rule_version, level, "

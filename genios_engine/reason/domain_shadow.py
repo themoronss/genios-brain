@@ -92,6 +92,7 @@ from genios_engine.platform.l4_activation import (
     is_l4_activated,
     missing_cross_layer_preconditions,
 )
+from genios_engine.platform import card_lifecycle
 from genios_engine.platform.ids import new_id
 from genios_engine.platform.self_identity import identity_for
 from genios_engine.reason.adapters.expertise import expertise_capability_manifest
@@ -320,10 +321,9 @@ def _emit_capability_signal(conn, *, org_id: str, node_id: str, package, executi
         {"o": org_id, "p": pack["pack_id"], "pv": pack["version"],
          "r": rule_id, "n": node_id}).fetchall()
     if retired:
-        conn.execute(text(
-            "update cards set state='expired' where org_id=:o and signal_id=any(:ids) "
-            "and state in ('queued','surfaced','snoozed','claimed','delivered')"),
-            {"o": org_id, "ids": [item.signal_id for item in retired]})
+        # STEP-06: the refreshed advice replaces the stale signal — its cards say so.
+        card_lifecycle.expire_cards(conn, org_id=org_id, cause=card_lifecycle.REPLACED,
+                                    signal_ids=[item.signal_id for item in retired])
     row = conn.execute(text(
         "insert into signals (signal_id, org_id, pack_id, pack_version, rule_id, rule_version, "
         "level, subject_node_id, score, score_inputs, reason_code, evidence, play, eval_time, "

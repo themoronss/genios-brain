@@ -19,6 +19,7 @@ from genios_engine.packs.wiring import (DEFAULT_PACK_ID, ensure_default, ensure_
                                         make_registry)
 from genios_engine.platform.config import get_settings, l1_seam_enabled
 from genios_engine.platform.funnel import CAPABILITY_RESOLVED, DECISION_EMITTED, NO_CAPABILITY
+from genios_engine.platform import card_lifecycle
 from genios_engine.platform.ids import new_id
 from genios_engine.platform.self_identity import identity_for
 
@@ -799,10 +800,9 @@ def _emit(store, org_id, rule, node_id, S, inputs, evidence, eval_time, snapshot
             {"o": org_id, "r": rule.id, "n": node_id,
              "p": pack_id, "pv": pack_version}).fetchall()
         if retired:
-            c.execute(text(
-                "update cards set state='expired' where org_id=:o and signal_id=any(:ids) "
-                "and state in ('queued','surfaced','snoozed','claimed','delivered')"),
-                {"o": org_id, "ids": [item.signal_id for item in retired]})
+            # STEP-06: the card leaves with its reason — a newer signal replaced the one it carried.
+            card_lifecycle.expire_cards(c, org_id=org_id, cause=card_lifecycle.REPLACED,
+                                        signal_ids=[item.signal_id for item in retired])
         row = c.execute(text(
             "insert into signals (signal_id, org_id, pack_id, pack_version, rule_id, "
             "rule_version, level, "
@@ -1650,11 +1650,10 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
                                 "and signal_id=:id and status='open' returning signal_id"),
                                 {"o": org_id, "id": sig.signal_id}).first()
                             if resolved is not None:
-                                c.execute(text(
-                                    "update cards set state='expired' where org_id=:o "
-                                    "and signal_id=:id and state in "
-                                    "('queued','surfaced','snoozed','claimed','delivered')"),
-                                    {"o": org_id, "id": sig.signal_id})
+                                # STEP-06: the rule no longer holds on its subject — said so.
+                                card_lifecycle.expire_cards(
+                                    c, org_id=org_id, cause=card_lifecycle.RULE_CLEARED,
+                                    signal_ids=[sig.signal_id])
                                 out["resolved"] += 1
 
     _flush_suppress_batch(store)     # one bulk INSERT for every suppression buffered this sweep

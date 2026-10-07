@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import bindparam, text
 
 from genios_engine.platform.db import get_engine
+from genios_engine.platform import card_lifecycle
 from genios_engine.platform.ids import new_id
 from genios_engine.reason.authority import (
     AUTHORITATIVE_SCORE_SQL,
@@ -344,11 +345,8 @@ class CardStore:
           • wake snoozed cards past snooze_until → 'queued' (snooze was a black hole)."""
         now = eval_time or datetime.now(timezone.utc)
         with self._engine.begin() as c:
-            expired = c.execute(text(
-                "update cards set state='expired' where state in ('queued','surfaced','snoozed') "
-                "and expires_at < :now returning card_id, org_id"), {"now": now}).fetchall()
-            for r in expired:
-                self.log_event(r.card_id, r.org_id, "window.lapsed", cause="expired", conn=c)
+            # STEP-06: through the one writer of `expired`, keeping `window.lapsed` / `expired`.
+            expired = card_lifecycle.expire_lapsed(c, now=now)
             woken = c.execute(text(
                 "update cards set state='queued', snooze_until=null where state='snoozed' "
                 "and snooze_until is not null and snooze_until <= :now "
@@ -562,9 +560,12 @@ class CardStore:
     OPEN_STATES = ("queued", "surfaced", "snoozed", "claimed", "delivered")
 
     #: Event kinds that describe what HAPPENED to a card, as opposed to it being shown. The newest
-    #: one is the history row's "last action" line.
+    #: one is the history row's "last action" line. ⛔ STEP-06 (03 F75): `card.resolved` (the team
+    #: lane) and `card.retired` (STEP-04's repair) were written and never shown, and `card.expired` is
+    #: every expiry that used to write nothing — a card that left that way showed no reason.
     _OUTCOME_KINDS = ("human.card_action", "ui.requeued", "agent.result", "human.override",
-                      "success.detected", "window.lapsed", "card.dismissed")
+                      "success.detected", "window.lapsed", "card.dismissed", "card.expired",
+                      "card.resolved", "card.retired")
 
     def history(self, org_id: str, *, assignee: str | None = None, admin: bool = False,
                 states=HISTORY_STATES, since: datetime | None = None,

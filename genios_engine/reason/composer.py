@@ -19,6 +19,7 @@ from sqlalchemy import text
 from genios_engine.contracts.reasoning import (ContextSnapshot, EvidenceRef, ExecutionMode,
                                                ReasoningRequest)
 from genios_engine.packs.capabilities import DEAL_HEALTH_V1
+from genios_engine.platform import card_lifecycle
 from genios_engine.platform.ids import new_id
 from genios_engine.reason.adapters.legacy_context import semantic_legacy_value
 from genios_engine.reason.audit import persist_execution
@@ -276,10 +277,10 @@ def compose_deal_health(store, org_id: str, eval_time, snapshot_id, adj: dict | 
                     c.execute(text(
                         "update signals set status='resolved' where org_id=:o and signal_id=:id"),
                         {"o": org_id, "id": prev["signal_id"]})
-                    c.execute(text(
-                        "update cards set state='expired' where org_id=:o and signal_id=:id "
-                        "and state in ('queued','surfaced','snoozed','claimed','delivered')"),
-                        {"o": org_id, "id": prev["signal_id"]})
+                    # STEP-06: retired, and today's budget holds its successor — said so.
+                    card_lifecycle.expire_cards(c, org_id=org_id,
+                                                cause=card_lifecycle.BUDGET_HELD,
+                                                signal_ids=[prev["signal_id"]])
             budget_held += 1
             continue
         try:
@@ -305,20 +306,19 @@ def compose_deal_health(store, org_id: str, eval_time, snapshot_id, adj: dict | 
                     c.execute(text(
                         "update signals set status='expired' where org_id=:o and signal_id=:id"),
                         {"o": org_id, "id": prev["signal_id"]})
-                    c.execute(text(
-                        "update cards set state='expired' where org_id=:o and signal_id=:id "
-                        "and state in ('queued','surfaced','snoozed','claimed','delivered')"),
-                        {"o": org_id, "id": prev["signal_id"]})
+                    # STEP-06: the fresh audit no longer authorizes delivery — said so.
+                    card_lifecycle.expire_cards(c, org_id=org_id,
+                                                cause=card_lifecycle.NOT_AUTHORIZED,
+                                                signal_ids=[prev["signal_id"]])
             continue
         with store.engine.begin() as c:
             if prev:                                    # member set changed → resolve the stale one
                 c.execute(text(
                     "update signals set status='resolved' where org_id=:o and signal_id=:id"),
                     {"o": org_id, "id": prev["signal_id"]})
-                c.execute(text(
-                    "update cards set state='expired' where org_id=:o and signal_id=:id "
-                    "and state in ('queued','surfaced','snoozed','claimed','delivered')"),
-                    {"o": org_id, "id": prev["signal_id"]})
+                # STEP-06: the member set changed; a newer composite replaces this one — said so.
+                card_lifecycle.expire_cards(c, org_id=org_id, cause=card_lifecycle.REPLACED,
+                                            signal_ids=[prev["signal_id"]])
             row = c.execute(text(
                 "insert into signals (signal_id, org_id, pack_id, pack_version, rule_id, "
                 "rule_version, level, "
@@ -356,10 +356,9 @@ def compose_deal_health(store, org_id: str, eval_time, snapshot_id, adj: dict | 
             c.execute(text(
                 "update signals set status='resolved' where org_id=:o and signal_id=any(:ids)"),
                 {"o": org_id, "ids": stale})
-            c.execute(text(
-                "update cards set state='expired' where org_id=:o and signal_id=any(:ids) "
-                "and state in ('queued','surfaced','snoozed','claimed','delivered')"),
-                {"o": org_id, "ids": stale})
+            # STEP-06: the parent plan is gone — said so.
+            card_lifecycle.expire_cards(c, org_id=org_id, cause=card_lifecycle.PLAN_GONE,
+                                        signal_ids=stale)
     result = {"emitted": emitted, "active": active, "audit_failed": audit_failed}
     if budget_held:
         result["budget_held"] = budget_held

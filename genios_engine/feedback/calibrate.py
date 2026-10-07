@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import text
 
+from genios_engine.platform import card_lifecycle
 from genios_engine.platform.canonical import stable_id
 from genios_engine.reason.authority import (
     AUDITED_CARD_JUDGMENTS_CTES,
@@ -420,10 +421,9 @@ def run_calibration(store, org_id: str, *, registry=None, pack_id: str = "sales"
                 {"o": org_id, "p": pack_id, "pv": pack_version,
                  "rules": muted}).fetchall()]
             if signal_ids:
-                conn.execute(text(
-                    "update cards set state='expired' where org_id=:o and signal_id=any(:ids) "
-                    "and state in ('queued','surfaced','snoozed','claimed','delivered')"),
-                    {"o": org_id, "ids": signal_ids})
+                # STEP-06: a muted rule's cards leave saying so (`06` D13: only on an armed tenant).
+                card_lifecycle.expire_cards(conn, org_id=org_id, cause=card_lifecycle.RULE_MUTED,
+                                            signal_ids=signal_ids)
                 conn.execute(text(
                     "update signals set status='expired' where org_id=:o "
                     "and signal_id=any(:ids) and status='open'"),
