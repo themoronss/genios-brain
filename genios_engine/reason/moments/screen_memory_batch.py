@@ -13,7 +13,8 @@ would never reach memory. So:
                seconds`): once the oldest queued job is `screen_memory_batch_wait_minutes` old,
                up to `screen_memory_batch_max` queued jobs go out as ONE batch — the T1 model,
                temperature 0, a short prompt: who the manager is, their local date / time and
-               the next 14 days, the text; JSON {work, summary, items[0..5]}.
+               the next 14 days, the company brief the founder accepted (STEP-07; nothing when
+               there is none), the text; JSON {work, summary, items[0..5]}.
     results    a later tick polls each submitted batch; once it has ended, each succeeded
                result is grounded by the instant judge's own `screen_insight.judge` (an item whose
                quote is not in the text is dropped; the manager is never "who"; weekday dates
@@ -56,9 +57,13 @@ POLL_BATCHES = 20
 DONE_RESULTS = frozenset({"succeeded"})
 RETRY_RESULTS = frozenset({"errored", "expired", "canceled"})
 
+#: `{company_brief}` is the tenant's company brief (`speedrun008/YC-II W27/` STEP-07 §8.3): its
+#: own paragraph beside who the manager is and when, before the rules and the text — so "work" is
+#: judged knowing whose work it is. Empty when the founder has accepted no line, and the prompt is
+#: then byte for byte what it was.
 _PROMPT = """You update a busy manager's memory from one chat or page they had on screen ({app}).
 The manager: {me}. Lines starting "You:" are the manager's own; the manager is never "who".
-For the manager it was {now_local}.
+For the manager it was {now_local}.{company_brief}
 Work = customers, clients, colleagues, vendors, partners, investors, candidates being hired, deals,
 projects, the business's money. Personal = family, friends, and the manager's OWN job search,
 shopping, banking and personal admin (rent, bills, deliveries, orders).
@@ -140,10 +145,15 @@ class _Seats:
         return self._memo[k]
 
 
-def build_prompt(*, app: str | None, me: list[str], now_local: str, text: str) -> str:
+def build_prompt(*, app: str | None, me: list[str], now_local: str, text: str,
+                 company_brief: str = "") -> str:
+    """One job's prompt. `company_brief` is the tenant's `CompanyBrief.prompt_block()` (STEP-07);
+    "" — no accepted line — leaves the prompt exactly as it was."""
+    brief = (company_brief or "").strip()
     return _PROMPT.format(app=app or "an app",
                           me=", ".join(m for m in me if m) or "(unknown)",
-                          now_local=now_local, text=text)
+                          now_local=now_local, text=text,
+                          company_brief=f"\n\n{brief}\n" if brief else "")
 
 
 # ── the client ──────────────────────────────────────────────────────────────────────────────────
@@ -169,6 +179,7 @@ def submit(engine, *, client, now: datetime, crypto_key: str, wait_minutes: int,
     """Queued jobs → one batch, once the oldest has waited `wait_minutes` (or the batch is full).
     The claim holds the rows (skip locked) across the create call, so two workers never send the
     same job; a failed create leaves them queued. Returns jobs submitted."""
+    from genios_engine.platform import company_brief as CB
     from genios_engine.platform.crypto import decrypt
     from genios_engine.reason.llm_sites import tier_model
     from genios_engine.reason.moments import screen_insight as SI
@@ -186,6 +197,11 @@ def submit(engine, *, client, now: datetime, crypto_key: str, wait_minutes: int,
             "where status = 'queued' order by created_at, id limit :n for update skip locked"),
             {"n": max_jobs}).fetchall()
         seats = _Seats(c)
+        # STEP-07: each job's tenant's company brief, read once per tenant per batch. Through the
+        # ENGINE, never this claim's connection: a brief that cannot be read must cost the brief
+        # (`current` answers the empty one), and a failed statement inside this transaction would
+        # abort the claim and leave the queue stuck behind it.
+        briefs: dict[str, str] = {}
         requests, sent, broken = [], [], []
         for r in rows:
             try:
@@ -194,8 +210,11 @@ def submit(engine, *, client, now: datetime, crypto_key: str, wait_minutes: int,
                 broken.append((r.id, f"undecryptable: {type(exc).__name__}"))
                 continue
             _email, me, tz = seats.get(r.org_id, r.seat_id)
+            if r.org_id not in briefs:
+                briefs[r.org_id] = CB.current(engine, r.org_id).prompt_block()
             prompt = build_prompt(app=r.app, me=me, text=screen,
-                                  now_local=SI.local_label(aware(r.created_at), tz))
+                                  now_local=SI.local_label(aware(r.created_at), tz),
+                                  company_brief=briefs[r.org_id])
             requests.append({"custom_id": r.id, "params": {
                 "model": model, "max_tokens": MAX_TOKENS, "temperature": 0,
                 "messages": [{"role": "user", "content": prompt}]}})
