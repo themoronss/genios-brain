@@ -404,30 +404,36 @@ def _named_counterparties(conn, org_id: str, brief: CompanyBrief | None, lines: 
                  for n, (m, f, x) in sorted(mail.items()) if m or x)
 
 
-def as_dict(ws: Workstreams, *, now: datetime) -> dict:
-    """The read model as JSON — what `GET /v1/workstreams` returns."""
+def file_as_dict(f: WorkFile) -> dict:
+    """One file as JSON — an entry of `GET /v1/workstreams`, and the head of
+    `GET /v1/workstreams/{file_id}`."""
     def iso(at):
         return at.isoformat() if at else None
 
     def said(measured):
         return measured.as_dict() if measured is not None else None
     return {
+        "file_id": f.file_id, "kind": f.kind, "line": f.line,
+        "introduced_by": f.introduced_by,
+        "counterparty": {"name": f.counterparty, "key": f.counterparty_key,
+                         "type": f.counterparty_type},
+        "domains": list(f.domains), "correlations": list(f.correlations),
+        "events": list(f.events), "first_touch": iso(f.first_touch),
+        "last_touch": iso(f.last_touch), "days_quiet": f.days_quiet,
+        "whose_move": f.whose_move,
+        "open_asks": [{"loop_id": a.loop_id, "kind": a.kind, "asked_by": a.asked_by,
+                       "owed_by": a.owed_by, "thread_id": a.thread_id,
+                       "opened_at": iso(a.opened_at)} for a in f.open_asks],
+        "introductions": said(f.introductions), "replied": said(f.replied),
+        "calls": said(f.calls),
+    }
+
+
+def as_dict(ws: Workstreams, *, now: datetime) -> dict:
+    """The read model as JSON — what `GET /v1/workstreams` returns."""
+    return {
         "as_of": now.isoformat(),
-        "files": [{
-            "file_id": f.file_id, "kind": f.kind, "line": f.line,
-            "introduced_by": f.introduced_by,
-            "counterparty": {"name": f.counterparty, "key": f.counterparty_key,
-                             "type": f.counterparty_type},
-            "domains": list(f.domains), "correlations": list(f.correlations),
-            "events": list(f.events), "first_touch": iso(f.first_touch),
-            "last_touch": iso(f.last_touch), "days_quiet": f.days_quiet,
-            "whose_move": f.whose_move,
-            "open_asks": [{"loop_id": a.loop_id, "kind": a.kind, "asked_by": a.asked_by,
-                           "owed_by": a.owed_by, "thread_id": a.thread_id,
-                           "opened_at": iso(a.opened_at)} for a in f.open_asks],
-            "introductions": said(f.introductions), "replied": said(f.replied),
-            "calls": said(f.calls),
-        } for f in ws.files],
+        "files": [file_as_dict(f) for f in ws.files],
         "named": [{"named": n.named, "line": n.line, "mail": n.mail, "filed": n.filed,
                    "misfiled": n.misfiled} for n in ws.named],
         "unfiled": [n.named for n in ws.unfiled],
@@ -436,4 +442,4 @@ def as_dict(ws: Workstreams, *, now: datetime) -> dict:
 
 
 __all__ = ["Ask", "KINDS", "NEVER_A_FILE", "Named", "WorkFile", "Workstreams", "as_dict",
-           "files_for"]
+           "file_as_dict", "files_for"]

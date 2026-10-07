@@ -122,22 +122,6 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "*'Every lens one entity appears in.'* One test caller. The multi-lens view of a node, and every live reader asks for one lens at a time",
         "MOVES WHEN a surface shows one entity across lenses — an entity page is the obvious caller and does not exist"),
 
-    "workstream_timeline.timeline_for": (
-        "STEP-10's file timeline (`yc2_w27_s10 · M29.C2.L-logic.V2.U01`): every touch of a file both ways, who did it, its evidence, the gaps and whether the silence outlasts them — a read model built BEFORE its route, so the route and the expert's numbers read one answer. Unreached between this unit and the next one in the same tree, a declared gap of one unit",
-        "MOVES WHEN `GET /v1/workstreams/{file_id}` (`api/workstream_routes.py`, `M29.C2.L-interface.V3.U02`) serves it"),
-
-    "workstream_timeline.as_dict": (
-        "The file timeline as JSON — the shape `GET /v1/workstreams/{file_id}` returns, with each statistic as its `Measured` (value, n, basis). Built with `timeline_for` and unreached for the same reason: its caller is the route, the next unit of the same tree",
-        "MOVES WITH `workstream_timeline.timeline_for` — the route reads both or neither"),
-
-    "workstream_numbers.numbers_for": (
-        "STEP-10's file numbers (`yc2_w27_s10 · M29.C2.L-logic.V2.U04`): each person's reply time and yours measured inside each conversation at any n, the normals the waiting pass wrote, a bounce, the file's mailboxes and whether \"no reply\" may be said — read before the route that serves them, so the route stays a thin reader",
-        "MOVES WHEN `GET /v1/workstreams/{file_id}` (`api/workstream_routes.py`, `M29.C2.L-interface.V3.U02`) serves a file's numbers"),
-
-    "workstream_numbers.as_dict": (
-        "The file numbers as JSON — each statistic as its `Measured`, each instant as an instant — the shape `GET /v1/workstreams/{file_id}` returns beside the timeline. Unreached for the same reason as `numbers_for`, its pair",
-        "MOVES WITH `workstream_numbers.numbers_for` — the route reads both or neither"),
-
 }
 
 
