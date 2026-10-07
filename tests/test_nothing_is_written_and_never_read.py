@@ -210,6 +210,13 @@ KNOWN_UNREAD: dict[str, str] = {
         "it yet. MOVES WHEN: the file route (`GET /v1/workstreams/{file_id}`, "
         "M29.C2.L-interface.V3.U02) shows it beside their reply time, with its n, and this moves "
         "to MUST_BE_READ.",
+    "delivery.status":
+        "A bounce on the address it is about (`context/delivery`, M29.C3.L-logic.V1.U02, `06` "
+        "D38): `failed` on the node of the address a delivery report says could not be reached. "
+        "The wait it ends is read from the `delivery_failure` observation beside it "
+        "(`context/waiting`), so the fact itself has no reader yet. MOVES WHEN: the file route "
+        "(`GET /v1/workstreams/{file_id}`, M29.C2.L-interface.V3.U02) shows a file's bounces from "
+        "it, and this moves to MUST_BE_READ.",
     "derived.our_reply_days":
         "Your reply time across every counterparty, pooled on the tenant node at `NORMAL_AT` "
         "answers or more with `derived.our_reply_n` beside it, retired below — written by "

@@ -31,6 +31,12 @@ YOUR REPLY TIME (STEP-10, `M29.C1.L-logic.V2.U03`) is the mirror: from a mail so
 next mail to them in the same conversation — per counterparty (`party.our_reply_days`, `…_n`) and overall
 on the tenant node (`derived.our_reply_days`, `…_n`), each only at `NORMAL_AT` answers. "Us" is the
 pipeline's direction, which is STEP-04's identity; nothing here asks it again.
+
+A BOUNCE ENDS THE WAIT (STEP-10, `M29.C3.L-logic.V2.U03`, `06` D38). A mail that never arrived is not
+waited on: when `context/delivery` has filed a `delivery_failure` on a counterparty at or after our last
+mail to them, their waiting-only facts are retired — on a person, because their address bounced; on a
+thread, only when every outside recipient of our last mail in it bounced. A newer mail to them is a new
+wait; a delay notice files nothing, so it ends nothing.
 """
 from __future__ import annotations
 
@@ -46,6 +52,7 @@ from sqlalchemy import bindparam, text
 
 from genios_engine.context.derived import _write_fact, retire_facts
 from genios_engine.contracts.measured import NORMAL_AT, median_of
+from genios_engine.platform.identity import norm_email
 
 #: How far back the timeline is reconstructed.  A follow-up count is about the CURRENT exchange,
 #: and `situations.DORMANT_AFTER_DAYS` already declares that a conversation older than 45 days has
@@ -143,6 +150,73 @@ _ASKS = (
     "where f.org_id = :o and f.field = 'thread.last_outbound' and f.status = 'active' "
     "  and o.status = 'active' and o.kind in :kinds"
 )
+
+
+#: STEP-10 · every counterparty a delivery report said we could not reach, and when: the latest
+#: `delivery_failure` (`context/delivery.KIND`) on each node — a person's address, or the thread the
+#: original was in.
+_BOUNCES = (
+    "select o.subject_node_id as node_id, n.node_type as node_type, n.canonical_key as key, "
+    "       max(o.occurred_at) as at "
+    "from graph_observations o "
+    "join graph_nodes n on n.org_id = o.org_id and n.node_id = o.subject_node_id "
+    "     and n.valid_to is null "
+    "where o.org_id = :o and o.kind = :kind and o.status = 'active' "
+    "group by o.subject_node_id, n.node_type, n.canonical_key"
+)
+
+#: Who our last mail in a thread went to — asked only of a thread a bounce touched.
+_LAST_SENT_TO = (
+    "select se.recipients as recipients "
+    "from graph_facts f "
+    "join graph_source_refs r on r.fact_version_id = f.fact_version_id and r.org_id = f.org_id "
+    "join source_events se on se.event_id = r.event_id and se.org_id = r.org_id "
+    "where f.org_id = :o and f.subject_node_id = :n and f.field = 'thread.last_outbound' "
+    "order by se.occurred_at desc, se.event_id desc limit 1"
+)
+
+
+def _moment(at) -> datetime | None:
+    """A driver may hand back a string (SQLite) — the same coercion the timeline applies."""
+    if isinstance(at, str):
+        try:
+            at = datetime.fromisoformat(at.replace("Z", "+00:00"))
+        except ValueError:
+            return None
+    if at is None:
+        return None
+    return at if at.tzinfo else at.replace(tzinfo=timezone.utc)
+
+
+def _bounces(c, org_id: str) -> dict[str, tuple[str, str, datetime]]:
+    """node id → (node type, canonical key, the latest bounce filed on it)."""
+    from genios_engine.context.delivery import KIND
+    out: dict[str, tuple[str, str, datetime]] = {}
+    for r in c.execute(text(_BOUNCES), {"o": org_id, "kind": KIND}):
+        at = _moment(r.at)
+        if at is not None:
+            out[str(r.node_id)] = (str(r.node_type), str(r.key), at)
+    return out
+
+
+def _bounced_since_our_last_mail(c, org_id: str, node_id: str, last_out: datetime | None,
+                                 bounces: Mapping[str, tuple[str, str, datetime]], us) -> bool:
+    """Did our last mail to this counterparty bounce? A person: their address bounced at or after
+    it. A thread: every outside recipient of our last mail in it bounced at or after it — one
+    partner's dead address does not end the wait on the partner whose mail arrived."""
+    hit = bounces.get(node_id)
+    if hit is None or last_out is None or hit[2] < last_out:
+        return False
+    if hit[0] != "thread":
+        return True
+    # Every bounced node by its key: a thread's key (`thread:<id>`) is never an address, so it
+    # matches no recipient and needs no filtering out.
+    by_address = {key: at for (_type, key, at) in bounces.values()}
+    row = c.execute(text(_LAST_SENT_TO), {"o": org_id, "n": node_id}).first()
+    theirs = {norm_email(a) for a in ((row.recipients if row else None) or ())
+              if norm_email(a) and not us.is_us(a)}
+    return bool(theirs) and all(by_address.get(a) is not None and by_address[a] >= last_out
+                                for a in theirs)
 
 
 def _days(later: datetime, earlier: datetime) -> int:
@@ -377,9 +451,23 @@ def compute_waiting(store, org_id: str, *, now: datetime | None = None) -> int:
                         for node_id, timeline in per_node.items()
                         if node_type.get(node_id) == "person"}
         firm_of = _firms(c, org_id)
+        bounces = _bounces(c, org_id)
+        us = None
+        if any(ntype == "thread" for ntype, _k, _at in bounces.values()):
+            from genios_engine.platform.self_identity import identity_for
+            us = identity_for(c, org_id)
 
         for node_id, timeline in per_node.items():
             state = _state(timeline, now)
+            # A BOUNCE ENDS THE WAIT (STEP-10, `06` D38): nobody is waited on for a reply to a mail
+            # that never arrived. Taken out of the state here, so the branch below retires the
+            # waiting-only facts an earlier pass wrote, exactly as it does when they answer.
+            if "thread.days_waiting" in state and _bounced_since_our_last_mail(
+                    c, org_id, node_id,
+                    max((at for direction, at in timeline if direction == "out"), default=None),
+                    bounces, us):
+                for field in WAITING_ONLY_FIELDS:
+                    state.pop(field, None)
             days, basis, n = cadence_for(node_id, gaps_by_node, firm_of)
             # THE FLOOR IS NOT A CADENCE and is not written as one. A number with no evidence
             # behind it would be indistinguishable from a measured one the moment it left this
