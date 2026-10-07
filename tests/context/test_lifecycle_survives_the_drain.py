@@ -70,6 +70,10 @@ def store():
             "status text, created_by_event_id text, occurred_at timestamp)",
             "create table graph_edges (org_id text, edge_type text, from_node_id text, "
             "to_node_id text, valid_to timestamp)",
+            # The timeline pools PEOPLE only (STEP-10: a thread node's facts are the same messages
+            # again) and asks who introduced whom (STEP-09), so it joins the node itself.
+            "create table graph_nodes (org_id text, node_id text, node_type text, "
+            "canonical_key text, valid_to timestamp, primary key (org_id, node_id))",
             "create table graph_source_refs (org_id text, event_id text, fact_version_id text)",
             "create table source_events (event_id text, org_id text, occurred_at timestamp, actor text)",
         ):
@@ -81,7 +85,7 @@ _SEQ = {"n": 0}
 
 
 def message(store, node: str, field: str, at: datetime) -> None:
-    """One directed message, in the three rows `waiting._TIMELINE` actually joins.
+    """One directed message, in the rows `waiting._TIMELINE` actually joins.
 
     The fact alone is not enough: the timeline reads its instant from `source_events` through
     `graph_source_refs`, because a fact's own `valid_from` is when GeniOS learned it and the
@@ -90,6 +94,8 @@ def message(store, node: str, field: str, at: datetime) -> None:
     _SEQ["n"] += 1
     key = f"{node}_{_SEQ['n']}"
     with store.engine.begin() as c:
+        c.execute(text("insert or ignore into graph_nodes (org_id, node_id, node_type, "
+                       "canonical_key) values (:o, :n, 'person', :n)"), {"o": ORG, "n": node})
         c.execute(text(
             "insert into graph_facts (fact_version_id, fact_id, org_id, subject_node_id, field, "
             "  value, value_type, status, valid_from, occurred_at) "
