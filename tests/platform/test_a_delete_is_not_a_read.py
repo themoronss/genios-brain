@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 2_984, (
+    assert r["statements"] == 2_989, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -306,7 +306,8 @@ def test_the_statement_count_did_NOT_move():
     # insert), the accepted lines and the pending ones — ten literals in a new file (0 → 10);
     # `platform/company_brief` — the org's name and company (0 → 1); `api/company_brief_routes` — the
     # accepted lines the screen lists (0 → 1). Measured per file against HEAD.
-    # ⛔ MOVED 2,967 → 2,983 by yc2_w27_s07/M25.C3 (V2.U01, V4.U04) and M25.C2.L-interface.V2.U02:
+    # ⛔ MOVED 2,967 → 2,984 by yc2_w27_s07/M25.C3 (V2.U01, V4.U04) and M25.C2.L-interface.V2.U02
+    # (the line first said 2,983; the five files below sum to +17, and the pin it moved said 2,984):
     # `reason/brief_patterns` — the drafter's patterns: the org's name, the inbound and outbound
     # correspondents and the mail copying other people (three f-strings over one shared filter, each
     # read twice: its hole and the literal before it), the introducer facts, the meetings, the
@@ -316,6 +317,10 @@ def test_the_statement_count_did_NOT_move():
     # (0 → 1); `scripts/pipeline_health.check_the_company_brief_exists_and_is_current` — the
     # proposals waiting, read with the check's own tenant filter (22 → 23). Measured per file
     # against HEAD.
+    # ⛔ MOVED 2,984 → 2,989 by yc2_w27_s08/M26.C1.L-data.V0.U01 (STEP-08, the deleted mail comes
+    # back): `capture/landing/resync` — the update that frees a deleted message's key, the freed rows
+    # with their replacement, the supersede, the trace insert and the tenant's Gmail window. Five
+    # literals in a new file (0 → 5), measured per file against HEAD.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():
