@@ -1,7 +1,7 @@
 {
  "case_id": "F41",
  "source": "ideal_reader",
- "recorded_at": "26591638",
+ "recorded_at": "621764b4",
  "answers": {
   "376aec1fbf83ee31b9099796098840f7ea197247acb2a498bd99187d2a3af9c7": {
    "site": "junk_gate_batch",
@@ -84,6 +84,22 @@
    "raw": "{\"intent\": \"inform\", \"stance\": \"neutral\", \"topics\": [\"board pack\"], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"low\", \"motive\": \"notes for the board pack\"}}",
    "input_tokens": 4880,
    "output_tokens": 74,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "8f5fdd64f820dc3410f43413dd20a869824e68b37c3c290bf44f2dfddc9be826": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Kitebird - August update",
+    "start_offset": 0,
+    "end_offset": 24,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Kitebird - August update\", \"start_offset\": 0, \"end_offset\": 24, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 908,
+   "output_tokens": 43,
    "model": "claude-haiku-4-5-20251001"
   },
   "cf6dd3d1407dfcbb5d9598e11e3f15a0225d15380690582280ce028b25ce848d": {

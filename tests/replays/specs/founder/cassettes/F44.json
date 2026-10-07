@@ -1,8 +1,41 @@
 {
  "case_id": "F44",
  "source": "ideal_reader",
- "recorded_at": "26591638",
+ "recorded_at": "621764b4",
  "answers": {
+  "0d3aa6c4c97b18f005344332dab7478fb675e3e956f331cff3187473359f60aa": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Kitebird deck?",
+    "start_offset": 0,
+    "end_offset": 14,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Kitebird deck?\", \"start_offset\": 0, \"end_offset\": 14, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 900,
+   "output_tokens": 41,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "166b94063ee025ef6b2de2d3d3f79757bb39bcb76998b34b407c89121cbdfe72": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "reply": 6500,
+     "wait_unanswered_email": 5500
+    },
+    "confidence_bp": 5500,
+    "rationale": "A direct question is waiting on us.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5500}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
+   "input_tokens": 1470,
+   "output_tokens": 42,
+   "model": "claude-haiku-4-5-20251001"
+  },
   "5475b43fadc54b0d9677d9d7e3f67a0743c9ed1c286060224357f65553522dff": {
    "site": "junk_gate_batch",
    "parsed": [
@@ -72,6 +105,63 @@
    "output_tokens": 190,
    "model": "claude-haiku-4-5-20251001"
   },
+  "7b7f0d244d065bc3e574b3ffb80e1aeef1b0b7af1e68d7fe43d4b348f822a323": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Send Kavita Rao your deck and a time to talk",
+    "situation": "Kavita Rao asked 3 days ago: \"Could you send your deck and a time to talk this week?\"",
+    "artifact": "Hi Kavita, attaching our deck. Would [day, time] this week work for a call?"
+   },
+   "raw": "{\"headline\": \"Send Kavita Rao your deck and a time to talk\", \"situation\": \"Kavita Rao asked 3 days ago: \\\"Could you send your deck and a time to talk this week?\\\"\", \"artifact\": \"Hi Kavita, attaching our deck. Would [day, time] this week work for a call?\"}",
+   "input_tokens": 1809,
+   "output_tokens": 63,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "9e9854188b4a35898aa1334d1e1a627b4dbfa82678556de038b8c48d3f19ed48": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Reply",
+    "situation_summary": "The reply is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
+    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
+   },
+   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
+   "input_tokens": 2362,
+   "output_tokens": 166,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "f3b83e3f28a04a6b2a6738d6002102470aa0626838b3f3171407845bc357c979": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 515,
+   "output_tokens": 74,
+   "model": "claude-haiku-4-5-20251001"
+  },
   "f4086060099de66de2cb9ce7e521d06283e57c7520dda30bdfff5d71f108e58a": {
    "site": "relevance",
    "parsed": {
@@ -89,6 +179,22 @@
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Kitebird deck?\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
    "input_tokens": 553,
    "output_tokens": 37,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "fd098d4b82f88507064f8fed5bd3df8211b594c0bea0042c9d50d09fb4b669aa": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Reply",
+    "situation_summary": "The reply is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
+    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
+   },
+   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
+   "input_tokens": 2321,
+   "output_tokens": 166,
    "model": "claude-haiku-4-5-20251001"
   }
  }

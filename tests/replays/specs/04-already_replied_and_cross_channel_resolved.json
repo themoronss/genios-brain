@@ -72,8 +72,8 @@
       "expected_decision": "The cross-channel matcher closes only that one request, using the explicit request/asset reference as completion evidence.",
       "prohibited": "Ignoring strong completion evidence because it arrived in another channel, OR closing every ask associated with that person.",
       "pass_condition": "Exactly one request closes; the wrong-close rate and the stale-loop rate are both zero for the replay.",
-      "implemented": "blocked_missing_capability",
-      "blocked_on": "No cross-channel request/action identity reducer exists in Layer 2; operational state is person-global, which is precisely the wrong-close surface. No completion matcher and no per-request lifecycle to close."
+      "implemented": "possible_today",
+      "blocked_on": ""
     },
     {
       "mutation": "The same person has two parallel asks outstanding; a Slack reply resolves exactly one of them.",

@@ -16,16 +16,16 @@
       "expected_decision": "Actionable card: Rohit accepts or declines the counterparty's proposal, carrying a counter-propose Alternative",
       "prohibited": "Rendering \"Deliver their sentence\", or assigning the response action to the counterparty instead of Rohit",
       "pass_condition": "Card names the correct proposer, correct responder and correct target, and cites the exact proposal evidence span",
-      "implemented": "blocked_missing_capability",
-      "blocked_on": "No counterparty role model (proposer/responder/target are not typed anywhere) and no direction in extraction — the LLM sees a body with no From/To and observations carry no actor; L4 also emits exactly one candidate and never produces an Alternative"
+      "implemented": "possible_today",
+      "blocked_on": ""
     },
     {
       "mutation": "Rohit proposes availability; the counterparty has not replied",
       "expected_decision": "Wait/stop until a reply arrives or an explicit cadence fires; the ball remains with the counterparty",
       "prohibited": "\"You promised — overdue: deliver availability\" (treating Rohit's own proposal as a task he owes)",
       "pass_condition": "No outbound action is emitted unless a separate follow-up trigger is independently evidenced",
-      "implemented": "blocked_missing_capability",
-      "blocked_on": "No abstention vocabulary — cards.level only carries prescriptive/predictive, so there is no wait/suppress state; and no direction in extraction to establish that Rohit was the proposer"
+      "implemented": "possible_today",
+      "blocked_on": ""
     },
     {
       "mutation": "A later message accepts the proposal and the current calendar confirms it",

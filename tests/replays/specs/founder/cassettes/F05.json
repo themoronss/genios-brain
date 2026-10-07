@@ -1,7 +1,7 @@
 {
  "case_id": "F05",
  "source": "ideal_reader",
- "recorded_at": "b47239c9",
+ "recorded_at": "621764b4",
  "answers": {
   "06d5ca7688db8c52d55d3a9a2d7853799810a6d8fc0898a1a96836f4b67ce60e": {
    "site": "junk_gate_batch",
@@ -50,6 +50,18 @@
    "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
    "input_tokens": 435,
    "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "341dab1c19678052e2ccac30d1fb65ebb9925365e917b42f13b4e23922801c92": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Send Marco Ruiz a short deck before the call",
+    "situation": "Marco Ruiz asked 2 days ago: \"Could you send a short deck before we set up a call?\"",
+    "artifact": "Hi Marco, attaching a short deck as you asked. Happy to set up a call once you have had a look."
+   },
+   "raw": "{\"headline\": \"Send Marco Ruiz a short deck before the call\", \"situation\": \"Marco Ruiz asked 2 days ago: \\\"Could you send a short deck before we set up a call?\\\"\", \"artifact\": \"Hi Marco, attaching a short deck as you asked. Happy to set up a call once you have had a look.\"}",
+   "input_tokens": 1610,
+   "output_tokens": 68,
    "model": "claude-haiku-4-5-20251001"
   },
   "57decbf80198ec597c28a8764015d0530a53a7b9239da68282eed494338b9578": {
@@ -119,6 +131,68 @@
    "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"deck\", \"investor pipelines\"], \"entity_mentions\": [{\"surface_form\": \"Marco Ruiz\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Marco Ruiz\", \"start_offset\": 13, \"end_offset\": 23}], \"confidence_bp\": 9000}, {\"surface_form\": \"Altavia Partners\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Altavia Partners\", \"start_offset\": 25, \"end_offset\": 41}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Send a short deck before setting up a call\", \"asked_by\": \"Marco Ruiz\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Could you send a short deck before we set up a call?\", \"start_offset\": 143, \"end_offset\": 195}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"a deck before a call\"}, \"implied_actions\": [\"send Marco a short deck\"]}",
    "input_tokens": 4910,
    "output_tokens": 244,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "61513e5c393428b81c9d05f7924764232c25e5aa7b2c65261f93e6211a5827e9": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Could you send a short deck before we set up a call?",
+    "start_offset": 143,
+    "end_offset": 195,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Could you send a short deck before we set up a call?\", \"start_offset\": 143, \"end_offset\": 195, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 913,
+   "output_tokens": 51,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "865f06e185fd7d45913b85a087527134f9c041a49ec8dc3d89893bb68f434cd3": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "reply": 6500,
+     "wait_unanswered_email": 5600
+    },
+    "confidence_bp": 5500,
+    "rationale": "A direct question is waiting on us.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5600}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
+   "input_tokens": 1483,
+   "output_tokens": 42,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "d275c3b108f9cf2cb6d7d8f5cafc28e355dba324acb95c87599a40d7321044ef": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 518,
+   "output_tokens": 74,
    "model": "claude-haiku-4-5-20251001"
   }
  }

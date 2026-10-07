@@ -179,5 +179,37 @@
  "not_expressible": {
   "workstream": "STEP-09 — the engine forms no workstream; nothing to compare against"
  },
- "blocked_on": "the contact's reply is captured but dropped at the qualification floor (2,500): an opportunity_signal at 1,360 never reaches memory — STEP-05"
+ "blocked_on": null,
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "unanswered email",
+     "Marco Ruiz"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "reply": 6500
+     },
+     "confidence_bp": 5500,
+     "rationale": "A direct question is waiting on us.",
+     "missing": []
+    }
+   }
+  ],
+  "narrator": [
+   {
+    "when": [
+     "unanswered_email",
+     "Marco Ruiz"
+    ],
+    "answer": {
+     "headline": "Send Marco Ruiz a short deck before the call",
+     "situation": "Marco Ruiz asked 2 days ago: \"Could you send a short deck before we set up a call?\"",
+     "artifact": "Hi Marco, attaching a short deck as you asked. Happy to set up a call once you have had a look."
+    }
+   }
+  ]
+ }
 }

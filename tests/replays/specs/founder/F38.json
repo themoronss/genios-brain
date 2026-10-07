@@ -329,5 +329,5 @@
    }
   ]
  },
- "blocked_on": "the counterparty's 'all set' is dropped at the qualification floor (2,500) (a decision_made at 920), so the answer given on another channel never closes the ask — STEP-05, replay 04"
+ "blocked_on": null
 }

@@ -313,6 +313,110 @@
      "rationale": "The call with an introduced contact was two days ago and nothing since says what was agreed; ask what, if anything, was promised.",
      "missing": []
     }
+   },
+   {
+    "when": [
+     "account admin",
+     "ferngrove.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "Someone at this company asked us something and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "channel touch",
+     "Leela Krishnan"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "A sales opener, a demo script or market sizing does not fit a founder's call with an introduced contact; nothing here is for the founder to do.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "meeting follow through",
+     "Leela Krishnan"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "the_follow_through_relay": 6400
+     },
+     "confidence_bp": 5000,
+     "rationale": "The call with an introduced contact was two days ago and nothing since says what was agreed; ask what, if anything, was promised.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "admin contact",
+     "Leela Krishnan",
+     "evaluated at: 2026-08-12"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "one_page_brief_before_every_external_meeting": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "A confirmed call with an introduced contact is tomorrow.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "admin contact",
+     "Leela Krishnan",
+     "evaluated at: 2026-08-13"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "the_follow_through_relay": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "The call was on the calendar for today; what, if anything, was promised is open.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "admin contact",
+     "Leela Krishnan",
+     "evaluated at: 2026-08-15"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "the_follow_through_relay": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "The call was on the calendar two days ago; what, if anything, was promised is open.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "unanswered email",
+     "Leela Krishnan"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Leela's notes set up the 13 Aug call and said what Leela would bring to it; nothing asks us anything, and the call date has passed.",
+     "missing": []
+    }
    }
   ],
   "narrator": [
@@ -337,8 +441,30 @@
      "situation": "The meeting with leela@ferngrove.test happened 2 days ago. No follow-through is visible.",
      "artifact": "Recap: [what was discussed - yours to fill]. Next step: [one specific step, with a date]."
     }
+   },
+   {
+    "when": [
+     "account_admin",
+     "ferngrove.test"
+    ],
+    "answer": {
+     "headline": "Reply to Leela at ferngrove.test",
+     "situation": "Leela at ferngrove.test wrote last and the next move is ours; nothing on record says what is still open.",
+     "artifact": "Hi Leela, thanks for your note. What would be most useful from us next?"
+    }
+   },
+   {
+    "when": [
+     "meeting_follow_through",
+     "Leela Krishnan"
+    ],
+    "answer": {
+     "headline": "Meeting with Leela Krishnan, 2 days ago",
+     "situation": "The meeting with Leela Krishnan happened 2 days ago. No follow-through is visible.",
+     "artifact": "Recap: [what was discussed - yours to fill]. Next step: [one specific step, with a date]."
+    }
    }
   ]
  },
- "blocked_on": "the contact's mails are dropped at the qualification floor (2,500) (a commitment_made at 1,000); the meeting makes two cards; the follow-through narrator is told the call 'happened' and asked for a recap nobody confirmed — STEP-05, STEP-14, replay 05"
+ "blocked_on": "reaches memory since STEP-05; the account and the meeting make two cards, and the follow-through narrator is told the call 'happened' and asked for a recap nobody confirmed — STEP-14, replay 05"
 }

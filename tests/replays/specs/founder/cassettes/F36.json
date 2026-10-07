@@ -1,7 +1,7 @@
 {
  "case_id": "F36",
  "source": "ideal_reader",
- "recorded_at": "b47239c9",
+ "recorded_at": "621764b4",
  "answers": {
   "17c8ac8e74a3d6de17fd14707463c0f503e046d16e9d4ec73c79b6fb0f5440ab": {
    "site": "extraction",
@@ -57,6 +57,22 @@
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Integration doc\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
    "input_tokens": 538,
    "output_tokens": 37,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "3b399b20f98d85e9bba2e8da132da3615450d555ab72cd14ec21e3b65db534bc": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Let me know if anything's unclear.",
+    "start_offset": 69,
+    "end_offset": 103,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Let me know if anything's unclear.\", \"start_offset\": 69, \"end_offset\": 103, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 885,
+   "output_tokens": 46,
    "model": "claude-haiku-4-5-20251001"
   },
   "d8b107bdd2a0518e2ba318bb92a08731d1d0f97acd716615a70816bf86d465e0": {

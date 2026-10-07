@@ -1,7 +1,7 @@
 {
  "case_id": "F06",
  "source": "ideal_reader",
- "recorded_at": "b47239c9",
+ "recorded_at": "621764b4",
  "answers": {
   "0d8537e503175108ff74b4e6622172e81293d3aa4807a3c8c21300ff1da2cd3f": {
    "site": "extraction",
@@ -109,6 +109,22 @@
    "output_tokens": 23,
    "model": "claude-haiku-4-5-20251001"
   },
+  "8f705fa6931e81a9f0ce8e18147ce6acb9ab43170d62765e552699224c41c0c4": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Are you around on Thursday for a 30-minute call?",
+    "start_offset": 72,
+    "end_offset": 120,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Are you around on Thursday for a 30-minute call?\", \"start_offset\": 72, \"end_offset\": 120, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 905,
+   "output_tokens": 50,
+   "model": "claude-haiku-4-5-20251001"
+  },
   "adf98236ca0e612cb178637ba1c8694af496dcbecc3974606574ec8592497f53": {
    "site": "relevance",
    "parsed": {
@@ -128,6 +144,47 @@
    "output_tokens": 43,
    "model": "claude-haiku-4-5-20251001"
   },
+  "dd732e1498176b462ad9797e389f5db746c6ab45500d33af89c40a844bc1115e": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 518,
+   "output_tokens": 74,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "e8f06058b868c12eac5b5be1ec628e35a4e1b0eb4a0e514956c44e329eb280ad": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Confirm Thursday's 30-minute call with Nikhil Bose",
+    "situation": "Nikhil Bose asked 2 days ago: \"Are you around on Thursday for a 30-minute call?\"",
+    "artifact": "Hi Nikhil, Thursday works for a 30-minute call. Would [time] suit you?"
+   },
+   "raw": "{\"headline\": \"Confirm Thursday's 30-minute call with Nikhil Bose\", \"situation\": \"Nikhil Bose asked 2 days ago: \\\"Are you around on Thursday for a 30-minute call?\\\"\", \"artifact\": \"Hi Nikhil, Thursday works for a 30-minute call. Would [time] suit you?\"}",
+   "input_tokens": 1781,
+   "output_tokens": 62,
+   "model": "claude-haiku-4-5-20251001"
+  },
   "ed6497c974f729612965419de4e960fb94d9278549e6ed34c50a06de7f865959": {
    "site": "junk_gate_batch",
    "parsed": [
@@ -141,6 +198,23 @@
    "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
    "input_tokens": 427,
    "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "f902c0310c1890773d5c87b145df12790d38c7ae72019535282d69a13eafdaf7": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "reply": 6500,
+     "wait_unanswered_email": 5600
+    },
+    "confidence_bp": 5500,
+    "rationale": "A direct question is waiting on us.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5600}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
+   "input_tokens": 1528,
+   "output_tokens": 42,
    "model": "claude-haiku-4-5-20251001"
   }
  }

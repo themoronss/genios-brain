@@ -224,8 +224,21 @@
      "missing": []
     }
    }
+  ],
+  "narrator": [
+   {
+    "when": [
+     "unanswered_email",
+     "Kiran Agnihotri"
+    ],
+    "answer": {
+     "headline": "Send Kiran Agnihotri your data-room link and cap table",
+     "situation": "Kiran Agnihotri asked 3 days ago: \"could you share your data-room link and the current cap table?\"",
+     "artifact": "Hi Kiran, here is our data-room link: [link]. The current cap table is in the room."
+    }
+   }
   ]
  },
  "notes": "Production's AI filter called the real mail junk and parked both attachments. The synthetic text is a personal note a faithful reader keeps; the model's own drop is for the live evaluation to measure.",
- "blocked_on": "the investor's follow-up is captured but dropped at the qualification floor (2,500): an opportunity_signal at 1,040 never reaches memory — STEP-05"
+ "blocked_on": null
 }

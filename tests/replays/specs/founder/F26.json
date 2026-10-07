@@ -301,7 +301,20 @@
      "missing": []
     }
    }
+  ],
+  "narrator": [
+   {
+    "when": [
+     "unanswered_email",
+     "Neha"
+    ],
+    "answer": {
+     "headline": "Confirm Tuesday 30 Sep, 11 am IST with Neha",
+     "situation": "Neha asked 7 days ago: \"Would Tuesday 30 Sep, 11 am IST work for you?\"",
+     "artifact": "Hi Neha, Tuesday 30 Sep at 11 am IST works for us. See you then."
+    }
+   }
   ]
  },
- "blocked_on": "the partner's dated proposal is dropped at the qualification floor (2,500) (2,240 and 2,280) and never reaches memory — STEP-05"
+ "blocked_on": null
 }

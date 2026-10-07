@@ -114,5 +114,5 @@
  },
  "not_expressible": {},
  "notes": "STEP-04. Production: the founder's own pitch threads were named '<the founder> - <the pitch>' (the business claim's sender, whatever the direction) and never renamed. The acceptance checks the thread's name.",
- "blocked_on": "the founder's own sent mail is captured but yields no signal, so it never reaches memory and the decision not to card it is never made — STEP-05"
+ "blocked_on": null
 }

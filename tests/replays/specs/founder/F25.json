@@ -200,12 +200,10 @@
      "Kavitha Nair"
     ],
     "answer": {
-     "outcome": "decision",
-     "move": {
-      "reply": 6500
-     },
-     "confidence_bp": 5500,
-     "rationale": "A direct question is waiting on us.",
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Kavitha's reply asks us nothing: Kavitha will confirm by the 12th after reading the documents, so the next move is Kavitha's.",
      "missing": []
     }
    },
@@ -292,6 +290,19 @@
      },
      "confidence_bp": 5000,
      "rationale": "We promised her the engagement documents once the board approves; that promise is ours to keep.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "reply owed",
+     "Kavitha Nair"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Kavitha's reply asks us nothing: Kavitha will confirm by the 12th after reading the documents, so the next move is Kavitha's.",
      "missing": []
     }
    }

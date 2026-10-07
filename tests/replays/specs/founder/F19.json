@@ -561,9 +561,20 @@
      "situation": "Ritika at ditincubator.test says your monthly progress report is due on 15 Sep. The next move is ours.",
      "artifact": "Hi Ritika, the monthly progress report is submitted on the portal. Thanks, Arjun"
     }
+   },
+   {
+    "when": [
+     "unanswered_email",
+     "Naveen Gupta"
+    ],
+    "answer": {
+     "headline": "Send Naveen Gupta the signed incubation agreement",
+     "situation": "Naveen Gupta has waited 17 days: \"Please share the signed incubation agreement\"",
+     "artifact": "Hi Naveen, attaching the signed incubation agreement. Thanks"
+    }
    }
   ]
  },
  "notes": "None of the four real people reached memory.",
- "blocked_on": "two of the three asks never reach memory (the qualification floor (2,500)); the one that does becomes the incubation cell's card, not the person's — STEP-05, STEP-09"
+ "blocked_on": "all three asks reach memory since STEP-05; Naveen's and Ritika's become their own cards, and no card names Ekta — lost in reasoning (STEP-09)"
 }

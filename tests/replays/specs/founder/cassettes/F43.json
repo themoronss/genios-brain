@@ -1,7 +1,7 @@
 {
  "case_id": "F43",
  "source": "ideal_reader",
- "recorded_at": "26591638",
+ "recorded_at": "621764b4",
  "answers": {
   "5a4783937bb25b3339cb10e8352c4eecd0d862457cc7be7dbd6c0637b60ba3b7": {
    "site": "relevance",
@@ -20,6 +20,22 @@
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Kitebird - seed round\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
    "input_tokens": 553,
    "output_tokens": 39,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "c70483fdc4509386c86ac4f93c72d928388a9e478b602ac2f78b2205680eb055": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Would you take a look at our deck this week?",
+    "start_offset": 120,
+    "end_offset": 164,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Would you take a look at our deck this week?\", \"start_offset\": 120, \"end_offset\": 164, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 900,
+   "output_tokens": 49,
    "model": "claude-haiku-4-5-20251001"
   },
   "d8179c10c5fb6257cd8242408efd59589b1390576d9db8135ea9a433641dfb14": {

@@ -192,5 +192,37 @@
  "not_expressible": {
   "workstream": "STEP-09 — the engine forms no workstream; nothing to compare against"
  },
- "blocked_on": "the contact's scheduling question is dropped at the qualification floor (2,500): an opportunity_signal at 1,360 never reaches memory — STEP-05"
+ "blocked_on": null,
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "unanswered email",
+     "Nikhil Bose"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "reply": 6500
+     },
+     "confidence_bp": 5500,
+     "rationale": "A direct question is waiting on us.",
+     "missing": []
+    }
+   }
+  ],
+  "narrator": [
+   {
+    "when": [
+     "unanswered_email",
+     "Nikhil Bose"
+    ],
+    "answer": {
+     "headline": "Confirm Thursday's 30-minute call with Nikhil Bose",
+     "situation": "Nikhil Bose asked 2 days ago: \"Are you around on Thursday for a 30-minute call?\"",
+     "artifact": "Hi Nikhil, Thursday works for a 30-minute call. Would [time] suit you?"
+    }
+   }
+  ]
+ }
 }

@@ -89,14 +89,28 @@ CASE = {
         "outcome": "decision", "confidence_bp": 5500,
         "move": {"one_page_brief_before_every_external_meeting": 6200},
         "rationale": "A confirmed external meeting on 22 Sep: a one-page brief before it is the "
-                     "useful move."}}],
+                     "useful move."}},
+        # STEP-05: with every kept event in memory, the account's own situation now reaches the
+        # decider — answered as every case answers it.
+        {"when": ["account admin", "lotusvc.test"], "answer": {
+            "outcome": "decision", "confidence_bp": 5000,
+            "move": {"triage_to_five_outcomes": 6200},
+            "rationale": "Someone at this company asked us something and the ball is in our "
+                         "court."}}],
               # Written from the narrator's prompt alone: it knows the attendee and nothing open.
               "narrator": [{"when": ["admin_contact", "kavya@lotusvc.test"], "answer": {
                   "headline": "Meeting with kavya@lotusvc.test is clear",
                   "situation": "Nothing open is on record with kavya@lotusvc.test before the "
                                "meeting.",
                   "artifact": "Nothing is missing on record; confirm the agenda before the "
-                              "meeting."}}]},
+                              "meeting."}},
+                  # STEP-05: the account's own card, written from its prompt alone — Kavya's
+                  # question is the one quote it shows, with no date on it.
+                  {"when": ["account_admin", "lotusvc.test"], "answer": {
+                      "headline": "Send Kavya at lotusvc.test your latest deck",
+                      "situation": "Kavya at lotusvc.test asked for your latest deck. The next "
+                                   "move is ours; no date is on the request.",
+                      "artifact": "Hi Kavya, sharing our latest deck as you asked."}}]},
 }
 
 #: The mail of `tests/test_e2e_all_layers.py`, and the extraction it hands Layer 1 — as quotes.

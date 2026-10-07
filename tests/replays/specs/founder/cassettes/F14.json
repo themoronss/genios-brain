@@ -1,7 +1,7 @@
 {
  "case_id": "F14",
  "source": "ideal_reader",
- "recorded_at": "b47239c9",
+ "recorded_at": "621764b4",
  "answers": {
   "137343deb8a9154e5e0d09d1b6aaa323465423e249031be565a1a9a9e04f4755": {
    "site": "extraction",
@@ -145,6 +145,22 @@
    "output_tokens": 111,
    "model": "claude-haiku-4-5-20251001"
   },
+  "3e360df48e0e845d22129f2bd56813e19fefe5752c64fdae34d30a95c313c607": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Nimbus Labs - update #2",
+    "start_offset": 0,
+    "end_offset": 23,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Nimbus Labs - update #2\", \"start_offset\": 0, \"end_offset\": 23, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 890,
+   "output_tokens": 42,
+   "model": "claude-haiku-4-5-20251001"
+  },
   "50ad45441a08ffa0ec68389cec71adf869e49d0e42d751fd7d99eb8843facb9d": {
    "site": "extraction",
    "parsed": {
@@ -180,6 +196,22 @@
    "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"investor update\"], \"entity_mentions\": [{\"surface_form\": \"Tara\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Tara\", \"start_offset\": 28, \"end_offset\": 32}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
    "input_tokens": 4882,
    "output_tokens": 108,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "5397925ae26119e2403a80802b413bf6d2339797a517ff7da8da34b01c988fbb": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Nimbus Labs - update #1",
+    "start_offset": 0,
+    "end_offset": 23,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Nimbus Labs - update #1\", \"start_offset\": 0, \"end_offset\": 23, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 890,
+   "output_tokens": 42,
    "model": "claude-haiku-4-5-20251001"
   },
   "93e1522951f7b46adc0f89aff73dd35ba0ac5dd11ebcc51e9ceba3b5291dfa3c": {
@@ -288,6 +320,38 @@
    "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"investor update\"], \"entity_mentions\": [{\"surface_form\": \"Tara\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Tara\", \"start_offset\": 28, \"end_offset\": 32}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
    "input_tokens": 4882,
    "output_tokens": 108,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "bda6716d7cbb3172fd11dfb12fff4b7e7641e64665e8416adb2d3f52b3e56113": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Nimbus Labs - update #3",
+    "start_offset": 0,
+    "end_offset": 23,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Nimbus Labs - update #3\", \"start_offset\": 0, \"end_offset\": 23, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 890,
+   "output_tokens": 42,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "f0d3defa323f978f669adad8dbea555a84eef604283baf6a16f86d50ab233dfe": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Re: Nimbus Labs",
+    "start_offset": 0,
+    "end_offset": 15,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Nimbus Labs\", \"start_offset\": 0, \"end_offset\": 15, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 902,
+   "output_tokens": 40,
    "model": "claude-haiku-4-5-20251001"
   }
  }

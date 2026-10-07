@@ -1,7 +1,7 @@
 {
  "case_id": "F16",
  "source": "ideal_reader",
- "recorded_at": "b47239c9",
+ "recorded_at": "621764b4",
  "answers": {
   "004d3c7ba1b324477475709cfa2d2ec901a9e116776da14e716c8e97bdf51a0f": {
    "site": "relevance",
@@ -41,6 +41,22 @@
    "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
    "input_tokens": 470,
    "output_tokens": 49,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "0fe1fee7f9cee64a0140f657c072e44f02c67af67bd3acd7066da0ca770dae3d": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Could we find 20 minutes?",
+    "start_offset": 93,
+    "end_offset": 118,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Could we find 20 minutes?\", \"start_offset\": 93, \"end_offset\": 118, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 889,
+   "output_tokens": 44,
    "model": "claude-haiku-4-5-20251001"
   },
   "3afbf3eb55c4ab2488609a60e5fa5c6e856f4fe7e87126143afd59f902bf184d": {

@@ -1,7 +1,7 @@
 {
  "case_id": "F04",
  "source": "ideal_reader",
- "recorded_at": "b47239c9",
+ "recorded_at": "621764b4",
  "answers": {
   "1922b54d888fae705372020eb88747c17203d81a6a925f3def1a59bb8d384eaf": {
    "site": "extraction",
@@ -94,6 +94,18 @@
    "output_tokens": 356,
    "model": "claude-haiku-4-5-20251001"
   },
+  "750b7c913fd669f36623335ce4f1d1d42c06bf00413ecd73b42c6815333e93e6": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Offer Sofia Brandt a 20-minute product demo",
+    "situation": "Sofia Brandt asked 2 days ago: \"Would you have 20 minutes next week to show me the product?\"",
+    "artifact": "Hi Sofia, happy to show you the product for 20 minutes next week. Would [day, time] work for you?"
+   },
+   "raw": "{\"headline\": \"Offer Sofia Brandt a 20-minute product demo\", \"situation\": \"Sofia Brandt asked 2 days ago: \\\"Would you have 20 minutes next week to show me the product?\\\"\", \"artifact\": \"Hi Sofia, happy to show you the product for 20 minutes next week. Would [day, time] work for you?\"}",
+   "input_tokens": 1606,
+   "output_tokens": 70,
+   "model": "claude-haiku-4-5-20251001"
+  },
   "7c3b33d56428fbb46c6b145094639ef754517780b1ff8a2384d583e93937bfc0": {
    "site": "junk_gate_batch",
    "parsed": [
@@ -115,6 +127,35 @@
    "output_tokens": 47,
    "model": "claude-haiku-4-5-20251001"
   },
+  "9b92789657b046abcd25a95488e5f898c1a35245b8490e2494f4978a16dc0953": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 518,
+   "output_tokens": 74,
+   "model": "claude-haiku-4-5-20251001"
+  },
   "bcff62be76ae7e6d6dbfce05c24b612471b2cc172d58bec8e8c69d2bee99cf1c": {
    "site": "relevance",
    "parsed": {
@@ -132,6 +173,39 @@
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Arjun <> Sofia Brandt (Brandt Labs)\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
    "input_tokens": 570,
    "output_tokens": 43,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "d30031ddb8549cc0cfcf900ff0de2c6949f4830917986ab2ccc390b09928a22f": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "reply": 6500,
+     "wait_unanswered_email": 5600
+    },
+    "confidence_bp": 5500,
+    "rationale": "A direct question is waiting on us.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5600}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
+   "input_tokens": 1535,
+   "output_tokens": 42,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "ee5686ef481df24b226de8c01004add0b00a4b2fc2257d571f7b9e939c8e4b8b": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Would you have 20 minutes next week to show me the product?",
+    "start_offset": 83,
+    "end_offset": 142,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Would you have 20 minutes next week to show me the product?\", \"start_offset\": 83, \"end_offset\": 142, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 917,
+   "output_tokens": 52,
    "model": "claude-haiku-4-5-20251001"
   }
  }

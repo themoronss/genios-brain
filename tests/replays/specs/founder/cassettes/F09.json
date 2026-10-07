@@ -1,8 +1,24 @@
 {
  "case_id": "F09",
  "source": "ideal_reader",
- "recorded_at": "b47239c9",
+ "recorded_at": "621764b4",
  "answers": {
+  "116b05583b757eac40452a1ef1d52cb80c1d7b21c395377fa86d133964d771c7": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Re: your intros",
+    "start_offset": 0,
+    "end_offset": 15,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: your intros\", \"start_offset\": 0, \"end_offset\": 15, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 884,
+   "output_tokens": 40,
+   "model": "claude-haiku-4-5-20251001"
+  },
   "79479c5d8aab256291d6460a085373b733b147e9b65c7fb18b99bb064bbae612": {
    "site": "extraction",
    "parsed": {

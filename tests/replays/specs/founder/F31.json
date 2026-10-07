@@ -345,7 +345,20 @@
      "missing": []
     }
    }
+  ],
+  "narrator": [
+   {
+    "when": [
+     "unanswered_email",
+     "Divya Raman"
+    ],
+    "answer": {
+     "headline": "Send Divya Raman Assignment 4, the pricing-page teardown",
+     "situation": "Divya Raman wrote 2 days ago: \"Assignment 4 (a teardown of your pricing page) is due on 17 Sep, 11:59 pm IST.\"",
+     "artifact": "Hi Divya, attaching Assignment 4, the teardown of our pricing page. Thanks"
+    }
+   }
   ]
  },
- "blocked_on": "the assignment's deadline is dropped at the qualification floor (2,500) (2,280), so the one card the session should leave behind never forms — STEP-05"
+ "blocked_on": null
 }

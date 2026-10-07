@@ -1,7 +1,7 @@
 {
  "case_id": "F11",
  "source": "ideal_reader",
- "recorded_at": "b47239c9",
+ "recorded_at": "621764b4",
  "answers": {
   "06c5faaa8d656beaf9eb25cb8a56f2b2484e758bdaabf116346cf82fbba4439e": {
    "site": "extraction",
@@ -85,6 +85,22 @@
    "raw": "{\"intent\": \"question\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Tom Keller\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Tom Keller\", \"start_offset\": 173, \"end_offset\": 183}], \"confidence_bp\": 9000}, {\"surface_form\": \"Northfield Ventures\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Northfield Ventures\", \"start_offset\": 193, \"end_offset\": 212}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Is Nimbus Labs raising this year?\", \"asked_by\": \"Tom Keller\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Are you raising this year?\", \"start_offset\": 119, \"end_offset\": 145}], \"confidence_bp\": 9000}], \"business_facts\": [{\"field\": \"person.title\", \"subject\": \"Tom Keller\", \"value\": \"Partner\", \"standing\": \"observed\", \"evidence\": [{\"quote\": \"Partner, Northfield Ventures\", \"start_offset\": 184, \"end_offset\": 212}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"explore an investment\"}, \"implied_actions\": [\"tell Tom whether Nimbus Labs is raising\"]}",
    "input_tokens": 4900,
    "output_tokens": 298,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "44ee7a5ad06b6b4e17d092f705b79cdc56292564a3441ea1d809dd1b1a99e35d": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Are you raising this year?",
+    "start_offset": 119,
+    "end_offset": 145,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Are you raising this year?\", \"start_offset\": 119, \"end_offset\": 145, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 910,
+   "output_tokens": 44,
    "model": "claude-haiku-4-5-20251001"
   },
   "5e4a82dc9a592e00d194737bfec207aeddf610ce437da021e2e6d6bfa49a27ae": {

@@ -190,5 +190,37 @@
  "not_expressible": {
   "workstream": "STEP-09 — the engine forms no workstream; nothing to compare against"
  },
- "blocked_on": "the contact's reply is captured but dropped at the qualification floor (2,500): an opportunity_signal at 1,360 never reaches memory — STEP-05"
+ "blocked_on": null,
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "unanswered email",
+     "Sofia Brandt"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "reply": 6500
+     },
+     "confidence_bp": 5500,
+     "rationale": "A direct question is waiting on us.",
+     "missing": []
+    }
+   }
+  ],
+  "narrator": [
+   {
+    "when": [
+     "unanswered_email",
+     "Sofia Brandt"
+    ],
+    "answer": {
+     "headline": "Offer Sofia Brandt a 20-minute product demo",
+     "situation": "Sofia Brandt asked 2 days ago: \"Would you have 20 minutes next week to show me the product?\"",
+     "artifact": "Hi Sofia, happy to show you the product for 20 minutes next week. Would [day, time] work for you?"
+    }
+   }
+  ]
+ }
 }

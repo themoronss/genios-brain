@@ -1,8 +1,24 @@
 {
  "case_id": "F15",
  "source": "ideal_reader",
- "recorded_at": "b47239c9",
+ "recorded_at": "621764b4",
  "answers": {
+  "0eb5c20bcbaab427649635c9b11abfdaf5ca67b55a8c292f295a0ec8b2e1a1a6": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Our deck is attached; could we find 20 minutes in the next two weeks?",
+    "start_offset": 142,
+    "end_offset": 211,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Our deck is attached; could we find 20 minutes in the next two weeks?\", \"start_offset\": 142, \"end_offset\": 211, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 918,
+   "output_tokens": 55,
+   "model": "claude-haiku-4-5-20251001"
+  },
   "1c3c678e69f806fd7d7b26f04c50bde7ec39768e9e3a5ad6a91468496b7f79a8": {
    "site": "extraction",
    "parsed": {
@@ -54,6 +70,22 @@
    "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meridian Seed\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Meridian Seed\", \"start_offset\": 41, \"end_offset\": 54}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Find 20 minutes in the next two weeks\", \"asked_by\": \"Arjun Rao\", \"asked_of\": \"Meridian Seed\", \"evidence\": [{\"quote\": \"could we find 20 minutes in the next two weeks?\", \"start_offset\": 164, \"end_offset\": 211}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"seed round outreach\"}}",
    "input_tokens": 4915,
    "output_tokens": 186,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "4f453ea466c2c2cfe63ced8034d2870a6e5e48f8d44f213e1f83b5654f3eef27": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Our deck is attached; could we find 20 minutes in the next two weeks?",
+    "start_offset": 142,
+    "end_offset": 211,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Our deck is attached; could we find 20 minutes in the next two weeks?\", \"start_offset\": 142, \"end_offset\": 211, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 918,
+   "output_tokens": 55,
    "model": "claude-haiku-4-5-20251001"
   },
   "5bd4dd011fc0846b3d17ce2c29f680c70cad005be9aa618d43251ffbacb5cb75": {
@@ -252,6 +284,22 @@
    "output_tokens": 188,
    "model": "claude-haiku-4-5-20251001"
   },
+  "c1bfb2f0f22de041606cca929ec6614878d2009932a9a9cc471816a57ff5b207": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Our deck is attached; could we find 20 minutes in the next two weeks?",
+    "start_offset": 145,
+    "end_offset": 214,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Our deck is attached; could we find 20 minutes in the next two weeks?\", \"start_offset\": 145, \"end_offset\": 214, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 919,
+   "output_tokens": 55,
+   "model": "claude-haiku-4-5-20251001"
+  },
   "cb64c18d2972b977ca4b0b020f3a7a0df6261ab322e0cc01d65923441bbe638b": {
    "site": "extraction",
    "parsed": {
@@ -305,6 +353,22 @@
    "output_tokens": 186,
    "model": "claude-haiku-4-5-20251001"
   },
+  "dcd6a9bcba6e422338a182f156ba1954b68f32f521139a1a60dff561ae9fb353": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Our deck is attached; could we find 20 minutes in the next two weeks?",
+    "start_offset": 144,
+    "end_offset": 213,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Our deck is attached; could we find 20 minutes in the next two weeks?\", \"start_offset\": 144, \"end_offset\": 213, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 919,
+   "output_tokens": 55,
+   "model": "claude-haiku-4-5-20251001"
+  },
   "e028675f5103c7ea218af42cd3e1b134e5a136198b1140eeff4d306d5190df20": {
    "site": "extraction",
    "parsed": {
@@ -356,6 +420,22 @@
    "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Cobalt Peak\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Cobalt Peak\", \"start_offset\": 41, \"end_offset\": 52}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Find 20 minutes in the next two weeks\", \"asked_by\": \"Arjun Rao\", \"asked_of\": \"Cobalt Peak\", \"evidence\": [{\"quote\": \"could we find 20 minutes in the next two weeks?\", \"start_offset\": 162, \"end_offset\": 209}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"seed round outreach\"}}",
    "input_tokens": 4915,
    "output_tokens": 184,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "e3c7b364b460cc895e0b2a242e5c4442cf961663babe4813b8aca6bdd9b080c4": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Our deck is attached; could we find 20 minutes in the next two weeks?",
+    "start_offset": 140,
+    "end_offset": 209,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Our deck is attached; could we find 20 minutes in the next two weeks?\", \"start_offset\": 140, \"end_offset\": 209, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 918,
+   "output_tokens": 55,
    "model": "claude-haiku-4-5-20251001"
   }
  }

@@ -1,7 +1,7 @@
 {
  "case_id": "F39",
  "source": "ideal_reader",
- "recorded_at": "b47239c9",
+ "recorded_at": "621764b4",
  "answers": {
   "296eb70595c9639b6a4082bce6e9393a066325c830b212f9478b464c1d0c4539": {
    "site": "relevance",
@@ -64,6 +64,22 @@
    "raw": "{\"intent\": \"schedule\", \"stance\": \"positive\", \"topics\": [\"call\"], \"entity_mentions\": [{\"surface_form\": \"Rohan\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Rohan\", \"start_offset\": 19, \"end_offset\": 24}], \"confidence_bp\": 9000}], \"scheduling_proposals\": [{\"proposer\": \"Arjun Rao\", \"text\": \"Thursday 3 pm or Friday 11 am IST\", \"evidence_text\": \"I'm free Thursday 3 pm or Friday 11 am IST\"}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\"}}",
    "input_tokens": 4872,
    "output_tokens": 147,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "9aa2b04583c99e310e2757d5e9a595d1757fad2e47724974c89e808f4ca47e35": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Re: Quick call",
+    "start_offset": 0,
+    "end_offset": 14,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Quick call\", \"start_offset\": 0, \"end_offset\": 14, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 882,
+   "output_tokens": 40,
    "model": "claude-haiku-4-5-20251001"
   },
   "c6c19e75fca54249035bbd64c2898604c200dc871b6a8aed5db685b306602e1a": {

@@ -1,8 +1,25 @@
 {
  "case_id": "F26",
  "source": "ideal_reader",
- "recorded_at": "b47239c9",
+ "recorded_at": "621764b4",
  "answers": {
+  "09f2fd2476c6e8ccc57c8f9f6b8c5e5b517355d79dc27c34588c516ce5f4d6ab": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "reply": 6500,
+     "wait_unanswered_email": 5200
+    },
+    "confidence_bp": 5500,
+    "rationale": "A direct question is waiting on us.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5200}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
+   "input_tokens": 1563,
+   "output_tokens": 42,
+   "model": "claude-haiku-4-5-20251001"
+  },
   "21734c77f73fa6facc8d6418a80452739c518f089abffcbb0dde93ab48043dfd": {
    "site": "junk_gate_batch",
    "parsed": [
@@ -103,6 +120,22 @@
    "output_tokens": 315,
    "model": "claude-haiku-4-5-20251001"
   },
+  "4b96a07fa0f3263e9e6e631eb79a1e1314aae5682ce56bdf1d5e946873cc4b4c": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Reply",
+    "situation_summary": "The reply is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
+    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
+   },
+   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
+   "input_tokens": 2398,
+   "output_tokens": 166,
+   "model": "claude-haiku-4-5-20251001"
+  },
   "5b07e1e0da105f4c13435ad120bb7f843299e8c7dc9fd48c8a7a1cac8d72c474": {
    "site": "relevance",
    "parsed": {
@@ -128,6 +161,69 @@
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Orbitly x Nimbus Labs\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 2, \"business\": true, \"description\": \"Orbitly x Nimbus Labs\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
    "input_tokens": 600,
    "output_tokens": 75,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "74bd383088d177c64f9e6f0716c5c6ce1f0cc509353e47a3cbc17fc8f8534c1b": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Can we do a call next week?",
+    "start_offset": 38,
+    "end_offset": 65,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Can we do a call next week?\", \"start_offset\": 38, \"end_offset\": 65, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 887,
+   "output_tokens": 44,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "b708b058fef8bccbe796ca02367a71b039e387b9fcdc68accfa5b759bb4692d8": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 4,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 4, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 551,
+   "output_tokens": 98,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "e3f08a0726508427412a635475b36736184235bbc08d9b5717654c6a846f4616": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Confirm Tuesday 30 Sep, 11 am IST with Neha",
+    "situation": "Neha asked 7 days ago: \"Would Tuesday 30 Sep, 11 am IST work for you?\"",
+    "artifact": "Hi Neha, Tuesday 30 Sep at 11 am IST works for us. See you then."
+   },
+   "raw": "{\"headline\": \"Confirm Tuesday 30 Sep, 11 am IST with Neha\", \"situation\": \"Neha asked 7 days ago: \\\"Would Tuesday 30 Sep, 11 am IST work for you?\\\"\", \"artifact\": \"Hi Neha, Tuesday 30 Sep at 11 am IST works for us. See you then.\"}",
+   "input_tokens": 2124,
+   "output_tokens": 57,
    "model": "claude-haiku-4-5-20251001"
   },
   "e9718658a014043606ad80414e0ab8016a7d2137b834c90e980f3b53d006f33b": {
@@ -177,6 +273,22 @@
    "raw": "{\"intent\": \"introduce\", \"stance\": \"positive\", \"topics\": [\"integration\"], \"entity_mentions\": [{\"surface_form\": \"Neha Kapoor\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Neha Kapoor\", \"start_offset\": 150, \"end_offset\": 161}], \"confidence_bp\": 9000}, {\"surface_form\": \"Orbitly\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Orbitly\", \"start_offset\": 0, \"end_offset\": 7}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
    "input_tokens": 4892,
    "output_tokens": 150,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "edc14032e051e268fd718c91a1d4da1aca0cb3eb43a3700b737394b4f6389305": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Reply",
+    "situation_summary": "The reply is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
+    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
+   },
+   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
+   "input_tokens": 2358,
+   "output_tokens": 166,
    "model": "claude-haiku-4-5-20251001"
   }
  }

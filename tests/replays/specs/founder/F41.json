@@ -131,5 +131,5 @@
  },
  "not_expressible": {},
  "notes": "STEP-04. Production: the founder's company address only ever receives his own mail; not known as his, it was typed a service, waited on forever and listed as 'waiting longest'. Built with the founder's real identity shape: a Gmail address, that second address, the company domain.",
- "blocked_on": "the founder's own sent mail is captured but yields no signal, so it never reaches memory and the decision not to card it is never made — STEP-05"
+ "blocked_on": null
 }

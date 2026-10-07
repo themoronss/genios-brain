@@ -138,7 +138,20 @@
      "missing": []
     }
    }
+  ],
+  "narrator": [
+   {
+    "when": [
+     "unanswered_email",
+     "Kavita Rao"
+    ],
+    "answer": {
+     "headline": "Send Kavita Rao your deck and a time to talk",
+     "situation": "Kavita Rao asked 3 days ago: \"Could you send your deck and a time to talk this week?\"",
+     "artifact": "Hi Kavita, attaching our deck. Would [day, time] this week work for a call?"
+    }
+   }
   ]
  },
- "blocked_on": "the investor's ask passes every L1 stage and publishes no qualified signal, so L2 never reads it — memory is gated on a qualified signal (F03) — STEP-05"
+ "blocked_on": null
 }

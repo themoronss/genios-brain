@@ -206,5 +206,5 @@
   ]
  },
  "notes": "Production's AI filter called the real mail junk.",
- "blocked_on": "the investor's question is captured but dropped at the qualification floor (2,500): an opportunity_signal at 1,360 never reaches memory — STEP-05"
+ "blocked_on": "the investor's question reaches memory since STEP-05 (below the floor); no situation takes it to the decider, so no card — lost in reasoning (STEP-09, STEP-12)"
 }
