@@ -222,6 +222,20 @@ def _meeting_prep(body: EvaluateRequest, p: Principal, engine, now: datetime, st
     return out
 
 
+def _draft_key(seat_id: str, subject_ids, draft: str, brief_version: str = "") -> str:
+    """The key a draft's notes are deduplicated under: the same draft about the same subjects is
+    one moment. Only the draft's hash is in it, never its text.
+
+    STEP-07 (`speedrun008/YC-II W27/` §8.3): the company brief's version is part of it. The notes
+    the model writes under a changed brief are new notes, not duplicates of the old brief's to be
+    suppressed. A tenant with no brief has no version, and its keys are exactly what they were."""
+    from genios_engine.reason.moments import draft_review as DR
+    return M.cache_key(seat_id=seat_id, capability_id=DR.CAPABILITY_ID, subject_ids=subject_ids,
+                       trigger=M.trigger_digest(DR.CAPABILITY_ID, DR.draft_digest(draft),
+                                                *((brief_version,) if brief_version else ())),
+                       subject_version="draft")
+
+
 def _draft_review(body: EvaluateRequest, p: Principal, engine, now: datetime, started: float):
     """≤ 2 notes about the draft, or 204 (nothing to say / the 2.8 s budget ran out). The draft
     text is never stored: only its hash is in the dedupe key and the evidence."""
@@ -231,16 +245,15 @@ def _draft_review(body: EvaluateRequest, p: Principal, engine, now: datetime, st
         prior = _stored(c, moment_id=moment_id, org_id=p.org_id, seat_id=p.seat_id)
     if prior is not None:
         return prior
+    # STEP-07: the tenant's company brief, read once for this draft — its block goes to the one
+    # model call, its version into the draft's dedupe key.
+    brief = CB.current(engine, p.org_id)
     res = DR.review(engine, org_id=p.org_id, email=p.email, participants=body.participants,
                     entities=body.features.entities, draft=body.draft_text or "", now=now,
-                    seat_id=p.seat_id)
+                    seat_id=p.seat_id, company_brief=brief.prompt_block())
     if res is None:
         return Response(status_code=_NO_CONTENT)
-    key = M.cache_key(seat_id=p.seat_id, capability_id=DR.CAPABILITY_ID,
-                      subject_ids=res["subject_ids"],
-                      trigger=M.trigger_digest(DR.CAPABILITY_ID,
-                                               DR.draft_digest(body.draft_text or "")),
-                      subject_version="draft")
+    key = _draft_key(p.seat_id, res["subject_ids"], body.draft_text or "", brief.version)
     try:
         out = M.persist(engine, org_id=p.org_id, seat_id=p.seat_id, device_id=p.device_id,
                         origin="server", moment={"moment_id": moment_id, **res["content"]},

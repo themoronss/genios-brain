@@ -15,8 +15,9 @@ itself is NEVER stored — only its sha256 travels (evidence + dedupe key).
                        (`slice.recent_changes`, seat-visible, 90 d);
     critique           (only when a reasoned run exists for the subject; the seam's refusal —
                        its 409 — is caught and skipped) GeniOS's own read disagrees;
-    one Haiku call     turns the facts + the two findings into ≤ 2 notes. No key / failure →
-                       the deterministic notes alone.
+    one Haiku call     turns the facts + the two findings into ≤ 2 notes, reading the company
+                       brief the founder accepted (STEP-07; nothing when there is none). No key
+                       / failure → the deterministic notes alone.
 HARD TIMEOUT 2.8 s for the whole review → None (the route answers 204). Never credit-charged (D6);
 the model call's cost is recorded in `llm_costs` like every other call.
 """
@@ -255,10 +256,14 @@ def critique_notes(engine, *, org_id: str, subject_ids: list[str], draft: str,
     return []
 
 
+#: `{company_brief}` is the tenant's company brief (`speedrun008/YC-II W27/` STEP-07 §8.3): its own
+#: paragraph after the role, before the facts the draft is checked against — the prompt promises
+#: "what the sender's company knows", and until STEP-07 it knew nothing about the company itself.
+#: Empty when the founder has accepted no line, and the prompt is then byte for byte what it was.
 _PROMPT = """You check an email/chat DRAFT against what the sender's company knows. You never
 rewrite the draft and never suggest replacement wording.
 
-FACTS (current, id: subject · field = value):
+{company_brief}FACTS (current, id: subject · field = value):
 {facts}
 
 FINDINGS ALREADY MADE (may be empty):
@@ -276,8 +281,12 @@ no quoting the draft back; if nothing is wrong return {{"notes": []}}."""
 
 
 def llm_notes(engine, *, org_id: str, facts: list[dict], findings: list[dict], draft: str,
-              digest: str, deadline: float, seat_id: str | None = None) -> list[dict] | None:
-    """One Haiku call. None when no model is configured, time is short, or the call failed."""
+              digest: str, deadline: float, seat_id: str | None = None,
+              company_brief: str = "") -> list[dict] | None:
+    """One Haiku call. None when no model is configured, time is short, or the call failed.
+
+    `company_brief` is the tenant's `CompanyBrief.prompt_block()` (STEP-07), read once by the
+    route; "" — no accepted line — leaves the prompt exactly as it was."""
     from genios_engine.platform.config import get_settings
     settings = get_settings()
     remaining = deadline - time.monotonic() - 0.15
@@ -289,7 +298,9 @@ def llm_notes(engine, *, org_id: str, facts: list[dict], findings: list[dict], d
     from genios_engine.reason.llm_sites import tier_model
     model = tier_model("T1")
     ids = {f"F{i + 1}": f for i, f in enumerate(facts)}
+    brief = (company_brief or "").strip()
     prompt = _PROMPT.format(
+        company_brief=f"{brief}\n\n" if brief else "",
         facts="\n".join(f"{k}: {f.get('name') or f['node_id']} · {f['field']} = {f['value']}"
                         for k, f in ids.items()) or "(none)",
         findings="\n".join("- " + n["text"] for n in findings) or "(none)",
@@ -364,7 +375,8 @@ def moment_content(notes: list[dict], *, digest: str) -> dict:
 
 
 def _compute(engine, *, org_id: str, email: str | None, participants, entities, draft: str,
-             now: datetime, deadline: float, seat_id: str | None = None) -> dict | None:
+             now: datetime, deadline: float, seat_id: str | None = None,
+             company_brief: str = "") -> dict | None:
     from genios_engine.reason.moments import recall as R
     from genios_engine.reason.moments.slice import recent_changes
     digest = draft_digest(draft)
@@ -397,7 +409,8 @@ def _compute(engine, *, org_id: str, email: str | None, participants, entities, 
     # ROUTER CHECK 5, HERE TOO: with nothing but open items and no facts to weigh them against,
     # the sentence is already written and a model call would only rephrase it. Pay for nothing.
     model = (llm_notes(engine, org_id=org_id, facts=facts, findings=owed + graph, draft=draft,
-                       digest=digest, deadline=deadline, seat_id=seat_id)
+                       digest=digest, deadline=deadline, seat_id=seat_id,
+                       company_brief=company_brief)
              if facts or graph else None)
     # An open item is a fact about this person, not an opinion — the model never drops it.
     notes = finalize(owed + ((model or []) or graph), draft)
@@ -408,13 +421,15 @@ def _compute(engine, *, org_id: str, email: str | None, participants, entities, 
 
 def review(engine, *, org_id: str, email: str | None, participants, entities, draft: str,
            now: datetime | None = None, timeout_s: float = TIMEOUT_S,
-           seat_id: str | None = None) -> dict | None:
-    """`{"subject_ids", "content"}` or None (nothing to say, or the 2.8 s budget ran out)."""
+           seat_id: str | None = None, company_brief: str = "") -> dict | None:
+    """`{"subject_ids", "content"}` or None (nothing to say, or the 2.8 s budget ran out).
+
+    `company_brief` is the tenant's brief block, read once by the caller (STEP-07)."""
     now = now or datetime.now(timezone.utc)
     deadline = time.monotonic() + timeout_s
     fut = _POOL.submit(_compute, engine, org_id=org_id, email=email, participants=participants,
                        entities=entities, draft=draft, now=now, deadline=deadline,
-                       seat_id=seat_id)
+                       seat_id=seat_id, company_brief=company_brief)
     try:
         return fut.result(timeout=max(0.0, deadline - time.monotonic()))
     except FutureTimeout:
