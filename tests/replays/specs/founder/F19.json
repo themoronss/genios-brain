@@ -235,7 +235,7 @@
  },
  "witness": null,
  "not_expressible": {
-  "workstream": "STEP-09 — the engine forms no workstream; nothing to compare against"
+  "workstream": "STEP-11 — the file exists since STEP-09 (`GET /v1/workstreams`, its acceptance `tests/replays/test_every_piece_of_work_has_a_file.py`), but this line names its stage or state, and no stage is derived to compare against"
  },
  "model": {
   "decider": [
@@ -576,5 +576,5 @@
   ]
  },
  "notes": "None of the four real people reached memory.",
- "blocked_on": "all three asks reach memory since STEP-05; Naveen's and Ritika's become their own cards, and no card names Ekta — lost in reasoning (STEP-09)"
+ "blocked_on": "all three asks reach memory since STEP-05; Naveen's and Ritika's become their own cards, and no card names Ekta — lost in reasoning (STEP-12, STEP-14)"
 }

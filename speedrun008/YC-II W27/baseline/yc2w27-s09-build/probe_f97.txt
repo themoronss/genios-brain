@@ -1,0 +1,3 @@
+current(conn) inside the writing transaction sees the line: False
+brief_for(conn) sees it: True
+after commit, current() serves: False

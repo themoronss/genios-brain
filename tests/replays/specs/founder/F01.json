@@ -113,9 +113,9 @@
  },
  "witness": null,
  "not_expressible": {
-  "workstream": "STEP-09 — the engine forms no workstream; nothing to compare against",
-  "stage": "STEP-09 — no stage is derived for a workstream"
+  "workstream": "STEP-11 — the file exists since STEP-09 (`GET /v1/workstreams`, its acceptance `tests/replays/test_every_piece_of_work_has_a_file.py`), but this line names its stage or state, and no stage is derived to compare against",
+  "stage": "STEP-11 — no stage is derived for a file (STEP-09 built the files, not their stages)"
  },
  "notes": "The faithful junk-filter answer to an automated portal notice is drop: the prompt says to drop automated, self-service notices, and nothing in it says the founder has a live application. That gap is the engine's (STEP-03, STEP-04).",
- "blocked_on": "the portal's status notice is kept and read now (STEP-07, W-07: the company brief's watchlist names the portal) and reaches memory — but no situation forms about the application, only the period reviews; an application in motion is a workstream — STEP-09"
+ "blocked_on": "the portal's notice is the portal's own file since STEP-09 (watched, one file) — but the reading hints the application as fundraising, a domain that is not active, and the situation formed there reads a government portal as an investor (investor_relationship): no card — D2, STEP-11, STEP-12"
 }

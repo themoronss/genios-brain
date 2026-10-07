@@ -1,0 +1,4 @@
+founder golden set   must-detect  12/32 (8 not expressible)   must-abstain  11/12 (0 not exercised)   forbidden outputs  4
+atlas replays 01–07  passing  4/80   blocked  3/80   not expressible  73
+must-detect cases lost at:  gate 1  reasoning 10
+model answers:  ideal_reader (06-DECISIONS D12c)

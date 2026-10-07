@@ -40,6 +40,10 @@ F37), the State Startup Mission's four (F23) and Lakshya's community mail (F32).
 and the other twelve are archived exactly as before. Four cases moved — F01, F02, F03 and F09, from
 lost at the gate to lost in REASONING (`MOVED_AFTER`): their mail is read now, and no situation it
 forms reaches a card yet (STEP-09's workstreams, STEP-12's expert pass).
+
+RESTATED BY STEP-09 (`yc2_w27_s09 · M27.C5`). F03 moved again — to a PASS: its introduction and both
+nudges are the investor's file, the connector anchors none of them, and one card is about Rahul. The
+gate's promise is unchanged on every case.
 """
 from __future__ import annotations
 
@@ -118,8 +122,10 @@ MOVED_AFTER: dict[str, tuple[str, tuple[str, str, str | None, int]]] = {
     # read — but no situation it forms reaches a card yet.
     "F01": ("STEP-07", ("must_detect", "fail", "reasoning", 0)),
     "F02": ("STEP-07", ("must_detect", "fail", "reasoning", 0)),
-    "F03": ("STEP-07", ("must_detect", "fail", "reasoning", 0)),
     "F09": ("STEP-07", ("must_detect", "fail", "reasoning", 0)),
+    # STEP-09 (`yc2_w27_s09 · M27.C5`): the introduction and its two nudges are Rahul's file, never
+    # the connector's, and one card is about him.
+    "F03": ("STEP-09", ("must_detect", "pass", None, 1)),
 }
 
 #: The same measurement: (kind, verdict, lost_at, cards over every sweep) per case.

@@ -190,7 +190,7 @@
  },
  "witness": null,
  "not_expressible": {
-  "workstream": "STEP-09 — the engine forms no workstream; nothing to compare against"
+  "workstream": "STEP-11 — the file exists since STEP-09 (`GET /v1/workstreams`, its acceptance `tests/replays/test_every_piece_of_work_has_a_file.py`), but this line names its stage or state, and no stage is derived to compare against"
  },
  "blocked_on": null,
  "model": {
@@ -207,18 +207,6 @@
      },
      "confidence_bp": 5500,
      "rationale": "A direct question is waiting on us.",
-     "missing": []
-    }
-   },
-   {
-    "when": [
-     "unanswered email",
-     "this is a person: Introly"
-    ],
-    "answer": {
-     "outcome": "defer",
-     "confidence_bp": 7000,
-     "rationale": "Introly is the founder's intro agent; its introduction asks nothing of Introly itself — the reply belongs to the person it introduced.",
      "missing": []
     }
    }

@@ -1,23 +1,35 @@
 {
  "case_id": "F37",
  "source": "ideal_reader",
- "recorded_at": "fdd8b98a",
+ "recorded_at": "5a28449d",
  "answers": {
-  "153ef46fec35de01277d920721fe851279feaa7f639ef209ca5651ead4051f4d": {
+  "10c4150bc68254700915584d7e2f1818b7148d53fd3c954af50d406f239b9c5a": {
    "site": "decider",
    "parsed": {
-    "outcome": "defer",
+    "outcome": "decision",
     "scores": {
-     "reply": 5600,
+     "reply": 6500,
      "wait_unanswered_email": 5600
     },
-    "confidence_bp": 7000,
-    "rationale": "Introly is the founder's intro agent; its introduction asks nothing of Introly itself — the reply belongs to the person it introduced.",
+    "confidence_bp": 5500,
+    "rationale": "A direct question is waiting on us.",
     "missing": []
    },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"reply\": 5600, \"wait_unanswered_email\": 5600}, \"confidence_bp\": 7000, \"rationale\": \"Introly is the founder's intro agent; its introduction asks nothing of Introly itself — the reply belongs to the person it introduced.\", \"missing\": []}",
-   "input_tokens": 1818,
-   "output_tokens": 66,
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5600}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
+   "input_tokens": 1920,
+   "output_tokens": 42,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "118d767f6a0a9b8f1643143015ad2ef9c08a2d7aedc037b03070d79b4fc028b9": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Send Farah Qureshi your deck",
+    "situation": "Farah Qureshi asked 2 days ago for your deck by Friday 12 Sep.",
+    "artifact": "Hi Farah, here is our deck. Thanks, Arjun"
+   },
+   "raw": "{\"headline\": \"Send Farah Qureshi your deck\", \"situation\": \"Farah Qureshi asked 2 days ago for your deck by Friday 12 Sep.\", \"artifact\": \"Hi Farah, here is our deck. Thanks, Arjun\"}",
+   "input_tokens": 1619,
+   "output_tokens": 45,
    "model": "claude-haiku-4-5-20251001"
   },
   "25fe7eee7e728af1dbbeccdc0f116ca7a45c074cff97536029e9fad21e1b094e": {
@@ -55,6 +67,41 @@
    "output_tokens": 48,
    "model": "claude-haiku-4-5-20251001"
   },
+  "30d99db12c1039691f4065a27d545fb43b918039ebcf14408977e5fa2e8c5f7f": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 4,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 4, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 963,
+   "output_tokens": 98,
+   "model": "claude-haiku-4-5-20251001"
+  },
   "3776240b5da49b7a50ea4cbd55272f699372b98ac6f7a8abcf8f08744c63283a": {
    "site": "bundle_narrator",
    "parsed": {
@@ -85,35 +132,6 @@
    "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
    "input_tokens": 2361,
    "output_tokens": 166,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "468cd350d528e54a03d32718a85280d2de0a86932818371544880686056494b4": {
-   "site": "narrator",
-   "parsed": {
-    "headline": "Send Farah Qureshi your deck",
-    "situation": "Farah Qureshi asked 2 days ago for your deck by Friday 12 Sep.",
-    "artifact": "Hi Farah, here is our deck. Thanks, Arjun"
-   },
-   "raw": "{\"headline\": \"Send Farah Qureshi your deck\", \"situation\": \"Farah Qureshi asked 2 days ago for your deck by Friday 12 Sep.\", \"artifact\": \"Hi Farah, here is our deck. Thanks, Arjun\"}",
-   "input_tokens": 1608,
-   "output_tokens": 45,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "4df20b435604059b1cf96570a4aeb6a45efca2435380f91af2abd6e364379018": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "reply": 6500,
-     "wait_unanswered_email": 5600
-    },
-    "confidence_bp": 5500,
-    "rationale": "A direct question is waiting on us.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5600}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
-   "input_tokens": 1886,
-   "output_tokens": 42,
    "model": "claude-haiku-4-5-20251001"
   },
   "74704ba90b6d9f84b8532b40bb240c5f3008f076705b7fa184dc783adf85c296": {
@@ -197,35 +215,6 @@
    "output_tokens": 288,
    "model": "claude-haiku-4-5-20251001"
   },
-  "790707597d78a7110ed2263567a67eda17568c0fc77f28a641286d0392202f30": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 3,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     }
-    ]
-   },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 930,
-   "output_tokens": 74,
-   "model": "claude-haiku-4-5-20251001"
-  },
   "9955ced535ac7cb17f356b84a7d46843b374041c5785c855a8caf47f5c62eb5d": {
    "site": "junk_gate_batch",
    "parsed": [
@@ -289,35 +278,6 @@
    "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.account_research.fifteen_minute_account_brief\": 4330, \"sales.pb.investor_relations.reopen_after_a_pass\": 4627}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
    "input_tokens": 2631,
    "output_tokens": 70,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "d973d2b038fe7c4e104478099e3a3f82f10d47032806f27749b9758c25b5a3ed": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 3,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     }
-    ]
-   },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 864,
-   "output_tokens": 74,
    "model": "claude-haiku-4-5-20251001"
   },
   "dad61afef801144c21f13484037ccf9f09bb2cba83b28f2dc88ec6a0c5dbceec": {

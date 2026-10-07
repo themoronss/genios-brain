@@ -303,8 +303,8 @@
  },
  "witness": null,
  "not_expressible": {
-  "workstream": "STEP-09 — the engine forms no workstream; nothing to compare against"
+  "workstream": "STEP-11 — the file exists since STEP-09 (`GET /v1/workstreams`, its acceptance `tests/replays/test_every_piece_of_work_has_a_file.py`), but this line names its stage or state, and no stage is derived to compare against"
  },
  "notes": "Production typed most of the real wave as contract_renewal, the nearest of its 16 boxes, and never raised a follow-up.",
- "blocked_on": "the founder's outreach wave reaches memory (STEP-05), but its five awaiting-response readings are held at admission and the five fund situations sit dormant in the fundraising domain, which is not active; no follow-up decision is ever formed — STEP-09, STEP-10"
+ "blocked_on": "the founder's outreach wave reaches memory (STEP-05), but its five awaiting-response readings are held at admission and the five fund situations sit dormant in the fundraising domain, which is not active; no follow-up decision is ever formed — STEP-10 (the wave as one object), D2"
 }

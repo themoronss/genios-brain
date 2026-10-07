@@ -179,8 +179,8 @@
  },
  "witness": null,
  "not_expressible": {
-  "workstream": "STEP-09 — the engine forms no workstream; nothing to compare against",
-  "stage": "STEP-09 — no stage is derived for a workstream"
+  "workstream": "STEP-11 — the file exists since STEP-09 (`GET /v1/workstreams`, its acceptance `tests/replays/test_every_piece_of_work_has_a_file.py`), but this line names its stage or state, and no stage is derived to compare against",
+  "stage": "STEP-11 — no stage is derived for a file (STEP-09 built the files, not their stages)"
  },
  "model": {
   "decider": [
@@ -314,5 +314,5 @@
   ]
  },
  "notes": "Production's AI filter called the real 1 Oct mail junk.",
- "blocked_on": "the interview request reaches memory but is framed only as an investor relationship, whose plays fit neither an application nor an interview, and the faithful decider defers — STEP-09, STEP-11"
+ "blocked_on": "the interview request reaches memory but is framed only as an investor relationship, whose plays fit neither an application nor an interview, and the faithful decider defers — STEP-11 (a program's stages; STEP-09 files the accelerator as watched and names no stage)"
 }

@@ -1,9 +1,9 @@
 {
  "case_id": "F06",
  "source": "ideal_reader",
- "recorded_at": "fdd8b98a",
+ "recorded_at": "5a28449d",
  "answers": {
-  "1c33b57dec42eb684358fda8c103ff86fea0d166f1758e5c24dcb0acc024532f": {
+  "42642e1c2de50cb26737afdf2e698b1a3e6bb1c4b44bc08e8c10cb6ecbfafd1b": {
    "site": "r1",
    "parsed": {
     "readings": [
@@ -24,92 +24,18 @@
       "ambiguous": false,
       "classification": "NOT_INTERPRETABLE",
       "confidence_bp": 5000
-     }
-    ]
-   },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 937,
-   "output_tokens": 74,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "28a180b24f805092841ccc388731a895f278a37df6194500536066f0bb412e36": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "reply": 5600,
-     "wait_unanswered_email": 5600
-    },
-    "confidence_bp": 7000,
-    "rationale": "Introly is the founder's intro agent; its introduction asks nothing of Introly itself — the reply belongs to the person it introduced.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"reply\": 5600, \"wait_unanswered_email\": 5600}, \"confidence_bp\": 7000, \"rationale\": \"Introly is the founder's intro agent; its introduction asks nothing of Introly itself — the reply belongs to the person it introduced.\", \"missing\": []}",
-   "input_tokens": 1818,
-   "output_tokens": 66,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "5c5427226a6507056864fd3c5cddacc86c3dcb5833ec9b10b8a6363114cc2e1e": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "reply": 5400,
-     "wait_unanswered_email": 5400
-    },
-    "confidence_bp": 7000,
-    "rationale": "Introly is the founder's intro agent; its introduction asks nothing of Introly itself — the reply belongs to the person it introduced.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"reply\": 5400, \"wait_unanswered_email\": 5400}, \"confidence_bp\": 7000, \"rationale\": \"Introly is the founder's intro agent; its introduction asks nothing of Introly itself — the reply belongs to the person it introduced.\", \"missing\": []}",
-   "input_tokens": 1818,
-   "output_tokens": 66,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "645533333cc3c3e320b1f7ef630992126320b5c0f4dd445f4d8906aefbdb942a": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "reply": 6500,
-     "wait_unanswered_email": 5600
-    },
-    "confidence_bp": 5500,
-    "rationale": "A direct question is waiting on us.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5600}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
-   "input_tokens": 1948,
-   "output_tokens": 42,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "6beee498a69d6baf81e324079fdc99e31234824410b14589d36e824614b8b3fb": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
      },
      {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 3,
+      "item": 4,
       "ambiguous": false,
       "classification": "NOT_INTERPRETABLE",
       "confidence_bp": 5000
      }
     ]
    },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 864,
-   "output_tokens": 74,
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 4, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 970,
+   "output_tokens": 98,
    "model": "claude-haiku-4-5-20251001"
   },
   "6dc6c48af0235a59161c20d16dfaf9ef86caa3768390013d94e6a27ac1a40f31": {
@@ -203,6 +129,35 @@
    "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Are you around on Thursday for a 30-minute call?\", \"start_offset\": 72, \"end_offset\": 120, \"speaker_role_said\": \"unknown\"}",
    "input_tokens": 1325,
    "output_tokens": 50,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "b9e252977e6e35dd2a47594ff0a6052d1ad0ef6352ff523cc3ec12a1e3d49853": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "reply": 6500,
+     "wait_unanswered_email": 5600
+    },
+    "confidence_bp": 5500,
+    "rationale": "A direct question is waiting on us.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5600}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
+   "input_tokens": 1982,
+   "output_tokens": 42,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "cdd1da4550672e8c223a96caa39a59ba614c1520f75843e95dd55e202c50f55c": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Confirm Thursday's 30-minute call with Nikhil Bose",
+    "situation": "Nikhil Bose asked 2 days ago: \"Are you around on Thursday for a 30-minute call?\"",
+    "artifact": "Hi Nikhil, Thursday works for a 30-minute call. Would [time] suit you?"
+   },
+   "raw": "{\"headline\": \"Confirm Thursday's 30-minute call with Nikhil Bose\", \"situation\": \"Nikhil Bose asked 2 days ago: \\\"Are you around on Thursday for a 30-minute call?\\\"\", \"artifact\": \"Hi Nikhil, Thursday works for a 30-minute call. Would [time] suit you?\"}",
+   "input_tokens": 1792,
+   "output_tokens": 62,
    "model": "claude-haiku-4-5-20251001"
   },
   "dfb7504f2852b676a3ea7410f8f5d570c28ff91fec8c365fc2a303a5c16f4f5d": {
@@ -309,18 +264,6 @@
    "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
    "input_tokens": 847,
    "output_tokens": 24,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "e8f06058b868c12eac5b5be1ec628e35a4e1b0eb4a0e514956c44e329eb280ad": {
-   "site": "narrator",
-   "parsed": {
-    "headline": "Confirm Thursday's 30-minute call with Nikhil Bose",
-    "situation": "Nikhil Bose asked 2 days ago: \"Are you around on Thursday for a 30-minute call?\"",
-    "artifact": "Hi Nikhil, Thursday works for a 30-minute call. Would [time] suit you?"
-   },
-   "raw": "{\"headline\": \"Confirm Thursday's 30-minute call with Nikhil Bose\", \"situation\": \"Nikhil Bose asked 2 days ago: \\\"Are you around on Thursday for a 30-minute call?\\\"\", \"artifact\": \"Hi Nikhil, Thursday works for a 30-minute call. Would [time] suit you?\"}",
-   "input_tokens": 1781,
-   "output_tokens": 62,
    "model": "claude-haiku-4-5-20251001"
   },
   "f0ef9b5369d2598389ef3042dbeecec29be53a3347dea478a642f185689bc198": {

@@ -1,35 +1,23 @@
 {
  "case_id": "F04",
  "source": "ideal_reader",
- "recorded_at": "fdd8b98a",
+ "recorded_at": "5a28449d",
  "answers": {
-  "3b8450e1987e59420b9f1b62fdbf651e6245b297adda5b74a78f69c1dca867a2": {
-   "site": "r1",
+  "5d5e624b2e2381fa8b817c90f9e8fbdf5df0d1729719d93fb2c153eec8e849fb": {
+   "site": "decider",
    "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 3,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     }
-    ]
+    "outcome": "decision",
+    "scores": {
+     "reply": 6500,
+     "wait_unanswered_email": 5600
+    },
+    "confidence_bp": 5500,
+    "rationale": "A direct question is waiting on us.",
+    "missing": []
    },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 937,
-   "output_tokens": 74,
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5600}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
+   "input_tokens": 1989,
+   "output_tokens": 42,
    "model": "claude-haiku-4-5-20251001"
   },
   "73b3426e54f445c345e15e290910e4aaf1aa5c31d850b8ff7ce300ab62b25b6e": {
@@ -46,18 +34,6 @@
    "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Would you have 20 minutes next week to show me the product?\", \"start_offset\": 83, \"end_offset\": 142, \"speaker_role_said\": \"unknown\"}",
    "input_tokens": 1336,
    "output_tokens": 52,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "750b7c913fd669f36623335ce4f1d1d42c06bf00413ecd73b42c6815333e93e6": {
-   "site": "narrator",
-   "parsed": {
-    "headline": "Offer Sofia Brandt a 20-minute product demo",
-    "situation": "Sofia Brandt asked 2 days ago: \"Would you have 20 minutes next week to show me the product?\"",
-    "artifact": "Hi Sofia, happy to show you the product for 20 minutes next week. Would [day, time] work for you?"
-   },
-   "raw": "{\"headline\": \"Offer Sofia Brandt a 20-minute product demo\", \"situation\": \"Sofia Brandt asked 2 days ago: \\\"Would you have 20 minutes next week to show me the product?\\\"\", \"artifact\": \"Hi Sofia, happy to show you the product for 20 minutes next week. Would [day, time] work for you?\"}",
-   "input_tokens": 1606,
-   "output_tokens": 70,
    "model": "claude-haiku-4-5-20251001"
   },
   "7fca7b25dc81991288f972e06f64fe317204e88777424d70f6a5ab0412495f62": {
@@ -110,21 +86,39 @@
    "output_tokens": 43,
    "model": "claude-haiku-4-5-20251001"
   },
-  "9a062fced933d6c5748d616bf0b0012a9b2b2a4c1aa2bb5dfef17a230a7a2d0e": {
-   "site": "decider",
+  "a08569cd2f8544f746234202f96d80c1b09fc9f9faf44cad12c6462210404e78": {
+   "site": "r1",
    "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "reply": 5600,
-     "wait_unanswered_email": 5600
-    },
-    "confidence_bp": 7000,
-    "rationale": "Introly is the founder's intro agent; its introduction asks nothing of Introly itself — the reply belongs to the person it introduced.",
-    "missing": []
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 4,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
    },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"reply\": 5600, \"wait_unanswered_email\": 5600}, \"confidence_bp\": 7000, \"rationale\": \"Introly is the founder's intro agent; its introduction asks nothing of Introly itself — the reply belongs to the person it introduced.\", \"missing\": []}",
-   "input_tokens": 1818,
-   "output_tokens": 66,
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 4, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 970,
+   "output_tokens": 98,
    "model": "claude-haiku-4-5-20251001"
   },
   "ba1c0bc025d27e14a2102336d3bc3c0445f2ea0aafd3a626ea5a724cd6cdde0b": {
@@ -218,35 +212,6 @@
    "output_tokens": 356,
    "model": "claude-haiku-4-5-20251001"
   },
-  "c0860a6389e5c490be854f4735942aef0f27cda1e2d034e112bb6ac95d4ed5a8": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 3,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     }
-    ]
-   },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 864,
-   "output_tokens": 74,
-   "model": "claude-haiku-4-5-20251001"
-  },
   "e3f0297358609203ebfbf5389b2865c6e89f55f9cfd5dcc5c7913b68dcc6ea09": {
    "site": "extraction",
    "parsed": {
@@ -305,21 +270,16 @@
    "output_tokens": 198,
    "model": "claude-haiku-4-5-20251001"
   },
-  "f8d1ce00f239a078c07ab1ea77fa44876a744e72bbaa33e3d251e056a414157d": {
-   "site": "decider",
+  "ec0ea461fc19e17e6371b50083876c9cf9591f65a6097c7acdea60e685fc8526": {
+   "site": "narrator",
    "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "reply": 6500,
-     "wait_unanswered_email": 5600
-    },
-    "confidence_bp": 5500,
-    "rationale": "A direct question is waiting on us.",
-    "missing": []
+    "headline": "Offer Sofia Brandt a 20-minute product demo",
+    "situation": "Sofia Brandt asked 2 days ago: \"Would you have 20 minutes next week to show me the product?\"",
+    "artifact": "Hi Sofia, happy to show you the product for 20 minutes next week. Would [day, time] work for you?"
    },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5600}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
-   "input_tokens": 1955,
-   "output_tokens": 42,
+   "raw": "{\"headline\": \"Offer Sofia Brandt a 20-minute product demo\", \"situation\": \"Sofia Brandt asked 2 days ago: \\\"Would you have 20 minutes next week to show me the product?\\\"\", \"artifact\": \"Hi Sofia, happy to show you the product for 20 minutes next week. Would [day, time] work for you?\"}",
+   "input_tokens": 1617,
+   "output_tokens": 70,
    "model": "claude-haiku-4-5-20251001"
   }
  }

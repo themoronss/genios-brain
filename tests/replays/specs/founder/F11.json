@@ -111,7 +111,7 @@
  },
  "witness": null,
  "not_expressible": {
-  "workstream": "STEP-09 — the engine forms no workstream; nothing to compare against"
+  "workstream": "STEP-11 — the file exists since STEP-09 (`GET /v1/workstreams`, its acceptance `tests/replays/test_every_piece_of_work_has_a_file.py`), but this line names its stage or state, and no stage is derived to compare against"
  },
  "model": {
   "decider": [
@@ -206,5 +206,5 @@
   ]
  },
  "notes": "Production's AI filter called the real mail junk.",
- "blocked_on": "the investor's question reaches memory since STEP-05 (below the floor); no situation takes it to the decider, so no card — lost in reasoning (STEP-09, STEP-12)"
+ "blocked_on": "the investor's question reaches memory since STEP-05 (below the floor); no situation takes it to the decider, so no card — lost in reasoning (STEP-12: STEP-09 lists the file, and nothing yet takes a file to the decider)"
 }

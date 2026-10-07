@@ -1,7 +1,7 @@
 {
  "case_id": "F07",
  "source": "ideal_reader",
- "recorded_at": "fdd8b98a",
+ "recorded_at": "5a28449d",
  "answers": {
   "04a81d79b4ce19e86f955295d36f5fe8b74d1baad72a23f40ef7428e3ecff218": {
    "site": "extraction",
@@ -77,6 +77,23 @@
    "output_tokens": 47,
    "model": "claude-haiku-4-5-20251001"
   },
+  "30aa2eedafa6b203a071176f05aa3749bac99c4ccf80fa0d37ad816a60ad312e": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "reply": 5600,
+     "wait_unanswered_email": 5600
+    },
+    "confidence_bp": 4000,
+    "rationale": "Leela's notes set up the 13 Aug call and said what Leela would bring to it; nothing asks us anything, and the call date has passed.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"reply\": 5600, \"wait_unanswered_email\": 5600}, \"confidence_bp\": 4000, \"rationale\": \"Leela's notes set up the 13 Aug call and said what Leela would bring to it; nothing asks us anything, and the call date has passed.\", \"missing\": []}",
+   "input_tokens": 1966,
+   "output_tokens": 66,
+   "model": "claude-haiku-4-5-20251001"
+  },
   "3102d8da0ae641a305a00403d1b95d45a8c8711804e1364a4977041e9e180cc6": {
    "site": "relevance",
    "parsed": {
@@ -96,51 +113,16 @@
    "output_tokens": 38,
    "model": "claude-haiku-4-5-20251001"
   },
-  "4bcd7ad95ea231d04099c59cd07f914d423e74735b1c607adc050a8a099ca30c": {
-   "site": "r1",
+  "4ccf83550d612e83b605ec147149434586a5085e634ae21cfc829097e6d48991": {
+   "site": "narrator",
    "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 3,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     }
-    ]
+    "headline": "Reply to Leela at ferngrove.test",
+    "situation": "Leela at ferngrove.test wrote last and the next move is ours; nothing on record says what is still open.",
+    "artifact": "Hi Leela, thanks for your note. What would be most useful from us next?"
    },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 864,
-   "output_tokens": 74,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "6359967f21ddc23eca0d338e69a7007aa382ffac096f8ae57d07c2b3248b14af": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4540,
-     "admin.pb.follow_up_coordination.the_follow_through_relay": 4596,
-     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 6200
-    },
-    "confidence_bp": 5000,
-    "rationale": "Someone at this company asked us something and the ball is in our court.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4540, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4596, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 6200}, \"confidence_bp\": 5000, \"rationale\": \"Someone at this company asked us something and the ball is in our court.\", \"missing\": []}",
-   "input_tokens": 2887,
-   "output_tokens": 91,
+   "raw": "{\"headline\": \"Reply to Leela at ferngrove.test\", \"situation\": \"Leela at ferngrove.test wrote last and the next move is ours; nothing on record says what is still open.\", \"artifact\": \"Hi Leela, thanks for your note. What would be most useful from us next?\"}",
+   "input_tokens": 1030,
+   "output_tokens": 64,
    "model": "claude-haiku-4-5-20251001"
   },
   "670a640f9e8425c68ee296489ca23e6a693bd9df3a1a069012710f23964408d7": {
@@ -162,16 +144,22 @@
    "output_tokens": 113,
    "model": "claude-haiku-4-5-20251001"
   },
-  "6c530d1b7c346bd85b79d431b833b5f74df2e5483108a1585c13419d783472b9": {
-   "site": "narrator",
+  "7436ff2aa262392fd4a0dcbb921ffbb15f85418215986f9302fe48b6e89cfb70": {
+   "site": "decider",
    "parsed": {
-    "headline": "Reply to Leela at ferngrove.test",
-    "situation": "Leela at ferngrove.test wrote last and the next move is ours; nothing on record says what is still open.",
-    "artifact": "Hi Leela, thanks for your note. What would be most useful from us next?"
+    "outcome": "decision",
+    "scores": {
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4610,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 4666,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 6200
+    },
+    "confidence_bp": 5000,
+    "rationale": "Someone at this company asked us something and the ball is in our court.",
+    "missing": []
    },
-   "raw": "{\"headline\": \"Reply to Leela at ferngrove.test\", \"situation\": \"Leela at ferngrove.test wrote last and the next move is ours; nothing on record says what is still open.\", \"artifact\": \"Hi Leela, thanks for your note. What would be most useful from us next?\"}",
-   "input_tokens": 1032,
-   "output_tokens": 64,
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4610, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4666, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 6200}, \"confidence_bp\": 5000, \"rationale\": \"Someone at this company asked us something and the ball is in our court.\", \"missing\": []}",
+   "input_tokens": 2867,
+   "output_tokens": 91,
    "model": "claude-haiku-4-5-20251001"
   },
   "79042e50981949007ec2077db0dabe1e1cc3977b4249cd8ea63f7718f6254874": {
@@ -187,23 +175,6 @@
    "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
    "input_tokens": 835,
    "output_tokens": 24,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "7de06b847d2bf137f52493c0ea810891b832decd6144fb92c64abe534cd132a7": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "reply": 5600,
-     "wait_unanswered_email": 5600
-    },
-    "confidence_bp": 7000,
-    "rationale": "Introly is the founder's intro agent; its introduction asks nothing of Introly itself — the reply belongs to the person it introduced.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"reply\": 5600, \"wait_unanswered_email\": 5600}, \"confidence_bp\": 7000, \"rationale\": \"Introly is the founder's intro agent; its introduction asks nothing of Introly itself — the reply belongs to the person it introduced.\", \"missing\": []}",
-   "input_tokens": 1818,
-   "output_tokens": 66,
    "model": "claude-haiku-4-5-20251001"
   },
   "8456a898d9a312c559a38011be962807fced504445f03fd0d9aa588037d90cf8": {
@@ -227,23 +198,6 @@
    "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
    "input_tokens": 831,
    "output_tokens": 51,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "8579c47f6c5b4118621a5f446d9c561d85bd511243f633a66dc54018916468ef": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "reply": 5600,
-     "wait_unanswered_email": 5600
-    },
-    "confidence_bp": 4000,
-    "rationale": "Leela's notes set up the 13 Aug call and said what Leela would bring to it; nothing asks us anything, and the call date has passed.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"reply\": 5600, \"wait_unanswered_email\": 5600}, \"confidence_bp\": 4000, \"rationale\": \"Leela's notes set up the 13 Aug call and said what Leela would bring to it; nothing asks us anything, and the call date has passed.\", \"missing\": []}",
-   "input_tokens": 1932,
-   "output_tokens": 66,
    "model": "claude-haiku-4-5-20251001"
   },
   "864e9fa59de89b0cbf0373bdb0635193bd7b9d74716f203d41654fa49782a531": {
@@ -323,6 +277,24 @@
    "output_tokens": 124,
    "model": "claude-haiku-4-5-20251001"
   },
+  "a392698ac5501e2e0372a0c91994c0e773fb4089db96292285ea142c7dc30f73": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4733,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 4789,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 6200
+    },
+    "confidence_bp": 5000,
+    "rationale": "Someone at this company asked us something and the ball is in our court.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4733, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4789, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 6200}, \"confidence_bp\": 5000, \"rationale\": \"Someone at this company asked us something and the ball is in our court.\", \"missing\": []}",
+   "input_tokens": 2862,
+   "output_tokens": 91,
+   "model": "claude-haiku-4-5-20251001"
+  },
   "adcca8b62c304583e166eff7793ff6d93a0e6477eed1f3d861bd64243e631c8c": {
    "site": "resolution",
    "parsed": {
@@ -352,41 +324,6 @@
    "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
    "input_tokens": 830,
    "output_tokens": 24,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "b27fcf379926260b16df040efab2e6c58e60fd5d686a2acbeb2c4262560f2f7e": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 3,
-      "ambiguous": false,
-      "classification": "COMMITMENT_MADE",
-      "confidence_bp": 6000
-     },
-     {
-      "item": 4,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     }
-    ]
-   },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"COMMITMENT_MADE\", \"confidence_bp\": 6000}, {\"item\": 4, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 981,
-   "output_tokens": 98,
    "model": "claude-haiku-4-5-20251001"
   },
   "b46e683f37fc89d6cc3e6af33587680602a98a083a22b33aa026216d394854b5": {
@@ -440,6 +377,24 @@
    "raw": "{\"intent\": \"commit\", \"stance\": \"positive\", \"topics\": [\"onboarding\"], \"entity_mentions\": [{\"surface_form\": \"Leela\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Leela\", \"start_offset\": 13, \"end_offset\": 18}], \"confidence_bp\": 9000}], \"commitments\": [{\"actor\": \"Leela Krishnan\", \"action\": \"bring the current onboarding flow to the call\", \"beneficiary\": \"Arjun Rao\", \"is_conditional\": false, \"evidence\": [{\"quote\": \"I'll bring our current onboarding flow\", \"start_offset\": 64, \"end_offset\": 102}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
    "input_tokens": 5310,
    "output_tokens": 179,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "c36a109622b38babbec95d45e19b6c051431d308a3386d4a50ebc2bf5f63137d": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4616,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 4672,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 6200
+    },
+    "confidence_bp": 5000,
+    "rationale": "Someone at this company asked us something and the ball is in our court.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4616, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4672, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 6200}, \"confidence_bp\": 5000, \"rationale\": \"Someone at this company asked us something and the ball is in our court.\", \"missing\": []}",
+   "input_tokens": 2867,
+   "output_tokens": 91,
    "model": "claude-haiku-4-5-20251001"
   },
   "c3735627c093641167c01fba03a0e897aa68c02ecc3bae186d1d72ac53d7ff43": {
@@ -522,6 +477,47 @@
    "output_tokens": 50,
    "model": "claude-haiku-4-5-20251001"
   },
+  "d36496d45b2c2a9a05bdc2c3c86899dd850c2d5e7b455fb7f28f53e4614933ce": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "COMMITMENT_MADE",
+      "confidence_bp": 6000
+     },
+     {
+      "item": 4,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 5,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"COMMITMENT_MADE\", \"confidence_bp\": 6000}, {\"item\": 4, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 5, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 1014,
+   "output_tokens": 121,
+   "model": "claude-haiku-4-5-20251001"
+  },
   "dfee3c830d900c5e0dd174bb9f3982a905625bd18450c681bcb4f02118385d3d": {
    "site": "relevance",
    "parsed": {
@@ -539,24 +535,6 @@
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Arjun <> Leela Krishnan (Ferngrove)\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
    "input_tokens": 966,
    "output_tokens": 43,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "f52e82e727cf89db05b43371d39fcd189bd895e18e2714bf79778a8cab4ddc6b": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4663,
-     "admin.pb.follow_up_coordination.the_follow_through_relay": 4719,
-     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 6200
-    },
-    "confidence_bp": 5000,
-    "rationale": "Someone at this company asked us something and the ball is in our court.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4663, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4719, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 6200}, \"confidence_bp\": 5000, \"rationale\": \"Someone at this company asked us something and the ball is in our court.\", \"missing\": []}",
-   "input_tokens": 2881,
-   "output_tokens": 91,
    "model": "claude-haiku-4-5-20251001"
   }
  }

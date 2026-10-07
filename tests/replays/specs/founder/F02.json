@@ -278,9 +278,28 @@
  },
  "witness": null,
  "not_expressible": {
-  "workstream": "STEP-09 — the engine forms no workstream; nothing to compare against",
-  "stage": "STEP-09 — no stage is derived for a workstream"
+  "workstream": "STEP-11 — the file exists since STEP-09 (`GET /v1/workstreams`, its acceptance `tests/replays/test_every_piece_of_work_has_a_file.py`), but this line names its stage or state, and no stage is derived to compare against",
+  "stage": "STEP-11 — no stage is derived for a file (STEP-09 built the files, not their stages)"
  },
  "notes": "Three of the four real mails were dropped by the rules (Promotions N-06, no-reply N-03); the fourth passed them and the AI filter called it junk, which is also the faithful answer to an automated acknowledgement.",
- "blocked_on": "all four mails are kept and read now (STEP-07, W-07: the brief's watchlist names the portal and the locker) and reach memory — but no situation forms about the application, only the period reviews; an application in motion is a workstream — STEP-09"
+ "blocked_on": "the portal and the locker each have their own file since STEP-09, and the portal's account_admin situation now reaches the decider — which is shown none of the notices' words, only the company, and faithfully defers: no card — the file's content in front of the decider is STEP-12 (the dossier)",
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "account admin",
+     "startupsetu.gov.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Nothing shown says what StartupSetu asked of us or what we owe it; a portal's company with no message in front of us is not something to act on.",
+     "missing": [
+      "what the portal's notices say"
+     ]
+    }
+   }
+  ]
+ }
 }

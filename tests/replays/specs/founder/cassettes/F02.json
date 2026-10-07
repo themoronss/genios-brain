@@ -1,8 +1,28 @@
 {
  "case_id": "F02",
  "source": "ideal_reader",
- "recorded_at": "fdd8b98a",
+ "recorded_at": "5a28449d",
  "answers": {
+  "106ca1f0d398e638b7e886b6b28dd94664d10bdfeccb04b28aec3e4665f2831e": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4470,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 4526,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 4719
+    },
+    "confidence_bp": 4000,
+    "rationale": "Nothing shown says what StartupSetu asked of us or what we owe it; a portal's company with no message in front of us is not something to act on.",
+    "missing": [
+     "what the portal's notices say"
+    ]
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4470, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4526, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 4719}, \"confidence_bp\": 4000, \"rationale\": \"Nothing shown says what StartupSetu asked of us or what we owe it; a portal's company with no message in front of us is not something to act on.\", \"missing\": [\"what the portal's notices say\"]}",
+   "input_tokens": 2809,
+   "output_tokens": 116,
+   "model": "claude-haiku-4-5-20251001"
+  },
   "43ea30d30680d013cf8d0a2f1b563381f29e8a930cc66b255f4b6212ff4e4b55": {
    "site": "extraction",
    "parsed": {
@@ -80,6 +100,22 @@
    "output_tokens": 286,
    "model": "claude-haiku-4-5-20251001"
   },
+  "595db189ff53e1faeaa641fea651ee0cdfe9109e60cf927f4a80510b0402bade": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Upload it on the StartupSetu portal within 7 days, or the application will be closed.",
+    "start_offset": 137,
+    "end_offset": 222,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Upload it on the StartupSetu portal within 7 days, or the application will be closed.\", \"start_offset\": 137, \"end_offset\": 222, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1339,
+   "output_tokens": 59,
+   "model": "claude-haiku-4-5-20251001"
+  },
   "7447b7f446e6c175003b75e2433eb90b3c1bd9ca1a48e81b1bc01502ee778684": {
    "site": "extraction",
    "parsed": {
@@ -131,6 +167,26 @@
    "raw": "{\"intent\": \"acknowledge\", \"stance\": \"neutral\", \"topics\": [\"startup recognition\", \"application status\"], \"entity_mentions\": [{\"surface_form\": \"StartupSetu\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"StartupSetu\", \"start_offset\": 182, \"end_offset\": 193}], \"confidence_bp\": 9000}], \"decision_states\": [{\"subject\": \"the board resolution for the recognition application\", \"state\": \"pending\", \"owner\": \"StartupSetu\", \"evidence\": [{\"quote\": \"The examiner will review it and update the application\", \"start_offset\": 116, \"end_offset\": 170}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"transactional\", \"tone\": \"neutral\", \"formality\": \"templated\", \"addressed_personally\": false, \"human_authored\": false, \"asks_for_reply\": false, \"engagement\": \"medium\"}}",
    "input_tokens": 5327,
    "output_tokens": 192,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "dd7d82416154fc88b4dc99d15a07d36fc9bfe7a8383913a1c3db9120116c1061": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4470,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 4526,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 4719
+    },
+    "confidence_bp": 4000,
+    "rationale": "Nothing shown says what StartupSetu asked of us or what we owe it; a portal's company with no message in front of us is not something to act on.",
+    "missing": [
+     "what the portal's notices say"
+    ]
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4470, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4526, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 4719}, \"confidence_bp\": 4000, \"rationale\": \"Nothing shown says what StartupSetu asked of us or what we owe it; a portal's company with no message in front of us is not something to act on.\", \"missing\": [\"what the portal's notices say\"]}",
+   "input_tokens": 2827,
+   "output_tokens": 116,
    "model": "claude-haiku-4-5-20251001"
   },
   "ea0add451d8a8d11c5481fc0da1d7d5ea290a275bb0b2c34e1ec67318d114d9e": {
@@ -199,6 +255,22 @@
    "raw": "{\"intent\": \"request\", \"stance\": \"neutral\", \"topics\": [\"startup recognition\"], \"entity_mentions\": [{\"surface_form\": \"StartupSetu\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"StartupSetu\", \"start_offset\": 154, \"end_offset\": 165}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Upload a board resolution authorising the applicant\", \"asked_by\": \"StartupSetu\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Upload it on the StartupSetu portal within 7 days\", \"start_offset\": 137, \"end_offset\": 186}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"within 7 days\", \"earliest\": \"2026-09-29T06:00:00Z\", \"latest\": \"2026-10-06T18:29:59Z\", \"certainty\": \"range\", \"resolved_against\": \"2026-09-29T06:00:00Z\", \"evidence\": [{\"quote\": \"within 7 days\", \"start_offset\": 173, \"end_offset\": 186}]}], \"exchange_intent\": {\"category\": \"transactional\", \"tone\": \"neutral\", \"formality\": \"templated\", \"addressed_personally\": false, \"human_authored\": false, \"asks_for_reply\": true, \"engagement\": \"high\"}}",
    "input_tokens": 5340,
    "output_tokens": 251,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "f32e511e4a11d91c6f9a71dda79e2bdf62e19e96066be63851d690e195c5905d": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "The examiner will review it and update the application.",
+    "start_offset": 116,
+    "end_offset": 171,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"The examiner will review it and update the application.\", \"start_offset\": 116, \"end_offset\": 171, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1327,
+   "output_tokens": 52,
    "model": "claude-haiku-4-5-20251001"
   },
   "f62714ddcce9d038aa1050db5f8244198523499d190937a5164dd6dbe6edd67c": {

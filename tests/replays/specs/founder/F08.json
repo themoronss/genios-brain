@@ -179,13 +179,16 @@
    {
     "when": [
      "unanswered email",
-     "this is a person: Introly"
+     "party.role: introduced"
     ],
     "answer": {
      "outcome": "defer",
-     "confidence_bp": 7000,
-     "rationale": "Introly is the founder's intro agent; its introduction asks nothing of Introly itself — the reply belongs to the person it introduced.",
-     "missing": []
+     "move": {},
+     "confidence_bp": 5000,
+     "rationale": "An introduction that asks nothing of the founder yet, with no word from either side since: a line to watch in the brief, not a card.",
+     "missing": [
+      "a reply from the person introduced"
+     ]
     }
    }
   ]

@@ -150,7 +150,7 @@
  },
  "witness": null,
  "not_expressible": {
-  "workstream": "STEP-09 — the engine forms no workstream; nothing to compare against"
+  "workstream": "STEP-11 — the file exists since STEP-09 (`GET /v1/workstreams`, its acceptance `tests/replays/test_every_piece_of_work_has_a_file.py`), but this line names its stage or state, and no stage is derived to compare against"
  },
  "model": {
   "narrator": [
@@ -481,5 +481,5 @@
    }
   ]
  },
- "blocked_on": "one partner gets three cards, and the follow-through narrator is told a call 'happened' and asked for a recap — STEP-09, STEP-14, replay 05"
+ "blocked_on": "one partner gets three cards, and the follow-through narrator is told a call 'happened' and asked for a recap — STEP-14, replay 05"
 }

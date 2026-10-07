@@ -1,0 +1,283 @@
+{
+ "F01": {
+  "miss": true,
+  "error": "cassette miss at the resolution site (key 9b2d3692989d\u2026): the chain asked the model something this case's recording does not answer. A prompt changed, or the case reached a site it never reached before \u2014 re-record deliberately (scripts/golden_eval.py --record), never by loosening the key."
+ },
+ "F02": {
+  "miss": true,
+  "error": "cassette miss at the resolution site (key 595db189ff53\u2026): the chain asked the model something this case's recording does not answer. A prompt changed, or the case reached a site it never reached before \u2014 re-record deliberately (scripts/golden_eval.py --record), never by loosening the key."
+ },
+ "F03": {
+  "miss": true,
+  "error": "cassette miss at the r1 site (key 3d487e057b4b\u2026): the chain asked the model something this case's recording does not answer. A prompt changed, or the case reached a site it never reached before \u2014 re-record deliberately (scripts/golden_eval.py --record), never by loosening the key."
+ },
+ "F04": {
+  "miss": true,
+  "error": "cassette miss at the r1 site (key a08569cd2f85\u2026): the chain asked the model something this case's recording does not answer. A prompt changed, or the case reached a site it never reached before \u2014 re-record deliberately (scripts/golden_eval.py --record), never by loosening the key."
+ },
+ "F05": {
+  "miss": true,
+  "error": "cassette miss at the r1 site (key fb8ce7de61e0\u2026): the chain asked the model something this case's recording does not answer. A prompt changed, or the case reached a site it never reached before \u2014 re-record deliberately (scripts/golden_eval.py --record), never by loosening the key."
+ },
+ "F06": {
+  "miss": true,
+  "error": "cassette miss at the r1 site (key 42642e1c2de5\u2026): the chain asked the model something this case's recording does not answer. A prompt changed, or the case reached a site it never reached before \u2014 re-record deliberately (scripts/golden_eval.py --record), never by loosening the key."
+ },
+ "F07": {
+  "miss": true,
+  "error": "cassette miss at the decider site (key 7436ff2aa262\u2026): the chain asked the model something this case's recording does not answer. A prompt changed, or the case reached a site it never reached before \u2014 re-record deliberately (scripts/golden_eval.py --record), never by loosening the key."
+ },
+ "F08": {
+  "miss": true,
+  "error": "cassette miss at the r1 site (key 0d94301223f0\u2026): the chain asked the model something this case's recording does not answer. A prompt changed, or the case reached a site it never reached before \u2014 re-record deliberately (scripts/golden_eval.py --record), never by loosening the key."
+ },
+ "F09": {
+  "miss": false,
+  "verdict": "fail",
+  "lost_at": "reasoning",
+  "reason": "0 cards about Introly over every sweep; expected exactly 1",
+  "cards": 0
+ },
+ "F10": {
+  "miss": false,
+  "verdict": "pass",
+  "lost_at": null,
+  "reason": "what the founder sees is what the case expects",
+  "cards": 1
+ },
+ "F11": {
+  "miss": false,
+  "verdict": "fail",
+  "lost_at": "reasoning",
+  "reason": "0 cards about Tom/Northfield over every sweep; expected exactly 1",
+  "cards": 0
+ },
+ "F12": {
+  "miss": false,
+  "verdict": "pass",
+  "lost_at": null,
+  "reason": "what the founder sees is what the case expects",
+  "cards": 1
+ },
+ "F13": {
+  "miss": false,
+  "verdict": "pass",
+  "lost_at": null,
+  "reason": "what the founder sees is what the case expects",
+  "cards": 1
+ },
+ "F14": {
+  "miss": false,
+  "verdict": "not_expressible",
+  "lost_at": null,
+  "reason": "every card expectation is declared not expressible",
+  "cards": 0
+ },
+ "F15": {
+  "miss": false,
+  "verdict": "fail",
+  "lost_at": null,
+  "reason": "0 cards about Cobalt Peak/Juniper Ridge/Lattice Capital/Meridian Seed/Northstar Angels over every sweep; expected exactly 1",
+  "cards": 0
+ },
+ "F16": {
+  "miss": false,
+  "verdict": "fail",
+  "lost_at": "gate",
+  "reason": "0 cards about lattice-capital.test/Lattice over every sweep; expected exactly 1",
+  "cards": 0
+ },
+ "F17": {
+  "miss": false,
+  "verdict": "fail",
+  "lost_at": "reasoning",
+  "reason": "0 cards about Gulf Launchpad/Amira over every sweep; expected exactly 1",
+  "cards": 0
+ },
+ "F18": {
+  "miss": false,
+  "verdict": "not_expressible",
+  "lost_at": null,
+  "reason": "every card expectation is declared not expressible",
+  "cards": 0
+ },
+ "F19": {
+  "miss": false,
+  "verdict": "fail",
+  "lost_at": "reasoning",
+  "reason": "0 cards about Ekta over every sweep; expected exactly 1",
+  "cards": 2
+ },
+ "F20": {
+  "miss": false,
+  "verdict": "not_expressible",
+  "lost_at": null,
+  "reason": "every card expectation is declared not expressible",
+  "cards": 0
+ },
+ "F21": {
+  "miss": false,
+  "verdict": "not_expressible",
+  "lost_at": null,
+  "reason": "every card expectation is declared not expressible",
+  "cards": 0
+ },
+ "F22": {
+  "miss": false,
+  "verdict": "not_expressible",
+  "lost_at": null,
+  "reason": "every card expectation is declared not expressible",
+  "cards": 0
+ },
+ "F23": {
+  "miss": false,
+  "verdict": "not_expressible",
+  "lost_at": null,
+  "reason": "every card expectation is declared not expressible",
+  "cards": 0
+ },
+ "F24": {
+  "miss": false,
+  "verdict": "fail",
+  "lost_at": "reasoning",
+  "reason": "0 cards about Phase-1/review deck over every sweep; expected exactly 1",
+  "cards": 1
+ },
+ "F25": {
+  "miss": false,
+  "verdict": "pass",
+  "lost_at": null,
+  "reason": "what the founder sees is what the case expects",
+  "cards": 1
+ },
+ "F26": {
+  "miss": false,
+  "verdict": "pass",
+  "lost_at": null,
+  "reason": "what the founder sees is what the case expects",
+  "cards": 1
+ },
+ "F27": {
+  "miss": false,
+  "verdict": "fail",
+  "lost_at": "reasoning",
+  "reason": "2 cards about Varun/Cleanwave over every sweep; expected exactly 1",
+  "cards": 2
+ },
+ "F28": {
+  "miss": false,
+  "verdict": "pass",
+  "lost_at": null,
+  "reason": "what the founder sees is what the case expects",
+  "cards": 1
+ },
+ "F29": {
+  "miss": false,
+  "verdict": "fail",
+  "lost_at": "reasoning",
+  "reason": "3 cards about Aman/Memloop over every sweep; expected 1\u20132 | card_1c988d629044c8539001bbf9 says 'happened'; card_6a736c5059604657bd37869e says 'happened'",
+  "cards": 3
+ },
+ "F30": {
+  "miss": false,
+  "verdict": "not_expressible",
+  "lost_at": null,
+  "reason": "every card expectation is declared not expressible",
+  "cards": 0
+ },
+ "F31": {
+  "miss": false,
+  "verdict": "pass",
+  "lost_at": null,
+  "reason": "what the founder sees is what the case expects",
+  "cards": 1
+ },
+ "F32": {
+  "miss": false,
+  "verdict": "pass",
+  "lost_at": null,
+  "reason": "what the founder sees is what the case expects",
+  "cards": 0
+ },
+ "F33": {
+  "miss": false,
+  "verdict": "pass",
+  "lost_at": null,
+  "reason": "what the founder sees is what the case expects",
+  "cards": 0
+ },
+ "F34": {
+  "miss": false,
+  "verdict": "pass",
+  "lost_at": null,
+  "reason": "what the founder sees is what the case expects",
+  "cards": 0
+ },
+ "F35": {
+  "miss": false,
+  "verdict": "pass",
+  "lost_at": null,
+  "reason": "what the founder sees is what the case expects",
+  "cards": 0
+ },
+ "F36": {
+  "miss": false,
+  "verdict": "pass",
+  "lost_at": null,
+  "reason": "what the founder sees is what the case expects",
+  "cards": 0
+ },
+ "F37": {
+  "miss": true,
+  "error": "cassette miss at the r1 site (key 30d99db12c10\u2026): the chain asked the model something this case's recording does not answer. A prompt changed, or the case reached a site it never reached before \u2014 re-record deliberately (scripts/golden_eval.py --record), never by loosening the key."
+ },
+ "F38": {
+  "miss": false,
+  "verdict": "pass",
+  "lost_at": null,
+  "reason": "what the founder sees is what the case expects",
+  "cards": 0
+ },
+ "F39": {
+  "miss": false,
+  "verdict": "pass",
+  "lost_at": null,
+  "reason": "what the founder sees is what the case expects",
+  "cards": 0
+ },
+ "F40": {
+  "miss": false,
+  "verdict": "fail",
+  "lost_at": null,
+  "reason": "2 cards about Meera/Tallgrass/meera@tallgrass.test over every sweep; expected exactly 0 | card_2ee0f2da383656e4f13b97f8 says 'happened'",
+  "cards": 2
+ },
+ "F41": {
+  "miss": false,
+  "verdict": "pass",
+  "lost_at": null,
+  "reason": "what the founder sees is what the case expects",
+  "cards": 0
+ },
+ "F42": {
+  "miss": false,
+  "verdict": "pass",
+  "lost_at": null,
+  "reason": "what the founder sees is what the case expects",
+  "cards": 1
+ },
+ "F43": {
+  "miss": false,
+  "verdict": "pass",
+  "lost_at": null,
+  "reason": "what the founder sees is what the case expects",
+  "cards": 0
+ },
+ "F44": {
+  "miss": false,
+  "verdict": "pass",
+  "lost_at": null,
+  "reason": "what the founder sees is what the case expects",
+  "cards": 1
+ }
+}

@@ -1,7 +1,7 @@
 {
  "case_id": "F05",
  "source": "ideal_reader",
- "recorded_at": "fdd8b98a",
+ "recorded_at": "5a28449d",
  "answers": {
   "0eec41e9763b9a04158654fdfdb2499380efbc8d83cfba6cc59af5af783d6a96": {
    "site": "junk_gate_batch",
@@ -18,7 +18,7 @@
    "output_tokens": 24,
    "model": "claude-haiku-4-5-20251001"
   },
-  "341dab1c19678052e2ccac30d1fb65ebb9925365e917b42f13b4e23922801c92": {
+  "1f39a23c0332927cbeaeb0d646922d97a70f44d850020c16600c83ae10a2fa9a": {
    "site": "narrator",
    "parsed": {
     "headline": "Send Marco Ruiz a short deck before the call",
@@ -26,37 +26,8 @@
     "artifact": "Hi Marco, attaching a short deck as you asked. Happy to set up a call once you have had a look."
    },
    "raw": "{\"headline\": \"Send Marco Ruiz a short deck before the call\", \"situation\": \"Marco Ruiz asked 2 days ago: \\\"Could you send a short deck before we set up a call?\\\"\", \"artifact\": \"Hi Marco, attaching a short deck as you asked. Happy to set up a call once you have had a look.\"}",
-   "input_tokens": 1610,
+   "input_tokens": 1622,
    "output_tokens": 68,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "386fa37044bb072ef2f94b2356eef1b65ecaaf47c867acab81bc55623c55d216": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 3,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     }
-    ]
-   },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 864,
-   "output_tokens": 74,
    "model": "claude-haiku-4-5-20251001"
   },
   "489ae2f15205edb172b4395d134fef71c058cf2ee5b396808486571adcb22654": {
@@ -160,53 +131,7 @@
    "output_tokens": 244,
    "model": "claude-haiku-4-5-20251001"
   },
-  "684c32e2adbf2627eb0cc150992fb42d757a807d42a455801bcc3e58ae28f04d": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "reply": 5400,
-     "wait_unanswered_email": 5400
-    },
-    "confidence_bp": 7000,
-    "rationale": "Introly is the founder's intro agent; its introduction asks nothing of Introly itself — the reply belongs to the person it introduced.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"reply\": 5400, \"wait_unanswered_email\": 5400}, \"confidence_bp\": 7000, \"rationale\": \"Introly is the founder's intro agent; its introduction asks nothing of Introly itself — the reply belongs to the person it introduced.\", \"missing\": []}",
-   "input_tokens": 1818,
-   "output_tokens": 66,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "6c99f9c50f8ab8c1936f58d88c3656cc8248f8764ae62e21baacf054494eb65a": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 3,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     }
-    ]
-   },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 937,
-   "output_tokens": 74,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "8f2cdd7f23fe3acce149c2a0927fe19e669763bca413a3ff2f007d9a511d1f75": {
+  "9d40e0024dccc9fd611ee16648b1284f47700f5038833d60b0fe4bb3e991b03d": {
    "site": "decider",
    "parsed": {
     "outcome": "decision",
@@ -219,7 +144,7 @@
     "missing": []
    },
    "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5600}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
-   "input_tokens": 1902,
+   "input_tokens": 1936,
    "output_tokens": 42,
    "model": "claude-haiku-4-5-20251001"
   },
@@ -300,21 +225,39 @@
    "output_tokens": 199,
    "model": "claude-haiku-4-5-20251001"
   },
-  "d10e49f4840fe79d07122499cb7a2b0bd2444357109a221a7c7541a1d24f70fb": {
-   "site": "decider",
+  "fb8ce7de61e03d4e8cab6ba66dba0b896a417a8f7de18a1764f9fc16bc22539c": {
+   "site": "r1",
    "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "reply": 5200,
-     "wait_unanswered_email": 5200
-    },
-    "confidence_bp": 7000,
-    "rationale": "Introly is the founder's intro agent; its introduction asks nothing of Introly itself — the reply belongs to the person it introduced.",
-    "missing": []
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 4,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
    },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"reply\": 5200, \"wait_unanswered_email\": 5200}, \"confidence_bp\": 7000, \"rationale\": \"Introly is the founder's intro agent; its introduction asks nothing of Introly itself — the reply belongs to the person it introduced.\", \"missing\": []}",
-   "input_tokens": 1825,
-   "output_tokens": 66,
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 4, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 970,
+   "output_tokens": 98,
    "model": "claude-haiku-4-5-20251001"
   }
  }
