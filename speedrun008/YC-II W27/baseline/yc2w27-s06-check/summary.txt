@@ -1,0 +1,89 @@
+STEP-06 check · the golden set measured at b074c091 (STEP-02 to STEP-05 built), 2026-10-07
+Two runs of all 44 founder cases with their cassettes (no spend), each on a database created for it
+(genios_s06_before_024220, genios_s06_sit_*). Read-only queries after each case; the tenant removed after.
+Run 1 counts every situation's LATEST admission (dormant ones too); run 2 reads ACTIVE situations only —
+so run 1's 99 held and run 2's 72 held are the same ledger read over two different sets.
+
+1 · measure_before.py → before.json
+      cards_total                  25
+      cards_expired                0
+      cards_expired_no_event       0
+      situations_total             328
+      situations_active            227
+      admitted_latest              17
+      held_latest                  99
+      admitted_no_fingerprint      0
+      events_no_end_state          0
+
+2 · measure_situations.py → situations.json — every ACTIVE situation's recorded end
+      live|admission:hold              72
+      live|decided                     17
+      shadow|NONE                      118
+      shadow|decided                   7
+      unroutable|NONE                  8
+      unroutable|decided               5
+
+    by lane | domain:type | end
+         5  live|admin:account_admin|admission:hold
+        10  live|admin:account_admin|decided
+         1  live|admin:admin_contact|decided
+        44  live|admin:admin_period_review|admission:hold
+        10  live|admin:analytic_movement|admission:hold
+         9  live|admin:awaiting_response|admission:hold
+         3  live|admin:condition_in_review|admission:hold
+         1  live|admin:dependency_stated|decided
+         4  live|admin:meeting_follow_through|decided
+         1  live|admin:reply_owed|admission:hold
+         1  live|admin:reply_owed|decided
+         4  shadow|sales:channel_touch|decided
+         1  shadow|sales:opportunity|NONE
+         1  shadow|sales:opportunity|decided
+        44  shadow|sales:pipeline_period_review|NONE
+        29  shadow|support:first_response_overdue|NONE
+         2  shadow|support:first_response_overdue|decided
+        44  shadow|support:support_period_review|NONE
+         1  unroutable|fundraising:investor_contact|NONE
+         7  unroutable|fundraising:investor_relationship|NONE
+         5  unroutable|fundraising:investor_relationship|decided
+
+3 · sum_compiler_lines.py over run 2's log — the compiled lane's counters (its one log line), all 85 sweeps
+    sweeps 85
+      admission_admit                          49
+      admission_hold                           398
+      budget_allowance                         329
+      capabilities_total                       159
+      compiled                                 47
+      contradicted_situations                  0
+      decided                                  44
+      emitted                                  10
+      gate_changed                             15
+      gate_new                                 29
+      gate_ready                               85
+      incomplete                               1
+      l1_scored_in_sweep                       29
+      l1_scoring_active                        33
+      l3_activated_domains                     85
+      live_situations                          179
+      no_route                                 1
+      nothing_to_emit                          13
+      projected_situation_facts                483
+      projected_unknown_fields                 261
+      r1_interpreter                           85
+      ranking_v2                               85
+      ranking_v2_cross_layer_unmet             0
+      reasoned                                 44
+      reasoner_consulted                       3
+      reasoner_unknown                         44
+      roster_v2                                85
+      roster_v2_cross_layer_unmet              0
+      shadow_situations                        268
+      situations                               447
+      skipped_unchanged                        3
+      slice_over_budget                        3
+      standing                                 6
+      unactivatable_domain                     33
+      unroutable:fundraising                   33
+      unroutable:fundraising:investor_contact  2
+      unroutable:fundraising:investor_relationship 31
+    no_route_by_reason {'predicate_rejected': 1}
+    no_route_by_type {'meeting_follow_through': 1}
