@@ -125,7 +125,7 @@ def build_prompt(items: Sequence[Mapping[str, Any]], feedback: str | None = None
     listing = "\n".join(
         f"{number}. [{item['field']}{' — THE RECORD DISAGREES ABOUT THIS' if item['conflict'] else ''}]"
         f" {item['text']}" for number, item in enumerate(items, 1))
-    # STEP-07 (`speedrun008/YC-II W27/STEP-07-TO-BUILD-the-company-brief.md` §8.3) · the company
+    # STEP-07 (`speedrun008/YC-II W27/` STEP-07 §8.3) · the company
     # brief, as its own paragraph after the opening one and before the items, so a counterparty's
     # words are read knowing the company they were written to. Without a brief this is empty, and
     # the prompt is byte for byte the one it was before.

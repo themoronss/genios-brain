@@ -32,15 +32,16 @@ is one branch, `speedrun008`, and the units are block `yc2_w27` of `tree.yaml`.
 |---|---|---|
 | 0 · Ground truth | `STEP-00` one branch · `STEP-01` the golden set | both **PENDING — Harsh** (deploy). Claude's part done, pushed |
 | 1 · Remember everything | `STEP-02` change gate · `03` the gate keeps everything · `04` who is us · `05` every item enters memory · `06` nothing lost silently | `02`–`06` **PENDING — Rohit (push), Harsh (deploy)**: built, QA green (§6b–§6f) |
-| 2 · The expert's desk | `STEP-07` company brief · `08` the re-sync · `09` workstreams · `10` history, patterns, analytics | `08` **PENDING — Harsh** (after 03–07 are live); the rest TO BUILD |
+| 2 · The expert's desk | `STEP-07` company brief · `08` the re-sync · `09` workstreams · `10` history, patterns, analytics | `07` **PENDING — Rohit (push; accept the brief), Harsh (deploy, migration `0195`; draft it)**: built, QA green (§6g) · `08` **PENDING — Harsh** (after 03–07 are live and the brief is accepted, `06` D26); its six scripts are Claude's to build · `09`, `10` TO BUILD |
 | 3 · Expertise | `STEP-11` founder playbooks | TO BUILD |
 | 4 · The expert thinks | `STEP-12` the expert pass · `13` check every claim | TO BUILD |
 | 5 · What you see | `STEP-14` the card · `15` the morning brief | TO BUILD |
 | 6 · Learning from you | `STEP-16` | TO BUILD |
 | Across all phases | `STEP-17` real tests · `18` known bugs | TO BUILD — six of `STEP-18`'s bugs are fixed in code and pushed (§5) |
 
-**19 steps: 7 finished by Claude (`00`, `01` pushed; `02`–`06` waiting for the push), 1 waiting on
-Harsh from the start (`08`), 11 to build.** The next is `STEP-07` (the company brief).
+**19 steps: 8 finished by Claude (`00`, `01` pushed; `02`–`07` waiting for the push), 1 waiting on
+Harsh from the start (`08` — its scripts planned, tree `yc2_w27_s08`), 10 to build.** The next is
+`STEP-08`'s six scripts, on Rohit's go and `06` D5 (how far back), then `STEP-09` (workstreams).
 
 ## 4 · STEP-00 · one branch, one baseline
 
@@ -207,6 +208,23 @@ expiry sites that write nothing 9 → 0; the board unchanged — STEP-06 changes
 
 **Still owed:** the push; Harsh's deploy with migration `0194`; the two production numbers (`08` §4.4).
 
+## 6g · STEP-07 · the company brief
+
+**What was built** (`STEP-07-PENDING-owner-rohit-and-harsh-the-company-brief.md` §9): the company brief in
+its own table (migration `0195`), one writer, one composer; routes and a script for the founder to accept,
+edit, reject, remove (the owner only, D27); a Sonnet-class drafter that proposes from memory patterns —
+never a message — and proposes again weekly; the gate keeps and reads every sender the brief names
+(**W-07**); the brief in every model call that judges or reads — twelve sites, held by a guard — and its
+version in the change gate's fingerprint and every cache key; a health check.
+
+**Measured:** on the golden set, every judging and reading prompt carries the brief (321 of 373, from 0),
+no writing prompt does (52, byte for byte); 21 of the 33 objects the gate archived are now kept and read;
+the board unchanged — four cases moved from lost at the gate to lost in reasoning (F01, F02, F03, F09).
+
+**QA:** `baseline/yc2w27-s07-qa/qa_record.txt` (§9.4).
+
+**Still owed:** the push; Harsh's deploy with `0195`; the first draft; Rohit's acceptance (`08` §3.6).
+
 ## 7 · CI on the push
 
 | Job | Run `37407196202`, on `77aba10e` |
@@ -238,6 +256,8 @@ The full notes, with commands, expected outputs and what not to do: **`08-FOR-HA
    (`08` §3.5, §4.3).
 8. ⛔ STEP-06: migration `0194_situation_outcomes` — the boot log must name it. Nothing to run after;
    read the two numbers before and a day after (`08` §1.8, §4.4).
+9. ⛔ STEP-07: migration `0195_company_brief`. Then draft the company brief — patterns, the dry run to
+   Rohit, `--apply` — and Rohit accepts it line by line; the health check must pass (`08` §1.9, §3.6, §4.5).
 
 ## 9 · Decisions still open — none blocks the next step
 

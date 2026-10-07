@@ -4861,7 +4861,13 @@ yc2_w27_s06:
                       depends_on: [M24.C2.L-logic.V2.U02, M24.C3.L-logic.V1.U01, M24.C4.L-interface.V4.U01, M24.C5.L-data.V1.U01, M24.C5.L-data.V1.U02]
 
 yc2_w27_s07:
-  status: proposed
+  status: built
+  built: >
+    2026-10-07 — 34 units (32 drawn + 2 found while building: C8.U01, the dash-key flake `03` F71;
+    C8.U02, two test files under one import name). C4.U05 re-opened and closed (the sweep's junk
+    filter carried no brief, `740e13bc`); C1.V0.U01's test renamed. Nine units built by two worktree
+    workers and re-verified on Postgres after the cherry-pick. QA run 2 at `1f0beffa` green on every
+    tier (`speedrun008/YC-II W27/baseline/yc2w27-s07-qa/`); crosscheck ship.
   source: 'speedrun008/YC-II W27/STEP-07 §1–§7, re-checked claim by claim against speedrun008 @ 18b41f0f
     (STEP-07 §8) — by hand and by three read-only traces (every model call site; every store the plan
     names; the capture gate end to end), their claims checked line by line. Golden: 316 of 368 recorded

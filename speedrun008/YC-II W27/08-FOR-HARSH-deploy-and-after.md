@@ -27,6 +27,9 @@ or the command it came from.
    (`06` D23).
    ⛔ **And STEP-06 (§1.8) adds a fourth, `0194_situation_outcomes`** — what came of every admitted
    situation. Nothing to run after the deploy; read two numbers before and a day after (§4.4).
+   ⛔ **And STEP-07 (§1.9) adds a fifth, `0195_company_brief`** — the founder's company brief. Nothing
+   changes until Rohit accepts a line. After the deploy: draft it, send the dry run to Rohit, apply his
+   answers (§3.6), then the health check (§4.5).
 2. After the deploy, **re-queue the attachments** the `file_name` refusal dead-lettered (§3.1).
 3. **Read the first `refetch_last_error`** that comes back (§3.2).
 4. **Pin the Composio toolkits** — the one unit of this block that is yours (§3.3).
@@ -138,6 +141,18 @@ it** (`03` F62), or that company reads as a counterparty in those three places.
 | two receipts | *every expired card says why* (cards created since `0194`) · *every admitted situation has a recorded end* |
 | a new health check | `scripts/pipeline_health.py` — *every situation and every card says how it ended*, with each live situation type that has no open card shown with its histogram |
 | a new script | `scripts/situation_ends.py --org …` — how every situation ended, per type (read-only) |
+
+### 1.9 · STEP-07, the company brief — in the next push
+
+| | What changes at runtime |
+|---|---|
+| new tables | `company_brief_lines` (one row per line: proposed · accepted · rejected · removed, never deleted) and `company_brief_reviews` (one per tenant per ISO week) — migration `0195`. Both SURVIVE `/reset`: the brief is the founder's word |
+| new routes | `GET /v1/company-brief`; `POST /v1/company-brief/lines`; `POST /v1/company-brief/proposals/{id}/decide`; `DELETE /v1/company-brief/lines/{id}` — every write the account OWNER's (`06` D27). The dashboard's screen is not built yet |
+| every judging prompt | carries the brief — but only once a line is accepted. Until then every prompt is byte for byte what it was |
+| the gate | a sender the brief names (a connector's address, a watchlist domain) is W-07 — kept, read deep, never archived by a noise rule or the AI filter |
+| the heavy tick | a weekly review per tenant WITH an accepted brief: one Sonnet call (≈ $0.05), proposals only — `company_brief_review` in the sweep's result |
+| new scripts | `scripts/draft_company_brief.py` (patterns / dry run / `--apply`), `scripts/company_brief.py` (show / accept / reject / remove / add) |
+| a new health check | *the company brief exists and is current* — FAILS until Rohit accepts a line (expected) |
 
 ### 1.3 · How it was tested before the push
 
@@ -293,6 +308,32 @@ The next chain pass reads them. ⛔ Two meeting nodes production holds from befo
 meetings' start (`03` F73): an edit made before such a meeting lands as history until the meeting
 passes. Nothing to do unless a reschedule of one of them must show sooner.
 
+### 3.6 · STEP-07 — draft the company brief; Rohit decides every line
+
+Nothing changes until a line is accepted. In this order — every command on production needs
+`GENIOS_ALLOW_PROD_WRITE=1` (`scripts/_db.py`), the reads too:
+
+```
+ORG=org_e97e86f858ad48b2bbf64b8a
+# 1 · what the drafter will read — counts, names, domains, dates; no model, no message
+python scripts/draft_company_brief.py --org $ORG --database-url "$URL" --patterns
+# 2 · the dry run — ONE Sonnet call (≈ $0.05); every proposed line with what it rests on. Send it to Rohit.
+python scripts/draft_company_brief.py --org $ORG --database-url "$URL"
+# 3 · write the lines as PROPOSALS — nothing is accepted
+python scripts/draft_company_brief.py --org $ORG --database-url "$URL" --apply
+# 4 · Rohit decides; apply exactly what he says
+python scripts/company_brief.py --org $ORG --database-url "$URL" show
+python scripts/company_brief.py --org $ORG --database-url "$URL" --by rohit accept <id> <id> …
+python scripts/company_brief.py --org $ORG --database-url "$URL" --by rohit accept <id> --text "his own words"
+python scripts/company_brief.py --org $ORG --database-url "$URL" --by rohit reject <id> …
+python scripts/company_brief.py --org $ORG --database-url "$URL" --by rohit add watchlist "Startup India" --domain sampark.gov.in
+```
+
+Accepting a connector, key person or watchlist line promotes what the gate archived from that sender
+(every archiving rule; a public mail host never). ⛔ So accepting Boardy's connector line
+(`boardy@boardy.ai`) IS `06` D23's promotion — skip §3.5's command if Rohit accepts that line. Then
+`STEP-08` (the re-sync), only after the brief is accepted (`06` D26).
+
 ## 4 · The probes — send the outputs
 
 Read-only, from `speedrun008/YC-II W27/baseline/production_state.sql`:
@@ -386,12 +427,24 @@ python scripts/situation_ends.py --org org_e97e86f858ad48b2bbf64b8a --database-u
 each live situation type that has no open card, with the histogram of its ends — informational
 (`06` D25).
 
+### 4.5 · STEP-07 — after Rohit accepts
+
+```
+python scripts/pipeline_health.py --org org_e97e86f858ad48b2bbf64b8a --database-url "$URL"
+```
+
+*The company brief exists and is current* passes and names the version (`cb-…`), the proposals still
+waiting, what the budget left out (should be none) and the last weekly review. Before Rohit accepts a
+line it FAILS — that is the check doing its job, not a broken deploy.
+
 ## 5 · Do not
 
 - switch **`calibration_apply`** on for any tenant. It is Rohit's decision (`06` D13), and not
   before `STEP-18` B22–B24: armed, an applied mute or nudge hides every open card of its pack;
 - run the re-queue before the deploy;
-- fix anything new silently — a finding goes to `03-FINDINGS.md` §E, a bug to `STEP-18`.
+- fix anything new silently — a finding goes to `03-FINDINGS.md` §E, a bug to `STEP-18`;
+- accept, add or remove a line of the company brief that Rohit did not say — the brief steers every
+  judgment the engine makes (`06` D27).
 
 ## 6 · CI
 

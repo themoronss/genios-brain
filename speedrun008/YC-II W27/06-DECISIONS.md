@@ -25,6 +25,10 @@ default holds, and the step that depends on it says so in its own file.
 | **D23** | Promote Boardy's archived introductions (rule N-02, sender `boardy.ai` — ⛔ corrected 2026-10-07 from `boardy.com`, which matches nothing) back to kept, so their words are read? | **Yes, after you read the list** — Harsh runs `scripts/promote_archived.py` dry, you read the event ids and dates it lists (never a mail's words), then `--apply`; the next chain pass reads them | `STEP-05` (✅ built 2026-10-07) — needed only after the deploy |
 | **D24** | Cards that expired before STEP-06 carry no reason. Write one now ("expired before reasons were recorded")? | **No** — History keeps them as they are; the receipt counts only cards created since `0194`. Default applied 2026-10-07 (*"step 6 start karo … go"*) | `STEP-06` (✅ built 2026-10-07) |
 | **D25** | A situation type that produced no card for 7 days: a red receipt, or a health-check line with its histogram? | **The line** — silence can be right; the histogram says which kind. Default applied 2026-10-07 | `STEP-06` (✅ built 2026-10-07) |
+| **D26** | Run STEP-08 (the re-sync) before you have accepted the company brief? | **No** — re-read through a gate that does not know your connectors and portals would archive the same mail again (STEP-08 §8.5) | `STEP-08` |
+| **D27** | Who may accept a line of the company brief: the account owner only, or admins too? | **The owner** — the brief steers every judgment. Default applied 2026-10-07: every write route is `require_account_owner` | `STEP-07` (✅ built 2026-10-07) |
+| **D28** | The brief's drafter: which model, how often? | **Sonnet-class, one call to draft, one a week for what is missing** — about $0.05 each. Default applied 2026-10-07 (`Settings.company_brief_model = claude-sonnet-5`) | `STEP-07` (✅ built) |
+| **D29** | Now that the brief exists, should the AI filter's archive stand (end `03` F55's re-admission)? | **No** — not until a live run measures the filter with the brief (D12c). Holds | `STEP-07` |
 
 ---
 

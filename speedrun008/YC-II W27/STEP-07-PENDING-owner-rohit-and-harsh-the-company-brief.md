@@ -1,4 +1,4 @@
-# STEP-07 · TO BUILD · the company brief — what a chief of staff knows on day one
+# STEP-07 · PENDING — owner Rohit (push; accept the brief) and Harsh (deploy, migration 0195; draft it) · the company brief — what a chief of staff knows on day one
 
 **Owner:** Claude builds · **Rohit confirms** the brief (two minutes, then weekly diffs).
 **Depends on:** `STEP-04`, `STEP-05`. **Moves:** a versioned brief exists and is in **100%** of
@@ -171,3 +171,96 @@ its cassettes (no spend). Production was not read; §8.7 is for Harsh.
 32 units. Critical path, 7: the contract → the composer → the resolver → the gate's reason →
 the golden brief → the re-record → the acceptance. The thirteen prompt units depend only on the
 contract and the composer, and touch one file each.
+
+## 9 · Built — 2026-10-07 (`yc2_w27_s07`, 34 units green: 32 drawn + 2 found)
+
+### 9.1 · What was built
+
+| | Where | What it does |
+|---|---|---|
+| the brief, in its own table | `contracts/company_brief.py`, migration `0195_company_brief` | one row per line — section (company, goals, in motion, people, connectors, watchlist, preferences; *us* is composed, never written), text ≤ 200 characters, an address for a connector, a domain for the watchlist — proposed · accepted · rejected · removed, never deleted. Composed under 3,200 characters, whole lines only, what the budget leaves out named; version `cb-<12 hex>`. Survives `/reset` |
+| one writer, one composer | `platform/company_brief_store.py`, `platform/company_brief.py` | propose (no repeats; a rejected line is not proposed again for 90 days), accept (as written or in the founder's words), reject, remove, add; `brief_for(conn, org, at=…)` rebuilds the brief in force at any instant; `current` holds it a minute per process, dropped on every write, EMPTY on any failure |
+| the founder decides | `api/company_brief_routes.py`, `scripts/company_brief.py` | read the brief, its proposals and its last weekly review; add, accept (or edit), reject, remove — the account owner only (`06` D27). Accepting a connector, key person or watchlist line promotes what the gate archived from that sender (`capture/landing/promote.promote_named_sender`; a public mail host never) |
+| the drafter | `reason/brief_patterns.py`, `reason/brief_drafter.py`, `scripts/draft_company_brief.py` | one Sonnet-class call (`Settings.company_brief_model`, D28) over memory PATTERNS — correspondents, domains, outbound waves, introducers read off the envelope, meeting series, the domains that carry deadlines, thread objectives; no subject, no body, nothing private. Proposals only, each with the pattern items it rests on; a line naming an address or domain the patterns never showed is refused. `--patterns` (no model), a dry run, `--apply` |
+| the weekly review | `reason/brief_review.py`, the heavy tick (`api/routes.run_maintenance_sweep`) | once per tenant per ISO week, for a tenant with an accepted line: the drafter again, with the brief in force, for what is missing — claimed in `company_brief_reviews`, its own block and transactions, off with no model |
+| the gate reads it | `capture/gate/rules.py` W-07, `api/routes._sender_resolver_for`, the fast path, the junk filter | a sender the brief names is KNOWN to all four stages that asked "is the sender known" — the noise rules, the AI filter, the relevance page's first rung, the bulk check — and the gate says why: **W-07**, *named in the company brief*, attention `deep`. The fast path fetches it whole. The junk filter carries the brief, skips its senders in the batch (`03` F79), sends the masked subject (F78) |
+| every judging and reading prompt | twelve sites | the junk filter, the relevance page, extraction (the per-call envelope), resolution, R-1 (both), R-6, the decider, screen insight, screen memory, draft review, org-rule extraction, the drafter — the block after each prompt's opening, never in a fence or a cached prefix; every cache that keys on a version string takes the brief's version — only when there is one |
+| the change gate | `reason/fingerprint.MaterialInputs.brief` | the brief's version is a fingerprint input when a brief exists: a changed brief re-decides each subject once; with none, every fingerprint is the pre-STEP-07 one (pinned) |
+| the guard | `tests/test_every_prompt_carries_the_company_brief.py` | the model-site register split in two — 12 that carry the brief, 10 that do not, each with its reason — held equal to it both ways; by the AST every builder takes the block and every caller passes it; a planted site that omits it is caught at every link |
+| the check | `scripts/pipeline_health.py` | *the company brief exists and is current* — fails while no line is accepted; names the version, the proposals waiting, what the budget left out, the last weekly review |
+| the golden set | `tests/replays/specs/founder/brief/company_brief.json`, `engine_runner`, the cassettes | the golden founder holds §4's draft in the golden world's names; every cassette re-recorded (no spend); the acceptance `test_the_company_brief_is_in_every_prompt.py` on every case |
+| found while building | `tests/test_recode_parked_documents.py`, `tests/test_no_two_test_modules_share_an_import_name.py` | the dash-key flake closed (`03` F71); no two test files import under one name |
+
+### 9.2 · Measured
+
+| | Before (§8.1) | After |
+|---|---|---|
+| golden: prompts that carry any company context | 0 of 368 | every judging and reading prompt of every case — **321 of 373** — once, under its version |
+| golden: writing prompts (card narrator, bundle narrator) | 52 | 52, **byte for byte** — every cassette key identical in all 44 cases |
+| golden: mail the gate archived | 33 objects | **12** — the other 21 are mail the brief names (StartupSetu, DigiVault, every Introly mail, the State Startup Mission, Lakshya's community mail), now kept and read: W-07, `deep` |
+| golden: model calls by site | extraction 48 · resolution 46 · R-1 42 · decider 63 · junk filter 59 · relevance page 58 | 69 · 57 · 48 · 68 · **37** · **42** — the kept mail is read; the filter and the page are not asked about a sender the brief names |
+| the golden board | must-detect 11/32 · must-abstain 11/12 · forbidden 4 · Atlas 4/80 | **unchanged** (`golden_score.py --assert-recorded` matches). Lost at the gate **5 → 1** (F16, a bounce); lost in reasoning 7 → 11 (F01, F02, F03, F09 — read now, no card yet: §9.3) |
+| a tenant with no brief | — | byte for byte as before: every site's builder run beside the old module, by the workers who built them; the fingerprints pinned to their pre-STEP-07 values; the golden lane replayed unchanged before the golden brief was seeded |
+| production | no brief | ⏳ none until Rohit accepts the first draft (§9.5) |
+
+### 9.3 · Found while building — each a measurement
+
+- **The sweep's junk filter carried no brief.** The scheduled sweep and `/ingest/all` build one
+  classifier with no tenant and re-bind it per connection (`api/routes._bind_gate_costs`); the re-bind
+  bound the cost sink only. Found by writing the guard, fixed in `740e13bc` (`03` F84).
+- **The four cases the gate now keeps are lost in reasoning.** F01, F02: the portal's notices reach
+  memory and no situation forms about the application (STEP-09). F03: the intro's situations anchor on
+  the CONNECTOR — the extraction's role `connector` is free text the graph never reads as an introducer
+  (F80). F09: the connector's ask forms an investor situation in the fundraising domain, which is not
+  active. And the legacy rule raises the connector as a person owed a reply in six cases; the decider,
+  reading the brief, defers it (F81).
+- **What a changed brief does not re-judge.** Answers stored per item — the screen lanes' 24-hour
+  verdicts, M-4's resolution claims, N-3's per-document-version ledger — are verdicts, not caches (F82).
+  The resolution claim row does not name the brief it was made under; the model-run row does (F83).
+- **A write-only table, caught by the resolver's pin.** `company_brief_reviews` had a writer and no
+  reader; `platform/company_brief.last_review` is its reader (the confirm route and the health check).
+- **The golden reader would have answered every prompt the same.** A `when` term the brief also names
+  (Introly, Kavitha Nair) matches every prompt that carries the brief; the ideal reader now takes the
+  block out before matching (`ideal_reader.without_company_brief`, with its own test).
+- **My own mutation poisoned a guard run.** A same-size mutation restored within a second left its
+  `.pyc` valid; two tests read red on code no longer in the file. The mutation runner now drops the
+  `.pyc` and writes none.
+- **Two test files, one import name — the whole suite stopped at collection.** The contract's test and
+  the composer's test were both `test_company_brief.py`, in two folders with no `__init__.py`: green in
+  every per-folder guard run, a collection error in QA's one-process run — and CI's hermetic job is that
+  run. Renamed, and a guard computes every test file's import name as pytest does (`1f0beffa`, minted
+  `M25.C8.L-integration.V0.U02`).
+- **A flake I numbered twice.** The dash-key flake is `03` F71 (recorded at STEP-05); fixed here
+  (`175ea9f1`, minted `M25.C8.L-integration.V0.U01`) — the commit message calls it F80.
+- R-6's prompt says *"the only thing you may reason from"* right after the brief (F85); a watchlist
+  DOMAIN keeps a program's newsletters deep (F86).
+- Pins: statements 2,967 → 2,984, table usage 191 → 192 — each per file, with its reason.
+
+### 9.4 · QA
+
+`baseline/yc2w27-s07-qa/qa_record.txt` — run 2 at `1f0beffa`, green on every tier, a database created for
+every check, re-run whole after run 1 (at `73f9c949`) stopped at collection: two test files imported under
+one name (§9.3). The units 38 / 0 / 0 (4 tree checks + 34 units); the whole database suite 18,276 passed,
+0 failed (the same four optional skips, re-listed with their reasons); the golden lane 682 passed, 87
+xfailed, 0 skipped; the board matches — the two lines unchanged (must-detect 11/32, must-abstain 11/12,
+Atlas 4/80), lost at the gate 1 and in reasoning 11; 0 golden tenants left; the hermetic job 16,497
+passed, 1,473 skipped (the database tests, run in tier 2), 323 deselected, 72 xfailed in 828.57s
+(0:13:48). Crosscheck: verdict ship (`.trace/reports/crosscheck-yc2_w27_s07-20261007T104500Z.md`), with
+an addendum — QA run 1 contradicted one of its rows.
+
+### 9.5 · The deploy, and what comes after
+
+Migration **`0195_company_brief`** ships with `0191`–`0194`; the boot applies it. Nothing changes for
+the design partner until a line is accepted — then every judging prompt carries it. In this order
+(`08` §3.6):
+
+1. `scripts/draft_company_brief.py --org … --patterns` — what the drafter will read; no model.
+2. The dry run (one Sonnet call, ≈ $0.05) — every proposed line with what it rests on; Harsh sends it.
+3. `--apply` — the lines become proposals; nothing is accepted.
+4. Rohit decides each line (`scripts/company_brief.py --org … show`, then `accept` / `reject` /
+   `add`), until the dashboard has its screen. Accepting the Boardy connector line promotes Boardy's
+   archived introductions — D23's promotion, by the brief.
+5. `scripts/pipeline_health.py --org …` — *the company brief exists and is current* passes.
+6. Weekly, by itself: the review proposes what is missing; Rohit decides again.
+
+STEP-08 (the re-sync) runs after the brief is accepted (`06` D26).

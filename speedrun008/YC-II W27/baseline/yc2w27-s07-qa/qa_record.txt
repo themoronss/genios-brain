@@ -1,0 +1,69 @@
+yc2_w27_s07 QA record · STEP-07, the company brief · deterministic-qa · speedrun008 · 2026-10-07 09:43–11:21 UTC
+scratch Postgres 17 in Docker. Every check that uses a database runs on a database CREATED for it
+(genios_qa_<run>_<n>) — auto mode refuses to drop databases, and a database nobody has used is as
+empty as a recreated one. Exit codes only; every command verbatim from tree.yaml (block
+yc2_w27_s07) and .github/workflows/ci.yml, the unit verifies pointed at their own fresh database
+(`/genios_test ` → `/genios_qa_<run>_<n> `). Driver: run_s07.sh and qa_block_nodrop.py, beside this file.
+
+RUN 1 · at 73f9c949 (clean tree), 09:43–10:00 UTC — RED, stopped
+1 · units                                                                   exit 0
+      37 pass / 0 fail / 0 skip  (4 tree checks + 33 units)
+2 · the whole suite on the database                                        exit 2
+      "2 warnings, 1 error in 8.89s" — a COLLECTION error:
+      tests/contracts/test_company_brief.py and tests/platform/test_company_brief.py import under one
+      name (two folders with no __init__.py): "import file mismatch". Every per-folder guard run had
+      been green; the one-process run — which is also CI's hermetic job — was not.
+      Run stopped. Fixed in 1f0beffa: the contract test renamed
+      tests/contracts/test_the_company_brief_contract.py (M25.C1.L-contract.V0.U01's verify follows
+      it), and a guard minted — M25.C8.L-integration.V0.U02,
+      tests/test_no_two_test_modules_share_an_import_name.py (a planted clash fails it).
+
+RUN 2 · at 1f0beffa (clean tree), 10:01–11:21 UTC — green on every tier, re-run whole
+
+1 · the tree, and every unit's own verify — 34 units                       exit 0
+      38 pass / 0 fail / 0 skip          (4 tree checks + 34 units: 32 drawn + 2 found while building)
+      report: .trace/reports/qa-yc2_w27_s07-units-20261007T100129Z.json
+
+2 · the whole suite on the database                                        exit 0
+      18276 passed, 4 skipped, 89 xfailed, 1595 warnings in 2036.73s (0:33:56)
+      db=genios_qa_full_100129. Re-listed afterwards with -rs on a database of its own, the four
+      files that carry the known four skip exactly four, for the same reasons: could not import
+      'docx' (tests/capture/transcripts/test_transcript_units.py), an empty parameter set
+      (tests/contracts/test_l1_contracts.py), 0080 a declared exception
+      (tests/platform/test_the_code_can_always_be_rolled_back.py), internal auth not wired in this
+      harness (403) (tests/test_health_memory.py) — 333 passed, 4 skipped.
+
+3 · the golden-pg lane, as CI runs it (GENIOS_GOLDEN_REQUIRED=1)            exit 0
+      pytest -q -rs tests/replays tests/test_golden_labels_sheet.py
+      682 passed, 87 xfailed in 789.38s (0:13:09) — 0 skipped
+      db=genios_qa_golden_100129. (631 after STEP-06; + the golden founder's brief, its acceptance on
+      every case and the ideal reader's brief-blind matching.)
+
+4 · the board, held to 03-FINDINGS.md §F.1                                 exit 0
+      scripts/golden_score.py --assert-recorded "speedrun008/YC-II W27/03-FINDINGS.md"
+      matches the board recorded in speedrun008/YC-II W27/03-FINDINGS.md — the two lines unchanged
+      founder golden set   must-detect  11/32 (8 not expressible)   must-abstain  11/12 (0 not exercised)   forbidden outputs  4
+      atlas replays 01–07  passing  4/80   blocked  3/80   not expressible  73
+      must-detect cases lost at:  gate 1  reasoning 11      (gate 5, reasoning 7 before STEP-07)
+      golden tenants left in the database afterwards: 0
+
+5 · the hermetic job, as CI runs it (no database)                           exit 0
+      pytest -q -m "not golden"
+      16497 passed, 1473 skipped, 323 deselected, 72 xfailed, 1595 warnings in 828.57s (0:13:48)
+      Its skips are the tests that need a database; tier 2 ran every one of them.
+
+THE ACCEPTANCE, in tier 3 (tests/replays/test_the_company_brief_is_in_every_prompt.py): on every
+founder case every judging and reading prompt carries the founder's brief once, under its version; no
+writing prompt carries it; every mail from a sender the brief names lands emitted, deep, W-07. Its
+negative control: W-07 read as W-01 fails it.
+
+Before this run: every unit was committed after its guards passed on databases created for them
+(root, tests/platform, and the areas it touched). Guard runs that were red first, each fixed before
+its commit: a text guard on the relevance page's recorder (the call now passes it by keyword); the
+health check's tenant-scope guard (the check reads its own org-scoped SQL); a 1-in-64 key flake (03
+F71, fixed in its own commit); two tests red on a stale .pyc my own mutation left (no code change —
+the mutation runner now drops the .pyc). The guard for every judging prompt found the sweep's junk
+filter carried no brief (03 F84, fixed 740e13bc).
+
+Crosscheck: .trace/reports/crosscheck-yc2_w27_s07-20261007T104500Z.md — verdict ship, with an addendum:
+run 1's collection error contradicted its C1.V0.U01 row; the deterministic tier was right.

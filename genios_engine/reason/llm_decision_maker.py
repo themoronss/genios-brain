@@ -515,7 +515,7 @@ def build_prompt(request: Any, results: Sequence[ReasonerResult], proposals: Seq
         "their inbox and calendar. Decide whether it belongs in front of them today, and what "
         "they should do about it.",
         "",
-        # STEP-07 (`speedrun008/YC-II W27/STEP-07-TO-BUILD-the-company-brief.md` §8.3) · the
+        # STEP-07 (`speedrun008/YC-II W27/` STEP-07 §8.3) · the
         # company brief, as its own paragraph after the role and before the situation: what a chief
         # of staff knows on day one, read before anything it judges. Without a brief this adds
         # nothing, and the prompt is byte for byte the one it was before.
