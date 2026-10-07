@@ -133,7 +133,7 @@ def event_journey(engine, *, org_id: str, event_id: str) -> dict:
     with engine.connect() as c:
         events = _rows(c, (
             "select event_id, source, object_type, source_object_id, occurred_at, captured_at, "
-            "       outcome, route, triage_lane, internal_kind "
+            "       outcome, route, triage_lane, internal_kind, attention, attention_reason "
             "  from source_events where org_id=:o and event_id=:e"), params)
         steps = [
             {"at": _jsonable(r.at), "stage": r.stage, "action": r.action,
@@ -151,8 +151,12 @@ def event_journey(engine, *, org_id: str, event_id: str) -> dict:
                                         f"where org_id=:o and event_id=:e order by {when}",
                                      params)]
             for table, when in _LEDGERS}
+        # STEP-06: the memory run, the one hop past Layer 1 this walk did not read.
+        runs = _rows(c, ("select status, attempts, last_error, updated_at from l2_processing_runs "
+                         " where org_id=:o and event_id=:e"), params)
 
     event = ({k: _jsonable(v) for k, v in events[0]._mapping.items()} if events else None)
+    memory = ({k: _jsonable(v) for k, v in runs[0]._mapping.items()} if runs else None)
     return {
         "event_id": event_id,
         "found": event is not None,
@@ -161,6 +165,9 @@ def event_journey(engine, *, org_id: str, event_id: str) -> dict:
         "ledgers": ledgers,
         "reached": steps[-1]["stage"] if steps else None,
         "stopped_by": _stopped_by(steps, ledgers),
+        "memory": memory,
+        # STEP-06 · exactly one end for the event — see `_end`.
+        "end": _end(event, steps, ledgers, memory),
         # Named so a caller can tell "this deployment has no such table" from "this event has no
         # such row" — the distinction a support answer lives or dies on.
         "unclassified_actions": sorted({s["stage"] + ":" + s["action"] for s in steps
@@ -213,4 +220,56 @@ def _stopped_by(steps: list[dict], ledgers: Mapping[str, list[dict]]) -> dict | 
     return last
 
 
-__all__ = ["TRACE_ADVANCING", "TRACE_STOPPING", "event_journey", "unclassified_actions"]
+#: Every end an event can have — exactly one each (STEP-06, `yc2_w27_s06 · M24.C3.L-logic.V1.U01`).
+ENDS = ("not_captured", "superseded", "in_memory", "failed", "parked", "waiting", "archived",
+        "stopped", "none")
+
+#: A kept mail is owed memory (`context/memory_lanes.KEPT_OUTCOMES`, spelled here because capture
+#: may not import context — `LAYERS.py`); a screen archive is the one kept item with no road (`06` D22).
+_KEPT = ("emitted", "archived")
+_SCREEN = "screen_session"
+
+
+def _end(event: Mapping[str, Any] | None, steps: list[dict], ledgers: Mapping[str, list[dict]],
+         memory: Mapping[str, Any] | None) -> dict:
+    """The one end of one event, from what each layer recorded — never re-derived.
+
+    ⛔ THE ORDER IS THE ANSWER'S. A run that finished is the end whatever stopped the event before it
+    (an archive, a re-read); a failed run comes next; then the park queue; then a kept mail still owed
+    memory — waiting for the drain, or for its re-read when a pending park says so; then what stopped
+    it. `none` is the population nothing explains, and it must stay empty.
+    """
+    if event is None:
+        return {"end": "not_captured"}
+    outcome = event.get("outcome")
+    if outcome == "superseded":
+        return {"end": "superseded"}
+    if memory and memory.get("status") == "done":
+        return {"end": "in_memory", "attention": event.get("attention"),
+                "attempts": memory.get("attempts")}
+    if memory and memory.get("status") in ("failed", "parked"):
+        return {"end": "failed", "status": memory.get("status"),
+                "error": memory.get("last_error"), "attempts": memory.get("attempts")}
+    parks = list(ledgers.get("parked_events") or ())
+    pending = [p for p in parks if p.get("status") == "pending"]
+    if outcome == "parked" and parks:
+        park = (pending or parks)[-1]
+        return {"end": "parked", "reason_code": park.get("reason_code"),
+                "status": park.get("status"),
+                "next_attempt_at": park.get("refetch_next_attempt_at")}
+    if outcome in _KEPT:
+        if pending:
+            return {"end": "waiting", "for": "re-read", "reason_code": pending[-1].get("reason_code")}
+        if memory and memory.get("status") == "held":
+            return {"end": "waiting", "for": "memory", "held": memory.get("last_error")}
+        if outcome == "archived" and event.get("source") == _SCREEN:
+            return {"end": "archived", "reason": event.get("attention_reason")}
+        return {"end": "waiting", "for": "the drain", "attention": event.get("attention")}
+    stop = _stopped_by(steps, ledgers)
+    if stop is not None:
+        return {"end": "stopped", "stage": stop.get("stage"), "action": stop.get("action"),
+                "reason_code": stop.get("reason_code")}
+    return {"end": "none"}
+
+
+__all__ = ["ENDS", "TRACE_ADVANCING", "TRACE_STOPPING", "event_journey", "unclassified_actions"]
