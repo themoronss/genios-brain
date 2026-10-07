@@ -11,6 +11,9 @@ or the command it came from.
 1. **Deploy `speedrun008`**, at `77aba10e` or later. `origin/harsh/mvp` (`2c42722d`, 4 Oct) is
    **75 commits behind it and 0 ahead** — it fast-forwards, no merge, no conflict. **No migration**:
    the newest is still `0190`, which production has.
+   ⛔ **CORRECTED 2026-10-07, for the NEXT push:** measured after `git fetch origin`, `origin/harsh/mvp`
+   (still `2c42722d`) is **189 commits behind** `speedrun008` (`7b2a91f2`) and 0 ahead — still a
+   fast-forward.
    ⛔ **CORRECTED 2026-10-06, for the NEXT push:** it carries STEP-02 (§1.4) and STEP-03 (§1.5), and
    with them **two migrations — `0191_reasoning_fingerprints` and `0192_attention_and_archive`** —
    the first since `0190`. `main.py` applies them at boot when the database is writable; check the
@@ -140,7 +143,7 @@ Production runs `harsh/mvp`. Either deploy `speedrun008` directly, or fast-forwa
 
 ```
 git fetch origin
-git checkout harsh/mvp && git merge --ff-only origin/speedrun008    # 75 commits, no merge commit
+git checkout harsh/mvp && git merge --ff-only origin/speedrun008    # 75 commits then; after the next push count them: git rev-list --count origin/harsh/mvp..origin/speedrun008
 git push origin harsh/mvp
 ```
 
@@ -186,6 +189,10 @@ python scripts/requeue_refused_attachments.py --org org_e97e86f858ad48b2bbf64b8a
   attempt now; the old error is kept, prefixed `requeued after the file_name fix (B19); was: `.
 - `scripts/_db.py` refuses a production host unless `GENIOS_ALLOW_PROD_WRITE=1` is set — your
   call, for the `--apply` run only.
+  ⛔ **CORRECTED 2026-10-07:** not only `--apply`. `scripts/_db.resolve_database_url` refuses a
+  production host without the flag whatever the script does next, so the **dry runs** here and in
+  §3.4–§3.5, and the read-only `scripts/pipeline_health.py`, need it too. A dry run writes nothing
+  with it set; `pipeline_health` reads through `scripts/_gate.read_only_connection`.
 
 ### 3.2 · Read the first error that comes back
 
@@ -275,7 +282,7 @@ PGOPTIONS='-c default_transaction_read_only=on' psql "$URL" -f "speedrun008/YC-I
 | B18 | `@park_queue` | 2 mails `extraction_parse_failed`, pending since 3 Oct 11:17 UTC, 0 attempts, no next attempt | attempted, with a next attempt or an end state |
 | B19 | `@attachment_refetch_errors` | 88 of 88 the `file_name` refusal | no new refusal; re-queued rows fetched or failing with a named shape |
 | B2 | `@l2_processing_runs` | 30 runs, 0 edge errors (latent) | still 0 |
-| — | `@latest_migration` | `0190` | `0190` |
+| — | `@latest_migration` | `0190` | `0190` — ⛔ **corrected 2026-10-07:** after the NEXT push's deploy, `0193_org_self_identities` |
 
 Two that are not in the file:
 

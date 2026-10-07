@@ -160,6 +160,8 @@ says what it corrects.
 | E9 | Should `dependency_stated` declare coverage expectations? None is registered for it, so `context/situations.py:428-429` returns *coverage unknown* (−1) — while the gate row says *"all 6 axes present"* | Rohit |
 | E10 | Whose mailbox is the second golden set (`STEP-01` §8)? | Rohit |
 | E11 | Should a message already captured from the **same** source suppress extraction? `_seen_on_screen` treats any earlier claim, from any source, as canonical — its docstring says the screen copy. `yc2_w27/M17.C2.L-data.V0.U02` only voids claims by events that no longer exist | Rohit |
+| E12 | `09` §6 placed about eleven benchmark cases in the golden set *right after STEP-04, before STEP-05 is built* (D15, default yes). STEP-05 was built without them (found 2026-10-07, writing the one-document notes). Land them before STEP-06, so STEP-06 is measured on the full set? | Rohit (D15) |
+| E13 | The re-sync window has two defaults: `06` D5 says 60 days if unanswered (180 recommended); `09` D16 says 365 if unanswered (180 loses the 3one4 deferral). Which holds for STEP-08? | Rohit (D5 · D16) |
 
 ## F · Numbers, with their sources
 
