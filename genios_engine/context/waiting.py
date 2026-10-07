@@ -26,6 +26,11 @@ person AND on the *"Thread with …"* node, so the cadence pools person nodes on
 since STEP-09 an introduction writes our turn on the person introduced, and the connector's mail is no
 reply of theirs and no "heard from". And "normal" needs `contracts/measured.NORMAL_AT` replies at the
 level used (`06` D37), with the n written beside the days and the basis.
+
+YOUR REPLY TIME (STEP-10, `M29.C1.L-logic.V2.U03`) is the mirror: from a mail someone wrote us to our
+next mail to them in the same conversation — per counterparty (`party.our_reply_days`, `…_n`) and overall
+on the tenant node (`derived.our_reply_days`, `…_n`), each only at `NORMAL_AT` answers. "Us" is the
+pipeline's direction, which is STEP-04's identity; nothing here asks it again.
 """
 from __future__ import annotations
 
@@ -40,7 +45,7 @@ from statistics import median
 from sqlalchemy import bindparam, text
 
 from genios_engine.context.derived import _write_fact, retire_facts
-from genios_engine.contracts.measured import NORMAL_AT
+from genios_engine.contracts.measured import NORMAL_AT, median_of
 
 #: How far back the timeline is reconstructed.  A follow-up count is about the CURRENT exchange,
 #: and `situations.DORMANT_AFTER_DAYS` already declares that a conversation older than 45 days has
@@ -244,6 +249,35 @@ def cadence_for(node_id: str, gaps_by_node: Mapping[str, list[float]],
     return CADENCE_FLOOR_DAYS, CADENCE_FLOOR, 0
 
 
+def _our_reply_gaps(timeline: list[tuple[str, datetime]]) -> list[float]:
+    """Days between each inbound and OUR next outbound — the mirror of `_reply_gaps`.
+
+    Measured from the first mail of theirs we had not answered: two mails before our answer are one
+    wait, the longer one. Consecutive inbounds with no answer between contribute nothing yet — an
+    unanswered mail has no latency, and scoring it as zero would make us look fast.
+    """
+    gaps: list[float] = []
+    pending: datetime | None = None
+    for direction, at in timeline:
+        if direction == "in":
+            if pending is None:
+                pending = at
+        elif pending is not None:
+            gaps.append((at - pending).total_seconds() / 86400.0)
+            pending = None
+    return gaps
+
+
+def our_reply_gaps_of(timeline: list[tuple[str, datetime]]) -> list[float]:
+    """Our reply latencies to one counterparty, in time order."""
+    return _our_reply_gaps(sorted(timeline, key=lambda pair: pair[1]))
+
+
+#: STEP-10 · your reply time's facts: per counterparty, and overall on the tenant node.
+OUR_REPLY_FIELDS: tuple[str, ...] = ("party.our_reply_days", "party.our_reply_n")
+OUR_OVERALL_FIELDS: tuple[str, ...] = ("derived.our_reply_days", "derived.our_reply_n")
+
+
 def reply_gaps_of(timeline: list[tuple[str, datetime]]) -> list[float]:
     """This counterparty's reply latencies. Exposed so the cascade can pool them across a firm."""
     return _reply_gaps(sorted(timeline, key=lambda pair: pair[1]))
@@ -339,6 +373,9 @@ def compute_waiting(store, org_id: str, *, now: datetime | None = None) -> int:
         # facts are the same messages again, and pooling both counted every reply twice.
         gaps_by_node = {node_id: reply_gaps_of(timeline) for node_id, timeline in per_node.items()
                         if node_type.get(node_id) == "person"}
+        ours_by_node = {node_id: our_reply_gaps_of(timeline)
+                        for node_id, timeline in per_node.items()
+                        if node_type.get(node_id) == "person"}
         firm_of = _firms(c, org_id)
 
         for node_id, timeline in per_node.items():
@@ -355,6 +392,14 @@ def compute_waiting(store, org_id: str, *, now: datetime | None = None) -> int:
                 state["party.reply_cadence_n"] = n
             else:
                 written += retire_facts(c, org_id, node_id, CADENCE_FIELDS, now)
+            # The contract's own "normal" (`measured.Measured.normal`): measured here, at
+            # `NORMAL_AT` answers or more — one definition of a habit, not a second threshold.
+            ours = median_of(ours_by_node.get(node_id) or (), basis=CADENCE_PERSON)
+            if ours.normal:
+                state["party.our_reply_days"] = ours.value
+                state["party.our_reply_n"] = ours.n
+            else:
+                written += retire_facts(c, org_id, node_id, OUR_REPLY_FIELDS, now)
             if "thread.days_waiting" not in state:
                 # THEY ANSWERED, or we never wrote to them. Either way the waiting facts are no
                 # longer true and must be retired rather than left standing — see
@@ -388,9 +433,27 @@ def compute_waiting(store, org_id: str, *, now: datetime | None = None) -> int:
                 else:
                     _write_fact(c, org_id, node_id, field, json.dumps(str(value)), "string", now)
                 written += 1
+        written += _our_overall(c, org_id, [g for gs in ours_by_node.values() for g in gs], now)
     return written
+
+
+def _our_overall(c, org_id: str, gaps: list[float], now: datetime) -> int:
+    """Your reply time across every counterparty, on the tenant node — at `NORMAL_AT` answers,
+    retired below. No tenant node yet (before the first periodic pass): nothing, and no error."""
+    from genios_engine.context.periodic import tenant_node_id
+    node_id = tenant_node_id(c, org_id)
+    if node_id is None:
+        return 0
+    overall = median_of(gaps, basis=CADENCE_TENANT)
+    if not overall.normal:
+        return retire_facts(c, org_id, node_id, OUR_OVERALL_FIELDS, now)
+    _write_fact(c, org_id, node_id, "derived.our_reply_days", json.dumps(overall.value), "number",
+                now)
+    _write_fact(c, org_id, node_id, "derived.our_reply_n", json.dumps(overall.n), "number", now)
+    return 2
 
 
 __all__ = [
     "CADENCE_FIELDS", "CADENCE_FIRM", "CADENCE_FLOOR", "CADENCE_FLOOR_DAYS", "CADENCE_PERSON",
-    "CADENCE_TENANT", "MIN_GAPS_FOR_CADENCE", "cadence_for", "reply_gaps_of","WAITING_ONLY_FIELDS", "compute_waiting"]
+    "CADENCE_TENANT", "MIN_GAPS_FOR_CADENCE", "OUR_OVERALL_FIELDS", "OUR_REPLY_FIELDS", "cadence_for",
+    "our_reply_gaps_of", "reply_gaps_of", "WAITING_ONLY_FIELDS", "compute_waiting"]

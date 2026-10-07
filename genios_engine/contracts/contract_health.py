@@ -109,14 +109,6 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "⛔ MOVES WHEN somebody who knows whether `snapshot` is supposed to consult it writes one "
         "line above it. Flagged in `HANDOFF-CODING-AGENT.md` rather than guessed at here"),
 
-    "measured.median_of": (
-        "STEP-10's contract (`yc2_w27_s10 · M29.C1.L-contract.V0.U01`), frozen BEFORE its callers so "
-        "four worktrees could build against one shape: the median of what was observed WITH its n, "
-        "so no reader can call a number resting on one reply a habit. Unreached between the commit "
-        "that froze it and the first unit that measures through it — a declared gap of one commit.",
-        "MOVES WHEN `context/waiting.py` measures your reply time through it "
-        "(`M29.C1.L-logic.V2.U03`, the next unit on this branch)"),
-
     "measured.rate_of": (
         "STEP-10's contract, frozen before its callers: `hits` of `total` as a ratio resting on "
         "`total` observations — the connector's rate (introductions made, people who replied, calls "
