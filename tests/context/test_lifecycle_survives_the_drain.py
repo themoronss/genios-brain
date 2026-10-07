@@ -75,7 +75,8 @@ def store():
             "create table graph_nodes (org_id text, node_id text, node_type text, "
             "canonical_key text, valid_to timestamp, primary key (org_id, node_id))",
             "create table graph_source_refs (org_id text, event_id text, fact_version_id text)",
-            "create table source_events (event_id text, org_id text, occurred_at timestamp, actor text)",
+            "create table source_events (event_id text, org_id text, occurred_at timestamp, actor text, "
+            "parent_object_id text)",
         ):
             c.execute(text(ddl))
     return Store(engine)

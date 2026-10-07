@@ -32,6 +32,14 @@ next mail to them in the same conversation — per counterparty (`party.our_repl
 on the tenant node (`derived.our_reply_days`, `…_n`), each only at `NORMAL_AT` answers. "Us" is the
 pipeline's direction, which is STEP-04's identity; nothing here asks it again.
 
+A REPLY IS A REPLY IN ITS OWN CONVERSATION (STEP-10, `M29.C1.L-logic.V2.U06`). Both reply times are
+measured inside each conversation — the Gmail thread a message belongs to — and pooled per counterparty.
+Read across one merged timeline, a new topic they opened two days after our pitch on another thread was
+counted as their two-day reply, and our one-day answer to their second thread was measured from their
+first mail a week earlier. A message with no thread is a conversation of its own and pairs with nothing.
+The waiting state itself (who spoke last, for how long) stays per counterparty: it is about them, not
+about one thread.
+
 A BOUNCE ENDS THE WAIT (STEP-10, `M29.C3.L-logic.V2.U03`, `06` D38). A mail that never arrived is not
 waited on: when `context/delivery` has filed a `delivery_failure` on a counterparty at or after our last
 mail to them, their waiting-only facts are retired — on a person, because their address bounced; on a
@@ -85,7 +93,7 @@ _ASK_KINDS: frozenset[str] = kinds_where(is_ask=True) or _ASK_KINDS_FALLBACK
 
 _TIMELINE = (
     "select f.subject_node_id as node_id, f.field as field, se.occurred_at as at, "
-    "       n.node_type as node_type "
+    "       n.node_type as node_type, r.event_id as event_id, se.parent_object_id as thread "
     "from graph_source_refs r "
     "join graph_facts f on f.fact_version_id = r.fact_version_id and f.org_id = r.org_id "
     "join source_events se on se.event_id = r.event_id "
@@ -352,6 +360,17 @@ OUR_REPLY_FIELDS: tuple[str, ...] = ("party.our_reply_days", "party.our_reply_n"
 OUR_OVERALL_FIELDS: tuple[str, ...] = ("derived.our_reply_days", "derived.our_reply_n")
 
 
+def conversation_reply_gaps(conversations: Mapping[str, list[tuple[str, datetime]]]) -> list[float]:
+    """Their reply latencies, each measured inside one conversation, pooled — the cascade's input."""
+    return [g for key in sorted(conversations) for g in reply_gaps_of(conversations[key])]
+
+
+def conversation_our_reply_gaps(conversations: Mapping[str, list[tuple[str, datetime]]]
+                                ) -> list[float]:
+    """Our reply latencies to them, each measured inside one conversation, pooled."""
+    return [g for key in sorted(conversations) for g in our_reply_gaps_of(conversations[key])]
+
+
 def reply_gaps_of(timeline: list[tuple[str, datetime]]) -> list[float]:
     """This counterparty's reply latencies. Exposed so the cascade can pool them across a firm."""
     return _reply_gaps(sorted(timeline, key=lambda pair: pair[1]))
@@ -410,46 +429,61 @@ def _firms(conn, org_id: str) -> Mapping[str, str]:
         return {}
 
 
+def directed_timelines(c, org_id: str, *, now: datetime
+                       ) -> tuple[dict[str, list[tuple[str, datetime]]], dict[str, str],
+                                  dict[str, dict[str, list[tuple[str, datetime]]]]]:
+    """Every counterparty's directed message timeline over the waiting window, each node's type, and
+    the same messages split by conversation: `({node: [(direction, at), …]}, {node: node_type},
+    {node: {conversation: [(direction, at), …]}})`. One reading of `_TIMELINE`, shared by the waiting
+    pass and by the file's numbers (`context/workstream_numbers`), so the two can never disagree
+    about who wrote when. A conversation is the message's thread; one with no thread is its own."""
+    rows = c.execute(text(_TIMELINE), {"o": org_id,
+                                       "since": now - timedelta(days=_WINDOW_DAYS)}).all()
+    per_node: dict[str, list[tuple[str, datetime]]] = {}
+    node_type: dict[str, str] = {}
+    conversations: dict[str, dict[str, list[tuple[str, datetime]]]] = {}
+    for node_id, field, at, ntype, event_id, thread in rows:
+        node_type[str(node_id)] = str(ntype)
+        direction = _DIRECTION_FIELD.get(str(field))
+        if direction is None or at is None:
+            continue
+        # A DRIVER MAY HAND BACK A STRING. Postgres returns a datetime; SQLite does not, and
+        # this module could therefore only be exercised against production — the failure
+        # `situation_bso._L1_BY_EVENT_SELECT` and `correlation_conversation` both record
+        # ("a query whose correctness can only be demonstrated against production is a query
+        # nobody can hold to account"). Coerced here, exactly as `_rows_to_campaigns` does.
+        if isinstance(at, str):
+            try:
+                at = datetime.fromisoformat(at.replace("Z", "+00:00"))
+            except ValueError:
+                continue
+        moment = at if at.tzinfo else at.replace(tzinfo=timezone.utc)
+        per_node.setdefault(str(node_id), []).append((direction, moment))
+        conversation = f"thread:{thread}" if thread else f"event:{event_id}"
+        conversations.setdefault(str(node_id), {}).setdefault(conversation, []).append(
+            (direction, moment))
+    return per_node, node_type, conversations
+
+
 def compute_waiting(store, org_id: str, *, now: datetime | None = None) -> int:
     """Write the waiting/absence facts for every counterparty in the org. Returns rows written."""
     now = now or datetime.now(timezone.utc)
-    since = now - timedelta(days=_WINDOW_DAYS)
 
     with store.engine.begin() as c:
-        rows = c.execute(text(_TIMELINE), {"o": org_id, "since": since}).all()
+        per_node, node_type, conversations = directed_timelines(c, org_id, now=now)
         asked = {r[0] for r in c.execute(
             text(_ASKS).bindparams(bindparam("kinds", expanding=True)),
             {"o": org_id, "kinds": sorted(_ASK_KINDS)}).all()}
-
-        per_node: dict[str, list[tuple[str, datetime]]] = {}
-        node_type: dict[str, str] = {}
-        for node_id, field, at, ntype in rows:
-            node_type[str(node_id)] = str(ntype)
-            direction = _DIRECTION_FIELD.get(str(field))
-            if direction is None or at is None:
-                continue
-            # A DRIVER MAY HAND BACK A STRING. Postgres returns a datetime; SQLite does not, and
-            # this module could therefore only be exercised against production — the failure
-            # `situation_bso._L1_BY_EVENT_SELECT` and `correlation_conversation` both record
-            # ("a query whose correctness can only be demonstrated against production is a query
-            # nobody can hold to account"). Coerced here, exactly as `_rows_to_campaigns` does.
-            if isinstance(at, str):
-                try:
-                    at = datetime.fromisoformat(at.replace("Z", "+00:00"))
-                except ValueError:
-                    continue
-            moment = at if at.tzinfo else at.replace(tzinfo=timezone.utc)
-            per_node.setdefault(str(node_id), []).append((direction, moment))
 
         written = 0
         # POOLED BEFORE ANYTHING IS WRITTEN, because the cascade needs every counterparty's gaps
         # to answer for the one that has none of its own. PEOPLE ONLY (STEP-10): a thread node's
         # facts are the same messages again, and pooling both counted every reply twice.
-        gaps_by_node = {node_id: reply_gaps_of(timeline) for node_id, timeline in per_node.items()
-                        if node_type.get(node_id) == "person"}
-        ours_by_node = {node_id: our_reply_gaps_of(timeline)
-                        for node_id, timeline in per_node.items()
-                        if node_type.get(node_id) == "person"}
+        # PER CONVERSATION (STEP-10 U06): a reply is measured inside the thread it answers.
+        gaps_by_node = {node_id: conversation_reply_gaps(conversations.get(node_id, {}))
+                        for node_id in per_node if node_type.get(node_id) == "person"}
+        ours_by_node = {node_id: conversation_our_reply_gaps(conversations.get(node_id, {}))
+                        for node_id in per_node if node_type.get(node_id) == "person"}
         firm_of = _firms(c, org_id)
         bounces = _bounces(c, org_id)
         us = None
@@ -544,4 +578,6 @@ def _our_overall(c, org_id: str, gaps: list[float], now: datetime) -> int:
 __all__ = [
     "CADENCE_FIELDS", "CADENCE_FIRM", "CADENCE_FLOOR", "CADENCE_FLOOR_DAYS", "CADENCE_PERSON",
     "CADENCE_TENANT", "MIN_GAPS_FOR_CADENCE", "OUR_OVERALL_FIELDS", "OUR_REPLY_FIELDS", "cadence_for",
-    "our_reply_gaps_of", "reply_gaps_of", "WAITING_ONLY_FIELDS", "compute_waiting"]
+    "conversation_our_reply_gaps", "conversation_reply_gaps", "directed_timelines",
+    "our_reply_gaps_of", "reply_gaps_of", "WAITING_ONLY_FIELDS",
+    "compute_waiting"]
