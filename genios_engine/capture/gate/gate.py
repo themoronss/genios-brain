@@ -108,9 +108,12 @@ def run_gate(ctx: GateContext, trace: EventTrace,
     # S1b — unstructured noise: whitelist first, then the N-codes, each ARCHIVED with its code
     wl = whitelist(ctx)
     if wl:
-        # A re-read (W-06) names why it is read again, so the trace says which recovery it was.
+        # A re-read (W-06) names why it is read again, so the trace says which recovery it was;
+        # a sender the company brief names (W-07) names why the founder named it (STEP-07).
         trace.record("S1", "pass", whitelist=wl,
-                     **({"rereading": ctx.rereading} if ctx.rereading else {}))
+                     **({"rereading": ctx.rereading} if ctx.rereading else {}),
+                     **({"named_in_brief": ctx.named_in_brief}
+                        if wl == "W-07" else {}))
     else:
         hit = noise_rule(ctx)
         if hit:
@@ -139,7 +142,10 @@ def run_gate(ctx: GateContext, trace: EventTrace,
     # NOT FOR A RE-READ (STEP-05). The classifier's question — keep this mail or not — was
     # answered when the mail was kept: a park re-admitted for `low_relevance` met the very
     # classifier that parked it, and was parked again. A re-read is routed to be read.
-    if relevance is not None and not ctx.rereading:
+    # NOR FOR A SENDER THE COMPANY BRIEF NAMES (STEP-07, W-07): the founder said this sender's mail
+    # matters — the portal of a live application, the agent that introduces them — and the
+    # classifier's question, "is a specific human writing?", is the one that got it wrong.
+    if relevance is not None and not ctx.rereading and wl != "W-07":
         v = relevance.classify(ctx, ctx.prepared)
         disp = v.disposition or ("keep" if v.relevant else "park")
         if disp == "drop":

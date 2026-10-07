@@ -457,6 +457,11 @@ class ExtractionRequest:
     #: whole event rather than of an offset: an upload chunk IS one section, and a message has
     #: none. `None` is the ordinary case.
     section: str | None = None
+    #: STEP-07 · the tenant's company brief, as its block (`CompanyBrief.prompt_block()`), or
+    #: "" for a tenant with none. It rides in the envelope — the one slot above the fence and
+    #: after the cached prefix — so an extraction made under one brief is never served as the
+    #: answer to a prompt carrying another, and a tenant without a brief is asked as before.
+    company_brief: str = ""
 
     def __post_init__(self) -> None:
         require_text(self.org_id, "org_id")
@@ -816,8 +821,11 @@ def assemble_call(request: ExtractionRequest, *, nonce: str | None = None) -> As
         "absent answer only means we do not filter on it, and a wrong one deletes somebody's "
         "mail. Do not return any score, probability or number anywhere in this object."
     )
-    envelope = (f"{_envelope_block(request.envelope)}\n\n{offset_frame_block(len(content))}"
-                f"\n\n{business}\n\n{intent}")
+    # STEP-07 · the company brief first, when the tenant has one: who this company is, its
+    # goals and work in motion, frame every reading below it (`speedrun008/YC-II W27/` STEP-07).
+    brief = f"{request.company_brief.rstrip()}\n\n" if request.company_brief else ""
+    envelope = (f"{brief}{_envelope_block(request.envelope)}\n\n"
+                f"{offset_frame_block(len(content))}\n\n{business}\n\n{intent}")
     rendered = render_prompt(profile.profile_id, schema=generate_schema_block(),
                              vocab=vocabulary_block(), envelope=envelope, content=fenced.text)
     fenced.check_placement(rendered.text)

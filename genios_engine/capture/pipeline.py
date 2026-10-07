@@ -396,6 +396,9 @@ class SemanticLane:
     #: it, a Gmail/Outlook message whose fingerprint the seat's screen claimed first is not
     #: extracted again (`skipped="seen_on_screen"`) and gets one `same_message:` source ref.
     fingerprint_engine: Any | None = None
+    #: STEP-07 · the tenant's company brief, as its block — read once when the lane is built,
+    #: so every extraction of one sweep reads the same brief. "" for a tenant with none.
+    company_brief: str = ""
 
 
 #: `llm_costs.purpose` for S2's extraction calls (S4's relevance page files `l1_relevance`).
@@ -823,7 +826,8 @@ def run_semantic_lane(event: SourceEvent, prepared: PreparedContent | None,
         org_id=event.org_id, event_id=event.event_id, source=event.source,
         profile_id=choice.profile_id, tier=decision.tier, prepared=prepared, envelope=envelope,
         eval_time=lane.eval_time, timezone=lane.timezone, locale=lane.locale,
-        page_map=page_map, section=section)
+        page_map=page_map, section=section,
+        company_brief=getattr(lane, "company_brief", "") or "")
     outcome = extract(request, llm=lane.llm, store=lane.cache, open_lane=lane.open_lane)
     _record_extraction_cost(lane, event, outcome)
     outcome, counters = _grade_spans(outcome, prepared.clean_text, locale=lane.locale,
@@ -1376,6 +1380,21 @@ def page_relevance_candidate(raw, *, sender_known: bool) -> RelevanceCandidate:
         snippet=body[:MAX_ITEM_CHARS])
 
 
+def named_in_brief(sender_resolver, raw) -> str | None:
+    """Why the founder's company brief names this object's sender — `connector:…`, `person:…`,
+    `watchlist:…` — or None (STEP-07). Asked of the same resolver that says whether the sender is
+    known (`api/routes._sender_resolver_for`, its `.named`); a resolver without one, or one that
+    fails, names nobody — the gate then behaves exactly as it did before the brief existed."""
+    named = getattr(sender_resolver, "named", None)
+    if named is None:
+        return None
+    try:
+        return named(raw) or None
+    except Exception:      # noqa: BLE001 — a brief that cannot be read names nobody
+        _log.warning("company brief: could not ask who it names", exc_info=True)
+        return None
+
+
 def prime_relevance_page(objects, semantic, sender_resolver=None) -> None:
     """D6 · ONE connector page is ONE prompt for its ambiguous remainder.
 
@@ -1500,6 +1519,9 @@ def _finish(event: SourceEvent, trace: EventTrace, outcome: str,
 def capture_event(raw: RawObject, *, org_id: str, connection_id: str,
                   repo: SourceEventRepository,
                   sender_known: bool = False, is_structured: bool = False,
+                  # Why the founder's company brief names the sender, or None (STEP-07,
+                  # `named_in_brief`): the gate whitelists it as W-07 and does not judge it.
+                  named_in_brief: str | None = None,
                   structured_fields: dict | None = None, in_scope: bool = True,
                   mask_phone: bool = False,
                   relevance: RelevanceClassifier | None = None,
@@ -1582,7 +1604,8 @@ def capture_event(raw: RawObject, *, org_id: str, connection_id: str,
     ctx = GateContext(event=event, prepared=prepared, raw=raw.raw,
                       content_version=raw.content_version,
                       is_structured=is_structured, structured_fields=structured_fields,
-                      sender_known=sender_known, in_scope=in_scope, rereading=raw.rereading)
+                      sender_known=sender_known, in_scope=in_scope, rereading=raw.rereading,
+                      named_in_brief=named_in_brief)
     gate = run_gate(ctx, trace, relevance=relevance)
 
     # Decision-first ledger: write the lightweight source_events row (metadata + the

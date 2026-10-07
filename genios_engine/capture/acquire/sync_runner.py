@@ -21,7 +21,7 @@ from genios_engine.capture.connectors.base import RawObject, SourceBatch, Source
 from genios_engine.capture.landing.repository import SourceEventRepository
 from genios_engine.capture.parked.store import ParkedStore, parked_from_trace
 from genios_engine.capture.payload_store import RawPayloadStore
-from genios_engine.capture.pipeline import (CaptureResult, capture_event,
+from genios_engine.capture.pipeline import (CaptureResult, capture_event, named_in_brief,
                                             prime_relevance_page)
 from genios_engine.capture.validate.claim_group import (ClaimGroup, assemble_claim_groups,
                                                         claims_from_extraction)
@@ -590,6 +590,12 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
     # The run's own start, taken once, from the injectable seam rather than a bare clock so the
     # ledger row and the cadence decision below cannot disagree about when "now" was.
     started_at = (_now or (lambda: datetime.now(timezone.utc)))()
+    # STEP-07 · the junk filter learns who the company brief names before the first page is
+    # listed, so neither its batch (here) nor the connector's snippet gate (the fast path, which
+    # holds the same classifier) spends a call on a sender the gate will whitelist as W-07.
+    if relevance is not None and sender_resolver is not None and hasattr(relevance,
+                                                                         "bind_senders"):
+        relevance.bind_senders(sender_resolver)
     saved = None
     if mode == "recovery":
         since = started_at - timedelta(days=reconcile_days)
@@ -701,6 +707,8 @@ def run_sync(connector: SourceConnector, *, org_id: str, connection_id: str,
                 res, err = _capture_bounded(raw, retries=2, org_id=org_id,
                                             connection_id=connection_id, repo=repo,
                                             sender_known=sk, relevance=relevance,
+                                            named_in_brief=named_in_brief(sender_resolver,
+                                                                          raw),
                                             trace_repo=trace_repo, payload_store=payload_store,
                                             prepared_store=prepared_store,
                                             document_job_store=document_job_store,

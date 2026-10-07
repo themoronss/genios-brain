@@ -438,10 +438,16 @@ class ComposioGmailConnector:
             # ARCHIVES them since STEP-03 — kept with these list fields, never deleted). On a real inbox
             # this is most of the volume. Header-only bulk signals (List-Unsubscribe) still need the
             # full body → they stay on the LLM path. Flag-guarded (GENIOS_L1_DET_JUNK) for rollback.
+            # STEP-07 · a known counterparty, or a sender the company brief names, is never
+            # settled from its list snippet: the gate keeps it (W-01, W-07), so it must arrive
+            # whole — a watchlisted portal's status mail sits on Promotions as often as not.
+            whole = getattr(rel, "keeps_whole", None)
             det_junk: set[int] = set()
             if _DET_JUNK_PREFILTER:
                 for m, objs in light:
                     if not objs:
+                        continue
+                    if whole is not None and whole(objs[0]):
                         continue
                     # L1.3.8-U2 — attachment presence overrides junk confidence. A
                     # PROMOTIONS-labelled message carrying a signed contract is junk MAIL with a
@@ -479,6 +485,8 @@ class ComposioGmailConnector:
             # Same threshold, same constant, so the two surfaces cannot drift apart again.
             def _skip_body(m, objs) -> bool:
                 if not objs or availability_marker(objs[0].raw):
+                    return False
+                if whole is not None and whole(objs[0]):
                     return False
                 # L1.3.8-U2 — the same override, against the LLM's confident drop. This is the
                 # case the spec names: "a junk-classified email with a real contract attached

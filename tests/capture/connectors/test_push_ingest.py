@@ -88,7 +88,10 @@ def test_the_wiring_reaches_the_pipeline_verbatim(monkeypatch):
                     "payload_store": "PS", "prepared_store": "PREP", "document_job_store": "DOC",
                     "mailbox_owner": "founder@acme.com", "coverage_fn": "COV",
                     "semantic": "SEM", "structured": "STRUCT", "esqe": "ESQE",
-                    "sync_mode": SyncMode.backfill}
+                    "sync_mode": SyncMode.backfill,
+                    # STEP-07: why the company brief names the sender — this resolver has no
+                    # `.named`, so nobody (`capture/pipeline.named_in_brief`).
+                    "named_in_brief": None}
 
 
 @pytest.mark.parametrize("resolver, expected, why", [

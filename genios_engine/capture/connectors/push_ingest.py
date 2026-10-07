@@ -9,7 +9,7 @@ from genios_engine.capture.esqe.qualification import (DropLedger, FloorStore,
 from genios_engine.capture.landing.repository import SourceEventRepository
 from genios_engine.capture.parked.store import ParkedStore, parked_from_trace
 from genios_engine.capture.payload_store import RawPayloadStore
-from genios_engine.capture.pipeline import (CaptureResult, capture_event,
+from genios_engine.capture.pipeline import (CaptureResult, capture_event, named_in_brief,
                                             prime_relevance_page)
 from genios_engine.capture.trace_store import TraceRepository
 from genios_engine.contracts.parked import ParkedEvent
@@ -158,6 +158,7 @@ def ingest_pushed_objects(objects: tuple[RawObject, ...], *, org_id: str, connec
         res, err = _capture_bounded(
             raw, retries=wiring.retries, org_id=org_id, connection_id=connection_id,
             repo=wiring.repo, sender_known=sender_known, relevance=wiring.relevance,
+            named_in_brief=named_in_brief(wiring.sender_resolver, raw),
             trace_repo=wiring.trace_repo, payload_store=wiring.payload_store,
             prepared_store=wiring.prepared_store,
             document_job_store=wiring.document_job_store,
