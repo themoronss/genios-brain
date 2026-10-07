@@ -31,7 +31,7 @@ is one branch, `speedrun008`, and the units are block `yc2_w27` of `tree.yaml`.
 | Phase | Steps | Status |
 |---|---|---|
 | 0 · Ground truth | `STEP-00` one branch · `STEP-01` the golden set | both **PENDING — Harsh** (deploy). Claude's part done, pushed |
-| 1 · Remember everything | `STEP-02` change gate · `03` the gate keeps everything · `04` who is us · `05` every item enters memory · `06` nothing lost silently | `02`–`05` **PENDING — Rohit (push), Harsh (deploy)**: built, QA green (§6b–§6e). `06` TO BUILD |
+| 1 · Remember everything | `STEP-02` change gate · `03` the gate keeps everything · `04` who is us · `05` every item enters memory · `06` nothing lost silently | `02`–`06` **PENDING — Rohit (push), Harsh (deploy)**: built, QA green (§6b–§6f) |
 | 2 · The expert's desk | `STEP-07` company brief · `08` the re-sync · `09` workstreams · `10` history, patterns, analytics | `08` **PENDING — Harsh** (after 03–07 are live); the rest TO BUILD |
 | 3 · Expertise | `STEP-11` founder playbooks | TO BUILD |
 | 4 · The expert thinks | `STEP-12` the expert pass · `13` check every claim | TO BUILD |
@@ -39,8 +39,8 @@ is one branch, `speedrun008`, and the units are block `yc2_w27` of `tree.yaml`.
 | 6 · Learning from you | `STEP-16` | TO BUILD |
 | Across all phases | `STEP-17` real tests · `18` known bugs | TO BUILD — six of `STEP-18`'s bugs are fixed in code and pushed (§5) |
 
-**19 steps: 6 finished by Claude (`00`, `01` pushed; `02`–`05` waiting for the push), 1 waiting on
-Harsh from the start (`08`), 12 to build.** The next is `STEP-06` (nothing lost silently).
+**19 steps: 7 finished by Claude (`00`, `01` pushed; `02`–`06` waiting for the push), 1 waiting on
+Harsh from the start (`08`), 11 to build.** The next is `STEP-07` (the company brief).
 
 ## 4 · STEP-00 · one branch, one baseline
 
@@ -191,6 +191,22 @@ every calendar event a meeting, no archive's words readable — a planted miss o
 **Still owed:** the push; Harsh's deploy (no migration); the first pass's numbers (`08` §3.5, §4.3);
 Boardy's introductions promoted only after Rohit reads the dry run (D23).
 
+## 6f · STEP-06 · nothing is lost silently
+
+**What was built** (`STEP-06-PENDING-owner-rohit-and-harsh-nothing-lost-silently.md` §9): one writer of a
+card's `expired` state, `platform/card_lifecycle`, called by all twelve places that used to set it (nine
+wrote nothing), each with its cause — and History shows it. The compiled lane records what came of every
+admitted live situation (migration `0194`): `decided`, or the stop and its reason. One reader names every
+active situation's end, the journey every event's. The parked drain and the re-read ladder no longer
+starve. Two receipts and a health check hold it.
+
+**Measured:** on the golden set, active situations with no record of how they ended 126 of 227 → 0; card
+expiry sites that write nothing 9 → 0; the board unchanged — STEP-06 changes no decision.
+
+**QA:** `baseline/yc2w27-s06-qa/qa_record.txt` — run 1 at `d2146f4f`, green on every tier, a database created for every check: the units 28 / 0 / 0 (4 tree checks + 24 units; 1 retired); the whole database suite 17,989 passed, 0 failed (the same four optional skips, re-listed with their reasons); the golden lane 631 passed, 87 xfailed, 0 skipped; the board matches, unchanged (must-detect 11/32, must-abstain 11/12, Atlas 4/80); 0 golden tenants left; the hermetic job 16,339 passed, 1,388 skipped (the database tests, run in tier 2), 279 deselected, 72 xfailed in 763.88s (0:12:43).
+
+**Still owed:** the push; Harsh's deploy with migration `0194`; the two production numbers (`08` §4.4).
+
 ## 7 · CI on the push
 
 | Job | Run `37407196202`, on `77aba10e` |
@@ -220,6 +236,8 @@ The full notes, with commands, expected outputs and what not to do: **`08-FOR-HA
 7. ⛔ STEP-05: no migration. Watch the first chain pass (heavy, model-free) and read the two numbers a
    day later; the promotion of Boardy's introductions — dry run, Rohit reads it (D23), then `--apply`
    (`08` §3.5, §4.3).
+8. ⛔ STEP-06: migration `0194_situation_outcomes` — the boot log must name it. Nothing to run after;
+   read the two numbers before and a day after (`08` §1.8, §4.4).
 
 ## 9 · Decisions still open — none blocks the next step
 

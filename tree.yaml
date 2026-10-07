@@ -4524,10 +4524,16 @@ yc2_w27_s05:
                       depends_on: [M23.C5.L-integration.V4.U02, M23.C6.L-logic.V2.U01]
 
 # ═══════════════════════════════════════════════════════════════════════════════════════════════
-# yc2_w27_s06 · STEP-06 nothing is lost silently — speedrun008/YC-II W27/STEP-06-TO-BUILD-nothing-lost-silently.md
+# yc2_w27_s06 · STEP-06 nothing is lost silently — speedrun008/YC-II W27/STEP-06-PENDING-owner-rohit-and-harsh-nothing-lost-silently.md
 # ═══════════════════════════════════════════════════════════════════════════════════════════════
 yc2_w27_s06:
-  status: approved_in_progress
+  status: built
+  built: >
+    2026-10-07 — 24 units (25 drawn; C4.V3.U03 retired: receipt 44 and STEP-05's receipt
+    already hold it), crosscheck ship (.trace/reports/crosscheck-yc2_w27_s06-*.md), QA green
+    (speedrun008/YC-II W27/baseline/yc2w27-s06-qa/qa_record.txt, at d2146f4f). Golden: situations
+    with no recorded end 126 → 0, the board unchanged. Pending: Rohit's push; Harsh's deploy
+    (migration 0194); the two production numbers (STEP-06 §8.6).
   confirmed: >
     Rohit, 2026-10-07 — "step 6 start karo … go", after the STEP-06 check (§8) and its tree were put
     to him; D24 and D25 hold at their defaults (no backfill of old expiries; a silent situation type

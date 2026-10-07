@@ -1,11 +1,9 @@
-# STEP-06 · TO BUILD · nothing is lost silently — every item and every situation has an end state
+# STEP-06 · PENDING — owner Rohit (push) and Harsh (deploy, migration 0194) · nothing is lost silently — every item, every situation and every card has an end state
 
 **Owner:** Claude. **Depends on:** `STEP-05`. **Moves:** items and situations with no recorded end
 state **→ 0**; card expiries with no `card_event` **9 sites → 0**.
 
-**Checked 2026-10-07** (§8): the plan re-read against the code with STEP-02 to STEP-05 built, and the
-golden set measured. Tree `yc2_w27_s06` (milestone M24, 25 units) is proposed in §8.4 and waits for
-Rohit's go.
+**✅ Built 2026-10-07** — tree block `yc2_w27_s06`, 24 units (25 drawn, 1 retired while building), crosscheck *ship*, QA §9.4. **Pending:** Rohit's push; Harsh's deploy (migration `0194`); the production numbers (§8.6, §9.5).
 
 ---
 
@@ -172,3 +170,64 @@ select s.domain, s.situation_type, d.outcome, d.reasons, count(*)
 select reason_code, status, count(*) from parked_events
  where org_id = :o and status = 'pending' group by 1, 2 order by 3 desc;
 ```
+
+---
+
+## 9 · Built — 2026-10-07 (`yc2_w27_s06`, 24 units green, 1 retired)
+
+### 9.1 · What was built
+
+| | Where | What it does |
+|---|---|---|
+| one way to expire a card | `platform/card_lifecycle.py` | `expire_cards` / `expire_lapsed`: the only writer of a card's `expired` state; one `card_events` row per card it moves, in the caller's transaction, with a cause from a closed vocabulary — `replaced`, `rule_cleared`, `budget_held`, `not_authorized`, `plan_gone`, `rule_muted`, `expired` (the lapse), `extension`, `subject_is_us` |
+| every expiry site | `reason/runner`, `reason/composer`, `reason/publication`, `reason/domain_shadow`, `feedback/calibrate`, `deliver/store`, `api/intelligence_routes`, `scripts/repair_self_identity` | all twelve call it — the nine that wrote nothing, and the three that wrote their own event keep their kind (`window.lapsed`, `card.dismissed`, `card.retired`); an AST guard refuses a thirteenth |
+| History says why | `deliver/store.CardStore._OUTCOME_KINDS` | gains `card.expired`, `card.resolved` (the team lane wrote it, History never showed it) and `card.retired` (`03` F75) |
+| a situation's end after admission | migration `0194_situation_outcomes`, `reason/situation_outcome_store.py`, `reason/domain_shadow.py` | the compiled lane records what came of every admitted LIVE candidate, once per material change (keyed on its admission `decision_id`): `decided` with the change gate's word for it, or the stop and its reason — `no_route`, `incomplete`, `conflict`, `required_missing`, `unsupported`, `no_tenant_pack`, `budget_exhausted`, `error`. Written once after the pass, failing open; a measurement writes nothing; the tenant reset wipes it |
+| one reader for every situation | `reason/situation_end.py`, `scripts/situation_ends.py` | every active situation, one end: `no_corpus`, `not_live` (the compiled lane's own `live_lane` answer), `held`, `rejected`, `carded`, `decided`, `stopped`, or `unrecorded` — which must be 0 |
+| one end per event | `capture/journey.py` | `event_journey` now reads the memory run and the attention tier and names exactly one `end`: `not_captured`, `superseded`, `in_memory`, `failed`, `parked`, `waiting` (for the drain, the re-read, or memory), `archived` (a screen item), `stopped`, `none` |
+| the drains stop starving | `capture/parked/drain.py`, `capture/landing/unread.py` | the parked drain's limited read takes only rows it re-admits (the others counted, unlimited); the re-read ladder's due test moved into its SQL (`03` F74), with the give-up path on its own read |
+| the checks | `platform/receipts.py`, `scripts/pipeline_health.py` | receipts *every expired card says why* and *every admitted situation has a recorded end*; the health check *every situation and every card says how it ended*, with each live situation type that has no open card shown with the histogram of its ends (`06` D25: a line, not a red receipt) |
+| the golden set | `tests/replays/test_nothing_ends_silently.py` | on every founder case: every event names its end, every active situation names its end, every expired card has its event — with a planted miss of each kind |
+
+### 9.2 · Measured
+
+| | Before (§8.1) | After |
+|---|---|---|
+| golden: active situations with no record of how they ended | 126 of 227 | **0** — each names its end; the 126 are `not_live` (118) and `no_corpus` (8) |
+| golden: events with no end | 0 | 0 — now named by the journey too |
+| golden: cards expired with no event | 0 of 0 (never exercised) | 0 of 0 — the twelve sites held one by one instead |
+| card expiry sites that write no event | 9 of 12 | **0** — and a thirteenth fails the guard |
+| what ends after admission | counters in one log line | one row per admitted candidate, with its reason |
+| the golden board | 11/32 · 11/12 · Atlas 4/80 | **unchanged** (`golden_score.py --assert-recorded` exit 0) — STEP-06 changes no decision |
+| production: expired cards with no event · admitted situations with no recorded end | 15 (4 Oct audit) · unmeasured | ⏳ after the deploy (§8.6) — target 0 and 0 for everything created since |
+
+### 9.3 · Found while building — each a measurement
+
+- **The check missed a receipt that already existed.** §8.3.5 drew *every event has an end*; receipt 44
+  (*every captured event that reached no signal says where it stopped*) and STEP-05's *every kept event
+  has entered memory* already hold it. `M24.C4.L-integration.V3.U03` retired with the reason.
+- **A fix that would have stopped the ladder giving up.** The first ladder fix filtered the due rows in
+  the SQL that `give_up_parked_extractions` also read for over-limit rows — so it gave nothing up. The
+  root and capture guards caught it before the commit; the give-up path has its own read.
+- **The store's first rule was wrong.** "The first outcome stays" would have kept `budget_exhausted` on a
+  candidate decided the next day; the row holds the candidate's CURRENT end, and the change gate's skip
+  moves only its clock.
+- **A shared SQL fragment inflates the resolver.** Joining two statements from one fragment with `+` read
+  as six statements with holes (`platform/table_coverage`); the two ladder reads are whole literals,
+  held identical by a test.
+- **Two receipt counts are decision gates** — L4 7 → 8, L5 6 → 7, each moved with its reason where it is
+  pinned.
+- Statement pin 2,955 → 2,955 (moves: +3, −14, +2, +1, +2, +1, +1, +4 — each measured per file and
+  documented).
+
+### 9.4 · QA
+
+`baseline/yc2w27-s06-qa/qa_record.txt` — run 1 at `d2146f4f`, green on every tier, a database created for every check: the units 28 / 0 / 0 (4 tree checks + 24 units; 1 retired); the whole database suite 17,989 passed, 0 failed (the same four optional skips, re-listed with their reasons); the golden lane 631 passed, 87 xfailed, 0 skipped; the board matches, unchanged (must-detect 11/32, must-abstain 11/12, Atlas 4/80); 0 golden tenants left; the hermetic job 16,339 passed, 1,388 skipped (the database tests, run in tier 2), 279 deselected, 72 xfailed in 763.88s (0:12:43).
+
+### 9.5 · The deploy, and what comes after
+
+Migration **`0194_situation_outcomes`** ships with `0191`–`0193`; `main.py` applies it at boot, and the
+new compiled lane writes it — the code must not serve without it (the boot log must name it). Nothing
+to run after the deploy: every expiry carries its reason from the first sweep, every admitted situation
+its end. Read §8.6's numbers before and a day after; `scripts/situation_ends.py --org …` names every
+situation's end, and `pipeline_health` holds both.

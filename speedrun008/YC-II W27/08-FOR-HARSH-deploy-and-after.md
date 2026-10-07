@@ -25,6 +25,8 @@ or the command it came from.
    every recovery is read again. The **first chain pass after the deploy is heavy** (§3.5); read its
    numbers (§4.3). Boardy's archived introductions are promoted only after Rohit reads the dry run
    (`06` D23).
+   ⛔ **And STEP-06 (§1.8) adds a fourth, `0194_situation_outcomes`** — what came of every admitted
+   situation. Nothing to run after the deploy; read two numbers before and a day after (§4.4).
 2. After the deploy, **re-queue the attachments** the `file_name` refusal dead-lettered (§3.1).
 3. **Read the first `refetch_last_error`** that comes back (§3.2).
 4. **Pin the Composio toolkits** — the one unit of this block that is yours (§3.3).
@@ -124,6 +126,19 @@ it** (`03` F62), or that company reads as a counterparty in those three places.
 | a new health check | `scripts/pipeline_health.py` — *every kept event entered memory, every calendar event is a meeting*, split by cause, with the ladder's backlog |
 | promotion | `scripts/promote_archived.py` — dry run by default; nothing is promoted until Rohit says (`06` D23) |
 
+### 1.8 · STEP-06, nothing is lost silently — in the next push
+
+| | What changes at runtime |
+|---|---|
+| card expiry | every place that expires a card goes through `platform/card_lifecycle`, which writes one `card_events` row per card saying why (`replaced`, `rule_cleared`, `budget_held`, `not_authorized`, `plan_gone`, `rule_muted`; the lapse keeps `window.lapsed` / `expired`, the extension's dismiss `card.dismissed`, the repair `card.retired`). Expect a `card.expired` row wherever a card used to vanish |
+| History | a card's last line now shows `card.expired`, `card.resolved` and `card.retired` with their cause |
+| new table | `situation_outcomes` (migration `0194`): one row per admitted situation candidate, written once after each compiled pass — `decided`, or the stop and its reason. Wiped by the tenant reset |
+| the drains | the parked drain's 200 are now only rows it can re-admit (the rest counted); the re-read ladder's 200 are only rows that are due |
+| the journey | `GET /events/{id}/journey` gains `memory` and `end` — one end per event |
+| two receipts | *every expired card says why* (cards created since `0194`) · *every admitted situation has a recorded end* |
+| a new health check | `scripts/pipeline_health.py` — *every situation and every card says how it ended*, with each live situation type that has no open card shown with its histogram |
+| a new script | `scripts/situation_ends.py --org …` — how every situation ended, per type (read-only) |
+
 ### 1.3 · How it was tested before the push
 
 `baseline/yc2w27-qa/qa_record.txt`, at `83dd87f3`, every check on an **empty** scratch Postgres 17:
@@ -136,6 +151,7 @@ it** (`03` F62), or that company reads as a counterparty in those three places.
 | on GitHub, the first push | `golden-pg` ✅ passed (run `37407196202`, Python 3.12, Postgres 17); `test` — see §6 |
 | ⛔ STEP-04, in the next push (`baseline/yc2w27-s04-qa/qa_record.txt`) | units 48 / 0 / 0; the database suite 17,696 passed, 0 failed; the golden set 520 passed, 103 xfailed, 0 skipped, the board matches; the hermetic job 16,259 passed, 0 failed (run 2 — run 1 was red on one gate test, fixed in `78d7b4fd`) |
 | ⛔ STEP-05, in the next push (`baseline/yc2w27-s05-qa/qa_record.txt`, at `4909f718`) | units 23 / 0 / 0; the database suite 17,843 passed, 0 failed; the golden set 584 passed, 87 xfailed, 0 skipped, the board matches; the hermetic job 16,300 passed, 0 failed — green on the first run |
+| ⛔ STEP-06, in the next push (`baseline/yc2w27-s06-qa/qa_record.txt`, at `d2146f4f`) | `baseline/yc2w27-s06-qa/qa_record.txt` — run 1 at `d2146f4f`, green on every tier, a database created for every check: the units 28 / 0 / 0 (4 tree checks + 24 units; 1 retired); the whole database suite 17,989 passed, 0 failed (the same four optional skips, re-listed with their reasons); the golden lane 631 passed, 87 xfailed, 0 skipped; the board matches, unchanged (must-detect 11/32, must-abstain 11/12, Atlas 4/80); 0 golden tenants left; the hermetic job 16,339 passed, 1,388 skipped (the database tests, run in tier 2), 279 deselected, 72 xfailed in 763.88s (0:12:43). |
 
 ## 2 · Deploy
 
@@ -158,7 +174,9 @@ crashes the boot (fail fast) rather than serving broken SQL.
 `address` or `domain`; a value is trimmed, lowercased, non-empty), `on delete cascade` from `orgs`.
 Every module that asks "is this us?" reads it through `platform/self_identity.identity_for`, the L2
 drain included — so, like `0192`, the new code must not serve without it: the boot log must name
-`0193_org_self_identities.sql`. It starts empty: until §3.4 declares, who is us is the seats,
+`0193_org_self_identities.sql` — ⛔ and, from STEP-06, `0194_situation_outcomes.sql` (the compiled
+lane writes it after every pass; a degraded boot without it costs the record, never the pass, but
+the receipt reads red). `0193` starts empty: until §3.4 declares, who is us is the seats,
 `orgs.email` and the connected accounts — `ceo@thegenios.com` and `thegenios.com` become ours from
 the declaration on.
 If it says `DEGRADED BOOT — database is read-only` instead, the change gate fails open (every subject
@@ -342,6 +360,17 @@ select count(*) filter (where r.event_id is not null)::float / nullif(count(*), 
 select (select count(*) from graph_nodes where org_id = 'org_e97e86f858ad48b2bbf64b8a' and node_type = 'meeting' and valid_to is null),
        (select count(distinct source_object_id) from source_events where org_id = 'org_e97e86f858ad48b2bbf64b8a' and source = 'gcal');
 ```
+
+### 4.4 · STEP-06 — before the deploy and a day after
+
+```
+python scripts/pipeline_health.py --org org_e97e86f858ad48b2bbf64b8a --database-url "$URL"
+python scripts/situation_ends.py --org org_e97e86f858ad48b2bbf64b8a --database-url "$URL" --verbose
+```
+
+*Every situation and every card says how it ended* should read **0 and 0** a day after; the lines under
+it name each live situation type that has no open card, with the histogram of its ends — informational
+(`06` D25). The read-only SQL behind the two numbers is `STEP-06` §8.6.
 
 ## 5 · Do not
 
