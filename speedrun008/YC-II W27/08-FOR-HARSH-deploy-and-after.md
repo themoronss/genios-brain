@@ -277,11 +277,17 @@ Boardy's introductions stay archived until Rohit has read the list (`06` D23):
 ```
 # DRY RUN ONLY — send its output to Rohit (event ids, dates, sender domains; never a body)
 python scripts/promote_archived.py --org org_e97e86f858ad48b2bbf64b8a --rule N-02 \
-    --sender-domain boardy.com --database-url "$URL"
+    --sender-domain boardy.ai --database-url "$URL"
 # after Rohit says
 python scripts/promote_archived.py --org org_e97e86f858ad48b2bbf64b8a --rule N-02 \
-    --sender-domain boardy.com --database-url "$URL" --apply
+    --sender-domain boardy.ai --database-url "$URL" --apply
 ```
+
+⛔ **CORRECTED 2026-10-07 (the STEP-08 check): `boardy.ai`, not `boardy.com`.** Boardy writes from
+`boardy@boardy.ai` (`context/pipeline.py:472`, 254 threads in your graph; `api/routes.py:5022`), and
+the promotion matches the sender domain exactly (`capture/landing/promote.py`), so `boardy.com`
+would list nothing. ⛔ And it can only see what was **archived after the deploy**: the 31 intros the
+old gate deleted are `dropped`, not archived, until `STEP-08` lands them again.
 
 The next chain pass reads them. ⛔ Two meeting nodes production holds from before were filed at their
 meetings' start (`03` F73): an edit made before such a meeting lands as history until the meeting

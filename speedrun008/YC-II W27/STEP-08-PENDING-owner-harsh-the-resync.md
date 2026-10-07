@@ -90,6 +90,10 @@ read (Claude's production reads need Rohit's permission); §8.7 is the read-only
 | (new) attachments | ⚠️ `capture/landing/reread.drop_reread_attachments` drops a listing's attachment copies by asking whether the PARENT message's key exists. A freed parent key lets its attachments land again — right when they were deleted with the message, **a duplicate** when an attachment survived its deleted message (`attachment_overrides_junk`, `composio.py:828`) |
 | (new) calendar | ✅ structured — short-circuited at S1.5 before any noise rule (`capture/gate/gate.py`, `capture/pipeline.py` "gcal etc. always have a mapping"). **STEP-08 is Gmail only** |
 | (new) what a re-listing costs | dedup runs at capture, after the connector has listed and full-fetched each kept message (`sync_runner.py:45`, `composio._to_batch`): re-listing the 60 days already synced costs Composio calls and the junk filter's batched calls again — no extraction, no reasoning |
+| §5's verify query | ⚠️ **can never reach 0 as written**: it has no `outcome <> 'superseded'` and no `object_type = 'email_message'`, and a superseded row keeps no payload. §8.7's first query and C4's health check replace it |
+| (new) D23, Boardy's promotion | ⛔ **wrong domain, now corrected**: `08` §3.5 and `06` D23 said `--sender-domain boardy.com`; Boardy writes from `boardy@boardy.ai` (`context/pipeline.py:472`, `api/routes.py:5022`) and the promotion matches exactly, so it would have listed nothing. ⚠️ And it sees only mail archived **after** the deploy — the 31 intros the old gate deleted stay `dropped` until STEP-08 lands them. With the brief naming Boardy as a connector they land deep; without it, promote again after STEP-08 |
+| (new) the doors | ⚠️ `POST /integrations/gmail/sync` and the onboarding backfill take the fast path (list snippets for rule-junk); **STEP-08 uses `POST /connections/{gmail}/backfill`**, the legacy full fetch |
+| (new) the payload clocks | ⚠️ mail emitted before the deploy carries the old 30-day payload expiry (`03` F21): what was captured 3–5 Oct loses its body around **2–4 Nov 2026**, after which the re-read ladder cannot read it and STEP-08 does not cover it (it frees `dropped` rows only). The deploy should land before then |
 
 ### 8.3 · What changes in the design
 
@@ -129,15 +133,17 @@ Built after `STEP-07` or beside it — nothing here touches what STEP-07 changes
 
 ### 8.6 · Harsh's runbook — replaces §3
 
-0. Deployed and done first: `STEP-03` … `STEP-07` live; the STEP-04 repair (D14); the STEP-05
-   promotion (D23); the brief accepted (`STEP-07`).
+0. Deployed and done first: `STEP-03` … `STEP-07` live; B19 live and the Composio toolkits pinned
+   (`08` §3.3 — STEP-08 is a burst of provider calls); the STEP-04 repair (D14); the STEP-05
+   promotion (D23, `boardy.ai`); the brief accepted (`STEP-07`).
 1. `python scripts/resync_deleted_mail.py --org $ORG --database-url "$URL"` — the dry run: how many,
    by rule, sender domain and month; the oldest; the window it needs. Send it to Rohit.
 2. Rohit names the window (D5/D16).
 3. `PATCH /connections/{gmail}/backfill-window` with that number of days.
 4. `… --apply --days <N>` — frees the keys; prints how many.
-5. `POST /connections/{gmail}/backfill` — wait for `backfill drain done` in the log; re-run while
-   it says `TRUNCATED`.
+5. `POST /connections/{gmail}/backfill` — the legacy door, every message fetched in full; never
+   `/integrations/gmail/sync`, which keeps rule-junk as list snippets. Wait for `backfill drain
+   done` in the log; re-run while it says `TRUNCATED`.
 6. `… --finish` — superseded, and not listed with its reason.
 7. `scripts/pipeline_health.py` and the funnel probe; keep both outputs in
    `baseline/<date>-after-resync/`.
@@ -165,16 +171,26 @@ select count(*) from source_events a
 -- the Gmail connection's window today
 select connection_id, capture_scope ->> 'backfill_days' as backfill_days
   from connections where org_id = :o and source_type = 'gmail';
+-- the payload clocks: the earliest body that expires, and how many expire before 5 Nov
+select min(expires_at), count(*) filter (where expires_at < '2026-11-05')
+  from raw_payloads where org_id = :o;
+-- the plan the tenant is on (a long backfill counts against its sync quota)
+select * from subscriptions where org_id = :o;
 ```
 
 ### 8.8 · What it costs `[MODELLED]`
 
-From `03` §F (5 Oct): 395 messages in the 60-day window — about 65% deleted by a rule (no model
-call), 17% judged junk by the AI filter, 18% read. A message read costs one extraction (Haiku 4.5,
-about $0.01); the filter and the relevance page are batched (12 a call). So the 258 come back for a
-few cents beyond the ~37 the brief names (Startup India 5, Boardy 31 → read, about $0.40). Each extra
-180 days of history is about 1,200 messages: ~220 read, ~$2.5; 365 days, ~$5. One time. The dry run
-prints the real counts before anything is spent.
+From production's own tokens (`01-CROSSCHECK.md:79-90`, Haiku 4.5 at $1 / $5 a million): a mail READ
+costs about **$0.017** (one extraction); a mail a rule archives costs **$0**; the junk filter and the
+relevance page are batched. So:
+
+- **the 258** come back for ≈ $0 — the rules archive them again — except what the brief names: Boardy's
+  31 and the portal's 5 are read, about **$0.60**;
+- **each extra 180 days** of history is ~790 messages at the measured 6.6 a day, ~35% read: about
+  **$5–6.5**; **365 days**, ~2,000 messages, about **$12–17** — inside one day's platform cap ($25),
+  over two days on a trial plan's $10. L2 and the decider (once per new subject, STEP-02) are extra.
+
+The dry run prints the real counts before anything is spent.
 
 ### 8.9 · Risks
 
@@ -185,3 +201,12 @@ prints the real counts before anything is spent.
 | model spend over the daily caps | the caps hold; the backlog drains over days |
 | a freed key whose mail never returns | `--finish` reports it; the row stays `dropped`, with its reason |
 | an attachment twice | C2, and the acceptance's control |
+| the bodies captured before the deploy expire (~2–4 Nov) | deploy before then; §8.7 reads the clock |
+| the sync quota on a long window | §8.7 reads the plan; the manual `/backfill` checks no quota (unverified) — Harsh watches `source_events` growth |
+
+### 8.10 · Done, in production
+
+The 258 have their content or a stated reason (§8.7's first query: 0 rows without a reason); the
+health check reads zero; and the threads `09` G1 names as the benchmark's production half — the
+introducer's reply, the July promises, the 2 Apr deferral — are in memory. The last needs the
+365-day window.

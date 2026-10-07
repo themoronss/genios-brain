@@ -1,6 +1,6 @@
 """Promote one tenant's archived mail back to kept, by the rule that archived it — STEP-05.
 
-    python scripts/promote_archived.py --org <org_id> --rule N-02 --sender-domain boardy.com \\
+    python scripts/promote_archived.py --org <org_id> --rule N-02 --sender-domain boardy.ai \\
         --database-url postgresql://…                                               # dry run
     … --apply                                                                         # promotes
 
@@ -38,7 +38,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--rule", required=True,
                     help="the code that archived the mail — an N-code or llm_junk")
     ap.add_argument("--sender-domain", default=None,
-                    help="only mail sent from this domain (e.g. boardy.com)")
+                    help="only mail sent from this domain (e.g. boardy.ai — Boardy writes from boardy@boardy.ai)")
     ap.add_argument("--apply", action="store_true", help="promote (default: a dry run that counts)")
     return ap.parse_args(argv)
 

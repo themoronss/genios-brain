@@ -22,7 +22,7 @@ default holds, and the step that depends on it says so in its own file.
 | **D20** | A kept mail with no signal — does it enter memory with its L1 extraction (its words), or as names and dates only? | **With its extraction** — it was already read, so no model call; the asks the expert needs are in it. Default applied 2026-10-06 (*"step 5 start karo"*) | `STEP-05` |
 | **D21** | Is a memory write with no model read (an archived mail's metadata) billed as a message read? | **No** — only what a model read is billed. Default applied 2026-10-06 | `STEP-05` |
 | **D22** | STEP-05's draft 3.7 — a screen item creates a person the graph does not have? | **No, dropped** — nodes are listed org-wide and a private WhatsApp contact must not appear to the rest of the org (`reason/moments/screen_memory.py:10-15`); revisit with seat-private nodes in `STEP-09`. Default applied 2026-10-06 | `STEP-05` |
-| **D23** | Promote Boardy's archived introductions (rule N-02, sender `boardy.com`) back to kept, so their words are read? | **Yes, after you read the list** — Harsh runs `scripts/promote_archived.py` dry, you read the event ids and dates it lists (never a mail's words), then `--apply`; the next chain pass reads them | `STEP-05` (✅ built 2026-10-07) — needed only after the deploy |
+| **D23** | Promote Boardy's archived introductions (rule N-02, sender `boardy.ai` — ⛔ corrected 2026-10-07 from `boardy.com`, which matches nothing) back to kept, so their words are read? | **Yes, after you read the list** — Harsh runs `scripts/promote_archived.py` dry, you read the event ids and dates it lists (never a mail's words), then `--apply`; the next chain pass reads them | `STEP-05` (✅ built 2026-10-07) — needed only after the deploy |
 | **D24** | Cards that expired before STEP-06 carry no reason. Write one now ("expired before reasons were recorded")? | **No** — History keeps them as they are; the receipt counts only cards created since `0194`. Default applied 2026-10-07 (*"step 6 start karo … go"*) | `STEP-06` (✅ built 2026-10-07) |
 | **D25** | A situation type that produced no card for 7 days: a red receipt, or a health-check line with its histogram? | **The line** — silence can be right; the histogram says which kind. Default applied 2026-10-07 | `STEP-06` (✅ built 2026-10-07) |
 
@@ -248,7 +248,7 @@ pass reads it as a re-read the gate does not archive again.
 
 | | Option | Verdict |
 |---|---|---|
-| **A** | Harsh runs the dry run (`scripts/promote_archived.py --org … --rule N-02 --sender-domain boardy.com`), you read what it lists — event ids, dates, sender domains, never a body — then `--apply` | ✅ **Recommended** |
+| **A** | Harsh runs the dry run (`scripts/promote_archived.py --org … --rule N-02 --sender-domain boardy.ai`), you read what it lists — event ids, dates, sender domains, never a body — then `--apply` | ✅ **Recommended** |
 | B | Promote every N-02 archive, not only Boardy's | reads every newsletter with an unsubscribe header too — one model call each, and most are what N-02 was written for |
 | C | Leave them archived | the people Boardy introduced stay names without the reason they were introduced |
 
