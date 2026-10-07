@@ -147,6 +147,15 @@ def facts(store, org: str, key: str, field: str) -> list:
     return [(_loaded(r.value), _loaded(r.evidence) or {}) for r in rows]
 
 
+def noise(store, org: str, event_id: str) -> list[str]:
+    """The kinds of the noise or relevance record an event left on its sender."""
+    with store.engine.connect() as c:
+        return sorted(r.kind for r in c.execute(text(
+            "select kind from graph_observations where org_id = :o and created_by_event_id = :e "
+            "   and (kind like 'email_noise:%' or kind = 'email_relevance')"),
+            {"o": org, "e": event_id}))
+
+
 def edges(store, org: str, edge_type: str) -> set[tuple[str, str]]:
     """Every live edge of `edge_type`, as (from key, to key)."""
     with store.engine.connect() as c:

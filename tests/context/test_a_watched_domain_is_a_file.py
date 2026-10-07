@@ -16,7 +16,7 @@ from __future__ import annotations
 import pytest
 
 from .workstream_world import (FOUNDER, UNSUBSCRIBE, WATCHED, anchors, brief, later, mention, node,
-                               process, reset, tenant)
+                               noise, process, reset, tenant)
 
 pytestmark = pytest.mark.pg
 
@@ -40,6 +40,7 @@ def _notice(store, event_id, sender, **kw):
                                      f"support@{WATCHED}"])
 def test_a_portals_notice_is_filed_under_the_portal(store, address):
     assert _notice(store, "evt_notice", address) == {WATCHED}
+    assert noise(store, ORG, "evt_notice") == ["email_relevance"]
     assert node(store, ORG, address).node_type == "service", "a portal's address is not a person"
 
 
@@ -74,11 +75,13 @@ def test_a_notice_the_portal_marks_auto_generated_is_still_a_file(store):
                                      {"Precedence": "bulk"}])
 def test_every_mark_of_a_mailing_keeps_it_out(store, headers):
     assert _notice(store, "evt_news", f"community@{WATCHED}", headers=headers) == set()
+    assert noise(store, ORG, "evt_news") == ["email_noise:newsletter"], "recorded as what it is"
 
 
 def test_an_auto_reply_from_the_portal_is_not_a_file(store):
     assert _notice(store, "evt_ooo", f"support@{WATCHED}",
                    headers={"Auto-Submitted": "auto-replied"}) == set()
+    assert noise(store, ORG, "evt_ooo") == ["email_noise:auto_reply"]
 
 
 def test_an_out_of_office_layer_1_marked_is_not_a_file(store):

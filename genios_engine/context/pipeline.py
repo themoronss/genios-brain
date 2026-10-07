@@ -1161,9 +1161,14 @@ def process_event(*, org_id: str, event_id: str, source: str, content: str,
             # marker, or the message saying so) still is; so is a watched domain's MAILING (golden
             # F32 — read, never a file). A connector's introduction carries an unsubscribe header as
             # a matter of course, and is not a mailing.
-            is_noise = (auto_reply or _an_auto_reply(canon_meta)
-                        or ex.noise_type in ("newsletter", "spam")
-                        or (bool(watched_domain) and _a_portals_mailing(canon_meta)))
+            # An auto-reply the message declares is treated as L1's marker is — no ask, no
+            # question, no promise is read from it — and a portal's mailing IS a newsletter, so its
+            # noise is recorded under that name whatever the reader called it.
+            auto_reply = auto_reply or _an_auto_reply(canon_meta)
+            if (watched_domain and ex.noise_type not in ("newsletter", "spam")
+                    and _a_portals_mailing(canon_meta)):
+                ex.noise_type = "newsletter"
+            is_noise = auto_reply or ex.noise_type in ("newsletter", "spam")
         else:
             # A machine sender is noise for the NETWORK too: it gets a `service` node (facts attach)
             # but never anchors a relationship edge or a situation — same treatment as a newsletter.

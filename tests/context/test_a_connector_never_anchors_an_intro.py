@@ -20,7 +20,7 @@ from pathlib import Path
 import pytest
 
 from .workstream_world import (CONNECTOR, FOUNDER, UNSUBSCRIBE, anchors, brief, facts, later,
-                               mention, process, reset, tenant)
+                               mention, noise, process, reset, tenant)
 
 pytestmark = pytest.mark.pg
 
@@ -85,6 +85,7 @@ def test_a_connectors_auto_reply_is_no_file_and_owed_nothing(store):
             company_brief=brief(ORG))
     assert anchors(store, ORG, "evt_auto") == set()
     assert facts(store, ORG, CONNECTOR, "thread.ball_in_court") == []
+    assert noise(store, ORG, "evt_auto") == ["email_noise:auto_reply"]
 
 
 def test_a_tenant_with_no_brief_is_unchanged(store):
