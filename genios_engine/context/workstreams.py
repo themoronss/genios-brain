@@ -34,8 +34,10 @@ is not listed.
 NAMED, AND WHETHER FILED. For every counterparty the brief names — a connector, a person, a watched
 domain — how much of its mail memory read that can be a file (a mailing, spam and an auto-reply never
 are), and how much of that is in one. A named counterparty with such mail and nothing filed is
-`unfiled`: its mail was read before the brief named it, or the filing failed, and the health check
-names it (`scripts/pipeline_health.check_every_named_counterparty_has_a_file`).
+`unfiled`; a connector whose introductions are filed under the CONNECTOR rather than under the
+people introduced is `misfiled`. Either means its mail was read before the founder named it (or the
+filing failed), and the health check names it
+(`scripts/pipeline_health.check_every_named_counterparty_has_a_file`).
 """
 from __future__ import annotations
 
@@ -47,6 +49,7 @@ from sqlalchemy import text
 
 from genios_engine.context.introductions import connector_roles
 from genios_engine.contracts.company_brief import CompanyBrief
+from genios_engine.platform.self_identity import identity_for
 
 #: The brief's kinds of file, in the order that decides when several lines stand behind one.
 KINDS: tuple[str, ...] = ("connector", "watched", "person", "intro")
@@ -95,6 +98,7 @@ class Named:
     line: str
     mail: int                          # its mail memory read that can be a file
     filed: int                         # of which, in a file
+    misfiled: int = 0                  # a connector's introductions filed under the connector
 
 
 @dataclass(frozen=True, slots=True)
@@ -106,6 +110,11 @@ class Workstreams:
     def unfiled(self) -> tuple[Named, ...]:
         """Named counterparties with mail and no file — what the health check names."""
         return tuple(n for n in self.named if n.mail and not n.filed)
+
+    @property
+    def misfiled(self) -> tuple[Named, ...]:
+        """Connectors whose introductions are filed under them — what the health check names too."""
+        return tuple(n for n in self.named if n.misfiled)
 
 
 _MEMBERS = text(
@@ -161,6 +170,23 @@ _NAMED_MAIL = text(
     "        or split_part(lower(se.actor->>'email'), '@', 2) = any(:domains) "
     "        or exists (select 1 from unnest(cast(:domains as text[])) d "
     "                    where split_part(lower(se.actor->>'email'), '@', 2) like '%.' || d))")
+
+
+_UNDER_THE_CONNECTOR = text(
+    "select lower(se.actor->>'email') as sender, se.recipients, "
+    "       exists (select 1 from context_correlation_members m "
+    "                 join context_correlations k on k.org_id = m.org_id "
+    "                      and k.correlation_id = m.correlation_id "
+    "                where m.org_id = se.org_id and m.event_id = se.event_id "
+    "                  and (k.anchor_node_id = any(:nodes) "
+    "                       or k.anchor_node_id in (select w.to_node_id from graph_edges w "
+    "                            where w.org_id = se.org_id and w.edge_type = 'works_at' "
+    "                              and w.valid_to is null and w.from_node_id = any(:nodes)))) "
+    "       as under_connector "
+    "  from source_events se "
+    " where se.org_id = :o and se.outcome = 'emitted' "
+    "   and se.visibility_scope is distinct from 'private' "
+    "   and lower(se.actor->>'email') = any(:addresses)")
 
 
 def _lines(brief: CompanyBrief | None) -> dict[str, str]:
@@ -267,14 +293,15 @@ def files_for(conn, org_id: str, *, now: datetime,
                 for r in asks if r.subject_node_id in mine or r.awaited_from_node_id in mine)))
     files.sort(key=lambda f: (f.last_touch is None, -(f.last_touch.timestamp())
                               if f.last_touch else 0, f.file_id))
-    return Workstreams(files=tuple(files), named=_named_counterparties(conn, org_id, brief, lines))
+    return Workstreams(files=tuple(files),
+                       named=_named_counterparties(conn, org_id, brief, lines, connectors))
 
 
-def _named_counterparties(conn, org_id: str, brief: CompanyBrief | None,
-                          lines: dict[str, str]) -> tuple[Named, ...]:
+def _named_counterparties(conn, org_id: str, brief: CompanyBrief | None, lines: dict[str, str],
+                          connectors: dict[str, str]) -> tuple[Named, ...]:
     if not lines:
         return ()
-    mail: dict[str, list[int]] = {named: [0, 0] for named in lines}
+    mail: dict[str, list[int]] = {named: [0, 0, 0] for named in lines}
     addresses = sorted(n.split(":", 1)[1] for n in lines if not n.startswith("watchlist:"))
     domains = sorted(n.split(":", 1)[1] for n in lines if n.startswith("watchlist:"))
     for r in conn.execute(_NAMED_MAIL, {"o": org_id, "never": list(NEVER_A_FILE),
@@ -283,8 +310,18 @@ def _named_counterparties(conn, org_id: str, brief: CompanyBrief | None,
         if named in mail:
             mail[named][0] += 1
             mail[named][1] += int(bool(r.filed))
-    return tuple(Named(named=n, line=lines[n], mail=m, filed=f)
-                 for n, (m, f) in sorted(mail.items()) if m)
+    # A connector's INTRODUCTION — its mail to someone besides us and its fellow connectors — filed
+    # under the connector or its company: read before the founder named it, never split (`03` F92).
+    by_connector = sorted(n.split(":", 1)[1] for n in lines if n.startswith("connector:"))
+    if by_connector and connectors:
+        us = identity_for(conn, org_id)
+        for r in conn.execute(_UNDER_THE_CONNECTOR, {"o": org_id, "nodes": sorted(connectors),
+                                                     "addresses": by_connector}):
+            introduced = {str(a).strip().lower() for a in (r.recipients or ())} - set(by_connector)
+            if r.under_connector and any(not us.is_us(a) for a in introduced):
+                mail[f"connector:{r.sender}"][2] += 1
+    return tuple(Named(named=n, line=lines[n], mail=m, filed=f, misfiled=x)
+                 for n, (m, f, x) in sorted(mail.items()) if m or x)
 
 
 def as_dict(ws: Workstreams, *, now: datetime) -> dict:
@@ -306,9 +343,10 @@ def as_dict(ws: Workstreams, *, now: datetime) -> dict:
                            "owed_by": a.owed_by, "thread_id": a.thread_id,
                            "opened_at": iso(a.opened_at)} for a in f.open_asks],
         } for f in ws.files],
-        "named": [{"named": n.named, "line": n.line, "mail": n.mail, "filed": n.filed}
-                  for n in ws.named],
+        "named": [{"named": n.named, "line": n.line, "mail": n.mail, "filed": n.filed,
+                   "misfiled": n.misfiled} for n in ws.named],
         "unfiled": [n.named for n in ws.unfiled],
+        "misfiled": [n.named for n in ws.misfiled],
     }
 
 

@@ -96,6 +96,18 @@ def test_it_fails_on_a_portal_read_before_it_was_named_and_names_it(store):
     assert "rebuild_graph.py" in check.fix
 
 
+def test_it_fails_on_introductions_filed_under_the_connector_and_names_them(store):
+    """Introly's introduction read before the founder named Introly sits in Introly's file."""
+    process(store, ORG, event_id="evt_old", sender=CONNECTOR, recipients=(FOUNDER, RAHUL),
+            thread="t_old", headers=UNSUBSCRIBE, company_brief=None)
+    _accept(store, "connectors", address=CONNECTOR)
+    check = _check(store)
+    assert not check.ok and "1 introduction(s) are filed under the connector" in check.measured
+    assert check.detail == [f"connector:{CONNECTOR} — \"connectors: {CONNECTOR}\": 1 "
+                            "introduction(s) filed under the connector, not under the people "
+                            "introduced"]
+
+
 def test_mail_outside_its_file_is_said_beside_a_pass(store):
     process(store, ORG, event_id="evt_old", sender=f"updates@{LATE}", company_brief=None)
     _accept(store, "watchlist", domain=LATE)

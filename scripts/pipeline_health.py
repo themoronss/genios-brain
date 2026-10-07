@@ -567,23 +567,29 @@ def check_every_named_counterparty_has_a_file(conn, org: str) -> Check:
 
     name = "every counterparty the brief names that has mail has a file"
     ws = files_for(conn, org, now=datetime.now(timezone.utc))
-    unfiled, partly = ws.unfiled, [n for n in ws.named if 0 < n.filed < n.mail]
+    unfiled, misfiled = ws.unfiled, ws.misfiled
+    partly = [n for n in ws.named if 0 < n.filed < n.mail]
     if not ws.named:
         measured = "not exercised — no counterparty the brief names has mail memory read"
     else:
         measured = (f"{len(ws.unfiled)} of {len(ws.named)} named counterparties with mail have no "
                     f"file; {sum(n.filed for n in ws.named)} of {sum(n.mail for n in ws.named)} "
                     f"of their mails are filed; {len(ws.files)} file(s) in all"
+                    + (f"; {sum(n.misfiled for n in misfiled)} introduction(s) are filed under "
+                       "the connector" if misfiled else "")
                     + (f"; some of the mail of {len(partly)} is outside its file" if partly
                        else ""))
     return Check(
-        name=name, ok=not unfiled, measured=measured,
-        expected="every named counterparty whose mail was read has that mail in a file",
+        name=name, ok=not unfiled and not misfiled, measured=measured,
+        expected=("every named counterparty whose mail was read has that mail in a file, and every "
+                  "introduction a connector made is in the file of the person introduced"),
         fix=("re-read the named counterparty's mail with the brief in force — "
              "`scripts/rebuild_graph.py --org …` files mail read before the founder named it; mail "
              "read after it and still unfiled is a filing defect: run "
              "`tests/replays/test_every_piece_of_work_has_a_file.py`"),
         detail=[f"{n.named} — \"{n.line}\": {n.mail} mail read, none filed" for n in unfiled]
+               + [f"{n.named} — \"{n.line}\": {n.misfiled} introduction(s) filed under the "
+                  "connector, not under the people introduced" for n in misfiled]
                + [f"{n.named}: {n.filed} of {n.mail} filed" for n in partly])
 
 

@@ -74,18 +74,19 @@ def extraction(mentions=()) -> Extraction:
 
 
 def ledger(store, org: str, *, event_id: str, sender: str, thread: str | None,
-           at: datetime = T0) -> None:
+           at: datetime = T0, recipients=()) -> None:
     """The ledger row Layer 1 would have written: a thread is found through it
     (`correlation.thread_correlations` reads `source_events.parent_object_id`), and a rebuild replays
     from it (`context/backfill`)."""
     with store.engine.begin() as c:
         c.execute(text(
             "insert into source_events (event_id, org_id, connection_id, source, object_type, "
-            " source_object_id, parent_object_id, dedup_key, actor, occurred_at, captured_at, "
-            " outcome) values (:e, :o, 'con_x', 'gmail', 'email_message', :e, :t, :k, "
-            " cast(:a as jsonb), :at, :at, 'emitted') on conflict do nothing"),
+            " source_object_id, parent_object_id, dedup_key, actor, recipients, occurred_at, "
+            " captured_at, outcome) values (:e, :o, 'con_x', 'gmail', 'email_message', :e, :t, "
+            " :k, cast(:a as jsonb), :r, :at, :at, 'emitted') on conflict do nothing"),
             {"e": event_id, "o": org, "t": thread, "k": f"gmail:email_message:{event_id}",
-             "a": json.dumps({"type": "external_contact", "email": sender}), "at": at})
+             "a": json.dumps({"type": "external_contact", "email": sender}),
+             "r": list(recipients), "at": at})
 
 
 def process(store, org: str, *, event_id: str, sender: str, recipients=(FOUNDER,),
@@ -97,7 +98,8 @@ def process(store, org: str, *, event_id: str, sender: str, recipients=(FOUNDER,
     a mention the text does not carry is ungrounded and never reaches the graph."""
     us = identity_for(store, org)
     content = content or ("A note. " + " ".join(m["name"] for m in mentions)).strip()
-    ledger(store, org, event_id=event_id, sender=sender, thread=thread, at=at)
+    ledger(store, org, event_id=event_id, sender=sender, thread=thread, at=at,
+           recipients=recipients)
     return pipeline.process_event(
         org_id=org, event_id=event_id, source="gmail", content=content, sender_email=sender,
         sender_name=sender_name, recipient_emails=list(recipients), occurred_at=at,

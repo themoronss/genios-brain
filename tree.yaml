@@ -5655,8 +5655,9 @@ yc2_w27_s09:
                         behind it, who introduced it, the counterparty, the member events, the first
                         and last touch, the open asks with who owes them, and whose move it is (ours
                         while anyone in it waits on us); every named counterparty with how much of its
-                        mail is filed — one with mail and none filed is unfiled. An org-level reader:
-                        nothing a seat captured privately.
+                        mail is filed — one with mail and none filed is unfiled, a connector whose
+                        introductions sit in its own file is misfiled. An org-level reader: nothing a
+                        seat captured privately.
                       artifact: genios_engine/context/workstreams.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_the_files_are_listed.py -q
                       depends_on: [M27.C1.L-logic.V1.U03, M27.C1.L-logic.V1.U04, M27.C2.L-logic.V0.U01, M27.C3.L-logic.V0.U01]
@@ -5676,7 +5677,8 @@ yc2_w27_s09:
                         `scripts/pipeline_health.py` — *every counterparty the brief names that has
                         mail has a file*, read from the same answer the API serves: fails while one
                         has mail memory read and none filed (a mailing, spam, an auto-reply are not
-                        counted), and names it; says when it measured nothing.
+                        counted), or a connector's introductions sit in the connector's file, and
+                        names each; says when it measured nothing.
                       artifact: scripts/pipeline_health.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/scripts/test_pipeline_health_files.py -q
                       depends_on: [M27.C4.L-logic.V1.U01]

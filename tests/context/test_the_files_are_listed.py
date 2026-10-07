@@ -11,6 +11,8 @@ loops. An org-level reader: nothing a seat captured privately is listed.
 """
 from __future__ import annotations
 
+from datetime import timedelta
+
 import pytest
 from sqlalchemy import text
 
@@ -219,6 +221,51 @@ def test_a_named_counterparty_with_mail_and_no_file_is_named(store):
     assert [n.named for n in ws.unfiled] == [f"watchlist:{LATE_PORTAL}"]
 
 
+def test_an_introduction_read_before_the_connector_was_named_is_misfiled(store):
+    """Read before the founder named Introly, an introduction was filed under the connector — the
+    file the founder never wants. It is filed, so not unfiled; it is in the wrong file, and said so.
+    Read with the brief in force, none is (the world above: 0)."""
+    process(store, ORG, event_id="evt_old_intro", sender=CONNECTOR,
+            recipients=(FOUNDER, "simon@lumenpath.test"), thread="t_old", headers=UNSUBSCRIBE,
+            company_brief=None, at=T0 - timedelta(days=30))
+    _world(store)
+    with store.engine.connect() as c:
+        ws = files_for(c, ORG, now=NOW, company_brief=brief(ORG, people=(KAVITHA,)))
+    [connector] = [n for n in ws.named if n.named == f"connector:{CONNECTOR}"]
+    assert (connector.mail, connector.filed, connector.misfiled) == (4, 4, 1)
+    assert [n.named for n in ws.misfiled] == [f"connector:{CONNECTOR}"] and ws.unfiled == ()
+
+
+def test_a_misfiled_introduction_is_named_even_when_it_was_recorded_as_a_mailing(store):
+    """A rebuild can file mail the drain kept out (`03` F98's door): an introduction recorded as a
+    mailing still sits in the connector's file, and is named although none of its mail counts."""
+    process(store, ORG, event_id="evt_old_intro", sender=CONNECTOR,
+            recipients=(FOUNDER, "simon@lumenpath.test"), thread="t_old", headers=UNSUBSCRIBE,
+            company_brief=None, at=T0 - timedelta(days=30))
+    with store.engine.begin() as c:
+        c.execute(text("update graph_observations set kind = 'email_noise:newsletter' "
+                       " where org_id = :o and created_by_event_id = 'evt_old_intro' "
+                       "   and kind = 'email_relevance'"), {"o": ORG})
+    with store.engine.connect() as c:
+        ws = files_for(c, ORG, now=NOW, company_brief=brief(ORG))
+    assert [(n.named, n.mail, n.filed, n.misfiled) for n in ws.named] == [
+        (f"connector:{CONNECTOR}", 0, 0, 1)]
+
+
+def test_a_connector_mail_to_us_alone_is_never_misfiled(store):
+    """Its own ask is the connector's own file by design — not an introduction filed wrongly; nor is
+    a mail it copies to a fellow connector."""
+    two = brief(ORG, connectors=(CONNECTOR, "team@matchmaker.test"), people=(KAVITHA,))
+    _world(store)
+    process(store, ORG, event_id="evt_both", sender=CONNECTOR,
+            recipients=(FOUNDER, "team@matchmaker.test"), thread="t_both", headers=UNSUBSCRIBE,
+            company_brief=two, at=later(8))
+    with store.engine.connect() as c:
+        ws = files_for(c, ORG, now=NOW, company_brief=two)
+    assert ws.misfiled == ()
+    assert "evt_both" in ws.files[0].events or any("evt_both" in f.events for f in ws.files)
+
+
 def test_without_a_brief_every_file_is_listed_with_no_kind(store):
     _world(store)
     files = _files(store, None)            # the accepted brief: this tenant accepted no line
@@ -244,10 +291,10 @@ def test_the_read_model_is_json(store):
         body = as_dict(files_for(c, ORG, now=NOW, company_brief=_world(store)), now=NOW)
     kestrel = next(f for f in body["files"] if f["counterparty"]["key"] == "kestrelcap.test")
     assert kestrel["kind"] == "intro" and kestrel["last_touch"] == later(3).isoformat()
-    assert body["as_of"] == NOW.isoformat() and body["unfiled"] == []
+    assert body["as_of"] == NOW.isoformat() and body["unfiled"] == body["misfiled"] == []
     assert body["named"][0] == {"named": f"connector:{CONNECTOR}",
                                 "line": "Introly — introduces the founder to people",
-                                "mail": 3, "filed": 3}
+                                "mail": 3, "filed": 3, "misfiled": 0}
 
 
 def test_the_read_writes_nothing(store):
