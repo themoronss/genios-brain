@@ -68,6 +68,7 @@ from genios_engine.context.situations import (
     decide_lifecycle,
     normalize_stage,
 )
+from genios_engine.platform import company_brief as brief_mod
 from genios_engine.platform.logging import get_logger
 
 __all__ = ["MAX_OUTPUT_TOKENS", "detect_resolutions"]
@@ -170,6 +171,17 @@ def detect_resolutions(store, org_id: str, *, llm: Any | None = None,
                  "back to terminal_by_fact only", org_id, len(messages))
         notes.append("no_model")
 
+    # STEP-07 (`speedrun008/YC-II W27/` §8.3): the tenant's company brief, read ONCE per sweep and
+    # only when a model will be asked. Every prompt below carries its block, and every audit row
+    # names its version beside the prompt's (`m4.1.0+cb-…`), so a reading can be traced to the brief
+    # it was made under. No accepted line: the prompts and `PROMPT_VERSION` are exactly as before.
+    company_brief, prompt_version = "", PROMPT_VERSION
+    if llm is not None and messages:
+        brief = brief_mod.current(store.engine, org_id)
+        company_brief = brief.prompt_block()
+        if brief.version:
+            prompt_version = f"{PROMPT_VERSION}+{brief.version}"
+
     for row in messages:
         situation = by_situation.get(row["situation_id"])
         if situation is None:                     # a situation that left the set mid-sweep
@@ -210,7 +222,7 @@ def detect_resolutions(store, org_id: str, *, llm: Any | None = None,
         prior = gate_mod.candidate_prior(
             (extractions.get(row["event_id"]) or {}).get("decision_states"), subject)
         prompt = build_prompt(subject=subject, obligations=obligations, message=message,
-                              prior=prior)
+                              prior=prior, company_brief=company_brief)
 
         calls += 1
         org_calls += 1
@@ -221,7 +233,7 @@ def detect_resolutions(store, org_id: str, *, llm: Any | None = None,
         record_model_run(
             store.engine, org_id=org_id, site="resolution",
             subject_ref=_subject_ref(situation.situation_id, row["event_id"]),
-            prompt_version=PROMPT_VERSION, prompt=prompt, result=result, called_at=now,
+            prompt_version=prompt_version, prompt=prompt, result=result, called_at=now,
             max_tokens=MAX_OUTPUT_TOKENS,
             latency_ms=max(0, int((perf_counter() - started) * 1000)))
         if not getattr(result, "ok", False):

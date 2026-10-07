@@ -26,6 +26,13 @@ THE MESSAGE IS FENCED. It is untrusted text from outside the org, and the fence 
 span validator is imported rather than rewritten. The fence escapes structural characters ONE
 CODE POINT FOR ONE, so an offset the model reports into the fenced body is the same offset in the
 prepared text — which is what lets ALG-08 verify the quote against the real source.
+
+THE COMPANY BRIEF IS BACKGROUND, NOT A FIELD (`speedrun008/YC-II W27/` STEP-07 §8.3). When the
+founder has accepted a brief, it sits between the instruction spine and the situation — whose
+company this is, who works for it, what it is in the middle of — because whether "we signed"
+closes an obligation can turn on who "we" are. It adds nothing the answer may be about: the
+verdict is still one of four words, the scope still names listed ids, the quote is still a span of
+the message. No accepted line, no brief, and the prompt is byte for byte what it was.
 """
 from __future__ import annotations
 
@@ -110,7 +117,7 @@ def _obligation_block(obligations: Sequence[Obligation], subject: str) -> str:
 
 
 def build_prompt(*, subject: str, obligations: Sequence[Obligation], message: Message,
-                 prior: bool = False, nonce: str | None = None) -> str:
+                 prior: bool = False, nonce: str | None = None, company_brief: str = "") -> str:
     """The full prompt for one (situation, message) pair.
 
     `prior` is L1's own reading — a `DecisionState` with `state == "made"` on this subject — and
@@ -119,13 +126,21 @@ def build_prompt(*, subject: str, obligations: Sequence[Obligation], message: Me
     look; "Layer 1 says this is resolved" would be a leading question, and a leading question at
     the one site whose false positive closes a live thread is how you buy a 90% agreement rate
     with the model's own prior.
+
+    `company_brief` is the tenant's `CompanyBrief.prompt_block()`, read once per sweep by the
+    caller (STEP-07): its own paragraph AFTER the instruction spine — which stays one constant, so
+    a stored prompt is still rebuilt from its prompt version, now `m4…+cb-…` — and before the
+    situation and the fenced message. "" — no accepted line — leaves the prompt exactly as it was.
     """
     fenced = fence(message.text, nonce=nonce)
     prior_line = ("\nLAYER 1 NOTE: an earlier reader recorded a decision as *made* on this "
                   "subject. That is about the DECISION, not about the work. Check the message.\n"
                   if prior else "")
+    brief = (company_brief or "").strip()
+    brief_paragraph = f"{brief}\n\n" if brief else ""
     return (
         f"{_INSTRUCTIONS}\n"
+        f"{brief_paragraph}"
         f"SITUATION SUBJECT: {subject}\n"
         f"OPEN OBLIGATIONS (name these ids in `scope`):\n"
         f"{_obligation_block(obligations, subject)}\n"
