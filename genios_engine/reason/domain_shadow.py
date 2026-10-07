@@ -689,6 +689,51 @@ class _CompiledGate:
             logger.exception("change gate could not record the pass for org=%s", org_id)
 
 
+class _SituationEnds:
+    """STEP-06 · what came of each admitted LIVE candidate in this pass — noted, then written once.
+
+    The admission ledger says admit / hold / reject; the change gate's rows say what was decided.
+    What ended in between was a counter in this pass's log line. Each admitted live candidate now
+    leaves one `situation_outcomes` row (0194), keyed on its admission `decision_id`: `decided` with
+    the change gate's word for it, or the stop and its reason. Written once, after the pass, in one
+    transaction, failing open — the change gate's discipline (`_CompiledGate.flush`): a lost write
+    costs a record, never the pass. A shadow row is never noted: its candidate was never recorded.
+    """
+
+    def __init__(self) -> None:
+        self.ends: dict[str, tuple[str, str, str | None]] = {}
+        self.seen: dict[str, str] = {}
+
+    def note(self, decision_id: str | None, situation_id: str, outcome: str,
+             reason: str | None = None) -> None:
+        if decision_id:
+            self.ends[decision_id] = (situation_id, outcome, reason)
+
+    def unchanged(self, decision_id: str | None, situation_id: str) -> None:
+        """The change gate skipped it: the end it was given stands; only its clock moves."""
+        if decision_id:
+            self.seen[decision_id] = situation_id
+
+    def flush(self, *, store, org_id: str, eval_time, counts) -> None:
+        from genios_engine.reason import situation_outcome_store as so
+
+        if not (self.ends or self.seen):
+            return
+        try:
+            with store.engine.begin() as conn:
+                for decision_id, (situation_id, outcome, reason) in self.ends.items():
+                    so.record(conn, org_id=org_id, decision_id=decision_id,
+                              situation_id=situation_id, outcome=outcome, reason=reason,
+                              at=eval_time)
+                for decision_id, situation_id in self.seen.items():
+                    if decision_id not in self.ends:
+                        so.record_seen(conn, org_id=org_id, decision_id=decision_id,
+                                       situation_id=situation_id, at=eval_time)
+        except Exception:      # noqa: BLE001 — a lost record never costs the pass
+            counts["outcome_write_failed"] += 1
+            logger.exception("situation ends could not be recorded for org=%s", org_id)
+
+
 def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None = None,
                    limit: int = 200, live: bool = False, registry=None,
                    live_domains: frozenset[str] | Iterable[str] = ()) -> dict:
@@ -852,6 +897,8 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
         situations = conn.execute(text(_ACTIVE_SITUATIONS),
                                   {"o": org_id, "lim": limit}).mappings().all()
         gate = _CompiledGate.load(conn, org_id)
+        # STEP-06 · beside the gate, and for the same reason: noted per row, written once.
+        ends = _SituationEnds()
         counts["gate_ready"] = int(gate.ready)
         # WHO IS US, once for the sweep (STEP-04): `gather_members` leaves us out of a situation's
         # members, and read per situation that was one more statement for every situation.
@@ -1053,6 +1100,9 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
         variants_by_domain = {d: declared_variants(store.engine, org_id, d) for d in live_domains}
         for row in situations:
             counts["situations"] += 1
+            # STEP-06: set once this candidate is admitted on the live lane; every end below is
+            # noted against it. None for a shadow row, or one that ended before admission.
+            admitted = None
             # WHICH LANE THIS SITUATION IS ON. The global flag still forces live for a deployment
             # that has already set it — its behaviour is unchanged — and otherwise the answer is
             # the tenant's activation row for THIS situation's corpus. A domain with no corpus
@@ -1184,9 +1234,14 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                     # whose roster was in fact fully awake.
                     record=live_row)
                 counts[f"admission_{publication.outcome.value}"] += 1
+                if live_row and publication.admitted:
+                    admitted = publication.decision_id
                 if not publication.admitted or publication.situation is None:
                     # HOLD/REJECT is the output.  Nothing above Layer 2 receives a weak object;
                     # the durable ledger says exactly what the next sweep may repair.
+                    if publication.admitted:
+                        ends.note(admitted, str(row["situation_id"]), "error",
+                                  "admitted_without_a_situation")
                     continue
                 bso = publication.situation
                 context_slice = build_context_slice(
@@ -1307,6 +1362,8 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                             # The tenant holds no active pack in this capability's domain, so
                             # nothing can grant the decision authority. Counted, never guessed.
                             counts["no_tenant_pack"] += 1
+                            ends.note(admitted, str(row["situation_id"]), "no_tenant_pack",
+                                      manifest.domain)
                             continue
                     gate_key, gate_fp, gate_verdict = gate.check(
                         org_id=org_id, situation_id=str(row["situation_id"]), manifest=manifest,
@@ -1316,6 +1373,7 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                     if gate_verdict is not None and gate_verdict.skip:
                         counts["skipped_unchanged"] += 1
                         gate.skipped.add(gate_key)
+                        ends.unchanged(admitted, str(row["situation_id"]))
                         continue
                     counts[f"gate_{gate_verdict.reason if gate_verdict else 'unjudged'}"] += 1
                     execution = reason_native_capability(
@@ -1332,6 +1390,7 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                     _run_id = getattr(getattr(execution, "trace", None), "run_id", None)
                     if execution.decision is None:
                         gate.record(gate_key, gate_fp, "indeterminate", _run_id)
+                        ends.note(admitted, str(row["situation_id"]), "decided", "indeterminate")
                         continue
                     counts["decided"] += 1
                     if not live_row:
@@ -1368,6 +1427,7 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                             # Tomorrow's budget may publish it: a clock the fingerprint does not
                             # carry, so the gate must decide it again.
                             gate.record(gate_key, gate_fp, "indeterminate", _run_id)
+                            ends.note(admitted, str(row["situation_id"]), "budget_exhausted")
                             continue
                     try:
                         # ⛔ L2-7 · CARRY THE SITUATION. `row["situation_id"]` is read four times
@@ -1382,6 +1442,8 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                             situation_id=str(row["situation_id"]))
                         counts[outcome] += 1
                         gate.record(gate_key, gate_fp, _gate_outcome(execution, outcome), _run_id)
+                        ends.note(admitted, str(row["situation_id"]), "decided",
+                                  _gate_outcome(execution, outcome))
                         # Only a row that actually reached a human's queue spends the budget.
                         # `standing` left yesterday's advice alone and `nothing_to_emit` concluded
                         # no action — neither put a card in front of anybody.
@@ -1389,10 +1451,12 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                             _remaining[0] -= 1
                     except Exception:
                         counts["persist_error"] += 1
+                        ends.note(admitted, str(row["situation_id"]), "error", "persist")
                         logger.exception("domain-compiler live: persist %s failed",
                                          row["situation_id"])
                 except Exception:
                     counts["reason_error"] += 1
+                    ends.note(admitted, str(row["situation_id"]), "error", "reasoning")
                     logger.exception("domain-compiler shadow: reasoning for %s failed",
                                      row["situation_id"])
             except NoExpertiseRoute as exc:
@@ -1417,12 +1481,16 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                 # visible as that rather than absent from the total.
                 _type = exc.situation_type if exc.situation_type is not None else "unknown"
                 no_route_by_type[_type] = no_route_by_type.get(_type, 0) + 1
+                ends.note(admitted, str(row["situation_id"]), "no_route", exc.reason)
             except SituationContextIncomplete:
                 counts["incomplete"] += 1
+                ends.note(admitted, str(row["situation_id"]), "incomplete")
             except SituationContextConflict:
                 counts["conflict"] += 1
+                ends.note(admitted, str(row["situation_id"]), "conflict")
             except RequiredKnowledgeMissing:
                 counts["required_missing"] += 1
+                ends.note(admitted, str(row["situation_id"]), "required_missing")
             except UnsupportedCoverage as exc:
                 # An honest "we do not cover this yet" — a route matched but every capability
                 # behind it is an unauthored stub. This used to fall into the catch-all below,
@@ -1430,8 +1498,10 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                 # the route-coverage metric exists to resolve. Counted by REASON so "all_stub"
                 # (authoring debt) reads apart from "no_route" (nothing claims this situation).
                 counts[f"unsupported_{exc.reason}"] += 1
-            except Exception:
+                ends.note(admitted, str(row["situation_id"]), "unsupported", exc.reason)
+            except Exception as exc:
                 counts["error"] += 1
+                ends.note(admitted, str(row["situation_id"]), "error", type(exc).__name__)
                 logger.exception("domain-compiler shadow: situation %s failed",
                                  row["situation_id"])
             finally:
@@ -1453,6 +1523,8 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
 
     # STEP-02 · the gate's memory, written once for the whole pass (see `_CompiledGate`).
     gate.flush(store=store, org_id=org_id, eval_time=eval_time, counts=counts)
+    # STEP-06 · what came of each admitted live candidate, written once for the whole pass.
+    ends.flush(store=store, org_id=org_id, eval_time=eval_time, counts=counts)
     result = dict(counts)
     result["no_route_by_reason"] = dict(sorted(no_route_by_reason.items()))
     result["no_route_by_type"] = dict(sorted(no_route_by_type.items()))

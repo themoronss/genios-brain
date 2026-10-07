@@ -4694,8 +4694,12 @@ yc2_w27_s06:
                   units:
                     - id: M24.C2.L-data.V1.U01
                       what: >
-                        New `reason/situation_outcome_store.py` — `record` upserts by `decision_id` (the
-                        first outcome stays; `last_seen_at` and `sweeps` move), `load` reads one org's.
+                        New `reason/situation_outcome_store.py` — `record` upserts by `decision_id`: the
+                        row holds the candidate's CURRENT end (the same end again moves `last_seen_at`
+                        and `sweeps`; a different end replaces it and starts again); `record_seen` is
+                        the change gate's skip — the end stands, its clock moves. (Corrected while
+                        building: "the first outcome stays" would have kept `budget_exhausted` on a
+                        candidate decided the next day; `load` had no reader and was dropped.)
                       artifact: genios_engine/reason/situation_outcome_store.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/reason/test_situation_outcome_store.py -q
                       depends_on: [M24.C2.L-contract.V0.U01]
