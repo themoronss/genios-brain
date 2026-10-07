@@ -57,6 +57,11 @@ SURVIVES_RESET: dict[str, str] = {
     "org_members": "same",
     "org_invites": "an invite in flight",
     "seat_profiles": "the person's own profile",
+    "company_brief_lines": "the founder's company brief (STEP-07, 0195): authored and accepted line "
+                           "by line, like `org_self_identities` — what the tenant told us about "
+                           "itself, not something we concluded",
+    "company_brief_reviews": "the weekly review's claim on its week — bookkeeping for the brief "
+                             "that survives with it",
     "workspace_accounts": "the account itself",
     "orgs_archive": "the archive OF orgs — erasing it would erase the record of erasure",
     "audit_log": "must outlive the erasure it records, or the erasure cannot be proved",

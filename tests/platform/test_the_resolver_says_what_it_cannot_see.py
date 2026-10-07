@@ -444,5 +444,12 @@ def test_the_resolver_change_moved_no_coverage_verdict():
     # (YC-II W27 STEP-06, `yc2_w27_s06/M24.C2.L-contract.V0.U01`): one new table, whose first
     # reference is the tenant reset's `delete` list. An engine change, not a resolver change; its
     # writer (`reason/situation_outcome_store.py`) and its reader are the next units.
-    assert len(TC.table_usage()) == 190
-    assert len(TC._known_tables()) == 192
+    # ⛔ RE-PINNED 190 → 191 and 192 → 194 on 2026-10-07 by migration `0195_company_brief`
+    # (YC-II W27 STEP-07, `yc2_w27_s07/M25.C1.L-contract.V0.U02`): two new tables.
+    # `company_brief_lines` is read and written by its one writer, `platform/company_brief_store`,
+    # and read by the confirm routes; `company_brief_reviews` has no reference yet — its claim
+    # is the weekly review's (`M25.C3.L-integration.V4.U04`), so `table_usage` moves by one and
+    # the known tables by two. An engine change, not a resolver change; the nine write-only
+    # members above did not move.
+    assert len(TC.table_usage()) == 191
+    assert len(TC._known_tables()) == 194

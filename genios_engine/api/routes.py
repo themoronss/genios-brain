@@ -416,8 +416,23 @@ def known_counterparty_keys(connection, org_id: str) -> frozenset[str]:
 
 
 def _sender_resolver_for(org_id: str):
+    """Is this sender known to us? Known counterparties — and, from STEP-07, every sender the
+    founder's company brief names: a connector's or a key person's address, a watchlist domain.
+
+    One answer for every stage that asks "is the sender known" — the noise rules' whitelist, the AI
+    filter's skip, the relevance page's first rung, the bulk check before extraction — because the
+    brief's senders are stopped by all four today, and naming them to one would read nothing
+    (`speedrun008/YC-II W27/` STEP-07 §8.1). `.named(raw)` says why the brief names a sender, so
+    the gate records W-07 rather than W-01."""
     if _graph is None:
         return None
+
+    def _named(raw) -> str | None:
+        email = (getattr(raw, "actor_email", None) or "").strip().lower()
+        if not email:
+            return None
+        from genios_engine.platform.company_brief import named_sender
+        return named_sender(_graph.engine, org_id, email)
 
     def _known(raw) -> bool:
         email = (getattr(raw, "actor_email", None) or "").strip().lower()
@@ -430,7 +445,9 @@ def _sender_resolver_for(org_id: str):
             with _graph.engine.connect() as c:
                 hit = (now, known_counterparty_keys(c, org_id))
             _SENDER_CACHE[org_id] = hit
-        return email in hit[1]
+        return email in hit[1] or _named(raw) is not None
+
+    _known.named = _named
     return _known
 
 

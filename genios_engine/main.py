@@ -45,6 +45,7 @@ from genios_engine.api.stream_routes import router as stream_router
 from genios_engine.api.upload_routes import router as upload_router
 from genios_engine.api.transcript_routes import router as transcript_router
 from genios_engine.api.usermodel_routes import router as usermodel_router
+from genios_engine.api.company_brief_routes import router as company_brief_router
 from genios_engine.api.workspace_routes import router as workspace_router
 from genios_engine.mcp.server import router as mcp_router
 from genios_engine.platform.config import get_settings
@@ -179,6 +180,7 @@ app.include_router(lifecycle_router)  # L2.7.7 M-4's review queue: stated resolu
 app.include_router(policy_router)
 app.include_router(approval_router)
 app.include_router(usermodel_router)
+app.include_router(company_brief_router)  # STEP-07: the company brief — read, add, decide, remove
 app.include_router(audit_router)
 app.include_router(authority_router)  # L2.1.4 authority view + founder bottleneck
 app.include_router(segments_router)

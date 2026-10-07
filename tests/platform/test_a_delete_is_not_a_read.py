@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 2_955, (
+    assert r["statements"] == 2_967, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -300,6 +300,12 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 2,951 → 2,955 by yc2_w27_s06/M24.C4.L-integration.V3.U01-U02: `platform/receipts` — the
     # two STEP-06 receipts' queries, each an f-string the resolver reads twice (its hole and the
     # literal before it).
+    # ⛔ MOVED 2,955 → 2,967 by yc2_w27_s07/M25.C1 and M25.C2.L-interface.V2.U01: the company brief.
+    # `platform/company_brief_store` — its one writer: the proposal insert, the same-line read, the
+    # row it decides (`for update`), accept, reject and remove, the founder's line (a read and an
+    # insert), the accepted lines and the pending ones — ten literals in a new file (0 → 10);
+    # `platform/company_brief` — the org's name and company (0 → 1); `api/company_brief_routes` — the
+    # accepted lines the screen lists (0 → 1). Measured per file against HEAD.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():
