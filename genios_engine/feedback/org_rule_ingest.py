@@ -480,6 +480,7 @@ def sweep_org_rule_discovery(org_id: str, *, limit: int = 25, engine=None,
     on every canon write because the version key makes a repeat a no-op.
     """
     from genios_engine.packs.brains.org_rule_extract import make_org_rule_extractor
+    from genios_engine.platform import company_brief as CB
     from genios_engine.platform.logging import get_logger
 
     log = get_logger("genios.feedback.org_rule_ingest")
@@ -489,7 +490,11 @@ def sweep_org_rule_discovery(org_id: str, *, limit: int = 25, engine=None,
         if store is None:
             return {"org_id": org_id, "skipped": "no_database"}
         engine = store.engine
-    extractor = extractor or make_org_rule_extractor(org_id=org_id, engine=engine)
+    # STEP-07 (`speedrun008/YC-II W27/` §8.3): the tenant's company brief, read ONCE per sweep —
+    # and only when this sweep builds its own extractor — and carried by every document's prompt.
+    # It fails open to the empty brief, which leaves every prompt exactly as it was.
+    extractor = extractor or make_org_rule_extractor(
+        org_id=org_id, engine=engine, company_brief=CB.current(engine, org_id).prompt_block())
     if extractor is None:
         return {"org_id": org_id, "skipped": "no_extractor"}
     # THE CLOCK IS READ AT THE PROCESS BOUNDARY, once, and passed down as a parameter everywhere
