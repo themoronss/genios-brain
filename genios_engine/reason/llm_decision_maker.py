@@ -476,9 +476,26 @@ def business_context(request: Any) -> list[str]:
     return lines[:40]
 
 
+def _company_brief(request: Any):
+    """The tenant's company brief (STEP-07), read through the same engine as `business_context`.
+
+    `platform/company_brief.current` holds it a minute per process and fails open to the empty
+    brief, so a brief that cannot be read changes nothing — the prompt goes without it, exactly as
+    it did before STEP-07, and the decision is never lost to it. No database means no brief.
+    """
+    from genios_engine.contracts.company_brief import CompanyBrief
+    from genios_engine.platform.company_brief import current
+
+    engine = _engine()
+    if engine is None:
+        return CompanyBrief(org_id=str(request.org_id))
+    return current(engine, str(request.org_id))
+
+
 def build_prompt(request: Any, results: Sequence[ReasonerResult], proposals: Sequence[Any],
                  uncertainty: Sequence[str], degraded: bool, importance_bp: int | None,
-                 feedback: str | None = None, business: Sequence[str] = ()) -> str:
+                 feedback: str | None = None, business: Sequence[str] = (), *,
+                 company_brief: str = "") -> str:
     capability = request.capability
     context = request.context
     metadata = capability.metadata
@@ -497,6 +514,11 @@ def build_prompt(request: Any, results: Sequence[ReasonerResult], proposals: Seq
         "their inbox and calendar. Decide whether it belongs in front of them today, and what "
         "they should do about it.",
         "",
+        # STEP-07 (`speedrun008/YC-II W27/STEP-07-TO-BUILD-the-company-brief.md` §8.3) · the
+        # company brief, as its own paragraph after the role and before the situation: what a chief
+        # of staff knows on day one, read before anything it judges. Without a brief this adds
+        # nothing, and the prompt is byte for byte the one it was before.
+        *([company_brief.rstrip("\n"), ""] if company_brief else []),
         "Decide:",
         "1. outcome — \"decision\" if a good chief of staff would put this in front of the founder "
         "now; \"defer\" if it is noise (automated or promotional mail), already handled, has "
@@ -665,22 +687,30 @@ def _debug_dump(request: Any, attempt: int, prompt: str, res: Any, tag: str = "d
 
 
 def _cache_key(request: Any, results: Sequence[ReasonerResult], uncertainty: Sequence[str],
-               degraded: bool, model: str) -> str:
+               degraded: bool, model: str, *, company_brief_version: str = "") -> str:
     """What the decision is ABOUT — never how the run was invoked.
 
     `request.semantic_hash` would be the obvious key and is wrong: a replay rebuilds the request
     with `mode=REPLAY` and no `request_id`, so the hash moves while the situation does not, the
     replay pays for a second call, and a model that answers even slightly differently turns an
     honest run into a replay mismatch. Only what the model is shown (and which model) is keyed.
+
+    The company brief is shown, so its version is keyed (STEP-07 §8.2: this cache keys on a
+    version string, not the prompt, and would otherwise answer a changed brief with the decision
+    made under the old one). It joins the key ONLY when the tenant has a brief, so a tenant without
+    one keys exactly as before and nothing already cached for it is invalidated.
     """
-    return semantic_hash({"prompt": PROMPT_VERSION, "model": model,
-                          "org_id": str(request.org_id),
-                          "capability": request.capability.capability_snapshot_id,
-                          "context": request.context.context_snapshot_id,
-                          "evaluation_time": request.evaluation_time,
-                          "results": [item.semantic_hash for item in results],
-                          "uncertainty": sorted(set(str(u) for u in uncertainty)),
-                          "degraded": bool(degraded)})
+    material = {"prompt": PROMPT_VERSION, "model": model,
+                "org_id": str(request.org_id),
+                "capability": request.capability.capability_snapshot_id,
+                "context": request.context.context_snapshot_id,
+                "evaluation_time": request.evaluation_time,
+                "results": [item.semantic_hash for item in results],
+                "uncertainty": sorted(set(str(u) for u in uncertainty)),
+                "degraded": bool(degraded)}
+    if company_brief_version:
+        material["company_brief"] = company_brief_version
+    return semantic_hash(material)
 
 
 def _consult(request: Any, results: Sequence[ReasonerResult], proposals: Sequence[Any],
@@ -693,7 +723,12 @@ def _consult(request: Any, results: Sequence[ReasonerResult], proposals: Sequenc
                     if item.disposition == CandidateDisposition.ELIGIBLE]
     model = str(getattr(llm, "model", "") or "unknown")
     business = business_context(request)
-    key = semantic_hash({"base": _cache_key(request, results, uncertainty, degraded, model),
+    # STEP-07 · the tenant's company brief, read once for this decision: its block goes into both
+    # attempts' prompts, and its version into the key (empty for a tenant without one).
+    company_brief = _company_brief(request)
+    company_brief_block = company_brief.prompt_block()
+    key = semantic_hash({"base": _cache_key(request, results, uncertainty, degraded, model,
+                                            company_brief_version=company_brief.version),
                          "business": list(business)})
     with _lock:
         hit = _cache.get(key)
@@ -709,7 +744,8 @@ def _consult(request: Any, results: Sequence[ReasonerResult], proposals: Sequenc
     last_reason = "no_answer"
     for attempt in range(2):
         prompt = build_prompt(request, results, proposals, uncertainty, degraded,
-                              importance_bp, feedback, business=business)
+                              importance_bp, feedback, business=business,
+                              company_brief=company_brief_block)
         try:
             res = llm.call(prompt, max_tokens=_MAX_TOKENS)
         except Exception as exc:      # noqa: BLE001 — a transport failure is a DEFER
