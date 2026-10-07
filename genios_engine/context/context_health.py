@@ -130,6 +130,14 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "The file timeline as JSON — the shape `GET /v1/workstreams/{file_id}` returns, with each statistic as its `Measured` (value, n, basis). Built with `timeline_for` and unreached for the same reason: its caller is the route, the next unit of the same tree",
         "MOVES WITH `workstream_timeline.timeline_for` — the route reads both or neither"),
 
+    "coverage_receipt.receipt_for": (
+        "STEP-10's coverage receipt (`yc2_w27_s10 · M29.C5.L-logic.V2.U03`): per connected mailbox, its window and whether its last sync finished, as of an instant — what a file may say it checked before it says \"no reply\". Built in a parallel worktree before the route that serves it, so it is unreached between the two units",
+        "MOVES WHEN `GET /v1/workstreams/{file_id}` (`api/workstream_routes.py`, `M29.C2.L-interface.V3.U02`) serves a file's receipt"),
+
+    "coverage_receipt.covers": (
+        "The one rule a file may use before it says \"no reply since then\": some mailbox's window reaches back that far and a sync that completed has looked since. Unreached for the same reason as `receipt_for`, its pair",
+        "MOVES WITH `coverage_receipt.receipt_for` — the route reads the receipt and asks it this"),
+
 }
 
 
