@@ -5,6 +5,10 @@ from typing import Protocol
 from genios_engine.capture.attention import ATTENTIONS
 from genios_engine.contracts.source_event import SourceEvent
 
+#: The outcomes the gate KEEPS a body for — everything but a drop (`capture/pipeline.capture_event`,
+#: `kept`). A `dropped` row was deleted; a `superseded` one was replaced by a row that is itself kept.
+KEPT_OUTCOMES: tuple[str, ...] = ("emitted", "parked", "archived")
+
 
 class SourceEventRepository(Protocol):
     """Storage seam. In-memory for dev/tests; a Postgres/Supabase impl replaces it
@@ -17,6 +21,11 @@ class SourceEventRepository(Protocol):
     `capture/attention.attention_for`) — None from a caller that names none."""
 
     def exists(self, org_id: str, dedup_key: str) -> bool: ...
+    def kept_child_exists(self, org_id: str, source: str, object_type: str,
+                          parent_object_id: str) -> bool:
+        """Has an object of `object_type` under this parent landed KEPT? (STEP-08: a Gmail
+        attachment's key changes with every read, so a re-read is known by its message.)"""
+        ...
     def add(self, event: SourceEvent, outcome: str | None = None, *,
             route: str | None = None, triage_lane: str | None = None,
             domain_hints: list | None = None, linkage_hints: list | None = None,
@@ -31,6 +40,13 @@ class InMemorySourceEventRepository:
 
     def exists(self, org_id: str, dedup_key: str) -> bool:
         return (org_id, dedup_key) in self._by_key
+
+    def kept_child_exists(self, org_id: str, source: str, object_type: str,
+                          parent_object_id: str) -> bool:
+        return any(org == org_id and e.source == source and e.object_type == object_type
+                   and e.parent_object_id == parent_object_id
+                   and self._outcome.get((org, key)) in KEPT_OUTCOMES
+                   for (org, key), e in self._by_key.items())
 
     def add(self, event: SourceEvent, outcome: str | None = None, *,
             route: str | None = None, triage_lane: str | None = None,

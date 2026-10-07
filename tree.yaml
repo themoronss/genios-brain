@@ -5380,6 +5380,20 @@ yc2_w27_s08:
         - id: M26.C2
           name: Attachments come back once
           layers:
+            - layer: data
+              levels:
+                - level: 0
+                  units:
+                    - id: M26.C2.L-data.V0.U01
+                      what: >
+                        Minted building C2 (2026-10-07) — the unit below needs the ledger to answer
+                        one more question. Both source-event repositories (`pg_repository`, and the
+                        in-memory twin with the protocol) answer `kept_child_exists`: has an object of
+                        this type under this parent landed KEPT (emitted, parked or archived) — never
+                        a dropped or superseded row. The twin answers exactly as Postgres does.
+                      artifact: genios_engine/capture/landing/pg_repository.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/capture/test_the_ledger_knows_a_kept_attachment.py -q
+                      depends_on: []
             - layer: logic
               levels:
                 - level: 0
@@ -5391,6 +5405,17 @@ yc2_w27_s08:
                         only when the message's own key exists; it lands when the earlier copy was
                         deleted with its message. A freed parent key no longer duplicates an
                         attachment that survived its deleted message.
+                      artifact: genios_engine/capture/landing/reread.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/capture/test_an_attachment_comes_back_once.py -q
+                      depends_on: [M26.C2.L-data.V0.U01]
+                    - id: M26.C2.L-logic.V0.U02
+                      what: >
+                        Minted building C2 (2026-10-07), an adjacent defect found in the same check —
+                        the re-read ladder's own copy of a KEPT attachment (`RawObject.rereading`,
+                        STEP-05 / B18) was dropped as a listing's re-read because its message had
+                        landed, restored, retried and given up after three tries: a recovered,
+                        promoted or parked attachment was never read. A copy that carries `rereading`
+                        always goes through.
                       artifact: genios_engine/capture/landing/reread.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/capture/test_an_attachment_comes_back_once.py -q
                       depends_on: []

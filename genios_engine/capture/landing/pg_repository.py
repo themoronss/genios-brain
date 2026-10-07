@@ -44,6 +44,11 @@ def _dump_list(items: list | None) -> str | None:
 
 
 _EXISTS = text("select 1 from source_events where org_id=:o and dedup_key=:d limit 1")
+#: STEP-08 · a re-read Gmail attachment carries a new key on every read, so it is known by its
+#: message: has an attachment of this message landed KEPT (`repository.KEPT_OUTCOMES`)?
+_KEPT_CHILD = text(
+    "select 1 from source_events where org_id = :o and source = :s and object_type = :t "
+    "   and parent_object_id = :p and outcome in ('emitted', 'parked', 'archived') limit 1")
 
 
 class PostgresSourceEventRepository:
@@ -60,6 +65,12 @@ class PostgresSourceEventRepository:
     def exists(self, org_id: str, dedup_key: str) -> bool:
         with self._engine.connect() as conn:
             return conn.execute(_EXISTS, {"o": org_id, "d": dedup_key}).first() is not None
+
+    def kept_child_exists(self, org_id: str, source: str, object_type: str,
+                          parent_object_id: str) -> bool:
+        with self._engine.connect() as conn:
+            return conn.execute(_KEPT_CHILD, {"o": org_id, "s": source, "t": object_type,
+                                              "p": parent_object_id}).first() is not None
 
     def add(self, event: SourceEvent, outcome: str | None = None, *,
             route: str | None = None, triage_lane: str | None = None,

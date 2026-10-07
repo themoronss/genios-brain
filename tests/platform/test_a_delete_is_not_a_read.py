@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 2_989, (
+    assert r["statements"] == 2_990, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -321,6 +321,9 @@ def test_the_statement_count_did_NOT_move():
     # back): `capture/landing/resync` — the update that frees a deleted message's key, the freed rows
     # with their replacement, the supersede, the trace insert and the tenant's Gmail window. Five
     # literals in a new file (0 → 5), measured per file against HEAD.
+    # ⛔ MOVED 2,989 → 2,990 by yc2_w27_s08/M26.C2.L-data.V0.U01: `capture/landing/pg_repository.
+    # kept_child_exists` — has an attachment of this message landed kept? One SELECT, a literal
+    # (measured per file: 2 → 3).
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():
