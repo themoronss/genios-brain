@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_019, (
+    assert r["statements"] == 3_020, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -362,6 +362,10 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 3,017 → 3,019 by yc2_w27_s10/M29.C2.L-logic.V2.U04 (the file's numbers):
     # `context/workstream_numbers` — the file's people, and the numbers written on them and on the
     # tenant — two literal SELECTs (0 → 2). `waiting._TIMELINE` gained two columns, not a statement.
+    # ⛔ MOVED 3,019 → 3,020 by yc2_w27_s10/M29.C6.L-interface.V3.U03: `scripts/pipeline_health.
+    # check_every_normal_says_its_n` — the normals written on a tenant's nodes, one literal SELECT
+    # (24 → 25). Its failure line was first worded " with no n", which this counter took for a CTE
+    # (`03` F100, again) — reworded rather than counted.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

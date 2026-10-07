@@ -595,6 +595,82 @@ def check_every_named_counterparty_has_a_file(conn, org: str) -> Check:
                + [f"{n.named}: {n.filed} of {n.mail} filed" for n in partly])
 
 
+#: STEP-10 · the reply times the waiting pass writes as NORMALS — each `(days, n)` pair.
+_NORMALS = (("party.reply_cadence_days", "party.reply_cadence_n"),
+            ("party.our_reply_days", "party.our_reply_n"),
+            ("derived.our_reply_days", "derived.our_reply_n"))
+
+
+def check_every_normal_says_its_n(conn, org: str) -> Check:
+    """⛔ STEP-10 (`yc2_w27_s10/M29.C6.L-interface.V3.U03`). Every reply time written as a NORMAL —
+    their reply time (`party.reply_cadence_*`), your reply time with one counterparty
+    (`party.our_reply_*`) and overall (`derived.our_reply_*`) — says its n, and none rests on fewer
+    than `NORMAL_AT` (`06` D37). On the golden set the only normals were built from ONE reply counted
+    twice, with no n anywhere (golden F17, F25); a file must never show a habit like that again. It
+    names the file each failing number is on — the counterparty the founder would read it beside, by
+    the same files `GET /v1/workstreams` serves (`context/workstreams.files_for`) — and a tenant with no
+    normal written measures nothing, and says so.
+    """
+    from datetime import datetime, timezone
+
+    from genios_engine.context.workstreams import files_for
+    from genios_engine.contracts.measured import NORMAL_AT
+
+    name = "every reply time written as a normal says its n, and none rests on fewer than five"
+    rows = conn.execute(sql(
+        "select n.node_id, n.canonical_key, n.node_type, f.field, f.value #>> '{}' as value "
+        "  from graph_facts f "
+        "  join graph_nodes n on n.org_id = f.org_id and n.node_id = f.subject_node_id "
+        "       and n.valid_to is null "
+        " where f.org_id = :o and f.valid_to is null and f.status = 'active' "
+        "   and f.field in ('party.reply_cadence_days', 'party.reply_cadence_n', "
+        "                   'party.our_reply_days', 'party.our_reply_n', "
+        "                   'derived.our_reply_days', 'derived.our_reply_n')"),
+        {"o": org}).fetchall()
+    held: dict[str, dict[str, str]] = {}
+    who: dict[str, tuple[str, str]] = {}
+    for r in rows:
+        held.setdefault(r.node_id, {})[r.field] = r.value
+        who[r.node_id] = (r.canonical_key, r.node_type)
+    file_of = {person: f.counterparty_key
+               for f in files_for(conn, org, now=datetime.now(timezone.utc)).files
+               for person in f.people}
+    normals, wrong = 0, []
+    for node_id, fields in sorted(held.items(), key=lambda kv: who[kv[0]][0]):
+        key, node_type = who[node_id]
+        where = "the tenant" if node_type == "tenant" else file_of.get(node_id, "no file")
+        for days, n in _NORMALS:
+            if days not in fields:
+                continue
+            normals += 1
+            try:
+                count = int(float(fields.get(n) or ""))
+            except ValueError:
+                # Worded so no fragment opens with "with": the statement counter reads such prose
+                # as a CTE (`03` F100).
+                wrong.append(f"{where} — {key}: {days} {fields[days]} has no n beside it")
+                continue
+            if count < NORMAL_AT:
+                wrong.append(f"{where} — {key}: {days} {fields[days]} rests on {count}, "
+                             f"fewer than {NORMAL_AT}")
+    if not normals:
+        measured = "not exercised — no reply time is written as a normal"
+    elif not wrong:
+        measured = f"{normals} normal(s) written, each with its n and none below {NORMAL_AT}"
+    else:
+        measured = f"{normals} normal(s) written; {len(wrong)} without its n or below {NORMAL_AT}"
+    return Check(
+        name=name, ok=not wrong, measured=measured,
+        expected=(f"every normal says its n, and every n is {NORMAL_AT} or more — below it a number "
+                  "is shown as what it is, never written as a habit"),
+        fix=("a normal with no n was written before STEP-10 and the waiting pass retires it on its "
+             "next sweep — run it (`context/waiting.compute_waiting`, every chain pass) and check "
+             "again; a normal below five written since is a defect in `context/waiting`: run "
+             "`tests/context/test_a_reply_is_counted_once.py` and "
+             "`tests/context/test_your_reply_time.py`"),
+        detail=wrong)
+
+
 CHECKS = (
     check_every_emitted_event_is_routed,
     check_parked_errors_are_readable,
@@ -609,6 +685,7 @@ CHECKS = (
     check_the_company_brief_exists_and_is_current,
     check_every_gmail_message_in_the_window_has_its_content,
     check_every_named_counterparty_has_a_file,
+    check_every_normal_says_its_n,
 )
 
 
