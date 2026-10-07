@@ -28,6 +28,9 @@ from genios_engine.capture.documents.router import has_pages
 # the module imported cleanly, every test passed, and the first real fetch with a drop verdict
 # raised NameError and took the whole gmail sync down.
 from genios_engine.capture.gate.relevance import DROP_BELOW_RELEVANCE
+# The gate's own question, so the connector leaves out the original of exactly the mail the gate
+# keeps and reads as a delivery report (`_REPORT_PARTS`). At import time for the reason above.
+from genios_engine.capture.gate.rules import is_a_delivery_report
 
 from .backfill import DEFAULT_BACKFILL_DAYS, BackfillWindow
 from .thread_position import thread_place_from_references
@@ -68,6 +71,22 @@ _EXTRACTABLE_ATTACHMENT_MIMES = {
     "application/vnd.openxmlformats-officedocument.presentationml.presentation",   # pptx
     "text/plain", "text/markdown",
 }
+
+# STEP-10 · A DELIVERY REPORT'S ORIGINAL IS NOT A DOCUMENT (`yc2_w27_s10 · M29.C3.L-data.V0.U05`,
+# `06` D38). A delivery report is RFC 6522's `multipart/report`: the daemon's own words, the status
+# for machines (`message/delivery-status`, RFC 3464), and the mail that bounced — whole
+# (`message/rfc822`) or its headers alone (`text/rfc822-headers`). That mail is OURS: production's
+# reports carried the founder's pitch, which `_to_objects` minted as an `email_attachment` of its
+# own and the gate parked as a DOC-02 "unsupported" stub for review — and `_walk` walked into it,
+# so a deck on the pitch would have been filed as a document the mail daemon sent. So when a
+# message is a delivery report — the question the gate asks of the same fields,
+# `gate/rules.is_a_delivery_report` —
+# these three parts mint no attachment event and are never walked into, and the report's own
+# words stay its body, for the parser. RECOGNISED BY MIME TYPE, NEVER BY FILENAME: a part's name
+# is whatever the mailer chose, or nothing, while its type is the standard's (compared without
+# case, RFC 2045). Any other message — a person forwarding a bounce with the `.eml` attached, a
+# daemon's notice that is not a report — keeps every part exactly as before.
+_REPORT_PARTS = frozenset({"message/delivery-status", "message/rfc822", "text/rfc822-headers"})
 
 # Headers that mark automated / bulk / mailing-list mail. Surfaced into raw["headers"] so the gate's
 # N-01 (Auto-Submitted), N-02 (List-Unsubscribe) and N-04 (Precedence) rules can actually FIRE — the
@@ -166,6 +185,16 @@ def _header(m: dict, name: str) -> str | None:
         if str(h.get("name", "")).lower() == name.lower():
             return h.get("value")
     return None
+
+
+def _body_and_snippet(texts: list, list_body: str, preview: str) -> tuple[str, str]:
+    """A message's body — its first text/plain part, else its first text/html, else the list's
+    text — and its snippet: the provider's preview when it says something, else the body's start."""
+    plain = next((t for mm, t in texts if mm == "text/plain"), b"")
+    html = next((t for mm, t in texts if mm == "text/html"), b"")
+    body_bytes = plain or html
+    body = body_bytes.decode("utf-8", "replace") if body_bytes else list_body
+    return body, (preview if len(preview.strip()) >= 20 else body[:280])
 
 
 def _parse_ts(m: dict) -> datetime:
@@ -382,14 +411,21 @@ class ComposioGmailConnector:
         )
 
     @staticmethod
-    def _walk(payload: Any, texts: list, atts: list) -> None:
+    def _walk(payload: Any, texts: list, atts: list, pruned: list | None = None) -> None:
         """Recursively collect (mime, bytes) text bodies and attachment part-refs from a Gmail
-        MIME payload — so the FULL body (not a 280-char snippet) and every PDF/file are captured."""
+        MIME payload — so the FULL body (not a 280-char snippet) and every PDF/file are captured.
+
+        Given `pruned`, a delivery report's own parts (`_REPORT_PARTS`) are neither collected nor
+        walked into, and each one left out is appended to it — so the caller knows this walk
+        skipped something, and walks again whole when the message is not a report after all."""
         if not isinstance(payload, dict):
             return
-        for p in (payload.get("parts") or []):
-            ComposioGmailConnector._walk(p, texts, atts)
         mime = payload.get("mimeType") or ""
+        if pruned is not None and mime.lower() in _REPORT_PARTS:
+            pruned.append(mime)
+            return
+        for p in (payload.get("parts") or []):
+            ComposioGmailConnector._walk(p, texts, atts, pruned)
         filename = payload.get("filename") or ""
         body = payload.get("body") or {}
         data = body.get("data") if isinstance(body, dict) else None
@@ -546,7 +582,8 @@ class ComposioGmailConnector:
     def _to_objects(self, m: dict, fetch_full: bool | None = None) -> list[RawObject]:
         """One Gmail message → [email_message] + one [email_attachment] per file. The email carries
         the FULL body (walked from MIME parts, snippet only as fallback); each attachment is text-
-        extracted (native/OCR) exactly like a Drive file so its content reaches the graph too.
+        extracted (native/OCR) exactly like a Drive file so its content reaches the graph too. A
+        delivery report's status and the original it carries are not files (`_REPORT_PARTS`).
 
         fetch_full: None → decide by need_full (legacy); True → always full-fetch (keepers); False →
         LIGHT (list snippet only, NO per-message call) — used to gate cheaply before deciding."""
@@ -603,17 +640,22 @@ class ComposioGmailConnector:
         position, depth = thread_place_from_references(
             references=headers.get("References"), in_reply_to=headers.get("In-Reply-To"))
 
-        # walk MIME → full body text + attachment refs
-        texts: list = []
-        atts: list = []
-        self._walk(payload, texts, atts)
-        plain = next((t for mm, t in texts if mm == "text/plain"), b"")
-        html = next((t for mm, t in texts if mm == "text/html"), b"")
-        body_bytes = plain or html
-        body = body_bytes.decode("utf-8", "replace") if body_bytes else list_body
+        # walk MIME → full body text + attachment refs. STEP-10 (`_REPORT_PARTS`): first without a
+        # delivery report's status and original, so a report is recognised on the daemon's OWN
+        # words — the very fields the gate will read; a message that is not one is walked whole.
         preview = pick("preview", "snippet") or ""
         preview = preview if isinstance(preview, str) else ""
-        snippet = preview if len(preview.strip()) >= 20 else body[:280]
+        texts: list = []
+        atts: list = []
+        pruned: list = []
+        self._walk(payload, texts, atts, pruned)
+        if pruned:
+            own_body, own_snippet = _body_and_snippet(texts, list_body, preview)
+            if not is_a_delivery_report({"subject": subject, "body": own_body,
+                                         "snippet": own_snippet}, sender_email=sender_email):
+                texts, atts = [], []
+                self._walk(payload, texts, atts)
+        body, snippet = _body_and_snippet(texts, list_body, preview)
 
         objs = [RawObject(
             source="gmail", object_type="email_message", source_object_id=mid,

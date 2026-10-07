@@ -222,10 +222,11 @@ def is_a_delivery_report(raw: dict | None, *, sender_email: str | None) -> bool:
     STEP-10 (`yc2_w27_s10 · M29.C3.L-logic.V0.U04`, `06` D38). `capture/delivery_status.
     is_delivery_status` — a delivery daemon sent it AND it reads as a delivery report — handed the
     three inputs `capture/pipeline._delivery_status` hands the parser: the sender, the subject, the
-    body else the snippet. S1 keeps a report on it (`noise_rule`) and S2 never judges one
-    (`gate.run_gate`). Each asking with inputs of its own, a report kept by one step was judged out
-    by the next — the first cut's was kept at S1 and archived as `llm_junk` at S2. One function is
-    how the two cannot disagree.
+    body else the snippet. S1 keeps a report on it (`noise_rule`), S2 never judges one
+    (`gate.run_gate`), and the Gmail connector mints no document out of the original a report
+    carries (`connectors/composio._REPORT_PARTS`, U05). Each asking with inputs of its own, a
+    report kept by one step was judged out by the next — the first cut's was kept at S1 and
+    archived as `llm_junk` at S2. One function is how the three cannot disagree.
 
     The sender is required, never defaulted: half of the question is who sent it.
     """
@@ -398,11 +399,13 @@ def noise_rule(ctx: GateContext) -> tuple[str, str] | None:
     # delivery report. A person forwarding a bounce, or `postmaster@`'s own notice, is neither, and
     # meets the rules below as before. The same three inputs `capture/pipeline._delivery_status`
     # hands the parser, so the gate keeps exactly what the detector reads — asked through
-    # `is_a_delivery_report`, which S2 asks too (U04). A delay notice is kept
+    # `is_a_delivery_report`, which S2 and the connector ask too (U04, U05). A delay notice is kept
     # too: whether delivery FAILED is the reader's question (`context/delivery`), not the gate's.
     # Below the provider's own verdicts — a report filed as spam is backscatter, not our outbound.
-    # Its attached original is untouched: the connector lands each attachment as an event of its
-    # own, with no headers and `has_attachment` set, so N-01 … N-04 never fire on one.
+    # Its attached original is no event at all: the connector leaves a report's status and
+    # original out (`connectors/composio._REPORT_PARTS`, U05). Any other mail's attachment lands
+    # as an event of its own, with no headers and `has_attachment` set, so N-01 … N-04 never fire
+    # on one.
     if is_a_delivery_report(ctx.raw, sender_email=email):
         return None
     # N-05 — an availability notice from a real sender passes every traffic-shape rule below: a
