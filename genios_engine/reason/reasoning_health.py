@@ -36,7 +36,7 @@ _ENGINE = _PKG.parent
 #: CLOSED, and checked in BOTH directions by `tests/reason/test_the_reasoning_layer_says_what_it_does_not_call.py`.
 UNREACHED: dict[str, tuple[str, str]] = {
     "baselines.load_baselines": (
-        "⛔ *'Back-compat: just the reply_cadence baseline used by `{baseline}` threshold resolution'* — and NOTHING is compatible with it any more: no callers, no tests, not even a script. ⛔ **A back-compat shim is wanted only while something old still calls it**, and the thing it was kept for is gone. L4's `STEP-08` worked on `build_baselines` next door and did not need this",
+        "⛔ *'Back-compat: just the write_interval baseline used by `{baseline}` threshold resolution'* (named `reply_cadence` until STEP-10, `06` D41) — and NOTHING is compatible with it any more: no callers, no tests, not even a script. ⛔ **A back-compat shim is wanted only while something old still calls it**, and the thing it was kept for is gone. L4's `STEP-08` worked on `build_baselines` next door and did not need this",
         "⛔ MOVES WHEN it is deleted. It is the clearest delete candidate in this table, and it is left declared rather than removed because deleting a public function is a boundary change nobody asked for"),
 
     "baselines.load_node_metrics": (
