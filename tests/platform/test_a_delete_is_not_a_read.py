@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_022, (
+    assert r["statements"] == 3_023, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -370,6 +370,12 @@ def test_the_statement_count_did_NOT_move():
     # `context/correlation_conversation` `_MAIL` (our sends, their subjects and recipients) and
     # `_FAILED_DELIVERIES` — two literal SELECTs (1 → 3). The gate and connector units (C3 U04, U05)
     # add none.
+    # ⛔ MOVED 3,022 → 3,023 by yc2_w27_s10/M29.C3.L-logic.V2.U06 (a bounce shown while it stands):
+    # `context/workstream_numbers._LATEST_BOUNCE` — the latest report behind each person's
+    # `delivery.status`, read through its references because a second report only corroborates the
+    # first one's fact — one literal SELECT (2 → 3; `_FACTS` no longer reads the bounce). The
+    # savepoints of C5 V1.U06 / V2.U05 move the coverage reads into closures, not into new
+    # statements (`window` 3 → 3, `coverage_receipt` 2 → 2), and the runner units none.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

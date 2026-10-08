@@ -5925,6 +5925,8 @@ yc2_w27_s10:
                       artifact: genios_engine/context/delivery.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_a_bounce_is_on_the_file.py -q
                       depends_on: [M29.C3.L-logic.V0.U01]
+                - level: 2
+                  units:
                     - id: M29.C3.L-logic.V2.U03
                       what: >
                         Minted integrating C3 (2026-10-07): the bounce was on the file and the partner still read
@@ -5933,6 +5935,17 @@ yc2_w27_s10:
                       artifact: genios_engine/context/waiting.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_a_bounce_ends_the_wait.py -q
                       depends_on: [M29.C3.L-logic.V1.U02]
+                    - id: M29.C3.L-logic.V2.U06
+                      what: >
+                        Found by STEP-10's crosscheck (X1, 2026-10-08): a file showed `bounced_at` while
+                        `delivery.status = failed` stood, and that fact is never retired — a partner who wrote a
+                        week after a full mailbox still read "bounced"; and it showed the FIRST report's time (a
+                        second report on the address is a corroborating reference on the first one's fact).
+                        `context/workstream_numbers.py` shows the latest report behind the fact, as of the
+                        instant asked, and only while nothing has passed between us since.
+                      artifact: genios_engine/context/workstream_numbers.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_a_bounce_is_shown_while_it_stands.py -q
+                      depends_on: [M29.C3.L-logic.V1.U02, M29.C2.L-logic.V2.U04]
         - id: M29.C4
           name: Waves and the connector's rate
           layers:

@@ -17,7 +17,10 @@ written here, no model:
     n), present only where some level holds `NORMAL_AT` replies;
   your reply time — measured on your answers to them, at any n (`waiting.conversation_our_reply_gaps`); and
     your normal with them (`party.our_reply_*`), present only at `NORMAL_AT`;
-  bounced — when a delivery report said our mail to them failed (`delivery.status`, `context/delivery`).
+  bounced — the latest delivery report that said our mail to them failed (`delivery.status`,
+    `context/delivery`), shown while it is still the latest word between us: once they write, the
+    address works, and once we write again, a newer mail is a new attempt — if it bounces too, its
+    own report is the one shown (`M29.C3.L-logic.V2.U06`, found by STEP-10's crosscheck, X1).
 
 And for the file: every WAVE one of its people was sent (`correlation_conversation.find_waves`, over the
 waiting window — `M29.C2.L-logic.V2.U05`, found holding the build against STEP-10's vision, which says the
@@ -53,14 +56,30 @@ _PEOPLE = text(
     "select node_id, canonical_key, display_name from graph_nodes "
     " where org_id = :o and node_id = any(:ids) and valid_to is null")
 
-#: The numbers the waiting pass and the delivery report wrote on the file's people, and on the tenant.
+#: The numbers the waiting pass wrote on the file's people, and on the tenant.
 _FACTS = text(
-    "select subject_node_id, field, value #>> '{}' as value, occurred_at from graph_facts "
+    "select subject_node_id, field, value #>> '{}' as value from graph_facts "
     " where org_id = :o and subject_node_id = any(:ids) and valid_to is null "
     "   and status = 'active' and visibility_scope is distinct from 'private' "
     "   and field in ('party.reply_cadence_days', 'party.reply_cadence_basis', "
     "                 'party.reply_cadence_n', 'party.our_reply_days', 'party.our_reply_n', "
-    "                 'derived.our_reply_days', 'derived.our_reply_n', 'delivery.status')")
+    "                 'derived.our_reply_days', 'derived.our_reply_n')")
+
+#: The LATEST report behind each person's `delivery.status = failed`, as of the instant asked about.
+#: ⛔ NOT THE FACT'S OWN TIME: a second report on an address writes the same value, which the store
+#: keeps as a corroborating reference on the first one's fact (`graph_store.fact_write_action`:
+#: "noop"), so the fact's time is only the first report's — and a pitch that bounced after an older
+#: one did would read the older bounce. Every report is a reference; the waves read them the same
+#: way (`correlation_conversation._FAILED_DELIVERIES`).
+_LATEST_BOUNCE = text(
+    "select f.subject_node_id, max(e.occurred_at) as at from graph_facts f "
+    "  join graph_source_refs r on r.org_id = f.org_id and r.fact_version_id = f.fact_version_id "
+    "  join source_events e on e.org_id = r.org_id and e.event_id = r.event_id "
+    " where f.org_id = :o and f.subject_node_id = any(:ids) and f.field = 'delivery.status' "
+    "   and f.value #>> '{}' = 'failed' and f.valid_to is null and f.status = 'active' "
+    "   and f.visibility_scope is distinct from 'private' and e.occurred_at <= :now "
+    "   and (e.visibility_scope is null or e.visibility_scope <> 'private') "
+    " group by f.subject_node_id")
 
 
 @dataclass(frozen=True, slots=True)
@@ -72,7 +91,7 @@ class PersonNumbers:
     their_normal: Measured | None          # the cascade's normal for them, where one holds
     your_reply_time: Measured              # measured on your answers to them, any n
     your_normal: Measured | None           # your normal with them, at NORMAL_AT
-    bounced_at: datetime | None            # a report said our mail to them failed
+    bounced_at: datetime | None            # the latest report that our mail failed, while it stands
 
 
 @dataclass(frozen=True, slots=True)
@@ -102,6 +121,20 @@ def _normal(facts: dict, days: str, n: str, basis: str | None) -> Measured | Non
     return Measured(value=value, n=int(count), basis=basis or PERSON_BASIS, unit="days")
 
 
+def _standing(bounced_at: datetime | None, timeline) -> datetime | None:
+    """A bounce while it is still the latest word between us and them — or None.
+
+    `timeline` is the person's `(direction, at)` over the waiting window. A mail either way at or
+    before the report leaves it standing; one after it ends it — they wrote (the address works: a
+    full mailbox one day, an answer a week later), or we wrote again (a new attempt, whose own report
+    is the latest if it bounces too). The wait reads the same order: a bounce ends it only at or
+    after our last mail (`waiting._bounced_since_our_last_mail`).
+    """
+    if bounced_at is None or any(at > bounced_at for _direction, at in timeline):
+        return None
+    return bounced_at
+
+
 def numbers_for(conn, org_id: str, file, timeline, *, now: datetime) -> FileNumbers:
     """The numbers of one file — `file` a `workstreams.WorkFile`, `timeline` its
     `workstream_timeline.FileTimeline`, both read as of `now`."""
@@ -110,12 +143,12 @@ def numbers_for(conn, org_id: str, file, timeline, *, now: datetime) -> FileNumb
     tenant = tenant_node_id(conn, org_id)
     ids = people + ([tenant] if tenant else [])
     facts: dict[str, dict[str, str]] = {}
-    when: dict[str, dict[str, datetime]] = {}
     for r in conn.execute(_FACTS, {"o": org_id, "ids": ids}):
         facts.setdefault(r.subject_node_id, {})[r.field] = r.value
-        when.setdefault(r.subject_node_id, {})[r.field] = r.occurred_at
+    bounced = {r.subject_node_id: r.at
+               for r in conn.execute(_LATEST_BOUNCE, {"o": org_id, "ids": people, "now": now})}
     nodes = {r.node_id: r for r in conn.execute(_PEOPLE, {"o": org_id, "ids": people})}
-    _per_node, _types, conversations = directed_timelines(conn, org_id, now=now)
+    per_node, _types, conversations = directed_timelines(conn, org_id, now=now)
 
     rows: list[PersonNumbers] = []
     for node_id in people:
@@ -133,8 +166,7 @@ def numbers_for(conn, org_id: str, file, timeline, *, now: datetime) -> FileNumb
             your_reply_time=median_of(conversation_our_reply_gaps(theirs), basis=PERSON_BASIS,
                                       unit="days"),
             your_normal=_normal(mine, "party.our_reply_days", "party.our_reply_n", PERSON_BASIS),
-            bounced_at=(when.get(node_id, {}).get("delivery.status")
-                        if mine.get("delivery.status") == "failed" else None)))
+            bounced_at=_standing(bounced.get(node_id), per_node.get(node_id, ()))))
     rows.sort(key=lambda p: p.key)
 
     keys = {p.key for p in rows}
