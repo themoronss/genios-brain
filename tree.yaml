@@ -5772,6 +5772,15 @@ yc2_w27_s10:
                       artifact: genios_engine/contracts/measured.py
                       verify: .venv/bin/python -m pytest tests/contracts/test_a_measured_number_says_its_n.py -q
                       depends_on: []
+                    - id: M29.C1.L-contract.V0.U05
+                      what: >
+                        Minted building C4 (2026-10-07): the contract was frozen with medians only and worded a
+                        connector's rate 'usually 0.625 ratio' and a count '3 times, median 3 count'.
+                        `contracts/measured.py` — three kinds of number: a median (a habit only at NORMAL_AT), a rate
+                        ('k of n', exact, never a habit), a count (exact, zero is 'none'); `count_of`.
+                      artifact: genios_engine/contracts/measured.py
+                      verify: .venv/bin/python -m pytest tests/contracts/test_a_measured_number_says_its_n.py -q
+                      depends_on: []
             - layer: logic
               levels:
                 - level: 0
@@ -5808,6 +5817,14 @@ yc2_w27_s10:
                       artifact: genios_engine/context/waiting.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_your_reply_time.py -q
                       depends_on: [M29.C1.L-logic.V1.U02]
+                    - id: M29.C1.L-logic.V2.U06
+                      what: >
+                        Minted building C2 (2026-10-07): both reply times were read off one timeline per counterparty,
+                        merged across threads. `context/waiting.py` — each gap measured inside its own conversation (the
+                        Gmail thread) and pooled; `directed_timelines`, one reading shared with the file's numbers.
+                      artifact: genios_engine/context/waiting.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_a_reply_is_in_its_own_conversation.py -q
+                      depends_on: [M29.C1.L-logic.V1.U02]
         - id: M29.C2
           name: The file's timeline
           layers:
@@ -5834,6 +5851,14 @@ yc2_w27_s10:
                       artifact: genios_engine/context/workstream_timeline.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_a_file_has_a_timeline.py -q
                       depends_on: [M29.C1.L-contract.V0.U01, M29.C1.L-logic.V1.U02]
+                    - id: M29.C2.L-logic.V2.U04
+                      what: >
+                        Minted to keep the route thin (2026-10-07): new `context/workstream_numbers.numbers_for` — each
+                        person's reply time and yours at any n, the normals the waiting pass wrote, a bounce, the file's
+                        mailboxes and whether 'no reply' may be said.
+                      artifact: genios_engine/context/workstream_numbers.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_a_file_has_its_numbers.py -q
+                      depends_on: [M29.C1.L-logic.V2.U06, M29.C1.L-contract.V0.U01, M29.C5.L-logic.V2.U03, M29.C3.L-logic.V1.U02]
             - layer: interface
               levels:
                 - level: 3
@@ -5849,6 +5874,18 @@ yc2_w27_s10:
         - id: M29.C3
           name: A bounce on the file
           layers:
+            - layer: data
+              levels:
+                - level: 0
+                  units:
+                    - id: M29.C3.L-data.V0.U05
+                      what: >
+                        Minted integrating C3 (2026-10-07): a report's attached original became a document of its own.
+                        `capture/connectors/composio.py` — no attachment event for a message/rfc822, text/rfc822-headers
+                        or message/delivery-status part of a delivery report, by MIME type.
+                      artifact: genios_engine/capture/connectors/composio.py
+                      verify: .venv/bin/python -m pytest tests/capture/test_a_bounces_original_is_not_a_document.py -q
+                      depends_on: [M29.C3.L-logic.V0.U04]
             - layer: logic
               levels:
                 - level: 0
@@ -5861,6 +5898,14 @@ yc2_w27_s10:
                       artifact: genios_engine/capture/gate/rules.py
                       verify: .venv/bin/python -m pytest tests/capture/gate/test_a_bounce_is_kept.py -q
                       depends_on: []
+                    - id: M29.C3.L-logic.V0.U04
+                      what: >
+                        Minted integrating C3 (2026-10-07): the gate kept a report and S2's junk filter still archived
+                        it (golden F16). `capture/gate/gate.py` — S2 never judges a report the parser recognises; one
+                        shared helper, `rules.is_a_delivery_report`.
+                      artifact: genios_engine/capture/gate/gate.py
+                      verify: .venv/bin/python -m pytest tests/capture/gate/test_a_bounce_is_read.py -q
+                      depends_on: []
                 - level: 1
                   units:
                     - id: M29.C3.L-logic.V1.U02
@@ -5872,6 +5917,14 @@ yc2_w27_s10:
                       artifact: genios_engine/context/delivery.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_a_bounce_is_on_the_file.py -q
                       depends_on: [M29.C3.L-logic.V0.U01]
+                    - id: M29.C3.L-logic.V2.U03
+                      what: >
+                        Minted integrating C3 (2026-10-07): the bounce was on the file and the partner still read
+                        days_waiting. `context/waiting.py` — a counterparty whose latest mail from us bounced is not
+                        waited on; a thread only when every outside recipient of our last mail bounced.
+                      artifact: genios_engine/context/waiting.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_a_bounce_ends_the_wait.py -q
+                      depends_on: [M29.C3.L-logic.V1.U02]
         - id: M29.C4
           name: Waves and the connector's rate
           layers:
@@ -5935,6 +5988,14 @@ yc2_w27_s10:
                       artifact: genios_engine/context/coverage_receipt.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_a_file_says_what_was_checked.py -q
                       depends_on: [M29.C5.L-logic.V1.U02]
+                    - id: M29.C5.L-logic.V2.U04
+                      what: >
+                        Found replaying the golden set (2026-10-08, 03 F102): written coverage crashed the bundler
+                        ('could not group … published signal(s)'). `capture/esqe/bundle.merged_coverage` reads the typed
+                        block through its row's shape.
+                      artifact: genios_engine/capture/esqe/bundle.py
+                      verify: .venv/bin/python -m pytest tests/capture/esqe/test_a_bundle_merges_the_coverage_a_signal_carries.py -q
+                      depends_on: [M29.C5.L-data.V0.U01]
         - id: M29.C6
           name: The golden set
           layers:
