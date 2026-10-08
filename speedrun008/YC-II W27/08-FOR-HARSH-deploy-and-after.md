@@ -1,6 +1,6 @@
 # 08 · For Harsh — deploying the batch, and what to run after
 
-**Written for:** Harsh. **As of:** 2026-10-07. **From:** the `yc2_w27` build (Claude), pushed by
+**Written for:** Harsh. **As of:** 2026-10-08 (STEP-10 added). **From:** the `yc2_w27` build (Claude), pushed by
 Rohit. Everything here can be checked against the repository; every number below names the file
 or the command it came from.
 
@@ -35,6 +35,9 @@ or the command it came from.
    replay after every backfill drain filed every newsletter the drain kept out — so **deploy it before
    STEP-08's re-sync** (§3.7). After Rohit accepts the brief: the health check, and re-file the history
    if it names anything (§3.8, §4.7).
+   ⛔ **And STEP-10 (§1.11) adds no migration** — the expert's numbers. The published pack moves
+   1.5.0 → 1.5.1 (registered at boot); the first sweep re-decides each subject whose numbers changed,
+   once (§3.9). After one sweep: the health check — every normal says its n (§4.8).
 2. After the deploy, **re-queue the attachments** the `file_name` refusal dead-lettered (§3.1).
 3. **Read the first `refetch_last_error`** that comes back (§3.2).
 4. **Pin the Composio toolkits** — the one unit of this block that is yours (§3.3).
@@ -169,6 +172,20 @@ it** (`03` F62), or that company reads as a counterparty in those three places.
 | a new route | `GET /v1/workstreams` — read only, the tenant's files; anyone who may read the tenant (`get_current_org`) |
 | a new health check | *every counterparty the brief names that has mail has a file* — fails while a named counterparty's read mail is filed nowhere, or a connector's introductions sit in the connector's file; names each |
 | what does NOT change | no card is added for a file in a domain that is not active (`06` D2); no stage is derived (`STEP-11`) |
+
+### 1.11 · STEP-10, the expert's numbers — in the next push
+
+| | What changes at runtime |
+|---|---|
+| no migration | the pack `general_v1` registers as **1.5.1** — 1.5.0's published bytes are immutable, and the only change is the send-interval baseline's name (`write_interval`, `06` D41) |
+| the waiting pass | their reply time is counted ONCE (person nodes only) and measured inside each conversation; a normal is written only at five replies, with its n (`party.reply_cadence_n`) — **every "usually replies in X days" that rested on fewer goes**; your own reply time is written per counterparty and overall at five; a counterparty whose latest mail from us bounced is no longer waited on |
+| the gate and the connector | a delivery report is kept and read — never archived, never judged junk; its attached original is not landed as a document |
+| the L2 drain | a failed report writes `delivery_failure` on the address and the original's thread, `delivery.status = failed` on the address |
+| history | per (anchor, domain): `derived.history.<fact>@<domain>`; the per-anchor rows are closed, never deleted |
+| coverage | the sync summary carries its source and finish, so per-signal coverage is written (`STEP-18` B5); a bundle merges it (`03` F102, fixed) |
+| a new route | `GET /v1/workstreams/{file_id}` — one file, its timeline and its numbers; read only; the tenant's own (`get_current_org`) |
+| a new health check | *every reply time written as a normal says its n, and none rests on fewer than five* — names the file |
+| what does NOT change | no card is added: a bounce, a wave and a reply time reach no card until `STEP-14`; the reply-owed threshold stays two days (`06` D42) |
 
 ### 1.3 · How it was tested before the push
 
@@ -422,6 +439,13 @@ select count(*) from source_events se
 
 Not zero: the step-2 rebuild above re-derives every file without them.
 
+### 3.9 · STEP-10 — the first sweep after the deploy
+
+Nothing to run. **The first sweep re-decides once** each subject whose request changed — the n beside a
+reply time, a normal that went, history per domain, the renamed metric — as a new company brief does
+(the change gate, `STEP-02`); the decision count of that sweep says how many. Then the health check
+(§4.8).
+
 ## 4 · The probes — send the outputs
 
 Read-only, from `speedrun008/YC-II W27/baseline/production_state.sql`:
@@ -547,6 +571,27 @@ python scripts/pipeline_health.py --org org_e97e86f858ad48b2bbf64b8a --database-
 many named counterparties have mail, how much of it is filed, how many files the tenant has, and — if
 any — how many introductions sit in the connector's file. A failure names each counterparty; its fix
 is §3.8. Keep the output, and `GET /v1/workstreams`'s, in `baseline/<date>-after-files/`.
+
+### 4.8 · STEP-10 — after one sweep
+
+```
+python scripts/pipeline_health.py --org org_e97e86f858ad48b2bbf64b8a --database-url "$URL"
+```
+
+*Every reply time written as a normal says its n, and none rests on fewer than five* must pass. A normal
+with no n is one written before the deploy, and the waiting pass retires it on its sweep — run the check
+again after one more; a normal below five written since is a defect (its fix names the two tests). Keep
+the output, with `GET /v1/workstreams/{file_id}` for one investor's file and this read-only count of how
+many normals the deploy took away and kept:
+
+```
+select f.field, count(*) filter (where f.valid_to is null) as current,
+       count(*) filter (where f.valid_to is not null) as retired
+  from graph_facts f
+ where f.org_id = :org and f.field in ('party.reply_cadence_days', 'party.our_reply_days',
+                                       'derived.our_reply_days')
+ group by f.field;
+```
 
 ## 5 · Do not
 

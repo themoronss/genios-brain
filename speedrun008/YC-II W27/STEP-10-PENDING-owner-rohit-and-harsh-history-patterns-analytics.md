@@ -1,4 +1,4 @@
-# STEP-10 · TO BUILD · history, patterns, analytics — the expert's numbers
+# STEP-10 · PENDING — owner Rohit (push; D42–D44) and Harsh (deploy, no migration; the health check after one sweep) · history, patterns, analytics — the expert's numbers
 
 **Owner:** Claude. **Depends on:** `STEP-09`. **Moves:** every number the expert reasons with comes
 from a calculator, with its evidence and its provenance (*measured here* vs *profession's prior*),
@@ -210,3 +210,130 @@ Critical path, 6 units: the contract → a reply counted once → the file's tim
 | a new per-sweep fact makes the change gate re-decide every sweep | facts that move each sweep stay out of the fingerprint (`reason/fingerprint.py` ladders only `days`/`_hours`); `tests/replays/test_an_unchanged_sweep_costs_nothing.py` |
 | the rename of *reply cadence* breaks corpus rules | one rename, every reader moved in the same unit, the corpus ratchet tests |
 | the gate keeping bounces lets a DSN flood in | only a report the parser recognises (`is_delivery_status`); never on its attached original |
+
+---
+
+## 9 · Built — 2026-10-07/08 (tree `yc2_w27_s10`, 31 units: 18 drawn, 8 found while building, 3 found by the crosscheck, 2 found by QA)
+
+On Rohit's go of 7 Oct with D36–D41 as recommended. 39 commits on `speedrun008`, `c26a2ce7` …
+`65faa860`: the lead built 20 units; six worktree workers built 11 (bounces, coverage, the connector's
+rate and history, the rename, the gate and connector follow-ups, the wave), and every one was
+re-verified on the lead branch — its tests run there and its own mutation set re-run against the
+integrated code — before it was taken.
+
+### 9.1 · What was built
+
+| | Where | What it does |
+|---|---|---|
+| a number says what it rests on | `contracts/measured.py` | `Measured(value, n, basis, source, unit, stat, k)`; `NORMAL_AT = 5` (D37); three kinds — a median is a habit only at five (*"once: 1.92 days"*, *"2 times, median 2 days — too few to call normal"*, *"usually 2 days (n=5, person)"*), a rate says *"k of n"* and is never a habit, a count is exact and zero is *"none"*; `median_of`, `rate_of`, `count_of` |
+| their reply time, counted once | `context/waiting.py` | person nodes only (a thread node's facts are the same messages again — the double count, D36); a normal only where a level holds five replies, written with its n and basis; a normal the evidence no longer carries is retired; an introduction is the connector's mail, never the person's |
+| a reply in its own conversation (found) | the same | each gap measured inside its thread and pooled — a new topic on another thread is no reply, and your answer is measured from the mail it answers (`03` F103) |
+| your reply time | the same | the mirror: per counterparty (`party.our_reply_*`) and overall on the tenant node (`derived.our_reply_*`), each at five answers |
+| a bounce ends the wait (found) | the same | a counterparty whose latest mail from us bounced is not waited on; a thread only when every outside recipient of our last mail bounced; a newer mail is a new wait |
+| one meaning for *reply cadence* | `reason/baselines.py` and 49 files | how often a person writes is `write_interval` — 77 corpus thresholds moved, values unchanged, the published pack 1.5.0 → 1.5.1 (D41) |
+| the file's timeline | `context/workstream_timeline.py` | every touch both ways — mail by who WROTE it, a meeting once at its current start, never a cancelled one; the gaps, the usual gap with its n, whether the silence outlasts every gap the file closed; meetings still to come listed as booked |
+| the file's numbers (found) | `context/workstream_numbers.py` | per person: their reply time and yours at any n, the normals that hold (with their level), a bounce; per file: your normal overall, the mailboxes its mail came through, whether *"no reply"* may be said, and every wave its people were sent with what came of it there (found by the crosscheck) |
+| one file, readable | `api/workstream_routes.py` | `GET /v1/workstreams/{file_id}` — the file, its timeline, its numbers; another tenant's file and an unknown id are the same 404; nothing written |
+| history per file | `context/correlation_history.py` | published per (anchor, domain) — a file in two domains keeps both pasts |
+| a bounce kept and read | `capture/gate/rules.py`, `gate.py`, `connectors/composio.py` | a report the parser recognises is never archived by N-01…N-04 nor judged by the junk filter (two found units); its attached original is not a document of its own |
+| a bounce on the file | `context/delivery.py` | `delivery_failure` on the address and the original's thread, `delivery.status = failed` on the address (D38; `STEP-18` B6) |
+| the connector's rate | `context/workstreams.py` | on a connector's file: the people it introduced (a count), the share who wrote back themselves, the share who met us (rates) |
+| a wave | `context/correlation_conversation.find_waves` | one outreach to three or more outside people within seven days, by its sentence or else its subject — sent, replied, bounced, followed up, days since |
+| the coverage receipt | `capture/acquire/sync_runner.py`, `capture/coverage/window.py`, `context/coverage_receipt.py` | the sync summary says its source and finish (`STEP-18` B5); coverage per mailbox over its own window; a file's receipt and `covers` — *"no reply"* only when a mailbox's window reaches back and a completed sync has looked since |
+| the bundle on written coverage (found) | `capture/esqe/bundle.py` | coverage, once written, crashed signal bundling — fixed (`03` F102) |
+| a bounce while it stands (crosscheck) | `context/workstream_numbers.py` | the latest report behind the address's `failed`, read through its references — a second report only corroborates the first one's fact, whose time is the first report's; shown only while nothing has passed between us since: they wrote, or we wrote again |
+| a read that fails says so (crosscheck) | `capture/coverage/window.py`, `context/coverage_receipt.py` | each coverage read in a savepoint, with a warning naming the tenant and the mailbox — on Postgres a failed statement had aborted every read after it, silently |
+| the golden runner, cold and clean (QA) | `tests/replays/engine_runner.py` | a run starts with no memory of who an earlier run's tenant knew (`routes._SENDER_CACHE`, `03` F119); a run that raises removes its tenant even when asked to keep it |
+| the health check | `scripts/pipeline_health.check_every_normal_says_its_n` | fails while a reply time written as a normal has no n or fewer than five; names the file |
+| the golden set | `tests/replays/` | the runner seats the founder's mailboxes as production has them (N9); a message may arrive in a second mailbox; three new cases (F45–F47, D40); fifteen cassettes re-recorded, each diff read; the acceptance `test_every_number_says_its_n.py` |
+
+### 9.2 · Measured — the golden set
+
+| | Before STEP-10 | After |
+|---|---|---|
+| their reply time | F17 *35.98 days* and F25 *1.92 days* as tenant normals built from ONE reply counted twice, written on everyone, no n | *"once: 35.98 days"*, *"once: 1.92 days"* (n = 1); no normal on anyone |
+| your reply time | nowhere | F45: *"usually 1.5 days (n=6, person)"* with Meera — written as your normal with her, and overall |
+| a bounce | archived at the gate (F16) | kept and read, on the fund's file, its wait ended — F16, and F47 in Gmail's shape (its original never a document) |
+| the outreach wave (F15) | five unrelated readings | one wave: sent 5, 0 of 5 replied, bounced or followed up, 56.3 days since |
+| coverage | no file named a mailbox; the runner seated none | every file names its mailbox and its 60-day window; F46's answer in the other mailbox is in the file |
+| the board (`03` §F.1) | must-detect 12/32 · must-abstain 11/12 · forbidden 4 · Atlas 4/80; lost at the gate 1 | must-detect **13/35** (9 not expressible) · 11/12 · 4 · 4/80; lost at the gate **0**, in reasoning 12 |
+
+Mutations, each unit against its own test (the lead's): 15/15 and 16/16 (your reply time), 11/11 (three
+kinds), 6/6 (per conversation), 20/21 + 1 equivalent (the timeline), 13/13 (the numbers), 8/8 (the
+waves), 6/6 (the route), 12/13 + the redundant filter deleted (a bounce ends the wait), 8/9 + 1
+equivalent (the health check), 2/2 (the bundle); the workers' as listed in the crosscheck. After the
+crosscheck and QA: 11/13 + 2 equivalent (a bounce while it stands — the `valid_to` / `status` pair, which
+a supersede sets together), 6/6 and 7/7 (the reads that fail), 1/1 on both tests (the cold start), 3/3
+(the kept tenant).
+
+### 9.3 · Decided while building
+
+- **Stored normals stay at five; below it the file computes the number from the ledger and shows it
+  with its n** — D37's *"shown as what it is"* without ever writing a habit a reader could misuse.
+- **Both reply times per conversation** — the plan said so for yours (§8.4); the same rule for theirs,
+  or the two would not be mirrors.
+- **Three kinds of number in the contract** — a rate worded as a median read *"usually 0.625 ratio"*.
+- **The bounce is L1's own `delivery_failure` kind** — one name for one meaning; and `service`, which
+  the pipeline has minted since L3-0A, is declared in the node vocabulary.
+- **A thread's wait ends on a bounce only when every outside recipient of our last mail bounced.**
+- **The rename landed at 49 files** — the worker's 40-file rule stopped it as a proposal; D41 is exactly
+  this change. The corpus's prose and the generated book are the authors' (D44, `03` F106).
+- **The golden runner seats the mailboxes** — the coverage receipt could not be tested otherwise, and
+  production has them.
+
+### 9.4 · Found while building — `03` F102–F118
+
+Fixed: **F102** (the bundle crashed on written coverage), **F103** (reply times across a merged
+timeline), **F116** (the scratch database's shared memory), **F119** (the golden runner remembered an
+earlier run's tenant, §9.5). Open, each named with its owner: the compiled
+corpus lane never receives baselines (F104), two corpus rules compare unlike units (F105), the corpus
+book cannot be regenerated (F106), the reply-owed threshold is still two days (F107 → D42), a finished
+backfill reads partial in one window read (F108), a receipt cannot name its mailbox's address (F109),
+coverage counts objects against messages (F110), the campaign rule counts a colleague (F111), a Bcc'd
+pitch forms no wave (F112), history's prior outcome is per anchor (F113), a connector that only
+introduces shows its rate nowhere (F114 → D43), four capture tests are sensitive to load (F115), the
+connector's fast path still primes the filter for a report (F117), a body-only report reads as an
+out-of-office (F118), two older coverage reads swallow a failed statement as X3's did (F120). The
+crosscheck (`.trace/reports/crosscheck-yc2_w27_s10-20261008T044214Z.md`) found three, and two are built: a
+stored bounce outlived a later exchange in the file's display and showed the first report's time (X1 —
+`M29.C3.L-logic.V2.U06`); the coverage reads swallowed a failed statement, which on Postgres aborts every
+read after it (X3 — `M29.C5.L-logic.V1.U06`, `V2.U05`); and the route reads the whole tenant for one file
+(X2 — declared: fine at the pilot's ~500 mails; scope the reads to the file's people when a tenant needs
+it).
+
+### 9.5 · QA
+
+Green on every tier on the second run, at `65faa860` (`baseline/yc2w27-s10-qa/qa_record.txt`; every
+database check on a database created for it):
+
+| Tier | Run 1, at `d0496989` | Run 2, at `65faa860` |
+|---|---|---|
+| the tree and the units' own verifies | 30 pass / 0 fail / 0 skip (26 units) | 35 pass / 0 fail / 0 skip (31 units) |
+| the whole suite on Postgres | **4 failed**, 18,880 passed, 4 skipped, 89 xfailed | 18,911 passed, 4 skipped (the known four, re-listed with their reasons), 89 xfailed |
+| the golden lane, `GENIOS_GOLDEN_REQUIRED=1` | 776 passed, 87 xfailed, 0 skipped | 782 passed, 87 xfailed, **0 skipped** |
+| the board against `03` §F.1 | matches | matches — must-detect **13/35**, must-abstain 11/12, forbidden 4, Atlas 4/80 |
+| the hermetic job | 16,719 passed, 1,779 skipped | 16,720 passed, 1,800 skipped (1,796 need a database; tier 2 ran them), 72 xfailed |
+
+**Run 1 was red on the whole suite only.** F45's cassette missed twice at the relevance site
+(`test_the_gate_deletes_nothing…[F45]`, key `679dd0acaf92…`; `test_we_are_never_the_subject[F45]`, key
+`fea5a51d5ba5…`), and two activation-list tests then failed on the tenant the miss left switched on. The
+golden lane and the case alone replayed it exactly. The cause (`03` F119), measured before any fix:
+`api/routes._SENDER_CACHE` holds each tenant's known counterparties for five minutes of process memory,
+and the runner's `cold_start` never emptied it — seeded with what a finished F45 run knows, the next run
+asks exactly `fea5a51d5ba5…`; expired before F45's second sweep, exactly `679dd0acaf92…`. And
+`run_case(keep=True)` kept the tenant of a run that raised. Fixed test-first in `M29.C6.L-integration.V0.U05`
+and `V0.U06`; the crosscheck's X1 and X3 landed before run 2 as well, and the whole run was repeated.
+
+### 9.6 · After the deploy — Rohit, then Harsh
+
+1. **No migration.** The deploy registers the published pack 1.5.1 (1.5.0's bytes are immutable).
+2. **Numbers move on the first sweep, once.** Every *"they usually reply in X days"* that rested on
+   fewer than five replies goes (D36); their reply time is now measured per conversation; the waiting
+   facts of a bounced counterparty retire. Each subject whose request changed is re-decided once by the
+   change gate — as a new company brief is — so the first sweep after the deploy spends more decisions.
+3. **A delivery report is kept and read from the deploy on**; its attached original is not a document.
+4. **Harsh:** after one sweep, `pipeline_health` — *every reply time written as a normal says its n* must
+   pass (`08` §4.8); keep the output with `GET /v1/workstreams/{file_id}` for one investor's file.
+5. **Decisions waiting** (`06`): **D42** (the reply-owed threshold from your reply time), **D43** (a
+   connector's rate on its named entry), **D44** (corpus rules meant as their reply time); and the label
+   rows 45–47 (`golden-labels.md`), Claude's answers until Rohit gives his.

@@ -25,8 +25,8 @@
 #                                                   (built 2026-10-07); past every other block again
 #   yc2_w27_s09                       M27         ← YC-II W27 STEP-09, a file for every piece of work
 #                                                   (built 2026-10-07); past every other block again
-#   yc2_w27_s10                       M29         ← YC-II W27 STEP-10, the expert's numbers (2026-10-07);
-#                                                   M28 is held for STEP-09's cards (D2), not drawn
+#   yc2_w27_s10                       M29         ← YC-II W27 STEP-10, the expert's numbers (built
+#                                                   2026-10-08); M28 is held for STEP-09's cards (D2)
 #
 # So `M11` is AMBIGUOUS on its own: it names "The remaining Layer 3 losses" in one block and
 # "L2 Reasoning" in another, and `M11.C1.L-logic.V0.U01` exists twice with different meanings.
@@ -5723,7 +5723,18 @@ yc2_w27_s09:
                       depends_on: [M27.C5.L-integration.V3.U01]
 
 yc2_w27_s10:
-  status: proposed
+  status: built
+  built: >
+    2026-10-07/08 — 31 units: 18 drawn; 8 found while building (C1 V0.U05 three kinds of number, C1
+    V2.U06 a reply in its own conversation, C2 V2.U04 the file's numbers, C2 V2.U05 its waves, C3 V0.U04
+    and data V0.U05 the report kept whole, C3 V2.U03 a bounce ends the wait, C5 V2.U04 the bundle on
+    written coverage, `03` F102); 3 found by the crosscheck (C3 V2.U06 a bounce shown while it stands,
+    C5 V1.U06 and V2.U05 coverage reads that fail say so); 2 found by QA (C6 V0.U05 the golden runner
+    starts cold, C6 V0.U06 a failed run leaves no tenant, `03` F119). Fifteen built by the lead and five
+    after the crosscheck; eleven by six worktree workers, each re-verified on the lead branch with its
+    own mutations. QA run 1 at `d0496989` red on the whole suite only (F45's cassette missed twice, two
+    activation-list tests failed on the tenant it left — F119); run 2 at `65faa860` green on every tier
+    (`speedrun008/YC-II W27/baseline/yc2w27-s10-qa/`). The board must-detect 12/32 → 13/35.
   source: >
     speedrun008/YC-II W27/STEP-10 §1–§7, re-checked claim by claim against speedrun008 @ 79d0ff54
     (STEP-10 §8) by a read-only worker and by hand, and measured on the golden set

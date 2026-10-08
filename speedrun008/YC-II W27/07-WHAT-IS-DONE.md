@@ -32,17 +32,17 @@ is one branch, `speedrun008`, and the units are block `yc2_w27` of `tree.yaml`.
 |---|---|---|
 | 0 · Ground truth | `STEP-00` one branch · `STEP-01` the golden set | both **PENDING — Harsh** (deploy). Claude's part done, pushed |
 | 1 · Remember everything | `STEP-02` change gate · `03` the gate keeps everything · `04` who is us · `05` every item enters memory · `06` nothing lost silently | `02`–`06` **PENDING — Rohit (push), Harsh (deploy)**: built, QA green (§6b–§6f) |
-| 2 · The expert's desk | `STEP-07` company brief · `08` the re-sync · `09` workstreams · `10` history, patterns, analytics | `07` **PENDING — Rohit (push; accept the brief), Harsh (deploy, migration `0195`; draft it)**: built, QA green (§6g) · `08` **PENDING — Rohit (push; the window, D5/D16), Harsh (the run, after the brief — `06` D26)**: built, QA green (§6h) · `09` **PENDING — Rohit (push; accept the brief's connectors and watchlist; D35), Harsh (deploy before STEP-08's run; re-file history if the health check names it)**: built, QA green (§6i) · `10` TO BUILD — building since 7 Oct (checked, `STEP-10` §8; go given with `06` D36–D41 as recommended; tree `yc2_w27_s10`) |
+| 2 · The expert's desk | `STEP-07` company brief · `08` the re-sync · `09` workstreams · `10` history, patterns, analytics | `07` **PENDING — Rohit (push; accept the brief), Harsh (deploy, migration `0195`; draft it)**: built, QA green (§6g) · `08` **PENDING — Rohit (push; the window, D5/D16), Harsh (the run, after the brief — `06` D26)**: built, QA green (§6h) · `09` **PENDING — Rohit (push; accept the brief's connectors and watchlist; D35), Harsh (deploy before STEP-08's run; re-file history if the health check names it)**: built, QA green (§6i) · `10` **PENDING — Rohit (push; `06` D42–D44), Harsh (deploy, no migration; the health check after one sweep)**: built, QA green (§6j) |
 | 3 · Expertise | `STEP-11` founder playbooks | TO BUILD |
 | 4 · The expert thinks | `STEP-12` the expert pass · `13` check every claim | TO BUILD |
 | 5 · What you see | `STEP-14` the card · `15` the morning brief | TO BUILD |
 | 6 · Learning from you | `STEP-16` | TO BUILD |
 | Across all phases | `STEP-17` real tests · `18` known bugs | TO BUILD — six of `STEP-18`'s bugs are fixed in code and pushed (§5) |
 
-**19 steps: 10 finished by Claude (`00`, `01` pushed; `02`–`09` waiting for the push — `08`'s run is
-Harsh's), 9 to build.** `STEP-10` (history, patterns, analytics) is being built: checked (§8), go given
-on 7 Oct with `06` D36–D41 as recommended, tree `yc2_w27_s10` (18 units) — the contract and the reply
-times first, bounces, coverage, the connector's rate and the renamed baseline in parallel worktrees.
+**19 steps: 11 finished by Claude (`00`, `01` pushed; `02`–`10` waiting for the push — `08`'s run is
+Harsh's), 8 to build.** The next is `STEP-11` (founder playbooks): Claude drafts what a professional knows
+about raising, programs, introductions, compliance and hiring; Rohit reviews (`06` D2, D3). Like every
+step, it is checked against the code before it is planned.
 
 ## 4 · STEP-00 · one branch, one baseline
 
@@ -269,6 +269,38 @@ and fixed on the way: the history replay after every backfill drain filed what t
 connectors and watchlist; the health check, and re-filing history if it names anything (`08` §3.8, §4.7);
 D35 (declare the company's domain — `03` F96).
 
+## 6j · STEP-10 · the expert's numbers
+
+**What was built** (`STEP-10-PENDING-owner-rohit-and-harsh-history-patterns-analytics.md` §9): every number
+the expert reasons with about a file says what it rests on — a `Measured` with its n and basis, a habit
+("normal") only at five replies, a rate as *"k of n"*, a count exact. Their reply time is counted once
+(person nodes only: a thread node's facts were the same replies again) and measured inside each
+conversation; your own reply time the same way, per counterparty and overall. A file has its timeline
+(every touch both ways, the gaps, the usual gap with its n, whether the silence outlasts every gap the file
+closed), its numbers, the waves its people were sent, and a coverage receipt — which mailboxes its mail
+came through, over which window, and whether *"no reply"* may be said at all — served at
+`GET /v1/workstreams/{file_id}`. A delivery report is kept, read and filed on the address and the
+original's thread; it ends the wait and shows on the file while it is the latest word. The send interval
+is `write_interval` now (77 corpus thresholds; the pack 1.5.1). A health check fails while a normal has no
+n or rests on fewer than five. Found and fixed on the way: written coverage crashed signal bundling (`03`
+F102); the crosscheck's X1 and X3; and in QA, the golden runner's memory of an earlier run (`03` F119).
+
+**Measured:** on the golden set no "normal" rests on one reply any more (F17 and F25 read *"once: 35.98
+days"*, *"once: 1.92 days"*); your reply time on the new case F45 is *"usually 1.5 days (n=6, person)"*;
+F15's outreach is one wave (sent 5, none replied); F16's and F47's bounces are on the fund's file with the
+wait ended; every file names its mailbox and its window. The board: must-detect 12/32 → **13/35** (three new
+cases, `06` D40), lost at the gate 1 → 0.
+
+**QA:** `baseline/yc2w27-s10-qa/qa_record.txt` (§9.5) — green on every tier on the second run, at
+`65faa860`: the units 35/0/0; the whole suite 18,911 passed, the known four skipped; the golden lane 782
+passed, 0 skipped; the board matches; hermetic 16,720 passed. The first run, at `d0496989`, was red on
+the whole suite only — F45 missed its cassette twice there, because the golden runner remembered who an
+earlier run's tenant knew (`03` F119); fixed, and the whole run repeated.
+
+**Still owed:** the push; the deploy — no migration, the pack registers as 1.5.1 at boot and the first
+sweep re-decides once each subject whose numbers changed (`08` §1.11, §3.9); after one sweep the health
+check (`08` §4.8); decisions D42–D44 (`06`); the label rows 45–47 (`golden-labels.md`).
+
 ## 7 · CI on the push
 
 | Job | Run `37407196202`, on `77aba10e` |
@@ -308,6 +340,9 @@ The full notes, with commands, expected outputs and what not to do: **`08-FOR-HA
 11. ⛔ STEP-09: no migration. After Rohit accepts the brief's connectors and watchlist, the health check;
     if it names anything, re-file — `rebuild_graph --apply`, then `situations/backfill?rebuild=true` —
     and the check again (`08` §1.10, §3.8, §4.7).
+12. ⛔ STEP-10: no migration. The first sweep re-decides once each subject whose numbers changed — read its
+    decision count; after one sweep, the health check: *every reply time written as a normal says its n*
+    must pass, and the SQL beside it counts the normals the deploy retired (`08` §1.11, §3.9, §4.8).
 
 ## 9 · Decisions still open — none blocks the next step
 
@@ -321,3 +356,7 @@ The full notes, with commands, expected outputs and what not to do: **`08-FOR-HA
 | `06` D2 | do the founder's files reach cards beyond Admin (M28)? | the files are built and listed; a file in a dark domain is carded never |
 | `06` D31 | does an in-motion line name its counterparty? | files take their kind from connectors, the watchlist and named people only |
 | `06` D35 | may your company's own domain be declared yours? | a portal's notice naming your company also files it under you (`03` F96); no card |
+| `06` D42 | may "a reply is owed" wait for your own reply time instead of a fixed two days? | two days, as today (`03` F107) |
+| `06` D43 | show a connector's rate on the brief's entry for a connector that only introduces? | shown only on a connector's own file (`03` F114) |
+| `06` D44 | re-point the corpus rules written to mean their reply time? | each reads what it reads today (`03` F105) |
+| `golden-labels.md` rows 45–47 | your labels for the three new cases (F45–F47) | Claude's, each row marked `claude` |
