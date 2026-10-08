@@ -6060,6 +6060,17 @@ yc2_w27_s10:
                       artifact: tests/replays/specs/founder
                       verify: .venv/bin/python -m pytest tests/replays/test_founder_case_contract.py tests/test_golden_labels_sheet.py -q
                       depends_on: []
+                    - id: M29.C6.L-integration.V0.U05
+                      what: >
+                        Found by STEP-10's QA (2026-10-08): the whole suite missed F45's cassette at the
+                        relevance site twice, where the golden lane and the case alone replayed it exactly.
+                        `api/routes._SENDER_CACHE` holds each tenant's known counterparties for five minutes
+                        of process memory and the runner never emptied it, so a run inherited who an earlier
+                        run of the same golden tenant had read into the graph. `tests/replays/engine_runner`
+                        — `cold_start` empties it with the model caches.
+                      artifact: tests/replays/engine_runner.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest tests/replays/test_a_case_starts_with_no_memory_of_its_senders.py -q
+                      depends_on: [M29.C6.L-integration.V0.U01]
                 - level: 4
                   units:
                     - id: M29.C6.L-integration.V4.U02

@@ -75,6 +75,12 @@ COLD_CACHES: tuple[tuple[str, str], ...] = (
     # Not a model's answers but what every prompt is built from: the tenant's company brief, held a
     # minute per process (STEP-07). A golden tenant is re-seeded per run; a fresh process has none.
     ("genios_engine.platform.company_brief", "_CACHE"),
+    # Who each tenant already knows, held five minutes per process (`routes._SENDER_TTL_S`) — and a
+    # known sender's mail is judged without the model. A run inside five minutes of another run of
+    # the same golden tenant inherited the people that run had read into the graph, or had its entry
+    # run out between its own sweeps: F45 asked two relevance pages its recording never asked, in
+    # the whole suite only (STEP-10 QA, `M29.C6.L-integration.V0.U05`).
+    ("genios_engine.api.routes", "_SENDER_CACHE"),
 )
 
 
