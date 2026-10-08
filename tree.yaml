@@ -6071,6 +6071,15 @@ yc2_w27_s10:
                       artifact: tests/replays/engine_runner.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest tests/replays/test_a_case_starts_with_no_memory_of_its_senders.py -q
                       depends_on: [M29.C6.L-integration.V0.U01]
+                    - id: M29.C6.L-integration.V0.U06
+                      what: >
+                        Found by the same QA: F45's miss failed two activation-list tests besides its own —
+                        `run_case(keep=True)` kept the tenant of a run that RAISED, which hands nobody its
+                        tenant to remove. `tests/replays/engine_runner.run_case` — a run that does not
+                        finish removes its tenant whatever `keep` says.
+                      artifact: tests/replays/engine_runner.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest tests/replays/test_a_failed_run_leaves_no_tenant.py -q
+                      depends_on: [M29.C6.L-integration.V0.U01]
                 - level: 4
                   units:
                     - id: M29.C6.L-integration.V4.U02

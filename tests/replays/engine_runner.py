@@ -324,6 +324,7 @@ def run_case(case: FounderCase, llm: Any, *, org_id: str | None = None,
     chain_ok: list[bool] = []
     funnel: list[dict[str, int]] = []
     open_after: list[set[str]] = []
+    finished = False
     try:
         with production_switches(llm), pinned_world(f"golden:{case.case_id}"):
             provision_intelligence(engine, org)
@@ -351,9 +352,13 @@ def run_case(case: FounderCase, llm: Any, *, org_id: str | None = None,
                          situations=_situations(engine, org),
                          cards=_cards(engine, org, open_after), funnel=tuple(funnel),
                          chain_ok=tuple(chain_ok), model_calls=calls, misses=misses)
+        finished = True
     finally:
-        # On EVERY exit — a cassette miss included — or the tenant stays switched on.
-        if not keep:
+        # On EVERY exit — a cassette miss included — or the tenant stays switched on. `keep` is for
+        # the reader of a run that FINISHED: a run that raised hands nobody its tenant to remove, and
+        # a tenant left switched on fails every test that reads a table whole — STEP-10's QA saw one
+        # miss of F45 fail two activation-list tests besides its own (`M29.C6.L-integration.V0.U06`).
+        if not keep or not finished:
             remove_tenant(engine, org)
     return report
 
