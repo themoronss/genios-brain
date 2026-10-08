@@ -19,7 +19,10 @@ written here, no model:
     your normal with them (`party.our_reply_*`), present only at `NORMAL_AT`;
   bounced — when a delivery report said our mail to them failed (`delivery.status`, `context/delivery`).
 
-And for the file: your normal across every counterparty (the tenant node's `derived.our_reply_*`);
+And for the file: every WAVE one of its people was sent (`correlation_conversation.find_waves`, over the
+waiting window — `M29.C2.L-logic.V2.U05`, found holding the build against STEP-10's vision, which says the
+file serves the wave and nothing read it) with what came of it, overall and for this file's own people;
+your normal across every counterparty (the tenant node's `derived.our_reply_*`);
 the receipt of every mailbox its touches came through (`context/coverage_receipt`); the instant a
 "no reply" would be about — our last mail in the file — and whether it may be said at all
 (`coverage_receipt.covers`: a mailbox of the file reaches back that far and a completed sync has looked
@@ -30,10 +33,11 @@ AN ORG-LEVEL READER: no private fact is read, and the people are this tenant's f
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from sqlalchemy import text
 
+from genios_engine.context.correlation_conversation import Wave, find_waves
 from genios_engine.context.coverage_receipt import MailboxReceipt, covers, receipt_for
 from genios_engine.context.waiting import (conversation_our_reply_gaps, conversation_reply_gaps,
                                             directed_timelines)
@@ -41,6 +45,9 @@ from genios_engine.contracts.measured import Measured, median_of
 
 #: The level a person's own numbers are measured at.
 PERSON_BASIS = "person"
+
+#: How far back a file looks for the waves its people were sent — the waiting window (`waiting`).
+WAVE_LOOKBACK_DAYS = 180
 
 _PEOPLE = text(
     "select node_id, canonical_key, display_name from graph_nodes "
@@ -77,6 +84,7 @@ class FileNumbers:
     mailboxes: tuple[MailboxReceipt, ...]
     no_reply_since: datetime | None        # our last mail in the file
     no_reply_can_be_said: bool
+    waves: tuple[Wave, ...] = ()           # every wave one of the file's people was sent
 
 
 def _number(value) -> float | None:
@@ -129,6 +137,10 @@ def numbers_for(conn, org_id: str, file, timeline, *, now: datetime) -> FileNumb
                         if mine.get("delivery.status") == "failed" else None)))
     rows.sort(key=lambda p: p.key)
 
+    keys = {p.key for p in rows}
+    waves = tuple(w for w in find_waves(conn, org_id, now=now,
+                                        since=now - timedelta(days=WAVE_LOOKBACK_DAYS))
+                  if keys & set(w.recipients))
     mailboxes = tuple(receipt_for(conn, org_id, now=now, connection_ids={
         t.mailbox for t in timeline.touches if t.kind == "mail" and t.mailbox}))
     ours = [t.at for t in timeline.touches if t.direction == "out"]
@@ -137,7 +149,7 @@ def numbers_for(conn, org_id: str, file, timeline, *, now: datetime) -> FileNumb
         file_id=file.file_id, as_of=now, people=tuple(rows),
         your_normal_overall=(_normal(facts.get(tenant, {}), "derived.our_reply_days",
                                      "derived.our_reply_n", "tenant") if tenant else None),
-        mailboxes=mailboxes, no_reply_since=since,
+        mailboxes=mailboxes, no_reply_since=since, waves=waves,
         no_reply_can_be_said=since is not None and covers(mailboxes, since))
 
 
@@ -163,7 +175,20 @@ def as_dict(numbers: FileNumbers) -> dict:
                        "last_completed": m.last_completed} for m in numbers.mailboxes],
         "no_reply_since": iso(numbers.no_reply_since),
         "no_reply_can_be_said": numbers.no_reply_can_be_said,
+        "waves": [_wave(w, {p.key for p in numbers.people}) for w in numbers.waves],
     }
+
+
+def _wave(w: Wave, people: set[str]) -> dict:
+    """One wave as JSON: what it was, what came of it, and what came of it for this file's people."""
+    return {"wave_id": w.wave_id, "recognised_by": w.recognised_by, "line": w.line,
+            "first_sent": w.first_sent.isoformat(), "last_sent": w.last_sent.isoformat(),
+            "sent": w.sent.as_dict(), "replied": w.reply_rate.as_dict(),
+            "bounced": w.bounce_rate.as_dict(), "followed_up": w.follow_up_rate.as_dict(),
+            "days_since_last_send": w.days_since_last_send,
+            "this_file": [{"key": k, "replied": k in w.replied, "bounced": k in w.bounced,
+                           "followed_up": k in w.followed_up}
+                          for k in sorted(people & set(w.recipients))]}
 
 
 __all__ = ["FileNumbers", "PERSON_BASIS", "PersonNumbers", "as_dict", "numbers_for"]
