@@ -49,6 +49,9 @@ from sqlalchemy import text
 
 from genios_engine.capture.connectors.backfill import backfill_window_for
 from genios_engine.contracts.connection import Connection
+from genios_engine.platform.logging import get_logger
+
+_log = get_logger("genios.capture.coverage")
 
 
 class SyncHealth(str, Enum):
@@ -231,14 +234,16 @@ def coverage_for_connection(conn, *, org_id: str, connection_id: str,
     window nobody configured. No run is counted and the health is `UNKNOWN`.
 
     `None` when the tenant has no such connection, or the row cannot be read.
+
+    ⛔ A READ THAT FAILS LOSES THAT READ ALONE, AND SAYS SO (`M29.C5.L-logic.V1.U06`, STEP-10's
+    crosscheck X3). Each read runs in a SAVEPOINT (`_optional`): Postgres aborts the transaction
+    that holds a failed statement, and a bare `except` here left every later read on the connection
+    — the receipt's next mailbox, the file's numbers — failing and swallowed the same way.
     """
-    try:
-        row = conn.execute(text(
-            "select source_type, external_account_id, capture_scope "
-            "  from connections where org_id = :o and connection_id = :c"),
-            {"o": org_id, "c": connection_id}).first()
-    except Exception:                       # noqa: BLE001 — absent table: no mailbox is known
-        return None
+    row = _optional(conn, org_id, connection_id, "its connection row", lambda: conn.execute(
+        text("select source_type, external_account_id, capture_scope "
+             "  from connections where org_id = :o and connection_id = :c"),
+        {"o": org_id, "c": connection_id}).first(), None)
     if row is None:
         return None
     window = _backfill_window(row, org_id=org_id, connection_id=connection_id)
@@ -247,17 +252,29 @@ def coverage_for_connection(conn, *, org_id: str, connection_id: str,
     if window is None:
         return _window_of([], source=row.source_type, since=None, until=now, **mailbox)
     since = window.since(now)
-    try:
-        rows = conn.execute(text(
-            "select mode, scanned, claimed_total, claimed_is_estimate, "
-            "       cursor_exhausted, page_budget_spent, error "
-            "  from l1_sync_runs "
-            " where org_id = :o and connection_id = :c "
-            "   and finished_at > :since and finished_at <= :now"),
-            {"o": org_id, "c": connection_id, "since": since, "now": now}).fetchall()
-    except Exception:                       # noqa: BLE001 — absent table: no run vouches for it
-        rows = []
+    rows = _optional(conn, org_id, connection_id, "its sync runs", lambda: conn.execute(
+        text("select mode, scanned, claimed_total, claimed_is_estimate, "
+             "       cursor_exhausted, page_budget_spent, error "
+             "  from l1_sync_runs "
+             " where org_id = :o and connection_id = :c "
+             "   and finished_at > :since and finished_at <= :now"),
+        {"o": org_id, "c": connection_id, "since": since, "now": now}).fetchall(), [])
     return _window_of(rows, source=row.source_type, since=since, until=now, **mailbox)
+
+
+def _optional(conn, org_id: str, connection_id: str, what: str, read, default):
+    """What `read` returns, or `default` when it fails — in a SAVEPOINT, so the transaction that
+    holds it reads on, and in the log, so a mailbox that vouches for nothing because it could not be
+    read is not mistaken for one that was never synced. An absent table, a column a migration has
+    not added yet, a timeout: the mailbox loses this read and nothing else
+    (`context/outreach_situations._optional` is the same guard, and says why it exists)."""
+    try:
+        with conn.begin_nested():
+            return read()
+    except Exception:                       # noqa: BLE001 — one read of one mailbox, never the rest
+        _log.warning("coverage: %s unreadable for org=%s connection=%s; it vouches for nothing",
+                     what, org_id, connection_id, exc_info=True)
+        return default
 
 
 def _backfill_window(row, *, org_id: str, connection_id: str):

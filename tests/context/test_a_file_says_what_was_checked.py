@@ -14,6 +14,7 @@ receipt, and nothing is covered. Read only.
 """
 from __future__ import annotations
 
+import contextlib
 import inspect
 import json
 from datetime import datetime, timedelta, timezone
@@ -88,6 +89,10 @@ class _Scripted:
 
     def __init__(self, answers: dict):
         self._answers = answers
+
+    def begin_nested(self):
+        """Every read is a savepoint; a scripted connection has nothing to roll back."""
+        return contextlib.nullcontext()
 
     def execute(self, stmt, params=None):
         sql = str(stmt)
@@ -284,6 +289,9 @@ class _Recording:
 
     def __init__(self, conn):
         self._conn, self.params = conn, []
+
+    def begin_nested(self):
+        return self._conn.begin_nested()
 
     def execute(self, stmt, params=None):
         self.params.append(dict(params or {}))

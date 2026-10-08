@@ -5999,6 +5999,15 @@ yc2_w27_s10:
                       artifact: genios_engine/capture/coverage/window.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/capture/coverage/test_coverage_per_mailbox.py -q
                       depends_on: [M29.C5.L-data.V0.U01]
+                    - id: M29.C5.L-logic.V1.U06
+                      what: >
+                        Found by STEP-10's crosscheck (X3, 2026-10-08): `coverage_for_connection` caught every
+                        exception — safe, but silent, and on Postgres the failed statement aborted the transaction
+                        for every read after it. `capture/coverage/window.py` — each read in a savepoint, with a
+                        warning naming the tenant and the mailbox.
+                      artifact: genios_engine/capture/coverage/window.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/capture/coverage/test_a_mailbox_read_that_fails_says_so.py -q
+                      depends_on: [M29.C5.L-logic.V1.U02]
                 - level: 2
                   units:
                     - id: M29.C5.L-logic.V2.U03

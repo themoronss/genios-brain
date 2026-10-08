@@ -16,6 +16,7 @@ and one mailbox — one `connections` row, its address when the row has one — 
 """
 from __future__ import annotations
 
+import contextlib
 import json
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -134,6 +135,10 @@ class _TextScope:
 
     def execute(self, *_a, **_k):
         return self
+
+    def begin_nested(self):
+        """Every read is a savepoint (`window._optional`); this driver has nothing to roll back."""
+        return contextlib.nullcontext()
 
     def first(self):
         return self._row
