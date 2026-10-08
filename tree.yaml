@@ -6018,6 +6018,14 @@ yc2_w27_s10:
                       artifact: genios_engine/context/coverage_receipt.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_a_file_says_what_was_checked.py -q
                       depends_on: [M29.C5.L-logic.V1.U02]
+                    - id: M29.C5.L-logic.V2.U05
+                      what: >
+                        Found by STEP-10's crosscheck (X3, 2026-10-08): `receipt_for` and `_last_sync` caught every
+                        exception the same way. `context/coverage_receipt.py` — each read in a savepoint, with a
+                        warning naming the tenant (and the mailbox); the answer stays the safe one.
+                      artifact: genios_engine/context/coverage_receipt.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_a_receipt_that_cannot_be_read_says_so.py -q
+                      depends_on: [M29.C5.L-logic.V2.U03, M29.C5.L-logic.V1.U06]
                     - id: M29.C5.L-logic.V2.U04
                       what: >
                         Found replaying the golden set (2026-10-08, 03 F102): written coverage crashed the bundler
