@@ -1,7 +1,7 @@
 {
  "case_id": "F17",
  "source": "ideal_reader",
- "recorded_at": "fdd8b98a",
+ "recorded_at": "785ae938",
  "answers": {
   "0fd3a34371e1f13c46ff7ad151758b5ce0594e492c743cff3b222c98d1cfdf8e": {
    "site": "relevance",
@@ -120,20 +120,20 @@
    "output_tokens": 74,
    "model": "claude-haiku-4-5-20251001"
   },
-  "c0e3fc34b8141db789542a65c124979d34397c96f4afd2401995dd15db36a017": {
+  "ba2537db29f861190f78944ee76976f802c2aa3ce305fe367485f4a28d7cc516": {
    "site": "decider",
    "parsed": {
     "outcome": "defer",
     "scores": {
-     "sales.pb.account_research.fifteen_minute_account_brief": 4296,
-     "sales.pb.investor_relations.reopen_after_a_pass": 4594
+     "sales.pb.account_research.fifteen_minute_account_brief": 4389,
+     "sales.pb.investor_relations.reopen_after_a_pass": 4686
     },
     "confidence_bp": 4000,
     "rationale": "Defining the ideal customer profile does not answer what this person asked.",
     "missing": []
    },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.account_research.fifteen_minute_account_brief\": 4296, \"sales.pb.investor_relations.reopen_after_a_pass\": 4594}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
-   "input_tokens": 2645,
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.account_research.fifteen_minute_account_brief\": 4389, \"sales.pb.investor_relations.reopen_after_a_pass\": 4686}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
+   "input_tokens": 2648,
    "output_tokens": 70,
    "model": "claude-haiku-4-5-20251001"
   },

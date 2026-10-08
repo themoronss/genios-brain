@@ -1,7 +1,7 @@
 {
  "case_id": "F20",
  "source": "ideal_reader",
- "recorded_at": "fdd8b98a",
+ "recorded_at": "785ae938",
  "answers": {
   "011355b7521c3b2f07571e9da5c1d6cd304e6f9035c931d55a082b833493a45f": {
    "site": "resolution",
@@ -85,6 +85,23 @@
    "output_tokens": 227,
    "model": "claude-haiku-4-5-20251001"
   },
+  "6bc580a229081c51a0efe130fd8f333faacab74b4e31f3743f0e52fc165dd149": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "sales.pb.account_research.fifteen_minute_account_brief": 4387,
+     "sales.pb.investor_relations.reopen_after_a_pass": 4685
+    },
+    "confidence_bp": 4000,
+    "rationale": "Nothing here asks anything of the founder.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.account_research.fifteen_minute_account_brief\": 4387, \"sales.pb.investor_relations.reopen_after_a_pass\": 4685}, \"confidence_bp\": 4000, \"rationale\": \"Nothing here asks anything of the founder.\", \"missing\": []}",
+   "input_tokens": 2654,
+   "output_tokens": 62,
+   "model": "claude-haiku-4-5-20251001"
+  },
   "c16ad08e6e9893e175b7c691613f3e53bc21434f61b68c9fa6e09e50904792d5": {
    "site": "r1",
    "parsed": {
@@ -112,23 +129,6 @@
    "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
    "input_tokens": 843,
    "output_tokens": 74,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "d01de8156b542e0d9543b8e0cfd26383edd4b0cf2e4547e8586b06b87592ffb7": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "sales.pb.account_research.fifteen_minute_account_brief": 4296,
-     "sales.pb.investor_relations.reopen_after_a_pass": 4594
-    },
-    "confidence_bp": 4000,
-    "rationale": "Nothing here asks anything of the founder.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.account_research.fifteen_minute_account_brief\": 4296, \"sales.pb.investor_relations.reopen_after_a_pass\": 4594}, \"confidence_bp\": 4000, \"rationale\": \"Nothing here asks anything of the founder.\", \"missing\": []}",
-   "input_tokens": 2651,
-   "output_tokens": 62,
    "model": "claude-haiku-4-5-20251001"
   }
  }

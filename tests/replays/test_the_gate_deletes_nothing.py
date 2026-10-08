@@ -44,6 +44,12 @@ forms reaches a card yet (STEP-09's workstreams, STEP-12's expert pass).
 RESTATED BY STEP-09 (`yc2_w27_s09 · M27.C5`). F03 moved again — to a PASS: its introduction and both
 nudges are the investor's file, the connector anchors none of them, and one card is about Rahul. The
 gate's promise is unchanged on every case.
+
+RESTATED BY STEP-10 (`yc2_w27_s10 · M29.C6`, `06` D38). A delivery report the parser recognises is kept
+and read (`KEPT_AS_A_DELIVERY_REPORT`): F16's bounce, archived at N-03 until now, is emitted, and F16
+moves from lost at the gate to lost in REASONING — the bounce is on the fund's file and ends its wait,
+and no card shows a bounce yet (STEP-14). Three cases are new (`ADDED_AFTER`: F45–F47, `06` D40). The
+gate's promise is unchanged: nothing dropped, every other archive the same.
 """
 from __future__ import annotations
 
@@ -98,9 +104,16 @@ KEPT_BY_THE_BRIEF: dict[str, tuple[str, ...]] = {
     "F37": ("f37-intro",),
 }
 
+#: STEP-10 (`06` D38): the objects above that are a delivery report the parser recognises — kept and
+#: read since STEP-10, never archived (`capture/gate/rules.is_a_delivery_report`).
+KEPT_AS_A_DELIVERY_REPORT: dict[str, tuple[str, ...]] = {
+    "F16": ("f16-bounce",),
+}
+
 #: Cases added after STEP-03 measured the set, each by the step that added it.
 ADDED_AFTER: dict[str, str] = {"F41": "STEP-04", "F42": "STEP-04", "F43": "STEP-04",
-                               "F44": "STEP-04"}
+                               "F44": "STEP-04", "F45": "STEP-10", "F46": "STEP-10",
+                               "F47": "STEP-10"}
 
 #: Cases a later step moved, with their marking after it — (step, (kind, verdict, lost_at, cards)).
 #: STEP-05: a mail below the floor, the founder's own sent mail and an archive now enter memory.
@@ -126,6 +139,9 @@ MOVED_AFTER: dict[str, tuple[str, tuple[str, str, str | None, int]]] = {
     # STEP-09 (`yc2_w27_s09 · M27.C5`): the introduction and its two nudges are Rahul's file, never
     # the connector's, and one card is about him.
     "F03": ("STEP-09", ("must_detect", "pass", None, 1)),
+    # STEP-10 (`yc2_w27_s10 · M29.C3`, D38): the bounce report is kept and read, and it is on the
+    # fund's file — and no card shows a bounce yet (STEP-14).
+    "F16": ("STEP-10", ("must_detect", "fail", "reasoning", 0)),
 }
 
 #: The same measurement: (kind, verdict, lost_at, cards over every sweep) per case.
@@ -227,16 +243,17 @@ def test_the_gate_deletes_nothing_and_the_case_is_marked_as_before(case):
     dropped = [(x.source_object_id, x.reason) for x in run.landed if x.outcome == "dropped"]
     assert not dropped, f"{case.case_id}: the gate still deleted {dropped}"
 
-    kept = set(KEPT_BY_THE_BRIEF.get(case.case_id, ()))
+    kept = (set(KEPT_BY_THE_BRIEF.get(case.case_id, ()))
+            | set(KEPT_AS_A_DELIVERY_REPORT.get(case.case_id, ())))
     expected = {oid: code for oid, code in DROPPED_BEFORE.get(case.case_id, {}).items()
                 if oid not in kept}
     archived = {x.source_object_id: x.reason for x in run.landed if x.outcome == "archived"}
     assert archived == expected, (
         f"{case.case_id}: archived {archived}, but the gate dropped {expected} before STEP-03 "
-        f"(less what the company brief keeps: {sorted(kept)})")
+        f"(less what the company brief and a delivery report keep: {sorted(kept)})")
     landed = {x.source_object_id: x.outcome for x in run.landed}
     assert {oid: landed.get(oid) for oid in kept} == {oid: "emitted" for oid in kept}, (
-        f"{case.case_id}: the brief's senders did not land kept")
+        f"{case.case_id}: the brief's senders, or a delivery report, did not land kept")
 
     stored = {r.source_object_id: r for r in rows}
     assert set(stored) == set(expected), f"{case.case_id}: archived rows {sorted(stored)}"

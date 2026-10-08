@@ -1,7 +1,7 @@
 {
  "case_id": "F07",
  "source": "ideal_reader",
- "recorded_at": "5a28449d",
+ "recorded_at": "785ae938",
  "answers": {
   "04a81d79b4ce19e86f955295d36f5fe8b74d1baad72a23f40ef7428e3ecff218": {
    "site": "extraction",
@@ -113,18 +113,6 @@
    "output_tokens": 38,
    "model": "claude-haiku-4-5-20251001"
   },
-  "4ccf83550d612e83b605ec147149434586a5085e634ae21cfc829097e6d48991": {
-   "site": "narrator",
-   "parsed": {
-    "headline": "Reply to Leela at ferngrove.test",
-    "situation": "Leela at ferngrove.test wrote last and the next move is ours; nothing on record says what is still open.",
-    "artifact": "Hi Leela, thanks for your note. What would be most useful from us next?"
-   },
-   "raw": "{\"headline\": \"Reply to Leela at ferngrove.test\", \"situation\": \"Leela at ferngrove.test wrote last and the next move is ours; nothing on record says what is still open.\", \"artifact\": \"Hi Leela, thanks for your note. What would be most useful from us next?\"}",
-   "input_tokens": 1030,
-   "output_tokens": 64,
-   "model": "claude-haiku-4-5-20251001"
-  },
   "670a640f9e8425c68ee296489ca23e6a693bd9df3a1a069012710f23964408d7": {
    "site": "decider",
    "parsed": {
@@ -160,6 +148,18 @@
    "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4610, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4666, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 6200}, \"confidence_bp\": 5000, \"rationale\": \"Someone at this company asked us something and the ball is in our court.\", \"missing\": []}",
    "input_tokens": 2867,
    "output_tokens": 91,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "772860e7db3ee652f486ac597d7d63bce15e0ccffd299995b58a7b5cdad473e7": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Reply to Leela at ferngrove.test",
+    "situation": "Leela at ferngrove.test wrote last and the next move is ours; nothing on record says what is still open.",
+    "artifact": "Hi Leela, thanks for your note. What would be most useful from us next?"
+   },
+   "raw": "{\"headline\": \"Reply to Leela at ferngrove.test\", \"situation\": \"Leela at ferngrove.test wrote last and the next move is ours; nothing on record says what is still open.\", \"artifact\": \"Hi Leela, thanks for your note. What would be most useful from us next?\"}",
+   "input_tokens": 1034,
+   "output_tokens": 64,
    "model": "claude-haiku-4-5-20251001"
   },
   "79042e50981949007ec2077db0dabe1e1cc3977b4249cd8ea63f7718f6254874": {

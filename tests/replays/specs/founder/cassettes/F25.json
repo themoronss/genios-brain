@@ -1,8 +1,25 @@
 {
  "case_id": "F25",
  "source": "ideal_reader",
- "recorded_at": "fdd8b98a",
+ "recorded_at": "785ae938",
  "answers": {
+  "07d2e90e8efe0346ba52292d461a97fba8251307de0cfdd34297647a2af45235": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "reply": 5500,
+     "wait_unanswered_email": 5500
+    },
+    "confidence_bp": 4000,
+    "rationale": "Kavitha's reply asks us nothing: Kavitha will confirm by the 12th after reading the documents, so the next move is Kavitha's.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"reply\": 5500, \"wait_unanswered_email\": 5500}, \"confidence_bp\": 4000, \"rationale\": \"Kavitha's reply asks us nothing: Kavitha will confirm by the 12th after reading the documents, so the next move is Kavitha's.\", \"missing\": []}",
+   "input_tokens": 2017,
+   "output_tokens": 64,
+   "model": "claude-haiku-4-5-20251001"
+  },
   "09eeb9975aed988123fc63e8628e94cf86e23924702ac5fbfed354a5ff2ed921": {
    "site": "relevance",
    "parsed": {
@@ -312,23 +329,6 @@
    "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
    "input_tokens": 819,
    "output_tokens": 27,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "a532b7c78e5f4543f830747bc9d527f82242572edd24f692fc6687c88249917d": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "reply": 5500,
-     "wait_unanswered_email": 5500
-    },
-    "confidence_bp": 4000,
-    "rationale": "Kavitha's reply asks us nothing: Kavitha will confirm by the 12th after reading the documents, so the next move is Kavitha's.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"reply\": 5500, \"wait_unanswered_email\": 5500}, \"confidence_bp\": 4000, \"rationale\": \"Kavitha's reply asks us nothing: Kavitha will confirm by the 12th after reading the documents, so the next move is Kavitha's.\", \"missing\": []}",
-   "input_tokens": 2034,
-   "output_tokens": 64,
    "model": "claude-haiku-4-5-20251001"
   },
   "a67d3f2f10e39a5cece974efa2c9a075682bb2b1618b7c28d34956ea7819d16d": {

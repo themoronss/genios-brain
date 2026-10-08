@@ -1,20 +1,8 @@
 {
  "case_id": "F13",
  "source": "ideal_reader",
- "recorded_at": "fdd8b98a",
+ "recorded_at": "785ae938",
  "answers": {
-  "1860eae98ba05faad1d58d7266f8504996f25b8a7fa3707f8f203d35c15d8be4": {
-   "site": "narrator",
-   "parsed": {
-    "headline": "Share traction metrics with Tusker Capital",
-    "situation": "Mohit at tuskercap.test asked for your current traction metrics. The next move is ours; no date is on the request.",
-    "artifact": "Hi Mohit, sharing our current traction metrics as you asked - one page attached."
-   },
-   "raw": "{\"headline\": \"Share traction metrics with Tusker Capital\", \"situation\": \"Mohit at tuskercap.test asked for your current traction metrics. The next move is ours; no date is on the request.\", \"artifact\": \"Hi Mohit, sharing our current traction metrics as you asked - one page attached.\"}",
-   "input_tokens": 1574,
-   "output_tokens": 71,
-   "model": "claude-haiku-4-5-20251001"
-  },
   "206ab4845c1dc0292e88f778874e6661d97d02e21015085cb2973afe46e18bb8": {
    "site": "resolution",
    "parsed": {
@@ -231,6 +219,18 @@
    "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"traction metrics\", \"seed round\"], \"entity_mentions\": [{\"surface_form\": \"Mohit Sethi\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Mohit Sethi\", \"start_offset\": 249, \"end_offset\": 260}], \"confidence_bp\": 9000}, {\"surface_form\": \"Tusker Capital\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Tusker Capital\", \"start_offset\": 270, \"end_offset\": 284}], \"confidence_bp\": 9000}, {\"surface_form\": \"Nimbus Labs\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Nimbus Labs\", \"start_offset\": 0, \"end_offset\": 11}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Share the current traction metrics: monthly active teams, revenue run-rate and the pilot pipeline\", \"asked_by\": \"Mohit Sethi\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"could you share your current traction metrics\", \"start_offset\": 108, \"end_offset\": 153}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"Monday\", \"earliest\": \"2026-08-10T00:00:00+05:30\", \"latest\": \"2026-08-10T23:59:59+05:30\", \"certainty\": \"relative\", \"resolved_against\": \"2026-08-08T06:30:00Z\", \"evidence\": [{\"quote\": \"Monday\", \"start_offset\": 82, \"end_offset\": 88}]}], \"business_facts\": [{\"field\": \"person.title\", \"subject\": \"Mohit Sethi\", \"value\": \"Partner\", \"standing\": \"observed\", \"evidence\": [{\"quote\": \"Partner, Tusker Capital\", \"start_offset\": 261, \"end_offset\": 284}], \"confidence_bp\": 9000}, {\"field\": \"thread.objective\", \"subject\": \"thread\", \"value\": \"traction metrics before the partners' meeting\", \"standing\": \"judgement\", \"evidence\": [{\"quote\": \"could you share your current traction metrics\", \"start_offset\": 108, \"end_offset\": 153}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"traction metrics before the partners' meeting\"}, \"implied_actions\": [\"share the current traction metrics before Monday\"]}",
    "input_tokens": 5342,
    "output_tokens": 504,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "784d203b1f1e0ebf14c8923cb443f76be2a9d1c10b8f20732472979608d74757": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Share traction metrics with Tusker Capital",
+    "situation": "Mohit at tuskercap.test asked for your current traction metrics. The next move is ours; no date is on the request.",
+    "artifact": "Hi Mohit, sharing our current traction metrics as you asked - one page attached."
+   },
+   "raw": "{\"headline\": \"Share traction metrics with Tusker Capital\", \"situation\": \"Mohit at tuskercap.test asked for your current traction metrics. The next move is ours; no date is on the request.\", \"artifact\": \"Hi Mohit, sharing our current traction metrics as you asked - one page attached.\"}",
+   "input_tokens": 1579,
+   "output_tokens": 71,
    "model": "claude-haiku-4-5-20251001"
   }
  }

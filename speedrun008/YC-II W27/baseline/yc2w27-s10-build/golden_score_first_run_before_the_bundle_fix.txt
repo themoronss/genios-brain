@@ -1,0 +1,6 @@
+founder golden set   must-detect  13/35 (9 not expressible)   must-abstain  11/12 (0 not exercised)   forbidden outputs  4
+atlas replays 01–07  passing  4/80   blocked  3/80   not expressible  73
+must-detect cases lost at:  reasoning 12
+model answers:  ideal_reader (06-DECISIONS D12c)
+exit=0
+17 x 'could not group 1 published signal(s)' (AttributeError: 'SignalCoverage' object has no attribute 'get') in this run — 03 F102, fixed in M29.C5.L-logic.V2.U04; the replay after the fix: 0

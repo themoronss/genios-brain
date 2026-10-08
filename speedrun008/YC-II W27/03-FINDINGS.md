@@ -6,7 +6,7 @@ re-do): F26–F29, E8, and the corrections to F24 and E4. **Root-caused the same
 databases, for tree `yc2_w27`: F30–F37, E9–E11. **Measured 2026-10-06 by the golden set**
 (`STEP-01`, `yc2_w27/M19`) on a scratch database: F38–F49 and §F.1, the before-score. **Found
 2026-10-06 building STEP-02** (`yc2_w27_s02`) **and checking STEP-03**: F50–F55. **Found 2026-10-06
-building STEP-04** (`yc2_w27_s04`): F59–F68. **Found 2026-10-06 building STEP-05** (`yc2_w27_s05`): F69–F73. **Found 2026-10-07 checking STEP-06**: F74–F77. **Found 2026-10-07 checking STEP-07 and STEP-08**: F78–F79. **Found 2026-10-07 building STEP-07** (`yc2_w27_s07`): F80–F86; closed by it: F14, F71, F78, F79's half. **Found 2026-10-07 building STEP-09** (`yc2_w27_s09`): F96–F101; closed by it: F80, F81, F91, F92, F93, F101. A finding is never deleted; a correction is a new line that
+building STEP-04** (`yc2_w27_s04`): F59–F68. **Found 2026-10-06 building STEP-05** (`yc2_w27_s05`): F69–F73. **Found 2026-10-07 checking STEP-06**: F74–F77. **Found 2026-10-07 checking STEP-07 and STEP-08**: F78–F79. **Found 2026-10-07 building STEP-07** (`yc2_w27_s07`): F80–F86; closed by it: F14, F71, F78, F79's half. **Found 2026-10-07 building STEP-09** (`yc2_w27_s09`): F96–F101; closed by it: F80, F81, F91, F92, F93, F101. A finding is never deleted; a correction is a new line that **Found 2026-10-07/08 building STEP-10** (`yc2_w27_s10`): F102–F118; closed by it: F20, F102, F103, F116.
 says what it corrects.
 
 ---
@@ -34,7 +34,7 @@ says what it corrects.
 | F17 | The card copy prompt carries real names and a salesperson persona | `[CODE]` `deliver/render.py:750, 767` | `STEP-14` |
 | F18 | A fallback asserts money where there is none | `[PROD]` *"nsrcel — a dated payment obligation is open"*; the corpus gate is any `commitment.due_at` | `STEP-14` |
 | F19 | Screen reminders are built and hidden | `[CODE]` `reason/moments/guards.py:68-71`; `[PROD]` 65 hidden | `STEP-14`, `06` D8 |
-| F20 | Bounces never become delivery failures | `[PROD]` 5 junked, 8 parked | `STEP-10`, `STEP-18` B6 |
+| F20 | Bounces never become delivery failures | `[PROD]` 5 junked, 8 parked | ✅ `STEP-10` (`yc2_w27_s10/M29.C3`): a report is kept, read and never judged junk, its attached original is not a document, the bounce is on the fund's file and ends its wait — golden F16 and F47; `STEP-18` B6 with it |
 | F21 | A 30-day TTL on emitted payloads strands any event not drained within a month | `[CODE]` `capture/pipeline.py:179-187`; `context/runner.py:242` | `STEP-03` |
 | F22 | Intro, information, approval and investor-update requests never open a loop | `[CODE]` `contracts/open_loop.py:24` vs `observations/kinds.yaml` | `STEP-09` |
 | F23 | The golden replays cannot fail or pass on the engine — the harness never calls it | `[CODE]` `tests/replays/test_golden_replays.py:34-48` | `STEP-01` |
@@ -117,6 +117,23 @@ says what it corrects.
 | F99 | A watched portal's file reaches the decider with none of its notices' words: F02's `account_admin` on `startupsetu.gov.test` is shown *"this is a company: startupsetu.gov.test"* and nothing else under WHO AND WHAT, so the faithful decider defers a 7-day ask (*"Upload it on the StartupSetu portal within 7 days, or the application will be closed"*) that is an open loop on the same file | `[TEST]` the STEP-09 re-record, F02 (the decider's prompt) | open — `STEP-12` (the file's dossier in front of the expert) |
 | F100 | The statement counter (`platform/table_coverage._statements`) counts a prose string that begins with *"with"* as SQL: a health check's measured line *"; N with mail outside their file"* moved the pinned statement count by one | `[TEST]` building `M27.C4.U03` (the per-file measure showed `pipeline_health` 24 → 25 with no SQL added) | open — the line was reworded; the counter is unchanged (`STEP-18`) |
 | F101 | **The history replay filed what the drain called noise.** `context/backfill.backfill_correlations` recovers an event's nodes from what it created and never asked the drain's verdict: a newsletter, a connector's mailing, an out-of-office — read, recorded `email_noise:*`, kept out of every file by the drain — were filed by the replay `api/routes._replay_l2_history` runs after EVERY backfill drain (STEP-08's re-sync among them) and by every rebuild (new deal nodes, an operator's repair). Live `[]`, replayed `['editor@letters.test']`; and a connector's newsletter naming someone it introduced was recorded as a nudge and rebuilt into their file (the STEP-09 crosscheck's X1) | `[TEST]` `baseline/yc2w27-s09-build/probe_f101.py`, `probe_x1_nudge_from_noise.py`, before and after (`probe_f101_and_x1.txt`) | ✅ fixed in `STEP-09` (`M27.C1.L-logic.V1.U05`, `V1.U04` follow-ups): the replay skips an event whose memory record is noise; a nudge is read only from correspondence. ⛔ It was live before STEP-09 — any backfill drain since L3-0A could have filed noise: a read-only count (emitted events with an `email_noise:*` observation AND a correlation membership) says how much production holds |
+| F102 | **A bundle crashed on the coverage it was meant to merge.** Per-signal coverage was NULL on every signal (`STEP-18` B5), so `capture/esqe/bundle.merged_coverage` had only ever met `None`; the day STEP-10 wrote coverage, `.get` on the typed `SignalCoverage` lost every bundle of a covered signal — *"could not group 1 published signal(s)"*, 17 times in one golden run, with no test red | `[TEST]` the golden board run on the STEP-10 branch | ✅ fixed — `yc2_w27_s10/M29.C5.L-logic.V2.U04` |
+| F103 | Both reply times were read off one timeline per counterparty, merged across every thread: a new topic they opened on another thread counted as their reply, and our one-day answer to their second thread was measured from their first mail a week before | `[TEST]` building the file's numbers | ✅ fixed — `M29.C1.L-logic.V2.U06`: measured inside each conversation |
+| F104 | The compiled corpus lane never receives baselines: `ContextAdapter` reads `metadata["baselines"]`, which only the legacy lane writes, so every corpus `{baseline: …}` threshold answers UNKNOWN there | `[CODE]` `packs/compiler/context_adapter.py:222-224, 405-421`; `reason/adapters/legacy_context.py:159`; a probe | open — L2 Qualification |
+| F105 | Two executable corpus rules compare unlike things: `buying-signal.yaml:454` hours against a baseline in days; `investor-conversation.yaml:336` a 0–2 engagement ratio against 0.5 × days — it would fire on almost every open conversation the day baselines resolve | `[CORPUS]` | open — the authors |
+| F106 | The corpus book cannot be regenerated (`_tools/render.py:385`, KeyError `l2_situation_types`), is already stale at HEAD (85 entries), and `admit.py --check` shows 3 drifted situations | `[TEST]` | open — the authors |
+| F107 | Your reply time exists now, and the reply-owed threshold still uses a fixed two days — `outreach_situations.py:758` `_REPLY_OWED_AFTER_DAYS = 2`, its comment at `:818` saying nothing derives our cadence | `[CODE]` | open — `06` D42 |
+| F108 | A completed multi-round backfill reads PARTIAL: only its last round sets `cursor_exhausted`, and `window_coverage_gaps` needs every run exhausted — *"a tail was never read"* on a finished backfill. Conservative (fewer absence claims); the file's receipt does not share it | `[CODE]` `capture/coverage/window.py:296`; `sync_runner.py:854`; a probe | open — `STEP-18` |
+| F109 | `connections.external_account_id` is never written, so a file's receipt names a mailbox by its connection, never by its address | `[CODE]` `api/routes.py:856` | open — `STEP-18` |
+| F110 | Coverage compares objects with messages: `scanned` counts a message and each attachment, the provider's total counts messages — capped and labelled an estimate since STEP-10; counting listed messages needs a summary field and a column | `[CODE]` `composio.py:547`; `sync_runner.py:699` | open — a migration |
+| F111 | The campaign rule counts a colleague at a declared domain as a recipient: only exact addresses of ours skip `thread.last_outbound`, so `campaign.contacted` counts her (waves do not) | `[CODE]` `context/pipeline.py:1351, 1373`; `correlation_conversation.py:243` | open — `STEP-18` |
+| F112 | A pitch sent Bcc forms no wave and no campaign: the connector keeps To and Cc only | `[CODE]` `composio.py:368, 625, 710` | open — declared |
+| F113 | A file's history is per domain since STEP-10, but its prior outcome and card verdict are keyed by anchor only, and are the latest overall rather than the prior generation's | `[CODE]` `context/correlation_history.py:167-197, 258-291` | open — `STEP-11` |
+| F114 | A connector that only introduces has no file, so its rate (introductions, replies, calls) shows nowhere | `[CODE]` `context/workstreams.py`; a probe | open — `06` D43 |
+| F115 | Four capture tests fail under concurrent load and pass alone — `tests/capture/test_unread_reread_pg.py` (three) and the scheduler's 24-hour cursor round trip (read as 24.17 h) | `[TEST]` a five-lane guard run; the capture suite alone: 5,872 passed | open — `STEP-17` |
+| F116 | The scratch Postgres segfaulted twice when its 64 MB `/dev/shm` ran out under parallel query (*"could not resize shared memory segment"*) and every running suite failed for the length of the recovery | `[ENV]` the container's log, 7 Oct 06:57 and 18:46 UTC | ✅ parallel query off on the scratch server; `--shm-size=1g` when it is recreated |
+| F117 | The connector's fast path still asks the LLM filter about a delivery report, and downloads a kept list entry's attachments twice | `[CODE]` `composio.py:469, 502-503, 521-536, 550`; probes | open — `STEP-18` |
+| F118 | A delivery report named only in its body and marked `Auto-Submitted` is filed as an out-of-office: `availability_marker` exempts reports by subject only. Gmail names its reports in the subject | `[CODE]` `capture/gate/rules.py:55`; a probe | open — declared |
 
 
 ## B · False alarms — things that looked wrong and are not
@@ -236,7 +253,7 @@ ideal reader's recorded answers (cassettes recorded at `b47239c9`, `06-DECISIONS
 spend). `scripts/golden_score.py --assert-recorded` holds the two lines below to every later run.
 
 ```
-founder golden set   must-detect  12/32 (8 not expressible)   must-abstain  11/12 (0 not exercised)   forbidden outputs  4
+founder golden set   must-detect  13/35 (9 not expressible)   must-abstain  11/12 (0 not exercised)   forbidden outputs  4
 atlas replays 01–07  passing  4/80   blocked  3/80   not expressible  73
 ```
 
@@ -303,16 +320,31 @@ added one is a person introduced, a portal's file, or the resolution site readin
 | F08 | Simon and Omar are in memory with their own files (0 before); each one's *"unanswered email"* is decided — deferred, `brief only` |
 | F09 | unchanged — the connector's own ask is its own file, in `fundraising` |
 
+**Re-recorded 2026-10-08 by `STEP-10`** (`yc2_w27_s10 · M29.C6`). The runner now seats the founder's
+mailboxes as production has them (one `connections` row per connection a case lands through — `STEP-10`
+§8.3 N9), and a case may land mail in a second mailbox. Fifteen cassettes missed and were re-recorded
+from the ideal reader (no spend), each diff read (`baseline/yc2w27-s10-build/cassette_diff.txt`): ten
+answers are the same answer under a moved prompt (the n beside a reply time, the renamed send interval,
+history per domain); the decider's formula scores moved by about 90 bp where a reply-time input left
+the prompt (F17, F20, F24, F35, F37); F16's bounce report is read now, so its extraction is asked
+(D38); F24 and F37 reach three new *first response overdue* decisions, licensed by the mailbox's sync
+runs that the window now sees (the sync ledger is stamped at the case's instant); F03's two bundle
+narrations are no longer asked. Verdicts: F16 moves from *lost at the gate* to *lost in reasoning* —
+kept and read, on the fund's file, ending its wait, and no card shows a bounce yet (`STEP-14`). Three
+cases are new (rows 45–47, `06` D40): **F45**, your own reply time at several speeds — `brief only`;
+**F46**, an answer in the founder's other mailbox — passes; **F47**, a bounce in the shape Gmail sends
+it — lost in reasoning as F16 is. Nothing else moved.
+
 The table below is the board's state now.
 
 | | |
 |---|---|
-| must-detect that pass · 12 | F03 (an investor introduced by the connector — STEP-09), F04, F05, F06 (an introduced contact's reply owed — STEP-05), F10 (an investor's follow-up — STEP-05), F12, F13, F25 (one offer, one card), F26 (a partner's dated proposal — STEP-05), F28, F42, F44 (a Gmail investor's ask — STEP-05) |
-| must-detect lost at the gate · 1 | F16 (a bounce from an automated sender) — five before STEP-07: F01, F02, F03, F09 are kept and read now (the company brief) |
+| must-detect that pass · 13 | F03 (an investor introduced by the connector — STEP-09), F04, F05, F06 (an introduced contact's reply owed — STEP-05), F10 (an investor's follow-up — STEP-05), F12, F13, F25 (one offer, one card), F26 (a partner's dated proposal — STEP-05), F28, F42, F44 (a Gmail investor's ask — STEP-05), F46 (an answer in the other mailbox — STEP-10) |
+| must-detect lost at the gate · 0 | — F16's bounce is kept and read since STEP-10 (D38); five before STEP-07: F01, F02, F03, F09 are kept and read now (the company brief) |
 | must-detect lost before memory · 0 | — (ten before STEP-05) |
-| must-detect lost in reasoning · 10 | F01 (the portal's file is read as an investor in `fundraising` — F94), F02 (the portal's file reaches the decider with none of its notices' words — F99), F07 (two cards and *"happened"*), F09 (the fundraising domain is not active — STEP-07), F11 (no situation reaches the decider), F17 (an accelerator framed as an investor), F19 (no card names Ekta), F24 (no card names the review deck), F27 and F29 (one ask, several cards) |
+| must-detect lost in reasoning · 12 | F01 (the portal's file is read as an investor in `fundraising` — F94), F02 (the portal's file reaches the decider with none of its notices' words — F99), F07 (two cards and *"happened"*), F09 (the fundraising domain is not active — STEP-07), F11 (no situation reaches the decider), F16 and F47 (a bounce on the fund's file, and no card shows one — STEP-14), F17 (an accelerator framed as an investor), F19 (no card names Ekta), F24 (no card names the review deck), F27 and F29 (one ask, several cards) |
 | must-detect with no stage to read · 1 | F15 (the founder's outreach wave, typed `anomaly`) |
-| not expressible · 8 | F08, F14, F18, F20–F23 (`brief only` — `STEP-15`), F30 (the screen door) |
+| not expressible · 9 | F08, F14, F18, F20–F23, F45 (`brief only` — `STEP-15`), F30 (the screen door) |
 | must-abstain that pass · 11 | F31 (the assignment), F32 (archived, and Lakshya's social read and not carded — STEP-07), F33, F34 (archived), F35, F36, F37 (the connector is never the person to reply to — since STEP-09 no reply situation about it arises at all), F38 (an answer elsewhere closes the ask), F39, F41, F43 (the founder's own mail, in memory, not carded) |
 | must-abstain not exercised · 0 | — (four before STEP-05) |
 | must-abstain that fail · 1 | F40 (a meeting nobody confirmed, recapped) |

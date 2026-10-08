@@ -1,7 +1,7 @@
 {
  "case_id": "F16",
  "source": "ideal_reader",
- "recorded_at": "fdd8b98a",
+ "recorded_at": "785ae938",
  "answers": {
   "33eedb9074ffe5269738a2776b2a3b0ce98d94aae8ca3d8d5ac4f681cda1708f": {
    "site": "extraction",
@@ -94,6 +94,29 @@
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Nimbus Labs - raising our seed round\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
    "input_tokens": 961,
    "output_tokens": 42,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "fa0e35e85c63dbc271331748fc9e09eef6bf5d394752191332ce840559baf8e2": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "negative",
+    "topics": [
+     "delivery failure"
+    ],
+    "exchange_intent": {
+     "category": "automated",
+     "tone": "neutral",
+     "formality": "templated",
+     "addressed_personally": false,
+     "human_authored": false,
+     "asks_for_reply": false,
+     "engagement": "high"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"negative\", \"topics\": [\"delivery failure\"], \"exchange_intent\": {\"category\": \"automated\", \"tone\": \"neutral\", \"formality\": \"templated\", \"addressed_personally\": false, \"human_authored\": false, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
+   "input_tokens": 5333,
+   "output_tokens": 67,
    "model": "claude-haiku-4-5-20251001"
   }
  }

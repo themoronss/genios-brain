@@ -1,8 +1,37 @@
 {
  "case_id": "F24",
  "source": "ideal_reader",
- "recorded_at": "fdd8b98a",
+ "recorded_at": "785ae938",
  "answers": {
+  "353e108922b92a3d6dc3ec20f28dfa836682d1e97c9ea92c8b99801dd7e88f4b": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 937,
+   "output_tokens": 74,
+   "model": "claude-haiku-4-5-20251001"
+  },
   "45c4dc9167983d42864f6628967aeebb6123b3b1621f1ed5e506754289f4293c": {
    "site": "r1",
    "parsed": {
@@ -253,23 +282,6 @@
    "output_tokens": 370,
    "model": "claude-haiku-4-5-20251001"
   },
-  "7b81910b253abefe1ed92f71a067436e3751bd7cb5272c2bc4f2b498ec83a3ec": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "sales.pb.account_research.fifteen_minute_account_brief": 4296,
-     "sales.pb.investor_relations.reopen_after_a_pass": 4594
-    },
-    "confidence_bp": 4000,
-    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.account_research.fifteen_minute_account_brief\": 4296, \"sales.pb.investor_relations.reopen_after_a_pass\": 4594}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
-   "input_tokens": 2650,
-   "output_tokens": 70,
-   "model": "claude-haiku-4-5-20251001"
-  },
   "8faf48640a0c8f9067a9750815ba6a775839f5e973453f3807d81048976260cc": {
    "site": "r1",
    "parsed": {
@@ -309,6 +321,23 @@
    "raw": "{\"headline\": \"Send Divya Raman Assignment 3, the unit economics sheet\", \"situation\": \"Divya Raman wrote 12 days ago: Assignment 3 (the unit economics sheet) is due on 15 Sep, 11:59 pm IST.\", \"artifact\": \"Hi Divya, attaching Assignment 3, the unit economics sheet. Thanks, Arjun\"}",
    "input_tokens": 1926,
    "output_tokens": 69,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "95c56e0e545cd0a75021c8006195ea8db581d3026cc240e75d2e642573d39011": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "sales.pb.account_research.fifteen_minute_account_brief": 4387,
+     "sales.pb.investor_relations.reopen_after_a_pass": 4685
+    },
+    "confidence_bp": 4000,
+    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.account_research.fifteen_minute_account_brief\": 4387, \"sales.pb.investor_relations.reopen_after_a_pass\": 4685}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
+   "input_tokens": 2653,
+   "output_tokens": 70,
    "model": "claude-haiku-4-5-20251001"
   },
   "c6b247f8bdb28343bbd0a502d2f408694a19a9aad9452009813e49320456db43": {
@@ -358,6 +387,32 @@
    "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 4800}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
    "input_tokens": 2020,
    "output_tokens": 42,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "f729ce309db0f669d6ba833f9f0f7f5f5334a24ab4b106267996b0195468b17a": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "customer_support.pb.breach_prevention.work_the_at_risk_list_hourly": 4916,
+     "customer_support.pb.expectation_setting.promise_the_process_not_the_outcome": 5112,
+     "customer_support.pb.response_drafting.answer_first_then_everything_else": 5600,
+     "customer_support.pb.ticket_triage.blast_radius_before_depth": 4858,
+     "customer_support.pb.ticket_triage.entitlement_before_complaint": 4858,
+     "customer_support.pb.ticket_triage.hand_off_with_the_assumption": 4802,
+     "customer_support.pb.ticket_triage.name_the_finishing_queue": 4830,
+     "customer_support.pb.ticket_triage.one_question_then_route": 4802,
+     "customer_support.pb.ticket_triage.state_the_coin_flip": 4802,
+     "customer_support.pb.ticket_triage.two_questions_in_order": 4858,
+     "customer_support.pb.ticket_triage.workaround_test": 4830
+    },
+    "confidence_bp": 4500,
+    "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"customer_support.pb.breach_prevention.work_the_at_risk_list_hourly\": 4916, \"customer_support.pb.expectation_setting.promise_the_process_not_the_outcome\": 5112, \"customer_support.pb.response_drafting.answer_first_then_everything_else\": 5600, \"customer_support.pb.ticket_triage.blast_radius_before_depth\": 4858, \"customer_support.pb.ticket_triage.entitlement_before_complaint\": 4858, \"customer_support.pb.ticket_triage.hand_off_with_the_assumption\": 4802, \"customer_support.pb.ticket_triage.name_the_finishing_queue\": 4830, \"customer_support.pb.ticket_triage.one_question_then_route\": 4802, \"customer_support.pb.ticket_triage.state_the_coin_flip\": 4802, \"customer_support.pb.ticket_triage.two_questions_in_order\": 4858, \"customer_support.pb.ticket_triage.workaround_test\": 4830}, \"confidence_bp\": 4500, \"rationale\": \"A person asked us for something; none of the support plays fits, and answering first is the closest.\", \"missing\": []}",
+   "input_tokens": 4170,
+   "output_tokens": 242,
    "model": "claude-haiku-4-5-20251001"
   }
  }

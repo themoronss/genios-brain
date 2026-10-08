@@ -46,7 +46,8 @@ import pytest
 
 from tests.replays import cassettes
 from tests.replays.founder_case import CASSETTE_DIR, load_cases
-from tests.replays.test_the_gate_deletes_nothing import DROPPED_BEFORE, KEPT_BY_THE_BRIEF
+from tests.replays.test_the_gate_deletes_nothing import (DROPPED_BEFORE, KEPT_AS_A_DELIVERY_REPORT,
+                                                         KEPT_BY_THE_BRIEF)
 
 CASES = {c.case_id: c for c in load_cases()}
 MEASURED = ("F01", "F02", "F03", "F09", "F16", "F32")
@@ -242,6 +243,7 @@ def test_the_deleted_mail_comes_back_with_its_content(case_id):
 
         rows, traces = _rows(engine, org), _resync_trace(engine, org)
         brief = set(KEPT_BY_THE_BRIEF.get(case_id, ()))
+        report = set(KEPT_AS_A_DELIVERY_REPORT.get(case_id, ()))
         for oid, code in objects.items():
             old = rows[deleted[oid]]
             assert old.outcome == "superseded", (oid, old)
@@ -253,6 +255,9 @@ def test_the_deleted_mail_comes_back_with_its_content(case_id):
             if oid in brief:
                 assert (new.outcome, new.attention, new.attention_reason, new.was_read) == (
                     "emitted", "deep", "W-07", True), (oid, new)
+            elif oid in report:        # STEP-10 (D38): a delivery report is kept and read
+                assert (new.outcome, new.attention, new.was_read) == (
+                    "emitted", "deep", True), (oid, new)
             else:
                 assert (new.outcome, new.attention, new.attention_reason, new.was_read) == (
                     "archived", "archive", code, False), (oid, new)

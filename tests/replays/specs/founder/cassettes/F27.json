@@ -1,7 +1,7 @@
 {
  "case_id": "F27",
  "source": "ideal_reader",
- "recorded_at": "fdd8b98a",
+ "recorded_at": "785ae938",
  "answers": {
   "09d1bc43557715dfb5f5c466cab71bc0f7a0dad7b8d17ee636f9bfed4ab93ebb": {
    "site": "decider",
@@ -82,18 +82,6 @@
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"no readable text\", \"category\": \"unknown\", \"human_authored\": null, \"asks_for_reply\": null}]}",
    "input_tokens": 934,
    "output_tokens": 38,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "32293692b03d0e10cd5d6764e6e29ea4651cea5020157630e90f1289596146b1": {
-   "site": "narrator",
-   "parsed": {
-    "headline": "Confirm webhook support for Cleanwave",
-    "situation": "Varun at Cleanwave asked whether our agent can read their webhook events before you meet. The next move is ours.",
-    "artifact": "Hi Varun, thanks for the docs. On whether our agent can read your webhook events: [our answer]. We can go through it when we meet."
-   },
-   "raw": "{\"headline\": \"Confirm webhook support for Cleanwave\", \"situation\": \"Varun at Cleanwave asked whether our agent can read their webhook events before you meet. The next move is ours.\", \"artifact\": \"Hi Varun, thanks for the docs. On whether our agent can read your webhook events: [our answer]. We can go through it when we meet.\"}",
-   "input_tokens": 1564,
-   "output_tokens": 82,
    "model": "claude-haiku-4-5-20251001"
   },
   "48e838c8ac639c0de16eb7be21e2da3d2f26a39f42c244cb1077d944f72153cf": {
@@ -385,6 +373,18 @@
    "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
    "input_tokens": 831,
    "output_tokens": 51,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "f7ca79db2b919d1fb581dc143fff56f266ea478516c52a28791d36ce69c30c0d": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Confirm webhook support for Cleanwave",
+    "situation": "Varun at Cleanwave asked whether our agent can read their webhook events before you meet. The next move is ours.",
+    "artifact": "Hi Varun, thanks for the docs. On whether our agent can read your webhook events: [our answer]. We can go through it when we meet."
+   },
+   "raw": "{\"headline\": \"Confirm webhook support for Cleanwave\", \"situation\": \"Varun at Cleanwave asked whether our agent can read their webhook events before you meet. The next move is ours.\", \"artifact\": \"Hi Varun, thanks for the docs. On whether our agent can read your webhook events: [our answer]. We can go through it when we meet.\"}",
+   "input_tokens": 1568,
+   "output_tokens": 82,
    "model": "claude-haiku-4-5-20251001"
   }
  }

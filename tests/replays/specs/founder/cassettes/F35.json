@@ -1,7 +1,7 @@
 {
  "case_id": "F35",
  "source": "ideal_reader",
- "recorded_at": "fdd8b98a",
+ "recorded_at": "785ae938",
  "answers": {
   "03cfcd606ae323fb2c023e94c21c9e101624c37995e62683c859730973235d8f": {
    "site": "extraction",
@@ -69,6 +69,23 @@
    "output_tokens": 227,
    "model": "claude-haiku-4-5-20251001"
   },
+  "35950916bb6f3ab8a7faac19c47ab5ef4520709d352c348253106311658ebeaf": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "sales.pb.account_research.fifteen_minute_account_brief": 4390,
+     "sales.pb.investor_relations.reopen_after_a_pass": 4688
+    },
+    "confidence_bp": 4000,
+    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.account_research.fifteen_minute_account_brief\": 4390, \"sales.pb.investor_relations.reopen_after_a_pass\": 4688}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
+   "input_tokens": 2653,
+   "output_tokens": 70,
+   "model": "claude-haiku-4-5-20251001"
+  },
   "48304c0be0a74a3f1e779ba31ec45313c3738ea2aed2256a8463b630a990cb0f": {
    "site": "resolution",
    "parsed": {
@@ -112,23 +129,6 @@
    "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
    "input_tokens": 843,
    "output_tokens": 74,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "6c62ec735a24c88e5a970c8ebf74f055c79153ad6a4ba1776dca713a0febaaa0": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "sales.pb.account_research.fifteen_minute_account_brief": 4299,
-     "sales.pb.investor_relations.reopen_after_a_pass": 4597
-    },
-    "confidence_bp": 4000,
-    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.account_research.fifteen_minute_account_brief\": 4299, \"sales.pb.investor_relations.reopen_after_a_pass\": 4597}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
-   "input_tokens": 2650,
-   "output_tokens": 70,
    "model": "claude-haiku-4-5-20251001"
   }
  }

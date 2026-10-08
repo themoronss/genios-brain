@@ -1,7 +1,7 @@
 {
  "case_id": "F42",
  "source": "ideal_reader",
- "recorded_at": "fdd8b98a",
+ "recorded_at": "785ae938",
  "answers": {
   "1a822ae5c22d3a3d12384ed867ee69e740c1ea83647b481dd67c541e6e19fa05": {
    "site": "junk_gate_batch",
@@ -187,7 +187,7 @@
    "output_tokens": 40,
    "model": "claude-haiku-4-5-20251001"
   },
-  "6fb0d8490ea56abacd59cd8a212a4f169de7ea06fb6b58cbb0ecee99bd846bc5": {
+  "bfe6737ca8d8134d3217f2ad2c7b17dd4e765688a5d5c5f41f4cbce3e1b8b66c": {
    "site": "narrator",
    "parsed": {
     "headline": "Share traction metrics with Lumen Ventures",
@@ -195,7 +195,7 @@
     "artifact": "Hi Manav, sharing our current traction metrics as you asked - one page attached."
    },
    "raw": "{\"headline\": \"Share traction metrics with Lumen Ventures\", \"situation\": \"Manav at lumenvc.test asked for your current traction metrics before Monday's partners' meeting. The next move is ours.\", \"artifact\": \"Hi Manav, sharing our current traction metrics as you asked - one page attached.\"}",
-   "input_tokens": 1585,
+   "input_tokens": 1590,
    "output_tokens": 72,
    "model": "claude-haiku-4-5-20251001"
   },

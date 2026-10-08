@@ -1,7 +1,7 @@
 {
  "case_id": "F40",
  "source": "ideal_reader",
- "recorded_at": "fdd8b98a",
+ "recorded_at": "785ae938",
  "answers": {
   "194f01fba9498e17896b9808dd59d532e37ec53c43ea03255c6b7cf471efc618": {
    "site": "decider",
@@ -128,18 +128,6 @@
    "output_tokens": 109,
    "model": "claude-haiku-4-5-20251001"
   },
-  "6aceccb587581576c864ece0c272ff0d0d6650ba305bb3f509f3230c0b9262ca": {
-   "site": "narrator",
-   "parsed": {
-    "headline": "Meeting with meera@tallgrass.test is clear",
-    "situation": "Nothing open is on record with meera@tallgrass.test.",
-    "artifact": "Nothing is missing on record; confirm the agenda."
-   },
-   "raw": "{\"headline\": \"Meeting with meera@tallgrass.test is clear\", \"situation\": \"Nothing open is on record with meera@tallgrass.test.\", \"artifact\": \"Nothing is missing on record; confirm the agenda.\"}",
-   "input_tokens": 675,
-   "output_tokens": 48,
-   "model": "claude-haiku-4-5-20251001"
-  },
   "807b6330b6dcb5a0f0c67d302a86c263c5ea554ed03032dc5f4f20af296c66bb": {
    "site": "decider",
    "parsed": {
@@ -160,6 +148,18 @@
    "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.agenda_preparation.decision_first_agendas\": 4671, \"admin.pb.briefing_and_preparation.one_page_brief_before_every_external_meeting\": 4805, \"admin.pb.calendar_management.calendar_as_strategy_not_tetris\": 4671, \"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4814, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 6200, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 5063, \"admin.pb.meeting_scheduling.schedule_once_correctly\": 4804}, \"confidence_bp\": 5000, \"rationale\": \"The meeting was on the calendar; what, if anything, was promised is open.\", \"missing\": []}",
    "input_tokens": 3563,
    "output_tokens": 161,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "ab00f014a6f878bd444e700a23cfadcb0c31f22b86a9d8ea812e44e48be9d5de": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Meeting with meera@tallgrass.test is clear",
+    "situation": "Nothing open is on record with meera@tallgrass.test.",
+    "artifact": "Nothing is missing on record; confirm the agenda."
+   },
+   "raw": "{\"headline\": \"Meeting with meera@tallgrass.test is clear\", \"situation\": \"Nothing open is on record with meera@tallgrass.test.\", \"artifact\": \"Nothing is missing on record; confirm the agenda.\"}",
+   "input_tokens": 680,
+   "output_tokens": 48,
    "model": "claude-haiku-4-5-20251001"
   },
   "d280329e4f18f1deadca7672b73184e3ba70ea6530993b844141eb0dabec7298": {

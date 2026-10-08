@@ -1,7 +1,7 @@
 {
  "case_id": "F37",
  "source": "ideal_reader",
- "recorded_at": "5a28449d",
+ "recorded_at": "785ae938",
  "answers": {
   "10c4150bc68254700915584d7e2f1818b7148d53fd3c954af50d406f239b9c5a": {
    "site": "decider",
@@ -134,6 +134,23 @@
    "output_tokens": 166,
    "model": "claude-haiku-4-5-20251001"
   },
+  "670b9ba3b0086f87636050376eb6607dc934b62d68905dfd95cf6c94bd77f589": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "sales.pb.account_research.fifteen_minute_account_brief": 4431,
+     "sales.pb.investor_relations.reopen_after_a_pass": 4729
+    },
+    "confidence_bp": 4000,
+    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.account_research.fifteen_minute_account_brief\": 4431, \"sales.pb.investor_relations.reopen_after_a_pass\": 4729}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
+   "input_tokens": 2634,
+   "output_tokens": 70,
+   "model": "claude-haiku-4-5-20251001"
+  },
   "74704ba90b6d9f84b8532b40bb240c5f3008f076705b7fa184dc783adf85c296": {
    "site": "extraction",
    "parsed": {
@@ -230,23 +247,6 @@
    "output_tokens": 24,
    "model": "claude-haiku-4-5-20251001"
   },
-  "ac5ad44aa082010f615d66249a4ae488c2e51d46ef9952a1311d343cbdf19d1d": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "sales.pb.account_research.fifteen_minute_account_brief": 4447,
-     "sales.pb.investor_relations.reopen_after_a_pass": 4745
-    },
-    "confidence_bp": 4000,
-    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.account_research.fifteen_minute_account_brief\": 4447, \"sales.pb.investor_relations.reopen_after_a_pass\": 4745}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
-   "input_tokens": 2626,
-   "output_tokens": 70,
-   "model": "claude-haiku-4-5-20251001"
-  },
   "b3a3dee03e04da7913f99cd9533fbc010be068ac3998507933ebc185eee8b3a8": {
    "site": "resolution",
    "parsed": {
@@ -261,23 +261,6 @@
    "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"I'll let you two take it from here.\", \"start_offset\": 199, \"end_offset\": 234, \"speaker_role_said\": \"unknown\"}",
    "input_tokens": 1337,
    "output_tokens": 47,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "c1470bccbbc65eef33665ec6e9f47c4c09cda2489377871ad9115fc5d87da2b1": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "sales.pb.account_research.fifteen_minute_account_brief": 4330,
-     "sales.pb.investor_relations.reopen_after_a_pass": 4627
-    },
-    "confidence_bp": 4000,
-    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.account_research.fifteen_minute_account_brief\": 4330, \"sales.pb.investor_relations.reopen_after_a_pass\": 4627}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
-   "input_tokens": 2631,
-   "output_tokens": 70,
    "model": "claude-haiku-4-5-20251001"
   },
   "dad61afef801144c21f13484037ccf9f09bb2cba83b28f2dc88ec6a0c5dbceec": {
@@ -365,6 +348,75 @@
    "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
    "input_tokens": 843,
    "output_tokens": 74,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "e32c3e77088255f4fea73da9cc8929b9033236403806cea3b26118712532169f": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "customer_support.pb.breach_prevention.work_the_at_risk_list_hourly": 5067,
+     "customer_support.pb.expectation_setting.promise_the_process_not_the_outcome": 5263,
+     "customer_support.pb.response_drafting.answer_first_then_everything_else": 5600,
+     "customer_support.pb.ticket_triage.blast_radius_before_depth": 5009,
+     "customer_support.pb.ticket_triage.entitlement_before_complaint": 5009,
+     "customer_support.pb.ticket_triage.hand_off_with_the_assumption": 4953,
+     "customer_support.pb.ticket_triage.name_the_finishing_queue": 4981,
+     "customer_support.pb.ticket_triage.one_question_then_route": 4953,
+     "customer_support.pb.ticket_triage.state_the_coin_flip": 4953,
+     "customer_support.pb.ticket_triage.two_questions_in_order": 5009,
+     "customer_support.pb.ticket_triage.workaround_test": 4981
+    },
+    "confidence_bp": 4500,
+    "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"customer_support.pb.breach_prevention.work_the_at_risk_list_hourly\": 5067, \"customer_support.pb.expectation_setting.promise_the_process_not_the_outcome\": 5263, \"customer_support.pb.response_drafting.answer_first_then_everything_else\": 5600, \"customer_support.pb.ticket_triage.blast_radius_before_depth\": 5009, \"customer_support.pb.ticket_triage.entitlement_before_complaint\": 5009, \"customer_support.pb.ticket_triage.hand_off_with_the_assumption\": 4953, \"customer_support.pb.ticket_triage.name_the_finishing_queue\": 4981, \"customer_support.pb.ticket_triage.one_question_then_route\": 4953, \"customer_support.pb.ticket_triage.state_the_coin_flip\": 4953, \"customer_support.pb.ticket_triage.two_questions_in_order\": 5009, \"customer_support.pb.ticket_triage.workaround_test\": 4981}, \"confidence_bp\": 4500, \"rationale\": \"A person asked us for something; none of the support plays fits, and answering first is the closest.\", \"missing\": []}",
+   "input_tokens": 4183,
+   "output_tokens": 242,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "e449a4b1d11d2a39bee39fea523a2de852b40831cca16afb359ca744d30dc058": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "sales.pb.account_research.fifteen_minute_account_brief": 4549,
+     "sales.pb.investor_relations.reopen_after_a_pass": 4846
+    },
+    "confidence_bp": 4000,
+    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.account_research.fifteen_minute_account_brief\": 4549, \"sales.pb.investor_relations.reopen_after_a_pass\": 4846}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
+   "input_tokens": 2628,
+   "output_tokens": 70,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "f49646dfb5b3bc4a87ba78d6491abfe2d17c514d1a9835fa77055402e50ece51": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "customer_support.pb.breach_prevention.work_the_at_risk_list_hourly": 4949,
+     "customer_support.pb.expectation_setting.promise_the_process_not_the_outcome": 5145,
+     "customer_support.pb.response_drafting.answer_first_then_everything_else": 5600,
+     "customer_support.pb.ticket_triage.blast_radius_before_depth": 4892,
+     "customer_support.pb.ticket_triage.entitlement_before_complaint": 4892,
+     "customer_support.pb.ticket_triage.hand_off_with_the_assumption": 4836,
+     "customer_support.pb.ticket_triage.name_the_finishing_queue": 4864,
+     "customer_support.pb.ticket_triage.one_question_then_route": 4836,
+     "customer_support.pb.ticket_triage.state_the_coin_flip": 4836,
+     "customer_support.pb.ticket_triage.two_questions_in_order": 4892,
+     "customer_support.pb.ticket_triage.workaround_test": 4864
+    },
+    "confidence_bp": 4500,
+    "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"customer_support.pb.breach_prevention.work_the_at_risk_list_hourly\": 4949, \"customer_support.pb.expectation_setting.promise_the_process_not_the_outcome\": 5145, \"customer_support.pb.response_drafting.answer_first_then_everything_else\": 5600, \"customer_support.pb.ticket_triage.blast_radius_before_depth\": 4892, \"customer_support.pb.ticket_triage.entitlement_before_complaint\": 4892, \"customer_support.pb.ticket_triage.hand_off_with_the_assumption\": 4836, \"customer_support.pb.ticket_triage.name_the_finishing_queue\": 4864, \"customer_support.pb.ticket_triage.one_question_then_route\": 4836, \"customer_support.pb.ticket_triage.state_the_coin_flip\": 4836, \"customer_support.pb.ticket_triage.two_questions_in_order\": 4892, \"customer_support.pb.ticket_triage.workaround_test\": 4864}, \"confidence_bp\": 4500, \"rationale\": \"A person asked us for something; none of the support plays fits, and answering first is the closest.\", \"missing\": []}",
+   "input_tokens": 4180,
+   "output_tokens": 242,
    "model": "claude-haiku-4-5-20251001"
   }
  }

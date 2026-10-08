@@ -1,0 +1,277 @@
+{
+ "F01": {
+  "miss": false,
+  "verdict": "fail",
+  "lost_at": "reasoning",
+  "reason": "0 cards about StartupSetu/SSR-2026-48213 over every sweep; expected exactly 1",
+  "cards": 0
+ },
+ "F02": {
+  "miss": false,
+  "verdict": "fail",
+  "lost_at": "reasoning",
+  "reason": "0 cards about StartupSetu/SSR-2026-48213 over every sweep; expected exactly 1",
+  "cards": 0
+ },
+ "F03": {
+  "miss": true,
+  "error": "cassette miss at the decider site (key d33844e6c6ce\u2026): the chain asked the model something this case's recording does not answer. A prompt changed, or the case reached a site it never reached before \u2014 re-record deliberately (scripts/golden_eval.py --record), never by loosening the key."
+ },
+ "F04": {
+  "miss": false,
+  "verdict": "pass",
+  "lost_at": null,
+  "reason": "what the founder sees is what the case expects",
+  "cards": 1
+ },
+ "F05": {
+  "miss": false,
+  "verdict": "pass",
+  "lost_at": null,
+  "reason": "what the founder sees is what the case expects",
+  "cards": 1
+ },
+ "F06": {
+  "miss": false,
+  "verdict": "pass",
+  "lost_at": null,
+  "reason": "what the founder sees is what the case expects",
+  "cards": 1
+ },
+ "F07": {
+  "miss": true,
+  "error": "cassette miss at the narrator site (key 772860e7db3e\u2026): the chain asked the model something this case's recording does not answer. A prompt changed, or the case reached a site it never reached before \u2014 re-record deliberately (scripts/golden_eval.py --record), never by loosening the key."
+ },
+ "F08": {
+  "miss": true,
+  "error": "cassette miss at the decider site (key c97481d1bb92\u2026): the chain asked the model something this case's recording does not answer. A prompt changed, or the case reached a site it never reached before \u2014 re-record deliberately (scripts/golden_eval.py --record), never by loosening the key."
+ },
+ "F09": {
+  "miss": false,
+  "verdict": "fail",
+  "lost_at": "reasoning",
+  "reason": "0 cards about Introly over every sweep; expected exactly 1",
+  "cards": 0
+ },
+ "F10": {
+  "miss": false,
+  "verdict": "pass",
+  "lost_at": null,
+  "reason": "what the founder sees is what the case expects",
+  "cards": 1
+ },
+ "F11": {
+  "miss": false,
+  "verdict": "fail",
+  "lost_at": "reasoning",
+  "reason": "0 cards about Tom/Northfield over every sweep; expected exactly 1",
+  "cards": 0
+ },
+ "F12": {
+  "miss": false,
+  "verdict": "pass",
+  "lost_at": null,
+  "reason": "what the founder sees is what the case expects",
+  "cards": 1
+ },
+ "F13": {
+  "miss": true,
+  "error": "cassette miss at the narrator site (key 784d203b1f1e\u2026): the chain asked the model something this case's recording does not answer. A prompt changed, or the case reached a site it never reached before \u2014 re-record deliberately (scripts/golden_eval.py --record), never by loosening the key."
+ },
+ "F14": {
+  "miss": false,
+  "verdict": "not_expressible",
+  "lost_at": null,
+  "reason": "every card expectation is declared not expressible",
+  "cards": 0
+ },
+ "F15": {
+  "miss": false,
+  "verdict": "fail",
+  "lost_at": null,
+  "reason": "0 cards about Cobalt Peak/Juniper Ridge/Lattice Capital/Meridian Seed/Northstar Angels over every sweep; expected exactly 1",
+  "cards": 0
+ },
+ "F16": {
+  "miss": true,
+  "error": "cassette miss at the extraction site (key fa0e35e85c63\u2026): the chain asked the model something this case's recording does not answer. A prompt changed, or the case reached a site it never reached before \u2014 re-record deliberately (scripts/golden_eval.py --record), never by loosening the key."
+ },
+ "F17": {
+  "miss": true,
+  "error": "cassette miss at the decider site (key ba2537db29f8\u2026): the chain asked the model something this case's recording does not answer. A prompt changed, or the case reached a site it never reached before \u2014 re-record deliberately (scripts/golden_eval.py --record), never by loosening the key."
+ },
+ "F18": {
+  "miss": false,
+  "verdict": "not_expressible",
+  "lost_at": null,
+  "reason": "every card expectation is declared not expressible",
+  "cards": 0
+ },
+ "F19": {
+  "miss": false,
+  "verdict": "fail",
+  "lost_at": "reasoning",
+  "reason": "0 cards about Ekta over every sweep; expected exactly 1",
+  "cards": 2
+ },
+ "F20": {
+  "miss": true,
+  "error": "cassette miss at the decider site (key 6bc580a22908\u2026): the chain asked the model something this case's recording does not answer. A prompt changed, or the case reached a site it never reached before \u2014 re-record deliberately (scripts/golden_eval.py --record), never by loosening the key."
+ },
+ "F21": {
+  "miss": false,
+  "verdict": "not_expressible",
+  "lost_at": null,
+  "reason": "every card expectation is declared not expressible",
+  "cards": 0
+ },
+ "F22": {
+  "miss": false,
+  "verdict": "not_expressible",
+  "lost_at": null,
+  "reason": "every card expectation is declared not expressible",
+  "cards": 0
+ },
+ "F23": {
+  "miss": false,
+  "verdict": "not_expressible",
+  "lost_at": null,
+  "reason": "every card expectation is declared not expressible",
+  "cards": 0
+ },
+ "F24": {
+  "miss": true,
+  "error": "cassette miss at the r1 site (key 353e108922b9\u2026): the chain asked the model something this case's recording does not answer. A prompt changed, or the case reached a site it never reached before \u2014 re-record deliberately (scripts/golden_eval.py --record), never by loosening the key."
+ },
+ "F25": {
+  "miss": true,
+  "error": "cassette miss at the decider site (key 07d2e90e8efe\u2026): the chain asked the model something this case's recording does not answer. A prompt changed, or the case reached a site it never reached before \u2014 re-record deliberately (scripts/golden_eval.py --record), never by loosening the key."
+ },
+ "F26": {
+  "miss": false,
+  "verdict": "pass",
+  "lost_at": null,
+  "reason": "what the founder sees is what the case expects",
+  "cards": 1
+ },
+ "F27": {
+  "miss": true,
+  "error": "cassette miss at the narrator site (key f7ca79db2b91\u2026): the chain asked the model something this case's recording does not answer. A prompt changed, or the case reached a site it never reached before \u2014 re-record deliberately (scripts/golden_eval.py --record), never by loosening the key."
+ },
+ "F28": {
+  "miss": false,
+  "verdict": "pass",
+  "lost_at": null,
+  "reason": "what the founder sees is what the case expects",
+  "cards": 1
+ },
+ "F29": {
+  "miss": false,
+  "verdict": "fail",
+  "lost_at": "reasoning",
+  "reason": "3 cards about Aman/Memloop over every sweep; expected 1\u20132 | card_1c988d629044c8539001bbf9 says 'happened'; card_6a736c5059604657bd37869e says 'happened'",
+  "cards": 3
+ },
+ "F30": {
+  "miss": false,
+  "verdict": "not_expressible",
+  "lost_at": null,
+  "reason": "every card expectation is declared not expressible",
+  "cards": 0
+ },
+ "F31": {
+  "miss": false,
+  "verdict": "pass",
+  "lost_at": null,
+  "reason": "what the founder sees is what the case expects",
+  "cards": 1
+ },
+ "F32": {
+  "miss": false,
+  "verdict": "pass",
+  "lost_at": null,
+  "reason": "what the founder sees is what the case expects",
+  "cards": 0
+ },
+ "F33": {
+  "miss": false,
+  "verdict": "pass",
+  "lost_at": null,
+  "reason": "what the founder sees is what the case expects",
+  "cards": 0
+ },
+ "F34": {
+  "miss": false,
+  "verdict": "pass",
+  "lost_at": null,
+  "reason": "what the founder sees is what the case expects",
+  "cards": 0
+ },
+ "F35": {
+  "miss": true,
+  "error": "cassette miss at the decider site (key 35950916bb6f\u2026): the chain asked the model something this case's recording does not answer. A prompt changed, or the case reached a site it never reached before \u2014 re-record deliberately (scripts/golden_eval.py --record), never by loosening the key."
+ },
+ "F36": {
+  "miss": false,
+  "verdict": "pass",
+  "lost_at": null,
+  "reason": "what the founder sees is what the case expects",
+  "cards": 0
+ },
+ "F37": {
+  "miss": true,
+  "error": "cassette miss at the decider site (key 670b9ba3b008\u2026): the chain asked the model something this case's recording does not answer. A prompt changed, or the case reached a site it never reached before \u2014 re-record deliberately (scripts/golden_eval.py --record), never by loosening the key."
+ },
+ "F38": {
+  "miss": false,
+  "verdict": "pass",
+  "lost_at": null,
+  "reason": "what the founder sees is what the case expects",
+  "cards": 0
+ },
+ "F39": {
+  "miss": false,
+  "verdict": "pass",
+  "lost_at": null,
+  "reason": "what the founder sees is what the case expects",
+  "cards": 0
+ },
+ "F40": {
+  "miss": true,
+  "error": "cassette miss at the narrator site (key ab00f014a6f8\u2026): the chain asked the model something this case's recording does not answer. A prompt changed, or the case reached a site it never reached before \u2014 re-record deliberately (scripts/golden_eval.py --record), never by loosening the key."
+ },
+ "F41": {
+  "miss": false,
+  "verdict": "pass",
+  "lost_at": null,
+  "reason": "what the founder sees is what the case expects",
+  "cards": 0
+ },
+ "F42": {
+  "miss": true,
+  "error": "cassette miss at the narrator site (key bfe6737ca8d8\u2026): the chain asked the model something this case's recording does not answer. A prompt changed, or the case reached a site it never reached before \u2014 re-record deliberately (scripts/golden_eval.py --record), never by loosening the key."
+ },
+ "F43": {
+  "miss": false,
+  "verdict": "pass",
+  "lost_at": null,
+  "reason": "what the founder sees is what the case expects",
+  "cards": 0
+ },
+ "F44": {
+  "miss": true,
+  "error": "cassette miss at the narrator site (key 55965a9e2f4e\u2026): the chain asked the model something this case's recording does not answer. A prompt changed, or the case reached a site it never reached before \u2014 re-record deliberately (scripts/golden_eval.py --record), never by loosening the key."
+ },
+ "F45": {
+  "miss": null,
+  "error": "rain (yc)/genios-brain/.claude/worktrees/s10-contract/tests/replays/cassettes.py\", line 84, in replay\n    return run_case(case, RecordedLLM(load(case, folder)))\n                                      ~~~~^^^^^^^^^^^^^^\n  File \"/Users/rohitswerashi/Downloads/Artifacts/Product/genios-brain (yc)/genios-brain/.claude/worktrees/s10-contract/tests/replays/cassettes.py\", line 57, in load\n    raise AssertionError(f\"{case.case_id} has no cassette at {path} \u2014 record it with \"\n                         f\"`scripts/golden_eval.py --record {case.case_id}`\")\nAssertionError: F45 has no cassette at /Users/rohitswerashi/Downloads/Artifacts/Product/genios-brain (yc)/genios-brain/.claude/worktrees/s10-contract/tests/replays/specs/founder/cassettes/F45.json \u2014 record it with `scripts/golden_eval.py --record F45`\n"
+ },
+ "F46": {
+  "miss": null,
+  "error": "rain (yc)/genios-brain/.claude/worktrees/s10-contract/tests/replays/cassettes.py\", line 84, in replay\n    return run_case(case, RecordedLLM(load(case, folder)))\n                                      ~~~~^^^^^^^^^^^^^^\n  File \"/Users/rohitswerashi/Downloads/Artifacts/Product/genios-brain (yc)/genios-brain/.claude/worktrees/s10-contract/tests/replays/cassettes.py\", line 57, in load\n    raise AssertionError(f\"{case.case_id} has no cassette at {path} \u2014 record it with \"\n                         f\"`scripts/golden_eval.py --record {case.case_id}`\")\nAssertionError: F46 has no cassette at /Users/rohitswerashi/Downloads/Artifacts/Product/genios-brain (yc)/genios-brain/.claude/worktrees/s10-contract/tests/replays/specs/founder/cassettes/F46.json \u2014 record it with `scripts/golden_eval.py --record F46`\n"
+ },
+ "F47": {
+  "miss": null,
+  "error": "rain (yc)/genios-brain/.claude/worktrees/s10-contract/tests/replays/cassettes.py\", line 84, in replay\n    return run_case(case, RecordedLLM(load(case, folder)))\n                                      ~~~~^^^^^^^^^^^^^^\n  File \"/Users/rohitswerashi/Downloads/Artifacts/Product/genios-brain (yc)/genios-brain/.claude/worktrees/s10-contract/tests/replays/cassettes.py\", line 57, in load\n    raise AssertionError(f\"{case.case_id} has no cassette at {path} \u2014 record it with \"\n                         f\"`scripts/golden_eval.py --record {case.case_id}`\")\nAssertionError: F47 has no cassette at /Users/rohitswerashi/Downloads/Artifacts/Product/genios-brain (yc)/genios-brain/.claude/worktrees/s10-contract/tests/replays/specs/founder/cassettes/F47.json \u2014 record it with `scripts/golden_eval.py --record F47`\n"
+ }
+}
