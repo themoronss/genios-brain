@@ -86,6 +86,17 @@ real mail — 13 asks whether it reaches you, 42 whether the card is about Manik
 | 43 | Your own pitch, and what its thread is called · 11 Aug | `no` | | `claude` |
 | 44 | An investor writing from a Gmail address · 4 Aug → 5 Oct | `yes` | | `claude` |
 
+## The expert's numbers — 3 items (`STEP-10`, added 2026-10-07)
+
+The numbers a file shows have to be right before anything reasons with them (`06` D40). The set held
+one reply of yours to an inbound mail, no bounce in the shape Gmail sends it, and one mailbox.
+
+| # | Item — sender · date | Claude's answer | Your answer | Labelled by |
+|---|---|---|---|---|
+| 45 | Your own answers to an investor's questions · 5 Aug → 15 Sep | `brief only` | | `claude` |
+| 46 | An investor who answered in your other mailbox · 3 Sep | `yes` | | `claude` |
+| 47 | Mail Delivery Subsystem, a report with your pitch attached · 14 Aug | `yes` | | `claude` |
+
 ---
 
 ## Why I answered as I did
@@ -101,6 +112,9 @@ real mail — 13 asks whether it reaches you, 42 whether the card is about Manik
 - **41–44** (`STEP-04`): your company address is never someone you wait on (41); an ask that names
   you is about the person asking (42); your own pitch is named after the investor, never after you
   (43); an investor at gmail.com is an outside person, even though you are at gmail.com too (44).
+- **45–47** (`STEP-10`): how fast you answer is a line in the brief, not a card (45); an answer in
+  your other mailbox still reaches you, and your move is to reply (46); a bounced pitch reaches you,
+  whatever shape the report comes in (47).
 
 A `brief only` answer is scored as *not expressible* until `STEP-15` builds the morning brief —
 the board counts it apart rather than as a pass or a fail.

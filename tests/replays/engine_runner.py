@@ -326,8 +326,12 @@ def run_case(case: FounderCase, llm: Any, *, org_id: str | None = None,
                 objects = case.objects_in(sweep)
                 mail = [o for o in objects if o.source == "gmail"]
                 events = [o for o in objects if o.source == "gcal"]
-                if mail:
-                    landed += _land(routes, case, org, sweep, at, mailbox_cls(mail), "gmail")
+                # One sync per mailbox (STEP-10, D40): each lands through its own connection.
+                for connection_id in sorted({o.connection_id for o in mail}):
+                    landed += _land(routes, case, org, sweep, at,
+                                    mailbox_cls([o for o in mail if o.connection_id
+                                                 == connection_id]), "gmail",
+                                    connection_id=connection_id)
                 if events:
                     landed += _land(routes, case, org, sweep, at,
                                     calendar_cls(events, _internal(routes, org)), "gcal")
@@ -368,14 +372,15 @@ def remove_tenant(engine: Any, org: str) -> None:
 
 
 def _land(routes: Any, case: FounderCase, org: str, sweep: int, at: datetime, connector: Any,
-          source: str) -> list[Landed]:
+          source: str, *, connection_id: str | None = None) -> list[Landed]:
     """One provider's objects for one sweep, through the production sync door."""
     from genios_engine.capture.acquire.sync_runner import run_sync
     from genios_engine.platform.wiring import make_esqe_stage, make_semantic_lane
 
     engine = routes._graph.engine
     summary = run_sync(
-        connector, org_id=org, connection_id=f"conn_golden_{source}", repo=routes._repo,
+        connector, org_id=org, connection_id=connection_id or f"conn_golden_{source}",
+        repo=routes._repo,
         mode="incremental", limit=100, parked_store=routes._parked,
         relevance=routes.make_relevance_classifier(org),
         trace_repo=routes._trace_repo, payload_store=routes._payload_store,
@@ -470,6 +475,20 @@ def _fresh_tenant(engine: Any, org: str, case: FounderCase) -> None:
         for table in ("company_brief_lines", "company_brief_reviews"):
             conn.execute(text(f"delete from {table} where org_id = :o"), {"o": org})
         seed_company_brief(conn, org)
+        # STEP-10 · AND THE MAILBOXES THE FOUNDER CONNECTED, as production has them. The runner swept
+        # through `conn_golden_<source>` with no `connections` row behind it, so every state
+        # situation said a communication source "is not connected" (`STEP-10` §8.3 N9) and no file
+        # could name the mailbox it was read from (`context/coverage_receipt`). One row per
+        # connection the case lands through, connected, at the default window; its account address
+        # left empty, as production leaves it. A connection id is global, so a re-run moves the row.
+        for connection_id, source in sorted({(o.connection_id, o.source) for o in case.objects}):
+            conn.execute(text(
+                "insert into connections (connection_id, org_id, provider, source_type, "
+                " composio_user_id, status) values (:c, :o, 'google', :s, :u, 'connected') "
+                "on conflict (connection_id) do update set org_id = excluded.org_id, "
+                "source_type = excluded.source_type, composio_user_id = excluded.composio_user_id, "
+                "status = 'connected', capture_scope = '{}'::jsonb"),
+                {"c": connection_id, "o": org, "s": source, "u": "golden"})
 
 
 #: The golden founder's company brief — STEP-07 §4's first draft in the golden world's names.

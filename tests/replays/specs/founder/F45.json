@@ -1,0 +1,640 @@
+{
+ "case_id": "F45",
+ "title": "The founder answers an investor's questions at several speeds - his own reply time, exact",
+ "kind": "must_detect",
+ "label_row": 45,
+ "labelled_by": "claude",
+ "replays": [
+  "01"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-08-31T18:00:00Z",
+  "2026-09-30T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "q1",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-05T09:00:00Z",
+   "from": "Meera Shah <meera@bluepeak.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Bluepeak x Nimbus - retention",
+   "body": "Hi Arjun,\n\nCould you share how the first three pilot teams retained over eight weeks?\n\nMeera Shah\nBluepeak Ventures",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-bluepeak-1",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "positive",
+     "topics": [
+      "fundraising"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Meera Shah",
+       "entity_type": "person",
+       "quote": "Meera Shah"
+      },
+      {
+       "surface_form": "Bluepeak Ventures",
+       "entity_type": "organization",
+       "quote": "Bluepeak Ventures"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Share the eight-week retention of the first three pilot teams",
+       "asked_by": "Meera Shah",
+       "asked_of": "Arjun Rao",
+       "quote": "Could you share how the first three pilot teams retained over eight weeks?"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high"
+     }
+    }
+   }
+  },
+  {
+   "id": "a1",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-05T21:00:00Z",
+   "from": "Arjun Rao <arjun@nimbuslabs.test>",
+   "to": [
+    "meera@bluepeak.test"
+   ],
+   "subject": "Re: Bluepeak x Nimbus - retention",
+   "body": "Hi Meera,\n\nAll three pilot teams were still active at week eight; usage grew in two of them.\n\nArjun",
+   "labels": [
+    "SENT"
+   ],
+   "thread": "t-bluepeak-1",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "positive",
+     "topics": [
+      "fundraising"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Meera",
+       "entity_type": "person",
+       "quote": "Meera"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "high"
+     }
+    }
+   }
+  },
+  {
+   "id": "q2",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-12T09:00:00Z",
+   "from": "Meera Shah <meera@bluepeak.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Bluepeak x Nimbus - pricing",
+   "body": "Hi Arjun,\n\nHow do you plan to price the team tier once the pilots convert?\n\nMeera Shah\nBluepeak Ventures",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-bluepeak-2",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "positive",
+     "topics": [
+      "fundraising"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Meera Shah",
+       "entity_type": "person",
+       "quote": "Meera Shah"
+      },
+      {
+       "surface_form": "Bluepeak Ventures",
+       "entity_type": "organization",
+       "quote": "Bluepeak Ventures"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Explain how the team tier will be priced after the pilots convert",
+       "asked_by": "Meera Shah",
+       "asked_of": "Arjun Rao",
+       "quote": "How do you plan to price the team tier once the pilots convert?"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high"
+     }
+    }
+   }
+  },
+  {
+   "id": "a2",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-13T09:00:00Z",
+   "from": "Arjun Rao <arjun@nimbuslabs.test>",
+   "to": [
+    "meera@bluepeak.test"
+   ],
+   "subject": "Re: Bluepeak x Nimbus - pricing",
+   "body": "Hi Meera,\n\nThe team tier will be priced per seat, with a floor of five seats.\n\nArjun",
+   "labels": [
+    "SENT"
+   ],
+   "thread": "t-bluepeak-2",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "positive",
+     "topics": [
+      "fundraising"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Meera",
+       "entity_type": "person",
+       "quote": "Meera"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "high"
+     }
+    }
+   }
+  },
+  {
+   "id": "q3",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-19T09:00:00Z",
+   "from": "Meera Shah <meera@bluepeak.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Bluepeak x Nimbus - hiring",
+   "body": "Hi Arjun,\n\nWho is the first engineer you plan to hire after the round?\n\nMeera Shah\nBluepeak Ventures",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-bluepeak-3",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "positive",
+     "topics": [
+      "fundraising"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Meera Shah",
+       "entity_type": "person",
+       "quote": "Meera Shah"
+      },
+      {
+       "surface_form": "Bluepeak Ventures",
+       "entity_type": "organization",
+       "quote": "Bluepeak Ventures"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Say who the first engineering hire after the round will be",
+       "asked_by": "Meera Shah",
+       "asked_of": "Arjun Rao",
+       "quote": "Who is the first engineer you plan to hire after the round?"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high"
+     }
+    }
+   }
+  },
+  {
+   "id": "a3",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-20T09:00:00Z",
+   "from": "Arjun Rao <arjun@nimbuslabs.test>",
+   "to": [
+    "meera@bluepeak.test"
+   ],
+   "subject": "Re: Bluepeak x Nimbus - hiring",
+   "body": "Hi Meera,\n\nA backend engineer who has built sync pipelines before.\n\nArjun",
+   "labels": [
+    "SENT"
+   ],
+   "thread": "t-bluepeak-3",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "positive",
+     "topics": [
+      "fundraising"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Meera",
+       "entity_type": "person",
+       "quote": "Meera"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "high"
+     }
+    }
+   }
+  },
+  {
+   "id": "q4",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-26T09:00:00Z",
+   "from": "Meera Shah <meera@bluepeak.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Bluepeak x Nimbus - pipeline",
+   "body": "Hi Arjun,\n\nHow many teams are in your pipeline for the next quarter?\n\nMeera Shah\nBluepeak Ventures",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-bluepeak-4",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "positive",
+     "topics": [
+      "fundraising"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Meera Shah",
+       "entity_type": "person",
+       "quote": "Meera Shah"
+      },
+      {
+       "surface_form": "Bluepeak Ventures",
+       "entity_type": "organization",
+       "quote": "Bluepeak Ventures"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Give the number of teams in next quarter's pipeline",
+       "asked_by": "Meera Shah",
+       "asked_of": "Arjun Rao",
+       "quote": "How many teams are in your pipeline for the next quarter?"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high"
+     }
+    }
+   }
+  },
+  {
+   "id": "a4",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-28T09:00:00Z",
+   "from": "Arjun Rao <arjun@nimbuslabs.test>",
+   "to": [
+    "meera@bluepeak.test"
+   ],
+   "subject": "Re: Bluepeak x Nimbus - pipeline",
+   "body": "Hi Meera,\n\nNine teams are in conversation for next quarter.\n\nArjun",
+   "labels": [
+    "SENT"
+   ],
+   "thread": "t-bluepeak-4",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "positive",
+     "topics": [
+      "fundraising"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Meera",
+       "entity_type": "person",
+       "quote": "Meera"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "high"
+     }
+    }
+   }
+  },
+  {
+   "id": "q5",
+   "source": "gmail",
+   "sweep": 1,
+   "occurred_at": "2026-09-02T09:00:00Z",
+   "from": "Meera Shah <meera@bluepeak.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Bluepeak x Nimbus - competition",
+   "body": "Hi Arjun,\n\nWhich tool do your pilot teams use today instead of Nimbus Labs?\n\nMeera Shah\nBluepeak Ventures",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-bluepeak-5",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "positive",
+     "topics": [
+      "fundraising"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Meera Shah",
+       "entity_type": "person",
+       "quote": "Meera Shah"
+      },
+      {
+       "surface_form": "Bluepeak Ventures",
+       "entity_type": "organization",
+       "quote": "Bluepeak Ventures"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Name the tool the pilot teams use today instead of Nimbus Labs",
+       "asked_by": "Meera Shah",
+       "asked_of": "Arjun Rao",
+       "quote": "Which tool do your pilot teams use today instead of Nimbus Labs?"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high"
+     }
+    }
+   }
+  },
+  {
+   "id": "a5",
+   "source": "gmail",
+   "sweep": 1,
+   "occurred_at": "2026-09-05T09:00:00Z",
+   "from": "Arjun Rao <arjun@nimbuslabs.test>",
+   "to": [
+    "meera@bluepeak.test"
+   ],
+   "subject": "Re: Bluepeak x Nimbus - competition",
+   "body": "Hi Meera,\n\nMost of them use shared spreadsheets and a chat channel today.\n\nArjun",
+   "labels": [
+    "SENT"
+   ],
+   "thread": "t-bluepeak-5",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "positive",
+     "topics": [
+      "fundraising"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Meera",
+       "entity_type": "person",
+       "quote": "Meera"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "high"
+     }
+    }
+   }
+  },
+  {
+   "id": "q6",
+   "source": "gmail",
+   "sweep": 1,
+   "occurred_at": "2026-09-09T09:00:00Z",
+   "from": "Meera Shah <meera@bluepeak.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Bluepeak x Nimbus - references",
+   "body": "Hi Arjun,\n\nCould two of your pilot customers take a short reference call with us?\n\nMeera Shah\nBluepeak Ventures",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-bluepeak-6",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "positive",
+     "topics": [
+      "fundraising"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Meera Shah",
+       "entity_type": "person",
+       "quote": "Meera Shah"
+      },
+      {
+       "surface_form": "Bluepeak Ventures",
+       "entity_type": "organization",
+       "quote": "Bluepeak Ventures"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Arrange two pilot-customer reference calls",
+       "asked_by": "Meera Shah",
+       "asked_of": "Arjun Rao",
+       "quote": "Could two of your pilot customers take a short reference call with us?"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high"
+     }
+    }
+   }
+  },
+  {
+   "id": "a6",
+   "source": "gmail",
+   "sweep": 1,
+   "occurred_at": "2026-09-15T09:00:00Z",
+   "from": "Arjun Rao <arjun@nimbuslabs.test>",
+   "to": [
+    "meera@bluepeak.test"
+   ],
+   "subject": "Re: Bluepeak x Nimbus - references",
+   "body": "Hi Meera,\n\nYes - two pilot leads have agreed; I will send their details separately.\n\nArjun",
+   "labels": [
+    "SENT"
+   ],
+   "thread": "t-bluepeak-6",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "positive",
+     "topics": [
+      "fundraising"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Meera",
+       "entity_type": "person",
+       "quote": "Meera"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "high"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "cards": [
+   {
+    "about": [
+     "Meera",
+     "Bluepeak"
+    ],
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "brief": "how fast you answer Bluepeak: usually 1.5 days (n=6)"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": []
+ },
+ "witness": null,
+ "not_expressible": {
+  "cards": "brief only - how fast the founder answers is a line in the morning brief, not a card (D12d)",
+  "brief": "STEP-15 - there is no morning brief to appear in"
+ },
+ "model": {},
+ "notes": "STEP-10 (06 D40): the golden set held one founder reply to an inbound mail (F14, n = 1). Here Meera asks six questions, each in its own thread, and the founder answers after 0.5, 1, 1, 2, 3 and 6 days: his reply time with her is their median, 1.5 days, on 6 answers - a normal, at NORMAL_AT or more (tests/replays/test_every_number_says_its_n.py)."
+}

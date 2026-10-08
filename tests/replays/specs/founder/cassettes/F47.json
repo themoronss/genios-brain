@@ -1,0 +1,123 @@
+{
+ "case_id": "F47",
+ "source": "ideal_reader",
+ "recorded_at": "785ae938",
+ "answers": {
+  "159246e5ea65543d67a4da568a90d3595924260a4d40e114b9c80d894d60583c": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "drop",
+     "relevance": 0.05,
+     "reason": "automated, nobody waits on a reply"
+    },
+    {
+     "i": 1,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 889,
+   "output_tokens": 49,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "809572053ac1b802afd4c12baeef3e2ffcccbf1890d847d3751c1a4d43983e8b": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Nimbus Labs - raising our seed round",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Nimbus Labs - raising our seed round\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 962,
+   "output_tokens": 42,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "84099ac0177fec741285d7d7d8c864ea70e9f67edf3b3dbf31454be07b27c1b7": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Could we find 20 minutes?",
+    "start_offset": 98,
+    "end_offset": 123,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Could we find 20 minutes?\", \"start_offset\": 98, \"end_offset\": 123, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1309,
+   "output_tokens": 44,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "bf5b5cc735040854e69478af832d918e93a622db752dfb16ada12ff533f134ce": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "negative",
+    "topics": [
+     "delivery failure"
+    ],
+    "exchange_intent": {
+     "category": "automated",
+     "tone": "neutral",
+     "formality": "templated",
+     "addressed_personally": false,
+     "human_authored": false,
+     "asks_for_reply": false,
+     "engagement": "high"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"negative\", \"topics\": [\"delivery failure\"], \"exchange_intent\": {\"category\": \"automated\", \"tone\": \"neutral\", \"formality\": \"templated\", \"addressed_personally\": false, \"human_authored\": false, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
+   "input_tokens": 5331,
+   "output_tokens": 67,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "c226fcd63dee66998d2367cc441e38a2bca72d7d5d48351b1f3b660bc85a228f": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "request",
+    "stance": "positive",
+    "topics": [
+     "fundraising"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Ardent Ridge",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Ardent Ridge",
+        "start_offset": 41,
+        "end_offset": 53
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high"
+    }
+   },
+   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Ardent Ridge\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Ardent Ridge\", \"start_offset\": 41, \"end_offset\": 53}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\"}}",
+   "input_tokens": 5306,
+   "output_tokens": 112,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

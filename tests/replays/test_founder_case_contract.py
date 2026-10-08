@@ -279,6 +279,24 @@ def test_a_bad_identity_declaration_is_refused(field, value, message):
         _parse(raw)
 
 
+def test_a_message_may_name_the_mailbox_it_arrives_in():
+    """STEP-10 (`yc2_w27_s10/M29.C6.L-integration.V0.U01`, D40): the founder has two mailboxes, and
+    each lands through a connection of its own — what a file's coverage receipt names."""
+    raw = _case()
+    raw["objects"][0]["mailbox"] = "personal"
+    obj = _parse(raw).objects[0]
+    assert (obj.mailbox, obj.connection_id) == ("personal", "conn_golden_gmail_personal")
+    assert _parse(_case()).objects[0].connection_id == "conn_golden_gmail", "one mailbox by default"
+
+
+@pytest.mark.parametrize("name", ["Personal", "work mail", "x" * 17, "9inbox"])
+def test_a_mailbox_name_is_short_and_plain(name):
+    raw = _case()
+    raw["objects"][0]["mailbox"] = name
+    with pytest.raises(fc.CaseError, match="mailbox"):
+        _parse(raw)
+
+
 # =================================================================================================
 # 3 · the set: its own folder, never read by the Atlas loader, and never empty
 # =================================================================================================

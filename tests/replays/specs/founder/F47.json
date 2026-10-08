@@ -1,0 +1,147 @@
+{
+ "case_id": "F47",
+ "title": "A pitch bounced, in the shape Gmail sends it - the report kept, the original not a document",
+ "kind": "must_detect",
+ "label_row": 47,
+ "labelled_by": "claude",
+ "replays": [
+  "01"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata"
+ },
+ "sweeps": [
+  "2026-08-14T18:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "sent",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-14T06:00:00Z",
+   "from": "Arjun Rao <arjun@nimbuslabs.test>",
+   "to": [
+    "partners@ardentridge.test"
+   ],
+   "subject": "Nimbus Labs - raising our seed round",
+   "body": "Hi Ardent Ridge team,\n\nNimbus Labs is raising a seed round. Could we find 20 minutes?\n\nArjun",
+   "labels": [
+    "SENT"
+   ],
+   "thread": "t-ardent",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "positive",
+     "topics": [
+      "fundraising"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Ardent Ridge",
+       "entity_type": "organization",
+       "quote": "Ardent Ridge"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high"
+     }
+    }
+   }
+  },
+  {
+   "id": "bounce",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-14T06:00:20Z",
+   "from": "Mail Delivery Subsystem <mailer-daemon@mailhost.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Delivery Status Notification (Failure)",
+   "body": "Address not found\n\nYour message wasn't delivered to partners@ardentridge.test because the domain ardentridge.test couldn't be found. Check for typos or unnecessary spaces and try again.",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-ardent",
+   "headers": {
+    "Auto-Submitted": "auto-replied"
+   },
+   "attachments": [
+    {
+     "filename": "",
+     "mime": "message/delivery-status",
+     "fetch": "ok",
+     "text": "Reporting-MTA: dns; mailhost.test\nFinal-Recipient: rfc822; partners@ardentridge.test\nAction: failed\nStatus: 5.1.1"
+    },
+    {
+     "filename": "Nimbus Labs - raising our seed round.eml",
+     "mime": "message/rfc822",
+     "fetch": "ok",
+     "text": "Hi Ardent Ridge team,\n\nNimbus Labs is raising a seed round. Could we find 20 minutes?\n\nArjun"
+    }
+   ],
+   "read": {
+    "gate": "drop",
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "negative",
+     "topics": [
+      "delivery failure"
+     ],
+     "exchange_intent": {
+      "category": "automated",
+      "tone": "neutral",
+      "formality": "templated",
+      "addressed_personally": false,
+      "human_authored": false,
+      "asks_for_reply": false,
+      "engagement": "high"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "gate": {
+   "bounce": "emitted"
+  },
+  "memory": {
+   "bounce": true
+  },
+  "cards": [
+   {
+    "about": [
+     "ardentridge.test",
+     "Ardent Ridge"
+    ],
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "workstream": "your outbound - a fund never received your mail"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": []
+ },
+ "witness": null,
+ "not_expressible": {
+  "workstream": "STEP-11 - the file exists since STEP-09 (`GET /v1/workstreams`), and carries the bounce since STEP-10, but this line names its state, and no stage is derived to compare against"
+ },
+ "model": {},
+ "notes": "STEP-10 (06 D38, D40): F16's bounce in production's shape - Gmail marks its report Auto-Submitted: auto-replied and attaches the status and the original pitch. Before STEP-10 N-01 archived it; then S2's junk filter did (production's filter called all five real reports junk); and the attached original was a document of its own. Now the report is kept and read, the bounce is on the fund's file and ends its wait, and the original is not a document. No card yet shows a bounce (STEP-14).",
+ "blocked_on": "the report is kept and read, its attached original is not a document, and the bounce is on the fund's file, ending its wait (STEP-10, D38) — but no card shows a bounce yet: STEP-14"
+}

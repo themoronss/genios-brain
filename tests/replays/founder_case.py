@@ -165,6 +165,14 @@ class CaseObject:
     #: The ideal reader's answers for this object, per site (`READ_SITES`). Served by
     #: `ideal_reader.py`; recorded into the case's cassette by `scripts/golden_eval.py`.
     read: Mapping[str, Any] = field(default_factory=dict)
+    #: STEP-10 · which of the founder's mailboxes a message arrives in: empty — the one every case
+    #: has; a name — a second mailbox, landed through a connection of its own (D40, two mailboxes).
+    mailbox: str = ""
+
+    @property
+    def connection_id(self) -> str:
+        """The connection the runner lands this object through — what a file's receipt names."""
+        return f"conn_golden_{self.source}" + (f"_{self.mailbox}" if self.mailbox else "")
 
     @property
     def provider_id(self) -> str:
@@ -350,7 +358,8 @@ _CASE_KEYS = {"case_id", "title", "kind", "label_row", "labelled_by", "replays",
               "sweeps", "objects", "expected", "forbidden", "witness", "not_expressible",
               "model", "notes", "blocked_on"}
 _GMAIL_KEYS = {"id", "source", "sweep", "occurred_at", "from", "to", "cc", "thread", "subject",
-               "body", "labels", "headers", "attachments", "read"}
+               "body", "labels", "headers", "attachments", "read", "mailbox"}
+_MAILBOX = re.compile(r"^[a-z][a-z0-9]{0,15}$")
 _GCAL_KEYS = {"id", "source", "sweep", "occurred_at", "summary", "start", "end", "organizer",
               "attendees", "status", "description", "location", "recurringEventId", "read"}
 _CARD_KEYS = {"about", "min", "max", "mentions"}
@@ -559,11 +568,14 @@ def _object(raw: Any, case_id: str, owner: str, sweeps: tuple[datetime, ...],
     headers = raw.get("headers") or {}
     if not isinstance(headers, dict):
         raise CaseError(f"{at}: headers must be a mapping of name to value")
+    mailbox = str(raw.get("mailbox") or "")
+    if mailbox and not _MAILBOX.match(mailbox):
+        raise CaseError(f"{at}: mailbox {mailbox!r} must be a short lower-case name")
     return CaseObject(
         sender=str(raw["from"]), to=tuple(raw.get("to") or ()), cc=tuple(raw.get("cc") or ()),
         thread=str(raw.get("thread") or ""), subject=str(raw["subject"]), body=str(raw["body"]),
         labels=tuple(raw.get("labels") or ()), headers=dict(headers),
-        attachments=tuple(attachments), **common)
+        attachments=tuple(attachments), mailbox=mailbox, **common)
 
 
 def _card(raw: Any, where: str) -> CardExpectation:
