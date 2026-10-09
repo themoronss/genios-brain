@@ -821,6 +821,28 @@ def _readable_structure(value: dict) -> str | None:
 #: citation list stays on the signal row for anyone auditing it.
 MAX_WHY_CITATIONS = 2
 
+#: STEP-11 · `06` D3. The corpora whose playbooks the founder reviews line by line (D45) — today the
+#: Founder Office, switched on for the pilot org alone. Before a playbook there is reviewed, the expert
+#: may still advise from it, and the card says so in these words. Other corpora's review states are
+#: counted on the package (`unreviewed_artifact_ids`), not shown on every card.
+REVIEWED_BY_THE_FOUNDER: frozenset[str] = frozenset({"founder_office"})
+PLAYBOOK_NOT_YET_REVIEWED = "playbook not yet reviewed"
+
+
+def _review_label(signal: dict) -> list[dict]:
+    """The first `why` entry of a card whose play rests on a founder playbook nobody has reviewed.
+
+    Read off what the signal carries from the audited snapshot (`pipeline._open_signals_without_cards`:
+    `capability_domain`, `play_review_state`). Only `accepted` is reviewed — a missing state is not a
+    review, so it is labelled too.
+    """
+    if str(signal.get("capability_domain") or "") not in REVIEWED_BY_THE_FOUNDER:
+        return []
+    if signal.get("play_review_state") == "accepted":
+        return []
+    return [{"review": PLAYBOOK_NOT_YET_REVIEWED, "play": signal.get("play"),
+             "source": "expertise_review"}]
+
 
 def _why(evidence: list, _facts: dict, citations: list | None = None) -> list[dict]:
     """Project the evidence the immutable reasoning context bound, then the doctrine it rested on.
@@ -1204,7 +1226,8 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
         # call for different user actions and a single number cannot tell them apart.
         "confidence_vector": {k: score_inputs.get(k) for k in ("C", "U", "I", "R")},
         "actions": actions,
-        "why": _why(signal.get("evidence"), facts, signal.get("citations")),
+        "why": _review_label(signal) + _why(signal.get("evidence"), facts,
+                                            signal.get("citations")),
         "surfaces": _surfaces(facts, signal, actions,
                               has_finding=has_finding and has_quote),
         "context_tags": _context_tags(node_type, attrs, facts, sources),
