@@ -58,9 +58,12 @@ def test_the_tables_have_the_columns_the_store_needs(engine):
         reviews = {r.column_name for r in c.execute(text(
             "select column_name from information_schema.columns "
             "where table_name = 'company_brief_reviews'"))}
+    # ⛔ MOVED 2026-10-09 by yc2_w27_s11/M30.C4.L-contract.V0.U01: migration 0196 adds `kind`, the
+    # kind of work an in-motion line names (`06` D31) — nullable, validated in code; its own test is
+    # `tests/platform/test_a_brief_line_names_its_kind.py`.
     assert lines == {"org_id", "line_id", "section", "text", "address", "domain", "status",
                      "proposed_by", "proposed_text", "evidence", "proposed_at", "decided_by",
-                     "decided_at", "accepted_at", "removed_at"}
+                     "decided_at", "accepted_at", "removed_at", "kind"}
     assert reviews == {"org_id", "week_key", "started_at", "finished_at", "outcome", "proposed"}
 
 
