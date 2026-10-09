@@ -68,3 +68,11 @@ def test_every_capability_routes_or_says_why_not():
     for cap in Path(ROOT / "capabilities").glob("*/*/capability.yaml"):
         cid = yaml.safe_load(cap.read_text())["identity"]["id"]
         assert cid in routed or (cid in deferred and deferred[cid]["reason"].strip()), cid
+
+
+def test_its_core_objects_are_on_its_roster_and_authored():
+    """The roster and the folder agree both ways (`validate.py` warns on either drift)."""
+    rostered = {name for names in (_domain().get("core_objects") or {}).values() for name in names}
+    authored = {yaml.safe_load(p.read_text())["identity"]["id"].rsplit(".", 1)[1]
+                for p in (ROOT / "objects" / "core").glob("*.yaml")}
+    assert rostered == authored == {"company", "contact", "next_action", "risk"}

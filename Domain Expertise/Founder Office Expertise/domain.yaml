@@ -112,6 +112,15 @@ subdomains:
     capabilities: [external_meetings]
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Core objects — the founder's shared nouns. Authored with investor relations (M30.C6.L-data.V1.U01)
+# for the programmes, introductions and hiring capabilities to load as they are authored; until a
+# second capability does, `validate.py` warns that only one references each, by design.
+# ─────────────────────────────────────────────────────────────────────────────
+core_objects:
+  people_and_companies: [company, contact]
+  work_in_motion: [next_action, risk]
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Naming — enforced by _tools/validate.py
 # ─────────────────────────────────────────────────────────────────────────────
 id_scheme:
