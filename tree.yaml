@@ -6190,8 +6190,11 @@ yc2_w27_s11:
                       what: >
                         `tests/replays/engine_runner.py` — the golden runner switches `founder_office` on for the founder
                         cases, as `scripts/activate_tenant.py --domains admin,founder_office` does for the pilot org.
+                        Its verify corrected on 9 Oct, building: `test_engine_runner.py` replays whole cases, so it could
+                        pass only after C7.U03 re-records the cassettes the founder lane moves; the unit's own test checks
+                        the switch-on, its place in `run_case`, and that Sales stays off.
                       artifact: tests/replays/engine_runner.py
-                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest tests/replays/test_engine_runner.py -q
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest tests/replays/test_the_golden_founder_has_the_founder_office.py -q
                       depends_on: [M30.C1.L-logic.V1.U02, M30.C1.L-logic.V1.U03]
         - id: M30.C2
           name: The playbook contract

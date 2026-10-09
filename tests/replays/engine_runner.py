@@ -329,6 +329,7 @@ def run_case(case: FounderCase, llm: Any, *, org_id: str | None = None,
         with production_switches(llm), pinned_world(f"golden:{case.case_id}"):
             provision_intelligence(engine, org)
             routes._ensure_tenant_live(org)
+            switch_on_founder_office(engine, org)
             for sweep, at in enumerate(case.sweeps):
                 objects = case.objects_in(sweep)
                 mail = [o for o in objects if o.source == "gmail"]
@@ -361,6 +362,21 @@ def run_case(case: FounderCase, llm: Any, *, org_id: str | None = None,
         if not keep or not finished:
             remove_tenant(engine, org)
     return report
+
+
+#: STEP-11 (`06` D2) · the corpus the golden founder's work reads, switched on as the pilot org's is:
+#: `default_on: false`, so a tenant nobody configured never hears from it, and `scripts/activate_tenant.py
+#: --domains admin,founder_office` is what switches it on for the founder (M30.C1.L-integration.V2.U04).
+FOUNDER_DOMAIN = "founder_office"
+
+
+def switch_on_founder_office(engine: Any, org: str) -> None:
+    """Activate the Founder Office for a golden tenant, beside what `_ensure_tenant_live` switched on —
+    the same `platform/l3_activation.activate` the operator script calls. The org row's cascade removes
+    it with the tenant."""
+    from genios_engine.platform import l3_activation
+    l3_activation.activate(engine, org, domain=FOUNDER_DOMAIN, by="golden_runner",
+                           notes="the golden founder's own work, as the pilot org (06 D2)")
 
 
 def remove_tenant(engine: Any, org: str) -> None:
