@@ -293,6 +293,39 @@ do_nothing_consequence: >
   a clarification goes unanswered past the programme's date, an offer lapses before its agreement is
   signed, and a rejection that came with a re-application date is filed as final.
 
+# THE STOP RULE (`06` D33; the follow-up to M30.C6.L-data.V1.U02, 9 Oct 2026). Three things in this
+# playbook say when to stop, and each answers a different question:
+#   - `stop` says WHEN a quiet programme file stops waiting and is DORMANT: after 90 quiet days since
+#     the programme's last word, a prior. It is a clock on silence that code reads, and it closes nothing.
+#   - step 7, "Stop on purpose", says WHAT the founders do then: the one status query (step 6) and,
+#     two weeks unanswered, a close with its reason — declined, lapsed or withdrawn. Only evidence
+#     closes a file.
+#   - the `declined` stage is where a rejected application waits for its next intake. Its 90-day prior
+#     is the same span seen from the other side: a declined file quiet for 90 days has typically
+#     reached its next intake, so dormancy there means "decide whether to re-apply", never "lapsed".
+# `outcome_window_days` (90) counts from the application to the decision; `stop` counts quiet days
+# from the last word. For an application nobody has written about since it went in, the two coincide.
+stop:
+  dormant_after_days: 90
+  source: >
+    The longest wait the programmes read promise: Hub71 gives "feedback about the status of your
+    application within three months of applying" (https://www.hub71.com/faqs) — about ninety days. The
+    others answer inside it: YC decides on-time applications by 11 December for a 2 November deadline
+    (https://www.ycombinator.com/apply), Techstars reviews "within four weeks of applications closing"
+    (https://www.techstars.com/blog/founder-advice/inside-a-techstars-accelerator-the-application-and-interview-process),
+    and SISFS selects "within 45 days" (https://seedfund.startupindia.gov.in/faq). For a declined file
+    the same span is one intake: YC runs four batches a year (https://www.ycombinator.com/apply). It is
+    the 90 days `06` D33 proposed for a programme file; a programme's own published date replaces it.
+  then: >
+    Close nothing on the clock alone. Read the programme's own record first — its portal, its
+    published decision date, its next cohort: where the programme's date is still ahead, the file is
+    waiting, not dormant, and that date replaces this number. Otherwise act by stage. A live
+    application gets the spine's one status query through the programme's own channel and, two weeks
+    unanswered (step 7's practitioner wait), is closed as lapsed with that reason. A declined one has
+    reached its re-application point: put the next intake's deadline on the file and decide — re-apply
+    with what changed, or close it with the reason. After the programme has ended, an investing
+    programme goes on as investor relations, and any other closes with a note.
+
 objects_used:
   - founder_office.obj.program_applications.application
 
@@ -369,7 +402,8 @@ references:
     note: >
       Read 9 Oct 2026. Winter 2027 batch, January to March; on-time deadline 2 November at 8pm PT,
       decision by 11 December; interviews by video in November and December; decisions typically the same
-      day; Spring, Summer and Fall batches. Supports under_review, interview, decision, onboarding, declined.
+      day; Spring, Summer and Fall batches. Supports under_review, interview, decision, onboarding,
+      declined and the stop rule.
   - title: Y Combinator FAQ
     kind: practitioner
     author: Y Combinator
@@ -397,7 +431,7 @@ references:
     note: >
       Published 12 Jan 2026, read 9 Oct 2026. Interview invitations one to four weeks after the deadline;
       all applications reviewed within four weeks of the close; all applicants notified; a screening
-      committee after the interviews. Supports under_review, decision.
+      committee after the interviews. Supports under_review, decision and the stop rule.
   - title: "Techstars Paris: The ins and outs of the application and selection process"
     kind: practitioner
     author: Techstars Paris
@@ -419,7 +453,7 @@ references:
       Read 9 Oct 2026. Feedback within three months of applying; four selection rounds ending in a
       selection committee; a two-month onboarding; Access is twelve months with a three-month guided
       track; re-apply to future cohorts; status queries through the contact form. Supports
-      under_review, decision, onboarding, in_programme, declined, and the outcome window.
+      under_review, decision, onboarding, in_programme, declined, the outcome window and the stop rule.
   - title: Hub71 Access Programme
     kind: practitioner
     author: Hub71
@@ -448,7 +482,7 @@ references:
       Read 9 Oct 2026 (the FAQ as the portal serves it). Email confirmation on submission; up to three
       incubators; selection within 45 days; real-time status on the dashboard; rejections notified by
       email; re-apply after six weeks; first grant instalment within 60 days of receipt. Supports applied,
-      under_review, onboarding, declined.
+      under_review, onboarding, declined and the stop rule.
   - title: Guidelines for Startup India Seed Fund Scheme
     kind: standard
     author: DPIIT, Ministry of Commerce and Industry
@@ -482,4 +516,5 @@ metadata:
     Priors from published pages: under_review (28, Techstars), interview (21, Techstars Paris), in_programme
     (90, YC, Techstars, Google), declined (90, YC's four batches a year). Practitioner judgement, so labelled:
     applied (14), decision (14) and the midpoint of onboarding (30). The outcome window (90) is Hub71's
-    published three months. Every one is for the founder's review, line by line.
+    published three months, and so is the stop rule's dormancy (90 quiet days, `06` D33). Every one is
+    for the founder's review, line by line.

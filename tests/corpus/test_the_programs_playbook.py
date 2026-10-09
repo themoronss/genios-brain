@@ -11,7 +11,9 @@ none will be minted (`06` D32). So this capability owns NO situation: it stays d
 
 * ONE playbook — the spine — declares the closed list of stages STEP-12 picks a file's stage from,
   each with a typical duration that is a PRIOR naming its source, what quiet means at that stage and
-  the event that ends it; and what success is, how long to wait for it, and what doing nothing costs.
+  the event that ends it; what success is, how long to wait for it, and what doing nothing costs; and
+  its STOP RULE (`06` D33, follow-up of 9 Oct): after how many quiet days a programme file is dormant
+  rather than waiting — a prior with its source — and what a professional does with it then.
 * four moves (playbooks with steps, no stages), each saying what success is and how long to wait;
 * the claims (heuristics) the moves rest on;
 * one scoped object whose states are the spine's stages.
@@ -205,18 +207,21 @@ def test_every_stage_carries_a_sourced_prior_and_what_quiet_means():
 
 
 def test_every_source_is_a_page_read_or_says_it_is_judgement():
-    """A prior names a page its playbook lists among its references — or says, in so many words, that
-    no page supports it. A URL a reference does not list is a citation nobody can check."""
+    """A prior — a stage's, or the stop rule's — names a page its playbook lists among its references,
+    or says, in so many words, that no page supports it. A URL a reference does not list is a citation
+    nobody can check."""
     checked = 0
     for pid, doc in _playbooks().items():
         listed = {ref.get("url") for ref in doc.get("references") or [] if ref.get("url")}
-        for stage in doc.get("stages") or []:
-            source = stage["source"]
+        priors = [(stage["name"], stage["source"]) for stage in doc.get("stages") or []]
+        if isinstance(doc.get("stop"), dict):
+            priors.append(("stop", str(doc["stop"].get("source") or "")))
+        for where, source in priors:
             urls = set(URL.findall(source))
-            assert urls or PRACTITIONER in source, f"{pid} · {stage['name']}: no page and no label"
-            assert urls <= listed, f"{pid} · {stage['name']}: cites {sorted(urls - listed)} unlisted"
+            assert urls or PRACTITIONER in source, f"{pid} · {where}: no page and no label"
+            assert urls <= listed, f"{pid} · {where}: cites {sorted(urls - listed)} unlisted"
             checked += 1
-    assert checked == len(STAGES)
+    assert checked == len(STAGES) + 1, "the priors are the seven stages and the stop rule"
 
 
 def test_the_spine_and_every_move_say_what_success_is_and_how_long_to_wait():
@@ -225,6 +230,52 @@ def test_the_spine_and_every_move_say_what_success_is_and_how_long_to_wait():
         window = doc.get("outcome_window_days")
         assert type(window) is int and window >= 1, f"{pid}: outcome_window_days {window!r}"
     assert str(_spine().get("do_nothing_consequence") or "").strip()
+
+
+# ── the spine: when a quiet application is dormant (`06` D33) ───────────────────────────────────
+
+def test_the_spine_says_when_a_quiet_application_is_dormant():
+    """D33 moved dormancy into the playbooks: a programme file is dormant, not waiting, after the
+    spine's own number of quiet days — a prior with its source — and `then` says what a professional
+    does with it. Never sooner than the outcome window: a file is not dormant while the longest wait
+    a programme publishes may still be running."""
+    spine = _spine()
+    stop = spine.get("stop")
+    assert isinstance(stop, dict), "the spine declares no stop rule"
+    days = stop.get("dormant_after_days")
+    assert type(days) is int and days >= 1, f"dormant_after_days is not whole days: {days!r}"
+    for field in ("source", "then"):
+        assert str(stop.get(field) or "").strip(), f"the stop rule has no {field}"
+    assert days >= spine["outcome_window_days"], (
+        f"dormant after {days} quiet days, inside the {spine['outcome_window_days']}-day outcome window")
+
+
+def test_no_move_says_when_to_stop():
+    """One kind of work, one stop rule — the spine's. A move is a play within the work."""
+    moves = {pid: doc for pid, doc in _playbooks().items() if pid != SPINE}
+    assert set(moves) == MOVES
+    for pid, doc in moves.items():
+        assert "stop" not in doc, f"{pid} declares a stop rule"
+
+
+def test_the_reader_hands_the_expert_the_stop_rule_as_a_prior():
+    """What STEP-12's expert reads (`playbook_for`, over the shipped corpus): the number as a
+    `playbook_prior` — never a measurement, never normal (`06` D37) — with its source and its words."""
+    from genios_engine.contracts.measured import PLAYBOOK_PRIOR
+    from genios_engine.packs.compiler.playbook_reader import playbook_for
+
+    stop = _spine()["stop"]
+    answer = playbook_for("program")
+    assert answer.reason is None and answer.playbook.playbook_id == SPINE
+    rule = answer.playbook.stop
+    assert rule is not None, "the reader found no stop rule on the spine"
+    assert rule.dormant_after.source == PLAYBOOK_PRIOR == "playbook_prior"
+    assert (rule.dormant_after.value, rule.dormant_after.n, rule.dormant_after.unit) == (
+        stop["dormant_after_days"], 0, "days")
+    assert not rule.dormant_after.normal
+    assert rule.dormant_after.says().endswith("a playbook's prior, not measured here")
+    assert rule.cited == " ".join(stop["source"].split())
+    assert rule.then == " ".join(stop["then"].split())
 
 
 def test_every_step_says_when_it_is_done():
