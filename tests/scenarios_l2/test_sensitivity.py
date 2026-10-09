@@ -58,9 +58,10 @@ def test_no_verdict_is_quiet():
 def test_l2_0_the_dark_domain_declaration(monkeypatch):
     from genios_engine.context import domain_silence
 
-    assert domain_silence.is_dark("fundraising") is True
+    # `general`: `fundraising` was this probe's dark domain until STEP-11 mapped it (2026-10-09).
+    assert domain_silence.is_dark("general") is True
     monkeypatch.setattr(domain_silence, "DARK_DOMAINS", {})
-    assert domain_silence.is_dark("fundraising") is False, (
+    assert domain_silence.is_dark("general") is False, (
         "`is_dark` survived its own table being emptied, so it has a second copy")
 
 
@@ -100,13 +101,14 @@ def test_l2_4_the_unroutable_tally(monkeypatch):
     from genios_engine.context import domain_silence
     from genios_engine.reason.unroutable import tally_unroutable
 
+    # `general`, the declared dark domain since STEP-11 mapped `fundraising` (2026-10-09).
     counts: dict = {}
-    tally_unroutable(counts, l2_domain="fundraising", situation_type="investor_contact")
+    tally_unroutable(counts, l2_domain="general", situation_type="relationship")
     assert "unroutable_undeclared" not in counts
 
     monkeypatch.setattr(domain_silence, "DARK_DOMAINS", {})
     after: dict = {}
-    tally_unroutable(after, l2_domain="fundraising", situation_type="investor_contact")
+    tally_unroutable(after, l2_domain="general", situation_type="relationship")
     assert after["unroutable_undeclared"] == 1, (
         "the surprise flag does not read `DARK_DOMAINS`")
 

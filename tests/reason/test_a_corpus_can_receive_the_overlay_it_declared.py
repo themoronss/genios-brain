@@ -53,11 +53,12 @@ def test_every_activated_corpus_can_be_looked_up_from_a_layer_two_domain(l2_doma
 
 
 def test_an_unactivatable_domain_still_gets_nothing() -> None:
-    """The direction that must not change. `fundraising` maps to no corpus, so it has no overlay
-    to receive — and the lookup must return empty rather than raise or borrow another's."""
+    """The direction that must not change. `general` maps to no corpus, so it has no overlay to
+    receive — and the lookup must return empty rather than raise or borrow another's. (`fundraising`
+    was this test's example until STEP-11 mapped it to the Founder Office, 2026-10-09.)"""
     table = {d: (f"{d}.variant.example",) for d in L3_DOMAINS}
-    assert l3_domain_for("fundraising") is None
-    assert table.get(l3_domain_for("fundraising") or "", ()) == ()
+    assert l3_domain_for("general") is None
+    assert table.get(l3_domain_for("general") or "", ()) == ()
 
 
 def test_the_lookup_in_the_pass_uses_the_bridged_name() -> None:

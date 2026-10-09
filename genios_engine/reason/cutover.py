@@ -70,12 +70,20 @@ SWITCHES: dict[str, Switch] = {
     # --- the four L2-0…L2-7 each left, deliberately ----------------------------------------------
     "fundraising_route": Switch(
         owner="L2-4",
-        flips="`_L2_TO_L3_DOMAIN['fundraising'] = 'sales'` — one line, reversible",
+        flips="`_L2_TO_L3_DOMAIN['fundraising'] = 'founder_office'` — one line, reversible "
+              "(L2-4 proposed `'sales'`; investor relations moved to the Founder Office instead)",
         precondition="the pilot's fundraising situation count (Harsh 26). Arming it makes every "
-                     "fundraising situation activatable at once",
-        alone="⛔ **Nothing breaks, and that is why it is easy to forget.** The doctrine exists — "
-              "`sales.sit.live_investor_relationship`, stable and approved — and the pilot's "
-              "dominant domain simply keeps not reaching it"),
+                     "fundraising situation activatable at once. ⛔ ARMED 2026-10-09 by STEP-11 on "
+                     "Rohit's `06` D2 (M30.C1.L-logic.V1.U02): the line makes the founder's work "
+                     "ACTIVATABLE, and nothing live by itself — the Founder Office is `default_on: "
+                     "false`, switched on per tenant (the pilot org alone), and the live compile "
+                     "still admits only what a named reviewer accepted (D45), so until then a pilot "
+                     "fundraising situation is refused as `unreviewed`, counted. The pilot's count "
+                     "(Harsh 26) is still owed — before the activation row, not before this line",
+        alone="Nothing reaches a card: a tenant that has not activated the Founder Office measures "
+              "fundraising against it in shadow, and one that has is refused `unreviewed` until "
+              "the founder's review stamps the capability",
+        armed=True),
     "observing_laws": Switch(
         owner="L2-2",
         flips="`LAW_ACTIONS[L2Law.V9]` and `[V10]` from `OBSERVE` to `REJECT` — one line each",

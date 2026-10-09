@@ -68,13 +68,17 @@ def test_every_entry_names_what_would_end_it():
         assert len(reason) > 80, f"{domain}: a one-line reason is a label, not a mover"
 
 
-def test_the_pilots_own_domain_is_named():
-    """⛔ Not a generic guard. `fundraising` is the domain the pilot tenant lives in, it mints
-    `investor_relationship` and `investor_contact` today, and every one of them dies unread."""
+def test_the_pilots_own_domain_is_dark_no_more():
+    """⛔ Not a generic guard. `fundraising` is the domain the pilot tenant lives in, and it minted
+    `investor_relationship` and `investor_contact` that died unread — named here while it was dark.
+    ⛔ 2026-10-09, STEP-11 (M30.C1.L-logic.V1.U02): its silence ended the way this module says one
+    ends — a corpus of its own, the Founder Office — so its row left `DARK_DOMAINS` and the map reads
+    it. Kept as the record that the pilot's domain is read, and by which corpus."""
     from genios_engine.context.domain_silence import DARK_DOMAINS
+    from genios_engine.reason.domain_shadow import l3_domain_for
 
-    assert "fundraising" in DARK_DOMAINS
-    assert "investor" in DARK_DOMAINS["fundraising"].lower()
+    assert "fundraising" not in DARK_DOMAINS
+    assert l3_domain_for("fundraising") == "founder_office"
 
 
 def test_layer_two_really_does_mint_situations_for_a_dark_domain():

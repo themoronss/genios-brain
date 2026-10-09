@@ -22,6 +22,9 @@ AT = datetime(2026, 10, 7, 12, 0, tzinfo=timezone.utc)
 #: situation id → (domain, type)
 SITUATIONS = {
     "s_fund": ("fundraising", "investor_relationship"),
+    # STEP-11 (2026-10-09): `fundraising` maps to the Founder Office now, so `general` carries the
+    # no-corpus end — a domain no corpus claims.
+    "s_general": ("general", "relationship"),
     "s_sales": ("sales", "pipeline_period_review"),
     "s_held": ("admin", "awaiting_response"),
     "s_rejected": ("admin", "account_admin"),
@@ -106,7 +109,9 @@ def test_every_active_situation_names_exactly_one_end(engine):
     with engine.connect() as c:
         ends = {e.situation_id: (e.end, e.detail) for e in se.situation_ends(c, ORG)}
     assert ends == {
-        "s_fund": (se.NO_CORPUS, ("fundraising",)),
+        # a tenant with Admin alone: the Founder Office exists and is not switched on (STEP-11, D2)
+        "s_fund": (se.NOT_LIVE, ("founder_office",)),
+        "s_general": (se.NO_CORPUS, ("general",)),
         "s_sales": (se.NOT_LIVE, ("sales",)),
         "s_held": (se.HELD, ("verified_evidence_required",)),
         "s_rejected": (se.REJECTED, ("identity_review_required",)),

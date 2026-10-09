@@ -455,42 +455,23 @@ class CandidateRoute:
     evidence: str
 
 
-#: ⛔ **THE FUNDRAISING DOCTRINE EXISTS, AND THE COMMENT BELOW SAYING IT DOES NOT IS STALE.**
-#:
-#: Measured 2026-09-24 against the authored catalog:
-#:
-#:     sales.sit.live_investor_relationship      stable · approved
-#:         "An ongoing relationship with a party that might fund us, read at the ACCOUNT level:
-#:          the fund, the accelerator, the syndicate"
-#:     sales.sit.live_investor_contact           stable · approved
-#:     sales.investor_relations.investor_relations
-#:         "Reading and running the relationships with the people who might fund the company:
-#:          funds, accelerators, angels and the operators who introduce them."
-#:
-#: **The pilot tenant is a fundraising founder and this doctrine is unreachable from their
-#: dominant domain**, behind one `None` in the table below.
-#:
-#: AND THE OBJECTION DOES NOT APPLY. The table's comment says borrowing a corpus "would put Admin
-#: doctrine on a fundraising situation". True of `admin`, and routing is **per situation type**:
-#: every type `fundraising` can mint — `investor_relationship` and `investor_contact` — lands on
-#: investor-named doctrine and on nothing else.
-#: `test_every_fundraising_type_would_land_on_investor_doctrine_only` proves that and keeps
-#: proving it.
-#:
-#: NOT ARMED, DELIBERATELY. Arming it makes every fundraising situation activatable at once, and
-#: nobody has counted them on the pilot.
-CANDIDATE_ROUTES: dict[str, CandidateRoute] = {
-    "fundraising": CandidateRoute(
-        corpus="sales",
-        evidence="`sales.sit.live_investor_relationship` and `sales.sit.live_investor_contact` "
-                 "are authored, stable and approved, and the Sales registry routes "
-                 "`investor_relationship` and `investor_contact` to them — the only two types "
-                 "`fundraising` mints. Behind them sits "
-                 "`sales.investor_relations.investor_relations`, which is fundraising doctrine by "
-                 "its own description. ENDS WHEN: the pilot's fundraising situation count is "
-                 "known (Harsh 26) and this row moves into `_L2_TO_L3_DOMAIN` — one line. "
-                 "`live_lane` still requires the tenant to have activated the `sales` corpus, so "
-                 "arming this is the second of two switches, not the first."),
+#: ⛔ **RETIRED 2026-10-09 — THE ONE CANDIDATE ROUTE THERE WAS** (STEP-11, `06` D2,
+#: M30.C1.L-logic.V1.U02). It said `fundraising`'s doctrine existed, in the Sales corpus, "one line
+#: from live". The doctrine has since moved to a corpus of its own — the Founder Office (`Domain
+#: Expertise/Founder Office Expertise/`, M30.C6.L-data.V1.U01), whose card lane needs no engine code
+#: (`packs/wiring._corpus_packs`) — and `_L2_TO_L3_DOMAIN` maps `fundraising` there below: the one line,
+#: to the right corpus. Its two switches are unchanged in kind: `live_lane` still needs the TENANT to
+#: have activated the corpus (the pilot org alone, D2), and the live compile still admits only what a
+#: named reviewer accepted (D45) — so until the founder's review, a fundraising situation on the pilot
+#: is refused as `unreviewed`, said, rather than dark, unsaid. The Sales copy is retired with it
+#: (M30.C6.L-data.V2.U03). Kept as an empty table so the next dark domain's candidate has its shape.
+CANDIDATE_ROUTES: dict[str, CandidateRoute] = {}
+
+#: Why each candidate route that went live ended — one line of history per route.
+RETIRED_CANDIDATE_ROUTES: dict[str, str] = {
+    "fundraising": "ENDED 2026-10-09 (STEP-11, `06` D2): the L2 `fundraising` domain maps to the "
+                   "`founder_office` corpus, where investor relations moved; the Sales copy it "
+                   "pointed at is retired (M30.C6.L-data.V2.U03).",
 }
 
 #: ⛔ **KEYS THAT ARE NOT LAYER 2 DOMAINS.** Accepted defensively so a caller that already
@@ -515,14 +496,13 @@ _L2_TO_L3_DOMAIN: dict[str, str | None] = {
     "sales": "sales",
     "support": "customer_support",
     "customer_support": "customer_support",   # see CORPUS_ID_ALIASES
-    # ⛔ THESE TWO ARE DARK FOR TWO DIFFERENT REASONS, AND ONE SENTENCE USED TO COVER BOTH.
-    #   `fundraising` — the doctrine EXISTS, in the Sales corpus, and is unreachable from here.
-    #                   See CANDIDATE_ROUTES above: declared, evidenced, one line from live,
-    #                   waiting on the pilot count rather than on an author.
-    #   `general`     — genuinely unrouted: `relationship` is claimed by ALL THREE corpora, so a
-    #                   route is a CHOICE nobody has made. Not a missing corpus. Not this one.
-    # `DARK_DOMAINS` carries the reason and the ENDS WHEN for each.
-    "fundraising": None,
+    # STEP-11 (`06` D2) · the founder's own work — investors, and the programmes Layer 1 hints into
+    # this domain — reads the Founder Office corpus, switched on for the pilot org alone. It was dark
+    # until 2026-10-09: see RETIRED_CANDIDATE_ROUTES above.
+    "fundraising": "founder_office",
+    # ⛔ `general` IS STILL DARK, AND FOR ITS OWN REASON: `relationship` is claimed by ALL THREE
+    # older corpora, so a route is a CHOICE nobody has made. Not a missing corpus.
+    # `DARK_DOMAINS` carries the reason and the ENDS WHEN.
     "general": None,
 }
 
@@ -1112,7 +1092,7 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
             # WHICH LANE THIS SITUATION IS ON. The global flag still forces live for a deployment
             # that has already set it — its behaviour is unchanged — and otherwise the answer is
             # the tenant's activation row for THIS situation's corpus. A domain with no corpus
-            # (`fundraising`, `general`) resolves to None and can never be live, which is the
+            # (`general`; `fundraising` until STEP-11) resolves to None and can never be live, which is the
             # fail-closed direction: an unactivatable domain compiles and measures exactly as it
             # does today.
             row_domain = l3_domain_for(row["domain"])
@@ -1127,8 +1107,9 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                 #
                 # It is not a small set. `general:relationship` is the most-authored type in the
                 # corpus (15 situations across the three domains) and the largest on the pilot
-                # (55 rows); `fundraising:investor_relationship` and `investor_contact` are the
-                # other two. Everything they compile is measurement, forever.
+                # (55 rows); `fundraising:investor_relationship` and `investor_contact` were the
+                # other two, until STEP-11 mapped `fundraising` to the Founder Office (2026-10-09).
+                # Everything they compile is measurement, forever.
                 #
                 # THE MAP IS NOT THE DEFECT. Pointing `general` at `admin` "to get some coverage"
                 # would put Admin doctrine on a general situation, which is worse than silence.

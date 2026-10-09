@@ -60,7 +60,8 @@ def scratch():
         c.execute(text("delete from orgs where id = :o"), {"o": ORG})
         c.execute(text("insert into orgs (id, name, email) values (:o, :o, 's@ends.test')"),
                   {"o": ORG})
-        for sid, domain in [("s1", "sales"), ("s2", "fundraising")]:
+        # s2 is `general`, the domain no corpus claims: `fundraising` was one until STEP-11.
+        for sid, domain in [("s1", "sales"), ("s2", "general")]:
             c.execute(text("insert into context_situations (situation_id, org_id, correlation_id, "
                            "anchor_node_id, situation_type, domain) "
                            "values (:s, :o, :c, 'n1', 'kind', :d)"),
@@ -76,5 +77,5 @@ def test_it_reads_the_tenant_and_exits_0_when_nothing_is_unrecorded(scratch, cap
     out = capsys.readouterr().out.splitlines()
     body = json.loads(out[-1])
     assert rc == 0 and body["unrecorded"] == 0 and body["situations"] == 2
-    assert body["by_type"] == {"fundraising:kind": {"no_corpus": 1},
+    assert body["by_type"] == {"general:kind": {"no_corpus": 1},
                                "sales:kind": {"not_live": 1}}
