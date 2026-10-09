@@ -13,6 +13,13 @@ ACCEPTING A NAMED SENDER PROMOTES ITS ARCHIVE. A connector, a key person or a wa
 founder accepts is a sender whose mail always matters, so whatever the gate archived from that domain
 goes back to the ledger as kept and the next chain pass reads it (`capture/landing/promote`) — the
 promotion `promote.py` was written to wait for. A public mail host is never promoted by domain.
+
+AN IN-MOTION LINE NAMES ITS KIND OF WORK (STEP-11, `06` D31). Adding a line takes its `kind`
+(`contracts/company_brief.WORK_KINDS`) beside its counterparty's `address` or `domain`; accepting a
+proposal takes the founder's edit of all three — a value sets or corrects it, `null` clears it, a field
+left out keeps the proposal's. Each line and proposal is read back with its kind; the brief's text, the
+one the models read, never shows one. Adding a line the brief already holds, with another kind, is a
+conflict (`kind_differs`, 409) — removed and added again is how an accepted line's kind changes.
 """
 from __future__ import annotations
 
@@ -29,7 +36,11 @@ from genios_engine.platform.wiring import make_graph_store
 router = APIRouter()
 _graph = make_graph_store()
 
-_CODE_STATUS = {"not_found": 404, "not_pending": 409, "not_accepted": 409}
+_CODE_STATUS = {"not_found": 404, "not_pending": 409, "not_accepted": 409, "kind_differs": 409}
+
+#: What accepting may edit besides the words: a field the body names is the founder's (null clears
+#: it); a field it leaves out keeps the proposal's (`company_brief_store.AS_PROPOSED`).
+_ACCEPT_EDITS: tuple[str, ...] = ("kind", "address", "domain")
 
 
 class CompanyBriefLineIn(BaseModel):
@@ -37,11 +48,15 @@ class CompanyBriefLineIn(BaseModel):
     text: str
     address: str | None = None
     domain: str | None = None
+    kind: str | None = None          # STEP-11 · an in-motion line's kind of work
 
 
 class CompanyBriefDecision(BaseModel):
     decision: str                    # "accept" | "reject"
     text: str | None = None          # accept in these words instead of the proposal's
+    kind: str | None = None          # STEP-11 · accept naming this kind of work (null: none)
+    address: str | None = None       # … and this counterparty (null: none)
+    domain: str | None = None
 
 
 def _engine():
@@ -52,11 +67,13 @@ def _engine():
 
 def _lines(conn, org_id: str) -> list[dict]:
     rows = conn.execute(text(
-        "select line_id, section, text, address, domain, proposed_by, proposed_text, accepted_at "
+        "select line_id, section, text, address, domain, kind, proposed_by, proposed_text, "
+        "       accepted_at "
         "  from company_brief_lines where org_id = :o and status = 'accepted' "
         " order by accepted_at, line_id"), {"o": org_id}).fetchall()
     return [{"line_id": r.line_id, "section": r.section, "text": r.text, "address": r.address,
-             "domain": r.domain, "proposed_by": r.proposed_by, "proposed_text": r.proposed_text,
+             "domain": r.domain, "kind": r.kind, "proposed_by": r.proposed_by,
+             "proposed_text": r.proposed_text,
              "accepted_at": r.accepted_at.isoformat() if r.accepted_at else None} for r in rows]
 
 
@@ -94,7 +111,7 @@ def add_company_brief_line(body: CompanyBriefLineIn,
     try:
         with _engine().begin() as c:
             line_id = store.add(c, org_id=ctx.org_id, section=body.section, words=body.text,
-                                address=body.address, domain=body.domain,
+                                address=body.address, domain=body.domain, kind=body.kind,
                                 decided_by=ctx.actor_id or ctx.org_id, at=now)
     except ValueError as exc:
         _refuse(exc)
@@ -106,7 +123,8 @@ def add_company_brief_line(body: CompanyBriefLineIn,
 @router.post("/v1/company-brief/proposals/{line_id}/decide")
 def decide_company_brief_proposal(line_id: str, body: CompanyBriefDecision,
                                   ctx: AuthCtx = Depends(require_account_owner)) -> dict:
-    """Accept a proposal (as written, or in the founder's own words) or reject it."""
+    """Accept a proposal (as written, or in the founder's own words, kind of work and counterparty)
+    or reject it."""
     if body.decision not in ("accept", "reject"):
         raise HTTPException(422, {"error": "invalid_decision",
                                   "message": "decision must be accept or reject"})
@@ -118,7 +136,9 @@ def decide_company_brief_proposal(line_id: str, body: CompanyBriefDecision,
                 store.reject(c, org_id=ctx.org_id, line_id=line_id, decided_by=by, at=now)
                 return {"line_id": line_id, "status": store.REJECTED, "promoted": 0}
             line = store.accept(c, org_id=ctx.org_id, line_id=line_id, decided_by=by, at=now,
-                                words=body.text)
+                                words=body.text,
+                                **{f: getattr(body, f) for f in _ACCEPT_EDITS
+                                   if f in body.model_fields_set})
     except ValueError as exc:
         _refuse(exc)
     promoted = _promote_named(ctx.org_id, address=line.address, domain=line.domain) \
