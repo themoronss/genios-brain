@@ -171,7 +171,20 @@ def run_gate(ctx: GateContext, trace: EventTrace,
                          reason=v.reason)
             return GateResult(action=ARCHIVE, reason_code="llm_junk", whitelist_code=wl)
         if disp == "park":
-            trace.record("S2", "park", reason_code="low_relevance", relevance=v.relevance)
+            # `v.reason` travels. It is the only thing that says WHY, and the park branch was the
+            # one branch here that threw it away while its three neighbours kept it.
+            #
+            # MEASURED on production 2026-10-08: 429 of 897 screen objects for one tenant sat at
+            # `low_relevance` with no reason, so three different outcomes were indistinguishable —
+            # a chat the insight model judged PERSONAL (relevance 0.30, correct and desirable), a
+            # thread it judged not worth remembering (0.35), and a page no gate could judge at all
+            # (a real gap). Half a tenant's screen data was unexplainable, and "48% is being
+            # parked" could not be answered as good or bad by anyone.
+            #
+            # `reason_code` stays `low_relevance` on purpose: `parked/drain.py` retries on that
+            # code, and renaming it would silently change what gets re-adjudicated.
+            trace.record("S2", "park", reason_code="low_relevance", relevance=v.relevance,
+                         reason=v.reason)
             return GateResult(action="park", reason_code="low_relevance", whitelist_code=wl)
         trace.record("S2", "pass", relevance=v.relevance, reason=v.reason)
         return GateResult(action="route", route="needs_extraction", whitelist_code=wl)

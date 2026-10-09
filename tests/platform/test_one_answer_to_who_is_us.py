@@ -55,6 +55,9 @@ DECLARED: dict[tuple[str, str], str] = {
     ("scripts/workstream_funnel.py", "inbound_mail"):
         "STEP-00's baseline probe: its numbers are the recorded before-state, and redefining its "
         "sender test would falsify every comparison made against it",
+    ("scripts/screen_flow_report.py", "<module>"):
+        "Harsh's read-only screen report (`649208f2`, merged 2026-10-09): it lists each org's seats "
+        "beside their devices and capture policy — a directory, never a test of who is us",
 }
 
 #: The shapes the twenty sites used, copied from the code STEP-04 replaced (`f0ee8225`). Each must

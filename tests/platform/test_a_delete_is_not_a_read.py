@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_023, (
+    assert r["statements"] == 3_033, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -376,6 +376,11 @@ def test_the_statement_count_did_NOT_move():
     # first one's fact — one literal SELECT (2 → 3; `_FACTS` no longer reads the bounce). The
     # savepoints of C5 V1.U06 / V2.U05 move the coverage reads into closures, not into new
     # statements (`window` 3 → 3, `coverage_receipt` 2 → 2), and the runner units none.
+    # ⛔ MOVED 3,023 → 3,033 on 2026-10-09 by merging `origin/harsh/mvp` (`649208f2`) into
+    # `speedrun008`, measured per file against `5aff2ce5`: +10 `scripts/screen_flow_report.py`, Harsh's
+    # read-only screen report — ten SELECTs, each a literal in its QUERIES list; `capture/gate/gate`
+    # 0 → 0 and `reason/moments/screen_insight` 4 → 4 for the two other commits. The loop hop expanded
+    # nothing.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():
