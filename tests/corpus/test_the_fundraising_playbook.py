@@ -263,6 +263,62 @@ def test_the_spine_says_what_success_waiting_and_doing_nothing_mean():
     assert spine["steps"] and all(str(s.get("done_when") or "").strip() for s in spine["steps"])
 
 
+def test_the_spine_says_when_a_quiet_investor_file_is_dormant():
+    """`06` D33 moved dormancy into the playbooks: an investor file is dormant, not waiting, after the
+    spine's own number of quiet days — a prior with its source — and `then` says what a professional
+    does with it. Never sooner than the outcome window, and never inside a stage a conversation is
+    still typically in: a file is not dormant while a typical deal, or the stage it sits in, may still
+    be running."""
+    spine = _doc(SPINE)
+    stop = spine.get("stop")
+    assert isinstance(stop, dict), "the spine declares no stop rule"
+    days = stop.get("dormant_after_days")
+    assert type(days) is int and days >= 1, f"dormant_after_days is not whole days: {days!r}"
+    for field in ("source", "then"):
+        assert len(str(stop.get(field) or "").strip()) > 40, f"the stop rule has no real {field}"
+    assert days >= spine["outcome_window_days"], (
+        f"dormant after {days} quiet days, inside the {spine['outcome_window_days']}-day outcome window")
+    live = [s for s in spine["stages"] if s["name"] not in TERMINAL]
+    assert all(days > s["typical_duration_days"] for s in live), (
+        f"dormant after {days} quiet days, inside a stage that typically lasts longer")
+
+
+def test_no_move_says_when_to_stop():
+    """One kind of work, one stop rule — the spine's. A move is a play made inside the work."""
+    for move in MOVES:
+        assert "stop" not in _doc(move), f"{move} declares a stop rule"
+
+
+def test_the_reader_hands_the_expert_the_stop_rule_as_a_prior():
+    """What STEP-12's expert reads (`playbook_for`, over the shipped corpus): the number as a
+    `playbook_prior` resting on no observation of this founder (n = 0) — never a measurement, never
+    normal (`06` D37) — with its source and its words."""
+    from genios_engine.contracts.measured import PLAYBOOK_PRIOR
+    from genios_engine.packs.compiler.playbook_reader import playbook_for
+
+    stop = _doc(SPINE)["stop"]
+    answer = playbook_for("investor")
+    assert answer.reason is None and answer.playbook.playbook_id == SPINE
+    rule = answer.playbook.stop
+    assert rule is not None, "the reader found no stop rule on the spine"
+    assert rule.dormant_after.source == PLAYBOOK_PRIOR == "playbook_prior"
+    assert (rule.dormant_after.value, rule.dormant_after.n, rule.dormant_after.unit) == (
+        stop["dormant_after_days"], 0, "days")
+    assert not rule.dormant_after.normal
+    assert rule.dormant_after.says().endswith("a playbook's prior, not measured here")
+    assert rule.cited == " ".join(stop["source"].split())
+    assert rule.then == " ".join(stop["then"].split())
+
+
+def test_the_object_reads_dormancy_from_the_spine():
+    """The scoped object names no dormancy clock of its own: its `dormant` state defers to the spine's
+    stop rule, so the two cannot disagree about when an investor file is dormant."""
+    obj = _doc("founder_office.obj.investor_relations.investor_conversation")
+    [dormant] = [v for v in obj["states"]["values"] if v["name"] == "dormant"]
+    assert "stop rule" in dormant["description"]
+    assert "entered_when" not in dormant, "a predicate here would be a second dormancy clock"
+
+
 def test_the_object_holds_the_spine_s_stages():
     """The scoped object and the spine name one stage model; `unknown` is the honest default."""
     obj = _doc("founder_office.obj.investor_relations.investor_conversation")

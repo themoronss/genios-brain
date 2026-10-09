@@ -237,8 +237,9 @@ states:
         The cheapest action available, and the one the investor will never prompt for.
     - name: dormant
       description: >-
-        Quiet for longer than the stage's typical duration with no turn outstanding — lapsed rather than
-        decided. Judged against the spine's priors by the expert, not by a fixed count of days.
+        No word from the investor for longer than the spine's stop rule (its `dormant_after_days`, a
+        prior) and no turn of ours outstanding — lapsed rather than decided. Before that, quiet past a
+        stage's typical duration is the moment for the spine's one direct ask, not yet dormancy.
       implies: >-
         Usually nothing. Dormant is the resting state of most investor relationships and becomes
         actionable only when a reopening condition is met or a real update exists.
@@ -256,7 +257,7 @@ states:
     - {from: live, to: waiting_on_us, when: [{path: thread.ball_in_court, op: "=", value: us}],
        reversible: true}
     - {from: waiting_on_us, to: live, trigger: we reply, reversible: true}
-    - {from: live, to: dormant, trigger: quiet past the stage's typical duration with no turn outstanding,
+    - {from: live, to: dormant, trigger: no word from the investor past the spine's stop rule and no turn of ours outstanding,
        reversible: true}
     - {from: dormant, to: live, trigger: either side writes with something new, reversible: true}
     - {from: live, to: passed_with_condition, trigger: a pass carrying a reopening condition,
@@ -685,6 +686,6 @@ metadata:
   notes: >
     Moved from Sales' investor relations, where it was a draft approved by Harsh on 2026-08-25. New id,
     so it is unreviewed here until the founder accepts it (`06` D45). Eight executable patterns and four
-    blocked; none sets the stage. Sales' sixty-day dormancy predicate is gone: dormancy is now read
-    against each stage's typical duration on the spine (`06` D33), and no fixed count of days carries a
-    source.
+    blocked; none sets the stage. Sales' sixty-day dormancy predicate is gone: dormancy is the spine's
+    stop rule (`06` D33), a labelled prior with its source that code reads, and no predicate here
+    re-implements it.

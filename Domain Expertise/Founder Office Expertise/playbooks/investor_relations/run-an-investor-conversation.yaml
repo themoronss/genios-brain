@@ -275,6 +275,42 @@ do_nothing_consequence: >-
   Left alone, an investor conversation does not pause: it decays into a no that nobody sends, and the
   founder learns of it only when the round has moved on without that investor.
 
+# THE STOP RULE (`06` D33; the follow-up to M30.C6.L-data.V1.U01, 9 Oct 2026). Three things in this
+# playbook already say when to stop waiting, and each answers a different question:
+#   - the stages' typical durations, with steps 4 and 5, say when to make the one direct ask and when an
+#     unanswered ask is a no for this round — a judgement on evidence, recorded as `passed` with no
+#     reason given;
+#   - step 8, the last step, says what to record when a pass arrives, stated or inferred — its reason and
+#     its condition — and hands the conversation to reopen after a pass;
+#   - `passed` is where the conversation then rests until its condition is met. Its quiet is the resting
+#     state, not decay.
+# `stop` is different again: the clock on silence that code reads. An investor file whose investor has
+# said nothing for 90 days, with no turn of ours outstanding, is DORMANT rather than waiting, whatever
+# its stage — and that closes nothing. For a conversation that was live it means steps 4 and 5 never
+# ran; for one already passed it is the expected state. `outcome_window_days` (83) counts from first
+# contact to a decision, `stop` counts quiet days from the investor's last word, so a file reaches `stop`
+# only after its window has closed; for a conversation nobody has written in since the first contact,
+# the two nearly coincide. The conditional deferral's window (90 days, three monthly updates) ends on the
+# same day as this clock.
+stop:
+  dormant_after_days: 90
+  source: >-
+    practitioner judgement — unverified; for the founder's review. Ninety days is `06` D33's proposal for
+    an investor file. Measured context: venture firms report that the average deal takes 83 days to
+    close — 73 at early-stage firms and 96 at firms outside the US (Gompers, Gornall, Kaplan &
+    Strebulaev, NBER Working Paper 22587, 2016, Table 9) — so an investor quiet for longer than a whole
+    typical deal takes is not running a process on the company.
+  then: >-
+    Close nothing on the clock alone, and send no check-in: dormant is the resting state of most investor
+    relationships, and a check-in spends one for nothing. Read whose turn it is first — if the investor
+    wrote last and we owe the answer, the file is not dormant but waiting on us, and the reply comes
+    before anything else. Otherwise act by stage. A conversation that was live is a no for this round:
+    record it as passed with no reason given, as step 5 does, and stop counting it. One already passed
+    rests until its condition is met, and is reopened then with the change. A commitment quiet this long
+    has lapsed until the investor confirms it in writing. Keep on the monthly update only the investors
+    who asked for one, and write to the rest only with a reason — their condition met, a new round, a
+    real milestone.
+
 objects_used:
   - founder_office.obj.investor_relations.investor_conversation
   - founder_office.obj.core.company
@@ -409,5 +445,6 @@ metadata:
     New on STEP-11 (M30.C6.L-data.V1.U01). Of the five stages a conversation moves through, two carry a
     published prior (partner_meeting, term_sheet) and three are practitioner judgement, marked so
     (first_contact, first_call, diligence); the two terminal stages carry no duration by definition. The
-    outcome window is published (Gompers et al.). Each is for the founder to accept, change or reject
-    line by line (`06` D45).
+    outcome window is published (Gompers et al.). The stop rule's 90 days is practitioner judgement —
+    `06` D33's proposal — with the same paper's deal period as its context. Each is for the founder to
+    accept, change or reject line by line (`06` D45).
