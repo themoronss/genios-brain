@@ -13,6 +13,12 @@ whose evidence names no pattern, or whose address or domain is not in the patter
 reason — the drafter cannot introduce a sender the memory never saw. Weekly (`reason/brief_review`) it
 is asked again with the brief in force, for what is missing.
 
+THE KIND OF WORK (STEP-11, `06` D31). Each in-motion line it proposes names its kind of work — one of
+`contracts/company_brief.WORK_KINDS`, or none when none fits — and may name its counterparty, an address
+or a domain the patterns show; the file that counterparty names reads that kind's playbook. Refused like
+anything else, never repaired: a kind off the list, or a kind on a line of any other section. The kind is
+proposed with the line, and the founder accepts, corrects or clears it with the line.
+
 One Sonnet-class call (`Settings.company_brief_model`, `06` D28), recorded as `company_brief_draft`.
 """
 from __future__ import annotations
@@ -22,9 +28,10 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
-from genios_engine.contracts.company_brief import PROPOSABLE, CompanyBriefLine
+from genios_engine.contracts.company_brief import PROPOSABLE, WORK_KINDS, CompanyBriefLine
 
-PROMPT_VERSION = "company-brief-draft.v1"
+#: v2 (STEP-11): the prompt asks for each in-motion line's kind of work and counterparty.
+PROMPT_VERSION = "company-brief-draft.v2"
 COST_PURPOSE = "company_brief_draft"
 MAX_LINES = 30
 MAX_PER_SECTION = 8
@@ -47,12 +54,16 @@ preferences.
 - A people line may give the person's address. A connectors line MUST give the address the connector \
 writes from. A watchlist line MUST give a domain: a government portal, a program or a fund whose mail \
 must never be missed. Use only addresses and domains that appear in the patterns.
+- An in_motion line names its kind of work: {kinds} — or null when none fits. It may give its \
+counterparty, the one on the other side of that work: the person's address, or the domain of the fund, \
+program, portal or company. No other section has a kind.
 - Every line cites the ids of the patterns it rests on.
 - Never invent a name, an amount, a date or a fact the patterns do not show. When unsure, leave it out.
 - At most {per_section} lines in a section and {total} in all; each line under {chars} characters.
 {current}
 Return JSON only, in exactly this shape:
-{{"lines": [{{"section": "...", "text": "...", "address": null, "domain": null, "evidence": ["p1"]}}]}}
+{{"lines": [{{"section": "...", "text": "...", "address": null, "domain": null, "kind": null, \
+"evidence": ["p1"]}}]}}
 
 THE COMPANY: {company}
 US: {us}
@@ -66,6 +77,21 @@ The brief already holds the lines below. Propose only what is missing — never 
 {block}
 """
 
+#: How the prompt offers each kind of work (STEP-11). One per `WORK_KINDS`, in its order: a kind the
+#: drafter is never offered is a kind no line is ever proposed with.
+_KIND_GLOSSES: dict[str, str] = {
+    "investor": "raising from a fund or an angel",
+    "program": "an accelerator, incubator or program application",
+    "compliance": "a registration, filing or certificate with a government portal",
+    "hiring": "filling a role",
+    "intro": "an introduction made or asked for",
+    "partner": "a design partner, customer or distribution partner",
+}
+
+
+def _kinds_offered() -> str:
+    return ", ".join(f"{k} ({_KIND_GLOSSES[k]})" if k in _KIND_GLOSSES else k for k in WORK_KINDS)
+
 
 @dataclass(frozen=True)
 class Proposal:
@@ -74,6 +100,7 @@ class Proposal:
     address: str | None
     domain: str | None
     evidence: tuple[str, ...]
+    kind: str | None = None             # STEP-11 · an in-motion line's kind of work, or none
 
 
 @dataclass(frozen=True)
@@ -99,6 +126,7 @@ def build_prompt(patterns: dict[str, Any], *, company_brief: str = "") -> str:
     rendered = "\n".join(json.dumps(item, ensure_ascii=False, sort_keys=True)
                          for item in patterns.get("items", ()))
     return _PROMPT.format(per_section=MAX_PER_SECTION, total=MAX_LINES, chars=MAX_TEXT,
+                          kinds=_kinds_offered(),
                           current=_CURRENT.format(block=company_brief.rstrip()) if company_brief else "",
                           company=company, us=" · ".join(patterns.get("us", ())) or "unknown",
                           patterns=rendered)
@@ -126,6 +154,7 @@ def parse(parsed: Any, patterns: dict[str, Any]) -> tuple[list[Proposal], list[s
             words = str(entry.get("text") or "").strip()
             address = str(entry.get("address") or "").strip().lower() or None
             domain = str(entry.get("domain") or "").strip().lower().lstrip("@") or None
+            kind = str(entry.get("kind") or "").strip().lower() or None
             evidence = entry.get("evidence")
             if section not in PROPOSABLE:
                 why = f"section {section!r} is not one a line may be filed under"
@@ -145,7 +174,7 @@ def parse(parsed: Any, patterns: dict[str, Any]) -> tuple[list[Proposal], list[s
             else:
                 try:
                     CompanyBriefLine(line_id=f"draft_{n}", section=section, text=words,
-                                     address=address, domain=domain)
+                                     address=address, domain=domain, kind=kind)
                 except ValueError as exc:
                     why = str(exc)
         if why:
@@ -154,7 +183,7 @@ def parse(parsed: Any, patterns: dict[str, Any]) -> tuple[list[Proposal], list[s
         per_section[section] += 1
         seen.add((section, words.lower()))
         kept.append(Proposal(section=section, text=words, address=address, domain=domain,
-                             evidence=tuple(evidence)))
+                             evidence=tuple(evidence), kind=kind))
     return kept, refused
 
 
@@ -200,7 +229,7 @@ def draft_company_brief(engine, org_id: str, llm: Any, *, now: datetime, cost_si
         with engine.begin() as c:
             for p in proposals:
                 if store.propose(c, org_id=org_id, section=p.section, words=p.text, address=p.address,
-                                 domain=p.domain, proposed_by=proposed_by, at=now,
+                                 domain=p.domain, kind=p.kind, proposed_by=proposed_by, at=now,
                                  evidence=_evidence(p, patterns)) is not None:
                     written += 1
     return DraftOutcome(proposed=written, refused=tuple(refused), model=model, input_tokens=it,
