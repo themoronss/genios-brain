@@ -1,4 +1,21 @@
-# STUB load-set — filled with the capability by its content unit (STEP-11).
+# Load-set for founder_office.programs_and_applications.program_applications — REFERENCES ONLY.
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8).
+#
+# One scoped object: the application, whose states are the spine playbook's stages
+# (`founder_office.pb.program_applications.follow_an_application`), so the expert and the object can
+# never disagree about where an application can be.
+#
+# NO CORE OBJECT, AND NOT BY OVERSIGHT. The domain's shared objects — the programme's organisation,
+# its people, the founder's next move — are authored by another unit of STEP-11 in parallel and do not
+# exist on this branch; naming one here would fail link integrity. They join this load-set (as
+# `optional`) when that unit lands, which is the lead's merge to make.
+#
+# Deliberately absent, as in investor relations: deal, opportunity, pipeline stage and close date. A
+# programme decides on its own calendar; a deal-shaped object would answer `unknown` about a buyer
+# that does not exist, and an `unknown` reads downstream as assessed-and-absent.
+
 capability: founder_office.programs_and_applications.program_applications
 
 core:
@@ -6,5 +23,6 @@ core:
   optional: []
 
 scoped:
-  required: []
+  required:
+    - founder_office.obj.program_applications.application
   optional: []

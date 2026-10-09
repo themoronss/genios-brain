@@ -1,0 +1,100 @@
+identity:
+  id: founder_office.heu.program_applications.a_rejection_carries_a_reapplication_date
+  name: A rejection carries a re-application date
+  kind: heuristic
+  domain: founder_office
+  scope: capability
+  owner_capability: founder_office.programs_and_applications.program_applications
+  subdomain: programs_and_applications
+  version: 0.1.0
+  status: draft
+  aliases:
+    - Not this cohort is not never
+
+purpose:
+  statement: >
+    Separates a programme's rejection from a verdict on the company, because the two need opposite
+    handling: a verdict is filed and forgotten, a dated rejection is scheduled against.
+  answers:
+    - Is this rejection final, or is it dated?
+    - When can we apply again, and what must be different when we do?
+
+heuristic:
+  statement: >
+    A programme's rejection is usually a dated fact, not a verdict: it stops being true at the next
+    intake. File it with that date and with what will be different.
+  why: >
+    Programmes re-admit on a calendar and say so. "In a typical YC batch, about half the companies
+    applied multiple times before being accepted", and YC strongly encourages applying again; Techstars:
+    "It takes many companies a few tries to get in"; SISFS takes a new application six weeks after a
+    rejection; Hub71 and NSRCEL take applications for future cohorts. A cohort has a fixed number of
+    places — Techstars Paris takes twelve companies a class — so a no can be about the batch as much
+    as the company, and the next application is read for the progress since the last: YC calls that
+    progress "a strong signal".
+  confidence_bp: 7500
+  applies_when: A programme has declined an application, with or without feedback.
+  breaks_down_when: >
+    An eligibility rejection does not reopen with time and can close for good: SISFS admits only
+    companies incorporated not more than two years before the application, so waiting can end
+    eligibility rather than restore it. A one-off programme has no next intake. And a re-application with
+    nothing new repeats the decision — NSRCEL asks re-applicants to "highlight any additional information
+    of your progress since your application for a previous cohort".
+  reads:
+    - founder_office.obj.program_applications.application
+
+objects_used:
+  - founder_office.obj.program_applications.application
+
+outcomes:
+  - Every rejection is filed with its re-application date, its feedback and the change for next time.
+  - The next intake's deadline reaches the file before it passes.
+
+failure_modes:
+  - Filing every rejection as reversible, including the eligibility rejections time will not undo.
+  - Re-applying on the date with the same application.
+
+limits:
+  - It dates the rejection; it does not predict the next decision.
+
+references:
+  - title: Y Combinator FAQ
+    kind: practitioner
+    author: Y Combinator
+    url: https://www.ycombinator.com/faq
+    note: >
+      Read 9 Oct 2026. About half of a typical batch applied more than once; "we strongly encourage you to
+      apply again"; "Having made progress since your last application is a strong signal to us."
+  - title: "Inside a Techstars Accelerator: The Application & Interview Process"
+    kind: practitioner
+    author: Techstars
+    url: https://www.techstars.com/blog/founder-advice/inside-a-techstars-accelerator-the-application-and-interview-process
+    note: Published 12 Jan 2026, read 9 Oct 2026. "It takes many companies a few tries to get in".
+  - title: "Techstars Paris: The ins and outs of the application and selection process"
+    kind: practitioner
+    author: Techstars Paris
+    url: https://www.techstars.com/blog/advice/techstars-paris-the-ins-and-outs-of-the-application-and-selection-process
+    note: Published 30 Jan 2022, read 9 Oct 2026. Twelve companies per class.
+  - title: Startup India Seed Fund Scheme — F.A.Q.
+    kind: standard
+    author: DPIIT, Government of India
+    url: https://seedfund.startupindia.gov.in/faq
+    note: Read 9 Oct 2026. "you can apply to the SISFS again after 6 Weeks of receiving a rejection".
+  - title: Hub71 FAQs
+    kind: practitioner
+    author: Hub71
+    url: https://www.hub71.com/faqs
+    note: Read 9 Oct 2026. "Yes, you can apply to join our future cohorts."
+  - title: NSRCEL Launchpad
+    kind: practitioner
+    author: NSRCEL, IIM Bangalore
+    url: https://nsrcel.org/launchpad/
+    note: Read 9 Oct 2026. Re-applicants welcome, with their progress since the previous application.
+
+metadata:
+  owner: Founder Office
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-10-09"
+  review_status: unreviewed
+  confidence: experimental
+  completeness: partial

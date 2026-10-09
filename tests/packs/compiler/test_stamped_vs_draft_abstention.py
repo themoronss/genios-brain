@@ -52,7 +52,9 @@ def test_the_whole_shipped_corpus_is_stamped_now():
     # with a reason each, and stamped one by one as Rohit accepts them (`06` D45). Every other
     # capability is stamped. Exact, so a stub anywhere else — or a seventh here — goes red.
     founder_stubs = {"founder_office.fundraising.investor_relations": "stub",
-                     "founder_office.programs_and_applications.program_applications": "stub",
+                     # M30.C6.L-data.V1.U02 authored it: no longer a stub, draft and unstamped until review.
+                     "founder_office.programs_and_applications.program_applications":
+                         "identity_status_draft",
                      "founder_office.networking_and_intros.introductions": "stub",
                      "founder_office.compliance.registrations_and_recognition": "stub",
                      "founder_office.hiring.offers_and_joining": "stub",

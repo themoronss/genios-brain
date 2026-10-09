@@ -1,0 +1,170 @@
+# A MOVE of program_applications: what to do when a programme's date is on the file. No stages —
+# the spine (`follow_an_application`) holds those.
+#
+# outcome_window_days: 14 — practitioner judgement, unverified; for the founder's review. A work-back
+# plan is judged on the deadline itself; a fortnight is the horizon at which a plan with several owners
+# can still be kept. A programme's own date always decides.
+#
+# The YC conversion in step 1 was computed, not copied: 2 November 2026 is the day after US daylight
+# saving ends (1 November), so 8pm PT is PST, UTC-8 — 04:00 UTC on 3 November, 09:30 in India.
+identity:
+  id: founder_office.pb.program_applications.work_back_from_the_deadline
+  name: Work back from a deadline that does not move
+  kind: playbook
+  domain: founder_office
+  scope: capability
+  owner_capability: founder_office.programs_and_applications.program_applications
+  subdomain: programs_and_applications
+  version: 0.1.0
+  status: draft
+  aliases:
+    - Deadlines that do not move
+
+purpose:
+  statement: >
+    A programme's deadline is published once, kept, and the same for every applicant. The only plan
+    that survives one is written backwards from it, on the programme's clock, with every part of the
+    application owned and dated, the facts frozen a day early, and the receipt on file.
+  answers:
+    - When, on the founders' own clock, is this actually due?
+    - What has to be finished before then, by whom, and by when?
+    - What does late mean for this programme?
+  not:
+    - Whether the programme is worth applying to — that is the founder's call.
+    - A rolling programme's response clock — the spine's calendar step holds it.
+
+when_to_use:
+  conditions:
+    - {has_obs: deadline_stated}
+  signals:
+    - A programme's application deadline is on the file.
+    - A cohort's own due date — an assignment, a review deck, a demo-day slot — is on the file.
+    - An interview booking date, a clarification's date or an offer's reply-by date is on the file.
+  do_not_use_when:
+    - >
+      The programme is rolling and has no deadline (SISFS takes applications on an ongoing basis): its
+      fixed points are its eligibility rules on the day of application and its response clock.
+    - The date is the company's own target rather than the programme's.
+
+steps:
+  - order: 1
+    actor: agent
+    name: Put the deadline on the founders' clock
+    description: >
+      Write the deadline in the programme's time zone and in the founders'. YC's "November 2 at 8pm PT"
+      for its Winter 2027 batch is 3 November at 9:30 am in India.
+    produces: The deadline on both clocks.
+    done_when: The deadline is on the file in the programme's time zone and in the founders', both written out.
+  - order: 2
+    actor: human
+    name: Give every part an owner and a date
+    description: >
+      Each answer, the video, the deck, the metrics, each co-founder's own profile, any recommendation:
+      an owner and a date before the deadline. On YC's form only the founder who created the application
+      can edit it, and each co-founder completes a profile of their own.
+    produces: A dated list of the application's parts and their owners.
+    done_when: Each part of the application has a named owner and a date before the deadline.
+  - order: 3
+    actor: human
+    name: Freeze the facts a day early
+    description: >
+      Numbers, names and the deck are final the day before; the last day is for the upload. What is
+      submitted stays submitted: YC does not allow continuous editing once an application enters review,
+      and SISFS fixes the order of incubator preferences on submission.
+    produces: A final application, a day ahead.
+    done_when: Every part is final at least a day before the deadline, on the founders' clock.
+  - order: 4
+    actor: human
+    name: Submit early and keep the receipt
+    description: >
+      Submit before the last day and file the receipt — the confirmation mail or the portal's submitted
+      status. Without it the application may not have gone in: YC says that without its confirmation
+      "you likely did not submit the application".
+    produces: A dated receipt.
+    done_when: A dated receipt is on the file before the deadline.
+  - order: 5
+    actor: agent
+    name: Know what late means here
+    description: >
+      If the deadline is missed, read the programme's own rule instead of asking for an exception:
+      Hub71 considers a late application for the next cohort; YC still reads one but "can't promise
+      exactly when we'll get back to you", and will not mark it on time for a good reason.
+    produces: The intake a late application now belongs to.
+    done_when: >
+      For a missed deadline, the file says which intake the application now belongs to and when it will
+      be read, from the programme's own rule.
+
+success_signal: >
+  The application's receipt — a confirmation mail or the portal's submitted status — is on the file
+  before the programme's deadline, read on the programme's own clock.
+
+outcome_window_days: 14
+
+objects_used:
+  - founder_office.obj.program_applications.application
+
+outcomes:
+  - The deadline is on the file on both clocks, and every part of the application has an owner and a date.
+  - The application is in, with a receipt, before the deadline.
+  - A missed deadline is re-dated by the programme's own rule, not by hope.
+
+failure_modes:
+  - >
+    Planning forwards from today rather than backwards from the deadline, so the last part to be written
+    is the one that needs a co-founder who is travelling that week.
+  - >
+    Treating the deadline as negotiable. The programme's answer to a late application is its own
+    published rule — the next cohort, or a reading with no promised date — not an exception.
+  - >
+    Reading the date in the founders' time zone when the programme published it in its own.
+
+limits:
+  - >
+    A programme can extend its own window; the new date then replaces the old one, and the plan moves
+    with it.
+  - >
+    Rolling programmes have no deadline. Their fixed points are eligibility on the day of application —
+    SISFS admits only DPIIT-recognised companies incorporated not more than two years before it — and
+    their response clock.
+
+references:
+  - title: Apply to Y Combinator
+    kind: practitioner
+    author: Y Combinator
+    url: https://www.ycombinator.com/apply
+    note: >
+      Read 9 Oct 2026. "The deadline to apply on-time is November 2 at 8pm PT"; after it, YC "can't
+      promise exactly when we'll get back to you".
+  - title: Y Combinator FAQ
+    kind: practitioner
+    author: Y Combinator
+    url: https://www.ycombinator.com/faq
+    note: >
+      Read 9 Oct 2026. Only the founder who created the application can edit it; no continuous editing
+      after submission; the confirmation mail; a late application is not marked on time ("No, sorry").
+  - title: Hub71 Access Programme
+    kind: practitioner
+    author: Hub71
+    url: https://www.hub71.com/program/access-programme
+    note: >
+      Read 9 Oct 2026. "if you apply after the mentioned deadline related to a cohort, you will be
+      considered for the next cohort".
+  - title: Startup India Seed Fund Scheme — F.A.Q.
+    kind: standard
+    author: DPIIT, Government of India
+    url: https://seedfund.startupindia.gov.in/faq
+    note: >
+      Read 9 Oct 2026. Applications on an ongoing basis; "Applications once filled and submitted are
+      final"; eligibility — DPIIT recognition, incorporated not more than two years before applying.
+
+metadata:
+  owner: Founder Office
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-10-09"
+  review_status: unreviewed
+  confidence: experimental
+  completeness: partial
+  notes: >
+    The outcome window (14) is practitioner judgement, unverified; for the founder's review. Every rule
+    quoted is the programme's own, read on 9 October 2026, and changes with each intake.

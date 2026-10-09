@@ -112,7 +112,9 @@ def test_the_measured_corpus_is_healthy_and_says_so(catalog):
     # 155 shipped, all admitted; + the Founder Office's six (STEP-11), declared as stubs and stamped
     # one by one as Rohit accepts them (`06` D45). Nothing outside that domain may go dark.
     founder = health["founder_office"]
-    assert (founder.total, founder.admitted, founder.by_reason.get("stub")) == (6, 0, 6)
+    # M30.C6.L-data.V1.U02 authored program_applications: one stub fewer, counted as draft instead.
+    assert (founder.total, founder.admitted, founder.by_reason.get("stub"),
+            founder.by_reason.get("identity_status_not_stable")) == (6, 0, 5, 1)
     assert admitted == total - founder.total, (
         f"{total - admitted} capabilities would go dark under require_admission=True; "
         f"the plan's cutover cost is no longer zero outside the Founder Office")

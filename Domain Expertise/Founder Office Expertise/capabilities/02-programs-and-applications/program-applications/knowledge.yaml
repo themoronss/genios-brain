@@ -1,17 +1,43 @@
-# STUB knowledge manifest — filled with the capability by its content unit (STEP-11).
+# Knowledge manifest for founder_office.programs_and_applications.program_applications — references only.
+#
+# THE SPINE is `follow_an_application`: the one playbook of this capability that declares `stages`,
+# the closed list STEP-12's expert names a file's stage from. The four moves are the plays it hands
+# off to at the points where an application is usually lost — a deadline, an interview, the decision
+# mail, the papers after acceptance. The five heuristics are the claims those plays rest on, each with
+# the regime where it stops holding.
 capability: founder_office.programs_and_applications.program_applications
+
 playbooks:
   core: []
-  scoped: []
+  scoped:
+    - founder_office.pb.program_applications.follow_an_application
+    - founder_office.pb.program_applications.work_back_from_the_deadline
+    - founder_office.pb.program_applications.prepare_for_the_interview
+    - founder_office.pb.program_applications.read_the_decision_mail
+    - founder_office.pb.program_applications.documents_after_acceptance
+
 heuristics:
   core: []
-  scoped: []
+  scoped:
+    - founder_office.heu.program_applications.a_programme_is_not_an_investor
+    - founder_office.heu.program_applications.a_batch_is_silent_until_it_decides
+    - founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point
+    - founder_office.heu.program_applications.a_rejection_carries_a_reapplication_date
+    - founder_office.heu.program_applications.the_portal_is_the_record
+
 mental_models:
   core: []
   scoped: []
+
 rules:
   core: []
   scoped: []
+
 decision_frameworks:
   core: []
   scoped: []
+
+notes: >
+  Read by the expert for a file whose kind of work is `program`, not by a routed situation: the
+  capability is deferred (no Layer 2 type is an application). The spine is the playbook to resolve for
+  such a file; the moves are read alongside it.

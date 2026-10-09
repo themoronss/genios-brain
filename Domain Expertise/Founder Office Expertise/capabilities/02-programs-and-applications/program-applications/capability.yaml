@@ -1,18 +1,154 @@
-# STUB — declared by the domain root (STEP-11 M30.C1.L-contract.V0.U01) and filled by its content unit.
-# A stub is skipped by the resolver: nothing compiles through it until it is authored and admitted.
+# founder_office.programs_and_applications.program_applications
+#
+# Authored by STEP-11 M30.C6.L-data.V1.U02 (9 Oct 2026), replacing the stub M30.C1.L-contract.V0.U01
+# declared. Draft and unreviewed: every line is the founder's to accept, edit or reject (`06` D45),
+# and only that review admits it (`_tools/admit.py`, run by the lead after it — never by the author).
+#
+# WHY IT EXISTS. On the golden set an accelerator's interview (F17), an accelerator's review (F24) and
+# a government portal (F01, F02) each formed an `investor_relationship`, because Layer 1 hints
+# programmes into `fundraising` (`capture/domain/hints.py`) and the extraction prompt calls an
+# accelerator an investor (`context/extract/prompt.py`). The investor reading then advises the wrong
+# things for an application: chase, warm intros, "a pass". This capability is the refusal of that
+# reading, written as what a chief of staff knows about applying to a programme.
+#
+# WHY IT OWNS NO SITUATION. No Layer 2 situation type is an application and none will be minted
+# (`06` D32). It stays deferred (`deferrals.yaml`, `no_runtime_trigger`) and is read by the expert for
+# a file whose kind of work is `program` (`playbook_for(file)`, STEP-12's dossier). Its spine playbook
+# (`founder_office.pb.program_applications.follow_an_application`) holds the closed list of stages the
+# expert names a file's stage from; the numbers live there, as sourced priors — none here (rule 7).
 identity:
   id: founder_office.programs_and_applications.program_applications
   name: Program Applications
   domain: founder_office
   subdomain: programs_and_applications
-  version: 0.1.0
+  version: 0.2.0
   status: draft
-  stub: true
+  stub: false
 
 description: >
-  Every application to an accelerator, incubator, fellowship, grant or government scheme, from submission to onboarding. Filled by STEP-11 M30.C6.
+  Every application the company makes to an accelerator, an incubator, a fellowship, a grant or a
+  government scheme, from the submission to the programme's first day, and the programme's own
+  deadlines while the company is in it.
+
+
+  An application is a selection process, not a conversation. The programme publishes its calendar,
+  reads every applicant against the same form, decides as a batch or by a committee, and answers on
+  its own date — or, for a rolling scheme, on its own clock from receipt. Four things follow that an
+  investor reading gets wrong. The programme's deadline is the one date in the file that will not move
+  for anyone. Its silence before its published decision date is not a no, because the answer has a
+  date and many programmes promise to answer every applicant; the exception is the programme that
+  writes only to the applicants it wants, and knowing which kind this is decides what the quiet means.
+  Its rejection usually carries a date on which it stops being true — the next intake — and is worth
+  filing with that date and with what will be different. And its acceptance is not the end: it opens a
+  second process with its own dates — the agreement, the investment documents where the programme
+  invests, the entity the programme can invest in, and for some programmes a move.
+
+
+  The capability's job is to keep each application's real stage, the programme's next date and whose
+  turn it is visible, so that no application is lost on a date rather than on merit.
 
 question: "Where does this application stand, and what does its programme expect next?"
+
+outcomes:
+  - >
+    Every live application carries its programme's own calendar — the deadline in the programme's
+    time zone and in the founder's, the review window, the decision-by date, the start — each with the
+    page it came from; or the file says the programme is rolling and names its response clock instead.
+  - >
+    Each application's stage is named from the programme's own words — its mail or its portal's status
+    — and the file says what the programme's quiet means at that stage, rather than how long it feels.
+  - >
+    Every request a programme makes — an interview slot to book, a clarification, a missing document,
+    an offer to accept — is answered before the programme's own date, with every founder it asks for.
+  - >
+    A decision is recorded with what it asks next: an offer accepted in writing before its reply-by
+    date and its papers in hand before the first day, or a rejection filed with its re-application date
+    and the change the next application will lead with.
+  - >
+    Programmes are kept out of the investor reading. No chase is sent to a selection team that has
+    published its date, no introduction is sought for a process that reads every application alike,
+    and no rejection is filed as a lost relationship.
+  - >
+    An application is stopped on purpose when that is the answer: a programme past its own decision
+    date that has not answered one status query, an offer the founder chooses to decline, or an intake
+    the company is not eligible for is closed with its reason — not left as a live file that ages until
+    someone asks why it is still there.
+
+failure_modes:
+  - >
+    Reading a programme as an investor. The file is then chased like a fund that has gone quiet, a warm
+    introduction is sought for a process that says it does not rely on introductions, and a rejection
+    is filed as a lost deal — when the programme has published its calendar, decides through its own
+    selection rounds and invites the company back at its next intake.
+  - >
+    Treating a batch's silence as a no. The founder gives up — or nags — before the published decision
+    date, when the programme answers on its own calendar and has said it will answer everyone. The
+    opposite error is as costly: waiting for a programme that writes only to the applicants it wants,
+    long after its silence has become the answer.
+  - >
+    Missing a deadline that does not move. The date is read in the founder's time zone when the
+    programme publishes it in its own, the upload is left to the final hour, or a co-founder's part of
+    the form is still open. A late application is read for the next cohort, or read with no promised
+    date — never marked on time for a good reason.
+  - >
+    Filing a rejection as final when the programme invites a re-application. Without the date and the
+    feedback the company either never re-applies or re-applies with the same application, and a
+    programme that counts progress since the last application sees none.
+  - >
+    Losing an offer in onboarding. Acceptance is read as the finish while the agreement goes unsigned,
+    the investment documents wait on a cap table nobody has checked, or the entity the programme can
+    invest in does not exist yet — a parent company abroad, or a licence in the programme's own
+    jurisdiction — and each of those has a date of its own.
+  - >
+    Reading only the mail. A government scheme's portal holds the status and the mail only reports it,
+    often in a template that a filter takes for an automated notice; the application moves, or is
+    asked a question, and nobody sees it until the portal's own clock has run.
+
+kpis:
+  - name: programme_calendar_on_file
+    unit: percent
+    direction: higher_is_better
+    description: >
+      Share of live applications whose file carries the programme's published deadline and decision
+      date with the page each came from, or a stated response clock for a rolling programme. The
+      capability's floor: an application nobody can date is an application nobody is running.
+  - name: programme_requests_answered_in_time
+    unit: percent
+    direction: higher_is_better
+    description: >
+      Share of programme requests — interview bookings, clarifications, documents, offer acceptances —
+      answered before the programme's own date. The most actionable number here, because the programme's
+      date passes whether or not anyone reminds the founder of it.
+  - name: oldest_unanswered_programme_request
+    unit: days
+    direction: lower_is_better
+    description: >
+      Age of the oldest programme request still waiting on the founder. Read against the request's own
+      date, never against how quiet the programme has been.
+  - name: declines_filed_with_a_reapplication_date
+    unit: percent
+    direction: higher_is_better
+    description: >
+      Share of rejections recorded with the programme's re-application window and what will change.
+      Measures whether the reversible half of the rejections survives being written down.
+  - name: programme_files_read_as_investors
+    unit: count
+    direction: lower_is_better
+    description: >
+      Programme files carried in the investor reading — chased, offered an introduction, or filed as a
+      pass. Each one is advice built for a different kind of counterparty.
+
+handoffs:
+  # Only this domain's capabilities, by id. Recognition is upstream: a government seed scheme admits
+  # only a recognised company (SISFS: "Only DPIIT recognized startups can apply"). An investing
+  # programme becomes a shareholder on acceptance, so investor relations is downstream.
+  upstream:
+    - founder_office.compliance.registrations_and_recognition
+  downstream:
+    - founder_office.fundraising.investor_relations
+  parallel:
+    - founder_office.meetings.external_meetings
+    - founder_office.networking_and_intros.introductions
 
 metadata:
   owner: Founder Office
@@ -21,3 +157,10 @@ metadata:
   last_updated: "2026-10-09"
   review_status: unreviewed
   confidence: experimental
+  notes: >
+    Authored from the programmes' own published pages, read on the day it was written, and from
+    practitioner judgement where no page states a number; every prior sits in the spine playbook with
+    its source, and each judgement says that it is one. The priors are a profession's typical values,
+    never a measurement of this founder. Applies to Indian and international programmes alike;
+    where the two differ — a government scheme's portal, its recognition rule, its re-application
+    wait — the playbooks say which is which.

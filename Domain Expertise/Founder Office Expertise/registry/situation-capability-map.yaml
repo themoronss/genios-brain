@@ -74,12 +74,12 @@ stats:
   l2_types_pending: 0
   situations: 0
   capabilities: 6
-  capabilities_stub: 6
-  capabilities_complete: 0
+  capabilities_stub: 5
+  capabilities_complete: 1
   capabilities_routed: 0
   capabilities_deferred: 6
   capabilities_unrouted_unreasoned: 0
   situations_suppressed: 0
-  objects_total: 0
+  objects_total: 1
   objects_core: 0
-  objects_scoped: 0
+  objects_scoped: 1

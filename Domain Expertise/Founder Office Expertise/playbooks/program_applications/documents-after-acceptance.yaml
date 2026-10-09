@@ -1,0 +1,216 @@
+# A MOVE of program_applications: the spine's `onboarding` stage, as a procedure. No stages here.
+#
+# outcome_window_days: 30 — the spine's onboarding prior: its midpoint is practitioner judgement,
+# unverified; for the founder's review, between SISFS (selection within 45 days, first instalment
+# within 60 of receipt) and Hub71's "two-month onboarding process".
+#
+# ONLY WHAT A SOURCE SUPPORTS. Founder identity documents (KYC) are not listed as a step: no programme
+# page read for this playbook names them, so the step that asks for the programme's own list covers
+# them, and `limits` says so.
+identity:
+  id: founder_office.pb.program_applications.documents_after_acceptance
+  name: Get the papers in after acceptance
+  kind: playbook
+  domain: founder_office
+  scope: capability
+  owner_capability: founder_office.programs_and_applications.program_applications
+  subdomain: programs_and_applications
+  version: 0.1.0
+  status: draft
+  aliases:
+    - Onboarding documents
+    - Post-selection paperwork
+
+purpose:
+  statement: >
+    Acceptance starts a second process with dates of its own: the programme's agreement, its investment
+    instruments where it invests, the company documents behind them, and for some programmes a new
+    entity or a move. Each has an owner and a date, and none is a formality — the money and the first
+    day wait on them.
+  answers:
+    - What does this programme need from the company, and by when?
+    - Can the company, as it is incorporated today, take this programme's investment?
+    - What does the agreement oblige the company to do after it is signed?
+  not:
+    - The company's own registrations and recognitions — compliance holds those; this move only checks the ones a programme requires.
+
+when_to_use:
+  signals:
+    - A programme has accepted the company, or selected it for a grant or a seed fund.
+    - A programme sends an agreement, a contract, investment documents or an onboarding list.
+  do_not_use_when:
+    - The offer has not been accepted yet — the decision-mail move comes first.
+
+steps:
+  - order: 1
+    actor: human
+    name: Get the programme's whole list in writing
+    description: >
+      Ask once for every document the programme needs and by when, and work from its list rather than
+      from what another programme asked for.
+    produces: The programme's own onboarding list, dated.
+    done_when: The programme's onboarding list is on the file, each item with a date.
+  - order: 2
+    actor: human
+    name: Sign the programme's agreement
+    description: >
+      SISFS: "it is mandatory to sign a legal agreement with the incubator to avail the seed fund";
+      Google for Startups Accelerator India sends a programme contract to sign; YC invests with a YC
+      Agreement alongside its SAFEs; Hub71's selected startups "enter into an agreement".
+    produces: The signed agreement.
+    done_when: The programme's agreement is signed for the company and on the file.
+  - order: 3
+    actor: human
+    name: Check that the company can take the investment
+    description: >
+      YC invests in US, Canada, Cayman and Singapore corporations; a company incorporated elsewhere — an
+      Indian private limited company, say — creates a parent in one of them, which YC says "will require a
+      significant effort on your part". Hub71 requires an ADGM tech licence for a subsidiary of the holding company.
+    produces: The entity the programme invests in, or a dated plan to create it.
+    done_when: The entity the programme invests in exists, or each step to create it has an owner and a date.
+  - order: 4
+    actor: human
+    name: Put the cap table in order before the instruments
+    description: >
+      The instruments are issued against the cap table — YC's two SAFEs, Techstars' uncapped MFN SAFE and
+      post-money CEA, Hub71's SAFE note. An Indian scheme reads shareholding too: SISFS requires Indian
+      promoters to hold at least 51% when the company applies.
+    produces: A current cap table, with the instruments named against it.
+    done_when: A current cap table is on the file, and the instruments the programme will issue are named against it.
+  - order: 5
+    actor: human
+    name: Have the scheme's eligibility papers to hand
+    description: >
+      A government scheme admits only the company its rules describe, and its incubator checks before it
+      signs — SISFS takes only DPIIT-recognised startups incorporated not more than two years before the
+      application, and its incubators "conduct due diligence of the startups and sign legal agreement".
+    produces: The recognition and eligibility papers the scheme relies on.
+    done_when: >
+      The recognition, where the scheme requires one, is on the file, and the company met the scheme's
+      other rules on the day it applied.
+  - order: 6
+    actor: human
+    name: Give the account the money goes to
+    description: >
+      SISFS pays startups "in their company bank accounts" and releases the first grant instalment within
+      60 days of receiving the application; later instalments wait on an interim progress update and a
+      utilisation certificate.
+    produces: The company's bank details, in the programme's form.
+    done_when: The company's bank details have gone to the programme in the form it asked for.
+  - order: 7
+    actor: agent
+    name: Diary what the agreement obliges
+    description: >
+      SISFS: an update to the incubator at least once in fifteen days, and on the scheme's dashboard every
+      month. Hub71: "Startups accepted to our programs must relocate and establish a presence at our space
+      within Abu Dhabi."
+    produces: Every recurring obligation, on the calendar.
+    done_when: Every recurring obligation in the agreement is on the calendar with its first date.
+
+success_signal: >
+  The programme's agreement is signed and every item on its onboarding list is in before the
+  programme's first day — or, for a grant, before the first instalment.
+
+outcome_window_days: 30
+
+objects_used:
+  - founder_office.obj.program_applications.application
+
+outcomes:
+  - The programme's agreement is signed and its onboarding list is complete before the first day.
+  - The company is an entity the programme can invest in, or the plan to become one is dated.
+  - The agreement's recurring obligations are on the calendar before they fall due.
+
+failure_modes:
+  - >
+    Reading acceptance as the finish. The agreement, the instruments and the entity take weeks, and the
+    programme's first day does not move for them.
+  - >
+    Discovering the entity problem after the offer. A flip to a parent abroad is a project of its own,
+    and YC says so.
+  - >
+    Signing instruments against a cap table nobody has checked, so the conversion arithmetic is wrong
+    from the start.
+
+limits:
+  - >
+    Founder identity and bank documents (KYC) are typically asked for before money moves, but no
+    programme page read for this playbook lists them; take the list from the programme itself —
+    practitioner judgement — unverified; for the founder's review.
+  - >
+    A flip, a licence abroad or a change to the cap table has legal and tax consequences this playbook
+    does not cover; YC connects founders with lawyers for the flip, and the company's own advisers cover
+    the Indian side.
+  - >
+    The terms quoted were published on 9 October 2026 and change; the agreement in hand decides.
+
+variants:
+  - applies_to: investing_programme
+    change: Steps 3 and 4 decide the timeline; the instruments cannot be issued to an entity the programme does not invest in.
+    why: YC, Techstars and Hub71 each invest through SAFEs or similar instruments issued by the company.
+  - applies_to: government_scheme
+    change: Steps 5 and 6 decide the timeline; the money moves in instalments against milestones and certificates.
+    why: SISFS disburses a grant in milestone-based instalments, the first within 60 days of receiving the application.
+
+references:
+  - title: The Y Combinator Deal
+    kind: practitioner
+    author: Y Combinator (Kirsty Nathoo)
+    url: https://www.ycombinator.com/deal
+    note: >
+      Read 9 Oct 2026. Two SAFEs with a YC Agreement; investment in US, Canada, Cayman and Singapore
+      corporations; a company incorporated elsewhere "flips" to a parent in one of them.
+  - title: Y Combinator FAQ
+    kind: practitioner
+    author: Y Combinator
+    url: https://www.ycombinator.com/faq
+    note: >
+      Read 9 Oct 2026. A non-US/CA/SG/Cayman company creates a parent there; "it will require a
+      significant effort on your part"; YC connects founders with lawyers.
+  - title: What investments does Techstars make in its Accelerator Portfolio companies?
+    kind: practitioner
+    author: Techstars
+    url: https://help.techstars.com/support/solutions/articles/4000207063-what-investments-does-techstars-make-in-its-accelerator-portfolio-companies-
+    note: >
+      Modified 8 Apr 2025, read 9 Oct 2026. $220,000: $200,000 on an uncapped MFN Safe and $20,000 on a
+      post-money Convertible Equity Agreement.
+  - title: Hub71 FAQs
+    kind: practitioner
+    author: Hub71
+    url: https://www.hub71.com/faqs
+    note: >
+      Read 9 Oct 2026. An agreement; AED 250,000 in-kind and AED 250,000 in cash for equity on a SAFE
+      note; an ADGM tech licence for a subsidiary of the holding entity; relocation to Abu Dhabi; a
+      two-month onboarding.
+  - title: "Google for Startups Accelerator: India"
+    kind: practitioner
+    author: Google for Startups
+    url: https://startup.google.com/programs/accelerator/india/
+    note: Read 9 Oct 2026. Equity-free; the final list receives "the program contract to sign".
+  - title: Startup India Seed Fund Scheme — F.A.Q.
+    kind: standard
+    author: DPIIT, Government of India
+    url: https://seedfund.startupindia.gov.in/faq
+    note: >
+      Read 9 Oct 2026. DPIIT recognition and incorporation within two years; the mandatory legal agreement;
+      funds into the company bank account; the first grant instalment within 60 days; updates every
+      fifteen days.
+  - title: Guidelines for Startup India Seed Fund Scheme
+    kind: standard
+    author: DPIIT, Ministry of Commerce and Industry
+    url: https://www.startupindia.gov.in/content/dam/invest-india/Templates/public/Guidelines%20for%20Startup%20India%20Seed%20Fund%20Scheme.pdf
+    note: >
+      Read 9 Oct 2026. §3.1: Indian promoters hold at least 51% at application; the incubator executes a
+      legal agreement before the first instalment; milestone-based instalments; utilisation certificates.
+
+metadata:
+  owner: Founder Office
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-10-09"
+  review_status: unreviewed
+  confidence: experimental
+  completeness: partial
+  notes: >
+    The outcome window (30) shares the spine's onboarding prior, whose midpoint is practitioner judgement,
+    unverified; for the founder's review. Founder KYC is deliberately not a step — no page read supports one.

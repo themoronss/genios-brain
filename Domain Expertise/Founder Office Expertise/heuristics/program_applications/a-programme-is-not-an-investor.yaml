@@ -1,0 +1,115 @@
+# The claim this capability exists to make. Layer 1 hints programmes into `fundraising` and the
+# extraction prompt names "an accelerator" among investors, so on the golden set an accelerator's
+# interview (F17) formed an `investor_relationship` and its decider weighed a pass playbook.
+identity:
+  id: founder_office.heu.program_applications.a_programme_is_not_an_investor
+  name: A programme is not an investor
+  kind: heuristic
+  domain: founder_office
+  scope: capability
+  owner_capability: founder_office.programs_and_applications.program_applications
+  subdomain: programs_and_applications
+  version: 0.1.0
+  status: draft
+  aliases:
+    - An application is not a raise
+
+purpose:
+  statement: >
+    Separates an application from an investor conversation, which the extraction cannot: both arrive
+    from people who may put money into the company, and the two need opposite moves.
+  answers:
+    - Is this counterparty selecting us, or negotiating with us?
+    - Which playbook does this file read — the programme's, or investor relations'?
+
+heuristic:
+  statement: >
+    An application to a programme is a selection process with a published calendar, not an investor
+    conversation — even when the programme invests. Read it by its calendar and its rules, not by how
+    warm the last mail was.
+  why: >
+    A programme reads every applicant against the same form and the same calendar, and decides through
+    its own selection rounds; YC puts it plainly — "One of YC's core principles is considering all applications equally.
+    We don't rely on introductions the way many investors do." Its terms are its own, published before
+    anyone applies: YC has "a standard deal for every company that is accepted", Techstars offers
+    $220,000 "for the vast majority of our programs", Hub71 AED 250,000 on a SAFE note. And its no comes
+    with a next intake. Read as an investor, the same file gets an investor's moves — a chase to a
+    selection team that has published its date, a warm introduction to a process that reads every
+    application alike, a pass filed as final — and each one is wrong here.
+  confidence_bp: 8000
+  applies_when: >
+    The counterparty is an accelerator, an incubator, a fellowship, a grant-maker or a government
+    scheme, and the company has applied or is about to.
+  breaks_down_when: >
+    Once the company is in an investing programme, the programme holds a SAFE or shares — YC also takes
+    a right to invest in later rounds — and from then the relationship is investor relations. And an
+    investor's own programme behaves like the fund it belongs to: Peak XV calls Surge "the way Peak XV
+    does seed investing" and reviews its applications on a rolling basis, and Antler India says around
+    half of its investments have been made directly, outside its residency. There the application is an
+    investment conversation with a programme's paperwork.
+  reads:
+    - founder_office.obj.program_applications.application
+    - relationship.nature
+
+objects_used:
+  - founder_office.obj.program_applications.application
+
+outcomes:
+  - A programme file reads the programme playbook, and an investor file reads investor relations.
+  - No chase, warm introduction or "pass" is applied to an application that is still being selected.
+
+failure_modes:
+  - >
+    Applying it after acceptance. An investing programme is a shareholder once the papers are signed, and
+    treating it as a mere programme then neglects an investor.
+  - >
+    Applying it to a fund's own programme in the middle of a term negotiation, where the investor reading
+    is the right one.
+
+limits:
+  - >
+    It says which reading applies, not what the programme will decide; a correctly read application can
+    still be declined.
+
+references:
+  - title: Y Combinator FAQ
+    kind: practitioner
+    author: Y Combinator
+    url: https://www.ycombinator.com/faq
+    note: Read 9 Oct 2026. "We don't rely on introductions the way many investors do."
+  - title: The Y Combinator Deal
+    kind: practitioner
+    author: Y Combinator (Kirsty Nathoo)
+    url: https://www.ycombinator.com/deal
+    note: Read 9 Oct 2026. "We have a standard deal for every company that is accepted"; a pro rata right in later rounds.
+  - title: What investments does Techstars make in its Accelerator Portfolio companies?
+    kind: practitioner
+    author: Techstars
+    url: https://help.techstars.com/support/solutions/articles/4000207063-what-investments-does-techstars-make-in-its-accelerator-portfolio-companies-
+    note: Modified 8 Apr 2025, read 9 Oct 2026. "For the vast majority of our programs, we offer $220,000."
+  - title: Hub71 FAQs
+    kind: practitioner
+    author: Hub71
+    url: https://www.hub71.com/faqs
+    note: Read 9 Oct 2026. AED 250,000 in cash for equity through a SAFE note, under an agreement.
+  - title: Surge by Peak XV FAQs
+    kind: practitioner
+    author: Peak XV Partners
+    url: https://surge.peakxv.com/faqs
+    note: >
+      Read 9 Oct 2026. "Surge is the way Peak XV does seed investing"; applications open year-round and
+      reviewed on a rolling basis.
+  - title: Antler in India
+    kind: practitioner
+    author: Antler
+    url: https://www.antler.co/residency/india
+    note: Read 9 Oct 2026. "Around 50% of our investments so far have been made directly outside of the Residency".
+
+metadata:
+  owner: Founder Office
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-10-09"
+  review_status: unreviewed
+  confidence: experimental
+  completeness: partial

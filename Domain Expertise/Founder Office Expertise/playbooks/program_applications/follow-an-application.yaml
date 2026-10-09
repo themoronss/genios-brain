@@ -1,0 +1,485 @@
+# THE SPINE of founder_office.programs_and_applications.program_applications — the one playbook of
+# this capability that declares `stages`. STEP-12's expert names a `program` file's current stage from
+# this closed list, with evidence; code computes how long the file has sat in it and compares that with
+# the stage's `typical_duration_days`. Nothing here detects a stage by rule (STEP-11 §8.4).
+#
+# EVERY PRIOR NAMES ITS SOURCE. Four of the seven rest on programmes' own published pages, read on
+# 9 October 2026: under_review and in_programme directly, interview and declined derived from published
+# calendars. Three are practitioner judgement, and their source says so in so many words: applied,
+# decision, and the midpoint of onboarding. A prior is what a typical programme does — a profession's
+# value, never a measurement of this founder (`06` D37). A programme's own published date always
+# replaces the prior.
+#
+# outcome_window_days: 90 — Hub71 promises feedback "within three months of applying"
+# (https://www.hub71.com/faqs), the longest wait any programme read promises; YC (a decision by 11
+# December for a 2 November deadline), Techstars (review within four weeks of the close, then the
+# interview rounds) and SISFS (a selection within 45 days of receipt) all decide inside it. It is also
+# the 90 days `06` D33 proposed for a programme file's dormancy.
+identity:
+  id: founder_office.pb.program_applications.follow_an_application
+  name: Follow an application from the deadline to the first day
+  kind: playbook
+  domain: founder_office
+  scope: capability
+  owner_capability: founder_office.programs_and_applications.program_applications
+  subdomain: programs_and_applications
+  version: 0.1.0
+  status: draft
+  aliases:
+    - Application tracking
+    - Programme application stages
+
+purpose:
+  statement: >
+    Carry one application to a programme from its deadline to its first day: hold the programme's own
+    calendar, name the stage from the programme's own words, answer every request before the
+    programme's date, read the programme's quiet by the stage it is in, and stop on purpose. Its stages
+    are the closed list from which the expert names where an application stands.
+  answers:
+    - Where does this application stand, and what says so?
+    - Is the programme's quiet a problem yet, or is it how this stage looks?
+    - What does the programme expect from us next, and by when?
+    - When do we stop waiting, and what do we write down when we do?
+  not:
+    - Whether to apply at all, or to which programme — that is the founder's strategy.
+    - The investor conversation an investing programme becomes after acceptance — investor relations owns it.
+    - A registration, a recognition or a filing — compliance owns those, even when a portal sends the mail.
+
+when_to_use:
+  signals:
+    - >
+      The file's kind of work is `program`: an application to an accelerator, an incubator, a
+      fellowship, a grant or a government scheme, from before its deadline to the programme's last day.
+    - >
+      A programme's mail or its portal reports on an application — a receipt, a status change, an
+      invitation, a request, a decision.
+  do_not_use_when:
+    - >
+      The company is registering or being recognised rather than applying to be selected: a recognition,
+      a licence or a filing is compliance, whichever portal sends the notice.
+    - >
+      The application has become an investment negotiation — terms, valuation, a lead — with a fund's
+      own programme; the investor relations playbooks fit that conversation better.
+    - >
+      The programme has ended. An investing programme is a shareholder from then on, and the
+      relationship is investor relations.
+
+steps:
+  - order: 1
+    actor: agent
+    name: Put the programme's calendar on the file
+    description: >
+      Read the programme's own page for its deadline with its time zone, its review window, its
+      decision-by date and its start date, and note each with the page it came from. A rolling programme
+      has no deadline; note its response clock instead (SISFS selects within 45 days of receipt).
+    produces: The programme's dated calendar, with its sources.
+    done_when: >
+      The file names the programme's deadline, decision-by date and start date, each with the page it
+      came from — or says the programme is rolling and names its response clock.
+  - order: 2
+    actor: agent
+    name: Confirm the application arrived
+    description: >
+      Find the programme's receipt: the confirmation mail, or the portal's submitted status. YC sends a
+      copy of the application on submission and says that without it "you likely did not submit the
+      application". No receipt by the next day means re-checking the submission, not waiting.
+    produces: A dated receipt on the file.
+    done_when: A dated receipt — a confirmation mail or the portal's submitted status — is on the file.
+  - order: 3
+    actor: agent
+    name: Name the stage from the programme's own words
+    description: >
+      Read the programme's mail and its portal as one record, and name the stage from the seven below,
+      citing the dated mail or status that put it there — never from memory, and never from how long
+      the file has been quiet.
+    produces: The application's stage, with its evidence.
+    done_when: >
+      The file's stage is one of the seven, with the dated mail or portal status that put it there.
+  - order: 4
+    actor: human
+    name: Answer every request before the programme's date
+    description: >
+      An interview slot to book, a clarification, a missing document, an offer to accept: each typically
+      carries the programme's own date, and that date is the deadline. Answer with what was asked, from
+      the founder who was asked.
+    produces: Each request answered, dated.
+    done_when: No request from the programme is open past its own date.
+  - order: 5
+    actor: agent
+    name: Read the quiet by the stage
+    description: >
+      Use the stage's own reading of silence below. Before the programme's published date, wait — and
+      spend the wait on progress: YC says the best edge at interview is a company that improved between
+      the application and the interview.
+    produces: The date on which the quiet would start to mean something.
+    done_when: >
+      A quiet file carries the next date on which its quiet would mean something — the programme's
+      decision-by date, or its response clock counted from the application.
+  - order: 6
+    actor: human
+    name: Ask once when the programme's own date has passed
+    description: >
+      One short status query, through the channel the programme names — Hub71 points applicants to its
+      contact form; SISFS has a grievance cell for delayed evaluation — and none where the programme says
+      it does not answer status questions.
+    produces: One status query, or the reason none was sent.
+    done_when: >
+      One status query has gone out after the programme's published date, or the file says why none will.
+  - order: 7
+    actor: human
+    name: Stop on purpose
+    description: >
+      Close the file with its reason when the answer is in: declined, with its re-application date;
+      lapsed, when the programme's date — or, with none published, the outcome window from the
+      application — has passed and the status query has had no answer for two weeks (a practitioner's
+      wait, unverified; for the founder's review); or withdrawn by the founders.
+    produces: A closed file with its reason, or a live one with a dated next check.
+    done_when: The file is closed with one of those reasons, or it is live with a dated next check.
+
+stages:
+  - name: applied
+    label: Applied — in, and waiting for the window to close
+    typical_duration_days: 14
+    quiet_means: >
+      Nothing, and nothing is owed. A programme with a cohort deadline selects after its window closes —
+      some check eligibility while it is open, as Google for Startups Accelerator India does — and a
+      rolling one picks applications up as they arrive. The one thing to check at this stage is the receipt: YC sends a confirmation with a copy of the application and says that
+      without it "you likely did not submit the application"; the SISFS portal sends an email
+      confirmation the same way.
+    leaves_when: >
+      The programme's published deadline passes, or the programme or its portal shows the application
+      is being read — a status change, an eligibility check, a request for a missing document.
+    source: >
+      practitioner judgement — unverified; for the founder's review. No programme publishes how long an
+      application waits for its window to close, because it turns on when the founders applied: a cohort
+      programme starts reading after its deadline — Techstars Paris says the application "typically
+      stays open for ~12 weeks, after which we will commence the selection process"
+      (https://www.techstars.com/blog/advice/techstars-paris-the-ins-and-outs-of-the-application-and-selection-process)
+      — and a rolling scheme shares each application with the chosen incubators on receipt
+      (https://seedfund.startupindia.gov.in/faq). Read the programme's own deadline before this number.
+
+  - name: under_review
+    label: Under review — the programme is reading
+    typical_duration_days: 28
+    quiet_means: >
+      Not a no. A cohort programme reads its applications against one calendar and answers on its own
+      dates: YC gives on-time applicants a decision date and says "We always respond to everyone who applies, no
+      exceptions"; Techstars "will notify all applicants about the state of their application". Two
+      exceptions decide what the quiet means. Some programmes write only to the applicants they want —
+      Antler's form says "If there's a fit, we'll be in touch by email" — and there the silence, once
+      past their own response time, is the answer. And on a government scheme the portal, not the mail,
+      is the record: SISFS shows each application's status on its dashboard in real time and notifies
+      rejections by email, so read the portal before reading the silence.
+    leaves_when: >
+      An invitation to interview or to pitch arrives (interview); or the decision arrives without one —
+      an offer (onboarding) or a rejection (declined).
+    source: >
+      Techstars: "You may receive an invitation to interview anytime between one and four weeks after
+      the application deadline. We do our best to review all applications within four weeks of
+      applications closing"
+      (https://www.techstars.com/blog/founder-advice/inside-a-techstars-accelerator-the-application-and-interview-process),
+      12 January 2026. The spread around it: SISFS selects "within 45 days" of receiving an application
+      (https://seedfund.startupindia.gov.in/faq); Hub71 gives "feedback about the status of your
+      application within three months of applying" (https://www.hub71.com/faqs); YC interviews in
+      November and December against a 2 November deadline (https://www.ycombinator.com/apply).
+
+  - name: interview
+    label: Interview — the founders' turn to book, prepare and attend
+    typical_duration_days: 21
+    quiet_means: >
+      Typically that the turn is ours. An invitation typically carries the programme's own date — to
+      book a slot, to confirm who attends, to send a deck — and that date is a deadline, not a
+      suggestion. Between rounds the programme's quiet is scheduling: Techstars Paris invites half of
+      its first-round companies to a second interview before its screening committee, and Hub71 holds a
+      round with its team and a round with its partners before its selection committee.
+    leaves_when: >
+      The last round the founders attend is held (decision) — or the decision follows it at once: YC
+      typically decides the same day as the interview (onboarding, or declined).
+    source: >
+      Techstars Paris: "The selection process lasts six weeks", with "an invitation to a first interview
+      2 to 4 weeks after the application deadline", a second interview for half of those companies and
+      a screening committee after it — so the interview rounds run two to four weeks
+      (https://www.techstars.com/blog/advice/techstars-paris-the-ins-and-outs-of-the-application-and-selection-process),
+      30 January 2022. The short end is YC's: one 10-minute interview over Zoom, and typically a decision
+      the same day (https://www.ycombinator.com/interviews, https://www.ycombinator.com/apply).
+
+  - name: decision
+    label: Decision — the founders' part is done; the programme decides
+    typical_duration_days: 14
+    quiet_means: >
+      A committee meets on its own date and weighs its shortlist together, so quiet before the
+      programme's published decision date means nothing. After that date, ask once, through the channel
+      the programme names — Hub71 points applicants to the form on its contact page — and not at all
+      where it says it will not: Emergent Ventures cannot "answer questions about application status".
+      A waitlist or a move to the next cohort is a decision about timing; it keeps the file here, with
+      the programme's new date on it.
+    leaves_when: >
+      The decision mail arrives: an offer (onboarding) or a rejection (declined).
+    source: >
+      practitioner judgement — unverified; for the founder's review. The programmes read publish the
+      step, not its length: YC typically decides the same day as the interview
+      (https://www.ycombinator.com/apply); Techstars ends with a screening committee after its interview
+      rounds
+      (https://www.techstars.com/blog/founder-advice/inside-a-techstars-accelerator-the-application-and-interview-process);
+      Hub71's fourth round is a final selection committee (https://www.hub71.com/faqs); Google for
+      Startups Accelerator India's selection board reviews the shortlist for the final list
+      (https://startup.google.com/programs/accelerator/india/).
+
+  - name: onboarding
+    label: Onboarding — accepted; the offer answered and the papers done
+    typical_duration_days: 30
+    quiet_means: >
+      Most often that the programme is waiting for us. An offer typically carries a date to reply by,
+      and the agreement, the investment documents, the entity and any move are the founders' to
+      produce; here the programme's quiet is rarely the risk — the founders' is.
+    leaves_when: >
+      The programme's first day — the kick-off, the first bootcamp — or, for a grant, the first
+      instalment in the company's bank account.
+    source: >
+      Summarised from published calendars; the midpoint is practitioner judgement — unverified; for the
+      founder's review. Hub71 describes "a two-month onboarding process" (https://www.hub71.com/faqs);
+      YC decides by 11 December for a batch that runs from January to March and starts the investment
+      process on acceptance (https://www.ycombinator.com/apply, https://www.ycombinator.com/deal); SISFS
+      releases the first grant instalment "not more than 60 days from receipt of application", having
+      selected within 45 (https://seedfund.startupindia.gov.in/faq).
+
+  - name: in_programme
+    label: In the programme — its calendar is the file's calendar
+    typical_duration_days: 90
+    quiet_means: >
+      Nothing about the application, which is settled. What the file holds now is the programme's own
+      deadlines — assignments, reviews, demo day — published to the cohort and fixed for all of it.
+    leaves_when: >
+      The programme ends — graduation, demo day or the final review. Where the programme invested, the
+      relationship goes on as investor relations: it now holds a SAFE or shares.
+    source: >
+      Three months is the published length of most accelerators read: YC ("after the 3 month program",
+      https://www.ycombinator.com/faq), Techstars ("three months of intensive, mentorship-driven
+      support", https://www.techstars.com/accelerators) and Google for Startups Accelerator India ("A
+      three-month equity-free Accelerator program", https://startup.google.com/programs/accelerator/india/).
+      Longer: NSRCEL's Launchpad runs five months (https://nsrcel.org/launchpad/); Hub71's Access
+      programme twelve, with a three-month guided track (https://www.hub71.com/faqs).
+
+  - name: declined
+    label: Declined — a date to re-apply, not a verdict
+    typical_duration_days: 90
+    quiet_means: >
+      Nothing: the programme has said what it will say about this application. Its newsletters about
+      the next intake are not a re-opening; the re-application is the founders' move, on the
+      programme's next date.
+    leaves_when: >
+      A re-application goes in to the next intake — a new application, back at applied, carrying this
+      one's feedback and what changed — or the founders decide not to re-apply and the file closes with
+      that reason.
+    source: >
+      One intake. YC runs four batches a year — Winter, Spring, Summer and Fall
+      (https://www.ycombinator.com/apply) — and "It's very common for teams to take our feedback,
+      re-apply the following batch and get accepted" (https://www.ycombinator.com/interviews). The
+      programme's own rule replaces the number: SISFS takes a new application "after 6 Weeks of
+      receiving a rejection" (https://seedfund.startupindia.gov.in/faq); Techstars Paris opens
+      applications twice a year, in February and September
+      (https://www.techstars.com/blog/advice/techstars-paris-the-ins-and-outs-of-the-application-and-selection-process);
+      Hub71: "you can apply to join our future cohorts" (https://www.hub71.com/faqs).
+
+success_signal: >
+  The programme's decision is on file and answered — an offer accepted in writing before its reply-by
+  date, or a rejection filed with its re-application date and the change the next application will
+  lead with.
+
+outcome_window_days: 90
+
+do_nothing_consequence: >
+  Left alone, an application is lost on a date rather than on merit: the interview slot goes unbooked,
+  a clarification goes unanswered past the programme's date, an offer lapses before its agreement is
+  signed, and a rejection that came with a re-application date is filed as final.
+
+objects_used:
+  - founder_office.obj.program_applications.application
+
+outcomes:
+  - Every application carries the programme's calendar with its sources, and a dated receipt.
+  - Every application's stage is one of seven, with the dated mail or portal status that put it there.
+  - No programme request waits past the programme's own date.
+  - Every closed application says why it closed — declined with a date, lapsed after one query, or withdrawn.
+
+failure_modes:
+  - >
+    Measuring the quiet against the prior when the programme has published its own date. The prior is
+    the fallback; the programme's decision-by date is the fact.
+  - >
+    Naming the stage from the last mail's tone. A friendly note from a programme manager is not an
+    interview invitation, and a newsletter about the next cohort is not a decision.
+  - >
+    Asking for a status before the programme's date. It spends the one query the file has, on a
+    question the programme has already answered on its page.
+  - >
+    Keeping a lapsed application live. A file past the programme's date with an unanswered query is not
+    in review; it is waiting for someone to decide to close it.
+
+limits:
+  - >
+    The priors are typical values from the programmes read, never a measurement of this founder; a
+    programme's own published date always replaces them.
+  - >
+    The calendars cited are the ones the programmes published when they were read, on 9 October 2026 —
+    YC's Winter 2027 batch, Hub71's Cohort 21, Google for Startups Accelerator India's 2026 class — and
+    they change every intake; read the next intake's page again before relying on a date from this file.
+  - >
+    A founder's withdrawal, or an offer the founders let go, is not a stage; the file closes with that
+    reason (step 7).
+  - >
+    It names stages from evidence; it detects nothing by rule, and a file with no programme mail or
+    portal status has no stage until one arrives.
+
+variants:
+  - applies_to: rolling_programme
+    change: >
+      No deadline and no batch: applied lasts no time at all, and the programme's response clock from
+      receipt replaces the decision-by date — SISFS selects within 45 days of receiving an application.
+    why: A rolling programme reads each application as it arrives, so the clock starts at the receipt.
+  - applies_to: government_scheme
+    change: >
+      The portal is the record and the mail reports it; eligibility is fixed on the day of application
+      (SISFS: "All the criteria must be met on the date of application submission"); a rejection reopens
+      on the scheme's own rule (SISFS: six weeks).
+    why: A scheme is run by rules published as guidelines, and the portal is where those rules are applied.
+  - applies_to: investing_programme
+    change: >
+      Acceptance makes the programme a shareholder: onboarding includes its investment instruments, and
+      after the programme the relationship is investor relations.
+    why: >
+      YC invests on two SAFEs with a YC Agreement, Techstars on an uncapped MFN SAFE with a post-money
+      CEA, Hub71 on a SAFE note — each a security the company has issued.
+
+metrics:
+  - name: applications_without_a_receipt
+    unit: count
+    direction: lower_is_better
+    description: Applications with no confirmation mail or portal status on file a day after submission.
+  - name: programme_requests_past_their_date
+    unit: count
+    direction: lower_is_better
+    description: Programme requests still open after the programme's own date.
+
+references:
+  - title: Apply to Y Combinator
+    kind: practitioner
+    author: Y Combinator
+    url: https://www.ycombinator.com/apply
+    note: >
+      Read 9 Oct 2026. Winter 2027 batch, January to March; on-time deadline 2 November at 8pm PT,
+      decision by 11 December; interviews by video in November and December; decisions typically the same
+      day; Spring, Summer and Fall batches. Supports under_review, interview, decision, onboarding, declined.
+  - title: Y Combinator FAQ
+    kind: practitioner
+    author: Y Combinator
+    url: https://www.ycombinator.com/faq
+    note: >
+      Read 9 Oct 2026. Confirmation mail on submission; "We always respond to everyone who applies, no
+      exceptions"; late applications decided "within a month" but not guaranteed; "after the 3 month
+      program". Supports applied, under_review, in_programme.
+  - title: YC Interview Guide
+    kind: practitioner
+    author: Y Combinator
+    url: https://www.ycombinator.com/interviews
+    note: >
+      Read 9 Oct 2026 (the page's own text, from its source). Ten-minute Zoom interviews; re-applying the
+      following batch after feedback is "very common". Supports interview, declined.
+  - title: The Y Combinator Deal
+    kind: practitioner
+    author: Y Combinator (Kirsty Nathoo)
+    url: https://www.ycombinator.com/deal
+    note: Read 9 Oct 2026. The investment process begins the day a company is accepted. Supports onboarding.
+  - title: "Inside a Techstars Accelerator: The Application & Interview Process"
+    kind: practitioner
+    author: Techstars
+    url: https://www.techstars.com/blog/founder-advice/inside-a-techstars-accelerator-the-application-and-interview-process
+    note: >
+      Published 12 Jan 2026, read 9 Oct 2026. Interview invitations one to four weeks after the deadline;
+      all applications reviewed within four weeks of the close; all applicants notified; a screening
+      committee after the interviews. Supports under_review, decision.
+  - title: "Techstars Paris: The ins and outs of the application and selection process"
+    kind: practitioner
+    author: Techstars Paris
+    url: https://www.techstars.com/blog/advice/techstars-paris-the-ins-and-outs-of-the-application-and-selection-process
+    note: >
+      Published 30 Jan 2022, read 9 Oct 2026. Application open about twelve weeks; a six-week selection;
+      first interviews two to four weeks after the deadline; applications open in February and
+      September. Supports applied, interview, declined. Its 2022 investment terms are superseded.
+  - title: Techstars Accelerators
+    kind: practitioner
+    author: Techstars
+    url: https://www.techstars.com/accelerators
+    note: Read 9 Oct 2026. "three months of intensive, mentorship-driven support". Supports in_programme.
+  - title: Hub71 FAQs
+    kind: practitioner
+    author: Hub71
+    url: https://www.hub71.com/faqs
+    note: >
+      Read 9 Oct 2026. Feedback within three months of applying; four selection rounds ending in a
+      selection committee; a two-month onboarding; Access is twelve months with a three-month guided
+      track; re-apply to future cohorts; status queries through the contact form. Supports
+      under_review, decision, onboarding, in_programme, declined, and the outcome window.
+  - title: Hub71 Access Programme
+    kind: practitioner
+    author: Hub71
+    url: https://www.hub71.com/program/access-programme
+    note: >
+      Read 9 Oct 2026. Cohort 21: deadline February 2027, programme from September 2027; a late
+      application is considered for the next cohort.
+  - title: Apply to Antler
+    kind: practitioner
+    author: Antler
+    url: https://www.antler.co/apply
+    note: Read 9 Oct 2026. "If there's a fit, we'll be in touch by email." Supports the reading of quiet in under_review.
+  - title: "Google for Startups Accelerator: India"
+    kind: practitioner
+    author: Google for Startups
+    url: https://startup.google.com/programs/accelerator/india/
+    note: >
+      Read 9 Oct 2026. A three-month equity-free programme; applications closed 19 April 2026, kick-off
+      June 2026; a panel shortlist, then a selection board, then a programme contract to sign.
+      Supports decision, in_programme.
+  - title: Startup India Seed Fund Scheme — F.A.Q.
+    kind: standard
+    author: DPIIT, Government of India
+    url: https://seedfund.startupindia.gov.in/faq
+    note: >
+      Read 9 Oct 2026 (the FAQ as the portal serves it). Email confirmation on submission; up to three
+      incubators; selection within 45 days; real-time status on the dashboard; rejections notified by
+      email; re-apply after six weeks; first grant instalment within 60 days of receipt. Supports applied,
+      under_review, onboarding, declined.
+  - title: Guidelines for Startup India Seed Fund Scheme
+    kind: standard
+    author: DPIIT, Ministry of Commerce and Industry
+    url: https://www.startupindia.gov.in/content/dam/invest-india/Templates/public/Guidelines%20for%20Startup%20India%20Seed%20Fund%20Scheme.pdf
+    note: >
+      Read 9 Oct 2026. §7.2: the ISMC selects "within 45 days of receipt of application"; applicants
+      track progress on the portal; "An applicant, if rejected once, may apply afresh"; a grievance cell
+      at DPIIT for delayed evaluation.
+  - title: NSRCEL Launchpad
+    kind: practitioner
+    author: NSRCEL, IIM Bangalore
+    url: https://nsrcel.org/launchpad/
+    note: Read 9 Oct 2026. "Launchpad is for a period of 5 months". Supports in_programme.
+  - title: Emergent Ventures
+    kind: practitioner
+    author: Mercatus Center
+    url: https://www.mercatus.org/emergent-ventures
+    note: >
+      Read 9 Oct 2026. Says it cannot "answer questions about application status". Supports the
+      reading of quiet in decision.
+
+metadata:
+  owner: Founder Office
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-10-09"
+  review_status: unreviewed
+  confidence: experimental
+  completeness: partial
+  notes: >
+    Priors from published pages: under_review (28, Techstars), interview (21, Techstars Paris), in_programme
+    (90, YC, Techstars, Google), declined (90, YC's four batches a year). Practitioner judgement, so labelled:
+    applied (14), decision (14) and the midpoint of onboarding (30). The outcome window (90) is Hub71's
+    published three months. Every one is for the founder's review, line by line.

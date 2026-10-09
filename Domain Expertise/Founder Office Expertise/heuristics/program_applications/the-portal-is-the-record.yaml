@@ -1,0 +1,81 @@
+# On the golden set a government portal's status notice (F01) was dropped as an automated message
+# before anything read it (its case notes: the junk filter drops automated, self-service notices). This
+# claim is why such a notice is the programme speaking, and why the portal outranks the mailbox's silence.
+identity:
+  id: founder_office.heu.program_applications.the_portal_is_the_record
+  name: The portal is the record
+  kind: heuristic
+  domain: founder_office
+  scope: capability
+  owner_capability: founder_office.programs_and_applications.program_applications
+  subdomain: programs_and_applications
+  version: 0.1.0
+  status: draft
+  aliases:
+    - Read the portal before the silence
+
+purpose:
+  statement: >
+    Says where a government scheme's decision actually lives, so that a templated notice is not
+    discarded as noise and a silent mailbox is not read as a silent scheme.
+  answers:
+    - Where is this scheme's real status?
+    - Is a templated portal notice worth keeping?
+
+heuristic:
+  statement: >
+    For a government scheme, the portal's status is the decision record and the mail only reports it.
+    Read the portal before reading the mailbox's silence, and keep the portal's templated notices: they
+    are the programme speaking.
+  why: >
+    A scheme applies its published rules through its portal. SISFS lets every applicant "track the
+    progress of their application on the Startup India portal on a real-time basis", requires every
+    incubator to report its evaluation progress there, and notifies rejections by email. Such notices
+    typically arrive as templates from an automated sender — the shape a mail filter treats as
+    automated — so the mailbox is the copy of the record most likely to be lost.
+  confidence_bp: 7000
+  applies_when: The application is to a government scheme, or to any programme that runs its own portal.
+  breaks_down_when: >
+    When the mail carries the request itself — a clarification with its own date — the mail is the
+    instruction and must be answered on time whatever the portal shows. Where an incubator writes to the
+    founders directly, its mail can report a decision before the portal does. And a programme with no
+    portal keeps its record in the mail.
+  reads:
+    - founder_office.obj.program_applications.application
+
+objects_used:
+  - founder_office.obj.program_applications.application
+
+outcomes:
+  - A scheme's status is read from its portal, with the date it was read.
+  - A templated portal notice reaches the file instead of the archive.
+
+failure_modes:
+  - Reading the portal and ignoring a mail that asks for something by a date.
+  - Waiting on the mailbox for a scheme whose portal moved weeks ago.
+
+limits:
+  - It says where to look; the portal's own labels are the scheme's words and keep their meaning only for that scheme.
+
+references:
+  - title: Guidelines for Startup India Seed Fund Scheme
+    kind: standard
+    author: DPIIT, Ministry of Commerce and Industry
+    url: https://www.startupindia.gov.in/content/dam/invest-india/Templates/public/Guidelines%20for%20Startup%20India%20Seed%20Fund%20Scheme.pdf
+    note: >
+      Read 9 Oct 2026. §7.2: incubators report evaluation progress to the Startup India portal in real
+      time; applicants track it there; rejections are notified by email.
+  - title: Startup India Seed Fund Scheme — F.A.Q.
+    kind: standard
+    author: DPIIT, Government of India
+    url: https://seedfund.startupindia.gov.in/faq
+    note: Read 9 Oct 2026. "a dashboard can be accessed using their login credential to check the real-time application status".
+
+metadata:
+  owner: Founder Office
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-10-09"
+  review_status: unreviewed
+  confidence: experimental
+  completeness: partial
