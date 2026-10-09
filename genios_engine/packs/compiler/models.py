@@ -145,6 +145,15 @@ class RoutePlan:
     #: pattern_id no registry names yet). None means no fire reached this compile at all, which
     #: is every tenant until X6 lands for them.
     pattern_route_state: str | None = None
+    #: STEP-11 · what doing nothing costs, in the words of the leading situation that wrote one —
+    #: ranked as the card copy is, by the author's `priority_bp`, ties on id. It travels on the plan
+    #: for the reason `render` does: the manifest is built from the package alone, and until this
+    #: field the package carried no situation sentence, so every compiled decision read the
+    #: adapter's template. None means no selected situation authored one; the builder then writes
+    #: no key at all, and the package keeps the content address it always had.
+    do_nothing_consequence: str | None = None
+    #: Which situation the sentence came from — "whose words are these", as `render_situation_id`.
+    do_nothing_situation_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

@@ -639,6 +639,9 @@ class CapabilityResolver:
         priority_bp: int | None = None
         priority_situation_id: str | None = None
         priority_rank: tuple[int, str] | None = None
+        do_nothing: str | None = None
+        do_nothing_situation_id: str | None = None
+        do_nothing_rank: tuple[int, str] | None = None
         saw_index_route = False
         # L3.1-U2 · the richer routing key, when the tenant has one. Read ONCE for the whole
         # resolve so every domain answers against the same fire.
@@ -708,6 +711,17 @@ class CapabilityResolver:
                         priority_rank = p_rank
                         priority_bp = int(authored_priority)
                         priority_situation_id = situation_id
+
+                # STEP-11 · WHAT DOING NOTHING COSTS, in the situation's own words, ranked the way the
+                # card copy is — the author's priority, ties on id. Over the situations that WROTE one:
+                # a louder situation that said nothing does not silence a quieter one that did.
+                consequence = authored.get("do_nothing_consequence")
+                if isinstance(consequence, str) and consequence.strip():
+                    c_rank = (-int(authored.get("priority_bp") or 0), situation_id)
+                    if do_nothing_rank is None or c_rank < do_nothing_rank:
+                        do_nothing_rank = c_rank
+                        do_nothing = consequence.strip()
+                        do_nothing_situation_id = situation_id
 
                 render_block = authored.get("render")
                 if isinstance(render_block, Mapping) and render_block:
@@ -849,6 +863,8 @@ class CapabilityResolver:
             render_situation_id=render_situation_id,
             priority_bp=priority_bp,
             priority_situation_id=priority_situation_id,
+            do_nothing_consequence=do_nothing,
+            do_nothing_situation_id=do_nothing_situation_id,
             pattern_route_id=pattern_route_id,
             # An ACTIVATED fire that no registry names is not the same fact as a shadow fire, and
             # it is the one an operator has to act on: the tenant switched a pattern on and the
