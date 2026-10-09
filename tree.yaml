@@ -27,8 +27,8 @@
 #                                                   (built 2026-10-07); past every other block again
 #   yc2_w27_s10                       M29         ← YC-II W27 STEP-10, the expert's numbers (built
 #                                                   2026-10-08); M28 is held for STEP-09's cards (D2)
-#   yc2_w27_s11                       M30, M31    ← YC-II W27 STEP-11, founder playbooks (approved
-#                                                   2026-10-09, building); past every other block again
+#   yc2_w27_s11                       M30, M31    ← YC-II W27 STEP-11, founder playbooks (M30 built
+#                                                   2026-10-09; M31 after the review); past every other block again
 #
 # So `M11` is AMBIGUOUS on its own: it names "The remaining Layer 3 losses" in one block and
 # "L2 Reasoning" in another, and `M11.C1.L-logic.V0.U01` exists twice with different meanings.
@@ -6116,7 +6116,17 @@ yc2_w27_s10:
                       depends_on: [M29.C6.L-integration.V4.U02]
 
 yc2_w27_s11:
-  status: approved_in_progress
+  status: m30_built
+  built: >
+    2026-10-09 — M30, 31 units: 22 drawn; 9 added while building (C2 V0.U04 the plan carries what doing
+    nothing costs, C2 V0.U05 a playbook's stop rule, C2 V1.U06 a play's review state, C3 V1.U03 the
+    signal select carries the play, C3 V2.U04 the card reads the play's success, C4 V1.U06 and V2.U07
+    and V2.U08 the kind through the store, the route and the script, C6 V2.U03 the Sales copy retired).
+    Twenty-two built by the lead; nine by three worktree workers, each re-verified on the lead branch
+    with the lead's own mutations. Crosscheck SHIP AFTER QA; QA run 1 at `430c4ebc` green on every tier
+    (`speedrun008/YC-II W27/baseline/yc2w27-s11-qa/`). The board unchanged — no founder card before the
+    founder's review (06 D45). M31's four units are not started: after the review of M30's two
+    playbooks, by the plan's depth-first rule (STEP-11 §8.7).
   source: >
     speedrun008/YC-II W27/STEP-11 §1–§7, re-checked claim by claim against speedrun008 @ 353d06ea
     (STEP-11 §8) by two read-only workers and by hand, and measured on the golden set

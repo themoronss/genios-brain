@@ -1,0 +1,82 @@
+yc2_w27_s11 QA record · STEP-11, founder playbooks — M30 (the first half) · deterministic-qa · speedrun008 · 2026-10-09
+scratch Postgres 17 in Docker (parallel query off — 03 F116). Every check that uses a database runs on a
+database CREATED for it — auto mode refuses to drop databases, and a database nobody has used is as empty
+as a recreated one. Exit codes only; every command verbatim from tree.yaml (block yc2_w27_s11) and
+.github/workflows/ci.yml, the unit verifies pointed at their own fresh database (`/genios_test ` →
+`/genios_qa_<run>_<n> `). The full suite runs ALONE (03 F115: four capture tests are sensitive to
+concurrent load); the golden lane, the board and the hermetic job then run side by side, each on a
+database of its own. Drivers, beside this file: run_s11.sh, qa_block_nodrop.py (the block's units, with
+a milestone scope: M30 — M31's four units are not built, by the plan's depth-first rule, STEP-11 §8.7).
+
+RUN 1 · at 430c4ebc (code tree clean: 0 changed under genios_engine/ scripts/ tests/ tree.yaml
+'Domain Expertise/'), 10:03–11:08 UTC — GREEN on every tier, on the first run
+
+1 · the tree, and every unit's own verify — M30, 31 units                  exit 0
+      35 pass / 0 fail / 0 skip          (4 tree checks + 31 units: 22 drawn, 9 added while building)
+      not in scope, not run: M31's 4 (M31.C1.L-data.V0.U01 … U04) — not built
+      report: .trace/reports/qa-yc2_w27_s11-units-20261009T100344Z.json
+      The acceptance (M30.C7.L-integration.V5.U04) reads "4 passed, 1 xfailed": the xfail is its card
+      clause, declared NOT EXERCISED — no founder card can exist before the founder's review admits the
+      Founder Office's capability (06 D45); the clause's path is proven at its seams (C2.U02, C3.U03,
+      C3.U04). It is not counted as a pass.
+
+2 · the whole suite on the database                                        exit 0
+      19277 passed, 4 skipped, 90 xfailed, 1623 warnings in 2424.39s (0:40:24)
+      db=genios_qa_s11_full_100343. With -rs in the same run, its four skips are the known four, for
+      the same reasons as STEP-08 to STEP-10: could not import 'docx'
+      (tests/capture/transcripts/test_transcript_units.py), an empty parameter set
+      (tests/contracts/test_l1_contracts.py), 0080 a declared exception
+      (tests/platform/test_the_code_can_always_be_rolled_back.py), internal auth not wired in this
+      harness (403) (tests/test_health_memory.py).
+      (STEP-10's run 2: 18911 passed, 89 xfailed; the 366 more and the one more xfail are STEP-11's.)
+
+3 · the golden-pg lane, as CI runs it (GENIOS_GOLDEN_REQUIRED=1)            exit 0
+      pytest -q -rs tests/replays tests/test_golden_labels_sheet.py
+      794 passed, 88 xfailed, 2 warnings in 1197.40s (0:19:57) — 0 skipped
+      db=genios_qa_s11_golden_100343; golden tenants left in the database afterwards: 0
+      (782 after STEP-10; + STEP-11's golden tests: the brief's kinds (5), the Founder Office switched on
+      for every golden tenant (3), the acceptance (4 passed + its declared NOT EXERCISED clause, the one
+      more xfail).)
+
+4 · the board, held to 03-FINDINGS.md §F.1                                 exit 0
+      scripts/golden_score.py --assert-recorded "speedrun008/YC-II W27/03-FINDINGS.md"
+      matches the board recorded in speedrun008/YC-II W27/03-FINDINGS.md
+      founder golden set   must-detect  13/35 (9 not expressible)   must-abstain  11/12 (0 not exercised)   forbidden outputs  4
+      atlas replays 01–07  passing  4/80   blocked  3/80   not expressible  73
+      must-detect cases lost at:  reasoning 12
+      model answers:  ideal_reader (06-DECISIONS D12c)
+      Unchanged from STEP-10, by design: no founder card can exist before the founder's review (06 D45).
+
+5 · the hermetic job, as CI runs it (no database)                           exit 0
+      pytest -q -m "not golden"
+      17034 passed, 1848 skipped, 413 deselected, 72 xfailed, 1623 warnings in 1111.55s (0:18:31)
+      Its skips, grouped by reason: 1,844 name a missing database (tier 2 ran every one of them); the
+      other four are the known four of tier 2.
+
+THE ACCEPTANCE, in tiers 1–3 (tests/replays/test_every_founder_file_reads_its_playbook.py): on the golden
+cases through the real chain with the cassettes — every founder file whose in-motion line names a kind
+reads its playbook, or the named reason there is none (F10's Banyan Seed `investor` → its spine,
+labelled "playbook not yet reviewed"; F01's portal `compliance` → `capability_not_authored`, M31; F26's
+Orbitly `partner` → `no_capability_for_kind` — a reason, never a borrowed playbook);
+F17's Gulf Launchpad file is `program` and reads `follow_an_application`, whose stages include
+`interview`; no decider prompt anywhere shows `{"rule": null`, and every quoted claim is the authored
+statement verbatim. Its fourth clause — no founder card carries the template consequence, the 7-day
+default or a NULL success signal — is declared NOT EXERCISED (an xfail that names why): before the
+founder's review no founder card exists to read.
+
+Before this run: every unit was committed after its guards passed on databases created for them, and
+each unit's tests were run against its own mutations (STEP-11 §9). ⛔ The per-unit guard rounds listed
+twelve test folders and missed five (tests/feedback, tests/scenarios, tests/scenarios_l2,
+tests/executive, tests/golden) for nine commits; tier 2 above is the whole suite, every folder. The
+crosscheck (.trace/reports/crosscheck-yc2_w27_s11-20261009T100230Z.md) gave SHIP AFTER QA with four
+findings, none blocking: the deploy's three manual steps (now 08 §3.10, §4.9), the review as the
+bottleneck, F129 and F124, and the guard-folder gap.
+
+AFTER THE RUN, guarding the close-out commit (docs, the review sheets, the tree's status): tests/test_*.py
+and tests/platform in ONE run on a database created for it — 1 failed, 4501 passed, 2 skipped (the known
+two of these folders), 2 xfailed. The failure is 03 F136, pre-existing and order-dependent:
+tests/platform/test_warm_lane_pg.py::test_a_burst_coalesces_into_one_chain_run claims the OLDEST open
+batch in l2_work_queue, and tests/test_screen_promoter_pg.py leaves open rows for its own orgs. On three
+more new databases: the warm-lane file alone 12 passed; screen promoter then warm lane 1 failed, 21
+passed; warm lane then screen promoter 22 passed. The whole suite (tier 2) orders tests/platform first.
+tests/platform alone on a new database: 955 passed, 1 skipped (0080, the declared exception).

@@ -1,0 +1,1201 @@
+kind: program
+capability: founder_office.programs_and_applications.program_applications
+how: For every line set decision to accept, edit or reject; give an edit or a reject a note. Nothing is
+  admitted until every line is accepted (06 D45).
+lines:
+- id: L001
+  artifact: founder_office.programs_and_applications.program_applications
+  field: description
+  text: 'Every application the company makes to an accelerator, an incubator, a fellowship, a grant or
+    a government scheme, from the submission to the programme''s first day, and the programme''s own deadlines
+    while the company is in it. An application is a selection process, not a conversation. The programme
+    publishes its calendar, reads every applicant against the same form, decides as a batch or by a committee,
+    and answers on its own date — or, for a rolling scheme, on its own clock from receipt. Four things
+    follow that an investor reading gets wrong. The programme''s deadline is the one date in the file
+    that will not move for anyone. Its silence before its published decision date is not a no, because
+    the answer has a date and many programmes promise to answer every applicant; the exception is the
+    programme that writes only to the applicants it wants, and knowing which kind this is decides what
+    the quiet means. Its rejection usually carries a date on which it stops being true — the next intake
+    — and is worth filing with that date and with what will be different. And its acceptance is not the
+    end: it opens a second process with its own dates — the agreement, the investment documents where
+    the programme invests, the entity the programme can invest in, and for some programmes a move. The
+    capability''s job is to keep each application''s real stage, the programme''s next date and whose
+    turn it is visible, so that no application is lost on a date rather than on merit.'
+  fingerprint: d11295c24ce27998
+  decision: ''
+  note: ''
+- id: L002
+  artifact: founder_office.programs_and_applications.program_applications
+  field: question
+  text: Where does this application stand, and what does its programme expect next?
+  fingerprint: ef9bb3594f5cb19d
+  decision: ''
+  note: ''
+- id: L003
+  artifact: founder_office.programs_and_applications.program_applications
+  field: outcomes[1]
+  text: Every live application carries its programme's own calendar — the deadline in the programme's
+    time zone and in the founder's, the review window, the decision-by date, the start — each with the
+    page it came from; or the file says the programme is rolling and names its response clock instead.
+  fingerprint: e820b7264ea6b465
+  decision: ''
+  note: ''
+- id: L004
+  artifact: founder_office.programs_and_applications.program_applications
+  field: outcomes[2]
+  text: Each application's stage is named from the programme's own words — its mail or its portal's status
+    — and the file says what the programme's quiet means at that stage, rather than how long it feels.
+  fingerprint: 9c147fdb0c25a0f2
+  decision: ''
+  note: ''
+- id: L005
+  artifact: founder_office.programs_and_applications.program_applications
+  field: outcomes[3]
+  text: Every request a programme makes — an interview slot to book, a clarification, a missing document,
+    an offer to accept — is answered before the programme's own date, with every founder it asks for.
+  fingerprint: 7b0449827e8fd0c8
+  decision: ''
+  note: ''
+- id: L006
+  artifact: founder_office.programs_and_applications.program_applications
+  field: outcomes[4]
+  text: 'A decision is recorded with what it asks next: an offer accepted in writing before its reply-by
+    date and its papers in hand before the first day, or a rejection filed with its re-application date
+    and the change the next application will lead with.'
+  fingerprint: 5e734d71bfbc69b2
+  decision: ''
+  note: ''
+- id: L007
+  artifact: founder_office.programs_and_applications.program_applications
+  field: outcomes[5]
+  text: Programmes are kept out of the investor reading. No chase is sent to a selection team that has
+    published its date, no introduction is sought for a process that reads every application alike, and
+    no rejection is filed as a lost relationship.
+  fingerprint: 742bab76750a2024
+  decision: ''
+  note: ''
+- id: L008
+  artifact: founder_office.programs_and_applications.program_applications
+  field: outcomes[6]
+  text: 'An application is stopped on purpose when that is the answer: a programme past its own decision
+    date that has not answered one status query, an offer the founder chooses to decline, or an intake
+    the company is not eligible for is closed with its reason — not left as a live file that ages until
+    someone asks why it is still there.'
+  fingerprint: 968f062faa19d8a2
+  decision: ''
+  note: ''
+- id: L009
+  artifact: founder_office.programs_and_applications.program_applications
+  field: failure_modes[1]
+  text: Reading a programme as an investor. The file is then chased like a fund that has gone quiet, a
+    warm introduction is sought for a process that says it does not rely on introductions, and a rejection
+    is filed as a lost deal — when the programme has published its calendar, decides through its own selection
+    rounds and invites the company back at its next intake.
+  fingerprint: f8ab3effe49b4942
+  decision: ''
+  note: ''
+- id: L010
+  artifact: founder_office.programs_and_applications.program_applications
+  field: failure_modes[2]
+  text: 'Treating a batch''s silence as a no. The founder gives up — or nags — before the published decision
+    date, when the programme answers on its own calendar and has said it will answer everyone. The opposite
+    error is as costly: waiting for a programme that writes only to the applicants it wants, long after
+    its silence has become the answer.'
+  fingerprint: bbf179b875dfc512
+  decision: ''
+  note: ''
+- id: L011
+  artifact: founder_office.programs_and_applications.program_applications
+  field: failure_modes[3]
+  text: Missing a deadline that does not move. The date is read in the founder's time zone when the programme
+    publishes it in its own, the upload is left to the final hour, or a co-founder's part of the form
+    is still open. A late application is read for the next cohort, or read with no promised date — never
+    marked on time for a good reason.
+  fingerprint: f4f92acc80d46740
+  decision: ''
+  note: ''
+- id: L012
+  artifact: founder_office.programs_and_applications.program_applications
+  field: failure_modes[4]
+  text: Filing a rejection as final when the programme invites a re-application. Without the date and
+    the feedback the company either never re-applies or re-applies with the same application, and a programme
+    that counts progress since the last application sees none.
+  fingerprint: cf9dbdaa9a8623fb
+  decision: ''
+  note: ''
+- id: L013
+  artifact: founder_office.programs_and_applications.program_applications
+  field: failure_modes[5]
+  text: Losing an offer in onboarding. Acceptance is read as the finish while the agreement goes unsigned,
+    the investment documents wait on a cap table nobody has checked, or the entity the programme can invest
+    in does not exist yet — a parent company abroad, or a licence in the programme's own jurisdiction
+    — and each of those has a date of its own.
+  fingerprint: c3943a5ceff9167c
+  decision: ''
+  note: ''
+- id: L014
+  artifact: founder_office.programs_and_applications.program_applications
+  field: failure_modes[6]
+  text: Reading only the mail. A government scheme's portal holds the status and the mail only reports
+    it, often in a template that a filter takes for an automated notice; the application moves, or is
+    asked a question, and nobody sees it until the portal's own clock has run.
+  fingerprint: 7ebefbed55c39837
+  decision: ''
+  note: ''
+- id: L015
+  artifact: founder_office.programs_and_applications.program_applications
+  field: kpis[1]
+  text: 'programme_calendar_on_file (higher_is_better): Share of live applications whose file carries
+    the programme''s published deadline and decision date with the page each came from, or a stated response
+    clock for a rolling programme. The capability''s floor: an application nobody can date is an application
+    nobody is running.'
+  fingerprint: cbedca6faa7fcaaa
+  decision: ''
+  note: ''
+- id: L016
+  artifact: founder_office.programs_and_applications.program_applications
+  field: kpis[2]
+  text: 'programme_requests_answered_in_time (higher_is_better): Share of programme requests — interview
+    bookings, clarifications, documents, offer acceptances — answered before the programme''s own date.
+    The most actionable number here, because the programme''s date passes whether or not anyone reminds
+    the founder of it.'
+  fingerprint: f5faff94bdd27d2e
+  decision: ''
+  note: ''
+- id: L017
+  artifact: founder_office.programs_and_applications.program_applications
+  field: kpis[3]
+  text: 'oldest_unanswered_programme_request (lower_is_better): Age of the oldest programme request still
+    waiting on the founder. Read against the request''s own date, never against how quiet the programme
+    has been.'
+  fingerprint: e2acbcc9348376b2
+  decision: ''
+  note: ''
+- id: L018
+  artifact: founder_office.programs_and_applications.program_applications
+  field: kpis[4]
+  text: 'declines_filed_with_a_reapplication_date (higher_is_better): Share of rejections recorded with
+    the programme''s re-application window and what will change. Measures whether the reversible half
+    of the rejections survives being written down.'
+  fingerprint: bb37ddc0661454d3
+  decision: ''
+  note: ''
+- id: L019
+  artifact: founder_office.programs_and_applications.program_applications
+  field: kpis[5]
+  text: 'programme_files_read_as_investors (lower_is_better): Programme files carried in the investor
+    reading — chased, offered an introduction, or filed as a pass. Each one is advice built for a different
+    kind of counterparty.'
+  fingerprint: a76dedddaf00ed62
+  decision: ''
+  note: ''
+- id: L020
+  artifact: founder_office.heu.program_applications.a_batch_is_silent_until_it_decides
+  field: purpose
+  text: 'Says what a programme''s quiet means, which is not what an investor''s quiet means: a selection
+    team with a published decision date is silent because the batch has not been decided, not because
+    this application has.'
+  fingerprint: d2347aa5ccf44b03
+  decision: ''
+  note: ''
+- id: L021
+  artifact: founder_office.heu.program_applications.a_batch_is_silent_until_it_decides
+  field: heuristic.statement
+  text: A programme that reads its applications as a batch answers on its own published calendar, not
+    on the applicant's. Its quiet before that date is not a no — and after it, the programme's own reply
+    rule, not the length of the quiet, says what the quiet means.
+  fingerprint: f396526e2852ce7c
+  decision: ''
+  note: ''
+- id: L022
+  artifact: founder_office.heu.program_applications.a_batch_is_silent_until_it_decides
+  field: heuristic.why
+  text: Reviewers read an intake's applications against one calendar and answer on dates they publish.
+    YC tells on-time applicants they "will get a decision by December 11" and says "We always respond
+    to everyone who applies, no exceptions"; Techstars reviews "within four weeks of applications closing"
+    and "will notify all applicants about the state of their application"; Hub71 promises "feedback about
+    the status of your application within three months of applying". The answer has a date, so until that
+    date has come the quiet carries no information about this application.
+  fingerprint: eabcdc1ef21b95f8
+  decision: ''
+  note: ''
+- id: L023
+  artifact: founder_office.heu.program_applications.a_batch_is_silent_until_it_decides
+  field: heuristic.applies_when
+  text: The application is under review or awaiting a decision, and the programme has published a decision
+    date or a response time.
+  fingerprint: 12b6007c8ad46916
+  decision: ''
+  note: ''
+- id: L024
+  artifact: founder_office.heu.program_applications.a_batch_is_silent_until_it_decides
+  field: heuristic.breaks_down_when
+  text: 'Three regimes. A programme that writes only to the applicants it wants — Antler''s form says
+    "If there''s a fit, we''ll be in touch by email" — means its silence, once past its own response time,
+    as the answer. A programme that publishes no date gives the quiet no reference point, and the outcome
+    window has to stand in for one. And on a government scheme the status may already have changed on
+    the portal while the mailbox is silent: SISFS shows status on its dashboard in real time.'
+  fingerprint: 122796a6cc95b96f
+  decision: ''
+  note: ''
+- id: L025
+  artifact: founder_office.heu.program_applications.a_programme_is_not_an_investor
+  field: purpose
+  text: 'Separates an application from an investor conversation, which the extraction cannot: both arrive
+    from people who may put money into the company, and the two need opposite moves.'
+  fingerprint: e481555c2660325a
+  decision: ''
+  note: ''
+- id: L026
+  artifact: founder_office.heu.program_applications.a_programme_is_not_an_investor
+  field: heuristic.statement
+  text: An application to a programme is a selection process with a published calendar, not an investor
+    conversation — even when the programme invests. Read it by its calendar and its rules, not by how
+    warm the last mail was.
+  fingerprint: 2f4657314bd894e9
+  decision: ''
+  note: ''
+- id: L027
+  artifact: founder_office.heu.program_applications.a_programme_is_not_an_investor
+  field: heuristic.why
+  text: 'A programme reads every applicant against the same form and the same calendar, and decides through
+    its own selection rounds; YC puts it plainly — "One of YC''s core principles is considering all applications
+    equally. We don''t rely on introductions the way many investors do." Its terms are its own, published
+    before anyone applies: YC has "a standard deal for every company that is accepted", Techstars offers
+    $220,000 "for the vast majority of our programs", Hub71 AED 250,000 on a SAFE note. And its no comes
+    with a next intake. Read as an investor, the same file gets an investor''s moves — a chase to a selection
+    team that has published its date, a warm introduction to a process that reads every application alike,
+    a pass filed as final — and each one is wrong here.'
+  fingerprint: 00217350c362de06
+  decision: ''
+  note: ''
+- id: L028
+  artifact: founder_office.heu.program_applications.a_programme_is_not_an_investor
+  field: heuristic.applies_when
+  text: The counterparty is an accelerator, an incubator, a fellowship, a grant-maker or a government
+    scheme, and the company has applied or is about to.
+  fingerprint: 9c085dd58088a407
+  decision: ''
+  note: ''
+- id: L029
+  artifact: founder_office.heu.program_applications.a_programme_is_not_an_investor
+  field: heuristic.breaks_down_when
+  text: 'Once the company is in an investing programme, the programme holds a SAFE or shares — YC also
+    takes a right to invest in later rounds — and from then the relationship is investor relations. And
+    an investor''s own programme behaves like the fund it belongs to: Peak XV calls Surge "the way Peak
+    XV does seed investing" and reviews its applications on a rolling basis, and Antler India says around
+    half of its investments have been made directly, outside its residency. There the application is an
+    investment conversation with a programme''s paperwork.'
+  fingerprint: ea05ff0bd6fca039
+  decision: ''
+  note: ''
+- id: L030
+  artifact: founder_office.heu.program_applications.a_rejection_carries_a_reapplication_date
+  field: purpose
+  text: 'Separates a programme''s rejection from a verdict on the company, because the two need opposite
+    handling: a verdict is filed and forgotten, a dated rejection is scheduled against.'
+  fingerprint: 56e08b095a4b0f45
+  decision: ''
+  note: ''
+- id: L031
+  artifact: founder_office.heu.program_applications.a_rejection_carries_a_reapplication_date
+  field: heuristic.statement
+  text: 'A programme''s rejection is usually a dated fact, not a verdict: it stops being true at the next
+    intake. File it with that date and with what will be different.'
+  fingerprint: 7ef2233acc9a8d91
+  decision: ''
+  note: ''
+- id: L032
+  artifact: founder_office.heu.program_applications.a_rejection_carries_a_reapplication_date
+  field: heuristic.why
+  text: 'Programmes re-admit on a calendar and say so. "In a typical YC batch, about half the companies
+    applied multiple times before being accepted", and YC strongly encourages applying again; Techstars:
+    "It takes many companies a few tries to get in"; SISFS takes a new application six weeks after a rejection;
+    Hub71 and NSRCEL take applications for future cohorts. A cohort has a fixed number of places — Techstars
+    Paris takes twelve companies a class — so a no can be about the batch as much as the company, and
+    the next application is read for the progress since the last: YC calls that progress "a strong signal".'
+  fingerprint: a1086ec0fcdf5f11
+  decision: ''
+  note: ''
+- id: L033
+  artifact: founder_office.heu.program_applications.a_rejection_carries_a_reapplication_date
+  field: heuristic.applies_when
+  text: A programme has declined an application, with or without feedback.
+  fingerprint: 8df4b373a07691be
+  decision: ''
+  note: ''
+- id: L034
+  artifact: founder_office.heu.program_applications.a_rejection_carries_a_reapplication_date
+  field: heuristic.breaks_down_when
+  text: 'An eligibility rejection does not reopen with time and can close for good: SISFS admits only
+    companies incorporated not more than two years before the application, so waiting can end eligibility
+    rather than restore it. A one-off programme has no next intake. And a re-application with nothing
+    new repeats the decision — NSRCEL asks re-applicants to "highlight any additional information of your
+    progress since your application for a previous cohort".'
+  fingerprint: 4bd705958799c3ab
+  decision: ''
+  note: ''
+- id: L035
+  artifact: founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point
+  field: purpose
+  text: Names the one date in an application that the company cannot move, so that every other date is
+    planned from it rather than towards it.
+  fingerprint: 3e23ed1ca81cb0d4
+  decision: ''
+  note: ''
+- id: L036
+  artifact: founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point
+  field: heuristic.statement
+  text: In an application, the programme's deadline is the one date that will not move for this company;
+    every other date in the plan is set backwards from it, on the programme's clock.
+  fingerprint: 0450fd67a1cd6c42
+  decision: ''
+  note: ''
+- id: L037
+  artifact: founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point
+  field: heuristic.why
+  text: The deadline is published once, for every applicant, and kept. YC publishes "November 2 at 8pm
+    PT" and answers a request to mark a late application on time with "No, sorry"; Hub71 reads an application
+    that misses its cohort's deadline for the next cohort. Everything on the company's side — the deck,
+    the numbers, a co-founder's week — can move; the deadline cannot, so it is the only point a plan can
+    be anchored to.
+  fingerprint: ae599f4892202ce3
+  decision: ''
+  note: ''
+- id: L038
+  artifact: founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point
+  field: heuristic.applies_when
+  text: A programme with a published deadline, before the deadline has passed.
+  fingerprint: 1f85ce8c90701fdd
+  decision: ''
+  note: ''
+- id: L039
+  artifact: founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point
+  field: heuristic.breaks_down_when
+  text: 'A rolling programme has no deadline — SISFS takes applications on an ongoing basis — and its
+    fixed points are its eligibility rules on the day of application and its response clock. A programme
+    can extend its own window, and then the new date replaces the old one. And a late application is not
+    always a lost one: YC still reads late applications and says "We fund many companies that apply late
+    every batch", so for YC late moves the application to an unpromised date rather than out of the process.'
+  fingerprint: f9a4bdede8288f3a
+  decision: ''
+  note: ''
+- id: L040
+  artifact: founder_office.heu.program_applications.the_portal_is_the_record
+  field: purpose
+  text: Says where a government scheme's decision actually lives, so that a templated notice is not discarded
+    as noise and a silent mailbox is not read as a silent scheme.
+  fingerprint: a090b7f776975746
+  decision: ''
+  note: ''
+- id: L041
+  artifact: founder_office.heu.program_applications.the_portal_is_the_record
+  field: heuristic.statement
+  text: 'For a government scheme, the portal''s status is the decision record and the mail only reports
+    it. Read the portal before reading the mailbox''s silence, and keep the portal''s templated notices:
+    they are the programme speaking.'
+  fingerprint: 0414e351875f23a5
+  decision: ''
+  note: ''
+- id: L042
+  artifact: founder_office.heu.program_applications.the_portal_is_the_record
+  field: heuristic.why
+  text: A scheme applies its published rules through its portal. SISFS lets every applicant "track the
+    progress of their application on the Startup India portal on a real-time basis", requires every incubator
+    to report its evaluation progress there, and notifies rejections by email. Such notices typically
+    arrive as templates from an automated sender — the shape a mail filter treats as automated — so the
+    mailbox is the copy of the record most likely to be lost.
+  fingerprint: 06d8263b524d1e47
+  decision: ''
+  note: ''
+- id: L043
+  artifact: founder_office.heu.program_applications.the_portal_is_the_record
+  field: heuristic.applies_when
+  text: The application is to a government scheme, or to any programme that runs its own portal.
+  fingerprint: e7d460aa2515e45d
+  decision: ''
+  note: ''
+- id: L044
+  artifact: founder_office.heu.program_applications.the_portal_is_the_record
+  field: heuristic.breaks_down_when
+  text: When the mail carries the request itself — a clarification with its own date — the mail is the
+    instruction and must be answered on time whatever the portal shows. Where an incubator writes to the
+    founders directly, its mail can report a decision before the portal does. And a programme with no
+    portal keeps its record in the mail.
+  fingerprint: cca3325ad2d8b6db
+  decision: ''
+  note: ''
+- id: L045
+  artifact: founder_office.pb.program_applications.documents_after_acceptance
+  field: purpose
+  text: 'Acceptance starts a second process with dates of its own: the programme''s agreement, its investment
+    instruments where it invests, the company documents behind them, and for some programmes a new entity
+    or a move. Each has an owner and a date, and none is a formality — the money and the first day wait
+    on them.'
+  fingerprint: 8a363201ee52fd37
+  decision: ''
+  note: ''
+- id: L046
+  artifact: founder_office.pb.program_applications.documents_after_acceptance
+  field: when_to_use.signals[1]
+  text: A programme has accepted the company, or selected it for a grant or a seed fund.
+  fingerprint: 6019d990354fa658
+  decision: ''
+  note: ''
+- id: L047
+  artifact: founder_office.pb.program_applications.documents_after_acceptance
+  field: when_to_use.signals[2]
+  text: A programme sends an agreement, a contract, investment documents or an onboarding list.
+  fingerprint: 2a06182e4ed5b17a
+  decision: ''
+  note: ''
+- id: L048
+  artifact: founder_office.pb.program_applications.documents_after_acceptance
+  field: when_to_use.do_not_use_when[1]
+  text: The offer has not been accepted yet — the decision-mail move comes first.
+  fingerprint: 2eacfcf4511cb43a
+  decision: ''
+  note: ''
+- id: L049
+  artifact: founder_office.pb.program_applications.documents_after_acceptance
+  field: steps[1]
+  text: 'Get the programme''s whole list in writing — Ask once for every document the programme needs
+    and by when, and work from its list rather than from what another programme asked for. (done when:
+    The programme''s onboarding list is on the file, each item with a date.)'
+  fingerprint: e6b318fb63ca04ad
+  decision: ''
+  note: ''
+- id: L050
+  artifact: founder_office.pb.program_applications.documents_after_acceptance
+  field: steps[2]
+  text: 'Sign the programme''s agreement — SISFS: "it is mandatory to sign a legal agreement with the
+    incubator to avail the seed fund"; Google for Startups Accelerator India sends a programme contract
+    to sign; YC invests with a YC Agreement alongside its SAFEs; Hub71''s selected startups "enter into
+    an agreement". (done when: The programme''s agreement is signed for the company and on the file.)'
+  fingerprint: 3cee1301d5bccab6
+  decision: ''
+  note: ''
+- id: L051
+  artifact: founder_office.pb.program_applications.documents_after_acceptance
+  field: steps[3]
+  text: 'Check that the company can take the investment — YC invests in US, Canada, Cayman and Singapore
+    corporations; a company incorporated elsewhere — an Indian private limited company, say — creates
+    a parent in one of them, which YC says "will require a significant effort on your part". Hub71 requires
+    an ADGM tech licence for a subsidiary of the holding company. (done when: The entity the programme
+    invests in exists, or each step to create it has an owner and a date.)'
+  fingerprint: 2faa927a282c35c5
+  decision: ''
+  note: ''
+- id: L052
+  artifact: founder_office.pb.program_applications.documents_after_acceptance
+  field: steps[4]
+  text: 'Put the cap table in order before the instruments — The instruments are issued against the cap
+    table — YC''s two SAFEs, Techstars'' uncapped MFN SAFE and post-money CEA, Hub71''s SAFE note. An
+    Indian scheme reads shareholding too: SISFS requires Indian promoters to hold at least 51% when the
+    company applies. (done when: A current cap table is on the file, and the instruments the programme
+    will issue are named against it.)'
+  fingerprint: 395544c13b9fdd21
+  decision: ''
+  note: ''
+- id: L053
+  artifact: founder_office.pb.program_applications.documents_after_acceptance
+  field: steps[5]
+  text: 'Have the scheme''s eligibility papers to hand — A government scheme admits only the company its
+    rules describe, and its incubator checks before it signs — SISFS takes only DPIIT-recognised startups
+    incorporated not more than two years before the application, and its incubators "conduct due diligence
+    of the startups and sign legal agreement". (done when: The recognition, where the scheme requires
+    one, is on the file, and the company met the scheme''s other rules on the day it applied.)'
+  fingerprint: 5e7bcd15b7cee47c
+  decision: ''
+  note: ''
+- id: L054
+  artifact: founder_office.pb.program_applications.documents_after_acceptance
+  field: steps[6]
+  text: 'Give the account the money goes to — SISFS pays startups "in their company bank accounts" and
+    releases the first grant instalment within 60 days of receiving the application; later instalments
+    wait on an interim progress update and a utilisation certificate. (done when: The company''s bank
+    details have gone to the programme in the form it asked for.)'
+  fingerprint: c005fe7a27e34ca5
+  decision: ''
+  note: ''
+- id: L055
+  artifact: founder_office.pb.program_applications.documents_after_acceptance
+  field: steps[7]
+  text: 'Diary what the agreement obliges — SISFS: an update to the incubator at least once in fifteen
+    days, and on the scheme''s dashboard every month. Hub71: "Startups accepted to our programs must relocate
+    and establish a presence at our space within Abu Dhabi." (done when: Every recurring obligation in
+    the agreement is on the calendar with its first date.)'
+  fingerprint: 8f9cdfe8f56bcb91
+  decision: ''
+  note: ''
+- id: L056
+  artifact: founder_office.pb.program_applications.documents_after_acceptance
+  field: success_signal
+  text: The programme's agreement is signed and every item on its onboarding list is in before the programme's
+    first day — or, for a grant, before the first instalment.
+  fingerprint: a6f698938e3add62
+  decision: ''
+  note: ''
+- id: L057
+  artifact: founder_office.pb.program_applications.documents_after_acceptance
+  field: outcome_window_days
+  text: wait 30 days for the success signal
+  fingerprint: 48922a3a5102fb2a
+  decision: ''
+  note: ''
+- id: L058
+  artifact: founder_office.pb.program_applications.follow_an_application
+  field: purpose
+  text: 'Carry one application to a programme from its deadline to its first day: hold the programme''s
+    own calendar, name the stage from the programme''s own words, answer every request before the programme''s
+    date, read the programme''s quiet by the stage it is in, and stop on purpose. Its stages are the closed
+    list from which the expert names where an application stands.'
+  fingerprint: a203f029067a89cb
+  decision: ''
+  note: ''
+- id: L059
+  artifact: founder_office.pb.program_applications.follow_an_application
+  field: when_to_use.signals[1]
+  text: 'The file''s kind of work is `program`: an application to an accelerator, an incubator, a fellowship,
+    a grant or a government scheme, from before its deadline to the programme''s last day.'
+  fingerprint: b67c5a094fb96ef5
+  decision: ''
+  note: ''
+- id: L060
+  artifact: founder_office.pb.program_applications.follow_an_application
+  field: when_to_use.signals[2]
+  text: A programme's mail or its portal reports on an application — a receipt, a status change, an invitation,
+    a request, a decision.
+  fingerprint: b7fea734e3253905
+  decision: ''
+  note: ''
+- id: L061
+  artifact: founder_office.pb.program_applications.follow_an_application
+  field: when_to_use.do_not_use_when[1]
+  text: 'The company is registering or being recognised rather than applying to be selected: a recognition,
+    a licence or a filing is compliance, whichever portal sends the notice.'
+  fingerprint: 3e527212e4a2ab4b
+  decision: ''
+  note: ''
+- id: L062
+  artifact: founder_office.pb.program_applications.follow_an_application
+  field: when_to_use.do_not_use_when[2]
+  text: The application has become an investment negotiation — terms, valuation, a lead — with a fund's
+    own programme; the investor relations playbooks fit that conversation better.
+  fingerprint: a7a8d71f513d7a3f
+  decision: ''
+  note: ''
+- id: L063
+  artifact: founder_office.pb.program_applications.follow_an_application
+  field: when_to_use.do_not_use_when[3]
+  text: The programme has ended. An investing programme is a shareholder from then on, and the relationship
+    is investor relations.
+  fingerprint: 0cc9d939229e1481
+  decision: ''
+  note: ''
+- id: L064
+  artifact: founder_office.pb.program_applications.follow_an_application
+  field: steps[1]
+  text: 'Put the programme''s calendar on the file — Read the programme''s own page for its deadline with
+    its time zone, its review window, its decision-by date and its start date, and note each with the
+    page it came from. A rolling programme has no deadline; note its response clock instead (SISFS selects
+    within 45 days of receipt). (done when: The file names the programme''s deadline, decision-by date
+    and start date, each with the page it came from — or says the programme is rolling and names its response
+    clock.)'
+  fingerprint: cc493f49dc3264ec
+  decision: ''
+  note: ''
+- id: L065
+  artifact: founder_office.pb.program_applications.follow_an_application
+  field: steps[2]
+  text: 'Confirm the application arrived — Find the programme''s receipt: the confirmation mail, or the
+    portal''s submitted status. YC sends a copy of the application on submission and says that without
+    it "you likely did not submit the application". No receipt by the next day means re-checking the submission,
+    not waiting. (done when: A dated receipt — a confirmation mail or the portal''s submitted status —
+    is on the file.)'
+  fingerprint: 56bd91581c4beee7
+  decision: ''
+  note: ''
+- id: L066
+  artifact: founder_office.pb.program_applications.follow_an_application
+  field: steps[3]
+  text: 'Name the stage from the programme''s own words — Read the programme''s mail and its portal as
+    one record, and name the stage from the seven below, citing the dated mail or status that put it there
+    — never from memory, and never from how long the file has been quiet. (done when: The file''s stage
+    is one of the seven, with the dated mail or portal status that put it there.)'
+  fingerprint: 78f11166f708b64e
+  decision: ''
+  note: ''
+- id: L067
+  artifact: founder_office.pb.program_applications.follow_an_application
+  field: steps[4]
+  text: 'Answer every request before the programme''s date — An interview slot to book, a clarification,
+    a missing document, an offer to accept: each typically carries the programme''s own date, and that
+    date is the deadline. Answer with what was asked, from the founder who was asked. (done when: No request
+    from the programme is open past its own date.)'
+  fingerprint: 7c93b1c8b7f68fbc
+  decision: ''
+  note: ''
+- id: L068
+  artifact: founder_office.pb.program_applications.follow_an_application
+  field: steps[5]
+  text: 'Read the quiet by the stage — Use the stage''s own reading of silence below. Before the programme''s
+    published date, wait — and spend the wait on progress: YC says the best edge at interview is a company
+    that improved between the application and the interview. (done when: A quiet file carries the next
+    date on which its quiet would mean something — the programme''s decision-by date, or its response
+    clock counted from the application.)'
+  fingerprint: fd80f8f0bc067490
+  decision: ''
+  note: ''
+- id: L069
+  artifact: founder_office.pb.program_applications.follow_an_application
+  field: steps[6]
+  text: 'Ask once when the programme''s own date has passed — One short status query, through the channel
+    the programme names — Hub71 points applicants to its contact form; SISFS has a grievance cell for
+    delayed evaluation — and none where the programme says it does not answer status questions. (done
+    when: One status query has gone out after the programme''s published date, or the file says why none
+    will.)'
+  fingerprint: 1fb2a046cfe87239
+  decision: ''
+  note: ''
+- id: L070
+  artifact: founder_office.pb.program_applications.follow_an_application
+  field: steps[7]
+  text: 'Stop on purpose — Close the file with its reason when the answer is in: declined, with its re-application
+    date; lapsed, when the programme''s date — or, with none published, the outcome window from the application
+    — has passed and the status query has had no answer for two weeks (a practitioner''s wait, unverified;
+    for the founder''s review); or withdrawn by the founders. (done when: The file is closed with one
+    of those reasons, or it is live with a dated next check.)'
+  fingerprint: 0756af175f0933c9
+  decision: ''
+  note: ''
+- id: L071
+  artifact: founder_office.pb.program_applications.follow_an_application
+  field: stages[1]
+  text: 'Applied — in, and waiting for the window to close [applied]: typically 14 days — a prior; source:
+    practitioner judgement — unverified; for the founder''s review. No programme publishes how long an
+    application waits for its window to close, because it turns on when the founders applied: a cohort
+    programme starts reading after its deadline — Techstars Paris says the application "typically stays
+    open for ~12 weeks, after which we will commence the selection process" (https://www.techstars.com/blog/advice/techstars-paris-the-ins-and-outs-of-the-application-and-selection-process)
+    — and a rolling scheme shares each application with the chosen incubators on receipt (https://seedfund.startupindia.gov.in/faq).
+    Read the programme''s own deadline before this number. ; quiet means: Nothing, and nothing is owed.
+    A programme with a cohort deadline selects after its window closes — some check eligibility while
+    it is open, as Google for Startups Accelerator India does — and a rolling one picks applications up
+    as they arrive. The one thing to check at this stage is the receipt: YC sends a confirmation with
+    a copy of the application and says that without it "you likely did not submit the application"; the
+    SISFS portal sends an email confirmation the same way. ; leaves when: The programme''s published deadline
+    passes, or the programme or its portal shows the application is being read — a status change, an eligibility
+    check, a request for a missing document.'
+  fingerprint: 9d2d7fd48af1b5b4
+  decision: ''
+  note: ''
+- id: L072
+  artifact: founder_office.pb.program_applications.follow_an_application
+  field: stages[2]
+  text: 'Under review — the programme is reading [under_review]: typically 28 days — a prior; source:
+    Techstars: "You may receive an invitation to interview anytime between one and four weeks after the
+    application deadline. We do our best to review all applications within four weeks of applications
+    closing" (https://www.techstars.com/blog/founder-advice/inside-a-techstars-accelerator-the-application-and-interview-process),
+    12 January 2026. The spread around it: SISFS selects "within 45 days" of receiving an application
+    (https://seedfund.startupindia.gov.in/faq); Hub71 gives "feedback about the status of your application
+    within three months of applying" (https://www.hub71.com/faqs); YC interviews in November and December
+    against a 2 November deadline (https://www.ycombinator.com/apply). ; quiet means: Not a no. A cohort
+    programme reads its applications against one calendar and answers on its own dates: YC gives on-time
+    applicants a decision date and says "We always respond to everyone who applies, no exceptions"; Techstars
+    "will notify all applicants about the state of their application". Two exceptions decide what the
+    quiet means. Some programmes write only to the applicants they want — Antler''s form says "If there''s
+    a fit, we''ll be in touch by email" — and there the silence, once past their own response time, is
+    the answer. And on a government scheme the portal, not the mail, is the record: SISFS shows each application''s
+    status on its dashboard in real time and notifies rejections by email, so read the portal before reading
+    the silence. ; leaves when: An invitation to interview or to pitch arrives (interview); or the decision
+    arrives without one — an offer (onboarding) or a rejection (declined).'
+  fingerprint: bb59bdb58cad7fdb
+  decision: ''
+  note: ''
+- id: L073
+  artifact: founder_office.pb.program_applications.follow_an_application
+  field: stages[3]
+  text: 'Interview — the founders'' turn to book, prepare and attend [interview]: typically 21 days —
+    a prior; source: Techstars Paris: "The selection process lasts six weeks", with "an invitation to
+    a first interview 2 to 4 weeks after the application deadline", a second interview for half of those
+    companies and a screening committee after it — so the interview rounds run two to four weeks (https://www.techstars.com/blog/advice/techstars-paris-the-ins-and-outs-of-the-application-and-selection-process),
+    30 January 2022. The short end is YC''s: one 10-minute interview over Zoom, and typically a decision
+    the same day (https://www.ycombinator.com/interviews, https://www.ycombinator.com/apply). ; quiet
+    means: Typically that the turn is ours. An invitation typically carries the programme''s own date
+    — to book a slot, to confirm who attends, to send a deck — and that date is a deadline, not a suggestion.
+    Between rounds the programme''s quiet is scheduling: Techstars Paris invites half of its first-round
+    companies to a second interview before its screening committee, and Hub71 holds a round with its team
+    and a round with its partners before its selection committee. ; leaves when: The last round the founders
+    attend is held (decision) — or the decision follows it at once: YC typically decides the same day
+    as the interview (onboarding, or declined).'
+  fingerprint: 2354bc4d678170af
+  decision: ''
+  note: ''
+- id: L074
+  artifact: founder_office.pb.program_applications.follow_an_application
+  field: stages[4]
+  text: 'Decision — the founders'' part is done; the programme decides [decision]: typically 14 days —
+    a prior; source: practitioner judgement — unverified; for the founder''s review. The programmes read
+    publish the step, not its length: YC typically decides the same day as the interview (https://www.ycombinator.com/apply);
+    Techstars ends with a screening committee after its interview rounds (https://www.techstars.com/blog/founder-advice/inside-a-techstars-accelerator-the-application-and-interview-process);
+    Hub71''s fourth round is a final selection committee (https://www.hub71.com/faqs); Google for Startups
+    Accelerator India''s selection board reviews the shortlist for the final list (https://startup.google.com/programs/accelerator/india/).
+    ; quiet means: A committee meets on its own date and weighs its shortlist together, so quiet before
+    the programme''s published decision date means nothing. After that date, ask once, through the channel
+    the programme names — Hub71 points applicants to the form on its contact page — and not at all where
+    it says it will not: Emergent Ventures cannot "answer questions about application status". A waitlist
+    or a move to the next cohort is a decision about timing; it keeps the file here, with the programme''s
+    new date on it. ; leaves when: The decision mail arrives: an offer (onboarding) or a rejection (declined).'
+  fingerprint: 171a62bad35f71a7
+  decision: ''
+  note: ''
+- id: L075
+  artifact: founder_office.pb.program_applications.follow_an_application
+  field: stages[5]
+  text: 'Onboarding — accepted; the offer answered and the papers done [onboarding]: typically 30 days
+    — a prior; source: Summarised from published calendars; the midpoint is practitioner judgement — unverified;
+    for the founder''s review. Hub71 describes "a two-month onboarding process" (https://www.hub71.com/faqs);
+    YC decides by 11 December for a batch that runs from January to March and starts the investment process
+    on acceptance (https://www.ycombinator.com/apply, https://www.ycombinator.com/deal); SISFS releases
+    the first grant instalment "not more than 60 days from receipt of application", having selected within
+    45 (https://seedfund.startupindia.gov.in/faq). ; quiet means: Most often that the programme is waiting
+    for us. An offer typically carries a date to reply by, and the agreement, the investment documents,
+    the entity and any move are the founders'' to produce; here the programme''s quiet is rarely the risk
+    — the founders'' is. ; leaves when: The programme''s first day — the kick-off, the first bootcamp
+    — or, for a grant, the first instalment in the company''s bank account.'
+  fingerprint: 76e66aa17082e3fe
+  decision: ''
+  note: ''
+- id: L076
+  artifact: founder_office.pb.program_applications.follow_an_application
+  field: stages[6]
+  text: 'In the programme — its calendar is the file''s calendar [in_programme]: typically 90 days — a
+    prior; source: Three months is the published length of most accelerators read: YC ("after the 3 month
+    program", https://www.ycombinator.com/faq), Techstars ("three months of intensive, mentorship-driven
+    support", https://www.techstars.com/accelerators) and Google for Startups Accelerator India ("A three-month
+    equity-free Accelerator program", https://startup.google.com/programs/accelerator/india/). Longer:
+    NSRCEL''s Launchpad runs five months (https://nsrcel.org/launchpad/); Hub71''s Access programme twelve,
+    with a three-month guided track (https://www.hub71.com/faqs). ; quiet means: Nothing about the application,
+    which is settled. What the file holds now is the programme''s own deadlines — assignments, reviews,
+    demo day — published to the cohort and fixed for all of it. ; leaves when: The programme ends — graduation,
+    demo day or the final review. Where the programme invested, the relationship goes on as investor relations:
+    it now holds a SAFE or shares.'
+  fingerprint: a701f64c119123ae
+  decision: ''
+  note: ''
+- id: L077
+  artifact: founder_office.pb.program_applications.follow_an_application
+  field: stages[7]
+  text: 'Declined — a date to re-apply, not a verdict [declined]: typically 90 days — a prior; source:
+    One intake. YC runs four batches a year — Winter, Spring, Summer and Fall (https://www.ycombinator.com/apply)
+    — and "It''s very common for teams to take our feedback, re-apply the following batch and get accepted"
+    (https://www.ycombinator.com/interviews). The programme''s own rule replaces the number: SISFS takes
+    a new application "after 6 Weeks of receiving a rejection" (https://seedfund.startupindia.gov.in/faq);
+    Techstars Paris opens applications twice a year, in February and September (https://www.techstars.com/blog/advice/techstars-paris-the-ins-and-outs-of-the-application-and-selection-process);
+    Hub71: "you can apply to join our future cohorts" (https://www.hub71.com/faqs). ; quiet means: Nothing:
+    the programme has said what it will say about this application. Its newsletters about the next intake
+    are not a re-opening; the re-application is the founders'' move, on the programme''s next date. ;
+    leaves when: A re-application goes in to the next intake — a new application, back at applied, carrying
+    this one''s feedback and what changed — or the founders decide not to re-apply and the file closes
+    with that reason.'
+  fingerprint: 51e148d03c3c3aa0
+  decision: ''
+  note: ''
+- id: L078
+  artifact: founder_office.pb.program_applications.follow_an_application
+  field: success_signal
+  text: The programme's decision is on file and answered — an offer accepted in writing before its reply-by
+    date, or a rejection filed with its re-application date and the change the next application will lead
+    with.
+  fingerprint: b44b5e7083b088b0
+  decision: ''
+  note: ''
+- id: L079
+  artifact: founder_office.pb.program_applications.follow_an_application
+  field: do_nothing_consequence
+  text: 'Left alone, an application is lost on a date rather than on merit: the interview slot goes unbooked,
+    a clarification goes unanswered past the programme''s date, an offer lapses before its agreement is
+    signed, and a rejection that came with a re-application date is filed as final.'
+  fingerprint: 0e90455a90843cfd
+  decision: ''
+  note: ''
+- id: L080
+  artifact: founder_office.pb.program_applications.follow_an_application
+  field: outcome_window_days
+  text: wait 90 days for the success signal
+  fingerprint: 38eeb219778173f3
+  decision: ''
+  note: ''
+- id: L081
+  artifact: founder_office.pb.program_applications.follow_an_application
+  field: stop
+  text: 'dormant after 90 quiet days — a prior; source: The longest wait the programmes read promise:
+    Hub71 gives "feedback about the status of your application within three months of applying" (https://www.hub71.com/faqs)
+    — about ninety days. The others answer inside it: YC decides on-time applications by 11 December for
+    a 2 November deadline (https://www.ycombinator.com/apply), Techstars reviews "within four weeks of
+    applications closing" (https://www.techstars.com/blog/founder-advice/inside-a-techstars-accelerator-the-application-and-interview-process),
+    and SISFS selects "within 45 days" (https://seedfund.startupindia.gov.in/faq). For a declined file
+    the same span is one intake: YC runs four batches a year (https://www.ycombinator.com/apply). It is
+    the 90 days `06` D33 proposed for a programme file; a programme''s own published date replaces it.
+    ; then: Close nothing on the clock alone. Read the programme''s own record first — its portal, its
+    published decision date, its next cohort: where the programme''s date is still ahead, the file is
+    waiting, not dormant, and that date replaces this number. Otherwise act by stage. A live application
+    gets the spine''s one status query through the programme''s own channel and, two weeks unanswered
+    (step 7''s practitioner wait), is closed as lapsed with that reason. A declined one has reached its
+    re-application point: put the next intake''s deadline on the file and decide — re-apply with what
+    changed, or close it with the reason. After the programme has ended, an investing programme goes on
+    as investor relations, and any other closes with a note.'
+  fingerprint: dffbc7cf04657134
+  decision: ''
+  note: ''
+- id: L082
+  artifact: founder_office.pb.program_applications.prepare_for_the_interview
+  field: purpose
+  text: 'A programme''s interview is short, and it tests three things: the founders, what they have built,
+    and how far it has moved since they applied. Prepare for the programme''s own format, not for an investor
+    meeting — YC''s is a ten-minute Zoom call with two or three partners who have the application open;
+    Techstars runs two rounds and then a screening committee.'
+  fingerprint: d460ea24da00e338
+  decision: ''
+  note: ''
+- id: L083
+  artifact: founder_office.pb.program_applications.prepare_for_the_interview
+  field: when_to_use.signals[1]
+  text: A programme invites the founders to an interview, a pitch or a committee session.
+  fingerprint: 3c118f5c7d9ac5cb
+  decision: ''
+  note: ''
+- id: L084
+  artifact: founder_office.pb.program_applications.prepare_for_the_interview
+  field: when_to_use.do_not_use_when[1]
+  text: The meeting is a programme's information session, office hours or webinar — nobody is being selected
+    in it.
+  fingerprint: 5ab0e3ba07b8816b
+  decision: ''
+  note: ''
+- id: L085
+  artifact: founder_office.pb.program_applications.prepare_for_the_interview
+  field: steps[1]
+  text: 'Book the slot before the invitation''s date — Book by the date the invitation gives and write
+    the time on both clocks. Know the format before preparing for it: YC''s interviews are ten-minute
+    conversations over Zoom. (done when: A slot is booked before the invitation''s date, with its time
+    in the programme''s zone and the founders''.)'
+  fingerprint: 4b9f6cad7c82ff98
+  decision: ''
+  note: ''
+- id: L086
+  artifact: founder_office.pb.program_applications.prepare_for_the_interview
+  field: steps[2]
+  text: 'Get every founder on the call — YC: "All founders should be present on the call", and it prefers
+    that each founder answers at least one question. Techstars uses the interview to meet any additional
+    co-founders and the extended team. (done when: Every founder has confirmed the slot.)'
+  fingerprint: d6c65fc2d4cca159
+  decision: ''
+  note: ''
+- id: L087
+  artifact: founder_office.pb.program_applications.prepare_for_the_interview
+  field: steps[3]
+  text: 'Reread the application they will have open — YC''s interviewers "will have read your application
+    and have it open during the call". Know what was written, and list what has changed since it went
+    in. (done when: The founders have reread the submitted application and listed what has changed since.)'
+  fingerprint: 58ecc00095bb15c5
+  decision: ''
+  note: ''
+- id: L088
+  artifact: founder_office.pb.program_applications.prepare_for_the_interview
+  field: steps[4]
+  text: 'Lead with progress since applying — YC''s advice for an edge is "to work hard and have your startup
+    improve between the time that you applied and the time that you interview". Have that change ready
+    to say in a sentence. (done when: The progress since the application is written down in one or two
+    sentences.)'
+  fingerprint: 37b76bffb31ba135
+  decision: ''
+  note: ''
+- id: L089
+  artifact: founder_office.pb.program_applications.prepare_for_the_interview
+  field: steps[5]
+  text: 'Say what the company does in two sentences — YC''s typical first question is "What is your company
+    working on?", answered "in a few simple, jargon-free sentences". Techstars asks what the founders
+    have learned since they started, and from their first customer. (done when: The answer to what the
+    company is working on is written down, and every founder can give it.)'
+  fingerprint: 389ebb2c4a3cb9f5
+  decision: ''
+  note: ''
+- id: L090
+  artifact: founder_office.pb.program_applications.prepare_for_the_interview
+  field: steps[6]
+  text: 'Have the numbers written down, and true — YC suggests having key metrics written down to hand
+    during the call, and warns that "if you state numbers in the interview we may ask for verification
+    of them afterwards". (done when: The key metrics are on one page, each with where it comes from.)'
+  fingerprint: fa0e420e7546d5f7
+  decision: ''
+  note: ''
+- id: L091
+  artifact: founder_office.pb.program_applications.prepare_for_the_interview
+  field: steps[7]
+  text: 'Have the demo loaded — YC sometimes asks to see a demo: software "loaded up and ready to screenshare",
+    hardware in the room with the founders, or a demo video when it cannot be. (done when: The demo has
+    been screen-shared once before the call, or a demo video is ready.)'
+  fingerprint: ce21acbf5b73c1bb
+  decision: ''
+  note: ''
+- id: L092
+  artifact: founder_office.pb.program_applications.prepare_for_the_interview
+  field: steps[8]
+  text: 'Rehearse only as much as this programme wants — The programmes disagree. YC: beyond the basic
+    preparation, rehearsal "is not useful and is often counter-productive". Techstars: practise the introduction,
+    anticipate questions and rehearse answers. Follow the programme being interviewed for. (done when:
+    The preparation follows the programme''s stated advice, and the founders know which advice that is.)'
+  fingerprint: 380fd92e7151c7c8
+  decision: ''
+  note: ''
+- id: L093
+  artifact: founder_office.pb.program_applications.prepare_for_the_interview
+  field: steps[9]
+  text: 'Write down what was asked and promised — After the call, note the questions, every number stated,
+    and anything promised — a verification, a document, a follow-up — with its date. (done when: The questions
+    asked and every promise made are on the file within a day of the call.)'
+  fingerprint: 8e97f956196e22e1
+  decision: ''
+  note: ''
+- id: L094
+  artifact: founder_office.pb.program_applications.prepare_for_the_interview
+  field: success_signal
+  text: The interview is held at the booked time with every founder present, and every number stated in
+    it is on the file, ready to verify.
+  fingerprint: f7b8f339416ce1c4
+  decision: ''
+  note: ''
+- id: L095
+  artifact: founder_office.pb.program_applications.prepare_for_the_interview
+  field: outcome_window_days
+  text: wait 14 days for the success signal
+  fingerprint: 55431225a5e01c19
+  decision: ''
+  note: ''
+- id: L096
+  artifact: founder_office.pb.program_applications.read_the_decision_mail
+  field: purpose
+  text: 'A programme''s decision mail is two documents in one: a verdict, and a list of next steps with
+    dates. Accepted, the dates are the offer''s — confirm, sign, send. Rejected, the date that matters
+    is the re-application window, and the line that matters is the feedback.'
+  fingerprint: 96a926a1e1f8f5c3
+  decision: ''
+  note: ''
+- id: L097
+  artifact: founder_office.pb.program_applications.read_the_decision_mail
+  field: when_to_use.signals[1]
+  text: A programme's mail, or its portal's status, gives a decision on an application.
+  fingerprint: 4e5ab1f1c04bb8b4
+  decision: ''
+  note: ''
+- id: L098
+  artifact: founder_office.pb.program_applications.read_the_decision_mail
+  field: when_to_use.do_not_use_when[1]
+  text: The mail invites the founders to a further round; that is the interview, not a decision.
+  fingerprint: 18ccfe2b0429a604
+  decision: ''
+  note: ''
+- id: L099
+  artifact: founder_office.pb.program_applications.read_the_decision_mail
+  field: when_to_use.do_not_use_when[2]
+  text: The mail announces the programme's next intake; nothing has been decided about this application.
+  fingerprint: f82ac3ce8b435452
+  decision: ''
+  note: ''
+- id: L100
+  artifact: founder_office.pb.program_applications.read_the_decision_mail
+  field: steps[1]
+  text: 'Class the decision — An offer, a rejection, a waitlist or a move to a later cohort — or an invitation
+    to a further round, which is no decision at all. (done when: The mail is classed as one of those,
+    with its date.)'
+  fingerprint: 675fa46588e898b5
+  decision: ''
+  note: ''
+- id: L101
+  artifact: founder_office.pb.program_applications.read_the_decision_mail
+  field: steps[2]
+  text: 'Accepted: list everything it asks, with dates — Confirmation, the programme''s agreement or contract,
+    the investment documents where it invests, the entity it needs, any move. Google for Startups Accelerator
+    India sends its final list "the program contract to sign"; YC begins the investment process the day
+    a company is accepted. (done when: Every ask in the offer is on the file with its date and its owner.)'
+  fingerprint: 003c993c07434f66
+  decision: ''
+  note: ''
+- id: L102
+  artifact: founder_office.pb.program_applications.read_the_decision_mail
+  field: steps[3]
+  text: 'Accepted: answer in writing before the offer''s date — Accept, or decline, in writing before
+    the date the offer gives, and ask in the same reply for the programme''s complete onboarding list.
+    (done when: A written acceptance or refusal has gone back before the offer''s date.)'
+  fingerprint: d5ef377bc092bc95
+  decision: ''
+  note: ''
+- id: L103
+  artifact: founder_office.pb.program_applications.read_the_decision_mail
+  field: steps[4]
+  text: 'Rejected: find the re-application window — Read the programme''s own rule. SISFS takes a new
+    application six weeks after a rejection; YC and Techstars encourage applying again, YC to the following
+    batch; Hub71 and NSRCEL take applications for future cohorts. (done when: The re-application date,
+    or the next intake''s deadline, is on the file with the page it came from.)'
+  fingerprint: 5c1a8c27bd3ef430
+  decision: ''
+  note: ''
+- id: L104
+  artifact: founder_office.pb.program_applications.read_the_decision_mail
+  field: steps[5]
+  text: 'Rejected: keep the feedback and decide what changes — YC gives everyone it interviews detailed
+    feedback on its decision; SISFS''s six-week wait exists so that applicants have "worked on the feedback
+    received from incubators". Write down what will be different — YC calls progress since the last application
+    "a strong signal". (done when: The feedback, if any was given, and the change the next application
+    will lead with are on the file.)'
+  fingerprint: f9b420be73ccff27
+  decision: ''
+  note: ''
+- id: L105
+  artifact: founder_office.pb.program_applications.read_the_decision_mail
+  field: steps[6]
+  text: 'Waitlisted or deferred: put the new date on the file — A waitlist or a move to a later cohort
+    is a decision about timing. Keep the file at decision with the programme''s new date, and answer anything
+    it asks meanwhile. (done when: The programme''s new decision date is on the file.)'
+  fingerprint: 7fb5d2bcfda41548
+  decision: ''
+  note: ''
+- id: L106
+  artifact: founder_office.pb.program_applications.read_the_decision_mail
+  field: success_signal
+  text: 'The decision is answered: an offer accepted in writing before its date, or a rejection filed
+    with its re-application date and the change the next application will lead with.'
+  fingerprint: 3c99924905271241
+  decision: ''
+  note: ''
+- id: L107
+  artifact: founder_office.pb.program_applications.read_the_decision_mail
+  field: outcome_window_days
+  text: wait 7 days for the success signal
+  fingerprint: b570f7d792af5c74
+  decision: ''
+  note: ''
+- id: L108
+  artifact: founder_office.pb.program_applications.work_back_from_the_deadline
+  field: purpose
+  text: A programme's deadline is published once, kept, and the same for every applicant. The only plan
+    that survives one is written backwards from it, on the programme's clock, with every part of the application
+    owned and dated, the facts frozen a day early, and the receipt on file.
+  fingerprint: 948f8277821dd3ab
+  decision: ''
+  note: ''
+- id: L109
+  artifact: founder_office.pb.program_applications.work_back_from_the_deadline
+  field: when_to_use.signals[1]
+  text: A programme's application deadline is on the file.
+  fingerprint: f6ef65963e70cdcd
+  decision: ''
+  note: ''
+- id: L110
+  artifact: founder_office.pb.program_applications.work_back_from_the_deadline
+  field: when_to_use.signals[2]
+  text: A cohort's own due date — an assignment, a review deck, a demo-day slot — is on the file.
+  fingerprint: 2f095992d7c81f5e
+  decision: ''
+  note: ''
+- id: L111
+  artifact: founder_office.pb.program_applications.work_back_from_the_deadline
+  field: when_to_use.signals[3]
+  text: An interview booking date, a clarification's date or an offer's reply-by date is on the file.
+  fingerprint: 65455c55c55e6f64
+  decision: ''
+  note: ''
+- id: L112
+  artifact: founder_office.pb.program_applications.work_back_from_the_deadline
+  field: when_to_use.do_not_use_when[1]
+  text: 'The programme is rolling and has no deadline (SISFS takes applications on an ongoing basis):
+    its fixed points are its eligibility rules on the day of application and its response clock.'
+  fingerprint: 44dd51c056a1d58e
+  decision: ''
+  note: ''
+- id: L113
+  artifact: founder_office.pb.program_applications.work_back_from_the_deadline
+  field: when_to_use.do_not_use_when[2]
+  text: The date is the company's own target rather than the programme's.
+  fingerprint: fd61bab8efa4733e
+  decision: ''
+  note: ''
+- id: L114
+  artifact: founder_office.pb.program_applications.work_back_from_the_deadline
+  field: steps[1]
+  text: 'Put the deadline on the founders'' clock — Write the deadline in the programme''s time zone and
+    in the founders''. YC''s "November 2 at 8pm PT" for its Winter 2027 batch is 3 November at 9:30 am
+    in India. (done when: The deadline is on the file in the programme''s time zone and in the founders'',
+    both written out.)'
+  fingerprint: 65ad626d2f9bc566
+  decision: ''
+  note: ''
+- id: L115
+  artifact: founder_office.pb.program_applications.work_back_from_the_deadline
+  field: steps[2]
+  text: 'Give every part an owner and a date — Each answer, the video, the deck, the metrics, each co-founder''s
+    own profile, any recommendation: an owner and a date before the deadline. On YC''s form only the founder
+    who created the application can edit it, and each co-founder completes a profile of their own. (done
+    when: Each part of the application has a named owner and a date before the deadline.)'
+  fingerprint: 744f9fd5608f4337
+  decision: ''
+  note: ''
+- id: L116
+  artifact: founder_office.pb.program_applications.work_back_from_the_deadline
+  field: steps[3]
+  text: 'Freeze the facts a day early — Numbers, names and the deck are final the day before; the last
+    day is for the upload. What is submitted stays submitted: YC does not allow continuous editing once
+    an application enters review, and SISFS fixes the order of incubator preferences on submission. (done
+    when: Every part is final at least a day before the deadline, on the founders'' clock.)'
+  fingerprint: eaf80b96c659b9a2
+  decision: ''
+  note: ''
+- id: L117
+  artifact: founder_office.pb.program_applications.work_back_from_the_deadline
+  field: steps[4]
+  text: 'Submit early and keep the receipt — Submit before the last day and file the receipt — the confirmation
+    mail or the portal''s submitted status. Without it the application may not have gone in: YC says that
+    without its confirmation "you likely did not submit the application". (done when: A dated receipt
+    is on the file before the deadline.)'
+  fingerprint: 859cc09c2e734961
+  decision: ''
+  note: ''
+- id: L118
+  artifact: founder_office.pb.program_applications.work_back_from_the_deadline
+  field: steps[5]
+  text: 'Know what late means here — If the deadline is missed, read the programme''s own rule instead
+    of asking for an exception: Hub71 considers a late application for the next cohort; YC still reads
+    one but "can''t promise exactly when we''ll get back to you", and will not mark it on time for a good
+    reason. (done when: For a missed deadline, the file says which intake the application now belongs
+    to and when it will be read, from the programme''s own rule.)'
+  fingerprint: b3d10aa496d625fc
+  decision: ''
+  note: ''
+- id: L119
+  artifact: founder_office.pb.program_applications.work_back_from_the_deadline
+  field: success_signal
+  text: The application's receipt — a confirmation mail or the portal's submitted status — is on the file
+    before the programme's deadline, read on the programme's own clock.
+  fingerprint: d5ad56b04fdd564d
+  decision: ''
+  note: ''
+- id: L120
+  artifact: founder_office.pb.program_applications.work_back_from_the_deadline
+  field: outcome_window_days
+  text: wait 14 days for the success signal
+  fingerprint: 4eb2550c8f7bda40
+  decision: ''
+  note: ''
+- id: L121
+  artifact: founder_office.obj.program_applications.application
+  field: purpose
+  text: 'One application by the company to one intake of one programme — an accelerator, an incubator,
+    a fellowship, a grant or a government scheme — and where it stands. It exists apart from an investor
+    conversation because the two move differently: a conversation moves when its parties move it; an application
+    moves on the programme''s published calendar, by its rules, for the whole batch at once. What it holds
+    is that calendar, the stage the programme''s own words put the application in, whose turn it is, and
+    — when it ends — how, including the date on which a rejection stops being true.'
+  fingerprint: 0709c0c4afd42bd4
+  decision: ''
+  note: ''

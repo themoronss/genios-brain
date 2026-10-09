@@ -33,18 +33,21 @@ is one branch, `speedrun008`, and the units are block `yc2_w27` of `tree.yaml`.
 | 0 · Ground truth | `STEP-00` one branch · `STEP-01` the golden set | both **PENDING — Harsh** (deploy). Claude's part done, pushed |
 | 1 · Remember everything | `STEP-02` change gate · `03` the gate keeps everything · `04` who is us · `05` every item enters memory · `06` nothing lost silently | `02`–`06` **PENDING — Rohit (push), Harsh (deploy)**: built, QA green (§6b–§6f) |
 | 2 · The expert's desk | `STEP-07` company brief · `08` the re-sync · `09` workstreams · `10` history, patterns, analytics | `07` **PENDING — Rohit (push; accept the brief), Harsh (deploy, migration `0195`; draft it)**: built, QA green (§6g) · `08` **PENDING — Rohit (push; the window, D5/D16), Harsh (the run, after the brief — `06` D26)**: built, QA green (§6h) · `09` **PENDING — Rohit (push; accept the brief's connectors and watchlist; D35), Harsh (deploy before STEP-08's run; re-file history if the health check names it)**: built, QA green (§6i) · `10` **PENDING — Rohit (push; `06` D42–D44), Harsh (deploy, no migration; the health check after one sweep)**: built, QA green (§6j) |
-| 3 · Expertise | `STEP-11` founder playbooks | TO BUILD |
+| 3 · Expertise | `STEP-11` founder playbooks | **M30 PENDING — Rohit (push; review the two playbooks, `06` D45; give your in-motion lines their kind), Harsh (deploy, migration `0196`; the Founder Office for your org only)**: built, QA green (§6k) · M31 — introductions, compliance, hiring, meetings — after your review |
 | 4 · The expert thinks | `STEP-12` the expert pass · `13` check every claim | TO BUILD |
 | 5 · What you see | `STEP-14` the card · `15` the morning brief | TO BUILD |
 | 6 · Learning from you | `STEP-16` | TO BUILD |
 | Across all phases | `STEP-17` real tests · `18` known bugs | TO BUILD — six of `STEP-18`'s bugs are fixed in code and pushed (§5) |
 
 **19 steps: 11 finished by Claude (`00`, `01` pushed; `02`–`10` waiting for the push — `08`'s run is
-Harsh's), 8 to build.** The next is `STEP-11` (founder playbooks): checked on 9 Oct (`STEP-11` §8) and
-planned as tree `yc2_w27_s11` (M30 — the founder domain, the playbook contract, the decider able to read
-the corpus, each file's kind of work, the playbook a file reads, fundraising and programs; M31 — intros,
-compliance, hiring, meetings, while STEP-12 is built; 30 units). Rohit's go came on 9 Oct (*Go — recommended*:
-`06` D2, D3, D31, D45–D47 as recommended); it is being built.
+Harsh's), `STEP-11` half (M30 built, waiting for the push and your review), 7 to build.** `STEP-11` was
+checked on 9 Oct (`STEP-11` §8), planned as tree `yc2_w27_s11` and built on your go of the same day
+(*Go — recommended*: `06` D2, D3, D31, D45–D47 as recommended): M30 — the Founder Office, the playbook
+contract, the decider reading the corpus whole, each file's kind of work, the playbook a file reads, the
+fundraising and programmes playbooks, your review sheets — 31 units (§6k). Its M31 — introductions,
+compliance, hiring, meetings — waits for your review of the first two, by the plan's depth-first rule
+(`STEP-11` §8.7), and is authored while `STEP-12` (the expert pass) is built; `STEP-12` is checked
+against the code before it is planned.
 
 ## 4 · STEP-00 · one branch, one baseline
 
@@ -171,7 +174,7 @@ cases were added (F42 passes; F41, F43, F44 wait on `STEP-05`).
 
 **Still owed:** the push; Harsh's deploy with migration `0193`; the declaration of `ceo@thegenios.com`
 and `thegenios.com` (D6); the repair's dry run, **read by Rohit (D14)**, then `--apply`; the production
-number — open cards about the founder → 0, threads named after him → 0
+number — open cards about the founder → 0, threads named after the founder → 0
 (`08-FOR-HARSH` §3.4, §4.2).
 
 ## 6e · STEP-05 · every kept item enters memory
@@ -303,6 +306,38 @@ earlier run's tenant knew (`03` F119); fixed, and the whole run repeated.
 sweep re-decides once each subject whose numbers changed (`08` §1.11, §3.9); after one sweep the health
 check (`08` §4.8); decisions D42–D44 (`06`); the label rows 45–47 (`golden-labels.md`).
 
+## 6k · STEP-11 · founder playbooks — the first half (M30)
+
+**What was built** (`STEP-11-PENDING-owner-rohit-and-harsh-founder-playbooks.md` §9): the founder's work
+has a domain of its own — the **Founder Office**, a corpus beside Admin, off for every tenant until it is
+switched on (`06` D2) — and fundraising reads it: the dark domain is gone, the Sales copy of investor
+relations retired. A playbook can now say what a professional knows about the work's shape: its stages,
+each with a typical duration as a labelled prior and its source, what quiet means at each, what ends it;
+what success looks like, how long to wait for it, what doing nothing costs, and when to stop. Two are
+written — **running an investor conversation** (seven stages, five moves, five claims) and **following a
+programme application** (seven stages, four moves, five claims) — each prior sourced or labelled
+practitioner judgement. An in-motion line of the company brief names its kind of work and ONE
+counterparty (`06` D31, migration `0196`); a file takes its line's kind; `playbook_for(kind)` answers what
+the corpus says about that kind — the spine, its stages, moves, claims, stop rule, and whether you
+reviewed it — and `GET /v1/workstreams/{file_id}` carries it. The decider reads the corpus's claims whole
+at last (`03` F121, `06` D46). A card built on a founder playbook you have not reviewed says so (`06` D3).
+Your review is two sheets — 146 lines for investors, 121 for programmes — and nothing is admitted until
+every line says accept (`06` D45).
+
+**Measured:** on the golden set five cases' decider prompts carry Admin's claims verbatim where every
+claim read `{"rule": null}`; a play's steps reach the model whole and numbered within a budget (196 of
+228 playbooks whole — the rest lose their last steps, counted, never cut mid-step); F10's Banyan Seed file is `investor`, F17's Gulf
+Launchpad file `program`, and it reads the programmes playbook. The 23 fundraising situations are no
+longer dark: they are the Founder Office's, refused `unreviewed` — no decider call, no card — until your
+review admits a playbook. The board did not move (must-detect 13/35, must-abstain 11/12, forbidden 4,
+Atlas 4/80), by design: no founder card can exist before your review.
+
+**QA:** `baseline/yc2w27-s11-qa/qa_record.txt` — run 1 at `430c4ebc`, green on every tier, on the first run, a database created for every check: the units 35 / 0 / 0 (4 tree checks + 31 units; M31's four are not built and not in scope); the whole suite on Postgres 19,277 passed, the known four skipped, 90 xfailed; the golden lane 794 passed, 88 xfailed, 0 skipped, 0 golden tenants left; the board matches `03` §F.1, unchanged (must-detect 13/35, must-abstain 11/12, forbidden 4, Atlas 4/80); the hermetic job 17,034 passed, its 1,848 skips 1,844 *needs a database* and the known four. The acceptance's card clause is declared NOT EXERCISED (an xfail that names why) until your review — it is not counted as a pass.
+
+**Still owed:** the push; the deploy — migration `0196`, the Founder Office switched on for your org only,
+and the refusal count a day later (`08` §1.12, §3.10, §4.9); your in-motion lines' kinds; your review of
+the two sheets (`06` D45); then M31, with its cases and your review; decision D48 (`03` F134).
+
 ## 7 · CI on the push
 
 | Job | Run `37407196202`, on `77aba10e` |
@@ -327,7 +362,7 @@ The full notes, with commands, expected outputs and what not to do: **`08-FOR-HA
 4. Pin the Composio toolkits — `yc2_w27/M17.C3.L-integration.V2.U04`.
 5. Re-run the probes and send the outputs; each bug is closed on its own probe.
 6. ⛔ STEP-04: the next push also carries migration `0193`. Then declare the design partner's
-   identity, run the repair DRY, send its list to Rohit, and `--apply` only after he reads it (D14);
+   identity, run the repair DRY, send its list to Rohit, and `--apply` only after Rohit reads it (D14);
    the health check must read 0 and 0 (`08` §3.4, §4.2).
 7. ⛔ STEP-05: no migration. Watch the first chain pass (heavy, model-free) and read the two numbers a
    day later; the promotion of Boardy's introductions — dry run, Rohit reads it (D23), then `--apply`
@@ -337,7 +372,7 @@ The full notes, with commands, expected outputs and what not to do: **`08-FOR-HA
 9. ⛔ STEP-07: migration `0195_company_brief`. Then draft the company brief — patterns, the dry run to
    Rohit, `--apply` — and Rohit accepts it line by line; the health check must pass (`08` §1.9, §3.6, §4.5).
 10. ⛔ STEP-08, only after 9 and only on a deploy that carries STEP-09 (`03` F101): the dry run to
-    Rohit, his window (D5 / D16), `PATCH …/backfill-window`, `--apply --days N`,
+    Rohit, the window Rohit names (D5 / D16), `PATCH …/backfill-window`, `--apply --days N`,
     `POST /connections/{gmail}/backfill`, `--finish`; the health check must read 0 (`08` §3.7, §4.6).
 11. ⛔ STEP-09: no migration. After Rohit accepts the brief's connectors and watchlist, the health check;
     if it names anything, re-file — `rebuild_graph --apply`, then `situations/backfill?rebuild=true` —
@@ -345,6 +380,10 @@ The full notes, with commands, expected outputs and what not to do: **`08-FOR-HA
 12. ⛔ STEP-10: no migration. The first sweep re-decides once each subject whose numbers changed — read its
     decision count; after one sweep, the health check: *every reply time written as a normal says its n*
     must pass, and the SQL beside it counts the normals the deploy retired (`08` §1.11, §3.9, §4.8).
+13. ⛔ STEP-11: migration `0196_company_brief_line_kind` — the boot log must name it. Then the Founder
+    Office for Rohit's org ONLY: `--status`, the dry run (it must list exactly one switch, `L3
+    founder_office`), `--apply`; a day later `--status`, the unroutable report and the outcome count, to
+    Rohit (`08` §1.12, §3.10, §4.9).
 
 ## 9 · Decisions still open — none blocks the next step
 
@@ -355,10 +394,10 @@ The full notes, with commands, expected outputs and what not to do: **`08-FOR-HA
 | `06` D13 | may calibration mute or nudge on your account? | shadow — it records, applies nothing; arming not before `STEP-18` B22–B24 |
 | — | is `GENIOS_L4_LLM_DECISION_MAKER` on in production? | the golden set assumes on; one look at the deploy's environment |
 | `06` D5 / D16 | how far back does STEP-08 re-read? | nothing runs: `--apply` refuses without a number; 365 recommended |
-| `06` D2 | do the founder's files reach cards beyond Admin (M28)? | the files are built and listed; a file in a dark domain is carded never |
-| `06` D31 | does an in-motion line name its counterparty? | files take their kind from connectors, the watchlist and named people only |
+| `06` D45 | your review of the two founder playbooks (`review/investor.review.yaml`, `review/program.review.yaml`) | fundraising is refused `unreviewed` — counted, no decider call, no card; a file's playbook reads *"playbook not yet reviewed"*; M31 waits (§3) |
 | `06` D35 | may your company's own domain be declared yours? | a portal's notice naming your company also files it under you (`03` F96); no card |
 | `06` D42 | may "a reply is owed" wait for your own reply time instead of a fixed two days? | two days, as today (`03` F107) |
 | `06` D43 | show a connector's rate on the brief's entry for a connector that only introduces? | shown only on a connector's own file (`03` F114) |
 | `06` D44 | re-point the corpus rules written to mean their reply time? | each reads what it reads today (`03` F105) |
 | `golden-labels.md` rows 45–47 | your labels for the three new cases (F45–F47) | Claude's, each row marked `claude` |
+| `06` D48 | may a prompt change re-decide every live subject once? | a prompt change waits for each subject's inputs to move (`03` F134) |

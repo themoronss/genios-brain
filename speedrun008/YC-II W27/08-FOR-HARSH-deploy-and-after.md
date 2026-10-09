@@ -1,6 +1,6 @@
 # 08 · For Harsh — deploying the batch, and what to run after
 
-**Written for:** Harsh. **As of:** 2026-10-08 (STEP-10 added). **From:** the `yc2_w27` build (Claude), pushed by
+**Written for:** Harsh. **As of:** 2026-10-09 (STEP-11 added). **From:** the `yc2_w27` build (Claude), pushed by
 Rohit. Everything here can be checked against the repository; every number below names the file
 or the command it came from.
 
@@ -20,7 +20,7 @@ or the command it came from.
    boot log names both (§2).
    ⛔ **And STEP-04 (§1.6) adds a third, `0193_org_self_identities`** — the tenant's declared addresses
    and domains. After the deploy: **declare** the design partner's identity, then the **repair**, dry
-   run first, its list to Rohit, `--apply` only after he reads it (§3.4).
+   run first, its list to Rohit, `--apply` only after Rohit reads it (§3.4).
    ⛔ **And STEP-05 (§1.7) adds no migration** — every kept mail and calendar event enters memory, and
    every recovery is read again. The **first chain pass after the deploy is heavy** (§3.5); read its
    numbers (§4.3). Boardy's archived introductions are promoted only after Rohit reads the dry run
@@ -28,7 +28,7 @@ or the command it came from.
    ⛔ **And STEP-06 (§1.8) adds a fourth, `0194_situation_outcomes`** — what came of every admitted
    situation. Nothing to run after the deploy; read two numbers before and a day after (§4.4).
    ⛔ **And STEP-07 (§1.9) adds a fifth, `0195_company_brief`** — the founder's company brief. Nothing
-   changes until Rohit accepts a line. After the deploy: draft it, send the dry run to Rohit, apply his
+   changes until Rohit accepts a line. After the deploy: draft it, send the dry run to Rohit, apply Rohit's
    answers (§3.6), then the health check (§4.5).
    ⛔ **And STEP-09 (§1.10) adds no migration** — a file for every piece of work. Nothing moves until the
    brief names a connector or a watchlist domain. It also carries the fix for `03` F101 — the history
@@ -38,6 +38,11 @@ or the command it came from.
    ⛔ **And STEP-10 (§1.11) adds no migration** — the expert's numbers. The published pack moves
    1.5.0 → 1.5.1 (registered at boot); the first sweep re-decides each subject whose numbers changed,
    once (§3.9). After one sweep: the health check — every normal says its n (§4.8).
+   ⛔ **And STEP-11 (§1.12) adds a sixth, `0196_company_brief_line_kind`** — one nullable column: an
+   in-motion line's kind of work. The new Founder Office corpus compiles for NO tenant until it is
+   switched on: after the deploy switch it on for Rohit's org ONLY — the dry run must list one switch
+   (§3.10) — and send Rohit the refusal count a day later (§4.9). No fundraising card appears before
+   Rohit's review of the two playbooks (`06` D45).
 2. After the deploy, **re-queue the attachments** the `file_name` refusal dead-lettered (§3.1).
 3. **Read the first `refetch_last_error`** that comes back (§3.2).
 4. **Pin the Composio toolkits** — the one unit of this block that is yours (§3.3).
@@ -187,6 +192,20 @@ it** (`03` F62), or that company reads as a counterparty in those three places.
 | a new health check | *every reply time written as a normal says its n, and none rests on fewer than five* — names the file |
 | what does NOT change | no card is added: a bounce, a wave and a reply time reach no card until `STEP-14`; the reply-owed threshold stays two days (`06` D42) |
 
+### 1.12 · STEP-11, founder playbooks — in the next push
+
+| | What changes at runtime |
+|---|---|
+| migration `0196` | `company_brief_lines.kind` — one nullable text column, no check constraint: its six values (investor · program · compliance · hiring · intro · partner) are validated by `contracts/company_brief.WORK_KINDS`. A brief whose lines name no kind keeps its version (`cb-…`) byte for byte, so no fingerprint moves for it |
+| a new corpus | `Domain Expertise/Founder Office Expertise/` — `default_on: false`: it compiles for NO tenant until it is switched on (§3.10). Two capabilities authored — investor relations, programmes — both `draft`, not reviewed |
+| fundraising situations | read the Founder Office, no longer the Sales copy (retired — Sales' `10-investor-relations` folders are gone). A tenant WITHOUT the Founder Office: measured in shadow, as before. A tenant WITH it: the live compiler refuses the unreviewed capability — `unsupported_unreviewed` in the pass's counts, the end `unsupported · unreviewed` in `situation_outcomes` — **no decider call, no card**, until Rohit's review admits it |
+| the decider's prompt | `l4-llm-decision.v6`: each corpus claim quoted whole by its id (it read `{"rule": null}` — `03` F121), framing blocks under their own heading, each play's steps whole and numbered |
+| a compiled play | named by its playbook; carries the playbook's success signal, outcome window and review state (the `expertise` adapter 2.1.0). Every compiled manifest changes, so **the first sweep re-decides each compiled-lane subject once** — its decision count says how many. A legacy-lane subject is re-decided only when its own inputs move (`03` F134) |
+| a card | a Founder Office card whose playbook is not reviewed leads its *why* with *"playbook not yet reviewed"* (`06` D3); no other card changes, and the card builder's version does not move |
+| routes | `GET /v1/workstreams/{file_id}` carries `"playbook"` — the file's kind of work and what the corpus says about it, or the named reason it says nothing; the company-brief routes carry a line's `kind` |
+| scripts | `scripts/company_brief.py … --kind`; `scripts/playbook_review_sheet.py` — Rohit's review, local files only, no database |
+| what does NOT change | no new environment variable; Admin's cards; nothing for any tenant that has not switched the Founder Office on |
+
 ### 1.3 · How it was tested before the push
 
 `baseline/yc2w27-qa/qa_record.txt`, at `83dd87f3`, every check on an **empty** scratch Postgres 17:
@@ -230,7 +249,9 @@ the declaration on.
 If it says `DEGRADED BOOT — database is read-only` instead, the change gate fails open (every subject
 is decided, as today — nothing lost, nothing saved) and `/reset` fails until `0191` is applied, because
 the reset now wipes `reasoning_fingerprints` — ⛔ and, from STEP-06, until `0194` is (it wipes
-`situation_outcomes`). No new environment variable. One value we need from the
+`situation_outcomes`). ⛔ **STEP-11 adds `0196_company_brief_line_kind.sql`** — one nullable column on
+`company_brief_lines`; the brief's store and routes write it, so the boot log must name it too.
+No new environment variable. One value we need from the
 deploy's environment:
 **`GENIOS_L4_LLM_DECISION_MAKER`** — on or off? The golden set runs the LLM decider on, as
 `speedrun008/YCW27/STATUS.md` records production; `YCW27` decision R1 recommended off. Tell
@@ -354,10 +375,10 @@ python scripts/draft_company_brief.py --org $ORG --database-url "$URL" --pattern
 python scripts/draft_company_brief.py --org $ORG --database-url "$URL"
 # 3 · write the lines as PROPOSALS — nothing is accepted
 python scripts/draft_company_brief.py --org $ORG --database-url "$URL" --apply
-# 4 · Rohit decides; apply exactly what he says
+# 4 · Rohit decides; apply exactly what Rohit says
 python scripts/company_brief.py --org $ORG --database-url "$URL" show
 python scripts/company_brief.py --org $ORG --database-url "$URL" --by rohit accept <id> <id> …
-python scripts/company_brief.py --org $ORG --database-url "$URL" --by rohit accept <id> --text "his own words"
+python scripts/company_brief.py --org $ORG --database-url "$URL" --by rohit accept <id> --text "Rohit's own words"
 python scripts/company_brief.py --org $ORG --database-url "$URL" --by rohit reject <id> …
 python scripts/company_brief.py --org $ORG --database-url "$URL" --by rohit add watchlist "Startup India" --domain sampark.gov.in
 ```
@@ -378,7 +399,7 @@ too (`scripts/_db.py`):
 ```
 ORG=org_e97e86f858ad48b2bbf64b8a
 # 1 · the dry run (read-only): how many, by rule, month and sender domain; the oldest and the
-#     window that reaches it; the attachments. Send it to Rohit — he names the window (D5 / D16).
+#     window that reaches it; the attachments. Send it to Rohit, who names the window (D5 / D16).
 python scripts/resync_deleted_mail.py --org $ORG --database-url "$URL"
 python scripts/resync_deleted_mail.py --org $ORG --database-url "$URL" --days 365   # what 365 reaches and leaves out
 # 2 · the connection lists that far back
@@ -445,6 +466,32 @@ Nothing to run. **The first sweep re-decides once** each subject whose request c
 reply time, a normal that went, history per domain, the renamed metric — as a new company brief does
 (the change gate, `STEP-02`); the decision count of that sweep says how many. Then the health check
 (§4.8).
+
+### 3.10 · STEP-11 — switch the Founder Office on for Rohit's org, and nothing else
+
+Every command on production needs `GENIOS_ALLOW_PROD_WRITE=1` (`scripts/_db.py`), the reads too:
+
+```
+ORG=org_e97e86f858ad48b2bbf64b8a
+# 1 · what is live now — read only
+python scripts/activate_tenant.py --org $ORG --database-url "$URL" --status
+# 2 · the dry run. It must list exactly ONE switch: `L3 founder_office` (its effect column is
+#     blank — `03` F135). If it lists anything else — `L1 semantic` SPENDS a model call on every
+#     message — stop and send the output to Rohit
+python scripts/activate_tenant.py --org $ORG --database-url "$URL" --domains admin,founder_office \
+    --by harsh --notes "06 D2: the founder's own work, Rohit's org only"
+# 3 · the same with --apply
+python scripts/activate_tenant.py --org $ORG --database-url "$URL" --domains admin,founder_office \
+    --by harsh --notes "06 D2: the founder's own work, Rohit's org only" --apply
+```
+
+Switch it on for no other tenant (`06` D2). From the next sweep Rohit's fundraising situations are
+refused `unreviewed` — counted, no model call, no card — until Rohit's review admits a playbook;
+the count is §4.9's. Then each in-motion line of the brief gets its kind of work and ONE counterparty —
+Rohit's call, applied by Rohit or by you on Rohit's word: a line already accepted gains a kind by
+`remove`, then `add in_motion "<Rohit's words>" --domain <domain> --kind <kind> --by rohit`
+(`scripts/company_brief.py`, as §3.6). The review itself is Rohit's and needs nothing from you: the
+admitted corpus ships with a later push.
 
 ## 4 · The probes — send the outputs
 
@@ -593,6 +640,29 @@ select f.field, count(*) filter (where f.valid_to is null) as current,
  group by f.field;
 ```
 
+### 4.9 · STEP-11 — a day after the switch (§3.10)
+
+```
+python scripts/activate_tenant.py --org org_e97e86f858ad48b2bbf64b8a --database-url "$URL" --status
+python scripts/unroutable_report.py --org org_e97e86f858ad48b2bbf64b8a --database-url "$URL"
+```
+
+`--status` must show `L3 founder_office LIVE`; the report's routing must read `fundraising →
+founder_office` and name no dark domain but `general`. Then this read-only count — the
+`unsupported · unreviewed` rows are the fundraising situations waiting for Rohit's review, the
+pilot's fundraising count the cutover table asks for (`reason/cutover.py`, Harsh 26):
+
+```
+select o.outcome, o.reason, count(*) as situations, max(o.last_seen_at) as last_seen
+  from situation_outcomes o
+ where o.org_id = :org and o.last_seen_at > now() - interval '1 day'
+ group by o.outcome, o.reason
+ order by situations desc;
+```
+
+Zero `unsupported · unreviewed` rows after a sweep means the switch did not take, or the org has no
+open fundraising situation — `--status` says which. Keep the outputs in `baseline/<date>-after-founder/`.
+
 ## 5 · Do not
 
 - switch **`calibration_apply`** on for any tenant. It is Rohit's decision (`06` D13), and not
@@ -602,7 +672,11 @@ select f.field, count(*) filter (where f.valid_to is null) as current,
 - accept, add or remove a line of the company brief that Rohit did not say — the brief steers every
   judgment the engine makes (`06` D27);
 - run STEP-08's `--apply` before Rohit has named the window (D5 / D16) and accepted the brief (D26), or
-  drain the re-sync through `/integrations/gmail/sync` instead of `/connections/{id}/backfill`.
+  drain the re-sync through `/integrations/gmail/sync` instead of `/connections/{id}/backfill`;
+- switch the Founder Office on for any tenant but Rohit's (`06` D2), or `--apply` an activation whose dry
+  run lists more than `L3 founder_office`;
+- mark a playbook reviewed, or run `scripts/playbook_review_sheet.py apply`, on anyone's word but Rohit's
+  line-by-line review (`06` D45).
 
 ## 6 · CI
 

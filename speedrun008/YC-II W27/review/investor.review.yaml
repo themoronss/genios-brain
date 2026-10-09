@@ -1,0 +1,1374 @@
+kind: investor
+capability: founder_office.fundraising.investor_relations
+how: For every line set decision to accept, edit or reject; give an edit or a reject a note. Nothing is
+  admitted until every line is accepted (06 D45).
+lines:
+- id: L001
+  artifact: founder_office.fundraising.investor_relations
+  field: description
+  text: 'Reading and running the founder''s conversations with the people who might fund the company —
+    funds, angels, angel networks and syndicates — and with the people who introduce them, from first
+    contact to a decision. It lives in the Founder Office because an investor is not a customer, and the
+    default reading of an investor thread as a deal is wrong in a specific, expensive way. Four things
+    are structurally different from a purchase. The counterparty is not buying a product, so there is
+    nothing to demo in the sales sense and no value case to prove. There is no close date the founder
+    controls: a fund invests when its own cycle, thesis and partnership say so. "No" is usually "not now"
+    with a reopening condition attached, so a pass is a state to schedule against rather than an outcome
+    to record and forget. And the whole thing is a PARALLEL process on one shared clock: an investor''s
+    read of the company is substantially a read of how the round is going, so silence is not neutral the
+    way it is in a deal — it is evidence, and what it is evidence of depends on the stage the conversation
+    has reached. The capability''s job is to keep every conversation''s real stage and real next move
+    visible, to read silence against what is typical for that stage, and to keep the reversible conversations
+    from being written off.'
+  fingerprint: 59652f70937373c6
+  decision: ''
+  note: ''
+- id: L002
+  artifact: founder_office.fundraising.investor_relations
+  field: question
+  text: Where does each investor conversation actually stand, and what does it need from us next?
+  fingerprint: 265d0670a4665ca2
+  decision: ''
+  note: ''
+- id: L003
+  artifact: founder_office.fundraising.investor_relations
+  field: outcomes[1]
+  text: Each investor conversation placed on the stage list — first contact, first call, partner meeting,
+    diligence, term sheet, closed or passed — from the last observable event rather than from how warm
+    the last email felt, and `unknown` where nothing establishes it.
+  fingerprint: 310c861b6a665307
+  decision: ''
+  note: ''
+- id: L004
+  artifact: founder_office.fundraising.investor_relations
+  field: outcomes[2]
+  text: 'Ball-in-court named per investor, with the asymmetry stated. Investors do not chase: where the
+    turn is ours and has been for a while, that is the finding, and it is nearly always the cheapest thing
+    on the list to fix.'
+  fingerprint: bd9175ec2af1753d
+  decision: ''
+  note: ''
+- id: L005
+  artifact: founder_office.fundraising.investor_relations
+  field: outcomes[3]
+  text: 'A pass recorded WITH its reason and its reopening condition, or with an explicit statement that
+    none was given. "Passed" alone destroys the information: the next round, the next fund and the partner
+    who liked the company all remain live and all become invisible.'
+  fingerprint: 09afb241be92fcd8
+  decision: ''
+  note: ''
+- id: L006
+  artifact: founder_office.fundraising.investor_relations
+  field: outcomes[4]
+  text: Accelerator, incubator and programme applications kept apart from fund conversations and handed
+    to `founder_office.programs_and_applications.program_applications`. They run on cohort deadlines that
+    do not move, so the correct action is calendar-shaped, not persuasion-shaped.
+  fingerprint: a25924dbc2f912bd
+  decision: ''
+  note: ''
+- id: L007
+  artifact: founder_office.fundraising.investor_relations
+  field: outcomes[5]
+  text: The relationships worth keeping warm while NOT raising named as such. Most investor relationships
+    are dormant most of the time, and that is their healthy state rather than a lapse.
+  fingerprint: 11ac96cf05ba2641
+  decision: ''
+  note: ''
+- id: L008
+  artifact: founder_office.fundraising.investor_relations
+  field: outcomes[6]
+  text: An explicit verdict per investor — advance it, re-approach at a stated trigger, or let it rest.
+    "Keep warm" is not a verdict; it is what gets written when nobody decided.
+  fingerprint: f6b7c4dfe9867c62
+  decision: ''
+  note: ''
+- id: L009
+  artifact: founder_office.fundraising.investor_relations
+  field: failure_modes[1]
+  text: 'Reading the relationship as a deal. Everything that follows from that reading is wrong: a stalled-deal
+    frame on a fund that is simply between partner meetings, a "closed lost" on a pass that invited a
+    return, urgency aimed at a party that has no reason to feel it.'
+  fingerprint: 53316776b2bf9c83
+  decision: ''
+  note: ''
+- id: L010
+  artifact: founder_office.fundraising.investor_relations
+  field: failure_modes[2]
+  text: Treating a pass as terminal. Many passes are on stage, timing or traction rather than on the company
+    itself, and those carry their own dates; filing them as verdicts discards what Paul Graham calls "some
+    of your warmest leads for future fundraising".
+  fingerprint: c6cb78fc2e26787c
+  decision: ''
+  note: ''
+- id: L011
+  artifact: founder_office.fundraising.investor_relations
+  field: failure_modes[3]
+  text: Mistaking activity for progress. A raise produces a great deal of pleasant correspondence, and
+    "investors habitually seem more positive than they are" (Graham). The measure is whether the process
+    moved — a partner meeting booked, diligence opened, an offer with terms — not whether the last email
+    was friendly.
+  fingerprint: 3f9d99164bf089ef
+  decision: ''
+  note: ''
+- id: L012
+  artifact: founder_office.fundraising.investor_relations
+  field: failure_modes[4]
+  text: Single-threading a fund. The associate who sourced the company cannot fund it, and a conversation
+    that never reaches a partner converts at approximately nothing however well it reads.
+  fingerprint: e1f1712a795be243
+  decision: ''
+  note: ''
+- id: L013
+  artifact: founder_office.fundraising.investor_relations
+  field: failure_modes[5]
+  text: Running the round in sequence. Talking to investors one at a time removes the only real source
+    of momentum and hands each of them an indefinite option, at the founder's expense.
+  fingerprint: 72b330075a0616e5
+  decision: ''
+  note: ''
+- id: L014
+  artifact: founder_office.fundraising.investor_relations
+  field: failure_modes[6]
+  text: Letting the wrong parties into the set — a connector filed as an investor, an introduction bot,
+    a newsletter, a portfolio-operations address, the company's own domain. Each needs a different move
+    or none, and each costs attention every time the set is reviewed.
+  fingerprint: 70d10ade982584e7
+  decision: ''
+  note: ''
+- id: L015
+  artifact: founder_office.fundraising.investor_relations
+  field: kpis[1]
+  text: 'investor_state_coverage (higher_is_better): Share of active investor conversations carrying a
+    stage newer than their last inbound. The floor: a set of conversations nobody can place is not being
+    run, whatever the founder''s confidence about it.'
+  fingerprint: 4b1c7b25fde4f59d
+  decision: ''
+  note: ''
+- id: L016
+  artifact: founder_office.fundraising.investor_relations
+  field: kpis[2]
+  text: 'ball_in_our_court_age (lower_is_better): Age of the oldest conversation waiting on us. The most
+    actionable number here, because the counterparty will not produce it — an investor who is waiting
+    simply stops appearing.'
+  fingerprint: 345e4083e5ed37e6
+  decision: ''
+  note: ''
+- id: L017
+  artifact: founder_office.fundraising.investor_relations
+  field: kpis[3]
+  text: 'stage_dwell_past_prior (lower_is_better): Share of live conversations that have sat in their
+    stage longer than the stage''s typical duration on the spine. A conversation past its stage''s prior
+    has usually been decided by the investor and not yet told to the founder.'
+  fingerprint: c13fff678047b089
+  decision: ''
+  note: ''
+- id: L018
+  artifact: founder_office.fundraising.investor_relations
+  field: kpis[4]
+  text: 'reopening_conditions_captured (higher_is_better): Share of passes recorded with the condition
+    under which the investor invited a return. Measures whether the reversible half of the set survives
+    being written down.'
+  fingerprint: a1e38dab9ea60d70
+  decision: ''
+  note: ''
+- id: L019
+  artifact: founder_office.fundraising.investor_relations
+  field: kpis[5]
+  text: 'partner_reach_rate (higher_is_better): Share of live fund conversations that have reached someone
+    with a cheque decision. Everything below it is sourcing.'
+  fingerprint: def3021fdaf66cf5
+  decision: ''
+  note: ''
+- id: L020
+  artifact: founder_office.fundraising.investor_relations
+  field: kpis[6]
+  text: 'dormant_revival_rate (higher_is_better): Share of re-approaches at a stated trigger that produce
+    a meeting. Calibrates whether the reopening conditions being captured are real ones or politeness
+    recorded as a plan.'
+  fingerprint: 3b079d7da4e0d8ee
+  decision: ''
+  note: ''
+- id: L021
+  artifact: founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict
+  field: purpose
+  text: 'Separates the two things a pass can be, because a pipeline''s closed-lost reading cannot: it
+    fires the same way on both, and the two demand opposite behaviour.'
+  fingerprint: b57ff636d3306e4b
+  decision: ''
+  note: ''
+- id: L022
+  artifact: founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict
+  field: heuristic.statement
+  text: Most passes are decisions about timing, stage or a metric, and each of those carries an implicit
+    date on which it stops being true. Record the date, not the refusal. Only thesis and team passes are
+    verdicts.
+  fingerprint: e503eaf74e15d1ba
+  decision: ''
+  note: ''
+- id: L023
+  artifact: founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict
+  field: heuristic.why
+  text: 'A fund passing on stage is saying its cheque does not fit today''s round, which changes at the
+    next round without anyone changing their mind; a fund passing on timing is reading its own cycle.
+    Both are scheduling facts wearing the vocabulary of rejection, and the vocabulary is what gets recorded.
+    Investors who reject a company "are some of your warmest leads for future fundraising" — any who "spent
+    significant time deciding probably came close to saying yes" (Graham). Thesis and team are different
+    in kind: judgments about what the company is, which no date changes.'
+  fingerprint: e4fde97d924e7e53
+  decision: ''
+  note: ''
+- id: L024
+  artifact: founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict
+  field: heuristic.applies_when
+  text: A pass has been received or inferred, and a reason is stated or can be read from it.
+  fingerprint: e13f5cc45a960f77
+  decision: ''
+  note: ''
+- id: L025
+  artifact: founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict
+  field: heuristic.breaks_down_when
+  text: A pass with no reason given carries no date and must not be assigned one — an invented trigger
+    produces a re-approach with nothing behind it, which is worse than none. Repeated passes from the
+    same investor across rounds stop being about timing whatever the stated reason. And a warm pass is
+    sometimes simple politeness with no invitation inside it.
+  fingerprint: a5eab5c213a302b5
+  decision: ''
+  note: ''
+- id: L026
+  artifact: founder_office.heu.investor_relations.investors_do_not_chase
+  field: purpose
+  text: Corrects the reflex a seller brings to a quiet thread. In a deal, a buyer who wants the product
+    will eventually surface; in a raise, the counterparty has no such incentive and attrition costs it
+    nothing. So a conversation waiting on the founder does not stall visibly — it disappears, without
+    ever producing a signal that anything went wrong.
+  fingerprint: 145913cdeb94d276
+  decision: ''
+  note: ''
+- id: L027
+  artifact: founder_office.heu.investor_relations.investors_do_not_chase
+  field: heuristic.statement
+  text: When the turn is ours, the clock is running against us and nobody will say so. Age the conversations
+    where we owe the reply before the ones where they do.
+  fingerprint: 670dcc0fe743ae67
+  decision: ''
+  note: ''
+- id: L028
+  artifact: founder_office.heu.investor_relations.investors_do_not_chase
+  field: heuristic.why
+  text: 'A fund sees far more companies than it can fund — one partner described 500 to 800 plans a year
+    for one or two deals done (David Hornik, quoted by Paul Graham) — and loses nothing by dropping one.
+    A partial reply left unanswered reads to it as a company that lost momentum, the one attribute a raise
+    cannot afford to project. The asymmetry is structural: our silence is informative to them; theirs,
+    before the stage says otherwise, is not informative to us.'
+  fingerprint: 705e6aeed8e9df4e
+  decision: ''
+  note: ''
+- id: L029
+  artifact: founder_office.heu.investor_relations.investors_do_not_chase
+  field: heuristic.applies_when
+  text: The last message came from the investing party, and something was asked or offered in it.
+  fingerprint: 3c7146330c610d99
+  decision: ''
+  note: ''
+- id: L030
+  artifact: founder_office.heu.investor_relations.investors_do_not_chase
+  field: heuristic.breaks_down_when
+  text: Three regimes. A deliberate hold — waiting for a metric or a lead before replying — looks identical
+    from the correspondence and is often correct. A courtesy close leaves the turn nominally ours with
+    nothing owed. And where a programme's application window is running, the programme's own deadline
+    outranks the turn; that clock belongs to the programmes capability.
+  fingerprint: 2d4be1179a7bfd16
+  decision: ''
+  note: ''
+- id: L031
+  artifact: founder_office.heu.investor_relations.momentum_is_a_parallel_process
+  field: purpose
+  text: 'Explains why a round run one investor at a time stalls, and what actually moves an investor who
+    is waiting: another investor moving.'
+  fingerprint: 4662571c2e9ec59c
+  decision: ''
+  note: ''
+- id: L032
+  artifact: founder_office.heu.investor_relations.momentum_is_a_parallel_process
+  field: heuristic.statement
+  text: A round's momentum comes from investors seeing other investors move. Run every conversation in
+    parallel, and let each live investor hear real progress elsewhere; a conversation run on its own has
+    no clock.
+  fingerprint: e939518570aac25d
+  decision: ''
+  note: ''
+- id: L033
+  artifact: founder_office.heu.investor_relations.momentum_is_a_parallel_process
+  field: heuristic.why
+  text: '"The biggest factor in most investors'' opinions of you is the opinion of other investors" (Graham,
+    "How to Raise Money"), and getting far along with one firm "will sometimes provoke other firms, even
+    good ones, to make up their minds, lest they lose the deal" ("Investor Herd Dynamics"). Talked to
+    one at a time, each investor holds a free option and waits; and the first commitment is the hard one
+    — "Once you start getting investors to commit, it becomes increasingly easy to get more to."'
+  fingerprint: 6116dcb7e19e95bd
+  decision: ''
+  note: ''
+- id: L034
+  artifact: founder_office.heu.investor_relations.momentum_is_a_parallel_process
+  field: heuristic.applies_when
+  text: The founder is raising from more than one investor, or deciding whether to wait on one.
+  fingerprint: cd446cd6ec005d70
+  decision: ''
+  note: ''
+- id: L035
+  artifact: founder_office.heu.investor_relations.momentum_is_a_parallel_process
+  field: heuristic.breaks_down_when
+  text: 'When the progress is exaggerated: investors are very sensitive to manufactured urgency, and telling
+    one firm who the other is ("Do not, however, tell A who B is") costs trust with both. When the round
+    is going badly everywhere, parallel silence carries momentum too, downward. And when the company''s
+    numbers are flat between meetings, which cools investors faster than competing interest warms them
+    — "if your numbers are flat or down they''ll start to get cold feet" (Graham).'
+  fingerprint: e196473752d731e5
+  decision: ''
+  note: ''
+- id: L036
+  artifact: founder_office.heu.investor_relations.only_an_offer_counts
+  field: purpose
+  text: Draws the line between interest and commitment, which a founder's hopes and an investor's politeness
+    both blur, so that the round is counted in money that will arrive rather than in warmth.
+  fingerprint: 3f169c768f071602
+  decision: ''
+  note: ''
+- id: L037
+  artifact: founder_office.heu.investor_relations.only_an_offer_counts
+  field: heuristic.statement
+  text: Count an investor in only when they have made a definite offer — an amount and a valuation or
+    cap, with no conditions — and confirmed it in writing. Until then, treat them as a no, however warm
+    they sound.
+  fingerprint: e5468683dd1a90c8
+  decision: ''
+  note: ''
+- id: L038
+  artifact: founder_office.heu.investor_relations.only_an_offer_counts
+  field: heuristic.why
+  text: '"Investors habitually seem more positive than they are", and some "use language that makes it
+    sound as if they''re committing, but which doesn''t actually commit them" (Graham). "We''d love to
+    be part of this", "we''re in if you find a lead" and "we can do fifty to a hundred and fifty" are
+    not offers: Y Combinator''s Handshake Deal Protocol defines an offer as an amount plus a valuation
+    or cap and refuses ranges and conditions, because a founder who keeps room for a conditional yes is
+    the only party it binds.'
+  fingerprint: f9d6aa3b241a4f90
+  decision: ''
+  note: ''
+- id: L039
+  artifact: founder_office.heu.investor_relations.only_an_offer_counts
+  field: heuristic.applies_when
+  text: An investor has expressed interest, or the founder is counting how much of the round is committed.
+  fingerprint: 2948c5d2dbfc0c2d
+  decision: ''
+  note: ''
+- id: L040
+  artifact: founder_office.heu.investor_relations.only_an_offer_counts
+  field: heuristic.breaks_down_when
+  text: An established investor's verbal yes on standard paperwork is rarely withdrawn — "Established
+    ones have learned to treat saying yes as like diving off a diving board" (Graham) — so the written
+    confirmation is a formality there, though still worth the email. And a term sheet is conditional by
+    design (diligence, documents); that is the term-sheet stage, not a contingent yes.
+  fingerprint: d2edea69a153df8f
+  decision: ''
+  note: ''
+- id: L041
+  artifact: founder_office.heu.investor_relations.silence_reads_by_stage
+  field: purpose
+  text: 'Stops two opposite mistakes with one rule: chasing a firm that is quietly doing its diligence,
+    and waiting on a firm whose partners decided a week ago and will never send the no.'
+  fingerprint: 303117e00dccde0b
+  decision: ''
+  note: ''
+- id: L042
+  artifact: founder_office.heu.investor_relations.silence_reads_by_stage
+  field: heuristic.statement
+  text: Investor silence means different things at different stages. Before a first meeting it is the
+    default; after a first call that named no next step it is usually a soft no; more than a week after
+    a partners' meeting it is usually a no; in diligence it is the work; after a term sheet it is paperwork,
+    until the timetable slips. Read silence by the stage, never by its length alone.
+  fingerprint: d3d11e50f901b80f
+  decision: ''
+  note: ''
+- id: L043
+  artifact: founder_office.heu.investor_relations.silence_reads_by_stage
+  field: heuristic.why
+  text: Each stage has a different decider and a different clock. A firm in diligence is calling references
+    and writing its memo (Gompers et al. measured ten reference calls on average); a partnership decides
+    in a weekly meeting, and its rejection "will rarely come in the form of an actual 'no'" (Dixon); and
+    investors at every stage prefer an open option to a closed door — "Some of the worse ones never actually
+    do say no; they just stop replying to your emails" (Graham). The same twelve days of quiet is therefore
+    nothing in diligence and an answer after a partners' meeting.
+  fingerprint: 60a74c607d8764bf
+  decision: ''
+  note: ''
+- id: L044
+  artifact: founder_office.heu.investor_relations.silence_reads_by_stage
+  field: heuristic.applies_when
+  text: An investor conversation is open, the turn is theirs, and the stage is known.
+  fingerprint: 2d65c4bad77201ff
+  decision: ''
+  note: ''
+- id: L045
+  artifact: founder_office.heu.investor_relations.silence_reads_by_stage
+  field: heuristic.breaks_down_when
+  text: 'When the investor named a date that has not yet passed: the date outranks the stage. When the
+    stage itself is wrong — a "diligence" request that is an associate asking for a deck before any partner
+    has met the company. And with angels, who decide alone and on no cycle: their silence after a first
+    call reads like a fund''s after a partners'' meeting.'
+  fingerprint: a956decf6cdf95d2
+  decision: ''
+  note: ''
+- id: L046
+  artifact: founder_office.pb.investor_relations.a_warm_intro_to_an_investor
+  field: purpose
+  text: Getting an introduction to an investor and following it through on both sides. In a raise the
+    introduction is the door — "Before you can talk to investors, you have to be introduced to them" (Graham)
+    — and who opens it matters as much as that it is opened. This move picks the connector, hands them
+    a note they can forward, lets the investor opt in, and closes the loop with the connector whatever
+    the answer.
+  fingerprint: 0a468f98645cc68c
+  decision: ''
+  note: ''
+- id: L047
+  artifact: founder_office.pb.investor_relations.a_warm_intro_to_an_investor
+  field: when_to_use.signals[1]
+  text: The founder wants a meeting with a specific investor and has no direct relationship with them.
+  fingerprint: 62f9b18dba33c832
+  decision: ''
+  note: ''
+- id: L048
+  artifact: founder_office.pb.investor_relations.a_warm_intro_to_an_investor
+  field: when_to_use.signals[2]
+  text: A connector has offered, or agreed, to make an introduction.
+  fingerprint: dd3372b2f2167946
+  decision: ''
+  note: ''
+- id: L049
+  artifact: founder_office.pb.investor_relations.a_warm_intro_to_an_investor
+  field: when_to_use.do_not_use_when[1]
+  text: The only path is an investor who has just passed on the company. Asked, they make an introduction
+    that reads as an anti-recommendation.
+  fingerprint: b73d6a4dd99248db
+  decision: ''
+  note: ''
+- id: L050
+  artifact: founder_office.pb.investor_relations.a_warm_intro_to_an_investor
+  field: when_to_use.do_not_use_when[2]
+  text: The founder already knows the investor well enough to write directly.
+  fingerprint: a0218705b2547036
+  decision: ''
+  note: ''
+- id: L051
+  artifact: founder_office.pb.investor_relations.a_warm_intro_to_an_investor
+  field: steps[1]
+  text: 'Pick the connector whose word carries most — Rank the paths: an investor who has just committed
+    to the round, then a founder the investor has backed, then others who know them well (Graham''s order).
+    Never ask an investor who has just passed on the company. (done when: One connector is chosen, with
+    the reason they carry weight with this investor written down.)'
+  fingerprint: adf7b36c7ebf8bcf
+  decision: ''
+  note: ''
+- id: L052
+  artifact: founder_office.pb.investor_relations.a_warm_intro_to_an_investor
+  field: steps[2]
+  text: 'Give the connector a note they can forward — Write three to five lines the connector can forward
+    unchanged — what the company does, the one number that matters, why this investor, the ask. A connector
+    who has to write it themselves often never does. (done when: The connector has a forwardable note
+    in hand.)'
+  fingerprint: c2c5880874f33931
+  decision: ''
+  note: ''
+- id: L053
+  artifact: founder_office.pb.investor_relations.a_warm_intro_to_an_investor
+  field: steps[3]
+  text: 'Ask for a double opt-in — Ask the connector to check with the investor before introducing — Fred
+    Wilson''s double opt-in. An introduction the investor agreed to is a meeting; one they did not agree
+    to is an email they can ignore. (done when: The connector has asked the investor, or has said when
+    they will.)'
+  fingerprint: 6db93a3d1e16895c
+  decision: ''
+  note: ''
+- id: L054
+  artifact: founder_office.pb.investor_relations.a_warm_intro_to_an_investor
+  field: steps[4]
+  text: 'Answer the introduction the same day — When the introduction lands, reply that day: thank the
+    connector and move them to bcc, then offer the investor two or three times to meet. (done when: A
+    reply offering times is sent on the day the introduction arrives.)'
+  fingerprint: 939955aeb1179092
+  decision: ''
+  note: ''
+- id: L055
+  artifact: founder_office.pb.investor_relations.a_warm_intro_to_an_investor
+  field: steps[5]
+  text: 'Close the loop with the connector — Tell the connector what came of it — a meeting, a pass or
+    nothing — whatever the answer. A connector who never hears back does not introduce again. (done when:
+    The connector has been told the outcome.)'
+  fingerprint: c80e206643da4d9d
+  decision: ''
+  note: ''
+- id: L056
+  artifact: founder_office.pb.investor_relations.a_warm_intro_to_an_investor
+  field: steps[6]
+  text: 'If it stalls, remind once, then let it go — If the connector has not sent it by the time they
+    gave, remind them once with the note attached again. If the investor declined to opt in, accept it:
+    writing to them cold around the connector spends the connector too. (done when: The introduction is
+    made, declined or dropped, and nobody was approached around the connector.)'
+  fingerprint: 0d78a5cecafe0427
+  decision: ''
+  note: ''
+- id: L057
+  artifact: founder_office.pb.investor_relations.a_warm_intro_to_an_investor
+  field: success_signal
+  text: The investor opts in and a first meeting with them is on the calendar.
+  fingerprint: ded42785bb979637
+  decision: ''
+  note: ''
+- id: L058
+  artifact: founder_office.pb.investor_relations.a_warm_intro_to_an_investor
+  field: do_nothing_consequence
+  text: The connector's offer goes stale, the investor is approached cold or not at all, and the strongest
+    door into that fund stays shut.
+  fingerprint: cc9cabb10daabc9a
+  decision: ''
+  note: ''
+- id: L059
+  artifact: founder_office.pb.investor_relations.a_warm_intro_to_an_investor
+  field: outcome_window_days
+  text: wait 14 days for the success signal
+  fingerprint: aad4a9b732510772
+  decision: ''
+  note: ''
+- id: L060
+  artifact: founder_office.pb.investor_relations.before_an_investor_call
+  field: purpose
+  text: 'The preparation that makes one investor call move its conversation to the next stage: knowing
+    the investor, knowing where this conversation stands and what the call must produce, and leaving with
+    a named next step and a date. It is what a chief of staff puts in front of the founder before the
+    call.'
+  fingerprint: 95a972bef2bfa051
+  decision: ''
+  note: ''
+- id: L061
+  artifact: founder_office.pb.investor_relations.before_an_investor_call
+  field: when_to_use.signals[1]
+  text: A call or meeting with an investor is on the calendar in the next few days.
+  fingerprint: 56d7f6bb1f4d353f
+  decision: ''
+  note: ''
+- id: L062
+  artifact: founder_office.pb.investor_relations.before_an_investor_call
+  field: when_to_use.do_not_use_when[1]
+  text: The meeting is a catch-up with an existing shareholder. That is reporting, not a stage of a raise.
+  fingerprint: 3f8fe2728bcc5933
+  decision: ''
+  note: ''
+- id: L063
+  artifact: founder_office.pb.investor_relations.before_an_investor_call
+  field: steps[1]
+  text: 'Know the investor — Their stage, sector and cheque size; what they have backed and why; any portfolio
+    company that competes; what the partner on the call has written or invested in. "Make sure you know
+    your audience" (YC''s seed guide). (done when: The brief names the investor''s fit, any conflict in
+    their portfolio, and the partner''s own interests.)'
+  fingerprint: 9c7a2d5b3bb6fa72
+  decision: ''
+  note: ''
+- id: L064
+  artifact: founder_office.pb.investor_relations.before_an_investor_call
+  field: steps[2]
+  text: 'Know where this conversation stands — The stage, what was said last, what they asked for and
+    whether it was sent, who introduced the company. A call that repeats the last one moves the conversation
+    backwards. (done when: The brief states the stage, the last exchange and anything still owed to the
+    investor.)'
+  fingerprint: 14d6dfb1c3894e84
+  decision: ''
+  note: ''
+- id: L065
+  artifact: founder_office.pb.investor_relations.before_an_investor_call
+  field: steps[3]
+  text: 'Decide what the call must produce — Name the next step to ask for — a partners'' meeting, a data
+    room, references, a commitment — and who on their side can grant it. (done when: One next step and
+    the person who can grant it are written down before the call.)'
+  fingerprint: eac9b938df73454c
+  decision: ''
+  note: ''
+- id: L066
+  artifact: founder_office.pb.investor_relations.before_an_investor_call
+  field: steps[4]
+  text: 'Prepare the answers they will ask for — The numbers that matter and how they moved since the
+    last contact, the questions this investor''s thesis raises, and a demo if the product can be shown.
+    (done when: Each likely question has a one-line answer, and every number is current to the day of
+    the call.)'
+  fingerprint: b2a4b0d6dec369d1
+  decision: ''
+  note: ''
+- id: L067
+  artifact: founder_office.pb.investor_relations.before_an_investor_call
+  field: steps[5]
+  text: 'On the call, listen, then ask what happens next — Let them talk; then ask what they need in order
+    to decide, who else must meet the company, and by when. Leave with "an attempted close or at very
+    minimum absolute clarity on next steps" (YC). (done when: The call ends with a named next step, its
+    owner and a date, or the founder knows there is none.)'
+  fingerprint: 9cda129f77655596
+  decision: ''
+  note: ''
+- id: L068
+  artifact: founder_office.pb.investor_relations.before_an_investor_call
+  field: steps[6]
+  text: 'Follow up the same day — Write the same day: thank them, confirm the next step and its date in
+    writing, and send anything promised on the call. (done when: A follow-up confirming the next step
+    is sent on the day of the call.)'
+  fingerprint: 5c68f5f1cfdf002c
+  decision: ''
+  note: ''
+- id: L069
+  artifact: founder_office.pb.investor_relations.before_an_investor_call
+  field: success_signal
+  text: The call ends with a named next step and a date, confirmed in writing the same day.
+  fingerprint: a24e03f29c63bdc2
+  decision: ''
+  note: ''
+- id: L070
+  artifact: founder_office.pb.investor_relations.before_an_investor_call
+  field: do_nothing_consequence
+  text: The call is spent repeating what the investor already knows, it ends without a next step, and
+    the conversation drifts into the silence that follows most first calls.
+  fingerprint: 512158f8f1521f16
+  decision: ''
+  note: ''
+- id: L071
+  artifact: founder_office.pb.investor_relations.before_an_investor_call
+  field: outcome_window_days
+  text: wait 7 days for the success signal
+  fingerprint: 0642e18738c8afca
+  decision: ''
+  note: ''
+- id: L072
+  artifact: founder_office.pb.investor_relations.reopen_after_a_pass
+  field: purpose
+  text: 'A pass from an investor is, most of the time, a dated decision rather than a permanent one —
+    passed on stage, on timing, on a metric the company had not yet reached. This procedure turns that
+    pass into a scheduled re-approach with a stated trigger, which is the only form in which it survives
+    contact with a founder''s memory. The default is what happens otherwise: the relationship is filed
+    as lost and the invitation inside it is thrown away.'
+  fingerprint: 03fee5ec8d304b9f
+  decision: ''
+  note: ''
+- id: L073
+  artifact: founder_office.pb.investor_relations.reopen_after_a_pass
+  field: when_to_use.signals[1]
+  text: A pass received or inferred whose reason is stage, timing or traction.
+  fingerprint: db2c085ffa3f19cc
+  decision: ''
+  note: ''
+- id: L074
+  artifact: founder_office.pb.investor_relations.reopen_after_a_pass
+  field: when_to_use.signals[2]
+  text: A relationship that went quiet after a warm start, where no explicit pass was ever sent and the
+    silence is functioning as one.
+  fingerprint: 63692f7d0e55aad4
+  decision: ''
+  note: ''
+- id: L075
+  artifact: founder_office.pb.investor_relations.reopen_after_a_pass
+  field: when_to_use.do_not_use_when[1]
+  text: The pass was on thesis or on team. Those do not reopen for this company, and re-approaching spends
+    the relationship as well as the time.
+  fingerprint: 27d1826c4afd3450
+  decision: ''
+  note: ''
+- id: L076
+  artifact: founder_office.pb.investor_relations.reopen_after_a_pass
+  field: when_to_use.do_not_use_when[2]
+  text: No reason was given and none can be read. There is no trigger to schedule against, and an invented
+    one produces a re-approach with nothing new to lead with.
+  fingerprint: 31ec7173cd3391f8
+  decision: ''
+  note: ''
+- id: L077
+  artifact: founder_office.pb.investor_relations.reopen_after_a_pass
+  field: when_to_use.do_not_use_when[3]
+  text: The same investor has passed across more than one round. That is no longer a timing fact, whatever
+    the stated reason.
+  fingerprint: 5ed87e0012af38e8
+  decision: ''
+  note: ''
+- id: L078
+  artifact: founder_office.pb.investor_relations.reopen_after_a_pass
+  field: steps[1]
+  text: 'Classify the pass before answering it — Read the passing message for its reason: stage, timing,
+    traction, thesis, team, or none given. Only the first three reopen. Thesis and team do not reopen
+    for this company, and pretending otherwise costs the relationship as well as the time. (done when:
+    The pass carries one reason class, read from the message, or "none given".)'
+  fingerprint: 2670c9a172b09b72
+  decision: ''
+  note: ''
+- id: L079
+  artifact: founder_office.pb.investor_relations.reopen_after_a_pass
+  field: steps[2]
+  text: 'Extract the reopening condition verbatim — Capture the exact words — "come back when you have
+    a lead", "we look again above fifty thousand a month in revenue". Paraphrase loses the threshold,
+    and the threshold is the asset. Where none was given, record that rather than inventing one. (done
+    when: The condition is on file in the investor''s own words, or recorded as "none given".)'
+  fingerprint: 3c4491975c1d6410
+  decision: ''
+  note: ''
+- id: L080
+  artifact: founder_office.pb.investor_relations.reopen_after_a_pass
+  field: steps[3]
+  text: 'Reply once, briefly, and take the no cleanly — Thank them, confirm the condition back in their
+    own words, and ask for nothing. Arguing with a pass turns a warm future conversation into a closed
+    one, and this is the moment the temptation is strongest. (done when: One short reply confirming the
+    condition is sent, and it contains no request and no argument.)'
+  fingerprint: 6a71eb00de41587e
+  decision: ''
+  note: ''
+- id: L081
+  artifact: founder_office.pb.investor_relations.reopen_after_a_pass
+  field: steps[4]
+  text: 'Schedule the re-approach against the trigger — A date where the condition is a date; a watch
+    on the metric where it is a threshold. An unscheduled intention to follow up later is indistinguishable
+    from having dropped it. (done when: The re-approach is on the calendar against a date, or a metric
+    watch names its threshold.)'
+  fingerprint: 507335a508f9b94a
+  decision: ''
+  note: ''
+- id: L082
+  artifact: founder_office.pb.investor_relations.reopen_after_a_pass
+  field: steps[5]
+  text: 'Re-approach with the change, not with a check-in — Open on what changed against their stated
+    condition and nothing else. "You said come back with a lead; we have one" is a new conversation. "Just
+    checking in" is the one they already declined, and it teaches them to skim the next. (done when: A
+    re-approach naming the met condition is sent, and it asks for a meeting.)'
+  fingerprint: da4afe570ad78a49
+  decision: ''
+  note: ''
+- id: L083
+  artifact: founder_office.pb.investor_relations.reopen_after_a_pass
+  field: success_signal
+  text: The re-approach produces a meeting, or a reply that reopens the conversation.
+  fingerprint: 135c33388a21757f
+  decision: ''
+  note: ''
+- id: L084
+  artifact: founder_office.pb.investor_relations.reopen_after_a_pass
+  field: do_nothing_consequence
+  text: The pass is filed as a loss, the condition the investor named is forgotten, and when the company
+    reaches it the investor hears about it from somebody else.
+  fingerprint: 06d86a03ee326460
+  decision: ''
+  note: ''
+- id: L085
+  artifact: founder_office.pb.investor_relations.reopen_after_a_pass
+  field: outcome_window_days
+  text: wait 30 days for the success signal
+  fingerprint: 55e0f02c9f94f41c
+  decision: ''
+  note: ''
+- id: L086
+  artifact: founder_office.pb.investor_relations.run_an_investor_conversation
+  field: purpose
+  text: Carry one conversation with one investor from first contact to a decision the founder can act
+    on — money in the bank, or a pass with its reason — by knowing at every point which stage it is in,
+    whose move it is, what silence means at that stage, and what typically ends it.
+  fingerprint: 9ac1c68ac7bb647f
+  decision: ''
+  note: ''
+- id: L087
+  artifact: founder_office.pb.investor_relations.run_an_investor_conversation
+  field: when_to_use.signals[1]
+  text: A conversation with a fund, an angel, an angel network or a syndicate is open while the founder
+    is raising.
+  fingerprint: 31e49e8a1790908c
+  decision: ''
+  note: ''
+- id: L088
+  artifact: founder_office.pb.investor_relations.run_an_investor_conversation
+  field: when_to_use.signals[2]
+  text: The founder cannot say, for an investor, what was last agreed and what happens next.
+  fingerprint: 329f73eee50d562c
+  decision: ''
+  note: ''
+- id: L089
+  artifact: founder_office.pb.investor_relations.run_an_investor_conversation
+  field: when_to_use.do_not_use_when[1]
+  text: The investor has already invested and the thread is a shareholder update. That is reporting, not
+    raising.
+  fingerprint: e100f8256f3b5c9d
+  decision: ''
+  note: ''
+- id: L090
+  artifact: founder_office.pb.investor_relations.run_an_investor_conversation
+  field: when_to_use.do_not_use_when[2]
+  text: The party is a programme, a connector or a service provider rather than someone who could fund
+    the company.
+  fingerprint: 95b9034dfdead548
+  decision: ''
+  note: ''
+- id: L091
+  artifact: founder_office.pb.investor_relations.run_an_investor_conversation
+  field: steps[1]
+  text: 'Place the conversation on the stage list — Name the stage from the last thing that happened —
+    a meeting held, a partners'' meeting booked, a data-room request, a term sheet — never from how warm
+    the last email felt. Where nothing establishes it, the stage is unknown. (done when: One stage from
+    the list is named with the dated event that puts it there, or the stage is recorded as unknown.)'
+  fingerprint: 5de92eb5f0513795
+  decision: ''
+  note: ''
+- id: L092
+  artifact: founder_office.pb.investor_relations.run_an_investor_conversation
+  field: steps[2]
+  text: 'Name whose move it is and the next step with its date — From the last exchange: who owes the
+    next move, what it is, and by when. If the last meeting ended without one, that is the finding — "Never
+    leave a meeting with an investor without asking what happens next" (Graham). (done when: The next
+    step, its owner and its date are on file, or it is recorded that none was agreed.)'
+  fingerprint: 4869e0f810b54a21
+  decision: ''
+  note: ''
+- id: L093
+  artifact: founder_office.pb.investor_relations.run_an_investor_conversation
+  field: steps[3]
+  text: 'If the move is ours, make it first — Answer the question, send what was asked for, or confirm
+    the next meeting before working any conversation that waits on them. An investor who is waiting does
+    not remind the founder; they stop appearing. (done when: Nothing the investor asked for is outstanding
+    on our side.)'
+  fingerprint: f486e534f7751511
+  decision: ''
+  note: ''
+- id: L094
+  artifact: founder_office.pb.investor_relations.run_an_investor_conversation
+  field: steps[4]
+  text: 'Read the silence against the stage — Compare the time since their last word with the stage''s
+    typical duration, and read it by what quiet means at that stage. Before then, wait. Past it, ask the
+    person who decides, once and directly, where it stands and what they need in order to decide. (done
+    when: Every conversation past its stage''s typical duration has had one direct ask, or is waiting
+    on a date the investor gave.)'
+  fingerprint: 7a23c33f8a15a5d8
+  decision: ''
+  note: ''
+- id: L095
+  artifact: founder_office.pb.investor_relations.run_an_investor_conversation
+  field: steps[5]
+  text: 'Treat an unanswered direct ask as a no for this round — If the direct ask goes unanswered by
+    the date they gave — or within the stage''s typical duration if they gave none — treat the conversation
+    as a no for this round and stop counting it. Move them to the update list; send no third note. (done
+    when: The conversation is marked passed with the date of the unanswered ask, and nothing further is
+    queued to the investor.)'
+  fingerprint: 136085649327bf5c
+  decision: ''
+  note: ''
+- id: L096
+  artifact: founder_office.pb.investor_relations.run_an_investor_conversation
+  field: steps[6]
+  text: 'Keep every live conversation moving in parallel — Tell each live investor real progress elsewhere
+    — a commitment, a lead, a number that moved — without naming the other investors. Interest from other
+    investors moves most of them; a conversation run on its own has no clock. (done when: Every live investor
+    has heard the round''s latest real progress since it happened.)'
+  fingerprint: 9a4d0e1caec3a445
+  decision: ''
+  note: ''
+- id: L097
+  artifact: founder_office.pb.investor_relations.run_an_investor_conversation
+  field: steps[7]
+  text: 'Confirm an offer in writing, then babysit the money — When an investor says yes, confirm the
+    exact offer — amount plus valuation or cap, no conditions — in writing, agree when the money arrives,
+    and follow it until it lands. "It''s not a deal till the money''s in the bank" (Graham). (done when:
+    The investor has confirmed the offer in writing and the money is in the company''s bank account.)'
+  fingerprint: 1b9337d0cea8f64d
+  decision: ''
+  note: ''
+- id: L098
+  artifact: founder_office.pb.investor_relations.run_an_investor_conversation
+  field: steps[8]
+  text: 'Record a pass with its reason and its condition — When a pass arrives, record its reason — stage,
+    timing, traction, thesis, team, or none given — and any condition in the investor''s own words; reply
+    once, briefly, without arguing. Then follow reopen after a pass. (done when: The pass is on file with
+    its reason class and the condition verbatim, or "none given".)'
+  fingerprint: 589b639d553b3f24
+  decision: ''
+  note: ''
+- id: L099
+  artifact: founder_office.pb.investor_relations.run_an_investor_conversation
+  field: stages[1]
+  text: 'First contact [first_contact]: typically 14 days — a prior; source: practitioner judgement —
+    unverified; for the founder''s review. Context only: investor meetings "have to be arranged at least
+    a few days in advance" (Paul Graham, "How to Raise Money", September 2013, paulgraham.com/fr.html)
+    — a floor, not a typical value.; quiet means: Nothing has started, so silence is the default rather
+    than a signal: funded seed founders in DocSend''s 2019 sample contacted 77 investors on average and
+    held 40 meetings, so a large share of first emails never become a meeting. After a warm introduction,
+    silence means the investor has not opted in; ask the connector, not the investor.; leaves when: A
+    first meeting or call with the investor takes place, or the investor declines.'
+  fingerprint: 9894fb944279ec5c
+  decision: ''
+  note: ''
+- id: L100
+  artifact: founder_office.pb.investor_relations.run_an_investor_conversation
+  field: stages[2]
+  text: 'First call held [first_call]: typically 14 days — a prior; source: practitioner judgement — unverified;
+    for the founder''s review. The funnel is measured (Gompers, Gornall, Kaplan & Strebulaev, "How Do
+    Venture Capitalists Make Decisions?", NBER Working Paper 22587, 2016, section 3.2: "One in four opportunities
+    lead to meeting the management; one-third of those are reviewed at a partners meeting"); the duration
+    is not.; quiet means: The investor is deciding whether to spend more time, and most do not: at a venture
+    firm about one company in three whose management the firm meets is reviewed at a partners'' meeting
+    (Gompers et al.). After a first call that ended without a named next step, silence is usually a soft
+    no; after one that named a step and a date, it is the firm''s process until that date passes.; leaves
+    when: A partners'' meeting or a second meeting with a decision-maker is booked, diligence material
+    is requested, or the investor passes.'
+  fingerprint: b7f1aeb769ba9363
+  decision: ''
+  note: ''
+- id: L101
+  artifact: founder_office.pb.investor_relations.run_an_investor_conversation
+  field: stages[3]
+  text: 'Partner meeting [partner_meeting]: typically 7 days — a prior; source: Chris Dixon, "Pitching
+    the VC partnership", cdixon.org, 27 August 2009: the partnership meets weekly ("their weekly monday
+    meeting"), and the prior is one such cycle — the cycle is sourced, the seven days are that cycle.;
+    quiet means: A partnership decides in its weekly cycle, so silence more than a week after the meeting
+    usually means no — and the no "will rarely come in the form of an actual ''no''" (Dixon). About half
+    the companies reviewed at a partners'' meeting go on to diligence (Gompers et al.). Ask the partner
+    who brought the company in, directly.; leaves when: The firm opens diligence (a data-room, reference
+    or customer-call request), makes an offer, or passes.'
+  fingerprint: 3e8feddfd15350b4
+  decision: ''
+  note: ''
+- id: L102
+  artifact: founder_office.pb.investor_relations.run_an_investor_conversation
+  field: stages[4]
+  text: 'Diligence [diligence]: typically 21 days — a prior; source: practitioner judgement — unverified;
+    for the founder''s review. Measured context: early-stage firms report 81 hours of diligence and 8
+    reference calls across the whole deal (Gompers, Gornall, Kaplan & Strebulaev, NBER Working Paper 22587,
+    2016, Table 9); how many days those hours spread over is not measured there.; quiet means: The firm
+    is working — calling references (eight on average at early-stage firms), talking to customers, writing
+    its memo — so a few quiet days are the work, not a signal. Silence past the date they gave, or a new
+    question each time the last is answered, is the warning: "If you get through several obstacles and
+    they keep raising new ones, assume that ultimately they''re going to flake" (Graham). About one company
+    in three that reaches diligence is offered a term sheet (Gompers et al.).; leaves when: A term sheet
+    or a firm offer arrives, or the firm passes.'
+  fingerprint: e812b592a6d36b1c
+  decision: ''
+  note: ''
+- id: L103
+  artifact: founder_office.pb.investor_relations.run_an_investor_conversation
+  field: stages[5]
+  text: 'Term sheet or firm commitment [term_sheet]: typically 30 days — a prior; source: Tyler Hollenbeck
+    (DLA Piper), "How Long Should it Take to Close my Venture Financing?", The Venture Alley, 25 September
+    2019: "roughly 30 days from signed term sheet to close is typically a best case scenario". Corroborating:
+    Yokum Taku, "What should the terms of the no shop be?", Startup Company Lawyer, 9 December 2007 ("most
+    venture financings seem to take more than three weeks from term sheet signing to closing"); for a
+    SAFE, Y Combinator''s Handshake Deal Protocol (ycombinator.com/handshake): "Ten days is a reasonable
+    period of time for both parties to complete the funding process".; quiet means: Silence here is lawyers
+    and paperwork rather than a change of mind — but deals still fall through at this stage ("Deals fall
+    through", Graham), so the founder watches the timetable rather than trusting it. On a seed SAFE, money
+    not wired within about ten days of the confirmed commitment is late; on a priced round, thirty days
+    is the best case, and more investors or a diligence finding extend it.; leaves when: The money is
+    in the company''s bank account, or the investor withdraws.'
+  fingerprint: a133a8898c4d879d
+  decision: ''
+  note: ''
+- id: L104
+  artifact: founder_office.pb.investor_relations.run_an_investor_conversation
+  field: stages[6]
+  text: 'Closed — money in the bank (terminal) [closed]: typically 0 days — a prior; source: terminal
+    stage — no typical duration applies; "It''s not a deal till the money''s in the bank" (Paul Graham,
+    "How to Raise Money", 2013) is what marks it.; quiet means: Nothing more is owed by the investor,
+    who is now a shareholder to update every month and the best source of the next introductions ("The
+    best type of intro is from a well-known investor who has just invested in you", Graham). An Indian
+    company that has taken a foreign investor''s money still owes the shares: equity instruments not issued
+    within sixty days of receiving the money must be refunded (RBI Master Direction – Foreign Investment
+    in India, Annex, para 2.3).; leaves when: Terminal for this round: nothing ends it. The relationship
+    continues as a shareholder''s.'
+  fingerprint: 360a0d75d174ea8b
+  decision: ''
+  note: ''
+- id: L105
+  artifact: founder_office.pb.investor_relations.run_an_investor_conversation
+  field: stages[7]
+  text: 'Passed (terminal for this round) [passed]: typically 0 days — a prior; source: terminal stage
+    — no typical duration applies; how long a pass stays true is the pass''s own condition, recorded on
+    the conversation as its reopening condition.; quiet means: Quiet is the resting state, not decay.
+    A pass on stage, timing or traction carries a date on which it stops being true, and investors who
+    reject a company "are some of your warmest leads for future fundraising" (Graham). Record the reason
+    and the condition, then leave it alone until the condition is met.; leaves when: Terminal for this
+    round. A re-approach that meets the investor''s stated condition opens a new conversation at first
+    contact or first call (reopen after a pass).'
+  fingerprint: f7856d27a69d9ca0
+  decision: ''
+  note: ''
+- id: L106
+  artifact: founder_office.pb.investor_relations.run_an_investor_conversation
+  field: success_signal
+  text: 'The investor reaches a decision the founder can act on: the money is in the company''s bank account,
+    or a pass arrives with its reason.'
+  fingerprint: 9a8a54cb04b374a0
+  decision: ''
+  note: ''
+- id: L107
+  artifact: founder_office.pb.investor_relations.run_an_investor_conversation
+  field: do_nothing_consequence
+  text: 'Left alone, an investor conversation does not pause: it decays into a no that nobody sends, and
+    the founder learns of it only when the round has moved on without that investor.'
+  fingerprint: 516471478796e726
+  decision: ''
+  note: ''
+- id: L108
+  artifact: founder_office.pb.investor_relations.run_an_investor_conversation
+  field: outcome_window_days
+  text: wait 83 days for the success signal
+  fingerprint: 390bdee8d1d904e8
+  decision: ''
+  note: ''
+- id: L109
+  artifact: founder_office.pb.investor_relations.run_an_investor_conversation
+  field: stop
+  text: 'dormant after 90 quiet days — a prior; source: practitioner judgement — unverified; for the founder''s
+    review. Ninety days is `06` D33''s proposal for an investor file. Measured context: venture firms
+    report that the average deal takes 83 days to close — 73 at early-stage firms and 96 at firms outside
+    the US (Gompers, Gornall, Kaplan & Strebulaev, NBER Working Paper 22587, 2016, Table 9) — so an investor
+    quiet for longer than a whole typical deal takes is not running a process on the company.; then: Close
+    nothing on the clock alone, and send no check-in: dormant is the resting state of most investor relationships,
+    and a check-in spends one for nothing. Read whose turn it is first — if the investor wrote last and
+    we owe the answer, the file is not dormant but waiting on us, and the reply comes before anything
+    else. Otherwise act by stage. A conversation that was live is a no for this round: record it as passed
+    with no reason given, as step 5 does, and stop counting it. One already passed rests until its condition
+    is met, and is reopened then with the change. A commitment quiet this long has lapsed until the investor
+    confirms it in writing. Keep on the monthly update only the investors who asked for one, and write
+    to the rest only with a reason — their condition met, a new round, a real milestone.'
+  fingerprint: bf5cc3bd0e633818
+  decision: ''
+  note: ''
+- id: L110
+  artifact: founder_office.pb.investor_relations.the_conditional_deferral
+  field: purpose
+  text: An investor has answered with a deferral that carries a condition — "send me updates", "come back
+    when you have a lead", "let's talk again at a million in revenue". It is a no for now with a door
+    left open. This move takes the no cleanly, keeps the condition in the investor's own words, puts the
+    investor on the monthly update, and re-approaches only with the change against that condition.
+  fingerprint: 2ca6c8b208fba6bd
+  decision: ''
+  note: ''
+- id: L111
+  artifact: founder_office.pb.investor_relations.the_conditional_deferral
+  field: when_to_use.signals[1]
+  text: The investor wrote "send me updates", "keep me posted", "come back when ..." or "too early for
+    us".
+  fingerprint: dd6918680b5910d2
+  decision: ''
+  note: ''
+- id: L112
+  artifact: founder_office.pb.investor_relations.the_conditional_deferral
+  field: when_to_use.signals[2]
+  text: The investor said they would invest once another investor leads.
+  fingerprint: 60590a212cffd485
+  decision: ''
+  note: ''
+- id: L113
+  artifact: founder_office.pb.investor_relations.the_conditional_deferral
+  field: when_to_use.do_not_use_when[1]
+  text: The deferral is a date rather than a condition ("after our fund closes in March"). Schedule the
+    date; there is nothing to prove.
+  fingerprint: 24d80705dac98e9e
+  decision: ''
+  note: ''
+- id: L114
+  artifact: founder_office.pb.investor_relations.the_conditional_deferral
+  field: when_to_use.do_not_use_when[2]
+  text: The investor has declined on thesis or team. No update changes what the company is.
+  fingerprint: 48c132a874e6db8b
+  decision: ''
+  note: ''
+- id: L115
+  artifact: founder_office.pb.investor_relations.the_conditional_deferral
+  field: steps[1]
+  text: 'Read it as a no for now — Take the conversation out of the round''s count. "Send me updates"
+    commits nobody, and "I want to invest in you, but I don''t lead" translates to "No, except yes if
+    you turn out to be a hot deal" (Graham). (done when: The conversation is marked deferred and is not
+    counted as committed or live interest.)'
+  fingerprint: 18a207b09b2011d9
+  decision: ''
+  note: ''
+- id: L116
+  artifact: founder_office.pb.investor_relations.the_conditional_deferral
+  field: steps[2]
+  text: 'Write the condition down verbatim — Record exactly what would bring them back — a lead, a revenue
+    figure, a launch — in their words. "Keep me posted" with nothing named is recorded as no condition,
+    never filled in with a plausible one. (done when: The condition is on file in the investor''s words,
+    or recorded as "none named".)'
+  fingerprint: 3d3824a9f1fd0b07
+  decision: ''
+  note: ''
+- id: L117
+  artifact: founder_office.pb.investor_relations.the_conditional_deferral
+  field: steps[3]
+  text: 'Reply once and ask for nothing — Thank them, confirm the condition back in their words, and say
+    they will hear when it changes. Arguing with a deferral turns a door left open into a closed one.
+    (done when: One short reply is sent, and it contains no request.)'
+  fingerprint: f81b8897f3cc84cd
+  decision: ''
+  note: ''
+- id: L118
+  artifact: founder_office.pb.investor_relations.the_conditional_deferral
+  field: steps[4]
+  text: 'Put them on the monthly update — Add them to the update list: growth, cash and burn, what the
+    company needs, sent every month — the cadence Aaron Harris, a former Y Combinator partner, recommends.
+    Each update is a dated reading of progress against their condition. (done when: The investor receives
+    the next scheduled monthly update.)'
+  fingerprint: 9e28fa2f07403fd9
+  decision: ''
+  note: ''
+- id: L119
+  artifact: founder_office.pb.investor_relations.the_conditional_deferral
+  field: steps[5]
+  text: 'Re-approach with the change, when the condition is met — When the condition is met, write to
+    them about that and nothing else — "You said come back with a lead; we have one." A check-in is the
+    conversation they already deferred. (done when: A note naming the met condition is sent as soon as
+    it is met, and it asks for a meeting.)'
+  fingerprint: 332dc4bcbc6e6045
+  decision: ''
+  note: ''
+- id: L120
+  artifact: founder_office.pb.investor_relations.the_conditional_deferral
+  field: steps[6]
+  text: 'Stop counting on updates alone at the window — If the updates in the window draw no reply and
+    no question, stop expecting them to reopen the conversation by themselves. Keep the investor on the
+    list; the re-approach waits for the condition. (done when: At the end of the window with no reply
+    to any update, the conversation is marked dormant and stays on the update list.)'
+  fingerprint: 81f0452088c0990c
+  decision: ''
+  note: ''
+- id: L121
+  artifact: founder_office.pb.investor_relations.the_conditional_deferral
+  field: success_signal
+  text: The investor answers an update with a question or a request to meet — or the condition is met
+    and a meeting is booked.
+  fingerprint: ad9a0f3cbc613a4a
+  decision: ''
+  note: ''
+- id: L122
+  artifact: founder_office.pb.investor_relations.the_conditional_deferral
+  field: do_nothing_consequence
+  text: The investor who asked to be kept posted hears nothing, the door they left open closes by default,
+    and the founder goes back to them cold on the day the condition is finally met.
+  fingerprint: ebb094935082f95c
+  decision: ''
+  note: ''
+- id: L123
+  artifact: founder_office.pb.investor_relations.the_conditional_deferral
+  field: outcome_window_days
+  text: wait 90 days for the success signal
+  fingerprint: 217150e73520e99a
+  decision: ''
+  note: ''
+- id: L124
+  artifact: founder_office.pb.investor_relations.the_wave_gone_silent
+  field: purpose
+  text: An outreach wave — the same ask sent to many investors in one window — has drawn no replies. This
+    move reads what the silence says about the wave rather than about each investor, follows up once with
+    something new, turns the few investors who matter most into warm introductions, and widens the next
+    wave instead of waiting on this one.
+  fingerprint: 02c55dda72451db9
+  decision: ''
+  note: ''
+- id: L125
+  artifact: founder_office.pb.investor_relations.the_wave_gone_silent
+  field: when_to_use.signals[1]
+  text: The same ask went to several investors in one window and most have not replied.
+  fingerprint: 95b70f0911f0ba96
+  decision: ''
+  note: ''
+- id: L126
+  artifact: founder_office.pb.investor_relations.the_wave_gone_silent
+  field: when_to_use.signals[2]
+  text: Every reply that did come back was a pass or a "not for us".
+  fingerprint: 87fde40f3cde6a4e
+  decision: ''
+  note: ''
+- id: L127
+  artifact: founder_office.pb.investor_relations.the_wave_gone_silent
+  field: when_to_use.do_not_use_when[1]
+  text: The wave went out recently enough that silence is still the default; an unanswered first email
+    is not yet a finding.
+  fingerprint: a3507f4073e36749
+  decision: ''
+  note: ''
+- id: L128
+  artifact: founder_office.pb.investor_relations.the_wave_gone_silent
+  field: when_to_use.do_not_use_when[2]
+  text: The wave was an update to existing investors rather than a raise.
+  fingerprint: 3cc6622dcaea62bc
+  decision: ''
+  note: ''
+- id: L129
+  artifact: founder_office.pb.investor_relations.the_wave_gone_silent
+  field: steps[1]
+  text: 'Read the wave before the investors — Check the wave, not each recipient: cold or introduced,
+    sent to partners or to generic addresses, to investors whose stage and thesis fit, with the traction
+    in the first lines. A wave silent everywhere is usually about the ask, not the investors. (done when:
+    The likely cause is named — the targeting, the ask, the channel — or it is recorded that none was
+    found.)'
+  fingerprint: 64c6a1746a812acd
+  decision: ''
+  note: ''
+- id: L130
+  artifact: founder_office.pb.investor_relations.the_wave_gone_silent
+  field: steps[2]
+  text: 'Follow up once, with something new — One short note per investor that carries a fact the first
+    email did not — a commitment, a customer, a number that moved. "Just bumping this" is the same email
+    they already ignored. (done when: Each investor in the wave has received at most one follow-up, and
+    each follow-up carries a fact the first email did not.)'
+  fingerprint: e5563c7377fb275a
+  decision: ''
+  note: ''
+- id: L131
+  artifact: founder_office.pb.investor_relations.the_wave_gone_silent
+  field: steps[3]
+  text: 'Turn the few that matter into warm introductions — For the investors with the highest expected
+    value, find someone they trust — an investor who has just committed, or a founder they backed — and
+    ask for an introduction instead of sending a second cold note. (done when: Each top-priority investor
+    has an introduction requested, or a note that no path to them exists.)'
+  fingerprint: ad922150629e08f9
+  decision: ''
+  note: ''
+- id: L132
+  artifact: founder_office.pb.investor_relations.the_wave_gone_silent
+  field: steps[4]
+  text: 'Widen the next wave rather than wait on this one — Add new investors whose stage and thesis fit,
+    now. A raise run as a queue gives every silent investor a free option on the company and the founder
+    nothing. (done when: A next wave is drafted, with the investors in it chosen for stage and thesis
+    fit.)'
+  fingerprint: 084f3928925042fd
+  decision: ''
+  note: ''
+- id: L133
+  artifact: founder_office.pb.investor_relations.the_wave_gone_silent
+  field: steps[5]
+  text: 'Change the ask if the whole wave was silent — If nobody replied at all, change the one-line pitch,
+    the list or the channel before the next wave. A rejection "does suggest your pitch could be improved"
+    (Graham); it is not a verdict on the company. (done when: The next wave''s ask differs from this one
+    in a named way, or the reason it does not is recorded.)'
+  fingerprint: 470bd1f8e7505bbd
+  decision: ''
+  note: ''
+- id: L134
+  artifact: founder_office.pb.investor_relations.the_wave_gone_silent
+  field: steps[6]
+  text: 'Stop when the window closes — When the window after the follow-up closes, treat the silent investors
+    as a no for this round: move them to the update list and send nothing more. Investors who drift away
+    are matched by drifting away from them. (done when: Every investor in the wave is marked replied,
+    passed or no reply, and no third note is queued.)'
+  fingerprint: 975bd5a61c609b7a
+  decision: ''
+  note: ''
+- id: L135
+  artifact: founder_office.pb.investor_relations.the_wave_gone_silent
+  field: success_signal
+  text: At least one investor in the wave replies after the follow-up with a meeting time or a clear answer.
+  fingerprint: 5407b437377290e2
+  decision: ''
+  note: ''
+- id: L136
+  artifact: founder_office.pb.investor_relations.the_wave_gone_silent
+  field: do_nothing_consequence
+  text: The investors in the wave file the company as one that asked once and went away, and the round
+    loses the weeks a better wave would have taken.
+  fingerprint: 3d72745c3fa970e4
+  decision: ''
+  note: ''
+- id: L137
+  artifact: founder_office.pb.investor_relations.the_wave_gone_silent
+  field: outcome_window_days
+  text: wait 14 days for the success signal
+  fingerprint: 2cab2b153fdc94b9
+  decision: ''
+  note: ''
+- id: L138
+  artifact: founder_office.sit.live_investor_contact
+  field: description
+  text: 'A named individual at an investor — a partner, a principal, an associate, an angel — read at
+    the PERSON level: where their conviction stands, what they last asked for, and whose move it is. The
+    counterparty here is not an organisation deciding; it is a person who has to take the case to a partnership
+    or an investment committee, and their engagement is the only reliable signal available before a decision
+    exists. It is emphatically not a prospect relationship. Nobody is buying, there is no value to prove
+    and no close to drive toward; the currency is conviction and the sequence is theirs. The failure this
+    file exists to prevent is treating an associate''s silence as a signal about the fund. Associates
+    go quiet because they are gathering internal support, because the partner meeting is next week, or
+    because the answer is no and nobody has said so — three readings with three different next moves,
+    and only the correspondence and the stage distinguish them. An associate has no decision-making power
+    of their own (Paul Graham, "How to Raise Money", note 5).'
+  fingerprint: 33a0641726091eb2
+  decision: ''
+  note: ''
+- id: L139
+  artifact: founder_office.sit.live_investor_contact
+  field: do_nothing_consequence
+  text: The person who would have carried the case inside the fund loses the thread, and the conviction
+    built so far decays without anyone ever saying no.
+  fingerprint: a26d16e00416fb18
+  decision: ''
+  note: ''
+- id: L140
+  artifact: founder_office.sit.live_investor_relationship
+  field: description
+  text: 'An ongoing relationship with a party that might fund the company, read at the ACCOUNT level:
+    the fund, the angel network, the syndicate — not the individual partner. Layer 2 types it `fundraising`,
+    which the Founder Office now serves. It is emphatically NOT an opportunity. There is no purchase,
+    no value to prove, no close date the founder controls, and a "no" is usually a "not now" carrying
+    a condition. Read through a pipeline it produces closed-lost language about a fund that explicitly
+    invited a return next round. An accelerator or a programme that reaches this situation is a misfile:
+    its clock is a cohort''s, and it belongs to the programmes capability.'
+  fingerprint: 954fea37bdee5ef8
+  decision: ''
+  note: ''
+- id: L141
+  artifact: founder_office.sit.live_investor_relationship
+  field: do_nothing_consequence
+  text: A fund that is given no reason to move simply stops replying, and by the time the silence reads
+    as a no the round has moved on without it.
+  fingerprint: d46046e03583b6fd
+  decision: ''
+  note: ''
+- id: L142
+  artifact: founder_office.obj.core.company
+  field: purpose
+  text: The organisation on the other side of a piece of founder work — a fund, an angel network, a syndicate,
+    an accelerator, a government programme, a firm that introduces — held as an entity with its kind,
+    its people and how it decides, apart from any one conversation with it.
+  fingerprint: d87097fbc59a27e8
+  decision: ''
+  note: ''
+- id: L143
+  artifact: founder_office.obj.core.contact
+  field: purpose
+  text: A person the founder deals with in a piece of work — a partner or an associate at a fund, an angel,
+    a programme manager, a connector — held with the role they play in that work, whether they can decide,
+    and whose move it is.
+  fingerprint: 32ab6979dc6d92af
+  decision: ''
+  note: ''
+- id: L144
+  artifact: founder_office.obj.core.next_action
+  field: purpose
+  text: The next concrete thing that moves a piece of founder work, with its owner and its date — what
+    we owe an investor, what they owe us, or the dated re-approach a pass invited.
+  fingerprint: 650fcd28b365bb65
+  decision: ''
+  note: ''
+- id: L145
+  artifact: founder_office.obj.core.risk
+  field: purpose
+  text: A named way a piece of founder work could fail, with what would trigger it — a fund conversation
+    held by one associate, a round with no investor willing to go first, a closing that slips, a deferral
+    that quietly expires.
+  fingerprint: 4bc3d9c83e124a84
+  decision: ''
+  note: ''
+- id: L146
+  artifact: founder_office.obj.investor_relations.investor_conversation
+  field: purpose
+  text: 'The state of one investing relationship, and the next move it implies. It exists because nothing
+    else in the Founder Office can answer its question: where one investor stands in the raise, whose
+    turn it is, and — if they passed — the condition under which "no" turns back into a conversation.
+    Held as a deal, an investor relationship produces confidently wrong advice: urgency aimed at a party
+    with no reason to feel it, and write-offs of relationships that were explicitly left open.'
+  fingerprint: 3104b0f8004c8ee5
+  decision: ''
+  note: ''

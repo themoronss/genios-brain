@@ -1,4 +1,4 @@
-# STEP-11 · TO BUILD · founder playbooks — what a professional knows about your work
+# STEP-11 · PENDING — owner Rohit (push; review the two playbooks, D45; the in-motion lines' kinds) and Harsh (deploy, migration `0196`; the Founder Office for Rohit's org only) · founder playbooks — what a professional knows about your work — M30 built (§9); M31 after the review
 
 **Owner:** Claude drafts · **Rohit reviews and accepts** (or names a reviewer). **Depends on:**
 nothing to start — drafting runs in parallel from `STEP-03` on; *routing* the playbooks needs
@@ -195,3 +195,90 @@ acceptance.
 | moving investor relations breaks what Sales routes | Sales is off; the move retires the Sales ids in one unit, its guards with it |
 | fixing F121 changes every decider prompt that carries a citation | the cassettes re-recorded from the ideal reader, each diff read (as STEP-10 did fifteen) |
 
+
+---
+
+## 9 · Built — 2026-10-09 (tree `yc2_w27_s11`, M30: 31 units — 22 drawn, 9 added while building; M31 waits for your review)
+
+On your go of 9 Oct (*Go — recommended*: D2, D3, D31, D45, D46, D47 as recommended). 35 commits on
+`speedrun008` after the plan, `f1337a19` … `430c4ebc`: the lead built 22 units; three worktree workers built
+9 — the brief's kind of work end to end (seven units), the fundraising playbook and the programmes
+playbook, each with a follow-up for its stop rule — and every one was re-verified on the lead branch (its tests
+run there, the lead's own mutations against it, the corpus validated, the read model run over the real
+files) before it was taken. M31 — introductions, compliance, hiring, meetings — is not started: the plan's
+own guard (§8.7) is depth first, two playbooks reviewed before the next four.
+
+### 9.1 · What was built
+
+| | Where | What it does |
+|---|---|---|
+| the founder's domain | `Domain Expertise/Founder Office Expertise/` | a corpus of its own (D2): `default_on: false`, six capabilities (two authored, four deferred with their reasons), four core objects on its roster; its card lane comes from `packs/wiring._corpus_packs`, no engine code |
+| fundraising reads it | `reason/domain_shadow.py`, `packs/compiler/capability_resolver.py` | the L2 `fundraising` domain and the `fundraising`/`investor` aliases resolve to `founder_office`; the Sales candidate route is retired with its reason; `DARK_DOMAINS` keeps `general` alone; the cutover table's `fundraising_route` row is armed, by D2, and says the pilot's count (Harsh 26) is still owed |
+| live only where switched on | `platform/l3_activation`, the live compiler | a tenant that has not activated the Founder Office measures fundraising against it in shadow; one that has (the golden founder; your org after the deploy) compiles it live, where an unreviewed capability is refused `unreviewed` — counted, never a card — until your review stamps it (D45) |
+| one copy of investor relations | `Sales Expertise/` | Sales' `10-investor-relations` retired — the doctrine moved, re-identified, deepened |
+| the playbook contract | `_schema/artifact.schema.json`, `situation.schema.json` | a playbook may declare its STAGES (each a typical duration as a prior with its source, what quiet means, what ends it), `success_signal`, `outcome_window_days`, `do_nothing_consequence` and `stop` (D33's dormancy, a prior); a situation its own `do_nothing_consequence` |
+| the expert reads it | `reason/adapters/expertise.py`, `packs/compiler/capability_resolver.py` | each compiled play is named by its playbook (not its id), carries the playbook's success signal and outcome window, and its review state; the decision reads the situation's own do-nothing sentence; every fallback (the template, 7 days, NULL) is named in `metadata.runtime_sources` |
+| the decider reads the corpus (`03` F121) | `reason/llm_decision_maker.py` | each claim by the contract's keys, quoted whole; mental models and frameworks under their own heading; each play's steps whole and numbered within a budget — on the golden set five cases' decider prompts carry Admin's claims verbatim where they showed `{"rule": null}` |
+| the card can say it | `deliver/pipeline.py`, `deliver/card_builder.py` | a card's success line reads the play's authored signal; a card built on a founder playbook you have not reviewed leads its *why* with *"playbook not yet reviewed"* (D3) — Founder Office cards only |
+| a line names its work (D31) | `migrations/0196`, `contracts/company_brief.py`, the store, the drafter, the route, the script | an in-motion line names its kind — investor, program, compliance, hiring, intro, partner — and ONE counterparty (an address or a domain); a brief whose lines name no kind keeps its version byte for byte; no model is shown a kind |
+| a file knows its work | `context/workstreams.py` | a file takes the kind of the accepted line whose counterparty names it (`work_kind`, beside its role) |
+| what a professional knows, per kind | `packs/compiler/playbook_reader.py`, `stage_priors.py` | `playbook_for(kind)` — the kind's spine (its stages, each prior a `playbook_prior`, n = 0, never *normal*), its moves, its claims, do-nothing, success, window, stop, review state; or the named reason there is none. STEP-12's dossier reads it |
+| one file names its playbook | `api/workstream_routes.py` | `GET /v1/workstreams/{file_id}` carries `"playbook"` |
+| the fundraising playbook | `capabilities/01-fundraising/`, `playbooks|heuristics|objects/…/investor_relations` | a seven-stage spine — first contact 14 · first call 14 · partner meeting 7 (Dixon) · diligence 21 · term sheet 30 (DLA Piper; Taku; YC's handshake protocol) · closed · passed; the outcome window 83 days (Gompers et al., NBER w22587); dormant after 90 (practitioner judgement, labelled); five moves (the wave gone silent, the conditional deferral, a warm intro, before an investor call, reopen after a pass); five claims; two situations routing `investor_relationship` and `investor_contact` |
+| the programmes playbook | `capabilities/02-programs-and-applications/`, `…/program_applications` | a seven-stage spine — applied 14 · under review 28 (Techstars) · interview 21 (Techstars Paris) · decision 14 · onboarding 30 · in programme 90 (YC, Techstars, Google) · declined 90 (YC's four batches); window 90 and dormant after 90 (Hub71's three months); four moves (work back from the deadline, prepare the interview, read the decision mail, documents after acceptance); five claims; read per file — no Layer 2 type is an application (D32) |
+| the cases | `Domain Expertise/_eval/founder.cases.yaml` | 25 cases, 11 must-abstain; a kind of work is judged through `playbook_for`, and a deferral case is checked by name (`03` F123) |
+| your review | `scripts/playbook_review_sheet.py`, `review/investor.review.yaml`, `review/program.review.yaml` | one line per thing a professional would stand behind — 146 for investors, 121 for programmes; `apply` admits only when every line says accept, refuses a sheet made for older words, and stamps with the corpus's own hash |
+| the golden set | `tests/replays/` | the golden founder's work in motion one line per counterparty with its kind; the Founder Office switched on for every golden tenant; 47 cassettes and the re-sync scenario's re-recorded, each read; the acceptance `test_every_founder_file_reads_its_playbook.py` |
+
+### 9.2 · Measured — the golden set
+
+| | Before STEP-11 | After |
+|---|---|---|
+| a heuristic in the decider's prompt | `{"rule": null, "quote": null}` — every one | quoted whole, by its id — five cases (`baseline/yc2w27-s11-build/claims_in_decider_prompts.txt`) |
+| a play in the decider's prompt | its id as its name; its steps cut at 300 characters | its playbook's name; every step whole, numbered (196 of 228 playbooks whole) |
+| the 23 fundraising situations | dark: measured in shadow against the Sales copy, deferred | the Founder Office's, refused `unreviewed` until your review — no decider call, no card |
+| a founder file's kind of work | none — a role only | F10's Banyan Seed `investor`, F17's Gulf Launchpad `program` (reading `follow_an_application`, stages include `interview`), F01's portal `compliance`, F26's Orbitly `partner` |
+| the board | must-detect 13/35, must-abstain 11/12, forbidden 4; Atlas 4/80 | the same — no card moves before your review admits a playbook (`03` §F.1) |
+
+### 9.3 · Decided while building
+
+| | |
+|---|---|
+| C2.U02 narrowed | the situation's `typical_duration_days` and signals stay unread until STEP-12 — carried now, they would re-mint every package for fields nothing in M30 reads |
+| a stop rule per playbook | D33's dormancy needed a field; `stop` is a prior with its source, never a count that closes a file by itself |
+| the label is the Founder Office's | D3's *"playbook not yet reviewed"* goes on Founder Office cards only — the corpus you review; Admin's draft playbooks stay counted on the package, not shown on every card |
+| no card builder bump | no shipped playbook authors a success signal yet, so no card a user is looking at reads differently; a bump recomposes every untouched card in production |
+| the acceptance's card clause | declared NOT EXERCISED until your review: no founder card can exist before the capability is admitted, and a pass over an empty set is not a pass |
+
+### 9.4 · Found while building — `03` F123–F133
+
+F123 (a case kind the corpus's runner never read — closed), F124 (no tool reads `handoffs`), F125 (an
+in-motion counterparty is no named sender), F126 (the drafter's kind is lost when you correct it), F127
+(the draft script prints no kind), F128 (two public-mail-host lists disagree), F129 (a Sales handoff names
+the retired id — Harsh's file), F130 (one explicit-file test combination loses a fixture — pre-existing),
+F131 (an agent's worktree starts on `origin/main`), F132 (an investor-run programme behaves like the fund),
+F133 (FC-GPR and s.42 are not in the corpus — official sources could not be fetched). Closed by this step:
+F121 and F122's first half. Found writing the deploy steps and guarding the close-out: F134 (a change to the decider's
+prompt re-decides nothing by itself — `06` D48), F135 (the activation dry run shows a blank effect for
+`founder_office`), F136 (an order-dependent warm-lane test — pre-existing, `STEP-17`).
+
+### 9.5 · QA
+
+`baseline/yc2w27-s11-qa/qa_record.txt` — run 1 at `430c4ebc`, green on every tier, on the first run, a database created for every check: the units 35 / 0 / 0 (4 tree checks + 31 units; M31's four are not built and not in scope); the whole suite on Postgres 19,277 passed, the known four skipped, 90 xfailed; the golden lane 794 passed, 88 xfailed, 0 skipped, 0 golden tenants left; the board matches `03` §F.1, unchanged (must-detect 13/35, must-abstain 11/12, forbidden 4, Atlas 4/80); the hermetic job 17,034 passed, its 1,848 skips 1,844 *needs a database* and the known four. The acceptance's card clause is declared NOT EXERCISED (an xfail that names why) until your review — it is not counted as a pass.
+
+### 9.6 · After the deploy — Rohit, then Harsh
+
+1. **Harsh:** the boot log names `0196_company_brief_line_kind.sql` (one nullable column).
+2. **Harsh:** switch the Founder Office on for your org — `python scripts/activate_tenant.py --org <your org>
+   --database-url … --domains admin,founder_office` (dry run, then `--apply`). From the next sweep your
+   fundraising situations are refused `unreviewed`: the sweep's `unsupported_unreviewed` count is the
+   pilot's fundraising count Harsh 26 asked for.
+3. **Rohit:** give your in-motion lines their kind of work and ONE counterparty each — a line already
+   accepted gains a kind by remove and add (`scripts/company_brief.py --org … remove <line>`, then `add
+   in_motion "<text>" --domain <domain> --kind <kind> --by rohit`, or the route).
+4. **Rohit:** review `review/investor.review.yaml` and `review/program.review.yaml` line by line — accept,
+   edit (with a note) or reject. Then `python scripts/playbook_review_sheet.py apply <sheet> --reviewer
+   rohit` admits only if every line is accepted; edits come back as a list for the author. The admitted
+   corpus ships with the next push.
+5. **Then M31** — introductions, compliance (official sources only, D47), hiring, meetings — authored
+   while STEP-12 is built, each with its cases and your review.
