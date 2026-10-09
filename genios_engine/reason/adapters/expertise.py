@@ -1112,6 +1112,11 @@ def _plays(package: ExpertisePackage) -> tuple[tuple[PlayDefinition, ...], dict,
     # config maps, the receipt, the candidate rows — addresses a play by.
     priors_by_play: dict[str, Any] = {}
     definitions_by_play: dict[str, Mapping[str, Any]] = {}
+    # STEP-11 (D3) · WHICH PLAYBOOKS NO NAMED HUMAN REVIEWED — the builder's own count, read here and
+    # never re-derived, so the manifest and its package cannot disagree. A package that carries no list
+    # predates the count, and silence about a review is not a review: every play then reads unreviewed.
+    listed = package.metadata.get("unreviewed_artifact_ids")
+    unreviewed = None if listed is None else frozenset(str(item) for item in listed)
     for position, rule in enumerate(package.expert_rules):
         if not isinstance(rule, Mapping):
             skipped[f"unmapped_{position}"] = "not_a_mapping"
@@ -1202,6 +1207,8 @@ def _plays(package: ExpertisePackage) -> tuple[tuple[PlayDefinition, ...], dict,
             metadata={"source": "expert_playbook", "external_recipient_required": False,
                       "window_source": window_source,
                       "success_signal_source": success_signal_source,
+                      "review_state": ("unreviewed" if unreviewed is None or rule_id in unreviewed
+                                       else "accepted"),
                       # Provenance on the play itself, so an auditor reading a candidate can see
                       # WHICH learned entry moved it rather than inferring it from a score.
                       **({"learned_success_from": learned[1]} if learned else {}),
