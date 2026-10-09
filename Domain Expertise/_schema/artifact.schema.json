@@ -31,6 +31,10 @@
     {
       "if": { "properties": { "identity": { "properties": { "scope": { "const": "capability" } }, "required": ["scope"] } }, "required": ["identity"] },
       "then": { "properties": { "identity": { "required": ["owner_capability"] } } }
+    },
+    {
+      "if": { "properties": { "identity": { "properties": { "kind": { "not": { "const": "playbook" } } }, "required": ["kind"] } }, "required": ["identity"] },
+      "then": { "not": { "anyOf": [ { "required": ["stages"] }, { "required": ["success_signal"] }, { "required": ["outcome_window_days"] }, { "required": ["do_nothing_consequence"] } ] } }
     }
   ],
 
@@ -104,6 +108,39 @@
       }
     },
 
+    "stages": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Playbook only (STEP-11). The stages this kind of work moves through, in order. Each carries a typical duration as a PRIOR — a profession's usual value with its source, never a measurement of this founder and never called normal (`06` D37) — what quiet means at that stage, and the observable event that ends it. The current stage of a file is the expert's judgment (STEP-12); nothing here detects a stage by rule.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "typical_duration_days", "source"],
+        "properties": {
+          "name": {"type": "string", "pattern": "^[a-z0-9_]+$", "description": "The stage's id, unique in the playbook."},
+          "label": {"type": "string"},
+          "typical_duration_days": {"type": "integer", "minimum": 0, "description": "How long this stage usually takes — a prior."},
+          "quiet_means": {"type": "string", "description": "What silence from the other side means at this stage."},
+          "leaves_when": {"type": "string", "description": "The observable event that ends this stage."},
+          "source": {"type": "string", "minLength": 1, "description": "Where the typical duration comes from — a URL or a named reference."}
+        }
+      }
+    },
+    "success_signal": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Playbook only (STEP-11). The one observable event that says the play worked — what the card's success line reads instead of NULL."
+    },
+    "do_nothing_consequence": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Playbook only (STEP-11). What leaving this kind of work alone costs, in one sentence a professional would say — read by `playbook_for` for a file of this kind; a routed situation's own `do_nothing_consequence` wins for its decision."
+    },
+    "outcome_window_days": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Playbook only (STEP-11). How many days to wait for the success signal before the play is judged — what the card reads instead of the 7-day default."
+    },
     "heuristic": {
       "type": "object",
       "additionalProperties": false,
