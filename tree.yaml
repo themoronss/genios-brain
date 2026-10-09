@@ -1,7 +1,7 @@
 # ═════════════════════════════════════════════════════════════════════════════════════════════
 # ⛔ HOW A UNIT ID IS ADDRESSED — read this before quoting one.
 #
-# This file holds FOURTEEN programme blocks, and three of them number their milestones from M8:
+# This file holds FIFTEEN programme blocks, and three of them number their milestones from M8:
 #
 #   <root>                            M1  … M7    retired in place
 #   persona_brain_and_layer_repair    M8  … M12
@@ -27,6 +27,8 @@
 #                                                   (built 2026-10-07); past every other block again
 #   yc2_w27_s10                       M29         ← YC-II W27 STEP-10, the expert's numbers (built
 #                                                   2026-10-08); M28 is held for STEP-09's cards (D2)
+#   yc2_w27_s11                       M30, M31    ← YC-II W27 STEP-11, founder playbooks (proposed
+#                                                   2026-10-09); past every other block again
 #
 # So `M11` is AMBIGUOUS on its own: it names "The remaining Layer 3 losses" in one block and
 # "L2 Reasoning" in another, and `M11.C1.L-logic.V0.U01` exists twice with different meanings.
@@ -6112,3 +6114,326 @@ yc2_w27_s10:
                       artifact: tests/replays/test_every_number_says_its_n.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest tests/replays/test_every_number_says_its_n.py -q
                       depends_on: [M29.C6.L-integration.V4.U02]
+
+yc2_w27_s11:
+  status: proposed
+  source: >
+    speedrun008/YC-II W27/STEP-11 §1–§7, re-checked claim by claim against speedrun008 @ 353d06ea
+    (STEP-11 §8) by two read-only workers and by hand, and measured on the golden set
+    (speedrun008/YC-II W27/baseline/yc2w27-s11-check/): 47 cases replayed from their cassettes, 0
+    misses. 23 fundraising situations in 18 cases, every one dark; 17 of 27 cards from the legacy
+    unanswered_email rule, none from founder expertise; programs formed as investor relationships (F17,
+    F24, F01, F02); the decider renders every heuristic citation as null (03 F121); no file names its
+    kind of work and nothing has a stage. A new corpus domain needs no engine code for its card lane.
+  vision: >
+    What a professional knows about the founder's work is written once, sourced, reviewed by the
+    founder, and read by the expert. Every founder file names its kind of work and resolves the
+    playbook for it — stages with typical durations as labelled priors, what quiet means at each
+    stage, the next moves, when to wait and when to stop, what doing nothing costs and what success
+    looks like — accepted, or labelled "playbook not yet reviewed". The decider (and STEP-12's
+    expert) reads those claims whole. Fundraising situations reach a live founder lane for the pilot
+    org only; Sales stays off.
+  order_note: >
+    C1 (the domain) and C2 (the contract) first; C3 (F121) and C4 (the kind) are independent of them;
+    C5 after C2 and C4; C6 after C1 and C2; C7 last. M31's four playbooks after M30's contract and
+    domain, authored while STEP-12 is built. Built on Rohit's go and D2, D3, D31, D45–D47.
+  milestones:
+    - id: M30
+      name: Founder expertise the expert can read, by the file's kind (STEP-11)
+      ships: >
+        On the golden set: every founder file with a kind resolves its playbook, accepted or labelled
+        draft; F17's file reads the programs playbook; the decider's prompt carries the playbook's
+        claims whole; no founder card carries the template consequence, the 7-day default or a NULL
+        success signal; fundraising situations reach a live lane for the pilot org only; two playbooks
+        reviewed by Rohit and admitted.
+      categories:
+        - id: M30.C1
+          name: The founder domain (D2)
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M30.C1.L-contract.V0.U01
+                      what: >
+                        `Domain Expertise/Founder Office Expertise/domain.yaml` — the corpus domain `founder_office`,
+                        `activation.default_on: false`, with its registry and deferrals; `validate.py` clean. Its card lane
+                        comes from `packs/wiring._corpus_packs` (no engine code, STEP-11 §8.2).
+                      artifact: "Domain Expertise/Founder Office Expertise/domain.yaml"
+                      verify: .venv/bin/python -m pytest tests/corpus/test_the_founder_office_domain.py -q
+                      depends_on: []
+            - layer: logic
+              levels:
+                - level: 1
+                  units:
+                    - id: M30.C1.L-logic.V1.U02
+                      what: >
+                        `reason/domain_shadow.py` — the L2 `fundraising` domain maps to `founder_office`; the
+                        `CANDIDATE_ROUTES` row is retired with its reason; `context/domain_silence.DARK_DOMAINS` and
+                        both guards move with it.
+                      artifact: genios_engine/reason/domain_shadow.py
+                      verify: .venv/bin/python -m pytest tests/reason/test_domain_mapping_is_total.py tests/reason/test_the_dark_domains_are_dark_for_different_reasons.py tests/reason/test_fundraising_is_founder_work.py -q
+                      depends_on: [M30.C1.L-contract.V0.U01]
+                    - id: M30.C1.L-logic.V1.U03
+                      what: >
+                        `packs/compiler/capability_resolver.py` — `fundraising` and `investor` alias to `founder_office`;
+                        the stale *"can never become a card"* comment corrected (`03` F122).
+                      artifact: genios_engine/packs/compiler/capability_resolver.py
+                      verify: .venv/bin/python -m pytest tests/packs/test_founder_aliases.py -q
+                      depends_on: [M30.C1.L-contract.V0.U01]
+            - layer: integration
+              levels:
+                - level: 2
+                  units:
+                    - id: M30.C1.L-integration.V2.U04
+                      what: >
+                        `tests/replays/engine_runner.py` — the golden runner switches `founder_office` on for the founder
+                        cases, as `scripts/activate_tenant.py --domains admin,founder_office` does for the pilot org.
+                      artifact: tests/replays/engine_runner.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest tests/replays/test_engine_runner.py -q
+                      depends_on: [M30.C1.L-logic.V1.U02, M30.C1.L-logic.V1.U03]
+        - id: M30.C2
+          name: The playbook contract
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M30.C2.L-contract.V0.U01
+                      what: >
+                        `Domain Expertise/_schema/artifact.schema.json` — a playbook may declare its stages
+                        (`name`, `typical_duration_days`, `quiet_means`, `leaves_when`, each prior with its `source`) and
+                        `do_nothing_consequence`, `success_signal`, `outcome_window_days`.
+                      artifact: "Domain Expertise/_schema/artifact.schema.json"
+                      verify: .venv/bin/python -m pytest tests/corpus/test_a_playbook_declares_its_stages.py -q
+                      depends_on: []
+            - layer: logic
+              levels:
+                - level: 1
+                  units:
+                    - id: M30.C2.L-logic.V1.U02
+                      what: >
+                        `reason/adapters/expertise.py` — the compiled lane reads the playbook's three runtime fields and
+                        the situation's `typical_duration_days` and `signals_of_progress`; today's template sentence,
+                        7 days and NULL remain only as fallbacks that say they are.
+                      artifact: genios_engine/reason/adapters/expertise.py
+                      verify: .venv/bin/python -m pytest tests/reason/test_the_compiled_lane_reads_what_the_playbook_says.py -q
+                      depends_on: [M30.C2.L-contract.V0.U01]
+                    - id: M30.C2.L-logic.V1.U03
+                      what: >
+                        New `packs/compiler/stage_priors.py` — a playbook's stages as `Measured(source=playbook_prior)`
+                        with the stage's source; a prior is never called normal (D37).
+                      artifact: genios_engine/packs/compiler/stage_priors.py
+                      verify: .venv/bin/python -m pytest tests/packs/test_a_stage_prior_is_never_a_habit.py -q
+                      depends_on: [M30.C2.L-contract.V0.U01]
+        - id: M30.C3
+          name: The expert can see it
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M30.C3.L-logic.V0.U01
+                      what: >
+                        `reason/llm_decision_maker.py` — `03` F121: the prompt renders each citation by the contract's
+                        own keys (`artifact_id`, `statement`) and each play by its name with whole steps within a budget,
+                        never cut mid-step.
+                      artifact: genios_engine/reason/llm_decision_maker.py
+                      verify: .venv/bin/python -m pytest tests/reason/test_the_decider_reads_the_corpus_claims.py -q
+                      depends_on: []
+            - layer: interface
+              levels:
+                - level: 2
+                  units:
+                    - id: M30.C3.L-interface.V2.U02
+                      what: >
+                        `deliver/card_builder.py` — a card whose package rests on an unreviewed playbook or heuristic
+                        says *"playbook not yet reviewed"* (D3), for the activated pilot org only.
+                      artifact: genios_engine/deliver/card_builder.py
+                      verify: .venv/bin/python -m pytest tests/deliver/test_an_unreviewed_playbook_says_so.py -q
+                      depends_on: [M30.C2.L-logic.V1.U02]
+        - id: M30.C4
+          name: The file's kind of work (D31)
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M30.C4.L-contract.V0.U01
+                      what: >
+                        `migrations/0196_company_brief_line_kind.sql` — a brief line's `kind` and `counterparty`,
+                        reversible.
+                      artifact: migrations/0196_company_brief_line_kind.sql
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/platform/test_a_brief_line_names_its_kind.py -q
+                      depends_on: []
+                    - id: M30.C4.L-contract.V0.U02
+                      what: >
+                        `contracts/company_brief.py` — an in-motion line may name its kind (`investor`, `program`,
+                        `compliance`, `hiring`, `intro`, `partner`) and its counterparty (an address or a domain);
+                        no other section names one.
+                      artifact: genios_engine/contracts/company_brief.py
+                      verify: .venv/bin/python -m pytest tests/contracts/test_an_in_motion_line_names_its_work.py -q
+                      depends_on: []
+            - layer: logic
+              levels:
+                - level: 1
+                  units:
+                    - id: M30.C4.L-logic.V1.U03
+                      what: >
+                        `reason/brief_drafter.py` — the drafter proposes each in-motion line's kind and counterparty;
+                        the founder accepts them with the line.
+                      artifact: genios_engine/reason/brief_drafter.py
+                      verify: .venv/bin/python -m pytest tests/reason/test_the_drafter_names_the_work.py -q
+                      depends_on: [M30.C4.L-contract.V0.U02]
+                    - id: M30.C4.L-logic.V1.U04
+                      what: >
+                        `context/workstreams.py` — a file takes the kind of work of the in-motion line that names its
+                        counterparty; the roles (connector, watched, person, intro) stay.
+                      artifact: genios_engine/context/workstreams.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_a_file_knows_its_kind_of_work.py -q
+                      depends_on: [M30.C4.L-contract.V0.U01, M30.C4.L-contract.V0.U02]
+            - layer: integration
+              levels:
+                - level: 2
+                  units:
+                    - id: M30.C4.L-integration.V2.U05
+                      what: >
+                        `tests/replays/specs/founder/brief/company_brief.json` — the golden founder's in-motion lines name
+                        their kind and counterparty: the funds, the accelerators, the portal, the hire, the partners.
+                      artifact: tests/replays/specs/founder/brief/company_brief.json
+                      verify: .venv/bin/python -m pytest tests/replays/test_founder_case_contract.py -q
+                      depends_on: [M30.C4.L-contract.V0.U02]
+        - id: M30.C5
+          name: The playbook a file reads
+          layers:
+            - layer: logic
+              levels:
+                - level: 2
+                  units:
+                    - id: M30.C5.L-logic.V2.U01
+                      what: >
+                        New `packs/compiler/playbook_reader.py` — `playbook_for(file)`: the kind's playbook — stages with
+                        priors, what quiet means, next moves, wait and stop, do-nothing, success, its review state — the
+                        read model STEP-12's dossier calls.
+                      artifact: genios_engine/packs/compiler/playbook_reader.py
+                      verify: .venv/bin/python -m pytest tests/packs/test_a_file_reads_its_playbook.py -q
+                      depends_on: [M30.C2.L-logic.V1.U03, M30.C4.L-logic.V1.U04]
+            - layer: interface
+              levels:
+                - level: 3
+                  units:
+                    - id: M30.C5.L-interface.V3.U02
+                      what: >
+                        `api/workstream_routes.py` — `GET /v1/workstreams/{file_id}` names the file's playbook and its
+                        review state.
+                      artifact: genios_engine/api/workstream_routes.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/api/test_a_file_names_its_playbook.py -q
+                      depends_on: [M30.C5.L-logic.V2.U01]
+        - id: M30.C6
+          name: The first two playbooks
+          layers:
+            - layer: data
+              levels:
+                - level: 1
+                  units:
+                    - id: M30.C6.L-data.V1.U01
+                      what: >
+                        `Domain Expertise/Founder Office Expertise/capabilities/01-fundraising/` — Sales'
+                        `10-investor-relations` moved (its Sales ids retired) and deepened: stages first contact → call →
+                        diligence → term sheet → closed or passed, with sourced priors; the wave gone silent; the
+                        conditional deferral; a warm intro to an investor; before an investor call; a pass is a date.
+                      artifact: "Domain Expertise/Founder Office Expertise/capabilities/01-fundraising"
+                      verify: .venv/bin/python -m pytest tests/corpus/test_the_fundraising_playbook.py -q
+                      depends_on: [M30.C1.L-contract.V0.U01, M30.C2.L-contract.V0.U01]
+                    - id: M30.C6.L-data.V1.U02
+                      what: >
+                        `Domain Expertise/Founder Office Expertise/capabilities/02-programs-and-applications/` — applied
+                        → under review → interview → decision → onboarding, with sourced priors; deadlines that do not
+                        move; decision mail; interview preparation; documents after acceptance.
+                      artifact: "Domain Expertise/Founder Office Expertise/capabilities/02-programs-and-applications"
+                      verify: .venv/bin/python -m pytest tests/corpus/test_the_programs_playbook.py -q
+                      depends_on: [M30.C1.L-contract.V0.U01, M30.C2.L-contract.V0.U01]
+        - id: M30.C7
+          name: The golden set and the review
+          layers:
+            - layer: integration
+              levels:
+                - level: 2
+                  units:
+                    - id: M30.C7.L-integration.V2.U01
+                      what: >
+                        `Domain Expertise/_eval/founder.cases.yaml` — must-detect and must-abstain cases for the two
+                        playbooks, at least ten each, run by the corpus's own cases test.
+                      artifact: "Domain Expertise/_eval/founder.cases.yaml"
+                      verify: .venv/bin/python -m pytest tests/packs/test_the_corpus_answers_its_own_cases.py -q
+                      depends_on: [M30.C6.L-data.V1.U01, M30.C6.L-data.V1.U02]
+                    - id: M30.C7.L-integration.V2.U02
+                      what: >
+                        New `scripts/playbook_review_sheet.py` — one review sheet per playbook for Rohit, line by line
+                        (accept · edit · reject); the admission stamp (`_tools/admit.py --accept`, the reviewer named)
+                        only after it (D45).
+                      artifact: scripts/playbook_review_sheet.py
+                      verify: .venv/bin/python -m pytest tests/scripts/test_playbook_review_sheet.py -q
+                      depends_on: [M30.C6.L-data.V1.U01]
+                - level: 4
+                  units:
+                    - id: M30.C7.L-integration.V4.U03
+                      what: >
+                        The cassettes whose prompts move (F121, the brief's kinds, the founder lane) re-recorded from
+                        the ideal reader, each diff read; the board re-scored and `03` §F.1 restated.
+                      artifact: tests/replays/specs/founder/cassettes
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py --assert-recorded "speedrun008/YC-II W27/03-FINDINGS.md"
+                      depends_on: [M30.C1.L-integration.V2.U04, M30.C3.L-logic.V0.U01, M30.C4.L-integration.V2.U05, M30.C5.L-logic.V2.U01, M30.C6.L-data.V1.U01, M30.C6.L-data.V1.U02]
+                - level: 5
+                  units:
+                    - id: M30.C7.L-integration.V5.U04
+                      what: >
+                        The acceptance — `tests/replays/test_every_founder_file_reads_its_playbook.py`: every founder
+                        file with a kind resolves its playbook (accepted or labelled draft); F17's file reads the
+                        programs playbook; the decider's prompt carries the playbook's claims whole; no founder card
+                        carries the template consequence, the 7-day default or a NULL success signal.
+                      artifact: tests/replays/test_every_founder_file_reads_its_playbook.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest tests/replays/test_every_founder_file_reads_its_playbook.py -q
+                      depends_on: [M30.C7.L-integration.V4.U03, M30.C5.L-interface.V3.U02, M30.C3.L-interface.V2.U02, M30.C2.L-logic.V1.U02]
+    - id: M31
+      name: The other four founder playbooks (STEP-11, while STEP-12 is built)
+      ships: >
+        Intros, compliance, hiring and meetings authored, each with its cases, reviewed by Rohit and
+        admitted.
+      categories:
+        - id: M31.C1
+          name: Four playbooks
+          layers:
+            - layer: data
+              levels:
+                - level: 0
+                  units:
+                    - id: M31.C1.L-data.V0.U01
+                      what: >
+                        `03-networking-and-intros/` — introduced → replied → met → outcome, with sourced priors; the
+                        connector is never the one to reply to; both sides closed; an intro left a week usually dies; its
+                        cases.
+                      artifact: "Domain Expertise/Founder Office Expertise/capabilities/03-networking-and-intros"
+                      verify: .venv/bin/python -m pytest tests/corpus/test_the_intros_playbook.py -q
+                      depends_on: [M30.C1.L-contract.V0.U01, M30.C2.L-contract.V0.U01]
+                    - id: M31.C1.L-data.V0.U02
+                      what: >
+                        `04-compliance/` — Startup India / DPIIT recognition and what it unlocks; DigiLocker; MSME / Udyam;
+                        state programs — every line cites an official source, fetched (D47); its cases.
+                      artifact: "Domain Expertise/Founder Office Expertise/capabilities/04-compliance"
+                      verify: .venv/bin/python -m pytest tests/corpus/test_the_compliance_playbook.py -q
+                      depends_on: [M30.C1.L-contract.V0.U01, M30.C2.L-contract.V0.U01]
+                    - id: M31.C1.L-data.V0.U03
+                      what: >
+                        `05-hiring/` — offer → accepted → documents → joined, with sourced priors; the ESOP dependency;
+                        its cases.
+                      artifact: "Domain Expertise/Founder Office Expertise/capabilities/05-hiring"
+                      verify: .venv/bin/python -m pytest tests/corpus/test_the_hiring_playbook.py -q
+                      depends_on: [M30.C1.L-contract.V0.U01, M30.C2.L-contract.V0.U01]
+                    - id: M31.C1.L-data.V0.U04
+                      what: >
+                        `06-meetings/` — Admin's four meeting situations reused; investor-call and interview preparation
+                        added; its cases.
+                      artifact: "Domain Expertise/Founder Office Expertise/capabilities/06-meetings"
+                      verify: .venv/bin/python -m pytest tests/corpus/test_the_meetings_playbook.py -q
+                      depends_on: [M30.C1.L-contract.V0.U01, M30.C2.L-contract.V0.U01]
