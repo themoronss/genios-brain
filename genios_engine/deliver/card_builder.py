@@ -217,8 +217,19 @@ def _play_window(effective: dict, play_id: str | None) -> int | None:
     return int(window) if isinstance(window, int) else None
 
 
-def _play_success(effective: dict, play_id: str | None) -> str | None:
-    play = (effective.get("plays") or {}).get(str(play_id or ""), {})
+def _play_success(effective: dict, signal: dict) -> str | None:
+    """What success looks like for this card's play — the PLAY's own authored signal first, carried off
+    the audited capability snapshot (`pipeline._open_signals_without_cards`, `play_success_events`);
+    the tenant pack's second; NULL only when neither says one.
+
+    STEP-11 (M30.C3.L-interface.V2.U04). The pack's `plays` are `{}` for every corpus pack, so reading
+    only them meant no compiled card could ever name its success, however its playbook put it.
+    """
+    for event in signal.get("play_success_events") or ():
+        text = " ".join(str(event or "").split())
+        if text:
+            return text
+    play = (effective.get("plays") or {}).get(str(signal.get("play") or ""), {})
     return play.get("success_signal") or None
 
 
@@ -1177,7 +1188,7 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
         # generic estimate, not this decision's judgment.
         "outcome_window_days": (signal.get("decision_window")
                                 or _play_window(effective, signal.get("play"))),
-        "success_signal": _play_success(effective, signal.get("play")),
+        "success_signal": _play_success(effective, signal),
         "do_nothing_consequence": signal.get("do_nothing_consequence"),
         "candidate_steps": signal.get("candidate_steps") or [],
         "rejected_candidates": signal.get("rejected_candidates") or [],
