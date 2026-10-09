@@ -537,3 +537,87 @@ def test_a_remark_is_not_a_commitment():
     assert SI.reject({"kind": "deadline", "text": "Client lunch at the Taj",
                       "who": "Priya Shah", "due": "2026-09-18T13:00",
                       "quote": "lunch with the client on Friday 1 pm"}) is None
+
+
+def test_the_manager_never_gets_a_card_about_himself():
+    """Harsh is the seat; the screen says "Harsh". GeniOS used to hand Harsh a card about chasing
+    Harsh, because `is_me` refused a bare first name on purpose ("Rohit may be a different Rohit").
+    The cure for that ambiguity is the screen itself: if nobody else here answers to the name, it
+    is the manager."""
+    me = ["tripathihk2014@gmail.com", "Harsh Tripathi"]
+    weak = SI.seat_first_names(me, ["Priya Shah", "Rohit Kumar"])
+    assert weak == ["harsh"]
+    assert SI.is_me("Harsh", me, weak)
+    assert not SI.is_me("Harsh Mehta", me, weak), "two tokens are a different person"
+    assert not SI.is_me("Priya", me, weak)
+
+    # …and when somebody else on this screen IS a Harsh, the name is ambiguous again and refused.
+    assert SI.seat_first_names(me, ["Harsh Mehta"]) == []
+    assert not SI.is_me("Harsh", me, SI.seat_first_names(me, ["Harsh Mehta"]))
+
+    # An ask or a promise whose other side is the manager is dropped, not kept with who=None:
+    # "follow up with Harsh" addressed to Harsh is the fastest way to lose him.
+    screen = "Harsh: bhai quote ka kya hua, kal tak bhej dena tha"
+    j = SI.judge({"work": True, "items": [
+        {"kind": "ask", "text": "Send the quote", "who": "Harsh",
+         "quote": "quote ka kya hua"}]}, screen, me=me, weak=weak)
+    assert j["items"] == [], "the manager does not ask himself"
+    # Somebody else asking the same thing is kept.
+    j2 = SI.judge({"work": True, "items": [
+        {"kind": "ask", "text": "Send the quote", "who": "Priya",
+         "quote": "quote ka kya hua"}]}, screen, me=me, weak=weak)
+    assert [i["who"] for i in j2["items"]] == ["Priya"]
+
+
+def test_a_time_is_said_the_way_a_manager_says_it():
+    """"due 2026-10-07T15:30" makes the reader redo the arithmetic GeniOS already did."""
+    from datetime import date
+    t = date(2026, 10, 7)
+    assert SI.human_due("2026-10-07T15:30", t) == "aaj dopahar 3:30 baje"
+    assert SI.human_due("2026-10-08T10:00", t) == "kal subah 10 baje"
+    assert SI.human_due("2026-10-09T21:45", t) == "parson raat 9:45 baje"
+    assert SI.human_due("2026-10-10T09:00", t) == "Saturday 9 baje (subah)"
+    assert SI.human_due("2026-10-20T16:00", t) == "20 Oct 4 baje (shaam)"
+    assert "beet gaya" in SI.human_due("2026-10-06T11:00", t)
+    # A day with no clock: the prompt fills DAY_ONLY_HOUR, which the manager never said — so the
+    # label names the day and invents no time.
+    assert SI.human_due(f"2026-10-07T{SI.DAY_ONLY_HOUR:02d}:00", t) == "aaj"
+    assert SI.human_due(None, t) is None
+    assert SI.human_due("not a date", t) is None
+    # The item carries the machine-readable due ONLY. A relative label rots — "kal" written
+    # tonight is wrong tomorrow — so the label is made at render time, never stored on the item.
+    j = SI.judge({"work": True, "items": [
+        {"kind": "deadline", "text": "Doubt session", "who": None, "due": "2026-10-07T15:30",
+         "quote": "doubt session has been scheduled"}]},
+        "A doubt session has been scheduled at 3:30 pm today", today=t)
+    assert j["items"][0]["due"] == "2026-10-07T15:30"
+    assert "due_label" not in j["items"][0]
+
+
+def test_a_headline_that_only_repeats_the_screen_is_not_a_headline():
+    """MEASURED in production 2026-10-08 — a stored card read, as its headline:
+
+        "Aadha hua.... Aadha kal parso me karunga... Safai kar diya... Ab pack"
+
+    with the identical string as its quote underneath. The same words twice, one of them
+    pretending to be a description, for a chat about house cleaning. The prompt asks for
+    "<= 16 words, plain and specific" and forbids telling the manager what is on the screen;
+    nothing enforced either.
+    """
+    paste = "Aadha hua.... Aadha kal parso me karunga... Safai kar diya... Ab pack"
+    assert SI.reject({"kind": "my_promise", "text": paste, "quote": paste}) == "pasted_quote"
+    # Trimmed and re-punctuated is still the same words.
+    assert SI.reject({"kind": "my_promise", "text": paste.replace("....", "."),
+                      "quote": paste}) == "pasted_quote"
+
+    # …and a real headline is left alone, even when every word of it came off the screen.
+    for text, quote in [
+        ("Send the signed MSA", "send the signed MSA by Friday"),
+        ("Phishing mail from our domain", "phishing mail from your domain, fix by Friday"),
+        ("Urgent need for fast delivery", "Hme jaldi chahiye, delivery kab hogi"),
+    ]:
+        assert SI.reject({"kind": "next_step", "text": text, "quote": quote}) is None, text
+
+    # The rule is length-first: a summary is shorter than what it summarises.
+    assert not SI._is_paste("Send the signed MSA", "send the signed MSA by Friday")
+    assert SI._is_paste("send the signed MSA by Friday", "send the signed MSA by Friday")

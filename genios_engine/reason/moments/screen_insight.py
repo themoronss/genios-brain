@@ -552,6 +552,37 @@ def is_a_person(who: str | None) -> bool:
     return bool(w) and w not in _NOT_A_PERSON
 
 
+def _is_paste(text, quote: str) -> bool:
+    """Is `text` the quote copied rather than a description of it?
+
+    Not string equality — the model trims and re-punctuates. A description of a message is
+    SHORTER than it and says something the message does not; a paste shares nearly all of its
+    words. The test is containment either way after normalising, or a word overlap above
+    `PASTE_OVERLAP` on a text that is not meaningfully shorter.
+    """
+    t, q = _norm(text or ""), _norm(quote or "")
+    if not t or not q:
+        return False
+    # LENGTH FIRST. A headline shorter than its quote is a summary even when every one of its
+    # words came from the message: "Phishing mail from our domain" out of a long mail, or "Send
+    # the signed MSA" out of "send the signed MSA by Friday". Both were rejected before this.
+    if len(t) < len(q) * PASTE_NEAR_WHOLE:
+        return False
+    # Containment or equality only. A word-overlap test was tried and dropped: a five-word
+    # headline shares four words with the line it describes almost by definition, so it rejected
+    # "Phishing mail from our domain" (a good headline for "phishing mail from your domain, fix by
+    # Friday"). The measured defect was an EXACT paste, and the rule does not reach past it.
+    return t == q or t in q or q in t
+
+
+#: How close to its quote's length a headline has to be before repeating it counts as a paste.
+#:
+#: Deliberately tight. 0.6 was tried and it ate real headlines: "Send the signed MSA" is 65% of
+#: "send the signed MSA by Friday" and is exactly the summary wanted. The measured defect was a
+#: headline IDENTICAL to its quote (ratio 1.0), so the rule stays near there and no further.
+PASTE_NEAR_WHOLE = 0.9
+
+
 def reject(item: dict, *, said: list[str] | None = None) -> str | None:
     """P15: why this item must NOT be saved, or None when it is worth keeping.
 
@@ -589,6 +620,16 @@ def reject(item: dict, *, said: list[str] | None = None) -> str | None:
         return "own_job"
     if item.get("who") is not None and not is_a_person(item.get("who")):
         return "no_person"
+    # `text` is the HEADLINE a manager reads. The prompt asks for "<= 16 words, plain and
+    # specific" and the model sometimes pastes the message back instead.
+    #
+    # MEASURED in production 2026-10-08: a stored card read
+    #   "Aadha hua.... Aadha kal parso me karunga... Safai kar diya... Ab pack"
+    # as its headline, with the identical string as its quote underneath — the same words twice,
+    # once pretending to be a description. A card that only repeats the screen tells the manager
+    # nothing they do not already know, which is the one thing the prompt forbids outright.
+    if _is_paste(item.get("text"), quote):
+        return "pasted_quote"
     # A clock or an amount means somebody is on the hook for something; without either, warning
     # boilerplate is just warning boilerplate.
     if not item.get("due") and not _MONEY.search(blob) and _ADVISORY.search(blob):
@@ -649,13 +690,92 @@ def _one_per_thing(items: list[dict]) -> list[dict]:
     return [it for it in items if it in kept]
 
 
-def is_me(who: str | None, me: list[str] | None) -> bool:
+def human_due(due: str | None, today: date | None, tz_name: str | None = None) -> str | None:
+    """`2026-10-07T15:30` → "aaj 3:30 baje". The way a manager says a time, not the way a database
+    stores one.
+
+    NOT put on the item, and that is deliberate. A relative label ROTS: "kal" written tonight is
+    wrong tomorrow morning, and an item outlives the moment it was made in. Time has to be said at
+    RENDER time, against the reader's own clock — which is where the device already does it
+    (`moments/mod.rs` `when`/`clock`). This function exists for the places that render server-side
+    (the brief, the digest, `recall`), so both sides say a time the same way.
+
+    A card that reads "due 2026-10-07T15:30" makes the reader do the arithmetic GeniOS already did.
+    The rule is the one people use out loud: name the DAY relatively while it is close (aaj / kal /
+    parson / this weekday), then by date; drop ":00" from a round hour; say subah / dopahar / shaam
+    / raat instead of AM/PM; and say nothing at all when there is no time, because an invented
+    "18:00" is worse than silence.
+    """
+    if not due:
+        return None
+    try:
+        dt = datetime.strptime(str(due)[:16], "%Y-%m-%dT%H:%M")
+    except ValueError:
+        return None
+    ref = today or dt.date()
+    days = (dt.date() - ref).days
+    if days == 0:
+        day = "aaj"
+    elif days == 1:
+        day = "kal"
+    elif days == 2:
+        day = "parson"
+    elif 3 <= days <= 6:
+        day = dt.strftime("%A")
+    elif days == -1:
+        day = "kal (beet gaya)"
+    elif days < 0:
+        day = f"{dt:%-d %b} (beet gaya)"
+    else:
+        day = f"{dt:%-d %b}"
+    h, m = dt.hour, dt.minute
+    # DAY_ONLY_HOUR is what the prompt fills in when the screen gave a day and no clock: that is
+    # not a time the manager said, so it is not reported as one.
+    if h == DAY_ONLY_HOUR and m == 0:
+        return day
+    part = "subah" if 4 <= h < 12 else "dopahar" if 12 <= h < 16 else "shaam" if 16 <= h < 20 else "raat"
+    clock = f"{(h % 12) or 12}" + (f":{m:02d}" if m else "")
+    return f"{day} {part} {clock} baje" if day in {"aaj", "kal", "parson"} else f"{day} {clock} baje ({part})"
+
+
+def first_name(full: str | None) -> str:
+    """"Harsh Tripathi" → "harsh"; "harsh@genios.ai" → "harsh"; "Harsh" → "harsh"."""
+    t = (full or "").strip()
+    if "@" in t:
+        t = t.split("@", 1)[0].replace(".", " ").replace("_", " ")
+    tok = _norm(t).split()
+    return tok[0] if tok else ""
+
+
+def seat_first_names(me: list[str] | None, others: list[str] | None = None) -> list[str]:
+    """The manager's own FIRST names — but only the ones nobody else on this screen answers to.
+
+    Why this exists: a screen says "Harsh" and the manager IS Harsh, so GeniOS was handing Harsh a
+    card about chasing Harsh. `is_me` refused a bare first name on purpose — in a group, "Rohit"
+    may be a different Rohit — and the result was worse than the risk it avoided: the single
+    fastest way to lose a manager is to tell him to follow up with himself.
+
+    So the first name counts as the manager UNLESS somebody else in this conversation shares it.
+    Then it is ambiguous again and we fall back to refusing, which is the old, safe behaviour.
+    """
+    # Display names only. An address's local part ("tripathihk2014") is not a name anyone is
+    # called on screen, and the strong matcher already covers it.
+    mine = {first_name(m) for m in (me or []) if "@" not in (m or "")} - {""}
+    theirs = {first_name(o) for o in (others or [])} - {""}   # an address IS a person here
+    return sorted(mine - theirs)
+
+
+def is_me(who: str | None, me: list[str] | None, weak: list[str] | None = None) -> bool:
     """Does `who` name the manager (their email, the name part of it, or their node's name)?
     Inside an email's name part only a long run matches ("rohitswerashi" in "mrrohitswerashi"):
     a bare first name ("Rohit") may be someone else and keeps its who."""
     w = _norm(who or "")
     if not w:
         return False
+    # A SINGLE token that is one of the manager's unambiguous first names is the manager.
+    # Two tokens ("Harsh Mehta") are a different person and never match weakly.
+    if len(w.split()) == 1 and w in {x for x in (weak or []) if x}:
+        return True
     compact = w.replace(" ", "")
     raw = (who or "").strip().casefold()
     for m in me or []:
@@ -747,6 +867,7 @@ def snap_due(due: str | None, quote: str | None, dates) -> str | None:
 
 
 def _item(it, screen: str, me: list[str] | None, today: date | None = None,
+          weak: list[str] | None = None, tz_name: str | None = None,
           dates=None) -> dict | None:
     """One model item → a grounded item, or None (unknown kind, no text, quote not on screen)."""
     if not isinstance(it, dict):
@@ -762,15 +883,22 @@ def _item(it, screen: str, me: list[str] | None, today: date | None = None,
     who = _opt(it.get("who"), WHO_MAX_CHARS)
     snapped = snap_due(_opt(it.get("due"), 32), quote, dates)
     due = snapped if snapped != _opt(it.get("due"), 32) else fix_weekday(snapped, quote, today)
-    return {"kind": kind, "text": text, "who": None if is_me(who, me) else who,
-            "due": due, "quote": quote[:200],
+    mine = is_me(who, me, weak)
+    # An "ask" or a "their_promise" whose other side is the MANAGER is nonsense — the manager does
+    # not ask himself and does not owe himself. Dropping it is the fix; nulling `who` (what this
+    # used to do) kept the item and produced "follow up with Harsh" for Harsh.
+    if mine and kind in {"ask", "their_promise"}:
+        return None
+    return {"kind": kind, "text": text, "who": None if mine else who,
+            "due": due,
+            "quote": quote[:200],
             "confidence": confidence_of(it.get("confidence"))}
 
 
 def judge(raw: dict | None, screen: str, *, me: list[str] | None = None,
           today: date | None = None, said: list[str] | None = None,
           meetings: list[dict] | None = None, tz_name: str | None = None,
-          dates=None) -> dict:
+          weak: list[str] | None = None, dates=None) -> dict:
     """The model's v4 answer → `{work, remember, items, adds_candidate, note_candidate}`. Items are
     grounded; a note is a CANDIDATE — `verify_adds` decides whether code can stand behind it. The
     model may propose an interrupt; it may not author one."""
@@ -780,7 +908,8 @@ def judge(raw: dict | None, screen: str, *, me: list[str] | None = None,
     if work is False or not isinstance(raw, dict):
         return out
     listed = raw.get("items") if isinstance(raw.get("items"), list) else []
-    grounded = [i for i in (_item(it, screen, me, today, dates) for it in listed[:MAX_ITEMS]) if i]
+    grounded = [i for i in (_item(it, screen, me, today, weak, tz_name, dates)
+                            for it in listed[:MAX_ITEMS]) if i]
     keep: list[dict] = []
     for it in grounded:
         why = reject(it, said=said)
@@ -1141,8 +1270,13 @@ def _compute(engine, *, org_id: str, email: str | None, app: str | None, partici
                       tz_name=tz_name, summary=summary, profile=profile)
     if raw is None:
         return None
+    # WHO IS THE MANAGER. The people named on this screen decide whether the manager's own first
+    # name is unambiguous here; `participants` is what the device resolved for this surface.
+    others = [str(p.get("name") or p.get("email") or "") for p in (participants or [])
+              if isinstance(p, dict)]
+    weak = seat_first_names(me, others)
     judged = judge(raw, screen, me=me, today=today, said=said, meetings=meetings,
-                   tz_name=tz_name, dates=dates)
+                   tz_name=tz_name, weak=weak, dates=dates)
     return {"subject_ids": sids, "work": judged["work"], "memory": judged["remember"],
             "judged": judged}
 
