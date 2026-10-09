@@ -34,7 +34,7 @@
     },
     {
       "if": { "properties": { "identity": { "properties": { "kind": { "not": { "const": "playbook" } } }, "required": ["kind"] } }, "required": ["identity"] },
-      "then": { "not": { "anyOf": [ { "required": ["stages"] }, { "required": ["success_signal"] }, { "required": ["outcome_window_days"] }, { "required": ["do_nothing_consequence"] } ] } }
+      "then": { "not": { "anyOf": [ { "required": ["stages"] }, { "required": ["success_signal"] }, { "required": ["outcome_window_days"] }, { "required": ["do_nothing_consequence"] }, { "required": ["stop"] } ] } }
     }
   ],
 
@@ -130,6 +130,17 @@
       "type": "string",
       "minLength": 1,
       "description": "Playbook only (STEP-11). The one observable event that says the play worked — what the card's success line reads instead of NULL."
+    },
+    "stop": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dormant_after_days", "source"],
+      "description": "Playbook only (STEP-11, `06` D33). When this kind of work, left quiet, is DORMANT rather than waiting — a prior with its source, never a measurement of this founder — and what a professional does then. Replaces the 45 days every file had, per kind.",
+      "properties": {
+        "dormant_after_days": {"type": "integer", "minimum": 1, "description": "Quiet days after which a file of this kind is dormant — a prior."},
+        "source": {"type": "string", "minLength": 1, "description": "Where that number comes from — a URL or a named reference."},
+        "then": {"type": "string", "minLength": 1, "description": "What to do with a dormant file of this kind: let it rest, re-approach at a trigger, close it."}
+      }
     },
     "do_nothing_consequence": {
       "type": "string",
