@@ -10,12 +10,21 @@ with the two things the engine already knows for certain — the company's name 
 the people who are us (`platform/self_identity`, STEP-04). "Us" is never proposed: it is STEP-04's
 answer, not an opinion. A connector names the address it writes from; a watchlist line names a domain.
 
+AN IN-MOTION LINE NAMES ITS KIND OF WORK (STEP-11, `06` D31). A founder's file knew only its role —
+connector, watched, person, intro — so nothing could say what kind of WORK it is, and the expert could
+not pick the playbook for it (`speedrun008/YC-II W27/` STEP-11 §8.3 N1). An in-motion line may name its
+`kind`, one of `WORK_KINDS`, and its counterparty through its own `address` (a person) or `domain` (a
+fund, a program, a portal, a company); `context/workstreams` gives that kind to the file the
+counterparty names. No other section names a kind, and no model is shown one.
+
 AN EMPTY BRIEF ADDS NOTHING. With no accepted line there is no brief: `prompt_block()` is "" and
 `version` is "" — so a tenant who has not confirmed a brief sees every prompt exactly as before.
 
 THE BUDGET. ~800 tokens, rendered whole lines only, in section order; a line that would overflow is
 left out and NAMED in `truncated`, never cut mid-sentence. The version is the hash of what the model is
-shown — two briefs that render the same text are the same version, whatever was cut.
+shown — two briefs that render the same text are the same version, whatever was cut — and, once a kept
+line names one, of the kinds of work its kept lines name: a kind is never shown, but setting or
+correcting one is a different brief. A brief whose lines name no kind has the version it always had.
 """
 from __future__ import annotations
 
@@ -30,6 +39,12 @@ SECTIONS: tuple[str, ...] = ("company", "us", "goals", "in_motion", "people", "c
                              "watchlist", "preferences")
 #: What a line may be filed under. "us" is composed from STEP-04's identity, never proposed.
 PROPOSABLE: tuple[str, ...] = tuple(s for s in SECTIONS if s != "us")
+
+#: STEP-11 (`06` D31) · the kinds of work an in-motion line may name — each the playbook a file of that
+#: work reads. A closed list, checked here and not by the schema (migration 0196): a seventh kind is an
+#: authoring event, not a schema event. Not a file's ROLE (`context/workstreams.KINDS`): a connector's
+#: file is a role; raising from the fund it introduced is work.
+WORK_KINDS: tuple[str, ...] = ("investor", "program", "compliance", "hiring", "intro", "partner")
 
 #: How each section is introduced to a model.
 SECTION_TITLES: dict[str, str] = {
@@ -70,13 +85,16 @@ def _address(value: str | None) -> str | None:
 
 @dataclass(frozen=True, slots=True)
 class CompanyBriefLine:
-    """One accepted line. `address` for a connector or a key person; `domain` for the watchlist."""
+    """One accepted line. `address` for a connector or a key person; `domain` for the watchlist. An
+    in-motion line may name its counterparty by either, and its `kind` of work (`WORK_KINDS`) — no
+    other line names a kind."""
 
     line_id: str
     section: str
     text: str
     address: str | None = None
     domain: str | None = None
+    kind: str | None = None
 
     def __post_init__(self) -> None:
         if not str(self.line_id or "").strip():
@@ -106,6 +124,14 @@ class CompanyBriefLine:
             raise ValueError("a connector line names the address it writes from")
         if self.section == "watchlist" and not self.domain:
             raise ValueError("a watchlist line names a domain")
+        if self.kind is not None:
+            if self.section != "in_motion":
+                raise ValueError(f"only an in-motion line names its kind of work, not a "
+                                 f"{self.section} line")
+            kind = str(self.kind).strip().lower()
+            if kind not in WORK_KINDS:
+                raise ValueError(f"{self.kind!r} is not a kind of work — one of {WORK_KINDS}")
+            object.__setattr__(self, "kind", kind)
 
     def rendered(self) -> str:
         named = self.address or self.domain
@@ -175,10 +201,19 @@ def _render(version: str, body: str) -> str:
     return f"{_HEADER.format(version=version)}\n{body}\n{_FOOTER}\n"
 
 
+def _kinds(kept: list[CompanyBriefLine]) -> str:
+    """The kinds of work the kept lines name, for the version only — no model is shown one. "" when
+    none names a kind, so such a brief's version is the hash of its body alone, byte for byte what it
+    was before kinds existed (STEP-11: recorded cassettes carry those versions)."""
+    named = [f"{ln.rendered()} [{ln.kind}]" for ln in kept if ln.kind]
+    return "\nKINDS OF WORK\n" + "\n".join(named) if named else ""
+
+
 def compose(*, org_id: str, company: str | None, founder: str | None,
             us: Iterable[str] = (), lines: Iterable[CompanyBriefLine] = ()) -> CompanyBrief:
     """The brief from its parts, deterministically: sections in `SECTIONS` order, lines in the order
-    given within a section, whole lines only under `BUDGET_CHARS`, the version over what is shown."""
+    given within a section, whole lines only under `BUDGET_CHARS`, the version over what is shown
+    and the kinds of work its shown lines name."""
     ordered = sorted(lines, key=lambda ln: SECTIONS.index(ln.section))      # stable within a section
     if not ordered:
         return CompanyBrief(org_id=org_id)
@@ -198,11 +233,11 @@ def compose(*, org_id: str, company: str | None, founder: str | None,
         else:
             cut.append(line.line_id)
     body = _body(company, founder, us_t, kept)
-    version = "cb-" + hashlib.sha256(body.encode("utf-8")).hexdigest()[:12]
+    version = "cb-" + hashlib.sha256((body + _kinds(kept)).encode("utf-8")).hexdigest()[:12]
     return CompanyBrief(org_id=org_id, lines=tuple(ordered), company=company, founder=founder,
                         us=us_t, text=_render(version, body), version=version,
                         truncated=tuple(cut))
 
 
 __all__ = ["BUDGET_CHARS", "BUDGET_TOKENS", "MAX_LINE_CHARS", "PROPOSABLE", "SECTIONS",
-           "SECTION_TITLES", "CompanyBrief", "CompanyBriefLine", "compose"]
+           "SECTION_TITLES", "WORK_KINDS", "CompanyBrief", "CompanyBriefLine", "compose"]
