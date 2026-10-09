@@ -43,8 +43,8 @@ is one branch, `speedrun008`, and the units are block `yc2_w27` of `tree.yaml`.
 Harsh's), 8 to build.** The next is `STEP-11` (founder playbooks): checked on 9 Oct (`STEP-11` §8) and
 planned as tree `yc2_w27_s11` (M30 — the founder domain, the playbook contract, the decider able to read
 the corpus, each file's kind of work, the playbook a file reads, fundraising and programs; M31 — intros,
-compliance, hiring, meetings, while STEP-12 is built; 26 units). It waits for Rohit's go and `06` D2, D3,
-D31, D45–D47.
+compliance, hiring, meetings, while STEP-12 is built; 30 units). Rohit's go came on 9 Oct (*Go — recommended*:
+`06` D2, D3, D31, D45–D47 as recommended); it is being built.
 
 ## 4 · STEP-00 · one branch, one baseline
 

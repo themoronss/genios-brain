@@ -163,13 +163,13 @@ it was removed — 0 cassette misses, every verdict as `03` §F.1 records it, no
 | M30.C1 · the domain (D2) | 4 | the corpus domain; the L2 map with its declarations and guards; the alias; the golden runner switches it on for the founder cases, as `scripts/activate_tenant.py --domains admin,founder_office` will for your org |
 | M30.C2 · the playbook contract | 3 | the schema and validator (stages with priors, the three runtime fields); the compiled adapter reads them; stage priors as `playbook_prior` numbers |
 | M30.C3 · the expert can see it | 2 | F121 — citations, whole steps and names in the decider's prompt; review state on the card (D3) |
-| M30.C4 · the file's kind (D31) | 5 | migration `0196` and the contract (an in-motion line's kind and counterparty); the drafter proposes them; files take them; the golden brief |
+| M30.C4 · the file's kind (D31) | 8 | migration `0196` and the contract (an in-motion line's kind and counterparty); the store, the route and the script carry them (three units added on 9 Oct, building: the contract alone reached none of the three); the drafter proposes them; files take them; the golden brief |
 | M30.C5 · the resolver | 2 | `playbook_for(file)`; the route names it |
-| M30.C6 · the first two playbooks | 2 | 01 fundraising (moved, deepened), 02 programs & applications |
+| M30.C6 · the first two playbooks | 3 | 01 fundraising (moved, deepened), 02 programs & applications; and Sales' copy of investor relations retired once the L2 map has moved (added on 9 Oct, building: retired any earlier, it breaks the candidate-route guard the map retires) |
 | M30.C7 · the golden set and review | 4 | `_eval/founder.cases.yaml`; the review sheet for you and the admission stamps; the re-record and the board; the acceptance — every founder file resolves its playbook, F17's file reads the program one, the decider reads the playbook's claims, no founder card carries the template, 7 days or NULL |
 | M31 · the other four playbooks | 4 | 03 intros · 04 compliance · 05 hiring · 06 meetings — each with its cases, reviewed by you, authored while STEP-12 is built |
 
-26 units: 22 in M30, 4 in M31. Critical path: the contract → the adapter → the fundraising playbook → the resolver → the re-record → the
+30 units: 26 in M30, 4 in M31 (26 when proposed; C4's store, route and script, and C6's retirement of the Sales copy, added on 9 Oct). Critical path: the contract → the adapter → the fundraising playbook → the resolver → the re-record → the
 acceptance.
 
 ### 8.6 · Decisions

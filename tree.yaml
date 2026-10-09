@@ -27,8 +27,8 @@
 #                                                   (built 2026-10-07); past every other block again
 #   yc2_w27_s10                       M29         ← YC-II W27 STEP-10, the expert's numbers (built
 #                                                   2026-10-08); M28 is held for STEP-09's cards (D2)
-#   yc2_w27_s11                       M30, M31    ← YC-II W27 STEP-11, founder playbooks (proposed
-#                                                   2026-10-09); past every other block again
+#   yc2_w27_s11                       M30, M31    ← YC-II W27 STEP-11, founder playbooks (approved
+#                                                   2026-10-09, building); past every other block again
 #
 # So `M11` is AMBIGUOUS on its own: it names "The remaining Layer 3 losses" in one block and
 # "L2 Reasoning" in another, and `M11.C1.L-logic.V0.U01` exists twice with different meanings.
@@ -6116,7 +6116,7 @@ yc2_w27_s10:
                       depends_on: [M29.C6.L-integration.V4.U02]
 
 yc2_w27_s11:
-  status: proposed
+  status: approved_in_progress
   source: >
     speedrun008/YC-II W27/STEP-11 §1–§7, re-checked claim by claim against speedrun008 @ 353d06ea
     (STEP-11 §8) by two read-only workers and by hand, and measured on the golden set
@@ -6170,10 +6170,11 @@ yc2_w27_s11:
                       what: >
                         `reason/domain_shadow.py` — the L2 `fundraising` domain maps to `founder_office`; the
                         `CANDIDATE_ROUTES` row is retired with its reason; `context/domain_silence.DARK_DOMAINS` and
-                        both guards move with it.
+                        both guards move with it. It lands after the fundraising capability routes (C6.U01): mapped
+                        any earlier, a fundraising situation would land on a domain with no door (9 Oct, building).
                       artifact: genios_engine/reason/domain_shadow.py
                       verify: .venv/bin/python -m pytest tests/reason/test_domain_mapping_is_total.py tests/reason/test_the_dark_domains_are_dark_for_different_reasons.py tests/reason/test_fundraising_is_founder_work.py -q
-                      depends_on: [M30.C1.L-contract.V0.U01]
+                      depends_on: [M30.C1.L-contract.V0.U01, M30.C6.L-data.V1.U01]
                     - id: M30.C1.L-logic.V1.U03
                       what: >
                         `packs/compiler/capability_resolver.py` — `fundraising` and `investor` alias to `founder_office`;
@@ -6274,6 +6275,18 @@ yc2_w27_s11:
                       artifact: genios_engine/contracts/company_brief.py
                       verify: .venv/bin/python -m pytest tests/contracts/test_an_in_motion_line_names_its_work.py -q
                       depends_on: []
+            - layer: data
+              levels:
+                - level: 1
+                  units:
+                    - id: M30.C4.L-data.V1.U06
+                      what: >
+                        Found planning the workers' briefs (2026-10-09): the kind needs a writer and a reader.
+                        `platform/company_brief_store.py` — a line's kind is written, kept and read (propose, add,
+                        accept, accepted); an in-motion line may name its counterparty by address or domain.
+                      artifact: genios_engine/platform/company_brief_store.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/platform/test_a_brief_line_keeps_its_kind.py -q
+                      depends_on: [M30.C4.L-contract.V0.U01, M30.C4.L-contract.V0.U02]
             - layer: logic
               levels:
                 - level: 1
@@ -6291,7 +6304,25 @@ yc2_w27_s11:
                         counterparty; the roles (connector, watched, person, intro) stay.
                       artifact: genios_engine/context/workstreams.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/context/test_a_file_knows_its_kind_of_work.py -q
-                      depends_on: [M30.C4.L-contract.V0.U01, M30.C4.L-contract.V0.U02]
+                      depends_on: [M30.C4.L-contract.V0.U02, M30.C4.L-data.V1.U06]
+            - layer: interface
+              levels:
+                - level: 2
+                  units:
+                    - id: M30.C4.L-interface.V2.U07
+                      what: >
+                        Found planning the workers' briefs: `api/company_brief_routes.py` — the founder adds, or
+                        accepts, an in-motion line with its kind and its counterparty.
+                      artifact: genios_engine/api/company_brief_routes.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/api/test_the_brief_route_takes_a_kind.py -q
+                      depends_on: [M30.C4.L-data.V1.U06]
+                    - id: M30.C4.L-interface.V2.U08
+                      what: >
+                        Found planning the workers' briefs: `scripts/company_brief.py` — `--kind` on add and on
+                        accept, so Harsh can apply Rohit's answers.
+                      artifact: scripts/company_brief.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/scripts/test_company_brief_script_takes_a_kind.py -q
+                      depends_on: [M30.C4.L-data.V1.U06]
             - layer: integration
               levels:
                 - level: 2
@@ -6339,7 +6370,8 @@ yc2_w27_s11:
                     - id: M30.C6.L-data.V1.U01
                       what: >
                         `Domain Expertise/Founder Office Expertise/capabilities/01-fundraising/` — Sales'
-                        `10-investor-relations` moved (its Sales ids retired) and deepened: stages first contact → call →
+                        `10-investor-relations` moved (re-identified; the Sales copy is retired by C6.U03 once the L2 map
+                        has moved) and deepened: stages first contact → call →
                         diligence → term sheet → closed or passed, with sourced priors; the wave gone silent; the
                         conditional deferral; a warm intro to an investor; before an investor call; a pass is a date.
                       artifact: "Domain Expertise/Founder Office Expertise/capabilities/01-fundraising"
@@ -6353,6 +6385,17 @@ yc2_w27_s11:
                       artifact: "Domain Expertise/Founder Office Expertise/capabilities/02-programs-and-applications"
                       verify: .venv/bin/python -m pytest tests/corpus/test_the_programs_playbook.py -q
                       depends_on: [M30.C1.L-contract.V0.U01, M30.C2.L-contract.V0.U01]
+                - level: 2
+                  units:
+                    - id: M30.C6.L-data.V2.U03
+                      what: >
+                        Sales' `10-investor-relations` retired — its capability, two situations, playbook, two
+                        heuristics and object deleted, and the Sales roster, registry and references with them — once
+                        the L2 `fundraising` domain lands on the Founder Office (C1.U02). Added on 9 Oct, building:
+                        retired inside C6.U01, it would have broken the candidate-route guard that C1.U02 retires.
+                      artifact: "Domain Expertise/Sales Expertise/capabilities/10-investor-relations"
+                      verify: .venv/bin/python -m pytest tests/corpus/test_investor_relations_left_sales.py -q
+                      depends_on: [M30.C1.L-logic.V1.U02, M30.C6.L-data.V1.U01]
         - id: M30.C7
           name: The golden set and the review
           layers:
@@ -6383,7 +6426,7 @@ yc2_w27_s11:
                         the ideal reader, each diff read; the board re-scored and `03` §F.1 restated.
                       artifact: tests/replays/specs/founder/cassettes
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py --assert-recorded "speedrun008/YC-II W27/03-FINDINGS.md"
-                      depends_on: [M30.C1.L-integration.V2.U04, M30.C3.L-logic.V0.U01, M30.C4.L-integration.V2.U05, M30.C5.L-logic.V2.U01, M30.C6.L-data.V1.U01, M30.C6.L-data.V1.U02]
+                      depends_on: [M30.C1.L-integration.V2.U04, M30.C3.L-logic.V0.U01, M30.C4.L-integration.V2.U05, M30.C5.L-logic.V2.U01, M30.C6.L-data.V1.U01, M30.C6.L-data.V1.U02, M30.C6.L-data.V2.U03]
                 - level: 5
                   units:
                     - id: M30.C7.L-integration.V5.U04
