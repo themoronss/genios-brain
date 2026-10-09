@@ -15,7 +15,14 @@ THE KIND IS THE BRIEF'S WORD, NEVER GUESSED FROM THE MAIL (`STEP-09` §8.3.4). T
   `person`    — the anchor is someone the brief names;
   `intro`     — the anchor is someone a connector the brief names introduced (an `introduced` edge);
   none        — no line of the brief stands behind it: listed, with no kind.
-An in-motion line names no counterparty yet (`06` D31), so it gives no kind.
+
+THE KIND OF WORK IS THE BRIEF'S WORD TOO (STEP-11, `06` D31). The kind above is a ROLE, and no file
+could say what kind of WORK it is — so none could pick its playbook (STEP-11 §8.3 N1). An in-motion line
+names its kind of work (`contracts/company_brief.WORK_KINDS`) and its counterparty; a file takes that
+line's kind as its `work_kind` when the line's address is one of the file's people's, or its domain is
+the anchor's domain or a parent of it (`lakshya.test` names `apply.lakshya.test`, never
+`notlakshya.test`). The roles stay beside it: an intro's file can be investor work. A line with a kind
+and no counterparty names no file, and a file no line names has no kind of work.
 
 WHOSE MOVE is read from the turn the pipeline writes on each of the file's people
 (`thread.ball_in_court`): `ours` while anyone in the file waits on us — answering one partner at a
@@ -63,7 +70,7 @@ from datetime import datetime
 from sqlalchemy import text
 
 from genios_engine.context.introductions import connector_roles
-from genios_engine.contracts.company_brief import CompanyBrief
+from genios_engine.contracts.company_brief import CompanyBrief, CompanyBriefLine
 from genios_engine.contracts.measured import Measured, count_of, rate_of
 from genios_engine.platform.self_identity import identity_for
 
@@ -115,6 +122,9 @@ class WorkFile:
     # STEP-10 · the file's people (node ids): the anchor when it is a person, everyone who works at
     # it when it is a company — whose numbers the file shows (`context/workstream_numbers`).
     people: tuple[str, ...] = ()
+    # STEP-11 (`06` D31) · the kind of work (`contracts/company_brief.WORK_KINDS`) the in-motion line
+    # naming this file's counterparty gives it, or None — beside the role in `kind`, never instead.
+    work_kind: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -263,6 +273,34 @@ def _named(brief: CompanyBrief | None, key: str | None) -> str | None:
     return brief.named_sender(key if "@" in key else f"x@{key}")
 
 
+def _work_lines(brief: CompanyBrief | None) -> list[CompanyBriefLine]:
+    """The in-motion lines that name a kind of work and a counterparty, in the brief's order — the
+    order the founder accepted them (`company_brief_store.accepted`; `compose` keeps it within a
+    section)."""
+    return [ln for ln in getattr(brief, "lines", None) or ()
+            if ln.section == "in_motion" and ln.kind and (ln.address or ln.domain)]
+
+
+def _anchor_domain(key: str | None) -> str | None:
+    """The domain a file's anchor is at: a company's key is its domain, a person's is their address."""
+    key = str(key or "").strip().lower()
+    return (key.rsplit("@", 1)[1] if "@" in key else key) or None
+
+
+def _work_kind(work: list[CompanyBriefLine], addresses: set[str], domain: str | None) -> str | None:
+    """The kind of work of the in-motion line that names this file — one of its people by address,
+    or its anchor's domain or a parent of that domain. ⛔ When two lines name one file (a partner's
+    address and the fund's domain), the FIRST the founder accepted wins, whichever names it more
+    exactly: `work` is in the order they were accepted."""
+    for line in work:
+        if line.address and line.address in addresses:
+            return line.kind
+        if line.domain and domain and (domain == line.domain
+                                       or domain.endswith("." + line.domain)):
+            return line.kind
+    return None
+
+
 def _accepted_brief(conn, org_id: str) -> CompanyBrief:
     from genios_engine.platform.company_brief import brief_for
     return brief_for(conn, org_id)
@@ -274,6 +312,7 @@ def files_for(conn, org_id: str, *, now: datetime,
     `company_brief` defaults to the brief the founder has accepted, read on this connection."""
     brief = company_brief if company_brief is not None else _accepted_brief(conn, org_id)
     lines = _lines(brief)
+    work = _work_lines(brief)
 
     grouped: dict[str, dict] = {}
     for r in conn.execute(_MEMBERS, {"o": org_id}):
@@ -353,7 +392,9 @@ def files_for(conn, org_id: str, *, now: datetime,
                     owed_by="them" if r.awaited_from_node_id in mine else "us",
                     thread_id=r.thread_id, opened_at=r.opened_at)
                 for r in asks if r.subject_node_id in mine or r.awaited_from_node_id in mine),
-            introductions=rate[0], replied=rate[1], calls=rate[2], people=tuple(sorted(mine))))
+            introductions=rate[0], replied=rate[1], calls=rate[2], people=tuple(sorted(mine)),
+            work_kind=_work_kind(work, {str(keys[p]).strip().lower() for p in mine if p in keys},
+                                 _anchor_domain(node.canonical_key))))
     files.sort(key=lambda f: (f.last_touch is None, -(f.last_touch.timestamp())
                               if f.last_touch else 0, f.file_id))
     return Workstreams(files=tuple(files),
@@ -413,7 +454,7 @@ def file_as_dict(f: WorkFile) -> dict:
     def said(measured):
         return measured.as_dict() if measured is not None else None
     return {
-        "file_id": f.file_id, "kind": f.kind, "line": f.line,
+        "file_id": f.file_id, "kind": f.kind, "work_kind": f.work_kind, "line": f.line,
         "introduced_by": f.introduced_by,
         "counterparty": {"name": f.counterparty, "key": f.counterparty_key,
                          "type": f.counterparty_type},
