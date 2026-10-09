@@ -192,58 +192,6 @@ map:
         - sales.obj.core.proposal
         - sales.obj.core.timeline
 
-  investor_relationship:
-    situations:
-      - sales.sit.live_investor_relationship
-    capabilities:
-      - sales.investor_relations.investor_relations
-      - sales.prospecting_and_outreach.account_research
-    objects:
-      load:
-        - sales.obj.core.account
-        - sales.obj.core.company
-        - sales.obj.investor_relations.investor_conversation
-      optional:
-        - sales.obj.core.competitor
-        - sales.obj.core.contact
-        - sales.obj.core.icp
-        - sales.obj.core.next_action
-        - sales.obj.core.pain_point
-        - sales.obj.core.risk
-      never_load:
-        - sales.obj.core.budget
-        - sales.obj.core.buying_committee
-        - sales.obj.core.contract
-        - sales.obj.core.deal
-        - sales.obj.core.opportunity
-        - sales.obj.core.pricing
-        - sales.obj.core.proposal
-        - sales.obj.core.timeline
-
-  investor_contact:
-    situations:
-      - sales.sit.live_investor_contact
-    capabilities:
-      - sales.investor_relations.investor_relations
-      - sales.prospecting_and_outreach.account_research
-    objects:
-      load:
-        - sales.obj.core.account
-        - sales.obj.core.company
-        - sales.obj.core.contact
-        - sales.obj.investor_relations.investor_conversation
-      optional:
-        - sales.obj.core.icp
-        - sales.obj.core.next_action
-        - sales.obj.core.pain_point
-        - sales.obj.core.risk
-        - sales.obj.core.stakeholder
-      never_load:
-        - sales.obj.core.budget
-        - sales.obj.core.competitor
-        - sales.obj.core.pricing
-        - sales.obj.core.proposal
-
   relationship:
     situations:
       - sales.sit.first_touch_unanswered
@@ -344,8 +292,6 @@ pending_l2_types:
 routed_l2_types:
   - channel_touch
   - deal
-  - investor_contact
-  - investor_relationship
   - opportunity
   - pipeline_period_review
   - prospect_relationship
@@ -364,21 +310,22 @@ unrouted_l2_types:
 orphan_capabilities: []
 
 # Authored but no capability's objects.yaml loads them.
-unreachable_objects: []
+unreachable_objects:
+  - sales.obj.core.contact
 
 stats:
   l2_types_total: 41
-  l2_types_routed_here: 8
+  l2_types_routed_here: 6
   l2_types_unrouted_globally: 5
   l2_types_pending: 1
-  situations: 15
-  capabilities: 47
+  situations: 13
+  capabilities: 46
   capabilities_stub: 0
-  capabilities_complete: 47
-  capabilities_routed: 47
+  capabilities_complete: 46
+  capabilities_routed: 46
   capabilities_deferred: 0
   capabilities_unrouted_unreasoned: 0
   situations_suppressed: 0
-  objects_total: 29
+  objects_total: 28
   objects_core: 24
-  objects_scoped: 5
+  objects_scoped: 4

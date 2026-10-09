@@ -106,11 +106,14 @@ def test_the_measured_corpus_is_healthy_and_says_so(catalog):
     health = corpus_health(catalog)
     total = sum(r.total for r in health.values())
     admitted = sum(r.admitted for r in health.values())
-    assert total == 161, (
-        f"the corpus is {total} capabilities, not 161 — update the plan's denominator; "
+    # 160 since 2026-10-09: M30.C6.L-data.V2.U03 retired Sales' copy of investor relations, which
+    # moved to the Founder Office (one capability, not two).
+    assert total == 160, (
+        f"the corpus is {total} capabilities, not 160 — update the plan's denominator; "
         f"the 534 in the plan counted FILES, three per capability")
-    # 155 shipped, all admitted; + the Founder Office's six (STEP-11), declared as stubs and stamped
-    # one by one as Rohit accepts them (`06` D45). Nothing outside that domain may go dark.
+    # 154 shipped, all admitted (155 until Sales' investor relations moved out); + the Founder
+    # Office's six (STEP-11), stamped one by one as Rohit accepts them (`06` D45). Nothing outside that
+    # domain may go dark.
     founder = health["founder_office"]
     # M30.C6.L-data.V1.U01 (investor relations) and M30.C6.L-data.V1.U02 (program applications)
     # authored the first two: four stubs, and two unadmitted drafts awaiting the founder's review.
@@ -196,8 +199,9 @@ def test_a_draft_situation_is_reported_because_its_card_cannot_instruct(catalog)
     health = corpus_health(catalog)
     total = sum(r.situations for r in health.values())
     unreviewed = sum(r.situations_unreviewed for r in health.values())
-    # M30.C6.L-data.V1.U01: + the Founder Office's two investor situations, moved as unreviewed drafts.
-    assert total == 71, f"the corpus has {total} authored situations, not 71 — update the plan"
+    # M30.C6.L-data.V1.U01: + the Founder Office's two investor situations, moved as unreviewed drafts;
+    # M30.C6.L-data.V2.U03: − Sales' two, retired (stable and approved, so the unreviewed count holds).
+    assert total == 69, f"the corpus has {total} authored situations, not 69 — update the plan"
     assert unreviewed == 22, (
         f"{unreviewed} authored situations cannot instruct, not 22. If this FELL, say so in the "
         f"findings — it is the cheapest quality win in Layer 2 and it is authoring, not code")
