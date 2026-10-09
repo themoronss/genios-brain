@@ -1,0 +1,182 @@
+# A move, not the spine. The introduction is how most investor conversations reach first_contact; the
+# connector, the relay and the network itself belong to the introductions capability, and this is the
+# fundraising half: which connector to ask, what to hand them, and how to follow it through.
+identity:
+  id: founder_office.pb.investor_relations.a_warm_intro_to_an_investor
+  name: A warm intro to an investor
+  kind: playbook
+  domain: founder_office
+  scope: capability
+  owner_capability: founder_office.fundraising.investor_relations
+  subdomain: fundraising
+  version: 1.0.0
+  status: draft
+
+purpose:
+  statement: >-
+    Getting an introduction to an investor and following it through on both sides. In a raise the
+    introduction is the door — "Before you can talk to investors, you have to be introduced to them"
+    (Graham) — and who opens it matters as much as that it is opened. This move picks the connector,
+    hands them a note they can forward, lets the investor opt in, and closes the loop with the
+    connector whatever the answer.
+  answers:
+    - Who should introduce us to this investor?
+    - The connector said yes and nothing has happened since. What now?
+  not:
+    - >-
+      The introduction network itself — who knows whom, relays, and introductions that are not about a
+      raise. Those belong to the introductions capability.
+
+when_to_use:
+  situations:
+    - founder_office.sit.live_investor_relationship
+    - founder_office.sit.live_investor_contact
+  signals:
+    - The founder wants a meeting with a specific investor and has no direct relationship with them.
+    - A connector has offered, or agreed, to make an introduction.
+  do_not_use_when:
+    - >-
+      The only path is an investor who has just passed on the company. Asked, they make an introduction
+      that reads as an anti-recommendation.
+    - >-
+      The founder already knows the investor well enough to write directly.
+
+steps:
+  - order: 1
+    actor: human
+    name: Pick the connector whose word carries most
+    description: >-
+      Rank the paths: an investor who has just committed to the round, then a founder the investor has
+      backed, then others who know them well (Graham's order). Never ask an investor who has just passed
+      on the company.
+    produces: One chosen connector and the reason they carry weight.
+    done_when: >-
+      One connector is chosen, with the reason they carry weight with this investor written down.
+  - order: 2
+    actor: human
+    name: Give the connector a note they can forward
+    description: >-
+      Write three to five lines the connector can forward unchanged — what the company does, the one
+      number that matters, why this investor, the ask. A connector who has to write it themselves often
+      never does.
+    produces: A forwardable note.
+    done_when: >-
+      The connector has a forwardable note in hand.
+  - order: 3
+    actor: human
+    name: Ask for a double opt-in
+    description: >-
+      Ask the connector to check with the investor before introducing — Fred Wilson's double opt-in. An
+      introduction the investor agreed to is a meeting; one they did not agree to is an email they can
+      ignore.
+    produces: The connector's question to the investor.
+    done_when: >-
+      The connector has asked the investor, or has said when they will.
+  - order: 4
+    actor: human
+    name: Answer the introduction the same day
+    description: >-
+      When the introduction lands, reply that day: thank the connector and move them to bcc, then offer
+      the investor two or three times to meet.
+    produces: A same-day reply with times.
+    done_when: >-
+      A reply offering times is sent on the day the introduction arrives.
+  - order: 5
+    actor: human
+    name: Close the loop with the connector
+    description: >-
+      Tell the connector what came of it — a meeting, a pass or nothing — whatever the answer. A connector
+      who never hears back does not introduce again.
+    produces: A short note to the connector.
+    done_when: >-
+      The connector has been told the outcome.
+  - order: 6
+    actor: human
+    name: If it stalls, remind once, then let it go
+    description: >-
+      If the connector has not sent it by the time they gave, remind them once with the note attached
+      again. If the investor declined to opt in, accept it: writing to them cold around the connector
+      spends the connector too.
+    produces: The introduction made, declined or dropped.
+    done_when: >-
+      The introduction is made, declined or dropped, and nobody was approached around the connector.
+
+success_signal: >-
+  The investor opts in and a first meeting with them is on the calendar.
+
+# Source in `references`: practitioner judgement — unverified.
+outcome_window_days: 14
+
+do_nothing_consequence: >-
+  The connector's offer goes stale, the investor is approached cold or not at all, and the strongest door
+  into that fund stays shut.
+
+objects_used:
+  - founder_office.obj.core.contact
+  - founder_office.obj.core.company
+  - founder_office.obj.investor_relations.investor_conversation
+
+outcomes:
+  - >-
+    The introduction comes from the connector this investor trusts most, through a note the connector
+    could send unchanged.
+  - >-
+    The investor agreed to the introduction before it was made.
+  - >-
+    The connector knows what came of it, and will introduce again.
+
+failure_modes:
+  - >-
+    Asking the most famous connector rather than the one this investor trusts.
+  - >-
+    Making the connector write the pitch, so the introduction waits on someone else's busy week.
+  - >-
+    Writing to the investor cold after they declined to opt in, which closes the warm path for good.
+
+limits:
+  - >-
+    It says nothing about whether this investor fits the round; that is decided before a connector is
+    asked.
+  - >-
+    The window is a judgement and depends on the connector's own pace.
+
+references:
+  - title: How to Raise Money
+    kind: practitioner
+    author: Paul Graham
+    url: https://paulgraham.com/fr.html
+    note: >-
+      September 2013. "Before you can talk to investors, you have to be introduced to them"; "The best
+      type of intro is from a well-known investor who has just invested in you"; "The next best type of
+      intro is from a founder of a company they've funded"; note 7: "Don't ask investors who say no for
+      introductions to other investors. That will in many cases be an anti-recommendation."
+  - title: The Double Opt-In Introduction
+    kind: practitioner
+    author: Fred Wilson
+    url: https://avc.com/2009/11/the-double-optin-introduction/
+    note: >-
+      3 November 2009. "When introducing two people who don't know each other, ask each of them to opt-in
+      to the introduction before making it."
+  - title: A guide to seed fundraising
+    kind: practitioner
+    author: Geoff Ralston (Y Combinator)
+    url: https://www.ycombinator.com/library/4A-a-guide-to-seed-fundraising
+    note: >-
+      "by far the best way to meet a venture capitalist or an angel is via a warm introduction."
+  - title: Practitioner judgement
+    kind: practitioner
+    note: >-
+      outcome_window_days (14): practitioner judgement — unverified; for the founder's review. Two weeks
+      covers a connector's ask, the investor's opt-in and the first meeting being booked.
+
+metadata:
+  owner: Founder Office
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-10-09"
+  review_status: unreviewed
+  confidence: experimental
+  completeness: complete
+  notes: >
+    New on STEP-11 (M30.C6.L-data.V1.U01), STEP-11 §3.2's "warm intro to an investor". The connector's
+    side of an introduction — closing it on both sides — is the introductions capability's (M31).

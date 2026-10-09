@@ -1,0 +1,413 @@
+# THE SPINE (STEP-11 §8.4.4). The one playbook of this capability that declares stages: the closed
+# list STEP-12's expert names a file's current stage from, with its evidence. Each stage carries a
+# typical duration as a PRIOR — a profession's value with its source, never a measurement of this
+# founder (`06` D37) — what quiet means at that stage, and the observable event that ends it. Nothing
+# here detects a stage by rule; code computes how long a conversation has dwelt in it.
+#
+# THE ORDER is the sequence venture firms describe (Gompers, Gornall, Kaplan & Strebulaev, NBER
+# w22587, 2016, section 3.2): a member of the firm meets the management at least once, brings the
+# company to the other partners, the partners approve a formal diligence, the firm presents a term
+# sheet, the documents are drafted and the deal closes. Not every conversation visits every stage. An
+# angel decides alone ("they can make the call all on their own", YC's seed guide) and usually skips
+# the partner meeting and formal diligence; some firms hold the full partnership pitch after diligence,
+# as the last step before a term sheet (Dixon 2009). A stage is named for what is happening, so a
+# skipped stage is skipped, never invented.
+#
+# THE PRIORS ADD UP. 14 + 14 + 7 + 21 + 30 = 86 days from first contact to money in the bank, beside
+# the 83 days (73 at early-stage firms) venture investors report for a deal to close. A sanity check on
+# the sum, not a source for any one stage.
+identity:
+  id: founder_office.pb.investor_relations.run_an_investor_conversation
+  name: Run an investor conversation to a decision
+  kind: playbook
+  domain: founder_office
+  scope: capability
+  owner_capability: founder_office.fundraising.investor_relations
+  subdomain: fundraising
+  version: 1.0.0
+  status: draft
+
+purpose:
+  statement: >-
+    Carry one conversation with one investor from first contact to a decision the founder can act on —
+    money in the bank, or a pass with its reason — by knowing at every point which stage it is in,
+    whose move it is, what silence means at that stage, and what typically ends it.
+  answers:
+    - Where does this investor conversation stand, and what happens next?
+    - Is this silence the investor's process, or a no that nobody has sent?
+    - When do we stop waiting and treat this one as a no for this round?
+  not:
+    - >-
+      Whether to raise at all, how much, or at what valuation. That is the founder's plan, not a stage
+      of any one conversation.
+    - >-
+      An accelerator, incubator or government programme application. Its stages and deadlines belong to
+      the programmes capability.
+
+when_to_use:
+  situations:
+    - founder_office.sit.live_investor_relationship
+    - founder_office.sit.live_investor_contact
+  signals:
+    - >-
+      A conversation with a fund, an angel, an angel network or a syndicate is open while the founder is
+      raising.
+    - >-
+      The founder cannot say, for an investor, what was last agreed and what happens next.
+  do_not_use_when:
+    - >-
+      The investor has already invested and the thread is a shareholder update. That is reporting, not
+      raising.
+    - >-
+      The party is a programme, a connector or a service provider rather than someone who could fund the
+      company.
+
+stages:
+  - name: first_contact
+    label: First contact
+    typical_duration_days: 14
+    quiet_means: >-
+      Nothing has started, so silence is the default rather than a signal: funded seed founders in
+      DocSend's 2019 sample contacted 77 investors on average and held 40 meetings, so a large share of
+      first emails never become a meeting. After a warm introduction, silence means the investor has not
+      opted in; ask the connector, not the investor.
+    leaves_when: >-
+      A first meeting or call with the investor takes place, or the investor declines.
+    source: >-
+      practitioner judgement — unverified; for the founder's review. Context only: investor meetings
+      "have to be arranged at least a few days in advance" (Paul Graham, "How to Raise Money", September
+      2013, paulgraham.com/fr.html) — a floor, not a typical value.
+
+  - name: first_call
+    label: First call held
+    typical_duration_days: 14
+    quiet_means: >-
+      The investor is deciding whether to spend more time, and most do not: at a venture firm about one
+      company in three whose management the firm meets is reviewed at a partners' meeting (Gompers et
+      al.). After a first call that ended without a named next step, silence is usually a soft no; after
+      one that named a step and a date, it is the firm's process until that date passes.
+    leaves_when: >-
+      A partners' meeting or a second meeting with a decision-maker is booked, diligence material is
+      requested, or the investor passes.
+    source: >-
+      practitioner judgement — unverified; for the founder's review. The funnel is measured (Gompers,
+      Gornall, Kaplan & Strebulaev, "How Do Venture Capitalists Make Decisions?", NBER Working Paper
+      22587, 2016, section 3.2: "One in four opportunities lead to meeting the management; one-third of
+      those are reviewed at a partners meeting"); the duration is not.
+
+  - name: partner_meeting
+    label: Partner meeting
+    typical_duration_days: 7
+    quiet_means: >-
+      A partnership decides in its weekly cycle, so silence more than a week after the meeting usually
+      means no — and the no "will rarely come in the form of an actual 'no'" (Dixon). About half the
+      companies reviewed at a partners' meeting go on to diligence (Gompers et al.). Ask the partner who
+      brought the company in, directly.
+    leaves_when: >-
+      The firm opens diligence (a data-room, reference or customer-call request), makes an offer, or
+      passes.
+    source: >-
+      Chris Dixon, "Pitching the VC partnership", cdixon.org, 27 August 2009: the partnership meets
+      weekly ("their weekly monday meeting"), and the prior is one such cycle — the cycle is sourced, the
+      seven days are that cycle.
+
+  - name: diligence
+    label: Diligence
+    typical_duration_days: 21
+    quiet_means: >-
+      The firm is working — calling references (eight on average at early-stage firms), talking to
+      customers, writing its memo — so a few quiet days are the work, not a signal. Silence past the date
+      they gave, or a new question each time the last is answered, is the warning: "If you get through
+      several obstacles and they keep raising new ones, assume that ultimately they're going to flake"
+      (Graham). About one company in three that reaches diligence is offered a term sheet (Gompers et
+      al.).
+    leaves_when: >-
+      A term sheet or a firm offer arrives, or the firm passes.
+    source: >-
+      practitioner judgement — unverified; for the founder's review. Measured context: early-stage firms
+      report 81 hours of diligence and 8 reference calls across the whole deal (Gompers, Gornall, Kaplan
+      & Strebulaev, NBER Working Paper 22587, 2016, Table 9); how many days those hours spread over is
+      not measured there.
+
+  - name: term_sheet
+    label: Term sheet or firm commitment
+    typical_duration_days: 30
+    quiet_means: >-
+      Silence here is lawyers and paperwork rather than a change of mind — but deals still fall through
+      at this stage ("Deals fall through", Graham), so the founder watches the timetable rather than
+      trusting it. On a seed SAFE, money not wired within about ten days of the confirmed commitment is
+      late; on a priced round, thirty days is the best case, and more investors or a diligence finding
+      extend it.
+    leaves_when: >-
+      The money is in the company's bank account, or the investor withdraws.
+    source: >-
+      Tyler Hollenbeck (DLA Piper), "How Long Should it Take to Close my Venture Financing?", The Venture
+      Alley, 25 September 2019: "roughly 30 days from signed term sheet to close is typically a best case
+      scenario". Corroborating: Yokum Taku, "What should the terms of the no shop be?", Startup Company
+      Lawyer, 9 December 2007 ("most venture financings seem to take more than three weeks from term
+      sheet signing to closing"); for a SAFE, Y Combinator's Handshake Deal Protocol
+      (ycombinator.com/handshake): "Ten days is a reasonable period of time for both parties to complete
+      the funding process".
+
+  - name: closed
+    label: Closed — money in the bank (terminal)
+    typical_duration_days: 0
+    quiet_means: >-
+      Nothing more is owed by the investor, who is now a shareholder to update every month and the best
+      source of the next introductions ("The best type of intro is from a well-known investor who has
+      just invested in you", Graham). An Indian company that has taken a foreign investor's money
+      still owes the shares: equity instruments not issued within sixty days of receiving the money must
+      be refunded (RBI Master Direction – Foreign Investment in India, Annex, para 2.3).
+    leaves_when: >-
+      Terminal for this round: nothing ends it. The relationship continues as a shareholder's.
+    source: >-
+      terminal stage — no typical duration applies; "It's not a deal till the money's in the bank" (Paul
+      Graham, "How to Raise Money", 2013) is what marks it.
+
+  - name: passed
+    label: Passed (terminal for this round)
+    typical_duration_days: 0
+    quiet_means: >-
+      Quiet is the resting state, not decay. A pass on stage, timing or traction carries a date on which
+      it stops being true, and investors who reject a company "are some of your warmest leads for future
+      fundraising" (Graham). Record the reason and the condition, then leave it alone until the condition
+      is met.
+    leaves_when: >-
+      Terminal for this round. A re-approach that meets the investor's stated condition opens a new
+      conversation at first contact or first call (reopen after a pass).
+    source: >-
+      terminal stage — no typical duration applies; how long a pass stays true is the pass's own
+      condition, recorded on the conversation as its reopening condition.
+
+steps:
+  - order: 1
+    actor: agent
+    name: Place the conversation on the stage list
+    description: >-
+      Name the stage from the last thing that happened — a meeting held, a partners' meeting booked, a
+      data-room request, a term sheet — never from how warm the last email felt. Where nothing
+      establishes it, the stage is unknown.
+    produces: The conversation's stage, with the dated event that puts it there.
+    done_when: >-
+      One stage from the list is named with the dated event that puts it there, or the stage is recorded
+      as unknown.
+  - order: 2
+    actor: agent
+    name: Name whose move it is and the next step with its date
+    description: >-
+      From the last exchange: who owes the next move, what it is, and by when. If the last meeting ended
+      without one, that is the finding — "Never leave a meeting with an investor without asking what
+      happens next" (Graham).
+    produces: The next step, its owner and its date — or the recorded fact that none was agreed.
+    done_when: >-
+      The next step, its owner and its date are on file, or it is recorded that none was agreed.
+  - order: 3
+    actor: human
+    name: If the move is ours, make it first
+    description: >-
+      Answer the question, send what was asked for, or confirm the next meeting before working any
+      conversation that waits on them. An investor who is waiting does not remind the founder; they stop
+      appearing.
+    produces: Our reply, or the thing the investor asked for.
+    done_when: >-
+      Nothing the investor asked for is outstanding on our side.
+  - order: 4
+    actor: human
+    name: Read the silence against the stage
+    description: >-
+      Compare the time since their last word with the stage's typical duration, and read it by what quiet
+      means at that stage. Before then, wait. Past it, ask the person who decides, once and directly,
+      where it stands and what they need in order to decide.
+    produces: One direct question to the decision-maker, or a deliberate wait.
+    done_when: >-
+      Every conversation past its stage's typical duration has had one direct ask, or is waiting on a date
+      the investor gave.
+  - order: 5
+    actor: human
+    name: Treat an unanswered direct ask as a no for this round
+    description: >-
+      If the direct ask goes unanswered by the date they gave — or within the stage's typical duration if
+      they gave none — treat the conversation as a no for this round and stop counting it. Move them to
+      the update list; send no third note.
+    produces: The conversation marked passed, with no reason given, and the date of the unanswered ask.
+    done_when: >-
+      The conversation is marked passed with the date of the unanswered ask, and nothing further is queued
+      to the investor.
+  - order: 6
+    actor: human
+    name: Keep every live conversation moving in parallel
+    description: >-
+      Tell each live investor real progress elsewhere — a commitment, a lead, a number that moved —
+      without naming the other investors. Interest from other investors moves most of them; a conversation
+      run on its own has no clock.
+    produces: A short, true update to each live investor.
+    done_when: >-
+      Every live investor has heard the round's latest real progress since it happened.
+  - order: 7
+    actor: human
+    name: Confirm an offer in writing, then babysit the money
+    description: >-
+      When an investor says yes, confirm the exact offer — amount plus valuation or cap, no conditions —
+      in writing, agree when the money arrives, and follow it until it lands. "It's not a deal till the
+      money's in the bank" (Graham).
+    produces: A written confirmation of the offer, and the money.
+    done_when: >-
+      The investor has confirmed the offer in writing and the money is in the company's bank account.
+  - order: 8
+    actor: human
+    name: Record a pass with its reason and its condition
+    description: >-
+      When a pass arrives, record its reason — stage, timing, traction, thesis, team, or none given — and
+      any condition in the investor's own words; reply once, briefly, without arguing. Then follow reopen
+      after a pass.
+    produces: The pass on file with its reason class and the condition verbatim.
+    done_when: >-
+      The pass is on file with its reason class and the condition verbatim, or "none given".
+
+success_signal: >-
+  The investor reaches a decision the founder can act on: the money is in the company's bank account, or
+  a pass arrives with its reason.
+
+# Source in `references` (Gompers et al., Table 9): the average deal takes 83 days to close.
+outcome_window_days: 83
+
+do_nothing_consequence: >-
+  Left alone, an investor conversation does not pause: it decays into a no that nobody sends, and the
+  founder learns of it only when the round has moved on without that investor.
+
+objects_used:
+  - founder_office.obj.investor_relations.investor_conversation
+  - founder_office.obj.core.company
+  - founder_office.obj.core.contact
+  - founder_office.obj.core.next_action
+
+outcomes:
+  - >-
+    Every conversation carries a stage, a next step and an owner — or says plainly that it has none.
+  - >-
+    Silence is read against the stage, so the founder neither chases a firm that is working nor waits on
+    one that has decided.
+  - >-
+    The round runs in parallel, and an offer is money in the bank before it is counted.
+
+failure_modes:
+  - >-
+    Counting interest as a commitment. "Treat investors as saying no till they unequivocally say yes, in
+    the form of a definite offer with no contingencies" (Graham).
+  - >-
+    Reading the stage from tone rather than from the last event, which places a polite first call in
+    diligence and a firm that is working in decay.
+  - >-
+    Waiting on one investor's process before starting the next conversation.
+  - >-
+    Chasing a firm in diligence with status checks instead of answering what it asked.
+
+limits:
+  - >-
+    The typical durations are a profession's priors, not this founder's measurements; the founder's own
+    numbers come from STEP-10's calculators and say their n.
+  - >-
+    An angel or a syndicate skips stages, and a skipped stage is not a stalled one.
+  - >-
+    It says nothing about whether to raise, how much, or at what valuation.
+
+metrics:
+  - name: stage_dwell_past_prior
+    unit: percent
+    direction: lower_is_better
+    description: Share of live conversations sitting in their stage longer than its typical duration.
+  - name: time_to_decision_days
+    unit: days
+    direction: lower_is_better
+    description: Days from first contact to money in the bank or a pass with its reason.
+
+references:
+  - title: How Do Venture Capitalists Make Decisions?
+    kind: research
+    author: Paul Gompers, William Gornall, Steven N. Kaplan, Ilya A. Strebulaev
+    url: https://www.nber.org/papers/w22587
+    note: >-
+      NBER Working Paper 22587, September 2016 (Journal of Financial Economics, 2020); a survey of 885
+      venture capitalists at 681 firms. Source for outcome_window_days (83): "The average deal takes 83
+      days to close" — 73 days at early-stage firms and 96 at firms outside the US (Table 9). Also the
+      order of the stages and the deal funnel (section 3.2), and the diligence hours and reference calls.
+  - title: How to Raise Money
+    kind: practitioner
+    author: Paul Graham
+    url: https://paulgraham.com/fr.html
+    note: >-
+      September 2013. "Hear no till you hear yes"; "You should always talk to investors in parallel
+      rather than serially"; "Never leave a meeting with an investor without asking what happens next";
+      "It's not a deal till the money's in the bank".
+  - title: A Fundraising Survival Guide
+    kind: practitioner
+    author: Paul Graham
+    url: https://paulgraham.com/fundraising.html
+    note: >-
+      August 2008. "Deals fall through"; "If you get through several obstacles and they keep raising new
+      ones, assume that ultimately they're going to flake".
+  - title: Pitching the VC partnership
+    kind: practitioner
+    author: Chris Dixon
+    url: https://cdixon.org/2009/08/27/pitching-the-vc-partnership/
+    note: >-
+      27 August 2009. The weekly partnership meeting, and a rejection that rarely arrives as an actual no;
+      source for partner_meeting's typical duration.
+  - title: How Long Should it Take to Close my Venture Financing?
+    kind: practitioner
+    author: Tyler Hollenbeck (DLA Piper)
+    url: https://www.theventurealley.com/2019/09/venture-financing-timeline/
+    note: >-
+      25 September 2019. Source for term_sheet's typical duration: roughly 30 days from signed term sheet
+      to close as a best case.
+  - title: What should the terms of the no shop be?
+    kind: practitioner
+    author: Yokum Taku
+    url: https://www.startupcompanylawyer.com/2007/12/09/what-should-the-terms-of-the-no-shop-be/
+    note: >-
+      9 December 2007. Most venture financings take more than three weeks from term sheet to closing;
+      funds may insist on a 45 to 60 day no-shop to finish diligence and documents.
+  - title: The Handshake Deal Protocol
+    kind: standard
+    author: Y Combinator
+    url: https://www.ycombinator.com/handshake
+    note: >-
+      An offer is an amount plus a valuation or cap (or no cap), confirmed in writing, with no conditions;
+      ten days is a reasonable period to complete the funding.
+  - title: A guide to seed fundraising
+    kind: practitioner
+    author: Geoff Ralston (Y Combinator)
+    url: https://www.ycombinator.com/library/4A-a-guide-to-seed-fundraising
+    note: >-
+      Angels decide faster and alone; VCs "will usually require more time, more meetings, and will have
+      multiple partners involved in the final decision"; leave no meeting without "an attempted close or
+      at very minimum absolute clarity on next steps".
+  - title: A (Brief) Anatomy of a Successful Seed Raise
+    kind: research
+    author: Nick Frost (DocSend)
+    url: https://www.docsend.com/blog/a-brief-anatomy-of-a-successful-seed-raise/
+    note: >-
+      10 September 2020, read through the Internet Archive's copy. 175 seed startups in 2019: founders who
+      were funded contacted 77 investors on average and held 40 meetings.
+  - title: Master Direction – Foreign Investment in India
+    kind: standard
+    author: Reserve Bank of India
+    url: https://www.rbi.org.in/Scripts/BS_ViewMasDirections.aspx?id=11200
+    note: >-
+      RBI/FED/2017-18/60, updated up to 15 June 2026. Annex, para 2.3: equity instruments not issued
+      within sixty days of receiving the consideration must be refunded within fifteen days after.
+
+metadata:
+  owner: Founder Office
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-10-09"
+  review_status: unreviewed
+  confidence: experimental
+  completeness: complete
+  notes: >
+    New on STEP-11 (M30.C6.L-data.V1.U01). Of the five stages a conversation moves through, two carry a
+    published prior (partner_meeting, term_sheet) and three are practitioner judgement, marked so
+    (first_contact, first_call, diligence); the two terminal stages carry no duration by definition. The
+    outcome window is published (Gompers et al.). Each is for the founder to accept, change or reject
+    line by line (`06` D45).

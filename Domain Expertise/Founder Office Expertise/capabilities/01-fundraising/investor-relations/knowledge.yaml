@@ -1,11 +1,26 @@
-# STUB knowledge manifest — filled with the capability by its content unit (STEP-11).
+# Knowledge manifest — references only. Every artifact is scoped to this capability.
+#
+# The SPINE is the one playbook that declares stages: the closed list STEP-12's expert names a file's
+# current stage from. The other five playbooks are moves made inside a stage; the five heuristics are
+# the claims those moves rest on.
 capability: founder_office.fundraising.investor_relations
 playbooks:
   core: []
-  scoped: []
+  scoped:
+    - founder_office.pb.investor_relations.run_an_investor_conversation
+    - founder_office.pb.investor_relations.the_wave_gone_silent
+    - founder_office.pb.investor_relations.the_conditional_deferral
+    - founder_office.pb.investor_relations.a_warm_intro_to_an_investor
+    - founder_office.pb.investor_relations.before_an_investor_call
+    - founder_office.pb.investor_relations.reopen_after_a_pass
 heuristics:
   core: []
-  scoped: []
+  scoped:
+    - founder_office.heu.investor_relations.investors_do_not_chase
+    - founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict
+    - founder_office.heu.investor_relations.silence_reads_by_stage
+    - founder_office.heu.investor_relations.only_an_offer_counts
+    - founder_office.heu.investor_relations.momentum_is_a_parallel_process
 mental_models:
   core: []
   scoped: []
@@ -15,3 +30,9 @@ rules:
 decision_frameworks:
   core: []
   scoped: []
+primary_framework: founder_office.pb.investor_relations.run_an_investor_conversation
+notes: >
+  Two heuristics and one playbook are moved from Sales (investors do not chase; a pass is a date, not
+  a verdict; reopen after a pass) under new ids. The spine, four moves and three heuristics are new
+  (STEP-11 §8.4). Every typical duration and every outcome window names its source in the playbook
+  that carries it.

@@ -51,8 +51,9 @@ def test_the_whole_shipped_corpus_is_stamped_now():
     # The Founder Office (STEP-11) is authored stub-first: its six capabilities are declared, deferred
     # with a reason each, and stamped one by one as Rohit accepts them (`06` D45). Every other
     # capability is stamped. Exact, so a stub anywhere else — or a seventh here — goes red.
-    founder_stubs = {"founder_office.fundraising.investor_relations": "stub",
-                     # M30.C6.L-data.V1.U02 authored it: no longer a stub, draft and unstamped until review.
+    # M30.C6.L-data.V1.U01 and M30.C6.L-data.V1.U02 authored the first two: no longer stubs, drafts
+    # and unstamped until the founder's review (06 D45).
+    founder_stubs = {"founder_office.fundraising.investor_relations": "identity_status_draft",
                      "founder_office.programs_and_applications.program_applications":
                          "identity_status_draft",
                      "founder_office.networking_and_intros.introductions": "stub",

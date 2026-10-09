@@ -1,0 +1,96 @@
+# Moved from Sales' investor relations with a new id (STEP-11 M30.C6.L-data.V1.U01).
+identity:
+  id: founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict
+  name: A pass is a date, not a verdict
+  kind: heuristic
+  domain: founder_office
+  scope: capability
+  owner_capability: founder_office.fundraising.investor_relations
+  subdomain: fundraising
+  version: 1.0.0
+  status: draft
+  aliases:
+    - Not now is not no
+
+purpose:
+  statement: >-
+    Separates the two things a pass can be, because a pipeline's closed-lost reading cannot: it fires
+    the same way on both, and the two demand opposite behaviour.
+  answers:
+    - Is this relationship finished, or scheduled?
+    - Which passes are worth re-approaching, and when?
+
+heuristic:
+  statement: >-
+    Most passes are decisions about timing, stage or a metric, and each of those carries an implicit date
+    on which it stops being true. Record the date, not the refusal. Only thesis and team passes are
+    verdicts.
+  why: >-
+    A fund passing on stage is saying its cheque does not fit today's round, which changes at the next
+    round without anyone changing their mind; a fund passing on timing is reading its own cycle. Both
+    are scheduling facts wearing the vocabulary of rejection, and the vocabulary is what gets recorded.
+    Investors who reject a company "are some of your warmest leads for future fundraising" — any who
+    "spent significant time deciding probably came close to saying yes" (Graham). Thesis and team are
+    different in kind: judgments about what the company is, which no date changes.
+  confidence_bp: 7000
+  applies_when: >-
+    A pass has been received or inferred, and a reason is stated or can be read from it.
+  breaks_down_when: >-
+    A pass with no reason given carries no date and must not be assigned one — an invented trigger
+    produces a re-approach with nothing behind it, which is worse than none. Repeated passes from the
+    same investor across rounds stop being about timing whatever the stated reason. And a warm pass is
+    sometimes simple politeness with no invitation inside it.
+  reads:
+    - founder_office.obj.investor_relations.investor_conversation
+
+objects_used:
+  - founder_office.obj.investor_relations.investor_conversation
+  - founder_office.obj.core.next_action
+
+outcomes:
+  - >-
+    Passes split into a reversible set carrying triggers and a final set that is genuinely closed.
+  - >-
+    Closed-lost language stops being applied to relationships that explicitly invited a return.
+
+failure_modes:
+  - >-
+    Reading every pass as reversible, which turns the set into an undifferentiated follow-up list and
+    trains the founder to ignore it.
+  - >-
+    Assigning a trigger where none was stated, producing a scheduled re-approach with nothing new to lead
+    with.
+
+limits:
+  - >-
+    It classifies the pass; it does not predict the re-approach. A correctly triggered return can still
+    be declined.
+
+metrics:
+  - name: reopening_conditions_captured
+    unit: percent
+    direction: higher_is_better
+    description: Share of passes recorded with their reopening condition.
+
+references:
+  - title: How to Raise Money
+    kind: practitioner
+    author: Paul Graham
+    url: https://paulgraham.com/fr.html
+    note: >-
+      September 2013. "Any investor who spent significant time deciding probably came close to saying yes.
+      Often you have some internal champion who only needs a little more evidence to convince the
+      skeptics."
+
+metadata:
+  owner: Founder Office
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-10-09"
+  review_status: unreviewed
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Moved from Sales' investor relations, where it was a draft approved by Harsh on 2026-08-25. New id,
+    so it is unreviewed here until the founder accepts it (`06` D45). The accelerator example is gone —
+    a programme's cohort is the programmes capability's — and the claim now names its source.

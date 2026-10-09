@@ -1,0 +1,209 @@
+# CORE — the next concrete thing that moves a piece of founder work. Optional in investor relations'
+# load-set; programmes, introductions and hiring will load it too (expected warning until they do).
+identity:
+  id: founder_office.obj.core.next_action
+  scope: core
+  name: Next Action
+  domain: founder_office
+  subdomain: fundraising
+  owner_capability: founder_office.fundraising.investor_relations
+  version: 1.0.0
+  status: draft
+  aliases: ["Next Step", "Follow-up"]
+
+purpose:
+  statement: >-
+    The next concrete thing that moves a piece of founder work, with its owner and its date — what we
+    owe an investor, what they owe us, or the dated re-approach a pass invited.
+  discriminator: >-
+    A next action has an owner and a date; "keep warm" and "let's reconnect" have neither, and are
+    recorded as the absence of one rather than as one.
+  answers:
+    - What happens next, who does it, and by when?
+    - Is it ours, and is it late?
+  not:
+    - The judgment of whether to act at all — Layer 4's, never this object's.
+
+attributes:
+  - name: the_action
+    purpose: What is to be done, by whom, and when.
+    type: composite
+    contains: [action_text, owner_side, owner_ref, due_at, origin]
+  - name: discharge
+    purpose: Whether it was done, and what showed it.
+    type: composite
+    contains: [is_dated, is_overdue, discharged_by]
+  - name: action_text
+    purpose: The action in plain words — "send the cohort data", "book the partners' meeting".
+    type: value
+    data_type: string
+    source_paths: [commitment.action]
+  - name: owner_side
+    purpose: Whose action it is. Ours sorts first, because the other side will not remind us.
+    type: value
+    data_type: enum
+    allowed_values: [us, them, nobody, unknown]
+    default: unknown
+  - name: owner_ref
+    purpose: The named owner, when the commitment names one.
+    type: value
+    data_type: string
+    source_paths: [commitment.owner]
+  - name: due_at
+    purpose: When it is due. An action with no date is a wish.
+    type: value
+    data_type: timestamp
+    source_paths: [commitment.due_at]
+  - name: origin
+    purpose: Where the action came from — agreed on a call, asked for in mail, a pass's condition, our plan.
+    type: value
+    data_type: enum
+    allowed_values: [agreed_on_call, asked_in_mail, reopen_condition, our_plan, unknown]
+    default: unknown
+  - name: is_dated
+    purpose: Whether a date is on the record at all.
+    type: derived
+    derived_from: [due_at]
+  - name: is_overdue
+    purpose: Whether the date has passed with the action undone.
+    type: derived
+    derived_from: [due_at, discharged_by]
+  - name: discharged_by
+    purpose: The observable event that showed it was done — a reply sent, a meeting held, a document received.
+    type: value
+    data_type: string
+
+states:
+  initial: none
+  terminal: [done, dropped]
+  values:
+    - name: none
+      description: No next step is on the record.
+      implies: That absence is the finding; it is not a neutral state in a live conversation.
+    - name: open
+      description: A dated action with an owner, not yet done.
+      entered_when:
+        - {exists: commitment.due_at}
+      implies: Track it to its date.
+    - name: undated
+      description: An action agreed with no date — "let's reconnect".
+      implies: The specific shape a founder's conversations die in; name it as undated.
+    - name: overdue
+      description: Past its date and not done.
+      entered_when:
+        - {path: commitment.days_overdue, op: ">", value: 0}
+      implies: If ours, it is the first thing to do; if theirs, it is a question to ask, once.
+    - name: done
+      description: Discharged by an observable event.
+      implies: Nothing further.
+    - name: dropped
+      description: Deliberately abandoned, with the reason recorded.
+      implies: Nothing further, and nothing silently.
+  transitions:
+    - {from: none, to: open, trigger: a dated next step is agreed, reversible: true}
+    - {from: none, to: undated, trigger: a next step is agreed with no date, reversible: true}
+    - {from: undated, to: open, trigger: a date is agreed, reversible: true}
+    - {from: open, to: overdue, when: [{path: commitment.days_overdue, op: ">", value: 0}],
+       reversible: true}
+    - {from: open, to: done, trigger: the discharging event is observed, reversible: false}
+    - {from: overdue, to: done, trigger: the discharging event is observed, reversible: false}
+    - {from: open, to: dropped, trigger: abandoned with a reason, reversible: false}
+
+relationships:
+  - type: belongs_to
+    target: founder_office.obj.core.contact
+    cardinality: zero_or_one
+    weight_bp: 7000
+    confidence_bp: 6000
+    description: The person who owns the action, on either side.
+  - type: references
+    target: founder_office.obj.core.company
+    cardinality: zero_or_one
+    weight_bp: 5000
+    confidence_bp: 6000
+    description: The organisation the action concerns.
+  - type: references
+    target: founder_office.obj.core.risk
+    cardinality: zero_or_many
+    weight_bp: 4000
+    confidence_bp: 5000
+    description: The risk an action exists to reduce, where one does.
+
+inference_patterns:
+  deterministic:
+    - id: na.dated_commitment
+      statement: A commitment with a date is on the record.
+      status: executable
+      when:
+        - {exists: commitment.due_at}
+      yields: {attribute: is_dated, value: true, confidence_bp: 9000}
+      false_positive: >-
+        A date mentioned in passing ("we're away until the 12th") read as a commitment.
+    - id: na.owner_named
+      statement: The commitment names its owner.
+      status: executable
+      when:
+        - {exists: commitment.owner}
+      yields: {attribute: owner_ref, confidence_bp: 8000}
+      false_positive: An owner named for one part of a shared action.
+    - id: na.overdue
+      statement: The commitment is past its date.
+      status: executable
+      when:
+        - {path: commitment.days_overdue, op: ">", value: 0}
+      yields: {attribute: is_overdue, value: true, confidence_bp: 8500}
+      false_positive: >-
+        The action was done and nothing observable said so — a call held off the record, a document sent
+        from another address.
+  heuristic:
+    - id: na.next_step_agreed
+      statement: A next step was agreed in the exchange.
+      status: executable
+      when:
+        - {has_obs: next_step_agreed}
+      yields: {attribute: origin, value: agreed_on_call, confidence_bp: 6000}
+      false_positive: The step was agreed by mail rather than on a call; the origin is mail.
+
+evidence:
+  - source: email
+    strength_bp: 8000
+    decays: true
+    description: The commitment as written, with its date.
+  - source: calendar
+    strength_bp: 8000
+    decays: true
+    independent_of: [email]
+    description: A booked meeting is a next action that has already been dated.
+
+anti_patterns:
+  - id: na.ap.keep_warm
+    statement: Recording "keep warm" as a next action.
+    why_it_happens: It sounds like a plan, and it is what gets written when nobody decided.
+    cost: It has no owner and no date, so it is never done and never missed.
+    instead: Name the action, its owner and its date — or record that there is none.
+
+examples:
+  - label: Send the cohort retention data to the partner by Friday
+    kind: typical
+    note: owner_side us, dated, origin agreed_on_call.
+  - label: The fund will come back after its Monday partners' meeting
+    kind: typical
+    note: owner_side them, dated by the meeting.
+  - label: "Let's reconnect in the new year"
+    kind: edge
+    note: Undated; recorded as undated, not as a plan.
+  - label: An investor's "keep me posted"
+    kind: misclassification
+    note: Not a next action on either side; it is a deferral, read by the conditional deferral.
+
+metadata:
+  owner: Founder Office
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-10-09"
+  review_status: unreviewed
+  confidence: experimental
+  completeness: partial
+  notes: >
+    New for the Founder Office on STEP-11 (M30.C6.L-data.V1.U01), written for the founder's work rather
+    than copied from Sales' deal-bound next action. Concise on purpose.

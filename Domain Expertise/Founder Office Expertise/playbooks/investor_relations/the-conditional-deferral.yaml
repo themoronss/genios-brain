@@ -1,0 +1,182 @@
+# A move, not the spine. "Send me updates", "come back when you have a lead", "too early for us — keep
+# us posted": the investor has said no for now and left a door open. The spine records it as a pass
+# with a condition (or, with none named, a pass with no reason given); this is how the door is kept.
+identity:
+  id: founder_office.pb.investor_relations.the_conditional_deferral
+  name: The conditional deferral
+  kind: playbook
+  domain: founder_office
+  scope: capability
+  owner_capability: founder_office.fundraising.investor_relations
+  subdomain: fundraising
+  version: 1.0.0
+  status: draft
+
+purpose:
+  statement: >-
+    An investor has answered with a deferral that carries a condition — "send me updates", "come back
+    when you have a lead", "let's talk again at a million in revenue". It is a no for now with a door
+    left open. This move takes the no cleanly, keeps the condition in the investor's own words, puts
+    the investor on the monthly update, and re-approaches only with the change against that condition.
+  answers:
+    - They said "keep me posted". Is this still a live conversation?
+    - When do we go back to them, and with what?
+  not:
+    - >-
+      A pass that left no door open. That is reopen after a pass, or a final no on thesis or team.
+
+when_to_use:
+  situations:
+    - founder_office.sit.live_investor_relationship
+    - founder_office.sit.live_investor_contact
+  conditions:
+    - has_obs: decision_deferred
+  signals:
+    - >-
+      The investor wrote "send me updates", "keep me posted", "come back when ..." or "too early for
+      us".
+    - >-
+      The investor said they would invest once another investor leads.
+  do_not_use_when:
+    - >-
+      The deferral is a date rather than a condition ("after our fund closes in March"). Schedule the
+      date; there is nothing to prove.
+    - >-
+      The investor has declined on thesis or team. No update changes what the company is.
+
+steps:
+  - order: 1
+    actor: human
+    name: Read it as a no for now
+    description: >-
+      Take the conversation out of the round's count. "Send me updates" commits nobody, and "I want to
+      invest in you, but I don't lead" translates to "No, except yes if you turn out to be a hot deal"
+      (Graham).
+    produces: The conversation marked deferred, not counted as live interest.
+    done_when: >-
+      The conversation is marked deferred and is not counted as committed or live interest.
+  - order: 2
+    actor: human
+    name: Write the condition down verbatim
+    description: >-
+      Record exactly what would bring them back — a lead, a revenue figure, a launch — in their words.
+      "Keep me posted" with nothing named is recorded as no condition, never filled in with a plausible
+      one.
+    produces: The condition, verbatim, or "none named".
+    done_when: >-
+      The condition is on file in the investor's words, or recorded as "none named".
+  - order: 3
+    actor: human
+    name: Reply once and ask for nothing
+    description: >-
+      Thank them, confirm the condition back in their words, and say they will hear when it changes.
+      Arguing with a deferral turns a door left open into a closed one.
+    produces: One short reply.
+    done_when: >-
+      One short reply is sent, and it contains no request.
+  - order: 4
+    actor: human
+    name: Put them on the monthly update
+    description: >-
+      Add them to the update list: growth, cash and burn, what the company needs, sent every month — the
+      cadence Aaron Harris, a former Y Combinator partner, recommends. Each update is a dated reading of
+      progress against their condition.
+    produces: The investor on the update list.
+    done_when: >-
+      The investor receives the next scheduled monthly update.
+  - order: 5
+    actor: human
+    name: Re-approach with the change, when the condition is met
+    description: >-
+      When the condition is met, write to them about that and nothing else — "You said come back with a
+      lead; we have one." A check-in is the conversation they already deferred.
+    produces: A note naming the met condition.
+    done_when: >-
+      A note naming the met condition is sent as soon as it is met, and it asks for a meeting.
+  - order: 6
+    actor: human
+    name: Stop counting on updates alone at the window
+    description: >-
+      If the updates in the window draw no reply and no question, stop expecting them to reopen the
+      conversation by themselves. Keep the investor on the list; the re-approach waits for the
+      condition.
+    produces: The conversation marked dormant, still on the update list.
+    done_when: >-
+      At the end of the window with no reply to any update, the conversation is marked dormant and stays
+      on the update list.
+
+success_signal: >-
+  The investor answers an update with a question or a request to meet — or the condition is met and a
+  meeting is booked.
+
+# Source in `references`: three monthly updates (Harris's cadence; judging after three is judgement).
+outcome_window_days: 90
+
+do_nothing_consequence: >-
+  The investor who asked to be kept posted hears nothing, the door they left open closes by default, and
+  the founder goes back to them cold on the day the condition is finally met.
+
+objects_used:
+  - founder_office.obj.investor_relations.investor_conversation
+  - founder_office.obj.core.next_action
+
+outcomes:
+  - >-
+    The deferral is counted as what it is — a no for now — and the round is planned without it.
+  - >-
+    The condition survives in the investor's own words, with the date it was given.
+  - >-
+    The re-approach, when it comes, opens on the condition met rather than on a check-in.
+
+failure_modes:
+  - >-
+    Counting a "keep me posted" as interest in the round and planning around it.
+  - >-
+    Inventing a condition where none was named, which produces a re-approach with nothing behind it.
+  - >-
+    Sending updates that never mention the investor's condition, so the investor never sees it moving.
+
+limits:
+  - >-
+    It cannot tell a courteous "keep me posted" from a real one; only the investor's answer to an update
+    does.
+  - >-
+    The monthly cadence suits a company whose numbers move monthly; a slower business has less to say.
+
+references:
+  - title: How to Raise Money
+    kind: practitioner
+    author: Paul Graham
+    url: https://paulgraham.com/fr.html
+    note: >-
+      September 2013. "Hear no till you hear yes"; "When an investor tells you 'I want to invest in you,
+      but I don't lead,' translate that in your mind to 'No, except yes if you turn out to be a hot
+      deal'"; investors who reject a company "are some of your warmest leads for future fundraising".
+  - title: Investor Updates
+    kind: practitioner
+    author: Aaron Harris (former Partner, Y Combinator)
+    url: https://blog.aaronkharris.com/investor-updates
+    note: >-
+      Source for outcome_window_days (90 = three monthly updates): "Send updates monthly", reporting
+      growth, cash and burn, and what the company needs. Judging the deferral after three updates is
+      practitioner judgement — unverified; for the founder's review.
+  - title: A guide to seed fundraising
+    kind: practitioner
+    author: Geoff Ralston (Y Combinator)
+    url: https://www.ycombinator.com/library/4A-a-guide-to-seed-fundraising
+    note: >-
+      "Investors have a lot of different ways to say no ... remember that they might be a 'yes' another
+      time, so part on the best possible terms."
+
+metadata:
+  owner: Founder Office
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-10-09"
+  review_status: unreviewed
+  confidence: experimental
+  completeness: complete
+  notes: >
+    New on STEP-11 (M30.C6.L-data.V1.U01), STEP-11 §3.2's "conditional deferral — send me updates".
+    Layer 2's `decision_deferred` observation is the trigger it names; the condition itself is not yet
+    extracted (the investor-conversation object's `reopen_condition` pattern needs a signal).

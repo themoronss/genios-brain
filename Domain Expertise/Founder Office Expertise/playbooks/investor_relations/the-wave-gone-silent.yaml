@@ -1,0 +1,187 @@
+# A move, not the spine: it declares no stages. It is made when a wave of first contacts — one ask to
+# many investors — has produced silence, which is the first_contact stage's default turned into a
+# finding about the wave itself.
+identity:
+  id: founder_office.pb.investor_relations.the_wave_gone_silent
+  name: The wave gone silent
+  kind: playbook
+  domain: founder_office
+  scope: capability
+  owner_capability: founder_office.fundraising.investor_relations
+  subdomain: fundraising
+  version: 1.0.0
+  status: draft
+
+purpose:
+  statement: >-
+    An outreach wave — the same ask sent to many investors in one window — has drawn no replies. This
+    move reads what the silence says about the wave rather than about each investor, follows up once
+    with something new, turns the few investors who matter most into warm introductions, and widens
+    the next wave instead of waiting on this one.
+  answers:
+    - Nobody has replied to the investors we wrote to. Do we chase them?
+    - Is the silence about these investors, or about how we asked?
+  not:
+    - >-
+      One investor going quiet in the middle of a conversation. That is silence by stage, read on the
+      spine.
+
+when_to_use:
+  situations:
+    - founder_office.sit.live_investor_relationship
+    - founder_office.sit.live_investor_contact
+  signals:
+    - The same ask went to several investors in one window and most have not replied.
+    - Every reply that did come back was a pass or a "not for us".
+  do_not_use_when:
+    - >-
+      The wave went out recently enough that silence is still the default; an unanswered first email is
+      not yet a finding.
+    - >-
+      The wave was an update to existing investors rather than a raise.
+
+steps:
+  - order: 1
+    actor: human
+    name: Read the wave before the investors
+    description: >-
+      Check the wave, not each recipient: cold or introduced, sent to partners or to generic addresses,
+      to investors whose stage and thesis fit, with the traction in the first lines. A wave silent
+      everywhere is usually about the ask, not the investors.
+    produces: The likely cause of the silence.
+    done_when: >-
+      The likely cause is named — the targeting, the ask, the channel — or it is recorded that none was
+      found.
+  - order: 2
+    actor: human
+    name: Follow up once, with something new
+    description: >-
+      One short note per investor that carries a fact the first email did not — a commitment, a
+      customer, a number that moved. "Just bumping this" is the same email they already ignored.
+    produces: One follow-up per investor, each with a new fact.
+    done_when: >-
+      Each investor in the wave has received at most one follow-up, and each follow-up carries a fact the
+      first email did not.
+  - order: 3
+    actor: human
+    name: Turn the few that matter into warm introductions
+    description: >-
+      For the investors with the highest expected value, find someone they trust — an investor who has
+      just committed, or a founder they backed — and ask for an introduction instead of sending a second
+      cold note.
+    produces: An introduction request per top-priority investor.
+    done_when: >-
+      Each top-priority investor has an introduction requested, or a note that no path to them exists.
+  - order: 4
+    actor: human
+    name: Widen the next wave rather than wait on this one
+    description: >-
+      Add new investors whose stage and thesis fit, now. A raise run as a queue gives every silent
+      investor a free option on the company and the founder nothing.
+    produces: The next wave's list.
+    done_when: >-
+      A next wave is drafted, with the investors in it chosen for stage and thesis fit.
+  - order: 5
+    actor: human
+    name: Change the ask if the whole wave was silent
+    description: >-
+      If nobody replied at all, change the one-line pitch, the list or the channel before the next wave.
+      A rejection "does suggest your pitch could be improved" (Graham); it is not a verdict on the
+      company.
+    produces: A revised ask for the next wave.
+    done_when: >-
+      The next wave's ask differs from this one in a named way, or the reason it does not is recorded.
+  - order: 6
+    actor: human
+    name: Stop when the window closes
+    description: >-
+      When the window after the follow-up closes, treat the silent investors as a no for this round: move
+      them to the update list and send nothing more. Investors who drift away are matched by drifting
+      away from them.
+    produces: Every investor in the wave marked replied, passed or no reply.
+    done_when: >-
+      Every investor in the wave is marked replied, passed or no reply, and no third note is queued.
+
+success_signal: >-
+  At least one investor in the wave replies after the follow-up with a meeting time or a clear answer.
+
+# Source in `references`: practitioner judgement — unverified.
+outcome_window_days: 14
+
+do_nothing_consequence: >-
+  The investors in the wave file the company as one that asked once and went away, and the round loses
+  the weeks a better wave would have taken.
+
+objects_used:
+  - founder_office.obj.investor_relations.investor_conversation
+  - founder_office.obj.core.company
+  - founder_office.obj.core.contact
+
+outcomes:
+  - >-
+    The silence is diagnosed as a property of the wave, so the next wave is better rather than merely
+    bigger.
+  - >-
+    Each investor hears from the founder at most twice in the wave, the second time with news.
+  - >-
+    The investors who matter most are reached through someone they trust.
+
+failure_modes:
+  - >-
+    Chasing every investor in the wave with the same note, which spends the founder's credibility on
+    investors who have already decided.
+  - >-
+    Waiting on the wave instead of widening it, so one silent window becomes a silent month.
+  - >-
+    Reading a silent wave as a verdict on the company rather than on the ask.
+
+limits:
+  - >-
+    The window is a judgement, not a measurement, and a wave sent over a holiday period needs longer.
+  - >-
+    It says nothing about which investors to approach in the first place beyond stage and thesis fit.
+
+references:
+  - title: How to Raise Money
+    kind: practitioner
+    author: Paul Graham
+    url: https://paulgraham.com/fr.html
+    note: >-
+      September 2013. "Some of the worse ones never actually do say no; they just stop replying to your
+      emails"; breadth-first search weighted by expected value "will save you from investors who never
+      explicitly say no but merely drift away, because you'll drift away from them at the same rate";
+      "The best type of intro is from a well-known investor who has just invested in you".
+  - title: A Fundraising Survival Guide
+    kind: practitioner
+    author: Paul Graham
+    url: https://paulgraham.com/fundraising.html
+    note: >-
+      August 2008. "Though a rejection doesn't necessarily tell you anything about your startup, it does
+      suggest your pitch could be improved."
+  - title: A (Brief) Anatomy of a Successful Seed Raise
+    kind: research
+    author: Nick Frost (DocSend)
+    url: https://www.docsend.com/blog/a-brief-anatomy-of-a-successful-seed-raise/
+    note: >-
+      10 September 2020, read through the Internet Archive's copy. In 2019 funded seed founders contacted
+      77 investors on average and held 40 meetings; founders who were not funded contacted 70 and held
+      15. The number contacted barely differed; the meetings it turned into did.
+  - title: Practitioner judgement
+    kind: practitioner
+    note: >-
+      outcome_window_days (14): practitioner judgement — unverified; for the founder's review. Two weeks
+      after the follow-up is long enough for an interested investor to answer and short enough that the
+      next wave is not delayed by this one.
+
+metadata:
+  owner: Founder Office
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-10-09"
+  review_status: unreviewed
+  confidence: experimental
+  completeness: complete
+  notes: >
+    New on STEP-11 (M30.C6.L-data.V1.U01), STEP-11 §3.2's "outreach wave gone silent". Admin's
+    campaign-awaiting-reply situation detects a wave in any domain; this is what a chief of staff does
+    with one when the wave was a raise.

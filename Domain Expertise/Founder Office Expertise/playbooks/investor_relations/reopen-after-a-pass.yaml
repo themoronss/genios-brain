@@ -1,0 +1,188 @@
+# Moved from Sales' investor relations with a new id (STEP-11 M30.C6.L-data.V1.U01). A move, not the
+# spine: it is what the spine's `passed` stage hands on to. Changed on the way: the trigger is Layer 2's
+# own investor observation, `pass_received`, rather than `closed_lost_mention` — filing a reversible
+# investor pass as a lost deal is what once produced "Save the deal now" on a fundraising rejection
+# (`_schema/vocabulary.yaml`) — every step now says when it is done, and the play says what success is
+# and how long to wait for it.
+identity:
+  id: founder_office.pb.investor_relations.reopen_after_a_pass
+  name: Reopen after a pass
+  kind: playbook
+  domain: founder_office
+  scope: capability
+  owner_capability: founder_office.fundraising.investor_relations
+  subdomain: fundraising
+  version: 1.0.0
+  status: draft
+
+purpose:
+  statement: >-
+    A pass from an investor is, most of the time, a dated decision rather than a permanent one — passed
+    on stage, on timing, on a metric the company had not yet reached. This procedure turns that pass into
+    a scheduled re-approach with a stated trigger, which is the only form in which it survives contact
+    with a founder's memory. The default is what happens otherwise: the relationship is filed as lost and
+    the invitation inside it is thrown away.
+  answers:
+    - This investor passed. Is it over, or scheduled?
+    - When do we go back to them, and with what?
+  not:
+    - >-
+      Whether to raise at all, or from whom. It works on a conversation that already exists.
+
+when_to_use:
+  situations:
+    - founder_office.sit.live_investor_relationship
+    - founder_office.sit.live_investor_contact
+  conditions:
+    - has_obs: pass_received
+  signals:
+    - A pass received or inferred whose reason is stage, timing or traction.
+    - >-
+      A relationship that went quiet after a warm start, where no explicit pass was ever sent and the
+      silence is functioning as one.
+  do_not_use_when:
+    - >-
+      The pass was on thesis or on team. Those do not reopen for this company, and re-approaching spends
+      the relationship as well as the time.
+    - >-
+      No reason was given and none can be read. There is no trigger to schedule against, and an invented
+      one produces a re-approach with nothing new to lead with.
+    - >-
+      The same investor has passed across more than one round. That is no longer a timing fact, whatever
+      the stated reason.
+
+steps:
+  - order: 1
+    actor: human
+    name: Classify the pass before answering it
+    description: >-
+      Read the passing message for its reason: stage, timing, traction, thesis, team, or none given. Only
+      the first three reopen. Thesis and team do not reopen for this company, and pretending otherwise
+      costs the relationship as well as the time.
+    produces: The pass's reason class.
+    done_when: >-
+      The pass carries one reason class, read from the message, or "none given".
+  - order: 2
+    actor: human
+    name: Extract the reopening condition verbatim
+    description: >-
+      Capture the exact words — "come back when you have a lead", "we look again above fifty thousand a
+      month in revenue". Paraphrase loses the threshold, and the threshold is the asset. Where none was
+      given, record that rather than inventing one.
+    produces: The condition in the investor's words, or "none given".
+    done_when: >-
+      The condition is on file in the investor's own words, or recorded as "none given".
+  - order: 3
+    actor: human
+    name: Reply once, briefly, and take the no cleanly
+    description: >-
+      Thank them, confirm the condition back in their own words, and ask for nothing. Arguing with a pass
+      turns a warm future conversation into a closed one, and this is the moment the temptation is
+      strongest.
+    produces: One short reply.
+    done_when: >-
+      One short reply confirming the condition is sent, and it contains no request and no argument.
+  - order: 4
+    actor: human
+    name: Schedule the re-approach against the trigger
+    description: >-
+      A date where the condition is a date; a watch on the metric where it is a threshold. An unscheduled
+      intention to follow up later is indistinguishable from having dropped it.
+    produces: A dated re-approach, or a metric watch with its threshold.
+    done_when: >-
+      The re-approach is on the calendar against a date, or a metric watch names its threshold.
+  - order: 5
+    actor: human
+    name: Re-approach with the change, not with a check-in
+    description: >-
+      Open on what changed against their stated condition and nothing else. "You said come back with a
+      lead; we have one" is a new conversation. "Just checking in" is the one they already declined, and it
+      teaches them to skim the next.
+    produces: A re-approach that names the met condition.
+    done_when: >-
+      A re-approach naming the met condition is sent, and it asks for a meeting.
+
+success_signal: >-
+  The re-approach produces a meeting, or a reply that reopens the conversation.
+
+# Source in `references`: practitioner judgement — unverified.
+outcome_window_days: 30
+
+do_nothing_consequence: >-
+  The pass is filed as a loss, the condition the investor named is forgotten, and when the company
+  reaches it the investor hears about it from somebody else.
+
+objects_used:
+  - founder_office.obj.investor_relations.investor_conversation
+  - founder_office.obj.core.company
+  - founder_office.obj.core.next_action
+
+outcomes:
+  - >-
+    The pass carries a reason class, so the reversible half of the set is separable from the final half.
+  - >-
+    A reopening condition is recorded in the investor's own words, with a scheduled trigger against it.
+  - >-
+    The relationship survives the no — which is the asset, and the thing arguing destroys.
+
+failure_modes:
+  - >-
+    Re-approaching without the change. It reopens nothing and spends the one credit the pass left
+    behind.
+  - >-
+    Treating a thesis pass as reversible. It burns attention on the one class that genuinely does not
+    reopen.
+  - >-
+    Negotiating with the pass. The decision was usually made by people not on the thread, so there is
+    nobody on it to persuade.
+
+limits:
+  - >-
+    It says nothing about whether to raise at all, or from whom. It operates on a conversation that
+    already exists.
+  - >-
+    The reason class is often inferred rather than stated, and a polite pass deliberately obscures it.
+
+metrics:
+  - name: reopen_conditions_captured
+    unit: percent
+    direction: higher_is_better
+    description: Share of passes carrying a recorded condition.
+  - name: dormant_revival_rate
+    unit: percent
+    direction: higher_is_better
+    description: Share of triggered re-approaches producing a meeting.
+
+references:
+  - title: How to Raise Money
+    kind: practitioner
+    author: Paul Graham
+    url: https://paulgraham.com/fr.html
+    note: >-
+      September 2013. "Be nice when investors reject you as well ... If they reject you in phase 2 and you
+      end up doing well, they'll often invest in phase 3. In fact investors who reject you are some of your
+      warmest leads for future fundraising."
+  - title: A guide to seed fundraising
+    kind: practitioner
+    author: Geoff Ralston (Y Combinator)
+    url: https://www.ycombinator.com/library/4A-a-guide-to-seed-fundraising
+    note: >-
+      "remember that they might be a 'yes' another time, so part on the best possible terms."
+  - title: Practitioner judgement
+    kind: practitioner
+    note: >-
+      outcome_window_days (30): practitioner judgement — unverified; for the founder's review. A month
+      after the re-approach is long enough for an investor to read a real change and answer it.
+
+metadata:
+  owner: Founder Office
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-10-09"
+  review_status: unreviewed
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Moved from Sales' investor relations, where it was a draft approved by Harsh on 2026-08-25. New id,
+    so it is unreviewed here until the founder accepts it (`06` D45). The steps are Sales' with a
+    done-when each; the accelerator examples are gone (programmes are the programmes capability's).

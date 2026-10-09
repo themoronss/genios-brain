@@ -1,0 +1,102 @@
+# New on STEP-11 (M30.C6.L-data.V1.U01). The claim under the spine's `quiet_means`: the same days of
+# quiet are nothing at one stage and an answer at another.
+identity:
+  id: founder_office.heu.investor_relations.silence_reads_by_stage
+  name: Silence reads by stage
+  kind: heuristic
+  domain: founder_office
+  scope: capability
+  owner_capability: founder_office.fundraising.investor_relations
+  subdomain: fundraising
+  version: 1.0.0
+  status: draft
+  aliases:
+    - What quiet means depends on where you are
+
+purpose:
+  statement: >-
+    Stops two opposite mistakes with one rule: chasing a firm that is quietly doing its diligence, and
+    waiting on a firm whose partners decided a week ago and will never send the no.
+  answers:
+    - They have not replied for twelve days. Is that bad?
+    - When does silence become an answer?
+
+heuristic:
+  statement: >-
+    Investor silence means different things at different stages. Before a first meeting it is the
+    default; after a first call that named no next step it is usually a soft no; more than a week after
+    a partners' meeting it is usually a no; in diligence it is the work; after a term sheet it is
+    paperwork, until the timetable slips. Read silence by the stage, never by its length alone.
+  why: >-
+    Each stage has a different decider and a different clock. A firm in diligence is calling references
+    and writing its memo (Gompers et al. measured ten reference calls on average); a partnership decides
+    in a weekly meeting, and its rejection "will rarely come in the form of an actual 'no'" (Dixon); and
+    investors at every stage prefer an open option to a closed door — "Some of the worse ones never
+    actually do say no; they just stop replying to your emails" (Graham). The same twelve days of quiet
+    is therefore nothing in diligence and an answer after a partners' meeting.
+  confidence_bp: 6500
+  applies_when: >-
+    An investor conversation is open, the turn is theirs, and the stage is known.
+  breaks_down_when: >-
+    When the investor named a date that has not yet passed: the date outranks the stage. When the stage
+    itself is wrong — a "diligence" request that is an associate asking for a deck before any partner has
+    met the company. And with angels, who decide alone and on no cycle: their silence after a first call
+    reads like a fund's after a partners' meeting.
+  reads:
+    - founder_office.obj.investor_relations.investor_conversation
+    - thread.last_inbound
+    - thread.ball_in_court
+
+objects_used:
+  - founder_office.obj.investor_relations.investor_conversation
+
+outcomes:
+  - >-
+    A quiet conversation is judged against its stage's typical duration, not against an all-purpose
+    count of days.
+  - >-
+    The founder stops chasing firms that are working and stops waiting on firms that have decided.
+
+failure_modes:
+  - >-
+    Applying it with the wrong stage, which makes a polite first call look like diligence and a decided
+    partnership look like a firm at work.
+  - >-
+    Using it to excuse our own silence. It reads their quiet, never ours.
+
+limits:
+  - >-
+    The stage durations it leans on are priors, several of them practitioner judgement; it is as good as
+    the stage reading under it.
+
+references:
+  - title: How to Raise Money
+    kind: practitioner
+    author: Paul Graham
+    url: https://paulgraham.com/fr.html
+    note: >-
+      September 2013. "They seem like they're about to invest right up till the moment they say no. If
+      they even say no. Some of the worse ones never actually do say no; they just stop replying to your
+      emails."
+  - title: Pitching the VC partnership
+    kind: practitioner
+    author: Chris Dixon
+    url: https://cdixon.org/2009/08/27/pitching-the-vc-partnership/
+    note: >-
+      27 August 2009. The weekly partnership meeting; a rejection "will rarely come in the form of an
+      actual 'no'".
+  - title: How Do Venture Capitalists Make Decisions?
+    kind: research
+    author: Paul Gompers, William Gornall, Steven N. Kaplan, Ilya A. Strebulaev
+    url: https://www.nber.org/papers/w22587
+    note: >-
+      NBER Working Paper 22587, 2016, Table 9: the average firm calls 10 references during a deal.
+
+metadata:
+  owner: Founder Office
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-10-09"
+  review_status: unreviewed
+  confidence: experimental
+  completeness: complete

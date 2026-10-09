@@ -112,9 +112,10 @@ def test_the_measured_corpus_is_healthy_and_says_so(catalog):
     # 155 shipped, all admitted; + the Founder Office's six (STEP-11), declared as stubs and stamped
     # one by one as Rohit accepts them (`06` D45). Nothing outside that domain may go dark.
     founder = health["founder_office"]
-    # M30.C6.L-data.V1.U02 authored program_applications: one stub fewer, counted as draft instead.
+    # M30.C6.L-data.V1.U01 (investor relations) and M30.C6.L-data.V1.U02 (program applications)
+    # authored the first two: four stubs, and two unadmitted drafts awaiting the founder's review.
     assert (founder.total, founder.admitted, founder.by_reason.get("stub"),
-            founder.by_reason.get("identity_status_not_stable")) == (6, 0, 5, 1)
+            founder.by_reason.get("identity_status_not_stable")) == (6, 0, 4, 2)
     assert admitted == total - founder.total, (
         f"{total - admitted} capabilities would go dark under require_admission=True; "
         f"the plan's cutover cost is no longer zero outside the Founder Office")
@@ -195,10 +196,12 @@ def test_a_draft_situation_is_reported_because_its_card_cannot_instruct(catalog)
     health = corpus_health(catalog)
     total = sum(r.situations for r in health.values())
     unreviewed = sum(r.situations_unreviewed for r in health.values())
-    assert total == 69, f"the corpus has {total} authored situations, not 69 — update the plan"
-    assert unreviewed == 20, (
-        f"{unreviewed} authored situations cannot instruct, not 23. If this FELL, say so in the "
+    # M30.C6.L-data.V1.U01: + the Founder Office's two investor situations, moved as unreviewed drafts.
+    assert total == 71, f"the corpus has {total} authored situations, not 71 — update the plan"
+    assert unreviewed == 22, (
+        f"{unreviewed} authored situations cannot instruct, not 22. If this FELL, say so in the "
         f"findings — it is the cheapest quality win in Layer 2 and it is authoring, not code")
+    assert health["founder_office"].situations_unreviewed == 2
     assert health["customer_support"].situations_unreviewed == 16, (
         "Customer Support carries two thirds of the gap and that concentration is the finding")
 

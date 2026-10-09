@@ -1,0 +1,690 @@
+# SCOPED to founder_office.fundraising.investor_relations. Moved from Sales' investor relations with a
+# new id (STEP-11 M30.C6.L-data.V1.U01) and rebuilt around the spine.
+#
+# One relationship with one investing party, held as a CONVERSATION rather than as a deal. A deal has a
+# value, a pipeline stage and a close date; this has a position on the spine's stage list, a turn, and —
+# when it has ended — the condition under which it reopens.
+#
+# WHAT CHANGED IN THE MOVE. `stage` now holds exactly the spine's closed list
+# (`founder_office.pb.investor_relations.run_an_investor_conversation`) and is the EXPERT'S judgment,
+# named from the timeline with its evidence (STEP-12); no pattern below sets it, because the Founder
+# Office never detects a stage by rule. Sales' `not_started / intro_in_flight / first_meeting_done /
+# in_diligence / dormant` mixed stage and lifecycle in one list; the lifecycle (live, waiting on us,
+# dormant, passed, invested) is now `states`. Layer 2 has since gained fundraising observation kinds of
+# its own — `pass_received`, `decision_deferred`, `diligence_started`, `intro_made`,
+# `investor_update_sent` — so patterns Sales had to approximate now read them directly.
+identity:
+  id: founder_office.obj.investor_relations.investor_conversation
+  scope: capability
+  name: Investor Conversation
+  domain: founder_office
+  subdomain: fundraising
+  owner_capability: founder_office.fundraising.investor_relations
+  version: 1.0.0
+  status: draft
+  aliases: ["Investor Relationship", "Fund Conversation", "Raise Thread"]
+
+purpose:
+  statement: >-
+    The state of one investing relationship, and the next move it implies. It exists because nothing
+    else in the Founder Office can answer its question: where one investor stands in the raise, whose
+    turn it is, and — if they passed — the condition under which "no" turns back into a conversation.
+    Held as a deal, an investor relationship produces confidently wrong advice: urgency aimed at a party
+    with no reason to feel it, and write-offs of relationships that were explicitly left open.
+  discriminator: >-
+    The company is who the investor is; the conversation is where we stand with them — the fund does not
+    change when the conversation does, and a pass ends the conversation without ending the company.
+  answers:
+    - Which stage is this conversation in, and since when?
+    - Whose turn is it, and how long has it been ours?
+    - If they passed, why, and what would bring them back?
+    - Are we raising from them, or reporting to them?
+  not:
+    - The investor as an organisation — its kind, thesis and cheque size are the company object's.
+    - The person on the other side — their seniority and reach are the contact object's.
+    - A programme application, whose clock is a cohort's — the programmes capability's.
+
+attributes:
+  - name: position
+    purpose: Where the conversation stands, and how we know. The half that decays silently.
+    type: composite
+    contains: [stage, round, ball_in_court, last_contact_at, days_since_contact, thread_count]
+
+  - name: counterparty
+    purpose: >-
+      What kind of investing party this is and whether anyone with a cheque decision is in it.
+    type: composite
+    contains: [party_kind, decision_reach, named_partner, introducer_ref, objective]
+
+  - name: deferral
+    purpose: >-
+      A "not now" that left a door open — "send me updates", "come back when". Held apart from a pass
+      because the move it calls for is the monthly update, not the reopen.
+    type: composite
+    contains: [deferred, deferral_condition, last_update_sent_at]
+
+  - name: closure
+    purpose: >-
+      How it ended, if it ended, and the reopening condition. Recorded together on purpose: a pass
+      without its condition is the most destructive omission in this object.
+    type: composite
+    contains: [outcome, passed_at, pass_reason_kind, reopen_condition, reopen_at]
+
+  - name: stage
+    purpose: >-
+      The conversation's place on the spine's closed list — named by the expert from the timeline, with
+      the dated event that puts it there, and never set by a pattern.
+    type: value
+    data_type: enum
+    allowed_values: [first_contact, first_call, partner_meeting, diligence, term_sheet, closed, passed,
+                     unknown]
+    default: unknown
+    required: true
+    description: >-
+      Defaults to `unknown`, never to `first_contact`: never having seen a conversation and knowing it
+      has only just begun are different facts, and collapsing them manufactures certainty. A skipped
+      stage (an angel has no partner meeting) is skipped, never filled in.
+
+  - name: round
+    purpose: >-
+      Which round this conversation belongs to — pre-seed, seed, Series A. Without it every investor sits
+      in one undifferentiated set and no sequencing advice is possible.
+    type: value
+    data_type: string
+
+  - name: ball_in_court
+    purpose: >-
+      Whose turn it is. Weighs more here than in a deal, because the counterparty will not chase.
+    type: value
+    data_type: enum
+    allowed_values: [us, them, nobody, unknown]
+    required: true
+    source_paths: [thread.ball_in_court]
+    description: >-
+      `nobody` is a real and common value: between a pass and its reopening trigger there is genuinely no
+      turn, and forcing it into `us` produces a chase that damages the relationship it means to protect.
+
+  - name: last_contact_at
+    purpose: The timestamp everything temporal here is measured from.
+    type: value
+    data_type: timestamp
+    source_paths: [thread.last_inbound]
+
+  - name: days_since_contact
+    purpose: >-
+      Read against the stage's typical duration on the spine, never absolutely. Twelve quiet days are
+      nothing in diligence and an answer after a partners' meeting.
+    type: derived
+    derived_from: [last_contact_at]
+
+  - name: thread_count
+    purpose: >-
+      How many distinct correspondences exist with this party — the cheapest available proxy for whether
+      the relationship is single-threaded.
+    type: value
+    data_type: integer
+
+  - name: party_kind
+    purpose: >-
+      Which clock applies. A fund runs to its partnership's cycle, an angel decides alone, an angel
+      network to its screening and pitch sessions; an introducer has no cheque at all.
+    type: value
+    data_type: enum
+    allowed_values: [fund, angel, angel_network, syndicate, corporate_vc, introducer, accelerator,
+                     unknown]
+    required: true
+    description: >-
+      `accelerator` is kept so a misfile is visible rather than silently absorbed: a programme's
+      application belongs to the programmes capability, and its cohort calendar is not this object's.
+
+  - name: decision_reach
+    purpose: >-
+      Whether anyone in the conversation can write the cheque. An associate "is not a VC. They have no
+      decision-making power" (Graham).
+    type: value
+    data_type: enum
+    allowed_values: [partner_engaged, associate_only, angel_decides, unknown]
+
+  - name: named_partner
+    purpose: The person with decision authority, once one has appeared.
+    type: reference
+    ref: founder_office.obj.core.contact
+
+  - name: introducer_ref
+    purpose: >-
+      Who opened the door. A warm path is an asset, routinely forgotten by the party it helped, and the
+      first person to tell when the round moves.
+    type: reference
+    ref: founder_office.obj.core.contact
+
+  - name: objective
+    purpose: >-
+      Whether we are raising from this investor or reporting to one who has already invested — the same
+      person and the same kind of relationship, with opposite follow-ups.
+    type: value
+    data_type: enum
+    allowed_values: [raising, reporting, unknown]
+    source_paths: [thread.objective]
+
+  - name: deferred
+    purpose: Whether the investor said "not now" and left a door open.
+    type: value
+    data_type: boolean
+    default: false
+
+  - name: deferral_condition
+    purpose: >-
+      What would bring them back, in their words — "come back with a lead". "Keep me posted" with
+      nothing named is recorded as no condition.
+    type: value
+    data_type: string
+
+  - name: last_update_sent_at
+    purpose: When the investor last received the monthly update — the clock the deferral is judged by.
+    type: value
+    data_type: timestamp
+
+  - name: outcome
+    purpose: What happened, where something has.
+    type: value
+    data_type: enum
+    allowed_values: [open, passed, invested, lapsed, unknown]
+
+  - name: passed_at
+    purpose: When the pass landed. The clock the reopening condition runs against.
+    type: value
+    data_type: timestamp
+
+  - name: pass_reason_kind
+    purpose: >-
+      Why they passed, at the only granularity that changes what we do. Stage, timing and traction
+      passes reopen; thesis and team passes do not reopen for this company.
+    type: value
+    data_type: enum
+    allowed_values: [stage, timing, thesis, traction, team, no_reason_given, unknown]
+
+  - name: reopen_condition
+    purpose: >-
+      The stated condition under which they invited a return — "come back with a lead", "we look again
+      at a million in revenue". The most valuable string in this object, and the one most reliably lost.
+    type: value
+    data_type: string
+
+  - name: reopen_at
+    purpose: The date the reopening condition becomes checkable, where it is a date rather than a threshold.
+    type: value
+    data_type: timestamp
+
+states:
+  initial: unknown
+  terminal: [invested, passed_final]
+  values:
+    - name: unknown
+      description: >-
+        A party exists and nothing about the conversation's position is established. The honest default.
+      implies: Establish the stage before advising anything; there is nothing to act on yet.
+    - name: live
+      description: Correspondence is ongoing and a turn exists.
+      entered_when:
+        - {exists: thread.last_inbound}
+        - {path: thread.ball_in_court, op: "!=", value: unknown}
+      implies: The conversation is running. Advice is about the next move, not about revival.
+    - name: waiting_on_us
+      description: The turn is ours. The most actionable state this object produces.
+      entered_when:
+        - {path: thread.ball_in_court, op: "=", value: us}
+      implies: >-
+        The cheapest action available, and the one the investor will never prompt for.
+    - name: dormant
+      description: >-
+        Quiet for longer than the stage's typical duration with no turn outstanding — lapsed rather than
+        decided. Judged against the spine's priors by the expert, not by a fixed count of days.
+      implies: >-
+        Usually nothing. Dormant is the resting state of most investor relationships and becomes
+        actionable only when a reopening condition is met or a real update exists.
+    - name: passed_with_condition
+      description: Passed, with a reopening condition (stage `passed`). Scheduled, not finished.
+      implies: Schedule against the condition. This is a calendar item, not a lost relationship.
+    - name: passed_final
+      description: Passed on thesis or team (stage `passed`). Finished for this company.
+      implies: Stop spending attention here, and say so explicitly rather than letting it drift.
+    - name: invested
+      description: The money is in the company's bank account (stage `closed`).
+      implies: The conversation becomes a shareholder's — monthly updates, and the next introductions.
+  transitions:
+    - {from: unknown, to: live, trigger: first observed correspondence, reversible: false}
+    - {from: live, to: waiting_on_us, when: [{path: thread.ball_in_court, op: "=", value: us}],
+       reversible: true}
+    - {from: waiting_on_us, to: live, trigger: we reply, reversible: true}
+    - {from: live, to: dormant, trigger: quiet past the stage's typical duration with no turn outstanding,
+       reversible: true}
+    - {from: dormant, to: live, trigger: either side writes with something new, reversible: true}
+    - {from: live, to: passed_with_condition, trigger: a pass carrying a reopening condition,
+       reversible: true}
+    - {from: live, to: passed_final, trigger: a pass on thesis or team, reversible: false}
+    - {from: passed_with_condition, to: live, trigger: the reopening condition is met and acted on,
+       reversible: true}
+    - {from: live, to: invested, trigger: the money arrives, reversible: false}
+
+relationships:
+  - type: belongs_to
+    target: founder_office.obj.core.company
+    cardinality: one
+    weight_bp: 10000
+    confidence_bp: 9000
+    description: The investing party as a graph node — the fund, the angel network, the syndicate.
+  - type: works_with
+    target: founder_office.obj.core.contact
+    cardinality: many
+    weight_bp: 8000
+    confidence_bp: 7000
+    description: >-
+      The people at that party. More than one is the healthy shape, and the count is the only structural
+      read on single-threading available today.
+  - type: produces
+    target: founder_office.obj.core.next_action
+    cardinality: many
+    weight_bp: 7000
+    confidence_bp: 6000
+    description: What we owe them, or the re-approach scheduled against a reopening condition.
+  - type: evidences
+    target: founder_office.obj.core.risk
+    cardinality: many
+    weight_bp: 5000
+    confidence_bp: 5000
+    description: >-
+      Risks belonging to the RAISE — a single-threaded fund, a round with no lead, a closing that slips.
+
+inference_patterns:
+  deterministic:
+    - id: ic.turn_is_ours
+      statement: >-
+        The last message came from them, so the turn is ours. Stated first because it is the finding this
+        capability most often produces and the cheapest to act on.
+      status: executable
+      when:
+        - {path: thread.ball_in_court, op: "=", value: us}
+      yields: {attribute: ball_in_court, value: us, confidence_bp: 9000}
+      evidence_fields: [thread.ball_in_court]
+      false_positive: >-
+        A courtesy close — "great to meet you, we'll be in touch" — leaves the turn nominally ours with
+        nothing owed. Ball-in-court is a fact about the correspondence, not about obligation.
+
+    - id: ic.pass_received
+      statement: >-
+        Layer 2 observed an investor pass on this party. A pass is a state with a reopening condition
+        until shown otherwise, which is why this yields `passed` and never `passed_final`.
+      status: executable
+      when:
+        - {has_obs: pass_received}
+      yields: {attribute: outcome, value: passed, confidence_bp: 6500}
+      false_positive: >-
+        The founder declining the investor reads the same; so does a pass forwarded by a connector about
+        a different company, and a programme's rejection misfiled here.
+
+    - id: ic.deferred_not_declined
+      statement: >-
+        The investor deferred rather than declined — "send me updates", "come back when". The conditional
+        deferral applies.
+      status: executable
+      when:
+        - {has_obs: decision_deferred}
+      yields: {attribute: deferred, value: true, confidence_bp: 6000}
+      false_positive: >-
+        A scheduling deferral ("let's talk after the holidays") is a date, not a condition; it defers the
+        meeting, not the decision.
+
+    - id: ic.diligence_opened
+      statement: >-
+        The investor opened diligence. At a venture firm formal diligence follows the partners' review
+        (Gompers et al. 2016), so a partner is very probably engaged.
+      status: executable
+      when:
+        - {has_obs: diligence_started}
+      yields: {attribute: decision_reach, value: partner_engaged, confidence_bp: 6000}
+      false_positive: >-
+        An associate asking for a data room before any partner has met the company reads the same, and so
+        does a programme's request for documents.
+
+    - id: ic.intro_observed
+      statement: >-
+        An introduction was observed against this party: the conversation began on a warm path, and an
+        introducer exists to be credited, updated and asked again.
+      status: executable
+      when:
+        - {has_obs: intro_made}
+      yields: {attribute: introducer_ref, confidence_bp: 6000}
+      false_positive: >-
+        Introductions run both ways. The founder introducing someone TO the fund produces the same
+        observation and says nothing about our own position.
+
+    - id: ic.reporting_not_raising
+      statement: >-
+        The thread's objective is an investor update, not a raise: this is a shareholder, or a prospect on
+        the update list.
+      status: executable
+      when:
+        - {path: thread.objective, op: "=", value: investor_update}
+      yields: {attribute: objective, value: reporting, confidence_bp: 7000}
+      false_positive: >-
+        The monthly update sent to an investor who deferred is also an update, and there the objective is
+        still raising. Read `deferred` before acting on this.
+
+    - id: ic.single_threaded
+      statement: >-
+        The party is attached to the graph by very few edges — one contact, one thread. Single-threading
+        is the commonest structural reason a fund conversation converts at nothing.
+      status: executable
+      when:
+        - {fn: edge_count, op: "<=", value: 2}
+      yields: {attribute: decision_reach, value: associate_only, confidence_bp: 4000}
+      false_positive: >-
+        Edge count is a proxy for graph coverage, not seniority. A single well-placed partner is a strong
+        position this pattern reads as a weak one, which is why it yields low confidence and never a
+        verdict on its own.
+
+  heuristic:
+    - id: ic.update_sent
+      statement: >-
+        An investor update went to this party — the clock the conditional deferral is judged by.
+      status: executable
+      when:
+        - {has_obs: investor_update_sent}
+      yields: {attribute: last_update_sent_at, confidence_bp: 7000}
+      false_positive: >-
+        A forwarded update, or one sent to the whole list in blind copy, reads as sent to every recipient
+        whether or not it was opened.
+
+    - id: ic.party_kind_from_correspondence
+      statement: >-
+        Which kind of investing party this is, inferred from how the correspondence behaves — programme
+        mail arrives on a schedule and in cohorts, a fund's does not.
+      status: needs_signal
+      requires_signals:
+        - {kind: fact_path, name: application_status, owner_layer: L2,
+           note: "Declared as an expected field for `investor_relationship` by the fundraising DomainSpec, and written by nothing."}
+        - {kind: obs_kind, name: programme_deadline, owner_layer: L1,
+           note: "Cohort dates arrive as dates in body text and are the one clock here that never moves."}
+      yields: {attribute: party_kind, confidence_bp: 6000}
+
+    - id: ic.round_context
+      statement: >-
+        Which round this conversation belongs to. Without it every investor sits in one undifferentiated
+        set and no sequencing advice is possible.
+      status: needs_signal
+      requires_signals:
+        - {kind: fact_path, name: funding.round, owner_layer: L2,
+           note: "Declared expected by the fundraising DomainSpec; no writer exists."}
+      yields: {attribute: round, confidence_bp: 5000}
+
+    - id: ic.partner_reached
+      statement: >-
+        Whether anyone with cheque authority has entered the conversation — the qualification question of
+        this object.
+      status: needs_signal
+      requires_signals:
+        - {kind: fact_path, name: party.title, owner_layer: L2,
+           note: "Seniority sits in signature blocks Layer 1 already reads. `party.role` is written, but it names a role in the exchange (counterparty, introducer, owner), not seniority."}
+      yields: {attribute: decision_reach, confidence_bp: 7000}
+
+    - id: ic.reopen_condition_stated
+      statement: >-
+        The condition under which they invited a return, extracted from the pass itself. The single most
+        valuable string this object could hold; nothing extracts it today.
+      status: needs_signal
+      requires_signals:
+        - {kind: obs_kind, name: reopen_condition, owner_layer: L1,
+           note: "Almost always verbatim in the passing email — 'come back when', 'once you have a lead'. Cheap to extract; its absence is why a pass currently destroys its own follow-up."}
+      yields: {attribute: reopen_condition, confidence_bp: 7500}
+
+inputs:
+  - source: email
+    signal: ball in court, last inbound, the thread's objective
+    path: thread.ball_in_court
+    fills: [ball_in_court, last_contact_at, objective]
+    reliability_bp: 8000
+  - source: email
+    signal: investor passes, deferrals, diligence requests, introductions, updates sent
+    fills: [outcome, deferred, decision_reach, introducer_ref, last_update_sent_at]
+    reliability_bp: 6500
+    description: Layer 2's fundraising observation kinds, read by the patterns above.
+  - source: calendar
+    signal: meetings held with the investor
+    fills: [stage]
+    reliability_bp: 8000
+    description: The strongest single piece of evidence for the expert's stage reading.
+
+outputs:
+  - name: stage_with_evidence
+    type: enum
+    description: The stage on the spine's list and the dated event behind it.
+    derived_from: [stage, last_contact_at]
+    consumed_by: [L4.reasoning_unit, L4.decision_maker]
+  - name: turn_and_age
+    type: object
+    description: Whose turn it is and how long it has been theirs or ours.
+    derived_from: [ball_in_court, days_since_contact]
+    consumed_by: [L4.decision_maker, L5.communication_planning]
+  - name: reopen_plan
+    type: object
+    description: A pass's reason, its condition and the date it becomes checkable.
+    derived_from: [pass_reason_kind, reopen_condition, reopen_at]
+    consumed_by: [L5.execution_planning]
+
+preconditions:
+  - id: ic.pre.is_an_investor
+    statement: >-
+      The party could fund the company. A connector, a service provider or our own domain is not an
+      investor conversation, whatever its mail looks like.
+    requires: [party_kind]
+    if_unmet: block
+
+constraints:
+  - id: ic.con.no_close_date
+    statement: An investor conversation carries no derived close date.
+    hard: true
+    why: >-
+      Nothing observable supports one; a fabricated date propagates into prioritisation as though it
+      were evidence.
+
+business_rules:
+  - id: ic.br.pass_needs_its_reason
+    statement: A pass is recorded with its reason class and its condition, or explicitly with neither.
+    then: Refuse a bare `passed` with no `pass_reason_kind`.
+    severity: warning
+    why: >-
+      Stage and timing passes reopen and thesis and team passes do not; collapsed together, half the set
+      is written off and the other half chased pointlessly.
+
+decision_factors:
+  - name: turn_is_ours
+    weight_bp: 3500
+    direction: increases
+    reads: [ball_in_court]
+    description: The cheapest move on the list, and the one the investor will never prompt for.
+  - name: dwell_past_stage_prior
+    weight_bp: 3000
+    direction: increases
+    reads: [stage, days_since_contact]
+    description: Quiet longer than the stage's typical duration is usually a decision nobody has sent.
+  - name: decision_reach
+    weight_bp: 2000
+    direction: increases
+    reads: [decision_reach]
+    description: A conversation that has reached a partner is worth more of the founder's time.
+  - name: reopen_condition_met
+    weight_bp: 1500
+    direction: increases
+    reads: [reopen_condition, reopen_at]
+    description: A met condition turns a resting pass into the warmest lead on the list.
+
+evidence:
+  - source: email
+    strength_bp: 8000
+    decays: true
+    independent_of: [calendar]
+    description: >-
+      The primary source. Position and turn are read from correspondence; the fundraising observation
+      kinds now say a little of what is being discussed.
+  - source: calendar
+    strength_bp: 8000
+    decays: true
+    independent_of: [email]
+    description: >-
+      A held meeting is the strongest evidence that the conversation is live and at which stage, and the
+      hardest to fake with courtesy.
+  - source: derived
+    strength_bp: 3000
+    decays: true
+    description: >-
+      Party kind, round and decision reach are still largely inferred from correspondence shape; weak on
+      purpose, and the reason three patterns above are blocked rather than approximated.
+
+metrics:
+  - name: state_freshness_days
+    unit: days
+    direction: lower_is_better
+    owner_layer: L3
+    description: Age of the stage reading relative to the last observed contact.
+  - name: reopen_conditions_captured
+    unit: percent
+    direction: higher_is_better
+    owner_layer: L3
+    description: Share of passed conversations carrying a reopening condition.
+    calibrates: [ic.pass_received, ic.reopen_condition_stated]
+
+events:
+  - id: ic.ev.pass_landed
+    name: Pass landed
+    emitted_when:
+      - {has_obs: pass_received}
+    payload: [pass_reason_kind, reopen_condition]
+    severity: notable
+    invalidates: [deferred]
+    description: A pass supersedes an earlier deferral; the conversation moves to the pass's clock.
+  - id: ic.ev.diligence_opened
+    name: Diligence opened
+    emitted_when:
+      - {has_obs: diligence_started}
+    payload: [decision_reach]
+    severity: notable
+    invalidates: [deferred]
+
+actions:
+  - id: ic.act.answer_the_turn
+    name: Answer what the investor asked
+    actor: human
+    preconditions:
+      - {path: thread.ball_in_court, op: "=", value: us}
+    effect: The turn passes back to the investor, and the conversation stays live.
+    cost: low
+    reversible: false
+  - id: ic.act.direct_ask
+    name: Ask the decider where it stands
+    actor: human
+    effect: The silence becomes an answer, or a date.
+    cost: low
+    reversible: false
+
+dependencies:
+  - target: founder_office.pb.investor_relations.run_an_investor_conversation
+    kind: requires
+    strength: hard
+    description: The stage list and its priors live in the spine; this object holds the conversation's place on it.
+  - target: founder_office.obj.core.company
+    kind: requires
+    strength: hard
+
+exceptions:
+  - id: ic.ex.angel_skips_stages
+    statement: >-
+      An angel decides alone, so a conversation can move from a first call straight to a commitment with
+      no partner meeting or diligence in between.
+    overrides: [ic.single_threaded]
+    why: One person who decides is not a single-threading risk; they are the whole decision.
+    frequency: common
+
+best_practices:
+  - id: ic.bp.stage_from_events
+    statement: Name the stage from the last dated event, and keep the event beside it.
+    why: A stage without its event cannot be checked, and one read from tone is usually a stage too far.
+    applies_when: Every time the conversation is read.
+
+anti_patterns:
+  - id: ic.ap.pipeline_stage
+    statement: Mapping the conversation onto a sales pipeline stage.
+    why_it_happens: >-
+      The tooling has a stage field, a sales stage is easier to report than a position, and the investor
+      looks like a buyer from a distance.
+    cost: >-
+      There is no forecast category for "the partnership meets on Mondays", and the stage then drives
+      prioritisation as though it meant what it means in a deal.
+    instead: Hold the stage on the spine's list, read from events, and derive no close date from it.
+    detectable_by: [ic.turn_is_ours]
+  - id: ic.ap.chase_on_dormant
+    statement: Sending a check-in because the relationship reads dormant.
+    why_it_happens: >-
+      Dormancy looks like decay, and an undifferentiated check-in is the cheapest available response.
+    cost: >-
+      Dormant is the resting state of most investor relationships. The check-in spends the relationship
+      to produce nothing and, repeated, trains the investor to skim.
+    instead: Act on a met reopening condition or a real update; otherwise leave it alone.
+  - id: ic.ap.pass_without_reason_kind
+    statement: Recording `passed` without its reason class or its condition.
+    why_it_happens: >-
+      The pass is the memorable part, and the conditions attached to it read as politeness.
+    cost: >-
+      Stage and timing passes reopen on their own; thesis and team passes do not. Collapsed together,
+      half the set is written off and the other half chased.
+    instead: Capture the reason class and the stated condition when the pass arrives.
+    detectable_by: [ic.pass_received, ic.reopen_condition_stated]
+
+examples:
+  - label: A fund partner asks for the cohort retention data after a first call
+    kind: typical
+    note: >-
+      Stage first_call moving to partner_meeting or diligence; the turn is ours, and the data is the
+      cheapest move on the list.
+  - label: An angel says "send me updates, I'd love to see where you are in six months"
+    kind: typical
+    note: A conditional deferral. Deferred, condition "where you are in six months", monthly update list.
+  - label: A fund passes "too early for us — come back with a lead"
+    kind: typical
+    note: Passed on stage, reopening condition "a lead"; passed_with_condition, not lost.
+  - label: Twelve quiet days after the firm asked for references
+    kind: edge
+    note: Diligence. The quiet is the work; it becomes a warning only past the date they gave.
+  - label: An introduction service whose mail reads like an investor's
+    kind: misclassification
+    note: >-
+      An introducer, not an investor: party_kind introducer, and no investor conversation at all. Filing
+      it as a fund produces advice that fits nobody.
+
+references:
+  - title: How to Raise Money
+    kind: practitioner
+    author: Paul Graham
+    url: https://paulgraham.com/fr.html
+    note: >-
+      September 2013. Note 5: "an associate is not a VC. They have no decision-making power."
+  - title: How Do Venture Capitalists Make Decisions?
+    kind: research
+    author: Paul Gompers, William Gornall, Steven N. Kaplan, Ilya A. Strebulaev
+    url: https://www.nber.org/papers/w22587
+    note: NBER Working Paper 22587, 2016, section 3.2 — formal diligence follows the partners' review.
+    artifact_ref: founder_office.pb.investor_relations.run_an_investor_conversation
+
+metadata:
+  owner: Founder Office
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-10-09"
+  review_status: unreviewed
+  confidence: experimental
+  completeness: complete
+  notes: >
+    Moved from Sales' investor relations, where it was a draft approved by Harsh on 2026-08-25. New id,
+    so it is unreviewed here until the founder accepts it (`06` D45). Eight executable patterns and four
+    blocked; none sets the stage. Sales' sixty-day dormancy predicate is gone: dormancy is now read
+    against each stage's typical duration on the spine (`06` D33), and no fixed count of days carries a
+    source.

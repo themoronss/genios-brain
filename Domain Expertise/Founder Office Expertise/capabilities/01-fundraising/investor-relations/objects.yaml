@@ -1,10 +1,28 @@
-# STUB load-set — filled with the capability by its content unit (STEP-11).
+# Load-set for founder_office.fundraising.investor_relations — REFERENCES ONLY, never an inline object.
+#
+# required = a missing one blocks the compile.
+# optional = absence lowers confidence rather than blocking (Layer 3 strategy S8).
+#
+# Deliberately narrow. A deal, an opportunity, a budget, a price, a proposal and a contract are not
+# objects this corpus has at all — which is the point of the move: in Sales each was resolvable and
+# answered `unknown` against an investor, and an `unknown` reads downstream as assessed-and-absent.
+# Here there is nothing commercial to load and nothing to refuse.
+#
+# Core, not scoped, for the four nouns: a company, a person, a next action and a risk are what a
+# programme application, an introduction and a hire are made of too, and those capabilities will load
+# them. Until they do, `validate.py` warns that only this capability references them — expected.
+
 capability: founder_office.fundraising.investor_relations
 
 core:
-  required: []
-  optional: []
+  required:
+    - founder_office.obj.core.company
+  optional:
+    - founder_office.obj.core.contact
+    - founder_office.obj.core.next_action
+    - founder_office.obj.core.risk
 
 scoped:
-  required: []
+  required:
+    - founder_office.obj.investor_relations.investor_conversation
   optional: []

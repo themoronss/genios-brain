@@ -1,0 +1,169 @@
+# A move, not the spine. A call is how a conversation leaves first_contact, first_call and
+# partner_meeting; this is the preparation that makes it leave forward. The meeting itself — booking,
+# agenda, follow-through — is an external meeting, the meetings capability's.
+identity:
+  id: founder_office.pb.investor_relations.before_an_investor_call
+  name: Before an investor call
+  kind: playbook
+  domain: founder_office
+  scope: capability
+  owner_capability: founder_office.fundraising.investor_relations
+  subdomain: fundraising
+  version: 1.0.0
+  status: draft
+
+purpose:
+  statement: >-
+    The preparation that makes one investor call move its conversation to the next stage: knowing the
+    investor, knowing where this conversation stands and what the call must produce, and leaving with a
+    named next step and a date. It is what a chief of staff puts in front of the founder before the
+    call.
+  answers:
+    - What do I need to know before this investor call?
+    - What should this call get us?
+  not:
+    - The pitch itself, and the story it tells. Those are the founder's.
+
+when_to_use:
+  situations:
+    - founder_office.sit.live_investor_relationship
+    - founder_office.sit.live_investor_contact
+  conditions:
+    - has_obs: meeting_scheduled
+  signals:
+    - A call or meeting with an investor is on the calendar in the next few days.
+  do_not_use_when:
+    - >-
+      The meeting is a catch-up with an existing shareholder. That is reporting, not a stage of a raise.
+
+steps:
+  - order: 1
+    actor: agent
+    name: Know the investor
+    description: >-
+      Their stage, sector and cheque size; what they have backed and why; any portfolio company that
+      competes; what the partner on the call has written or invested in. "Make sure you know your
+      audience" (YC's seed guide).
+    produces: A short brief on the investor.
+    done_when: >-
+      The brief names the investor's fit, any conflict in their portfolio, and the partner's own
+      interests.
+  - order: 2
+    actor: agent
+    name: Know where this conversation stands
+    description: >-
+      The stage, what was said last, what they asked for and whether it was sent, who introduced the
+      company. A call that repeats the last one moves the conversation backwards.
+    produces: The conversation's position, in three lines.
+    done_when: >-
+      The brief states the stage, the last exchange and anything still owed to the investor.
+  - order: 3
+    actor: human
+    name: Decide what the call must produce
+    description: >-
+      Name the next step to ask for — a partners' meeting, a data room, references, a commitment — and
+      who on their side can grant it.
+    produces: One next step and its decider.
+    done_when: >-
+      One next step and the person who can grant it are written down before the call.
+  - order: 4
+    actor: human
+    name: Prepare the answers they will ask for
+    description: >-
+      The numbers that matter and how they moved since the last contact, the questions this investor's
+      thesis raises, and a demo if the product can be shown.
+    produces: Current numbers and one-line answers.
+    done_when: >-
+      Each likely question has a one-line answer, and every number is current to the day of the call.
+  - order: 5
+    actor: human
+    name: On the call, listen, then ask what happens next
+    description: >-
+      Let them talk; then ask what they need in order to decide, who else must meet the company, and by
+      when. Leave with "an attempted close or at very minimum absolute clarity on next steps" (YC).
+    produces: A named next step, its owner and its date.
+    done_when: >-
+      The call ends with a named next step, its owner and a date, or the founder knows there is none.
+  - order: 6
+    actor: human
+    name: Follow up the same day
+    description: >-
+      Write the same day: thank them, confirm the next step and its date in writing, and send anything
+      promised on the call.
+    produces: A same-day follow-up.
+    done_when: >-
+      A follow-up confirming the next step is sent on the day of the call.
+
+success_signal: >-
+  The call ends with a named next step and a date, confirmed in writing the same day.
+
+# Source in `references`: practitioner judgement — unverified.
+outcome_window_days: 7
+
+do_nothing_consequence: >-
+  The call is spent repeating what the investor already knows, it ends without a next step, and the
+  conversation drifts into the silence that follows most first calls.
+
+objects_used:
+  - founder_office.obj.core.company
+  - founder_office.obj.core.contact
+  - founder_office.obj.investor_relations.investor_conversation
+  - founder_office.obj.core.next_action
+
+outcomes:
+  - >-
+    The founder walks in knowing the investor, the conversation's stage and the one step the call must
+    produce.
+  - >-
+    The call ends with that step named, owned and dated, and the date is in writing the same day.
+
+failure_modes:
+  - >-
+    Preparing the pitch and not the investor, so the call answers questions this investor would never
+    ask.
+  - >-
+    Ending a good call on "great, let's stay in touch", which is how a first call becomes silence.
+  - >-
+    Letting the follow-up wait until the next day, when the investor has had three more calls.
+
+limits:
+  - >-
+    Preparation cannot make a poor fit a good one; a call with an investor whose stage or thesis does not
+    fit is better not taken.
+  - >-
+    The window is a judgement, sized to the preparation before the call and the follow-up after it.
+
+references:
+  - title: A guide to seed fundraising
+    kind: practitioner
+    author: Geoff Ralston (Y Combinator)
+    url: https://www.ycombinator.com/library/4A-a-guide-to-seed-fundraising
+    note: >-
+      "make sure you know your audience--do research on what they like to invest in"; "If you can get the
+      investor to talk more than you, your probability of a deal skyrockets"; "make sure you don't leave
+      an investor meeting without an attempted close or at very minimum absolute clarity on next steps".
+  - title: How to Raise Money
+    kind: practitioner
+    author: Paul Graham
+    url: https://paulgraham.com/fr.html
+    note: >-
+      September 2013. "Never leave a meeting with an investor without asking what happens next. What more
+      do they need in order to decide?"
+  - title: Practitioner judgement
+    kind: practitioner
+    note: >-
+      outcome_window_days (7): practitioner judgement — unverified; for the founder's review. A week
+      covers the preparation in the days before the call, the call, and the same-day confirmation.
+
+metadata:
+  owner: Founder Office
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-10-09"
+  review_status: unreviewed
+  confidence: experimental
+  completeness: complete
+  notes: >
+    New on STEP-11 (M30.C6.L-data.V1.U01), STEP-11 §3.2's "before an investor call". Layer 2's
+    `meeting_scheduled` observation is the trigger it names; the meetings capability (M31) owns the
+    meeting itself.
