@@ -1,0 +1,46 @@
+# V1 ROUTING DEFERRALS — the named reason a capability has no door (see Admin's deferrals.yaml for the rules).
+#
+# The Founder Office is read two ways. Where a Layer 2 situation type honestly applies, a capability
+# owns a situation and is routed like any other. Where none does — a programme's application, a
+# registration, a hire — the capability is read by the EXPERT for a file of that kind of work
+# (`packs/compiler/playbook_reader.playbook_for`, STEP-11 §8.4, STEP-12), and the routing ledger says
+# so here. No new L2 types are minted for them (`06` D32).
+domain: founder_office
+version: 1.0.0
+
+deferred:
+
+  - capability: founder_office.fundraising.investor_relations
+    kind: no_runtime_trigger
+    reason: >
+      A stub until STEP-11 M30.C6 moves Sales' investor relations here with its two situations
+      (investor_relationship, investor_contact); this entry is removed in that unit.
+
+  - capability: founder_office.programs_and_applications.program_applications
+    kind: no_runtime_trigger
+    reason: >
+      No Layer 2 situation type is an application to a programme; the expert reads this capability
+      for a file whose kind of work is `program` (STEP-12).
+
+  - capability: founder_office.networking_and_intros.introductions
+    kind: no_runtime_trigger
+    reason: >
+      No Layer 2 situation type is an introduction; the expert reads this capability for a file whose
+      kind of work is `intro` (STEP-12).
+
+  - capability: founder_office.compliance.registrations_and_recognition
+    kind: no_runtime_trigger
+    reason: >
+      `filing_due` and `filing_overdue` are planned Layer 2 types with no producer; the expert reads
+      this capability for a file whose kind of work is `compliance` (STEP-12).
+
+  - capability: founder_office.hiring.offers_and_joining
+    kind: no_runtime_trigger
+    reason: >
+      `employee_lifecycle_event` is planned with no producer, and it is on- and off-boarding, not
+      hiring; the expert reads this capability for a file whose kind of work is `hiring` (STEP-12).
+
+  - capability: founder_office.meetings.external_meetings
+    kind: no_runtime_trigger
+    reason: >
+      A stub until STEP-11 M31; Admin's four meeting situations keep routing meetings meanwhile.

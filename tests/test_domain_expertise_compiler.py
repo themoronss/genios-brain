@@ -416,7 +416,8 @@ def test_missing_optional_object_is_visible_and_lowers_confidence(tmp_path: Path
 
 def test_current_three_domain_corpus_compiles_a_real_sales_slice():
     catalog = ExpertBrainCatalog(default_authoring_root())
-    assert set(catalog.domains) == {"admin", "customer_support", "sales"}
+    # Four since STEP-11 authored the Founder Office corpus (`06` D2); this test compiles Sales.
+    assert set(catalog.domains) == {"admin", "customer_support", "founder_office", "sales"}
     compiler = DomainCompiler(
         catalog=catalog,
         require_admission=False,   # draft fixtures: measurement mode; admission has its own test

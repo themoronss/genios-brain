@@ -55,10 +55,11 @@ def test_the_alias_table_is_inside_the_registry_stamp():
 
 def test_layer_three_resolves_the_older_name_too():
     """Situations already stored under `investor` are real. Re-typing history silently is worse
-    than reading it, so the corpus-side alias table maps the old name to its corpus folder."""
+    than reading it, so the corpus-side alias table maps the old name to its corpus folder — the
+    Founder Office since STEP-11 (`06` D2), no longer Sales."""
     from genios_engine.packs.compiler.capability_resolver import DOMAIN_ALIASES
-    assert DOMAIN_ALIASES["investor"] == "sales"
-    assert DOMAIN_ALIASES["fundraising"] == "sales"
+    assert DOMAIN_ALIASES["investor"] == "founder_office"
+    assert DOMAIN_ALIASES["fundraising"] == "founder_office"
 
 
 # ── the product's own domain is not a counterparty ──────────────────────────────

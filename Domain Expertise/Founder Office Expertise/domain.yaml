@@ -1,0 +1,135 @@
+# Founder Office — domain root
+#
+# The one question this domain answers, in Layer 3 terms:
+#   "How would a seasoned chief of staff to a founder read this situation?"
+#
+# Not what is true (Layer 2). Not what to do (Layer 4). Only how an expert would understand it.
+#
+# WHY THE FOUNDER'S OFFICE IS A DOMAIN (STEP-11, `06` D2)
+#
+# The work an early-stage founder's mailbox is made of — raising money, applying to programmes,
+# being introduced, registering the company, hiring the first people, and the meetings all of it
+# runs through — is not Admin and it is not Sales. Its atom is a RELATIONSHIP IN MOTION with a
+# stage: an investor between a first call and a decision, an application between submission and a
+# result, an introduction between the connector's mail and the first meeting. What a professional
+# knows about each is how the stages usually go, how long each usually takes, what silence means at
+# each one, and when to stop. That is what this corpus holds, sourced and reviewed by the founder.
+#
+# Investor relations used to live in Sales (`10-investor-relations`) because a compiled signal could
+# only carry authority in a pack lane the tenant held; `packs/wiring._corpus_packs` now gives every
+# authored corpus its own lane, so it moves here (STEP-11 §8.2).
+#
+# ARCHITECTURE — the same tree as every other domain
+#
+#   objects/core/<name>.yaml              shared — loaded by MORE THAN ONE capability
+#   objects/<capability>/<name>.yaml      scoped — loaded by EXACTLY ONE
+#   playbooks|heuristics/<scope>/<name>.yaml
+#
+#   capabilities/<NN-subdomain>/<capability>/
+#       capability.yaml     purpose, outcomes, failure modes, KPIs, handoffs
+#       objects.yaml        the load-set — references only
+#       knowledge.yaml      the expertise that applies — references only
+#       situations/         the situations this capability owns, where an L2 type honestly applies
+#
+# A playbook here also declares its STAGES — each with a typical duration as a labelled prior and
+# its source, what quiet means at that stage, and what ends it — and what doing nothing costs,
+# what success looks like and how long to wait for it. The current stage of a file is the expert's
+# judgment (STEP-12); these files never detect a stage by rule.
+
+# WHETHER A TENANT NOBODY HAS CONFIGURED HEARS FROM THIS CORPUS.
+#
+# It does not. A founder's office is one person's work, written for and reviewed by that person:
+# it is switched on for the pilot org only (`scripts/activate_tenant.py --domains admin,founder_office`)
+# and stays off for every other tenant until its playbooks are accepted and a second founder asks.
+activation:
+  default_on: false
+  why: >
+    Authored for one founder and reviewed by that founder line by line (`06` D2, D45). A tenant nobody configured
+    must not hear advice about a raise, a programme or a hire from playbooks another founder accepted.
+
+identity:
+  id: founder_office
+  name: Founder Office
+  version: 1.0.0
+  status: draft
+
+description: >
+  The work of an early-stage founder that runs through other people's decisions: raising money from
+  investors, applying to accelerators, incubators and government programmes, being introduced and
+  following introductions through, registering the company and keeping its recognitions, hiring the
+  first people, and the external meetings each of these turns on.
+
+question: "How would a seasoned chief of staff to a founder read this situation?"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Subdomains — the founder's kinds of work, in the order a raise usually needs them
+# ─────────────────────────────────────────────────────────────────────────────
+subdomains:
+
+  - id: fundraising
+    dir: "01-fundraising"
+    name: Fundraising
+    question: "Where does each investor conversation stand, and what does it need from us next?"
+    capabilities: [investor_relations]
+    note: >
+      Moved from Sales (`sales.investor_relations.investor_relations`) on STEP-11: an investor is not a
+      customer, and the capability exists to refuse that reading.
+
+  - id: programs_and_applications
+    dir: "02-programs-and-applications"
+    name: Programs & Applications
+    question: "Where does each application stand, and what does its programme expect next?"
+    capabilities: [program_applications]
+    note: >
+      Accelerators, incubators, fellowships, grants and government schemes. Their deadlines do not
+      move, their decisions arrive in batches, and their silence means something different from an
+      investor's.
+
+  - id: networking_and_intros
+    dir: "03-networking-and-intros"
+    name: Networking & Intros
+    question: "Has each introduction been followed through on both sides?"
+    capabilities: [introductions]
+
+  - id: compliance
+    dir: "04-compliance"
+    name: Compliance
+    question: "Are the company's registrations and recognitions in place, and what do they unlock?"
+    capabilities: [registrations_and_recognition]
+    note: >
+      Written only from official sources, each line citing its URL (`06` D47).
+
+  - id: hiring
+    dir: "05-hiring"
+    name: Hiring
+    question: "Is each candidate moving from offer to their first day, and what is anyone waiting on?"
+    capabilities: [offers_and_joining]
+
+  - id: meetings
+    dir: "06-meetings"
+    name: Meetings
+    question: "Is each external meeting prepared for, and followed through after?"
+    capabilities: [external_meetings]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Naming — enforced by _tools/validate.py
+# ─────────────────────────────────────────────────────────────────────────────
+id_scheme:
+  domain: "founder_office"
+  subdomain: "founder_office.<subdomain>"
+  capability: "founder_office.<subdomain>.<capability>"
+  situation: "founder_office.sit.<name>"
+  core_object: "founder_office.obj.core.<name>"
+  scoped_object: "founder_office.obj.<capability>.<name>"
+
+metadata:
+  owner: Founder Office
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-10-09"
+  review_status: unreviewed
+  confidence: provisional
+  notes: >
+    The fourth domain, authored for the pilot founder under `speedrun008/YC-II W27/STEP-11`. Every
+    prior in it is a profession's typical value with its source, never a measurement of this
+    founder; the founder's own numbers come from STEP-10's calculators and say their n.

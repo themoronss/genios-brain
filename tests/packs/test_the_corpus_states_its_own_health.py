@@ -57,7 +57,11 @@ def test_the_report_reads_the_compilers_own_rule_and_not_a_copy(catalog):
     """⛔ Two hand-kept copies of one rule drift. The report must call `_admission_reason`."""
     for domain, record in catalog.domains.items():
         expected_bad = sum(1 for c in record.capabilities.values() if _admission_reason(c))
-        expected_hollow = sum(1 for c in record.capabilities.values() if _hollow(c))
+        # A hollow capability is one that WAS admitted (`test_the_totals_close`): the report counts
+        # hollowness among the admitted, and so does this. The two only agreed by coincidence while
+        # every capability was admitted; STEP-11's stubs are hollow AND unadmitted.
+        expected_hollow = sum(1 for c in record.capabilities.values()
+                              if _hollow(c) and not _admission_reason(c))
         row = corpus_health(catalog)[domain]
         assert row.inadmissible == expected_bad
         assert row.hollow == expected_hollow
@@ -102,12 +106,16 @@ def test_the_measured_corpus_is_healthy_and_says_so(catalog):
     health = corpus_health(catalog)
     total = sum(r.total for r in health.values())
     admitted = sum(r.admitted for r in health.values())
-    assert total == 155, (
-        f"the corpus is {total} capabilities, not 155 — update the plan's denominator; "
+    assert total == 161, (
+        f"the corpus is {total} capabilities, not 161 — update the plan's denominator; "
         f"the 534 in the plan counted FILES, three per capability")
-    assert admitted == total, (
+    # 155 shipped, all admitted; + the Founder Office's six (STEP-11), declared as stubs and stamped
+    # one by one as Rohit accepts them (`06` D45). Nothing outside that domain may go dark.
+    founder = health["founder_office"]
+    assert (founder.total, founder.admitted, founder.by_reason.get("stub")) == (6, 0, 6)
+    assert admitted == total - founder.total, (
         f"{total - admitted} capabilities would go dark under require_admission=True; "
-        f"the plan's cutover cost is no longer zero")
+        f"the plan's cutover cost is no longer zero outside the Founder Office")
 
 
 # =================================================================================================

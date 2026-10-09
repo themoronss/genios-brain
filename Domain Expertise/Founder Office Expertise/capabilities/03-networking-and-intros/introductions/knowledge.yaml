@@ -1,0 +1,17 @@
+# STUB knowledge manifest — filled with the capability by its content unit (STEP-11).
+capability: founder_office.networking_and_intros.introductions
+playbooks:
+  core: []
+  scoped: []
+heuristics:
+  core: []
+  scoped: []
+mental_models:
+  core: []
+  scoped: []
+rules:
+  core: []
+  scoped: []
+decision_frameworks:
+  core: []
+  scoped: []

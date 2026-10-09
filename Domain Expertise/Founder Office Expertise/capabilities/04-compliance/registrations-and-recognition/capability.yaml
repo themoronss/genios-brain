@@ -1,0 +1,23 @@
+# STUB — declared by the domain root (STEP-11 M30.C1.L-contract.V0.U01) and filled by its content unit.
+# A stub is skipped by the resolver: nothing compiles through it until it is authored and admitted.
+identity:
+  id: founder_office.compliance.registrations_and_recognition
+  name: Registrations & Recognition
+  domain: founder_office
+  subdomain: compliance
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  The company's registrations and recognitions — Startup India / DPIIT, Udyam, state programmes — from application to certificate and what it unlocks, from official sources only. Filled by STEP-11 M31.
+
+question: "Is this registration or recognition in place, and what does it unlock?"
+
+metadata:
+  owner: Founder Office
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-10-09"
+  review_status: unreviewed
+  confidence: experimental

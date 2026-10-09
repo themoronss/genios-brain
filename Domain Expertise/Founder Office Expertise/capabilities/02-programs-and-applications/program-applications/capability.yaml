@@ -1,0 +1,23 @@
+# STUB — declared by the domain root (STEP-11 M30.C1.L-contract.V0.U01) and filled by its content unit.
+# A stub is skipped by the resolver: nothing compiles through it until it is authored and admitted.
+identity:
+  id: founder_office.programs_and_applications.program_applications
+  name: Program Applications
+  domain: founder_office
+  subdomain: programs_and_applications
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Every application to an accelerator, incubator, fellowship, grant or government scheme, from submission to onboarding. Filled by STEP-11 M30.C6.
+
+question: "Where does this application stand, and what does its programme expect next?"
+
+metadata:
+  owner: Founder Office
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-10-09"
+  review_status: unreviewed
+  confidence: experimental

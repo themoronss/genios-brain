@@ -1,0 +1,10 @@
+# STUB load-set — filled with the capability by its content unit (STEP-11).
+capability: founder_office.meetings.external_meetings
+
+core:
+  required: []
+  optional: []
+
+scoped:
+  required: []
+  optional: []

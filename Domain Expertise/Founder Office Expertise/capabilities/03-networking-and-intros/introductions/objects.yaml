@@ -1,0 +1,10 @@
+# STUB load-set — filled with the capability by its content unit (STEP-11).
+capability: founder_office.networking_and_intros.introductions
+
+core:
+  required: []
+  optional: []
+
+scoped:
+  required: []
+  optional: []

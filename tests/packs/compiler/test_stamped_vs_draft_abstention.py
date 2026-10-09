@@ -48,7 +48,16 @@ def test_the_whole_shipped_corpus_is_stamped_now():
                     for capability in record.capabilities.values()]
     gaps = {capability.id: _admission_reason(capability) for capability in capabilities}
     unadmitted = {k: v for k, v in gaps.items() if v is not None}
-    assert not unadmitted, f"the corpus is no longer fully stamped: {unadmitted}"
+    # The Founder Office (STEP-11) is authored stub-first: its six capabilities are declared, deferred
+    # with a reason each, and stamped one by one as Rohit accepts them (`06` D45). Every other
+    # capability is stamped. Exact, so a stub anywhere else — or a seventh here — goes red.
+    founder_stubs = {"founder_office.fundraising.investor_relations": "stub",
+                     "founder_office.programs_and_applications.program_applications": "stub",
+                     "founder_office.networking_and_intros.introductions": "stub",
+                     "founder_office.compliance.registrations_and_recognition": "stub",
+                     "founder_office.hiring.offers_and_joining": "stub",
+                     "founder_office.meetings.external_meetings": "stub"}
+    assert unadmitted == founder_stubs, f"the corpus is no longer stamped as declared: {unadmitted}"
     # A FLOOR, not an equality. The corpus is still being authored, and pinning the exact count
     # would make this test a tripwire for anyone adding a capability rather than for the thing it
     # guards — which is that the number is no longer 152-with-0-accepted.

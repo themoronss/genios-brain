@@ -1,0 +1,23 @@
+# STUB — declared by the domain root (STEP-11 M30.C1.L-contract.V0.U01) and filled by its content unit.
+# A stub is skipped by the resolver: nothing compiles through it until it is authored and admitted.
+identity:
+  id: founder_office.networking_and_intros.introductions
+  name: Introductions
+  domain: founder_office
+  subdomain: networking_and_intros
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  An introduction made by a connector or a friend, from the connector's mail to the first meeting and its outcome. Filled by STEP-11 M31.
+
+question: "Has this introduction been followed through on both sides?"
+
+metadata:
+  owner: Founder Office
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-10-09"
+  review_status: unreviewed
+  confidence: experimental

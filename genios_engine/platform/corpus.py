@@ -137,13 +137,18 @@ def speaks_for(domain_id: str, shipped: object) -> bool:
     coverage was complete without one.
 
     The question is not "what is this called on the other side" but "does a shipped entry already
-    speak for it", and both directions of the table answer that.
+    speak for it", and both directions of the table answer that — and so does a SHARED target:
+    since STEP-11 `fundraising` and `investor` both name the Founder Office corpus, and `fundraising`
+    is shipped, so `investor` is spoken for by it even though no shipped entry is called that.
     """
     if domain_id in shipped:                      # type: ignore[operator]
         return True
     aliases = engine_domain_aliases()
+    target = aliases.get(domain_id, "")
     return (domain_id in set(aliases.values())
-            or aliases.get(domain_id, "") in shipped)      # type: ignore[operator]
+            or target in shipped                                      # type: ignore[operator]
+            or bool(target) and any(aliases.get(name) == target
+                                    for name in shipped))             # type: ignore[union-attr]
 
 
 __all__ = ["authored_domain_ids", "authored_domains", "corpus_root",

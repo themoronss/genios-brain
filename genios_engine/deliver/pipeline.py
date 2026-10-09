@@ -428,7 +428,8 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
             # authority" — and a reader arriving today would conclude that every compiled card is
             # downgraded and stop looking. Every authored capability now clears the admission
             # ceremony (155 of 155 at the time of writing; the count moves as the corpus is
-            # authored, the property does not):
+            # authored, the property does not — except the Founder Office's, authored stub-first
+            # by STEP-11 and stamped one by one as the founder accepts them):
             # `identity.status == 'stable'`, `metadata.review_status == 'approved'` with
             # a named reviewer, and `admission.accepted_content_hash` equal to the hash of the
             # routed bytes minus the admission block. `capability_resolver._admission_reason`

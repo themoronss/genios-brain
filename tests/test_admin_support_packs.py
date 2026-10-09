@@ -323,7 +323,9 @@ def test_the_tenant_resolves_an_admin_pack_lane_where_it_used_to_resolve_none(pg
         rows = {r.pack_id: r for r in conn.execute(text(
             "select pack_id, version, state, authority_revision from tenant_packs "
             "where org_id=:o"), {"o": org})}
-    assert set(rows) == {"sales", "general", "admin", "customer_support"}
+    # + the Founder Office's synthesised lane (STEP-11): installed for every org and inert until a
+    # tenant activates the domain at Layer 3 — it carries no rules, no plays and no fields.
+    assert set(rows) == {"sales", "general", "admin", "customer_support", "founder_office"}
 
     for pack_id in ("admin", "customer_support"):
         lane = _tenant_pack(registry, pg_store, org, pack_id)

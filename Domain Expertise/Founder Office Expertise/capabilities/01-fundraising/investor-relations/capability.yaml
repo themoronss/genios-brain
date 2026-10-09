@@ -1,0 +1,23 @@
+# STUB — declared by the domain root (STEP-11 M30.C1.L-contract.V0.U01) and filled by its content unit.
+# A stub is skipped by the resolver: nothing compiles through it until it is authored and admitted.
+identity:
+  id: founder_office.fundraising.investor_relations
+  name: Investor Relations
+  domain: founder_office
+  subdomain: fundraising
+  version: 0.1.0
+  status: draft
+  stub: true
+
+description: >
+  Every conversation with a fund, an angel or a syndicate, from the first contact to a decision. Filled by STEP-11 M30.C6 (moved from Sales and deepened).
+
+question: "Where does this investor conversation stand, and what does it need from us next?"
+
+metadata:
+  owner: Founder Office
+  created_by: ai
+  reviewed_by: ""
+  last_updated: "2026-10-09"
+  review_status: unreviewed
+  confidence: experimental

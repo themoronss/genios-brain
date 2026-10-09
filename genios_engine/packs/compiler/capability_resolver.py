@@ -34,13 +34,15 @@ from .models import RoutePlan, SourceDocument
 #: written by humans and reads better as `customer_support`, while L2's id is a registry key.
 DOMAIN_ALIASES: dict[str, str] = {
     "support": "customer_support",
-    # Fundraising is authored inside the Sales corpus, in its own `investor_relations`
-    # subdomain. Not because an investor is a customer — the capability exists precisely to
-    # refuse that reading — but because a compiled signal can only carry authority in a pack
-    # lane the tenant actually holds (`_tenant_pack`: the config snapshot's `pack_id` must
-    # equal the capability's domain). Splitting fundraising into its own corpus domain would
-    # have produced a capability that compiles, reasons, and can never become a card.
-    "fundraising": "sales",
+    # Fundraising is the FOUNDER OFFICE's (STEP-11, `06` D2): the founder's raising, programmes,
+    # introductions, compliance and hiring, authored in `Domain Expertise/Founder Office Expertise/`.
+    # ⛔ IT USED TO POINT AT SALES, AND THE REASON GIVEN WAS STALE (`03` F122). The comment here said a
+    # corpus of its own "compiles, reasons, and can never become a card", because a compiled signal
+    # carries authority only in a pack lane the tenant holds (`_tenant_pack`: the snapshot's
+    # `pack_id` must equal the capability's domain). `packs/wiring._corpus_packs` has since given
+    # EVERY authored corpus that lane with no engine code, so an investor no longer has to be read
+    # through the Sales corpus to reach a card.
+    "fundraising": "founder_office",
     # `investor` is the SAME domain under the model's own word for it — `_RELATIONSHIP_NATURES`
     # in the L2 pipeline offers `investor`, the registry calls it `fundraising`, and the two never
     # met. `context.domain_spec._ALIASES` now canonicalises the name where a hint becomes THE
@@ -48,7 +50,7 @@ DOMAIN_ALIASES: dict[str, str] = {
     # stored under the old name are real and re-typing history silently would be worse than
     # reading it. Deliberately duplicated rather than imported: L2 and L3 share no module today,
     # and one import to save one line of data is not worth the edge.
-    "investor": "sales",
+    "investor": "founder_office",
 }
 
 #: Layer 2 domain ids that are NOT a domain — they mean "no domain was identified".
