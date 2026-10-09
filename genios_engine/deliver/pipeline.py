@@ -76,6 +76,15 @@ def _open_signals_without_cards(graph, org_id: str,
             # `{stage}` slot, the literal word "open", as the situation line on ten of the design
             # partner's eighteen live cards.
             "rcap.manifest->'metadata'->'render' as capability_render, "
+            # STEP-11 · WHAT THE PLAY SAID SUCCESS IS, AND WHETHER A HUMAN REVIEWED ITS PLAYBOOK, off
+            # `authority_play` — the very manifest entry the authority join already proved is the
+            # selected candidate's play — and the corpus the capability was compiled from. A card's
+            # success line read only the tenant pack's `plays`, which are `{}` for every corpus pack,
+            # so no compiled card could ever name one (M30.C3.L-data.V1.U03); the review state is
+            # what D3's "playbook not yet reviewed" is decided on.
+            "authority_play.declared_play->'success_events' as play_success_events, "
+            "authority_play.declared_play->'metadata'->>'review_state' as play_review_state, "
+            "rcap.manifest->>'domain' as capability_domain, "
             # The DecisionObject's own content (0070). Reading it here is what retires the API
             # layer's reason_code if/elif chain as the source of a card's recommendation.
             "s.do_nothing_consequence, s.uncertainty, s.outcome_window_days as decision_window, "
@@ -122,7 +131,8 @@ def _open_signals_without_cards(graph, org_id: str,
     out = []
     for r in rows:
         d = dict(r)
-        for jf in ("score_inputs", "evidence", "composite_members", "capability_render"):
+        for jf in ("score_inputs", "evidence", "composite_members", "capability_render",
+                   "play_success_events"):
             if isinstance(d.get(jf), str):
                 try:
                     d[jf] = json.loads(d[jf])
