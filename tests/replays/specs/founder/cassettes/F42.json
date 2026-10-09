@@ -1,9 +1,32 @@
 {
  "case_id": "F42",
  "source": "ideal_reader",
- "recorded_at": "785ae938",
+ "recorded_at": "7179cd68",
  "answers": {
-  "1a822ae5c22d3a3d12384ed867ee69e740c1ea83647b481dd67c541e6e19fa05": {
+  "4049b6b5048cc9bece95e470d07a26e3779564e8f7c24f4651cd8d0932753177": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 1043,
+   "output_tokens": 51,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "456136a6b88d894f53294ed0e18bf1e4daf3098fe1065e50d095f85c87bc26af": {
    "site": "junk_gate_batch",
    "parsed": [
     {
@@ -14,11 +37,11 @@
     }
    ],
    "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 865,
+   "input_tokens": 1069,
    "output_tokens": 24,
    "model": "claude-haiku-4-5-20251001"
   },
-  "1f778459162fb06f16da130655d964947ee5d126c40ba0805ee63527e0d280d9": {
+  "4f597293e5064beb567d96c2cd6628688f28744d3ca7b7833cee14e9a578085e": {
    "site": "extraction",
    "parsed": {
     "intent": "request",
@@ -141,34 +164,29 @@
     ]
    },
    "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"traction metrics\", \"seed round\"], \"entity_mentions\": [{\"surface_form\": \"Meera Iyer\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera Iyer\", \"start_offset\": 229, \"end_offset\": 239}], \"confidence_bp\": 9000}, {\"surface_form\": \"Manav Rao\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Manav Rao\", \"start_offset\": 273, \"end_offset\": 282}], \"confidence_bp\": 9000}, {\"surface_form\": \"Lumen Ventures\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Lumen Ventures\", \"start_offset\": 292, \"end_offset\": 306}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Share the current traction metrics: clinics live, revenue run-rate and the pilot pipeline\", \"asked_by\": \"Manav Rao\", \"asked_of\": \"Meera Iyer\", \"evidence\": [{\"quote\": \"could you share your current traction metrics\", \"start_offset\": 106, \"end_offset\": 151}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"Monday\", \"earliest\": \"2026-08-10T00:00:00+05:30\", \"latest\": \"2026-08-10T23:59:59+05:30\", \"certainty\": \"relative\", \"resolved_against\": \"2026-08-08T06:30:00Z\", \"evidence\": [{\"quote\": \"Monday\", \"start_offset\": 80, \"end_offset\": 86}]}], \"business_facts\": [{\"field\": \"person.title\", \"subject\": \"Manav Rao\", \"value\": \"Partner\", \"standing\": \"observed\", \"evidence\": [{\"quote\": \"Partner, Lumen Ventures\", \"start_offset\": 283, \"end_offset\": 306}], \"confidence_bp\": 9000}, {\"field\": \"thread.objective\", \"subject\": \"thread\", \"value\": \"traction metrics before the partners' meeting\", \"standing\": \"judgement\", \"evidence\": [{\"quote\": \"could you share your current traction metrics\", \"start_offset\": 106, \"end_offset\": 151}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"traction metrics before the partners' meeting\"}, \"implied_actions\": [\"share the current traction metrics before Monday\"]}",
-   "input_tokens": 5354,
+   "input_tokens": 5558,
    "output_tokens": 499,
    "model": "claude-haiku-4-5-20251001"
   },
-  "367d5237276c8d68f5d6b1005d72486f511e5506f21492d3d2114cbb45cb1f53": {
-   "site": "r1",
+  "95c696b47e99f1cf8b63e7090b34571d21acb67cb21bec3fc4dada23b450cf46": {
+   "site": "decider",
    "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     }
-    ]
+    "outcome": "decision",
+    "scores": {
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4526,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 4582,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 6200
+    },
+    "confidence_bp": 5000,
+    "rationale": "A company wrote today and the ball is in our court.",
+    "missing": []
    },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 839,
-   "output_tokens": 51,
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4526, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4582, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 6200}, \"confidence_bp\": 5000, \"rationale\": \"A company wrote today and the ball is in our court.\", \"missing\": []}",
+   "input_tokens": 4166,
+   "output_tokens": 85,
    "model": "claude-haiku-4-5-20251001"
   },
-  "44ea943f3b79ddb6e41d4c21df32c30c7fb3a166eb906548e7f9c05611c98da3": {
+  "9dc624277d8e472889e3314aa8ed56490e45cdbfe0ff2520608949a07b9e73d1": {
    "site": "relevance",
    "parsed": {
     "verdicts": [
@@ -183,7 +201,7 @@
     ]
    },
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Kitebird - traction metrics?\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "input_tokens": 1014,
+   "input_tokens": 1218,
    "output_tokens": 40,
    "model": "claude-haiku-4-5-20251001"
   },
@@ -199,25 +217,7 @@
    "output_tokens": 72,
    "model": "claude-haiku-4-5-20251001"
   },
-  "c8677fcd35b4b504abad6c1ba86b33b3f0047047e06cc3924817648fe8c357a4": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4526,
-     "admin.pb.follow_up_coordination.the_follow_through_relay": 4582,
-     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 6200
-    },
-    "confidence_bp": 5000,
-    "rationale": "A company wrote today and the ball is in our court.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4526, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4582, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 6200}, \"confidence_bp\": 5000, \"rationale\": \"A company wrote today and the ball is in our court.\", \"missing\": []}",
-   "input_tokens": 2894,
-   "output_tokens": 85,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "eb447986e5c0f7f94acb2389290f820c0605616528525918eb87cc618d2eba40": {
+  "d69da657dbde1e6b11fedb67e34442444fb43a552e639cb2aed76f972bb99bde": {
    "site": "resolution",
    "parsed": {
     "verdict": "NOT_RESOLVED",
@@ -229,7 +229,7 @@
     "speaker_role_said": "unknown"
    },
    "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Kitebird - traction metrics?\", \"start_offset\": 0, \"end_offset\": 28, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1361,
+   "input_tokens": 1565,
    "output_tokens": 44,
    "model": "claude-haiku-4-5-20251001"
   }

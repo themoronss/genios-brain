@@ -1,9 +1,63 @@
 {
  "case_id": "F08",
  "source": "ideal_reader",
- "recorded_at": "785ae938",
+ "recorded_at": "7179cd68",
  "answers": {
-  "0d94301223f0babd5600259e6867f830c1196cf502deb170276451e5ad26fe9b": {
+  "2d042d41588a6c0aee0ef58dc545da444a44ccb62aa505ae13474d1a36cae27a": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "I'll let you two take it from here.",
+    "start_offset": 195,
+    "end_offset": 230,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"I'll let you two take it from here.\", \"start_offset\": 195, \"end_offset\": 230, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1540,
+   "output_tokens": 47,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "816411ba802208d5cdabf02eb72e1f9a62ad1cfc1c7d5674ace868e89fff60f0": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "reply": 4600,
+     "wait_unanswered_email": 4600
+    },
+    "confidence_bp": 5000,
+    "rationale": "An introduction that asks nothing of the founder yet, with no word from either side since: a line to watch in the brief, not a card.",
+    "missing": [
+     "a reply from the person introduced"
+    ]
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"reply\": 4600, \"wait_unanswered_email\": 4600}, \"confidence_bp\": 5000, \"rationale\": \"An introduction that asks nothing of the founder yet, with no word from either side since: a line to watch in the brief, not a card.\", \"missing\": [\"a reply from the person introduced\"]}",
+   "input_tokens": 2029,
+   "output_tokens": 75,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "9d360665b7dce6bec5a95957f2b697a4348a1ab0a69fbfea6f248d4f08b8860e": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "reply": 4700,
+     "wait_unanswered_email": 4700
+    },
+    "confidence_bp": 5000,
+    "rationale": "An introduction that asks nothing of the founder yet, with no word from either side since: a line to watch in the brief, not a card.",
+    "missing": [
+     "a reply from the person introduced"
+    ]
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"reply\": 4700, \"wait_unanswered_email\": 4700}, \"confidence_bp\": 5000, \"rationale\": \"An introduction that asks nothing of the founder yet, with no word from either side since: a line to watch in the brief, not a card.\", \"missing\": [\"a reply from the person introduced\"]}",
+   "input_tokens": 2029,
+   "output_tokens": 75,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "a165a44a7780ee0534618643f6bfe6c3dada5d8a706f42b548302d8ea2979962": {
    "site": "r1",
    "parsed": {
     "readings": [
@@ -28,65 +82,11 @@
     ]
    },
    "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 864,
+   "input_tokens": 1068,
    "output_tokens": 74,
    "model": "claude-haiku-4-5-20251001"
   },
-  "32cc63c5f31eb36fa2b9e6b9efe6580017ab89ac6f2a0518bfdb5002e015a650": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "reply": 4700,
-     "wait_unanswered_email": 4700
-    },
-    "confidence_bp": 5000,
-    "rationale": "An introduction that asks nothing of the founder yet, with no word from either side since: a line to watch in the brief, not a card.",
-    "missing": [
-     "a reply from the person introduced"
-    ]
-   },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"reply\": 4700, \"wait_unanswered_email\": 4700}, \"confidence_bp\": 5000, \"rationale\": \"An introduction that asks nothing of the founder yet, with no word from either side since: a line to watch in the brief, not a card.\", \"missing\": [\"a reply from the person introduced\"]}",
-   "input_tokens": 1826,
-   "output_tokens": 75,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "3a2e61836b712925b539ea8dca57441871f026a89e18b7f984bbe7232e802769": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "reply": 4600,
-     "wait_unanswered_email": 4600
-    },
-    "confidence_bp": 5000,
-    "rationale": "An introduction that asks nothing of the founder yet, with no word from either side since: a line to watch in the brief, not a card.",
-    "missing": [
-     "a reply from the person introduced"
-    ]
-   },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"reply\": 4600, \"wait_unanswered_email\": 4600}, \"confidence_bp\": 5000, \"rationale\": \"An introduction that asks nothing of the founder yet, with no word from either side since: a line to watch in the brief, not a card.\", \"missing\": [\"a reply from the person introduced\"]}",
-   "input_tokens": 1825,
-   "output_tokens": 75,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "62c4a55ac2f41586c6f49c748211a33742170ef8f473faa921b6693cc61eea6a": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "I'll let you two take it from here.",
-    "start_offset": 195,
-    "end_offset": 230,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"I'll let you two take it from here.\", \"start_offset\": 195, \"end_offset\": 230, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1336,
-   "output_tokens": 47,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "65e22e27fa4e94aeab1ecdd04da10fb6f6ba1de0fb98e3c7bb886c74c8dca5f2": {
+  "b18857b42c39d55e23f646f5edfbb6237f507477d8e3bf0a5bd7ec621c7f8862": {
    "site": "extraction",
    "parsed": {
     "intent": "introduce",
@@ -140,11 +140,27 @@
     }
    },
    "raw": "{\"intent\": \"introduce\", \"stance\": \"positive\", \"topics\": [\"introduction\"], \"entity_mentions\": [{\"surface_form\": \"Simon Hart\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Simon Hart\", \"start_offset\": 9, \"end_offset\": 19}], \"confidence_bp\": 9000}, {\"surface_form\": \"Lumenpath\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Lumenpath\", \"start_offset\": 21, \"end_offset\": 30}], \"confidence_bp\": 9000}], \"relationships\": [{\"party\": \"Simon Hart\", \"nature\": \"introduced contact\", \"direction\": \"inbound\", \"evidence_text\": \"Arjun, meet Simon Hart\"}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": false, \"asks_for_reply\": true, \"engagement\": \"medium\", \"motive\": \"introduce a contact\"}}",
-   "input_tokens": 5336,
+   "input_tokens": 5540,
    "output_tokens": 195,
    "model": "claude-haiku-4-5-20251001"
   },
-  "7e285129327f7d38e3422660bec6e52609b192433e02486b90c39c642a99e4bf": {
+  "bf9207ff75aeb24f7cdc64bd3850e2c4eb029922d724974dd0fc7da979399b88": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "I'll let you two take it from here.",
+    "start_offset": 198,
+    "end_offset": 233,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"I'll let you two take it from here.\", \"start_offset\": 198, \"end_offset\": 233, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1541,
+   "output_tokens": 47,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "ca8cd6931673b1ea913edd657c869eb8c38dcf9162eeddf9fcf01ac1d6cadd48": {
    "site": "extraction",
    "parsed": {
     "intent": "introduce",
@@ -198,11 +214,30 @@
     }
    },
    "raw": "{\"intent\": \"introduce\", \"stance\": \"positive\", \"topics\": [\"introduction\"], \"entity_mentions\": [{\"surface_form\": \"Omar Haddad\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Omar Haddad\", \"start_offset\": 9, \"end_offset\": 20}], \"confidence_bp\": 9000}, {\"surface_form\": \"Tidewell\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Tidewell\", \"start_offset\": 22, \"end_offset\": 30}], \"confidence_bp\": 9000}], \"relationships\": [{\"party\": \"Omar Haddad\", \"nature\": \"introduced contact\", \"direction\": \"inbound\", \"evidence_text\": \"Arjun, meet Omar Haddad\"}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": false, \"asks_for_reply\": true, \"engagement\": \"medium\", \"motive\": \"introduce a contact\"}}",
-   "input_tokens": 5336,
+   "input_tokens": 5540,
    "output_tokens": 196,
    "model": "claude-haiku-4-5-20251001"
   },
-  "b43bf143b23fd06970cda316bc79391723e7bef92334bae9803ada3a34fe0a60": {
+  "d33ff108b3668a527ac4d24c1df7c9d63ab2835d7a121462758a9deceb2c8713": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "reply": 5600,
+     "wait_unanswered_email": 5600
+    },
+    "confidence_bp": 5000,
+    "rationale": "An introduction that asks nothing of the founder yet, with no word from either side since: a line to watch in the brief, not a card.",
+    "missing": [
+     "a reply from the person introduced"
+    ]
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"reply\": 5600, \"wait_unanswered_email\": 5600}, \"confidence_bp\": 5000, \"rationale\": \"An introduction that asks nothing of the founder yet, with no word from either side since: a line to watch in the brief, not a card.\", \"missing\": [\"a reply from the person introduced\"]}",
+   "input_tokens": 2021,
+   "output_tokens": 75,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "f9df36982a5215a9f97792492f71b3cabd6254b867dc2a039ce5edf07ee26835": {
    "site": "r1",
    "parsed": {
     "readings": [
@@ -227,43 +262,8 @@
     ]
    },
    "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 864,
+   "input_tokens": 1068,
    "output_tokens": 74,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "c97481d1bb92d4fbbaa5e57fcd63f68edadf8ef8185781429c217f2e63d238d6": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "reply": 5600,
-     "wait_unanswered_email": 5600
-    },
-    "confidence_bp": 5000,
-    "rationale": "An introduction that asks nothing of the founder yet, with no word from either side since: a line to watch in the brief, not a card.",
-    "missing": [
-     "a reply from the person introduced"
-    ]
-   },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"reply\": 5600, \"wait_unanswered_email\": 5600}, \"confidence_bp\": 5000, \"rationale\": \"An introduction that asks nothing of the founder yet, with no word from either side since: a line to watch in the brief, not a card.\", \"missing\": [\"a reply from the person introduced\"]}",
-   "input_tokens": 1818,
-   "output_tokens": 75,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "e846cb9a11975fe2ab8c625f317625e53f38ea764d3218b7d84173ba560c28cc": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "I'll let you two take it from here.",
-    "start_offset": 198,
-    "end_offset": 233,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"I'll let you two take it from here.\", \"start_offset\": 198, \"end_offset\": 233, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1337,
-   "output_tokens": 47,
    "model": "claude-haiku-4-5-20251001"
   }
  }

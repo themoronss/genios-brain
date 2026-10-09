@@ -1,60 +1,9 @@
 {
  "case_id": "F17",
  "source": "ideal_reader",
- "recorded_at": "785ae938",
+ "recorded_at": "7179cd68",
  "answers": {
-  "0fd3a34371e1f13c46ff7ad151758b5ce0594e492c743cff3b222c98d1cfdf8e": {
-   "site": "relevance",
-   "parsed": {
-    "verdicts": [
-     {
-      "item": 1,
-      "business": true,
-      "description": "Re: Gulf Launchpad cohort 9",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     }
-    ]
-   },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Gulf Launchpad cohort 9\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "input_tokens": 953,
-   "output_tokens": 40,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "28345a9027d8b281bea63e1a4cbc5a08e17ac993f07a536531ed9dfe210b69d3": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "AMBIGUOUS",
-    "scope": [],
-    "quote": "Re: Gulf Launchpad cohort 9",
-    "start_offset": 0,
-    "end_offset": 27,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Gulf Launchpad cohort 9\", \"start_offset\": 0, \"end_offset\": 27, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1300,
-   "output_tokens": 43,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "2f632bd7d49be6b455b4d5feb080fa3f15a980264cabfc28f1ab16b2a1cc1f41": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "Please book a 30-minute slot using the scheduling link by 10 Oct.",
-    "start_offset": 99,
-    "end_offset": 164,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Please book a 30-minute slot using the scheduling link by 10 Oct.\", \"start_offset\": 99, \"end_offset\": 164, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1329,
-   "output_tokens": 54,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "37d10946ded91e8aa33be1e64e89dc335b27a690ac0f8162bb8d88b039c91049": {
+  "2370705a80912229415dc7800dc051894eacf7d1c42ddbf70b66e71460ea3d13": {
    "site": "extraction",
    "parsed": {
     "intent": "inform",
@@ -87,57 +36,26 @@
     }
    },
    "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"accelerator application\"], \"entity_mentions\": [{\"surface_form\": \"Amira\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Amira\", \"start_offset\": 32, \"end_offset\": 37}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
-   "input_tokens": 5294,
+   "input_tokens": 5498,
    "output_tokens": 110,
    "model": "claude-haiku-4-5-20251001"
   },
-  "5c919342f7447a27dad1275cfd7202269feb6e5f15f80acc5856f89be82dc28d": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 3,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     }
-    ]
-   },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 843,
-   "output_tokens": 74,
+  "6be1c2f2fd05488210be552a17f7babb4df390af7839278b1884897db9642e40": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 1026,
+   "output_tokens": 24,
    "model": "claude-haiku-4-5-20251001"
   },
-  "ba2537db29f861190f78944ee76976f802c2aa3ce305fe367485f4a28d7cc516": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "sales.pb.account_research.fifteen_minute_account_brief": 4389,
-     "sales.pb.investor_relations.reopen_after_a_pass": 4686
-    },
-    "confidence_bp": 4000,
-    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.account_research.fifteen_minute_account_brief\": 4389, \"sales.pb.investor_relations.reopen_after_a_pass\": 4686}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
-   "input_tokens": 2648,
-   "output_tokens": 70,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "ca1535b50323baa96f8a4ec620dc5e6a1bb493bce179a5bfdef44974d2195924": {
+  "6ccae95fa6cdda8e12fba662a06fc7090bc88eb0db718896772f71acb10be5b6": {
    "site": "extraction",
    "parsed": {
     "intent": "request",
@@ -249,23 +167,59 @@
     ]
    },
    "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"accelerator application\", \"interview\"], \"entity_mentions\": [{\"surface_form\": \"Amira Saleh\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Amira Saleh\", \"start_offset\": 166, \"end_offset\": 177}], \"confidence_bp\": 9000}, {\"surface_form\": \"Gulf Launchpad\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Gulf Launchpad\", \"start_offset\": 0, \"end_offset\": 14}], \"confidence_bp\": 9000}], \"decision_states\": [{\"subject\": \"Gulf Launchpad cohort 9 application\", \"state\": \"pending\", \"owner\": \"Gulf Launchpad\", \"evidence\": [{\"quote\": \"Your application has moved to the interview stage.\", \"start_offset\": 48, \"end_offset\": 98}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Book a 30-minute interview slot by 10 Oct\", \"asked_by\": \"Amira Saleh\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Please book a 30-minute slot using the scheduling link by 10 Oct.\", \"start_offset\": 99, \"end_offset\": 164}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"10 Oct\", \"earliest\": \"2026-10-10T00:00:00+05:30\", \"latest\": \"2026-10-10T23:59:59+05:30\", \"certainty\": \"range\", \"resolved_against\": \"2026-10-01T07:30:00Z\", \"evidence\": [{\"quote\": \"10 Oct\", \"start_offset\": 157, \"end_offset\": 163}]}], \"business_facts\": [{\"field\": \"person.title\", \"subject\": \"Amira Saleh\", \"value\": \"Programme Manager\", \"standing\": \"observed\", \"evidence\": [{\"quote\": \"Programme Manager, Gulf Launchpad\", \"start_offset\": 178, \"end_offset\": 211}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"book the interview\"}, \"implied_actions\": [\"book an interview slot by 10 Oct\"]}",
-   "input_tokens": 5326,
+   "input_tokens": 5530,
    "output_tokens": 446,
    "model": "claude-haiku-4-5-20251001"
   },
-  "f55ca8d57d45584f79cd238a827cab45daf3ac06950ab0e93e8749e58ffd4bc5": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 822,
-   "output_tokens": 24,
+  "a208ea0ba3efacd8cabd270294b02c2b9f002f104b1cadb221acc481872449c6": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Re: Gulf Launchpad cohort 9",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Gulf Launchpad cohort 9\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 1157,
+   "output_tokens": 40,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "ad898bcdb6a8c5be3c17803c93b0fae00039305d3187f69526d9615c7f148116": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Please book a 30-minute slot using the scheduling link by 10 Oct.",
+    "start_offset": 99,
+    "end_offset": 164,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Please book a 30-minute slot using the scheduling link by 10 Oct.\", \"start_offset\": 99, \"end_offset\": 164, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1533,
+   "output_tokens": 54,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "cf18b0c48275d653f7d1cf27506388128ccbe020f649d7cf556c42d963c8cfc4": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Re: Gulf Launchpad cohort 9",
+    "start_offset": 0,
+    "end_offset": 27,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Gulf Launchpad cohort 9\", \"start_offset\": 0, \"end_offset\": 27, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1504,
+   "output_tokens": 43,
    "model": "claude-haiku-4-5-20251001"
   }
  }

@@ -1,89 +1,9 @@
 {
  "case_id": "F24",
  "source": "ideal_reader",
- "recorded_at": "785ae938",
+ "recorded_at": "7179cd68",
  "answers": {
-  "353e108922b92a3d6dc3ec20f28dfa836682d1e97c9ea92c8b99801dd7e88f4b": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 3,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     }
-    ]
-   },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 937,
-   "output_tokens": 74,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "45c4dc9167983d42864f6628967aeebb6123b3b1621f1ed5e506754289f4293c": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 3,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 4,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     }
-    ]
-   },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 4, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 1043,
-   "output_tokens": 98,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "55621d0d085e0587f91bab06252551d07fdc04b544b212c2531517846c947844": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "Please upload your review deck by 28 Sep.",
-    "start_offset": 81,
-    "end_offset": 122,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Please upload your review deck by 28 Sep.\", \"start_offset\": 81, \"end_offset\": 122, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1319,
-   "output_tokens": 48,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "5b2e794982709db3392cf81bd0fb81b699d7ad117684b9d569690c6f0aa564da": {
+  "2a9e0fb13bd2c84223119e768ddd4c92d3c0233b753e9034bfda958cd77e134d": {
    "site": "extraction",
    "parsed": {
     "intent": "request",
@@ -164,27 +84,28 @@
     ]
    },
    "raw": "{\"intent\": \"request\", \"stance\": \"neutral\", \"topics\": [\"assignment\", \"unit economics\"], \"entity_mentions\": [{\"surface_form\": \"Divya Raman\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Divya Raman\", \"start_offset\": 153, \"end_offset\": 164}], \"confidence_bp\": 9000}, {\"surface_form\": \"Lakshya Accelerator\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Lakshya Accelerator\", \"start_offset\": 181, \"end_offset\": 200}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Upload Assignment 3, the unit economics sheet, by 15 Sep\", \"asked_by\": \"Divya Raman\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Assignment 3 (the unit economics sheet) is due on 15 Sep, 11:59 pm IST.\", \"start_offset\": 41, \"end_offset\": 112}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"15 Sep, 11:59 pm IST\", \"earliest\": \"2026-09-15T18:29:00Z\", \"latest\": \"2026-09-15T18:29:00Z\", \"certainty\": \"exact\", \"resolved_against\": \"2026-09-01T06:00:00Z\", \"evidence\": [{\"quote\": \"15 Sep, 11:59 pm IST\", \"start_offset\": 91, \"end_offset\": 111}]}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"assignment deadline\"}, \"implied_actions\": [\"upload Assignment 3 by 15 Sep\"]}",
-   "input_tokens": 5320,
+   "input_tokens": 5524,
    "output_tokens": 328,
    "model": "claude-haiku-4-5-20251001"
   },
-  "5d73014f5ddc96c66b76bc5bd7ed39d05e7cef15275d83c74ff30125fe9d41f3": {
-   "site": "bundle_narrator",
+  "2c5020cf6931a689a908214b538e21d99d3b6dd0d3618ae55ee8c136017e4434": {
+   "site": "decider",
    "parsed": {
-    "headline": "Reply",
-    "situation_summary": "The reply is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
-    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
-    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
+    "outcome": "decision",
+    "scores": {
+     "reply": 6500,
+     "wait_unanswered_email": 4800
+    },
+    "confidence_bp": 5500,
+    "rationale": "A direct question is waiting on us.",
+    "missing": []
    },
-   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
-   "input_tokens": 2399,
-   "output_tokens": 166,
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 4800}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
+   "input_tokens": 2223,
+   "output_tokens": 42,
    "model": "claude-haiku-4-5-20251001"
   },
-  "75d7e338c0c47e25aeb4ee4fcdc031468d1677cc09a24e88af9d790ea168b74b": {
+  "365b342035dd7bc3a7f59cde479cbdb69e2aaf5b1ab0189c8776b1e9b8b4500d": {
    "site": "extraction",
    "parsed": {
     "intent": "request",
@@ -278,11 +199,106 @@
     ]
    },
    "raw": "{\"intent\": \"request\", \"stance\": \"neutral\", \"topics\": [\"phase-1 review\"], \"entity_mentions\": [{\"surface_form\": \"Divya Raman\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Divya Raman\", \"start_offset\": 124, \"end_offset\": 135}], \"confidence_bp\": 9000}, {\"surface_form\": \"Lakshya Accelerator\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Lakshya Accelerator\", \"start_offset\": 152, \"end_offset\": 171}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Upload the Phase-1 review deck by 28 Sep\", \"asked_by\": \"Divya Raman\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Please upload your review deck by 28 Sep.\", \"start_offset\": 81, \"end_offset\": 122}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"28 Sep\", \"earliest\": \"2026-09-28T00:00:00+05:30\", \"latest\": \"2026-09-28T23:59:59+05:30\", \"certainty\": \"range\", \"resolved_against\": \"2026-09-13T05:00:00Z\", \"evidence\": [{\"quote\": \"28 Sep\", \"start_offset\": 115, \"end_offset\": 121}]}, {\"as_written\": \"30 Sep\", \"earliest\": \"2026-09-30T00:00:00+05:30\", \"latest\": \"2026-09-30T23:59:59+05:30\", \"certainty\": \"range\", \"resolved_against\": \"2026-09-13T05:00:00Z\", \"evidence\": [{\"quote\": \"30 Sep\", \"start_offset\": 18, \"end_offset\": 24}]}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"review deadline\"}, \"implied_actions\": [\"upload the review deck by 28 Sep\"]}",
-   "input_tokens": 5312,
+   "input_tokens": 5515,
    "output_tokens": 370,
    "model": "claude-haiku-4-5-20251001"
   },
-  "8faf48640a0c8f9067a9750815ba6a775839f5e973453f3807d81048976260cc": {
+  "5d73014f5ddc96c66b76bc5bd7ed39d05e7cef15275d83c74ff30125fe9d41f3": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Reply",
+    "situation_summary": "The reply is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
+    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
+   },
+   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
+   "input_tokens": 2399,
+   "output_tokens": 166,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "8ee7c28ac69accafad3d9124b5d46e6c8d83e1744969d63960df59b19c6f59d2": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Please upload it to the cohort folder.",
+    "start_offset": 113,
+    "end_offset": 151,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Please upload it to the cohort folder.\", \"start_offset\": 113, \"end_offset\": 151, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1530,
+   "output_tokens": 47,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "937405fe6b101f498440409af0f2abf8367365b5f28457ed3ccdb8430c7a5816": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Send Divya Raman Assignment 3, the unit economics sheet",
+    "situation": "Divya Raman wrote 12 days ago: Assignment 3 (the unit economics sheet) is due on 15 Sep, 11:59 pm IST.",
+    "artifact": "Hi Divya, attaching Assignment 3, the unit economics sheet. Thanks, Arjun"
+   },
+   "raw": "{\"headline\": \"Send Divya Raman Assignment 3, the unit economics sheet\", \"situation\": \"Divya Raman wrote 12 days ago: Assignment 3 (the unit economics sheet) is due on 15 Sep, 11:59 pm IST.\", \"artifact\": \"Hi Divya, attaching Assignment 3, the unit economics sheet. Thanks, Arjun\"}",
+   "input_tokens": 1926,
+   "output_tokens": 69,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "c8005766c46953d978d8862cf3ef5a707dfb212213153915f1add010ee3eb6b1": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 4,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 4, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 1247,
+   "output_tokens": 98,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "d1ddd1dd7d8e12a47b76fae1f214ee7ef153a63ed1153f54178dc3dd3bfe1457": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Reply",
+    "situation_summary": "The reply is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
+    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
+   },
+   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
+   "input_tokens": 2359,
+   "output_tokens": 166,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "eaef4b64429c1f4ddf9ad237f013fc9070e32a9ac6e5f077511148c3d8dbae8a": {
    "site": "r1",
    "parsed": {
     "readings": [
@@ -307,89 +323,11 @@
     ]
    },
    "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 843,
+   "input_tokens": 1141,
    "output_tokens": 74,
    "model": "claude-haiku-4-5-20251001"
   },
-  "937405fe6b101f498440409af0f2abf8367365b5f28457ed3ccdb8430c7a5816": {
-   "site": "narrator",
-   "parsed": {
-    "headline": "Send Divya Raman Assignment 3, the unit economics sheet",
-    "situation": "Divya Raman wrote 12 days ago: Assignment 3 (the unit economics sheet) is due on 15 Sep, 11:59 pm IST.",
-    "artifact": "Hi Divya, attaching Assignment 3, the unit economics sheet. Thanks, Arjun"
-   },
-   "raw": "{\"headline\": \"Send Divya Raman Assignment 3, the unit economics sheet\", \"situation\": \"Divya Raman wrote 12 days ago: Assignment 3 (the unit economics sheet) is due on 15 Sep, 11:59 pm IST.\", \"artifact\": \"Hi Divya, attaching Assignment 3, the unit economics sheet. Thanks, Arjun\"}",
-   "input_tokens": 1926,
-   "output_tokens": 69,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "95c56e0e545cd0a75021c8006195ea8db581d3026cc240e75d2e642573d39011": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "sales.pb.account_research.fifteen_minute_account_brief": 4387,
-     "sales.pb.investor_relations.reopen_after_a_pass": 4685
-    },
-    "confidence_bp": 4000,
-    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.account_research.fifteen_minute_account_brief\": 4387, \"sales.pb.investor_relations.reopen_after_a_pass\": 4685}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
-   "input_tokens": 2653,
-   "output_tokens": 70,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "c6b247f8bdb28343bbd0a502d2f408694a19a9aad9452009813e49320456db43": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "Please upload it to the cohort folder.",
-    "start_offset": 113,
-    "end_offset": 151,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Please upload it to the cohort folder.\", \"start_offset\": 113, \"end_offset\": 151, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1327,
-   "output_tokens": 47,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "d1ddd1dd7d8e12a47b76fae1f214ee7ef153a63ed1153f54178dc3dd3bfe1457": {
-   "site": "bundle_narrator",
-   "parsed": {
-    "headline": "Reply",
-    "situation_summary": "The reply is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
-    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
-    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
-   },
-   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
-   "input_tokens": 2359,
-   "output_tokens": 166,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "f4fafb58de65998bb60e2b674b9a30f3b49034f3fa170802a21994343ec229ed": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "reply": 6500,
-     "wait_unanswered_email": 4800
-    },
-    "confidence_bp": 5500,
-    "rationale": "A direct question is waiting on us.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 4800}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
-   "input_tokens": 2020,
-   "output_tokens": 42,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "f729ce309db0f669d6ba833f9f0f7f5f5334a24ab4b106267996b0195468b17a": {
+  "eb4b30739b8bc68e51387c68906cc884693daa37d1ef092feb7801cd06b4295b": {
    "site": "decider",
    "parsed": {
     "outcome": "decision",
@@ -411,8 +349,24 @@
     "missing": []
    },
    "raw": "{\"outcome\": \"decision\", \"scores\": {\"customer_support.pb.breach_prevention.work_the_at_risk_list_hourly\": 4916, \"customer_support.pb.expectation_setting.promise_the_process_not_the_outcome\": 5112, \"customer_support.pb.response_drafting.answer_first_then_everything_else\": 5600, \"customer_support.pb.ticket_triage.blast_radius_before_depth\": 4858, \"customer_support.pb.ticket_triage.entitlement_before_complaint\": 4858, \"customer_support.pb.ticket_triage.hand_off_with_the_assumption\": 4802, \"customer_support.pb.ticket_triage.name_the_finishing_queue\": 4830, \"customer_support.pb.ticket_triage.one_question_then_route\": 4802, \"customer_support.pb.ticket_triage.state_the_coin_flip\": 4802, \"customer_support.pb.ticket_triage.two_questions_in_order\": 4858, \"customer_support.pb.ticket_triage.workaround_test\": 4830}, \"confidence_bp\": 4500, \"rationale\": \"A person asked us for something; none of the support plays fits, and answering first is the closest.\", \"missing\": []}",
-   "input_tokens": 4170,
+   "input_tokens": 5341,
    "output_tokens": 242,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "f3ca8b6e7ea78049683965a860743528cef6ecb4f15339d3fd45e6e34f078abf": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Please upload your review deck by 28 Sep.",
+    "start_offset": 81,
+    "end_offset": 122,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Please upload your review deck by 28 Sep.\", \"start_offset\": 81, \"end_offset\": 122, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1523,
+   "output_tokens": 48,
    "model": "claude-haiku-4-5-20251001"
   }
  }

@@ -1,9 +1,100 @@
 {
  "case_id": "F07",
  "source": "ideal_reader",
- "recorded_at": "785ae938",
+ "recorded_at": "7179cd68",
  "answers": {
-  "04a81d79b4ce19e86f955295d36f5fe8b74d1baad72a23f40ef7428e3ecff218": {
+  "0ae032aced5e94841516d60c648d2340c7e19603b8eb7b132ea5da4d44e63a3a": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "reply": 5600,
+     "wait_unanswered_email": 5600
+    },
+    "confidence_bp": 4000,
+    "rationale": "Leela's notes set up the 13 Aug call and said what Leela would bring to it; nothing asks us anything, and the call date has passed.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"reply\": 5600, \"wait_unanswered_email\": 5600}, \"confidence_bp\": 4000, \"rationale\": \"Leela's notes set up the 13 Aug call and said what Leela would bring to it; nothing asks us anything, and the call date has passed.\", \"missing\": []}",
+   "input_tokens": 2169,
+   "output_tokens": 66,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "1706fbca8c7ea64b36251baedf7be8699df4865de481aec7c78aa4206b1e776a": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "sales.pb.cold_calling.permission_based_opener": 3812,
+     "sales.pb.demo.discovery_anchored_demo": 3742,
+     "sales.pb.linkedin_outreach.comment_first_linkedin_approach": 3679,
+     "sales.pb.tam_sam_som.bottom_up_market_sizing": 3763
+    },
+    "confidence_bp": 4000,
+    "rationale": "A sales opener, a demo script or market sizing does not fit a founder's call with an introduced contact; nothing here is for the founder to do.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.cold_calling.permission_based_opener\": 3812, \"sales.pb.demo.discovery_anchored_demo\": 3742, \"sales.pb.linkedin_outreach.comment_first_linkedin_approach\": 3679, \"sales.pb.tam_sam_som.bottom_up_market_sizing\": 3763}, \"confidence_bp\": 4000, \"rationale\": \"A sales opener, a demo script or market sizing does not fit a founder's call with an introduced contact; nothing here is for the founder to do.\", \"missing\": []}",
+   "input_tokens": 4315,
+   "output_tokens": 113,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "340c3b318dc8b930c17f1a9f15a95e10441a35fe3df22d34a9a7e3f4d87207ac": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4733,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 4789,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 6200
+    },
+    "confidence_bp": 5000,
+    "rationale": "Someone at this company asked us something and the ball is in our court.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4733, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4789, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 6200}, \"confidence_bp\": 5000, \"rationale\": \"Someone at this company asked us something and the ball is in our court.\", \"missing\": []}",
+   "input_tokens": 4133,
+   "output_tokens": 91,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "3aa965349401c33b636f4ab180cf46e75057fcad8187867cb3435e220dcd654d": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4616,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 4672,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 6200
+    },
+    "confidence_bp": 5000,
+    "rationale": "Someone at this company asked us something and the ball is in our court.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4616, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4672, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 6200}, \"confidence_bp\": 5000, \"rationale\": \"Someone at this company asked us something and the ball is in our court.\", \"missing\": []}",
+   "input_tokens": 4139,
+   "output_tokens": 91,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "54fb90071de227117bed8a5e21ff799cbce0e8205585b7f03aebeb596aa6e987": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": false,
+      "description": "no readable text",
+      "category": "unknown",
+      "human_authored": null,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"no readable text\", \"category\": \"unknown\", \"human_authored\": null, \"asks_for_reply\": null}]}",
+   "input_tokens": 1138,
+   "output_tokens": 38,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "5ce586cfd369f068d0ce150f0771f08eacc05bcf639efbc31b219ecc3e87b249": {
    "site": "extraction",
    "parsed": {
     "intent": "introduce",
@@ -57,97 +148,53 @@
     }
    },
    "raw": "{\"intent\": \"introduce\", \"stance\": \"positive\", \"topics\": [\"introduction\"], \"entity_mentions\": [{\"surface_form\": \"Leela Krishnan\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Leela Krishnan\", \"start_offset\": 9, \"end_offset\": 23}], \"confidence_bp\": 9000}, {\"surface_form\": \"Ferngrove\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Ferngrove\", \"start_offset\": 25, \"end_offset\": 34}], \"confidence_bp\": 9000}], \"relationships\": [{\"party\": \"Leela Krishnan\", \"nature\": \"introduced contact\", \"direction\": \"inbound\", \"evidence_text\": \"Arjun, meet Leela Krishnan\"}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": false, \"asks_for_reply\": true, \"engagement\": \"medium\", \"motive\": \"introduce a contact\"}}",
-   "input_tokens": 5338,
+   "input_tokens": 5542,
    "output_tokens": 199,
    "model": "claude-haiku-4-5-20251001"
   },
-  "130aa73e28ef1e29a259f160f1276a15a32e22fbc699f837874ef27d0fbf3466": {
-   "site": "resolution",
+  "680391bb79a53d03f5675a665cd9f996d99e481db513018b408a7a32f44669b0": {
+   "site": "extraction",
    "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "I'll let you two take it from here.",
-    "start_offset": 199,
-    "end_offset": 234,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"I'll let you two take it from here.\", \"start_offset\": 199, \"end_offset\": 234, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1337,
-   "output_tokens": 47,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "30aa2eedafa6b203a071176f05aa3749bac99c4ccf80fa0d37ad816a60ad312e": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "reply": 5600,
-     "wait_unanswered_email": 5600
-    },
-    "confidence_bp": 4000,
-    "rationale": "Leela's notes set up the 13 Aug call and said what Leela would bring to it; nothing asks us anything, and the call date has passed.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"reply\": 5600, \"wait_unanswered_email\": 5600}, \"confidence_bp\": 4000, \"rationale\": \"Leela's notes set up the 13 Aug call and said what Leela would bring to it; nothing asks us anything, and the call date has passed.\", \"missing\": []}",
-   "input_tokens": 1966,
-   "output_tokens": 66,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "3102d8da0ae641a305a00403d1b95d45a8c8711804e1364a4977041e9e180cc6": {
-   "site": "relevance",
-   "parsed": {
-    "verdicts": [
+    "intent": "schedule",
+    "stance": "positive",
+    "topics": [
+     "intro call"
+    ],
+    "entity_mentions": [
      {
-      "item": 1,
-      "business": false,
-      "description": "no readable text",
-      "category": "unknown",
-      "human_authored": null,
-      "asks_for_reply": null
+      "surface_form": "Leela",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Leela",
+        "start_offset": 13,
+        "end_offset": 18
+       }
+      ],
+      "confidence_bp": 9000
      }
-    ]
+    ],
+    "scheduling_proposals": [
+     {
+      "proposer": "Leela Krishnan",
+      "text": "a call tomorrow at 3 pm IST",
+      "evidence_text": "I've sent you an invite for tomorrow at 3 pm IST."
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "high",
+     "motive": "set up the call"
+    }
    },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"no readable text\", \"category\": \"unknown\", \"human_authored\": null, \"asks_for_reply\": null}]}",
-   "input_tokens": 934,
-   "output_tokens": 38,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "670a640f9e8425c68ee296489ca23e6a693bd9df3a1a069012710f23964408d7": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "sales.pb.cold_calling.permission_based_opener": 3812,
-     "sales.pb.demo.discovery_anchored_demo": 3742,
-     "sales.pb.linkedin_outreach.comment_first_linkedin_approach": 3679,
-     "sales.pb.tam_sam_som.bottom_up_market_sizing": 3763
-    },
-    "confidence_bp": 4000,
-    "rationale": "A sales opener, a demo script or market sizing does not fit a founder's call with an introduced contact; nothing here is for the founder to do.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.cold_calling.permission_based_opener\": 3812, \"sales.pb.demo.discovery_anchored_demo\": 3742, \"sales.pb.linkedin_outreach.comment_first_linkedin_approach\": 3679, \"sales.pb.tam_sam_som.bottom_up_market_sizing\": 3763}, \"confidence_bp\": 4000, \"rationale\": \"A sales opener, a demo script or market sizing does not fit a founder's call with an introduced contact; nothing here is for the founder to do.\", \"missing\": []}",
-   "input_tokens": 2799,
-   "output_tokens": 113,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "7436ff2aa262392fd4a0dcbb921ffbb15f85418215986f9302fe48b6e89cfb70": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4610,
-     "admin.pb.follow_up_coordination.the_follow_through_relay": 4666,
-     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 6200
-    },
-    "confidence_bp": 5000,
-    "rationale": "Someone at this company asked us something and the ball is in our court.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4610, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4666, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 6200}, \"confidence_bp\": 5000, \"rationale\": \"Someone at this company asked us something and the ball is in our court.\", \"missing\": []}",
-   "input_tokens": 2867,
-   "output_tokens": 91,
+   "raw": "{\"intent\": \"schedule\", \"stance\": \"positive\", \"topics\": [\"intro call\"], \"entity_mentions\": [{\"surface_form\": \"Leela\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Leela\", \"start_offset\": 13, \"end_offset\": 18}], \"confidence_bp\": 9000}], \"scheduling_proposals\": [{\"proposer\": \"Leela Krishnan\", \"text\": \"a call tomorrow at 3 pm IST\", \"evidence_text\": \"I've sent you an invite for tomorrow at 3 pm IST.\"}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\", \"motive\": \"set up the call\"}}",
+   "input_tokens": 5508,
+   "output_tokens": 156,
    "model": "claude-haiku-4-5-20251001"
   },
   "772860e7db3ee652f486ac597d7d63bce15e0ccffd299995b58a7b5cdad473e7": {
@@ -162,171 +209,7 @@
    "output_tokens": 64,
    "model": "claude-haiku-4-5-20251001"
   },
-  "79042e50981949007ec2077db0dabe1e1cc3977b4249cd8ea63f7718f6254874": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 835,
-   "output_tokens": 24,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "8456a898d9a312c559a38011be962807fced504445f03fd0d9aa588037d90cf8": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     }
-    ]
-   },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 831,
-   "output_tokens": 51,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "864e9fa59de89b0cbf0373bdb0635193bd7b9d74716f203d41654fa49782a531": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "I'll bring our current onboarding flow so you can see where we lose people.",
-    "start_offset": 64,
-    "end_offset": 139,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"I'll bring our current onboarding flow so you can see where we lose people.\", \"start_offset\": 64, \"end_offset\": 139, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1313,
-   "output_tokens": 56,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "8c5293cea3d88fb9a472d60dabefb1334eefee4fc9c6bdf62b3ed9ede47397d2": {
-   "site": "relevance",
-   "parsed": {
-    "verdicts": [
-     {
-      "item": 1,
-      "business": true,
-      "description": "Re: Arjun <> Leela Krishnan (Ferngrove)",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     }
-    ]
-   },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Arjun <> Leela Krishnan (Ferngrove)\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "input_tokens": 961,
-   "output_tokens": 43,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "9536c646716745a5fdf10fcf6f9765b31c36ba479613cd1eb3e7403217150748": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     }
-    ]
-   },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 831,
-   "output_tokens": 51,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "a0e4d4ba8876bde16761c162e3de7681992b756cc1e21c113bd0331e0e71b25d": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "admin.pb.action_item_tracking.one_register_across_meetings": 4948,
-     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4938,
-     "admin.pb.follow_up_coordination.the_follow_through_relay": 6400,
-     "admin.pb.minutes_and_documentation.decisions_and_actions_same_day": 4829
-    },
-    "confidence_bp": 5000,
-    "rationale": "The call with an introduced contact was two days ago and nothing since says what was agreed; ask what, if anything, was promised.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.action_item_tracking.one_register_across_meetings\": 4948, \"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4938, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 6400, \"admin.pb.minutes_and_documentation.decisions_and_actions_same_day\": 4829}, \"confidence_bp\": 5000, \"rationale\": \"The call with an introduced contact was two days ago and nothing since says what was agreed; ask what, if anything, was promised.\", \"missing\": []}",
-   "input_tokens": 2932,
-   "output_tokens": 124,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "a392698ac5501e2e0372a0c91994c0e773fb4089db96292285ea142c7dc30f73": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4733,
-     "admin.pb.follow_up_coordination.the_follow_through_relay": 4789,
-     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 6200
-    },
-    "confidence_bp": 5000,
-    "rationale": "Someone at this company asked us something and the ball is in our court.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4733, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4789, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 6200}, \"confidence_bp\": 5000, \"rationale\": \"Someone at this company asked us something and the ball is in our court.\", \"missing\": []}",
-   "input_tokens": 2862,
-   "output_tokens": 91,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "adcca8b62c304583e166eff7793ff6d93a0e6477eed1f3d861bd64243e631c8c": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "AMBIGUOUS",
-    "scope": [],
-    "quote": "Re: Arjun <> Leela Krishnan (Ferngrove)",
-    "start_offset": 0,
-    "end_offset": 39,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Arjun <> Leela Krishnan (Ferngrove)\", \"start_offset\": 0, \"end_offset\": 39, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1308,
-   "output_tokens": 46,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "b24dbf766154cc616c08c1962e1db63897f6ed7a121e87ecf6d1afa41677b52d": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 830,
-   "output_tokens": 24,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "b46e683f37fc89d6cc3e6af33587680602a98a083a22b33aa026216d394854b5": {
+  "7c256abb5a7d73ee241a7d6ac95f4ee65aba45c4ed8050c4772d45201bbfdc7a": {
    "site": "extraction",
    "parsed": {
     "intent": "commit",
@@ -375,86 +258,27 @@
     }
    },
    "raw": "{\"intent\": \"commit\", \"stance\": \"positive\", \"topics\": [\"onboarding\"], \"entity_mentions\": [{\"surface_form\": \"Leela\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Leela\", \"start_offset\": 13, \"end_offset\": 18}], \"confidence_bp\": 9000}], \"commitments\": [{\"actor\": \"Leela Krishnan\", \"action\": \"bring the current onboarding flow to the call\", \"beneficiary\": \"Arjun Rao\", \"is_conditional\": false, \"evidence\": [{\"quote\": \"I'll bring our current onboarding flow\", \"start_offset\": 64, \"end_offset\": 102}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
-   "input_tokens": 5310,
+   "input_tokens": 5513,
    "output_tokens": 179,
    "model": "claude-haiku-4-5-20251001"
   },
-  "c36a109622b38babbec95d45e19b6c051431d308a3386d4a50ebc2bf5f63137d": {
-   "site": "decider",
+  "8999cc3c1c10dab5ee7a2e50ceeb7ca60de680cb5a96faac3b6e25cf2e6b60d7": {
+   "site": "resolution",
    "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4616,
-     "admin.pb.follow_up_coordination.the_follow_through_relay": 4672,
-     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 6200
-    },
-    "confidence_bp": 5000,
-    "rationale": "Someone at this company asked us something and the ball is in our court.",
-    "missing": []
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "I'll bring our current onboarding flow so you can see where we lose people.",
+    "start_offset": 64,
+    "end_offset": 139,
+    "speaker_role_said": "unknown"
    },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4616, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4672, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 6200}, \"confidence_bp\": 5000, \"rationale\": \"Someone at this company asked us something and the ball is in our court.\", \"missing\": []}",
-   "input_tokens": 2867,
-   "output_tokens": 91,
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"I'll bring our current onboarding flow so you can see where we lose people.\", \"start_offset\": 64, \"end_offset\": 139, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1517,
+   "output_tokens": 56,
    "model": "claude-haiku-4-5-20251001"
   },
-  "c3735627c093641167c01fba03a0e897aa68c02ecc3bae186d1d72ac53d7ff43": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "schedule",
-    "stance": "positive",
-    "topics": [
-     "intro call"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "Leela",
-      "entity_type": "person",
-      "evidence": [
-       {
-        "quote": "Leela",
-        "start_offset": 13,
-        "end_offset": 18
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "scheduling_proposals": [
-     {
-      "proposer": "Leela Krishnan",
-      "text": "a call tomorrow at 3 pm IST",
-      "evidence_text": "I've sent you an invite for tomorrow at 3 pm IST."
-     }
-    ],
-    "exchange_intent": {
-     "category": "relational",
-     "tone": "warm",
-     "formality": "professional",
-     "addressed_personally": true,
-     "human_authored": true,
-     "asks_for_reply": false,
-     "engagement": "high",
-     "motive": "set up the call"
-    }
-   },
-   "raw": "{\"intent\": \"schedule\", \"stance\": \"positive\", \"topics\": [\"intro call\"], \"entity_mentions\": [{\"surface_form\": \"Leela\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Leela\", \"start_offset\": 13, \"end_offset\": 18}], \"confidence_bp\": 9000}], \"scheduling_proposals\": [{\"proposer\": \"Leela Krishnan\", \"text\": \"a call tomorrow at 3 pm IST\", \"evidence_text\": \"I've sent you an invite for tomorrow at 3 pm IST.\"}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\", \"motive\": \"set up the call\"}}",
-   "input_tokens": 5304,
-   "output_tokens": 156,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "d1ac8b1bed6e0a651b732bbcd40fbfbe774df8d13fd018f539cab98effc327c2": {
-   "site": "narrator",
-   "parsed": {
-    "headline": "Meeting with Leela Krishnan, 2 days ago",
-    "situation": "The meeting with Leela Krishnan happened 2 days ago. No follow-through is visible.",
-    "artifact": "Recap: [what was discussed - yours to fill]. Next step: [one specific step, with a date]."
-   },
-   "raw": "{\"headline\": \"Meeting with Leela Krishnan, 2 days ago\", \"situation\": \"The meeting with Leela Krishnan happened 2 days ago. No follow-through is visible.\", \"artifact\": \"Recap: [what was discussed - yours to fill]. Next step: [one specific step, with a date].\"}",
-   "input_tokens": 651,
-   "output_tokens": 64,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "d27f44318da736ac6d6c287e59f63e28a2cd8b4987c5942682efecb340bfae5e": {
+  "92ea2e1921fc60f782ff20ee7bd35e879b92b2c174bc490e4c4354c1de65d8a2": {
    "site": "r1",
    "parsed": {
     "readings": [
@@ -473,11 +297,45 @@
     ]
    },
    "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"DECISION_MADE\", \"confidence_bp\": 6000}]}",
-   "input_tokens": 830,
+   "input_tokens": 1034,
    "output_tokens": 50,
    "model": "claude-haiku-4-5-20251001"
   },
-  "d36496d45b2c2a9a05bdc2c3c86899dd850c2d5e7b455fb7f28f53e4614933ce": {
+  "99d322aaa945500c484e9f3882dc507f5775254877d81957b31a2e037a3d27bb": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 1034,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "9b54423afc62f782b85e294fe468009e53898dc22352b0117d8e5924edb297fe": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "admin.pb.action_item_tracking.one_register_across_meetings": 4948,
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4938,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 6400,
+     "admin.pb.minutes_and_documentation.decisions_and_actions_same_day": 4829
+    },
+    "confidence_bp": 5000,
+    "rationale": "The call with an introduced contact was two days ago and nothing since says what was agreed; ask what, if anything, was promised.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.action_item_tracking.one_register_across_meetings\": 4948, \"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4938, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 6400, \"admin.pb.minutes_and_documentation.decisions_and_actions_same_day\": 4829}, \"confidence_bp\": 5000, \"rationale\": \"The call with an introduced contact was two days ago and nothing since says what was agreed; ask what, if anything, was promised.\", \"missing\": []}",
+   "input_tokens": 4419,
+   "output_tokens": 124,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "a0228f7c723b5ab6e49541eda01edf50272d9552f413797f68f3d29ac4adb333": {
    "site": "r1",
    "parsed": {
     "readings": [
@@ -514,11 +372,34 @@
     ]
    },
    "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"COMMITMENT_MADE\", \"confidence_bp\": 6000}, {\"item\": 4, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 5, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 1014,
+   "input_tokens": 1218,
    "output_tokens": 121,
    "model": "claude-haiku-4-5-20251001"
   },
-  "dfee3c830d900c5e0dd174bb9f3982a905625bd18450c681bcb4f02118385d3d": {
+  "a6882ce20e3020af51501367a819d1382e28fd5c14e8c20cd3c16a1310816052": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 1035,
+   "output_tokens": 51,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "a839a5c65bc6c80d0830386ecb10b1d52b4d19b7a4c21e4fd24a33d8dfe0f783": {
    "site": "relevance",
    "parsed": {
     "verdicts": [
@@ -533,8 +414,127 @@
     ]
    },
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Arjun <> Leela Krishnan (Ferngrove)\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "input_tokens": 966,
+   "input_tokens": 1170,
    "output_tokens": 43,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "adc53f0fea8c5bef3fd3e8c56f4e9b951a6a4c73d8c2374dfa6cb051e4378c37": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "I'll let you two take it from here.",
+    "start_offset": 199,
+    "end_offset": 234,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"I'll let you two take it from here.\", \"start_offset\": 199, \"end_offset\": 234, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1541,
+   "output_tokens": 47,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "b27e056834f62e5d30af47a3d265a14fbb65a842f398536a47970948c0cf4807": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Re: Arjun <> Leela Krishnan (Ferngrove)",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Arjun <> Leela Krishnan (Ferngrove)\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 1165,
+   "output_tokens": 43,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "c613ac8ea163a258afc4ca9359f783e9665787568188d64bc3ce38d0ad6041d1": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Re: Arjun <> Leela Krishnan (Ferngrove)",
+    "start_offset": 0,
+    "end_offset": 39,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Arjun <> Leela Krishnan (Ferngrove)\", \"start_offset\": 0, \"end_offset\": 39, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1512,
+   "output_tokens": 46,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "d1ac8b1bed6e0a651b732bbcd40fbfbe774df8d13fd018f539cab98effc327c2": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Meeting with Leela Krishnan, 2 days ago",
+    "situation": "The meeting with Leela Krishnan happened 2 days ago. No follow-through is visible.",
+    "artifact": "Recap: [what was discussed - yours to fill]. Next step: [one specific step, with a date]."
+   },
+   "raw": "{\"headline\": \"Meeting with Leela Krishnan, 2 days ago\", \"situation\": \"The meeting with Leela Krishnan happened 2 days ago. No follow-through is visible.\", \"artifact\": \"Recap: [what was discussed - yours to fill]. Next step: [one specific step, with a date].\"}",
+   "input_tokens": 651,
+   "output_tokens": 64,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "d53bb0ce5fb9282ec5eb4bccb2fab9da67fd76ed331aba1aeaccfba5f4b756aa": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 1039,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "dba44c0f77c2bfb9efa12a3b82c47770a1e5e58ce96d013abaea8ee5f67f5347": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4610,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 4666,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 6200
+    },
+    "confidence_bp": 5000,
+    "rationale": "Someone at this company asked us something and the ball is in our court.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4610, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4666, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 6200}, \"confidence_bp\": 5000, \"rationale\": \"Someone at this company asked us something and the ball is in our court.\", \"missing\": []}",
+   "input_tokens": 4139,
+   "output_tokens": 91,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "e5e8927f809cc5468b4aa538a2ed5c6de5cb24e3b70abd895afaf41e7538e631": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 1035,
+   "output_tokens": 51,
    "model": "claude-haiku-4-5-20251001"
   }
  }

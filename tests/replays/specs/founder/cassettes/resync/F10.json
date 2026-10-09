@@ -1,9 +1,9 @@
 {
  "case_id": "F10",
  "source": "ideal_reader",
- "recorded_at": "e65cc672",
+ "recorded_at": "7179cd68",
  "answers": {
-  "3eb7a665ae87ee5da0b6ebd20281e6cf00654ff2642531519d123654d71dd077": {
+  "7a4a96315f23e5f56f3e975cdaab7c320ef56d308289d3910cf742594485e23b": {
    "site": "junk_gate_batch",
    "parsed": [
     {
@@ -14,11 +14,11 @@
     }
    ],
    "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 856,
+   "input_tokens": 1059,
    "output_tokens": 24,
    "model": "claude-haiku-4-5-20251001"
   },
-  "e8cda9097d5bb0c96cc532385e38f5066bcc5901c151175adc2ffd05efd7edb1": {
+  "e3b3d56bd89e6922be64a932d82498f53831d39abe713d1baee64350b88ffeb3": {
    "site": "relevance",
    "parsed": {
     "verdicts": [
@@ -33,7 +33,7 @@
     ]
    },
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Nimbus Labs - data room?\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "input_tokens": 1005,
+   "input_tokens": 1209,
    "output_tokens": 39,
    "model": "claude-haiku-4-5-20251001"
   }

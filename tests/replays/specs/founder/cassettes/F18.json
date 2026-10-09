@@ -1,9 +1,24 @@
 {
  "case_id": "F18",
  "source": "ideal_reader",
- "recorded_at": "fdd8b98a",
+ "recorded_at": "7179cd68",
  "answers": {
-  "60f82e594d14c70f027cdfe1e5d6ded9ef699b6260f8c06466d38c15407d2a86": {
+  "2d1a1b23e84aa53454e706a97dc1dcaece49253eb235b0db5dbc6af2d63dae80": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "drop",
+     "relevance": 0.05,
+     "reason": "automated, nobody waits on a reply"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}]",
+   "input_tokens": 1061,
+   "output_tokens": 25,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "46787eb109cca51576ee17e0911c251df1e55bacd64ae02f70254893f99dbfb0": {
    "site": "relevance",
    "parsed": {
     "verdicts": [
@@ -18,23 +33,8 @@
     ]
    },
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"Seed Support round open until 31 Oct\", \"category\": \"automated\", \"human_authored\": false, \"asks_for_reply\": false}]}",
-   "input_tokens": 988,
+   "input_tokens": 1192,
    "output_tokens": 44,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "98ce1ca633aa1a717b3803aafa8b25bcf3dcc0d35f45fa25fc703205bf1c0a34": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "drop",
-     "relevance": 0.05,
-     "reason": "automated, nobody waits on a reply"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}]",
-   "input_tokens": 857,
-   "output_tokens": 25,
    "model": "claude-haiku-4-5-20251001"
   }
  }

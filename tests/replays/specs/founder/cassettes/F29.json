@@ -1,24 +1,52 @@
 {
  "case_id": "F29",
  "source": "ideal_reader",
- "recorded_at": "fdd8b98a",
+ "recorded_at": "7179cd68",
  "answers": {
-  "0d0648d7f618ca6ca50844343611cce60b1d9533722847fe0afa5186b4701ce7": {
-   "site": "decider",
+  "02094e6de57cf070c4b41bf2f65a316f37f341449139cb50ccb6243842da7fbf": {
+   "site": "r1",
    "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4894,
-     "admin.pb.follow_up_coordination.the_follow_through_relay": 4950,
-     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 5142
-    },
-    "confidence_bp": 4000,
-    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
-    "missing": []
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
    },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4894, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4950, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 5142}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
-   "input_tokens": 2879,
-   "output_tokens": 91,
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 1035,
+   "output_tokens": 51,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "0381d1168dbedc4f4f12aaf86d01ef02558fda513d9c194ce6e37015f37fb845": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "DECISION_MADE",
+      "confidence_bp": 6000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"DECISION_MADE\", \"confidence_bp\": 6000}]}",
+   "input_tokens": 1034,
+   "output_tokens": 50,
    "model": "claude-haiku-4-5-20251001"
   },
   "13cbcbbbd759d8314436521541137ba5893e792868edfa1920cc83f27b974b12": {
@@ -49,75 +77,58 @@
    "output_tokens": 62,
    "model": "claude-haiku-4-5-20251001"
   },
-  "1eb5ad74c5789b231b488e847109d026a8a6902761b342fc59321e35f8306308": {
-   "site": "resolution",
+  "1741d1e109a9491e8e3fcd8b1dabde7e48a30c273bb58492f4022d97b153a05a": {
+   "site": "decider",
    "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "Could you share your API pricing sheet before the second one?",
-    "start_offset": 93,
-    "end_offset": 154,
-    "speaker_role_said": "unknown"
+    "outcome": "decision",
+    "scores": {
+     "reply": 6500,
+     "wait_unanswered_email": 5100
+    },
+    "confidence_bp": 5500,
+    "rationale": "A direct question is waiting on us.",
+    "missing": []
    },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Could you share your API pricing sheet before the second one?\", \"start_offset\": 93, \"end_offset\": 154, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1322,
-   "output_tokens": 53,
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5100}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
+   "input_tokens": 2116,
+   "output_tokens": 42,
    "model": "claude-haiku-4-5-20251001"
   },
-  "36bd71d0d6ab8c632c3ae4e3b24d91eb514701d1e6acbf94a4890b3064e45bb1": {
-   "site": "r1",
+  "21b28c53ff52c72bc64cfb254b474f1e71aba1792494ede149fe5a52f3626031": {
+   "site": "decider",
    "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 3,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     }
-    ]
+    "outcome": "decision",
+    "scores": {
+     "admin.pb.action_item_tracking.one_register_across_meetings": 4854,
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4843,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 6400,
+     "admin.pb.minutes_and_documentation.decisions_and_actions_same_day": 4735
+    },
+    "confidence_bp": 5000,
+    "rationale": "Nothing since the meeting says what was agreed; ask what was promised.",
+    "missing": []
    },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 843,
-   "output_tokens": 74,
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.action_item_tracking.one_register_across_meetings\": 4854, \"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4843, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 6400, \"admin.pb.minutes_and_documentation.decisions_and_actions_same_day\": 4735}, \"confidence_bp\": 5000, \"rationale\": \"Nothing since the meeting says what was agreed; ask what was promised.\", \"missing\": []}",
+   "input_tokens": 4417,
+   "output_tokens": 109,
    "model": "claude-haiku-4-5-20251001"
   },
-  "3d83d2fa4b678e199705e89bb18016f20fcd5ced15d82d6fe7fd7024f8c6a0f6": {
+  "32cd949e83be211e615ba1235c87655a5d1b3ef3838d8867b3dc318a7eecfd91": {
    "site": "decider",
    "parsed": {
     "outcome": "defer",
     "scores": {
-     "sales.pb.account_research.fifteen_minute_account_brief": 5333,
-     "sales.pb.icp_definition.checkable_from_a_domain_name": 5499,
-     "sales.pb.icp_definition.drift_review_on_a_cadence": 5499,
-     "sales.pb.icp_definition.negative_list_first": 5499,
-     "sales.pb.icp_definition.retrofit_the_open_pipeline": 5499,
-     "sales.pb.icp_definition.tri_cohort_analysis": 5499,
-     "sales.pb.lead_generation.source_quality_ledger": 5452,
-     "sales.pb.lead_qualification.bant_budget_authority_need_timing_older": 5499,
-     "sales.pb.lead_qualification.disqualify_early_the_cheapest_action_available": 5499,
-     "sales.pb.lead_qualification.meddicc_metrics_economic_buyer_decision_criteria": 5499,
-     "sales.pb.meeting_booking.frictionless_scheduling": 5953
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4451,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 4507,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 4700
     },
     "confidence_bp": 4000,
     "rationale": "Defining the ideal customer profile does not answer what this person asked.",
     "missing": []
    },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.account_research.fifteen_minute_account_brief\": 5333, \"sales.pb.icp_definition.checkable_from_a_domain_name\": 5499, \"sales.pb.icp_definition.drift_review_on_a_cadence\": 5499, \"sales.pb.icp_definition.negative_list_first\": 5499, \"sales.pb.icp_definition.retrofit_the_open_pipeline\": 5499, \"sales.pb.icp_definition.tri_cohort_analysis\": 5499, \"sales.pb.lead_generation.source_quality_ledger\": 5452, \"sales.pb.lead_qualification.bant_budget_authority_need_timing_older\": 5499, \"sales.pb.lead_qualification.disqualify_early_the_cheapest_action_available\": 5499, \"sales.pb.lead_qualification.meddicc_metrics_economic_buyer_decision_criteria\": 5499, \"sales.pb.meeting_booking.frictionless_scheduling\": 5953}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
-   "input_tokens": 4297,
-   "output_tokens": 218,
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4451, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4507, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 4700}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
+   "input_tokens": 4156,
+   "output_tokens": 91,
    "model": "claude-haiku-4-5-20251001"
   },
   "4217a8eabba88bc2ca9c141138c4be7241b8d2768e287d9b8617bdb28dad45c9": {
@@ -132,49 +143,91 @@
    "output_tokens": 61,
    "model": "claude-haiku-4-5-20251001"
   },
-  "42aa614bed0324b7abffed939a4720850cba7be279ed51874ade43bcd392785b": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "reply": 6500,
-     "wait_unanswered_email": 5100
-    },
-    "confidence_bp": 5500,
-    "rationale": "A direct question is waiting on us.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5100}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
-   "input_tokens": 1913,
-   "output_tokens": 42,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "48cc7712210fa20608e2174d5fad4da09433a556273748fe7033bb6c8dcee88a": {
+  "48949606b729bc82bdf34e801d0038913b1344e4c0e236547a710ed069b81f6b": {
    "site": "decider",
    "parsed": {
     "outcome": "defer",
     "scores": {
-     "sales.pb.account_research.fifteen_minute_account_brief": 4591,
-     "sales.pb.icp_definition.checkable_from_a_domain_name": 4757,
-     "sales.pb.icp_definition.drift_review_on_a_cadence": 4757,
-     "sales.pb.icp_definition.negative_list_first": 4757,
-     "sales.pb.icp_definition.retrofit_the_open_pipeline": 4757,
-     "sales.pb.icp_definition.tri_cohort_analysis": 4757,
-     "sales.pb.lead_generation.source_quality_ledger": 4710,
-     "sales.pb.lead_qualification.bant_budget_authority_need_timing_older": 4757,
-     "sales.pb.lead_qualification.disqualify_early_the_cheapest_action_available": 4757,
-     "sales.pb.lead_qualification.meddicc_metrics_economic_buyer_decision_criteria": 4757
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4894,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 4950,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 5142
     },
     "confidence_bp": 4000,
     "rationale": "Defining the ideal customer profile does not answer what this person asked.",
     "missing": []
    },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.account_research.fifteen_minute_account_brief\": 4591, \"sales.pb.icp_definition.checkable_from_a_domain_name\": 4757, \"sales.pb.icp_definition.drift_review_on_a_cadence\": 4757, \"sales.pb.icp_definition.negative_list_first\": 4757, \"sales.pb.icp_definition.retrofit_the_open_pipeline\": 4757, \"sales.pb.icp_definition.tri_cohort_analysis\": 4757, \"sales.pb.lead_generation.source_quality_ledger\": 4710, \"sales.pb.lead_qualification.bant_budget_authority_need_timing_older\": 4757, \"sales.pb.lead_qualification.disqualify_early_the_cheapest_action_available\": 4757, \"sales.pb.lead_qualification.meddicc_metrics_economic_buyer_decision_criteria\": 4757}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
-   "input_tokens": 3747,
-   "output_tokens": 204,
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4894, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4950, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 5142}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
+   "input_tokens": 4151,
+   "output_tokens": 91,
    "model": "claude-haiku-4-5-20251001"
   },
-  "490d2baf73d35a755d4cc84e025e94eb8d0528857af27cd7cf64623df49240f1": {
+  "53c11411b7db4950e68af58db37604162e4e0100fa7f3f07e5e742d6378f5799": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "admin.pb.action_item_tracking.one_register_across_meetings": 4854,
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4843,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 6400,
+     "admin.pb.minutes_and_documentation.decisions_and_actions_same_day": 4735
+    },
+    "confidence_bp": 5000,
+    "rationale": "Nothing since the meeting says what was agreed; ask what was promised.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.action_item_tracking.one_register_across_meetings\": 4854, \"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4843, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 6400, \"admin.pb.minutes_and_documentation.decisions_and_actions_same_day\": 4735}, \"confidence_bp\": 5000, \"rationale\": \"Nothing since the meeting says what was agreed; ask what was promised.\", \"missing\": []}",
+   "input_tokens": 4417,
+   "output_tokens": 109,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "7797669de6f76349fdbc3b10b0cf0a52ee8634f03ae3d91f0f0cc84bc2d450d4": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "The follow through relay",
+    "situation_summary": "The the follow through relay is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The the follow through relay ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the the follow through relay shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
+    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
+   },
+   "raw": "{\"headline\": \"The follow through relay\", \"situation_summary\": \"The the follow through relay is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The the follow through relay ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the the follow through relay shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
+   "input_tokens": 3125,
+   "output_tokens": 189,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "8cd52444b396fef3a490d94249479d6af281899246ef57f074b36d2cf0859973": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Meeting with Aman Verma, 1 day ago",
+    "situation": "The meeting with Aman Verma happened 1 day ago. No follow-through is visible.",
+    "artifact": "Recap: [what was discussed - yours to fill]. Next step: [one specific step, with a date]."
+   },
+   "raw": "{\"headline\": \"Meeting with Aman Verma, 1 day ago\", \"situation\": \"The meeting with Aman Verma happened 1 day ago. No follow-through is visible.\", \"artifact\": \"Recap: [what was discussed - yours to fill]. Next step: [one specific step, with a date].\"}",
+   "input_tokens": 648,
+   "output_tokens": 62,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "96ba7488265cefff4f7735633e2d45432575ee67be58ed10bc3b1d5de8034b14": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "sales.pb.cold_calling.permission_based_opener": 3718,
+     "sales.pb.demo.discovery_anchored_demo": 3648,
+     "sales.pb.linkedin_outreach.comment_first_linkedin_approach": 3585,
+     "sales.pb.tam_sam_som.bottom_up_market_sizing": 3669
+    },
+    "confidence_bp": 4000,
+    "rationale": "A sales opener or demo script does not fit a founder's meeting.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.cold_calling.permission_based_opener\": 3718, \"sales.pb.demo.discovery_anchored_demo\": 3648, \"sales.pb.linkedin_outreach.comment_first_linkedin_approach\": 3585, \"sales.pb.tam_sam_som.bottom_up_market_sizing\": 3669}, \"confidence_bp\": 4000, \"rationale\": \"A sales opener or demo script does not fit a founder's meeting.\", \"missing\": []}",
+   "input_tokens": 4313,
+   "output_tokens": 93,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "98cf4cbb73696a2f89876af008ca07f30bd2c29847d5602ccb8847105a55c197": {
    "site": "r1",
    "parsed": {
     "readings": [
@@ -193,119 +246,11 @@
     ]
    },
    "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"DECISION_MADE\", \"confidence_bp\": 6000}]}",
-   "input_tokens": 830,
+   "input_tokens": 1034,
    "output_tokens": 50,
    "model": "claude-haiku-4-5-20251001"
   },
-  "499bd2fcee03fd844eeb21a4465c6cfa99bb099cde57b398f7ec76924c19dd78": {
-   "site": "bundle_narrator",
-   "parsed": {
-    "headline": "The follow through relay",
-    "situation_summary": "The the follow through relay is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
-    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The the follow through relay ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the the follow through relay shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
-    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
-   },
-   "raw": "{\"headline\": \"The follow through relay\", \"situation_summary\": \"The the follow through relay is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The the follow through relay ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the the follow through relay shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
-   "input_tokens": 3156,
-   "output_tokens": 189,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "795a281bcc581eb740094911d18b64fbf96e7d8ea42033af90bbac45eed2ee69": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "admin.pb.action_item_tracking.one_register_across_meetings": 4854,
-     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4843,
-     "admin.pb.follow_up_coordination.the_follow_through_relay": 6400,
-     "admin.pb.minutes_and_documentation.decisions_and_actions_same_day": 4735
-    },
-    "confidence_bp": 5000,
-    "rationale": "Nothing since the meeting says what was agreed; ask what was promised.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.action_item_tracking.one_register_across_meetings\": 4854, \"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4843, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 6400, \"admin.pb.minutes_and_documentation.decisions_and_actions_same_day\": 4735}, \"confidence_bp\": 5000, \"rationale\": \"Nothing since the meeting says what was agreed; ask what was promised.\", \"missing\": []}",
-   "input_tokens": 2930,
-   "output_tokens": 109,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "7b1ab585588f5b6653d91af166ab78b3f19dc8fd7e7bdfa5411a9cf45599f7e8": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     }
-    ]
-   },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 831,
-   "output_tokens": 51,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "8cd52444b396fef3a490d94249479d6af281899246ef57f074b36d2cf0859973": {
-   "site": "narrator",
-   "parsed": {
-    "headline": "Meeting with Aman Verma, 1 day ago",
-    "situation": "The meeting with Aman Verma happened 1 day ago. No follow-through is visible.",
-    "artifact": "Recap: [what was discussed - yours to fill]. Next step: [one specific step, with a date]."
-   },
-   "raw": "{\"headline\": \"Meeting with Aman Verma, 1 day ago\", \"situation\": \"The meeting with Aman Verma happened 1 day ago. No follow-through is visible.\", \"artifact\": \"Recap: [what was discussed - yours to fill]. Next step: [one specific step, with a date].\"}",
-   "input_tokens": 648,
-   "output_tokens": 62,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "905fae51febc328e67828c1113feb66cebbbde9acfd5c2c42991b642dd635714": {
-   "site": "relevance",
-   "parsed": {
-    "verdicts": [
-     {
-      "item": 1,
-      "business": true,
-      "description": "Two calls on 5 Oct",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     }
-    ]
-   },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Two calls on 5 Oct\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "input_tokens": 975,
-   "output_tokens": 38,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "a6340a997670bdc32cdf71c15a103432049651d1ac311f66bbd550ccd240267c": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "sales.pb.cold_calling.permission_based_opener": 3718,
-     "sales.pb.demo.discovery_anchored_demo": 3648,
-     "sales.pb.linkedin_outreach.comment_first_linkedin_approach": 3585,
-     "sales.pb.tam_sam_som.bottom_up_market_sizing": 3669
-    },
-    "confidence_bp": 4000,
-    "rationale": "A sales opener or demo script does not fit a founder's meeting.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.cold_calling.permission_based_opener\": 3718, \"sales.pb.demo.discovery_anchored_demo\": 3648, \"sales.pb.linkedin_outreach.comment_first_linkedin_approach\": 3585, \"sales.pb.tam_sam_som.bottom_up_market_sizing\": 3669}, \"confidence_bp\": 4000, \"rationale\": \"A sales opener or demo script does not fit a founder's meeting.\", \"missing\": []}",
-   "input_tokens": 2797,
-   "output_tokens": 93,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "b1f7e53155942359a2abf44da768c389f21491bbb90f5d77c56f212126cb6745": {
+  "a2e19cecac58e073bcc15e4462a6882078daf21c90c27e77c4e1eb8be8f9155c": {
    "site": "relevance",
    "parsed": {
     "verdicts": [
@@ -328,30 +273,37 @@
     ]
    },
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"no readable text\", \"category\": \"unknown\", \"human_authored\": null, \"asks_for_reply\": null}, {\"item\": 2, \"business\": false, \"description\": \"no readable text\", \"category\": \"unknown\", \"human_authored\": null, \"asks_for_reply\": null}]}",
-   "input_tokens": 956,
+   "input_tokens": 1160,
    "output_tokens": 72,
    "model": "claude-haiku-4-5-20251001"
   },
-  "b2c75757d7e504c03bd3e3cd00840f6a07e07d2e9ca0a399e78cfa7a9bd2769c": {
+  "a3320cdf30c1aace21f9624e5fc5d77141c603099e94499b9e4f3881f1205593": {
    "site": "decider",
    "parsed": {
     "outcome": "defer",
     "scores": {
-     "sales.pb.cold_calling.permission_based_opener": 3718,
-     "sales.pb.demo.discovery_anchored_demo": 3648,
-     "sales.pb.linkedin_outreach.comment_first_linkedin_approach": 3585,
-     "sales.pb.tam_sam_som.bottom_up_market_sizing": 3669
+     "sales.pb.account_research.fifteen_minute_account_brief": 5333,
+     "sales.pb.icp_definition.checkable_from_a_domain_name": 5499,
+     "sales.pb.icp_definition.drift_review_on_a_cadence": 5499,
+     "sales.pb.icp_definition.negative_list_first": 5499,
+     "sales.pb.icp_definition.retrofit_the_open_pipeline": 5499,
+     "sales.pb.icp_definition.tri_cohort_analysis": 5499,
+     "sales.pb.lead_generation.source_quality_ledger": 5452,
+     "sales.pb.lead_qualification.bant_budget_authority_need_timing_older": 5499,
+     "sales.pb.lead_qualification.disqualify_early_the_cheapest_action_available": 5499,
+     "sales.pb.lead_qualification.meddicc_metrics_economic_buyer_decision_criteria": 5499,
+     "sales.pb.meeting_booking.frictionless_scheduling": 5953
     },
     "confidence_bp": 4000,
-    "rationale": "A sales opener or demo script does not fit a founder's meeting.",
+    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
     "missing": []
    },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.cold_calling.permission_based_opener\": 3718, \"sales.pb.demo.discovery_anchored_demo\": 3648, \"sales.pb.linkedin_outreach.comment_first_linkedin_approach\": 3585, \"sales.pb.tam_sam_som.bottom_up_market_sizing\": 3669}, \"confidence_bp\": 4000, \"rationale\": \"A sales opener or demo script does not fit a founder's meeting.\", \"missing\": []}",
-   "input_tokens": 2797,
-   "output_tokens": 93,
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.account_research.fifteen_minute_account_brief\": 5333, \"sales.pb.icp_definition.checkable_from_a_domain_name\": 5499, \"sales.pb.icp_definition.drift_review_on_a_cadence\": 5499, \"sales.pb.icp_definition.negative_list_first\": 5499, \"sales.pb.icp_definition.retrofit_the_open_pipeline\": 5499, \"sales.pb.icp_definition.tri_cohort_analysis\": 5499, \"sales.pb.lead_generation.source_quality_ledger\": 5452, \"sales.pb.lead_qualification.bant_budget_authority_need_timing_older\": 5499, \"sales.pb.lead_qualification.disqualify_early_the_cheapest_action_available\": 5499, \"sales.pb.lead_qualification.meddicc_metrics_economic_buyer_decision_criteria\": 5499, \"sales.pb.meeting_booking.frictionless_scheduling\": 5953}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
+   "input_tokens": 6151,
+   "output_tokens": 218,
    "model": "claude-haiku-4-5-20251001"
   },
-  "c0e682077de052f4866735835c266aeab8c8299ce3fcb56b1822a0200154868f": {
+  "ac375d33b661e62d67b83eea0415648b20aa7d697cba26974993e370c92da8e6": {
    "site": "extraction",
    "parsed": {
     "intent": "request",
@@ -432,45 +384,55 @@
     ]
    },
    "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"pricing\", \"partnership\"], \"entity_mentions\": [{\"surface_form\": \"Aman Verma\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Aman Verma\", \"start_offset\": 156, \"end_offset\": 166}], \"confidence_bp\": 9000}, {\"surface_form\": \"Memloop\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Memloop\", \"start_offset\": 176, \"end_offset\": 183}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Share the API pricing sheet before the pricing call\", \"asked_by\": \"Aman Verma\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Could you share your API pricing sheet before the second one?\", \"start_offset\": 93, \"end_offset\": 154}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"5 Oct\", \"earliest\": \"2026-10-05T00:00:00+05:30\", \"latest\": \"2026-10-05T23:59:59+05:30\", \"certainty\": \"range\", \"resolved_against\": \"2026-09-27T08:00:00Z\", \"evidence\": [{\"quote\": \"5 Oct\", \"start_offset\": 13, \"end_offset\": 18}]}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"pricing before the second call\"}, \"implied_actions\": [\"share the API pricing sheet before the 4 pm call\"]}",
-   "input_tokens": 5313,
+   "input_tokens": 5517,
    "output_tokens": 319,
    "model": "claude-haiku-4-5-20251001"
   },
-  "c1b71982e0681e4b6881f740cd92cd72eb81ebe9ab35b347fc14691b15adeaa2": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 844,
-   "output_tokens": 24,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "c667c11a741328d4c248dc5913e312eca98930dc8392ad3c372e13125e3db29f": {
+  "b2f8c5068e50ae3d90662d58b2c7ea0242d96c914c312b27fdf686a20f7dca69": {
    "site": "decider",
    "parsed": {
-    "outcome": "decision",
+    "outcome": "defer",
     "scores": {
-     "admin.pb.action_item_tracking.one_register_across_meetings": 4854,
-     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4843,
-     "admin.pb.follow_up_coordination.the_follow_through_relay": 6400,
-     "admin.pb.minutes_and_documentation.decisions_and_actions_same_day": 4735
+     "sales.pb.account_research.fifteen_minute_account_brief": 4591,
+     "sales.pb.icp_definition.checkable_from_a_domain_name": 4757,
+     "sales.pb.icp_definition.drift_review_on_a_cadence": 4757,
+     "sales.pb.icp_definition.negative_list_first": 4757,
+     "sales.pb.icp_definition.retrofit_the_open_pipeline": 4757,
+     "sales.pb.icp_definition.tri_cohort_analysis": 4757,
+     "sales.pb.lead_generation.source_quality_ledger": 4710,
+     "sales.pb.lead_qualification.bant_budget_authority_need_timing_older": 4757,
+     "sales.pb.lead_qualification.disqualify_early_the_cheapest_action_available": 4757,
+     "sales.pb.lead_qualification.meddicc_metrics_economic_buyer_decision_criteria": 4757
     },
-    "confidence_bp": 5000,
-    "rationale": "Nothing since the meeting says what was agreed; ask what was promised.",
+    "confidence_bp": 4000,
+    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
     "missing": []
    },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.action_item_tracking.one_register_across_meetings\": 4854, \"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4843, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 6400, \"admin.pb.minutes_and_documentation.decisions_and_actions_same_day\": 4735}, \"confidence_bp\": 5000, \"rationale\": \"Nothing since the meeting says what was agreed; ask what was promised.\", \"missing\": []}",
-   "input_tokens": 2930,
-   "output_tokens": 109,
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.account_research.fifteen_minute_account_brief\": 4591, \"sales.pb.icp_definition.checkable_from_a_domain_name\": 4757, \"sales.pb.icp_definition.drift_review_on_a_cadence\": 4757, \"sales.pb.icp_definition.negative_list_first\": 4757, \"sales.pb.icp_definition.retrofit_the_open_pipeline\": 4757, \"sales.pb.icp_definition.tri_cohort_analysis\": 4757, \"sales.pb.lead_generation.source_quality_ledger\": 4710, \"sales.pb.lead_qualification.bant_budget_authority_need_timing_older\": 4757, \"sales.pb.lead_qualification.disqualify_early_the_cheapest_action_available\": 4757, \"sales.pb.lead_qualification.meddicc_metrics_economic_buyer_decision_criteria\": 4757}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
+   "input_tokens": 4663,
+   "output_tokens": 204,
    "model": "claude-haiku-4-5-20251001"
   },
-  "e100a1773c8fc0b831761edfacad6b169f6fc125cdcd6086da8374071b145527": {
+  "b5effea5369e26940d5529bca401f0e44a0f152d2b69adfb92f40164f0c446d0": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Two calls on 5 Oct",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Two calls on 5 Oct\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 1179,
+   "output_tokens": 38,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "baa456ee50081578510367dabee3c3ab1361f61315473e959d20ab19d68896cc": {
    "site": "r1",
    "parsed": {
     "readings": [
@@ -495,52 +457,27 @@
     ]
    },
    "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 937,
+   "input_tokens": 1047,
    "output_tokens": 74,
    "model": "claude-haiku-4-5-20251001"
   },
-  "e84a1e2436cc9f589b8aef49bfab81245fa1308bb4bb89f77efc41563c99236a": {
-   "site": "decider",
+  "bb95fbc08fb45a77305b931016aafcc3ae3f1230a76ea03e0c570a6a1231a885": {
+   "site": "resolution",
    "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4451,
-     "admin.pb.follow_up_coordination.the_follow_through_relay": 4507,
-     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 4700
-    },
-    "confidence_bp": 4000,
-    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
-    "missing": []
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Could you share your API pricing sheet before the second one?",
+    "start_offset": 93,
+    "end_offset": 154,
+    "speaker_role_said": "unknown"
    },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4451, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4507, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 4700}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
-   "input_tokens": 2885,
-   "output_tokens": 91,
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Could you share your API pricing sheet before the second one?\", \"start_offset\": 93, \"end_offset\": 154, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1526,
+   "output_tokens": 53,
    "model": "claude-haiku-4-5-20251001"
   },
-  "ebb2853d57b0790cb20d49a6a552de085de08b85d92a88137ca2480dea91a908": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "DECISION_MADE",
-      "confidence_bp": 6000
-     }
-    ]
-   },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"DECISION_MADE\", \"confidence_bp\": 6000}]}",
-   "input_tokens": 830,
-   "output_tokens": 50,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "ee070058e09eb0be9d590944359681a3e1a4815037a839fb071c4f4a69fdd6e2": {
+  "c317243013bfbb2c48e69432e4625187f76513b0f3204b9166d682650c16cb38": {
    "site": "decider",
    "parsed": {
     "outcome": "decision",
@@ -553,8 +490,42 @@
     "missing": []
    },
    "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5200}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
-   "input_tokens": 1913,
+   "input_tokens": 2116,
    "output_tokens": 42,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "d81644d42558ef69e4a5afe16185675af2cd6184c3cdfafd3a3945a9f8d079c5": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 1048,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "e017ccbccc7f4f486c0e72c266be4dbc6d853c1f5012f8a1f0f514237b5497af": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "sales.pb.cold_calling.permission_based_opener": 3718,
+     "sales.pb.demo.discovery_anchored_demo": 3648,
+     "sales.pb.linkedin_outreach.comment_first_linkedin_approach": 3585,
+     "sales.pb.tam_sam_som.bottom_up_market_sizing": 3669
+    },
+    "confidence_bp": 4000,
+    "rationale": "A sales opener or demo script does not fit a founder's meeting.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.cold_calling.permission_based_opener\": 3718, \"sales.pb.demo.discovery_anchored_demo\": 3648, \"sales.pb.linkedin_outreach.comment_first_linkedin_approach\": 3585, \"sales.pb.tam_sam_som.bottom_up_market_sizing\": 3669}, \"confidence_bp\": 4000, \"rationale\": \"A sales opener or demo script does not fit a founder's meeting.\", \"missing\": []}",
+   "input_tokens": 4313,
+   "output_tokens": 93,
    "model": "claude-haiku-4-5-20251001"
   },
   "f7f0e70e2e3f698872c36b428c4d01d69c9180feb30f25d983d61bbbd79219ae": {
@@ -571,6 +542,35 @@
    "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
    "input_tokens": 2358,
    "output_tokens": 166,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "f9552ddacb466d42cfda8c9d78440cdf0a77a511ae50e69ffabb7f430253fbeb": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 1141,
+   "output_tokens": 74,
    "model": "claude-haiku-4-5-20251001"
   }
  }

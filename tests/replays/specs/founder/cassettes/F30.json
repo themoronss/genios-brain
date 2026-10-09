@@ -1,28 +1,9 @@
 {
  "case_id": "F30",
  "source": "ideal_reader",
- "recorded_at": "fdd8b98a",
+ "recorded_at": "7179cd68",
  "answers": {
-  "12199650222959b6163d4c0901d03fc458b1c6ab4bc078d6e714a54e3abbc893": {
-   "site": "relevance",
-   "parsed": {
-    "verdicts": [
-     {
-      "item": 1,
-      "business": true,
-      "description": "Pilot proposal",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     }
-    ]
-   },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Pilot proposal\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "input_tokens": 954,
-   "output_tokens": 37,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "1eda039f01c3a2f760ecc28d17a609e7c332413a628347b56cbe4d47fa3da0fa": {
+  "452b50e297ab2e7dbd9dafc71bd5117bcb1366430cdffd1f9ddddf69699e0de6": {
    "site": "junk_gate_batch",
    "parsed": [
     {
@@ -33,27 +14,11 @@
     }
    ],
    "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 823,
+   "input_tokens": 1027,
    "output_tokens": 24,
    "model": "claude-haiku-4-5-20251001"
   },
-  "2b8500494313f443ed791f754e48494afb6e91b4c8e30cd499fc7dc1e337be08": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "As I said on WhatsApp, I'll send the pilot proposal by Friday.",
-    "start_offset": 28,
-    "end_offset": 90,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"As I said on WhatsApp, I'll send the pilot proposal by Friday.\", \"start_offset\": 28, \"end_offset\": 90, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1298,
-   "output_tokens": 53,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "675929738e74b69fac9bded5de0a1258e2d1913fdc9d080aac9fef67891afac9": {
+  "5dac917052279c3348a9ea490716bc7d00c7a203140d58fb9b74cb6e5f5e0c3c": {
    "site": "extraction",
    "parsed": {
     "intent": "commit",
@@ -116,8 +81,43 @@
     }
    },
    "raw": "{\"intent\": \"commit\", \"stance\": \"positive\", \"topics\": [\"pilot\"], \"entity_mentions\": [{\"surface_form\": \"Gaurav\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Gaurav\", \"start_offset\": 19, \"end_offset\": 25}], \"confidence_bp\": 9000}], \"commitments\": [{\"actor\": \"Arjun Rao\", \"action\": \"send the pilot proposal\", \"beneficiary\": \"Gaurav\", \"is_conditional\": false, \"due\": {\"as_written\": \"by Friday\", \"earliest\": \"2026-09-25T00:00:00+05:30\", \"latest\": \"2026-09-25T23:59:59+05:30\", \"certainty\": \"relative\", \"resolved_against\": \"2026-09-20T09:00:00Z\", \"evidence\": [{\"quote\": \"by Friday\", \"start_offset\": 80, \"end_offset\": 89}]}, \"evidence\": [{\"quote\": \"I'll send the pilot proposal by Friday.\", \"start_offset\": 51, \"end_offset\": 90}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
-   "input_tokens": 5291,
+   "input_tokens": 5495,
    "output_tokens": 236,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "7f1e44d6da62c59708571d1fd3c4c2adec17622ee435059fe19e045456e6720a": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Pilot proposal",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Pilot proposal\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 1158,
+   "output_tokens": 37,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "e512b3eb5a50270f97de2a525f845c4a34e7084086a4196524e261e8f58ecf40": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "As I said on WhatsApp, I'll send the pilot proposal by Friday.",
+    "start_offset": 28,
+    "end_offset": 90,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"As I said on WhatsApp, I'll send the pilot proposal by Friday.\", \"start_offset\": 28, \"end_offset\": 90, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1502,
+   "output_tokens": 53,
    "model": "claude-haiku-4-5-20251001"
   }
  }

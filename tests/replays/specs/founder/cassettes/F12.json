@@ -1,24 +1,9 @@
 {
  "case_id": "F12",
  "source": "ideal_reader",
- "recorded_at": "fdd8b98a",
+ "recorded_at": "7179cd68",
  "answers": {
-  "0778c132daed3f86fecbecca9007a9c23d4b81824fc31396258b5d54b79b6fb4": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 848,
-   "output_tokens": 24,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "0ca5cc193dbda226daa8d83cb38f4aa36eb4bc4cd69107270aac6d7392feb6da": {
+  "085895c4a98ef9f00329f39d91838f57c3bc145b123d31ea7e08620f77ce0363": {
    "site": "decider",
    "parsed": {
     "outcome": "defer",
@@ -32,11 +17,94 @@
     "missing": []
    },
    "raw": "{\"outcome\": \"defer\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4969, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 5025, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 5217}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
-   "input_tokens": 2871,
+   "input_tokens": 4142,
    "output_tokens": 91,
    "model": "claude-haiku-4-5-20251001"
   },
-  "11b31fec8c0f68586aa47ce584705e059746d227b83fbe4817ef9a926b6344e7": {
+  "24412177dbf8fe083e40741d7c4bede19ea2b7e1e91dfe77590a6822f0a0bf40": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "reply": 6500,
+     "wait_unanswered_email": 5100
+    },
+    "confidence_bp": 5500,
+    "rationale": "A direct question is waiting on us.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5100}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
+   "input_tokens": 2119,
+   "output_tokens": 42,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "25a196c90af75e0913234e4ce0d81ec82198f86f03aa542721b8d584465fa044": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Send Neeraj Joshi your pilot retention",
+    "situation": "Neeraj Joshi has waited 9 days to see retention for your first three pilot customers.",
+    "artifact": "Hi Neeraj, here is retention for our first three pilot customers: [figures]."
+   },
+   "raw": "{\"headline\": \"Send Neeraj Joshi your pilot retention\", \"situation\": \"Neeraj Joshi has waited 9 days to see retention for your first three pilot customers.\", \"artifact\": \"Hi Neeraj, here is retention for our first three pilot customers: [figures].\"}",
+   "input_tokens": 1910,
+   "output_tokens": 62,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "2eaf70603da4d79065c53ac3d6f6ca62575673370a5f60f7a01be821447e1629": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Re: Nimbus Labs update",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Nimbus Labs update\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 1183,
+   "output_tokens": 39,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "37629f239a95e4f85002307f48dc0a42cbd59335bb1fd179fc35cc52121652f7": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Re: Nimbus Labs update",
+    "start_offset": 0,
+    "end_offset": 22,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Nimbus Labs update\", \"start_offset\": 0, \"end_offset\": 22, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1530,
+   "output_tokens": 42,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "54fb90071de227117bed8a5e21ff799cbce0e8205585b7f03aebeb596aa6e987": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": false,
+      "description": "no readable text",
+      "category": "unknown",
+      "human_authored": null,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"no readable text\", \"category\": \"unknown\", \"human_authored\": null, \"asks_for_reply\": null}]}",
+   "input_tokens": 1138,
+   "output_tokens": 38,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "5997d84f9db91d250fc29d3de657e0b7ca756ab39b42e5a6809ca22160434c99": {
    "site": "r1",
    "parsed": {
     "readings": [
@@ -61,42 +129,66 @@
     ]
    },
    "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 937,
+   "input_tokens": 1141,
    "output_tokens": 74,
    "model": "claude-haiku-4-5-20251001"
   },
-  "25a196c90af75e0913234e4ce0d81ec82198f86f03aa542721b8d584465fa044": {
-   "site": "narrator",
+  "639ca37314a0ce63b1a5a318b555099c73501a23cd6705999614857102154bc2": {
+   "site": "bundle_narrator",
    "parsed": {
-    "headline": "Send Neeraj Joshi your pilot retention",
-    "situation": "Neeraj Joshi has waited 9 days to see retention for your first three pilot customers.",
-    "artifact": "Hi Neeraj, here is retention for our first three pilot customers: [figures]."
+    "headline": "Reply",
+    "situation_summary": "The reply is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
+    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
    },
-   "raw": "{\"headline\": \"Send Neeraj Joshi your pilot retention\", \"situation\": \"Neeraj Joshi has waited 9 days to see retention for your first three pilot customers.\", \"artifact\": \"Hi Neeraj, here is retention for our first three pilot customers: [figures].\"}",
-   "input_tokens": 1910,
-   "output_tokens": 62,
+   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
+   "input_tokens": 2398,
+   "output_tokens": 166,
    "model": "claude-haiku-4-5-20251001"
   },
-  "3102d8da0ae641a305a00403d1b95d45a8c8711804e1364a4977041e9e180cc6": {
-   "site": "relevance",
+  "b638db5ef9e3eb34a8a3bcb85f2f055e9785217e67f8e0af3dd9f024b44f9da5": {
+   "site": "r1",
    "parsed": {
-    "verdicts": [
+    "readings": [
      {
       "item": 1,
-      "business": false,
-      "description": "no readable text",
-      "category": "unknown",
-      "human_authored": null,
-      "asks_for_reply": null
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
      }
     ]
    },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"no readable text\", \"category\": \"unknown\", \"human_authored\": null, \"asks_for_reply\": null}]}",
-   "input_tokens": 934,
-   "output_tokens": 38,
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 1035,
+   "output_tokens": 51,
    "model": "claude-haiku-4-5-20251001"
   },
-  "342651478610bc132309c540b769929f111fc9f6cb15aa8a3a875a71531b4f19": {
+  "bcaac2d3388f90dee5dac180cc5fbb9d035a10dd5e9f217fb7dae6e46b4ae63b": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Reply",
+    "situation_summary": "The reply is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
+    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
+   },
+   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
+   "input_tokens": 2357,
+   "output_tokens": 166,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "be8d60278ab97b131f80ad5a05261b869e3b3cc375913aed093c00013a7da15e": {
    "site": "extraction",
    "parsed": {
     "intent": "request",
@@ -177,66 +269,26 @@
     ]
    },
    "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"retention\", \"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Neeraj Joshi\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Neeraj Joshi\", \"start_offset\": 164, \"end_offset\": 176}], \"confidence_bp\": 9000}, {\"surface_form\": \"Harbor Point Partners\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Harbor Point Partners\", \"start_offset\": 177, \"end_offset\": 198}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Show retention for the first three pilot customers before the call\", \"asked_by\": \"Neeraj Joshi\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"it would help to see how retention looks for your first three pilot customers\", \"start_offset\": 84, \"end_offset\": 161}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"8 Oct\", \"earliest\": \"2026-10-08T00:00:00+05:30\", \"latest\": \"2026-10-08T23:59:59+05:30\", \"certainty\": \"range\", \"resolved_against\": \"2026-09-27T10:00:00Z\", \"evidence\": [{\"quote\": \"8 Oct\", \"start_offset\": 77, \"end_offset\": 82}]}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"retention before the call\"}, \"implied_actions\": [\"send retention for the first three pilots before 8 Oct\"]}",
-   "input_tokens": 5319,
+   "input_tokens": 5523,
    "output_tokens": 336,
    "model": "claude-haiku-4-5-20251001"
   },
-  "4392cea52dddf999e51ca0ff7853f555c58a2173c5736c7b8ec48de68c7a9a38": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "AMBIGUOUS",
-    "scope": [],
-    "quote": "Re: Nimbus Labs update",
-    "start_offset": 0,
-    "end_offset": 22,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Nimbus Labs update\", \"start_offset\": 0, \"end_offset\": 22, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1326,
-   "output_tokens": 42,
+  "bfcab8ee1643c60f5ada0dd75794ec06546413eda75b8d669f485d697d10e3f6": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 1052,
+   "output_tokens": 24,
    "model": "claude-haiku-4-5-20251001"
   },
-  "639ca37314a0ce63b1a5a318b555099c73501a23cd6705999614857102154bc2": {
-   "site": "bundle_narrator",
-   "parsed": {
-    "headline": "Reply",
-    "situation_summary": "The reply is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
-    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
-    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
-   },
-   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
-   "input_tokens": 2398,
-   "output_tokens": 166,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "74b4d1caab9eff9e38c2c66aa0ffa8d0a0419362d40b7eb0678ca19e6b4fd2e3": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     }
-    ]
-   },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 831,
-   "output_tokens": 51,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "9b3913c9d5733d010effb863d71de508d324aed249304d822e57a9c74a3477d4": {
+  "c9f6c154434865c3a648e7e461b28a26d5acbccbef2cf6511aea8625c5ba106a": {
    "site": "decider",
    "parsed": {
     "outcome": "defer",
@@ -250,60 +302,8 @@
     "missing": []
    },
    "raw": "{\"outcome\": \"defer\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4521, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4577, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 4769}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
-   "input_tokens": 2869,
+   "input_tokens": 4141,
    "output_tokens": 91,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "bcaac2d3388f90dee5dac180cc5fbb9d035a10dd5e9f217fb7dae6e46b4ae63b": {
-   "site": "bundle_narrator",
-   "parsed": {
-    "headline": "Reply",
-    "situation_summary": "The reply is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
-    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
-    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
-   },
-   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
-   "input_tokens": 2357,
-   "output_tokens": 166,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "c0193495fa24058dd38e9bfa88cf523d0ad6e3d64e264ced625b75a5d806b377": {
-   "site": "relevance",
-   "parsed": {
-    "verdicts": [
-     {
-      "item": 1,
-      "business": true,
-      "description": "Re: Nimbus Labs update",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     }
-    ]
-   },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Nimbus Labs update\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "input_tokens": 979,
-   "output_tokens": 39,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "f5470fefa09013005b245b9ce932b4a2ec9382d5c51f3abc8900503500e54848": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "reply": 6500,
-     "wait_unanswered_email": 5100
-    },
-    "confidence_bp": 5500,
-    "rationale": "A direct question is waiting on us.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5100}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
-   "input_tokens": 1916,
-   "output_tokens": 42,
    "model": "claude-haiku-4-5-20251001"
   }
  }

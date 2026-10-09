@@ -1,28 +1,9 @@
 {
  "case_id": "F34",
  "source": "ideal_reader",
- "recorded_at": "fdd8b98a",
+ "recorded_at": "7179cd68",
  "answers": {
-  "7cfaa32f018a0bead6ea9a604aae92d5b2758341d512e3c2a15689f4d61bc277": {
-   "site": "relevance",
-   "parsed": {
-    "verdicts": [
-     {
-      "item": 1,
-      "business": false,
-      "description": "You have 6 new co-founder matches",
-      "category": "automated",
-      "human_authored": false,
-      "asks_for_reply": false
-     }
-    ]
-   },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"You have 6 new co-founder matches\", \"category\": \"automated\", \"human_authored\": false, \"asks_for_reply\": false}]}",
-   "input_tokens": 959,
-   "output_tokens": 43,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "d6ad7be202e64bb9929237607cadbcdf5bf4ed731eb71f6ff3c5ebd076d999cd": {
+  "6aed800f14609d53f60e99b96eadf3259515e1f470b0e05cc6ea375c5ed13886": {
    "site": "junk_gate_batch",
    "parsed": [
     {
@@ -39,8 +20,27 @@
     }
    ],
    "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}, {\"i\": 1, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}]",
-   "input_tokens": 859,
+   "input_tokens": 1062,
    "output_tokens": 50,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "9f3c7c5c6a3423c53181be83f48ba9e11ca00151a216535faeb138faa93ba091": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": false,
+      "description": "You have 6 new co-founder matches",
+      "category": "automated",
+      "human_authored": false,
+      "asks_for_reply": false
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"You have 6 new co-founder matches\", \"category\": \"automated\", \"human_authored\": false, \"asks_for_reply\": false}]}",
+   "input_tokens": 1163,
+   "output_tokens": 43,
    "model": "claude-haiku-4-5-20251001"
   }
  }

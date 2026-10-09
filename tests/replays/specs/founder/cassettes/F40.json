@@ -1,9 +1,136 @@
 {
  "case_id": "F40",
  "source": "ideal_reader",
- "recorded_at": "785ae938",
+ "recorded_at": "7179cd68",
  "answers": {
-  "194f01fba9498e17896b9808dd59d532e37ec53c43ea03255c6b7cf471efc618": {
+  "12fb36cf30c9ec0678598511a3b49a781ea69161cbc23324a38c9cb813903403": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "DECISION_MADE",
+      "confidence_bp": 6000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"DECISION_MADE\", \"confidence_bp\": 6000}]}",
+   "input_tokens": 1033,
+   "output_tokens": 50,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "51980a9453f8c059a07ce61a443b23d83c09080343c31e4e5d64fc10d871b14c": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "admin.pb.action_item_tracking.one_register_across_meetings": 5005,
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4994,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 6400,
+     "admin.pb.minutes_and_documentation.decisions_and_actions_same_day": 4886
+    },
+    "confidence_bp": 5000,
+    "rationale": "Nothing since the meeting says what was agreed; ask what was promised.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.action_item_tracking.one_register_across_meetings\": 5005, \"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4994, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 6400, \"admin.pb.minutes_and_documentation.decisions_and_actions_same_day\": 4886}, \"confidence_bp\": 5000, \"rationale\": \"Nothing since the meeting says what was agreed; ask what was promised.\", \"missing\": []}",
+   "input_tokens": 4422,
+   "output_tokens": 109,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "54fb90071de227117bed8a5e21ff799cbce0e8205585b7f03aebeb596aa6e987": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": false,
+      "description": "no readable text",
+      "category": "unknown",
+      "human_authored": null,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"no readable text\", \"category\": \"unknown\", \"human_authored\": null, \"asks_for_reply\": null}]}",
+   "input_tokens": 1138,
+   "output_tokens": 38,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "6cfdcd6a8e74421ea7d1f1d6ee06f8fb35951d4bf75dacad93175b1afe16e412": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "DECISION_MADE",
+      "confidence_bp": 6000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"DECISION_MADE\", \"confidence_bp\": 6000}]}",
+   "input_tokens": 1034,
+   "output_tokens": 50,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "ab00f014a6f878bd444e700a23cfadcb0c31f22b86a9d8ea812e44e48be9d5de": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Meeting with meera@tallgrass.test is clear",
+    "situation": "Nothing open is on record with meera@tallgrass.test.",
+    "artifact": "Nothing is missing on record; confirm the agenda."
+   },
+   "raw": "{\"headline\": \"Meeting with meera@tallgrass.test is clear\", \"situation\": \"Nothing open is on record with meera@tallgrass.test.\", \"artifact\": \"Nothing is missing on record; confirm the agenda.\"}",
+   "input_tokens": 680,
+   "output_tokens": 48,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "cc1e359a57298ae59143f6ee0c8698ca9b1f6d18f1fee48706e28b222b6403d6": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "sales.pb.cold_calling.permission_based_opener": 3869,
+     "sales.pb.demo.discovery_anchored_demo": 3799,
+     "sales.pb.linkedin_outreach.comment_first_linkedin_approach": 3736,
+     "sales.pb.tam_sam_som.bottom_up_market_sizing": 3820
+    },
+    "confidence_bp": 4000,
+    "rationale": "A sales opener or demo script does not fit a founder's meeting.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.cold_calling.permission_based_opener\": 3869, \"sales.pb.demo.discovery_anchored_demo\": 3799, \"sales.pb.linkedin_outreach.comment_first_linkedin_approach\": 3736, \"sales.pb.tam_sam_som.bottom_up_market_sizing\": 3820}, \"confidence_bp\": 4000, \"rationale\": \"A sales opener or demo script does not fit a founder's meeting.\", \"missing\": []}",
+   "input_tokens": 4318,
+   "output_tokens": 93,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "d280329e4f18f1deadca7672b73184e3ba70ea6530993b844141eb0dabec7298": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Meeting with meera@tallgrass.test, 2 days ago",
+    "situation": "The meeting with meera@tallgrass.test happened 2 days ago. No follow-through is visible.",
+    "artifact": "Recap: [what was discussed - yours to fill]. Next step: [one specific step, with a date]."
+   },
+   "raw": "{\"headline\": \"Meeting with meera@tallgrass.test, 2 days ago\", \"situation\": \"The meeting with meera@tallgrass.test happened 2 days ago. No follow-through is visible.\", \"artifact\": \"Recap: [what was discussed - yours to fill]. Next step: [one specific step, with a date].\"}",
+   "input_tokens": 656,
+   "output_tokens": 67,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "d98b11514c469cd6adad10af8294f0f00c9f13e1abb8d9127ef39fb0a3cb4d7f": {
    "site": "decider",
    "parsed": {
     "outcome": "decision",
@@ -21,114 +148,11 @@
     "missing": []
    },
    "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.agenda_preparation.decision_first_agendas\": 4671, \"admin.pb.briefing_and_preparation.one_page_brief_before_every_external_meeting\": 6200, \"admin.pb.calendar_management.calendar_as_strategy_not_tetris\": 4671, \"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4814, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4870, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 5063, \"admin.pb.meeting_scheduling.schedule_once_correctly\": 4804}, \"confidence_bp\": 5000, \"rationale\": \"A confirmed external meeting is coming.\", \"missing\": []}",
-   "input_tokens": 3558,
+   "input_tokens": 5538,
    "output_tokens": 152,
    "model": "claude-haiku-4-5-20251001"
   },
-  "3102d8da0ae641a305a00403d1b95d45a8c8711804e1364a4977041e9e180cc6": {
-   "site": "relevance",
-   "parsed": {
-    "verdicts": [
-     {
-      "item": 1,
-      "business": false,
-      "description": "no readable text",
-      "category": "unknown",
-      "human_authored": null,
-      "asks_for_reply": null
-     }
-    ]
-   },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"no readable text\", \"category\": \"unknown\", \"human_authored\": null, \"asks_for_reply\": null}]}",
-   "input_tokens": 934,
-   "output_tokens": 38,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "31c73948aa38998ecb60613b6cc46beeeac044779c7798daf7e06c6732295827": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "sales.pb.cold_calling.permission_based_opener": 3869,
-     "sales.pb.demo.discovery_anchored_demo": 3799,
-     "sales.pb.linkedin_outreach.comment_first_linkedin_approach": 3736,
-     "sales.pb.tam_sam_som.bottom_up_market_sizing": 3820
-    },
-    "confidence_bp": 4000,
-    "rationale": "A sales opener or demo script does not fit a founder's meeting.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.cold_calling.permission_based_opener\": 3869, \"sales.pb.demo.discovery_anchored_demo\": 3799, \"sales.pb.linkedin_outreach.comment_first_linkedin_approach\": 3736, \"sales.pb.tam_sam_som.bottom_up_market_sizing\": 3820}, \"confidence_bp\": 4000, \"rationale\": \"A sales opener or demo script does not fit a founder's meeting.\", \"missing\": []}",
-   "input_tokens": 2802,
-   "output_tokens": 93,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "360b8ace31d7ec3856a5f7228ed8d39d9d432cfe0e7b6b96071c3bd1e72e7257": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "DECISION_MADE",
-      "confidence_bp": 6000
-     }
-    ]
-   },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"DECISION_MADE\", \"confidence_bp\": 6000}]}",
-   "input_tokens": 830,
-   "output_tokens": 50,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "396b65341ec1a15ad152c7148fc8231b1ab57033e8a11308709d5b4ce01b9f6b": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "DECISION_MADE",
-      "confidence_bp": 6000
-     }
-    ]
-   },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"DECISION_MADE\", \"confidence_bp\": 6000}]}",
-   "input_tokens": 829,
-   "output_tokens": 50,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "6354bc2e828215d7d0fe921eb77ceda5a5ba24f5092582a6b5cba6a1124442b1": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "admin.pb.action_item_tracking.one_register_across_meetings": 5005,
-     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4994,
-     "admin.pb.follow_up_coordination.the_follow_through_relay": 6400,
-     "admin.pb.minutes_and_documentation.decisions_and_actions_same_day": 4886
-    },
-    "confidence_bp": 5000,
-    "rationale": "Nothing since the meeting says what was agreed; ask what was promised.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.action_item_tracking.one_register_across_meetings\": 5005, \"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4994, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 6400, \"admin.pb.minutes_and_documentation.decisions_and_actions_same_day\": 4886}, \"confidence_bp\": 5000, \"rationale\": \"Nothing since the meeting says what was agreed; ask what was promised.\", \"missing\": []}",
-   "input_tokens": 2935,
-   "output_tokens": 109,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "807b6330b6dcb5a0f0c67d302a86c263c5ea554ed03032dc5f4f20af296c66bb": {
+  "f1eca7f535b75d3fc3397db6afee09fa12568307b042953a9c753fd5a19dd4a4": {
    "site": "decider",
    "parsed": {
     "outcome": "decision",
@@ -146,32 +170,8 @@
     "missing": []
    },
    "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.agenda_preparation.decision_first_agendas\": 4671, \"admin.pb.briefing_and_preparation.one_page_brief_before_every_external_meeting\": 4805, \"admin.pb.calendar_management.calendar_as_strategy_not_tetris\": 4671, \"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4814, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 6200, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 5063, \"admin.pb.meeting_scheduling.schedule_once_correctly\": 4804}, \"confidence_bp\": 5000, \"rationale\": \"The meeting was on the calendar; what, if anything, was promised is open.\", \"missing\": []}",
-   "input_tokens": 3563,
+   "input_tokens": 5543,
    "output_tokens": 161,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "ab00f014a6f878bd444e700a23cfadcb0c31f22b86a9d8ea812e44e48be9d5de": {
-   "site": "narrator",
-   "parsed": {
-    "headline": "Meeting with meera@tallgrass.test is clear",
-    "situation": "Nothing open is on record with meera@tallgrass.test.",
-    "artifact": "Nothing is missing on record; confirm the agenda."
-   },
-   "raw": "{\"headline\": \"Meeting with meera@tallgrass.test is clear\", \"situation\": \"Nothing open is on record with meera@tallgrass.test.\", \"artifact\": \"Nothing is missing on record; confirm the agenda.\"}",
-   "input_tokens": 680,
-   "output_tokens": 48,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "d280329e4f18f1deadca7672b73184e3ba70ea6530993b844141eb0dabec7298": {
-   "site": "narrator",
-   "parsed": {
-    "headline": "Meeting with meera@tallgrass.test, 2 days ago",
-    "situation": "The meeting with meera@tallgrass.test happened 2 days ago. No follow-through is visible.",
-    "artifact": "Recap: [what was discussed - yours to fill]. Next step: [one specific step, with a date]."
-   },
-   "raw": "{\"headline\": \"Meeting with meera@tallgrass.test, 2 days ago\", \"situation\": \"The meeting with meera@tallgrass.test happened 2 days ago. No follow-through is visible.\", \"artifact\": \"Recap: [what was discussed - yours to fill]. Next step: [one specific step, with a date].\"}",
-   "input_tokens": 656,
-   "output_tokens": 67,
    "model": "claude-haiku-4-5-20251001"
   }
  }

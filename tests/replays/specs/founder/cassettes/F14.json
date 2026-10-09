@@ -1,9 +1,61 @@
 {
  "case_id": "F14",
  "source": "ideal_reader",
- "recorded_at": "fdd8b98a",
+ "recorded_at": "7179cd68",
  "answers": {
-  "03eca2814b76c266c34c99be8c70416f042c78c8dd806ff946ccbdef905f99ea": {
+  "1887a5605de21f518ede010f19dde7b0162309a48dc3e42b16ffc5f78ecd4815": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "positive",
+    "topics": [
+     "investor update"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Tara",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Tara",
+        "start_offset": 28,
+        "end_offset": 32
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "high"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"investor update\"], \"entity_mentions\": [{\"surface_form\": \"Tara\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Tara\", \"start_offset\": 28, \"end_offset\": 32}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
+   "input_tokens": 5505,
+   "output_tokens": 108,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "2a243cc7d662bae02f4e5c8252bdfcbe18d3cfc78a493b815841a80e36cdb8e0": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 1047,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "2b10a203fff2d12237872a38f9bc6813b029398d14f5ca0ef54485b3cfd01f1d": {
    "site": "relevance",
    "parsed": {
     "verdicts": [
@@ -34,11 +86,158 @@
     ]
    },
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Nimbus Labs - update #3\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 2, \"business\": true, \"description\": \"Nimbus Labs - update #2\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 3, \"business\": true, \"description\": \"Nimbus Labs - update #1\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "input_tokens": 1061,
+   "input_tokens": 1264,
    "output_tokens": 111,
    "model": "claude-haiku-4-5-20251001"
   },
-  "450ad1a902f34d13cabcf0417224a1f3f4f82a7249b6d2079381488921553e56": {
+  "39cc685a7250b7af1061f7841f41a472c1aa2fc13e2a7f8fbaa2ea6045746179": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Re: Nimbus Labs",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Nimbus Labs\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 1178,
+   "output_tokens": 37,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "459a08461834c97235e787d63cef711f8f2cdabff67a90be4a0c851a1ab1d67e": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Nimbus Labs - update #1",
+    "start_offset": 0,
+    "end_offset": 23,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Nimbus Labs - update #1\", \"start_offset\": 0, \"end_offset\": 23, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1513,
+   "output_tokens": 42,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "7ccfd9f1fd395cb2d12b73b7a8d52d3bfbcc366a80d54efef265385243997f5c": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Nimbus Labs - update #3",
+    "start_offset": 0,
+    "end_offset": 23,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Nimbus Labs - update #3\", \"start_offset\": 0, \"end_offset\": 23, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1513,
+   "output_tokens": 42,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "9e9e0864a41b91ca02e772275f9048685462b25643823a103ca862203b2349db": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 1,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 2,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 2, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 1102,
+   "output_tokens": 72,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "a9d8f4fbafd57592f52c58892e640ffdc4a4b1c3e554c2cb272edf0992831509": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "positive",
+    "topics": [
+     "investor update"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Tara",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Tara",
+        "start_offset": 28,
+        "end_offset": 32
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "high"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"investor update\"], \"entity_mentions\": [{\"surface_form\": \"Tara\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Tara\", \"start_offset\": 28, \"end_offset\": 32}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
+   "input_tokens": 5505,
+   "output_tokens": 108,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "b1cedc35e6e1675e32775064fa92ede02ef17a28a0b15755d22835221dde5089": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Re: Nimbus Labs",
+    "start_offset": 0,
+    "end_offset": 15,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Nimbus Labs\", \"start_offset\": 0, \"end_offset\": 15, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1525,
+   "output_tokens": 40,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "ba74ed1db9e74c0220e7484f6d2f0768359e08387322461943ed9dd3b33f1abb": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Nimbus Labs - update #2",
+    "start_offset": 0,
+    "end_offset": 23,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Nimbus Labs - update #2\", \"start_offset\": 0, \"end_offset\": 23, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1513,
+   "output_tokens": 42,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "ceb2ead66f769b5a5ff01ccec9eb9eefa86e7e90f55aff62596ded52acea21c9": {
    "site": "extraction",
    "parsed": {
     "intent": "inform",
@@ -114,57 +313,11 @@
     }
    },
    "raw": "{\"intent\": \"inform\", \"stance\": \"cautious\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Tara Lindqvist\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Tara Lindqvist\", \"start_offset\": 142, \"end_offset\": 156}], \"confidence_bp\": 9000}, {\"surface_form\": \"Fjord Venture Partners\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Fjord Venture Partners\", \"start_offset\": 157, \"end_offset\": 179}], \"confidence_bp\": 9000}], \"decision_states\": [{\"subject\": \"investment in Nimbus Labs\", \"state\": \"deferred\", \"owner\": \"Tara Lindqvist\", \"evidence\": [{\"quote\": \"It's too early for us right now\", \"start_offset\": 31, \"end_offset\": 62}], \"confidence_bp\": 9000}], \"commitments\": [{\"actor\": \"Tara Lindqvist\", \"action\": \"look again if Nimbus Labs hits a real milestone\", \"is_conditional\": true, \"condition_text\": \"if you hit a real milestone\", \"evidence\": [{\"quote\": \"If you hit a real milestone, I'd be happy to look again.\", \"start_offset\": 84, \"end_offset\": 140}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
-   "input_tokens": 5311,
+   "input_tokens": 5515,
    "output_tokens": 299,
    "model": "claude-haiku-4-5-20251001"
   },
-  "71e942916c3c72d73c542cb29281f69acac8398537f650d5cd72f459f512c426": {
-   "site": "relevance",
-   "parsed": {
-    "verdicts": [
-     {
-      "item": 1,
-      "business": true,
-      "description": "Re: Nimbus Labs",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     }
-    ]
-   },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Nimbus Labs\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "input_tokens": 974,
-   "output_tokens": 37,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "7cea05996bf40aca8f0659fdf53b2812f33f28e4ba15e3832587e64474cd4460": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    },
-    {
-     "i": 1,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    },
-    {
-     "i": 2,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 2, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 898,
-   "output_tokens": 72,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "9949e34e02ab85318a57518817cf82e9e0b09588b26cd909f53c72625575cb8b": {
+  "db1a2f5ef45e5c68858b309658c624670538b3aab795f8129e8e56959dd5c17a": {
    "site": "extraction",
    "parsed": {
     "intent": "inform",
@@ -197,161 +350,8 @@
     }
    },
    "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"investor update\"], \"entity_mentions\": [{\"surface_form\": \"Tara\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Tara\", \"start_offset\": 28, \"end_offset\": 32}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
-   "input_tokens": 5301,
+   "input_tokens": 5505,
    "output_tokens": 108,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "a1356d3455a5a94fe62b0644c69c2e93f62f3729c87d2c6cb6645cc09f6a8ebb": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "AMBIGUOUS",
-    "scope": [],
-    "quote": "Nimbus Labs - update #3",
-    "start_offset": 0,
-    "end_offset": 23,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Nimbus Labs - update #3\", \"start_offset\": 0, \"end_offset\": 23, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1309,
-   "output_tokens": 42,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "a5fa72ee4e2b1c94b32c017d670a028da0907d8f07804b4839b7b06ff30f46e4": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "AMBIGUOUS",
-    "scope": [],
-    "quote": "Nimbus Labs - update #2",
-    "start_offset": 0,
-    "end_offset": 23,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Nimbus Labs - update #2\", \"start_offset\": 0, \"end_offset\": 23, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1309,
-   "output_tokens": 42,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "aa3d22ff34bfd8962a448a4b50340f348f5c2b82b453c606232e337f5e80b784": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "inform",
-    "stance": "positive",
-    "topics": [
-     "investor update"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "Tara",
-      "entity_type": "person",
-      "evidence": [
-       {
-        "quote": "Tara",
-        "start_offset": 28,
-        "end_offset": 32
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "exchange_intent": {
-     "category": "relational",
-     "tone": "neutral",
-     "formality": "professional",
-     "addressed_personally": true,
-     "human_authored": true,
-     "asks_for_reply": false,
-     "engagement": "high"
-    }
-   },
-   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"investor update\"], \"entity_mentions\": [{\"surface_form\": \"Tara\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Tara\", \"start_offset\": 28, \"end_offset\": 32}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
-   "input_tokens": 5301,
-   "output_tokens": 108,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "acafa2d87d388ca7e1cf6ba47cf4be4855578088f5f8d836c9a9b66fc89bb4f4": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "AMBIGUOUS",
-    "scope": [],
-    "quote": "Re: Nimbus Labs",
-    "start_offset": 0,
-    "end_offset": 15,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Nimbus Labs\", \"start_offset\": 0, \"end_offset\": 15, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1321,
-   "output_tokens": 40,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "c75abb6bf5aef988f1f3bb5da38c5f11aa26e921338a2ce3204c51a3e8e92325": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 844,
-   "output_tokens": 24,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "ece8c2db1f79305594d001db9f5dd8fae53fccdbf24b5f0c9c6503b5aaf19c66": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "inform",
-    "stance": "positive",
-    "topics": [
-     "investor update"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "Tara",
-      "entity_type": "person",
-      "evidence": [
-       {
-        "quote": "Tara",
-        "start_offset": 28,
-        "end_offset": 32
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "exchange_intent": {
-     "category": "relational",
-     "tone": "neutral",
-     "formality": "professional",
-     "addressed_personally": true,
-     "human_authored": true,
-     "asks_for_reply": false,
-     "engagement": "high"
-    }
-   },
-   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"investor update\"], \"entity_mentions\": [{\"surface_form\": \"Tara\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Tara\", \"start_offset\": 28, \"end_offset\": 32}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
-   "input_tokens": 5301,
-   "output_tokens": 108,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "f57706bd9caa798397c690db17ab4575a8fcd74d4b400faf775dd8572079f098": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "AMBIGUOUS",
-    "scope": [],
-    "quote": "Nimbus Labs - update #1",
-    "start_offset": 0,
-    "end_offset": 23,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Nimbus Labs - update #1\", \"start_offset\": 0, \"end_offset\": 23, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1309,
-   "output_tokens": 42,
    "model": "claude-haiku-4-5-20251001"
   }
  }

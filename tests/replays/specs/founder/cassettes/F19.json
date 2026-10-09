@@ -1,26 +1,8 @@
 {
  "case_id": "F19",
  "source": "ideal_reader",
- "recorded_at": "fdd8b98a",
+ "recorded_at": "7179cd68",
  "answers": {
-  "00f1fdcbcaca6f4914629d8115fbdfa2493c477d8a91f231ae1006e75f9d2fc9": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4451,
-     "admin.pb.follow_up_coordination.the_follow_through_relay": 4507,
-     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 4699
-    },
-    "confidence_bp": 4000,
-    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4451, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4507, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 4699}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
-   "input_tokens": 2869,
-   "output_tokens": 91,
-   "model": "claude-haiku-4-5-20251001"
-  },
   "0c45db9d861efa57b81afebb5be770a50c78081f3c83a69a0d28cce83c7d3153": {
    "site": "bundle_narrator",
    "parsed": {
@@ -37,38 +19,43 @@
    "output_tokens": 166,
    "model": "claude-haiku-4-5-20251001"
   },
-  "1dd879827a738c2a48ecd4308232fbdb18249cfb65a0971b4de3855e47f94a55": {
+  "0d57d1166c03942cd614bcddf0999073bd95e163e6d71e92445871bfff74f5ac": {
    "site": "resolution",
    "parsed": {
     "verdict": "NOT_RESOLVED",
     "certainty": "INTENT_ONLY",
     "scope": [],
-    "quote": "Could you confirm the billing name?",
-    "start_offset": 99,
-    "end_offset": 134,
+    "quote": "Please submit it on the portal.",
+    "start_offset": 85,
+    "end_offset": 116,
     "speaker_role_said": "unknown"
    },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Could you confirm the billing name?\", \"start_offset\": 99, \"end_offset\": 134, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1317,
-   "output_tokens": 46,
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Please submit it on the portal.\", \"start_offset\": 85, \"end_offset\": 116, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1517,
+   "output_tokens": 45,
    "model": "claude-haiku-4-5-20251001"
   },
-  "27b6f5c5d2934e405bc5a05e002a5e05601b3d01aed8ddceb98f410189f51027": {
-   "site": "decider",
+  "11105013e84f7ed9f7b13fe2877098be33aa0294dfa7b8540f12358b00a1cef6": {
+   "site": "r1",
    "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4526,
-     "admin.pb.follow_up_coordination.the_follow_through_relay": 4582,
-     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 4775
-    },
-    "confidence_bp": 4000,
-    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
-    "missing": []
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
    },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4526, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4582, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 4775}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
-   "input_tokens": 2863,
-   "output_tokens": 91,
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 1035,
+   "output_tokens": 51,
    "model": "claude-haiku-4-5-20251001"
   },
   "28a52ef62317c04bf4dcf64f36312fff799f9fa9a66c921b206e87f71147849d": {
@@ -87,7 +74,39 @@
    "output_tokens": 166,
    "model": "claude-haiku-4-5-20251001"
   },
-  "2c0406ae33822fdc85f86a754e592996d05f4d2fc9f8e673025dcfcf240f7980": {
+  "7090b48e5e3336c260020512d092254778ad8629be7f0d0072d9019c13851be2": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Reply",
+    "situation_summary": "The reply is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
+    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
+   },
+   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
+   "input_tokens": 2406,
+   "output_tokens": 166,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "760e97be0a2f4785df1e8912063832c1b9bd6b7fed9d70f5424051f80751205a": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Could you confirm the billing name?",
+    "start_offset": 99,
+    "end_offset": 134,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Could you confirm the billing name?\", \"start_offset\": 99, \"end_offset\": 134, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1521,
+   "output_tokens": 46,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "7972821f0ded04e63f96c7d61191a3309ab4aca14b5c6951e6ca421c2aa570b1": {
    "site": "decider",
    "parsed": {
     "outcome": "decision",
@@ -109,11 +128,11 @@
     "missing": []
    },
    "raw": "{\"outcome\": \"decision\", \"scores\": {\"customer_support.pb.breach_prevention.work_the_at_risk_list_hourly\": 4980, \"customer_support.pb.expectation_setting.promise_the_process_not_the_outcome\": 5176, \"customer_support.pb.response_drafting.answer_first_then_everything_else\": 5600, \"customer_support.pb.ticket_triage.blast_radius_before_depth\": 4923, \"customer_support.pb.ticket_triage.entitlement_before_complaint\": 4923, \"customer_support.pb.ticket_triage.hand_off_with_the_assumption\": 4867, \"customer_support.pb.ticket_triage.name_the_finishing_queue\": 4895, \"customer_support.pb.ticket_triage.one_question_then_route\": 4867, \"customer_support.pb.ticket_triage.state_the_coin_flip\": 4867, \"customer_support.pb.ticket_triage.two_questions_in_order\": 4923, \"customer_support.pb.ticket_triage.workaround_test\": 4895}, \"confidence_bp\": 4500, \"rationale\": \"A person asked us for something; none of the support plays fits, and answering first is the closest.\", \"missing\": []}",
-   "input_tokens": 4155,
+   "input_tokens": 5326,
    "output_tokens": 242,
    "model": "claude-haiku-4-5-20251001"
   },
-  "4fb4636a758adf06f5310667bc7495bc03626dc82ad084798d55df5e0aeac90d": {
+  "7d0504e9de8753fa65ca5df6e8a8237fc61d8d476bc4f99465bd339d6fb3669f": {
    "site": "extraction",
    "parsed": {
     "intent": "request",
@@ -162,83 +181,29 @@
     }
    },
    "raw": "{\"intent\": \"request\", \"stance\": \"neutral\", \"topics\": [\"incubation\"], \"entity_mentions\": [{\"surface_form\": \"Naveen Gupta\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Naveen Gupta\", \"start_offset\": 109, \"end_offset\": 121}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Share the signed incubation agreement\", \"asked_by\": \"Naveen Gupta\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Please share the signed incubation agreement\", \"start_offset\": 33, \"end_offset\": 77}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"Share the signed incubation agreement\"}}",
-   "input_tokens": 5304,
+   "input_tokens": 5507,
    "output_tokens": 187,
    "model": "claude-haiku-4-5-20251001"
   },
-  "67f5b9659c430de7387a5a3a6504174a1e69166a4d80b01eca054fa225fafd10": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "Please share the signed incubation agreement so we can activate your seat.",
-    "start_offset": 33,
-    "end_offset": 107,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Please share the signed incubation agreement so we can activate your seat.\", \"start_offset\": 33, \"end_offset\": 107, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1311,
-   "output_tokens": 56,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "6f0f0f4205bd1d3ef4f7323a444e62d20207409dd30316aff87684d50f4911de": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     }
-    ]
-   },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 831,
-   "output_tokens": 51,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "6f33b13eb189784c5ab22d0724af5bf9e4ed7fcfe4811255a74051d0e42c4833": {
+  "809cb379189e2fb0c6063f0a7bcb4373a21ae5de734f6c25951fc98c911683a7": {
    "site": "decider",
    "parsed": {
-    "outcome": "decision",
+    "outcome": "defer",
     "scores": {
-     "reply": 6500,
-     "wait_unanswered_email": 4600
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4526,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 4582,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 4775
     },
-    "confidence_bp": 5500,
-    "rationale": "A direct question is waiting on us.",
+    "confidence_bp": 4000,
+    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
     "missing": []
    },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 4600}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
-   "input_tokens": 1894,
-   "output_tokens": 42,
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4526, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4582, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 4775}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
+   "input_tokens": 4135,
+   "output_tokens": 91,
    "model": "claude-haiku-4-5-20251001"
   },
-  "7090b48e5e3336c260020512d092254778ad8629be7f0d0072d9019c13851be2": {
-   "site": "bundle_narrator",
-   "parsed": {
-    "headline": "Reply",
-    "situation_summary": "The reply is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
-    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
-    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
-   },
-   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
-   "input_tokens": 2406,
-   "output_tokens": 166,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "7107d986018d8fb6ba1d92ad327c352a1a96ea860eb6ee9c238bea8f8ea63a75": {
+  "8367f098b5d952d65ad40211a24c5a83d52a48d72aa716f65a6bb3f98792f5f8": {
    "site": "extraction",
    "parsed": {
     "intent": "request",
@@ -303,11 +268,115 @@
     ]
    },
    "raw": "{\"intent\": \"request\", \"stance\": \"neutral\", \"topics\": [\"incubation\"], \"entity_mentions\": [{\"surface_form\": \"Ritika Sharma\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Ritika Sharma\", \"start_offset\": 118, \"end_offset\": 131}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Submit the monthly progress report by 15 Sep\", \"asked_by\": \"Ritika Sharma\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Your monthly progress report is due on 15 Sep.\", \"start_offset\": 38, \"end_offset\": 84}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"Submit the monthly progress report by 15 Sep\"}, \"dates_mentioned\": [{\"as_written\": \"15 Sep\", \"earliest\": \"2026-09-15T00:00:00+05:30\", \"latest\": \"2026-09-15T23:59:59+05:30\", \"certainty\": \"range\", \"resolved_against\": \"2026-09-07T06:00:00Z\", \"evidence\": [{\"quote\": \"15 Sep\", \"start_offset\": 19, \"end_offset\": 25}]}]}",
-   "input_tokens": 5307,
+   "input_tokens": 5511,
    "output_tokens": 258,
    "model": "claude-haiku-4-5-20251001"
   },
-  "7db0495f13f0366ef0275070cc191a2494966e303eeac25d74612d3cb0b2883a": {
+  "8c22c7afbfa9a9ecb474078c8766bc316c36fc45c340a44e24f24e9a3ce37483": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "DECISION_MADE",
+      "confidence_bp": 6000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"DECISION_MADE\", \"confidence_bp\": 6000}]}",
+   "input_tokens": 1135,
+   "output_tokens": 73,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "b60ac803d07de661264ebafb43502af7804f1ae8e6cc7dfe2f090b32511fce68": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4451,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 4507,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 4699
+    },
+    "confidence_bp": 4000,
+    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4451, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4507, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 4699}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
+   "input_tokens": 4141,
+   "output_tokens": 91,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "c159f634a98462fd709d055c7a72f7ed318f33c23df27f80f94b89a9d33b7de8": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Reply",
+    "situation_summary": "The reply is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
+    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
+   },
+   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
+   "input_tokens": 2365,
+   "output_tokens": 166,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "c3d7111decc94c23847dbb8a2c461b2aa0fd0fd7d64f320e266d1a84f237c984": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Send Ritika Sharma the monthly progress report",
+    "situation": "Ritika Sharma has waited 17 days: your monthly progress report is due on 15 Sep.",
+    "artifact": "Hi Ritika, the monthly progress report is submitted on the portal. Thanks, Arjun"
+   },
+   "raw": "{\"headline\": \"Send Ritika Sharma the monthly progress report\", \"situation\": \"Ritika Sharma has waited 17 days: your monthly progress report is due on 15 Sep.\", \"artifact\": \"Hi Ritika, the monthly progress report is submitted on the portal. Thanks, Arjun\"}",
+   "input_tokens": 1795,
+   "output_tokens": 63,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "c6652baff3a28d1f42a100ee75f104da209aa30b39eaa9687b07c0ee79a9b9d3": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Send Naveen Gupta the signed incubation agreement",
+    "situation": "Naveen Gupta has waited 17 days: \"Please share the signed incubation agreement\"",
+    "artifact": "Hi Naveen, attaching the signed incubation agreement. Thanks"
+   },
+   "raw": "{\"headline\": \"Send Naveen Gupta the signed incubation agreement\", \"situation\": \"Naveen Gupta has waited 17 days: \\\"Please share the signed incubation agreement\\\"\", \"artifact\": \"Hi Naveen, attaching the signed incubation agreement. Thanks\"}",
+   "input_tokens": 1777,
+   "output_tokens": 59,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "ccae54b85c814a5fd749d68b221ea3a8fc6849808c9951589a3efe8ce7618697": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "reply": 6500,
+     "wait_unanswered_email": 4600
+    },
+    "confidence_bp": 5500,
+    "rationale": "A direct question is waiting on us.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 4600}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
+   "input_tokens": 2098,
+   "output_tokens": 42,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "d5ca4a788a6d19c64295a6e0ef1f614feb0b05feafa644a3356c874e68c15cae": {
    "site": "r1",
    "parsed": {
     "readings": [
@@ -326,28 +395,11 @@
     ]
    },
    "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 831,
+   "input_tokens": 1035,
    "output_tokens": 51,
    "model": "claude-haiku-4-5-20251001"
   },
-  "84c56f9c5a34ca8e7a90b3b3589520ffe9d04a989b73eda4b82e342d66633cef": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "reply": 6500,
-     "wait_unanswered_email": 4600
-    },
-    "confidence_bp": 5500,
-    "rationale": "A direct question is waiting on us.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 4600}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
-   "input_tokens": 1895,
-   "output_tokens": 42,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "a72792c9e00f5f4271860a0639645828b317fb977eefba9028ac2e7672271bc1": {
+  "e15f1cde85d100be3d655be7661ba57559eb85fa8bcc9543d14c2749d2e25dcc": {
    "site": "extraction",
    "parsed": {
     "intent": "request",
@@ -412,11 +464,27 @@
     ]
    },
    "raw": "{\"intent\": \"request\", \"stance\": \"neutral\", \"topics\": [\"incubation\"], \"entity_mentions\": [{\"surface_form\": \"Ekta Bhalla\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Ekta Bhalla\", \"start_offset\": 136, \"end_offset\": 147}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Confirm the billing name for the co-working invoice\", \"asked_by\": \"Ekta Bhalla\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Could you confirm the billing name?\", \"start_offset\": 99, \"end_offset\": 134}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"Confirm the billing name for the co-working invoice\"}, \"dates_mentioned\": [{\"as_written\": \"30 Sep\", \"earliest\": \"2026-09-30T00:00:00+05:30\", \"latest\": \"2026-09-30T23:59:59+05:30\", \"certainty\": \"range\", \"resolved_against\": \"2026-09-24T09:00:00Z\", \"evidence\": [{\"quote\": \"30 Sep\", \"start_offset\": 91, \"end_offset\": 97}]}]}",
-   "input_tokens": 5311,
+   "input_tokens": 5515,
    "output_tokens": 257,
    "model": "claude-haiku-4-5-20251001"
   },
-  "af7fe5eb8ed004cd9d3a51c001826b77a9cb1328066465245d37a6e4998f4221": {
+  "e3635f85ce86e23ce76f8c4ac04eb722dd8530e7dcb1f2c4234b9fe224b80825": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Please share the signed incubation agreement so we can activate your seat.",
+    "start_offset": 33,
+    "end_offset": 107,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Please share the signed incubation agreement so we can activate your seat.\", \"start_offset\": 33, \"end_offset\": 107, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1515,
+   "output_tokens": 56,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "ec49a7afc69dd29c690523ab6a75b9f17d31ed756cdc5e0d6f2990cfbea5e028": {
    "site": "r1",
    "parsed": {
     "readings": [
@@ -441,93 +509,25 @@
     ]
    },
    "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 931,
+   "input_tokens": 1135,
    "output_tokens": 74,
    "model": "claude-haiku-4-5-20251001"
   },
-  "bfb2b242d9add555a5b69e76467840370e280af2c5a5672629693fcbac648c46": {
-   "site": "resolution",
+  "fcbd3047fad3e4d578b0be238c4e1a548e6ae537370fcfb35338f726d02d2a58": {
+   "site": "decider",
    "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "Please submit it on the portal.",
-    "start_offset": 85,
-    "end_offset": 116,
-    "speaker_role_said": "unknown"
+    "outcome": "decision",
+    "scores": {
+     "reply": 6500,
+     "wait_unanswered_email": 4600
+    },
+    "confidence_bp": 5500,
+    "rationale": "A direct question is waiting on us.",
+    "missing": []
    },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Please submit it on the portal.\", \"start_offset\": 85, \"end_offset\": 116, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1313,
-   "output_tokens": 45,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "c159f634a98462fd709d055c7a72f7ed318f33c23df27f80f94b89a9d33b7de8": {
-   "site": "bundle_narrator",
-   "parsed": {
-    "headline": "Reply",
-    "situation_summary": "The reply is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
-    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
-    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
-   },
-   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
-   "input_tokens": 2365,
-   "output_tokens": 166,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "c3d7111decc94c23847dbb8a2c461b2aa0fd0fd7d64f320e266d1a84f237c984": {
-   "site": "narrator",
-   "parsed": {
-    "headline": "Send Ritika Sharma the monthly progress report",
-    "situation": "Ritika Sharma has waited 17 days: your monthly progress report is due on 15 Sep.",
-    "artifact": "Hi Ritika, the monthly progress report is submitted on the portal. Thanks, Arjun"
-   },
-   "raw": "{\"headline\": \"Send Ritika Sharma the monthly progress report\", \"situation\": \"Ritika Sharma has waited 17 days: your monthly progress report is due on 15 Sep.\", \"artifact\": \"Hi Ritika, the monthly progress report is submitted on the portal. Thanks, Arjun\"}",
-   "input_tokens": 1795,
-   "output_tokens": 63,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "c6652baff3a28d1f42a100ee75f104da209aa30b39eaa9687b07c0ee79a9b9d3": {
-   "site": "narrator",
-   "parsed": {
-    "headline": "Send Naveen Gupta the signed incubation agreement",
-    "situation": "Naveen Gupta has waited 17 days: \"Please share the signed incubation agreement\"",
-    "artifact": "Hi Naveen, attaching the signed incubation agreement. Thanks"
-   },
-   "raw": "{\"headline\": \"Send Naveen Gupta the signed incubation agreement\", \"situation\": \"Naveen Gupta has waited 17 days: \\\"Please share the signed incubation agreement\\\"\", \"artifact\": \"Hi Naveen, attaching the signed incubation agreement. Thanks\"}",
-   "input_tokens": 1777,
-   "output_tokens": 59,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "fc108d1bd9be10b17e22e3ae670a5cc5ffec57f8bfeb3607654a6cb2db3aeca5": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 3,
-      "ambiguous": false,
-      "classification": "DECISION_MADE",
-      "confidence_bp": 6000
-     }
-    ]
-   },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"DECISION_MADE\", \"confidence_bp\": 6000}]}",
-   "input_tokens": 931,
-   "output_tokens": 73,
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 4600}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
+   "input_tokens": 2097,
+   "output_tokens": 42,
    "model": "claude-haiku-4-5-20251001"
   }
  }

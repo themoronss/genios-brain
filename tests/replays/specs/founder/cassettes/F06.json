@@ -1,63 +1,9 @@
 {
  "case_id": "F06",
  "source": "ideal_reader",
- "recorded_at": "5a28449d",
+ "recorded_at": "7179cd68",
  "answers": {
-  "42642e1c2de50cb26737afdf2e698b1a3e6bb1c4b44bc08e8c10cb6ecbfafd1b": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 3,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 4,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     }
-    ]
-   },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 4, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 970,
-   "output_tokens": 98,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "6dc6c48af0235a59161c20d16dfaf9ef86caa3768390013d94e6a27ac1a40f31": {
-   "site": "relevance",
-   "parsed": {
-    "verdicts": [
-     {
-      "item": 1,
-      "business": true,
-      "description": "Re: Arjun <> Nikhil Bose (Quillstack)",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     }
-    ]
-   },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Arjun <> Nikhil Bose (Quillstack)\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "input_tokens": 978,
-   "output_tokens": 43,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "715d4528c68c68d4ebdb9ee49a87c6565633dc42763cebd75918adcf48bc7c68": {
+  "11c2e22ffda70a881234e907dd7ed0a62abd4bd3560086bcda55b8d0b1a351c5": {
    "site": "extraction",
    "parsed": {
     "intent": "introduce",
@@ -111,56 +57,45 @@
     }
    },
    "raw": "{\"intent\": \"introduce\", \"stance\": \"positive\", \"topics\": [\"introduction\"], \"entity_mentions\": [{\"surface_form\": \"Nikhil Bose\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Nikhil Bose\", \"start_offset\": 9, \"end_offset\": 20}], \"confidence_bp\": 9000}, {\"surface_form\": \"Quillstack\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Quillstack\", \"start_offset\": 22, \"end_offset\": 32}], \"confidence_bp\": 9000}], \"relationships\": [{\"party\": \"Nikhil Bose\", \"nature\": \"introduced contact\", \"direction\": \"inbound\", \"evidence_text\": \"Arjun, meet Nikhil Bose\"}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": false, \"asks_for_reply\": true, \"engagement\": \"medium\", \"motive\": \"introduce a contact\"}}",
-   "input_tokens": 5335,
+   "input_tokens": 5538,
    "output_tokens": 197,
    "model": "claude-haiku-4-5-20251001"
   },
-  "9fb5ec7a9082e58a7fff3398df30964b502bd4ca0ac835982e7f2ac0769b6499": {
-   "site": "resolution",
+  "2f274ab7d96e44f739b744d1ade18aa121084f0bc8f77b5ff47cf41bc5671faa": {
+   "site": "relevance",
    "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "Are you around on Thursday for a 30-minute call?",
-    "start_offset": 72,
-    "end_offset": 120,
-    "speaker_role_said": "unknown"
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Re: Arjun <> Nikhil Bose (Quillstack)",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
    },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Are you around on Thursday for a 30-minute call?\", \"start_offset\": 72, \"end_offset\": 120, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1325,
-   "output_tokens": 50,
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Arjun <> Nikhil Bose (Quillstack)\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 1181,
+   "output_tokens": 43,
    "model": "claude-haiku-4-5-20251001"
   },
-  "b9e252977e6e35dd2a47594ff0a6052d1ad0ef6352ff523cc3ec12a1e3d49853": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "reply": 6500,
-     "wait_unanswered_email": 5600
-    },
-    "confidence_bp": 5500,
-    "rationale": "A direct question is waiting on us.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5600}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
-   "input_tokens": 1982,
-   "output_tokens": 42,
+  "6f40e5aa279caf31bc90b88d55bb698298989d97e6bcfbb120f6df96adf2e673": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 1050,
+   "output_tokens": 24,
    "model": "claude-haiku-4-5-20251001"
   },
-  "cdd1da4550672e8c223a96caa39a59ba614c1520f75843e95dd55e202c50f55c": {
-   "site": "narrator",
-   "parsed": {
-    "headline": "Confirm Thursday's 30-minute call with Nikhil Bose",
-    "situation": "Nikhil Bose asked 2 days ago: \"Are you around on Thursday for a 30-minute call?\"",
-    "artifact": "Hi Nikhil, Thursday works for a 30-minute call. Would [time] suit you?"
-   },
-   "raw": "{\"headline\": \"Confirm Thursday's 30-minute call with Nikhil Bose\", \"situation\": \"Nikhil Bose asked 2 days ago: \\\"Are you around on Thursday for a 30-minute call?\\\"\", \"artifact\": \"Hi Nikhil, Thursday works for a 30-minute call. Would [time] suit you?\"}",
-   "input_tokens": 1792,
-   "output_tokens": 62,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "dfb7504f2852b676a3ea7410f8f5d570c28ff91fec8c365fc2a303a5c16f4f5d": {
+  "77fa25d1976d492d4b11a75e8c81e505ef2bf88788fbfcce55aa86b3b5b09311": {
    "site": "extraction",
    "parsed": {
     "intent": "schedule",
@@ -247,26 +182,91 @@
     ]
    },
    "raw": "{\"intent\": \"schedule\", \"stance\": \"positive\", \"topics\": [\"intro call\"], \"entity_mentions\": [{\"surface_form\": \"Nikhil Bose\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Nikhil Bose\", \"start_offset\": 13, \"end_offset\": 24}], \"confidence_bp\": 9000}, {\"surface_form\": \"Quillstack\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Quillstack\", \"start_offset\": 26, \"end_offset\": 36}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Is Arjun free on Thursday for a 30-minute call, or what times work next week?\", \"asked_by\": \"Nikhil Bose\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Are you around on Thursday for a 30-minute call?\", \"start_offset\": 72, \"end_offset\": 120}], \"confidence_bp\": 9000}], \"scheduling_proposals\": [{\"proposer\": \"Nikhil Bose\", \"text\": \"a 30-minute call on Thursday\", \"evidence_text\": \"Are you around on Thursday for a 30-minute call?\"}], \"business_facts\": [{\"field\": \"person.title\", \"subject\": \"Nikhil Bose\", \"value\": \"CTO\", \"standing\": \"observed\", \"evidence\": [{\"quote\": \"CTO, Quillstack\", \"start_offset\": 177, \"end_offset\": 192}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"find a time to talk\"}, \"implied_actions\": [\"answer Nikhil with a time for the call\"]}",
-   "input_tokens": 5321,
+   "input_tokens": 5525,
    "output_tokens": 345,
    "model": "claude-haiku-4-5-20251001"
   },
-  "e202a4d3da9f0b1f6adaf8ee15d340dbcb3e53c4085d312983063d7c00a27906": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 847,
-   "output_tokens": 24,
+  "9dd116e53c4d45fcc536a35f323bfc60ccac173683ede1266b02f9a5f6b5bff3": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "reply": 6500,
+     "wait_unanswered_email": 5600
+    },
+    "confidence_bp": 5500,
+    "rationale": "A direct question is waiting on us.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5600}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
+   "input_tokens": 2185,
+   "output_tokens": 42,
    "model": "claude-haiku-4-5-20251001"
   },
-  "f0ef9b5369d2598389ef3042dbeecec29be53a3347dea478a642f185689bc198": {
+  "b4657e78f0acde30c1ab26adcf345529ec870dd9c1fda5c996b38d9cdcd4fdaa": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Are you around on Thursday for a 30-minute call?",
+    "start_offset": 72,
+    "end_offset": 120,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Are you around on Thursday for a 30-minute call?\", \"start_offset\": 72, \"end_offset\": 120, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1528,
+   "output_tokens": 50,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "cdd1da4550672e8c223a96caa39a59ba614c1520f75843e95dd55e202c50f55c": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Confirm Thursday's 30-minute call with Nikhil Bose",
+    "situation": "Nikhil Bose asked 2 days ago: \"Are you around on Thursday for a 30-minute call?\"",
+    "artifact": "Hi Nikhil, Thursday works for a 30-minute call. Would [time] suit you?"
+   },
+   "raw": "{\"headline\": \"Confirm Thursday's 30-minute call with Nikhil Bose\", \"situation\": \"Nikhil Bose asked 2 days ago: \\\"Are you around on Thursday for a 30-minute call?\\\"\", \"artifact\": \"Hi Nikhil, Thursday works for a 30-minute call. Would [time] suit you?\"}",
+   "input_tokens": 1792,
+   "output_tokens": 62,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "d1875a47388efe40b819ceca53a685b9455bc47c944b8dc4f402b6a9c1f6552d": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 4,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 4, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 1174,
+   "output_tokens": 98,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "f4c4b494c08d0eb5dd8d8499925edf34b02278213789926e9a34d0fa00d02548": {
    "site": "resolution",
    "parsed": {
     "verdict": "NOT_RESOLVED",
@@ -278,7 +278,7 @@
     "speaker_role_said": "unknown"
    },
    "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"I'll let you two take it from here.\", \"start_offset\": 186, \"end_offset\": 221, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1334,
+   "input_tokens": 1538,
    "output_tokens": 47,
    "model": "claude-haiku-4-5-20251001"
   }

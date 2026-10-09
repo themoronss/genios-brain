@@ -1,9 +1,9 @@
 {
  "case_id": "F45",
  "source": "ideal_reader",
- "recorded_at": "785ae938",
+ "recorded_at": "7179cd68",
  "answers": {
-  "0820d31a197d106f75ab30074b51295b76fcce8c347bcbad8e3775252de1e593": {
+  "0d05660a005c1a914e38118e41460164ea8d5a598f1b4a0241972ed8b34c4fab": {
    "site": "extraction",
    "parsed": {
     "intent": "inform",
@@ -18,8 +18,8 @@
       "evidence": [
        {
         "quote": "Meera",
-        "start_offset": 38,
-        "end_offset": 43
+        "start_offset": 36,
+        "end_offset": 41
        }
       ],
       "confidence_bp": 9000
@@ -35,108 +35,60 @@
      "engagement": "high"
     }
    },
-   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera\", \"start_offset\": 38, \"end_offset\": 43}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
-   "input_tokens": 5305,
+   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera\", \"start_offset\": 36, \"end_offset\": 41}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
+   "input_tokens": 5504,
    "output_tokens": 107,
    "model": "claude-haiku-4-5-20251001"
   },
-  "0c92ee8ccc332aed024308829cab1daf3097523b45597638ca6c7c0de738dc8c": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "AMBIGUOUS",
-    "scope": [],
-    "quote": "Re: Bluepeak x Nimbus - pipeline",
-    "start_offset": 0,
-    "end_offset": 32,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Bluepeak x Nimbus - pipeline\", \"start_offset\": 0, \"end_offset\": 32, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1302,
-   "output_tokens": 45,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "125579c0571b5592674f923ae781f4e3f0b6b91c1a2956c0e84fe03949b5748e": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "request",
-    "stance": "positive",
-    "topics": [
-     "fundraising"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "Meera Shah",
-      "entity_type": "person",
-      "evidence": [
-       {
-        "quote": "Meera Shah",
-        "start_offset": 100,
-        "end_offset": 110
-       }
-      ],
-      "confidence_bp": 9000
-     },
-     {
-      "surface_form": "Bluepeak Ventures",
-      "entity_type": "organization",
-      "evidence": [
-       {
-        "quote": "Bluepeak Ventures",
-        "start_offset": 111,
-        "end_offset": 128
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "questions": [
-     {
-      "text": "Say who the first engineering hire after the round will be",
-      "asked_by": "Meera Shah",
-      "asked_of": "Arjun Rao",
-      "evidence": [
-       {
-        "quote": "Who is the first engineer you plan to hire after the round?",
-        "start_offset": 39,
-        "end_offset": 98
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "exchange_intent": {
-     "category": "working",
-     "tone": "neutral",
-     "formality": "professional",
-     "addressed_personally": true,
-     "human_authored": true,
-     "asks_for_reply": true,
-     "engagement": "high"
-    }
-   },
-   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera Shah\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera Shah\", \"start_offset\": 100, \"end_offset\": 110}], \"confidence_bp\": 9000}, {\"surface_form\": \"Bluepeak Ventures\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Bluepeak Ventures\", \"start_offset\": 111, \"end_offset\": 128}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Say who the first engineering hire after the round will be\", \"asked_by\": \"Meera Shah\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Who is the first engineer you plan to hire after the round?\", \"start_offset\": 39, \"end_offset\": 98}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\"}}",
-   "input_tokens": 5302,
-   "output_tokens": 227,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "14ec0ede712b20f05a9c128d77865114b036006a4211dae243dd126335d9b2dd": {
+  "1452acc30cd34c12fb3415b533128f8043ac16b986c250fd0b924a51fde80f77": {
    "site": "resolution",
    "parsed": {
     "verdict": "NOT_RESOLVED",
     "certainty": "INTENT_ONLY",
     "scope": [],
-    "quote": "How do you plan to price the team tier once the pilots convert?",
-    "start_offset": 40,
-    "end_offset": 103,
+    "quote": "The team tier will be priced per seat, with a floor of five seats.",
+    "start_offset": 44,
+    "end_offset": 110,
     "speaker_role_said": "unknown"
    },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"How do you plan to price the team tier once the pilots convert?\", \"start_offset\": 40, \"end_offset\": 103, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1310,
-   "output_tokens": 53,
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"The team tier will be priced per seat, with a floor of five seats.\", \"start_offset\": 44, \"end_offset\": 110, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1510,
+   "output_tokens": 54,
    "model": "claude-haiku-4-5-20251001"
   },
-  "2123935b427ae27693e474d5417c8b97e8a44ee61aa152eaed97dfeb8aaf84b5": {
+  "1e1d0cb17ce281d75029805fbc1168aa040d5ff915e1d7575c113551bd19ee06": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Could two of your pilot customers take a short reference call with us?",
+    "start_offset": 43,
+    "end_offset": 113,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Could two of your pilot customers take a short reference call with us?\", \"start_offset\": 43, \"end_offset\": 113, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1516,
+   "output_tokens": 55,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "30478b450e0b78d18bb163d4fdadc03da265b3bdcfb48910f3fa371bc0b13385": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Yes - two pilot leads have agreed; I will send their details separately.",
+    "start_offset": 47,
+    "end_offset": 119,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Yes - two pilot leads have agreed; I will send their details separately.\", \"start_offset\": 47, \"end_offset\": 119, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1512,
+   "output_tokens": 56,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "376985a6cf1a5ea9b80b03c2581c0dbd54ec9265f9dabb0da4b032109901376c": {
    "site": "extraction",
    "parsed": {
     "intent": "request",
@@ -196,121 +148,27 @@
     }
    },
    "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera Shah\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera Shah\", \"start_offset\": 105, \"end_offset\": 115}], \"confidence_bp\": 9000}, {\"surface_form\": \"Bluepeak Ventures\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Bluepeak Ventures\", \"start_offset\": 116, \"end_offset\": 133}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Explain how the team tier will be priced after the pilots convert\", \"asked_by\": \"Meera Shah\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"How do you plan to price the team tier once the pilots convert?\", \"start_offset\": 40, \"end_offset\": 103}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\"}}",
-   "input_tokens": 5303,
+   "input_tokens": 5507,
    "output_tokens": 230,
    "model": "claude-haiku-4-5-20251001"
   },
-  "2e5ffdfcb7f51471ef84bfc597923c79b3ff1d8ffc40a34c5fc9ba20d8dc6c4c": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    },
-    {
-     "i": 1,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    },
-    {
-     "i": 2,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    },
-    {
-     "i": 3,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    },
-    {
-     "i": 4,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    },
-    {
-     "i": 5,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    },
-    {
-     "i": 6,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    },
-    {
-     "i": 7,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 2, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 3, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 4, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 5, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 6, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 7, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 1053,
-   "output_tokens": 192,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "35935caea58171d20f0b2a2ade0671f1ae5d4453d7ed8a3190aa4a6cdf5fa638": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "inform",
-    "stance": "positive",
-    "topics": [
-     "fundraising"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "Meera",
-      "entity_type": "person",
-      "evidence": [
-       {
-        "quote": "Meera",
-        "start_offset": 35,
-        "end_offset": 40
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "exchange_intent": {
-     "category": "working",
-     "tone": "neutral",
-     "formality": "professional",
-     "addressed_personally": true,
-     "human_authored": true,
-     "asks_for_reply": false,
-     "engagement": "high"
-    }
-   },
-   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera\", \"start_offset\": 35, \"end_offset\": 40}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
-   "input_tokens": 5297,
-   "output_tokens": 107,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "467c4035c6b4b33acc7f95c91e464ce5b3e1d5eeb2a8ac3ec015103bcae71183": {
+  "4051abc8db9d01854f807991302ab2ff0b75fe56bddf457aa9424d04f617485c": {
    "site": "resolution",
    "parsed": {
     "verdict": "NOT_RESOLVED",
-    "certainty": "AMBIGUOUS",
+    "certainty": "INTENT_ONLY",
     "scope": [],
-    "quote": "Re: Bluepeak x Nimbus - competition",
-    "start_offset": 0,
-    "end_offset": 35,
+    "quote": "How do you plan to price the team tier once the pilots convert?",
+    "start_offset": 40,
+    "end_offset": 103,
     "speaker_role_said": "unknown"
    },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Bluepeak x Nimbus - competition\", \"start_offset\": 0, \"end_offset\": 35, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1306,
-   "output_tokens": 45,
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"How do you plan to price the team tier once the pilots convert?\", \"start_offset\": 40, \"end_offset\": 103, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1514,
+   "output_tokens": 53,
    "model": "claude-haiku-4-5-20251001"
   },
-  "500cc89bbf738cd9da9aeb15fa3b03608e045a3a7013d7aa52f23598cbb78552": {
+  "407a72554aed212ca13e5dfd15fca58cfc98a455d6898dba553867acd6e35869": {
    "site": "relevance",
    "parsed": {
     "verdicts": [
@@ -349,60 +207,11 @@
     ]
    },
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Bluepeak x Nimbus - references\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 2, \"business\": true, \"description\": \"Bluepeak x Nimbus - references\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 3, \"business\": true, \"description\": \"Re: Bluepeak x Nimbus - competition\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 4, \"business\": true, \"description\": \"Bluepeak x Nimbus - competition\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "input_tokens": 1111,
+   "input_tokens": 1315,
    "output_tokens": 157,
    "model": "claude-haiku-4-5-20251001"
   },
-  "67251bbc8e48d3911dd4bff9dc44e4fa6bd29fbe6e964279be0d1fa7bf3cd2ba": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "The team tier will be priced per seat, with a floor of five seats.",
-    "start_offset": 44,
-    "end_offset": 110,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"The team tier will be priced per seat, with a floor of five seats.\", \"start_offset\": 44, \"end_offset\": 110, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1306,
-   "output_tokens": 54,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "7331675577383831f1174c90d4477eb502b948c7ab0ab4920c631174377418ec": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    },
-    {
-     "i": 1,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    },
-    {
-     "i": 2,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    },
-    {
-     "i": 3,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 2, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 3, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 933,
-   "output_tokens": 96,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "7c7bb2fac3e6540e40bea1ebac3d0048dd3a17f8fdc6d64696f4428d8548f9cc": {
+  "437475b70490ed99c679df7b3aab1928e11ec0ac7aa293dc1484b0e685fbff5f": {
    "site": "extraction",
    "parsed": {
     "intent": "request",
@@ -417,8 +226,8 @@
       "evidence": [
        {
         "quote": "Meera Shah",
-        "start_offset": 110,
-        "end_offset": 120
+        "start_offset": 100,
+        "end_offset": 110
        }
       ],
       "confidence_bp": 9000
@@ -429,103 +238,23 @@
       "evidence": [
        {
         "quote": "Bluepeak Ventures",
-        "start_offset": 121,
-        "end_offset": 138
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "questions": [
-     {
-      "text": "Name the tool the pilot teams use today instead of Nimbus Labs",
-      "asked_by": "Meera Shah",
-      "asked_of": "Arjun Rao",
-      "evidence": [
-       {
-        "quote": "Which tool do your pilot teams use today instead of Nimbus Labs?",
-        "start_offset": 44,
-        "end_offset": 108
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "exchange_intent": {
-     "category": "working",
-     "tone": "neutral",
-     "formality": "professional",
-     "addressed_personally": true,
-     "human_authored": true,
-     "asks_for_reply": true,
-     "engagement": "high"
-    }
-   },
-   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera Shah\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera Shah\", \"start_offset\": 110, \"end_offset\": 120}], \"confidence_bp\": 9000}, {\"surface_form\": \"Bluepeak Ventures\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Bluepeak Ventures\", \"start_offset\": 121, \"end_offset\": 138}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Name the tool the pilot teams use today instead of Nimbus Labs\", \"asked_by\": \"Meera Shah\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Which tool do your pilot teams use today instead of Nimbus Labs?\", \"start_offset\": 44, \"end_offset\": 108}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\"}}",
-   "input_tokens": 5305,
-   "output_tokens": 229,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "821a00795c1876536e43a7fa338545938541f27a75236203cb01f33b83bc4733": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "Yes - two pilot leads have agreed; I will send their details separately.",
-    "start_offset": 47,
-    "end_offset": 119,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Yes - two pilot leads have agreed; I will send their details separately.\", \"start_offset\": 47, \"end_offset\": 119, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1308,
-   "output_tokens": 56,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "859a9a7f758c916e1698cc3ddf252fd40174613a06f383f9b9bb6093bc2fb6d5": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "request",
-    "stance": "positive",
-    "topics": [
-     "fundraising"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "Meera Shah",
-      "entity_type": "person",
-      "evidence": [
-       {
-        "quote": "Meera Shah",
-        "start_offset": 118,
+        "start_offset": 111,
         "end_offset": 128
        }
       ],
       "confidence_bp": 9000
-     },
-     {
-      "surface_form": "Bluepeak Ventures",
-      "entity_type": "organization",
-      "evidence": [
-       {
-        "quote": "Bluepeak Ventures",
-        "start_offset": 129,
-        "end_offset": 146
-       }
-      ],
-      "confidence_bp": 9000
      }
     ],
     "questions": [
      {
-      "text": "Share the eight-week retention of the first three pilot teams",
+      "text": "Give the number of teams in next quarter's pipeline",
       "asked_by": "Meera Shah",
       "asked_of": "Arjun Rao",
       "evidence": [
        {
-        "quote": "Could you share how the first three pilot teams retained over eight weeks?",
-        "start_offset": 42,
-        "end_offset": 116
+        "quote": "How many teams are in your pipeline for the next quarter?",
+        "start_offset": 41,
+        "end_offset": 98
        }
       ],
       "confidence_bp": 9000
@@ -541,28 +270,12 @@
      "engagement": "high"
     }
    },
-   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera Shah\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera Shah\", \"start_offset\": 118, \"end_offset\": 128}], \"confidence_bp\": 9000}, {\"surface_form\": \"Bluepeak Ventures\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Bluepeak Ventures\", \"start_offset\": 129, \"end_offset\": 146}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Share the eight-week retention of the first three pilot teams\", \"asked_by\": \"Meera Shah\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Could you share how the first three pilot teams retained over eight weeks?\", \"start_offset\": 42, \"end_offset\": 116}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\"}}",
-   "input_tokens": 5307,
-   "output_tokens": 231,
+   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera Shah\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera Shah\", \"start_offset\": 100, \"end_offset\": 110}], \"confidence_bp\": 9000}, {\"surface_form\": \"Bluepeak Ventures\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Bluepeak Ventures\", \"start_offset\": 111, \"end_offset\": 128}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Give the number of teams in next quarter's pipeline\", \"asked_by\": \"Meera Shah\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"How many teams are in your pipeline for the next quarter?\", \"start_offset\": 41, \"end_offset\": 98}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\"}}",
+   "input_tokens": 5506,
+   "output_tokens": 224,
    "model": "claude-haiku-4-5-20251001"
   },
-  "972525235d39027e7c466934dcfd502b041ddcf7f8544059306070c234f5c075": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "How many teams are in your pipeline for the next quarter?",
-    "start_offset": 41,
-    "end_offset": 98,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"How many teams are in your pipeline for the next quarter?\", \"start_offset\": 41, \"end_offset\": 98, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1309,
-   "output_tokens": 52,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "b25b2e55c4c2f24bf82978f0fe4745fbbcb2fc82ece03fc4466a998456b169ab": {
+  "4507243e5224e7b139ecf2ce9bda5769a4570f8c5f3cd4dd81dfeda85f28773e": {
    "site": "extraction",
    "parsed": {
     "intent": "inform",
@@ -595,27 +308,11 @@
     }
    },
    "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera\", \"start_offset\": 39, \"end_offset\": 44}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
-   "input_tokens": 5303,
+   "input_tokens": 5507,
    "output_tokens": 107,
    "model": "claude-haiku-4-5-20251001"
   },
-  "b348a2485ebf457fd180542bacc7f76d51fbf231175d030d8e1b8d0aec9ea438": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "Could two of your pilot customers take a short reference call with us?",
-    "start_offset": 43,
-    "end_offset": 113,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Could two of your pilot customers take a short reference call with us?\", \"start_offset\": 43, \"end_offset\": 113, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1312,
-   "output_tokens": 55,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "b359e0845695dd97a84a059a344ba77ddd3eb499a5e81a6761f8354ebaad52f7": {
+  "4e2743c2faf9447ec7a0b5b8ddc4c93ca6fd6824805713ced7ff41bd57a0d081": {
    "site": "extraction",
    "parsed": {
     "intent": "request",
@@ -630,8 +327,8 @@
       "evidence": [
        {
         "quote": "Meera Shah",
-        "start_offset": 115,
-        "end_offset": 125
+        "start_offset": 100,
+        "end_offset": 110
        }
       ],
       "confidence_bp": 9000
@@ -642,8 +339,8 @@
       "evidence": [
        {
         "quote": "Bluepeak Ventures",
-        "start_offset": 126,
-        "end_offset": 143
+        "start_offset": 111,
+        "end_offset": 128
        }
       ],
       "confidence_bp": 9000
@@ -651,14 +348,14 @@
     ],
     "questions": [
      {
-      "text": "Arrange two pilot-customer reference calls",
+      "text": "Say who the first engineering hire after the round will be",
       "asked_by": "Meera Shah",
       "asked_of": "Arjun Rao",
       "evidence": [
        {
-        "quote": "Could two of your pilot customers take a short reference call with us?",
-        "start_offset": 43,
-        "end_offset": 113
+        "quote": "Who is the first engineer you plan to hire after the round?",
+        "start_offset": 39,
+        "end_offset": 98
        }
       ],
       "confidence_bp": 9000
@@ -674,12 +371,12 @@
      "engagement": "high"
     }
    },
-   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera Shah\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera Shah\", \"start_offset\": 115, \"end_offset\": 125}], \"confidence_bp\": 9000}, {\"surface_form\": \"Bluepeak Ventures\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Bluepeak Ventures\", \"start_offset\": 126, \"end_offset\": 143}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Arrange two pilot-customer reference calls\", \"asked_by\": \"Meera Shah\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Could two of your pilot customers take a short reference call with us?\", \"start_offset\": 43, \"end_offset\": 113}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\"}}",
-   "input_tokens": 5306,
-   "output_tokens": 226,
+   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera Shah\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera Shah\", \"start_offset\": 100, \"end_offset\": 110}], \"confidence_bp\": 9000}, {\"surface_form\": \"Bluepeak Ventures\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Bluepeak Ventures\", \"start_offset\": 111, \"end_offset\": 128}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Say who the first engineering hire after the round will be\", \"asked_by\": \"Meera Shah\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Who is the first engineer you plan to hire after the round?\", \"start_offset\": 39, \"end_offset\": 98}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\"}}",
+   "input_tokens": 5505,
+   "output_tokens": 227,
    "model": "claude-haiku-4-5-20251001"
   },
-  "c427d8c855761f1dc75fb9c131cc55f677eaed78e56ebc9f1ceb92bc83692074": {
+  "568d28c9441ba2529cba71491e39df52879e034ba4bcc0ac11e2beb9167fe469": {
    "site": "resolution",
    "parsed": {
     "verdict": "NOT_RESOLVED",
@@ -691,48 +388,11 @@
     "speaker_role_said": "unknown"
    },
    "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Bluepeak x Nimbus - hiring\", \"start_offset\": 0, \"end_offset\": 30, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1303,
+   "input_tokens": 1507,
    "output_tokens": 44,
    "model": "claude-haiku-4-5-20251001"
   },
-  "c7ef06a7212d225a0a1f9e550e61426da513676cc8498b20417c5bc07ec093c6": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "inform",
-    "stance": "positive",
-    "topics": [
-     "fundraising"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "Meera",
-      "entity_type": "person",
-      "evidence": [
-       {
-        "quote": "Meera",
-        "start_offset": 36,
-        "end_offset": 41
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "exchange_intent": {
-     "category": "working",
-     "tone": "neutral",
-     "formality": "professional",
-     "addressed_personally": true,
-     "human_authored": true,
-     "asks_for_reply": false,
-     "engagement": "high"
-    }
-   },
-   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera\", \"start_offset\": 36, \"end_offset\": 41}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
-   "input_tokens": 5300,
-   "output_tokens": 107,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "d9d29a2b5205c39d382b5ffa34c65ebeb1d71c76b8758ce6ecd97acb15aa1140": {
+  "5d6399e7499ee26f68e3f1d0a267a3f40fb8361eed7e4499e78ccf12ce49ef13": {
    "site": "extraction",
    "parsed": {
     "intent": "inform",
@@ -765,11 +425,43 @@
     }
    },
    "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera\", \"start_offset\": 37, \"end_offset\": 42}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
-   "input_tokens": 5296,
+   "input_tokens": 5500,
    "output_tokens": 107,
    "model": "claude-haiku-4-5-20251001"
   },
-  "e6b2081f2f43c2bed8d8355292d43f45024546269206100d73f8d566b2c1e5e8": {
+  "5ec422fc3c0b7f50a51dfcdace3cb808a94b4c97742d72e3668fcc84feb99c67": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "How many teams are in your pipeline for the next quarter?",
+    "start_offset": 41,
+    "end_offset": 98,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"How many teams are in your pipeline for the next quarter?\", \"start_offset\": 41, \"end_offset\": 98, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1512,
+   "output_tokens": 52,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "6dd29f5a184128e746d11c61f3355a8215b44bfdc449f79746aa8901450851b2": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Re: Bluepeak x Nimbus - pipeline",
+    "start_offset": 0,
+    "end_offset": 32,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Bluepeak x Nimbus - pipeline\", \"start_offset\": 0, \"end_offset\": 32, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1505,
+   "output_tokens": 45,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "79baa05d00979861aa7659386170f341dcc1cab77e7fe2d5c10da3d25d05076b": {
    "site": "relevance",
    "parsed": {
     "verdicts": [
@@ -840,11 +532,233 @@
     ]
    },
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Bluepeak x Nimbus - pipeline\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 2, \"business\": true, \"description\": \"Bluepeak x Nimbus - pipeline\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 3, \"business\": true, \"description\": \"Re: Bluepeak x Nimbus - hiring\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 4, \"business\": true, \"description\": \"Bluepeak x Nimbus - hiring\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 5, \"business\": true, \"description\": \"Re: Bluepeak x Nimbus - pricing\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 6, \"business\": true, \"description\": \"Bluepeak x Nimbus - pricing\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 7, \"business\": true, \"description\": \"Re: Bluepeak x Nimbus - retention\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 8, \"business\": true, \"description\": \"Bluepeak x Nimbus - retention\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "input_tokens": 1295,
+   "input_tokens": 1498,
    "output_tokens": 304,
    "model": "claude-haiku-4-5-20251001"
   },
-  "f160bc1079e1138579d3563f63561649ae0afae16c5440a3b52094026c9ccb75": {
+  "830daf59e1869945b47a00106106e89a73e09885abb478946c1d95bc311b4149": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "request",
+    "stance": "positive",
+    "topics": [
+     "fundraising"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Meera Shah",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Meera Shah",
+        "start_offset": 115,
+        "end_offset": 125
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Bluepeak Ventures",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Bluepeak Ventures",
+        "start_offset": 126,
+        "end_offset": 143
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "Arrange two pilot-customer reference calls",
+      "asked_by": "Meera Shah",
+      "asked_of": "Arjun Rao",
+      "evidence": [
+       {
+        "quote": "Could two of your pilot customers take a short reference call with us?",
+        "start_offset": 43,
+        "end_offset": 113
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high"
+    }
+   },
+   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera Shah\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera Shah\", \"start_offset\": 115, \"end_offset\": 125}], \"confidence_bp\": 9000}, {\"surface_form\": \"Bluepeak Ventures\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Bluepeak Ventures\", \"start_offset\": 126, \"end_offset\": 143}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Arrange two pilot-customer reference calls\", \"asked_by\": \"Meera Shah\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Could two of your pilot customers take a short reference call with us?\", \"start_offset\": 43, \"end_offset\": 113}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\"}}",
+   "input_tokens": 5510,
+   "output_tokens": 226,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "8b23a200b3306a46c0a4c45fae675f9f503a07661b2b46181198c2fd3a49de35": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "request",
+    "stance": "positive",
+    "topics": [
+     "fundraising"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Meera Shah",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Meera Shah",
+        "start_offset": 110,
+        "end_offset": 120
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Bluepeak Ventures",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Bluepeak Ventures",
+        "start_offset": 121,
+        "end_offset": 138
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "Name the tool the pilot teams use today instead of Nimbus Labs",
+      "asked_by": "Meera Shah",
+      "asked_of": "Arjun Rao",
+      "evidence": [
+       {
+        "quote": "Which tool do your pilot teams use today instead of Nimbus Labs?",
+        "start_offset": 44,
+        "end_offset": 108
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high"
+    }
+   },
+   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera Shah\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera Shah\", \"start_offset\": 110, \"end_offset\": 120}], \"confidence_bp\": 9000}, {\"surface_form\": \"Bluepeak Ventures\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Bluepeak Ventures\", \"start_offset\": 121, \"end_offset\": 138}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Name the tool the pilot teams use today instead of Nimbus Labs\", \"asked_by\": \"Meera Shah\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Which tool do your pilot teams use today instead of Nimbus Labs?\", \"start_offset\": 44, \"end_offset\": 108}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\"}}",
+   "input_tokens": 5509,
+   "output_tokens": 229,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "a43ca235b96880df456d6a2e71a0bf17ce6d0361a024f26772687ebee2817f58": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "positive",
+    "topics": [
+     "fundraising"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Meera",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Meera",
+        "start_offset": 38,
+        "end_offset": 43
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "high"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera\", \"start_offset\": 38, \"end_offset\": 43}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
+   "input_tokens": 5509,
+   "output_tokens": 107,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "a51a2dd481a92e0ef9f72850275294e9502a77825fa76f2417ff92845c272e9b": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 1,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 2,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 3,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 4,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 5,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 6,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 7,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 2, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 3, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 4, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 5, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 6, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 7, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 1257,
+   "output_tokens": 192,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "b2f25a680dd6a962a7de488d4c1d7cf8d9f099419fb70050c9fe81806e47a496": {
    "site": "extraction",
    "parsed": {
     "intent": "inform",
@@ -877,11 +791,60 @@
     }
    },
    "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera\", \"start_offset\": 40, \"end_offset\": 45}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
-   "input_tokens": 5301,
+   "input_tokens": 5505,
    "output_tokens": 107,
    "model": "claude-haiku-4-5-20251001"
   },
-  "fb3e80cb989fdf832ecbf40f16418bad332dff282cf27e636866b6cb6c184e7d": {
+  "c4da27758339188b991f2f82df6a20cf2450a178ef23fe7f35b3928d4b4b8273": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 1,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 2,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 3,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 2, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 3, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 1136,
+   "output_tokens": 96,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "c6d220f7d4e49744a426a1359aee13cd37b7b7155bbbfcea16d498a467346305": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Re: Bluepeak x Nimbus - competition",
+    "start_offset": 0,
+    "end_offset": 35,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Bluepeak x Nimbus - competition\", \"start_offset\": 0, \"end_offset\": 35, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1510,
+   "output_tokens": 45,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "eb4e3179aa6ba68a08af4b50e788a49cf489b674604747da0a5973943ca8dae0": {
    "site": "extraction",
    "parsed": {
     "intent": "request",
@@ -896,8 +859,8 @@
       "evidence": [
        {
         "quote": "Meera Shah",
-        "start_offset": 100,
-        "end_offset": 110
+        "start_offset": 118,
+        "end_offset": 128
        }
       ],
       "confidence_bp": 9000
@@ -908,8 +871,8 @@
       "evidence": [
        {
         "quote": "Bluepeak Ventures",
-        "start_offset": 111,
-        "end_offset": 128
+        "start_offset": 129,
+        "end_offset": 146
        }
       ],
       "confidence_bp": 9000
@@ -917,14 +880,14 @@
     ],
     "questions": [
      {
-      "text": "Give the number of teams in next quarter's pipeline",
+      "text": "Share the eight-week retention of the first three pilot teams",
       "asked_by": "Meera Shah",
       "asked_of": "Arjun Rao",
       "evidence": [
        {
-        "quote": "How many teams are in your pipeline for the next quarter?",
-        "start_offset": 41,
-        "end_offset": 98
+        "quote": "Could you share how the first three pilot teams retained over eight weeks?",
+        "start_offset": 42,
+        "end_offset": 116
        }
       ],
       "confidence_bp": 9000
@@ -940,9 +903,46 @@
      "engagement": "high"
     }
    },
-   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera Shah\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera Shah\", \"start_offset\": 100, \"end_offset\": 110}], \"confidence_bp\": 9000}, {\"surface_form\": \"Bluepeak Ventures\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Bluepeak Ventures\", \"start_offset\": 111, \"end_offset\": 128}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Give the number of teams in next quarter's pipeline\", \"asked_by\": \"Meera Shah\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"How many teams are in your pipeline for the next quarter?\", \"start_offset\": 41, \"end_offset\": 98}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\"}}",
-   "input_tokens": 5302,
-   "output_tokens": 224,
+   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera Shah\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera Shah\", \"start_offset\": 118, \"end_offset\": 128}], \"confidence_bp\": 9000}, {\"surface_form\": \"Bluepeak Ventures\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Bluepeak Ventures\", \"start_offset\": 129, \"end_offset\": 146}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Share the eight-week retention of the first three pilot teams\", \"asked_by\": \"Meera Shah\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Could you share how the first three pilot teams retained over eight weeks?\", \"start_offset\": 42, \"end_offset\": 116}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\"}}",
+   "input_tokens": 5511,
+   "output_tokens": 231,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "ef95ac36c34c58ae8979bf9349e8b5f277adfaaf82fd81e838de01a1bb5090d6": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "positive",
+    "topics": [
+     "fundraising"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Meera",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Meera",
+        "start_offset": 35,
+        "end_offset": 40
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "high"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Meera\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Meera\", \"start_offset\": 35, \"end_offset\": 40}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
+   "input_tokens": 5501,
+   "output_tokens": 107,
    "model": "claude-haiku-4-5-20251001"
   }
  }

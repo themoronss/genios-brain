@@ -1,25 +1,8 @@
 {
  "case_id": "F37",
  "source": "ideal_reader",
- "recorded_at": "785ae938",
+ "recorded_at": "7179cd68",
  "answers": {
-  "10c4150bc68254700915584d7e2f1818b7148d53fd3c954af50d406f239b9c5a": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "reply": 6500,
-     "wait_unanswered_email": 5600
-    },
-    "confidence_bp": 5500,
-    "rationale": "A direct question is waiting on us.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5600}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
-   "input_tokens": 1920,
-   "output_tokens": 42,
-   "model": "claude-haiku-4-5-20251001"
-  },
   "118d767f6a0a9b8f1643143015ad2ef9c08a2d7aedc037b03070d79b4fc028b9": {
    "site": "narrator",
    "parsed": {
@@ -32,74 +15,62 @@
    "output_tokens": 45,
    "model": "claude-haiku-4-5-20251001"
   },
-  "25fe7eee7e728af1dbbeccdc0f116ca7a45c074cff97536029e9fad21e1b094e": {
-   "site": "relevance",
+  "1b7a5c69bddb911d51d8d527c746f56138772f59570abb5d1c98245a925c03a5": {
+   "site": "extraction",
    "parsed": {
-    "verdicts": [
+    "intent": "introduce",
+    "stance": "positive",
+    "topics": [
+     "introduction"
+    ],
+    "entity_mentions": [
      {
-      "item": 1,
-      "business": true,
-      "description": "Re: Arjun <> Farah Qureshi (Kitepath)",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
+      "surface_form": "Farah Qureshi",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Farah Qureshi",
+        "start_offset": 9,
+        "end_offset": 22
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Kitepath",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Kitepath",
+        "start_offset": 24,
+        "end_offset": 32
+       }
+      ],
+      "confidence_bp": 9000
      }
-    ]
-   },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Arjun <> Farah Qureshi (Kitepath)\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "input_tokens": 964,
-   "output_tokens": 43,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "2f60b6c9ffb8f00ddce6c0df22d1662bd728591048833cc7819b9470a05764d3": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "Can you send your deck by Friday 12 Sep?",
-    "start_offset": 72,
-    "end_offset": 112,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Can you send your deck by Friday 12 Sep?\", \"start_offset\": 72, \"end_offset\": 112, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1311,
-   "output_tokens": 48,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "30d99db12c1039691f4065a27d545fb43b918039ebcf14408977e5fa2e8c5f7f": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
+    ],
+    "relationships": [
      {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 3,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 4,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
+      "party": "Farah Qureshi",
+      "nature": "introduced contact",
+      "direction": "inbound",
+      "evidence_text": "Arjun, meet Farah Qureshi"
      }
-    ]
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": false,
+     "asks_for_reply": true,
+     "engagement": "medium",
+     "motive": "introduce a contact"
+    }
    },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 4, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 963,
-   "output_tokens": 98,
+   "raw": "{\"intent\": \"introduce\", \"stance\": \"positive\", \"topics\": [\"introduction\"], \"entity_mentions\": [{\"surface_form\": \"Farah Qureshi\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Farah Qureshi\", \"start_offset\": 9, \"end_offset\": 22}], \"confidence_bp\": 9000}, {\"surface_form\": \"Kitepath\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Kitepath\", \"start_offset\": 24, \"end_offset\": 32}], \"confidence_bp\": 9000}], \"relationships\": [{\"party\": \"Farah Qureshi\", \"nature\": \"introduced contact\", \"direction\": \"inbound\", \"evidence_text\": \"Arjun, meet Farah Qureshi\"}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": false, \"asks_for_reply\": true, \"engagement\": \"medium\", \"motive\": \"introduce a contact\"}}",
+   "input_tokens": 5541,
+   "output_tokens": 198,
    "model": "claude-haiku-4-5-20251001"
   },
   "3776240b5da49b7a50ea4cbd55272f699372b98ac6f7a8abcf8f08744c63283a": {
@@ -134,24 +105,33 @@
    "output_tokens": 166,
    "model": "claude-haiku-4-5-20251001"
   },
-  "670b9ba3b0086f87636050376eb6607dc934b62d68905dfd95cf6c94bd77f589": {
+  "46d72de81efc7b0ffbcd0c44b36e589d6e242a448e70dc248dad0a9bff8f5ee6": {
    "site": "decider",
    "parsed": {
-    "outcome": "defer",
+    "outcome": "decision",
     "scores": {
-     "sales.pb.account_research.fifteen_minute_account_brief": 4431,
-     "sales.pb.investor_relations.reopen_after_a_pass": 4729
+     "customer_support.pb.breach_prevention.work_the_at_risk_list_hourly": 5067,
+     "customer_support.pb.expectation_setting.promise_the_process_not_the_outcome": 5263,
+     "customer_support.pb.response_drafting.answer_first_then_everything_else": 5600,
+     "customer_support.pb.ticket_triage.blast_radius_before_depth": 5009,
+     "customer_support.pb.ticket_triage.entitlement_before_complaint": 5009,
+     "customer_support.pb.ticket_triage.hand_off_with_the_assumption": 4953,
+     "customer_support.pb.ticket_triage.name_the_finishing_queue": 4981,
+     "customer_support.pb.ticket_triage.one_question_then_route": 4953,
+     "customer_support.pb.ticket_triage.state_the_coin_flip": 4953,
+     "customer_support.pb.ticket_triage.two_questions_in_order": 5009,
+     "customer_support.pb.ticket_triage.workaround_test": 4981
     },
-    "confidence_bp": 4000,
-    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
+    "confidence_bp": 4500,
+    "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
     "missing": []
    },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.account_research.fifteen_minute_account_brief\": 4431, \"sales.pb.investor_relations.reopen_after_a_pass\": 4729}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
-   "input_tokens": 2634,
-   "output_tokens": 70,
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"customer_support.pb.breach_prevention.work_the_at_risk_list_hourly\": 5067, \"customer_support.pb.expectation_setting.promise_the_process_not_the_outcome\": 5263, \"customer_support.pb.response_drafting.answer_first_then_everything_else\": 5600, \"customer_support.pb.ticket_triage.blast_radius_before_depth\": 5009, \"customer_support.pb.ticket_triage.entitlement_before_complaint\": 5009, \"customer_support.pb.ticket_triage.hand_off_with_the_assumption\": 4953, \"customer_support.pb.ticket_triage.name_the_finishing_queue\": 4981, \"customer_support.pb.ticket_triage.one_question_then_route\": 4953, \"customer_support.pb.ticket_triage.state_the_coin_flip\": 4953, \"customer_support.pb.ticket_triage.two_questions_in_order\": 5009, \"customer_support.pb.ticket_triage.workaround_test\": 4981}, \"confidence_bp\": 4500, \"rationale\": \"A person asked us for something; none of the support plays fits, and answering first is the closest.\", \"missing\": []}",
+   "input_tokens": 5354,
+   "output_tokens": 242,
    "model": "claude-haiku-4-5-20251001"
   },
-  "74704ba90b6d9f84b8532b40bb240c5f3008f076705b7fa184dc783adf85c296": {
+  "5891825ab3791a5f4193b3889d8c6b26895401f81405ad3d812b22a8ad6500f6": {
    "site": "extraction",
    "parsed": {
     "intent": "request",
@@ -228,11 +208,46 @@
     }
    },
    "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"deck\"], \"entity_mentions\": [{\"surface_form\": \"Farah Qureshi\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Farah Qureshi\", \"start_offset\": 13, \"end_offset\": 26}], \"confidence_bp\": 9000}, {\"surface_form\": \"Kitepath\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Kitepath\", \"start_offset\": 28, \"end_offset\": 36}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Send the deck by Friday 12 Sep\", \"asked_by\": \"Farah Qureshi\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Can you send your deck by Friday 12 Sep?\", \"start_offset\": 72, \"end_offset\": 112}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"Friday 12 Sep\", \"earliest\": \"2026-09-12T00:00:00+05:30\", \"latest\": \"2026-09-12T23:59:59+05:30\", \"certainty\": \"range\", \"resolved_against\": \"2026-09-08T09:00:00Z\", \"evidence\": [{\"quote\": \"Friday 12 Sep\", \"start_offset\": 98, \"end_offset\": 111}]}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"the deck by Friday\"}}",
-   "input_tokens": 5306,
+   "input_tokens": 5510,
    "output_tokens": 288,
    "model": "claude-haiku-4-5-20251001"
   },
-  "9955ced535ac7cb17f356b84a7d46843b374041c5785c855a8caf47f5c62eb5d": {
+  "5f67cf30202263d923e22f60a996840899d1ee78ffef34bb5add87e1d1a5379e": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Can you send your deck by Friday 12 Sep?",
+    "start_offset": 72,
+    "end_offset": 112,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Can you send your deck by Friday 12 Sep?\", \"start_offset\": 72, \"end_offset\": 112, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1514,
+   "output_tokens": 48,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "600936ff7ad78ca800b7df6c5a7a6b75638bd316c56f1043b2c95355c0b632e7": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Re: Arjun <> Farah Qureshi (Kitepath)",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Arjun <> Farah Qureshi (Kitepath)\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 1167,
+   "output_tokens": 43,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "6ccde5c46aef3b0a43ecfc7060bbca2d14dd911c4edfc4db1f7d1e77501b4b4d": {
    "site": "junk_gate_batch",
    "parsed": [
     {
@@ -243,85 +258,11 @@
     }
    ],
    "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 833,
+   "input_tokens": 1036,
    "output_tokens": 24,
    "model": "claude-haiku-4-5-20251001"
   },
-  "b3a3dee03e04da7913f99cd9533fbc010be068ac3998507933ebc185eee8b3a8": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "I'll let you two take it from here.",
-    "start_offset": 199,
-    "end_offset": 234,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"I'll let you two take it from here.\", \"start_offset\": 199, \"end_offset\": 234, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1337,
-   "output_tokens": 47,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "dad61afef801144c21f13484037ccf9f09bb2cba83b28f2dc88ec6a0c5dbceec": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "introduce",
-    "stance": "positive",
-    "topics": [
-     "introduction"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "Farah Qureshi",
-      "entity_type": "person",
-      "evidence": [
-       {
-        "quote": "Farah Qureshi",
-        "start_offset": 9,
-        "end_offset": 22
-       }
-      ],
-      "confidence_bp": 9000
-     },
-     {
-      "surface_form": "Kitepath",
-      "entity_type": "organization",
-      "evidence": [
-       {
-        "quote": "Kitepath",
-        "start_offset": 24,
-        "end_offset": 32
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "relationships": [
-     {
-      "party": "Farah Qureshi",
-      "nature": "introduced contact",
-      "direction": "inbound",
-      "evidence_text": "Arjun, meet Farah Qureshi"
-     }
-    ],
-    "exchange_intent": {
-     "category": "relational",
-     "tone": "warm",
-     "formality": "professional",
-     "addressed_personally": true,
-     "human_authored": false,
-     "asks_for_reply": true,
-     "engagement": "medium",
-     "motive": "introduce a contact"
-    }
-   },
-   "raw": "{\"intent\": \"introduce\", \"stance\": \"positive\", \"topics\": [\"introduction\"], \"entity_mentions\": [{\"surface_form\": \"Farah Qureshi\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Farah Qureshi\", \"start_offset\": 9, \"end_offset\": 22}], \"confidence_bp\": 9000}, {\"surface_form\": \"Kitepath\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Kitepath\", \"start_offset\": 24, \"end_offset\": 32}], \"confidence_bp\": 9000}], \"relationships\": [{\"party\": \"Farah Qureshi\", \"nature\": \"introduced contact\", \"direction\": \"inbound\", \"evidence_text\": \"Arjun, meet Farah Qureshi\"}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": false, \"asks_for_reply\": true, \"engagement\": \"medium\", \"motive\": \"introduce a contact\"}}",
-   "input_tokens": 5337,
-   "output_tokens": 198,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "e2333c605d0737e7da235131a05e84ba0f9053288239d70988993fca4a36fdcc": {
+  "d1189199262a188f92c421cc690d2a3bb628f9acfaba828fdae1ea11137e7caa": {
    "site": "r1",
    "parsed": {
     "readings": [
@@ -342,58 +283,37 @@
       "ambiguous": false,
       "classification": "NOT_INTERPRETABLE",
       "confidence_bp": 5000
+     },
+     {
+      "item": 4,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
      }
     ]
    },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 843,
-   "output_tokens": 74,
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 4, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 1167,
+   "output_tokens": 98,
    "model": "claude-haiku-4-5-20251001"
   },
-  "e32c3e77088255f4fea73da9cc8929b9033236403806cea3b26118712532169f": {
-   "site": "decider",
+  "e2a0ef59ddf42ca2be8907424a8266871af944afbc16918a34d477c031fe4cee": {
+   "site": "resolution",
    "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "customer_support.pb.breach_prevention.work_the_at_risk_list_hourly": 5067,
-     "customer_support.pb.expectation_setting.promise_the_process_not_the_outcome": 5263,
-     "customer_support.pb.response_drafting.answer_first_then_everything_else": 5600,
-     "customer_support.pb.ticket_triage.blast_radius_before_depth": 5009,
-     "customer_support.pb.ticket_triage.entitlement_before_complaint": 5009,
-     "customer_support.pb.ticket_triage.hand_off_with_the_assumption": 4953,
-     "customer_support.pb.ticket_triage.name_the_finishing_queue": 4981,
-     "customer_support.pb.ticket_triage.one_question_then_route": 4953,
-     "customer_support.pb.ticket_triage.state_the_coin_flip": 4953,
-     "customer_support.pb.ticket_triage.two_questions_in_order": 5009,
-     "customer_support.pb.ticket_triage.workaround_test": 4981
-    },
-    "confidence_bp": 4500,
-    "rationale": "A person asked us for something; none of the support plays fits, and answering first is the closest.",
-    "missing": []
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "I'll let you two take it from here.",
+    "start_offset": 199,
+    "end_offset": 234,
+    "speaker_role_said": "unknown"
    },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"customer_support.pb.breach_prevention.work_the_at_risk_list_hourly\": 5067, \"customer_support.pb.expectation_setting.promise_the_process_not_the_outcome\": 5263, \"customer_support.pb.response_drafting.answer_first_then_everything_else\": 5600, \"customer_support.pb.ticket_triage.blast_radius_before_depth\": 5009, \"customer_support.pb.ticket_triage.entitlement_before_complaint\": 5009, \"customer_support.pb.ticket_triage.hand_off_with_the_assumption\": 4953, \"customer_support.pb.ticket_triage.name_the_finishing_queue\": 4981, \"customer_support.pb.ticket_triage.one_question_then_route\": 4953, \"customer_support.pb.ticket_triage.state_the_coin_flip\": 4953, \"customer_support.pb.ticket_triage.two_questions_in_order\": 5009, \"customer_support.pb.ticket_triage.workaround_test\": 4981}, \"confidence_bp\": 4500, \"rationale\": \"A person asked us for something; none of the support plays fits, and answering first is the closest.\", \"missing\": []}",
-   "input_tokens": 4183,
-   "output_tokens": 242,
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"I'll let you two take it from here.\", \"start_offset\": 199, \"end_offset\": 234, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1541,
+   "output_tokens": 47,
    "model": "claude-haiku-4-5-20251001"
   },
-  "e449a4b1d11d2a39bee39fea523a2de852b40831cca16afb359ca744d30dc058": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "sales.pb.account_research.fifteen_minute_account_brief": 4549,
-     "sales.pb.investor_relations.reopen_after_a_pass": 4846
-    },
-    "confidence_bp": 4000,
-    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.account_research.fifteen_minute_account_brief\": 4549, \"sales.pb.investor_relations.reopen_after_a_pass\": 4846}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
-   "input_tokens": 2628,
-   "output_tokens": 70,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "f49646dfb5b3bc4a87ba78d6491abfe2d17c514d1a9835fa77055402e50ece51": {
+  "ef2b876ad61c3a478e9ce26e6c2a98a0d8a9b861360a91c39ec9b7d4d48f83f5": {
    "site": "decider",
    "parsed": {
     "outcome": "decision",
@@ -415,8 +335,25 @@
     "missing": []
    },
    "raw": "{\"outcome\": \"decision\", \"scores\": {\"customer_support.pb.breach_prevention.work_the_at_risk_list_hourly\": 4949, \"customer_support.pb.expectation_setting.promise_the_process_not_the_outcome\": 5145, \"customer_support.pb.response_drafting.answer_first_then_everything_else\": 5600, \"customer_support.pb.ticket_triage.blast_radius_before_depth\": 4892, \"customer_support.pb.ticket_triage.entitlement_before_complaint\": 4892, \"customer_support.pb.ticket_triage.hand_off_with_the_assumption\": 4836, \"customer_support.pb.ticket_triage.name_the_finishing_queue\": 4864, \"customer_support.pb.ticket_triage.one_question_then_route\": 4836, \"customer_support.pb.ticket_triage.state_the_coin_flip\": 4836, \"customer_support.pb.ticket_triage.two_questions_in_order\": 4892, \"customer_support.pb.ticket_triage.workaround_test\": 4864}, \"confidence_bp\": 4500, \"rationale\": \"A person asked us for something; none of the support plays fits, and answering first is the closest.\", \"missing\": []}",
-   "input_tokens": 4180,
+   "input_tokens": 5351,
    "output_tokens": 242,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "fda255d966787d4c8e31fe938763d0ab603d1809c44b48d39567a92ccf76e629": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "reply": 6500,
+     "wait_unanswered_email": 5600
+    },
+    "confidence_bp": 5500,
+    "rationale": "A direct question is waiting on us.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5600}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
+   "input_tokens": 2123,
+   "output_tokens": 42,
    "model": "claude-haiku-4-5-20251001"
   }
  }

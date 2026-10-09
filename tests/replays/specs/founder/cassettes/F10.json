@@ -1,97 +1,22 @@
 {
  "case_id": "F10",
  "source": "ideal_reader",
- "recorded_at": "fdd8b98a",
+ "recorded_at": "7179cd68",
  "answers": {
-  "2098cd3b346dbad2abb3420f33d232d6f7c5c350f00b5b58afd3d06fce57239b": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    },
-    {
-     "i": 1,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    },
-    {
-     "i": 2,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 2, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 871,
-   "output_tokens": 72,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "219373e9738a116930b66821c48a77fcfb6092e624fd5d30f26eda6cdec5a5c1": {
-   "site": "r1",
+  "08ed957f72519c2f233b5e7403717be61e8a50bb1a9be04c064187b0f2532a6c": {
+   "site": "resolution",
    "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 3,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     }
-    ]
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Nimbus Labs - data room?",
+    "start_offset": 0,
+    "end_offset": 24,
+    "speaker_role_said": "unknown"
    },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 937,
-   "output_tokens": 74,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "23610a0b901dcf9e56c14c804a0717772aabc908acffff34e9c09c98ce12364a": {
-   "site": "relevance",
-   "parsed": {
-    "verdicts": [
-     {
-      "item": 1,
-      "business": true,
-      "description": "Nimbus Labs - data room?",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     },
-     {
-      "item": 2,
-      "business": true,
-      "description": "Nimbus Labs - data room?",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     },
-     {
-      "item": 3,
-      "business": true,
-      "description": "Nimbus Labs - data room?",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     }
-    ]
-   },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Nimbus Labs - data room?\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 2, \"business\": true, \"description\": \"Nimbus Labs - data room?\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 3, \"business\": true, \"description\": \"Nimbus Labs - data room?\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "input_tokens": 1052,
-   "output_tokens": 112,
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Nimbus Labs - data room?\", \"start_offset\": 0, \"end_offset\": 24, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1556,
+   "output_tokens": 43,
    "model": "claude-haiku-4-5-20251001"
   },
   "2cb8e5f5eee09c809b34a92fa5be875fee27990546216e53b77e75e1d38ae2c2": {
@@ -126,19 +51,7 @@
    "output_tokens": 166,
    "model": "claude-haiku-4-5-20251001"
   },
-  "5eda2bb13ff3a3240ccad0065de16dca0042a76ff48a552b3502a958e9d03833": {
-   "site": "narrator",
-   "parsed": {
-    "headline": "Send Kiran Agnihotri your data-room link and cap table",
-    "situation": "Kiran Agnihotri asked 3 days ago: \"could you share your data-room link and the current cap table?\"",
-    "artifact": "Hi Kiran, here is our data-room link: [link]. The current cap table is in the room."
-   },
-   "raw": "{\"headline\": \"Send Kiran Agnihotri your data-room link and cap table\", \"situation\": \"Kiran Agnihotri asked 3 days ago: \\\"could you share your data-room link and the current cap table?\\\"\", \"artifact\": \"Hi Kiran, here is our data-room link: [link]. The current cap table is in the room.\"}",
-   "input_tokens": 1804,
-   "output_tokens": 71,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "81e17d2d8bae97157b74883af7ead91550c90cf393571c7790087392b2d78c65": {
+  "5a41c1e43ab39948fe839b9dada179ccab25e969f66a5226543d4249b62d290e": {
    "site": "extraction",
    "parsed": {
     "intent": "request",
@@ -231,27 +144,23 @@
     ]
    },
    "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\", \"data room\"], \"entity_mentions\": [{\"surface_form\": \"Kiran Agnihotri\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Kiran Agnihotri\", \"start_offset\": 260, \"end_offset\": 275}], \"confidence_bp\": 9000}, {\"surface_form\": \"Banyan Seed Fund\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Banyan Seed Fund\", \"start_offset\": 287, \"end_offset\": 303}], \"confidence_bp\": 9000}, {\"surface_form\": \"Nimbus Labs\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Nimbus Labs\", \"start_offset\": 0, \"end_offset\": 11}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Share the data-room link and the current cap table\", \"asked_by\": \"Kiran Agnihotri\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"could you share your data-room link and the current cap table?\", \"start_offset\": 123, \"end_offset\": 185}], \"confidence_bp\": 9000}], \"business_facts\": [{\"field\": \"person.title\", \"subject\": \"Kiran Agnihotri\", \"value\": \"Principal\", \"standing\": \"observed\", \"evidence\": [{\"quote\": \"Principal, Banyan Seed Fund\", \"start_offset\": 276, \"end_offset\": 303}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"diligence after the demo day\"}, \"implied_actions\": [\"send Kiran the data-room link and the cap table\"]}",
-   "input_tokens": 5345,
+   "input_tokens": 5549,
    "output_tokens": 362,
    "model": "claude-haiku-4-5-20251001"
   },
-  "b4b32cea8e3c6a40cb00f874f24fe578ca882a98742e2a99483a9904617bc982": {
-   "site": "resolution",
+  "5eda2bb13ff3a3240ccad0065de16dca0042a76ff48a552b3502a958e9d03833": {
+   "site": "narrator",
    "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "Nimbus Labs - data room?",
-    "start_offset": 0,
-    "end_offset": 24,
-    "speaker_role_said": "unknown"
+    "headline": "Send Kiran Agnihotri your data-room link and cap table",
+    "situation": "Kiran Agnihotri asked 3 days ago: \"could you share your data-room link and the current cap table?\"",
+    "artifact": "Hi Kiran, here is our data-room link: [link]. The current cap table is in the room."
    },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Nimbus Labs - data room?\", \"start_offset\": 0, \"end_offset\": 24, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1352,
-   "output_tokens": 43,
+   "raw": "{\"headline\": \"Send Kiran Agnihotri your data-room link and cap table\", \"situation\": \"Kiran Agnihotri asked 3 days ago: \\\"could you share your data-room link and the current cap table?\\\"\", \"artifact\": \"Hi Kiran, here is our data-room link: [link]. The current cap table is in the room.\"}",
+   "input_tokens": 1804,
+   "output_tokens": 71,
    "model": "claude-haiku-4-5-20251001"
   },
-  "cabb0f76c998d004a50f209817d0d4186270b3cf3b8cc324adb66676f3354c99": {
+  "627a9c5b316e675861de87e0e06d2c7c96d61adf4b910d069cd7522feb97e153": {
    "site": "decider",
    "parsed": {
     "outcome": "decision",
@@ -264,8 +173,99 @@
     "missing": []
    },
    "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5600}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
-   "input_tokens": 1916,
+   "input_tokens": 2119,
    "output_tokens": 42,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "a9f2eb8f1586f85cc50f3ad1ac9e6833c2b2a352e9f0851ffdcad0bfa81dd050": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 1141,
+   "output_tokens": 74,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "dac3d6b20fb8341fafb926dd56c24c38dfb7b45c8f02d868659c899000897ba9": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Nimbus Labs - data room?",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     },
+     {
+      "item": 2,
+      "business": true,
+      "description": "Nimbus Labs - data room?",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     },
+     {
+      "item": 3,
+      "business": true,
+      "description": "Nimbus Labs - data room?",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Nimbus Labs - data room?\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 2, \"business\": true, \"description\": \"Nimbus Labs - data room?\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 3, \"business\": true, \"description\": \"Nimbus Labs - data room?\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 1256,
+   "output_tokens": 112,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "fe6d43b3cf694f4a778ff0a2e875bbf663b73b230c15841f346ecb5d50514bca": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 1,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 2,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 2, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 1075,
+   "output_tokens": 72,
    "model": "claude-haiku-4-5-20251001"
   }
  }

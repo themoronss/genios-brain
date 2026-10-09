@@ -1,7 +1,7 @@
 {
  "case_id": "F31",
  "source": "ideal_reader",
- "recorded_at": "fdd8b98a",
+ "recorded_at": "7179cd68",
  "answers": {
   "02437855577348822753dea60875a964cfc32a9f36fa1ee4433bd9490a7a5e52": {
    "site": "bundle_narrator",
@@ -19,7 +19,7 @@
    "output_tokens": 166,
    "model": "claude-haiku-4-5-20251001"
   },
-  "2055bdb1bbd90b00b60f090eea82a7944868773a1a96a9a137cf534f60320cb3": {
+  "09b0600cddc2ae917551972e96eb0c4daaee286196cd286bfd85336b068ea28c": {
    "site": "resolution",
    "parsed": {
     "verdict": "NOT_RESOLVED",
@@ -31,23 +31,11 @@
     "speaker_role_said": "unknown"
    },
    "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Assignment 4: pricing page teardown\", \"start_offset\": 0, \"end_offset\": 35, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1320,
+   "input_tokens": 1524,
    "output_tokens": 45,
    "model": "claude-haiku-4-5-20251001"
   },
-  "285b35fe7e97847791e708571c47f65a34a3a69b409e9008c839b0da77d18398": {
-   "site": "narrator",
-   "parsed": {
-    "headline": "Send Divya Raman Assignment 4, the pricing-page teardown",
-    "situation": "Divya Raman wrote 2 days ago: \"Assignment 4 (a teardown of your pricing page) is due on 17 Sep, 11:59 pm IST.\"",
-    "artifact": "Hi Divya, attaching Assignment 4, the teardown of our pricing page. Thanks"
-   },
-   "raw": "{\"headline\": \"Send Divya Raman Assignment 4, the pricing-page teardown\", \"situation\": \"Divya Raman wrote 2 days ago: \\\"Assignment 4 (a teardown of your pricing page) is due on 17 Sep, 11:59 pm IST.\\\"\", \"artifact\": \"Hi Divya, attaching Assignment 4, the teardown of our pricing page. Thanks\"}",
-   "input_tokens": 1600,
-   "output_tokens": 72,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "585a90f8571c9e9ad26fc8c1751e1e5d99488eee2a8e50420c785157fe209bbf": {
+  "1baeb7124b456b695cb230adc5fab811f717a1996feef5323cdbcc94160c2f8a": {
    "site": "extraction",
    "parsed": {
     "intent": "request",
@@ -112,8 +100,37 @@
     }
    },
    "raw": "{\"intent\": \"request\", \"stance\": \"neutral\", \"topics\": [\"assignment\"], \"entity_mentions\": [{\"surface_form\": \"Divya Raman\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Divya Raman\", \"start_offset\": 128, \"end_offset\": 139}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Submit Assignment 4, the pricing page teardown, by 17 Sep\", \"asked_by\": \"Divya Raman\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Assignment 4 (a teardown of your pricing page) is due on 17 Sep, 11:59 pm IST.\", \"start_offset\": 48, \"end_offset\": 126}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"17 Sep, 11:59 pm IST\", \"earliest\": \"2026-09-17T18:29:00Z\", \"latest\": \"2026-09-17T18:29:00Z\", \"certainty\": \"exact\", \"resolved_against\": \"2026-09-09T06:00:00Z\", \"evidence\": [{\"quote\": \"17 Sep, 11:59 pm IST\", \"start_offset\": 105, \"end_offset\": 125}]}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"assignment deadline\"}}",
-   "input_tokens": 5315,
+   "input_tokens": 5519,
    "output_tokens": 267,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "285b35fe7e97847791e708571c47f65a34a3a69b409e9008c839b0da77d18398": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Send Divya Raman Assignment 4, the pricing-page teardown",
+    "situation": "Divya Raman wrote 2 days ago: \"Assignment 4 (a teardown of your pricing page) is due on 17 Sep, 11:59 pm IST.\"",
+    "artifact": "Hi Divya, attaching Assignment 4, the teardown of our pricing page. Thanks"
+   },
+   "raw": "{\"headline\": \"Send Divya Raman Assignment 4, the pricing-page teardown\", \"situation\": \"Divya Raman wrote 2 days ago: \\\"Assignment 4 (a teardown of your pricing page) is due on 17 Sep, 11:59 pm IST.\\\"\", \"artifact\": \"Hi Divya, attaching Assignment 4, the teardown of our pricing page. Thanks\"}",
+   "input_tokens": 1600,
+   "output_tokens": 72,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "42d201fb64e2631278d34a4f7eb18ce37f3a37591fdfaecdde3e3b949020d5de": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "reply": 6500,
+     "wait_unanswered_email": 5600
+    },
+    "confidence_bp": 5500,
+    "rationale": "A direct question is waiting on us.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5600}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
+   "input_tokens": 2089,
+   "output_tokens": 42,
    "model": "claude-haiku-4-5-20251001"
   },
   "6898685d0c4a5b5b16471207b5ba6e4aad00f7f03f160a473dd10e8bc72795da": {
@@ -132,7 +149,7 @@
    "output_tokens": 166,
    "model": "claude-haiku-4-5-20251001"
   },
-  "f7044956cf6cf6ad9340595e07ccdebab9439f182c91412843450eeee55d8eee": {
+  "f218b9612a582f30b5a6d6d5403af899518a73976ecf2b739a14ca65af9d48ca": {
    "site": "r1",
    "parsed": {
     "readings": [
@@ -157,25 +174,8 @@
     ]
    },
    "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 931,
+   "input_tokens": 1135,
    "output_tokens": 74,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "ff72ef0636ee81bbc7f29da8844002016e851ffe97c5eb4e3f584f67de2849e8": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "reply": 6500,
-     "wait_unanswered_email": 5600
-    },
-    "confidence_bp": 5500,
-    "rationale": "A direct question is waiting on us.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5600}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
-   "input_tokens": 1886,
-   "output_tokens": 42,
    "model": "claude-haiku-4-5-20251001"
   }
  }

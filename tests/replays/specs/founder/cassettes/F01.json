@@ -1,9 +1,25 @@
 {
  "case_id": "F01",
  "source": "ideal_reader",
- "recorded_at": "5a28449d",
+ "recorded_at": "7179cd68",
  "answers": {
-  "6e01f6d5a7122efb7589f77b0711b7e2036b3918ff02934bdc1a11607a26b250": {
+  "0a565b3b333aa5ec6c56ea11310a801b97d10a81aaecc20d1d791fad1485883d": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "You will be notified when the examination is complete.",
+    "start_offset": 184,
+    "end_offset": 238,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"You will be notified when the examination is complete.\", \"start_offset\": 184, \"end_offset\": 238, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1558,
+   "output_tokens": 51,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "37143def73c11ec7bda98886208d82adc4605cd4bc178aafeb3a055d5395c0cf": {
    "site": "extraction",
    "parsed": {
     "intent": "inform",
@@ -80,24 +96,8 @@
     }
    },
    "raw": "{\"intent\": \"inform\", \"stance\": \"neutral\", \"topics\": [\"startup recognition\", \"application status\"], \"entity_mentions\": [{\"surface_form\": \"StartupSetu\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"StartupSetu\", \"start_offset\": 119, \"end_offset\": 130}], \"confidence_bp\": 9000}, {\"surface_form\": \"SSR-2026-48213\", \"entity_type\": \"document\", \"evidence\": [{\"quote\": \"SSR-2026-48213\", \"start_offset\": 12, \"end_offset\": 26}], \"confidence_bp\": 9000}], \"decision_states\": [{\"subject\": \"recognition application SSR-2026-48213\", \"state\": \"pending\", \"owner\": \"StartupSetu\", \"evidence\": [{\"quote\": \"has moved to the stage: Under Examination\", \"start_offset\": 141, \"end_offset\": 182}], \"confidence_bp\": 9000}], \"business_facts\": [{\"field\": \"thread.objective\", \"subject\": \"thread\", \"value\": \"startup recognition application\", \"standing\": \"judgement\", \"evidence\": [{\"quote\": \"Your application SSR-2026-48213 for recognition\", \"start_offset\": 61, \"end_offset\": 108}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"transactional\", \"tone\": \"neutral\", \"formality\": \"templated\", \"addressed_personally\": false, \"human_authored\": false, \"asks_for_reply\": false, \"engagement\": \"medium\"}}",
-   "input_tokens": 5353,
+   "input_tokens": 5557,
    "output_tokens": 296,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "9b2d3692989d0fa82e86373d5c2475c4d889ce7827efce94a0df51f4637bc5a8": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "You will be notified when the examination is complete.",
-    "start_offset": 184,
-    "end_offset": 238,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"You will be notified when the examination is complete.\", \"start_offset\": 184, \"end_offset\": 238, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1354,
-   "output_tokens": 51,
    "model": "claude-haiku-4-5-20251001"
   }
  }

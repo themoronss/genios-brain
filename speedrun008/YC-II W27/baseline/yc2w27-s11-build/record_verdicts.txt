@@ -1,0 +1,48 @@
+F01 fail              2 answers  0 cards about StartupSetu/SSR-2026-48213 over every sweep; expected exactly 1
+F02 fail              8 answers  0 cards about StartupSetu/SSR-2026-48213 over every sweep; expected exactly 1
+F03 pass              9 answers  what the founder sees is what the case expects
+F04 pass              9 answers  what the founder sees is what the case expects
+F05 pass              9 answers  what the founder sees is what the case expects
+F06 pass              9 answers  what the founder sees is what the case expects
+F07 fail             23 answers  2 cards about Leela/Ferngrove over every sweep; expected exactly 1 | card_437315ceb1498b92c9d191b8 s
+F08 not_expressible   9 answers  every card expectation is declared not expressible
+F09 fail              6 answers  0 cards about Introly over every sweep; expected exactly 1
+F10 pass              9 answers  what the founder sees is what the case expects
+F11 fail              4 answers  0 cards about Tom/Northfield over every sweep; expected exactly 1
+F12 pass             13 answers  what the founder sees is what the case expects
+F13 pass              7 answers  what the founder sees is what the case expects
+F14 not_expressible  12 answers  every card expectation is declared not expressible
+F15 fail             12 answers  0 cards about Cobalt Peak/Juniper Ridge/Lattice Capital/Meridian Seed/Northstar Angels over every sw
+F16 fail              5 answers  0 cards about lattice-capital.test/Lattice over every sweep; expected exactly 1
+F17 fail              6 answers  0 cards about Gulf Launchpad/Amira over every sweep; expected exactly 1
+F18 not_expressible   2 answers  every card expectation is declared not expressible
+F19 fail             21 answers  0 cards about Ekta over every sweep; expected exactly 1
+F20 not_expressible   2 answers  every card expectation is declared not expressible
+F21 not_expressible   4 answers  every card expectation is declared not expressible
+F22 not_expressible   1 answers  every card expectation is declared not expressible
+F23 not_expressible   4 answers  every card expectation is declared not expressible
+F24 fail             11 answers  0 cards about Phase-1/review deck over every sweep; expected exactly 1
+F25 pass             20 answers  what the founder sees is what the case expects
+F26 pass             10 answers  what the founder sees is what the case expects
+F27 fail             16 answers  2 cards about Varun/Cleanwave over every sweep; expected exactly 1
+F28 pass             13 answers  what the founder sees is what the case expects
+F29 fail             26 answers  3 cards about Aman/Memloop over every sweep; expected 1–2 | card_1c988d629044c8539001bbf9 says 'happ
+F30 not_expressible   4 answers  every card expectation is declared not expressible
+F31 pass              7 answers  what the founder sees is what the case expects
+F32 pass              3 answers  what the founder sees is what the case expects
+F33 pass              2 answers  what the founder sees is what the case expects
+F34 pass              2 answers  what the founder sees is what the case expects
+F35 pass              2 answers  what the founder sees is what the case expects
+F36 pass              4 answers  what the founder sees is what the case expects
+F37 pass             13 answers  what the founder sees is what the case expects
+F38 pass             10 answers  what the founder sees is what the case expects
+F39 pass              4 answers  what the founder sees is what the case expects
+F40 fail              9 answers  2 cards about Meera/Tallgrass/meera@tallgrass.test over every sweep; expected exactly 0 | card_2ee0f
+F41 pass              5 answers  what the founder sees is what the case expects
+F42 pass              7 answers  what the founder sees is what the case expects
+F43 pass              4 answers  what the founder sees is what the case expects
+F44 pass              9 answers  what the founder sees is what the case expects
+F45 not_expressible  24 answers  every card expectation is declared not expressible
+F46 pass             13 answers  what the founder sees is what the case expects
+F47 fail              5 answers  0 cards about ardentridge.test/Ardent Ridge over every sweep; expected exactly 1
+record exit=0

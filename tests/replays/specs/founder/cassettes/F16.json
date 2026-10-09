@@ -1,9 +1,46 @@
 {
  "case_id": "F16",
  "source": "ideal_reader",
- "recorded_at": "785ae938",
+ "recorded_at": "7179cd68",
  "answers": {
-  "33eedb9074ffe5269738a2776b2a3b0ce98d94aae8ca3d8d5ac4f681cda1708f": {
+  "348ba5965407922e14cfdc99704996cd334dbaf4d55f7162a6a55d3b51c39d0f": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "drop",
+     "relevance": 0.05,
+     "reason": "automated, nobody waits on a reply"
+    },
+    {
+     "i": 1,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 1093,
+   "output_tokens": 49,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "425a215a4b31ad58c66acfed6010d211335467c27079e884c7e365f9da40ef17": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Could we find 20 minutes?",
+    "start_offset": 93,
+    "end_offset": 118,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Could we find 20 minutes?\", \"start_offset\": 93, \"end_offset\": 118, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1512,
+   "output_tokens": 44,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "99272fc6cd3389513c83d0b190a4908c695def919ce7c596bf41fbc2bfc9aeec": {
    "site": "extraction",
    "parsed": {
     "intent": "request",
@@ -36,67 +73,11 @@
     }
    },
    "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Lattice\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Lattice\", \"start_offset\": 41, \"end_offset\": 48}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\"}}",
-   "input_tokens": 5306,
+   "input_tokens": 5510,
    "output_tokens": 110,
    "model": "claude-haiku-4-5-20251001"
   },
-  "8e91702502bb84926930dff04048f67089c8c195929bdec429fc3a9f10a24c0c": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "Could we find 20 minutes?",
-    "start_offset": 93,
-    "end_offset": 118,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Could we find 20 minutes?\", \"start_offset\": 93, \"end_offset\": 118, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1308,
-   "output_tokens": 44,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "d4ffdfb352ff2e1919c8687838fc946225ab431e72cf3a854eadf9ef687d9192": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "drop",
-     "relevance": 0.05,
-     "reason": "automated, nobody waits on a reply"
-    },
-    {
-     "i": 1,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 889,
-   "output_tokens": 49,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "f08008e655395a2957f55a15061fc4e224187665e967f9a2d0fb3dfaba3ccca2": {
-   "site": "relevance",
-   "parsed": {
-    "verdicts": [
-     {
-      "item": 1,
-      "business": true,
-      "description": "Nimbus Labs - raising our seed round",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     }
-    ]
-   },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Nimbus Labs - raising our seed round\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "input_tokens": 961,
-   "output_tokens": 42,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "fa0e35e85c63dbc271331748fc9e09eef6bf5d394752191332ce840559baf8e2": {
+  "9999caa1dc869a98d6482cd3a9ea657934f0d876a22857bbc001547bd786c42d": {
    "site": "extraction",
    "parsed": {
     "intent": "inform",
@@ -115,8 +96,27 @@
     }
    },
    "raw": "{\"intent\": \"inform\", \"stance\": \"negative\", \"topics\": [\"delivery failure\"], \"exchange_intent\": {\"category\": \"automated\", \"tone\": \"neutral\", \"formality\": \"templated\", \"addressed_personally\": false, \"human_authored\": false, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
-   "input_tokens": 5333,
+   "input_tokens": 5537,
    "output_tokens": 67,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "a763f7babd18440c59f8b95d5e845994e4dfbf88518f7df657d3e458e89d5e59": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Nimbus Labs - raising our seed round",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Nimbus Labs - raising our seed round\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 1165,
+   "output_tokens": 42,
    "model": "claude-haiku-4-5-20251001"
   }
  }

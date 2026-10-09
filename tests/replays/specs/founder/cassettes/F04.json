@@ -1,92 +1,9 @@
 {
  "case_id": "F04",
  "source": "ideal_reader",
- "recorded_at": "5a28449d",
+ "recorded_at": "7179cd68",
  "answers": {
-  "5d5e624b2e2381fa8b817c90f9e8fbdf5df0d1729719d93fb2c153eec8e849fb": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "reply": 6500,
-     "wait_unanswered_email": 5600
-    },
-    "confidence_bp": 5500,
-    "rationale": "A direct question is waiting on us.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5600}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
-   "input_tokens": 1989,
-   "output_tokens": 42,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "73b3426e54f445c345e15e290910e4aaf1aa5c31d850b8ff7ce300ab62b25b6e": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "Would you have 20 minutes next week to show me the product?",
-    "start_offset": 83,
-    "end_offset": 142,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Would you have 20 minutes next week to show me the product?\", \"start_offset\": 83, \"end_offset\": 142, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1336,
-   "output_tokens": 52,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "7fca7b25dc81991288f972e06f64fe317204e88777424d70f6a5ab0412495f62": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 858,
-   "output_tokens": 24,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "906baa3aef5015769b1ca15b86cd55fbca2c7434da4e2def666ff31f02cda71d": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "I'll let you two take it from here.",
-    "start_offset": 201,
-    "end_offset": 236,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"I'll let you two take it from here.\", \"start_offset\": 201, \"end_offset\": 236, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1338,
-   "output_tokens": 47,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "992c797ad79c5de789209165c61fd5078eaaee48f8393bae7569ff7e61f0ef0a": {
-   "site": "relevance",
-   "parsed": {
-    "verdicts": [
-     {
-      "item": 1,
-      "business": true,
-      "description": "Re: Arjun <> Sofia Brandt (Brandt Labs)",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     }
-    ]
-   },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Arjun <> Sofia Brandt (Brandt Labs)\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "input_tokens": 989,
-   "output_tokens": 43,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "a08569cd2f8544f746234202f96d80c1b09fc9f9faf44cad12c6462210404e78": {
+  "1cfa217f49b8c67f33d381ae07c10603bcf53183afad616679337b3c578d4168": {
    "site": "r1",
    "parsed": {
     "readings": [
@@ -117,11 +34,11 @@
     ]
    },
    "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 4, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 970,
+   "input_tokens": 1174,
    "output_tokens": 98,
    "model": "claude-haiku-4-5-20251001"
   },
-  "ba1c0bc025d27e14a2102336d3bc3c0445f2ea0aafd3a626ea5a724cd6cdde0b": {
+  "33d2357146a5793cc74724aa46d53df781128cb4c25f85d0a94731332486bc3d": {
    "site": "extraction",
    "parsed": {
     "intent": "request",
@@ -208,11 +125,43 @@
     ]
    },
    "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"product demo\"], \"entity_mentions\": [{\"surface_form\": \"Sofia Brandt\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Sofia Brandt\", \"start_offset\": 13, \"end_offset\": 25}], \"confidence_bp\": 9000}, {\"surface_form\": \"Brandt Labs\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Brandt Labs\", \"start_offset\": 27, \"end_offset\": 38}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Can Arjun show Sofia the product for 20 minutes next week?\", \"asked_by\": \"Sofia Brandt\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Would you have 20 minutes next week to show me the product?\", \"start_offset\": 83, \"end_offset\": 142}], \"confidence_bp\": 9000}], \"scheduling_proposals\": [{\"proposer\": \"Sofia Brandt\", \"text\": \"Tuesday or Wednesday afternoon next week\", \"evidence_text\": \"Tuesday or Wednesday afternoon works for me.\"}], \"business_facts\": [{\"field\": \"person.title\", \"subject\": \"Sofia Brandt\", \"value\": \"Head of Operations\", \"standing\": \"observed\", \"evidence\": [{\"quote\": \"Head of Operations, Brandt Labs\", \"start_offset\": 208, \"end_offset\": 239}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"see the product next week\"}, \"implied_actions\": [\"offer Sofia a 20-minute slot next week\"]}",
-   "input_tokens": 5333,
+   "input_tokens": 5537,
    "output_tokens": 356,
    "model": "claude-haiku-4-5-20251001"
   },
-  "e3f0297358609203ebfbf5389b2865c6e89f55f9cfd5dcc5c7913b68dcc6ea09": {
+  "4b29a405a4b56b6438ff23838a14dcc5e91862d6ccea86cf6e0d05ffc1475a17": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 1062,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "4ca27fad11ce573499dce63bfc473e1612d4ad3923ca958b240cc8bd1421dccc": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "reply": 6500,
+     "wait_unanswered_email": 5600
+    },
+    "confidence_bp": 5500,
+    "rationale": "A direct question is waiting on us.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5600}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
+   "input_tokens": 2192,
+   "output_tokens": 42,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "596ed07b5503880bf8c9e400a39bd0f3f0c3a6fd1df432095a3fd88b5f8355c9": {
    "site": "extraction",
    "parsed": {
     "intent": "introduce",
@@ -266,8 +215,59 @@
     }
    },
    "raw": "{\"intent\": \"introduce\", \"stance\": \"positive\", \"topics\": [\"introduction\"], \"entity_mentions\": [{\"surface_form\": \"Sofia Brandt\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Sofia Brandt\", \"start_offset\": 9, \"end_offset\": 21}], \"confidence_bp\": 9000}, {\"surface_form\": \"Brandt Labs\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Brandt Labs\", \"start_offset\": 23, \"end_offset\": 34}], \"confidence_bp\": 9000}], \"relationships\": [{\"party\": \"Sofia Brandt\", \"nature\": \"introduced contact\", \"direction\": \"inbound\", \"evidence_text\": \"Arjun, meet Sofia Brandt\"}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": false, \"asks_for_reply\": true, \"engagement\": \"medium\", \"motive\": \"introduce a contact\"}}",
-   "input_tokens": 5339,
+   "input_tokens": 5542,
    "output_tokens": 198,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "6a3d218f7b0fc21fa07f4a1d2a41401fe4e1b8147ab964df7cfa60bb0b61008b": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Would you have 20 minutes next week to show me the product?",
+    "start_offset": 83,
+    "end_offset": 142,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Would you have 20 minutes next week to show me the product?\", \"start_offset\": 83, \"end_offset\": 142, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1540,
+   "output_tokens": 52,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "870c09ad929ecac95666b6936bfc80d9490351cb6b8b5906507a2c44e3b647f7": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "I'll let you two take it from here.",
+    "start_offset": 201,
+    "end_offset": 236,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"I'll let you two take it from here.\", \"start_offset\": 201, \"end_offset\": 236, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1542,
+   "output_tokens": 47,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "94cc5e3948ee3ee841572bfebbe4983088ec556333178b2329a1dd8238827d65": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Re: Arjun <> Sofia Brandt (Brandt Labs)",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Arjun <> Sofia Brandt (Brandt Labs)\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 1193,
+   "output_tokens": 43,
    "model": "claude-haiku-4-5-20251001"
   },
   "ec0ea461fc19e17e6371b50083876c9cf9591f65a6097c7acdea60e685fc8526": {

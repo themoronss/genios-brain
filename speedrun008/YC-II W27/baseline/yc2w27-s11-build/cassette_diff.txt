@@ -1,0 +1,29 @@
+== F17
+   site decider: 1 → 0 answers
+      1 → 0  {"confidence_bp": 4000, "missing": [], "outcome": "defer", "rationale": "Defining the ideal customer profile does not answer what this person asked.", "scores": {"sales.pb.account_research.fifteen_minute_account_brief": 4389, "sales.pb.inve
+   site r1: 1 → 0 answers
+      1 → 0  {"readings": [{"ambiguous": false, "classification": "NOT_INTERPRETABLE", "confidence_bp": 5000, "item": 1}, {"ambiguous": false, "classification": "NOT_INTERPRETABLE", "confidence_bp": 5000, "item": 2}, {"ambiguous": false, "classification
+== F20
+   site decider: 1 → 0 answers
+      1 → 0  {"confidence_bp": 4000, "missing": [], "outcome": "defer", "rationale": "Nothing here asks anything of the founder.", "scores": {"sales.pb.account_research.fifteen_minute_account_brief": 4387, "sales.pb.investor_relations.reopen_after_a_pas
+   site r1: 1 → 0 answers
+      1 → 0  {"readings": [{"ambiguous": false, "classification": "NOT_INTERPRETABLE", "confidence_bp": 5000, "item": 1}, {"ambiguous": false, "classification": "NOT_INTERPRETABLE", "confidence_bp": 5000, "item": 2}, {"ambiguous": false, "classification
+== F24
+   site decider: 3 → 2 answers
+      1 → 0  {"confidence_bp": 4000, "missing": [], "outcome": "defer", "rationale": "Defining the ideal customer profile does not answer what this person asked.", "scores": {"sales.pb.account_research.fifteen_minute_account_brief": 4387, "sales.pb.inve
+   site r1: 3 → 2 answers
+      2 → 1  {"readings": [{"ambiguous": false, "classification": "NOT_INTERPRETABLE", "confidence_bp": 5000, "item": 1}, {"ambiguous": false, "classification": "NOT_INTERPRETABLE", "confidence_bp": 5000, "item": 2}, {"ambiguous": false, "classification
+== F35
+   site decider: 1 → 0 answers
+      1 → 0  {"confidence_bp": 4000, "missing": [], "outcome": "defer", "rationale": "Defining the ideal customer profile does not answer what this person asked.", "scores": {"sales.pb.account_research.fifteen_minute_account_brief": 4390, "sales.pb.inve
+   site r1: 1 → 0 answers
+      1 → 0  {"readings": [{"ambiguous": false, "classification": "NOT_INTERPRETABLE", "confidence_bp": 5000, "item": 1}, {"ambiguous": false, "classification": "NOT_INTERPRETABLE", "confidence_bp": 5000, "item": 2}, {"ambiguous": false, "classification
+== F37
+   site decider: 5 → 3 answers
+      1 → 0  {"confidence_bp": 4000, "missing": [], "outcome": "defer", "rationale": "Defining the ideal customer profile does not answer what this person asked.", "scores": {"sales.pb.account_research.fifteen_minute_account_brief": 4431, "sales.pb.inve
+      1 → 0  {"confidence_bp": 4000, "missing": [], "outcome": "defer", "rationale": "Defining the ideal customer profile does not answer what this person asked.", "scores": {"sales.pb.account_research.fifteen_minute_account_brief": 4549, "sales.pb.inve
+   site r1: 2 → 1 answers
+      1 → 0  {"readings": [{"ambiguous": false, "classification": "NOT_INTERPRETABLE", "confidence_bp": 5000, "item": 1}, {"ambiguous": false, "classification": "NOT_INTERPRETABLE", "confidence_bp": 5000, "item": 2}, {"ambiguous": false, "classification
+
+42 cases answered the same per site; 5 differ (printed above)
+resync/F10.json: 2 answers (junk_gate_batch, relevance), the same per site; only the brief in the junk filter's prompt moved

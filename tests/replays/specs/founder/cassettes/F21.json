@@ -1,28 +1,39 @@
 {
  "case_id": "F21",
  "source": "ideal_reader",
- "recorded_at": "fdd8b98a",
+ "recorded_at": "7179cd68",
  "answers": {
-  "127835972c6123df2c2de4c7bd581b66f3fac75bbd1cdaab2332f52976f19e77": {
-   "site": "relevance",
-   "parsed": {
-    "verdicts": [
-     {
-      "item": 1,
-      "business": false,
-      "description": "Reminder: pre-incubation programme",
-      "category": "automated",
-      "human_authored": false,
-      "asks_for_reply": false
-     }
-    ]
-   },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"Reminder: pre-incubation programme\", \"category\": \"automated\", \"human_authored\": false, \"asks_for_reply\": false}]}",
-   "input_tokens": 967,
-   "output_tokens": 43,
+  "57ec02fb70df5189e8092d88258df0a97a07f3d660b3d01f561c05e62f7ced40": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "drop",
+     "relevance": 0.05,
+     "reason": "automated, nobody waits on a reply"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}]",
+   "input_tokens": 1040,
+   "output_tokens": 25,
    "model": "claude-haiku-4-5-20251001"
   },
-  "4704de981ed0cad0c99e62ed202d0fa306c8a659189f5ebbd6ece7dd282b02e9": {
+  "67cecc19ceffb2f431eebc8c5ba27e14a983707efe757000bf64f07eb886c56c": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "drop",
+     "relevance": 0.05,
+     "reason": "automated, nobody waits on a reply"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}]",
+   "input_tokens": 1050,
+   "output_tokens": 25,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "70138e04c3c334371a5e54e5c687936a8ab8cd124cd6ce241bda27fc21a3e58b": {
    "site": "relevance",
    "parsed": {
     "verdicts": [
@@ -37,38 +48,27 @@
     ]
    },
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"Pre-incubation programme: applications open\", \"category\": \"automated\", \"human_authored\": false, \"asks_for_reply\": false}]}",
-   "input_tokens": 977,
+   "input_tokens": 1181,
    "output_tokens": 45,
    "model": "claude-haiku-4-5-20251001"
   },
-  "6c2aec6388c4e5cca89f8f723b77990bbd1d21229ce234b018e4e9291a573d28": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "drop",
-     "relevance": 0.05,
-     "reason": "automated, nobody waits on a reply"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}]",
-   "input_tokens": 846,
-   "output_tokens": 25,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "7e78c0a185d9a5c8f27554133fd16157a417f4011478b603979d4bb3c0e93d30": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "drop",
-     "relevance": 0.05,
-     "reason": "automated, nobody waits on a reply"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}]",
-   "input_tokens": 836,
-   "output_tokens": 25,
+  "90ba9f9acadcab10e28767584fd022ffb586a628fd95e4a4215db4e1ee2d9d16": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": false,
+      "description": "Reminder: pre-incubation programme",
+      "category": "automated",
+      "human_authored": false,
+      "asks_for_reply": false
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"Reminder: pre-incubation programme\", \"category\": \"automated\", \"human_authored\": false, \"asks_for_reply\": false}]}",
+   "input_tokens": 1171,
+   "output_tokens": 43,
    "model": "claude-haiku-4-5-20251001"
   }
  }

@@ -1,9 +1,25 @@
 {
  "case_id": "F35",
  "source": "ideal_reader",
- "recorded_at": "785ae938",
+ "recorded_at": "7179cd68",
  "answers": {
-  "03cfcd606ae323fb2c023e94c21c9e101624c37995e62683c859730973235d8f": {
+  "7733d04329048546fb0c357f5b1f2af8985ea5b15d42e844cb920b41115336ac": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Phase-1 review: logistics",
+    "start_offset": 0,
+    "end_offset": 25,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Phase-1 review: logistics\", \"start_offset\": 0, \"end_offset\": 25, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1534,
+   "output_tokens": 43,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "8c57e03bdf489a1b68d487e4a652ab70e74ba70120d50294124d96179616894b": {
    "site": "extraction",
    "parsed": {
     "intent": "inform",
@@ -65,70 +81,8 @@
     }
    },
    "raw": "{\"intent\": \"inform\", \"stance\": \"neutral\", \"topics\": [\"phase-1 review\", \"logistics\"], \"entity_mentions\": [{\"surface_form\": \"Divya Raman\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Divya Raman\", \"start_offset\": 169, \"end_offset\": 180}], \"confidence_bp\": 9000}, {\"surface_form\": \"Lakshya Accelerator\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Lakshya Accelerator\", \"start_offset\": 197, \"end_offset\": 216}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"30 Sep\", \"earliest\": \"2026-09-30T00:00:00+05:30\", \"latest\": \"2026-09-30T23:59:59+05:30\", \"certainty\": \"range\", \"resolved_against\": \"2026-09-20T05:00:00Z\", \"evidence\": [{\"quote\": \"30 Sep\", \"start_offset\": 61, \"end_offset\": 67}]}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
-   "input_tokens": 5323,
+   "input_tokens": 5527,
    "output_tokens": 227,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "35950916bb6f3ab8a7faac19c47ab5ef4520709d352c348253106311658ebeaf": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "sales.pb.account_research.fifteen_minute_account_brief": 4390,
-     "sales.pb.investor_relations.reopen_after_a_pass": 4688
-    },
-    "confidence_bp": 4000,
-    "rationale": "Defining the ideal customer profile does not answer what this person asked.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.account_research.fifteen_minute_account_brief\": 4390, \"sales.pb.investor_relations.reopen_after_a_pass\": 4688}, \"confidence_bp\": 4000, \"rationale\": \"Defining the ideal customer profile does not answer what this person asked.\", \"missing\": []}",
-   "input_tokens": 2653,
-   "output_tokens": 70,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "48304c0be0a74a3f1e779ba31ec45313c3738ea2aed2256a8463b630a990cb0f": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "AMBIGUOUS",
-    "scope": [],
-    "quote": "Phase-1 review: logistics",
-    "start_offset": 0,
-    "end_offset": 25,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Phase-1 review: logistics\", \"start_offset\": 0, \"end_offset\": 25, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1331,
-   "output_tokens": 43,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "562fc042add84a8aba1ce0bf827a4b72714e8abe393859490f2cd8ac1ee197ac": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 3,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     }
-    ]
-   },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 843,
-   "output_tokens": 74,
    "model": "claude-haiku-4-5-20251001"
   }
  }

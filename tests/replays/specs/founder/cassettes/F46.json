@@ -1,59 +1,8 @@
 {
  "case_id": "F46",
  "source": "ideal_reader",
- "recorded_at": "785ae938",
+ "recorded_at": "7179cd68",
  "answers": {
-  "23e9e29e501a9094e14b7b060954b9bb60a02a580a97e2bf15039291c0713830": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "Could you send the deck before we speak?",
-    "start_offset": 78,
-    "end_offset": 118,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Could you send the deck before we speak?\", \"start_offset\": 78, \"end_offset\": 118, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1319,
-   "output_tokens": 48,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "252f73d3cad2d201d51090596d625363c3b7c23eb8b51fef58add5536348c3e8": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 3,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 4,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     }
-    ]
-   },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 4, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 969,
-   "output_tokens": 98,
-   "model": "claude-haiku-4-5-20251001"
-  },
   "2900a43c3604f781299f28c134495dc488115f789d853e764bcbdf26eeda8a10": {
    "site": "narrator",
    "parsed": {
@@ -66,7 +15,94 @@
    "output_tokens": 62,
    "model": "claude-haiku-4-5-20251001"
   },
-  "2db9c2873b69efd11a392dd66f6932a6ed6388c1f6f989daf7b230c7e9ce6c84": {
+  "43a7bebbdd715e4c4e6857a63213fda51585ce98037037f83dd0c62fc831e4f7": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Nimbus Labs - raising our seed round",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Nimbus Labs - raising our seed round\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 1183,
+   "output_tokens": 42,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "5dde0b71c18499d1996f02f36908ce1ae8155492130c36503a08a7fd15bb4557": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 1045,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "63bc9fc74be79a48837f1fe58573bb7a54e34e5558735a4c2ea34ba821824753": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Could we find 20 minutes next week?",
+    "start_offset": 133,
+    "end_offset": 168,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Could we find 20 minutes next week?\", \"start_offset\": 133, \"end_offset\": 168, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1530,
+   "output_tokens": 47,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "70ee36e359460020da3ef769010812e34dd5fdfda93e444642e5c453a790a1d2": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "request",
+    "stance": "positive",
+    "topics": [
+     "fundraising"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Ravi",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Ravi",
+        "start_offset": 41,
+        "end_offset": 45
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high"
+    }
+   },
+   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Ravi\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Ravi\", \"start_offset\": 41, \"end_offset\": 45}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\"}}",
+   "input_tokens": 5525,
+   "output_tokens": 107,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "868190479188f70fc4a515605e1996197b48d63d1f41808d620a66e8445b6183": {
    "site": "extraction",
    "parsed": {
     "intent": "request",
@@ -126,74 +162,24 @@
     }
    },
    "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Ravi Iyer\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Ravi Iyer\", \"start_offset\": 120, \"end_offset\": 129}], \"confidence_bp\": 9000}, {\"surface_form\": \"Seedfund Partners\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Seedfund Partners\", \"start_offset\": 130, \"end_offset\": 147}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Send the deck before the call\", \"asked_by\": \"Ravi Iyer\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Could you send the deck before we speak?\", \"start_offset\": 78, \"end_offset\": 118}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\"}}",
-   "input_tokens": 5315,
+   "input_tokens": 5519,
    "output_tokens": 214,
    "model": "claude-haiku-4-5-20251001"
   },
-  "2fdbcafe3b6589961cd3d33e59551c6bdd56c99a4d1bde53f4f0f36099334835": {
-   "site": "decider",
+  "892dca176507c915d5df2a0b704f06b1b6819cbab5f95639ed805d4cc1354c76": {
+   "site": "resolution",
    "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "reply": 6500,
-     "wait_unanswered_email": 5200
-    },
-    "confidence_bp": 5500,
-    "rationale": "A direct question is waiting on us.",
-    "missing": []
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Could you send the deck before we speak?",
+    "start_offset": 78,
+    "end_offset": 118,
+    "speaker_role_said": "unknown"
    },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5200}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
-   "input_tokens": 1937,
-   "output_tokens": 42,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "66c56b39fab2380976e88048ade77ee3320b6aa8fe446e8ce3e86f51f83c0587": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 848,
-   "output_tokens": 24,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "7d1f2902256179741873110aadc876cb5b481bf1533fee153872147993c27e0a": {
-   "site": "relevance",
-   "parsed": {
-    "verdicts": [
-     {
-      "item": 1,
-      "business": true,
-      "description": "Nimbus Labs - raising our seed round",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     }
-    ]
-   },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Nimbus Labs - raising our seed round\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "input_tokens": 979,
-   "output_tokens": 42,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "9e36aaadf9a1cd4bc33c1df6d25745e034e3f9884fadca2cd24c539b621efbb0": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 841,
-   "output_tokens": 24,
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Could you send the deck before we speak?\", \"start_offset\": 78, \"end_offset\": 118, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1523,
+   "output_tokens": 48,
    "model": "claude-haiku-4-5-20251001"
   },
   "9e67e995c6809030fec932bebd8df96c9229afe284826e151190f99c738b3527": {
@@ -212,7 +198,42 @@
    "output_tokens": 166,
    "model": "claude-haiku-4-5-20251001"
   },
-  "b306315a2c4db9ecb470de13a60fad8c4c011b14d56d60c96d26ff3d0b9d2299": {
+  "a3daeea0c90115ac3c90a0d75a9c6f68b431620c040970d598918eaf6f23dd23": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 4,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 4, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 1172,
+   "output_tokens": 98,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "ace0b8f298f4acc142ced63c5fd41de10576ab56a40e2c97d2dea16c2fc78421": {
    "site": "relevance",
    "parsed": {
     "verdicts": [
@@ -227,61 +248,8 @@
     ]
    },
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Nimbus Labs - raising our seed round\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "input_tokens": 972,
+   "input_tokens": 1176,
    "output_tokens": 43,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "b8ad8307ef15543eff0afc22df4a8f57cbbb5d41bf5150ea79429128a0638c30": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "Could we find 20 minutes next week?",
-    "start_offset": 133,
-    "end_offset": 168,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Could we find 20 minutes next week?\", \"start_offset\": 133, \"end_offset\": 168, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1326,
-   "output_tokens": 47,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "d67e8bcb9447952570dbd221b3bf40fcd853367c023c1da9feba4cdc9ced5ff3": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "request",
-    "stance": "positive",
-    "topics": [
-     "fundraising"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "Ravi",
-      "entity_type": "person",
-      "evidence": [
-       {
-        "quote": "Ravi",
-        "start_offset": 41,
-        "end_offset": 45
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "exchange_intent": {
-     "category": "working",
-     "tone": "neutral",
-     "formality": "professional",
-     "addressed_personally": true,
-     "human_authored": true,
-     "asks_for_reply": true,
-     "engagement": "high"
-    }
-   },
-   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Ravi\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Ravi\", \"start_offset\": 41, \"end_offset\": 45}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\"}}",
-   "input_tokens": 5321,
-   "output_tokens": 107,
    "model": "claude-haiku-4-5-20251001"
   },
   "dc6da491bf9e51da7198d1a2bc845457d29550ae0c81008f94ff8850935d50f3": {
@@ -298,6 +266,38 @@
    "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
    "input_tokens": 2358,
    "output_tokens": 166,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "fc4b76bb0050aefbb864d7e8687654eb0cfec67ff63271b41b6617bd1d24de32": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "reply": 6500,
+     "wait_unanswered_email": 5200
+    },
+    "confidence_bp": 5500,
+    "rationale": "A direct question is waiting on us.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5200}, \"confidence_bp\": 5500, \"rationale\": \"A direct question is waiting on us.\", \"missing\": []}",
+   "input_tokens": 2141,
+   "output_tokens": 42,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "fea83c2b85cf63fdd8063f790d27446f3843bca77796e9336cd90a71dd291d98": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 1052,
+   "output_tokens": 24,
    "model": "claude-haiku-4-5-20251001"
   }
  }

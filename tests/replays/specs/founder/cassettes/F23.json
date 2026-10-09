@@ -1,9 +1,46 @@
 {
  "case_id": "F23",
  "source": "ideal_reader",
- "recorded_at": "fdd8b98a",
+ "recorded_at": "7179cd68",
  "answers": {
-  "36854dd01536d8a51c344ffef2de78df287a83f39f1db39f120f5f65bfb341fb": {
+  "76dd4d434221a55acca5ca18ce1cf6ea51038831491db3ce954e81f9cdf975e0": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "neutral",
+    "topics": [
+     "programme bulletin"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "State Startup Mission",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "State Startup Mission",
+        "start_offset": 87,
+        "end_offset": 108
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "automated",
+     "tone": "neutral",
+     "formality": "templated",
+     "addressed_personally": false,
+     "human_authored": false,
+     "asks_for_reply": false,
+     "engagement": "low"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"neutral\", \"topics\": [\"programme bulletin\"], \"entity_mentions\": [{\"surface_form\": \"State Startup Mission\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"State Startup Mission\", \"start_offset\": 87, \"end_offset\": 108}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"automated\", \"tone\": \"neutral\", \"formality\": \"templated\", \"addressed_personally\": false, \"human_authored\": false, \"asks_for_reply\": false, \"engagement\": \"low\"}}",
+   "input_tokens": 5501,
+   "output_tokens": 118,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "87936b3d0bf267f9be9a9f0d682ef30eb9810552df192ac46e8d33b4550990f7": {
    "site": "extraction",
    "parsed": {
     "intent": "inform",
@@ -63,85 +100,11 @@
     }
    },
    "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"startup registration\"], \"entity_mentions\": [{\"surface_form\": \"State Startup Mission\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"State Startup Mission\", \"start_offset\": 59, \"end_offset\": 80}], \"confidence_bp\": 9000}, {\"surface_form\": \"SSM-2026-3381\", \"entity_type\": \"document\", \"evidence\": [{\"quote\": \"SSM-2026-3381\", \"start_offset\": 129, \"end_offset\": 142}], \"confidence_bp\": 9000}], \"decision_states\": [{\"subject\": \"the registration on the State Startup Mission portal\", \"state\": \"made\", \"owner\": \"State Startup Mission\", \"evidence\": [{\"quote\": \"Your registration on the State Startup Mission portal is complete\", \"start_offset\": 34, \"end_offset\": 99}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"transactional\", \"tone\": \"neutral\", \"formality\": \"templated\", \"addressed_personally\": false, \"human_authored\": false, \"asks_for_reply\": false, \"engagement\": \"medium\"}}",
-   "input_tokens": 5312,
+   "input_tokens": 5515,
    "output_tokens": 236,
    "model": "claude-haiku-4-5-20251001"
   },
-  "4e5a53f8006e4f59738d8cf58788b14fd2a2777d8a3268811b245a08d6a35b3b": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "inform",
-    "stance": "neutral",
-    "topics": [
-     "programme bulletin"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "State Startup Mission",
-      "entity_type": "organization",
-      "evidence": [
-       {
-        "quote": "State Startup Mission",
-        "start_offset": 93,
-        "end_offset": 114
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "exchange_intent": {
-     "category": "automated",
-     "tone": "neutral",
-     "formality": "templated",
-     "addressed_personally": false,
-     "human_authored": false,
-     "asks_for_reply": false,
-     "engagement": "low"
-    }
-   },
-   "raw": "{\"intent\": \"inform\", \"stance\": \"neutral\", \"topics\": [\"programme bulletin\"], \"entity_mentions\": [{\"surface_form\": \"State Startup Mission\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"State Startup Mission\", \"start_offset\": 93, \"end_offset\": 114}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"automated\", \"tone\": \"neutral\", \"formality\": \"templated\", \"addressed_personally\": false, \"human_authored\": false, \"asks_for_reply\": false, \"engagement\": \"low\"}}",
-   "input_tokens": 5298,
-   "output_tokens": 118,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "7a8d0b00b3f29fd32fd84fb060207b618460c2d93bff0293ca1d133729cba821": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "inform",
-    "stance": "neutral",
-    "topics": [
-     "programme bulletin"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "State Startup Mission",
-      "entity_type": "organization",
-      "evidence": [
-       {
-        "quote": "State Startup Mission",
-        "start_offset": 87,
-        "end_offset": 108
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "exchange_intent": {
-     "category": "automated",
-     "tone": "neutral",
-     "formality": "templated",
-     "addressed_personally": false,
-     "human_authored": false,
-     "asks_for_reply": false,
-     "engagement": "low"
-    }
-   },
-   "raw": "{\"intent\": \"inform\", \"stance\": \"neutral\", \"topics\": [\"programme bulletin\"], \"entity_mentions\": [{\"surface_form\": \"State Startup Mission\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"State Startup Mission\", \"start_offset\": 87, \"end_offset\": 108}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"automated\", \"tone\": \"neutral\", \"formality\": \"templated\", \"addressed_personally\": false, \"human_authored\": false, \"asks_for_reply\": false, \"engagement\": \"low\"}}",
-   "input_tokens": 5297,
-   "output_tokens": 118,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "a9bfdd425f64a020a43fd0b9011903270e370cded34edfd80d97599891965157": {
+  "8d6881633304cacebc174c332501ad1bfcfdb945380dd844a8846c649e2efc34": {
    "site": "extraction",
    "parsed": {
     "intent": "inform",
@@ -174,7 +137,44 @@
     }
    },
    "raw": "{\"intent\": \"inform\", \"stance\": \"neutral\", \"topics\": [\"government scheme\"], \"entity_mentions\": [{\"surface_form\": \"State Startup Mission\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"State Startup Mission\", \"start_offset\": 91, \"end_offset\": 112}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"automated\", \"tone\": \"neutral\", \"formality\": \"templated\", \"addressed_personally\": false, \"human_authored\": false, \"asks_for_reply\": false, \"engagement\": \"low\"}}",
-   "input_tokens": 5297,
+   "input_tokens": 5501,
+   "output_tokens": 118,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "caa7dec6e68e016de0c5ee544aeb1e9bb943c49d4eb3e7e7515605645164f7f7": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "neutral",
+    "topics": [
+     "programme bulletin"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "State Startup Mission",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "State Startup Mission",
+        "start_offset": 93,
+        "end_offset": 114
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "automated",
+     "tone": "neutral",
+     "formality": "templated",
+     "addressed_personally": false,
+     "human_authored": false,
+     "asks_for_reply": false,
+     "engagement": "low"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"neutral\", \"topics\": [\"programme bulletin\"], \"entity_mentions\": [{\"surface_form\": \"State Startup Mission\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"State Startup Mission\", \"start_offset\": 93, \"end_offset\": 114}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"automated\", \"tone\": \"neutral\", \"formality\": \"templated\", \"addressed_personally\": false, \"human_authored\": false, \"asks_for_reply\": false, \"engagement\": \"low\"}}",
+   "input_tokens": 5502,
    "output_tokens": 118,
    "model": "claude-haiku-4-5-20251001"
   }

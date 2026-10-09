@@ -1,9 +1,9 @@
 {
  "case_id": "F20",
  "source": "ideal_reader",
- "recorded_at": "785ae938",
+ "recorded_at": "7179cd68",
  "answers": {
-  "011355b7521c3b2f07571e9da5c1d6cd304e6f9035c931d55a082b833493a45f": {
+  "5284b847241f0a0252afbab39204589710dbb071bddb221c1c468d2217c3dc37": {
    "site": "resolution",
    "parsed": {
     "verdict": "NOT_RESOLVED",
@@ -15,11 +15,11 @@
     "speaker_role_said": "unknown"
    },
    "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"TechBridge founders meetup, 27 Sep\", \"start_offset\": 0, \"end_offset\": 34, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1329,
+   "input_tokens": 1533,
    "output_tokens": 45,
    "model": "claude-haiku-4-5-20251001"
   },
-  "1b8a4c429466ac44c25ecd072ff867369651a49a455ba7f9142756341bb62e39": {
+  "bcb9c700d38acc770fcfebe308a7d41b2ec59615555012d08c756f6c1fc88ea4": {
    "site": "extraction",
    "parsed": {
     "intent": "inform",
@@ -81,54 +81,8 @@
     }
    },
    "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"newsletter\", \"meetup\"], \"entity_mentions\": [{\"surface_form\": \"Sameer Rana\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Sameer Rana\", \"start_offset\": 177, \"end_offset\": 188}], \"confidence_bp\": 9000}, {\"surface_form\": \"TechBridge Foundation\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"TechBridge Foundation\", \"start_offset\": 189, \"end_offset\": 210}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"27 Sep\", \"earliest\": \"2026-09-27T00:00:00+05:30\", \"latest\": \"2026-09-27T23:59:59+05:30\", \"certainty\": \"range\", \"resolved_against\": \"2026-09-13T06:00:00Z\", \"evidence\": [{\"quote\": \"27 Sep\", \"start_offset\": 28, \"end_offset\": 34}]}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"low\"}}",
-   "input_tokens": 5325,
+   "input_tokens": 5529,
    "output_tokens": 227,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "6bc580a229081c51a0efe130fd8f333faacab74b4e31f3743f0e52fc165dd149": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "defer",
-    "scores": {
-     "sales.pb.account_research.fifteen_minute_account_brief": 4387,
-     "sales.pb.investor_relations.reopen_after_a_pass": 4685
-    },
-    "confidence_bp": 4000,
-    "rationale": "Nothing here asks anything of the founder.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.account_research.fifteen_minute_account_brief\": 4387, \"sales.pb.investor_relations.reopen_after_a_pass\": 4685}, \"confidence_bp\": 4000, \"rationale\": \"Nothing here asks anything of the founder.\", \"missing\": []}",
-   "input_tokens": 2654,
-   "output_tokens": 62,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "c16ad08e6e9893e175b7c691613f3e53bc21434f61b68c9fa6e09e50904792d5": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 3,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     }
-    ]
-   },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 843,
-   "output_tokens": 74,
    "model": "claude-haiku-4-5-20251001"
   }
  }

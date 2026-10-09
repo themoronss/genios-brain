@@ -1,9 +1,9 @@
 {
  "case_id": "F36",
  "source": "ideal_reader",
- "recorded_at": "fdd8b98a",
+ "recorded_at": "7179cd68",
  "answers": {
-  "45bde06ff81160dc55eea0492c7ca297c0d8d2f331f633dfca6895f61fabdf95": {
+  "11e382df2a4d97388e58240df1aa0b6d2a3d136981ba3ce32c885fa8c99c6bae": {
    "site": "extraction",
    "parsed": {
     "intent": "inform",
@@ -36,11 +36,11 @@
     }
    },
    "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"integration\"], \"entity_mentions\": [{\"surface_form\": \"Ravi\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Ravi\", \"start_offset\": 20, \"end_offset\": 24}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
-   "input_tokens": 5295,
+   "input_tokens": 5498,
    "output_tokens": 107,
    "model": "claude-haiku-4-5-20251001"
   },
-  "7274dcdacb06271bb381be49b864e1403dd71e08825736e6dbff13750bc00faf": {
+  "473a0c6357e71ad9e070684eb7ffa6f3f34dc1055ddac31edef0a9680a65687b": {
    "site": "resolution",
    "parsed": {
     "verdict": "NOT_RESOLVED",
@@ -52,26 +52,11 @@
     "speaker_role_said": "unknown"
    },
    "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Let me know if anything's unclear.\", \"start_offset\": 69, \"end_offset\": 103, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1304,
+   "input_tokens": 1508,
    "output_tokens": 46,
    "model": "claude-haiku-4-5-20251001"
   },
-  "d4fcfeed17cdf837299295a040ba35352c6660a82c84a96061d7166a2ee56e71": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 826,
-   "output_tokens": 24,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "e9d683225268abe17b73a6a23830da116b703c127f42172c982f33c57b49f8b8": {
+  "9b6fa826f0d4270f8798488379012392a3536e3ed420255d8dc121f481846e0f": {
    "site": "relevance",
    "parsed": {
     "verdicts": [
@@ -86,8 +71,23 @@
     ]
    },
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Integration doc\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "input_tokens": 957,
+   "input_tokens": 1161,
    "output_tokens": 37,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "e72c05f44812a832ac017812532723efddffa7ec121b675041b9c0fd0675990d": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 1030,
+   "output_tokens": 24,
    "model": "claude-haiku-4-5-20251001"
   }
  }

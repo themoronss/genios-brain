@@ -1,9 +1,25 @@
 {
  "case_id": "F03",
  "source": "ideal_reader",
- "recorded_at": "785ae938",
+ "recorded_at": "7179cd68",
  "answers": {
-  "35ba91f500485ae4d74614e939a6667494ffe849293a7fec634bdcfde2787f43": {
+  "44799780b9b32c119d0a6c09aeef1f34c4b76e75e0e6758adc6bede35904a790": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Did you see my intro to Rahul?",
+    "start_offset": 0,
+    "end_offset": 30,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Did you see my intro to Rahul?\", \"start_offset\": 0, \"end_offset\": 30, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1517,
+   "output_tokens": 45,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "76e949eed49f7b65a6a437ffe78a10a863aecf2d7a84953c0ee3d3b261c4ed9b": {
    "site": "extraction",
    "parsed": {
     "intent": "introduce",
@@ -115,181 +131,11 @@
     ]
    },
    "raw": "{\"intent\": \"introduce\", \"stance\": \"positive\", \"topics\": [\"introduction\", \"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Rahul Menon\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Rahul Menon\", \"start_offset\": 46, \"end_offset\": 57}], \"confidence_bp\": 9000}, {\"surface_form\": \"Kestrel Capital\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Kestrel Capital\", \"start_offset\": 16, \"end_offset\": 31}], \"confidence_bp\": 9000}, {\"surface_form\": \"Introly\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Introly\", \"start_offset\": 298, \"end_offset\": 305}], \"confidence_bp\": 9000}], \"roles\": [{\"party\": \"Introly\", \"role\": \"connector\", \"evidence\": [{\"quote\": \"I think you two should talk\", \"start_offset\": 236, \"end_offset\": 263}], \"confidence_bp\": 9000}, {\"party\": \"Rahul Menon\", \"role\": \"investor\", \"evidence\": [{\"quote\": \"a partner at Kestrel Capital who invests in early-stage AI infrastructure\", \"start_offset\": 59, \"end_offset\": 132}], \"confidence_bp\": 9000}], \"relationships\": [{\"party\": \"Rahul Menon\", \"nature\": \"introduced investor\", \"direction\": \"inbound\", \"evidence_text\": \"Arjun, meet Rahul Menon\"}], \"business_facts\": [{\"field\": \"person.title\", \"subject\": \"Rahul Menon\", \"value\": \"Partner\", \"standing\": \"observed\", \"evidence\": [{\"quote\": \"a partner at Kestrel Capital\", \"start_offset\": 59, \"end_offset\": 87}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": false, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"introduce an investor\"}, \"implied_actions\": [\"reply to Rahul Menon to take the introduction forward\"]}",
-   "input_tokens": 5353,
+   "input_tokens": 5557,
    "output_tokens": 417,
    "model": "claude-haiku-4-5-20251001"
   },
-  "3d487e057b4b0bc0ac92ea86633b93c0c4a2ea5134b67c143e83553318e7d6b1": {
-   "site": "r1",
-   "parsed": {
-    "readings": [
-     {
-      "item": 1,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 2,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     },
-     {
-      "item": 3,
-      "ambiguous": false,
-      "classification": "NOT_INTERPRETABLE",
-      "confidence_bp": 5000
-     }
-    ]
-   },
-   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
-   "input_tokens": 900,
-   "output_tokens": 74,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "8058d32a467fb0302b0f500b1a9bb7a214b8e4059fd140f5ac98ab6c1924a346": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "request",
-    "stance": "positive",
-    "topics": [
-     "introduction",
-     "fundraising"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "Introly",
-      "entity_type": "organization",
-      "evidence": [
-       {
-        "quote": "Introly",
-        "start_offset": 138,
-        "end_offset": 145
-       }
-      ],
-      "confidence_bp": 9000
-     },
-     {
-      "surface_form": "Kestrel Capital",
-      "entity_type": "organization",
-      "evidence": [
-       {
-        "quote": "Kestrel Capital",
-        "start_offset": 82,
-        "end_offset": 97
-       }
-      ],
-      "confidence_bp": 9000
-     },
-     {
-      "surface_form": "Rahul",
-      "entity_type": "person",
-      "evidence": [
-       {
-        "quote": "Rahul",
-        "start_offset": 24,
-        "end_offset": 29
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "roles": [
-     {
-      "party": "Introly",
-      "role": "connector",
-      "evidence": [
-       {
-        "quote": "Just checking you saw my introduction to Rahul",
-        "start_offset": 32,
-        "end_offset": 78
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "exchange_intent": {
-     "category": "relational",
-     "tone": "warm",
-     "formality": "templated",
-     "addressed_personally": true,
-     "human_authored": false,
-     "asks_for_reply": true,
-     "engagement": "medium",
-     "motive": "remind the founder of an introduction"
-    },
-    "implied_actions": [
-     "reply to Rahul to take the introduction forward"
-    ]
-   },
-   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"introduction\", \"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Introly\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Introly\", \"start_offset\": 138, \"end_offset\": 145}], \"confidence_bp\": 9000}, {\"surface_form\": \"Kestrel Capital\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Kestrel Capital\", \"start_offset\": 82, \"end_offset\": 97}], \"confidence_bp\": 9000}, {\"surface_form\": \"Rahul\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Rahul\", \"start_offset\": 24, \"end_offset\": 29}], \"confidence_bp\": 9000}], \"roles\": [{\"party\": \"Introly\", \"role\": \"connector\", \"evidence\": [{\"quote\": \"Just checking you saw my introduction to Rahul\", \"start_offset\": 32, \"end_offset\": 78}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"templated\", \"addressed_personally\": true, \"human_authored\": false, \"asks_for_reply\": true, \"engagement\": \"medium\", \"motive\": \"remind the founder of an introduction\"}, \"implied_actions\": [\"reply to Rahul to take the introduction forward\"]}",
-   "input_tokens": 5307,
-   "output_tokens": 272,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "9be28d1f866037c1eacca29b4e3416acc5dae15580f9ff1b6c70a976f153db89": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "Did you see my intro to Rahul?",
-    "start_offset": 0,
-    "end_offset": 30,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Did you see my intro to Rahul?\", \"start_offset\": 0, \"end_offset\": 30, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1313,
-   "output_tokens": 45,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "9fca3acdf3428268e679ad2e543e468802fce1510bf46f2304d9e935c36f57c9": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "AMBIGUOUS",
-    "scope": [],
-    "quote": "Rahul is still waiting",
-    "start_offset": 0,
-    "end_offset": 22,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Rahul is still waiting\", \"start_offset\": 0, \"end_offset\": 22, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1316,
-   "output_tokens": 42,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "b795a47d1b12d64d61e8bdc14f87a09b8610212cee22145c0818fa0b5796c3b7": {
-   "site": "narrator",
-   "parsed": {
-    "headline": "Take Rahul Menon's introduction forward",
-    "situation": "Rahul Menon, a Partner, was introduced to you 4 days ago and has not heard back from you.",
-    "artifact": "Hi Rahul, thank you for taking the introduction. I'd be glad to tell you what we are building — would a short call suit you? Happy to work around your calendar."
-   },
-   "raw": "{\"headline\": \"Take Rahul Menon's introduction forward\", \"situation\": \"Rahul Menon, a Partner, was introduced to you 4 days ago and has not heard back from you.\", \"artifact\": \"Hi Rahul, thank you for taking the introduction. I'd be glad to tell you what we are building — would a short call suit you? Happy to work around your calendar.\"}",
-   "input_tokens": 1517,
-   "output_tokens": 84,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "d33844e6c6ce9d8a09b138a688225bfdb9d04305b0b1ca25d13cf4285be4d188": {
-   "site": "decider",
-   "parsed": {
-    "outcome": "decision",
-    "scores": {
-     "reply": 6500,
-     "wait_unanswered_email": 5500
-    },
-    "confidence_bp": 5500,
-    "rationale": "A partner at a fund was introduced to the founder while the seed round is being raised; taking the introduction forward is our reply to Rahul.",
-    "missing": []
-   },
-   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5500}, \"confidence_bp\": 5500, \"rationale\": \"A partner at a fund was introduced to the founder while the seed round is being raised; taking the introduction forward is our reply to Rahul.\", \"missing\": []}",
-   "input_tokens": 1861,
-   "output_tokens": 69,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "dd1cb584262faaa8c546b821912ceee4c9f9ad3b870ae634b61276bc452faae9": {
+  "a0cb28abf625721fbe1e7a1a6523a6fe3e22ea42e82bdae4a1b60d9403612de5": {
    "site": "extraction",
    "parsed": {
     "intent": "request",
@@ -365,11 +211,136 @@
     ]
    },
    "raw": "{\"intent\": \"request\", \"stance\": \"neutral\", \"topics\": [\"introduction\", \"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Introly\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Introly\", \"start_offset\": 150, \"end_offset\": 157}], \"confidence_bp\": 9000}, {\"surface_form\": \"Kestrel Capital\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Kestrel Capital\", \"start_offset\": 49, \"end_offset\": 64}], \"confidence_bp\": 9000}, {\"surface_form\": \"Rahul\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Rahul\", \"start_offset\": 0, \"end_offset\": 5}], \"confidence_bp\": 9000}], \"roles\": [{\"party\": \"Introly\", \"role\": \"connector\", \"evidence\": [{\"quote\": \"Introductions work best when answered within two days\", \"start_offset\": 94, \"end_offset\": 147}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"direct\", \"formality\": \"templated\", \"addressed_personally\": true, \"human_authored\": false, \"asks_for_reply\": true, \"engagement\": \"medium\", \"motive\": \"remind the founder that the introduced investor waits\"}, \"implied_actions\": [\"reply to Rahul to take the introduction forward\"]}",
-   "input_tokens": 5308,
+   "input_tokens": 5511,
    "output_tokens": 278,
    "model": "claude-haiku-4-5-20251001"
   },
-  "f8f6567c678fa11229ca66f4da158e71f117fcacd54a270eece13c90e2d43aa7": {
+  "a5d4a830a2856d594ba1f7b3376a761781cd449629bdc83891ce0fa8df1869e6": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "request",
+    "stance": "positive",
+    "topics": [
+     "introduction",
+     "fundraising"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Introly",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Introly",
+        "start_offset": 138,
+        "end_offset": 145
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Kestrel Capital",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Kestrel Capital",
+        "start_offset": 82,
+        "end_offset": 97
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Rahul",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Rahul",
+        "start_offset": 24,
+        "end_offset": 29
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "roles": [
+     {
+      "party": "Introly",
+      "role": "connector",
+      "evidence": [
+       {
+        "quote": "Just checking you saw my introduction to Rahul",
+        "start_offset": 32,
+        "end_offset": 78
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "warm",
+     "formality": "templated",
+     "addressed_personally": true,
+     "human_authored": false,
+     "asks_for_reply": true,
+     "engagement": "medium",
+     "motive": "remind the founder of an introduction"
+    },
+    "implied_actions": [
+     "reply to Rahul to take the introduction forward"
+    ]
+   },
+   "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"introduction\", \"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Introly\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Introly\", \"start_offset\": 138, \"end_offset\": 145}], \"confidence_bp\": 9000}, {\"surface_form\": \"Kestrel Capital\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Kestrel Capital\", \"start_offset\": 82, \"end_offset\": 97}], \"confidence_bp\": 9000}, {\"surface_form\": \"Rahul\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Rahul\", \"start_offset\": 24, \"end_offset\": 29}], \"confidence_bp\": 9000}], \"roles\": [{\"party\": \"Introly\", \"role\": \"connector\", \"evidence\": [{\"quote\": \"Just checking you saw my introduction to Rahul\", \"start_offset\": 32, \"end_offset\": 78}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"templated\", \"addressed_personally\": true, \"human_authored\": false, \"asks_for_reply\": true, \"engagement\": \"medium\", \"motive\": \"remind the founder of an introduction\"}, \"implied_actions\": [\"reply to Rahul to take the introduction forward\"]}",
+   "input_tokens": 5510,
+   "output_tokens": 272,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "b4162e470501a8b51440347d7a2297f3ff48136dccb28075cde598ede81cff3d": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "reply": 6500,
+     "wait_unanswered_email": 5500
+    },
+    "confidence_bp": 5500,
+    "rationale": "A partner at a fund was introduced to the founder while the seed round is being raised; taking the introduction forward is our reply to Rahul.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5500}, \"confidence_bp\": 5500, \"rationale\": \"A partner at a fund was introduced to the founder while the seed round is being raised; taking the introduction forward is our reply to Rahul.\", \"missing\": []}",
+   "input_tokens": 2064,
+   "output_tokens": 69,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "b795a47d1b12d64d61e8bdc14f87a09b8610212cee22145c0818fa0b5796c3b7": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Take Rahul Menon's introduction forward",
+    "situation": "Rahul Menon, a Partner, was introduced to you 4 days ago and has not heard back from you.",
+    "artifact": "Hi Rahul, thank you for taking the introduction. I'd be glad to tell you what we are building — would a short call suit you? Happy to work around your calendar."
+   },
+   "raw": "{\"headline\": \"Take Rahul Menon's introduction forward\", \"situation\": \"Rahul Menon, a Partner, was introduced to you 4 days ago and has not heard back from you.\", \"artifact\": \"Hi Rahul, thank you for taking the introduction. I'd be glad to tell you what we are building — would a short call suit you? Happy to work around your calendar.\"}",
+   "input_tokens": 1517,
+   "output_tokens": 84,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "e6f08399e12770716cf08b40fe39884f61009e0f05911e2ba8d1f377b419953a": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Rahul is still waiting",
+    "start_offset": 0,
+    "end_offset": 22,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Rahul is still waiting\", \"start_offset\": 0, \"end_offset\": 22, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1520,
+   "output_tokens": 42,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "eb194b6e3c7809dd588b0266d8bce03252f1eee196d80a59325922608bebffef": {
    "site": "resolution",
    "parsed": {
     "verdict": "NOT_RESOLVED",
@@ -381,8 +352,37 @@
     "speaker_role_said": "unknown"
    },
    "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"I'll let you take it from here.\", \"start_offset\": 265, \"end_offset\": 296, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1353,
+   "input_tokens": 1557,
    "output_tokens": 46,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "f92c744dd7db8ce6ba730618b3ae0eec800abaca2d2798ee7f9cdbff83015960": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 1104,
+   "output_tokens": 74,
    "model": "claude-haiku-4-5-20251001"
   }
  }

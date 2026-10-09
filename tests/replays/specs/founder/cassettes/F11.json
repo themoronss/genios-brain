@@ -1,9 +1,9 @@
 {
  "case_id": "F11",
  "source": "ideal_reader",
- "recorded_at": "fdd8b98a",
+ "recorded_at": "7179cd68",
  "answers": {
-  "25b29091d376b6af88c44e2888e3deabb4d69a59b1897bd5183cfabb71b8e230": {
+  "0f40dc330fadf607e2e472e5176c27d63ac48db95af321377f87484da9f9388d": {
    "site": "relevance",
    "parsed": {
     "verdicts": [
@@ -18,11 +18,26 @@
     ]
    },
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Nimbus Labs\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "input_tokens": 983,
+   "input_tokens": 1186,
    "output_tokens": 36,
    "model": "claude-haiku-4-5-20251001"
   },
-  "3ffe8a4050749ac3d8e468767e307829646da38750f27e87c8b33553cfb7bf46": {
+  "651f8d3860f337839eb4e46fe4daf0b8d5a923bb15656eb83e49ceee33dd12ed": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 1055,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "81fbb64838acb767cb2e4d14c32c8bd2be96753f453f8374f1d924534d031f42": {
    "site": "extraction",
    "parsed": {
     "intent": "question",
@@ -102,11 +117,11 @@
     ]
    },
    "raw": "{\"intent\": \"question\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Tom Keller\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Tom Keller\", \"start_offset\": 173, \"end_offset\": 183}], \"confidence_bp\": 9000}, {\"surface_form\": \"Northfield Ventures\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Northfield Ventures\", \"start_offset\": 193, \"end_offset\": 212}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Is Nimbus Labs raising this year?\", \"asked_by\": \"Tom Keller\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Are you raising this year?\", \"start_offset\": 119, \"end_offset\": 145}], \"confidence_bp\": 9000}], \"business_facts\": [{\"field\": \"person.title\", \"subject\": \"Tom Keller\", \"value\": \"Partner\", \"standing\": \"observed\", \"evidence\": [{\"quote\": \"Partner, Northfield Ventures\", \"start_offset\": 184, \"end_offset\": 212}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"explore an investment\"}, \"implied_actions\": [\"tell Tom whether Nimbus Labs is raising\"]}",
-   "input_tokens": 5319,
+   "input_tokens": 5523,
    "output_tokens": 298,
    "model": "claude-haiku-4-5-20251001"
   },
-  "a3be0d886c1a53aa6702d8332c6162c863ca0e0f53d8a3f2657c6edc0bd6e6ce": {
+  "8cbdcf86aefa196b610066b316d064dcb32cc4ff0b41db431bf372f0c297d671": {
    "site": "resolution",
    "parsed": {
     "verdict": "NOT_RESOLVED",
@@ -118,23 +133,8 @@
     "speaker_role_said": "unknown"
    },
    "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Are you raising this year?\", \"start_offset\": 119, \"end_offset\": 145, \"speaker_role_said\": \"unknown\"}",
-   "input_tokens": 1330,
+   "input_tokens": 1533,
    "output_tokens": 44,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "bd87335e31d099e7e841135274cb93c7cea3ab851f9d0d3c0a368aad036b4875": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 852,
-   "output_tokens": 24,
    "model": "claude-haiku-4-5-20251001"
   }
  }
