@@ -13,6 +13,14 @@ with their n and basis, the normals that hold, a bounce, the mailboxes its mail 
 "no reply" may be said (`context/workstream_numbers`). A file of another tenant, or none, is 404 — the
 same answer, so a file id says nothing about who has one. Nothing is written.
 
+AND WHAT A PROFESSIONAL KNOWS ABOUT ITS WORK (STEP-11, `yc2_w27_s11 · M30.C5.L-interface.V3.U02`). A file
+knows its kind of work from the in-motion line of the brief that names it (`06` D31); the one-file read
+carries `packs/compiler/playbook_reader.playbook_for(file.work_kind)` beside it — the kind's playbook
+with its stages (each typical duration a labelled prior with its source), moves, claims, what doing
+nothing costs, when the work is dormant and whether it was reviewed ("playbook not yet reviewed", `06`
+D3), or the named reason there is none. What STEP-12's expert will read, readable first. The list does
+not carry it: the corpus is read for the file a reader opened.
+
 WHO READS. Anyone the dashboard already lets read the tenant (`get_current_org`), as the company
 brief's own read is (`api/company_brief_routes`). A scoped key is refused there, as everywhere.
 """
@@ -27,6 +35,7 @@ from genios_engine.context.workstream_numbers import numbers_for
 from genios_engine.context.workstream_timeline import as_dict as timeline_as_dict
 from genios_engine.context.workstream_timeline import timeline_for
 from genios_engine.context.workstreams import as_dict, file_as_dict, files_for
+from genios_engine.packs.compiler.playbook_reader import playbook_for
 from genios_engine.platform.auth import get_current_org
 from genios_engine.platform.wiring import make_graph_store
 
@@ -65,4 +74,5 @@ def read_workstream(file_id: str, org_id: str = Depends(get_current_org)) -> dic
         timeline = timeline_for(conn, org_id, file_id, now=now)
         return {"as_of": now.isoformat(), "file": file_as_dict(file),
                 "timeline": timeline_as_dict(timeline),
-                "numbers": numbers_as_dict(numbers_for(conn, org_id, file, timeline, now=now))}
+                "numbers": numbers_as_dict(numbers_for(conn, org_id, file, timeline, now=now)),
+                "playbook": playbook_for(file.work_kind).as_dict()}
