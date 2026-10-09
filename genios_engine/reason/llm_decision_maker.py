@@ -53,7 +53,17 @@ _log = logging.getLogger(__name__)
 #: v2: the subject and its messages lead the prompt; units give conclusions, not scores.
 #: v3: past-dated scheduling threads are closed. v4: the formula's own reading is the baseline.
 #: v5: R-1's job folded in — the hedge vocabulary, the stance classes, and unresolved conflicts.
-PROMPT_VERSION = "l4-llm-decision.v5"
+#: v6: `03` F121 — the corpus's claims by the contract's own keys, quoted whole; framing blocks;
+#:     each play's steps whole and numbered within a budget (STEP-11, M30.C3.L-logic.V0.U01).
+PROMPT_VERSION = "l4-llm-decision.v6"
+
+#: `03` F121 · HOW MUCH OF THE CORPUS ONE PROMPT CARRIES. A budget decides how MANY claims and steps
+#: reach the model, never how much of one. Measured on the corpus of 2026-10-09: the longest heuristic
+#: statement is 455 characters and the longest framing statement 510, so a 600-character claim budget
+#: keeps every authored claim whole; a playbook's steps run to a median of 691 characters and 1,500
+#: keeps 196 of 228 playbooks whole — the rest lose their last steps, counted, never cut mid-step.
+_CLAIM_BUDGET = 600
+_STEPS_BUDGET = 1_500
 
 #: R-1 (`reason/interpretation.py`) in the decision maker's own words. R-1 gates a model call on a
 #: CLOSED hedge list and asks for one of six stances; its reading reaches no unit at all, so in this
@@ -287,6 +297,52 @@ def _units_block(results: Sequence[ReasonerResult]) -> list[str]:
     return lines or ["- (nothing notable)"]
 
 
+def _whole(text: Any, budget: int = _CLAIM_BUDGET) -> str:
+    """One authored claim, whitespace folded, WHOLE — cut at a word only past `budget`, which no
+    claim in the corpus reaches today (see `_CLAIM_BUDGET`)."""
+    folded = " ".join(str(text or "").split())
+    if len(folded) <= budget:
+        return folded
+    cut = folded[:budget].rsplit(" ", 1)[0]
+    return f"{cut}…"
+
+
+def _claims(items: Any, limit: int) -> list[str]:
+    """`03` F121 · each claim by the CONTRACT's keys. The weld's citations and framing blocks carry
+    `artifact_id` and `statement` (`contracts/domain_expertise.require_citation`); this prompt read
+    `rule_id`/`claim_id` and `quote`/`text`, keys no citation has, and so showed the model
+    `{"rule": null, "quote": null}` for every claim the corpus made. The old keys stay as fallbacks
+    for a hand-built citation; a record with neither an id nor words is not shown at all."""
+    lines = []
+    for item in (items or ())[:limit]:
+        if not isinstance(item, Mapping):
+            continue
+        ident = item.get("artifact_id") or item.get("rule_id") or item.get("claim_id")
+        words = item.get("statement") or item.get("quote") or item.get("text")
+        if ident and words:
+            lines.append(f"- {ident}: \"{_whole(words)}\"")
+    return lines
+
+
+def _steps(steps: Sequence[Any], budget: int = _STEPS_BUDGET) -> str:
+    """A play's steps WHOLE and numbered, until the budget; the rest are counted, never cut mid-step.
+
+    `_short(list(play.steps), 300)` cut a JSON list at 300 characters — the median playbook runs to
+    691 — so the model routinely saw half a step and an ellipsis (`03` F121). The first step is
+    always shown whole, whatever its length: a budget may stop the list, never a sentence.
+    """
+    shown: list[str] = []
+    used = 0
+    for number, step in enumerate(steps, 1):
+        piece = f"{number}. {' '.join(str(step).split())}"
+        if shown and used + len(piece) + 2 > budget:
+            rest = len(steps) - len(shown)
+            return "; ".join(shown) + f" (+{rest} more step{'' if rest == 1 else 's'})"
+        shown.append(piece)
+        used += len(piece) + 2
+    return "; ".join(shown)
+
+
 def _plays_block(proposals: Sequence[Any]) -> list[str]:
     lines = []
     for item in proposals:
@@ -310,7 +366,7 @@ def _plays_block(proposals: Sequence[Any]) -> list[str]:
                                ("importance", "impact", "urgency", "success", "effort", "risk")
                                if name in item.components)
         lines.append(f"- play_id={play.play_id} | {play.label} | "
-                     f"steps: {_short(list(play.steps), 300)} | formula utility "
+                     f"steps: {_steps(play.steps)} | formula utility "
                      f"{item.utility_bp} ({components}){note}")
     return lines
 
@@ -502,9 +558,8 @@ def build_prompt(request: Any, results: Sequence[ReasonerResult], proposals: Seq
     metadata = capability.metadata
     weld = metadata.get("weld") or {}
     situation = str(metadata.get("situation_type") or capability.capability_id)
-    citations = [_short({"rule": c.get("rule_id") or c.get("claim_id"),
-                         "quote": c.get("quote") or c.get("text")}, 300)
-                 for c in (weld.get("citations") or ())[:6] if isinstance(c, Mapping)]
+    citations = _claims(weld.get("citations"), 6)
+    framing = _claims(weld.get("framing_blocks"), 3)
     conflicts = [_short({k: c.get(k) for k in ("left", "right", "left_role", "right_role")}, 200)
                  for c in (weld.get("conflicts") or ())[:4] if isinstance(c, Mapping)]
     eligible_ids = [item.play.play_id for item in proposals
@@ -593,7 +648,11 @@ def build_prompt(request: Any, results: Sequence[ReasonerResult], proposals: Seq
     sections += ["", "HOW THE ENGINE'S FORMULA SCORED THIS (your baseline, not your answer):",
                  *_formula_block(request, results)]
     if citations:
-        sections += ["", "AUTHORED EXPERT RULES THAT APPLY:", *[f"- {c}" for c in citations]]
+        sections += ["", "WHAT AN EXPERT WOULD KNOW HERE (authored claims, quoted whole):",
+                     *citations]
+    if framing:
+        sections += ["", "HOW AN EXPERT READS THIS KIND OF SITUATION (authored, quoted whole):",
+                     *framing]
     if conflicts:
         sections += ["", "AUTHORED RULES THAT CONTRADICT EACH OTHER HERE:",
                      *[f"- {c}" for c in conflicts]]
