@@ -1,0 +1,257 @@
+# Founder Office — the founder's own work (STEP-11, `06` D2), reviewed line by line by the founder (D45).
+# Two kinds of case: ROUTING (a Layer 2 type reaches founder doctrine, or must not) and KIND OF WORK
+# (a file of one kind reads its playbook through `packs/compiler/playbook_reader.playbook_for`, or says why
+# not). Deterministic and model-free, like every case file here.
+domain: founder_office
+cases:
+
+  # ── 02 · PROGRAMMES AND APPLICATIONS — read per file, never routed (`06` D32) ──────────────────
+  - id: founder.program.reads_its_spine
+    kind: playbook
+    work_kind: program
+    expect: resolve
+    playbook: founder_office.pb.program_applications.follow_an_application
+    why: >
+      A file whose in-motion line says `program` — an accelerator, an incubator, a fellowship, a grant
+      or a government scheme — must read the programmes playbook and no other: an accelerator's
+      interview read as an investor's (F17 on the golden set) is the defect this capability exists for.
+
+  - id: founder.program.has_the_interview_stage
+    kind: playbook
+    work_kind: program
+    expect: resolve
+    stages_include: [applied, under_review, interview, decision, onboarding, declined]
+    why: >
+      The expert names a programme file's stage from this closed list. F17 is an interview and F24 an
+      assignment inside a cohort; without `interview` (and the stages around it) the expert would have
+      no honest word for where those applications stand.
+
+  - id: founder.program.has_its_four_moves
+    kind: playbook
+    work_kind: program
+    expect: resolve
+    moves_include:
+      - founder_office.pb.program_applications.work_back_from_the_deadline
+      - founder_office.pb.program_applications.prepare_for_the_interview
+      - founder_office.pb.program_applications.read_the_decision_mail
+      - founder_office.pb.program_applications.documents_after_acceptance
+    why: >
+      What a professional does at each turn of an application — work back from a deadline that does
+      not move, prepare the interview, read the decision mail, send what acceptance asks for. A
+      programme file with none of these to read would leave the expert to improvise them.
+
+  - id: founder.program.rests_on_its_claims
+    kind: playbook
+    work_kind: program
+    expect: resolve
+    claims_include:
+      - founder_office.heu.program_applications.a_programme_is_not_an_investor
+      - founder_office.heu.program_applications.a_batch_is_silent_until_it_decides
+      - founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point
+    why: >
+      The claims the moves rest on — a programme is a selection process, not an investor; a batch is
+      silent until it decides; the deadline is the one fixed date — are what keep the expert from
+      chasing a programme the way it would chase a fund.
+
+  - id: founder.program.says_success_waiting_and_cost
+    kind: playbook
+    work_kind: program
+    expect: resolve
+    authored: [success_signal, outcome_window_days, do_nothing_consequence]
+    why: >
+      What success looks like, how long to wait for it and what doing nothing costs are the three
+      runtime values the corpus could not state before STEP-11 (a template, 7 days, NULL). A programme
+      playbook that leaves any of them unsaid hands the expert the old defaults back.
+
+  - id: founder.program.is_read_labelled_until_reviewed
+    kind: playbook
+    work_kind: program
+    expect: resolve
+    reviewed: false
+    why: >
+      `06` D3: before the founder reviews it, the expert may advise from this playbook — labelled
+      "playbook not yet reviewed". Read, never gated; and never presented as reviewed while it is not.
+
+  - id: founder.program.no_situation_type_is_an_application
+    situation_type: program_application
+    domain_hints: [founder_office]
+    expect: abstain
+    reason: no_situation_binds_type
+    why: >
+      No Layer 2 situation type is an application to a programme, and `06` D32 holds: none is minted.
+      The capability is read by the expert for a file of that kind of work. A route for this type
+      appearing would mean somebody bound programmes to a type nothing emits.
+
+  - id: founder.program.its_deferral_is_structural
+    kind: deferral_is_structural
+    capability: founder_office.programs_and_applications.program_applications
+    expect: abstain
+    reason: deferred
+    why: >
+      The programmes capability is deferred `no_runtime_trigger`: it appears in no route and compiles
+      into no package. Read per file, never routed — a programme reaching a card through a route would
+      be expertise nobody reviewed carrying authority through a door nobody opened.
+
+  - id: founder.program.a_hint_naming_programmes_is_no_corpus
+    situation_type: investor_relationship
+    domain_hints: [programs]
+    expect: abstain
+    reason: unknown_domain_hint
+    why: >
+      `programs` is a subdomain of the Founder Office, not a corpus. A hint naming it must stay
+      unknown, so that a programme's work is reached through the founder's kind of work and not by a
+      routing hint that happens to match a folder name.
+
+  - id: founder.program.an_accelerator_is_not_a_new_kind
+    kind: playbook
+    work_kind: accelerator
+    expect: abstain
+    reason: unknown_kind
+    why: >
+      An accelerator, an incubator and a government scheme are all the kind `program` (`06` D31's six
+      kinds). A seventh kind arriving through a file would be an authoring event nobody decided.
+
+  - id: founder.program.a_partner_file_reads_no_programme_playbook
+    kind: playbook
+    work_kind: partner
+    expect: abstain
+    reason: no_capability_for_kind
+    why: >
+      A design partner is not an application. Until a partners capability is authored, a partner file
+      reads nothing — and says so — rather than borrowing the nearest playbook.
+
+  - id: founder.program.a_file_with_no_kind_reads_nothing
+    kind: playbook
+    work_kind: null
+    expect: abstain
+    reason: no_kind
+    why: >
+      A file no in-motion line names has no kind of work, and no playbook: the expert may propose a
+      kind, labelled (STEP-12), but no playbook is read for a kind nobody gave.
+
+  # ── 01 · FUNDRAISING — routed (investor_relationship, investor_contact) and read per file ────────
+  - id: founder.investor_relationship.routes
+    situation_type: investor_relationship
+    domain_hints: [founder_office]
+    expect: resolve
+    why: >
+      A company-anchored relationship with a party that might fund us is the founder's own work. It
+      must reach the Founder Office's investor doctrine — on the golden set all 23 fundraising
+      situations were dark, and the only candidate route led to the Sales copy.
+
+  - id: founder.investor_contact.routes
+    situation_type: investor_contact
+    domain_hints: [founder_office]
+    expect: resolve
+    why: >
+      The person-anchored sibling — the partner, not the fund — reads the same capability through its
+      own situation, so the advice is aimed at the person who carries the case inside the fund.
+
+  - id: founder.investor.reads_its_spine
+    kind: playbook
+    work_kind: investor
+    expect: resolve
+    playbook: founder_office.pb.investor_relations.run_an_investor_conversation
+    why: >
+      A file whose in-motion line says `investor` reads the investor conversation's spine and no
+      other playbook: a fund read as a programme, or as a deal, is the misreading this domain exists
+      to refuse.
+
+  - id: founder.investor.has_its_stages
+    kind: playbook
+    work_kind: investor
+    expect: resolve
+    stages_include: [first_contact, first_call, partner_meeting, diligence, term_sheet, closed, passed]
+    why: >
+      The expert names an investor file's stage from this closed list; `passed` must be one of them,
+      because a pass is a date and a state to schedule against, not an outcome to forget.
+
+  - id: founder.investor.has_its_moves
+    kind: playbook
+    work_kind: investor
+    expect: resolve
+    moves_include:
+      - founder_office.pb.investor_relations.the_wave_gone_silent
+      - founder_office.pb.investor_relations.the_conditional_deferral
+      - founder_office.pb.investor_relations.a_warm_intro_to_an_investor
+      - founder_office.pb.investor_relations.before_an_investor_call
+      - founder_office.pb.investor_relations.reopen_after_a_pass
+    why: >
+      What a professional does when a wave goes quiet, when an investor says "send me updates", when an
+      introduction is asked for, before a call, and after a pass — the five moves STEP-11 §8.4 named.
+
+  - id: founder.investor.rests_on_its_claims
+    kind: playbook
+    work_kind: investor
+    expect: resolve
+    claims_include:
+      - founder_office.heu.investor_relations.investors_do_not_chase
+      - founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict
+      - founder_office.heu.investor_relations.silence_reads_by_stage
+    why: >
+      Investors do not chase; a pass is a date; silence means something different at each stage. The
+      decider and STEP-12's expert read these as claims, quoted whole.
+
+  - id: founder.investor.says_success_waiting_and_cost
+    kind: playbook
+    work_kind: investor
+    expect: resolve
+    authored: [success_signal, outcome_window_days, do_nothing_consequence]
+    why: >
+      The investor spine states what success looks like, how long to wait for it (a sourced 83 days)
+      and what doing nothing costs, so no founder card falls back to the template, 7 days or NULL.
+
+  - id: founder.investor.is_read_labelled_until_reviewed
+    kind: playbook
+    work_kind: investor
+    expect: resolve
+    reviewed: false
+    why: >
+      `06` D3: until the founder reviews it, the investor playbook is read and labelled "playbook not
+      yet reviewed" — never presented as reviewed.
+
+  - id: founder.live_investor_relationship.cannot_instruct
+    kind: admission
+    situation_id: founder_office.sit.live_investor_relationship
+    expect: abstain
+    reason: identity_status_draft
+    why: >
+      The moved situation is a draft no named human has accepted (`06` D45). Its card may advise,
+      labelled, but must not instruct — and the live compile admits nothing of it until the review.
+
+  - id: founder.live_investor_contact.cannot_instruct
+    kind: admission
+    situation_id: founder_office.sit.live_investor_contact
+    expect: abstain
+    reason: identity_status_draft
+    why: >
+      The same for the person-anchored situation: moving Sales' approved file under new ids un-did its
+      review, and only the founder's review re-does it.
+
+  - id: founder.investor.a_hint_naming_investors_is_no_corpus
+    situation_type: investor_relationship
+    domain_hints: [investors]
+    expect: abstain
+    reason: unknown_domain_hint
+    why: >
+      `investors` names no corpus. The L2 domain is `fundraising`, aliased to the Founder Office; a
+      hint that merely sounds right must stay unknown rather than be guessed into a route.
+
+  - id: founder.investor.a_fund_is_not_a_new_kind
+    kind: playbook
+    work_kind: fund
+    expect: abstain
+    reason: unknown_kind
+    why: >
+      A fund, an angel and a syndicate are all the kind `investor`. A file arriving with `fund` is an
+      authoring error, and reading nothing is the honest answer to it.
+
+  - id: founder.investor.a_recognition_application_reads_no_investor_playbook
+    kind: playbook
+    work_kind: compliance
+    expect: abstain
+    reason: capability_not_authored
+    why: >
+      F01 and F02 — a recognition portal — were read as investor relationships on the golden set. A
+      compliance file must never be handed the investor playbook; until compliance is authored (M31,
+      from official sources only, D47) it reads nothing and says so.

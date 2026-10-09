@@ -231,3 +231,61 @@ def test_a_deferred_capabilitys_situations_are_suppressed():
                 if f"\n  {sid}:" in reg_text:
                     bad.append(f"{dom.name}: {sid} is owned by a deferred capability and still mapped")
     assert bad == [], bad
+
+
+# ── STEP-11 · a deferral case names ONE capability, and that one is checked ───────────────────
+
+DEFERRAL = [c for _, c in ALL if c.get("kind") == "deferral_is_structural"]
+
+
+@pytest.mark.parametrize("case", DEFERRAL, ids=lambda c: c["id"])
+def test_a_named_deferred_capability_is_deferred_and_unrouted(case):
+    """⛔ THESE CASES WERE READ BY NOTHING (`03` F123, found building STEP-11). `kind:
+    deferral_is_structural` was declared in a case file and no test took it: the two global tests
+    above check every deferral at once, so a case naming ONE capability passed whether or not that
+    capability was deferred. Each named capability is now checked by name: listed in its domain's
+    `deferrals.yaml`, and absent from its generated route map."""
+    cid = case["capability"]
+    domain_dir = next((d for d in sorted(CORPUS.glob("* Expertise")) if cid in _deferred(d)), None)
+    assert domain_dir is not None, f"{case['id']}: {cid} is in no domain's deferrals.yaml"
+    reg_text = (domain_dir / "registry/situation-capability-map.yaml").read_text()
+    route_map = reg_text.split("\nmap:", 1)[1].split("\ndeferred_capabilities:", 1)[0]
+    assert cid not in route_map, f"{case['id']}: {cid} is deferred and still routed"
+
+
+# ── STEP-11 · a kind of work reads its playbook, or says why it cannot ────────────────────────
+
+PLAYBOOK = [c for _, c in ALL if c.get("kind") == "playbook"]
+
+
+@pytest.mark.parametrize("case", PLAYBOOK, ids=lambda c: c["id"])
+def test_a_kind_of_work_reads_its_playbook_or_says_why_not(case):
+    """`packs/compiler/playbook_reader.playbook_for` is what STEP-12's expert reads for a file of one
+    kind of work (STEP-11 §8.4 item 8). A resolve case names what the kind's playbook must hold — its
+    spine, stages, moves, claims, authored runtime values, review state; an abstain case the named
+    reason there is none. ⛔ Here too the abstention is the case that matters more: one resolving is a
+    file of one kind handed a playbook written for another, or for a kind nobody gave."""
+    from genios_engine.packs.compiler.playbook_reader import playbook_for
+
+    answer = playbook_for(case.get("work_kind"))
+    if case["expect"] == "abstain":
+        assert answer.playbook is None, (
+            f"{case['id']}: {case.get('work_kind')!r} read {answer.playbook.playbook_id}. "
+            f"{case.get('why')}")
+        assert answer.reason == case["reason"], f"{case['id']}: {answer.reason!r}"
+        return
+    playbook = answer.playbook
+    assert playbook is not None, f"{case['id']}: no playbook — {answer.reason}. {case.get('why')}"
+    if case.get("playbook"):
+        assert playbook.playbook_id == case["playbook"], playbook.playbook_id
+    missing = {
+        "stages": set(case.get("stages_include") or ()) - {s.name for s in playbook.stages},
+        "moves": set(case.get("moves_include") or ()) - {m.artifact_id for m in playbook.moves},
+        "claims": set(case.get("claims_include") or ()) - {c.artifact_id for c in playbook.claims},
+    }
+    assert not any(missing.values()), f"{case['id']}: {missing}"
+    for field in case.get("authored") or ():
+        assert getattr(playbook, field) not in (None, "", ()), f"{case['id']}: {field} unsaid"
+    if "reviewed" in case:
+        assert playbook.reviewed is case["reviewed"], f"{case['id']}: reviewed={playbook.reviewed}"
+        assert (playbook.review_label is None) is case["reviewed"], playbook.review_label
