@@ -29,6 +29,8 @@
 #                                                   2026-10-08); M28 is held for STEP-09's cards (D2)
 #   yc2_w27_s11                       M30, M31    ← YC-II W27 STEP-11, founder playbooks (M30 built
 #                                                   2026-10-09; M31 after the review); past every other block again
+#   yc2_w27_s12                       M32, M33    ← YC-II W27 STEP-12, the expert pass (proposed
+#                                                   2026-10-10, waiting for the go, D1 and D7)
 #
 # So `M11` is AMBIGUOUS on its own: it names "The remaining Layer 3 losses" in one block and
 # "L2 Reasoning" in another, and `M11.C1.L-logic.V0.U01` exists twice with different meanings.
@@ -6551,3 +6553,363 @@ yc2_w27_s11:
                       artifact: "Domain Expertise/Founder Office Expertise/capabilities/06-meetings"
                       verify: .venv/bin/python -m pytest tests/corpus/test_the_meetings_playbook.py -q
                       depends_on: [M30.C1.L-contract.V0.U01, M30.C2.L-contract.V0.U01]
+
+yc2_w27_s12:
+  status: proposed_awaiting_confirmation
+  source: >
+    speedrun008/YC-II W27/STEP-12 §1-§7, re-checked claim by claim against speedrun008 @ c50f0f7e
+    (STEP-12 §8) by two read-only workers and by hand, and measured on the golden set from its
+    cassettes: 409 recorded answers, 65 of them the decider's (24 cases); of the 10 must-detect cases
+    with no card, 7 never reach the decider at all. Nothing in reason/ reads a file; replay is
+    model-free only for the formula (03 F139); a truncated answer is read by nobody (F140); R-6 runs
+    ahead of the change gate (F141).
+  vision: >
+    Every piece of work that changed gets ONE judgment from a strong model, the way a 30-year chief of
+    staff would give it: on the whole file — the brief, its history, its numbers with their n, its
+    playbook, what was judged before — written as facts that cite their evidence, a frame and its
+    rivals, scenarios, an appraisal with reasons, a next move with a draft. Code checks it, stores it,
+    and decides the lane; an unchanged file costs nothing, and a decision replays without the model.
+  order_note: >
+    M32 first and whole, in shadow: it changes no card. M33 only after D1 (the appraisal decides what
+    matters) and D7 (the model and its cap); its live pass only after D50. The golden answers are
+    authored per case (D49) — the board then measures the plumbing, the live pass the model.
+  milestones:
+    - id: M32
+      name: The expert reviews every changed file, in shadow (STEP-12)
+      ships: >
+        On the golden set every file whose fingerprint moved is reviewed once and the review validates
+        against its dossier; an unchanged sweep makes 0 expert calls; a stored review is read back with
+        0 model calls; no card changes.
+      categories:
+        - id: M32.C1
+          name: The review's contract, its table, its site
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M32.C1.L-contract.V0.U01
+                      what: >
+                        The review's contract — Plane R Groups 1-4 as frozen dataclasses: facts each
+                        citing an evidence id of the dossier, inferences with what they rest on,
+                        hypotheses with what they need, unknowns with why they matter, a frame and its
+                        rivals, expected vs actual against the playbook's stage, scenarios (do nothing,
+                        act, best, worst, signals to watch), an appraisal with reasons, a mode (act,
+                        find out, wait, nothing, blocked), a next move, an alternative, wait-or-stop,
+                        done-when, a draft. `validate(review, dossier)` refuses an uncited fact and a
+                        number the dossier does not hold.
+                      artifact: "genios_engine/contracts/expert_review.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_the_review_contract.py"
+                      depends_on: []
+                    - id: M32.C1.L-contract.V0.U02
+                      what: >
+                        `expert_reviews` — one row per (org, file, fingerprint): the model, the prompt
+                        version, the dossier digest, the review, its status (valid, refused, truncated,
+                        over_budget, failed) with its reason, its cost. Wiped by `/reset`; rolled back
+                        cleanly.
+                      artifact: "migrations/0197_expert_reviews.sql"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_expert_reviews_table.py tests/platform/test_the_code_can_always_be_rolled_back.py"
+                      depends_on: []
+                    - id: M32.C1.L-contract.V0.U03
+                      what: >
+                        The site and its switch: `SITE_EXPERT` in the closed site list (tier T2, its
+                        output ceiling) and the L4 feature `expert_review` — not default-on, its wave,
+                        precondition and effect — with the pinned places that name every site and
+                        feature moved deliberately.
+                      artifact: "genios_engine/reason/bundle/sites.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_the_expert_site_and_feature.py tests/test_l4_pilot_activation.py tests/reason/test_llm_policy.py"
+                      depends_on: []
+                    - id: M32.C1.L-contract.V0.U04
+                      what: >
+                        Tiers for a strong model: a T3 (Opus-class) tier beside T2; the model in the
+                        R-site cache key (a cached Sonnet answer never answers an Opus ask); a per-site
+                        per-consult ceiling in `reason/bundle/budget.py`, so the expert's call is not
+                        refused by the $0.05 narrative ceiling (`06` D7).
+                      artifact: "genios_engine/reason/llm_sites.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_tiers_and_the_cache_key.py"
+                      depends_on: []
+        - id: M32.C2
+          name: The dossier and the file's fingerprint
+          layers:
+            - layer: data
+              levels:
+                - level: 0
+                  units:
+                    - id: M32.C2.L-data.V0.U01
+                      what: >
+                        `file_for(conn, org_id, file_id, *, now)` — one file read alone, not every file
+                        filtered (`api/workstream_routes` uses it).
+                      artifact: "genios_engine/context/workstreams.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/context/test_one_file_is_read_alone.py"
+                      depends_on: []
+                    - id: M32.C2.L-data.V0.U02
+                      what: >
+                        What was judged before, for one file: its latest reviews, the cards on its
+                        people with their events and verdicts, and how its situations ended — bounded,
+                        the cut counted.
+                      artifact: "genios_engine/context/file_judgments.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/context/test_a_file_knows_what_was_judged_before.py"
+                      depends_on: [M32.C1.L-contract.V0.U02]
+                    - id: M32.C2.L-data.V0.U03
+                      what: >
+                        A playbook's version: `KindPlaybook.version`, the content hash of its spine,
+                        moves and claims — what a review was made against, and a fingerprint input.
+                      artifact: "genios_engine/packs/compiler/playbook_reader.py"
+                      verify: ".venv/bin/python -m pytest -q tests/packs/test_a_playbook_has_a_version.py"
+                      depends_on: []
+            - layer: logic
+              levels:
+                - level: 1
+                  units:
+                    - id: M32.C2.L-logic.V1.U04
+                      what: >
+                        The dossier for one file: the brief, the file, its timeline (the newest touches
+                        whole with their event ids, the rest counted), its numbers with their n, its
+                        playbook (accepted or labelled), what was judged before, its coverage receipt —
+                        in one fixed order, with a catalogue of every evidence id and number in it, a
+                        digest, and the cut reported, never silent.
+                      artifact: "genios_engine/reason/expert/dossier.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_the_dossier.py"
+                      depends_on: [M32.C2.L-data.V0.U01, M32.C2.L-data.V0.U02, M32.C2.L-data.V0.U03, M32.C1.L-contract.V0.U01]
+                - level: 2
+                  units:
+                    - id: M32.C2.L-logic.V2.U05
+                      what: >
+                        The file's fingerprint: its events, asks, whose move, quiet days and next
+                        meeting as rungs (a 72-hour rung added), the brief's version, the playbook's
+                        version, the verdicts on its people, and who decides (model and prompt version,
+                        `06` D48). Fifteen minutes later: the same; a new mail, a 6 -> 7 day wait, a
+                        meeting 4 -> 3 days away: different.
+                      artifact: "genios_engine/reason/expert/fingerprint.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_the_file_fingerprint.py"
+                      depends_on: [M32.C2.L-logic.V1.U04]
+        - id: M32.C3
+          name: One review per changed file
+          layers:
+            - layer: data
+              levels:
+                - level: 1
+                  units:
+                    - id: M32.C3.L-data.V1.U03
+                      what: >
+                        The store: write a review once per (file, fingerprint); read the latest valid
+                        one; read a stored review for replay — never the model.
+                      artifact: "genios_engine/reason/expert/store.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_the_review_store.py"
+                      depends_on: [M32.C1.L-contract.V0.U02, M32.C1.L-contract.V0.U01]
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M32.C3.L-logic.V0.U01
+                      what: >
+                        The thinking checklist as the prompt's sections, in order — what is true; frame
+                        and rivals; expected vs actual; patterns and counter-patterns with their
+                        provenance; unknowns; scenarios; appraisal; mode; next move, alternative,
+                        wait-or-stop, done-when; the draft — over the dossier, with the output schema.
+                        `PROMPT_VERSION = "expert-review.v1"`. No number appears that the dossier does
+                        not hold.
+                      artifact: "genios_engine/reason/expert/prompt.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_the_checklist_prompt.py"
+                      depends_on: [M32.C1.L-contract.V0.U01, M32.C2.L-logic.V1.U04]
+                - level: 1
+                  units:
+                    - id: M32.C3.L-logic.V1.U02
+                      what: >
+                        One review: through `run_site` and the gate (budget, cache on the fingerprint),
+                        parsed and validated against the dossier; one repair for syntax only; a
+                        substantive refusal, a truncated answer or an over-budget call is recorded with
+                        its reason and never retried until the file moves.
+                      artifact: "genios_engine/reason/expert/review.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_one_review.py"
+                      depends_on: [M32.C3.L-logic.V0.U01, M32.C1.L-contract.V0.U03, M32.C1.L-contract.V0.U04, M32.C4.L-logic.V0.U01]
+            - layer: interface
+              levels:
+                - level: 3
+                  units:
+                    - id: M32.C3.L-interface.V3.U05
+                      what: >
+                        `GET /v1/workstreams/{file_id}` carries the file's latest review and its status
+                        — read only.
+                      artifact: "genios_engine/api/workstream_routes.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/api/test_a_file_shows_its_review.py"
+                      depends_on: [M32.C3.L-data.V1.U03, M32.C2.L-data.V0.U01]
+                    - id: M32.C3.L-interface.V3.U06
+                      what: >
+                        A health check: reviews per day, refusals by reason, spend against the cap — and
+                        it fails while a refusal has no reason.
+                      artifact: "scripts/pipeline_health.py"
+                      verify: ".venv/bin/python -m pytest -q tests/scripts/test_pipeline_health_expert.py"
+                      depends_on: [M32.C3.L-data.V1.U03]
+            - layer: integration
+              levels:
+                - level: 2
+                  units:
+                    - id: M32.C3.L-integration.V2.U04
+                      what: >
+                        The pass, in the sweep, for a tenant with `expert_review` on: the files whose
+                        fingerprint moved, nearest deadline or meeting first, bounded per pass and
+                        capped per day (`06` D7) — each reviewed once and stored. Shadow: nothing reads
+                        a review for a decision yet.
+                      artifact: "genios_engine/reason/expert/sweep.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_the_expert_pass.py"
+                      depends_on: [M32.C3.L-logic.V1.U02, M32.C3.L-data.V1.U03, M32.C2.L-logic.V2.U05]
+        - id: M32.C4
+          name: The gate's two fixes (F140, F141)
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M32.C4.L-logic.V0.U01
+                      what: >
+                        `03` F140: an answer cut at the token ceiling (`LLMResult.truncated`) is a
+                        refusal, `truncated`, recorded — never parsed into a decision; and a gate may be
+                        told to repair syntax only.
+                      artifact: "genios_engine/reason/bundle/gate.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/test_a_truncated_answer_is_refused.py"
+                      depends_on: []
+                    - id: M32.C4.L-logic.V0.U02
+                      what: >
+                        `03` F141 and `06` D51: R-6 retired — no consult and no
+                        `situation_interpretations` row per situation per pass; its feature kept off and
+                        named retired.
+                      artifact: "genios_engine/reason/domain_shadow.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/test_r6_is_retired.py"
+                      depends_on: []
+        - id: M32.C5
+          name: The golden set
+          layers:
+            - layer: data
+              levels:
+                - level: 0
+                  units:
+                    - id: M32.C5.L-data.V0.U01
+                      what: >
+                        The ideal reader answers the expert site from a case's authored `expert` block
+                        for that file — what a faithful strong model answers to the dossier as written —
+                        and refuses to guess when a case authors none.
+                      artifact: "tests/replays/ideal_reader.py"
+                      verify: ".venv/bin/python -m pytest -q tests/replays/test_ideal_reader.py"
+                      depends_on: [M32.C3.L-logic.V0.U01]
+                - level: 1
+                  units:
+                    - id: M32.C5.L-data.V1.U02
+                      what: >
+                        The expert answers for the 14 cases the board fails today and every must-abstain
+                        case, from each case's own text, each marked `claude` (`06` D49).
+                      artifact: "tests/replays/specs/founder"
+                      verify: ".venv/bin/python -m pytest -q tests/replays/test_every_changed_file_has_an_expert_answer.py -k board_cases"
+                      depends_on: [M32.C5.L-data.V0.U01]
+                    - id: M32.C5.L-data.V1.U03
+                      what: >
+                        The expert answers for the remaining cases — every file that changes in any case
+                        has one, or a declared reason.
+                      artifact: "tests/replays/specs/founder"
+                      verify: ".venv/bin/python -m pytest -q tests/replays/test_every_changed_file_has_an_expert_answer.py"
+                      depends_on: [M32.C5.L-data.V1.U02]
+            - layer: integration
+              levels:
+                - level: 2
+                  units:
+                    - id: M32.C5.L-integration.V2.U04
+                      what: >
+                        Every cassette whose prompts move re-recorded from the ideal reader, each read
+                        by what it answered; the board restated (`03` §F.1).
+                      artifact: "tests/replays/specs/founder/cassettes"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays && GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py --assert-recorded \"speedrun008/YC-II W27/03-FINDINGS.md\""
+                      depends_on: [M32.C3.L-integration.V2.U04, M32.C5.L-data.V1.U03]
+                - level: 3
+                  units:
+                    - id: M32.C5.L-integration.V3.U05
+                      what: >
+                        M32's acceptance on the golden set: every file whose fingerprint moved is
+                        reviewed once and the review validates; an unchanged sweep makes 0 expert calls;
+                        a stored review is read back with 0 model calls; the board unchanged (shadow).
+                      artifact: "tests/replays/test_every_changed_file_is_reviewed_once.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays/test_every_changed_file_is_reviewed_once.py"
+                      depends_on: [M32.C5.L-integration.V2.U04, M32.C3.L-interface.V3.U05]
+    - id: M33
+      name: The review decides each covered file (STEP-12, after D1)
+      ships: >
+        A covered file gets one audited decision from its review and its situations stand down; the
+        decider is asked 0 times on a covered file; F01, F02, F09, F11, F15, F16, F17 and F47 each get
+        one decision about their file; a replay asks no model; the live pass recorded (D50).
+      categories:
+        - id: M33.C1
+          name: The review decides
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M33.C1.L-logic.V0.U01
+                      what: >
+                        A covered file's review becomes ONE audited Layer 4 request: the mode -> the
+                        outcome, the next move -> the play, confidence from the evidence that validated
+                        (never the model's number), the lane by `reason/output_lane.route`; under `06`
+                        D1 the appraisal sets importance and urgency.
+                      artifact: "genios_engine/reason/expert/decide.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_the_review_decides.py"
+                      depends_on: [M32.C5.L-integration.V3.U05]
+                - level: 1
+                  units:
+                    - id: M33.C1.L-logic.V1.U03
+                      what: >
+                        `03` F139 for covered files: an expert-backed decision is replayed from its
+                        stored review — zero model calls in a fresh process.
+                      artifact: "genios_engine/reason/replay.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_replay_asks_no_model.py"
+                      depends_on: [M33.C1.L-logic.V0.U01]
+            - layer: integration
+              levels:
+                - level: 1
+                  units:
+                    - id: M33.C1.L-integration.V1.U02
+                      what: >
+                        A covered file decides once: its situations stand down (no decider, no R-1), and
+                        the file's decision is emitted as its signal, its anchor the subject. A
+                        situation the review does not explain keeps its own decision.
+                      artifact: "genios_engine/reason/domain_shadow.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_a_covered_file_decides_once.py"
+                      depends_on: [M33.C1.L-logic.V0.U01]
+        - id: M33.C2
+          name: The golden set, deciding
+          layers:
+            - layer: integration
+              levels:
+                - level: 0
+                  units:
+                    - id: M33.C2.L-integration.V0.U01
+                      what: >
+                        Re-recorded with the review deciding; the board restated case by case in `03`
+                        §F.1.
+                      artifact: "tests/replays/specs/founder/cassettes"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays && GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py --assert-recorded \"speedrun008/YC-II W27/03-FINDINGS.md\""
+                      depends_on: [M33.C1.L-integration.V1.U02, M33.C1.L-logic.V1.U03]
+                - level: 1
+                  units:
+                    - id: M33.C2.L-integration.V1.U02
+                      what: >
+                        M33's acceptance: the decider is asked 0 times on a covered file; F01, F02, F09,
+                        F11, F15, F16, F17 and F47 each get one decision about their file; every
+                        must-abstain case holds; a replay asks no model.
+                      artifact: "tests/replays/test_the_expert_decides_each_covered_file.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays/test_the_expert_decides_each_covered_file.py"
+                      depends_on: [M33.C2.L-integration.V0.U01]
+        - id: M33.C3
+          name: The live pass
+          layers:
+            - layer: integration
+              levels:
+                - level: 0
+                  units:
+                    - id: M33.C3.L-integration.V0.U01
+                      what: >
+                        The live pass (`06` D50): the golden set's expert calls on the D7 model,
+                        recorded beside the ideal reader's, the board compared — the only measure of the
+                        model itself. Runs only on Rohit's yes; its dry run counts the calls and the
+                        cost.
+                      artifact: "scripts/golden_eval.py"
+                      verify: ".venv/bin/python scripts/golden_eval.py --dry-run --site expert"
+                      depends_on: [M33.C2.L-integration.V1.U02]
