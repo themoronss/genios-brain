@@ -515,8 +515,10 @@ def seed_company_brief(conn: Any, org: str) -> None:
     data = json.loads(COMPANY_BRIEF.read_text(encoding="utf-8"))
     at = datetime.fromisoformat(data["accepted_at"].replace("Z", "+00:00"))
     for n, line in enumerate(data["lines"]):
+        # STEP-11 · an in-motion line's kind of work too (`06` D31): without it every golden file
+        # would read no playbook (M30.C4.L-integration.V2.U05).
         store.add(conn, org_id=org, section=line["section"], words=line["text"],
-                  address=line.get("address"), domain=line.get("domain"),
+                  address=line.get("address"), domain=line.get("domain"), kind=line.get("kind"),
                   decided_by="the golden founder", at=at + timedelta(seconds=n))
 
 

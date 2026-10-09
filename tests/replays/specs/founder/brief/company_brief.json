@@ -1,5 +1,5 @@
 {
-  "about": "STEP-07 §4's first draft — what the drafter proposes from the design partner's memory patterns alone — written in the golden world's names, and accepted by the golden founder as it stands. Every case runs with it: `tests/replays/engine_runner._fresh_tenant` seeds each line as the founder's own (`platform/company_brief_store.add`), in this order, before the case's first sweep. Real names never appear: StartupSetu is the recognition portal, DigiVault the document locker, Introly the intro agent, Lakshya the program the founder is in, Gulf Launchpad the accelerator applied to.",
+  "about": "STEP-07 §4's first draft — what the drafter proposes from the design partner's memory patterns alone — written in the golden world's names, and accepted by the golden founder as it stands. Every case runs with it: `tests/replays/engine_runner._fresh_tenant` seeds each line as the founder's own (`platform/company_brief_store.add`), in this order, before the case's first sweep. Real names never appear: StartupSetu is the recognition portal, DigiVault the document locker, Introly the intro agent, Lakshya the program the founder is in, Gulf Launchpad the accelerator applied to. STEP-11 (06 D31): the work in motion is one line per counterparty — each fund, programme, portal, hire and partner — with its kind of work, the shape the drafter's v2 proposes; the kind word leads each line because the kind itself is never shown to a model.",
   "accepted_at": "2026-08-01T00:00:00Z",
   "lines": [
     {
@@ -28,23 +28,123 @@
     },
     {
       "section": "in_motion",
-      "text": "Fundraising — five funds written to in one wave; Banyan Seed Fund, Northfield Ventures, Harbor Point Partners, Tusker Capital, Fjord Venture Partners and Lumen Ventures engaged"
+      "text": "Raise · Banyan Seed Fund — written to in the seed wave",
+      "kind": "investor",
+      "domain": "banyanseed.test"
     },
     {
       "section": "in_motion",
-      "text": "Programs — Lakshya Accelerator (the active cohort), Gulf Launchpad, the DIT Incubation Cell, TechBridge Foundation, Awadh Enterprise Centre, University Startup Cell, State Startup Mission"
+      "text": "Raise · Northfield Ventures — written to in the seed wave",
+      "kind": "investor",
+      "domain": "northfieldvc.test"
     },
     {
       "section": "in_motion",
-      "text": "Compliance — the StartupSetu recognition application, with its documents in DigiVault"
+      "text": "Raise · Harbor Point Partners — written to in the seed wave",
+      "kind": "investor",
+      "domain": "harborpoint.test"
     },
     {
       "section": "in_motion",
-      "text": "Hiring — Kavitha Nair, offered the Founding AI Engineer role"
+      "text": "Raise · Tusker Capital — written to in the seed wave",
+      "kind": "investor",
+      "domain": "tuskercap.test"
     },
     {
       "section": "in_motion",
-      "text": "Partners — Orbitly, Cleanwave, Novacore, Memloop"
+      "text": "Raise · Fjord Venture Partners — written to in the seed wave",
+      "kind": "investor",
+      "domain": "fjordvp.test"
+    },
+    {
+      "section": "in_motion",
+      "text": "Raise · Lumen Ventures — engaged",
+      "kind": "investor",
+      "domain": "lumenvc.test"
+    },
+    {
+      "section": "in_motion",
+      "text": "Program · Lakshya Accelerator — the active cohort",
+      "kind": "program",
+      "domain": "lakshya.test"
+    },
+    {
+      "section": "in_motion",
+      "text": "Program · Gulf Launchpad — applied",
+      "kind": "program",
+      "domain": "gulflaunchpad.test"
+    },
+    {
+      "section": "in_motion",
+      "text": "Program · The DIT Incubation Cell — applied",
+      "kind": "program",
+      "domain": "ditincubator.test"
+    },
+    {
+      "section": "in_motion",
+      "text": "Program · TechBridge Foundation — applied",
+      "kind": "program",
+      "domain": "techbridge.test"
+    },
+    {
+      "section": "in_motion",
+      "text": "Program · Awadh Enterprise Centre — applied",
+      "kind": "program",
+      "domain": "awadhec.test"
+    },
+    {
+      "section": "in_motion",
+      "text": "Program · University Startup Cell — applied",
+      "kind": "program",
+      "domain": "unistartupcell.test"
+    },
+    {
+      "section": "in_motion",
+      "text": "Program · State Startup Mission — applied",
+      "kind": "program",
+      "domain": "statestartup.gov.test"
+    },
+    {
+      "section": "in_motion",
+      "text": "Compliance · StartupSetu — the recognition application",
+      "kind": "compliance",
+      "domain": "startupsetu.gov.test"
+    },
+    {
+      "section": "in_motion",
+      "text": "Compliance · DigiVault — the recognition application's documents",
+      "kind": "compliance",
+      "domain": "digivault.gov.test"
+    },
+    {
+      "section": "in_motion",
+      "text": "Hiring · Kavitha Nair — offered the Founding AI Engineer role",
+      "kind": "hiring",
+      "address": "kavitha.nair@inboxmail.test"
+    },
+    {
+      "section": "in_motion",
+      "text": "Partner · Orbitly — design partner talks",
+      "kind": "partner",
+      "domain": "orbitly.test"
+    },
+    {
+      "section": "in_motion",
+      "text": "Partner · Cleanwave — design partner talks",
+      "kind": "partner",
+      "domain": "cleanwave.test"
+    },
+    {
+      "section": "in_motion",
+      "text": "Partner · Novacore — design partner talks",
+      "kind": "partner",
+      "domain": "novacore.test"
+    },
+    {
+      "section": "in_motion",
+      "text": "Partner · Memloop — design partner talks",
+      "kind": "partner",
+      "domain": "memloop.test"
     },
     {
       "section": "connectors",

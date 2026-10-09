@@ -6385,10 +6385,13 @@ yc2_w27_s11:
                     - id: M30.C4.L-integration.V2.U05
                       what: >
                         `tests/replays/specs/founder/brief/company_brief.json` — the golden founder's in-motion lines name
-                        their kind and counterparty: the funds, the accelerators, the portal, the hire, the partners.
+                        their kind and counterparty: the funds, the accelerators, the portal, the hire, the partners —
+                        one line per counterparty, and `engine_runner.seed_company_brief` carries the kind into the store.
+                        Its verify corrected on 9 Oct, building: the case-contract test reads no brief, so it passed with
+                        no kind anywhere.
                       artifact: tests/replays/specs/founder/brief/company_brief.json
-                      verify: .venv/bin/python -m pytest tests/replays/test_founder_case_contract.py -q
-                      depends_on: [M30.C4.L-contract.V0.U02]
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/replays/test_the_golden_brief_names_its_work.py -q
+                      depends_on: [M30.C4.L-contract.V0.U02, M30.C4.L-data.V1.U06]
         - id: M30.C5
           name: The playbook a file reads
           layers:
