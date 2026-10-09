@@ -1,6 +1,6 @@
 # 08 · For Harsh — deploying the batch, and what to run after
 
-**Written for:** Harsh. **As of:** 2026-10-09 (STEP-11 added). **From:** the `yc2_w27` build (Claude), pushed by
+**Written for:** Harsh. **As of:** 2026-10-09 (STEP-11 added; your three commits of 9 Oct merged — §0). **From:** the `yc2_w27` build (Claude), pushed by
 Rohit. Everything here can be checked against the repository; every number below names the file
 or the command it came from.
 
@@ -14,6 +14,16 @@ or the command it came from.
    ⛔ **CORRECTED 2026-10-07, for the NEXT push:** measured after `git fetch origin`, `origin/harsh/mvp`
    (still `2c42722d`) is **189 commits behind** `speedrun008` (`7b2a91f2`) and 0 ahead — still a
    fast-forward.
+   ⛔⛔ **2026-10-09 — your three commits of 9 Oct are merged into `speedrun008`** (`c50f0f7e`):
+   `f4a71022`, `b5c6b064`, `649208f2` made `harsh/mvp` 3 ahead and 315 behind, so the deploy was no
+   longer a fast-forward. The merge is textually clean; four tests then failed and were resolved in it
+   (`03` F137) — read them before you build on these files: `_is_paste` now bounds a paste's length on
+   BOTH sides (a headline that adds who acted, "Priya will share the signed PO by Thursday", is no
+   paste; an identical one still is), `tests/test_screen_memory_batch_pg.py` follows your drop of the
+   manager's own promise, `scripts/screen_flow_report.py` is declared to the who-is-us guard, and the
+   statement pin is 3,033. Open for you: that script reads `GENIOS_DATABASE_URL` from `.env` itself,
+   not through `scripts/_db.py`. Once Rohit pushes the merge, `harsh/mvp` is an ancestor of
+   `speedrun008` again and §2's `--ff-only` works.
    ⛔ **CORRECTED 2026-10-06, for the NEXT push:** it carries STEP-02 (§1.4) and STEP-03 (§1.5), and
    with them **two migrations — `0191_reasoning_fingerprints` and `0192_attention_and_archive`** —
    the first since `0190`. `main.py` applies them at boot when the database is writable; check the

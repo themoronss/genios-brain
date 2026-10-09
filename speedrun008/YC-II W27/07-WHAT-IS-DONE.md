@@ -26,6 +26,17 @@ is one branch, `speedrun008`, and the units are block `yc2_w27` of `tree.yaml`.
 | migrations | none in the push — the newest is still `0190`, which production already has |
 | CI on the push | run `37407196202` — see §7 |
 
+## 2b · The second push — 2026-10-09
+
+| | |
+|---|---|
+| pushed by | Rohit |
+| `origin/speedrun008` | `5aff2ce5` — checked against the remote itself (`git ls-remote`), the same as the local branch |
+| in this push | 240 commits since `77aba10e`: `STEP-02` to `STEP-10`, `STEP-11`'s first half (M30), the CI install fix (`2e7aea5b`), migrations `0191`–`0196` |
+| CI on the push | run `37924361307` — `golden-pg` ✅, `test` ⛔ — see §7 |
+| against production's branch | the same day Harsh pushed three commits to `origin/harsh/mvp` (`f4a71022`, `b5c6b064`, `649208f2`), so it was 3 ahead and 315 behind — **no longer a fast-forward**. Merged into `speedrun008` in `c50f0f7e` (textually clean; four tests resolved, `03` F137): once that merge is pushed, `harsh/mvp` is again an ancestor of `speedrun008` and the deploy a fast-forward |
+| QA of the merge | the units 35 / 0 / 0; the whole suite on Postgres **19,280 passed, 2 failed** — both a test that reads the wall clock (`03` F142, F143), exposed because the Mac slept through the run (2 h 37 min of wall clock for 42 min of process time, on battery), both unchanged by the merge. The golden lane, the board and the hermetic job were stopped: a run that spans a sleep is not a measurement. ⏳ The tier runs again on a machine that stays awake |
+
 ## 3 · The nineteen steps
 
 | Phase | Steps | Status |
@@ -350,6 +361,13 @@ did (`yc2_w27/M19.C5.L-integration.V5.U05`). Run the way the new job runs — a 
 then `.[dev]`, `pytest -q -m "not golden"` — it gives **16,020 passed, 0 failed** (the 1,093
 skipped are the database tests, which `golden-pg` and the database suite run). ⏳ It reaches GitHub
 with Rohit's next push.
+
+**The second push, 9 Oct** — run `37924361307`, on `5aff2ce5`:
+
+| Job | Result |
+|---|---|
+| `golden-pg` | ✅ **passed** — the golden set 11:33–12:05 UTC, the board 12:05–12:09 |
+| `test` | ⛔ **red** — its install passed (the `2e7aea5b` fix holds); "Unit tests" exited 1 after 46 minutes. The job's log needs a signed-in account (the API answers 403), so which tests failed is not known here. The SAME job reproduced on this machine — a clean clone of `5aff2ce5`, `python:3.12` in Docker, `requirements.txt` then `.[dev]`, `pytest -q -m "not golden"` — gives **17,035 passed, 0 failed** (arm64), and the same on x86_64 under emulation (17,035 passed, 0 failed, 34:45). The failure is the GitHub runner's own. From the next push each failing test is named as an annotation anyone can read (`03` F138) |
 
 ## 8 · Harsh's list — after the deploy, in this order
 
