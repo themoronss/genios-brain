@@ -6208,18 +6208,51 @@ yc2_w27_s11:
                       artifact: "Domain Expertise/_schema/artifact.schema.json"
                       verify: .venv/bin/python -m pytest tests/corpus/test_a_playbook_declares_its_stages.py -q
                       depends_on: []
+                    - id: M30.C2.L-contract.V0.U05
+                      what: >
+                        `Domain Expertise/_schema/artifact.schema.json` — a playbook may declare `stop`: the quiet days
+                        after which its kind of work is dormant, as a prior with its `source`, and what a professional
+                        does then (`06` D33: each playbook's stop rule, replacing the 45 days every file had). Added on
+                        9 Oct, building: C2.U01's contract had no field to say it in.
+                      artifact: "Domain Expertise/_schema/artifact.schema.json"
+                      verify: .venv/bin/python -m pytest tests/corpus/test_a_playbook_says_when_to_stop.py -q
+                      depends_on: [M30.C2.L-contract.V0.U01]
             - layer: logic
               levels:
+                - level: 0
+                  units:
+                    - id: M30.C2.L-logic.V0.U04
+                      what: >
+                        `packs/compiler/capability_resolver.py` — the route plan carries the leading situation's authored
+                        `do_nothing_consequence` and its id, as it carries the render and the priority (the `RoutePlan`
+                        field in `models.py`; `expertise_builder.py` writes it into the package ONLY when authored, so
+                        no package that exists today re-mints). Added on 9 Oct, building: the manifest reads only the
+                        package, and the package carried no situation sentence.
+                      artifact: genios_engine/packs/compiler/capability_resolver.py
+                      verify: .venv/bin/python -m pytest tests/packs/compiler/test_the_plan_carries_what_doing_nothing_costs.py -q
+                      depends_on: [M30.C2.L-contract.V0.U01]
                 - level: 1
                   units:
                     - id: M30.C2.L-logic.V1.U02
                       what: >
-                        `reason/adapters/expertise.py` — the compiled lane reads the playbook's three runtime fields and
-                        the situation's `typical_duration_days` and `signals_of_progress`; today's template sentence,
-                        7 days and NULL remain only as fallbacks that say they are.
+                        `reason/adapters/expertise.py` — the compiled lane reads the playbook's `success_signal` and
+                        `outcome_window_days` onto each play, its name as the play's label, and the leading situation's
+                        `do_nothing_consequence`; today's template sentence, 7 days and NULL remain only as fallbacks
+                        the manifest names (`metadata.runtime_sources`). Narrowed on 9 Oct, building: the situation's
+                        `typical_duration_days` and signals stay unread until STEP-12's dossier — carried now, they
+                        would re-mint every package for fields nothing in M30 reads.
                       artifact: genios_engine/reason/adapters/expertise.py
                       verify: .venv/bin/python -m pytest tests/reason/test_the_compiled_lane_reads_what_the_playbook_says.py -q
-                      depends_on: [M30.C2.L-contract.V0.U01]
+                      depends_on: [M30.C2.L-contract.V0.U01, M30.C2.L-logic.V0.U04]
+                    - id: M30.C2.L-logic.V1.U06
+                      what: >
+                        `reason/adapters/expertise.py` — each compiled play carries its playbook's review state, read off
+                        the package's own `unreviewed_artifact_ids` (the builder's count, never re-derived), so a card
+                        built on it can say *"playbook not yet reviewed"* (D3, C3.U02). Added on 9 Oct, building: the
+                        review state of a playbook reached the package and no further.
+                      artifact: genios_engine/reason/adapters/expertise.py
+                      verify: .venv/bin/python -m pytest tests/reason/test_a_play_knows_whether_its_playbook_was_reviewed.py -q
+                      depends_on: [M30.C2.L-logic.V1.U02]
                     - id: M30.C2.L-logic.V1.U03
                       what: >
                         New `packs/compiler/stage_priors.py` — a playbook's stages as `Measured(source=playbook_prior)`
@@ -6242,6 +6275,20 @@ yc2_w27_s11:
                       artifact: genios_engine/reason/llm_decision_maker.py
                       verify: .venv/bin/python -m pytest tests/reason/test_the_decider_reads_the_corpus_claims.py -q
                       depends_on: []
+            - layer: data
+              levels:
+                - level: 1
+                  units:
+                    - id: M30.C3.L-data.V1.U03
+                      what: >
+                        `deliver/pipeline.py` — the signal select carries the selected play's authored success signal and
+                        its review state, and the capability's domain, off the audited snapshot the authority join already
+                        holds (`authority_play`, `rcap.manifest`), as it carries the render. Added on 9 Oct, building: a
+                        card's success line read only the tenant pack's plays, which are `{}` for every corpus pack, so no
+                        compiled card could ever name one.
+                      artifact: genios_engine/deliver/pipeline.py
+                      verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest tests/deliver/test_a_card_names_what_success_looks_like.py -q
+                      depends_on: [M30.C2.L-logic.V1.U02]
             - layer: interface
               levels:
                 - level: 2
@@ -6252,7 +6299,15 @@ yc2_w27_s11:
                         says *"playbook not yet reviewed"* (D3), for the activated pilot org only.
                       artifact: genios_engine/deliver/card_builder.py
                       verify: .venv/bin/python -m pytest tests/deliver/test_an_unreviewed_playbook_says_so.py -q
-                      depends_on: [M30.C2.L-logic.V1.U02]
+                      depends_on: [M30.C2.L-logic.V1.U06, M30.C3.L-data.V1.U03]
+                    - id: M30.C3.L-interface.V2.U04
+                      what: >
+                        `deliver/card_builder.py` — a card's success line reads the play's authored signal carried by
+                        C3.U03 first, the tenant pack's second, and is NULL only when neither says one. Added on 9 Oct,
+                        with C3.U03.
+                      artifact: genios_engine/deliver/card_builder.py
+                      verify: .venv/bin/python -m pytest tests/deliver/test_the_card_reads_the_plays_success.py -q
+                      depends_on: [M30.C3.L-data.V1.U03, M30.C3.L-interface.V2.U02]
         - id: M30.C4
           name: The file's kind of work (D31)
           layers:
@@ -6437,7 +6492,7 @@ yc2_w27_s11:
                         carries the template consequence, the 7-day default or a NULL success signal.
                       artifact: tests/replays/test_every_founder_file_reads_its_playbook.py
                       verify: GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest tests/replays/test_every_founder_file_reads_its_playbook.py -q
-                      depends_on: [M30.C7.L-integration.V4.U03, M30.C5.L-interface.V3.U02, M30.C3.L-interface.V2.U02, M30.C2.L-logic.V1.U02]
+                      depends_on: [M30.C7.L-integration.V4.U03, M30.C5.L-interface.V3.U02, M30.C3.L-interface.V2.U02, M30.C3.L-interface.V2.U04, M30.C2.L-logic.V1.U02]
     - id: M31
       name: The other four founder playbooks (STEP-11, while STEP-12 is built)
       ships: >
