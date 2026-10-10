@@ -67,6 +67,7 @@ from genios_engine.context.situations import (
     _TERMINAL_DEAL_STAGES,
     decide_lifecycle,
     normalize_stage,
+    quiet_days_for_situation,
 )
 from genios_engine.platform import company_brief as brief_mod
 from genios_engine.platform.logging import get_logger
@@ -271,11 +272,16 @@ def detect_resolutions(store, org_id: str, *, llm: Any | None = None,
             # Nothing to say, and nothing of ours to undo. `refresh_situations` owns this row's
             # ordinary lifecycle and this pass does not touch it.
             continue
+        # The file's own quiet window (`06` D33), as `refresh_situations` reads it — or this pass
+        # and that one would disagree about a fund's dormancy between 45 and 90 days, and flap it.
+        with store.engine.connect() as conn:
+            quiet = quiet_days_for_situation(conn, org_id, situation.anchor_node_id,
+                                             domain_days=None)
         lifecycle = decide_lifecycle(
             current_status=situation.status, resolved_by=situation.resolved_by,
             last_seen_at=situation.last_seen_at, resolved_at=situation.resolved_at,
             terminal_by_fact=_terminal_by_fact(situation.deal_stage), now=now,
-            stated_resolution=state.state)
+            stated_resolution=state.state, dormant_after_days=quiet)
         if (lifecycle.status == situation.status
                 and lifecycle.resolved_by == situation.resolved_by):
             continue

@@ -7110,8 +7110,11 @@ yc2_w27_align:
                     - id: M34.C2.L-logic.V1.U02
                       what: >
                         `06` D33 in code, not only in the playbooks: a file's quiet window follows its
-                        kind of work — investor, program and compliance 90 days, the rest 45 — so a fund
-                        that answers after 60 days is the same file.
+                        kind of work — the stop rule of the kind's playbook, investor and program 90 days
+                        today; a kind whose playbook has none (compliance, intro, hiring until M31) keeps
+                        45 — so a fund that answers after 60 days is the same file. Corrected on 10 Oct,
+                        building: D33's own record puts compliance with M31, so the window is read from
+                        the playbooks, not written here; the correlation and both lifecycle passes read it.
                       artifact: "genios_engine/context/correlation.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/context/test_a_file_stays_open_by_its_kind.py"
                       depends_on: [M34.C2.L-contract.V0.U01]

@@ -978,6 +978,16 @@ _SET_STATUS = ("update context_situations set status = :st "
                "where org_id = :o and situation_id = :sid and status = :was")
 
 
+def quiet_days_for_situation(conn, org_id: str, anchor_node_id: str | None, *,
+                             domain_days: int | None) -> int | None:
+    """How long a situation may go quiet before it is dormant: its FILE's clock first (`06` D33,
+    `context/correlation.file_quiet_days` — a fund's 90 days), then its domain's, then (None) the
+    engine's `DORMANT_AFTER_DAYS`. The correlation it belongs to closes on the same clock, so the
+    file and its situation never disagree about whether the work went quiet."""
+    from genios_engine.context.correlation import file_quiet_days
+    return file_quiet_days(conn, org_id, anchor_node_id or "") or domain_days
+
+
 def age_uncorrelated_situations(store, org_id: str, *,
                                 eval_time: datetime | None = None) -> int:
     """Apply the CLOCK transitions to situations no correlation backs. Returns rows moved.
@@ -1157,7 +1167,8 @@ def refresh_situations(store, org_id: str, *, eval_time: datetime | None = None)
                 resolved_at=held.resolved_at if held else None,
                 terminal_by_fact=_is_terminal(spec, node_facts),
                 now=now,
-                dormant_after_days=spec.dormant_after_days,
+                dormant_after_days=quiet_days_for_situation(
+                    conn, org_id, corr.anchor_node_id, domain_days=spec.dormant_after_days),
                 archive_after_days=spec.archive_after_days)
 
             situation_id = held.situation_id if held else new_id("sit")

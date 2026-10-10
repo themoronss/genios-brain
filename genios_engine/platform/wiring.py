@@ -14,6 +14,12 @@ from genios_engine.platform.logging import get_logger
 
 _log = get_logger("genios.platform.wiring")
 
+# `06` D33 · a file's quiet window by its kind of work (a fund's 90 days), handed down to context,
+# which may not read the brief's kinds or the playbooks itself (`platform/kind_windows`).
+from genios_engine.platform import kind_windows as _kind_windows  # noqa: E402
+
+_kind_windows.install()
+
 # The switch between REAL and dev is here, driven entirely by .env — no code change.
 #   DATABASE_URL set   → Postgres/Supabase repo   (else in-memory)
 #   COMPOSIO keys set  → real Composio Gmail       (else fake connector)

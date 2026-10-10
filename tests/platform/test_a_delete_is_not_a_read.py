@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_033, (
+    assert r["statements"] == 3_034, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -381,6 +381,8 @@ def test_the_statement_count_did_NOT_move():
     # read-only screen report — ten SELECTs, each a literal in its QUERIES list; `capture/gate/gate`
     # 0 → 0 and `reason/moments/screen_insight` 4 → 4 for the two other commits. The loop hop expanded
     # nothing.
+    # ⛔ MOVED 3,033 → 3,034 by yc2_w27_align/M34.C2.L-logic.V1.U02 (`06` D33 in code): one SELECT,
+    # `platform/kind_windows._NODE` — the anchor node a file's quiet window is read for. A literal.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():
