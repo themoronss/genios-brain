@@ -6955,7 +6955,7 @@ yc2_w27_align:
                         measured, and on the board in the unit that adds it.
                       artifact: "tests/replays/specs/founder"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays/test_founder_cases.py tests/test_golden_labels_sheet.py && GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py --assert-recorded \"speedrun008/YC-II W27/03-FINDINGS.md\""
-                      depends_on: [M34.C2.L-integration.V2.U15]
+                      depends_on: [M34.C2.L-logic.V1.U14]
                     - id: M34.C1.L-data.V0.U02
                       what: >
                         `09` G1, the three brief-only shapes (F53-F55, rows 53-55): a relationship gone
@@ -6966,7 +6966,7 @@ yc2_w27_align:
                         measured, and on the board in the unit that adds it.
                       artifact: "tests/replays/specs/founder"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays/test_founder_cases.py tests/test_golden_labels_sheet.py && GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py --assert-recorded \"speedrun008/YC-II W27/03-FINDINGS.md\""
-                      depends_on: [M34.C2.L-integration.V2.U15]
+                      depends_on: [M34.C2.L-logic.V1.U14]
                     - id: M34.C1.L-data.V0.U03
                       what: >
                         `09` G5 and G6 and STEP-04's C5 as cases (F56-F58, rows 56-58): a vendor's
@@ -6980,7 +6980,7 @@ yc2_w27_align:
                         measured, and on the board in the unit that adds it.
                       artifact: "tests/replays/specs/founder"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays/test_founder_cases.py tests/test_golden_labels_sheet.py && GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py --assert-recorded \"speedrun008/YC-II W27/03-FINDINGS.md\""
-                      depends_on: [M34.C2.L-integration.V2.U15]
+                      depends_on: [M34.C2.L-logic.V1.U14]
                     - id: M34.C1.L-data.V0.U04
                       what: >
                         STEP-01's promise that every case says what must never appear: the 25 cases with
@@ -7038,7 +7038,10 @@ yc2_w27_align:
                       what: >
                         STEP-02's production measures: read-only probes for a subject decided twice on
                         one fingerprint (a flip) and for a card expired while its decision was a DEFER;
-                        STEP-02's check text matches the narrowed health check.
+                        STEP-02's check text matches the narrowed health check. Amended 10 Oct (`03`
+                        F148): two more read-only counts — the stored dates and the promises' due dates
+                        resolved against a read more than a day after the mail — the size of Harsh's
+                        repair at the deploy.
                       artifact: "speedrun008/YC-II W27/baseline/production_state.sql"
                       verify: ".venv/bin/python -m pytest -q tests/test_production_probes_are_read_only.py"
                       depends_on: []
@@ -7122,6 +7125,17 @@ yc2_w27_align:
                       depends_on: []
                 - level: 1
                   units:
+                    - id: M34.C2.L-interface.V1.U16
+                      what: >
+                        `03` F148's half already stored: a script re-frames the dates a late read stored —
+                        every `dates_mentioned` and every promise's `due` in `l1_extraction_results.output`
+                        re-resolved by ALG-09 against its event's `occurred_at`, where the stored frame is
+                        more than a day after it. Dry by default (counts by month, never a body);
+                        `--apply` rewrites only those rows and names each. STEP-09's re-filing (`08` §3.8)
+                        then carries them into the graph.
+                      artifact: "scripts/reframe_stored_dates.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/scripts/test_reframe_stored_dates.py"
+                      depends_on: [M34.C2.L-logic.V0.U13]
                     - id: M34.C2.L-interface.V1.U04
                       what: >
                         A health check: how far memory reaches — the oldest Gmail mail in memory against
@@ -7160,11 +7174,15 @@ yc2_w27_align:
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays/test_the_deleted_mail_comes_back.py"
                       depends_on: [M34.C2.L-interface.V0.U03]
                     - id: M34.C2.L-integration.V2.U15
+                      retired: >
+                        RETIRED IN BUILD, 2026-10-10 — nothing to re-record. Measured with U14 in place:
+                        all 47 golden cases replay from their cassettes with no miss and the same
+                        verdicts (no prompt of the set carries a relative date that moved), so the board
+                        stands. C1's new cases are the first recorded on the dates a message carries,
+                        and their own golden runs are this check.
                       what: >
-                        The golden set after F148: every cassette the moved dates re-key, re-recorded
-                        from the ideal reader (no spend), each diff read by what was answered; the board
-                        restated in `03` §F.1, every moved case explained. Before C1's new cases, so they
-                        are recorded on the dates a message carries.
+                        (retired) The golden set after F148: every cassette the moved dates re-key,
+                        re-recorded from the ideal reader; the board restated.
                       artifact: "tests/replays/specs/founder/cassettes"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays tests/test_golden_labels_sheet.py && GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py --assert-recorded \"speedrun008/YC-II W27/03-FINDINGS.md\""
                       depends_on: [M34.C2.L-logic.V1.U14]

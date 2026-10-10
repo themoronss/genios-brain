@@ -827,7 +827,12 @@ def run_semantic_lane(event: SourceEvent, prepared: PreparedContent | None,
         profile_id=choice.profile_id, tier=decision.tier, prepared=prepared, envelope=envelope,
         eval_time=lane.eval_time, timezone=lane.timezone, locale=lane.locale,
         page_map=page_map, section=section,
-        company_brief=getattr(lane, "company_brief", "") or "")
+        company_brief=getattr(lane, "company_brief", "") or "",
+        # `03` F148 · the lane's clock is the SYNC's; a message's "by Friday" is its writer's. A
+        # first connect or a re-sync reads mail months late, and resolved against the read every
+        # relative date in it moved by that gap. A time without a zone is no frame at all: such a
+        # message resolves against the lane's clock, as every message did before.
+        written_at=event.occurred_at if event.occurred_at.tzinfo is not None else None)
     outcome = extract(request, llm=lane.llm, store=lane.cache, open_lane=lane.open_lane)
     _record_extraction_cost(lane, event, outcome)
     outcome, counters = _grade_spans(outcome, prepared.clean_text, locale=lane.locale,
