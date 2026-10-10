@@ -29,8 +29,8 @@
 #                                                   2026-10-08); M28 is held for STEP-09's cards (D2)
 #   yc2_w27_s11                       M30, M31    ← YC-II W27 STEP-11, founder playbooks (M30 built
 #                                                   2026-10-09; M31 after the review); past every other block again
-#   yc2_w27_s12                       M32, M33    ← YC-II W27 STEP-12, the expert pass (proposed
-#                                                   2026-10-10, waiting for the go, D1 and D7)
+#   yc2_w27_s12                       M32, M33    ← STEP-12, the expert pass (proposed 2026-10-10)
+#   yc2_w27_align                     M34         ← before STEP-12, all aligned (proposed 2026-10-10)
 #
 # So `M11` is AMBIGUOUS on its own: it names "The remaining Layer 3 losses" in one block and
 # "L2 Reasoning" in another, and `M11.C1.L-logic.V0.U01` exists twice with different meanings.
@@ -6621,10 +6621,9 @@ yc2_w27_s12:
                       depends_on: []
                     - id: M32.C1.L-contract.V0.U04
                       what: >
-                        Tiers for a strong model: a T3 (Opus-class) tier beside T2; the model in the
-                        R-site cache key (a cached Sonnet answer never answers an Opus ask); a per-site
-                        per-consult ceiling in `reason/bundle/budget.py`, so the expert's call is not
-                        refused by the $0.05 narrative ceiling (`06` D7).
+                        `06` D7 (answered 10 Oct: Sonnet-class only, $2/day): the model in the R-site cache key (a cached
+                        answer from one model never answers another), and the expert site's own per-consult ceiling in
+                        `reason/bundle/budget.py`, so its call is not refused by the $0.05 narrative ceiling. No Opus tier.
                       artifact: "genios_engine/reason/llm_sites.py"
                       verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_tiers_and_the_cache_key.py"
                       depends_on: []
@@ -6913,3 +6912,286 @@ yc2_w27_s12:
                       artifact: "scripts/golden_eval.py"
                       verify: ".venv/bin/python scripts/golden_eval.py --dry-run --site expert"
                       depends_on: [M33.C2.L-integration.V1.U02]
+
+yc2_w27_align:
+  status: proposed_awaiting_confirmation
+  source: >
+    speedrun008/YC-II W27/10-BEFORE-STEP-12.md: three read-only audits of STEP-00..STEP-11 at db6328cd
+    against each step's promises and Rohit's five documents (09), their key claims re-checked by hand.
+    Rohit's condition for STEP-12's go (10 Oct): every step before it complete and aligned.
+  vision: >
+    Every promise STEP-00 to STEP-11 made is built and measured, or carries a recorded decision; the
+    golden set holds the shapes Rohit's benchmark found; the plan folder says only true things — so
+    STEP-12 starts on ground that is what it says it is.
+  order_note: >
+    C1 and C2 first (C1.U06 after the vendor kind); C3's guard is written first and red until the trail
+    is mended; C4 last — STEP-12's tree amended, then the whole QA tier, awake. STEP-12's M32 starts
+    after M34 is green.
+  milestones:
+    - id: M34
+      name: Before the expert — the steps before STEP-12, complete and aligned
+      ships: >
+        The golden set has 58 cases, every case forbids something, the board is restated; every promise
+        in 10-BEFORE-STEP-12.md §2 is built or decided; the plan-folder guard passes; QA green on every
+        tier.
+      categories:
+        - id: M34.C1
+          name: "The exam: the cases STEP-12 is measured on"
+          layers:
+            - layer: data
+              levels:
+                - level: 0
+                  units:
+                    - id: M34.C1.L-data.V0.U01
+                      what: >
+                        `09` G1, the benchmark's must-detect shapes as five synthetic cases (F48-F52)
+                        with label rows 48-52: the founder answered only the introducer; the founder's
+                        own promise in a sent mail, not kept; a specific question answered with a
+                        template; two slots offered and never confirmed; a months-old not-yet whose
+                        condition is now met (its verbatim quote and date carried; an invented traction
+                        number forbidden).
+                      artifact: "tests/replays/specs/founder"
+                      verify: ".venv/bin/python -m pytest -q tests/replays/test_founder_cases.py tests/test_golden_labels_sheet.py"
+                      depends_on: []
+                    - id: M34.C1.L-data.V0.U02
+                      what: >
+                        `09` G1, the three brief-only shapes (F53-F55, rows 53-55): a relationship gone
+                        cold after real exchanges; an event with no follow-up in 7 days; weeks of no
+                        outbound while people wait — each `brief only`, not expressible until STEP-15.
+                      artifact: "tests/replays/specs/founder"
+                      verify: ".venv/bin/python -m pytest -q tests/replays/test_founder_cases.py tests/test_golden_labels_sheet.py"
+                      depends_on: []
+                    - id: M34.C1.L-data.V0.U03
+                      what: >
+                        `09` G5 and G6 and STEP-04's C5 as cases (F56-F58, rows 56-58): a vendor's
+                        renewal with a 32% price rise; an ask raised, answered with the evidence, never
+                        raised again; a founder whose company domain is also the platform's.
+                      artifact: "tests/replays/specs/founder"
+                      verify: ".venv/bin/python -m pytest -q tests/replays/test_founder_cases.py tests/test_golden_labels_sheet.py"
+                      depends_on: []
+                    - id: M34.C1.L-data.V0.U04
+                      what: >
+                        STEP-01's promise that every case says what must never appear: the 25 cases with
+                        an empty `forbidden` get theirs (the founder or the connector as a card's
+                        subject, an invented number, a recap of an unconfirmed meeting — whatever the
+                        case's own shape makes wrong), guarded so a new case cannot ship without one.
+                      artifact: "tests/replays/specs/founder"
+                      verify: ".venv/bin/python -m pytest -q tests/replays/test_every_case_forbids_something.py tests/replays/test_founder_cases.py"
+                      depends_on: []
+            - layer: logic
+              levels:
+                - level: 1
+                  units:
+                    - id: M34.C1.L-logic.V1.U05
+                      what: >
+                        STEP-01 follow-up c: a forbidden phrase is matched as a claim — whole words,
+                        either case — never as a substring of another word.
+                      artifact: "tests/replays/marking.py"
+                      verify: ".venv/bin/python -m pytest -q tests/replays/test_marking_matches_the_claim.py"
+                      depends_on: [M34.C1.L-data.V0.U04]
+            - layer: integration
+              levels:
+                - level: 2
+                  units:
+                    - id: M34.C1.L-integration.V2.U06
+                      what: >
+                        F48-F58 recorded from the ideal reader and every cassette the new forbidden
+                        lists or the marker move re-read; the board restated in `03` §F.1 — the honest
+                        before-score STEP-12 is measured against.
+                      artifact: "tests/replays/specs/founder/cassettes"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays tests/test_golden_labels_sheet.py && GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py --assert-recorded \"speedrun008/YC-II W27/03-FINDINGS.md\""
+                      depends_on: [M34.C1.L-data.V0.U01, M34.C1.L-data.V0.U02, M34.C1.L-data.V0.U03, M34.C1.L-logic.V1.U05, M34.C2.L-contract.V0.U01]
+        - id: M34.C2
+          name: "Promised by a built step, and not built"
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M34.C2.L-contract.V0.U01
+                      what: >
+                        `09` G5 / `06` D18: `vendor` is a kind of work — a renewal, a price change, a
+                        failed payment, a trial ending; the store, the drafter, the route and the script
+                        accept it, and `playbook_for("vendor")` reads Admin's renewal-management
+                        capability.
+                      artifact: "genios_engine/contracts/company_brief.py"
+                      verify: ".venv/bin/python -m pytest -q tests/contracts/test_company_brief_contract.py tests/packs/test_a_file_reads_its_playbook.py"
+                      depends_on: []
+            - layer: data
+              levels:
+                - level: 0
+                  units:
+                    - id: M34.C2.L-data.V0.U09
+                      what: >
+                        STEP-02's production measures: read-only probes for a subject decided twice on
+                        one fingerprint (a flip) and for a card expired while its decision was a DEFER;
+                        STEP-02's check text matches the narrowed health check.
+                      artifact: "speedrun008/YC-II W27/baseline/production_state.sql"
+                      verify: ".venv/bin/python -m pytest -q tests/test_production_probes_are_read_only.py"
+                      depends_on: []
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M34.C2.L-logic.V0.U06
+                      what: >
+                        STEP-05's "a later signal upgrades it": measured first — can a signal published
+                        after a below-floor run is settled reach memory's reading? — then built (the
+                        settled run re-read once) or struck from STEP-05 with the measurement.
+                      artifact: "genios_engine/context/runner.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/context/test_a_later_signal_upgrades_a_below_floor_mail.py"
+                      depends_on: []
+                    - id: M34.C2.L-logic.V0.U07
+                      what: >
+                        `03` F113: a file's history is its own — the prior outcome and the card verdict
+                        keyed by (anchor, domain), and the prior generation's, not the latest overall —
+                        before the expert's dossier reads it.
+                      artifact: "genios_engine/context/correlation_history.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/context/test_history_is_the_files_own.py"
+                      depends_on: []
+                    - id: M34.C2.L-logic.V0.U10
+                      what: >
+                        A programme or a portal is never decided as an investor: when the founder's
+                        investor capability is admitted, an investor situation whose file's kind is
+                        program or compliance is refused `misfiled_kind`, counted — proven with the
+                        capability admitted in a test corpus.
+                      artifact: "genios_engine/reason/domain_shadow.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/test_a_programme_is_not_decided_as_an_investor.py"
+                      depends_on: [M34.C2.L-contract.V0.U01]
+                - level: 1
+                  units:
+                    - id: M34.C2.L-logic.V1.U02
+                      what: >
+                        `06` D33 in code, not only in the playbooks: a file's quiet window follows its
+                        kind of work — investor, program and compliance 90 days, the rest 45 — so a fund
+                        that answers after 60 days is the same file.
+                      artifact: "genios_engine/context/correlation.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/context/test_a_file_stays_open_by_its_kind.py"
+                      depends_on: [M34.C2.L-contract.V0.U01]
+            - layer: interface
+              levels:
+                - level: 0
+                  units:
+                    - id: M34.C2.L-interface.V0.U03
+                      what: >
+                        STEP-08's reach: `--apply` refuses, not warns, when the Gmail connection lists
+                        fewer days than `--days`, and the dry run says what 365 days would reach.
+                      artifact: "scripts/resync_deleted_mail.py"
+                      verify: ".venv/bin/python -m pytest -q tests/scripts/test_resync_deleted_mail.py"
+                      depends_on: []
+                - level: 1
+                  units:
+                    - id: M34.C2.L-interface.V1.U04
+                      what: >
+                        A health check: how far memory reaches — the oldest Gmail mail in memory against
+                        the window Rohit named, and the mail per month — failing while memory stops
+                        short of the window.
+                      artifact: "scripts/pipeline_health.py"
+                      verify: ".venv/bin/python -m pytest -q tests/scripts/test_pipeline_health_reach.py"
+                      depends_on: [M34.C2.L-interface.V0.U03]
+                    - id: M34.C2.L-interface.V1.U08
+                      what: >
+                        STEP-09's two numbers: the health check reads the brief's in-motion
+                        counterparties too (every investor named has a file — `03` F125's measure), and
+                        the golden set asserts one file per subject (F25).
+                      artifact: "scripts/pipeline_health.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/scripts/test_pipeline_health_in_motion.py tests/replays/test_every_piece_of_work_has_a_file.py"
+                      depends_on: [M34.C2.L-contract.V0.U01]
+            - layer: integration
+              levels:
+                - level: 1
+                  units:
+                    - id: M34.C2.L-integration.V1.U11
+                      what: >
+                        STEP-01 follow-up a: a golden case through the first-connect door
+                        (`_process_and_reason_unlocked`), the path a new tenant's first sync takes.
+                      artifact: "tests/replays/test_the_first_connect_door.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays/test_the_first_connect_door.py"
+                      depends_on: []
+                - level: 2
+                  units:
+                    - id: M34.C2.L-integration.V2.U05
+                      what: >
+                        The re-sync's acceptance reaches past half a year: a deleted mail and a
+                        never-captured thread about 190 days old come back only with `--days 365` and a
+                        365-day window, and are missing at 180.
+                      artifact: "tests/replays/test_the_deleted_mail_comes_back.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays/test_the_deleted_mail_comes_back.py"
+                      depends_on: [M34.C2.L-interface.V0.U03]
+        - id: M34.C3
+          name: "The decisions and the trail"
+          layers:
+            - layer: contract
+              levels:
+                - level: 1
+                  units:
+                    - id: M34.C3.L-contract.V1.U02
+                      what: >
+                        The decisions' trail: D15-D19 from `09` with their defaults; D5's body at 365;
+                        D33's note said true (built in C2.U02); D52 your reply time by who wrote first,
+                        D53 screen touches in a file's timeline (under D22), D54 Atlas replay 02, D55
+                        the old nodes of us re-typed or covered — each with a recommendation; every
+                        orphaned deferral in `03` given an owner or a recorded retirement (skim, F02's
+                        filter, F11, F42, F57, F58, F64-F66, F104, nondeterminism, poison_quarantine).
+                      artifact: "speedrun008/YC-II W27/06-DECISIONS.md"
+                      verify: ".venv/bin/python -m pytest -q tests/test_the_plan_folder_is_consistent.py -k decision_or_owner"
+                      depends_on: [M34.C3.L-logic.V0.U01]
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M34.C3.L-logic.V0.U01
+                      what: >
+                        A guard on `speedrun008/YC-II W27/`: a step file's status word matches its name;
+                        every `06` decision number from D1 to the last exists once; every open finding
+                        in `03` names an owner that is a step, a decision or a person; every §6 Verify
+                        path in a step file exists. Written first; red until C3.U02-U03.
+                      artifact: "tests/test_the_plan_folder_is_consistent.py"
+                      verify: ".venv/bin/python -m pytest -q tests/test_the_plan_folder_is_consistent.py"
+                      depends_on: []
+            - layer: interface
+              levels:
+                - level: 2
+                  units:
+                    - id: M34.C3.L-interface.V2.U03
+                      what: >
+                        The drift corrected: every step file's status and push lines, STEP-02/03/06
+                        renamed to their owners, the §6 verify paths, `00`'s targets and rows, `07`'s
+                        push and Harsh lines, `08`'s latest migration, boot-log list and D6's third
+                        address, the tree's stale statuses and M28's note, STEP-18 B5/B6, the stale code
+                        comment in `context/outreach_situations.py`, the re-sync runbook's TRUNCATED
+                        advice.
+                      artifact: "speedrun008/YC-II W27"
+                      verify: ".venv/bin/python -m pytest -q tests/test_the_plan_folder_is_consistent.py tests/test_tree_ids_are_addressable.py"
+                      depends_on: [M34.C3.L-contract.V1.U02]
+        - id: M34.C4
+          name: "STEP-12 amended, and the whole tier"
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M34.C4.L-contract.V0.U01
+                      what: >
+                        STEP-12 amended (§8.8) and its tree widened with what its check dropped or other
+                        steps deferred to it: the stage's dwell against its prior, the time-passes
+                        what-if (`06` D39), a situation's lifecycle fields (STEP-11 C2.U02), history in
+                        the dossier (after F113), the portal's notices (F99), in-motion counterparties
+                        as named senders (F125), the draft script's kinds (F127), the expert proposing a
+                        kind (F132), the per-file triggers (`05` §5).
+                      artifact: "speedrun008/YC-II W27/STEP-12-TO-BUILD-the-expert-pass.md"
+                      verify: ".venv/bin/python -m pytest -q tests/test_tree_ids_are_addressable.py && bash scripts/qa/check-tree.sh"
+                      depends_on: [M34.C3.L-interface.V2.U03]
+            - layer: integration
+              levels:
+                - level: 1
+                  units:
+                    - id: M34.C4.L-integration.V1.U02
+                      what: >
+                        The whole QA tier on a machine that stays awake, every tier green — the units,
+                        the whole suite, the golden lane with the new cases, the board as restated, the
+                        hermetic job — and the CI run of the push read, its annotations included (`03`
+                        F138).
+                      artifact: "speedrun008/YC-II W27/baseline/yc2w27-align-qa/qa_record.txt"
+                      verify: "bash \"speedrun008/YC-II W27/baseline/yc2w27-align-qa/run_align.sh\""
+                      depends_on: [M34.C1.L-integration.V2.U06, M34.C2.L-integration.V2.U05, M34.C2.L-integration.V1.U11, M34.C2.L-logic.V1.U02, M34.C2.L-logic.V0.U06, M34.C2.L-logic.V0.U07, M34.C2.L-interface.V1.U08, M34.C2.L-data.V0.U09, M34.C2.L-logic.V0.U10, M34.C2.L-interface.V1.U04, M34.C4.L-contract.V0.U01]

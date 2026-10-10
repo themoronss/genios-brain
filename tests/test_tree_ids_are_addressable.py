@@ -60,13 +60,13 @@ def test_the_tree_parses():
     assert yaml.safe_load(_TREE.read_text()) is not None
 
 
-def test_the_sixteen_programme_blocks_are_present():
+def test_the_seventeen_programme_blocks_are_present():
     assert set(_blocks()) == {"<root>", "persona_brain_and_layer_repair",
                              "l1_signal_quality_seam", "atlas_v2_alignment", "yc2_w27",
                              "yc2_w27_s02", "yc2_w27_s03", "yc2_w27_s04", "yc2_w27_s05",
                              "yc2_w27_s06", "yc2_w27_s07", "yc2_w27_s08",
                              "yc2_w27_s09", "yc2_w27_s10", "yc2_w27_s11",
-                             "yc2_w27_s12"}
+                             "yc2_w27_s12", "yc2_w27_align"}
 
 
 def test_the_ycw27_block_is_the_one_this_programme_builds():
@@ -140,8 +140,9 @@ def test_no_tenth_block_has_appeared_without_updating_this_guard():
     2026-10-07), M27. The fourteenth, `yc2_w27_s10` (STEP-10, the expert's numbers, 2026-10-07), M29 —
     M28 is held for STEP-09's cards (D2) and not drawn. The fifteenth, `yc2_w27_s11` (STEP-11, founder
     playbooks, proposed 2026-10-09), M30 and M31. The sixteenth, `yc2_w27_s12` (STEP-12, the
-    expert pass, proposed 2026-10-10), M32 and M33."""
-    assert len(_blocks()) == 16, (
+    expert pass, proposed 2026-10-10), M32 and M33. The seventeenth, `yc2_w27_align` (the steps
+    before STEP-12 complete and aligned, proposed 2026-10-10), M34."""
+    assert len(_blocks()) == 17, (
         "a programme block was added or removed — update the header note in tree.yaml and this test, "
         "deliberately")
 
@@ -149,7 +150,8 @@ def test_no_tenth_block_has_appeared_without_updating_this_guard():
 @pytest.mark.parametrize("block", ["yc2_w27", "yc2_w27_s02", "yc2_w27_s03", "yc2_w27_s04",
                                    "yc2_w27_s05", "yc2_w27_s06", "yc2_w27_s07",
                                    "yc2_w27_s08", "yc2_w27_s09", "yc2_w27_s10",
-                                   "yc2_w27_s11", "yc2_w27_s12"])
+                                   "yc2_w27_s11", "yc2_w27_s12",
+                                   "yc2_w27_align"])
 def test_the_newest_blocks_widen_no_collision(block):
     """⛔ The reason `yc2_w27` and `yc2_w27_s02` could be added: their milestone ids appear in no other
     block. If a later edit gives one an id another block already uses, this fails before the

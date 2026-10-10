@@ -199,6 +199,12 @@ board measured, and the live pass (D50).
 | D50 | A live golden pass on the D7 model before rollout? | yes — an estimate: ≈ 140 reviews, ≈ $6 at Sonnet-class list prices | no spend; the board measures the plumbing only |
 | D51 | Retire R-6? | yes — never ran, runs ahead of the gate, superseded | it keeps writing a row per situation per pass |
 
+**Answered on 10 Oct**, with the go: **D1 yes** · **D7 Sonnet-class only, $2/day per org** (no Opus tier:
+M32.C1.L-contract.V0.U04 keeps the model in the cache key and the expert's own per-consult ceiling, and
+drops T3; a busy day reviews the nearest deadlines first and carries the rest, said) · **D49 yes** ·
+**D50 yes** · **D51 yes**. D48 stays open. Before the build: the steps before it completed and aligned
+(the founder's condition for the go) — §8.8.
+
 ### 8.7 · Risks
 
 - **A golden answer written by the same hand as the code** — the board then shows that the plumbing
