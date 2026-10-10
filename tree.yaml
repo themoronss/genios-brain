@@ -7049,6 +7049,14 @@ yc2_w27_align:
                       artifact: "genios_engine/context/correlation_history.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/context/test_history_is_the_files_own.py"
                       depends_on: []
+                    - id: M34.C2.L-logic.V0.U12
+                      what: >
+                        `03` F145, CI's red job: the provider-refusal watch alerts on the first streak after a
+                        boot — "no alert sent yet" is None, not the time 0 that `time.monotonic()` reaches an hour
+                        after boot; the four tests pass on a clock that started a minute ago.
+                      artifact: "genios_engine/platform/provider_health.py"
+                      verify: ".venv/bin/python -m pytest -q tests/platform/test_the_provider_refusing_calls_is_noticed.py"
+                      depends_on: []
                     - id: M34.C2.L-logic.V0.U10
                       what: >
                         A programme or a portal is never decided as an investor: when the founder's
@@ -7194,4 +7202,4 @@ yc2_w27_align:
                         F138).
                       artifact: "speedrun008/YC-II W27/baseline/yc2w27-align-qa/qa_record.txt"
                       verify: "bash \"speedrun008/YC-II W27/baseline/yc2w27-align-qa/run_align.sh\""
-                      depends_on: [M34.C1.L-integration.V2.U06, M34.C2.L-integration.V2.U05, M34.C2.L-integration.V1.U11, M34.C2.L-logic.V1.U02, M34.C2.L-logic.V0.U06, M34.C2.L-logic.V0.U07, M34.C2.L-interface.V1.U08, M34.C2.L-data.V0.U09, M34.C2.L-logic.V0.U10, M34.C2.L-interface.V1.U04, M34.C4.L-contract.V0.U01]
+                      depends_on: [M34.C1.L-integration.V2.U06, M34.C2.L-integration.V2.U05, M34.C2.L-integration.V1.U11, M34.C2.L-logic.V1.U02, M34.C2.L-logic.V0.U06, M34.C2.L-logic.V0.U07, M34.C2.L-interface.V1.U08, M34.C2.L-data.V0.U09, M34.C2.L-logic.V0.U10, M34.C2.L-interface.V1.U04, M34.C4.L-contract.V0.U01, M34.C2.L-logic.V0.U12]
