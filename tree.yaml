@@ -6950,25 +6950,37 @@ yc2_w27_align:
                         template; two slots offered and never confirmed; a months-old not-yet whose
                         condition is now met (its verbatim quote and date carried; an invented traction
                         number forbidden).
+                        Its verify corrected on 10 Oct, building: without a database each case's run skips and the
+                        set-level test fails on the missing cassette, so a new case is recorded from the ideal reader,
+                        measured, and on the board in the unit that adds it.
                       artifact: "tests/replays/specs/founder"
-                      verify: ".venv/bin/python -m pytest -q tests/replays/test_founder_cases.py tests/test_golden_labels_sheet.py"
-                      depends_on: []
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays/test_founder_cases.py tests/test_golden_labels_sheet.py && GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py --assert-recorded \"speedrun008/YC-II W27/03-FINDINGS.md\""
+                      depends_on: [M34.C2.L-integration.V2.U15]
                     - id: M34.C1.L-data.V0.U02
                       what: >
                         `09` G1, the three brief-only shapes (F53-F55, rows 53-55): a relationship gone
                         cold after real exchanges; an event with no follow-up in 7 days; weeks of no
                         outbound while people wait — each `brief only`, not expressible until STEP-15.
+                        Its verify corrected on 10 Oct, building: without a database each case's run skips and the
+                        set-level test fails on the missing cassette, so a new case is recorded from the ideal reader,
+                        measured, and on the board in the unit that adds it.
                       artifact: "tests/replays/specs/founder"
-                      verify: ".venv/bin/python -m pytest -q tests/replays/test_founder_cases.py tests/test_golden_labels_sheet.py"
-                      depends_on: []
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays/test_founder_cases.py tests/test_golden_labels_sheet.py && GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py --assert-recorded \"speedrun008/YC-II W27/03-FINDINGS.md\""
+                      depends_on: [M34.C2.L-integration.V2.U15]
                     - id: M34.C1.L-data.V0.U03
                       what: >
                         `09` G5 and G6 and STEP-04's C5 as cases (F56-F58, rows 56-58): a vendor's
                         renewal with a 32% price rise; an ask raised, answered with the evidence, never
                         raised again; a founder whose company domain is also the platform's.
+                        With the case contract they need: a case may name the product's own sending domains
+                        (`platform_domains`), a card expectation may say from which sweep it is closed
+                        (`closed_from`), and a verified close is a declared gap (`outcome`, STEP-16).
+                        Its verify corrected on 10 Oct, building: without a database each case's run skips and the
+                        set-level test fails on the missing cassette, so a new case is recorded from the ideal reader,
+                        measured, and on the board in the unit that adds it.
                       artifact: "tests/replays/specs/founder"
-                      verify: ".venv/bin/python -m pytest -q tests/replays/test_founder_cases.py tests/test_golden_labels_sheet.py"
-                      depends_on: []
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays/test_founder_cases.py tests/test_golden_labels_sheet.py && GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py --assert-recorded \"speedrun008/YC-II W27/03-FINDINGS.md\""
+                      depends_on: [M34.C2.L-integration.V2.U15]
                     - id: M34.C1.L-data.V0.U04
                       what: >
                         STEP-01's promise that every case says what must never appear: the 25 cases with
@@ -6995,9 +7007,10 @@ yc2_w27_align:
                   units:
                     - id: M34.C1.L-integration.V2.U06
                       what: >
-                        F48-F58 recorded from the ideal reader and every cassette the new forbidden
-                        lists or the marker move re-read; the board restated in `03` §F.1 — the honest
-                        before-score STEP-12 is measured against.
+                        Every cassette the new forbidden lists or the marker move re-read, re-recorded from
+                        the ideal reader; the board restated in `03` §F.1, every moved case explained — the
+                        honest before-score STEP-12 is measured against. Corrected on 10 Oct, building: F48-F58
+                        are recorded by U01-U03, each with its board lines.
                       artifact: "tests/replays/specs/founder/cassettes"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays tests/test_golden_labels_sheet.py && GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py --assert-recorded \"speedrun008/YC-II W27/03-FINDINGS.md\""
                       depends_on: [M34.C1.L-data.V0.U01, M34.C1.L-data.V0.U02, M34.C1.L-data.V0.U03, M34.C1.L-logic.V1.U05, M34.C2.L-contract.V0.U01]
@@ -7057,6 +7070,17 @@ yc2_w27_align:
                       artifact: "genios_engine/platform/provider_health.py"
                       verify: ".venv/bin/python -m pytest -q tests/platform/test_the_provider_refusing_calls_is_noticed.py"
                       depends_on: []
+                    - id: M34.C2.L-logic.V0.U13
+                      what: >
+                        `03` F148: a relative date resolves against when its words were written. The
+                        extraction request carries the message's own time (`written_at`), and ALG-09
+                        resolves every `dates_mentioned` and every commitment's `due` against it — the
+                        request's clock only when the message has none. The prompt does not change.
+                        Added 10 Oct, building C1.U01: F48's 16 Jul "this week" was due at the sweep's
+                        instant, 30 Jul 12:00.
+                      artifact: "genios_engine/capture/semantic/extractor.py"
+                      verify: ".venv/bin/python -m pytest -q tests/capture/semantic/test_extractor.py"
+                      depends_on: []
                     - id: M34.C2.L-logic.V0.U10
                       what: >
                         A programme or a portal is never decided as an investor: when the founder's
@@ -7076,6 +7100,15 @@ yc2_w27_align:
                       artifact: "genios_engine/context/correlation.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/context/test_a_file_stays_open_by_its_kind.py"
                       depends_on: [M34.C2.L-contract.V0.U01]
+                    - id: M34.C2.L-logic.V1.U14
+                      what: >
+                        `03` F148: capture hands the extractor the message's own time — the semantic
+                        lane builds each request with `written_at` from the event's `occurred_at`, so a
+                        16 Jul "this week" read by a 30 Jul sync is due by 19 Jul, as a history re-sync
+                        (STEP-08) needs.
+                      artifact: "genios_engine/capture/pipeline.py"
+                      verify: ".venv/bin/python -m pytest -q tests/capture/test_a_backlog_mail_keeps_its_dates.py"
+                      depends_on: [M34.C2.L-logic.V0.U13]
             - layer: interface
               levels:
                 - level: 0
@@ -7126,6 +7159,15 @@ yc2_w27_align:
                       artifact: "tests/replays/test_the_deleted_mail_comes_back.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays/test_the_deleted_mail_comes_back.py"
                       depends_on: [M34.C2.L-interface.V0.U03]
+                    - id: M34.C2.L-integration.V2.U15
+                      what: >
+                        The golden set after F148: every cassette the moved dates re-key, re-recorded
+                        from the ideal reader (no spend), each diff read by what was answered; the board
+                        restated in `03` §F.1, every moved case explained. Before C1's new cases, so they
+                        are recorded on the dates a message carries.
+                      artifact: "tests/replays/specs/founder/cassettes"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays tests/test_golden_labels_sheet.py && GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py --assert-recorded \"speedrun008/YC-II W27/03-FINDINGS.md\""
+                      depends_on: [M34.C2.L-logic.V1.U14]
         - id: M34.C3
           name: "The decisions and the trail"
           layers:

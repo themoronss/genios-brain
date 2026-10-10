@@ -429,9 +429,11 @@ class ExtractionRequest:
     deterministic counts S1 produced. They are carried rather than computed here so that the one
     module allowed to call a model is not also the module that decides how much that call costs.
 
-    `eval_time` is the instant every relative date resolves against, and it is a parameter for
-    the reason the whole layer keeps saying: a March event's "next week" has to keep resolving to
-    March, and a clock read inside the pipeline makes a replay a different extraction.
+    `eval_time` is the request's clock, and it is a parameter for the reason the whole layer keeps
+    saying: a clock read inside the pipeline makes a replay a different extraction. A March
+    event's "next week" has to keep resolving to March, and that is `written_at`'s job (`03`
+    F148): the sweep's clock is when the mail was READ, which on a first connect or a re-sync of
+    history is months after it was written.
     """
 
     org_id: str
@@ -462,6 +464,12 @@ class ExtractionRequest:
     #: after the cached prefix — so an extraction made under one brief is never served as the
     #: answer to a prompt carrying another, and a tenant without a brief is asked as before.
     company_brief: str = ""
+    #: `03` F148 · WHEN THE WORDS WERE WRITTEN — the message's own `occurred_at`, the instant ALG-09
+    #: resolves its relative dates against: "by Friday" in a mail of Thursday 16 Jul is 17 Jul
+    #: however late a sync reads it. `None` (a message with no time of its own) resolves against
+    #: `eval_time`, as every date did before. Only the dates read it: the prompt, the cache key and
+    #: a park row's `created_at` keep the request's clock.
+    written_at: datetime | None = None
 
     def __post_init__(self) -> None:
         require_text(self.org_id, "org_id")
@@ -470,6 +478,8 @@ class ExtractionRequest:
         require_text(self.profile_id, "profile_id")
         require_text(self.timezone, "timezone")
         require_aware(self.eval_time, "eval_time")
+        if self.written_at is not None:
+            require_aware(self.written_at, "written_at")
         if self.tier not in TIERS:
             raise ValueError(f"tier must be one of {TIERS}, got {self.tier!r} — the tier is "
                              "L1.4.10's answer and the model never picks its own")
@@ -488,6 +498,12 @@ class ExtractionRequest:
     def content(self) -> str:
         """The text the model is shown, and the text every offset is measured against."""
         return self.prepared.clean_text
+
+    @property
+    def date_frame(self) -> datetime:
+        """The instant this message's relative dates resolve against: when it was written, else
+        the request's clock."""
+        return self.written_at if self.written_at is not None else self.eval_time
 
     @property
     def source_ref(self) -> str:
@@ -1219,13 +1235,14 @@ def _resolved_date(entry: Mapping[str, Any], evidence: Sequence[EvidenceSpan],
                    request: ExtractionRequest, tally: _Tally) -> ResolvedDate | None:
     """One date claim: the model's words, this machine's window.
 
-    ALG-09 (`capture/validate/dates.py`) resolves `as_written` against the caller's `eval_time`
-    in the org's timezone, and the model's own `earliest` / `latest` / `certainty` are read and
-    DISCARDED. Three reasons, in order of how much they cost when ignored: a window a model
-    computed is not reproducible across replays or machines; the doc's own worked example expects
-    "pretty soon" to come back RELATIVE with a derived window, which is row 9 of the cascade and
-    not a thing a model was asked; and `ResolvedDate` refuses an incoherent band-and-window pair
-    at construction, so a model that says RELATIVE with no window would cost the whole claim.
+    ALG-09 (`capture/validate/dates.py`) resolves `as_written` against the request's
+    `date_frame` — when the message was written (`03` F148) — in the org's timezone, and the
+    model's own `earliest` / `latest` / `certainty` are read and DISCARDED. Three reasons, in
+    order of how much they cost when ignored: a window a model computed is not reproducible across
+    replays or machines; the doc's own worked example expects "pretty soon" to come back RELATIVE
+    with a derived window, which is row 9 of the cascade and not a thing a model was asked; and
+    `ResolvedDate` refuses an incoherent band-and-window pair at construction, so a model that
+    says RELATIVE with no window would cost the whole claim.
 
     A phrase the cascade cannot resolve is still kept — UNRESOLVED with no window is an honest
     "somebody wrote a date-ish thing and we will not guess which day", and it is counted.
@@ -1234,7 +1251,7 @@ def _resolved_date(entry: Mapping[str, Any], evidence: Sequence[EvidenceSpan],
     if as_written is None or not evidence:
         return None
     try:
-        resolved = resolve_date(as_written, eval_time=request.eval_time, tz=request.timezone,
+        resolved = resolve_date(as_written, eval_time=request.date_frame, tz=request.timezone,
                                 evidence=list(evidence), locale=request.locale)
     except (TypeError, ValueError) as exc:
         tally.contract_rejects += 1

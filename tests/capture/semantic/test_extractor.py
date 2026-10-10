@@ -679,6 +679,49 @@ def test_the_same_phrase_resolves_against_the_request_clock_not_todays(
     assert parsed.result.dates_mentioned[0].earliest == march
 
 
+#: `03` F148 — a mail written on 16 Jul and read by a sync on 30 Jul (a first connect, a re-sync of
+#: history, a sync after downtime). Its "pretty soon" is the WRITER's: it resolves against 16 Jul.
+WRITTEN = datetime(2026, 7, 16, 7, 10, tzinfo=timezone.utc)
+READ = datetime(2026, 7, 30, 12, 0, tzinfo=timezone.utc)
+
+
+def test_a_date_resolves_against_when_its_words_were_written(request_for, worked_example_payload):
+    """`03` F148: the request's clock is the SYNC's. Resolved against it, a 16 Jul "this week" read
+    on 30 Jul was due at the sweep's own instant — eleven days after the week it named."""
+    parsed = _parse(worked_example_payload, request_for(eval_time=READ, written_at=WRITTEN))
+    date = parsed.result.dates_mentioned[0]
+    assert (date.resolved_against, date.earliest) == (WRITTEN, WRITTEN)
+
+
+def test_a_commitments_due_date_resolves_against_when_it_was_written(
+        request_for, worked_example_payload, worked_example_text):
+    payload = json.loads(json.dumps(worked_example_payload))
+    payload["commitments"][0]["due"] = {
+        "as_written": "pretty soon", "evidence": _cite(worked_example_text, "pretty soon")}
+    parsed = _parse(payload, request_for(eval_time=READ, written_at=WRITTEN))
+    due = parsed.result.commitments[0].due
+    assert due is not None and (due.resolved_against, due.earliest) == (WRITTEN, WRITTEN)
+
+
+def test_without_a_written_time_the_request_clock_stands(request_for, worked_example_payload):
+    """A message with no time of its own resolves as before — against the request's clock."""
+    parsed = _parse(worked_example_payload, request_for(eval_time=READ))
+    assert parsed.result.dates_mentioned[0].resolved_against == READ
+
+
+def test_a_written_time_without_a_timezone_is_refused(request_for):
+    with pytest.raises(ValueError, match="written_at"):
+        request_for(written_at=WRITTEN.replace(tzinfo=None))
+
+
+def test_the_prompt_does_not_depend_on_when_the_words_were_written(request_for):
+    """The time is ALG-09's, after the call: the model is asked the same thing, so the cache and
+    every recorded answer still match."""
+    asked = ex.assemble_call(request_for(eval_time=READ), nonce="deadbeefcafe0002").prompt
+    assert ex.assemble_call(request_for(eval_time=READ, written_at=WRITTEN),
+                            nonce="deadbeefcafe0002").prompt == asked
+
+
 def test_a_phrase_the_cascade_cannot_resolve_is_kept_unresolved_and_counted(
         request_for, worked_example_payload, worked_example_text):
     payload = json.loads(json.dumps(worked_example_payload))
