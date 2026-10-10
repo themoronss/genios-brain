@@ -643,6 +643,82 @@ def check_every_named_counterparty_has_a_file(conn, org: str) -> Check:
                + [f"{n.named}: {n.filed} of {n.mail} filed" for n in partly])
 
 
+def _names(line, address) -> bool:
+    """Whether one in-motion line names this address — itself, or its domain or a parent of it."""
+    address = str(address or "").strip().lower()
+    if not address:
+        return False
+    if line.address:
+        return address == line.address
+    domain = address.rsplit("@", 1)[-1]
+    return bool(line.domain) and (domain == line.domain or domain.endswith("." + line.domain))
+
+
+def check_every_piece_of_work_has_one_file(conn, org: str) -> Check:
+    """⛔ STEP-09's two numbers (`yc2_w27_align` M34.C2.L-interface.V1.U08), read on the brief's
+    IN-MOTION lines — the work the founder named, each with its kind (`06` D31). The check above reads
+    connectors, people and the watchlist only, and a counterparty named only in motion is no named
+    sender (`03` F125), so "every investor in the brief has a file" and "one file per subject" were
+    promised and never measured. Each line whose counterparty memory holds mail with — from them or to
+    them, an archive included (its names are memory, STEP-05), never a mailing, spam, an auto-reply or
+    a private mail — has exactly ONE file, by the rule a file takes its kind of work by
+    (`context/workstreams._work_kind`: an address line by one of the file's people, a domain line by
+    the file's anchor). None is F125's gap — its archived mail stays archived; two or more is one
+    subject split across files. A brief with no line in motion measures nothing, and says so.
+    """
+    from datetime import datetime, timezone
+
+    from genios_engine.context.memory_lanes import KEPT_OUTCOMES
+    from genios_engine.context.workstreams import NEVER_A_FILE, _anchor_domain, _work_lines, files_for
+    from genios_engine.platform.company_brief import brief_for
+
+    name = "every piece of work the brief names in motion has one file"
+    expected = ("each piece of work named in motion whose counterparty memory holds mail with has "
+                "exactly one file")
+    fix = ("no file: its mail was archived and an in-motion counterparty is no named sender (`03` F125) "
+           "— promote it (`scripts/promote_archived.py --rule <code> --sender-domain <domain> "
+           "--apply`) or name it on the watchlist or as a person; more than one: read the files "
+           "`GET /v1/workstreams` lists for it, and `tests/replays/test_every_piece_of_work_has_a_file.py`")
+    brief = brief_for(conn, org)
+    work = _work_lines(brief)
+    if not work:
+        return Check(name=name, ok=True, expected=expected, fix=fix,
+                     measured="not exercised — the brief names no piece of work in motion")
+    ws = files_for(conn, org, now=datetime.now(timezone.utc), company_brief=brief)
+    keys = {r.node_id: r.key for r in conn.execute(sql(
+        "select node_id, lower(canonical_key) as key from graph_nodes "
+        " where org_id = :o and node_id = any(:ids) and valid_to is null"),
+        {"o": org, "ids": sorted({p for f in ws.files for p in f.people})})}
+    files = {line.line_id: [f for f in ws.files
+                            if (line.address and line.address in {keys.get(p) for p in f.people})
+                            or (line.domain and _names(line, f"x@{_anchor_domain(f.counterparty_key)}"))]
+             for line in work}
+    mail = {line.line_id: 0 for line in work}
+    for r in conn.execute(sql(
+            "select lower(se.actor->>'email') as sender, se.recipients from source_events se "
+            " where se.org_id = :o and se.outcome = any(:kept) "
+            "   and se.visibility_scope is distinct from 'private' "
+            "   and not exists (select 1 from graph_observations ob where ob.org_id = se.org_id "
+            "                     and ob.created_by_event_id = se.event_id and ob.kind = any(:never))"),
+            {"o": org, "kept": list(KEPT_OUTCOMES), "never": list(NEVER_A_FILE)}):
+        for line in work:
+            if any(_names(line, a) for a in (r.sender, *(r.recipients or ()))):
+                mail[line.line_id] += 1
+    worked = [line for line in work if mail[line.line_id]]
+    unfiled = [line for line in worked if not files[line.line_id]]
+    split = [line for line in work if len(files[line.line_id]) > 1]
+    return Check(
+        name=name, ok=not unfiled and not split, expected=expected, fix=fix,
+        measured=(f"{len(worked)} piece(s) of work in motion have mail — no file: {len(unfiled)}, "
+                  f"split across files: {len(split)}"),
+        detail=[f"{line.kind} · {line.address or line.domain} — \"{line.text}\": "
+                f"{mail[line.line_id]} mail, no file" for line in unfiled]
+               + [f"{line.kind} · {line.address or line.domain} — \"{line.text}\": "
+                  f"{len(files[line.line_id])} files — "
+                  + ", ".join(sorted(f.counterparty_key for f in files[line.line_id]))
+                  for line in split])
+
+
 #: STEP-10 · the reply times the waiting pass writes as NORMALS — each `(days, n)` pair.
 _NORMALS = (("party.reply_cadence_days", "party.reply_cadence_n"),
             ("party.our_reply_days", "party.our_reply_n"),
@@ -734,6 +810,7 @@ CHECKS = (
     check_every_gmail_message_in_the_window_has_its_content,
     check_memory_reaches_the_window,
     check_every_named_counterparty_has_a_file,
+    check_every_piece_of_work_has_one_file,
     check_every_normal_says_its_n,
 )
 

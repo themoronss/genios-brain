@@ -15,7 +15,13 @@ about, each replayed from its cassette through the real chain and read through t
     `watched`, holding every notice it sent — none had a file before;
   * the must-abstain cases STEP-09 touches hold: the connector is never the person to reply to
     (F37), a program's newsletter is never a file or a card (F32);
-  * the health check reads the same answer: no named counterparty with mail and no file.
+  * the health check reads the same answer: no named counterparty with mail and no file;
+  * STEP-09's two numbers (`yc2_w27_align` M34.C2.L-interface.V1.U08): each piece of work the brief
+    names IN MOTION whose counterparty memory holds mail with has exactly one file — every investor,
+    programme, portal, hire and partner of the 20 cases that have one — and F25's offer, the founder's
+    and the candidate's mail, is that one file (STEP-09's "one file per subject": six cards once).
+    F21's and F22's programmes are `03` F125's gap, named: the gate archived their mail, and an
+    in-motion counterparty is no named sender, so nothing promoted it and neither has a file.
 """
 from __future__ import annotations
 
@@ -38,6 +44,12 @@ WATCHED = {"F01": {"startupsetu.gov.test": ("status",)},
            "F23": {"statestartup.gov.test": ("a", "b", "c", "d")}}
 ABSTAIN = ("F32", "F37")
 REPLAYED = (*INTRO_CASES, "F09", *WATCHED, "F32")
+#: The cases whose brief names a piece of work in motion that has mail — one file each.
+IN_MOTION = ("F01", "F02", "F10", "F11", "F12", "F13", "F14", "F17", "F19", "F20", "F23", "F24",
+             "F25", "F26", "F27", "F28", "F29", "F31", "F35", "F42")
+#: `03` F125's gap: the programme's mail, archived, and no file — the measure names it.
+IN_MOTION_UNFILED = {"F21": "awadhec.test", "F22": "unistartupcell.test"}
+EVERY = tuple(sorted({*REPLAYED, *IN_MOTION, *IN_MOTION_UNFILED}))
 
 
 def _scratch_db() -> None:
@@ -74,8 +86,9 @@ def _read(case_id: str) -> dict[str, Any]:
     try:
         with engine.connect() as c:
             ws = files_for(c, org, now=case.sweeps[-1])
-            health = importlib.import_module(
-                "scripts.pipeline_health").check_every_named_counterparty_has_a_file(c, org)
+            checks = importlib.import_module("scripts.pipeline_health")
+            health = checks.check_every_named_counterparty_has_a_file(c, org)
+            work = checks.check_every_piece_of_work_has_one_file(c, org)
             owed = c.execute(text(
                 "select count(*) from graph_facts f join graph_nodes n on n.org_id = f.org_id "
                 "   and n.node_id = f.subject_node_id and n.valid_to is null "
@@ -86,7 +99,7 @@ def _read(case_id: str) -> dict[str, Any]:
             if landed.event_id:
                 events.setdefault(landed.object_id, set()).add(landed.event_id)
         return {"files": {f.counterparty_key: f for f in ws.files}, "named": ws.named,
-                "unfiled": ws.unfiled, "health": health, "connector_owed": int(owed),
+                "unfiled": ws.unfiled, "health": health, "work": work, "connector_owed": int(owed),
                 "events": events, "mark": judge(case, run), "cards": run.cards,
                 "misses": llm.misses}
     finally:
@@ -96,7 +109,7 @@ def _read(case_id: str) -> dict[str, Any]:
 @pytest.fixture(scope="module")
 def read():
     _scratch_db()
-    return {case_id: _read(case_id) for case_id in REPLAYED}
+    return {case_id: _read(case_id) for case_id in EVERY}
 
 
 def _file_of(seen: dict, person: str):
@@ -194,6 +207,38 @@ def test_the_health_check_reads_the_same_answer_and_nothing_named_is_unfiled(rea
 
 @pytest.mark.pg
 @pytest.mark.golden
-@pytest.mark.parametrize("case_id", REPLAYED)
+@pytest.mark.parametrize("case_id", IN_MOTION)
+def test_every_piece_of_work_named_in_motion_has_one_file(read, case_id):
+    work = read[case_id]["work"]
+    assert work.ok, (case_id, work.measured, work.detail)
+    assert work.measured.endswith("have mail — no file: 0, split across files: 0"), work.measured
+    assert not work.measured.startswith("0 piece"), f"{case_id}: no piece of work had mail"
+
+
+@pytest.mark.pg
+@pytest.mark.golden
+def test_one_offer_is_one_file(read):
+    """F25: the founder's offer and the candidate's reply — one subject, one file, holding both."""
+    seen = read["F25"]
+    holding = [f for f in seen["files"].values()
+               if seen["events"]["offer"] & set(f.events) or seen["events"]["reply"] & set(f.events)]
+    assert len(holding) == 1, [f.counterparty_key for f in holding]
+    assert holding[0].work_kind == "hiring"
+    assert (seen["events"]["offer"] | seen["events"]["reply"]) <= set(holding[0].events)
+
+
+@pytest.mark.pg
+@pytest.mark.golden
+@pytest.mark.parametrize("case_id", sorted(IN_MOTION_UNFILED))
+def test_a_named_programmes_archived_mail_is_named_as_unfiled(read, case_id):
+    """`03` F125, measured: the founder named the programme; its mail was archived and has no file."""
+    work = read[case_id]["work"]
+    assert not work.ok and "no file: 1," in work.measured, work.measured
+    assert [d for d in work.detail if IN_MOTION_UNFILED[case_id] in d and "no file" in d], work.detail
+
+
+@pytest.mark.pg
+@pytest.mark.golden
+@pytest.mark.parametrize("case_id", EVERY)
 def test_no_model_call_the_cassette_does_not_hold(read, case_id):
     assert not read[case_id]["misses"], read[case_id]["misses"][:3]
