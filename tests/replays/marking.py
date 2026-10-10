@@ -143,8 +143,10 @@ def _forbidden(case: FounderCase, run: CaseRun):
         for name in case.forbidden_names:
             if says(card.text, name):
                 yield card.card_id, name
+        # STEP-01 follow-up c (`yc2_w27_align` M34.C1.L-logic.V1.U05): a phrase is the CLAIM it names —
+        # whole words, either case — as a name is. A substring match failed "ARR" on "arrived".
         for phrase in case.forbidden_phrases:
-            if phrase.lower() in card.text.lower():
+            if says(card.text, phrase):
                 yield card.card_id, phrase
 
 
