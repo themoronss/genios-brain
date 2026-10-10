@@ -28,10 +28,16 @@ The clock is pinned (`NOW`), so the window and the health check read the same on
 is Layer 1's: what the first replay put in MEMORY from a mail it read stays, so this is the capture
 door's acceptance — whether a deleted mail lands again, with what, and once — not memory's.
 
+And past half a year (`yc2_w27_align` M34.C2.L-integration.V2.U05, `06` D16, `09` G3), on F53: of four
+real exchanges in March, the first deleted by the old gate and the second never captured (the first
+connect listed 60 days), about 190 days before the clock — both come back only when the connection and
+`--days` reach a year, and stay missing at 180.
+
 F10's re-listing asks the junk filter about a page it never saw — the surviving attachments' copies are
 dropped before the page is primed — so its few extra answers sit in their own cassette,
-`cassettes/resync/F10.json`, recorded deliberately from the ideal reader. Re-record it, when a prompt
-moves, with
+`cassettes/resync/F10.json`, recorded deliberately from the ideal reader; F53's half-year scenario
+lists pages its case never listed, and its answers sit in `cassettes/resync/F53.json` the same way.
+Re-record both, when a prompt moves, with
 
     GENIOS_TEST_DATABASE_URL=postgresql+psycopg://… python -m tests.replays.test_the_deleted_mail_comes_back --record
 """
@@ -332,6 +338,73 @@ def test_attachments_deleted_with_their_message_come_back_with_it():
         "an attachment's old key is never taken again — its old row stays as it was")
 
 
+# ── past half a year: F53's March, ~190 days back ─────────────────────────────────────────────────
+#: After F53's last sweep; its first March mail is ~200 days before it, its fourth ~191.
+NOW_HALF_YEAR = datetime(2026, 9, 18, 12, tzinfo=timezone.utc)
+HALF_YEAR_DELETED = "f53-m1"          # the old gate deleted it: a ledger row, no content
+HALF_YEAR_NEVER = "m2"                # the first connect's window never listed it: no row at all
+
+
+def _window(engine, org: str, days: int) -> None:
+    """The runbook's step 2: the Gmail connection lists this far back (PATCH …/backfill-window)."""
+    from sqlalchemy import text
+    with engine.begin() as c:
+        c.execute(text("update connections set capture_scope = jsonb_set(coalesce(capture_scope, "
+                       "'{}'::jsonb), '{backfill_days}', to_jsonb(cast(:d as int))) "
+                       "where org_id = :o and source_type = 'gmail'"), {"d": days, "o": org})
+
+
+def _half_year(days: int, model=None):
+    """F53 replayed without its second mail, its first then deleted as the old gate did; the window
+    set to `days`; the runbook run; and the drain listing only what the connection's window reaches."""
+    import dataclasses
+    from datetime import timedelta
+
+    from genios_engine.api import routes
+    from genios_engine.capture.landing import resync
+    from tests.replays.engine_runner import remove_tenant, run_case
+    from tests.replays.harness import RecordedLLM
+
+    case = CASES["F53"]
+    first = dataclasses.replace(case, objects=tuple(o for o in case.objects
+                                                    if o.object_id != HALF_YEAR_NEVER))
+    llm = model or RecordedLLM(_cassette(case))
+    run = run_case(first, llm, keep=True)
+    engine = routes._graph.engine
+    org = run.org_id
+    try:
+        deleted = _delete(engine, org, {HALF_YEAR_DELETED: "N-02"})
+        _window(engine, org, days)
+        freed = resync.free_deleted(engine, org, days=days, now=NOW_HALF_YEAR)
+        since = NOW_HALF_YEAR - timedelta(days=days)
+        listed = _relist(dataclasses.replace(case, objects=tuple(
+            o for o in case.objects if o.occurred_at >= since)), org, llm, f"resync{days}")
+        done = resync.finish(engine, org, now=NOW_HALF_YEAR)
+        rows = {r.source_object_id: r for r in _rows(engine, org).values()
+                if r.outcome != "superseded"}
+        assert not getattr(llm, "misses", ()), f"F53: the cassette did not hold {llm.misses[:3]}"
+        return freed, listed, done, rows, deleted
+    finally:
+        remove_tenant(engine, org)
+
+
+@pytest.mark.pg
+@pytest.mark.golden
+def test_half_a_year_back_comes_back_with_a_year_and_not_with_180_days():
+    _scratch_db()
+    never = CASES["F53"].object(HALF_YEAR_NEVER).provider_id
+    freed, listed, done, rows, deleted = _half_year(180)
+    assert freed == 0, "a deleted mail ~200 days back is outside a 180-day window"
+    assert rows[HALF_YEAR_DELETED].outcome == "dropped" and not rows[HALF_YEAR_DELETED].has_body
+    assert never not in rows, "a thread the first connect never listed stays unlisted at 180 days"
+
+    freed, listed, done, rows, deleted = _half_year(365)
+    assert freed == 1 and done.superseded == 1, (freed, done)
+    back = rows[HALF_YEAR_DELETED]
+    assert back.has_body and back.outcome != "dropped", back
+    assert never in rows and rows[never].has_body, "the never-captured thread came back with a year"
+
+
 # ── recording F10's scenario cassette — deliberate, never from a test run ───────────────────────
 
 class _ServedThenRead:
@@ -362,6 +435,14 @@ def record() -> None:
     _f10({"f10-ask::att1": "N-06", "f10-ask::att2": "N-06"}, model)
     answers = model.recorder.cassette
     path = cassettes.save(case, answers, source=cassettes.IDEAL_READER, folder=RESYNC_CASSETTES)
+    print(f"{path}: {len(answers)} answer(s) — "
+          + ", ".join(sorted({a['site'] for a in answers.values()})))
+    half = CASES["F53"]
+    model = _ServedThenRead(half)
+    _half_year(180, model)
+    _half_year(365, model)
+    answers = model.recorder.cassette
+    path = cassettes.save(half, answers, source=cassettes.IDEAL_READER, folder=RESYNC_CASSETTES)
     print(f"{path}: {len(answers)} answer(s) — "
           + ", ".join(sorted({a['site'] for a in answers.values()})))
 
