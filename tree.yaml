@@ -7226,8 +7226,12 @@ yc2_w27_align:
                         the old nodes of us re-typed or covered — each with a recommendation; every
                         orphaned deferral in `03` given an owner or a recorded retirement (skim, F02's
                         filter, F11, F42, F57, F58, F64-F66, F104, nondeterminism, poison_quarantine).
+                        Corrected on 10 Oct, building: `-k decision_or_owner` is one keyword and selects
+                        no test (pytest exits 5), so the verify names the guard's two tests; F149's
+                        "soon" becomes D56; skim and poison_quarantine get rows of their own (F153,
+                        F154), and the bugs given to STEP-18 its rows B25-B29.
                       artifact: "speedrun008/YC-II W27/06-DECISIONS.md"
-                      verify: ".venv/bin/python -m pytest -q tests/test_the_plan_folder_is_consistent.py -k decision_or_owner"
+                      verify: ".venv/bin/python -m pytest -q tests/test_the_plan_folder_is_consistent.py -k \"decision or finding\""
                       depends_on: [M34.C3.L-logic.V0.U01]
             - layer: logic
               levels:

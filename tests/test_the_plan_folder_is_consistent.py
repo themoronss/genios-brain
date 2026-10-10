@@ -41,8 +41,6 @@ pytestmark = pytest.mark.skipif(not FOLDER.is_dir(), reason="the plan folder is 
 #: until its marker is removed.
 DRIFT: dict[str, str] = {
     "owners:STEP-03": "M34.C3 U03: STEP-03's title names no owner; its name names Rohit and Harsh",
-    "decisions": "M34.C3 U02: D15-D19 are proposed in `09` and missing from `06`",
-    "open_findings": "M34.C3 U02: eleven open findings name nobody who closes them",
     "verify:STEP-06": "M34.C3 U03: STEP-06 §6 names a test that does not exist",
     "verify:STEP-07": "M34.C3 U03: STEP-07 §6 names a test that does not exist",
     "verify:STEP-09": "M34.C3 U03: STEP-09 §6 names a test that does not exist",

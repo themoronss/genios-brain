@@ -19,6 +19,11 @@ default holds, and the step that depends on it says so in its own file.
 | **D12** | Ten minutes of labels for the golden set | **Yes** — ⏳ until you answer, the defaults hold: applied 2026-10-06 | `STEP-01` (built on the defaults; not blocked) |
 | **D13** | Once calibration runs again, may it mute a rule or move a threshold on your account without your approval? | **No** — shadow: it logs what it would do; you arm it per tenant, after `STEP-18` B22–B24 | `yc2_w27/M18` (shadow — ✅ built 2026-10-06, not deployed) · arming ⏳ |
 | **D14** | When STEP-04's repair retires the cards whose subject is you, do you read its list first? | **Yes** — Harsh runs the dry run, you read the list, then `--apply`; every retirement is a `card_event` | `STEP-04` |
+| **D15** | Add the benchmark's cases to the golden set (`09` G1), right after STEP-04? | **Yes** ✅ Built 10 Oct (`yc2_w27_align` M34.C1): F48–F58 — the benchmark's five must-detect shapes, three brief-only cases, a renewal, a verified close, and a founder whose domain is the platform's; the before-score STEP-12 is measured against is in `03` §F.1 | `STEP-01`, `STEP-12` |
+| **D16** | How far back does the re-sync go — 365 days instead of D5's 180 (`09` G3)? | **365** — 180 loses the 3one4 deferral (2 Apr) and the Neon exchanges (March); D5 is restated. The run waits for your number: `--apply` refuses without `--days`, and since 10 Oct refuses a window shorter than the connection's (`yc2_w27_align` M34.C2 U03); the health check says how far back memory reaches (U04) | `STEP-08` (Harsh runs it) |
+| **D17** | A new STEP-19 — the benchmark re-run, blind, with five ledgers (`09` G2)? | **Yes, after STEP-16** — not written yet; it re-runs the benchmark's own five shapes (F48–F52, D15) | `STEP-19` (to write) |
+| **D18** | `vendor` as a kind of work (`09` G5), and G6's verified-close case and scorecard in STEP-16? | **Yes** ✅ Built 10 Oct: the kind (`yc2_w27_align` M34.C2.L-contract.V0.U01 — it reads Admin's renewal playbook, which declares no stages yet), the renewal case F56 and the verified close F57 (M34.C1); the scorecard waits for STEP-16 | `STEP-09`, `STEP-16` |
+| **D19** | Sole Mate (`09` G7) as the next block after YC-II W27, not inside it? | **Yes** — a team tenant with its own golden set, after the founder path shows verified outcomes | the block after YC-II W27 |
 | **D20** | A kept mail with no signal — does it enter memory with its L1 extraction (its words), or as names and dates only? | **With its extraction** — it was already read, so no model call; the asks the expert needs are in it. Default applied 2026-10-06 (*"step 5 start karo"*) | `STEP-05` |
 | **D21** | Is a memory write with no model read (an archived mail's metadata) billed as a message read? | **No** — only what a model read is billed. Default applied 2026-10-06 | `STEP-05` |
 | **D22** | STEP-05's draft 3.7 — a screen item creates a person the graph does not have? | **No, dropped** — nodes are listed org-wide and a private WhatsApp contact must not appear to the rest of the org (`reason/moments/screen_memory.py:10-15`); revisit with seat-private nodes in `STEP-09`. Default applied 2026-10-06 | `STEP-05` |
@@ -51,6 +56,11 @@ default holds, and the step that depends on it says so in its own file.
 | **D49** | Who writes the golden set's expert answers? | **Claude, per case, from the case's own text, each marked `claude`** — you may correct any line. The board then shows that the plumbing carries a judgment; whether the model's judgment is good is the live pass's question (D50). Default: the same ✅ Answered 10 Oct: yes | `STEP-12` (M32) |
 | **D50** | A live golden pass on the D7 model before the expert reaches your account? | **Yes** — the golden set's expert calls on the real model, recorded beside the authored answers and compared; an estimate: ≈ 140 reviews, ≈ $6 at Sonnet-class list prices (the dry run counts them first). Default: no spend — the board measures the plumbing only ✅ Answered 10 Oct: yes — the live pass runs before the expert reaches your account | `STEP-12` (M33) |
 | **D51** | Retire R-6, the situation reasoner? | **Yes** — it has never run in production (its feature is off), it runs ahead of the change gate writing a row per situation per pass (`03` F141), and the expert pass replaces it. Default: it keeps writing those rows ✅ Answered 10 Oct: yes — R-6 retires | `STEP-12` (M32) |
+| **D52** | Your reply time — split by who wrote first (`STEP-10` §3.2)? | **Not yet** — built overall and per counterparty (`party.our_reply_*`, `derived.our_reply_*`); the golden set holds one founder reply to an inbound mail (F14, n = 1), so a split halves an n that rarely reaches five. Revisit with a second mailbox (`09` G8). Default: unsplit, as built | `STEP-12` |
+| **D53** | Screen touches in a file's timeline (`STEP-10` §3.1)? | **No, under D22** — a screen item is one seat's, and a file is an org-level reader (`context/workstreams`); the timeline carries mail and past meetings. Revisit with seat-private reads. Default: as built | `STEP-12` |
+| **D54** | Atlas golden replay 02 — the target *≥ 8 of 10 Boardy mutations* (`STEP-09` §5)? | **Move it to STEP-14** — nine of the ten have no founder case to drive them, and each needs STEP-12's judgment and STEP-14's card to pass; STEP-14 authors the cases with its acceptance. Default: the target leaves STEP-09 and is STEP-14's | `STEP-14` |
+| **D55** | The old nodes of us — re-typed, or covered where they are read (`STEP-04` §3.5)? | **Covered** — every reader asks `platform/self_identity.identity_for` (`is_us_node`), so a node of ours typed `service` or `company` is us wherever it is read; `scripts/repair_self_identity.py` renames threads and retires signals and cards and re-types nothing — STEP-04 §3.5 said otherwise and is corrected (`yc2_w27_align` M34.C3 U03). Default: covered | — |
+| **D56** | A *"soon"* promise (`DateCertainty.RELATIVE`) — when is it due (`03` F149)? | **Never a deadline** — the contract says so: it stays an open promise, and STEP-12's expert judges whether *soon* has passed from the file's own gaps. Today it is due at its window's first instant, so it is overdue the day it is said; a bounded window is due when it closes since 10 Oct (M34.C2 U17). Default: as today | `STEP-12` |
 
 ---
 
@@ -118,8 +128,10 @@ mail's body the same 180. If you meant another number, it is that one constant.
 After the gate stops deleting (`STEP-03`), the mailbox is re-read so the deleted mail comes back.
 Fundraising and program cycles run three to six months; 60 days loses the start of most of them.
 
-**Options:** 60 · **180 (recommended)** · 365. More history means a slower re-sync but costs
-little, because only high-attention mail is read by the model. **Default:** 60.
+**Options:** 60 · 180 · **365 (recommended — restated by D16, 2026-10-07: 180 loses the 3one4
+deferral of 2 Apr)**. More history means a slower re-sync but costs little, because only
+high-attention mail is read by the model. **Default:** none — the re-sync refuses `--apply` without
+your number, and since 10 Oct refuses a window shorter than the connection's (`STEP-08` §8.5).
 
 ## D6 · Who is "us"? — ✅ answered
 
@@ -279,3 +291,16 @@ pass reads it as a re-read the gate does not archive again.
 | C | Leave them archived | the people Boardy introduced stay names without the reason they were introduced |
 
 **Default:** A — nothing is promoted until you have read the list.
+
+## D15–D19 · `09` — the five gaps between your documents and the plan
+
+Proposed 2026-10-07 with `09` §4 and carried here on 10 Oct (`yc2_w27_align` M34.C3), each with the
+default `09` gave it; D15 and D18 are built, D16 waits for the re-sync, D17 and D19 are the order of
+the blocks after this one. `09` holds the evidence for each.
+
+## D52–D56 · what the builds narrowed, recorded
+
+Each was a promise a step made that its build narrowed or left to a decision without saying so
+(`10-BEFORE-STEP-12` §2); recorded 10 Oct (`yc2_w27_align` M34.C3) with a recommendation and the
+default that holds today. D52 and D53 are STEP-10's (your reply time, the timeline's sources), D54
+STEP-09's (replay 02's target), D55 STEP-04's (the repair's re-typing), D56 F149's (*"soon"*).
