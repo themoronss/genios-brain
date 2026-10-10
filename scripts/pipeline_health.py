@@ -551,6 +551,54 @@ def check_every_gmail_message_in_the_window_has_its_content(conn, org: str, *,
         detail=detail)
 
 
+#: How close to the window's first day memory's oldest mail must come — a mailbox's first mail inside
+#: a window is rarely on the window's first day.
+REACH_SLACK_DAYS = 14
+
+
+def check_memory_reaches_the_window(conn, org: str, *, now=None) -> Check:
+    """⛔ STEP-08's reach (`yc2_w27_align` M34.C2.L-interface.V1.U04, `06` D16, `09` G3). The window is
+    a recommendation until something measures it: the check beside this one asks that every mail
+    INSIDE the connection's window has its content, and it passed at 60 days. This asks how far back
+    memory goes — the oldest Gmail mail kept in memory (`context/memory_lanes.KEPT_OUTCOMES`) against
+    the first day of the connection's window — and fails while memory stops short of it, with the
+    mail per month beside it, so a gap is a month you can see. `now` is for a replay that pins the
+    clock; the deploy gate reads the database's.
+    """
+    from genios_engine.capture.landing.resync import window_days
+    from genios_engine.context.memory_lanes import KEPT_OUTCOMES
+
+    name = "memory reaches back as far as the Gmail connection's window"
+    days = window_days(conn, org)
+    rows = conn.execute(sql(
+        "select to_char(date_trunc('month', se.occurred_at), 'YYYY-MM') as month, count(*) as n, "
+        "       min(se.occurred_at) as oldest, "
+        "       coalesce(cast(:now as timestamptz), now()) - make_interval(days => :days) as starts "
+        "  from source_events se "
+        " where se.org_id = :o and se.source = 'gmail' and se.object_type = 'email_message' "
+        "   and se.outcome = any(:kept) "
+        " group by 1 order by 1"),
+        {"o": org, "now": now, "days": days, "kept": list(KEPT_OUTCOMES)}).fetchall()
+    fix = ("STEP-08 §8.6 / `08` §3.7: `PATCH /connections/{gmail}/backfill-window` to the window Rohit "
+           "named, then `POST /connections/{gmail}/backfill` until it no longer says TRUNCATED")
+    if not rows:
+        return Check(name=name, ok=False, measured=f"no Gmail mail in memory; the window is {days} days",
+                     expected=f"memory's oldest mail within {REACH_SLACK_DAYS} days of the window's "
+                              "first day", fix=fix)
+    oldest = min(r.oldest for r in rows)
+    starts = rows[0].starts
+    short = (oldest - starts).days
+    ok = short <= REACH_SLACK_DAYS
+    measured = (f"memory's oldest Gmail mail is {oldest.date().isoformat()}; the {days}-day window "
+                f"starts {starts.date().isoformat()}"
+                + (f" — {short} days short" if short > 0 else " — memory reaches it"))
+    return Check(
+        name=name, ok=ok, measured=measured,
+        expected=f"memory's oldest mail within {REACH_SLACK_DAYS} days of the window's first day",
+        fix=fix,
+        detail=["mail per month: " + " · ".join(f"{r.month} {int(r.n)}" for r in rows)])
+
+
 def check_every_named_counterparty_has_a_file(conn, org: str) -> Check:
     """⛔ STEP-09 (`yc2_w27_s09/M27.C4`). Every counterparty the founder's company brief names — a
     connector, a person, a portal or program it watches — whose mail memory read has that mail in a
@@ -684,6 +732,7 @@ CHECKS = (
     check_every_situation_and_card_says_how_it_ended,
     check_the_company_brief_exists_and_is_current,
     check_every_gmail_message_in_the_window_has_its_content,
+    check_memory_reaches_the_window,
     check_every_named_counterparty_has_a_file,
     check_every_normal_says_its_n,
 )
