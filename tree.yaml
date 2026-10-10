@@ -6619,7 +6619,10 @@ yc2_w27_s12:
                         precondition and effect — with the pinned places that name every site and
                         feature moved deliberately.
                       artifact: "genios_engine/reason/bundle/sites.py"
-                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_the_expert_site_and_feature.py tests/test_l4_pilot_activation.py tests/reason/test_llm_policy.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_the_expert_site_and_feature.py tests/test_l4_pilot_activation.py tests/reason/test_llm_policy.py"
+                      # ⛔ CORRECTED 2026-10-10 at the build: as written, with no database, 20 of
+                      # test_l4_pilot_activation's tests SKIPPED inside a PASS (the M34 QA lesson);
+                      # with one, 56 passed and 0 skipped.
                       depends_on: []
                     - id: M32.C1.L-contract.V0.U04
                       what: >

@@ -48,6 +48,7 @@ from dataclasses import dataclass, field
 
 from genios_engine.platform.l4_activation import (FEATURE_CALIBRATION_APPLY,
                                                   FEATURE_CARDS_FROM_SITUATIONS,
+                                                  FEATURE_EXPERT_REVIEW,
                                                   FEATURE_SITUATION_REASONER, L4_FEATURES)
 from genios_engine.platform.logging import get_logger
 
@@ -177,6 +178,11 @@ NOT_DEFAULT_ON = {
         "approving the change, and once it applies anything every open card of the pack is "
         "hidden (STEP-18 B22-B24). Unattended autonomy is the founder's call (D13), armed per "
         "tenant; until then calibration runs in shadow and only records what it would do.",
+    FEATURE_EXPERT_REVIEW:
+        "it spends a STRONG-MODEL CALL per changed file — the expert's review (STEP-12). A "
+        "default-on switch that costs money per file is a bill a tenant never agreed to; it is "
+        "armed per tenant, Rohit's org first, after the live golden pass on the D7 model (`06` "
+        "D50).",
 }
 
 #: Layer 4's default features in wave order — `L4_FEATURES` minus the declared exclusions above.

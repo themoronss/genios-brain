@@ -37,9 +37,14 @@ SITE_CONSULT = "R-5"
 #: everywhere, because nothing would catch the error. Sonnet is the ESCALATION, on two numbers,
 #: not the tier.
 SITE_SITUATION = "R-6"
+#: ⛔ R-7 · the expert (STEP-12). One strong judgment of a FILE — the whole piece of work — each time
+#: its fingerprint moves, never one per situation per sweep: the dossier in, an `ExpertReview`
+#: (`contracts/expert_review`) out, validated against what the dossier holds. T2, and only T2:
+#: `06` D7 (answered 10 Oct) is Sonnet-class only — no Opus tier exists, and none is added.
+SITE_EXPERT = "R-7"
 
 R_SITES = (SITE_INTERPRET, SITE_NARRATE, SITE_ALTERNATIVES, SITE_EFFECT, SITE_CONSULT,
-           SITE_SITUATION)
+           SITE_SITUATION, SITE_EXPERT)
 
 #: Tier per site, exactly as doc 11 §1 prints it. T1 = Haiku-class, T2 = Sonnet-class, the same
 #: two names `capture.semantic.batch.DEFAULT_TIER_PRICES` prices — reused rather than re-declared,
@@ -53,6 +58,7 @@ SITE_TIERS = {
     SITE_EFFECT: TIER_T1,
     SITE_CONSULT: TIER_T2,
     SITE_SITUATION: TIER_T1,
+    SITE_EXPERT: TIER_T2,
 }
 
 #: The output ceiling per site, in tokens. A cap rather than a hope: doc 11 sizes R-2 at ~450
@@ -81,6 +87,12 @@ SITE_MAX_OUTPUT_TOKENS = {
     # Structured output, not prose: a proposal is a mapping of at most fourteen fields, and a
     # model that decides to explain itself is a cost incident and a V-8 failure at once.
     SITE_SITUATION: 500,
+    # ⛔ A SIZING, NOT A MEASUREMENT — nothing has run yet. A review is fourteen sections and a
+    # draft (`contracts/expert_review`): a full one runs about 800-1,600 tokens, so 4,000 is about
+    # 2.5x that, and at the T2 price its worst case is 6 cents of output. R-2's lesson is why it is
+    # not tighter: a ceiling below the real distribution reads as bad JSON. Here a cut answer is a
+    # RECORDED refusal (`truncated`, `03` F140) and the first live pass (`06` D50) measures it.
+    SITE_EXPERT: 4000,
 }
 
 # ── what a consult may END as ────────────────────────────────────────────────────────────────
@@ -144,7 +156,7 @@ def max_output_tokens(site: str) -> int:
 __all__ = ["FALLBACK_OUTCOMES", "OUTCOMES", "OUTCOME_CACHED", "OUTCOME_FAILED_GENERATION",
            "OUTCOME_FAILED_VALIDATION", "OUTCOME_FORCE_FAILED", "OUTCOME_NOT_ACTIVATED",
            "OUTCOME_NO_BUDGET", "OUTCOME_NO_CLIENT", "OUTCOME_NO_PRECONDITION", "OUTCOME_RAN",
-           "R_SITES", "SITE_ALTERNATIVES", "SITE_CONSULT", "SITE_EFFECT", "SITE_INTERPRET",
-           "SITE_SITUATION",
+           "R_SITES", "SITE_ALTERNATIVES", "SITE_CONSULT", "SITE_EFFECT", "SITE_EXPERT",
+           "SITE_INTERPRET", "SITE_SITUATION",
            "SITE_MAX_OUTPUT_TOKENS", "SITE_NARRATE", "SITE_TIERS", "TIER_T1", "TIER_T2",
            "max_output_tokens", "require_outcome", "require_site", "tier_for"]

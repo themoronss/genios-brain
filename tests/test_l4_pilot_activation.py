@@ -125,10 +125,15 @@ def test_the_five_features_are_the_plans_five_in_wave_order():
     ⛔ THE EIGHTH ARRIVED ON PURPOSE, 2026-10-05: `calibration_apply` (STEP-18 B1, yc2_w27/M18), the
     switch that lets the weekly calibration APPLY its mutes and nudges instead of only recording
     them. It is never default-on (`intelligence_onboarding.NOT_DEFAULT_ON`).
+
+    ⛔ THE NINTH ARRIVED ON PURPOSE, 2026-10-10: `expert_review` (STEP-12, yc2_w27_s12/M32), the
+    switch for the expert's review of each changed file (R-7). It landed with its site, its wave,
+    its effect and no precondition, and it is never default-on — it spends a strong-model call per
+    file.
     """
     assert ACT.L4_FEATURES[:5] == ("roster_v2", "ranking_v2", "bundle", "critique", "brief")
     assert ACT.L4_FEATURES[5:] == ("situation_reasoner", "cards_from_situations",
-                                   "calibration_apply")
+                                   "calibration_apply", "expert_review")
     assert set(ACT.EFFECTS) == set(ACT.L4_FEATURES) == set(ACT.FEATURE_WAVES)
     assert set(ACT.PRECONDITIONS) == set(ACT.L4_FEATURES)
     assert ACT.FEATURE_WAVES["bundle"] == "Z4"

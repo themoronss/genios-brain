@@ -97,6 +97,11 @@ FEATURE_CARDS_FROM_SITUATIONS = "cards_from_situations"
 #: armed, any applied mute or nudge bumps the pack's authority revision and hides every open
 #: card of that pack.
 FEATURE_CALIBRATION_APPLY = "calibration_apply"
+#: ⛔ STEP-12 · the expert reviews this tenant's files (R-7, `reason/bundle/sites.SITE_EXPERT`). The
+#: feature lands WITH the site, the R-6 lesson above: a site no tenant can switch on is built and
+#: never on. Off — the default, and armed per tenant only after the live golden pass on the D7
+#: model (`06` D50) — no file is reviewed and nothing is spent.
+FEATURE_EXPERT_REVIEW = "expert_review"
 
 #: The five features doc 07 names, in WAVE order rather than alphabetical order — the order is the
 #: only safe order to switch them on in, and a list that read `bundle, brief, critique, ranking_v2,
@@ -106,7 +111,7 @@ FEATURE_CALIBRATION_APPLY = "calibration_apply"
 #: nothing happens.
 L4_FEATURES = (FEATURE_ROSTER_V2, FEATURE_RANKING_V2, FEATURE_BUNDLE, FEATURE_CRITIQUE,
                FEATURE_BRIEF, FEATURE_SITUATION_REASONER, FEATURE_CARDS_FROM_SITUATIONS,
-               FEATURE_CALIBRATION_APPLY)
+               FEATURE_CALIBRATION_APPLY, FEATURE_EXPERT_REVIEW)
 
 #: Which wave builds each feature. Carried in code rather than in a doc because it is what makes
 #: `PRECONDITIONS` checkable by eye: a feature is safe to switch on when the features its wave
@@ -120,6 +125,7 @@ FEATURE_WAVES = {
     FEATURE_BRIEF: "Z6",
     FEATURE_CARDS_FROM_SITUATIONS: "L2-7",
     FEATURE_CALIBRATION_APPLY: "B1",
+    FEATURE_EXPERT_REVIEW: "STEP-12",
 }
 
 #: The features that should already be live on a tenant before this one is switched on. NOT
@@ -148,6 +154,10 @@ PRECONDITIONS = {
     # ⛔ NONE AT THE SWITCH. Its real preconditions are not features: STEP-18 B22-B24 fixed, and
     # Rohit's answer to D13. Neither is a row an operator can flip, so neither is listed here.
     FEATURE_CALIBRATION_APPLY: (),
+    # ⛔ NONE. The expert reads a FILE (STEP-09) and its dossier; it consults no Layer 4 formula,
+    # and in shadow (M32) nothing reads its review for a decision. A file whose playbook is not live
+    # is reviewed with the playbook labelled, which is the dossier's business, not the switch's.
+    FEATURE_EXPERT_REVIEW: (),
 }
 
 #: THE PRECONDITIONS THAT ARE NOT LAYER 4's. `PRECONDITIONS` above orders the five switches against
@@ -248,6 +258,12 @@ EFFECTS = {
         "instead of only recording what it would do. \u26d4 Arm it only after STEP-18 B22-B24: "
         "an applied mute or nudge bumps the pack's authority revision, which hides every open "
         "card of that pack, and a mute has no way to lift"),
+    FEATURE_EXPERT_REVIEW: (
+        "a strong model (Sonnet-class, `06` D7) REVIEWS each of this tenant's files whose "
+        "fingerprint moved — once per fingerprint, nearest deadline or meeting first, capped per "
+        "pass and per day — and each review is validated against the dossier it was shown and kept "
+        "in `expert_reviews`, a refusal with its reason. In shadow (STEP-12 M32) nothing reads a "
+        "review for a decision: no card changes. Off, no file is reviewed and nothing is spent"),
 }
 
 #: Every column the record carries, in one place, so the reads below cannot select different shapes
