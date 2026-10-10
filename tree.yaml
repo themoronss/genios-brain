@@ -6979,7 +6979,7 @@ yc2_w27_align:
                         set-level test fails on the missing cassette, so a new case is recorded from the ideal reader,
                         measured, and on the board in the unit that adds it.
                       artifact: "tests/replays/specs/founder"
-                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays/test_founder_cases.py tests/test_golden_labels_sheet.py && GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py --assert-recorded \"speedrun008/YC-II W27/03-FINDINGS.md\""
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays/test_founder_cases.py tests/test_golden_labels_sheet.py tests/replays/test_founder_case_contract.py tests/replays/test_marking.py tests/replays/test_a_case_names_the_platforms_domain.py && GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py --assert-recorded \"speedrun008/YC-II W27/03-FINDINGS.md\""
                       depends_on: [M34.C2.L-logic.V1.U14]
                     - id: M34.C1.L-data.V0.U04
                       what: >

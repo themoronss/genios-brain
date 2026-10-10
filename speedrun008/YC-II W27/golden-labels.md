@@ -124,6 +124,17 @@ not a card.
 | 54 | FITT Forward 2026 and NexTech by 247VC, no follow-up after either · 10–19 Sep | `brief only` | | `claude` |
 | 55 | Your sent mail, nothing after 26 Aug while four people waited · 26 Aug → 23 Sep | `brief only` | | `claude` |
 
+## A renewal, a close that stays closed, and our own domain — 3 items (`yc2_w27_align`, added 2026-10-10)
+
+Shapes your documents ask for rather than items the benchmark found: the Possibility Atlas's first card
+(`09` G5), the pilot's verified close (`09` G6), and the design partner's own domain (`STEP-04`).
+
+| # | Item — sender · date | Claude's answer | Your answer | Labelled by |
+|---|---|---|---|---|
+| 56 | Your vendors' renewal notices, the price-rise shape of the Possibility Atlas's first card · 4 Aug → 5 Oct | `yes` | | `claude` |
+| 57 | An ask you answered with what was asked for, then never raised again · 4 Aug → 5 Oct | `yes` | | `claude` |
+| 58 | Your company domain, which is also GeniOS's own · 4 Aug → 5 Oct | `no` | | `claude` |
+
 ---
 
 ## Why I answered as I did
@@ -149,6 +160,9 @@ not a card.
 - **53–55** (`09` G1, the benchmark): a relationship that went cold after real exchanges (53), events
   with no follow-up within a week (54), and weeks of no outbound while people waited (55) — each true of
   the founder across threads, so a line in the brief, not a card about one person.
+- **56–58**: a renewal at a higher price is a decision with a date and money (56 — a plain receipt
+  stays archived, row 33); an ask answered with the thing asked for is closed, and never raised again
+  (57); your company's domain is also GeniOS's sending domain, and mail on it is still you (58).
 
 A `brief only` answer is scored as *not expressible* until `STEP-15` builds the morning brief —
 the board counts it apart rather than as a pass or a fail.

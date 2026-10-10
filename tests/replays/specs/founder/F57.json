@@ -1,0 +1,250 @@
+{
+ "case_id": "F57",
+ "title": "An ask answered with the signed document, and never raised again",
+ "kind": "must_detect",
+ "label_row": 57,
+ "labelled_by": "claude",
+ "replays": [
+  "04"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata",
+  "also": [
+   "arjun.rao@gmail.test"
+  ]
+ },
+ "sweeps": [
+  "2026-09-02T12:00:00Z",
+  "2026-09-04T12:00:00Z",
+  "2026-09-10T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "ask",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-09-01T05:00:00Z",
+   "from": "Zoya Hameed <zoya@pinecrest.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Mutual NDA",
+   "body": "Hi Arjun,\n\nCould you send the signed mutual NDA by Thursday so we can share the pilot data?\n\nZoya\nPinecrest",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-pinecrest",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "neutral",
+     "topics": [
+      "legal",
+      "pilot"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Zoya Hameed",
+       "entity_type": "person",
+       "quote": "Zoya"
+      },
+      {
+       "surface_form": "Pinecrest",
+       "entity_type": "organization",
+       "quote": "Pinecrest"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Send the signed mutual NDA by Thursday",
+       "asked_by": "Zoya Hameed",
+       "asked_of": "Arjun Rao",
+       "quote": "Could you send the signed mutual NDA by Thursday"
+      }
+     ],
+     "dates_mentioned": [
+      {
+       "as_written": "by Thursday",
+       "earliest": "2026-09-03T00:00:00+05:30",
+       "latest": "2026-09-03T23:59:59+05:30",
+       "certainty": "range",
+       "resolved_against": "2026-09-01T05:00:00Z",
+       "quote": "by Thursday"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "the signed NDA, to share the pilot data"
+     }
+    }
+   }
+  },
+  {
+   "id": "signed",
+   "source": "gmail",
+   "sweep": 1,
+   "occurred_at": "2026-09-03T06:00:00Z",
+   "from": "Arjun Rao <arjun@nimbuslabs.test>",
+   "to": [
+    "Zoya Hameed <zoya@pinecrest.test>"
+   ],
+   "subject": "Re: Mutual NDA",
+   "body": "Hi Zoya,\n\nSigned NDA attached.\n\nArjun",
+   "labels": [
+    "SENT"
+   ],
+   "thread": "t-pinecrest",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "positive",
+     "topics": [
+      "legal"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Zoya Hameed",
+       "entity_type": "person",
+       "quote": "Zoya"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "medium",
+      "motive": "the signed NDA she asked for"
+     }
+    }
+   },
+   "attachments": [
+    {
+     "filename": "Pinecrest-Nimbus-NDA-signed.pdf",
+     "mime": "application/pdf",
+     "fetch": "ok",
+     "text": "MUTUAL NON-DISCLOSURE AGREEMENT between Pinecrest and Nimbus Labs. Signed by Arjun Rao for Nimbus Labs on 3 September 2026."
+    }
+   ]
+  }
+ ],
+ "expected": {
+  "gate": {
+   "ask": "emitted",
+   "signed": "emitted"
+  },
+  "memory": {
+   "ask": true,
+   "signed": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Zoya",
+     "Pinecrest"
+    ],
+    "min": 1,
+    "max": 1,
+    "mentions": [
+     "NDA"
+    ],
+    "closed_from": 1
+   }
+  ],
+  "workstream": "partner - asked 1 Sep, answered with the signed NDA 3 Sep, closed",
+  "outcome": "verified on 3 Sep by the signed NDA, the sent mail's attachment"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "overdue",
+   "chase Zoya",
+   "remind Zoya"
+  ]
+ },
+ "witness": null,
+ "not_expressible": {
+  "workstream": "a closed file's last line is STEP-13 and STEP-16's",
+  "outcome": "STEP-16 - no card's end records the evidence that closed it"
+ },
+ "model": {
+  "resolution": [
+   {
+    "when": [
+     "Signed NDA attached"
+    ],
+    "answer": {
+     "verdict": "RESOLVED",
+     "certainty": "EXPLICIT_COMPLETION",
+     "scope": [
+      "situation"
+     ],
+     "quote": "Signed NDA attached",
+     "speaker_role_said": "owner"
+    }
+   }
+  ],
+  "decider": [
+   {
+    "when": [
+     "account admin",
+     "Pinecrest",
+     "evaluated at: 2026-09-02"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "triage_to_five_outcomes": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "Pinecrest wrote yesterday and the ball is in our court.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "account admin",
+     "Pinecrest",
+     "thread.ball_in_court: them"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Our mail of 3 Sep answered them and the ball is in their court; nothing here is ours to do.",
+     "missing": []
+    }
+   }
+  ],
+  "narrator": [
+   {
+    "when": [
+     "account_admin",
+     "Pinecrest"
+    ],
+    "answer": {
+     "headline": "Send Pinecrest the signed mutual NDA",
+     "situation": "Zoya at Pinecrest asked for the signed mutual NDA by Thursday. The next move is ours.",
+     "artifact": "Hi Zoya, attaching the signed mutual NDA. Thanks, Arjun"
+    }
+   }
+  ]
+ },
+ "notes": "09 G6: raised once, answered with the thing asked for, and never raised again across three sweeps. The card is open after the first sweep and closed from the second on; the verified close with its evidence id is STEP-16's to record.",
+ "blocked_on": "the signed NDA is read as RESOLVED, an explicit completion, and the support thread it answers resolves - but the account situation that carries the card stays active, is deferred twice, and its card stays open after both later sweeps (03 F152; STEP-13, STEP-16)"
+}

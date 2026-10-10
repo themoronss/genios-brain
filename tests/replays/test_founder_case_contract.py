@@ -335,3 +335,48 @@ def test_a_known_gap_is_named_in_a_sentence():
     assert _parse(_case(blocked_on="F04 — a meeting becomes a deadline that expires")).blocked_on
     with pytest.raises(fc.CaseError, match="blocked_on"):
         _parse(_case(blocked_on="todo"))
+
+
+# =================================================================================================
+# 4 · `yc2_w27_align` M34.C1.L-data.V0.U03 — the product's domain, a card that closes, a verified close
+# =================================================================================================
+def test_a_case_may_name_the_products_own_sending_domains():
+    """STEP-04 C5: the design partner's company domain is also the domain the product sends from — a
+    shape no case could hold, because production's default (`settings.platform_domains`) is a real
+    name a case may not carry."""
+    assert _parse(_case(platform_domains=["Relaygrid.test"])).platform_domains == ("relaygrid.test",)
+    assert _parse(_case()).platform_domains == ()
+
+
+@pytest.mark.parametrize("value, message", [(["not a domain"], "not a domain"),
+                                            (["gmail.com"], "public mail domain")])
+def test_a_bad_platform_domain_is_refused(value, message):
+    with pytest.raises(fc.CaseError, match=message):
+        _parse(_case(platform_domains=value))
+
+
+def _two_sweeps(**card) -> dict:
+    raw = _case(sweeps=["2026-09-18T12:00:00Z", "2026-09-19T12:00:00Z"])
+    raw["expected"]["cards"][0].update(card)
+    return raw
+
+
+def test_a_card_can_be_expected_closed_from_a_later_sweep():
+    """`09` G6: done means never raised again — from that sweep on, no card about the subject is open."""
+    assert _parse(_two_sweeps(closed_from=1)).cards[0].closed_from == 1
+    assert _parse(_case()).cards[0].closed_from is None
+
+
+@pytest.mark.parametrize("closed_from", [0, 2, "1", True])
+def test_a_closing_sweep_names_a_later_sweep_of_the_case(closed_from):
+    with pytest.raises(fc.CaseError, match="closed_from"):
+        _parse(_two_sweeps(closed_from=closed_from))
+
+
+def test_a_verified_close_is_a_declared_gap_until_step_16():
+    raw = _case()
+    raw["expected"]["outcome"] = "verified on 3 Sep by the signed NDA"
+    with pytest.raises(fc.CaseError, match="outcome"):
+        _parse(raw)
+    raw["not_expressible"]["outcome"] = "STEP-16 — no card's end records the evidence that closed it"
+    assert _parse(raw).expected_other["outcome"] == "verified on 3 Sep by the signed NDA"

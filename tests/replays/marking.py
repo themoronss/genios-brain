@@ -127,6 +127,14 @@ def _card_check(index: int, exp: CardExpectation, run: CaseRun) -> Check:
         if missing:
             return Check(name, FAIL, f"card {card.card_id} about {subject} does not say "
                                      f"{missing}")
+    if exp.closed_from is not None:
+        # `09` G6 · done means never raised again: open after a sweep at or past `closed_from`.
+        still = [(c.card_id, max(c.sweeps)) for c in matched
+                 if any(s >= exp.closed_from for s in c.sweeps)]
+        if still:
+            return Check(name, FAIL, "; ".join(f"card {cid} about {subject} is still open after "
+                                               f"sweep {s} — closed from sweep {exp.closed_from}"
+                                               for cid, s in still))
     return Check(name, PASS, f"{n} card(s) about {subject}")
 
 

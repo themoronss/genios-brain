@@ -52,7 +52,9 @@ and no card shows a bounce yet (STEP-14). Three cases are new (`ADDED_AFTER`: F4
 gate's promise is unchanged: nothing dropped, every other archive the same.
 
 RESTATED BY `yc2_w27_align` (M34.C1, before STEP-12). The benchmark's shapes are new cases (`ADDED_AFTER`:
-F48–F55, `09` G1); the gate keeps and reads every one of their mails and events. Nothing else moved.
+F48–F58, `09` G1, G5, G6 and STEP-04's C5); the gate keeps and reads every one of their mails and events
+but one — F56's renewal notice, which the junk filter's prompt drops and the gate archives
+(`ARCHIVED_IN_ADDED`). Nothing else moved.
 """
 from __future__ import annotations
 
@@ -119,7 +121,14 @@ ADDED_AFTER: dict[str, str] = {"F41": "STEP-04", "F42": "STEP-04", "F43": "STEP-
                                "F47": "STEP-10", "F48": "yc2_w27_align", "F49": "yc2_w27_align",
                                "F50": "yc2_w27_align", "F51": "yc2_w27_align",
                                "F52": "yc2_w27_align", "F53": "yc2_w27_align",
-                               "F54": "yc2_w27_align", "F55": "yc2_w27_align"}
+                               "F54": "yc2_w27_align", "F55": "yc2_w27_align",
+                               "F56": "yc2_w27_align", "F57": "yc2_w27_align",
+                               "F58": "yc2_w27_align"}
+
+#: A case added after STEP-03 whose mail today's gate ARCHIVES — held to that code, as the dropped mail
+#: of the cases before it is. F56: a vendor's renewal notice, which the junk filter's own prompt drops
+#: ("subscription / plan / account notices") — kept, with its body, and read by no model.
+ARCHIVED_IN_ADDED: dict[str, dict[str, str]] = {"F56": {"f56-renewal": "llm_junk"}}
 
 #: Cases a later step moved, with their marking after it — (step, (kind, verdict, lost_at, cards)).
 #: STEP-05: a mail below the floor, the founder's own sent mail and an archive now enter memory.
@@ -211,6 +220,7 @@ def test_the_measurement_is_the_one_section_8_recorded():
     assert set(BOARD_BEFORE) | set(ADDED_AFTER) == {c.case_id for c in CASES}
     assert not set(BOARD_BEFORE) & set(ADDED_AFTER)
     assert set(DROPPED_BEFORE) <= set(BOARD_BEFORE)
+    assert set(ARCHIVED_IN_ADDED) <= set(ADDED_AFTER), "an archive with no 'before' is an added case's"
     assert set(MOVED_AFTER) <= set(BOARD_BEFORE), "a moved case needs a before to move from"
     assert all(after != BOARD_BEFORE[c] for c, (_step, after) in MOVED_AFTER.items()), (
         "a case listed as moved did not move")
@@ -252,7 +262,7 @@ def test_the_gate_deletes_nothing_and_the_case_is_marked_as_before(case):
     kept = (set(KEPT_BY_THE_BRIEF.get(case.case_id, ()))
             | set(KEPT_AS_A_DELIVERY_REPORT.get(case.case_id, ())))
     expected = {oid: code for oid, code in DROPPED_BEFORE.get(case.case_id, {}).items()
-                if oid not in kept}
+                if oid not in kept} | ARCHIVED_IN_ADDED.get(case.case_id, {})
     archived = {x.source_object_id: x.reason for x in run.landed if x.outcome == "archived"}
     assert archived == expected, (
         f"{case.case_id}: archived {archived}, but the gate dropped {expected} before STEP-03 "

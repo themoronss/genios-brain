@@ -220,3 +220,24 @@ def test_a_card_with_no_subject_is_not_judged_on_it():
     case = _gmail_founder()
     run = _run(cards=[_card("c1", "Kavya Menon asked for the deck", subject=None)])
     assert judge(case, run).verdict == PASS
+
+
+# =================================================================================================
+# a card that must close — `09` G6, `yc2_w27_align` M34.C1.L-data.V0.U03
+# =================================================================================================
+def _closing(closed_from: int = 1) -> fc.FounderCase:
+    raw = copy.deepcopy(BASE)
+    raw["expected"]["cards"][0]["closed_from"] = closed_from
+    return fc.parse_case(raw, source="t.json")
+
+
+def test_a_card_closed_once_the_work_was_done_passes():
+    mark = judge(_closing(), _run(cards=[_card("c1", "Reply to Kavya Menon: send the deck", sweeps=(0,))]))
+    assert mark.verdict == PASS, mark.reason
+
+
+def test_a_card_still_open_after_the_work_was_done_fails():
+    mark = judge(_closing(), _run(cards=[_card("c1", "Reply to Kavya Menon: send the deck",
+                                               sweeps=(0, 1))]))
+    assert mark.verdict == FAIL
+    assert "still open after sweep 1" in mark.reason, mark.reason

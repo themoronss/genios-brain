@@ -152,9 +152,10 @@ def _where(url: Any) -> tuple[Any, ...]:
 # the model doors, and the transport refusal
 # =================================================================================================
 @contextmanager
-def production_switches(llm: Any) -> Iterator[None]:
+def production_switches(llm: Any, *, platform_domains: tuple[str, ...] = ()) -> Iterator[None]:
     """Hand `llm` to every door in `model_sites.DOORS`, refuse the real transport, and set
-    production's switches — all restored on exit, whatever happens inside."""
+    production's switches — all restored on exit, whatever happens inside. A case that names the
+    product's own sending domains (`FounderCase.platform_domains`, STEP-04 C5) runs with them."""
     try:
         import anthropic
     except ImportError:            # not installed: nothing can build a raw client to refuse
@@ -198,6 +199,7 @@ def production_switches(llm: Any) -> Iterator[None]:
         (llm_decision_maker.DecisionClient, "call", refuse_call),
         *(((anthropic, "Anthropic", _RefusedAnthropic),) if anthropic is not None else ()),
         *((settings, name, value) for name, value in PRODUCTION_SWITCHES.items()),
+        *(((settings, "platform_domains", ",".join(platform_domains)),) if platform_domains else ()),
     ]
     saved = [(target, name, getattr(target, name)) for target, name, _ in patches]
     try:
@@ -326,7 +328,8 @@ def run_case(case: FounderCase, llm: Any, *, org_id: str | None = None,
     open_after: list[set[str]] = []
     finished = False
     try:
-        with production_switches(llm), pinned_world(f"golden:{case.case_id}"):
+        with production_switches(llm, platform_domains=case.platform_domains), \
+                pinned_world(f"golden:{case.case_id}"):
             provision_intelligence(engine, org)
             routes._ensure_tenant_live(org)
             switch_on_founder_office(engine, org)

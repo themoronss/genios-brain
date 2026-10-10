@@ -1,0 +1,355 @@
+{
+ "case_id": "F57",
+ "source": "ideal_reader",
+ "recorded_at": "07b5544d",
+ "answers": {
+  "0ade2fb5bb6bec03bb05513e530607817f0fbc8e7a5da443d37bd9623d2942b9": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "positive",
+    "topics": [
+     "legal"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Zoya Hameed",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Zoya",
+        "start_offset": 19,
+        "end_offset": 23
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "medium",
+     "motive": "the signed NDA she asked for"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"legal\"], \"entity_mentions\": [{\"surface_form\": \"Zoya Hameed\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Zoya\", \"start_offset\": 19, \"end_offset\": 23}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"medium\", \"motive\": \"the signed NDA she asked for\"}}",
+   "input_tokens": 5489,
+   "output_tokens": 118,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "2cc0ad0943e1d7c90f844c83ede97669568104dddd3642dc2b82137399f8872b": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 1040,
+   "output_tokens": 51,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "33a94370e5d03c22ab84e04072691fdd16558f0ddbe223834707b2d51da410dd": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4733,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 4789,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 4982
+    },
+    "confidence_bp": 4000,
+    "rationale": "Our mail of 3 Sep answered them and the ball is in their court; nothing here is ours to do.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4733, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4789, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 4982}, \"confidence_bp\": 4000, \"rationale\": \"Our mail of 3 Sep answered them and the ball is in their court; nothing here is ours to do.\", \"missing\": []}",
+   "input_tokens": 4153,
+   "output_tokens": 95,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "39f5e4d1d4f4ca0c62321cbe7df2c8e620871bfcb8fc24085afc99a67be0121e": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "request",
+    "stance": "neutral",
+    "topics": [
+     "legal",
+     "pilot"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Zoya Hameed",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Zoya",
+        "start_offset": 105,
+        "end_offset": 109
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Pinecrest",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Pinecrest",
+        "start_offset": 110,
+        "end_offset": 119
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "Send the signed mutual NDA by Thursday",
+      "asked_by": "Zoya Hameed",
+      "asked_of": "Arjun Rao",
+      "evidence": [
+       {
+        "quote": "Could you send the signed mutual NDA by Thursday",
+        "start_offset": 23,
+        "end_offset": 71
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "dates_mentioned": [
+     {
+      "as_written": "by Thursday",
+      "earliest": "2026-09-03T00:00:00+05:30",
+      "latest": "2026-09-03T23:59:59+05:30",
+      "certainty": "range",
+      "resolved_against": "2026-09-01T05:00:00Z",
+      "evidence": [
+       {
+        "quote": "by Thursday",
+        "start_offset": 60,
+        "end_offset": 71
+       }
+      ]
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "the signed NDA, to share the pilot data"
+    }
+   },
+   "raw": "{\"intent\": \"request\", \"stance\": \"neutral\", \"topics\": [\"legal\", \"pilot\"], \"entity_mentions\": [{\"surface_form\": \"Zoya Hameed\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Zoya\", \"start_offset\": 105, \"end_offset\": 109}], \"confidence_bp\": 9000}, {\"surface_form\": \"Pinecrest\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Pinecrest\", \"start_offset\": 110, \"end_offset\": 119}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Send the signed mutual NDA by Thursday\", \"asked_by\": \"Zoya Hameed\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Could you send the signed mutual NDA by Thursday\", \"start_offset\": 23, \"end_offset\": 71}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"by Thursday\", \"earliest\": \"2026-09-03T00:00:00+05:30\", \"latest\": \"2026-09-03T23:59:59+05:30\", \"certainty\": \"range\", \"resolved_against\": \"2026-09-01T05:00:00Z\", \"evidence\": [{\"quote\": \"by Thursday\", \"start_offset\": 60, \"end_offset\": 71}]}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"the signed NDA, to share the pilot data\"}}",
+   "input_tokens": 5505,
+   "output_tokens": 297,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "51a629ab5689dc3603c84118252b19a433d8aa3bea414d4b9b9929fc225bdd0a": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4599,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 4655,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 6200
+    },
+    "confidence_bp": 5000,
+    "rationale": "Pinecrest wrote yesterday and the ball is in our court.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4599, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4655, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 6200}, \"confidence_bp\": 5000, \"rationale\": \"Pinecrest wrote yesterday and the ball is in our court.\", \"missing\": []}",
+   "input_tokens": 4156,
+   "output_tokens": 86,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "52bc9374295f8f2bbe332e33b3dc4a98cb5b0e26b28c2d823a947d493925732c": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 1041,
+   "output_tokens": 51,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "721786332f35f801110026b8877a954fb790114255356b4c864ab392175aeb2f": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 1038,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "751a2dacd4c08ad39bd424be439a7c90001b36957e919a95c01e7b76d2994542": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Could you send the signed mutual NDA by Thursday so we can share the pilot data?",
+    "start_offset": 23,
+    "end_offset": 103,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Could you send the signed mutual NDA by Thursday so we can share the pilot data?\", \"start_offset\": 23, \"end_offset\": 103, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1516,
+   "output_tokens": 58,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "97745906fdd4dc68896c508a17528158ffd028beafb5d53afd17b0c1486fa3ee": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "RESOLVED",
+    "certainty": "EXPLICIT_COMPLETION",
+    "scope": [
+     "situation"
+    ],
+    "quote": "Signed NDA attached",
+    "start_offset": 26,
+    "end_offset": 45,
+    "speaker_role_said": "owner"
+   },
+   "raw": "{\"verdict\": \"RESOLVED\", \"certainty\": \"EXPLICIT_COMPLETION\", \"scope\": [\"situation\"], \"quote\": \"Signed NDA attached\", \"start_offset\": 26, \"end_offset\": 45, \"speaker_role_said\": \"owner\"}",
+   "input_tokens": 1499,
+   "output_tokens": 45,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "afeab2d9941458c9610bc14950832497270f1b37f916d42632a8ab78910a651f": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 1,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 1031,
+   "output_tokens": 48,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "e13f44381a385a4103bffb3e95c2277eeabace41f49ff2d0fbe742d605e8a6d7": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Send Pinecrest the signed mutual NDA",
+    "situation": "Zoya at Pinecrest asked for the signed mutual NDA by Thursday. The next move is ours.",
+    "artifact": "Hi Zoya, attaching the signed mutual NDA. Thanks, Arjun"
+   },
+   "raw": "{\"headline\": \"Send Pinecrest the signed mutual NDA\", \"situation\": \"Zoya at Pinecrest asked for the signed mutual NDA by Thursday. The next move is ours.\", \"artifact\": \"Hi Zoya, attaching the signed mutual NDA. Thanks, Arjun\"}",
+   "input_tokens": 1542,
+   "output_tokens": 56,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "e6913aa35164bde4f35588d0386884118cc9878d0827ef22188f09f09956ddbd": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Re: Mutual NDA",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     },
+     {
+      "item": 2,
+      "business": true,
+      "description": "Re: Mutual NDA",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Mutual NDA\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 2, \"business\": true, \"description\": \"Re: Mutual NDA\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 1177,
+   "output_tokens": 71,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "f3f27494122bd7ce168b2fc8ad10a730a917b731deefbfd687d4b194a97693fb": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Mutual NDA",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Mutual NDA\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 1169,
+   "output_tokens": 36,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "f6d2683038a5202a3c3d1426aca1965f764c20af4febed08ff188fbe493de839": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4983,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 5039,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 5231
+    },
+    "confidence_bp": 4000,
+    "rationale": "Our mail of 3 Sep answered them and the ball is in their court; nothing here is ours to do.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4983, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 5039, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 5231}, \"confidence_bp\": 4000, \"rationale\": \"Our mail of 3 Sep answered them and the ball is in their court; nothing here is ours to do.\", \"missing\": []}",
+   "input_tokens": 4159,
+   "output_tokens": 95,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

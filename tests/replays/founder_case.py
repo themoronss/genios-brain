@@ -63,6 +63,7 @@ NOT_EXPRESSIBLE_TODAY: dict[str, str] = {
     "stage": "STEP-09 — no stage is derived for a workstream",
     "lane": "F10 — cards.output_lane is written NULL on the decided path",
     "brief": "STEP-15 — there is no morning brief to appear in",
+    "outcome": "STEP-16 — no card's end records the evidence that closed it",
 }
 #: Expectation keys the runner can check today.
 EXPRESSIBLE_KEYS = ("gate", "memory", "cards")
@@ -248,6 +249,10 @@ class CardExpectation:
     min: int
     max: int
     mentions: tuple[str, ...] = ()
+    #: `09` G6 (`yc2_w27_align` M34.C1.L-data.V0.U03) — from this sweep on (an index into the case's
+    #: sweeps) no card about the subject is open: the work was done, and done means never raised
+    #: again. None: not judged.
+    closed_from: int | None = None
 
 
 @dataclass(frozen=True)
@@ -287,6 +292,10 @@ class FounderCase:
     #: passes, the xfail fails, and this line has to go.
     blocked_on: str = ""
     source: str = field(default="", compare=False)
+    #: STEP-04 C5 (`yc2_w27_align` M34.C1.L-data.V0.U03) — the product's own sending domains for this
+    #: case (`settings.platform_domains`), when the founder's company domain is also the product's,
+    #: as the design partner's is. Empty: production's default stands.
+    platform_domains: tuple[str, ...] = ()
 
     def expressible(self, key: str) -> bool:
         return key not in self.not_expressible
@@ -356,13 +365,13 @@ class CaseRun:
 # =================================================================================================
 _CASE_KEYS = {"case_id", "title", "kind", "label_row", "labelled_by", "replays", "founder",
               "sweeps", "objects", "expected", "forbidden", "witness", "not_expressible",
-              "model", "notes", "blocked_on"}
+              "model", "notes", "blocked_on", "platform_domains"}
 _GMAIL_KEYS = {"id", "source", "sweep", "occurred_at", "from", "to", "cc", "thread", "subject",
                "body", "labels", "headers", "attachments", "read", "mailbox"}
 _MAILBOX = re.compile(r"^[a-z][a-z0-9]{0,15}$")
 _GCAL_KEYS = {"id", "source", "sweep", "occurred_at", "summary", "start", "end", "organizer",
               "attendees", "status", "description", "location", "recurringEventId", "read"}
-_CARD_KEYS = {"about", "min", "max", "mentions"}
+_CARD_KEYS = {"about", "min", "max", "mentions", "closed_from"}
 _ID = re.compile(r"^F\d{2}$")
 
 
@@ -436,6 +445,10 @@ def parse_case(raw: dict[str, Any], *, source: str = "") -> FounderCase:
         if not isinstance(reached, bool):
             raise CaseError(f"{where}: expected.memory[{oid!r}] must be true or false")
     cards = tuple(_card(c, f"{where}.expected.cards") for c in expected.get("cards") or ())
+    for c in cards:
+        if c.closed_from is not None and not 0 < c.closed_from < len(sweeps):
+            raise CaseError(f"{where}: closed_from {c.closed_from} names no later sweep of the case "
+                            f"(it has {len(sweeps)}) — a card is closed AFTER a sweep it was open on")
     if kind == "must_detect" and not any(c.min >= 1 for c in cards):
         raise CaseError(f"{where}: a must_detect case expects at least one card (min >= 1)")
     if kind == "must_abstain" and not any(c.max == 0 for c in cards):
@@ -478,6 +491,14 @@ def parse_case(raw: dict[str, Any], *, source: str = "") -> FounderCase:
     model = raw.get("model") or {}
     if not isinstance(model, dict):
         raise CaseError(f"{where}: model must be a mapping of site to answers")
+    platform_domains = tuple(str(d).strip().lower().lstrip("@").strip(".")
+                             for d in raw.get("platform_domains") or ())
+    for domain in platform_domains:
+        if not domain or "." not in domain or "@" in domain:
+            raise CaseError(f"{where}.platform_domains: {domain!r} is not a domain")
+        if domain in PUBLIC_MAIL_DOMAINS:
+            raise CaseError(f"{where}.platform_domains: {domain} is a public mail domain — never "
+                            "the product's own")
     blocked_on = str(raw.get("blocked_on") or "").strip()
     if raw.get("blocked_on") is not None and len(blocked_on) < 20:
         raise CaseError(f"{where}: blocked_on names the finding or step that blocks the case, in "
@@ -489,7 +510,8 @@ def parse_case(raw: dict[str, Any], *, source: str = "") -> FounderCase:
         objects=objects, expected_gate=gate, expected_memory=memory, cards=cards,
         expected_other=other, forbidden_names=tuple(forbidden.get("names") or ()),
         forbidden_phrases=tuple(forbidden.get("phrases") or ()), witness=witness,
-        not_expressible=not_expressible, model=model, blocked_on=blocked_on, source=source)
+        not_expressible=not_expressible, model=model, blocked_on=blocked_on, source=source,
+        platform_domains=platform_domains)
 
 
 def load_cases(folder: Path = FOUNDER_DIR) -> tuple[FounderCase, ...]:
@@ -588,8 +610,12 @@ def _card(raw: Any, where: str) -> CardExpectation:
     lo, hi = raw.get("min"), raw.get("max")
     if not (isinstance(lo, int) and isinstance(hi, int) and 0 <= lo <= hi):
         raise CaseError(f"{where}: min and max must be integers with 0 <= min <= max")
+    closed_from = raw.get("closed_from")
+    if closed_from is not None and (not isinstance(closed_from, int) or isinstance(closed_from, bool)):
+        raise CaseError(f"{where}: closed_from must be a sweep index")
     return CardExpectation(about=about, min=lo, max=hi,
-                           mentions=tuple(str(t) for t in raw.get("mentions") or ()))
+                           mentions=tuple(str(t) for t in raw.get("mentions") or ()),
+                           closed_from=closed_from)
 
 
 def _instant(value: Any, where: str) -> datetime:
