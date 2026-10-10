@@ -74,7 +74,9 @@ def test_the_prompt_asks_for_each_in_motion_lines_kind_and_counterparty():
 
 
 def test_a_new_prompt_is_a_new_prompt_version():
-    assert D.PROMPT_VERSION == "company-brief-draft.v2"
+    """v3: the prompt offers `vendor` (`yc2_w27_align` M34.C2.L-contract.V0.U01)."""
+    assert D.PROMPT_VERSION == "company-brief-draft.v3"
+    assert "vendor (" in D.build_prompt(PATTERNS)
 
 
 # ── what survives ───────────────────────────────────────────────────────────────────────────────

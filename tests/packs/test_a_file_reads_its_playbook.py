@@ -193,12 +193,68 @@ def test_the_kinds_are_the_brief_s_kinds():
     assert tuple(R.KIND_CAPABILITY) == WORK_KINDS
 
 
-def test_every_mapped_capability_is_declared_by_the_founder_office():
+def test_every_mapped_capability_is_declared_by_its_own_domain():
+    """A capability id names its domain first: `founder_office.…` the Founder Office's, `admin.…` Admin's."""
     import yaml
     from genios_engine.packs.compiler.authoring import default_authoring_root
-    doc = yaml.safe_load((default_authoring_root() / "Founder Office Expertise" / "domain.yaml").read_text())
-    declared = {f"founder_office.{s['id']}.{c}" for s in doc["subdomains"] for c in s["capabilities"]}
+    declared = set()
+    for folder in ("Founder Office Expertise", "Admin Expertise"):
+        doc = yaml.safe_load((default_authoring_root() / folder / "domain.yaml").read_text())
+        domain = doc["identity"]["id"]
+        declared |= {f"{domain}.{s['id']}.{c}" for s in doc["subdomains"] for c in s["capabilities"]}
     assert {c for c in R.KIND_CAPABILITY.values() if c} <= declared
+
+
+def test_a_vendor_file_reads_admin_s_renewal_management():
+    """`09` G5 / `06` D18: a vendor's renewal is Admin's work, not the Founder Office's. On the shipped
+    corpus the capability is authored and none of its playbooks declares stages yet — so a vendor file
+    reads no spine, and the answer says exactly that (an authoring step, never a borrowed playbook)."""
+    assert R.KIND_CAPABILITY["vendor"] == "admin.contract_and_vendor.renewal_management"
+    answer = R.playbook_for("vendor")
+    assert (answer.playbook, answer.reason) == (None, R.NO_SPINE)
+
+
+def test_a_kind_reads_its_capability_in_that_capability_s_own_domain(tmp_path):
+    """The lookup follows the capability id's domain: an Admin capability with a staged playbook is read."""
+    _corpus(tmp_path)                    # the Founder Office beside it, as the shipped root has
+    dom = tmp_path / "Domain Expertise" / "Admin Expertise"
+    cap_id = "admin.contract_and_vendor.renewal_management"
+    _write(dom / "domain.yaml", "identity: {id: admin, name: Admin, version: 1.0.0, status: draft}\n")
+    _write(dom / "registry/situation-capability-map.yaml", "domain: Admin Expertise\nmap: {}\n")
+    cap = dom / "capabilities/05-contract-and-vendor-administration/renewal-management"
+    _write(cap / "capability.yaml", f"""
+identity: {{id: {cap_id}, name: Renewal Management, domain: admin, subdomain: contract_and_vendor,
+            version: 0.1.0, status: draft, stub: false}}
+description: Deciding each renewal before its notice date.
+question: Do we still want it, at this price?
+""")
+    _write(cap / "objects.yaml", f"capability: {cap_id}\ncore: {{required: [], optional: []}}\n"
+                                 "scoped: {required: [], optional: []}\n")
+    pid = "admin.pb.renewal_management.renewals_as_annual_re_decisions"
+    _write(cap / "knowledge.yaml", f"""
+capability: {cap_id}
+playbooks: {{core: [], scoped: [{pid}]}}
+heuristics: {{core: [], scoped: []}}
+mental_models: {{core: [], scoped: []}}
+rules: {{core: [], scoped: []}}
+decision_frameworks: {{core: [], scoped: []}}
+""")
+    _write(dom / "playbooks/renewal_management/renewals-as-annual-re-decisions.yaml", f"""
+identity: {{id: {pid}, name: Renewals as annual re-decisions, kind: playbook, domain: admin,
+            scope: capability, owner_capability: {cap_id}, version: 0.1.0, status: draft}}
+purpose: {{statement: Decide each renewal before its notice date.}}
+when_to_use: {{signals: [A renewal notice arrived.]}}
+steps:
+  - {{order: 1, name: Check usage before the notice date, done_when: Usage is on file.}}
+stages:
+  - {{name: notice_received, typical_duration_days: 14, source: a named reference}}
+success_signal: The renewal is decided before its date.
+outcome_window_days: 30
+metadata: {{owner: Admin, last_updated: "2026-10-10", review_status: unreviewed}}
+""")
+    answer = R.playbook_for("vendor", catalog=ExpertBrainCatalog(tmp_path / "Domain Expertise"))
+    assert answer.reason is None and answer.playbook.capability_id == cap_id
+    assert answer.playbook.playbook_id == pid
 
 
 def test_every_kind_of_work_has_an_answer_on_the_shipped_corpus():

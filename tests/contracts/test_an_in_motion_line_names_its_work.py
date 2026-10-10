@@ -36,7 +36,9 @@ def _brief(*lines):
 # ── the kind ────────────────────────────────────────────────────────────────────────────────────
 
 def test_the_kinds_of_work_are_a_closed_list():
-    assert WORK_KINDS == ("investor", "program", "compliance", "hiring", "intro", "partner")
+    """`06` D31's six, and `vendor` (`09` G5, `06` D18 — `yc2_w27_align` M34.C2.L-contract.V0.U01): a
+    renewal, a price change, a failed payment, a trial ending is work with a date and money."""
+    assert WORK_KINDS == ("investor", "program", "compliance", "hiring", "intro", "partner", "vendor")
 
 
 def test_the_kind_is_the_lines_last_field_and_no_kind_is_the_default():

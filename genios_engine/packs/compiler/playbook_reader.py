@@ -36,8 +36,10 @@ from .stage_priors import StagePrior, stage_priors
 
 DOMAIN = "founder_office"
 
-#: `06` D31's kinds of work → the Founder Office capability whose playbook a file of that kind reads.
-#: `partner` has none yet: a partner file reads nothing, and the answer says so rather than borrowing.
+#: `06` D31's kinds of work → the capability whose playbook a file of that kind reads — the Founder
+#: Office's, and for `vendor` (`06` D18) Admin's renewal management: a capability id names its domain
+#: first, and the playbook is read in that domain. `partner` has none yet: a partner file reads nothing,
+#: and the answer says so rather than borrowing.
 KIND_CAPABILITY: Mapping[str, str | None] = {
     "investor": "founder_office.fundraising.investor_relations",
     "program": "founder_office.programs_and_applications.program_applications",
@@ -45,6 +47,7 @@ KIND_CAPABILITY: Mapping[str, str | None] = {
     "hiring": "founder_office.hiring.offers_and_joining",
     "intro": "founder_office.networking_and_intros.introductions",
     "partner": None,
+    "vendor": "admin.contract_and_vendor.renewal_management",
 }
 
 #: D3's words, on everything a named human has not reviewed.
@@ -188,7 +191,7 @@ def _ids(manifest: Mapping[str, Any], key: str) -> list[str]:
 
 
 def playbook_for(kind: str | None, *, catalog: ExpertBrainCatalog | None = None) -> PlaybookAnswer:
-    """What the Founder Office corpus says about one kind of work. A file reads
+    """What the corpus says about one kind of work, in its capability's own domain. A file reads
     `playbook_for(file.work_kind)`; a file no line names has no kind, and no playbook."""
     if not kind:
         return PlaybookAnswer(kind=None, playbook=None, reason=NO_KIND)
@@ -198,7 +201,7 @@ def playbook_for(kind: str | None, *, catalog: ExpertBrainCatalog | None = None)
     if capability_id is None:
         return PlaybookAnswer(kind=kind, playbook=None, reason=NO_CAPABILITY)
     catalog = catalog or _shipped_catalog()
-    domain = catalog.domains.get(DOMAIN)
+    domain = catalog.domains.get(capability_id.split(".", 1)[0])
     capability = domain.capabilities.get(capability_id) if domain is not None else None
     if capability is None or (capability.content.get("identity") or {}).get("stub"):
         return PlaybookAnswer(kind=kind, playbook=None, reason=NOT_AUTHORED)

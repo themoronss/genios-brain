@@ -146,9 +146,14 @@ def _object_lines(doc) -> Iterable[tuple[str, str]]:
         yield "purpose", _fold(purpose.get("statement") if isinstance(purpose, Mapping) else purpose)
 
 
+def _domain_of(capability_id: str) -> str:
+    """A capability id names its domain first — `founder_office.…`, `admin.…` (`vendor`, `06` D18)."""
+    return capability_id.split(".", 1)[0] or DOMAIN
+
+
 def scope(catalog: ExpertBrainCatalog, capability_id: str) -> dict[str, list]:
     """The documents a review of this capability covers, by kind, in a stable order."""
-    record = catalog.domain(DOMAIN)
+    record = catalog.domain(_domain_of(capability_id))
     capability = record.capabilities[capability_id]
     knowledge = record.knowledge_manifests[capability_id].content
     artifact_ids = sorted({str(i) for key in ("playbooks", "heuristics", "mental_models", "rules",
@@ -260,12 +265,12 @@ def apply(catalog: ExpertBrainCatalog, root: Path, filled: Mapping[str, Any], re
     sys.path.insert(0, str(default_authoring_root() / "_tools"))
     import admit                                            # noqa: E402 — the corpus's own stamp
     marked = ExpertBrainCatalog(root)
-    record = marked.domain(DOMAIN)
+    record = marked.domain(_domain_of(capability_id))
     stamped = [record.capabilities[capability_id]] + [
         record.situations[d.id] for d in scope(marked, capability_id)["situation"]]
     for doc in stamped:
         admit.stamp(root / doc.relative_path, admit.expected(dict(doc.content)))
-    final = ExpertBrainCatalog(root).domain(DOMAIN)
+    final = ExpertBrainCatalog(root).domain(_domain_of(capability_id))
     problems = [capability_id] if _admission_reason(final.capabilities[capability_id]) else []
     for sid in (d.id for d in scope(marked, capability_id)["situation"]):
         if situation_admission_reason(final.situations[sid].content):

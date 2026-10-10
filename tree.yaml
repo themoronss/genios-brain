@@ -7026,9 +7026,11 @@ yc2_w27_align:
                         `09` G5 / `06` D18: `vendor` is a kind of work — a renewal, a price change, a
                         failed payment, a trial ending; the store, the drafter, the route and the script
                         accept it, and `playbook_for("vendor")` reads Admin's renewal-management
-                        capability.
+                        capability. Its verify corrected on 10 Oct, building: the file it named does not
+                        exist; the kind's own tests are the contract's, the playbook reader's, the
+                        drafter's and the two scripts'.
                       artifact: "genios_engine/contracts/company_brief.py"
-                      verify: ".venv/bin/python -m pytest -q tests/contracts/test_company_brief_contract.py tests/packs/test_a_file_reads_its_playbook.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/contracts/test_an_in_motion_line_names_its_work.py tests/packs/test_a_file_reads_its_playbook.py tests/reason/test_the_drafter_names_the_work.py tests/scripts/test_company_brief_script_takes_a_kind.py tests/scripts/test_playbook_review_sheet.py"
                       depends_on: []
             - layer: data
               levels:

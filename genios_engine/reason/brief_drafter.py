@@ -31,7 +31,7 @@ from typing import Any
 from genios_engine.contracts.company_brief import PROPOSABLE, WORK_KINDS, CompanyBriefLine
 
 #: v2 (STEP-11): the prompt asks for each in-motion line's kind of work and counterparty.
-PROMPT_VERSION = "company-brief-draft.v2"
+PROMPT_VERSION = "company-brief-draft.v3"
 COST_PURPOSE = "company_brief_draft"
 MAX_LINES = 30
 MAX_PER_SECTION = 8
@@ -86,6 +86,7 @@ _KIND_GLOSSES: dict[str, str] = {
     "hiring": "filling a role",
     "intro": "an introduction made or asked for",
     "partner": "a design partner, customer or distribution partner",
+    "vendor": "a vendor or subscription: a renewal, a price change, a failed payment, a trial ending",
 }
 
 

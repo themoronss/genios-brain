@@ -18,7 +18,7 @@ promotes what the gate archived from that sender's domain, as the screen does
 accepted lines, and every proposal with the patterns it rests on — never a message.
 
 **The kind of work (STEP-11, `06` D31).** An in-motion line names its kind of work —
-`--kind investor|program|compliance|hiring|intro|partner` — on `add`, and on `accept`, where it sets or
+`--kind investor|program|compliance|hiring|intro|partner|vendor` — on `add`, and on `accept`, where it sets or
 corrects the drafter's kind and `--kind none` clears it; there `--address` and `--domain` correct the
 counterparty too (`none` clears it), as the screen's route does. Each such edit is ONE line's. `show`
 prints each line's kind and each proposal's; the brief's text, the one the models read, never shows one.

@@ -42,9 +42,11 @@ PROPOSABLE: tuple[str, ...] = tuple(s for s in SECTIONS if s != "us")
 
 #: STEP-11 (`06` D31) · the kinds of work an in-motion line may name — each the playbook a file of that
 #: work reads. A closed list, checked here and not by the schema (migration 0196): a seventh kind is an
-#: authoring event, not a schema event. Not a file's ROLE (`context/workstreams.KINDS`): a connector's
-#: file is a role; raising from the fund it introduced is work.
-WORK_KINDS: tuple[str, ...] = ("investor", "program", "compliance", "hiring", "intro", "partner")
+#: authoring event, not a schema event — and `vendor` was that event (`09` G5, `06` D18): a renewal, a
+#: price change, a failed payment, a trial ending is work with a date and money. Not a file's ROLE
+#: (`context/workstreams.KINDS`): a connector's file is a role; raising from the fund it introduced is work.
+WORK_KINDS: tuple[str, ...] = ("investor", "program", "compliance", "hiring", "intro", "partner",
+                               "vendor")
 
 #: How each section is introduced to a model.
 SECTION_TITLES: dict[str, str] = {

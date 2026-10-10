@@ -247,3 +247,12 @@ def test_the_sheet_is_plain_yaml_a_founder_can_fill(tool, root, tmp_path):
         line["decision"] = "accept"
     out.write_text(yaml.safe_dump(filled, sort_keys=False, allow_unicode=True))
     assert tool.main(["--root", str(root), "apply", str(out), "--reviewer", "rohit"]) == 0
+
+
+def test_a_vendor_sheet_reads_admin_s_renewal_management(tool):
+    """`yc2_w27_align` M34.C2.L-contract.V0.U01: `vendor`'s capability is Admin's, so its sheet is read in
+    Admin's domain — on the shipped corpus, every line of renewal management, none of the Founder Office."""
+    from genios_engine.packs.compiler.authoring import ExpertBrainCatalog, default_authoring_root
+    sheet = tool.sheet(ExpertBrainCatalog(default_authoring_root()), "vendor")
+    assert sheet["capability"] == "admin.contract_and_vendor.renewal_management"
+    assert sheet["lines"] and all(l["artifact"].startswith("admin.") for l in sheet["lines"])
