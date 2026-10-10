@@ -16,6 +16,10 @@ may READ, so an unreviewed playbook is answered — and says so: `reviewed` is T
 capability is admitted and a named human reviewed the spine, and otherwise `review_label` carries D3's
 words, *"playbook not yet reviewed"*.
 
+A PLAYBOOK HAS A VERSION (STEP-12). `KindPlaybook.version` is `pb-` and twelve hex of the canonical hash
+of everything the read model shows — the spine, its moves, its claims and whether a named human reviewed
+each — so a review is made against a version, and a file's fingerprint moves when the playbook does.
+
 THE CURRENT STAGE IS NOT HERE. Nothing in this module reads a file's timeline or detects a stage:
 stages are data, the current stage is the expert's judgment (STEP-12), and the dwell is code's (D39).
 
@@ -29,6 +33,7 @@ from functools import lru_cache
 from typing import Any, Mapping
 
 from genios_engine.contracts.measured import PLAYBOOK_PRIOR, Measured
+from genios_engine.platform.canonical import semantic_hash
 
 from .authoring import ExpertBrainCatalog, default_authoring_root
 from .capability_resolver import _admission_reason, artifact_admission_reason
@@ -119,7 +124,15 @@ class KindPlaybook:
     reviewed: bool
     review_label: str | None
 
+    @property
+    def version(self) -> str:
+        """What a review was made against: the content hash of everything `as_dict` shows."""
+        return "pb-" + semantic_hash(self._content())[:12]
+
     def as_dict(self) -> dict[str, Any]:
+        return {**self._content(), "version": self.version}
+
+    def _content(self) -> dict[str, Any]:
         return {"kind": self.kind, "capability_id": self.capability_id,
                 "playbook_id": self.playbook_id, "name": self.name,
                 "stages": [stage.as_dict() for stage in self.stages],
