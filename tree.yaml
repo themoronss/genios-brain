@@ -7055,8 +7055,11 @@ yc2_w27_align:
                       what: >
                         STEP-05's "a later signal upgrades it": measured first — can a signal published
                         after a below-floor run is settled reach memory's reading? — then built (the
-                        settled run re-read once) or struck from STEP-05 with the measurement.
-                      artifact: "genios_engine/context/runner.py"
+                        settled run re-read once) or struck from STEP-05 with the measurement. Measured
+                        on 10 Oct, building: no door publishes a signal for a mail after its capture (a
+                        second read is a duplicate with no S4; the floor judges a capture's own results;
+                        a re-read is a new event) — STRUCK, the test file is the measurement.
+                      artifact: "speedrun008/YC-II W27/STEP-05-PENDING-owner-rohit-and-harsh-every-item-enters-memory.md"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/context/test_a_later_signal_upgrades_a_below_floor_mail.py"
                       depends_on: []
                     - id: M34.C2.L-logic.V0.U07

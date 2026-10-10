@@ -38,7 +38,7 @@ the meetings — the rest is the work Startup India, Boardy and the investors li
 | # | Unit | Where | What |
 |---|---|---|---|
 | 3.1 | pull everything kept | `context/runner.py:218-270` | the signal join becomes a **left** join; `raw_payloads` becomes a left join with fallbacks to `source_events.actor`, `recipients`, `parent_object_id` and `prepared_content.direction`; `_pending_count` (`api/routes.py:3297-3317`) kept in step |
-| 3.2 | the skeleton path | `context/runner.py:162-167`; `context/extract/extractor.py:16-54` | an event with no signal gets an **empty `Extraction`** → the existing writers record person, company, thread, edges, direction and ball-in-court, **with no model call**. A new run status, `skeleton`, is re-admitted when a signal lands later, so the event is upgraded rather than skipped |
+| 3.2 | the skeleton path | `context/runner.py:162-167`; `context/extract/extractor.py:16-54` | an event with no signal gets an **empty `Extraction`** → the existing writers record person, company, thread, edges, direction and ball-in-court, **with no model call**. ~~A new run status, `skeleton`, is re-admitted when a signal lands later, so the event is upgraded rather than skipped~~ — **struck 2026-10-10** (`yc2_w27_align` M34.C2.L-logic.V0.U06), measured: no door publishes a signal for a mail after its capture — a second read is a duplicate and reaches no S4, the floor judges only a capture's own results, and what the re-read ladder reads again lands as a new event, the old row set aside `superseded` (`tests/context/test_a_later_signal_upgrades_a_below_floor_mail.py`) |
 | 3.3 | metadata-only memory for archived mail | same | an `archive`-tier mail still yields its skeleton: who wrote to whom, when, in which thread. That alone would have made Pankaj, Silas and Ori people in the graph |
 | 3.4 | meetings stay meetings | `context/runner.py:138-156`; `capture/structured/registry.py:197-211`; `context/meeting_lifecycle.py` | a calendar event always takes the structured lane and becomes a meeting node with attendees, organizer, start, end and status — **whether or not it has a signal**. A `DEADLINE_STATED` signal may still exist; its expiry no longer hides the meeting |
 | 3.5 | recovery is a real re-run | generalise `_reread_unread` (`api/routes.py:1512-1579`) and `capture/landing/unread.py:37-142` | one re-process path — set aside the dedup key, re-land, finalise L1, restore on failure — used by the parked drain, manual recover, attachment refetch, recapture, extraction parks and `poison_quarantine`. It carries the original outcome and a recovery flag so the gate cannot re-drop |
@@ -67,7 +67,8 @@ the meetings — the rest is the work Startup India, Boardy and the investors li
 
 ```
 GENIOS_TEST_DATABASE_URL=… .venv/bin/python -m pytest tests/context/test_every_kept_event_enters_memory.py -q
-#   an event with no signal gets a skeleton and zero model calls; a later signal upgrades it;
+#   an event with no signal gets a skeleton and zero model calls; ("a later signal upgrades it"
+#   was struck on 10 Oct — no door publishes one: tests/context/test_a_later_signal_upgrades_a_below_floor_mail.py);
 #   a meeting with no signal is a meeting node; a recovered park is re-processed, not flipped —
 #   each by mutation (reverting the left join, the empty Extraction, the status, the re-run)
 .venv/bin/python -m pytest tests/replays -q
