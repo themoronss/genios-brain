@@ -165,11 +165,12 @@ def cache_key(*, site: str, org_id: str, seed: Mapping[str, Any]) -> str:
 
     The prompt version is inside the key by construction, so editing a prompt cannot serve prose the
     new prompt would never have produced; the site id is inside it so two sites reading one decision
-    never collide.
+    never collide. ⛔ And the MODEL the site calls (`06` D7, STEP-12 §8.3 N4): the key left it out, so
+    an answer cached from one model would have answered for the next one the tier names.
     """
     require_site(site)
     return semantic_hash({"site": site, "org_id": str(org_id), "prompt_version": PROMPT_VERSION,
-                          "seed": dict(seed)})
+                          "model": tier_model(tier_for(site)), "seed": dict(seed)})
 
 
 @dataclass

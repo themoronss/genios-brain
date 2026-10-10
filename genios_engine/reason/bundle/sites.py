@@ -89,7 +89,8 @@ SITE_MAX_OUTPUT_TOKENS = {
     SITE_SITUATION: 500,
     # ⛔ A SIZING, NOT A MEASUREMENT — nothing has run yet. A review is fourteen sections and a
     # draft (`contracts/expert_review`): a full one runs about 800-1,600 tokens, so 4,000 is about
-    # 2.5x that, and at the T2 price its worst case is 6 cents of output. R-2's lesson is why it is
+    # 2.5x that, and at the T2 price (1,000 cents a million) its worst case is 4 cents of output.
+    # R-2's lesson is why it is
     # not tighter: a ceiling below the real distribution reads as bad JSON. Here a cut answer is a
     # RECORDED refusal (`truncated`, `03` F140) and the first live pass (`06` D50) measures it.
     SITE_EXPERT: 4000,

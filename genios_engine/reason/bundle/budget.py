@@ -27,7 +27,7 @@ from decimal import Decimal
 from genios_engine.capture.semantic.batch import DEFAULT_TIER_PRICES
 from genios_engine.platform.logging import get_logger
 
-from .sites import TIER_T1, TIER_T2, tier_for
+from .sites import R_SITES, SITE_EXPERT, TIER_T1, TIER_T2, require_site, tier_for
 
 _log = get_logger("genios.reason.bundle.budget")
 
@@ -42,6 +42,16 @@ DEFAULT_DAILY_USD_CAP = "2.00"
 #: Doc 11 §5's acceptance row is "measured $/published decision <= $0.02". This is that row as a
 #: control rather than a report: a single consult estimated above it is refused before it runs.
 DEFAULT_PER_DECISION_USD_CAP = "0.05"
+
+#: ⛔ THE SITES THAT SPEND FROM A BUDGET OF THEIR OWN — `{site: (daily cap, per-call cap)}`, in USD as a
+#: human types it. `06` D7, answered 10 Oct: the expert (R-7) thinks on the Sonnet-class tier with
+#: **$2 a day per org of its own**. Its spend never comes out of the narrative's day, and the
+#: narrative's never out of its: a busy day of narration must not silence the expert, and the expert
+#: must not spend the narrative's prose. The per-call ceiling is its own because the narrative's $0.05
+#: refuses a whole review on every call — a review at its bound, a 60,000-character dossier (15,000
+#: tokens: 3 cents on T2) and the 4,000-token ceiling (4 cents), is 7 cents; 10 cents leaves room for
+#: the dossier's bound and still refuses a runaway prompt.
+OWN_BUDGETS: dict[str, tuple[str, str]] = {SITE_EXPERT: ("2.00", "0.10")}
 
 
 def usd_to_micro(value: object) -> int:
@@ -131,11 +141,17 @@ class NarrativeBudget:
 
     Not a singleton and not cached across sweeps: the day boundary is the ledger's, and a governor
     that outlived a process would open tomorrow with today's balance.
+
+    `site` names a site with a budget of its own (`OWN_BUDGETS`, built with `for_site`); without one
+    this is the narrative's budget, shared by every other site — and neither counts the other's
+    spend.
     """
 
     def __init__(self, *, org_id: str, engine=None, daily_cap_micro_usd: int | None = None,
-                 per_call_cap_micro_usd: int | None = None, now: datetime | None = None) -> None:
+                 per_call_cap_micro_usd: int | None = None, now: datetime | None = None,
+                 site: str | None = None) -> None:
         self.org_id = org_id
+        self._site = None if site is None else require_site(site)
         self._daily_cap = (usd_to_micro(DEFAULT_DAILY_USD_CAP) if daily_cap_micro_usd is None
                            else max(0, int(daily_cap_micro_usd)))
         self._per_call_cap = (usd_to_micro(DEFAULT_PER_DECISION_USD_CAP)
@@ -157,6 +173,20 @@ class NarrativeBudget:
                        getattr(settings, "l4_bundle_max_usd_per_decision",
                                DEFAULT_PER_DECISION_USD_CAP)))
 
+    @classmethod
+    def for_site(cls, site: str, *, org_id: str, engine=None, now: datetime | None = None
+                 ) -> NarrativeBudget:
+        """The budget of a site that spends its own money (`OWN_BUDGETS`): its own daily cap, its own
+        per-call ceiling, and an opening balance of that site's spend alone."""
+        require_site(site)
+        if site not in OWN_BUDGETS:
+            raise ValueError(f"{site} has no budget of its own; it spends the narrative's "
+                             "(NarrativeBudget.from_settings)")
+        daily, per_call = OWN_BUDGETS[site]
+        return cls(org_id=org_id, engine=engine, now=now, site=site,
+                   daily_cap_micro_usd=usd_to_micro(daily),
+                   per_call_cap_micro_usd=usd_to_micro(per_call))
+
     def _opening_balance(self, engine, now: datetime | None) -> int:
         """Today's L4 narrative spend, from `l4_r_site_calls` — this layer's OWN ledger.
 
@@ -164,7 +194,8 @@ class NarrativeBudget:
         the narrative budget for every extraction the tenant paid for that morning and the
         narrative would go quiet for a reason that has nothing to do with narration. Every consult
         writes both — `llm_costs` so platform-wide spend stays whole, here so this ceiling is
-        about this spend.
+        about this spend. And only the sites this budget covers: its own site, or — for the
+        narrative's — every site without a budget of its own.
 
         FAILS CLOSED. An unreadable ledger means the day is treated as spent, which costs a day of
         plainer prose on a tenant whose decisions are unchanged. The opposite default spends real
@@ -173,12 +204,16 @@ class NarrativeBudget:
         if engine is None:
             return 0
         from sqlalchemy import text
+        sites = ([self._site] if self._site is not None
+                 else [s for s in R_SITES if s not in OWN_BUDGETS])
         try:
             with engine.connect() as conn:
                 spent = conn.execute(text(
                     "select coalesce(sum(cost_micro_usd), 0) from l4_r_site_calls "
-                    "where org_id = :o and created_at >= date_trunc('day', :now)"),
-                    {"o": self.org_id, "now": now or datetime.now(tz=_utc())}).scalar()
+                    "where org_id = :o and site = any(:sites) "
+                    "and created_at >= date_trunc('day', :now)"),
+                    {"o": self.org_id, "sites": sites,
+                     "now": now or datetime.now(tz=_utc())}).scalar()
             return int(spent or 0)
         except Exception as exc:      # noqa: BLE001 — see the docstring
             _log.warning("l4 narrative ledger unreadable for org=%s (%s) — refusing consults "
@@ -193,6 +228,15 @@ class NarrativeBudget:
     @property
     def daily_cap_micro_usd(self) -> int:
         return self._daily_cap
+
+    @property
+    def per_call_cap_micro_usd(self) -> int:
+        return self._per_call_cap
+
+    @property
+    def site(self) -> str | None:
+        """The one site this budget is the own budget of, or None for the narrative's."""
+        return self._site
 
     def check(self, estimate: int) -> BudgetVerdict:
         """May a consult estimated at `estimate` micro-dollars run right now?"""
@@ -231,6 +275,6 @@ def _utc():
 
 
 __all__ = ["BudgetVerdict", "DEFAULT_DAILY_USD_CAP", "DEFAULT_PER_DECISION_USD_CAP",
-           "MICRO_PER_USD", "NarrativeBudget", "REASON_DAILY_EXHAUSTED",
+           "MICRO_PER_USD", "NarrativeBudget", "OWN_BUDGETS", "REASON_DAILY_EXHAUSTED",
            "REASON_LEDGER_UNREADABLE", "REASON_PER_CALL", "TIER_T1", "TIER_T2",
            "cost_micro_usd", "estimate_micro_usd", "usd_to_micro"]

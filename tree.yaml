@@ -6630,7 +6630,10 @@ yc2_w27_s12:
                         answer from one model never answers another), and the expert site's own per-consult ceiling in
                         `reason/bundle/budget.py`, so its call is not refused by the $0.05 narrative ceiling. No Opus tier.
                       artifact: "genios_engine/reason/llm_sites.py"
-                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_tiers_and_the_cache_key.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_tiers_and_the_cache_key.py"
+                      # ⛔ CORRECTED 2026-10-10 at the build: the two days are kept apart ON THE
+                      # LEDGER (l4_r_site_calls), so two of its tests need the database; as written
+                      # they would have SKIPPED inside a PASS.
                       depends_on: []
                     - id: M32.C1.L-contract.V0.U05
                       what: >
