@@ -413,6 +413,16 @@ answered (F10, F27, F28, F38, F45, F55) — and `tests/replays/test_every_case_f
 that forbids nothing. One verdict moved: **F54** from not expressible to a failure — the mixer's organiser mailbox
 is a card's subject three times (finding F150), now a forbidden output. Forbidden outputs 5 → 8.
 
+Then forbidden phrases were matched as claims — whole words, either case (`M34.C1.L-logic.V1.U05`) — and the
+vendor kind of work arrived (`M34.C2.L-contract.V0.U01`); neither moved a hit or a prompt.
+
+**The before-score STEP-12 is measured against** (`M34.C1.L-integration.V2.U06`, 10 Oct): the two lines at the top
+of this section, over 58 cases and the Atlas replays 01–07, every cassette written by the ideal reader (no spend).
+No cassette needed re-recording in this block: the forbidden lists, the marker and the vendor kind change what is
+JUDGED, not what any prompt says, and the date fix (F148) moved no prompt of the 47 cases before it. What
+STEP-12 has to move, by where the must-detect cases are lost: at the gate 1 (F56), in reasoning 19 — of them the
+benchmark's five (F48–F52), the verified close (F57) and the mixer's noise (F54).
+
 The table below is the board's state now.
 
 | | |
