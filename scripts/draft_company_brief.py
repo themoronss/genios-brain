@@ -7,8 +7,8 @@
 `--patterns` prints what the drafter would be shown — counts, names, domains, dates
 (`reason/brief_patterns`) — and calls no model. Without a flag it is a DRY RUN: one Sonnet-class call
 (`reason/brief_drafter`, about $0.05, recorded in `llm_costs` as `company_brief_draft`), and it prints
-every proposed line with the patterns it rests on, and every refused line with its reason — writing no
-line. `--apply` makes the same call and writes the lines as PROPOSALS; nothing reaches a prompt until
+every proposed line with the patterns it rests on — an in-motion line with its kind of work (STEP-12,
+`03` F127) — and every refused line with its reason — writing no line. `--apply` makes the same call and writes the lines as PROPOSALS; nothing reaches a prompt until
 the founder accepts it (`scripts/company_brief.py`, or the dashboard's screen).
 
 Every database door goes through `scripts/_db.py`: no fallback to the application's database, and
@@ -42,7 +42,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def render(outcome, patterns: dict[str, Any], *, applied: bool) -> str:
-    """The proposals and what each rests on, then the refusals — never a message."""
+    """The proposals and what each rests on, then the refusals — never a message. An in-motion line
+    prints its kind of work beside its words — `none` when the drafter named none — so the founder
+    accepts the kind with the line (`03` F127); no other section has a kind."""
     by_id = {i["id"]: i for i in patterns.get("items", ())}
     if outcome.skipped:
         return f"no draft: {outcome.skipped}"
@@ -52,7 +54,8 @@ def render(outcome, patterns: dict[str, Any], *, applied: bool) -> str:
               else " — a dry run, nothing written")]
     for p in outcome.lines:
         named = p.address or p.domain
-        out.append(f"  [{p.section}] {p.text}" + (f" <{named}>" if named else ""))
+        out.append(f"  [{p.section}] {p.text}" + (f" <{named}>" if named else "")
+                   + (f" — kind: {p.kind or 'none'}" if p.section == "in_motion" else ""))
         for e in p.evidence:
             item = {k: v for k, v in by_id.get(e, {}).items() if k != "id"}
             out.append(f"      rests on {e}: {json.dumps(item, ensure_ascii=False, sort_keys=True)}")

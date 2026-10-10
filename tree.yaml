@@ -6657,7 +6657,9 @@ yc2_w27_s12:
                         The brief's draft prints each proposal's kind of work beside its words (`03` F127,
                         `scripts/draft_company_brief.py:55`), so the founder accepts the kind with the line. Added by M34.C4.
                       artifact: "scripts/draft_company_brief.py"
-                      verify: ".venv/bin/python -m pytest -q tests/scripts/test_draft_company_brief.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/scripts/test_draft_company_brief.py"
+                      # ⛔ CORRECTED 2026-10-10 at the build: three of the file's six tests read a
+                      # tenant and would have SKIPPED inside a PASS without the database.
                       depends_on: []
         - id: M32.C2
           name: The dossier and the file's fingerprint

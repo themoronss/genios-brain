@@ -144,3 +144,30 @@ def test_apply_writes_proposals_and_accepts_nothing(tenant, capsys):
     assert [(p["section"], p["domain"], p["proposed_by"]) for p in pending] == [
         ("watchlist", "sampark.gov.in", "drafter")]
     assert pending[0]["evidence"][0]["domain"] == "sampark.gov.in" and accepted == []
+
+
+# ── STEP-12 · each proposal prints its kind of work (`03` F127, M32.C1.L-interface.V0.U06) ────────
+
+def _outcome(*lines):
+    from genios_engine.reason.brief_drafter import DraftOutcome
+    return DraftOutcome(model="claude-sonnet-5", input_tokens=700, output_tokens=90, lines=lines)
+
+
+def _proposal(section, text, *, kind=None, address=None, domain=None, evidence=("p1",)):
+    from genios_engine.reason.brief_drafter import Proposal
+    return Proposal(section=section, text=text, address=address, domain=domain,
+                    evidence=evidence, kind=kind)
+
+
+def test_each_proposal_prints_its_kind_of_work_beside_its_words():
+    """`03` F127: the drafter proposed a kind with every in-motion line and the dry run printed the
+    words without it, so the founder accepted a kind nobody showed them. A line with no kind says so."""
+    out = _module().render(_outcome(
+        _proposal("in_motion", "Program · Awadh Enterprise Centre — applied", kind="program",
+                  domain="awadhec.test"),
+        _proposal("in_motion", "Talking to TechBridge", domain="techbridge.test"),
+        _proposal("watchlist", "Startup India portal", domain="sampark.gov.in")),
+        {"items": [{"id": "p1", "kind": "domain"}]}, applied=False)
+    assert "  [in_motion] Program · Awadh Enterprise Centre — applied <awadhec.test> — kind: program" in out
+    assert "  [in_motion] Talking to TechBridge <techbridge.test> — kind: none" in out
+    assert "  [watchlist] Startup India portal <sampark.gov.in>\n" in out + "\n"
