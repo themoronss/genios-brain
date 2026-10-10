@@ -7101,9 +7101,12 @@ yc2_w27_align:
                         A programme or a portal is never decided as an investor: when the founder's
                         investor capability is admitted, an investor situation whose file's kind is
                         program or compliance is refused `misfiled_kind`, counted — proven with the
-                        capability admitted in a test corpus.
+                        capability admitted in a test corpus. Corrected on 10 Oct, building: refused
+                        after admission and before the compile, so its end is recorded and no investor
+                        package is published for it — admitted or not; and the verify carries the
+                        scratch database, because the sweep it proves runs only on Postgres.
                       artifact: "genios_engine/reason/domain_shadow.py"
-                      verify: ".venv/bin/python -m pytest -q tests/reason/test_a_programme_is_not_decided_as_an_investor.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/test_a_programme_is_not_decided_as_an_investor.py"
                       depends_on: [M34.C2.L-contract.V0.U01]
                 - level: 1
                   units:

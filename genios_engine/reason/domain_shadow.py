@@ -82,6 +82,7 @@ from genios_engine.packs.compiler.errors import (
     UnsupportedCoverage,
 )
 from genios_engine.packs.compiler.expertise_publisher import PostgresExpertisePublisher
+from genios_engine.packs.compiler.playbook_reader import KIND_CAPABILITY
 from genios_engine.packs.domain_wiring import expert_catalog
 from genios_engine.packs.wiring import make_registry
 from genios_engine.platform.l4_activation import (
@@ -540,6 +541,71 @@ def live_lane(*, forced: bool, domain: str | None, activated: frozenset[str] | I
 def l3_domain_for(l2_domain: Any) -> str | None:
     """The activatable corpus for one L2 domain, or None when no corpus claims it."""
     return _L2_TO_L3_DOMAIN.get(str(l2_domain or "").strip().lower())
+
+
+# =================================================================================================
+# STEP-11 · A PROGRAMME OR A PORTAL IS NEVER DECIDED AS AN INVESTOR
+# (`yc2_w27_align` M34.C2.L-logic.V0.U10)
+#
+# Layer 2 has no situation type for an application (`06` D32), and its hint files accelerators,
+# incubators and cohorts under `fundraising` by construction (`capture/domain/hints.py`), so a
+# programme's mail and a government portal's form `investor_relationship` / `investor_contact` and
+# route to the investor capability — F17's accelerator, F24's, F01's and F02's portal (STEP-11 §8.1).
+# The capability's own situation file calls that a misfile. Nothing showed it, because the capability
+# is unreviewed and the live compile refused every fundraising file `unreviewed`; with the investor
+# sheet admitted (`06` D45) the programme was compiled, decided and EMITTED as a fund — measured on
+# a test corpus admitted by the founder's own ceremony.
+#
+# So the brief decides. A file whose in-motion line names its kind of work `program` or `compliance`
+# (`06` D31) is refused `misfiled_kind` when the investor capability is the one its route reaches:
+# after admission, so its end is recorded, and before the compile, so no investor package is
+# published for it. On both lanes — the shadow lane measures what the live one would do. A brief that
+# names no such line refuses nothing and costs no read; one that cannot be read is no brief
+# (`platform/company_brief.current`), and the file is read as it was. Which playbook such a file
+# reads instead is STEP-12's, per file (`packs/compiler/playbook_reader`).
+# =================================================================================================
+
+#: The capability that reads a file as an investor's (`06` D2, D31).
+INVESTOR_CAPABILITY: str = str(KIND_CAPABILITY["investor"])
+#: The kinds of work it may never decide — a programme's file and a portal's.
+NOT_AN_INVESTOR: frozenset[str] = frozenset({"program", "compliance"})
+#: The refusal, counted under this name; its end is `unsupported` with this reason.
+MISFILED_KIND = "misfiled_kind"
+
+_ANCHOR_KEYS = ("select node_id, canonical_key from graph_nodes "
+                " where org_id = :o and node_id = any(:ids) and valid_to is null")
+
+
+def file_kinds(conn, org_id: str, brief, anchors: Iterable[str]) -> dict[str, str]:
+    """Anchor node id → `program` or `compliance`, for each file the brief names as such work.
+
+    By the rule a file is filed by everywhere else (`context/workstreams._work_kind`, read by the
+    anchor's own key as `platform/kind_windows` reads D33's window): the first in-motion line the
+    founder accepted that names the anchor's address, or its domain or a parent of it. So a file a
+    founder named as a fund first stays a fund's. No read at all when no line names such work."""
+    from genios_engine.context.workstreams import _anchor_domain, _work_kind, _work_lines
+
+    work = _work_lines(brief)
+    ids = sorted({str(a) for a in anchors if a})
+    if not ids or not any(line.kind in NOT_AN_INVESTOR for line in work):
+        return {}
+    out: dict[str, str] = {}
+    for r in conn.execute(text(_ANCHOR_KEYS), {"o": org_id, "ids": ids}):
+        key = str(r.canonical_key or "").strip().lower()
+        kind = _work_kind(work, {key} if "@" in key else set(), _anchor_domain(key)) if key else None
+        if kind in NOT_AN_INVESTOR:
+            out[str(r.node_id)] = kind
+    return out
+
+
+def misfiled_kind(catalog, *, domain: str | None, situation_type: Any, kind: str | None) -> bool:
+    """Would the investor capability decide this file, which the brief names a programme's or a
+    portal's? The route is the corpus's own (`registry/situation-capability-map.yaml`)."""
+    if kind not in NOT_AN_INVESTOR or domain is None:
+        return False
+    corpus = (getattr(catalog, "domains", None) or {}).get(domain)
+    route = (getattr(corpus, "routes", None) or {}).get(str(situation_type or "")) or {}
+    return INVESTOR_CAPABILITY in (route.get("capabilities") or ())
 
 
 # =================================================================================================
@@ -1014,6 +1080,17 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
         except Exception:      # noqa: BLE001 — a correlator is context, not the product
             logger.exception("could not read cross-domain contradictions for org=%s", org_id)
         counts["contradicted_situations"] = len(contradicted)
+        # STEP-11 · the files the brief names as a programme's or a portal's (`file_kinds`), for the
+        # whole pass in one read. Never fatal: a failure costs this sweep the refusal, every file is
+        # read as it was, and the rollback keeps the failed read from costing the next situation too.
+        misfiled_kinds: dict[str, str] = {}
+        try:
+            misfiled_kinds = file_kinds(conn, org_id, company_brief,
+                                        [str(r["anchor_node_id"]) for r in situations
+                                         if r["anchor_node_id"]])
+        except Exception:      # noqa: BLE001 — a brief that cannot be read is no brief
+            conn.rollback()
+            logger.exception("could not read the files' kinds of work for org=%s", org_id)
         brains = PostgresRuntimeBrains(conn)
         # TWO COMPILERS, ONE CONNECTION, chosen PER SITUATION by the situation's own domain.
         #
@@ -1231,6 +1308,13 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                                   "admitted_without_a_situation")
                     continue
                 bso = publication.situation
+                # STEP-11 · a programme's or a portal's file is never decided as an investor: refused
+                # here, its end recorded, before an investor package can be compiled for it.
+                if misfiled_kind(catalog, domain=row_domain, situation_type=bso.type,
+                                 kind=misfiled_kinds.get(str(anchor))):
+                    counts[MISFILED_KIND] += 1
+                    ends.note(admitted, str(row["situation_id"]), "unsupported", MISFILED_KIND)
+                    continue
                 context_slice = build_context_slice(
                     visibility=situation_visibility,
                     org_id=org_id, situation=row, facts=node_ctx.facts,

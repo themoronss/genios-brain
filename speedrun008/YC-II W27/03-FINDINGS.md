@@ -416,6 +416,17 @@ is a card's subject three times (finding F150), now a forbidden output. Forbidde
 Then forbidden phrases were matched as claims — whole words, either case (`M34.C1.L-logic.V1.U05`) — and the
 vendor kind of work arrived (`M34.C2.L-contract.V0.U01`); neither moved a hit or a prompt.
 
+**A programme or a portal is never decided as an investor — 2026-10-10, `yc2_w27_align`**
+(`M34.C2.L-logic.V0.U10`). Measured first, on a copy of the Founder Office corpus with the investor sheet
+admitted by the founder's own ceremony: a programme's file was compiled, decided and EMITTED as a fund's —
+the shipped corpus hid it only because every fundraising file is refused `unreviewed`. A file the brief names
+`program` or `compliance` (`06` D31) is now refused `misfiled_kind` after admission and before the compile —
+counted, its end recorded (`unsupported`), no investor package published — whether or not the sheet is
+admitted (`tests/reason/test_a_programme_is_not_decided_as_an_investor.py`). On the golden set four admitted
+programme files end that way where they ended `unreviewed` — F17, F20, F24, F35; F01's and F02's portal file
+and F31's programme are held at admission and meet the same refusal the day they are admitted. No verdict and
+no prompt moved: what such a file reads instead is its kind's playbook, STEP-12's, per file.
+
 **The before-score STEP-12 is measured against** (`M34.C1.L-integration.V2.U06`, 10 Oct): the two lines at the top
 of this section, over 58 cases and the Atlas replays 01–07, every cassette written by the ideal reader (no spend).
 No cassette needed re-recording in this block: the forbidden lists, the marker and the vendor kind change what is
@@ -430,7 +441,7 @@ The table below is the board's state now.
 | must-detect that pass · 13 | F03 (an investor introduced by the connector — STEP-09), F04, F05, F06 (an introduced contact's reply owed — STEP-05), F10 (an investor's follow-up — STEP-05), F12, F13, F25 (one offer, one card), F26 (a partner's dated proposal — STEP-05), F28, F42, F44 (a Gmail investor's ask — STEP-05), F46 (an answer in the other mailbox — STEP-10) |
 | must-detect lost at the gate · 1 | F56 (a vendor's renewal notice — the junk filter's prompt drops plan notices; no vendor kind). F16's bounce is kept and read since STEP-10 (D38); five before STEP-07: F01, F02, F03, F09 are kept and read now (the company brief) |
 | must-detect lost before memory · 0 | — (ten before STEP-05) |
-| must-detect lost in reasoning · 19 | F01 (the portal's file is read as an investor in `fundraising` — F94), F02 (the portal's file reaches the decider with none of its notices' words — F99), F07 (two cards and *"happened"*), F09 (the fundraising domain is not active — STEP-07), F11 (no situation reaches the decider), F16 and F47 (a bounce on the fund's file, and no card shows one — STEP-14), F17 (an accelerator framed as an investor), F19 (no card names Ekta), F24 (no card names the review deck), F27 and F29 (one ask, several cards); F48 (the introduced person never written to), F49 (a card that chases a link already sent — finding F147), F50 (a template read as the answer), F51 (two cards, no times — finding F146), F52 (a condition never joined to the fact that meets it), F57 (a card that outlives its answer — finding F152), F54 (a `brief only` case whose cards name the organiser's mailbox — finding F150) |
+| must-detect lost in reasoning · 19 | F01 (the portal's file is typed an investor's in `fundraising` — F94 — and held; admitted, it is refused `misfiled_kind`), F02 (the portal's file reaches the decider with none of its notices' words — F99), F07 (two cards and *"happened"*), F09 (the fundraising domain is not active — STEP-07), F11 (no situation reaches the decider), F16 and F47 (a bounce on the fund's file, and no card shows one — STEP-14), F17 (an accelerator's file — refused `misfiled_kind` since `M34.C2` U10; its playbook is STEP-12's), F19 (no card names Ekta), F24 (no card names the review deck), F27 and F29 (one ask, several cards); F48 (the introduced person never written to), F49 (a card that chases a link already sent — finding F147), F50 (a template read as the answer), F51 (two cards, no times — finding F146), F52 (a condition never joined to the fact that meets it), F57 (a card that outlives its answer — finding F152), F54 (a `brief only` case whose cards name the organiser's mailbox — finding F150) |
 | must-detect with no stage to read · 1 | F15 (the founder's outreach wave, typed `anomaly`) |
 | not expressible · 11 | F08, F14, F18, F20–F23, F45, F53, F55 (`brief only` — `STEP-15`), F30 (the screen door) |
 | must-abstain that pass · 12 | F31 (the assignment), F32 (archived, and Lakshya's social read and not carded — STEP-07), F33, F34 (archived), F35, F36, F37 (the connector is never the person to reply to — since STEP-09 no reply situation about it arises at all), F38 (an answer elsewhere closes the ask), F39, F41, F43 (the founder's own mail, in memory, not carded), F58 (the company domain that is also the platform's — still the founder) |

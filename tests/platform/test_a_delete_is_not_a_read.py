@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_038, (
+    assert r["statements"] == 3_039, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -387,6 +387,9 @@ def test_the_statement_count_did_NOT_move():
     # one SELECT in `scripts/pipeline_health.check_memory_reaches_the_window`. A literal.
     # ⛔ MOVED 3,035 → 3,038 by yc2_w27_align/M34.C2.L-interface.V1.U16 (`03` F148's stored half):
     # `scripts/reframe_stored_dates.py` — its rows, the org's zone, and the one UPDATE. Three literals.
+    # ⛔ MOVED 3,038 → 3,039 by yc2_w27_align/M34.C2.L-logic.V0.U10 (a programme is never decided as
+    # an investor): one SELECT, `reason/domain_shadow._ANCHOR_KEYS` — the anchors' keys the brief's
+    # kinds of work are read by. A literal.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():
