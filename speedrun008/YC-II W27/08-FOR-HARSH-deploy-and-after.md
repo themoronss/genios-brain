@@ -439,6 +439,18 @@ Before the run, count what an earlier backfill drain already filed (read-only, �
 
 ### 3.8 · STEP-09 — after Rohit accepts the brief's connectors and watchlist
 
+**First, the dates late reads stored (`03` F148, `yc2_w27_align` M34.C2).** Until this batch, a mail's "by
+Friday" or "this week" was resolved against the day the sync READ it, not the day it was written, and the
+first connect read 60 days of history at once — so every relative date in that history is off by the gap,
+and a stored answer is reused as it is. The fix makes new reads right; this re-frames the stored ones.
+Read-only first; the count goes to Rohit; then apply, and the re-filing below carries them into the graph
+(re-file even if the brief named nothing new, when the count is not 0):
+
+```
+python scripts/reframe_stored_dates.py --org $ORG --database-url "$URL"            # counts by month, no words
+python scripts/reframe_stored_dates.py --org $ORG --database-url "$URL" --apply    # names each event
+```
+
 **No migration, nothing to run until the brief names a connector or a watched domain.** Mail read
 before the founder named them was filed the old way — an introduction under the connector, a portal's
 notice nowhere — and the drain only files NEW mail the new way. The health check says whether history
