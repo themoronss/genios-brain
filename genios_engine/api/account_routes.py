@@ -655,6 +655,9 @@ _ORG_SCOPED_TABLES = [
     # migration 0191: what each subject's last decision was made on — the change gate's memory.
     # Runtime state: a reset tenant is decided afresh, so nothing may skip on a pre-reset row.
     "reasoning_fingerprints",
+    # migration 0197: the expert's review of each file per fingerprint (STEP-12). Judgment ABOUT the
+    # tenant's own counterparties, quoting their material; and a reset tenant is reviewed afresh.
+    "expert_reviews",
     # Layer 4 deletion order is load-bearing: signals reference runs; runs reference context +
     # config; context references capability. Payloads are explicit as defense in depth even though
     # the context FK also cascades them.

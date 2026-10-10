@@ -1,0 +1,160 @@
+"""STEP-12 · the expert's review is kept: one row per file per fingerprint, and a refusal is a row.
+
+    GENIOS_TEST_DATABASE_URL=postgresql+psycopg://… pytest tests/reason/expert/test_expert_reviews_table.py -q
+
+`migrations/0197_expert_reviews.sql` (tree `yc2_w27_s12` M32.C1.L-contract.V0.U02). The expert judges a
+FILE once each time its fingerprint moves (STEP-12 §8.4); to know it already did, and to replay the
+judgment without the model, the review is kept with what it was shown (the dossier's digest), who wrote
+it (model, prompt version), what it cost, and what came of it. The status vocabulary is closed in the
+schema; a row that is not `valid` carries its reason, and a `valid` row carries its review. `/reset`
+erases it; the tenant's deletion cascades.
+"""
+from __future__ import annotations
+
+import json
+import os
+from datetime import datetime, timezone
+
+import pytest
+from sqlalchemy import create_engine, text
+from sqlalchemy.exc import IntegrityError
+
+from genios_engine.api import account_routes
+
+ORG = "er0197_org"
+AT = datetime(2026, 10, 10, 9, 0, tzinfo=timezone.utc)
+STATUSES = ("valid", "refused", "truncated", "over_budget", "failed")
+
+
+@pytest.fixture
+def engine():
+    url = os.environ.get("GENIOS_TEST_DATABASE_URL")
+    if not url:
+        pytest.skip("needs GENIOS_TEST_DATABASE_URL pointing at a scratch database")
+    eng = create_engine(url)
+    with eng.begin() as c:
+        c.execute(text("delete from orgs where id = :o"), {"o": ORG})
+        c.execute(text("insert into orgs (id, name, email) values (:o, :o, 'er0197@example.test')"),
+                  {"o": ORG})
+    yield eng
+    with eng.begin() as c:
+        c.execute(text("delete from orgs where id = :o"), {"o": ORG})
+
+
+def _insert(c, **over):
+    row = {"o": ORG, "file": "node_fund_neel", "fp": "fp_1", "model": "claude-sonnet-5",
+           "pv": "expert-review.v1", "digest": "sha256:d1", "status": "valid", "reason": None,
+           "review": json.dumps({"mode": "act"}), "tin": 4200, "tout": 900, "cost": 26_100, "at": AT}
+    row.update(over)
+    c.execute(text(
+        "insert into expert_reviews (org_id, file_id, fingerprint, model, prompt_version, "
+        "dossier_digest, status, reason, review, input_tokens, output_tokens, cost_micro_usd, "
+        "reviewed_at) values (:o, :file, :fp, :model, :pv, :digest, :status, :reason, "
+        "cast(:review as jsonb), :tin, :tout, :cost, :at)"), row)
+
+
+@pytest.mark.pg
+def test_the_table_has_the_columns_the_readers_need(engine):
+    with engine.connect() as c:
+        cols = {r.column_name: (r.data_type, r.is_nullable) for r in c.execute(text(
+            "select column_name, data_type, is_nullable from information_schema.columns "
+            "where table_name = 'expert_reviews'"))}
+    assert cols == {
+        "org_id": ("text", "NO"), "file_id": ("text", "NO"), "fingerprint": ("text", "NO"),
+        "model": ("text", "NO"), "prompt_version": ("text", "NO"), "dossier_digest": ("text", "NO"),
+        "status": ("text", "NO"), "reason": ("text", "YES"), "review": ("jsonb", "YES"),
+        "input_tokens": ("integer", "NO"), "output_tokens": ("integer", "NO"),
+        "cost_micro_usd": ("bigint", "NO"),
+        "reviewed_at": ("timestamp with time zone", "NO"),
+    }
+
+
+@pytest.mark.pg
+def test_one_review_per_file_per_fingerprint(engine):
+    with engine.begin() as c:
+        _insert(c)
+        _insert(c, fp="fp_2")                                  # the file moved: a new review
+        _insert(c, file="node_programme_iitd")                 # another file, the same fingerprint
+    with pytest.raises(IntegrityError):
+        with engine.begin() as c:
+            _insert(c, status="refused", reason="unknown_evidence", review=None)
+
+
+@pytest.mark.pg
+@pytest.mark.parametrize("status", STATUSES)
+def test_every_named_status_is_accepted(engine, status):
+    with engine.begin() as c:
+        _insert(c, status=status, reason=None if status == "valid" else f"why it was {status}")
+
+
+@pytest.mark.pg
+def test_an_unknown_status_is_refused(engine):
+    with pytest.raises(IntegrityError):
+        with engine.begin() as c:
+            _insert(c, status="skipped", reason="nobody said")
+
+
+@pytest.mark.pg
+@pytest.mark.parametrize("status", [s for s in STATUSES if s != "valid"])
+@pytest.mark.parametrize("reason", [None, "", "   "])
+def test_a_refusal_without_its_reason_is_refused(engine, status, reason):
+    with pytest.raises(IntegrityError):
+        with engine.begin() as c:
+            _insert(c, status=status, reason=reason, review=None)
+
+
+@pytest.mark.pg
+def test_a_valid_review_carries_the_review(engine):
+    with pytest.raises(IntegrityError):
+        with engine.begin() as c:
+            _insert(c, review=None)
+
+
+@pytest.mark.pg
+def test_a_refused_review_may_keep_what_the_model_wrote(engine):
+    with engine.begin() as c:
+        _insert(c, status="refused", reason="number_not_in_dossier: 32")
+        kept = c.execute(text("select review ->> 'mode' from expert_reviews where org_id = :o"),
+                         {"o": ORG}).scalar()
+    assert kept == "act"
+
+
+@pytest.mark.pg
+@pytest.mark.parametrize("column", ["tin", "tout", "cost"])
+def test_a_negative_cost_is_refused(engine, column):
+    with pytest.raises(IntegrityError):
+        with engine.begin() as c:
+            _insert(c, **{column: -1})
+
+
+@pytest.mark.pg
+def test_the_latest_review_of_a_file_has_its_index(engine):
+    with engine.connect() as c:
+        defn = c.execute(text("select indexdef from pg_indexes where tablename = 'expert_reviews' "
+                              "and indexname = 'expert_reviews_latest'")).scalar()
+    assert defn is not None and "(org_id, file_id, reviewed_at DESC)" in defn
+
+
+@pytest.mark.pg
+def test_deleting_the_tenant_cascades(engine):
+    with engine.begin() as c:
+        _insert(c)
+        c.execute(text("delete from orgs where id = :o"), {"o": ORG})
+        left = c.execute(text("select count(*) from expert_reviews where org_id = :o"),
+                         {"o": ORG}).scalar()
+    assert left == 0
+
+
+def test_reset_names_the_table():
+    assert "expert_reviews" in account_routes._ORG_SCOPED_TABLES
+
+
+@pytest.mark.pg
+def test_the_wipe_leaves_no_review_of_the_tenant(engine):
+    with engine.begin() as c:
+        _insert(c)
+        _insert(c, fp="fp_2", status="over_budget", reason="the day's $2 was spent", review=None)
+        wiped = account_routes._wipe(c, ORG)
+        left = c.execute(text("select count(*) from expert_reviews where org_id = :o"),
+                         {"o": ORG}).scalar()
+    assert wiped["expert_reviews"] == 2 and left == 0

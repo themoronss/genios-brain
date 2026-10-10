@@ -457,5 +457,11 @@ def test_the_resolver_change_moved_no_coverage_verdict():
     # (`platform/company_brief.last_review`, which the confirm route and `scripts/pipeline_health.py`
     # show). An engine change, not a resolver change; read as well as written, so the nine
     # write-only members above did not move.
-    assert len(TC.table_usage()) == 192
-    assert len(TC._known_tables()) == 194
+    # ⛔ RE-PINNED 192 → 193 and 194 → 195 on 2026-10-10 by migration `0197_expert_reviews`
+    # (YC-II W27 STEP-12, `yc2_w27_s12/M32.C1.L-contract.V0.U02`): one new table, whose first
+    # reference is the tenant reset's `delete` list — measured: `table_usage()["expert_reviews"]` is
+    # `{"delete": {"genios_engine/api/account_routes.py"}}`. An engine change, not a resolver change;
+    # its writer and readers (`reason/expert/store.py`, M32.C3.L-data.V1.U03) are later units, and the
+    # nine write-only members above did not move.
+    assert len(TC.table_usage()) == 193
+    assert len(TC._known_tables()) == 195
