@@ -122,6 +122,10 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "*'Every lens one entity appears in.'* One test caller. The multi-lens view of a node, and every live reader asks for one lens at a time",
         "MOVES WHEN a surface shows one entity across lenses — an entity page is the obvious caller and does not exist"),
 
+    "file_judgments.judgments_for": (
+        "What was judged before, for ONE file — the expert's own reviews of it, the cards on its people with their events and verdicts, how its situations ended, its `derived.history.*@<domain>` past — bounded, the cut counted. ⛔ BUILT FIRST ON PURPOSE: STEP-12 builds bottom-up (tree `yc2_w27_s12`), so this read (M32.C2.L-data.V0.U02) lands before the dossier that calls it, and nothing builds a dossier yet",
+        "MOVES WHEN `reason/expert/dossier.py` (M32.C2.L-logic.V1.U04) reads it for each file it builds — this entry is deleted in that unit's commit"),
+
 }
 
 
