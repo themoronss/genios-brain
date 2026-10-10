@@ -1,7 +1,7 @@
 {
  "case_id": "F53",
  "source": "ideal_reader",
- "recorded_at": "a9efb151",
+ "recorded_at": "2a072fb2",
  "answers": {
   "05aec04857e13cdb589156fefc497e3f6cefc0ff9b610b168d787754bd14d6cb": {
    "site": "extraction",
@@ -191,6 +191,22 @@
    "raw": "{\"intent\": \"question\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Ira Bose\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Ira\", \"start_offset\": 101, \"end_offset\": 104}], \"confidence_bp\": 9000}, {\"surface_form\": \"Larkspur Ventures\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Larkspur Ventures\", \"start_offset\": 105, \"end_offset\": 122}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"How many design partners are live\", \"asked_by\": \"Ira Bose\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"How many design partners do you have live today?\", \"start_offset\": 51, \"end_offset\": 99}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"interest after the demo\"}}",
    "input_tokens": 5509,
    "output_tokens": 224,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "5d40dbc85cef6db2be5de633ffb246c582ad7bac78d1267d59f8fd6c5e27d010": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "How many design partners do you have live today?",
+    "start_offset": 51,
+    "end_offset": 99,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"How many design partners do you have live today?\", \"start_offset\": 51, \"end_offset\": 99, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1517,
+   "output_tokens": 49,
    "model": "claude-haiku-4-5-20251001"
   },
   "63fc45687e6e68062f0e85782e749c793deb5f012a55e95563eed319f94354b2": {

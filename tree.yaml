@@ -7181,6 +7181,10 @@ yc2_w27_align:
                       what: >
                         STEP-01 follow-up a: a golden case through the first-connect door
                         (`_process_and_reason_unlocked`), the path a new tenant's first sync takes.
+                        Corrected on 10 Oct, building: every case, not one — and the door takes the
+                        sweep door's `eval_time` (one keyword; the Sync job passes none), so a case is
+                        judged at its own instant; F45's and F53's cassettes keep the door's 4 + 1
+                        resolution answers beside the sweep door's.
                       artifact: "tests/replays/test_the_first_connect_door.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays/test_the_first_connect_door.py"
                       depends_on: []

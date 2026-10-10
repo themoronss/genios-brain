@@ -3,7 +3,7 @@ from __future__ import annotations
 import threading
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:                 # `_run_l2_chain`'s `eval_time` annotation only
+if TYPE_CHECKING:                 # the two chain doors' `eval_time` annotations only
     from datetime import datetime
 
 from fastapi import (APIRouter, BackgroundTasks, Body, Depends, Header, HTTPException,
@@ -3684,9 +3684,13 @@ def _process_and_reason_tracked(org_id: str, heartbeat=None) -> None:
                     detail="Finishing in the background")
 
 
-def _process_and_reason_unlocked(org_id: str, hb) -> bool:
+def _process_and_reason_unlocked(org_id: str, hb, *, eval_time: datetime | None = None) -> bool:
     """The Sync job's pass, unguarded — call `_process_and_reason_tracked`. False when the
-    intelligence phase failed (logged and shown as an error phase)."""
+    intelligence phase failed (logged and shown as an error phase).
+
+    `eval_time` is the one instant every stage is judged at, as in `_run_l2_chain` — `None`, which the
+    Sync job passes, is now. A replay passes the instant its case happened at, so a golden case can
+    run through this door too (`tests/replays/test_the_first_connect_door.py`, STEP-01 follow-up a)."""
     from genios_engine.context.runner import process_pending
     from genios_engine.platform import progress as P
     eng = _graph.engine
@@ -3720,7 +3724,7 @@ def _process_and_reason_unlocked(org_id: str, hb) -> bool:
             out = process_pending(org_id=org_id, store=_graph, llm=_llm,
                                   registry=_registry,
                                   crypto_key=get_settings().crypto_key, max_total=500,
-                                  on_progress=_live)
+                                  eval_time=eval_time, on_progress=_live)
             n = int(out.get("processed", 0))
             processed += n
             P.set_phase(eng, org_id, "processing",
@@ -3747,12 +3751,12 @@ def _process_and_reason_unlocked(org_id: str, hb) -> bool:
     try:
         from genios_engine.reason.runner import run_all as run_l3
         with stage("l4.run_all", org_id):
-            run_l3(org_id=org_id, store=_graph, registry=_registry)
+            run_l3(org_id=org_id, store=_graph, registry=_registry, eval_time=eval_time)
         if _card_store is not None:
             from genios_engine.deliver.pipeline import build_cards_for_org
             with stage("deliver.build_cards", org_id):
                 build_cards_for_org(graph=_graph, card_store=_card_store, org_id=org_id,
-                                    llm=_llm, registry=_registry)
+                                    llm=_llm, registry=_registry, eval_time=eval_time)
         P.set_phase(eng, org_id, "intelligence", state="done", detail="Ready")
     except Exception:      # noqa: BLE001
         _log.exception("intelligence phase failed org=%s", org_id)

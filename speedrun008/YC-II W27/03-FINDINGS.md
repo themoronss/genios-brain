@@ -427,6 +427,14 @@ programme files end that way where they ended `unreviewed` — F17, F20, F24, F3
 and F31's programme are held at admission and meet the same refusal the day they are admitted. No verdict and
 no prompt moved: what such a file reads instead is its kind's playbook, STEP-12's, per file.
 
+**The first-connect door — 2026-10-10, `yc2_w27_align`** (`M34.C2.L-integration.V1.U11`, STEP-01 follow-up a).
+The set drove the 6-hourly sweep's door only; a founder's own Sync takes `_process_and_reason_unlocked`, which
+drains in chunks, calls the drain once more after a short chunk, and runs no post-passes. Every case now runs
+through it too, at its own instant (`tests/replays/test_the_first_connect_door.py`): 58 of 58 reach the sweep
+door's verdict and cards. F45 and F53 ask the resolution site 4 and 1 questions the sweep door leaves to the next
+sweep — the second drain call reads loops the first one opened — answered by the cases' own rules and kept in
+their cassettes. The board does not move.
+
 **The before-score STEP-12 is measured against** (`M34.C1.L-integration.V2.U06`, 10 Oct): the two lines at the top
 of this section, over 58 cases and the Atlas replays 01–07, every cassette written by the ideal reader (no spend).
 No cassette needed re-recording in this block: the forbidden lists, the marker and the vendor kind change what is

@@ -291,7 +291,7 @@ fixes.
 
 | | What | Proposed |
 |---|---|---|
-| a | the set drives the 6-hourly sweep door only. The first-connect door (`api/routes._process_and_reason_unlocked`) is a second chain with its own order, and no case runs it | a runner mode for it — `yc2_w27/M19.C3.L-integration.V3.U05` |
+| a | the set drives the 6-hourly sweep door only. The first-connect door (`api/routes._process_and_reason_unlocked`) is a second chain with its own order, and no case runs it | a runner mode for it — `yc2_w27/M19.C3.L-integration.V3.U05`. **Built 2026-10-10** (`yc2_w27_align` M34.C2.L-integration.V1.U11, `tests/replays/test_the_first_connect_door.py`): every case through that door at its own instant reaches the sweep door's verdict and cards, 58 of 58; F45 and F53 ask the resolution site about loops the sweep door reads one sweep later |
 | b | 23 of the 40 cases forbid nothing, so their verdict rests on the expected cards alone | a forbidden list per case (the founder as the person to reply to, a payment nobody stated) — `yc2_w27/M19.C4.L-data.V3.U06` |
 | c | the forbidden phrase *happened* is matched as a substring: a card saying *"nothing happened"* would trip it | match the forbidden claim, not the word |
 | d | the engine's own nondeterminism (`03` F38, F41) is pinned by the runner, not removed | `STEP-17`; its probe is every case run twice unpinned, prompts compared |
