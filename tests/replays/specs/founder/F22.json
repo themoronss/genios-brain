@@ -34,7 +34,41 @@
    },
    "read": {
     "gate": "drop",
-    "relevance": "not_business"
+    "relevance": "not_business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "neutral",
+     "topics": [
+      "seed grant",
+      "grant applications"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "University Startup Cell",
+       "entity_type": "organization",
+       "quote": "University Startup Cell"
+      }
+     ],
+     "dates_mentioned": [
+      {
+       "as_written": "30 Sep",
+       "earliest": "2026-09-30T00:00:00+05:30",
+       "latest": "2026-09-30T23:59:59+05:30",
+       "certainty": "range",
+       "resolved_against": "2026-09-07T05:00:00Z",
+       "quote": "close on 30 Sep"
+      }
+     ],
+     "exchange_intent": {
+      "category": "automated",
+      "tone": "neutral",
+      "formality": "templated",
+      "addressed_personally": false,
+      "human_authored": false,
+      "asks_for_reply": false,
+      "engagement": "low"
+     }
+    }
    }
   }
  ],
@@ -62,5 +96,6 @@
  "not_expressible": {
   "cards": "brief only — the founder's answer is a line in the morning brief, not a card (D12d)",
   "brief": "STEP-15 — there is no morning brief to appear in"
- }
+ },
+ "notes": "The founder's brief names the University Startup Cell as work in motion (a program line, its domain unistartupcell.test), so since STEP-12 (03 F125, yc2_w27_s12 M32.C1.L-contract.V0.U05) its mail is a named sender's: the gate keeps it as W-07 without asking, and it is read. The `gate` and `relevance` above are what those readers would answer if asked; the extraction is what a faithful reader takes from a templated mailing — a grant whose applications close on 30 Sep. Whether the founder is eligible is not in it."
 }

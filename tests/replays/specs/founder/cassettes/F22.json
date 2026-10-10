@@ -1,21 +1,76 @@
 {
  "case_id": "F22",
  "source": "ideal_reader",
- "recorded_at": "7179cd68",
+ "recorded_at": "e3a6f584",
  "answers": {
-  "91e4073eea2945b9163604f1272594d1dc235571fe8cba04b55674f857c636a6": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "drop",
-     "relevance": 0.05,
-     "reason": "automated, nobody waits on a reply"
+  "2062a72bd8fec4d020346448ed454841a784fc06d06155b4f402fcbe427d2348": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "neutral",
+    "topics": [
+     "seed grant",
+     "grant applications"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "University Startup Cell",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "University Startup Cell",
+        "start_offset": 154,
+        "end_offset": 177
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "dates_mentioned": [
+     {
+      "as_written": "30 Sep",
+      "earliest": "2026-09-30T00:00:00+05:30",
+      "latest": "2026-09-30T23:59:59+05:30",
+      "certainty": "range",
+      "resolved_against": "2026-09-07T05:00:00Z",
+      "evidence": [
+       {
+        "quote": "close on 30 Sep",
+        "start_offset": 96,
+        "end_offset": 111
+       }
+      ]
+     }
+    ],
+    "exchange_intent": {
+     "category": "automated",
+     "tone": "neutral",
+     "formality": "templated",
+     "addressed_personally": false,
+     "human_authored": false,
+     "asks_for_reply": false,
+     "engagement": "low"
     }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}]",
-   "input_tokens": 1047,
-   "output_tokens": 25,
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"neutral\", \"topics\": [\"seed grant\", \"grant applications\"], \"entity_mentions\": [{\"surface_form\": \"University Startup Cell\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"University Startup Cell\", \"start_offset\": 154, \"end_offset\": 177}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"30 Sep\", \"earliest\": \"2026-09-30T00:00:00+05:30\", \"latest\": \"2026-09-30T23:59:59+05:30\", \"certainty\": \"range\", \"resolved_against\": \"2026-09-07T05:00:00Z\", \"evidence\": [{\"quote\": \"close on 30 Sep\", \"start_offset\": 96, \"end_offset\": 111}]}], \"exchange_intent\": {\"category\": \"automated\", \"tone\": \"neutral\", \"formality\": \"templated\", \"addressed_personally\": false, \"human_authored\": false, \"asks_for_reply\": false, \"engagement\": \"low\"}}",
+   "input_tokens": 5522,
+   "output_tokens": 192,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "bc4a6e8b6f90718dc95d8720762f917520879f74f40143bd8e113598a8e3f672": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Seed grant applications close 30 Sep",
+    "start_offset": 0,
+    "end_offset": 36,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Seed grant applications close 30 Sep\", \"start_offset\": 0, \"end_offset\": 36, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1525,
+   "output_tokens": 46,
    "model": "claude-haiku-4-5-20251001"
   }
  }

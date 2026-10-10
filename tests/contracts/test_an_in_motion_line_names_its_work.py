@@ -106,16 +106,23 @@ def test_a_kind_and_a_counterparty_are_each_optional():
     assert (fund.kind, fund.domain) == (None, "banyanseed.test")
 
 
-def test_naming_a_counterparty_does_not_make_it_a_named_sender():
-    """The gate's W-07 reads `named_sender` — connectors, people, the watchlist. D31 gives an in-motion
-    line a counterparty for its FILE; who the gate keeps does not move with it, and moving it would be
-    its own decision."""
+def test_naming_a_counterparty_makes_it_a_named_sender_since_step_12():
+    """The gate's W-07 reads `named_sender`. D31 gave an in-motion line a counterparty for its FILE, and
+    this test said who the gate keeps did not move with it — moving it would be its own decision.
+
+    ⛔ THAT DECISION IS TAKEN, 2026-10-10: STEP-12 §8.8, under Rohit's go of 10 Oct, takes in `03` F125
+    (measured by `yc2_w27_align` M34.C2 U08: F21's and F22's programmes archived, with no file) — a
+    WORK line's counterparty is a named sender, after the connectors, people and watchlist it answered
+    before (`yc2_w27_s12` M32.C1.L-contract.V0.U05; the rule's own tests are
+    `test_an_in_motion_counterparty_is_a_named_sender.py`). The first work line accepted names a
+    counterparty two lines share."""
     brief = _brief(_line("l1", "in_motion", "Banyan Seed — data room asked", kind="investor",
                          domain="banyanseed.test"),
                    _line("l2", "in_motion", "Kiran — partner call booked", kind="investor",
                          address="kiran@banyanseed.test"))
-    assert brief.named_sender("kiran@banyanseed.test") is None
-    assert brief.named_sender("deals@banyanseed.test") is None
+    assert brief.named_sender("kiran@banyanseed.test") == "in_motion:investor:banyanseed.test"
+    assert brief.named_sender("deals@banyanseed.test") == "in_motion:investor:banyanseed.test"
+    assert brief.named_sender("deals@elsewhere.test") is None
 
 
 # ── the version, and the words a model reads ────────────────────────────────────────────────────

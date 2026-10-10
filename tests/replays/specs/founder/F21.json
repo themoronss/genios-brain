@@ -32,7 +32,41 @@
    ],
    "read": {
     "gate": "drop",
-    "relevance": "not_business"
+    "relevance": "not_business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "neutral",
+     "topics": [
+      "pre-incubation programme",
+      "programme applications"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Awadh Enterprise Centre",
+       "entity_type": "organization",
+       "quote": "Awadh Enterprise Centre"
+      }
+     ],
+     "dates_mentioned": [
+      {
+       "as_written": "November",
+       "earliest": "2026-11-01T00:00:00+05:30",
+       "latest": "2026-11-30T23:59:59+05:30",
+       "certainty": "range",
+       "resolved_against": "2026-09-16T05:00:00Z",
+       "quote": "twelve weeks from November"
+      }
+     ],
+     "exchange_intent": {
+      "category": "automated",
+      "tone": "neutral",
+      "formality": "templated",
+      "addressed_personally": false,
+      "human_authored": false,
+      "asks_for_reply": false,
+      "engagement": "low"
+     }
+    }
    }
   },
   {
@@ -51,7 +85,31 @@
    ],
    "read": {
     "gate": "drop",
-    "relevance": "not_business"
+    "relevance": "not_business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "neutral",
+     "topics": [
+      "pre-incubation programme",
+      "programme applications"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Awadh Enterprise Centre",
+       "entity_type": "organization",
+       "quote": "Awadh Enterprise Centre"
+      }
+     ],
+     "exchange_intent": {
+      "category": "automated",
+      "tone": "neutral",
+      "formality": "templated",
+      "addressed_personally": false,
+      "human_authored": false,
+      "asks_for_reply": false,
+      "engagement": "low"
+     }
+    }
    }
   }
  ],
@@ -78,5 +136,6 @@
  "not_expressible": {
   "cards": "brief only — the founder's answer is a line in the morning brief, not a card (D12d)",
   "brief": "STEP-15 — there is no morning brief to appear in"
- }
+ },
+ "notes": "The founder's brief names the Awadh Enterprise Centre as work in motion (a program line, its domain awadhec.test), so since STEP-12 (03 F125, yc2_w27_s12 M32.C1.L-contract.V0.U05) its mail is a named sender's: the gate keeps it as W-07 without asking, and it is read. The `gate` and `relevance` above are what those readers would answer if asked; the extraction is what a faithful reader takes from two templated notices — a programme starting in November, and a reminder that applications close 'soon', which names no date (06 D56)."
 }

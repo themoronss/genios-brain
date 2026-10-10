@@ -170,3 +170,38 @@ def test_a_key_person_at_a_public_mail_host_promotes_nothing(monkeypatch, engine
                      json={"section": "people", "text": "Kavita Rao — an angel",
                            "address": "kavita.rao.vc@gmail.com"})
     assert added.json()["promoted"] == 0
+
+
+# ── STEP-12 · a work line's counterparty is a named sender (`03` F125, M32.C1.L-contract.V0.U05) ────
+
+def test_accepting_a_work_line_promotes_its_counterpartys_archive(monkeypatch, engine):
+    """A programme the founder applied to, named by its domain and its kind of work: its notices the
+    gate archived come back, as a watched portal's do."""
+    _archived(engine, "evt_awadh_1", "eic@awadhec.test", rule="llm_junk")
+    _archived(engine, "evt_awadh_2", "eic@awadhec.test")
+    _archived(engine, "evt_news_2", "news@letters.test")
+    pending = _proposal(engine, section="in_motion",
+                        words="Program · Awadh Enterprise Centre — applied", kind="program",
+                        domain="awadhec.test")
+    api = _client(monkeypatch, engine, OWNER)
+    answer = api.post(f"/v1/company-brief/proposals/{pending}/decide", json={"decision": "accept"})
+    assert answer.json()["promoted"] == 2
+    with engine.connect() as c:
+        outcomes = dict(c.execute(text("select event_id, outcome from source_events "
+                                       "where org_id = :o"), {"o": ORG}).fetchall())
+    assert outcomes == {"evt_awadh_1": "emitted", "evt_awadh_2": "emitted",
+                        "evt_news_2": "archived"}
+
+
+def test_adding_a_work_line_promotes_and_a_line_without_its_kind_does_not(monkeypatch, engine):
+    _archived(engine, "evt_cell_1", "grants@unistartupcell.test")
+    _archived(engine, "evt_tb_1", "hello@techbridge.test")
+    api = _client(monkeypatch, engine, OWNER)
+    kindless = api.post("/v1/company-brief/lines",
+                        json={"section": "in_motion", "text": "Talking to TechBridge",
+                              "domain": "techbridge.test"})
+    assert kindless.status_code == 201 and kindless.json()["promoted"] == 0
+    work = api.post("/v1/company-brief/lines",
+                    json={"section": "in_motion", "text": "Program · University Startup Cell",
+                          "kind": "program", "domain": "unistartupcell.test"})
+    assert work.status_code == 201 and work.json()["promoted"] == 1

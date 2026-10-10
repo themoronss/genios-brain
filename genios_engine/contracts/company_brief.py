@@ -78,6 +78,21 @@ def _domain(value: str | None) -> str | None:
     return domain if domain and "." in domain and "@" not in domain else None
 
 
+#: The sections whose every line names a sender — what promotion and the gate's W-07 read.
+SENDER_SECTIONS: tuple[str, ...] = ("connectors", "people", "watchlist")
+
+
+def names_a_sender(section: str, *, address: str | None = None, domain: str | None = None,
+                   kind: str | None = None) -> bool:
+    """Whether a line of `section` names a sender, so accepting it promotes that sender's archive:
+    a connector, a key person, a watched domain — and a WORK line, an in-motion line that names its
+    kind of work and its counterparty (STEP-12, `03` F125). The one answer every door that accepts a
+    line asks (the confirm routes, `scripts/company_brief.py`)."""
+    if section in SENDER_SECTIONS:
+        return True
+    return section == "in_motion" and bool(kind) and bool(address or domain)
+
+
 def _address(value: str | None) -> str | None:
     address = norm_email(value)
     if not address or address.count("@") != 1 or not all(address.split("@")):
@@ -135,6 +150,12 @@ class CompanyBriefLine:
                 raise ValueError(f"{self.kind!r} is not a kind of work — one of {WORK_KINDS}")
             object.__setattr__(self, "kind", kind)
 
+    @property
+    def names_a_sender(self) -> bool:
+        """Whether accepting this line names a sender (`names_a_sender`)."""
+        return names_a_sender(self.section, address=self.address, domain=self.domain,
+                              kind=self.kind)
+
     def rendered(self) -> str:
         named = self.address or self.domain
         return f"- {self.text}" + (f" <{named}>" if named and named not in self.text else "")
@@ -162,7 +183,10 @@ class CompanyBrief:
 
     def named_sender(self, email: str | None) -> str | None:
         """Whether, and why, the brief names this sender: `connector:<address>`,
-        `person:<address>` or `watchlist:<domain>` (the domain or a subdomain of it)."""
+        `person:<address>` or `watchlist:<domain>` (the domain or a subdomain of it) — and, after
+        those three, `in_motion:<kind>:<address or domain>` for a WORK line's counterparty (STEP-12,
+        `03` F125): an in-motion line naming its kind and its counterparty, the first the founder
+        accepted when two name one sender, as `context/workstreams` files the work."""
         address = _address(email)
         if not address or not self.lines:
             return None
@@ -177,6 +201,13 @@ class CompanyBrief:
             if line.section == "watchlist" and line.domain and (
                     host == line.domain or host.endswith("." + line.domain)):
                 return f"watchlist:{line.domain}"
+        for line in self.lines:
+            if line.section != "in_motion" or not line.kind:
+                continue
+            if line.address and line.address == address:
+                return f"in_motion:{line.kind}:{address}"
+            if line.domain and (host == line.domain or host.endswith("." + line.domain)):
+                return f"in_motion:{line.kind}:{line.domain}"
         return None
 
 
@@ -242,4 +273,5 @@ def compose(*, org_id: str, company: str | None, founder: str | None,
 
 
 __all__ = ["BUDGET_CHARS", "BUDGET_TOKENS", "MAX_LINE_CHARS", "PROPOSABLE", "SECTIONS",
-           "SECTION_TITLES", "WORK_KINDS", "CompanyBrief", "CompanyBriefLine", "compose"]
+           "SECTION_TITLES", "SENDER_SECTIONS", "WORK_KINDS", "CompanyBrief", "CompanyBriefLine",
+           "compose", "names_a_sender"]

@@ -6643,7 +6643,10 @@ yc2_w27_s12:
                         watched portal's; `check_every_piece_of_work_has_one_file` then passes on F21 and F22. Added by
                         `yc2_w27_align` M34.C4 (STEP-12 §8.8).
                       artifact: "genios_engine/contracts/company_brief.py"
-                      verify: ".venv/bin/python -m pytest -q tests/contracts/test_an_in_motion_counterparty_is_a_named_sender.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/contracts/test_an_in_motion_counterparty_is_a_named_sender.py tests/api/test_company_brief_routes.py tests/scripts/test_company_brief_script.py && GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays/test_every_piece_of_work_has_a_file.py"
+                      # ⛔ CORRECTED 2026-10-10 at the build: the unit's own words promise the promotion
+                      # (the confirm routes, the script) and the health check passing on F21 and F22
+                      # (the golden file test) — the contract test alone proved none of them.
                       depends_on: []
             - layer: interface
               levels:

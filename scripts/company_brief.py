@@ -10,9 +10,10 @@
 **Why.** The founder confirms the brief on the dashboard's screen (`api/company_brief_routes`); until
 that screen exists, this makes the same decisions through the same writer
 (`platform/company_brief_store`) — so Harsh can send Rohit the proposals (`show`) and apply exactly what
-Rohit says, the way D14 and D23 are run. Accepting or adding a connector, key person or watchlist line
-promotes what the gate archived from that sender's domain, as the screen does
-(`capture/landing/promote.promote_named_sender`).
+Rohit says, the way D14 and D23 are run. Accepting or adding a connector, key person or watchlist line —
+or, since STEP-12, a work line that names its kind and its counterparty (`03` F125) — promotes what the
+gate archived from that sender's domain, as the screen does
+(`capture/landing/promote.promote_named_sender`; `contracts/company_brief.names_a_sender`).
 
 **What `show` prints.** The brief as the models read it, its version, what its budget left out, the
 accepted lines, and every proposal with the patterns it rests on — never a message.
@@ -39,8 +40,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from scripts._db import add_database_argument, resolve_database_url   # noqa: E402
 
 ACTIONS = ("show", "accept", "reject", "remove", "add")
-#: The sections whose line names a sender, so accepting one promotes that sender's archive.
-NAMES_A_SENDER = ("connectors", "people", "watchlist")
 #: `--kind none` (and, on accept, `--address none` / `--domain none`): the line names none.
 NONE = "none"
 #: What `accept` may edit besides the words — each flag given is the founder's word for ONE line.
@@ -135,6 +134,7 @@ def main(argv: list[str] | None = None) -> int:
                          "counterparty")
     url = resolve_database_url(args, purpose="read or decide a tenant's company brief")
     from genios_engine.capture.landing.promote import promote_named_sender
+    from genios_engine.contracts.company_brief import names_a_sender
     from genios_engine.platform import company_brief_store as store
     from genios_engine.platform.db import get_engine
 
@@ -155,7 +155,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"refused: {exc}")
             return 1
         promoted = promote_named_sender(engine, args.org, address=args.address, domain=args.domain) \
-            if section in NAMES_A_SENDER else 0
+            if names_a_sender(section, address=args.address, domain=args.domain, kind=kind) else 0
         print(f"added {line_id} [{section}]" + (f" as {kind}" if kind else "")
               + f" — in force now; promoted {promoted} archived mail(s)")
         return 0
@@ -175,7 +175,9 @@ def main(argv: list[str] | None = None) -> int:
         except ValueError as exc:            # each id is its own transaction: what came before stands
             print(f"refused {line_id}: {exc}")
             return 1
-        if line is not None and line.section in NAMES_A_SENDER:
+        # A line that names a sender — a connector, a key person, a watched domain, a work line's
+        # counterparty (`contracts/company_brief.names_a_sender`) — gets back what the gate archived.
+        if line is not None and line.names_a_sender:
             promoted = promote_named_sender(engine, args.org, address=line.address,
                                             domain=line.domain)
         print({"accept": "accepted", "reject": "rejected", "remove": "removed"}[args.action]

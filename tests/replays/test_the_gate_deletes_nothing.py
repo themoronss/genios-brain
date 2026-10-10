@@ -55,6 +55,14 @@ RESTATED BY `yc2_w27_align` (M34.C1, before STEP-12). The benchmark's shapes are
 F48–F58, `09` G1, G5, G6 and STEP-04's C5); the gate keeps and reads every one of their mails and events
 but one — F56's renewal notice, which the junk filter's prompt drops and the gate archives
 (`ARCHIVED_IN_ADDED`). Nothing else moved.
+
+RESTATED BY STEP-12 (`yc2_w27_s12` M32.C1.L-contract.V0.U05, `03` F125). A WORK line's counterparty is a
+named sender now — an in-motion line of the brief naming its kind and its counterparty — so the three
+programme notices the brief names are kept and read (W-07, `KEPT_BY_THE_BRIEF`): F21's two from the Awadh
+Enterprise Centre (archived at `llm_junk` until now) and F22's from the University Startup Cell (N-02).
+Each programme is now one file of kind `program`; neither case moves on the board — both are brief-only,
+not expressible (D12d), and no card is built for either. The gate's promise is unchanged: nothing
+dropped, every other archive the same.
 """
 from __future__ import annotations
 
@@ -107,6 +115,9 @@ KEPT_BY_THE_BRIEF: dict[str, tuple[str, ...]] = {
     "F23": ("f23-a", "f23-b", "f23-c", "f23-d"),
     "F32": ("f32-social",),
     "F37": ("f37-intro",),
+    # STEP-12 (`03` F125): a work line's counterparty — the programmes the brief says were applied to.
+    "F21": ("f21-one", "f21-two"),
+    "F22": ("f22-grant",),
 }
 
 #: STEP-10 (`06` D38): the objects above that are a delivery report the parser recognises — kept and
@@ -226,7 +237,8 @@ def test_the_measurement_is_the_one_section_8_recorded():
         "a case listed as moved did not move")
     assert all(set(objs) <= set(DROPPED_BEFORE[c]) for c, objs in KEPT_BY_THE_BRIEF.items()), (
         "the brief can only keep what the gate archived")
-    assert sum(len(objs) for objs in KEPT_BY_THE_BRIEF.values()) == 21
+    # 21 since STEP-07; 24 since STEP-12 (F21's two notices and F22's one, `03` F125).
+    assert sum(len(objs) for objs in KEPT_BY_THE_BRIEF.values()) == 24
 
 
 @pytest.mark.pg

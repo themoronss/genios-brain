@@ -12,7 +12,9 @@ judgment the engine makes, so a teammate may propose — through the drafter —
 ACCEPTING A NAMED SENDER PROMOTES ITS ARCHIVE. A connector, a key person or a watchlist domain the
 founder accepts is a sender whose mail always matters, so whatever the gate archived from that domain
 goes back to the ledger as kept and the next chain pass reads it (`capture/landing/promote`) — the
-promotion `promote.py` was written to wait for. A public mail host is never promoted by domain.
+promotion `promote.py` was written to wait for. A public mail host is never promoted by domain. Since
+STEP-12 a work line names its counterparty the same way (`03` F125) — which lines do is one answer,
+`contracts/company_brief.names_a_sender`.
 
 AN IN-MOTION LINE NAMES ITS KIND OF WORK (STEP-11, `06` D31). Adding a line takes its `kind`
 (`contracts/company_brief.WORK_KINDS`) beside its counterparty's `address` or `domain`; accepting a
@@ -29,6 +31,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import text
 
+from genios_engine.contracts.company_brief import names_a_sender
 from genios_engine.platform import company_brief_store as store
 from genios_engine.platform.auth import AuthCtx, get_current_org, require_account_owner
 from genios_engine.platform.wiring import make_graph_store
@@ -116,7 +119,8 @@ def add_company_brief_line(body: CompanyBriefLineIn,
     except ValueError as exc:
         _refuse(exc)
     promoted = _promote_named(ctx.org_id, address=body.address, domain=body.domain) \
-        if body.section in ("connectors", "people", "watchlist") else 0
+        if names_a_sender(body.section, address=body.address, domain=body.domain,
+                          kind=body.kind) else 0
     return {"line_id": line_id, "status": store.ACCEPTED, "promoted": promoted}
 
 
@@ -142,7 +146,7 @@ def decide_company_brief_proposal(line_id: str, body: CompanyBriefDecision,
     except ValueError as exc:
         _refuse(exc)
     promoted = _promote_named(ctx.org_id, address=line.address, domain=line.domain) \
-        if line.section in ("connectors", "people", "watchlist") else 0
+        if line.names_a_sender else 0
     return {"line_id": line_id, "status": store.ACCEPTED, "promoted": promoted}
 
 

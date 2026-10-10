@@ -20,8 +20,10 @@ about, each replayed from its cassette through the real chain and read through t
     names IN MOTION whose counterparty memory holds mail with has exactly one file — every investor,
     programme, portal, hire and partner of the 20 cases that have one — and F25's offer, the founder's
     and the candidate's mail, is that one file (STEP-09's "one file per subject": six cards once).
-    F21's and F22's programmes are `03` F125's gap, named: the gate archived their mail, and an
-    in-motion counterparty is no named sender, so nothing promoted it and neither has a file.
+    ⛔ F21's and F22's programmes were `03` F125's gap — the gate archived their mail, and an in-motion
+    counterparty was no named sender — until STEP-12 (`yc2_w27_s12` M32.C1.L-contract.V0.U05): a work
+    line's counterparty is a named sender now, so the gate keeps its mail (W-07), it is read, and each
+    programme is one file of kind `program` holding its notices. 22 cases, every one with its file.
 """
 from __future__ import annotations
 
@@ -45,11 +47,12 @@ WATCHED = {"F01": {"startupsetu.gov.test": ("status",)},
 ABSTAIN = ("F32", "F37")
 REPLAYED = (*INTRO_CASES, "F09", *WATCHED, "F32")
 #: The cases whose brief names a piece of work in motion that has mail — one file each.
-IN_MOTION = ("F01", "F02", "F10", "F11", "F12", "F13", "F14", "F17", "F19", "F20", "F23", "F24",
-             "F25", "F26", "F27", "F28", "F29", "F31", "F35", "F42")
-#: `03` F125's gap: the programme's mail, archived, and no file — the measure names it.
-IN_MOTION_UNFILED = {"F21": "awadhec.test", "F22": "unistartupcell.test"}
-EVERY = tuple(sorted({*REPLAYED, *IN_MOTION, *IN_MOTION_UNFILED}))
+IN_MOTION = ("F01", "F02", "F10", "F11", "F12", "F13", "F14", "F17", "F19", "F20", "F21", "F22",
+             "F23", "F24", "F25", "F26", "F27", "F28", "F29", "F31", "F35", "F42")
+#: `03` F125, closed by STEP-12: the programme a work line names, and the notices it sent.
+NAMED_PROGRAMMES = {"F21": ("awadhec.test", ("one", "two")),
+                    "F22": ("unistartupcell.test", ("grant",))}
+EVERY = tuple(sorted({*REPLAYED, *IN_MOTION}))
 
 
 def _scratch_db() -> None:
@@ -229,12 +232,17 @@ def test_one_offer_is_one_file(read):
 
 @pytest.mark.pg
 @pytest.mark.golden
-@pytest.mark.parametrize("case_id", sorted(IN_MOTION_UNFILED))
-def test_a_named_programmes_archived_mail_is_named_as_unfiled(read, case_id):
-    """`03` F125, measured: the founder named the programme; its mail was archived and has no file."""
-    work = read[case_id]["work"]
-    assert not work.ok and "no file: 1," in work.measured, work.measured
-    assert [d for d in work.detail if IN_MOTION_UNFILED[case_id] in d and "no file" in d], work.detail
+@pytest.mark.parametrize("case_id", sorted(NAMED_PROGRAMMES))
+def test_a_programme_a_work_line_names_is_one_file_of_its_kind(read, case_id):
+    """`03` F125, closed: the founder named the programme; its mail is kept and read, and it is one
+    file of kind `program` holding every notice it sent."""
+    domain, objects = NAMED_PROGRAMMES[case_id]
+    seen = read[case_id]
+    file = seen["files"].get(domain)
+    assert file is not None, (case_id, sorted(seen["files"]))
+    assert file.work_kind == "program", (case_id, file)
+    for oid in objects:
+        assert seen["events"][oid] & set(file.events), f"{case_id}: {oid} is not in {domain}'s file"
 
 
 @pytest.mark.pg

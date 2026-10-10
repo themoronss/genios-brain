@@ -141,3 +141,39 @@ def test_reject_remove_and_add_go_through_the_one_writer(tenant, capsys):
         assert store.accepted(c, org) == [] and [p["line_id"] for p in store.pending(c, org)] == [watch]
     assert mod.main(["--org", org, "--database-url", url, "remove", goal]) == 1
     assert f"refused {goal}" in capsys.readouterr().out
+
+
+@pytest.mark.pg
+def test_a_work_line_promotes_its_counterpartys_archive_and_a_kindless_one_does_not(tenant, capsys):
+    """STEP-12 (`03` F125, M32.C1.L-contract.V0.U05): a work line — an in-motion line naming its kind
+    and its counterparty — names a sender, as the screen's routes say (`names_a_sender`)."""
+    url, eng, org, event, watch, goal = tenant
+    mod = _module()
+    assert mod.main(["--org", org, "--database-url", url, "add", "in_motion",
+                     "Talking to the Startup India team", "--domain", "sampark.gov.in"]) == 0
+    out = capsys.readouterr().out
+    assert "promoted 0 archived mail(s)" in out
+    assert _outcome(eng, org, event) == "archived"
+    # The same counterparty with a kind is another line: the kind-less one goes first (`kind_differs`).
+    kindless = out.splitlines()[-1].split()[1]
+    assert mod.main(["--org", org, "--database-url", url, "remove", kindless]) == 0
+    capsys.readouterr()
+    assert mod.main(["--org", org, "--database-url", url, "add", "in_motion",
+                     "Compliance · Startup India recognition", "--kind", "compliance",
+                     "--domain", "sampark.gov.in"]) == 0
+    assert "promoted 1 archived mail(s)" in capsys.readouterr().out
+    assert _outcome(eng, org, event) == "emitted"
+
+
+@pytest.mark.pg
+def test_accepting_a_proposed_work_line_promotes_its_counterpartys_archive(tenant, capsys):
+    url, eng, org, event, watch, goal = tenant
+    from genios_engine.platform import company_brief_store as store
+    with eng.begin() as c:
+        work = store.propose(c, org_id=org, section="in_motion",
+                             words="Compliance · Startup India recognition", kind="compliance",
+                             domain="sampark.gov.in", proposed_by="drafter",
+                             at=datetime.now(timezone.utc))
+    assert _module().main(["--org", org, "--database-url", url, "accept", work]) == 0
+    assert f"accepted {work} as compliance; promoted 1 archived mail(s)" in capsys.readouterr().out
+    assert _outcome(eng, org, event) == "emitted"

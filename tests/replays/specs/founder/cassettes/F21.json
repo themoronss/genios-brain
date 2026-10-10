@@ -1,74 +1,130 @@
 {
  "case_id": "F21",
  "source": "ideal_reader",
- "recorded_at": "7179cd68",
+ "recorded_at": "e3a6f584",
  "answers": {
-  "57ec02fb70df5189e8092d88258df0a97a07f3d660b3d01f561c05e62f7ced40": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "drop",
-     "relevance": 0.05,
-     "reason": "automated, nobody waits on a reply"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}]",
-   "input_tokens": 1040,
-   "output_tokens": 25,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "67cecc19ceffb2f431eebc8c5ba27e14a983707efe757000bf64f07eb886c56c": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "drop",
-     "relevance": 0.05,
-     "reason": "automated, nobody waits on a reply"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"drop\", \"relevance\": 0.05, \"reason\": \"automated, nobody waits on a reply\"}]",
-   "input_tokens": 1050,
-   "output_tokens": 25,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "70138e04c3c334371a5e54e5c687936a8ab8cd124cd6ce241bda27fc21a3e58b": {
-   "site": "relevance",
+  "0ea24ba719612cc8ecfd36e747f539d588bf01cec3874b121d987be044fb2144": {
+   "site": "resolution",
    "parsed": {
-    "verdicts": [
-     {
-      "item": 1,
-      "business": false,
-      "description": "Pre-incubation programme: applications open",
-      "category": "automated",
-      "human_authored": false,
-      "asks_for_reply": false
-     }
-    ]
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Pre-incubation programme: applications open",
+    "start_offset": 0,
+    "end_offset": 43,
+    "speaker_role_said": "unknown"
    },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"Pre-incubation programme: applications open\", \"category\": \"automated\", \"human_authored\": false, \"asks_for_reply\": false}]}",
-   "input_tokens": 1181,
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Pre-incubation programme: applications open\", \"start_offset\": 0, \"end_offset\": 43, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1528,
+   "output_tokens": 47,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "2c82e324195e211e0cf3c3ea35b5decef48b04e60e6150bd3143796956965c49": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Reminder: pre-incubation programme",
+    "start_offset": 0,
+    "end_offset": 34,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Reminder: pre-incubation programme\", \"start_offset\": 0, \"end_offset\": 34, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1518,
    "output_tokens": 45,
    "model": "claude-haiku-4-5-20251001"
   },
-  "90ba9f9acadcab10e28767584fd022ffb586a628fd95e4a4215db4e1ee2d9d16": {
-   "site": "relevance",
+  "a7f165029e7e5f623c6fbd4c77dcb5741d523324b01cdaaa56aaabb4b5d6e1a3": {
+   "site": "extraction",
    "parsed": {
-    "verdicts": [
+    "intent": "inform",
+    "stance": "neutral",
+    "topics": [
+     "pre-incubation programme",
+     "programme applications"
+    ],
+    "entity_mentions": [
      {
-      "item": 1,
-      "business": false,
-      "description": "Reminder: pre-incubation programme",
-      "category": "automated",
-      "human_authored": false,
-      "asks_for_reply": false
+      "surface_form": "Awadh Enterprise Centre",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Awadh Enterprise Centre",
+        "start_offset": 126,
+        "end_offset": 149
+       }
+      ],
+      "confidence_bp": 9000
      }
-    ]
+    ],
+    "exchange_intent": {
+     "category": "automated",
+     "tone": "neutral",
+     "formality": "templated",
+     "addressed_personally": false,
+     "human_authored": false,
+     "asks_for_reply": false,
+     "engagement": "low"
+    }
    },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"Reminder: pre-incubation programme\", \"category\": \"automated\", \"human_authored\": false, \"asks_for_reply\": false}]}",
-   "input_tokens": 1171,
-   "output_tokens": 43,
+   "raw": "{\"intent\": \"inform\", \"stance\": \"neutral\", \"topics\": [\"pre-incubation programme\", \"programme applications\"], \"entity_mentions\": [{\"surface_form\": \"Awadh Enterprise Centre\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Awadh Enterprise Centre\", \"start_offset\": 126, \"end_offset\": 149}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"automated\", \"tone\": \"neutral\", \"formality\": \"templated\", \"addressed_personally\": false, \"human_authored\": false, \"asks_for_reply\": false, \"engagement\": \"low\"}}",
+   "input_tokens": 5512,
+   "output_tokens": 128,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "f45171e5fe96ca071f04c2e314cc4ae7306000dd4fda64b930843f23e63917aa": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "neutral",
+    "topics": [
+     "pre-incubation programme",
+     "programme applications"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Awadh Enterprise Centre",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Awadh Enterprise Centre",
+        "start_offset": 168,
+        "end_offset": 191
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "dates_mentioned": [
+     {
+      "as_written": "November",
+      "earliest": "2026-11-01T00:00:00+05:30",
+      "latest": "2026-11-30T23:59:59+05:30",
+      "certainty": "range",
+      "resolved_against": "2026-09-16T05:00:00Z",
+      "evidence": [
+       {
+        "quote": "twelve weeks from November",
+        "start_offset": 139,
+        "end_offset": 165
+       }
+      ]
+     }
+    ],
+    "exchange_intent": {
+     "category": "automated",
+     "tone": "neutral",
+     "formality": "templated",
+     "addressed_personally": false,
+     "human_authored": false,
+     "asks_for_reply": false,
+     "engagement": "low"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"neutral\", \"topics\": [\"pre-incubation programme\", \"programme applications\"], \"entity_mentions\": [{\"surface_form\": \"Awadh Enterprise Centre\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Awadh Enterprise Centre\", \"start_offset\": 168, \"end_offset\": 191}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"November\", \"earliest\": \"2026-11-01T00:00:00+05:30\", \"latest\": \"2026-11-30T23:59:59+05:30\", \"certainty\": \"range\", \"resolved_against\": \"2026-09-16T05:00:00Z\", \"evidence\": [{\"quote\": \"twelve weeks from November\", \"start_offset\": 139, \"end_offset\": 165}]}], \"exchange_intent\": {\"category\": \"automated\", \"tone\": \"neutral\", \"formality\": \"templated\", \"addressed_personally\": false, \"human_authored\": false, \"asks_for_reply\": false, \"engagement\": \"low\"}}",
+   "input_tokens": 5525,
+   "output_tokens": 200,
    "model": "claude-haiku-4-5-20251001"
   }
  }
