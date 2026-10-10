@@ -19,6 +19,7 @@ from typing import Any
 from genios_engine.context.vocabulary import OWNER_INFERRED
 from genios_engine.context.extract.extractor import Extraction
 from genios_engine.contracts.extraction import ExtractionResult
+from genios_engine.contracts.units import DateCertainty
 
 
 def _span_quote(spans: Sequence[Any]) -> str:
@@ -122,9 +123,16 @@ def adapt_qes_extraction(
 
     commitments = []
     for item in result.commitments:
+        # `03` F149 · A PROMISE IS DUE WHEN ITS WINDOW CLOSES. A bounded window ("this week", "by the
+        # 30th") is due at its last instant — `earliest` made a promise due the moment it was written.
+        # An exact date is one instant either way. A RELATIVE window ("soon") is a guess that
+        # `DateCertainty` says is never a deadline; what it is instead is `06`'s to decide, so it
+        # keeps its old reading until then.
         due_text = None
         if item.due is not None and item.due.earliest is not None:
-            due_text = item.due.earliest.isoformat()
+            relative = item.due.certainty is DateCertainty.RELATIVE
+            bound = item.due.earliest if relative or item.due.latest is None else item.due.latest
+            due_text = bound.isoformat()
         commitments.append({
             "actor": item.actor,
             "action": item.action,
