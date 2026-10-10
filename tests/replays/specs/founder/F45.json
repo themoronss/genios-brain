@@ -628,7 +628,10 @@
  },
  "forbidden": {
   "names": [],
-  "phrases": []
+  "phrases": [
+   "unanswered",
+   "you are slow"
+  ]
  },
  "witness": null,
  "not_expressible": {

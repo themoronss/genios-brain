@@ -142,7 +142,11 @@
  },
  "forbidden": {
   "names": [],
-  "phrases": []
+  "phrases": [
+   "crore",
+   "lakh",
+   "million"
+  ]
  },
  "witness": null,
  "not_expressible": {

@@ -287,7 +287,7 @@ ideal reader's recorded answers (cassettes recorded at `b47239c9`, `06-DECISIONS
 spend). `scripts/golden_score.py --assert-recorded` holds the two lines below to every later run.
 
 ```
-founder golden set   must-detect  13/45 (12 not expressible)   must-abstain  12/13 (0 not exercised)   forbidden outputs  5
+founder golden set   must-detect  13/45 (11 not expressible)   must-abstain  12/13 (0 not exercised)   forbidden outputs  8
 atlas replays 01–07  passing  4/80   blocked  3/80   not expressible  73
 ```
 
@@ -405,6 +405,14 @@ notice; **F57** an ask answered with the signed document (`09` G6) — the card 
 (finding F152); **F58** a founder whose company domain is also the platform's (`STEP-04` C5) — passes: mail
 on it is still the founder, never a counterparty. Nothing else moved.
 
+**Every case forbids something — 2026-10-10, `yc2_w27_align`** (`M34.C1.L-data.V0.U04`). STEP-01 promised each case
+would say what must never appear; 28 of 58 said nothing. Each now names what its own shape makes wrong — an
+invented raise size or valuation (F09, F10, F11), a reply to the connector (F08), a bounce read as silence (F16,
+F47: *"has not replied"*), a state the evidence contradicts (F01, F02, F23), a chase for what was sent or
+answered (F10, F27, F28, F38, F45, F55) — and `tests/replays/test_every_case_forbids_something.py` stops a case
+that forbids nothing. One verdict moved: **F54** from not expressible to a failure — the mixer's organiser mailbox
+is a card's subject three times (finding F150), now a forbidden output. Forbidden outputs 5 → 8.
+
 The table below is the board's state now.
 
 | | |
@@ -412,11 +420,11 @@ The table below is the board's state now.
 | must-detect that pass · 13 | F03 (an investor introduced by the connector — STEP-09), F04, F05, F06 (an introduced contact's reply owed — STEP-05), F10 (an investor's follow-up — STEP-05), F12, F13, F25 (one offer, one card), F26 (a partner's dated proposal — STEP-05), F28, F42, F44 (a Gmail investor's ask — STEP-05), F46 (an answer in the other mailbox — STEP-10) |
 | must-detect lost at the gate · 1 | F56 (a vendor's renewal notice — the junk filter's prompt drops plan notices; no vendor kind). F16's bounce is kept and read since STEP-10 (D38); five before STEP-07: F01, F02, F03, F09 are kept and read now (the company brief) |
 | must-detect lost before memory · 0 | — (ten before STEP-05) |
-| must-detect lost in reasoning · 18 | F01 (the portal's file is read as an investor in `fundraising` — F94), F02 (the portal's file reaches the decider with none of its notices' words — F99), F07 (two cards and *"happened"*), F09 (the fundraising domain is not active — STEP-07), F11 (no situation reaches the decider), F16 and F47 (a bounce on the fund's file, and no card shows one — STEP-14), F17 (an accelerator framed as an investor), F19 (no card names Ekta), F24 (no card names the review deck), F27 and F29 (one ask, several cards); F48 (the introduced person never written to), F49 (a card that chases a link already sent — finding F147), F50 (a template read as the answer), F51 (two cards, no times — finding F146), F52 (a condition never joined to the fact that meets it), F57 (a card that outlives its answer — finding F152) |
+| must-detect lost in reasoning · 19 | F01 (the portal's file is read as an investor in `fundraising` — F94), F02 (the portal's file reaches the decider with none of its notices' words — F99), F07 (two cards and *"happened"*), F09 (the fundraising domain is not active — STEP-07), F11 (no situation reaches the decider), F16 and F47 (a bounce on the fund's file, and no card shows one — STEP-14), F17 (an accelerator framed as an investor), F19 (no card names Ekta), F24 (no card names the review deck), F27 and F29 (one ask, several cards); F48 (the introduced person never written to), F49 (a card that chases a link already sent — finding F147), F50 (a template read as the answer), F51 (two cards, no times — finding F146), F52 (a condition never joined to the fact that meets it), F57 (a card that outlives its answer — finding F152), F54 (a `brief only` case whose cards name the organiser's mailbox — finding F150) |
 | must-detect with no stage to read · 1 | F15 (the founder's outreach wave, typed `anomaly`) |
-| not expressible · 12 | F08, F14, F18, F20–F23, F45, F53–F55 (`brief only` — `STEP-15`), F30 (the screen door) |
+| not expressible · 11 | F08, F14, F18, F20–F23, F45, F53, F55 (`brief only` — `STEP-15`), F30 (the screen door) |
 | must-abstain that pass · 12 | F31 (the assignment), F32 (archived, and Lakshya's social read and not carded — STEP-07), F33, F34 (archived), F35, F36, F37 (the connector is never the person to reply to — since STEP-09 no reply situation about it arises at all), F38 (an answer elsewhere closes the ask), F39, F41, F43 (the founder's own mail, in memory, not carded), F58 (the company domain that is also the platform's — still the founder) |
 | must-abstain not exercised · 0 | — (four before STEP-05) |
 | must-abstain that fail · 1 | F40 (a meeting nobody confirmed, recapped) |
-| forbidden outputs · 5 | *"happened"* — the follow-through narrator told a meeting took place (F07, F29 ×2, F40; finding F48); *"could you resend"* — a card chasing a link already sent (case F49, finding F147) |
+| forbidden outputs · 8 | *"happened"* — the follow-through narrator told a meeting took place (F07, F29 ×2, F40; finding F48); *"could you resend"* — a card chasing a link already sent (case F49, finding F147); `events@bluebayhub.test` — the mixer's organiser mailbox as a card's subject, three cards (case F54, finding F150) |
 | what the numbers judge | the ENGINE, given a faithful reader of every prompt. The model's own mistakes — production junked the real investor mails — are the live evaluation's to measure (`scripts/golden_eval.py --live`, ≈ $0.63 a pass on Haiku 4.5) |

@@ -231,7 +231,10 @@
  },
  "forbidden": {
   "names": [],
-  "phrases": []
+  "phrases": [
+   "already paid",
+   "already submitted"
+  ]
  },
  "witness": null,
  "not_expressible": {

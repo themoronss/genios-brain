@@ -72,7 +72,10 @@
  },
  "forbidden": {
   "names": [],
-  "phrases": []
+  "phrases": [
+   "send an invite",
+   "new matches"
+  ]
  },
  "witness": {
   "stage": "gate",

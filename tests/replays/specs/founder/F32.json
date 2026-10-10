@@ -119,7 +119,10 @@
  },
  "forbidden": {
   "names": [],
-  "phrases": []
+  "phrases": [
+   "RSVP",
+   "register now"
+  ]
  },
  "witness": {
   "stage": "gate",

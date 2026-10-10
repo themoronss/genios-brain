@@ -149,7 +149,9 @@
  },
  "forbidden": {
   "names": [],
-  "phrases": []
+  "phrases": [
+   "confirm the pilot start date"
+  ]
  },
  "witness": {
   "stage": "memory",

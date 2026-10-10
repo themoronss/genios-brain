@@ -109,7 +109,11 @@
  },
  "forbidden": {
   "names": [],
-  "phrases": []
+  "phrases": [
+   "recognition granted",
+   "rejected",
+   "pay the fee"
+  ]
  },
  "witness": null,
  "not_expressible": {

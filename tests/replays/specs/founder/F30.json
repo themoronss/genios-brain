@@ -90,7 +90,10 @@
  },
  "forbidden": {
   "names": [],
-  "phrases": []
+  "phrases": [
+   "Gaurav promised",
+   "waiting on Gaurav"
+  ]
  },
  "witness": null,
  "not_expressible": {

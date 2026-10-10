@@ -167,7 +167,10 @@
  },
  "forbidden": {
   "names": [],
-  "phrases": []
+  "phrases": [
+   "reply to Introly",
+   "follow up with Introly"
+  ]
  },
  "witness": null,
  "not_expressible": {

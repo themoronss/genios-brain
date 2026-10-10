@@ -139,7 +139,10 @@
  },
  "forbidden": {
   "names": [],
-  "phrases": []
+  "phrases": [
+   "already sent",
+   "after the call"
+  ]
  },
  "witness": null,
  "not_expressible": {

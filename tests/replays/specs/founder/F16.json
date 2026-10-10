@@ -116,7 +116,11 @@
  },
  "forbidden": {
   "names": [],
-  "phrases": []
+  "phrases": [
+   "has not replied",
+   "hasn't replied",
+   "no reply from"
+  ]
  },
  "witness": null,
  "not_expressible": {

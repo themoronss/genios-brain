@@ -98,7 +98,11 @@
  },
  "forbidden": {
   "names": [],
-  "phrases": []
+  "phrases": [
+   "upgrade",
+   "payment failed",
+   "invoice due"
+  ]
  },
  "witness": {
   "stage": "gate",

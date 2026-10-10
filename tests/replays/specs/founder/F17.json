@@ -175,7 +175,10 @@
  },
  "forbidden": {
   "names": [],
-  "phrases": []
+  "phrases": [
+   "investor relationship",
+   "term sheet"
+  ]
  },
  "witness": null,
  "not_expressible": {

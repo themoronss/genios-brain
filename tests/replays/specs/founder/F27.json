@@ -155,7 +155,10 @@
  },
  "forbidden": {
   "names": [],
-  "phrases": []
+  "phrases": [
+   "already confirmed",
+   "already answered"
+  ]
  },
  "witness": null,
  "not_expressible": {

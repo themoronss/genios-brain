@@ -53,7 +53,10 @@
  },
  "forbidden": {
   "names": [],
-  "phrases": []
+  "phrases": [
+   "you are eligible",
+   "you qualify"
+  ]
  },
  "witness": null,
  "not_expressible": {

@@ -236,7 +236,10 @@
  },
  "forbidden": {
   "names": [],
-  "phrases": []
+  "phrases": [
+   "Ira is waiting",
+   "reply to Ira"
+  ]
  },
  "witness": null,
  "not_expressible": {

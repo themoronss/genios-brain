@@ -58,7 +58,9 @@
   "brief": "the Bluebay mixer of 20 Aug - no follow-up to anyone you met"
  },
  "forbidden": {
-  "names": [],
+  "names": [
+   "events@bluebayhub.test"
+  ],
   "phrases": []
  },
  "witness": null,
@@ -319,5 +321,5 @@
   ]
  },
  "notes": "09 G1, the benchmark's two networking events with zero mail after: an external event with no follow-up within 7 days. A cohort session is excluded (F31's rule); this is a one-off mixer with named attendees.",
- "blocked_on": null
+ "blocked_on": "the mixer's organiser mailbox gets a card before the mixer and the one follow-up card after it, while the people met get 'a meeting is coming' cards again (03 F150; STEP-14, STEP-15)"
 }

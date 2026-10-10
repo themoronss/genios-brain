@@ -132,7 +132,10 @@
  },
  "forbidden": {
   "names": [],
-  "phrases": []
+  "phrases": [
+   "cancelled",
+   "reschedule"
+  ]
  },
  "witness": null,
  "not_expressible": {

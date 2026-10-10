@@ -274,7 +274,11 @@
  },
  "forbidden": {
   "names": [],
-  "phrases": []
+  "phrases": [
+   "rejected",
+   "pay the fee",
+   "missed the deadline"
+  ]
  },
  "witness": null,
  "not_expressible": {

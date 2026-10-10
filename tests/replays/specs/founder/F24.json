@@ -200,7 +200,10 @@
  },
  "forbidden": {
   "names": [],
-  "phrases": []
+  "phrases": [
+   "overdue",
+   "missed"
+  ]
  },
  "witness": null,
  "not_expressible": {

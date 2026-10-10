@@ -49,7 +49,10 @@
  },
  "forbidden": {
   "names": [],
-  "phrases": []
+  "phrases": [
+   "your application",
+   "awarded"
+  ]
  },
  "witness": null,
  "not_expressible": {
