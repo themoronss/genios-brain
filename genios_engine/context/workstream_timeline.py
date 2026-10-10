@@ -27,6 +27,14 @@ timeline:
 
 AN ORG-LEVEL READER, SO NOTHING PRIVATE (`context/fact_visibility`): an event a seat captured
 privately is no touch. A file id from another tenant reads as an empty timeline here.
+
+A TOUCH SAYS WHAT IT SAID (STEP-12, `yc2_w27_s12` M32.C2.L-data.V0.U06). Each touch carries its
+ledger OUTCOME and its WORDS — the prepared text memory holds for it, cut at `WORDS_CHARS` on a word
+and the cut counted (`words_cut`, per touch and for the file). The outcome is asked FIRST: a
+correlation's membership ignores outcome (`03` F57), so an archived mail can be a member of a file,
+and its words are never read through one — it stays a touch, `outcome` says what it is. This is what
+lets the expert read a portal's notice (F99) and the reply a promise answered beside our own promise
+(F147); which touches the dossier shows whole is the dossier's (`reason/expert/dossier`).
 """
 from __future__ import annotations
 
@@ -48,6 +56,9 @@ MEETING = ("gcal", "calendar_event")
 #: A cancelled calendar event is no meeting (`capture/structured/registry` — gcal's `status`).
 CANCELLED = "cancelled"
 
+#: The most of one touch's words a timeline carries; the rest is counted in `words_cut`.
+WORDS_CHARS = 1200
+
 
 @dataclass(frozen=True, slots=True)
 class Touch:
@@ -60,6 +71,9 @@ class Touch:
     event_id: str                      # the evidence
     thread: str | None                 # the mail's conversation; None for a meeting
     mailbox: str | None = None         # the connection it came through — what a coverage receipt is about
+    outcome: str | None = None         # the ledger's outcome, asked before any word is read (`03` F57)
+    words: str | None = None           # what it said, cut at WORDS_CHARS — None for an archive or no text
+    words_cut: int = 0                 # the characters of it left out
 
 
 @dataclass(frozen=True, slots=True)
@@ -73,16 +87,22 @@ class FileTimeline:
     longest_gap_days: float | None
     days_quiet: float | None           # the open stretch since the last touch — not a gap
     silence_exceeds_prior_gaps: bool | None
+    words_cut: int = 0                 # every touch's words left out, summed
 
 
+#: The words come only through a KEPT event (`se.outcome = 'emitted'` in the join): the outcome is
+#: asked before the text is, so an archived member's words are never read (`03` F57).
 _TOUCHES = text(
     "select distinct se.event_id, se.source, se.object_type, se.source_object_id, "
     "       se.parent_object_id, se.occurred_at, se.captured_at, se.connection_id, "
-    "       lower(se.actor->>'email') as who, se.actor->>'name' as who_name "
+    "       lower(se.actor->>'email') as who, se.actor->>'name' as who_name, se.outcome, "
+    "       pc.clean_text as words "
     "  from context_correlations k "
     "  join context_correlation_members m on m.org_id = k.org_id "
     "       and m.correlation_id = k.correlation_id "
     "  join source_events se on se.org_id = m.org_id and se.event_id = m.event_id "
+    "  left join prepared_content pc on pc.org_id = se.org_id and pc.event_id = se.event_id "
+    "       and se.outcome = 'emitted' "
     " where k.org_id = :o and k.anchor_node_id = :f "
     "   and se.visibility_scope is distinct from 'private' "
     "   and ((se.source = 'gmail' and se.object_type = 'email_message') "
@@ -95,6 +115,21 @@ _CANCELLED = text(
     "  join graph_facts f on f.org_id = n.org_id and f.subject_node_id = n.node_id "
     " where n.org_id = :o and n.valid_to is null and n.canonical_key = any(:keys) "
     "   and f.field = 'meeting.status' and f.valid_to is null and f.value #>> '{}' = :cancelled")
+
+
+def _said(words: str | None) -> tuple[str | None, int]:
+    """A touch's words, cut on a word boundary at `WORDS_CHARS`, and how many characters were left
+    out — never cut inside a word, never cut silently."""
+    folded = " ".join(str(words or "").split())
+    if not folded:
+        return None, 0
+    if len(folded) <= WORDS_CHARS:
+        return folded, 0
+    head = folded[:WORDS_CHARS]
+    if folded[WORDS_CHARS] != " " and " " in head:      # the limit falls inside a word: cut before it
+        head = head.rsplit(" ", 1)[0]
+    head = head.rstrip()
+    return head, len(folded) - len(head)
 
 
 def _days(later: datetime, earlier: datetime) -> float:
@@ -119,15 +154,18 @@ def timeline_for(conn, org_id: str, file_id: str, *, now: datetime) -> FileTimel
     touches: list[Touch] = []
     upcoming: list[Touch] = []
     for r in rows:
+        words, cut = _said(r.words)             # an archive's words never left the database
         if (r.source, r.object_type) == MAIL:
             touches.append(Touch(at=r.occurred_at, kind="mail",
                                  direction="out" if us.is_us(r.who) else "in", who=r.who,
                                  who_name=r.who_name, event_id=r.event_id,
-                                 thread=r.parent_object_id, mailbox=r.connection_id))
+                                 thread=r.parent_object_id, mailbox=r.connection_id,
+                                 outcome=r.outcome, words=words, words_cut=cut))
         elif newest.get(r.source_object_id) is r and r.source_object_id not in cancelled:
             meeting = Touch(at=r.occurred_at, kind="meeting", direction="meeting", who=r.who,
                             who_name=r.who_name, event_id=r.event_id, thread=None,
-                            mailbox=r.connection_id)
+                            mailbox=r.connection_id, outcome=r.outcome, words=words,
+                            words_cut=cut)
             (touches if r.occurred_at <= now else upcoming).append(meeting)
     touches.sort(key=lambda t: (t.at, t.event_id))
     upcoming.sort(key=lambda t: (t.at, t.event_id))
@@ -139,7 +177,8 @@ def timeline_for(conn, org_id: str, file_id: str, *, now: datetime) -> FileTimel
         file_id=file_id, as_of=now, touches=tuple(touches), upcoming=tuple(upcoming),
         gaps_days=gaps, usual_gap=median_of(gaps, basis=FILE_BASIS, unit="days"),
         longest_gap_days=longest, days_quiet=quiet,
-        silence_exceeds_prior_gaps=(quiet > longest) if longest is not None else None)
+        silence_exceeds_prior_gaps=(quiet > longest) if longest is not None else None,
+        words_cut=sum(t.words_cut for t in touches))
 
 
 def as_dict(tl: FileTimeline) -> dict:
@@ -147,13 +186,16 @@ def as_dict(tl: FileTimeline) -> dict:
     def touch(t: Touch) -> dict:
         return {"at": t.at.isoformat(), "kind": t.kind, "direction": t.direction, "who": t.who,
                 "who_name": t.who_name, "event_id": t.event_id, "thread": t.thread,
-                "mailbox": t.mailbox}
+                "mailbox": t.mailbox, "outcome": t.outcome, "words": t.words,
+                "words_cut": t.words_cut}
     return {"file_id": tl.file_id, "as_of": tl.as_of.isoformat(),
             "touches": [touch(t) for t in tl.touches],
             "upcoming": [touch(t) for t in tl.upcoming],
             "gaps_days": list(tl.gaps_days), "usual_gap": tl.usual_gap.as_dict(),
             "longest_gap_days": tl.longest_gap_days, "days_quiet": tl.days_quiet,
-            "silence_exceeds_prior_gaps": tl.silence_exceeds_prior_gaps}
+            "silence_exceeds_prior_gaps": tl.silence_exceeds_prior_gaps,
+            "words_cut": tl.words_cut}
 
 
-__all__ = ["CANCELLED", "FILE_BASIS", "FileTimeline", "Touch", "as_dict", "timeline_for"]
+__all__ = ["CANCELLED", "FILE_BASIS", "FileTimeline", "Touch", "WORDS_CHARS", "as_dict",
+           "timeline_for"]

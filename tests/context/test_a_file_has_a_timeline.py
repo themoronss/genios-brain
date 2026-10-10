@@ -255,10 +255,14 @@ def test_the_timeline_reads_as_json(store):
              captured=T0 + timedelta(days=30))
     with store.engine.connect() as c:
         body = as_dict(timeline_for(c, ORG, _file(store, PRIYA), now=T0 + timedelta(days=40)))
+    # ⛔ MOVED 2026-10-10 by STEP-12 (`yc2_w27_s12` M32.C2.L-data.V0.U06): a touch says what it said —
+    # its ledger outcome, and its words when memory holds them (none here: the world stores no
+    # prepared text), the cut counted. `test_a_touch_says_what_it_said.py` holds the words.
     assert body["touches"][0] == {"at": T0.isoformat(), "kind": "mail", "direction": "in",
                                   "who": PRIYA, "who_name": None,
                                   "event_id": f"{ORG}_in_1", "thread": "t_np",
-                                  "mailbox": "con_x"}
+                                  "mailbox": "con_x", "outcome": "emitted", "words": None,
+                                  "words_cut": 0}
     assert [t["event_id"] for t in body["upcoming"]] == ["evt_next_call"]
     assert body["gaps_days"] == [2.0, 3.0, 4.0, 3.0]
     assert body["usual_gap"] == Measured(value=3.0, n=4, basis="file", unit="days").as_dict()
