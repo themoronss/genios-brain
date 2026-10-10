@@ -25,7 +25,7 @@ def test_shadow_is_the_default_and_is_reported_first():
     assert G.decide(st, kind="advice", priority="critical", now=NOW) == (False, G.SHADOW)
 
 
-def test_dnd_rate_limits_and_the_reminder_exemption():
+def test_dnd_rate_limits_and_the_reminder_exemption_from_the_advice_budget():
     on = G.GuardState(moments_display=True)
     assert G.decide(on, kind="advice", priority="normal", now=NOW) == (True, None)
     dnd = G.GuardState(moments_display=True, dnd=True)
@@ -36,6 +36,39 @@ def test_dnd_rate_limits_and_the_reminder_exemption():
     assert G.decide(hour, kind="reminder", priority="normal", now=NOW) == (True, None)
     day = G.GuardState(moments_display=True, shown_hour=1, shown_day=30)
     assert G.decide(day, kind="verify", priority="high", now=NOW) == (False, G.RATE_DAY)
+
+
+def test_a_reminder_has_a_budget_of_its_own():
+    """"Reminders are never capped" used to mean no number existed. Now one does.
+
+    The budget is separate from the advice budget on purpose — a reminder must not be refused
+    because the seat already saw six pieces of advice this hour, and advice must not get a
+    bigger allowance because the seat had a quiet day for reminders. The measured worst hour
+    (9 Oct 2026 12:00 UTC) was 22 reminder-kind moments for one seat and nothing here would
+    have stopped 220.
+    """
+    on = G.GuardState(moments_display=True)
+    assert G.decide(on, kind="reminder", priority="normal", now=NOW) == (True, None)
+    # The advice budget being spent does not touch it, and vice versa.
+    spent_advice = G.GuardState(moments_display=True, shown_hour=99, shown_day=99)
+    assert G.decide(spent_advice, kind="reminder", priority="normal", now=NOW) == (True, None)
+    spent_reminders = G.GuardState(moments_display=True,
+                                   reminders_day=G.DEFAULT_MAX_REMINDERS_PER_DAY)
+    assert G.decide(spent_reminders, kind="advice", priority="normal", now=NOW) == (True, None)
+    # Its own budget does stop it, with its own reason.
+    assert (G.decide(spent_reminders, kind="reminder", priority="normal", now=NOW)
+            == (False, G.RATE_DAY_REMINDER))
+    # It is a backstop: above both the measured peak (43 true reminders in a day) and what a
+    # correctly-paced device can emit in a working day (6/hour for ten hours).
+    # Bounded on BOTH sides. A number far above any real day is the same as no cap at all,
+    # which is the defect this test exists for; the cap has to be a number someone could hit.
+    assert 60 <= G.DEFAULT_MAX_REMINDERS_PER_DAY <= 200
+    just_under = G.GuardState(moments_display=True,
+                              reminders_day=G.DEFAULT_MAX_REMINDERS_PER_DAY - 1)
+    assert G.decide(just_under, kind="reminder", priority="normal", now=NOW) == (True, None)
+    # Shadow and DND still come first — the budget never promotes a moment past them.
+    assert G.decide(G.GuardState(reminders_day=0), kind="reminder", priority="normal",
+                    now=NOW) == (False, G.SHADOW)
 
 
 def test_quiet_hours_apply_only_when_configured():

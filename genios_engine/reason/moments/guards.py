@@ -5,9 +5,20 @@ Every moment is stored either way; a suppressed one carries the first reason tha
     shadow            capture_policies.moments_display is off (the default — plan §15)
     dnd               the device reports Do-Not-Disturb / Focus (critical moments still show)
     quiet_hours       inside the seat's CONFIGURED quiet window (reminders and critical show)
-    rate_limited_hour ≥ max shown in the last hour (default 6; reminders are never capped)
+    rate_limited_hour ≥ max shown in the last hour (default 6; reminders have their own budget)
     rate_limited_day  ≥ max shown in the last 24 h (default 30)
+    rate_limited_reminder_day
+                      ≥ max REMINDERS shown in the last 24 h (default 60)
     duplicate         an identical moment is still inside its TTL (decided in store.py)
+
+REMINDERS HAVE A BUDGET NOW, AND IT IS A BACKSTOP, NOT A THROTTLE. A reminder is the person's own
+promise, so pacing it belongs on the device, where there is a queue to hold one in and a merge to
+fold a burst into (`lane/queue.rs`, `REMINDER_GAP_MS`: one reminder toast per ten minutes, nothing
+dropped). What this module can do is refuse to be the place where "reminders are never capped"
+means "no number exists at all" — the measured worst hour was 22 reminder-kind moments for one
+seat (9 Oct 2026 12:00 UTC) and nothing here would have stopped 220. The default is deliberately
+above anything a correctly-paced device can produce in a working day (6/hour × 10 h) and above the
+measured peak of 43, so it fires only when something upstream has run away.
 
 QUIET HOURS ARE OPT-IN HERE. `deliver/timing.AttentionProfile` defaults to a protective 21:00–08:00
 window for pushes that interrupt someone who is away. A moment is about what the seat is looking
@@ -34,10 +45,13 @@ DND = "dnd"
 QUIET = "quiet_hours"
 RATE_HOUR = "rate_limited_hour"
 RATE_DAY = "rate_limited_day"
+RATE_DAY_REMINDER = "rate_limited_reminder_day"
 DUPLICATE = "duplicate"
 
 DEFAULT_MAX_PER_HOUR = 6
 DEFAULT_MAX_PER_DAY = 30
+#: Not per-org configurable (no `capture_policies` column): a safety limit, not a preference.
+DEFAULT_MAX_REMINDERS_PER_DAY = 60
 
 
 @dataclass(frozen=True)
@@ -45,8 +59,10 @@ class GuardState:
     moments_display: bool = False
     max_per_hour: int = DEFAULT_MAX_PER_HOUR
     max_per_day: int = DEFAULT_MAX_PER_DAY
+    max_reminders_per_day: int = DEFAULT_MAX_REMINDERS_PER_DAY
     shown_hour: int = 0
     shown_day: int = 0
+    reminders_day: int = 0
     dnd: bool = False
     quiet: QuietWindow | None = None           # None = no quiet window configured
 
@@ -75,11 +91,15 @@ def decide(state: GuardState, *, kind: str, priority: str, now: datetime) -> tup
     if (state.quiet is not None and not critical and kind != "reminder"
             and state.quiet.is_quiet_at(now)):
         return False, QUIET
-    if kind != "reminder":
-        if state.shown_hour >= state.max_per_hour:
-            return False, RATE_HOUR
-        if state.shown_day >= state.max_per_day:
-            return False, RATE_DAY
+    if kind == "reminder":
+        # The device paces these (see the module docstring); this only catches a runaway.
+        if state.reminders_day >= state.max_reminders_per_day:
+            return False, RATE_DAY_REMINDER
+        return True, None
+    if state.shown_hour >= state.max_per_hour:
+        return False, RATE_HOUR
+    if state.shown_day >= state.max_per_day:
+        return False, RATE_DAY
     return True, None
 
 
@@ -89,6 +109,8 @@ _STATE = text(
     " and m.kind <> 'reminder' and m.created_at > :now - interval '1 hour') as shown_hour, "
     "(select count(*) from moments m where m.org_id = :o and m.seat_id = :s and m.display "
     " and m.kind <> 'reminder' and m.created_at > :now - interval '1 day') as shown_day, "
+    "(select count(*) from moments m where m.org_id = :o and m.seat_id = :s and m.display "
+    " and m.kind = 'reminder' and m.created_at > :now - interval '1 day') as reminders_day, "
     "o.timezone as org_tz, p.moments_display, p.moments_max_per_hour, p.moments_max_per_day, "
     "(select bool_or(l.dnd) from presence_leases l where l.org_id = :o and l.seat_id = :s "
     " and l.expires_at > :now and (cast(:d as text) is null or l.device_id = cast(:d as text))"
@@ -121,6 +143,7 @@ def load_state(conn, *, org_id: str, seat_id: str, device_id: str | None,
         max_per_day=int(r["moments_max_per_day"] if r["moments_max_per_day"] is not None
                         else DEFAULT_MAX_PER_DAY),
         shown_hour=int(r["shown_hour"] or 0), shown_day=int(r["shown_day"] or 0),
+        reminders_day=int(r["reminders_day"] or 0),
         dnd=bool(r["dnd"]), quiet=quiet_profile(prefs, r["org_tz"]))
 
 
@@ -130,5 +153,5 @@ def lock_seat(conn, org_id: str, seat_id: str) -> None:
                  {"k": f"moments:{org_id}:{seat_id}"})
 
 
-__all__ = ["DND", "DUPLICATE", "GuardState", "QUIET", "RATE_DAY", "RATE_HOUR", "SHADOW",
-           "decide", "load_state", "lock_seat", "quiet_profile"]
+__all__ = ["DND", "DUPLICATE", "GuardState", "QUIET", "RATE_DAY", "RATE_DAY_REMINDER",
+           "RATE_HOUR", "SHADOW", "decide", "load_state", "lock_seat", "quiet_profile"]
