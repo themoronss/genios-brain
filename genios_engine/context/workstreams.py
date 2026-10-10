@@ -153,13 +153,16 @@ class Workstreams:
         return tuple(n for n in self.named if n.misfiled)
 
 
+#: Every file's members — or, with `:a`, one file's alone (`file_for`): the anchor is in the filter,
+#: never a filter over every file of the tenant.
 _MEMBERS = text(
     "select k.correlation_id, k.anchor_node_id, k.domain, m.event_id, se.occurred_at "
     "  from context_correlations k "
     "  join context_correlation_members m on m.org_id = k.org_id "
     "       and m.correlation_id = k.correlation_id "
     "  join source_events se on se.org_id = m.org_id and se.event_id = m.event_id "
-    " where k.org_id = :o and se.visibility_scope is distinct from 'private'")
+    " where k.org_id = :o and se.visibility_scope is distinct from 'private' "
+    "   and (cast(:a as text) is null or k.anchor_node_id = :a)")
 
 _NODES = text(
     "select node_id, node_type, canonical_key, display_name from graph_nodes "
@@ -311,11 +314,30 @@ def files_for(conn, org_id: str, *, now: datetime,
     """Every file of the tenant, most recently touched first, and the brief's named counterparties.
     `company_brief` defaults to the brief the founder has accepted, read on this connection."""
     brief = company_brief if company_brief is not None else _accepted_brief(conn, org_id)
+    files, connectors = _files(conn, org_id, brief, now=now, anchor=None)
+    return Workstreams(files=tuple(files),
+                       named=_named_counterparties(conn, org_id, brief, _lines(brief), connectors))
+
+
+def file_for(conn, org_id: str, file_id: str, *, now: datetime,
+             company_brief: CompanyBrief | None = None) -> WorkFile | None:
+    """ONE file, read alone (STEP-12): the members of its own anchor, built exactly as `files_for`
+    builds each of its files — what the expert's dossier and `GET /v1/workstreams/{file_id}` read.
+    None for a file this tenant does not hold."""
+    brief = company_brief if company_brief is not None else _accepted_brief(conn, org_id)
+    files, _connectors = _files(conn, org_id, brief, now=now, anchor=str(file_id))
+    return files[0] if files else None
+
+
+def _files(conn, org_id: str, brief: CompanyBrief | None, *, now: datetime,
+           anchor: str | None) -> tuple[list[WorkFile], dict]:
+    """The files of the tenant, or of the one `anchor` — most recently touched first — and the
+    tenant's connectors, which every file's kind is read against."""
     lines = _lines(brief)
     work = _work_lines(brief)
 
     grouped: dict[str, dict] = {}
-    for r in conn.execute(_MEMBERS, {"o": org_id}):
+    for r in conn.execute(_MEMBERS, {"o": org_id, "a": anchor}):
         f = grouped.setdefault(r.anchor_node_id, {"correlations": set(), "domains": set(),
                                                   "events": {}})
         f["correlations"].add(r.correlation_id)
@@ -397,8 +419,7 @@ def files_for(conn, org_id: str, *, now: datetime,
                                  _anchor_domain(node.canonical_key))))
     files.sort(key=lambda f: (f.last_touch is None, -(f.last_touch.timestamp())
                               if f.last_touch else 0, f.file_id))
-    return Workstreams(files=tuple(files),
-                       named=_named_counterparties(conn, org_id, brief, lines, connectors))
+    return files, connectors
 
 
 def _connector_rate(since: dict[str, dict[str, tuple[bool, bool]]],
@@ -483,4 +504,4 @@ def as_dict(ws: Workstreams, *, now: datetime) -> dict:
 
 
 __all__ = ["Ask", "KINDS", "NEVER_A_FILE", "Named", "WorkFile", "Workstreams", "as_dict",
-           "file_as_dict", "files_for"]
+           "file_as_dict", "file_for", "files_for"]

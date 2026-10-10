@@ -6673,7 +6673,9 @@ yc2_w27_s12:
                         `file_for(conn, org_id, file_id, *, now)` — one file read alone, not every file
                         filtered (`api/workstream_routes` uses it).
                       artifact: "genios_engine/context/workstreams.py"
-                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/context/test_one_file_is_read_alone.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/context/test_one_file_is_read_alone.py tests/api/test_a_file_is_readable.py"
+                      # ⛔ WIDENED 2026-10-10 at the build: the unit's words name the route that uses
+                      # it; its own test is what notices the route reading the wrong file.
                       depends_on: []
                     - id: M32.C2.L-data.V0.U02
                       what: >

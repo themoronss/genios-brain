@@ -34,7 +34,7 @@ from genios_engine.context.workstream_numbers import as_dict as numbers_as_dict
 from genios_engine.context.workstream_numbers import numbers_for
 from genios_engine.context.workstream_timeline import as_dict as timeline_as_dict
 from genios_engine.context.workstream_timeline import timeline_for
-from genios_engine.context.workstreams import as_dict, file_as_dict, files_for
+from genios_engine.context.workstreams import as_dict, file_as_dict, file_for, files_for
 from genios_engine.packs.compiler.playbook_reader import playbook_for
 from genios_engine.platform.auth import get_current_org
 from genios_engine.platform.wiring import make_graph_store
@@ -67,8 +67,7 @@ def read_workstream(file_id: str, org_id: str = Depends(get_current_org)) -> dic
     """One file of the tenant: what it is, its timeline, and its numbers, each with what it rests on."""
     now = _now()
     with _engine().connect() as conn:
-        file = next((f for f in files_for(conn, org_id, now=now).files if f.file_id == file_id),
-                    None)
+        file = file_for(conn, org_id, file_id, now=now)
         if file is None:
             raise HTTPException(404, "no such file")
         timeline = timeline_for(conn, org_id, file_id, now=now)
