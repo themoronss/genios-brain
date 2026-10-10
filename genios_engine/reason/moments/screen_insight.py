@@ -555,23 +555,32 @@ def is_a_person(who: str | None) -> bool:
 def _is_paste(text, quote: str) -> bool:
     """Is `text` the quote copied rather than a description of it?
 
-    Not string equality — the model trims and re-punctuates. A description of a message is
-    SHORTER than it and says something the message does not; a paste shares nearly all of its
-    words. The test is containment either way after normalising, or a word overlap above
-    `PASTE_OVERLAP` on a text that is not meaningfully shorter.
+    Not string equality — the model trims and re-punctuates. But NEAR equality: the measured
+    defect was a headline identical to its quote, and every attempt to reach further than that
+    has eaten a real headline.
     """
     t, q = _norm(text or ""), _norm(quote or "")
     if not t or not q:
         return False
-    # LENGTH FIRST. A headline shorter than its quote is a summary even when every one of its
-    # words came from the message: "Phishing mail from our domain" out of a long mail, or "Send
-    # the signed MSA" out of "send the signed MSA by Friday". Both were rejected before this.
-    if len(t) < len(q) * PASTE_NEAR_WHOLE:
+    # LENGTH FIRST, AND IN BOTH DIRECTIONS.
+    #
+    # Shorter than its quote ⇒ a summary, even when every one of its words came from the message:
+    # "Phishing mail from our domain" out of a long mail, "Send the signed MSA" out of "send the
+    # signed MSA by Friday".
+    #
+    # LONGER than its quote ⇒ it adds something the quote does not say, which is the whole job of
+    # a headline. "Priya will share the signed PO by Thursday" wraps the quote "share the signed
+    # PO by Thursday" and names who is on the hook — a good card, and containment alone rejected
+    # it. That half of the rule shipped on 9 Oct 2026 and was dropping exactly the headlines the
+    # prompt asks for; this is the fix.
+    #
+    # What is left fires only when the two are within 10% of each other in length AND one sits
+    # inside the other — the paste, and nothing else.
+    if len(t) < len(q) * PASTE_NEAR_WHOLE or len(q) < len(t) * PASTE_NEAR_WHOLE:
         return False
-    # Containment or equality only. A word-overlap test was tried and dropped: a five-word
-    # headline shares four words with the line it describes almost by definition, so it rejected
-    # "Phishing mail from our domain" (a good headline for "phishing mail from your domain, fix by
-    # Friday"). The measured defect was an EXACT paste, and the rule does not reach past it.
+    # A word-overlap test was tried and dropped: a five-word headline shares four words with the
+    # line it describes almost by definition, so it rejected "Phishing mail from our domain" (a
+    # good headline for "phishing mail from your domain, fix by Friday").
     return t == q or t in q or q in t
 
 
