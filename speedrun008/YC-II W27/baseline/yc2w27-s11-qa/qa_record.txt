@@ -80,3 +80,24 @@ batch in l2_work_queue, and tests/test_screen_promoter_pg.py leaves open rows fo
 more new databases: the warm-lane file alone 12 passed; screen promoter then warm lane 1 failed, 21
 passed; warm lane then screen promoter 22 passed. The whole suite (tier 2) orders tests/platform first.
 tests/platform alone on a new database: 955 passed, 1 skipped (0080, the declared exception).
+
+RUN 2 · the merge of origin/harsh/mvp (c50f0f7e) and what followed, at bac34d35 (code tree clean), 2026-10-10
+00:05–01:07 UTC, the Mac held awake (caffeinate -i) — GREEN on every tier
+
+  An earlier run of the merge, at c50f0f7e on the night of 9-10 Oct, is void: the Mac slept through it on
+  battery (2 h 37 min of wall clock for 42 min of process time, pmset -g log), its whole suite showed two
+  wall-clock failures (03 F142, F143) and its last three tiers were stopped. This run replaces it:
+
+1 · the tree, and every unit's own verify — M30, 31 units                  exit 0
+      35 pass / 0 fail / 0 skip (M31's four not built)
+2 · the whole suite on the database                                        exit 0
+      19284 passed, 4 skipped, 90 xfailed, 1623 warnings in 2391.60s (0:39:51) — the known four skips;
+      db=genios_qa_s11m2_full_000512. The two tests of the void run pass: F45 in
+      tests/replays/test_we_are_never_the_subject.py and tests/test_device_api.py's pause.
+3 · the golden-pg lane (GENIOS_GOLDEN_REQUIRED=1)                           exit 0
+      794 passed, 88 xfailed, 2 warnings in 1047.36s (0:17:27) — 0 skipped; 0 golden tenants left
+4 · the board, held to 03-FINDINGS.md §F.1                                 exit 0
+      matches the board recorded in speedrun008/YC-II W27/03-FINDINGS.md (unchanged)
+5 · the hermetic job (no database)                                         exit 0
+      17041 passed, 1848 skipped, 413 deselected, 72 xfailed in 956.37s (0:15:56) — 1,844 skips name a
+      missing database, the other four are the known four
