@@ -1,0 +1,291 @@
+{
+ "case_id": "F52",
+ "source": "ideal_reader",
+ "recorded_at": "87d623bd",
+ "answers": {
+  "03838f4a197c4fe430abf9e60660d6eb58bce40124f57b8984771006da7a552f": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "COMMITMENT_MADE",
+      "confidence_bp": 6000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"COMMITMENT_MADE\", \"confidence_bp\": 6000}]}",
+   "input_tokens": 1146,
+   "output_tokens": 74,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "0fd263d5ffd0e548867242737f770c4ab423008bacd15af070735033565e61ba": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Nimbus Labs - September update",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Nimbus Labs - September update\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 1176,
+   "output_tokens": 41,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "1ca2d050e72fc69c81768eb029f00234ca030e5006e29b9a369b9288e1057b02": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "positive",
+    "topics": [
+     "fundraising"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Nandini Iyer",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Nandini",
+        "start_offset": 35,
+        "end_offset": 42
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "business_facts": [
+     {
+      "field": "thread.objective",
+      "subject": "thread",
+      "value": "a monthly investor update",
+      "standing": "judgement",
+      "evidence": [
+       {
+        "quote": "we crossed 12 paying customers this month",
+        "start_offset": 61,
+        "end_offset": 102
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "medium",
+     "motive": "the monthly update"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Nandini Iyer\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Nandini\", \"start_offset\": 35, \"end_offset\": 42}], \"confidence_bp\": 9000}], \"business_facts\": [{\"field\": \"thread.objective\", \"subject\": \"thread\", \"value\": \"a monthly investor update\", \"standing\": \"judgement\", \"evidence\": [{\"quote\": \"we crossed 12 paying customers this month\", \"start_offset\": 61, \"end_offset\": 102}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"medium\", \"motive\": \"the monthly update\"}}",
+   "input_tokens": 5518,
+   "output_tokens": 184,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "4f3f1320c1019e18feac1f0fbd72dbd2821e500c82002dada7c9db66436734bc": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 1059,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "52f37b18b045c8c1c5df492ecf6fb9395d890366d3566ed4e9f70c2ff0923c87": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Re: Nimbus Labs - pre-seed",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Nimbus Labs - pre-seed\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 1190,
+   "output_tokens": 40,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "b2b25f6a70b84ba544dd89f5d0b62f72b1c78a894218c345da3ff1fd0546ac9b": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Nimbus Labs - September update",
+    "start_offset": 0,
+    "end_offset": 30,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Nimbus Labs - September update\", \"start_offset\": 0, \"end_offset\": 30, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1523,
+   "output_tokens": 44,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "c3fa64b7cf613a9f745825769c61603f2317c5dee68d1a949d3683107d1222c6": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "reply": 3500,
+     "wait_unanswered_email": 3500
+    },
+    "confidence_bp": 4000,
+    "rationale": "Gautam asked us to come back once we have ten paying customers, and nothing shown says we have them; a note before then repeats the pitch he deferred.",
+    "missing": [
+     "whether we now have ten paying customers"
+    ]
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"reply\": 3500, \"wait_unanswered_email\": 3500}, \"confidence_bp\": 4000, \"rationale\": \"Gautam asked us to come back once we have ten paying customers, and nothing shown says we have them; a note before then repeats the pitch he deferred.\", \"missing\": [\"whether we now have ten paying customers\"]}",
+   "input_tokens": 2206,
+   "output_tokens": 81,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "d56c80a232a25546e0aac982fcc6b1469efadd61730efb93d4c714a6cff0ad7b": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 1045,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "dce2066a49133f245108bb2422ef03e4d4c95ac3e5e6899c9134064c6a0d1084": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Re: Nimbus Labs - pre-seed",
+    "start_offset": 0,
+    "end_offset": 26,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Nimbus Labs - pre-seed\", \"start_offset\": 0, \"end_offset\": 26, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1537,
+   "output_tokens": 43,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "e5a6c3df23c42e527f552e8c2e1aada6c1a051ed22383f5ac4eb059eaa8f5c54": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "cautious",
+    "topics": [
+     "fundraising"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Gautam Varma",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Gautam",
+        "start_offset": 179,
+        "end_offset": 185
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Ridgeline Capital",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Ridgeline Capital",
+        "start_offset": 186,
+        "end_offset": 203
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "decision_states": [
+     {
+      "subject": "investment in Nimbus Labs",
+      "state": "deferred",
+      "owner": "Gautam Varma",
+      "evidence": [
+       {
+        "quote": "it is slightly early for us to come in",
+        "start_offset": 65,
+        "end_offset": 103
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "commitments": [
+     {
+      "actor": "Gautam Varma",
+      "action": "re-engage",
+      "beneficiary": "Arjun Rao",
+      "is_conditional": true,
+      "condition_text": "once you have ten paying customers",
+      "evidence": [
+       {
+        "quote": "Let's re-engage once you have ten paying customers",
+        "start_offset": 105,
+        "end_offset": 155
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "medium",
+     "motive": "not yet, with a condition"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"cautious\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Gautam Varma\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Gautam\", \"start_offset\": 179, \"end_offset\": 185}], \"confidence_bp\": 9000}, {\"surface_form\": \"Ridgeline Capital\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Ridgeline Capital\", \"start_offset\": 186, \"end_offset\": 203}], \"confidence_bp\": 9000}], \"decision_states\": [{\"subject\": \"investment in Nimbus Labs\", \"state\": \"deferred\", \"owner\": \"Gautam Varma\", \"evidence\": [{\"quote\": \"it is slightly early for us to come in\", \"start_offset\": 65, \"end_offset\": 103}], \"confidence_bp\": 9000}], \"commitments\": [{\"actor\": \"Gautam Varma\", \"action\": \"re-engage\", \"beneficiary\": \"Arjun Rao\", \"is_conditional\": true, \"condition_text\": \"once you have ten paying customers\", \"evidence\": [{\"quote\": \"Let's re-engage once you have ten paying customers\", \"start_offset\": 105, \"end_offset\": 155}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"medium\", \"motive\": \"not yet, with a condition\"}}",
+   "input_tokens": 5531,
+   "output_tokens": 303,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

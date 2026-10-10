@@ -97,6 +97,22 @@ one reply of yours to an inbound mail, no bounce in the shape Gmail sends it, an
 | 46 | An investor who answered in your other mailbox · 3 Sep | `yes` | | `claude` |
 | 47 | Mail Delivery Subsystem, a report with your pitch attached · 14 Aug | `yes` | | `claude` |
 
+## The benchmark's best finds — 5 items (`yc2_w27_align`, added 2026-10-10)
+
+Your benchmark (`09` G1) found its most valuable items before the labelled window began. Two dates
+are counted back from its *days waiting* on 23 Sep: Radhesh 69 days (16 Jul), John 63 (22 Jul). Rows
+13, 42 and 50 are one real thread — 13 asks whether Manik's ask reaches you, 42 whether its card is
+about him, 50 whether the template you sent counts as the answer. Aditya is in two rows: your promise
+to him (49), and his window you never answered (51).
+
+| # | Item — sender · date | Claude's answer | Your answer | Labelled by |
+|---|---|---|---|---|
+| 48 | Radhesh (Suvan), introduced; your reply went to the introducer only · 16 Jul | `yes` | | `claude` |
+| 49 | Your promises to Keshav (RocketSDR), Aditya (IIMA Ventures), Vatsa (Valiron) · 6–24 Jul | `yes` | | `claude` |
+| 50 | Your 11 Aug template, sent as the answer to Manik (Titan Capital) · 11 Aug | `yes` | | `claude` |
+| 51 | John (Actual.ai) and Aditya (IIMA Ventures), times you never confirmed · 14–22 Jul | `yes` | | `claude` |
+| 52 | Piyush (3one4), not yet until there is traction · 2 Apr | `yes` | | `claude` |
+
 ---
 
 ## Why I answered as I did
@@ -115,6 +131,10 @@ one reply of yours to an inbound mail, no bounce in the shape Gmail sends it, an
 - **45–47** (`STEP-10`): how fast you answer is a line in the brief, not a card (45); an answer in
   your other mailbox still reaches you, and your move is to reply (46); a bounced pitch reaches you,
   whatever shape the report comes in (47).
+- **48–52** (`09` G1, the benchmark): someone waits on you in each — the person you were introduced
+  to and never wrote to (48), the people you promised a booking (49), an investor whose question your
+  template did not answer (50), the times nobody confirmed (51), and a fund that asked you to come back
+  when a condition was met, now met (52).
 
 A `brief only` answer is scored as *not expressible* until `STEP-15` builds the morning brief —
 the board counts it apart rather than as a pass or a fail.

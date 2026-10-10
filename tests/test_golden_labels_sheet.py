@@ -12,7 +12,9 @@ What this holds:
 
   * every row has a number, an item, Claude's answer, room for Rohit's, and who labelled it — and
     "labelled by" is `rohit` exactly when Rohit's column is filled (D12a);
-  * the item is a sender and a date, nothing more (D12b): short, dated, no quoted text;
+  * the item is a sender and a date, nothing more (D12b): short, dated, no quoted text. Any month:
+    the first forty rows sat inside the old 60-day window (4 Aug → 5 Oct), and the benchmark's
+    items (`09` G1, rows 48 on) begin in March;
   * rows are numbered 1…N with no gap, so a case's `label_row` always names one row.
 """
 from __future__ import annotations
@@ -23,7 +25,8 @@ from pathlib import Path
 SHEET = (Path(__file__).resolve().parents[1] / "speedrun008" / "YC-II W27" / "golden-labels.md")
 ANSWERS = ("yes", "no", "brief only")
 _ROW = re.compile(r"^\|\s*(\d+)\s*\|(.*)\|\s*$")
-_DATE = re.compile(r"\b\d{1,2}(?:[–-]\d{1,2})?\s+(?:Aug|Sep|Oct)\b")
+_DATE = re.compile(r"\b\d{1,2}(?:[–-]\d{1,2})?\s+"
+                   r"(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b")
 
 
 def rows() -> list[dict[str, str]]:

@@ -1,0 +1,206 @@
+{
+ "case_id": "F52",
+ "title": "A fund's not-yet from April whose condition is now met",
+ "kind": "must_detect",
+ "label_row": 52,
+ "labelled_by": "claude",
+ "replays": [
+  "01",
+  "06"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata",
+  "also": [
+   "arjun.rao@gmail.test"
+  ]
+ },
+ "sweeps": [
+  "2026-04-03T12:00:00Z",
+  "2026-09-20T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "notyet",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-04-02T09:00:00Z",
+   "from": "Gautam Varma <gautam@ridgelinecap.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Re: Nimbus Labs - pre-seed",
+   "body": "Thanks Arjun - we like the team, but it is slightly early for us to come in. Let's re-engage once you have ten paying customers; send me a note then.\n\nGautam\nRidgeline Capital",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-ridgeline",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "cautious",
+     "topics": [
+      "fundraising"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Gautam Varma",
+       "entity_type": "person",
+       "quote": "Gautam"
+      },
+      {
+       "surface_form": "Ridgeline Capital",
+       "entity_type": "organization",
+       "quote": "Ridgeline Capital"
+      }
+     ],
+     "decision_states": [
+      {
+       "subject": "investment in Nimbus Labs",
+       "state": "deferred",
+       "owner": "Gautam Varma",
+       "quote": "it is slightly early for us to come in"
+      }
+     ],
+     "commitments": [
+      {
+       "actor": "Gautam Varma",
+       "action": "re-engage",
+       "beneficiary": "Arjun Rao",
+       "is_conditional": true,
+       "condition_text": "once you have ten paying customers",
+       "quote": "Let's re-engage once you have ten paying customers"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "medium",
+      "motive": "not yet, with a condition"
+     }
+    }
+   }
+  },
+  {
+   "id": "update",
+   "source": "gmail",
+   "sweep": 1,
+   "occurred_at": "2026-09-12T08:00:00Z",
+   "from": "Arjun Rao <arjun@nimbuslabs.test>",
+   "to": [
+    "Nandini Iyer <nandini@vertexangels.test>"
+   ],
+   "subject": "Nimbus Labs - September update",
+   "body": "Hi Nandini,\n\nA quick update: we crossed 12 paying customers this month, and onboarding is down to two days.\n\nArjun",
+   "labels": [
+    "SENT"
+   ],
+   "thread": "t-vertex-update",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "positive",
+     "topics": [
+      "fundraising"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Nandini Iyer",
+       "entity_type": "person",
+       "quote": "Nandini"
+      }
+     ],
+     "business_facts": [
+      {
+       "field": "thread.objective",
+       "subject": "thread",
+       "value": "a monthly investor update",
+       "standing": "judgement",
+       "quote": "we crossed 12 paying customers this month"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "medium",
+      "motive": "the monthly update"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "gate": {
+   "notyet": "emitted",
+   "update": "emitted"
+  },
+  "memory": {
+   "notyet": true,
+   "update": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Gautam",
+     "Ridgeline"
+    ],
+    "min": 1,
+    "max": 1,
+    "mentions": [
+     "ten paying customers"
+    ]
+   }
+  ],
+  "workstream": "investor - the not-yet of 2 Apr; its condition met on 12 Sep"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "ARR",
+   "MRR",
+   "lakh",
+   "crore",
+   "revenue of",
+   "pilot users"
+  ]
+ },
+ "witness": null,
+ "not_expressible": {
+  "workstream": "no line joins a condition to the fact that meets it"
+ },
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "unanswered email",
+     "Gautam Varma"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "Gautam asked us to come back once we have ten paying customers, and nothing shown says we have them; a note before then repeats the pitch he deferred.",
+     "missing": [
+      "whether we now have ten paying customers"
+     ]
+    }
+   }
+  ]
+ },
+ "notes": "09 G1, the benchmark's 2 Apr deferral: the card quotes the condition verbatim, with its date, and the fact that meets it - in the founder's own mail of 12 Sep, to someone else. A traction number that is not in the evidence is forbidden: one model invented one in the benchmark.",
+ "blocked_on": "both mails reach memory, but the fund's file goes dormant after 45 days, and the decider is shown Gautam's condition without the 12 Sep fact that meets it and defers - nothing joins a condition to the fact that meets it (STEP-12; D33's quiet window, yc2_w27_align C2.U02)"
+}

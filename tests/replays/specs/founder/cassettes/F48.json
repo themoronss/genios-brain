@@ -1,0 +1,238 @@
+{
+ "case_id": "F48",
+ "source": "ideal_reader",
+ "recorded_at": "87d623bd",
+ "answers": {
+  "3851724112836fc739f6bfd363ec036a85336a89b8de35cf0db4ea24a32da28b": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 1,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 1096,
+   "output_tokens": 48,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "3ca6216501e011c459cc6f401558d747baea6218503040c5a0f7764835864a4f": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "I'll let you two take it from here.",
+    "start_offset": 226,
+    "end_offset": 261,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"I'll let you two take it from here.\", \"start_offset\": 226, \"end_offset\": 261, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1553,
+   "output_tokens": 47,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "be0a06076313a2505c1e26e6cd47e9d6746d2422fcf9ad0b44236c03e178668f": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Re: Intro: Arjun (Nimbus Labs) <> Tarun (Quillstack)",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     },
+     {
+      "item": 2,
+      "business": true,
+      "description": "Intro: Arjun (Nimbus Labs) <> Tarun (Quillstack)",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Intro: Arjun (Nimbus Labs) <> Tarun (Quillstack)\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 2, \"business\": true, \"description\": \"Intro: Arjun (Nimbus Labs) <> Tarun (Quillstack)\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 1246,
+   "output_tokens": 89,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "d8b19a49bc04fdf67529336acc366272607d6f86b234e9eb98596ed055396506": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "introduce",
+    "stance": "positive",
+    "topics": [
+     "introduction",
+     "partnership"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Tarun Bedi",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Tarun",
+        "start_offset": 30,
+        "end_offset": 35
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Quillstack",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Quillstack",
+        "start_offset": 37,
+        "end_offset": 47
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Mira Kapoor",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Mira",
+        "start_offset": 263,
+        "end_offset": 267
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "roles": [
+     {
+      "party": "Mira Kapoor",
+      "role": "connector",
+      "evidence": [
+       {
+        "quote": "Connecting you two as promised",
+        "start_offset": 68,
+        "end_offset": 98
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "party": "Tarun Bedi",
+      "role": "partner",
+      "evidence": [
+       {
+        "quote": "Tarun leads partnerships at Quillstack",
+        "start_offset": 100,
+        "end_offset": 138
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "relationships": [
+     {
+      "party": "Tarun Bedi",
+      "nature": "introduced contact",
+      "direction": "inbound",
+      "evidence_text": "Connecting you two as promised"
+     }
+    ],
+    "business_facts": [
+     {
+      "field": "person.title",
+      "subject": "Tarun Bedi",
+      "value": "leads partnerships",
+      "standing": "observed",
+      "evidence": [
+       {
+        "quote": "Tarun leads partnerships at Quillstack",
+        "start_offset": 100,
+        "end_offset": 138
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "an introduction"
+    }
+   },
+   "raw": "{\"intent\": \"introduce\", \"stance\": \"positive\", \"topics\": [\"introduction\", \"partnership\"], \"entity_mentions\": [{\"surface_form\": \"Tarun Bedi\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Tarun\", \"start_offset\": 30, \"end_offset\": 35}], \"confidence_bp\": 9000}, {\"surface_form\": \"Quillstack\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Quillstack\", \"start_offset\": 37, \"end_offset\": 47}], \"confidence_bp\": 9000}, {\"surface_form\": \"Mira Kapoor\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Mira\", \"start_offset\": 263, \"end_offset\": 267}], \"confidence_bp\": 9000}], \"roles\": [{\"party\": \"Mira Kapoor\", \"role\": \"connector\", \"evidence\": [{\"quote\": \"Connecting you two as promised\", \"start_offset\": 68, \"end_offset\": 98}], \"confidence_bp\": 9000}, {\"party\": \"Tarun Bedi\", \"role\": \"partner\", \"evidence\": [{\"quote\": \"Tarun leads partnerships at Quillstack\", \"start_offset\": 100, \"end_offset\": 138}], \"confidence_bp\": 9000}], \"relationships\": [{\"party\": \"Tarun Bedi\", \"nature\": \"introduced contact\", \"direction\": \"inbound\", \"evidence_text\": \"Connecting you two as promised\"}], \"business_facts\": [{\"field\": \"person.title\", \"subject\": \"Tarun Bedi\", \"value\": \"leads partnerships\", \"standing\": \"observed\", \"evidence\": [{\"quote\": \"Tarun leads partnerships at Quillstack\", \"start_offset\": 100, \"end_offset\": 138}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"an introduction\"}}",
+   "input_tokens": 5557,
+   "output_tokens": 389,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "da7a3bec31e79afd10b0e9741d9ec71ecf7bae8e651ec4c04d450df390ff8cae": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "acknowledge",
+    "stance": "positive",
+    "topics": [
+     "introduction"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Mira Kapoor",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Mira",
+        "start_offset": 61,
+        "end_offset": 65
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "medium",
+     "motive": "thanks for the introduction"
+    }
+   },
+   "raw": "{\"intent\": \"acknowledge\", \"stance\": \"positive\", \"topics\": [\"introduction\"], \"entity_mentions\": [{\"surface_form\": \"Mira Kapoor\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Mira\", \"start_offset\": 61, \"end_offset\": 65}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"medium\", \"motive\": \"thanks for the introduction\"}}",
+   "input_tokens": 5509,
+   "output_tokens": 120,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "eec8d4c2eb225dfc5c9784d1f4064c566acc809cca83af14a1e707a285c0d2e0": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Re: Intro: Arjun (Nimbus Labs) <> Tarun (Quillstack)",
+    "start_offset": 0,
+    "end_offset": 52,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Intro: Arjun (Nimbus Labs) <> Tarun (Quillstack)\", \"start_offset\": 0, \"end_offset\": 52, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1510,
+   "output_tokens": 50,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

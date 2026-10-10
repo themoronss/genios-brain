@@ -1,0 +1,265 @@
+{
+ "case_id": "F49",
+ "source": "ideal_reader",
+ "recorded_at": "87d623bd",
+ "answers": {
+  "02b3e47a9478e22fee8f36f6773c7da3bd8958dc7993b6fd1558180a30778b11": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Reply to Kunal Mehta about the calendar link",
+    "situation": "Last heard from Kunal Mehta 14 days ago, and the move is ours. You wrote: \"Please resend the calendar link\"",
+    "artifact": "Hi Kunal, following up on my note - could you resend the calendar link so I can book a time?"
+   },
+   "raw": "{\"headline\": \"Reply to Kunal Mehta about the calendar link\", \"situation\": \"Last heard from Kunal Mehta 14 days ago, and the move is ours. You wrote: \\\"Please resend the calendar link\\\"\", \"artifact\": \"Hi Kunal, following up on my note - could you resend the calendar link so I can book a time?\"}",
+   "input_tokens": 2181,
+   "output_tokens": 73,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "0e48cea5a0e6f2c08661c2d93c638302d241a7b0267f97525517630b85994099": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "schedule",
+    "stance": "positive",
+    "topics": [
+     "partnership"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Kunal Mehta",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Kunal",
+        "start_offset": 134,
+        "end_offset": 139
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "scheduling_proposals": [
+     {
+      "proposer": "Kunal Mehta",
+      "text": "any time on his calendar",
+      "evidence_text": "Block any time that works for you."
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "his calendar, to book a call"
+    }
+   },
+   "raw": "{\"intent\": \"schedule\", \"stance\": \"positive\", \"topics\": [\"partnership\"], \"entity_mentions\": [{\"surface_form\": \"Kunal Mehta\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Kunal\", \"start_offset\": 134, \"end_offset\": 139}], \"confidence_bp\": 9000}], \"scheduling_proposals\": [{\"proposer\": \"Kunal Mehta\", \"text\": \"any time on his calendar\", \"evidence_text\": \"Block any time that works for you.\"}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"his calendar, to book a call\"}}",
+   "input_tokens": 5515,
+   "output_tokens": 156,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "192f23c705a711c1df58d69339cf87dbf9b008b4b2aab0ce2fca5ba2f934672b": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Please resend the calendar link - I will book it again.",
+    "start_offset": 79,
+    "end_offset": 134,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Please resend the calendar link - I will book it again.\", \"start_offset\": 79, \"end_offset\": 134, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1521,
+   "output_tokens": 51,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "1e28fb7318d9dc264e76d01ab95ad222c34dcac6a6cd7983d933494eebd0ae8b": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "commit",
+    "stance": "positive",
+    "topics": [
+     "partnership"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Kunal Mehta",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Kunal",
+        "start_offset": 33,
+        "end_offset": 38
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "commitments": [
+     {
+      "actor": "Arjun Rao",
+      "action": "book the call again",
+      "beneficiary": "Kunal Mehta",
+      "is_conditional": false,
+      "evidence": [
+       {
+        "quote": "I will book it again",
+        "start_offset": 113,
+        "end_offset": 133
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "Resend the calendar link",
+      "asked_by": "Arjun Rao",
+      "asked_of": "Kunal Mehta",
+      "evidence": [
+       {
+        "quote": "Please resend the calendar link",
+        "start_offset": 79,
+        "end_offset": 110
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "apologetic",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "to book the missed call again"
+    }
+   },
+   "raw": "{\"intent\": \"commit\", \"stance\": \"positive\", \"topics\": [\"partnership\"], \"entity_mentions\": [{\"surface_form\": \"Kunal Mehta\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Kunal\", \"start_offset\": 33, \"end_offset\": 38}], \"confidence_bp\": 9000}], \"commitments\": [{\"actor\": \"Arjun Rao\", \"action\": \"book the call again\", \"beneficiary\": \"Kunal Mehta\", \"is_conditional\": false, \"evidence\": [{\"quote\": \"I will book it again\", \"start_offset\": 113, \"end_offset\": 133}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Resend the calendar link\", \"asked_by\": \"Arjun Rao\", \"asked_of\": \"Kunal Mehta\", \"evidence\": [{\"quote\": \"Please resend the calendar link\", \"start_offset\": 79, \"end_offset\": 110}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"apologetic\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"to book the missed call again\"}}",
+   "input_tokens": 5516,
+   "output_tokens": 237,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "2c57e918aefb140f264c03e5baa79ee2d938114dc5187d442f2665562df14951": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 4,
+      "ambiguous": false,
+      "classification": "COMMITMENT_MADE",
+      "confidence_bp": 6000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 4, \"ambiguous\": false, \"classification\": \"COMMITMENT_MADE\", \"confidence_bp\": 6000}]}",
+   "input_tokens": 1215,
+   "output_tokens": 98,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "2ca17ee4e0803f2ee75170b05ab1fe0e52c7cfac89e412120d0ccf5ad50a10cb": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 1,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 1079,
+   "output_tokens": 48,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "8ddd315a1c0de2d08e9b3c68cb899c4fe2f08495350541b1ea0408a46875e9c7": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Re: Nimbus Labs x Sparkreach",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     },
+     {
+      "item": 2,
+      "business": true,
+      "description": "Re: Nimbus Labs x Sparkreach",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Nimbus Labs x Sparkreach\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 2, \"business\": true, \"description\": \"Re: Nimbus Labs x Sparkreach\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 1226,
+   "output_tokens": 78,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "a58b2edb8eafb7f786d62c643639e6efd592a7fa246ddad93a5dcd7140a76320": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Re: Nimbus Labs x Sparkreach",
+    "start_offset": 0,
+    "end_offset": 28,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Nimbus Labs x Sparkreach\", \"start_offset\": 0, \"end_offset\": 28, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1521,
+   "output_tokens": 44,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "fe1d2b640de4f902cb585e226c19dd1a0d7ffccf9f6f81e6aea7a7c18e26705a": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "reply": 6500,
+     "wait_unanswered_email": 4700
+    },
+    "confidence_bp": 5500,
+    "rationale": "We told Kunal we would book the call again, and he sent his calendar the same day; the booking is ours to make.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 4700}, \"confidence_bp\": 5500, \"rationale\": \"We told Kunal we would book the call again, and he sent his calendar the same day; the booking is ours to make.\", \"missing\": []}",
+   "input_tokens": 2207,
+   "output_tokens": 61,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

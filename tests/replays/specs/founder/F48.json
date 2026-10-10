@@ -1,0 +1,189 @@
+{
+ "case_id": "F48",
+ "title": "An introduction the founder answered only to the introducer",
+ "kind": "must_detect",
+ "label_row": 48,
+ "labelled_by": "claude",
+ "replays": [
+  "02"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata",
+  "also": [
+   "arjun.rao@gmail.test"
+  ]
+ },
+ "sweeps": [
+  "2026-07-30T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "intro",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-07-16T05:30:00Z",
+   "from": "Mira Kapoor <mira@linkbridge.test>",
+   "to": [
+    "arjun@nimbuslabs.test",
+    "Tarun Bedi <tarun@quillstack.test>"
+   ],
+   "subject": "Intro: Arjun (Nimbus Labs) <> Tarun (Quillstack)",
+   "body": "Hi Arjun, Tarun,\n\nConnecting you two as promised. Tarun leads partnerships at Quillstack and is looking for workflow tools for their founder community; Arjun runs Nimbus Labs. I'll let you two take it from here.\n\nMira",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-quillstack-intro",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "introduce",
+     "stance": "positive",
+     "topics": [
+      "introduction",
+      "partnership"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Tarun Bedi",
+       "entity_type": "person",
+       "quote": "Tarun"
+      },
+      {
+       "surface_form": "Quillstack",
+       "entity_type": "organization",
+       "quote": "Quillstack"
+      },
+      {
+       "surface_form": "Mira Kapoor",
+       "entity_type": "person",
+       "quote": "Mira"
+      }
+     ],
+     "roles": [
+      {
+       "party": "Mira Kapoor",
+       "role": "connector",
+       "quote": "Connecting you two as promised"
+      },
+      {
+       "party": "Tarun Bedi",
+       "role": "partner",
+       "quote": "Tarun leads partnerships at Quillstack"
+      }
+     ],
+     "relationships": [
+      {
+       "party": "Tarun Bedi",
+       "nature": "introduced contact",
+       "direction": "inbound",
+       "evidence_text": "Connecting you two as promised"
+      }
+     ],
+     "business_facts": [
+      {
+       "field": "person.title",
+       "subject": "Tarun Bedi",
+       "value": "leads partnerships",
+       "standing": "observed",
+       "quote": "Tarun leads partnerships at Quillstack"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "an introduction"
+     }
+    }
+   }
+  },
+  {
+   "id": "thanks",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-07-16T07:10:00Z",
+   "from": "Arjun Rao <arjun@nimbuslabs.test>",
+   "to": [
+    "Mira Kapoor <mira@linkbridge.test>"
+   ],
+   "subject": "Re: Intro: Arjun (Nimbus Labs) <> Tarun (Quillstack)",
+   "body": "Thanks Mira, appreciate the intro!\n\nArjun",
+   "labels": [
+    "SENT"
+   ],
+   "thread": "t-quillstack-intro",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "acknowledge",
+     "stance": "positive",
+     "topics": [
+      "introduction"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Mira Kapoor",
+       "entity_type": "person",
+       "quote": "Mira"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "medium",
+      "motive": "thanks for the introduction"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "gate": {
+   "intro": "emitted",
+   "thanks": "emitted"
+  },
+  "memory": {
+   "intro": true,
+   "thanks": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Tarun",
+     "Quillstack"
+    ],
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "workstream": "intro - Tarun never heard from you; your reply went only to Mira"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "follow up with Mira",
+   "reply to Mira",
+   "thank Mira"
+  ]
+ },
+ "witness": null,
+ "not_expressible": {
+  "workstream": "the file exists since STEP-09, but no line compares who an answer reached with who was introduced"
+ },
+ "model": {},
+ "notes": "09 G1, the benchmark's introducer shape: an introduction with the introduced person in To, and the founder's thanks went to the introducer alone - the introduced person was never written to. No promise in the thanks: a promise would be caught as an overdue promise (F49's shape), and this case holds the structural miss alone. The card is about Tarun, never the connector (F37's rule).",
+ "blocked_on": "the intro and the thanks reach memory, Quillstack's and the connector's account situations form, and neither reaches the decider; the open wait is on Mira - nothing compares who an answer reached with who was introduced (STEP-12)"
+}

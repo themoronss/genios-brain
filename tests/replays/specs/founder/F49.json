@@ -1,0 +1,205 @@
+{
+ "case_id": "F49",
+ "title": "The founder's own promise in a sent mail, not kept",
+ "kind": "must_detect",
+ "label_row": 49,
+ "labelled_by": "claude",
+ "replays": [],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata",
+  "also": [
+   "arjun.rao@gmail.test"
+  ]
+ },
+ "sweeps": [
+  "2026-07-22T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "promise",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-07-08T09:00:00Z",
+   "from": "Arjun Rao <arjun@nimbuslabs.test>",
+   "to": [
+    "Kunal Mehta <kunal@sparkreach.test>"
+   ],
+   "subject": "Re: Nimbus Labs x Sparkreach",
+   "body": "Hi Kunal,\n\nSorry I missed our slot this morning. Please resend the calendar link - I will book it again.\n\nArjun",
+   "labels": [
+    "SENT"
+   ],
+   "thread": "t-sparkreach",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "commit",
+     "stance": "positive",
+     "topics": [
+      "partnership"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Kunal Mehta",
+       "entity_type": "person",
+       "quote": "Kunal"
+      }
+     ],
+     "commitments": [
+      {
+       "actor": "Arjun Rao",
+       "action": "book the call again",
+       "beneficiary": "Kunal Mehta",
+       "is_conditional": false,
+       "quote": "I will book it again"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Resend the calendar link",
+       "asked_by": "Arjun Rao",
+       "asked_of": "Kunal Mehta",
+       "quote": "Please resend the calendar link"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "apologetic",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "to book the missed call again"
+     }
+    }
+   }
+  },
+  {
+   "id": "link",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-07-08T10:30:00Z",
+   "from": "Kunal Mehta <kunal@sparkreach.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Re: Nimbus Labs x Sparkreach",
+   "body": "No worries, Arjun - here is my calendar: cal.sparkreach.test/kunal. Block any time that works for you.\n\nKunal",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-sparkreach",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "schedule",
+     "stance": "positive",
+     "topics": [
+      "partnership"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Kunal Mehta",
+       "entity_type": "person",
+       "quote": "Kunal"
+      }
+     ],
+     "scheduling_proposals": [
+      {
+       "proposer": "Kunal Mehta",
+       "text": "any time on his calendar",
+       "evidence_text": "Block any time that works for you."
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "his calendar, to book a call"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "gate": {
+   "promise": "emitted",
+   "link": "emitted"
+  },
+  "memory": {
+   "promise": true,
+   "link": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Kunal",
+     "Sparkreach"
+    ],
+    "min": 1,
+    "max": 1,
+    "mentions": [
+     "book"
+    ]
+   }
+  ],
+  "workstream": "partner - you said you would book again on 8 Jul; Kunal sent the link the same day; nothing since"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": [
+   "Kunal promised",
+   "waiting on Kunal",
+   "could you resend",
+   "resend it"
+  ]
+ },
+ "witness": null,
+ "not_expressible": {
+  "workstream": "the promise sits on the file since STEP-09, but no line names a promise's state"
+ },
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "unanswered email",
+     "Kunal Mehta"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "reply": 6500
+     },
+     "confidence_bp": 5500,
+     "rationale": "We told Kunal we would book the call again, and he sent his calendar the same day; the booking is ours to make.",
+     "missing": []
+    }
+   }
+  ],
+  "narrator": [
+   {
+    "when": [
+     "unanswered_email",
+     "Kunal Mehta"
+    ],
+    "answer": {
+     "headline": "Reply to Kunal Mehta about the calendar link",
+     "situation": "Last heard from Kunal Mehta 14 days ago, and the move is ours. You wrote: \"Please resend the calendar link\"",
+     "artifact": "Hi Kunal, following up on my note - could you resend the calendar link so I can book a time?"
+    }
+   }
+  ]
+ },
+ "notes": "09 G1, the benchmark's July promises: the founder's own 'I will book it again' in a SENT mail; the other side did its part the same day, and nothing came after. The move is ours. No date was given, so the promise is broken by time, as the benchmark judged.",
+ "blocked_on": "one card, about Kunal - but its narrator is shown only the founder's own 'Please resend the calendar link', not Kunal's link and not the founder's promise, so the card chases a link Kunal already sent (03 F147; STEP-12 reads the file's timeline)"
+}

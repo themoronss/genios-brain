@@ -1,0 +1,219 @@
+{
+ "case_id": "F50",
+ "source": "ideal_reader",
+ "recorded_at": "87d623bd",
+ "answers": {
+  "19b2c56be3dcc524e4369dfa75344cbcf4fcdbe0e41d005644c84ccdd2ac68b6": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 1,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 1110,
+   "output_tokens": 48,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "4ba8ee56cd6b96119acef333762c8dfaec0165ef75f80c3195e63a6bb92a3e1d": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Two quick questions before our partner meeting: what is your current monthly revenue, and how many months of runway do you have?",
+    "start_offset": 32,
+    "end_offset": 160,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Two quick questions before our partner meeting: what is your current monthly revenue, and how many months of runway do you have?\", \"start_offset\": 32, \"end_offset\": 160, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1532,
+   "output_tokens": 70,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "92d85f5d96148c1819e0e9083a922570e8067367518c6e64cf9a5d2bc383cf7d": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Re: Two quick questions",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     },
+     {
+      "item": 2,
+      "business": true,
+      "description": "Two quick questions",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Two quick questions\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 2, \"business\": true, \"description\": \"Two quick questions\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 1257,
+   "output_tokens": 74,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "a3c8cbfadd0a12f77620d23c22419d7910b3b60231674d615aaa4d5fc26dc586": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "positive",
+    "topics": [
+     "fundraising"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Owen Park",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Owen",
+        "start_offset": 28,
+        "end_offset": 32
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "templated",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "medium",
+     "motive": "the company's standard details"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Owen Park\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Owen\", \"start_offset\": 28, \"end_offset\": 32}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"templated\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"medium\", \"motive\": \"the company's standard details\"}}",
+   "input_tokens": 5534,
+   "output_tokens": 119,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "d5ce3d77c5c1de08cadd85b795c73dd9cb50a36b6a36d8195bf840e2759b1846": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "question",
+    "stance": "neutral",
+    "topics": [
+     "fundraising"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Owen Park",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Owen",
+        "start_offset": 162,
+        "end_offset": 166
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Saltmarsh Ventures",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Saltmarsh Ventures",
+        "start_offset": 167,
+        "end_offset": 185
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "What is the current monthly revenue",
+      "asked_by": "Owen Park",
+      "asked_of": "Arjun Rao",
+      "evidence": [
+       {
+        "quote": "what is your current monthly revenue",
+        "start_offset": 80,
+        "end_offset": 116
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "text": "How many months of runway",
+      "asked_by": "Owen Park",
+      "asked_of": "Arjun Rao",
+      "evidence": [
+       {
+        "quote": "how many months of runway do you have?",
+        "start_offset": 122,
+        "end_offset": 160
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "business_facts": [
+     {
+      "field": "thread.objective",
+      "subject": "thread",
+      "value": "two questions before the partner meeting",
+      "standing": "judgement",
+      "evidence": [
+       {
+        "quote": "Two quick questions before our partner meeting",
+        "start_offset": 32,
+        "end_offset": 78
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "direct",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "two numbers before the partner meeting"
+    }
+   },
+   "raw": "{\"intent\": \"question\", \"stance\": \"neutral\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Owen Park\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Owen\", \"start_offset\": 162, \"end_offset\": 166}], \"confidence_bp\": 9000}, {\"surface_form\": \"Saltmarsh Ventures\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Saltmarsh Ventures\", \"start_offset\": 167, \"end_offset\": 185}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"What is the current monthly revenue\", \"asked_by\": \"Owen Park\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"what is your current monthly revenue\", \"start_offset\": 80, \"end_offset\": 116}], \"confidence_bp\": 9000}, {\"text\": \"How many months of runway\", \"asked_by\": \"Owen Park\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"how many months of runway do you have?\", \"start_offset\": 122, \"end_offset\": 160}], \"confidence_bp\": 9000}], \"business_facts\": [{\"field\": \"thread.objective\", \"subject\": \"thread\", \"value\": \"two questions before the partner meeting\", \"standing\": \"judgement\", \"evidence\": [{\"quote\": \"Two quick questions before our partner meeting\", \"start_offset\": 32, \"end_offset\": 78}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"direct\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"two numbers before the partner meeting\"}}",
+   "input_tokens": 5524,
+   "output_tokens": 353,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "dd537b0e78cc79ec05c1a558159b51a3b749451a98e543941311344016220498": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Re: Two quick questions",
+    "start_offset": 0,
+    "end_offset": 23,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Two quick questions\", \"start_offset\": 0, \"end_offset\": 23, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1541,
+   "output_tokens": 42,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

@@ -50,6 +50,9 @@ and read (`KEPT_AS_A_DELIVERY_REPORT`): F16's bounce, archived at N-03 until now
 moves from lost at the gate to lost in REASONING — the bounce is on the fund's file and ends its wait,
 and no card shows a bounce yet (STEP-14). Three cases are new (`ADDED_AFTER`: F45–F47, `06` D40). The
 gate's promise is unchanged: nothing dropped, every other archive the same.
+
+RESTATED BY `yc2_w27_align` (M34.C1, before STEP-12). The benchmark's shapes are new cases (`ADDED_AFTER`:
+F48–F52, `09` G1); the gate keeps and reads every one of their mails. Nothing else moved.
 """
 from __future__ import annotations
 
@@ -113,7 +116,9 @@ KEPT_AS_A_DELIVERY_REPORT: dict[str, tuple[str, ...]] = {
 #: Cases added after STEP-03 measured the set, each by the step that added it.
 ADDED_AFTER: dict[str, str] = {"F41": "STEP-04", "F42": "STEP-04", "F43": "STEP-04",
                                "F44": "STEP-04", "F45": "STEP-10", "F46": "STEP-10",
-                               "F47": "STEP-10"}
+                               "F47": "STEP-10", "F48": "yc2_w27_align", "F49": "yc2_w27_align",
+                               "F50": "yc2_w27_align", "F51": "yc2_w27_align",
+                               "F52": "yc2_w27_align"}
 
 #: Cases a later step moved, with their marking after it — (step, (kind, verdict, lost_at, cards)).
 #: STEP-05: a mail below the floor, the founder's own sent mail and an archive now enter memory.

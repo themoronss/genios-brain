@@ -1,0 +1,243 @@
+{
+ "case_id": "F51",
+ "source": "ideal_reader",
+ "recorded_at": "87d623bd",
+ "answers": {
+  "162dafb1855c1b8977f96ca285eb328d6cb2654d82b0fde5598cb673f966dda4": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "reply": 6500,
+     "wait_unanswered_email": 5500
+    },
+    "confidence_bp": 5500,
+    "rationale": "Sana offered two times for a call, Tuesday 4 Aug or Wednesday 5 Aug, and is waiting on us to confirm one.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 5500}, \"confidence_bp\": 5500, \"rationale\": \"Sana offered two times for a call, Tuesday 4 Aug or Wednesday 5 Aug, and is waiting on us to confirm one.\", \"missing\": []}",
+   "input_tokens": 2078,
+   "output_tokens": 60,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "2a401c45e5d9e8bd0cc76be6aada31f774a1b2bc9f9ab83f62fa4a0d648ab11c": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 1123,
+   "output_tokens": 74,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "338813162b0052a70826f9a1c95e4279540ee3e89bd4f61b909850e12d2ff10d": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4686,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 4742,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 6200
+    },
+    "confidence_bp": 5000,
+    "rationale": "Brightloop wrote three days ago and the ball is in our court.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4686, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4742, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 6200}, \"confidence_bp\": 5000, \"rationale\": \"Brightloop wrote three days ago and the ball is in our court.\", \"missing\": []}",
+   "input_tokens": 4158,
+   "output_tokens": 88,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "84a34a0bc3b52ead4908abdcda0758375e429b372913ae9daf575584d06860b7": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Re: Nimbus Labs x Brightloop",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Nimbus Labs x Brightloop\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 1180,
+   "output_tokens": 40,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "8ccf43958fc0e958df872b57cff6775c97d1d84796c29c0e76dc20231b07381c": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Does Tuesday 4 Aug at 3pm or Wednesday 5 Aug at 11am IST work?",
+    "start_offset": 56,
+    "end_offset": 118,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Does Tuesday 4 Aug at 3pm or Wednesday 5 Aug at 11am IST work?\", \"start_offset\": 56, \"end_offset\": 118, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1527,
+   "output_tokens": 53,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "a3ef177c772553aed2b3fde65b86a59e3c5dc515e9b9566da3d4dc1dd67b5b71": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Reply to Sana at brightloop.test",
+    "situation": "Sana at brightloop.test wrote; the next move is ours.",
+    "artifact": "Hi Sana, thanks for your note - happy to find a time to talk."
+   },
+   "raw": "{\"headline\": \"Reply to Sana at brightloop.test\", \"situation\": \"Sana at brightloop.test wrote; the next move is ours.\", \"artifact\": \"Hi Sana, thanks for your note - happy to find a time to talk.\"}",
+   "input_tokens": 1037,
+   "output_tokens": 48,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "bb7ba8e28e45ec5f2ce9e54514d18eb9c62d828cfab4d4d68876a5f904193adc": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 1049,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "dd17ab988d5295442057bd4d01529cf1a9137d979994b74609691cd3c17386df": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "schedule",
+    "stance": "positive",
+    "topics": [
+     "partnership"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Sana Qureshi",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Sana",
+        "start_offset": 160,
+        "end_offset": 164
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "scheduling_proposals": [
+     {
+      "proposer": "Sana Qureshi",
+      "text": "Tuesday 4 Aug at 3pm or Wednesday 5 Aug at 11am IST",
+      "evidence_text": "Does Tuesday 4 Aug at 3pm or Wednesday 5 Aug at 11am IST work?"
+     }
+    ],
+    "dates_mentioned": [
+     {
+      "as_written": "Tuesday 4 Aug at 3pm",
+      "earliest": "2026-08-04T09:30:00Z",
+      "latest": "2026-08-04T09:30:00Z",
+      "certainty": "exact",
+      "resolved_against": "2026-07-30T06:00:00Z",
+      "evidence": [
+       {
+        "quote": "Tuesday 4 Aug at 3pm",
+        "start_offset": 61,
+        "end_offset": 81
+       }
+      ]
+     },
+     {
+      "as_written": "Wednesday 5 Aug at 11am IST",
+      "earliest": "2026-08-05T05:30:00Z",
+      "latest": "2026-08-05T05:30:00Z",
+      "certainty": "exact",
+      "resolved_against": "2026-07-30T06:00:00Z",
+      "evidence": [
+       {
+        "quote": "Wednesday 5 Aug at 11am IST",
+        "start_offset": 85,
+        "end_offset": 112
+       }
+      ]
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "a time for a call"
+    }
+   },
+   "raw": "{\"intent\": \"schedule\", \"stance\": \"positive\", \"topics\": [\"partnership\"], \"entity_mentions\": [{\"surface_form\": \"Sana Qureshi\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Sana\", \"start_offset\": 160, \"end_offset\": 164}], \"confidence_bp\": 9000}], \"scheduling_proposals\": [{\"proposer\": \"Sana Qureshi\", \"text\": \"Tuesday 4 Aug at 3pm or Wednesday 5 Aug at 11am IST\", \"evidence_text\": \"Does Tuesday 4 Aug at 3pm or Wednesday 5 Aug at 11am IST work?\"}], \"dates_mentioned\": [{\"as_written\": \"Tuesday 4 Aug at 3pm\", \"earliest\": \"2026-08-04T09:30:00Z\", \"latest\": \"2026-08-04T09:30:00Z\", \"certainty\": \"exact\", \"resolved_against\": \"2026-07-30T06:00:00Z\", \"evidence\": [{\"quote\": \"Tuesday 4 Aug at 3pm\", \"start_offset\": 61, \"end_offset\": 81}]}, {\"as_written\": \"Wednesday 5 Aug at 11am IST\", \"earliest\": \"2026-08-05T05:30:00Z\", \"latest\": \"2026-08-05T05:30:00Z\", \"certainty\": \"exact\", \"resolved_against\": \"2026-07-30T06:00:00Z\", \"evidence\": [{\"quote\": \"Wednesday 5 Aug at 11am IST\", \"start_offset\": 85, \"end_offset\": 112}]}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"a time for a call\"}}",
+   "input_tokens": 5521,
+   "output_tokens": 307,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "ef155688318b42278f1b03b5912f2fa012f6ea78e4f6357e44b07829831e7117": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Reply to Sana Qureshi",
+    "situation": "Last heard from Sana Qureshi 3 days ago; the move is ours.",
+    "artifact": "Hi Sana, thanks for your note - happy to find a time to talk."
+   },
+   "raw": "{\"headline\": \"Reply to Sana Qureshi\", \"situation\": \"Last heard from Sana Qureshi 3 days ago; the move is ours.\", \"artifact\": \"Hi Sana, thanks for your note - happy to find a time to talk.\"}",
+   "input_tokens": 1585,
+   "output_tokens": 47,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "fdc67db3205a98edb77fdccb289d25cc9e4623702e0470dd42aaf1502d2e3913": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 1040,
+   "output_tokens": 51,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}
