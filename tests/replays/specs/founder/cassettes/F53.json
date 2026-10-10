@@ -1,0 +1,310 @@
+{
+ "case_id": "F53",
+ "source": "ideal_reader",
+ "recorded_at": "a9efb151",
+ "answers": {
+  "05aec04857e13cdb589156fefc497e3f6cefc0ff9b610b168d787754bd14d6cb": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "positive",
+    "topics": [
+     "fundraising"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Ira Bose",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Ira",
+        "start_offset": 31,
+        "end_offset": 34
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "high",
+     "motive": "the answer to her question"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Ira Bose\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Ira\", \"start_offset\": 31, \"end_offset\": 34}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\", \"motive\": \"the answer to her question\"}}",
+   "input_tokens": 5509,
+   "output_tokens": 117,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "11b3e49abefbc7fa196f0cccef2cafa7423edf910cd4054827aea62886cfd1e2": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Re: Larkspur x Nimbus Labs",
+    "start_offset": 0,
+    "end_offset": 26,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Larkspur x Nimbus Labs\", \"start_offset\": 0, \"end_offset\": 26, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1509,
+   "output_tokens": 43,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "248741abbe4e87e51717be51b72120573475056e74686b72512cc286dcf2f24d": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "positive",
+    "topics": [
+     "fundraising"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Ira Bose",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Ira",
+        "start_offset": 99,
+        "end_offset": 102
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "high",
+     "motive": "taking it to her partners"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Ira Bose\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Ira\", \"start_offset\": 99, \"end_offset\": 102}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\", \"motive\": \"taking it to her partners\"}}",
+   "input_tokens": 5505,
+   "output_tokens": 117,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "31495b5a73ceeb11c6f88a64b3ecb82ed6fc42d9f5989a7812ca2a57ad3b5983": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 1,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 2,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 3,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 2, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 3, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 1121,
+   "output_tokens": 96,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "48811953db4b78707f0fb7e32d3273bfdc477025ba3f56efcc3686b3f56d5917": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "question",
+    "stance": "positive",
+    "topics": [
+     "fundraising"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Ira Bose",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Ira",
+        "start_offset": 101,
+        "end_offset": 104
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "Larkspur Ventures",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "Larkspur Ventures",
+        "start_offset": 105,
+        "end_offset": 122
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "How many design partners are live",
+      "asked_by": "Ira Bose",
+      "asked_of": "Arjun Rao",
+      "evidence": [
+       {
+        "quote": "How many design partners do you have live today?",
+        "start_offset": 51,
+        "end_offset": 99
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "interest after the demo"
+    }
+   },
+   "raw": "{\"intent\": \"question\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Ira Bose\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Ira\", \"start_offset\": 101, \"end_offset\": 104}], \"confidence_bp\": 9000}, {\"surface_form\": \"Larkspur Ventures\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Larkspur Ventures\", \"start_offset\": 105, \"end_offset\": 122}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"How many design partners are live\", \"asked_by\": \"Ira Bose\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"How many design partners do you have live today?\", \"start_offset\": 51, \"end_offset\": 99}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"interest after the demo\"}}",
+   "input_tokens": 5509,
+   "output_tokens": 224,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "63fc45687e6e68062f0e85782e749c793deb5f012a55e95563eed319f94354b2": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Re: Larkspur x Nimbus Labs",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     },
+     {
+      "item": 2,
+      "business": true,
+      "description": "Re: Larkspur x Nimbus Labs",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     },
+     {
+      "item": 3,
+      "business": true,
+      "description": "Re: Larkspur x Nimbus Labs",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     },
+     {
+      "item": 4,
+      "business": true,
+      "description": "Larkspur x Nimbus Labs",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Larkspur x Nimbus Labs\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 2, \"business\": true, \"description\": \"Re: Larkspur x Nimbus Labs\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 3, \"business\": true, \"description\": \"Re: Larkspur x Nimbus Labs\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 4, \"business\": true, \"description\": \"Larkspur x Nimbus Labs\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 1298,
+   "output_tokens": 149,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "65e871cc59dc92325342b23fcc0c2f64e16ca1907738337bfd1a7b71c79b8471": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "positive",
+    "topics": [
+     "fundraising"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Ira Bose",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Ira",
+        "start_offset": 41,
+        "end_offset": 44
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "high",
+     "motive": "an offer to join"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Ira Bose\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Ira\", \"start_offset\": 41, \"end_offset\": 44}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\", \"motive\": \"an offer to join\"}}",
+   "input_tokens": 5502,
+   "output_tokens": 114,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "672cdd30d3516d8ed0a911e1c8db7b101b34a5cc52c4dab3a19bcdba621c96dd": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Re: Larkspur x Nimbus Labs",
+    "start_offset": 0,
+    "end_offset": 26,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Larkspur x Nimbus Labs\", \"start_offset\": 0, \"end_offset\": 26, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1516,
+   "output_tokens": 43,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "b9e7f3aacd273edaf425ebc2b5a5b04abab40b9740f71596ff78f68495997913": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Re: Larkspur x Nimbus Labs",
+    "start_offset": 0,
+    "end_offset": 26,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Larkspur x Nimbus Labs\", \"start_offset\": 0, \"end_offset\": 26, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1512,
+   "output_tokens": 43,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

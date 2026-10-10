@@ -113,6 +113,17 @@ to him (49), and his window you never answered (51).
 | 51 | John (Actual.ai) and Aditya (IIMA Ventures), times you never confirmed · 14–22 Jul | `yes` | | `claude` |
 | 52 | Piyush (3one4), not yet until there is traction · 2 Apr | `yes` | | `claude` |
 
+## The benchmark's brief lines — 3 items (`yc2_w27_align`, added 2026-10-10)
+
+What the benchmark found across many threads rather than in one: each is a line in the morning brief,
+not a card.
+
+| # | Item — sender · date | Claude's answer | Your answer | Labelled by |
+|---|---|---|---|---|
+| 53 | Neon (Siddhant), four exchanges in March, then the template and silence · Mar → 11 Aug | `brief only` | | `claude` |
+| 54 | FITT Forward 2026 and NexTech by 247VC, no follow-up after either · 10–19 Sep | `brief only` | | `claude` |
+| 55 | Your sent mail, nothing after 26 Aug while four people waited · 26 Aug → 23 Sep | `brief only` | | `claude` |
+
 ---
 
 ## Why I answered as I did
@@ -135,6 +146,9 @@ to him (49), and his window you never answered (51).
   to and never wrote to (48), the people you promised a booking (49), an investor whose question your
   template did not answer (50), the times nobody confirmed (51), and a fund that asked you to come back
   when a condition was met, now met (52).
+- **53–55** (`09` G1, the benchmark): a relationship that went cold after real exchanges (53), events
+  with no follow-up within a week (54), and weeks of no outbound while people waited (55) — each true of
+  the founder across threads, so a line in the brief, not a card about one person.
 
 A `brief only` answer is scored as *not expressible* until `STEP-15` builds the morning brief —
 the board counts it apart rather than as a pass or a fail.

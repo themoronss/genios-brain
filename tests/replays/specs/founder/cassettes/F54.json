@@ -1,0 +1,290 @@
+{
+ "case_id": "F54",
+ "source": "ideal_reader",
+ "recorded_at": "a9efb151",
+ "answers": {
+  "31c98b6b6a03ad6f3b5c24ff90739a7b1f45238d6918daae1602c7bee313de0b": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "admin.pb.agenda_preparation.decision_first_agendas": 4614,
+     "admin.pb.briefing_and_preparation.one_page_brief_before_every_external_meeting": 4749,
+     "admin.pb.calendar_management.calendar_as_strategy_not_tetris": 4614,
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4758,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 6200,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 5006,
+     "admin.pb.meeting_scheduling.schedule_once_correctly": 4747
+    },
+    "confidence_bp": 5000,
+    "rationale": "The meeting was on the calendar; what, if anything, was promised is open.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.agenda_preparation.decision_first_agendas\": 4614, \"admin.pb.briefing_and_preparation.one_page_brief_before_every_external_meeting\": 4749, \"admin.pb.calendar_management.calendar_as_strategy_not_tetris\": 4614, \"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4758, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 6200, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 5006, \"admin.pb.meeting_scheduling.schedule_once_correctly\": 4747}, \"confidence_bp\": 5000, \"rationale\": \"The meeting was on the calendar; what, if anything, was promised is open.\", \"missing\": []}",
+   "input_tokens": 5548,
+   "output_tokens": 161,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "3ed9e9100c68ed30d77d3241b57ee5e4a15ea1877d5bae142d3a8f3f24125848": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "defer",
+    "scores": {
+     "sales.pb.cold_calling.permission_based_opener": 3812,
+     "sales.pb.demo.discovery_anchored_demo": 3742,
+     "sales.pb.linkedin_outreach.comment_first_linkedin_approach": 3679,
+     "sales.pb.tam_sam_som.bottom_up_market_sizing": 3763
+    },
+    "confidence_bp": 4000,
+    "rationale": "A sales opener or demo script does not fit a founder at a founders mixer.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"defer\", \"scores\": {\"sales.pb.cold_calling.permission_based_opener\": 3812, \"sales.pb.demo.discovery_anchored_demo\": 3742, \"sales.pb.linkedin_outreach.comment_first_linkedin_approach\": 3679, \"sales.pb.tam_sam_som.bottom_up_market_sizing\": 3763}, \"confidence_bp\": 4000, \"rationale\": \"A sales opener or demo script does not fit a founder at a founders mixer.\", \"missing\": []}",
+   "input_tokens": 4348,
+   "output_tokens": 96,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "3fa3296979745797b0e363a1ae66678f01c7fb262774f09c9041bd49e07d062c": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Meeting with events@bluebayhub.test, 7 days ago",
+    "situation": "The meeting with events@bluebayhub.test happened 7 days ago. No follow-through is visible.",
+    "artifact": "Recap: [what was discussed - yours to fill]. Next step: [one specific step, with a date]."
+   },
+   "raw": "{\"headline\": \"Meeting with events@bluebayhub.test, 7 days ago\", \"situation\": \"The meeting with events@bluebayhub.test happened 7 days ago. No follow-through is visible.\", \"artifact\": \"Recap: [what was discussed - yours to fill]. Next step: [one specific step, with a date].\"}",
+   "input_tokens": 682,
+   "output_tokens": 68,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "4f700deaca490f5c42c5ba3dd3ee488f900c57b41cd164212ac17fb2124753f5": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "admin.pb.agenda_preparation.decision_first_agendas": 4614,
+     "admin.pb.briefing_and_preparation.one_page_brief_before_every_external_meeting": 6200,
+     "admin.pb.calendar_management.calendar_as_strategy_not_tetris": 4614,
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4758,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 4814,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 5006,
+     "admin.pb.meeting_scheduling.schedule_once_correctly": 4747
+    },
+    "confidence_bp": 5000,
+    "rationale": "A confirmed external meeting is coming.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.agenda_preparation.decision_first_agendas\": 4614, \"admin.pb.briefing_and_preparation.one_page_brief_before_every_external_meeting\": 6200, \"admin.pb.calendar_management.calendar_as_strategy_not_tetris\": 4614, \"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4758, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4814, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 5006, \"admin.pb.meeting_scheduling.schedule_once_correctly\": 4747}, \"confidence_bp\": 5000, \"rationale\": \"A confirmed external meeting is coming.\", \"missing\": []}",
+   "input_tokens": 5545,
+   "output_tokens": 152,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "617bb16d7f3777030021aba778b3957b297914d591fd4b70bbf5de07c3f68fd7": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "DECISION_MADE",
+      "confidence_bp": 6000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"DECISION_MADE\", \"confidence_bp\": 6000}]}",
+   "input_tokens": 1039,
+   "output_tokens": 50,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "6511e77cef4dd6610ffe19fe19885bd6b26501b4f345f8aa2714572d058ba72b": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "admin.pb.agenda_preparation.decision_first_agendas": 4614,
+     "admin.pb.briefing_and_preparation.one_page_brief_before_every_external_meeting": 4749,
+     "admin.pb.calendar_management.calendar_as_strategy_not_tetris": 4614,
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4758,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 6200,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 5006,
+     "admin.pb.meeting_scheduling.schedule_once_correctly": 4747
+    },
+    "confidence_bp": 5000,
+    "rationale": "The meeting was on the calendar; what, if anything, was promised is open.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.agenda_preparation.decision_first_agendas\": 4614, \"admin.pb.briefing_and_preparation.one_page_brief_before_every_external_meeting\": 4749, \"admin.pb.calendar_management.calendar_as_strategy_not_tetris\": 4614, \"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4758, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 6200, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 5006, \"admin.pb.meeting_scheduling.schedule_once_correctly\": 4747}, \"confidence_bp\": 5000, \"rationale\": \"The meeting was on the calendar; what, if anything, was promised is open.\", \"missing\": []}",
+   "input_tokens": 5548,
+   "output_tokens": 161,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "809e694cda2255a2b9cbf762c43bbc6db863146d257c561d46505e91b7167319": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "admin.pb.agenda_preparation.decision_first_agendas": 4614,
+     "admin.pb.briefing_and_preparation.one_page_brief_before_every_external_meeting": 6200,
+     "admin.pb.calendar_management.calendar_as_strategy_not_tetris": 4614,
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4758,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 4814,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 5006,
+     "admin.pb.meeting_scheduling.schedule_once_correctly": 4747
+    },
+    "confidence_bp": 5000,
+    "rationale": "A confirmed external meeting is coming.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.agenda_preparation.decision_first_agendas\": 4614, \"admin.pb.briefing_and_preparation.one_page_brief_before_every_external_meeting\": 6200, \"admin.pb.calendar_management.calendar_as_strategy_not_tetris\": 4614, \"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4758, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4814, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 5006, \"admin.pb.meeting_scheduling.schedule_once_correctly\": 4747}, \"confidence_bp\": 5000, \"rationale\": \"A confirmed external meeting is coming.\", \"missing\": []}",
+   "input_tokens": 5544,
+   "output_tokens": 152,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "a131a81d27de81fe762e38904752027674a7cf921eb1115faffce8e6515540fe": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Meeting with rhea@tallowfin.test is clear",
+    "situation": "Nothing open is on record with rhea@tallowfin.test.",
+    "artifact": "Nothing is missing on record; confirm the agenda."
+   },
+   "raw": "{\"headline\": \"Meeting with rhea@tallowfin.test is clear\", \"situation\": \"Nothing open is on record with rhea@tallowfin.test.\", \"artifact\": \"Nothing is missing on record; confirm the agenda.\"}",
+   "input_tokens": 679,
+   "output_tokens": 47,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "b2f5f789ee724f34780bd90297bd240a85ae0f931e16776c1dc67432253cb006": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Meeting with kavya@ferrypay.test is clear",
+    "situation": "Nothing open is on record with kavya@ferrypay.test.",
+    "artifact": "Nothing is missing on record; confirm the agenda."
+   },
+   "raw": "{\"headline\": \"Meeting with kavya@ferrypay.test is clear\", \"situation\": \"Nothing open is on record with kavya@ferrypay.test.\", \"artifact\": \"Nothing is missing on record; confirm the agenda.\"}",
+   "input_tokens": 679,
+   "output_tokens": 47,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "b609cdd1ff3998d262814d274edf4d95dfe65b4e219a434efb0758a68d2de1b5": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Meeting with events@bluebayhub.test is clear",
+    "situation": "Nothing open is on record with events@bluebayhub.test.",
+    "artifact": "Nothing is missing on record; confirm the agenda."
+   },
+   "raw": "{\"headline\": \"Meeting with events@bluebayhub.test is clear\", \"situation\": \"Nothing open is on record with events@bluebayhub.test.\", \"artifact\": \"Nothing is missing on record; confirm the agenda.\"}",
+   "input_tokens": 681,
+   "output_tokens": 49,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "d3140b27f680acdc286cee9b97048038eb50303e503cc5dfe91ced50f0a253d3": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "admin.pb.agenda_preparation.decision_first_agendas": 4614,
+     "admin.pb.briefing_and_preparation.one_page_brief_before_every_external_meeting": 4749,
+     "admin.pb.calendar_management.calendar_as_strategy_not_tetris": 4614,
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4758,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 6200,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 5006,
+     "admin.pb.meeting_scheduling.schedule_once_correctly": 4747
+    },
+    "confidence_bp": 5000,
+    "rationale": "The meeting was on the calendar; what, if anything, was promised is open.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.agenda_preparation.decision_first_agendas\": 4614, \"admin.pb.briefing_and_preparation.one_page_brief_before_every_external_meeting\": 4749, \"admin.pb.calendar_management.calendar_as_strategy_not_tetris\": 4614, \"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4758, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 6200, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 5006, \"admin.pb.meeting_scheduling.schedule_once_correctly\": 4747}, \"confidence_bp\": 5000, \"rationale\": \"The meeting was on the calendar; what, if anything, was promised is open.\", \"missing\": []}",
+   "input_tokens": 5549,
+   "output_tokens": 161,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "d7c6aebcef719c4371c9202e3eea322362b843d9cf0df0d4c9aa39e39de10d06": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "admin.pb.action_item_tracking.one_register_across_meetings": 4948,
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4938,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 6400,
+     "admin.pb.minutes_and_documentation.decisions_and_actions_same_day": 4829
+    },
+    "confidence_bp": 5000,
+    "rationale": "Nothing since the meeting says what was agreed; ask what was promised.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.action_item_tracking.one_register_across_meetings\": 4948, \"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4938, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 6400, \"admin.pb.minutes_and_documentation.decisions_and_actions_same_day\": 4829}, \"confidence_bp\": 5000, \"rationale\": \"Nothing since the meeting says what was agreed; ask what was promised.\", \"missing\": []}",
+   "input_tokens": 4452,
+   "output_tokens": 109,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "df76f60519938e087380db992eaf1f46665a3ef2d09ea0bda8484a36b9d7ae66": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": false,
+      "description": "no readable text",
+      "category": "unknown",
+      "human_authored": null,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"no readable text\", \"category\": \"unknown\", \"human_authored\": null, \"asks_for_reply\": null}]}",
+   "input_tokens": 1144,
+   "output_tokens": 38,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "fa3d9f1a189d404c9071b45bcbd8c9806d4ff5b93caf3a9d9ffe281015a23dfa": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "admin.pb.agenda_preparation.decision_first_agendas": 4614,
+     "admin.pb.briefing_and_preparation.one_page_brief_before_every_external_meeting": 6200,
+     "admin.pb.calendar_management.calendar_as_strategy_not_tetris": 4614,
+     "admin.pb.commitment_tracking.the_executive_s_promise_ledger": 4758,
+     "admin.pb.follow_up_coordination.the_follow_through_relay": 4814,
+     "admin.pb.inbox_and_correspondence.triage_to_five_outcomes": 5006,
+     "admin.pb.meeting_scheduling.schedule_once_correctly": 4747
+    },
+    "confidence_bp": 5000,
+    "rationale": "A confirmed external meeting is coming.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.agenda_preparation.decision_first_agendas\": 4614, \"admin.pb.briefing_and_preparation.one_page_brief_before_every_external_meeting\": 6200, \"admin.pb.calendar_management.calendar_as_strategy_not_tetris\": 4614, \"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4758, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 4814, \"admin.pb.inbox_and_correspondence.triage_to_five_outcomes\": 5006, \"admin.pb.meeting_scheduling.schedule_once_correctly\": 4747}, \"confidence_bp\": 5000, \"rationale\": \"A confirmed external meeting is coming.\", \"missing\": []}",
+   "input_tokens": 5544,
+   "output_tokens": 152,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "fe3838f5975964355072ed4adbdb9d0f4d8e57ee377754031d819a4a5be727c9": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "DECISION_MADE",
+      "confidence_bp": 6000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"DECISION_MADE\", \"confidence_bp\": 6000}]}",
+   "input_tokens": 1040,
+   "output_tokens": 50,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

@@ -7084,6 +7084,16 @@ yc2_w27_align:
                       artifact: "genios_engine/capture/semantic/extractor.py"
                       verify: ".venv/bin/python -m pytest -q tests/capture/semantic/test_extractor.py"
                       depends_on: []
+                    - id: M34.C2.L-logic.V0.U17
+                      what: >
+                        `03` F149: a promise is due when its window closes — the adapter hands L2 a
+                        commitment's `due.latest` for an exact or bounded date (a "this week" promise is
+                        due on the week's last day, not at the moment it was made); a RELATIVE window
+                        ("soon") stays what it is today until `06` decides what it is. Added 10 Oct,
+                        building C1.U01.
+                      artifact: "genios_engine/context/qes_adapter.py"
+                      verify: ".venv/bin/python -m pytest -q tests/context/test_a_promise_is_due_when_its_window_closes.py"
+                      depends_on: []
                     - id: M34.C2.L-logic.V0.U10
                       what: >
                         A programme or a portal is never decided as an investor: when the founder's

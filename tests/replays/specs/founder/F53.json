@@ -1,0 +1,249 @@
+{
+ "case_id": "F53",
+ "title": "A fund gone cold after four real exchanges",
+ "kind": "must_detect",
+ "label_row": 53,
+ "labelled_by": "claude",
+ "replays": [],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata",
+  "also": [
+   "arjun.rao@gmail.test"
+  ]
+ },
+ "sweeps": [
+  "2026-03-12T12:00:00Z",
+  "2026-09-15T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "m1",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-03-02T05:00:00Z",
+   "from": "Ira Bose <ira@larkspurvc.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Larkspur x Nimbus Labs",
+   "body": "Hi Arjun,\n\nLoved the demo. How many design partners do you have live today?\n\nIra\nLarkspur Ventures",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-larkspur",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "question",
+     "stance": "positive",
+     "topics": [
+      "fundraising"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Ira Bose",
+       "entity_type": "person",
+       "quote": "Ira"
+      },
+      {
+       "surface_form": "Larkspur Ventures",
+       "entity_type": "organization",
+       "quote": "Larkspur Ventures"
+      }
+     ],
+     "questions": [
+      {
+       "text": "How many design partners are live",
+       "asked_by": "Ira Bose",
+       "asked_of": "Arjun Rao",
+       "quote": "How many design partners do you have live today?"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "interest after the demo"
+     }
+    }
+   }
+  },
+  {
+   "id": "m2",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-03-03T06:00:00Z",
+   "from": "Arjun Rao <arjun@nimbuslabs.test>",
+   "to": [
+    "Ira Bose <ira@larkspurvc.test>"
+   ],
+   "subject": "Re: Larkspur x Nimbus Labs",
+   "body": "Hi Ira,\n\nThree are live, and two more start in April. Happy to walk you through them.\n\nArjun",
+   "labels": [
+    "SENT"
+   ],
+   "thread": "t-larkspur",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "positive",
+     "topics": [
+      "fundraising"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Ira Bose",
+       "entity_type": "person",
+       "quote": "Ira"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "high",
+      "motive": "the answer to her question"
+     }
+    }
+   }
+  },
+  {
+   "id": "m3",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-03-10T05:00:00Z",
+   "from": "Ira Bose <ira@larkspurvc.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Re: Larkspur x Nimbus Labs",
+   "body": "Thanks Arjun - this is helpful. Let me take it to our Monday meeting.\n\nIra",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-larkspur",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "positive",
+     "topics": [
+      "fundraising"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Ira Bose",
+       "entity_type": "person",
+       "quote": "Ira"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "high",
+      "motive": "taking it to her partners"
+     }
+    }
+   }
+  },
+  {
+   "id": "m4",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-03-11T06:00:00Z",
+   "from": "Arjun Rao <arjun@nimbuslabs.test>",
+   "to": [
+    "Ira Bose <ira@larkspurvc.test>"
+   ],
+   "subject": "Re: Larkspur x Nimbus Labs",
+   "body": "Sounds good, Ira - happy to join the meeting if it helps.\n\nArjun",
+   "labels": [
+    "SENT"
+   ],
+   "thread": "t-larkspur",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "positive",
+     "topics": [
+      "fundraising"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Ira Bose",
+       "entity_type": "person",
+       "quote": "Ira"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "high",
+      "motive": "an offer to join"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "gate": {
+   "m1": "emitted",
+   "m2": "emitted",
+   "m3": "emitted",
+   "m4": "emitted"
+  },
+  "memory": {
+   "m1": true,
+   "m2": true,
+   "m3": true,
+   "m4": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Ira",
+     "Larkspur"
+    ],
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "brief": "Larkspur went quiet after four exchanges in March - six months"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": []
+ },
+ "witness": null,
+ "not_expressible": {
+  "cards": "brief only - a line in the morning brief, not a card (D12d)",
+  "brief": "STEP-15 - there is no morning brief to appear in"
+ },
+ "model": {},
+ "notes": "09 G1, the benchmark's March exchanges: four real exchanges, both ways, then six months of nothing. A line in the brief, not a card.",
+ "blocked_on": null
+}

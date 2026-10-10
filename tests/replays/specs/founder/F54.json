@@ -1,0 +1,323 @@
+{
+ "case_id": "F54",
+ "title": "A founders' mixer attended, and no follow-up in seven days",
+ "kind": "must_detect",
+ "label_row": 54,
+ "labelled_by": "claude",
+ "replays": [
+  "05"
+ ],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata",
+  "also": [
+   "arjun.rao@gmail.test"
+  ]
+ },
+ "sweeps": [
+  "2026-08-19T12:00:00Z",
+  "2026-08-28T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "mixer",
+   "source": "gcal",
+   "sweep": 0,
+   "occurred_at": "2026-08-10T04:00:00Z",
+   "summary": "Fintech founders mixer - Bluebay",
+   "start": "2026-08-20T12:30:00Z",
+   "end": "2026-08-20T15:00:00Z",
+   "organizer": "events@bluebayhub.test",
+   "attendees": [
+    "events@bluebayhub.test",
+    "arjun@nimbuslabs.test",
+    "kavya@ferrypay.test",
+    "rhea@tallowfin.test"
+   ]
+  }
+ ],
+ "expected": {
+  "gate": {
+   "mixer": "emitted"
+  },
+  "memory": {
+   "mixer": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Bluebay",
+     "mixer"
+    ],
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "brief": "the Bluebay mixer of 20 Aug - no follow-up to anyone you met"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": []
+ },
+ "witness": null,
+ "not_expressible": {
+  "cards": "brief only - a line in the morning brief, not a card (D12d)",
+  "brief": "STEP-15 - there is no morning brief to appear in"
+ },
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "admin contact",
+     "kavya@ferrypay.test",
+     "evaluated at: 2026-08-19"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "one_page_brief_before_every_external_meeting": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "A confirmed external meeting is coming.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "admin contact",
+     "rhea@tallowfin.test",
+     "evaluated at: 2026-08-19"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "one_page_brief_before_every_external_meeting": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "A confirmed external meeting is coming.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "admin contact",
+     "events@bluebayhub.test",
+     "evaluated at: 2026-08-19"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "one_page_brief_before_every_external_meeting": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "A confirmed external meeting is coming.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "admin contact",
+     "kavya@ferrypay.test",
+     "evaluated at: 2026-08-28"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "the_follow_through_relay": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "The meeting was on the calendar; what, if anything, was promised is open.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "channel touch",
+     "kavya@ferrypay.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "A sales opener or demo script does not fit a founder at a founders mixer.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "meeting follow through",
+     "kavya@ferrypay.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "the_follow_through_relay": 6400
+     },
+     "confidence_bp": 5000,
+     "rationale": "Nothing since the meeting says what was agreed; ask what was promised.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "admin contact",
+     "rhea@tallowfin.test",
+     "evaluated at: 2026-08-28"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "the_follow_through_relay": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "The meeting was on the calendar; what, if anything, was promised is open.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "channel touch",
+     "rhea@tallowfin.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "A sales opener or demo script does not fit a founder at a founders mixer.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "meeting follow through",
+     "rhea@tallowfin.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "the_follow_through_relay": 6400
+     },
+     "confidence_bp": 5000,
+     "rationale": "Nothing since the meeting says what was agreed; ask what was promised.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "admin contact",
+     "events@bluebayhub.test",
+     "evaluated at: 2026-08-28"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "the_follow_through_relay": 6200
+     },
+     "confidence_bp": 5000,
+     "rationale": "The meeting was on the calendar; what, if anything, was promised is open.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "channel touch",
+     "events@bluebayhub.test"
+    ],
+    "answer": {
+     "outcome": "defer",
+     "move": {},
+     "confidence_bp": 4000,
+     "rationale": "A sales opener or demo script does not fit a founder at a founders mixer.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "meeting follow through",
+     "events@bluebayhub.test"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "the_follow_through_relay": 6400
+     },
+     "confidence_bp": 5000,
+     "rationale": "Nothing since the meeting says what was agreed; ask what was promised.",
+     "missing": []
+    }
+   }
+  ],
+  "narrator": [
+   {
+    "when": [
+     "admin_contact",
+     "\"who\": \"kavya@ferrypay.test"
+    ],
+    "answer": {
+     "headline": "Meeting with kavya@ferrypay.test is clear",
+     "situation": "Nothing open is on record with kavya@ferrypay.test.",
+     "artifact": "Nothing is missing on record; confirm the agenda."
+    }
+   },
+   {
+    "when": [
+     "admin_contact",
+     "\"who\": \"rhea@tallowfin.test"
+    ],
+    "answer": {
+     "headline": "Meeting with rhea@tallowfin.test is clear",
+     "situation": "Nothing open is on record with rhea@tallowfin.test.",
+     "artifact": "Nothing is missing on record; confirm the agenda."
+    }
+   },
+   {
+    "when": [
+     "admin_contact",
+     "\"who\": \"events@bluebayhub.test"
+    ],
+    "answer": {
+     "headline": "Meeting with events@bluebayhub.test is clear",
+     "situation": "Nothing open is on record with events@bluebayhub.test.",
+     "artifact": "Nothing is missing on record; confirm the agenda."
+    }
+   },
+   {
+    "when": [
+     "meeting_follow_through",
+     "\"who\": \"kavya@ferrypay.test"
+    ],
+    "answer": {
+     "headline": "Meeting with kavya@ferrypay.test, 7 days ago",
+     "situation": "The meeting with kavya@ferrypay.test happened 7 days ago. No follow-through is visible.",
+     "artifact": "Recap: [what was discussed - yours to fill]. Next step: [one specific step, with a date]."
+    }
+   },
+   {
+    "when": [
+     "meeting_follow_through",
+     "\"who\": \"rhea@tallowfin.test"
+    ],
+    "answer": {
+     "headline": "Meeting with rhea@tallowfin.test, 7 days ago",
+     "situation": "The meeting with rhea@tallowfin.test happened 7 days ago. No follow-through is visible.",
+     "artifact": "Recap: [what was discussed - yours to fill]. Next step: [one specific step, with a date]."
+    }
+   },
+   {
+    "when": [
+     "meeting_follow_through",
+     "\"who\": \"events@bluebayhub.test"
+    ],
+    "answer": {
+     "headline": "Meeting with events@bluebayhub.test, 7 days ago",
+     "situation": "The meeting with events@bluebayhub.test happened 7 days ago. No follow-through is visible.",
+     "artifact": "Recap: [what was discussed - yours to fill]. Next step: [one specific step, with a date]."
+    }
+   }
+  ]
+ },
+ "notes": "09 G1, the benchmark's two networking events with zero mail after: an external event with no follow-up within 7 days. A cohort session is excluded (F31's rule); this is a one-off mixer with named attendees.",
+ "blocked_on": null
+}

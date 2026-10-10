@@ -1,0 +1,614 @@
+{
+ "case_id": "F55",
+ "source": "ideal_reader",
+ "recorded_at": "a9efb151",
+ "answers": {
+  "01d54cd0e5deb5f07ca3e470720ac6266e52c3546cc84b3a29b916cb781bcd71": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 1140,
+   "output_tokens": 74,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "023acd531a344f02df6bdeed183f62806c8987dbf719109f70df6eebe00c91c7": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 1141,
+   "output_tokens": 74,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "076e8ab8e905d113591ae861135d8448ed75aa5f4af0b6df2e6acc8356c7095a": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Reply",
+    "situation_summary": "The reply is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
+    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
+   },
+   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
+   "input_tokens": 2365,
+   "output_tokens": 166,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "0be83a77c056a5a80be7e58b92ef0cf7c982381afae1ed114c43ce559d6cf2af": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Nimbus Labs - July update",
+    "start_offset": 0,
+    "end_offset": 25,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Nimbus Labs - July update\", \"start_offset\": 0, \"end_offset\": 25, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1518,
+   "output_tokens": 43,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "0e956df9291ca4a572d520a990ec9efaac4f71e085e9626489f20e1020c7f951": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "reply": 6500,
+     "wait_unanswered_email": 4300
+    },
+    "confidence_bp": 5500,
+    "rationale": "Dev asked for the pricing sheet and has waited 26 days for it.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 4300}, \"confidence_bp\": 5500, \"rationale\": \"Dev asked for the pricing sheet and has waited 26 days for it.\", \"missing\": []}",
+   "input_tokens": 2103,
+   "output_tokens": 49,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "176918e94fda6cf879614b1406e4da42a2538308701a8a3e20396feaebbf5086": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Reply",
+    "situation_summary": "The reply is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
+    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
+   },
+   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
+   "input_tokens": 2409,
+   "output_tokens": 166,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "20cf5ccbe0cc36a5bab7909152cce3346472030341aa6c0d4747e99c5d64e03d": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Send Dev Malhotra the pricing sheet",
+    "situation": "Dev Malhotra asked 26 days ago: \"Could you send the pricing sheet?\"",
+    "artifact": "Hi Dev, here is the pricing sheet: [attach]."
+   },
+   "raw": "{\"headline\": \"Send Dev Malhotra the pricing sheet\", \"situation\": \"Dev Malhotra asked 26 days ago: \\\"Could you send the pricing sheet?\\\"\", \"artifact\": \"Hi Dev, here is the pricing sheet: [attach].\"}",
+   "input_tokens": 1847,
+   "output_tokens": 49,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "41e85e3f5c937666af16ecad14bd690d9c560dae78d5088e192283fa52897002": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "request",
+    "stance": "neutral",
+    "topics": [
+     "operations"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Dev Malhotra",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Dev",
+        "start_offset": 15,
+        "end_offset": 18
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "Could you send the pricing sheet",
+      "asked_by": "Dev Malhotra",
+      "asked_of": "Arjun Rao",
+      "evidence": [
+       {
+        "quote": "Could you send the pricing sheet?",
+        "start_offset": 31,
+        "end_offset": 64
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "a reply to one question"
+    }
+   },
+   "raw": "{\"intent\": \"request\", \"stance\": \"neutral\", \"topics\": [\"operations\"], \"entity_mentions\": [{\"surface_form\": \"Dev Malhotra\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Dev\", \"start_offset\": 15, \"end_offset\": 18}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Could you send the pricing sheet\", \"asked_by\": \"Dev Malhotra\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Could you send the pricing sheet?\", \"start_offset\": 31, \"end_offset\": 64}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"a reply to one question\"}}",
+   "input_tokens": 5494,
+   "output_tokens": 176,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "43b68d4d5a71a5fcc57239b3cf4cb9c2bb08133656edc2473fd8947d372f4353": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Reply",
+    "situation_summary": "The reply is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
+    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
+   },
+   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
+   "input_tokens": 2369,
+   "output_tokens": 166,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "4fca264e1822824cd4f938ad7a092e52110efd8a8967a6e2f57d965d8fe619e1": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Reply",
+    "situation_summary": "The reply is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
+    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
+   },
+   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
+   "input_tokens": 2369,
+   "output_tokens": 166,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "5ca09f577afd3c21f6f6f85f520f8ac98f1aa8d3f14485c2d59e64436ad6e70b": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "positive",
+    "topics": [
+     "fundraising"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Ishaan Mehra",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Ishaan",
+        "start_offset": 30,
+        "end_offset": 36
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "medium",
+     "motive": "the monthly update"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"fundraising\"], \"entity_mentions\": [{\"surface_form\": \"Ishaan Mehra\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Ishaan\", \"start_offset\": 30, \"end_offset\": 36}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"medium\", \"motive\": \"the monthly update\"}}",
+   "input_tokens": 5512,
+   "output_tokens": 117,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "7c603357f16af16efa7663b869178980cc49de5e89b975e4b4396072d69e5e65": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Are you still keen on the pilot?",
+    "start_offset": 33,
+    "end_offset": 65,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Are you still keen on the pilot?\", \"start_offset\": 33, \"end_offset\": 65, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1504,
+   "output_tokens": 45,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "9c6b825049db3594a690c18562b9b9039b2114282680a52236403f67dcb0689e": {
+   "site": "r1",
+   "parsed": {
+    "readings": [
+     {
+      "item": 1,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 2,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     },
+     {
+      "item": 3,
+      "ambiguous": false,
+      "classification": "NOT_INTERPRETABLE",
+      "confidence_bp": 5000
+     }
+    ]
+   },
+   "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
+   "input_tokens": 1140,
+   "output_tokens": 74,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "a192109fda08ce1b1b138c38423369daea7fc591f22086cad83c232a56558c13": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Answer Rhea Thomas on moving the call",
+    "situation": "Rhea Thomas asked 22 days ago: \"Can we move our call to next week?\"",
+    "artifact": "Hi Rhea, happy to move it - would [day, time] next week suit you?"
+   },
+   "raw": "{\"headline\": \"Answer Rhea Thomas on moving the call\", \"situation\": \"Rhea Thomas asked 22 days ago: \\\"Can we move our call to next week?\\\"\", \"artifact\": \"Hi Rhea, happy to move it - would [day, time] next week suit you?\"}",
+   "input_tokens": 1846,
+   "output_tokens": 55,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "aa269c5d0cec6131cd7d9d0b84858da1c236517c6535310e6a3697eaf00c03d6": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 1,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 2,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 3,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 2, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 3, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "input_tokens": 1097,
+   "output_tokens": 96,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "ab8d32396f3c64c7a1e998e207cad18a8d3e2fcc98b2d1d2155737618ee587d2": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Reply",
+    "situation_summary": "The reply is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
+    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
+   },
+   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
+   "input_tokens": 2409,
+   "output_tokens": 166,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "b76f8074fb935df6a394d8c5603c3eab0692fd9b34630fc1e47372cf3d098e9c": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Can we move our call to next week?",
+    "start_offset": 32,
+    "end_offset": 66,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Can we move our call to next week?\", \"start_offset\": 32, \"end_offset\": 66, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1504,
+   "output_tokens": 46,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "b9c58d1975701c3193a40150feff891efd7a1bd7f95b49a85e9d05ce32eed4f3": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "reply": 6500,
+     "wait_unanswered_email": 4600
+    },
+    "confidence_bp": 5500,
+    "rationale": "Kabir asked whether we are still keen on the pilot and has waited 17 days for our answer.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 4600}, \"confidence_bp\": 5500, \"rationale\": \"Kabir asked whether we are still keen on the pilot and has waited 17 days for our answer.\", \"missing\": []}",
+   "input_tokens": 2103,
+   "output_tokens": 56,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "c10536818ef026fec153008b5410f3964eedf28e1c0b99cd0b5955d367879ccb": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Could you send the pricing sheet?",
+    "start_offset": 31,
+    "end_offset": 64,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Could you send the pricing sheet?\", \"start_offset\": 31, \"end_offset\": 64, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1503,
+   "output_tokens": 46,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "c2486da99192f4daca2438ba0ccb4c82aaba87f74f4144f78345fb9382f2e187": {
+   "site": "narrator",
+   "parsed": {
+    "headline": "Answer Kabir Sethi on the pilot",
+    "situation": "Kabir Sethi asked 17 days ago: \"Are you still keen on the pilot?\"",
+    "artifact": "Hi Kabir, thanks for checking in - [where we are on the pilot]. Could we find a time to talk it through?"
+   },
+   "raw": "{\"headline\": \"Answer Kabir Sethi on the pilot\", \"situation\": \"Kabir Sethi asked 17 days ago: \\\"Are you still keen on the pilot?\\\"\", \"artifact\": \"Hi Kabir, thanks for checking in - [where we are on the pilot]. Could we find a time to talk it through?\"}",
+   "input_tokens": 1846,
+   "output_tokens": 62,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "d913adbfdd611e02e95e031df63f5aca95943809a74f1980491ed7a4b4e89f8e": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Quick one from Kabir",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     },
+     {
+      "item": 2,
+      "business": true,
+      "description": "Quick one from Rhea",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     },
+     {
+      "item": 3,
+      "business": true,
+      "description": "Quick one from Dev",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     },
+     {
+      "item": 4,
+      "business": true,
+      "description": "Nimbus Labs - July update",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Quick one from Kabir\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 2, \"business\": true, \"description\": \"Quick one from Rhea\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 3, \"business\": true, \"description\": \"Quick one from Dev\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 4, \"business\": true, \"description\": \"Nimbus Labs - July update\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "input_tokens": 1275,
+   "output_tokens": 145,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "dbc013813397cc6ae759af0bcf852e122c767ae2a1baf10d4072c52f5838681f": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Reply",
+    "situation_summary": "The reply is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
+    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
+   },
+   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
+   "input_tokens": 2406,
+   "output_tokens": 166,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "e0eac6c3fa7e00e56717eb4f4ee768077867d25940c6a1ed42d503e70c0c02cb": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "request",
+    "stance": "neutral",
+    "topics": [
+     "operations"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Kabir Sethi",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Kabir",
+        "start_offset": 15,
+        "end_offset": 20
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "Are you still keen on the pilot",
+      "asked_by": "Kabir Sethi",
+      "asked_of": "Arjun Rao",
+      "evidence": [
+       {
+        "quote": "Are you still keen on the pilot?",
+        "start_offset": 33,
+        "end_offset": 65
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "a reply to one question"
+    }
+   },
+   "raw": "{\"intent\": \"request\", \"stance\": \"neutral\", \"topics\": [\"operations\"], \"entity_mentions\": [{\"surface_form\": \"Kabir Sethi\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Kabir\", \"start_offset\": 15, \"end_offset\": 20}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Are you still keen on the pilot\", \"asked_by\": \"Kabir Sethi\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Are you still keen on the pilot?\", \"start_offset\": 33, \"end_offset\": 65}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"a reply to one question\"}}",
+   "input_tokens": 5495,
+   "output_tokens": 176,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "f890a2ef7d6b817666ecef46f402f91a358327e6c18b7868d3c71ce447c38631": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "request",
+    "stance": "neutral",
+    "topics": [
+     "operations"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Rhea Thomas",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Rhea",
+        "start_offset": 15,
+        "end_offset": 19
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "Can we move our call to next week",
+      "asked_by": "Rhea Thomas",
+      "asked_of": "Arjun Rao",
+      "evidence": [
+       {
+        "quote": "Can we move our call to next week?",
+        "start_offset": 32,
+        "end_offset": 66
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "a reply to one question"
+    }
+   },
+   "raw": "{\"intent\": \"request\", \"stance\": \"neutral\", \"topics\": [\"operations\"], \"entity_mentions\": [{\"surface_form\": \"Rhea Thomas\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Rhea\", \"start_offset\": 15, \"end_offset\": 19}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Can we move our call to next week\", \"asked_by\": \"Rhea Thomas\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Can we move our call to next week?\", \"start_offset\": 32, \"end_offset\": 66}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"a reply to one question\"}}",
+   "input_tokens": 5495,
+   "output_tokens": 177,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "fdc9fee3277011b0e139e6875f1e242deb0bfa7318a96b95a0322ec5ff352402": {
+   "site": "decider",
+   "parsed": {
+    "outcome": "decision",
+    "scores": {
+     "reply": 6500,
+     "wait_unanswered_email": 4400
+    },
+    "confidence_bp": 5500,
+    "rationale": "Rhea asked to move the call to next week and has waited 22 days for our answer.",
+    "missing": []
+   },
+   "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 4400}, \"confidence_bp\": 5500, \"rationale\": \"Rhea asked to move the call to next week and has waited 22 days for our answer.\", \"missing\": []}",
+   "input_tokens": 2103,
+   "output_tokens": 53,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

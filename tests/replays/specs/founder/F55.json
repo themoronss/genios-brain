@@ -1,0 +1,343 @@
+{
+ "case_id": "F55",
+ "title": "Four weeks of no outbound while three people wait",
+ "kind": "must_detect",
+ "label_row": 55,
+ "labelled_by": "claude",
+ "replays": [],
+ "founder": {
+  "name": "Arjun Rao",
+  "email": "arjun@nimbuslabs.test",
+  "company": "Nimbus Labs",
+  "timezone": "Asia/Kolkata",
+  "also": [
+   "arjun.rao@gmail.test"
+  ]
+ },
+ "sweeps": [
+  "2026-09-11T12:00:00Z"
+ ],
+ "objects": [
+  {
+   "id": "last",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-14T06:00:00Z",
+   "from": "Arjun Rao <arjun@nimbuslabs.test>",
+   "to": [
+    "Ishaan Mehra <ishaan@meadowvc.test>"
+   ],
+   "subject": "Nimbus Labs - July update",
+   "body": "Hi Ishaan,\n\nOur July update: three design partners live, and the seed round opens in September.\n\nArjun",
+   "labels": [
+    "SENT"
+   ],
+   "thread": "t-meadow",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "inform",
+     "stance": "positive",
+     "topics": [
+      "fundraising"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Ishaan Mehra",
+       "entity_type": "person",
+       "quote": "Ishaan"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "warm",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": false,
+      "engagement": "medium",
+      "motive": "the monthly update"
+     }
+    }
+   }
+  },
+  {
+   "id": "ask1",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-16T05:00:00Z",
+   "from": "Dev Malhotra <dev@tanglewood.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Quick one from Dev",
+   "body": "Hi Arjun,\n\nCould you send the pricing sheet?\n\nDev",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-wait1",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "neutral",
+     "topics": [
+      "operations"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Dev Malhotra",
+       "entity_type": "person",
+       "quote": "Dev"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Could you send the pricing sheet",
+       "asked_by": "Dev Malhotra",
+       "asked_of": "Arjun Rao",
+       "quote": "Could you send the pricing sheet?"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "a reply to one question"
+     }
+    }
+   }
+  },
+  {
+   "id": "ask2",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-20T05:00:00Z",
+   "from": "Rhea Thomas <rhea@pinegrove.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Quick one from Rhea",
+   "body": "Hi Arjun,\n\nCan we move our call to next week?\n\nRhea",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-wait2",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "neutral",
+     "topics": [
+      "operations"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Rhea Thomas",
+       "entity_type": "person",
+       "quote": "Rhea"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Can we move our call to next week",
+       "asked_by": "Rhea Thomas",
+       "asked_of": "Arjun Rao",
+       "quote": "Can we move our call to next week?"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "a reply to one question"
+     }
+    }
+   }
+  },
+  {
+   "id": "ask3",
+   "source": "gmail",
+   "sweep": 0,
+   "occurred_at": "2026-08-25T05:00:00Z",
+   "from": "Kabir Sethi <kabir@orchardhq.test>",
+   "to": [
+    "arjun@nimbuslabs.test"
+   ],
+   "subject": "Quick one from Kabir",
+   "body": "Hi Arjun,\n\nAre you still keen on the pilot?\n\nKabir",
+   "labels": [
+    "INBOX"
+   ],
+   "thread": "t-wait3",
+   "read": {
+    "gate": "keep",
+    "relevance": "business",
+    "extraction": {
+     "intent": "request",
+     "stance": "neutral",
+     "topics": [
+      "operations"
+     ],
+     "entity_mentions": [
+      {
+       "surface_form": "Kabir Sethi",
+       "entity_type": "person",
+       "quote": "Kabir"
+      }
+     ],
+     "questions": [
+      {
+       "text": "Are you still keen on the pilot",
+       "asked_by": "Kabir Sethi",
+       "asked_of": "Arjun Rao",
+       "quote": "Are you still keen on the pilot?"
+      }
+     ],
+     "exchange_intent": {
+      "category": "working",
+      "tone": "neutral",
+      "formality": "professional",
+      "addressed_personally": true,
+      "human_authored": true,
+      "asks_for_reply": true,
+      "engagement": "high",
+      "motive": "a reply to one question"
+     }
+    }
+   }
+  }
+ ],
+ "expected": {
+  "gate": {
+   "last": "emitted",
+   "ask1": "emitted",
+   "ask2": "emitted",
+   "ask3": "emitted"
+  },
+  "memory": {
+   "last": true,
+   "ask1": true,
+   "ask2": true,
+   "ask3": true
+  },
+  "cards": [
+   {
+    "about": [
+     "Dev",
+     "Rhea",
+     "Kabir"
+    ],
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "brief": "you have sent nothing for 28 days while three people wait"
+ },
+ "forbidden": {
+  "names": [],
+  "phrases": []
+ },
+ "witness": null,
+ "not_expressible": {
+  "cards": "brief only - a line in the morning brief, not a card (D12d)",
+  "brief": "STEP-15 - there is no morning brief to appear in"
+ },
+ "model": {
+  "decider": [
+   {
+    "when": [
+     "unanswered email",
+     "Rhea Thomas"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "reply": 6500
+     },
+     "confidence_bp": 5500,
+     "rationale": "Rhea asked to move the call to next week and has waited 22 days for our answer.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "unanswered email",
+     "Kabir Sethi"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "reply": 6500
+     },
+     "confidence_bp": 5500,
+     "rationale": "Kabir asked whether we are still keen on the pilot and has waited 17 days for our answer.",
+     "missing": []
+    }
+   },
+   {
+    "when": [
+     "unanswered email",
+     "Dev Malhotra"
+    ],
+    "answer": {
+     "outcome": "decision",
+     "move": {
+      "reply": 6500
+     },
+     "confidence_bp": 5500,
+     "rationale": "Dev asked for the pricing sheet and has waited 26 days for it.",
+     "missing": []
+    }
+   }
+  ],
+  "narrator": [
+   {
+    "when": [
+     "unanswered_email",
+     "Kabir Sethi"
+    ],
+    "answer": {
+     "headline": "Answer Kabir Sethi on the pilot",
+     "situation": "Kabir Sethi asked 17 days ago: \"Are you still keen on the pilot?\"",
+     "artifact": "Hi Kabir, thanks for checking in - [where we are on the pilot]. Could we find a time to talk it through?"
+    }
+   },
+   {
+    "when": [
+     "unanswered_email",
+     "Dev Malhotra"
+    ],
+    "answer": {
+     "headline": "Send Dev Malhotra the pricing sheet",
+     "situation": "Dev Malhotra asked 26 days ago: \"Could you send the pricing sheet?\"",
+     "artifact": "Hi Dev, here is the pricing sheet: [attach]."
+    }
+   },
+   {
+    "when": [
+     "unanswered_email",
+     "Rhea Thomas"
+    ],
+    "answer": {
+     "headline": "Answer Rhea Thomas on moving the call",
+     "situation": "Rhea Thomas asked 22 days ago: \"Can we move our call to next week?\"",
+     "artifact": "Hi Rhea, happy to move it - would [day, time] next week suit you?"
+    }
+   }
+  ]
+ },
+ "notes": "09 G1, the benchmark's 28 days of zero outbound while people waited 46-77 days: the founder's last mail went on 14 Aug. Each ask may be its own card too; the brief line is the founder-level silence across them.",
+ "blocked_on": null
+}

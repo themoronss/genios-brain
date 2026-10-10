@@ -52,7 +52,7 @@ and no card shows a bounce yet (STEP-14). Three cases are new (`ADDED_AFTER`: F4
 gate's promise is unchanged: nothing dropped, every other archive the same.
 
 RESTATED BY `yc2_w27_align` (M34.C1, before STEP-12). The benchmark's shapes are new cases (`ADDED_AFTER`:
-F48–F52, `09` G1); the gate keeps and reads every one of their mails. Nothing else moved.
+F48–F55, `09` G1); the gate keeps and reads every one of their mails and events. Nothing else moved.
 """
 from __future__ import annotations
 
@@ -118,7 +118,8 @@ ADDED_AFTER: dict[str, str] = {"F41": "STEP-04", "F42": "STEP-04", "F43": "STEP-
                                "F44": "STEP-04", "F45": "STEP-10", "F46": "STEP-10",
                                "F47": "STEP-10", "F48": "yc2_w27_align", "F49": "yc2_w27_align",
                                "F50": "yc2_w27_align", "F51": "yc2_w27_align",
-                               "F52": "yc2_w27_align"}
+                               "F52": "yc2_w27_align", "F53": "yc2_w27_align",
+                               "F54": "yc2_w27_align", "F55": "yc2_w27_align"}
 
 #: Cases a later step moved, with their marking after it — (step, (kind, verdict, lost_at, cards)).
 #: STEP-05: a mail below the floor, the founder's own sent mail and an archive now enter memory.
