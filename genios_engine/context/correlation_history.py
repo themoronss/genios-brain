@@ -30,11 +30,12 @@ WHERE EACH PAST IS KEPT below) — and the line each one refuses to cross:
                                       nobody fixed, and nothing here can tell those apart.
   derived.history.days_since_prior    how long the gap was. Two weeks and two years mean
                                       different things and only the reader knows which.
-  derived.history.prior_outcome       how the LAST generation's execution ended, verbatim from
+  derived.history.prior_outcome       how the PRIOR generation's execution ended — the one just
+                                      before this, in this domain — verbatim from
                                       `execution_outcomes.label`. Never re-graded here — a
                                       second opinion on what an ending means is how two
                                       spellings of the same question come to disagree.
-  derived.history.prior_card_verdict  what the person DID with the last card about this anchor,
+  derived.history.prior_card_verdict  what the person DID with the last card of that generation,
                                       as `cause` or `cause:reason` —
                                       `run_play | do_it_myself | wrong:not_relevant | …`
                                       (eleven `wrong:*` reasons — see `learning_attribution`).
@@ -81,6 +82,23 @@ reader resolves a declared path in the domain it is evaluating — its situation
 not write is closed (`analytic/publish.close_derived_facts`): the per-anchor rows the old shape left,
 and the past of a pair the chain no longer holds. Closed, never deleted — an as-of read of last week
 still answers.
+
+WHERE EACH ENDING BELONGS (`yc2_w27_align` M34.C2.L-logic.V0.U07, `03` F113). The chain was per
+(anchor, domain) and the two endings were not: an outcome and a verdict were keyed by ANCHOR, and the
+last one read won — so the fundraising file's ending was the admin file's too, and a verdict on the
+CURRENT generation's card was reported as how the prior one ended. Each ending is now placed
+(`_placed`) on the file and generation its signal belongs to, and the prior is the generation just
+before the current one:
+
+  * a signal compiled from a situation (`signals.situation_id`, 0182) belongs where the situation's
+    correlation is — exactly; and nowhere, if that correlation is gone;
+  * a signal with no situation (four of the five writers leave it NULL — `reason/situation_binding`,
+    held) names only its subject. It is placed in the prior generation of that anchor's ONE file when
+    it was emitted while that generation was open — after it opened, before the current one did — and
+    nowhere else: not on an anchor with two files, whose file it was about is written nowhere; not when
+    the prior generation's row is gone (a merge took it), or when either opening is unknown.
+
+What nothing places in the prior generation is `unrecorded`, as before.
 """
 
 from __future__ import annotations
@@ -131,10 +149,11 @@ class AnchorHistory:
     #: there is no prior, or when either timestamp is missing — never 0, which would read as
     #: "it recurred the same day".
     days_since_prior: int | None
-    #: `execution_outcomes.label` for the prior generation, verbatim. `NO_PRIOR` when this is
-    #: generation 1; `UNKNOWN_OUTCOME` when a prior exists and nothing recorded its ending.
+    #: `execution_outcomes.label` for the prior generation — the one just before this, in this
+    #: domain — verbatim. `NO_PRIOR` when this is generation 1; `UNKNOWN_OUTCOME` when a prior exists
+    #: and nothing placed there recorded its ending.
     prior_outcome: str
-    #: The last terminal card verdict on this anchor. Same two sentinels, same reason.
+    #: The last terminal card verdict in that same generation. Same two sentinels, same reason.
     prior_card_verdict: str
 
     @property
@@ -163,9 +182,12 @@ _GENERATIONS = text(
 #:
 #: So the join is stated as what it actually is — outcomes whose subject is a signal, and that
 #: signal's subject node. An execution opened by any other route is not counted here rather
-#: than matched by luck.
+#: than matched by luck. And from the signal, the file and generation it belongs to: its situation's
+#: correlation when it names one, else only its subject and when it was emitted (`_placed`).
 _PRIOR_OUTCOMES = text(
-    "select s.subject_node_id as anchor, o.label, o.closed_at "
+    "select s.subject_node_id as anchor, s.situation_id, s.eval_time as emitted_at, "
+    "       c.anchor_node_id as file_anchor, c.domain as file_domain, "
+    "       c.generation as file_generation, o.label, o.closed_at "
     "from execution_outcomes o "
     "join signals s on s.org_id = o.org_id "
     # `substr(x, 8)`, NOT `substring(x from 8)`. The second is Postgres-only and would make this
@@ -173,6 +195,9 @@ _PRIOR_OUTCOMES = text(
     # reports green about a query nobody ran. Both engines implement the two-argument form.
     # 8 is one past `len('signal:')`.
     "  and s.signal_id = substr(o.subject_ref, 8) "
+    "left join context_situations cs on cs.org_id = s.org_id and cs.situation_id = s.situation_id "
+    "left join context_correlations c on c.org_id = cs.org_id "
+    "     and c.correlation_id = cs.correlation_id "
     "where o.org_id = :o and o.subject_ref like 'signal:%' "
     "  and s.subject_node_id in :anchors "
     "order by o.closed_at"
@@ -189,10 +214,15 @@ _PRIOR_OUTCOMES = text(
 #: "they did it themselves" is not "we were wrong", and reporting either as the other is the
 #: precision-denominator defect this branch already fixed once at the feedback layer.
 _PRIOR_VERDICTS = text(
-    "select s.subject_node_id as anchor, v.cause, v.reason, v.occurred_at "
+    "select s.subject_node_id as anchor, s.situation_id, s.eval_time as emitted_at, "
+    "       c.anchor_node_id as file_anchor, c.domain as file_domain, "
+    "       c.generation as file_generation, v.cause, v.reason, v.occurred_at "
     "from card_feedback_verdicts v "
-    "join cards c on c.org_id = v.org_id and c.card_id = v.card_id "
-    "join signals s on s.org_id = c.org_id and s.signal_id = c.signal_id "
+    "join cards k on k.org_id = v.org_id and k.card_id = v.card_id "
+    "join signals s on s.org_id = k.org_id and s.signal_id = k.signal_id "
+    "left join context_situations cs on cs.org_id = s.org_id and cs.situation_id = s.situation_id "
+    "left join context_correlations c on c.org_id = cs.org_id "
+    "     and c.correlation_id = cs.correlation_id "
     "where v.org_id = :o and s.subject_node_id in :anchors "
     "order by v.occurred_at"
 ).bindparams(bindparam("anchors", expanding=True))
@@ -234,6 +264,32 @@ def _days(later: object, earlier: object) -> int | None:
         return None
 
 
+def _placed(row, chains: dict[tuple[str, str], list[dict]]) -> tuple[str, str, int] | None:
+    """The (anchor, domain, generation) one outcome or verdict belongs to, or None (module docstring,
+    WHERE EACH ENDING BELONGS). A signal with no situation is only ever placed in a PRIOR generation —
+    the one this module reads."""
+    if row["situation_id"] is not None:
+        if row["file_domain"] is None or row["file_generation"] is None:
+            return None            # its situation's correlation is gone: so is where it belonged
+        return (str(row["file_anchor"]), str(row["file_domain"]), int(row["file_generation"]))
+    anchor = str(row["anchor"])
+    files = [key for key in chains if key[0] == anchor]
+    emitted = _instant(row["emitted_at"])
+    if len(files) != 1 or emitted is None or len(chains[files[0]]) < 2:
+        return None
+    prior, current = chains[files[0]][-2], chains[files[0]][-1]
+    if int(prior["generation"]) != int(current["generation"]) - 1:
+        return None                # the prior generation's row is gone
+    opened, closed = _instant(prior.get("first_event_at")), _instant(current.get("first_event_at"))
+    if opened is None or closed is None:
+        return None
+    try:
+        inside = opened <= emitted < closed
+    except TypeError:              # a naive and an aware instant: refuse, never invent an offset
+        return None
+    return (anchor, files[0][1], int(prior["generation"])) if inside else None
+
+
 def read_histories(conn, org_id: str) -> tuple[AnchorHistory, ...]:
     """Every anchor's own past, in three statements regardless of how many anchors there are."""
     rows = conn.execute(_GENERATIONS, {"o": org_id}).mappings().all()
@@ -248,25 +304,28 @@ def read_histories(conn, org_id: str) -> tuple[AnchorHistory, ...]:
 
     anchors = sorted({key[0] for key in chains})
 
-    # LAST WINS, and the queries order by time so the last row read is the most recent. A
+    # EACH ENDING WHERE IT BELONGS — (anchor, domain, generation), `_placed` — and within one
+    # generation LAST WINS: the queries order by time so the last row read is the most recent. A
     # `max()` over a dict would need a comparison on possibly-None timestamps; ordering in SQL
     # puts that burden where it belongs.
-    outcomes: dict[str, str] = {}
+    outcomes: dict[tuple[str, str, int], str] = {}
     for row in _rows(conn, _PRIOR_OUTCOMES, {"o": org_id, "anchors": anchors}):
         label = str(row["label"] or "").strip()
-        if label:
-            outcomes[str(row["anchor"])] = label
+        place = _placed(row, chains)
+        if label and place is not None:
+            outcomes[place] = label
 
-    verdicts: dict[str, str] = {}
+    verdicts: dict[tuple[str, str, int], str] = {}
     for row in _rows(conn, _PRIOR_VERDICTS, {"o": org_id, "anchors": anchors}):
         cause = str(row["cause"] or "").strip()
-        if not cause:
+        place = _placed(row, chains)
+        if not cause or place is None:
             continue
         # BOTH HALVES OR NEITHER. `wrong` alone loses why, and the three reasons mean different
         # things to a reader deciding whether to send a fourth card: `bad_timing` invites a
         # later retry, `not_relevant` does not.
         reason = str(row["reason"] or "").strip()
-        verdicts[str(row["anchor"])] = f"{cause}:{reason}" if reason else cause
+        verdicts[place] = f"{cause}:{reason}" if reason else cause
 
     out: list[AnchorHistory] = []
     for (anchor, domain), chain in sorted(chains.items()):
@@ -278,6 +337,8 @@ def read_histories(conn, org_id: str) -> tuple[AnchorHistory, ...]:
         # long ago" is useful and a missing number is not. When no earlier row survives at all
         # the gap is None, never a guess.
         last_of_prior = chain[-2].get("last_event_at") if len(chain) > 1 else None
+        # THE PRIOR GENERATION IS THE ONE JUST BEFORE THIS ONE — its ending, not the latest overall.
+        prior = (anchor, domain, times_seen - 1)
         out.append(AnchorHistory(
             anchor_node_id=anchor, domain=domain, times_seen=times_seen,
             days_since_prior=_days(first_of_current, last_of_prior),
@@ -286,9 +347,9 @@ def read_histories(conn, org_id: str) -> tuple[AnchorHistory, ...]:
             # it went. Collapsing them would let "no record of last time" read as "there was no
             # last time", which inverts the meaning of the fact.
             prior_outcome=(NO_PRIOR if times_seen == 1
-                           else outcomes.get(anchor, UNKNOWN_OUTCOME)),
+                           else outcomes.get(prior, UNKNOWN_OUTCOME)),
             prior_card_verdict=(NO_PRIOR if times_seen == 1
-                                else verdicts.get(anchor, UNKNOWN_OUTCOME))))
+                                else verdicts.get(prior, UNKNOWN_OUTCOME))))
     return tuple(out)
 
 
