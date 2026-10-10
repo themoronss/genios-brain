@@ -1,7 +1,7 @@
 # ═════════════════════════════════════════════════════════════════════════════════════════════
 # ⛔ HOW A UNIT ID IS ADDRESSED — read this before quoting one.
 #
-# This file holds FIFTEEN programme blocks, and three of them number their milestones from M8:
+# This file holds SEVENTEEN programme blocks, and three of them number their milestones from M8:
 #
 #   <root>                            M1  … M7    retired in place
 #   persona_brain_and_layer_repair    M8  … M12
@@ -18,19 +18,19 @@
 #   yc2_w27_s05                       M23         ← YC-II W27 STEP-05, every kept item enters memory
 #                                                   (2026-10-06); past every other block again
 #   yc2_w27_s06                       M24         ← YC-II W27 STEP-06, nothing is lost silently
-#                                                   (proposed 2026-10-07); past every other block again
+#                                                   (built 2026-10-07); past every other block again
 #   yc2_w27_s07                       M25         ← YC-II W27 STEP-07, the company brief
-#                                                   (proposed 2026-10-07); past every other block again
+#                                                   (built 2026-10-07); past every other block again
 #   yc2_w27_s08                       M26         ← YC-II W27 STEP-08, the deleted mail comes back
 #                                                   (built 2026-10-07); past every other block again
 #   yc2_w27_s09                       M27         ← YC-II W27 STEP-09, a file for every piece of work
 #                                                   (built 2026-10-07); past every other block again
 #   yc2_w27_s10                       M29         ← YC-II W27 STEP-10, the expert's numbers (built
-#                                                   2026-10-08); M28 is held for STEP-09's cards (D2)
+#                                                   2026-10-08); M28 never drawn (D2: STEP-11)
 #   yc2_w27_s11                       M30, M31    ← YC-II W27 STEP-11, founder playbooks (M30 built
 #                                                   2026-10-09; M31 after the review); past every other block again
-#   yc2_w27_s12                       M32, M33    ← STEP-12, the expert pass (proposed 2026-10-10)
-#   yc2_w27_align                     M34         ← before STEP-12, all aligned (proposed 2026-10-10)
+#   yc2_w27_s12                       M32, M33    ← STEP-12, the expert pass (go 10 Oct, after M34)
+#   yc2_w27_align                     M34         ← before STEP-12, all aligned (building 10 Oct)
 #
 # So `M11` is AMBIGUOUS on its own: it names "The remaining Layer 3 losses" in one block and
 # "L2 Reasoning" in another, and `M11.C1.L-logic.V0.U01` exists twice with different meanings.
@@ -2535,7 +2535,7 @@ atlas_v2_alignment:
 # (M16.C4.U05, M16.C5.U02): never build those in parallel.
 # ═════════════════════════════════════════════════════════════════════════════════════════════
 yc2_w27:
-  status: approved_in_progress
+  status: built            # 2026-10-06; M17.C3.L-integration.V2.U04 (the toolkit pin) is Harsh's
   confirmed: >
     Rohit, 2026-10-05 — "Go Bhojli ke go start karo, best tareeke se karke complete karo." Built
     2026-10-05/06, local commits only; Rohit pushes the batch (06-DECISIONS D10).
@@ -3288,10 +3288,10 @@ yc2_w27:
                       depends_on: [M19.C5.L-integration.V5.U03]
 
 # ═══════════════════════════════════════════════════════════════════════════════════════════════
-# yc2_w27_s02 · STEP-02 the change gate — speedrun008/YC-II W27/STEP-02-PENDING-owner-rohit-and-harsh-the-change-gate.md
+# yc2_w27_s02 · STEP-02 the change gate — speedrun008/YC-II W27/STEP-02-PENDING-owner-harsh-the-change-gate.md
 # ═══════════════════════════════════════════════════════════════════════════════════════════════
 yc2_w27_s02:
-  status: approved_in_progress
+  status: built            # 2026-10-06
   confirmed: >
     Rohit, 2026-10-06 — "Haan, ab step 2 start karo." Built the same day; QA green at aaca7e67
     (speedrun008/YC-II W27/baseline/yc2w27-s02-qa/qa_record.txt). Local commits; Rohit pushes.
@@ -3530,10 +3530,10 @@ yc2_w27_s02:
                                    M20.C5.L-logic.V0.U01]
 
 # ═══════════════════════════════════════════════════════════════════════════════════════════════
-# yc2_w27_s03 · STEP-03 the gate keeps everything — speedrun008/YC-II W27/STEP-03-PENDING-owner-rohit-and-harsh-the-gate-keeps-everything.md
+# yc2_w27_s03 · STEP-03 the gate keeps everything — speedrun008/YC-II W27/STEP-03-PENDING-owner-harsh-the-gate-keeps-everything.md
 # ═══════════════════════════════════════════════════════════════════════════════════════════════
 yc2_w27_s03:
-  status: approved_in_progress
+  status: built            # 2026-10-06
   confirmed: >
     Rohit, 2026-10-06 — "Thik hai step 3 start karo fully... Perfectly hme complete karna hai." Built
     the same day; QA green at 81857ce2 (speedrun008/YC-II W27/baseline/yc2w27-s03-qa/qa_record.txt).
@@ -4536,7 +4536,7 @@ yc2_w27_s05:
                       depends_on: [M23.C5.L-integration.V4.U02, M23.C6.L-logic.V2.U01]
 
 # ═══════════════════════════════════════════════════════════════════════════════════════════════
-# yc2_w27_s06 · STEP-06 nothing is lost silently — speedrun008/YC-II W27/STEP-06-PENDING-owner-rohit-and-harsh-nothing-lost-silently.md
+# yc2_w27_s06 · STEP-06 nothing is lost silently — speedrun008/YC-II W27/STEP-06-PENDING-owner-harsh-nothing-lost-silently.md
 # ═══════════════════════════════════════════════════════════════════════════════════════════════
 yc2_w27_s06:
   status: built
@@ -5530,7 +5530,8 @@ yc2_w27_s09:
   order_note: >
     C1 (the intro) and C2 (the watched domain) and C3 (the reply rule) are independent; C4 (the list)
     after C1 and C2; C5 (the golden set) last — the cassettes whose prompts move are re-recorded
-    deliberately first, then the acceptance. Built on Rohit's go and D30; D2 decides M28 (not drawn).
+    deliberately first, then the acceptance. Built on Rohit's go and D30. M28 was never drawn: D2 was
+    answered by STEP-11 (9 Oct) — a file reaches a card through STEP-12 and STEP-14.
   milestones:
     - id: M27
       name: A file for every piece of work in motion (STEP-09)
@@ -6555,7 +6556,7 @@ yc2_w27_s11:
                       depends_on: [M30.C1.L-contract.V0.U01, M30.C2.L-contract.V0.U01]
 
 yc2_w27_s12:
-  status: proposed_awaiting_confirmation
+  status: approved_after_align   # Rohit's go of 2026-10-10: after yc2_w27_align (M34)
   source: >
     speedrun008/YC-II W27/STEP-12 §1-§7, re-checked claim by claim against speedrun008 @ c50f0f7e
     (STEP-12 §8) by two read-only workers and by hand, and measured on the golden set from its

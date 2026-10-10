@@ -144,7 +144,9 @@ Built after `STEP-07` or beside it — nothing here touches what STEP-07 changes
 4. `… --apply --days <N>` — frees the keys; prints how many.
 5. `POST /connections/{gmail}/backfill` — the legacy door, every message fetched in full; never
    `/integrations/gmail/sync`, which keeps rule-junk as list snippets. Wait for `backfill drain
-   done` in the log; re-run while it says `TRUNCATED`.
+   done` in the log. ⛔ Corrected 2026-10-10: a `TRUNCATED` drain spent its page budget (500 pages of
+   `limit` messages), and the door always starts from the newest page, so a plain re-run stops in the
+   same place — re-run with a larger page, `POST …/backfill?limit=100`.
 6. `… --finish` — superseded, and not listed with its reason.
 7. `scripts/pipeline_health.py` and the funnel probe; keep both outputs in
    `baseline/<date>-after-resync/`.
@@ -239,7 +241,7 @@ run against its own mutations, the repo-wide guards before every commit. Nothing
 | the thirteen mails of F01 F02 F03 F09 F16 F32, rewritten to production's deleted shape (dropped, no tier, no body, no prepared text, nothing read, the old gate's trace) | across the six cases the dry run counts **13**, +1 the control; the health check **fails** on each |
 | `free_deleted` with 365 days | **14 freed**, every row still `dropped` |
 | the production sync door lists the same mailbox again | **13 land again, each with its body**; 0 duplicates among them |
-| what they land as | **10 emitted, `deep`, W-07, read** (an extraction each) — the brief's senders: StartupSetu, DigiVault, every Introly mail, Lakshya's social; **3 archived** under the code that deleted them before — F16's bounce (N-03), F32's forum (N-06) and newsletter (N-02) |
+| what they land as | **10 emitted, `deep`, W-07, read** (an extraction each) — the brief's senders: StartupSetu, DigiVault, every Introly mail, Lakshya's social; **3 archived** under the code that deleted them before — F16's bounce (N-03), F32's forum (N-06) and newsletter (N-02). ⛔ Since STEP-10 (`06` D38, 8 Oct) a delivery report is kept and read, never archived by N-01…N-04: F16's bounce would land emitted today |
 | `finish` | **13 superseded**, each trace naming its new event; the control — a mail Gmail no longer lists — **left `dropped`**, reported once, inside the window |
 | the health check after | **passes** |
 | a second listing / a second finish | **13 duplicate** / nothing changes |
@@ -292,5 +294,8 @@ match by hand; F87 found and fixed; F88–F90 declared limits; four unknowns, ea
 
 `08` §3.7 is the runbook (§8.6, with the script's real flags). In one line: the dry run to Rohit → his
 window (D5 / D16, recommended **365**) → `PATCH …/backfill-window` → `--apply --days N` →
-`POST /connections/{gmail}/backfill` (re-run while it says `TRUNCATED`) → `--finish` → `pipeline_health`.
+`POST /connections/{gmail}/backfill` (if it says `TRUNCATED`, again with `?limit=100` — a plain re-run
+stops where the first did) → `--finish` → `pipeline_health`. ⛔ And only after STEP-09 is deployed: it
+carries the fix for `03` F101 — the history replay after every backfill drain filed every newsletter
+the drain kept out (`08` §0).
 The health check must pass; `--finish` again after any later drain. Nothing the founder has is reset.

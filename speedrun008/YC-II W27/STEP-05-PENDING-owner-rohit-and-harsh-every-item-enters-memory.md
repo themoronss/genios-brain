@@ -1,6 +1,6 @@
-# STEP-05 · PENDING — owner Rohit (push) and Harsh (deploy) · every kept mail, meeting and screen item enters memory
+# STEP-05 · PENDING — owner Rohit (D23 — read the promotion's list; push ✅ 9 Oct) and Harsh (deploy) · every kept mail, meeting and screen item enters memory
 
-**✅ Built 2026-10-07** — tree block `yc2_w27_s05`, 19 units (17 planned, 2 added while building), crosscheck *ship*, QA §9.4. **Pending:** Rohit's push; Harsh's deploy (no migration), the first pass's numbers (§9.5, §8.6), and the promotion of Boardy's introductions after Rohit reads its list (`06` D23).
+**✅ Built 2026-10-07** — tree block `yc2_w27_s05`, 19 units (17 planned, 2 added while building), crosscheck *ship*, QA §9.4. **Pending:** Harsh's deploy (no migration; Rohit's push ✅ 9 Oct), the first pass's numbers (§9.5, §8.6), and the promotion of Boardy's introductions after Rohit reads its list (`06` D23).
 
 **Owner:** Claude. **Depends on:** `STEP-03` (nothing is deleted any more) and `STEP-04` (who is
 us). **Moves:** items in memory **~27 of 395 mails · 2 of 34 meetings → ≥ 95%**.
@@ -252,6 +252,8 @@ What happens on the first chain pass after the deploy, and what to read — `08-
 3. **The receipt** *every kept event has entered memory* and the health check may read red for the
    first day; the health check names what holds each one.
 4. **Boardy's introductions stay archived until Rohit says** (`06` D23): the promotion's dry run, its
-   list to Rohit, then `--apply`.
+   list to Rohit, then `--apply`. ⛔ Since STEP-07 (7 Oct) accepting the Boardy connector line in the
+   brief is that say: it promotes the connector's archived mail by itself
+   (`capture/landing/promote.promote_named_sender`, `STEP-07` §9).
 
 The production numbers to read are §8.6's.

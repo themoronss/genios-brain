@@ -1,4 +1,4 @@
-# STEP-02 · PENDING — owner: Rohit (push, batched) and Harsh (deploy, with migration 0191) · the change gate — no new evidence, no new decision
+# STEP-02 · PENDING — owner: Harsh (deploy, with migration 0191) — Rohit's push ✅ 9 Oct · the change gate — no new evidence, no new decision
 
 **Owner:** Claude. **Depends on:** `STEP-00` (one branch). **Decision:** `06` D11 (recommended: keep
 the current decider, behind this gate). **Moves:** `l4_llm_decision` + `l4_llm_r1` **~1,400 calls a
@@ -8,8 +8,8 @@ day → under 100**; cards stop appearing and vanishing; a DEFER stops expiring 
 
 ⚠️ **Re-checked against the code on 2026-10-06, claim by claim, and measured on the golden runner**
 (§8). Every claim in §1 holds; three of the seven units in §3 would have broken something as
-drafted. **What will be built is §8.3** — tree block `yc2_w27_s02`, 12 units, proposed and
-awaiting Rohit's go.
+drafted. **What was built is §8.3** — tree block `yc2_w27_s02`, proposed with 12 units and built on
+Rohit's go the same day (§9).
 
 ✅ **Everything that is Claude's is done** — 2026-10-06, on Rohit's go (*"Haan, ab step 2 start
 karo"*), tree `yc2_w27_s02`, 13 units, each red before and green after, and the whole QA tier green

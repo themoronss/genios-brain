@@ -76,7 +76,7 @@ Every row below was checked against the plan files in this folder and, where it 
 | P0·5 claim-level validation | STEP-13 §3.1–3.3, STEP-14 §3.5 | ✅ |
 | P1·6 coverage receipts, absence signals | STEP-06, STEP-10 §3.3, §3.10 | ✅ |
 | P1·7 EvidenceNeed — an investigation resolves itself | STEP-13 §3.6 | ✅ |
-| P1·8 six object types | commitment (exists), condition (STEP-11 01), open question (STEP-09 §3.6), delivery status (STEP-10 §3.5), meeting follow-up link (STEP-05 §3.4 + STEP-11 06), thread terminal state (STEP-09 stages) | ✅ spread across steps |
+| P1·8 six object types | commitment (exists), condition (STEP-11 01), open question (STEP-09 §3.6), delivery status (STEP-10 §3.5), meeting follow-up link (STEP-05 §3.4 + STEP-11 06 — ⛔ STEP-05 built meetings as meetings and left the link: no writer exists; STEP-09 groups a meeting with its file by attendee), thread terminal state (STEP-09 stages) | ⚠️ spread across steps; the meeting ↔ thread link has no writer |
 | P1·9 organisation and behaviour brains | behaviour: STEP-10 + STEP-16 §3.4. Organisation: STEP-07's brief is the founder's version | ⚠️ no owners, approval limits or backups (G7) |
 | P1·10 corpus hygiene (Admin's `document.*`) | — | ❌ not in YC-II W27 (G7) |
 | P1·11 the orchestrator loop | STEP-02 (gate, fingerprint), STEP-12 (one pass, cached on the fingerprint) | ✅ |
@@ -113,7 +113,7 @@ reasoning).
 | Commitments and follow-ups | STEP-09 open loops, STEP-15 "your promises due" | ✅ |
 | Meetings to actions | STEP-05 §3.4, STEP-11 06, STEP-15 prep | ✅ |
 | Decisions and approvals | — | not needed for a one-person company |
-| **Vendor and subscription renewals** — its first example card is a login vendor renewing at +32% | workstream kinds are investor, program, intro, hire, partner, compliance, internal (STEP-09 §3.1); vendor receipts are archived (F33) | ❌ a renewal never becomes a file, so the expert never sees it (G5) |
+| **Vendor and subscription renewals** — its first example card is a login vendor renewing at +32% | workstream kinds are investor, program, intro, hire, partner, compliance, internal (STEP-09 §3.1); vendor receipts are archived (F33) | ❌ a renewal never becomes a file, so the expert never sees it (G5) — ✅ since 10 Oct: the kind `vendor` (D18, `yc2_w27_align` M34.C2.L-contract.V0.U01) reads Admin's renewal playbook, and golden case F56 is the renewal |
 | Weekly scorecard: usefulness, silence, coverage, outcomes | the data exists (STEP-06, STEP-10, STEP-16); no scorecard | ❌ (G6) |
 | "At least one situation proven end to end" | — | ❌ (G6) |
 

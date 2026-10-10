@@ -129,7 +129,7 @@ def test_the_thread_yields_to_the_person() -> None:
 def test_their_habit_travels_as_context():
     """`party.reply_cadence_days` is how fast THEY answer — not how fast we do — so it rides on
     the card and stays out of the gate. Turning "we are four times slower than they are" into a
-    threshold needs our own cadence, which nothing derives yet."""
+    threshold needs our own cadence — derived since STEP-10, and its use is `06` D42's."""
     facts = _facts(_one(_rows(**{"party.reply_cadence_days": 2})))
     assert facts["outreach.their_normal_reply_days"] == 2
 

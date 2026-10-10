@@ -18,7 +18,8 @@ company brief is accepted (D26):
   3. `--apply --days <N>` — it refuses, freeing nothing, while the connection lists fewer days;
   4. `POST /connections/{gmail}/backfill` — the legacy door, every message fetched in full (never
      `/integrations/gmail/sync`, which keeps rule-junk as a list snippet); wait for `backfill drain
-     done` in the log, and run it again while it says `TRUNCATED`;
+     done` in the log — a `TRUNCATED` drain spent its page budget and always starts from the newest
+     page, so run it again with a larger page (`?limit=100`), never the same call;
   5. `--finish`;
   6. `scripts/pipeline_health.py`: *every Gmail message in the window has its content, or a stated
      reason* must pass.
@@ -213,8 +214,8 @@ def main(argv: list[str] | None = None) -> int:
               f"message(s) not listed ({done.outside_window} older than the connection's "
               f"{done.window_days}-day window; the rest Gmail no longer lists, or the drain has "
               f"not reached yet); {done.newly_reported} reason(s) written now")
-        print("Next: re-run the backfill while it says TRUNCATED and --finish again; then "
-              "scripts/pipeline_health.py")
+        print("Next: a TRUNCATED backfill again with a larger page (?limit=100), and --finish "
+              "again; then scripts/pipeline_health.py")
         return 0
     conn = read_only_connection(engine)
     try:

@@ -1,7 +1,7 @@
 # 07 · What is done — each finished step, its proof, and what is still owed
 
-**Written for:** Rohit, Harsh, and whoever picks this folder up next. **As of:** 2026-10-06,
-after Rohit's push. A step is listed here once everything that is Claude's in it is done. It
+**Written for:** Rohit, Harsh, and whoever picks this folder up next. **As of:** 2026-10-10,
+after Rohit's third push (`db6328cd`, §2c). A step is listed here once everything that is Claude's in it is done. It
 becomes **DONE** only when its number moves on production (`00-START-HERE.md`, "How we work
 through it" §3), and this page says, step by step, what is still owed before that.
 
@@ -37,21 +37,31 @@ is one branch, `speedrun008`, and the units are block `yc2_w27` of `tree.yaml`.
 | against production's branch | the same day Harsh pushed three commits to `origin/harsh/mvp` (`f4a71022`, `b5c6b064`, `649208f2`), so it was 3 ahead and 315 behind — **no longer a fast-forward**. Merged into `speedrun008` in `c50f0f7e` (textually clean; four tests resolved, `03` F137): once that merge is pushed, `harsh/mvp` is again an ancestor of `speedrun008` and the deploy a fast-forward |
 | QA of the merge | the units 35 / 0 / 0; the whole suite on Postgres **19,280 passed, 2 failed** — both a test that reads the wall clock (`03` F142, F143), exposed because the Mac slept through the run (2 h 37 min of wall clock for 42 min of process time, on battery), both unchanged by the merge. The golden lane, the board and the hermetic job were stopped: a run that spans a sleep is not a measurement. ✅ **Run again awake at `bac34d35` (10 Oct, `baseline/yc2w27-s11-qa/qa_record.txt` run 2): green on every tier** — the units 35/0/0; the whole suite 19,284 passed, the known four skipped; the golden lane 794 passed, 0 skipped; the board unchanged; hermetic 17,041 passed. Both tests of the void run pass |
 
+## 2c · The third push — 2026-10-10
+
+| | |
+|---|---|
+| pushed by | Rohit |
+| `origin/speedrun008` | `db6328cd` |
+| in this push | 8 commits since `5aff2ce5`: Harsh's three of 9 Oct and their merge (`c50f0f7e`, `03` F137), CI naming its failing tests (`f6a3fefe`, `03` F138), the docs of the second push, STEP-12's check and plan (`bac34d35`), and the merge's QA re-run awake (`db6328cd`) |
+| against production's branch | `harsh/mvp` is an ancestor of `speedrun008` again: the deploy is a fast-forward |
+| after it, local | the alignment block `yc2_w27_align` (M34, `10-BEFORE-STEP-12.md`) — committed unit by unit, waiting for the next push |
+
 ## 3 · The nineteen steps
 
 | Phase | Steps | Status |
 |---|---|---|
-| 0 · Ground truth | `STEP-00` one branch · `STEP-01` the golden set | both **PENDING — Harsh** (deploy). Claude's part done, pushed |
-| 1 · Remember everything | `STEP-02` change gate · `03` the gate keeps everything · `04` who is us · `05` every item enters memory · `06` nothing lost silently | `02`–`06` **PENDING — Rohit (push), Harsh (deploy)**: built, QA green (§6b–§6f) |
-| 2 · The expert's desk | `STEP-07` company brief · `08` the re-sync · `09` workstreams · `10` history, patterns, analytics | `07` **PENDING — Rohit (push; accept the brief), Harsh (deploy, migration `0195`; draft it)**: built, QA green (§6g) · `08` **PENDING — Rohit (push; the window, D5/D16), Harsh (the run, after the brief — `06` D26)**: built, QA green (§6h) · `09` **PENDING — Rohit (push; accept the brief's connectors and watchlist; D35), Harsh (deploy before STEP-08's run; re-file history if the health check names it)**: built, QA green (§6i) · `10` **PENDING — Rohit (push; `06` D42–D44), Harsh (deploy, no migration; the health check after one sweep)**: built, QA green (§6j) |
-| 3 · Expertise | `STEP-11` founder playbooks | **M30 PENDING — Rohit (push; review the two playbooks, `06` D45; give your in-motion lines their kind), Harsh (deploy, migration `0196`; the Founder Office for your org only)**: built, QA green (§6k) · M31 — introductions, compliance, hiring, meetings — after your review |
+| 0 · Ground truth | `STEP-00` one branch · `STEP-01` the golden set | both **PENDING — Harsh** (deploy). Claude's part done, pushed; STEP-01's exam grown to 58 cases by the alignment block (M34.C1) |
+| 1 · Remember everything | `STEP-02` change gate · `03` the gate keeps everything · `04` who is us · `05` every item enters memory · `06` nothing lost silently | `02`, `03`, `06` **PENDING — Harsh (deploy)** · `04` and `05` **PENDING — Rohit (D14, D23 — read the two lists), Harsh (deploy)**: built, QA green (§6b–§6f), pushed 9 Oct |
+| 2 · The expert's desk | `STEP-07` company brief · `08` the re-sync · `09` workstreams · `10` history, patterns, analytics | `07` **PENDING — Rohit (accept the brief), Harsh (deploy, migration `0195`; draft it)**: built, QA green (§6g) · `08` **PENDING — Rohit (the window, D5/D16), Harsh (the run, after the brief — `06` D26, and after STEP-09's deploy)**: built, QA green (§6h) · `09` **PENDING — Rohit (accept the brief's connectors and watchlist; D35), Harsh (deploy before STEP-08's run; re-file history if the health check names it)**: built, QA green (§6i) · `10` **PENDING — Rohit (`06` D42–D44), Harsh (deploy, no migration; the health check after one sweep)**: built, QA green (§6j) |
+| 3 · Expertise | `STEP-11` founder playbooks | **M30 PENDING — Rohit (review the two playbooks, `06` D45; give your in-motion lines their kind), Harsh (deploy, migration `0196`; the Founder Office for your org only)**: built, QA green (§6k) · M31 — introductions, compliance, hiring, meetings — after your review |
 | 4 · The expert thinks | `STEP-12` the expert pass · `13` check every claim | TO BUILD |
 | 5 · What you see | `STEP-14` the card · `15` the morning brief | TO BUILD |
 | 6 · Learning from you | `STEP-16` | TO BUILD |
 | Across all phases | `STEP-17` real tests · `18` known bugs | TO BUILD — six of `STEP-18`'s bugs are fixed in code and pushed (§5) |
 
-**19 steps: 11 finished by Claude (`00`, `01` pushed; `02`–`10` waiting for the push — `08`'s run is
-Harsh's), `STEP-11` half (M30 built, waiting for the push and your review), 7 to build.** `STEP-11` was
+**19 steps: 11 finished by Claude and pushed (`00`, `01` on 6 Oct; `02`–`10` on 9 Oct — `08`'s run is
+Harsh's), `STEP-11` half (M30 built and pushed 9 Oct, waiting for your review), 7 to build.** `STEP-11` was
 checked on 9 Oct (`STEP-11` §8), planned as tree `yc2_w27_s11` and built on your go of the same day
 (*Go — recommended*: `06` D2, D3, D31, D45–D47 as recommended): M30 — the Founder Office, the playbook
 contract, the decider reading the corpus whole, each file's kind of work, the playbook a file reads, the
@@ -130,7 +140,7 @@ them (`06` D12a — optional, nothing waits on it).
 
 ## 6b · STEP-02 · the change gate
 
-**What was built** (`STEP-02-PENDING-owner-rohit-and-harsh-the-change-gate.md` §9): before the
+**What was built** (`STEP-02-PENDING-owner-harsh-the-change-gate.md` §9): before the
 decider and R-1 are asked, each lane fingerprints the request it is about to send — its own
 capability and context, with time taken out — and skips a subject whose fingerprint is the one its
 last decision was made on, while the card that decision left still has its authority. A DEFER keeps
@@ -145,7 +155,7 @@ calls** (before: F13 2 … F29 12), the cards are the same, and the board did no
 
 ## 6c · STEP-03 · the gate keeps everything
 
-**What was built** (`STEP-03-PENDING-owner-rohit-and-harsh-the-gate-keeps-everything.md` §9): the
+**What was built** (`STEP-03-PENDING-owner-harsh-the-gate-keeps-everything.md` §9): the
 gate no longer deletes a mail. What a noise rule or the AI filter's confident junk verdict used to
 drop is **archived** — its encrypted payload kept 180 days (`06` D4), read by no model — with the
 rule as its reason; every mail carries an attention tier (`deep` · `skim` · `archive`). Every reader
@@ -211,7 +221,7 @@ Boardy's introductions promoted only after Rohit reads the dry run (D23).
 
 ## 6f · STEP-06 · nothing is lost silently
 
-**What was built** (`STEP-06-PENDING-owner-rohit-and-harsh-nothing-lost-silently.md` §9): one writer of a
+**What was built** (`STEP-06-PENDING-owner-harsh-nothing-lost-silently.md` §9): one writer of a
 card's `expired` state, `platform/card_lifecycle`, called by all twelve places that used to set it (nine
 wrote nothing), each with its cause — and History shows it. The compiled lane records what came of every
 admitted live situation (migration `0194`): `decided`, or the stop and its reason. One reader names every

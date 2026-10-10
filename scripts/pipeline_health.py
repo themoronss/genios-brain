@@ -539,8 +539,8 @@ def check_every_gmail_message_in_the_window_has_its_content(conn, org: str, *,
                       + " · ".join(f"{code} {n}" for code, n in
                                    sorted(never.items(), key=lambda kv: (-kv[1], kv[0]))))
     if freed:
-        detail.append(f"freed, not yet back or finished: {freed} — run the backfill drain again "
-                      "while it says TRUNCATED, then --finish")
+        detail.append(f"freed, not yet back or finished: {freed} — finish the backfill drain (a "
+                      "TRUNCATED one again with a larger page, `?limit=100`), then --finish")
     return Check(
         name=name, ok=not inside, measured=measured,
         expected=("0 — each came back with its content and its old row is superseded, or says why "
@@ -580,7 +580,8 @@ def check_memory_reaches_the_window(conn, org: str, *, now=None) -> Check:
         " group by 1 order by 1"),
         {"o": org, "now": now, "days": days, "kept": list(KEPT_OUTCOMES)}).fetchall()
     fix = ("STEP-08 §8.6 / `08` §3.7: `PATCH /connections/{gmail}/backfill-window` to the window Rohit "
-           "named, then `POST /connections/{gmail}/backfill` until it no longer says TRUNCATED")
+           "named, then `POST /connections/{gmail}/backfill` — a TRUNCATED drain again with a larger "
+           "page, `?limit=100`: it always starts from the newest page")
     if not rows:
         return Check(name=name, ok=False, measured=f"no Gmail mail in memory; the window is {days} days",
                      expected=f"memory's oldest mail within {REACH_SLACK_DAYS} days of the window's "

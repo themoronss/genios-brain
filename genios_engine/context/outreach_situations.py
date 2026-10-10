@@ -815,7 +815,9 @@ def read_unanswered_replies(rows: dict, now: datetime, employers: dict) -> list[
         # THEIR HABIT, carried rather than compared. `party.reply_cadence_days` is the median gap
         # between THEIR replies, which says how quickly they answer — not how quickly we do — so
         # it belongs on the card as context and not in the gate above. Turning "we are four times
-        # slower than they are" into a threshold needs our own cadence, which nothing derives yet.
+        # slower than they are" into a threshold needs our own cadence — derived since STEP-10
+        # (`context/waiting`: `party.our_reply_days`, `derived.our_reply_days`); whether it becomes
+        # the threshold is `06` D42's decision, not this reading's.
         cadence = _num(held.get("party.reply_cadence_days"))
         if cadence is not None:
             facts.append(("outreach.their_normal_reply_days", int(cadence), "number"))

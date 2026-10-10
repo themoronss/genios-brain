@@ -1,4 +1,4 @@
-# STEP-07 · PENDING — owner Rohit (push; accept the brief) and Harsh (deploy, migration 0195; draft it) · the company brief — what a chief of staff knows on day one
+# STEP-07 · PENDING — owner Rohit (accept the brief; push ✅ 9 Oct) and Harsh (deploy, migration 0195; draft it) · the company brief — what a chief of staff knows on day one
 
 **Owner:** Claude builds · **Rohit confirms** the brief (two minutes, then weekly diffs).
 **Depends on:** `STEP-04`, `STEP-05`. **Moves:** a versioned brief exists and is in **100%** of
@@ -62,7 +62,7 @@ Every line is a proposal you accept, edit or delete.
 ```
 .venv/bin/python -m pytest tests/platform/test_company_brief.py -q
 #   composed deterministically from the stores; same inputs → same version id; over budget → reported, not cut
-.venv/bin/python -m pytest tests/test_every_prompt_carries_the_brief.py -q
+.venv/bin/python -m pytest tests/test_every_prompt_carries_the_company_brief.py -q
 #   an AST walk over every prompt builder that judges or reads — fails if one omits brief_for()
 ```
 

@@ -1,6 +1,6 @@
 # 08 · For Harsh — deploying the batch, and what to run after
 
-**Written for:** Harsh. **As of:** 2026-10-09 (STEP-11 added; your three commits of 9 Oct merged — §0). **From:** the `yc2_w27` build (Claude), pushed by
+**Written for:** Harsh. **As of:** 2026-10-10 (pushed through `db6328cd` — your merge is in it; the alignment block `yc2_w27_align` is local and comes with the next push — §0b). **From:** the `yc2_w27` build (Claude), pushed by
 Rohit. Everything here can be checked against the repository; every number below names the file
 or the command it came from.
 
@@ -61,6 +61,24 @@ or the command it came from.
 
 The commits after `77aba10e` change CI, test docstrings and these docs only — the engine is the
 same. `2e7aea5b` fixes the CI `test` job (§6); it reaches GitHub with Rohit's next push.
+
+## 0b · The alignment block (`yc2_w27_align`, M34) — in the next push
+
+Built 10 Oct, before STEP-12 (`10-BEFORE-STEP-12.md`). **No migration.** What changes in production,
+and what you run or read:
+
+| | What changes | You |
+|---|---|---|
+| the brief's kinds | a seventh kind of work, `vendor` (`06` D18); the drafter's prompt is v3, so the next draft is one new call | — |
+| a file's quiet window | by its kind of work (`06` D33): investor and program files stay open 90 quiet days, the rest 45 | — |
+| the re-sync | `--apply` refuses, freeing nothing, while the connection's window is shorter than `--days` (exit 2) | §3.7, step 2 before step 3 |
+| two new health checks | *memory reaches back as far as the Gmail connection's window* — red until the re-sync reaches it; *every piece of work the brief names in motion has one file* — red while a named programme's mail stays archived (`03` F125, open) | read both after §3.7 and §3.8 |
+| dates read late | new reads frame *"by Friday"* against the mail's own day (`03` F148); a promise for a window is due when the window closes (F149) | §3.8: `scripts/reframe_stored_dates.py`, dry run then `--apply`, then re-file |
+| programmes | a programme's or a portal's file is never decided as an investor: `situation_outcomes` says `unsupported`, `misfiled_kind` | — |
+| a file's history | each ending is placed on its own file and generation (`03` F113): `derived.history.prior_*` values move | — |
+| the first-connect Sync | judged at one instant, like the sweep (no change on a live Sync, which passes none) | — |
+| the provider watch | the first outage after a boot alerts (`03` F145) | — |
+| probes | four more in `baseline/production_state.sql` (§4) | send their outputs |
 
 ## 1 · What the deploy changes in production
 
@@ -261,6 +279,10 @@ is decided, as today — nothing lost, nothing saved) and `/reset` fails until `
 the reset now wipes `reasoning_fingerprints` — ⛔ and, from STEP-06, until `0194` is (it wipes
 `situation_outcomes`). ⛔ **STEP-11 adds `0196_company_brief_line_kind.sql`** — one nullable column on
 `company_brief_lines`; the brief's store and routes write it, so the boot log must name it too.
+⛔ **All of them, in one line** (10 Oct — the latest is `0196`): `migrations applied at boot:
+['0191_reasoning_fingerprints.sql', '0192_attention_and_archive.sql', '0193_org_self_identities.sql',
+'0194_situation_outcomes.sql', '0195_company_brief.sql', '0196_company_brief_line_kind.sql']` — six
+files; the deploy is not done until the boot log names each.
 No new environment variable. One value we need from the
 deploy's environment:
 **`GENIOS_L4_LLM_DECISION_MAKER`** — on or off? The golden set runs the LLM decider on, as
@@ -325,9 +347,9 @@ reader needs a change.
 ```
 # 1 · declare — dry run, then the same with --apply
 python scripts/declare_self_identity.py --org org_e97e86f858ad48b2bbf64b8a \
-    --address ceo@thegenios.com --domain thegenios.com --by "06 D6" --database-url "$URL"
+    --address ceo@thegenios.com --address mrrohitswerashi@gmail.com --domain thegenios.com --by "06 D6" --database-url "$URL"
 python scripts/declare_self_identity.py --org org_e97e86f858ad48b2bbf64b8a \
-    --address ceo@thegenios.com --domain thegenios.com --by "06 D6" --database-url "$URL" --apply
+    --address ceo@thegenios.com --address mrrohitswerashi@gmail.com --domain thegenios.com --by "06 D6" --database-url "$URL" --apply
 
 # 2 · the repair — DRY RUN ONLY. Send its whole output to Rohit.
 python scripts/repair_self_identity.py --org org_e97e86f858ad48b2bbf64b8a --database-url "$URL"
@@ -418,7 +440,10 @@ python scripts/resync_deleted_mail.py --org $ORG --database-url "$URL" --days 36
 #     while the connection's window is shorter than --days (step 2 first)
 python scripts/resync_deleted_mail.py --org $ORG --database-url "$URL" --apply --days <N>
 # 4 · the legacy door — every message fetched in full. NEVER /integrations/gmail/sync (it keeps
-#     rule-junk as a list snippet). Wait for "backfill drain done"; while it says TRUNCATED, run it again
+#     rule-junk as a list snippet). Wait for "backfill drain done". ⛔ A TRUNCATED drain spent its page
+#     budget (500 pages of `limit` messages); the door always starts from the newest page, so a plain
+#     re-run walks the same pages and stops in the same place — re-run with a larger page instead:
+#     POST /connections/<gmail connection id>/backfill?limit=100
 #     POST /connections/<gmail connection id>/backfill
 # 5 · supersede what came back; say why the rest did not
 python scripts/resync_deleted_mail.py --org $ORG --database-url "$URL" --finish
@@ -530,7 +555,7 @@ PGOPTIONS='-c default_transaction_read_only=on' psql "$URL" -f "speedrun008/YC-I
 | B18 | `@park_queue` | 2 mails `extraction_parse_failed`, pending since 3 Oct 11:17 UTC, 0 attempts, no next attempt | attempted, with a next attempt or an end state |
 | B19 | `@attachment_refetch_errors` | 88 of 88 the `file_name` refusal | no new refusal; re-queued rows fetched or failing with a named shape |
 | B2 | `@l2_processing_runs` | 30 runs, 0 edge errors (latent) | still 0 |
-| — | `@latest_migration` | `0190` | `0190` — ⛔ **corrected 2026-10-07:** after the NEXT push's deploy, `0193_org_self_identities` |
+| — | `@latest_migration` | `0190` | ⛔ **corrected 2026-10-10:** `0196_company_brief_line_kind` after the deploy (it said `0193` on 7 Oct) |
 | STEP-02 | `@cards_expired_while_deferred` | measured in STEP-01 only | **0** — a DEFER keeps its card |
 | STEP-02 | `@gate_redecided_unchanged` | — (the gate is new) | `decided_today_never_skipped` small and falling; `skips` growing |
 | `03` F148 | `@dates_framed_late`, `@promises_framed_late` | — | the count `scripts/reframe_stored_dates.py` re-frames (§3.8); 0 after it |

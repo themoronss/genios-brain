@@ -40,11 +40,8 @@ pytestmark = pytest.mark.skipif(not FOLDER.is_dir(), reason="the plan folder is 
 #: What the guard found on 10 Oct, and the unit that corrects each — strict, so a fixed one fails
 #: until its marker is removed.
 DRIFT: dict[str, str] = {
-    "owners:STEP-03": "M34.C3 U03: STEP-03's title names no owner; its name names Rohit and Harsh",
-    "verify:STEP-06": "M34.C3 U03: STEP-06 §6 names a test that does not exist",
-    "verify:STEP-07": "M34.C3 U03: STEP-07 §6 names a test that does not exist",
-    "verify:STEP-09": "M34.C3 U03: STEP-09 §6 names a test that does not exist",
-    "verify:STEP-10": "M34.C3 U03: STEP-10 §6 names two tests that do not exist",
+    # Empty since M34.C3 U02 and U03 (10 Oct) corrected all seven: STEP-03's owners; D15-D19; eleven
+    # findings with no owner; the verify paths of STEP-06, STEP-07, STEP-09 and STEP-10.
 }
 
 
@@ -89,13 +86,25 @@ def test_a_step_files_status_word_is_its_names(path):
 def test_a_step_files_owners_are_its_names(path):
     after = path.name.split("-owner-", 1)[1].split("-") if "-owner-" in path.name else []
     owners = {p for p in PEOPLE if p in after}
-    title = _title(path).lower()
+    clause = _owner_clause(_title(path))
     if not owners:
-        assert "owner" not in title, f"{path.name}: the title names owners the name does not"
+        assert clause is None, f"{path.name}: the title names owners the name does not"
         return
-    assert "owner" in title, f"{path.name}: the name names {sorted(owners)}, the title no owner"
-    assert {p for p in PEOPLE if re.search(rf"\b{p}\b", title)} == owners, (
+    assert clause is not None, f"{path.name}: the name names {sorted(owners)}, the title no owner"
+    assert {p for p in PEOPLE if re.search(rf"\b{p}\b", clause)} == owners, (
         f"{path.name}: the name names {sorted(owners)}, the title {_title(path)!r}")
+
+
+def _owner_clause(title: str) -> str | None:
+    """The people a title names as owners: what follows `owner`, its asides in brackets left out
+    (`(push ✅ 9 Oct)`, `(… for Rohit's org only)`), up to the next ` · ` or ` — `, lower-cased."""
+    m = re.search(r"\bowner\b:?\s*(.*)", title, re.I)
+    if m is None:
+        return None
+    clause = m.group(1)
+    while re.search(r"\([^()]*\)", clause):
+        clause = re.sub(r"\([^()]*\)", "", clause)
+    return re.split(r" · | — ", clause, maxsplit=1)[0].lower()
 
 
 def _decisions() -> list[int]:

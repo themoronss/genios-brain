@@ -1,9 +1,9 @@
-# STEP-06 · PENDING — owner Rohit (push) and Harsh (deploy, migration 0194) · nothing is lost silently — every item, every situation and every card has an end state
+# STEP-06 · PENDING — owner: Harsh (deploy, migration 0194) — Rohit's push ✅ 9 Oct · nothing is lost silently — every item, every situation and every card has an end state
 
 **Owner:** Claude. **Depends on:** `STEP-05`. **Moves:** items and situations with no recorded end
 state **→ 0**; card expiries with no `card_event` **9 sites → 0**.
 
-**✅ Built 2026-10-07** — tree block `yc2_w27_s06`, 24 units (25 drawn, 1 retired while building), crosscheck *ship*, QA §9.4. **Pending:** Rohit's push; Harsh's deploy (migration `0194`); the production numbers (§8.6, §9.5).
+**✅ Built 2026-10-07** — tree block `yc2_w27_s06`, 24 units (25 drawn, 1 retired while building), crosscheck *ship*, QA §9.4. **Pending:** Harsh's deploy (migration `0194`; Rohit's push ✅ 9 Oct); the production numbers (§8.6, §9.5).
 
 ---
 
@@ -30,7 +30,7 @@ A silent loss looks exactly like *"there was nothing there"*. Once memory holds 
 | 3.1 | one end state per item | a view over `source_events`, `event_trace`, `parked_events`, `l2_processing_runs` | each item is exactly one of: `deep` / `skim` / `archive` · in memory (`skeleton` / `full`) · parked (reason, next retry) · failed (reason) |
 | 3.2 | one outcome per situation, per material change | migration (next free number) `situation_outcomes`, keyed on `STEP-02`'s fingerprint | `no_route(reason)` · `held(reason)` · `deferred(reason)` · `suppressed(reason)` · `unchanged` · `carded(card_id)`. Written by the `domain_shadow` except branches and by the legacy lane; `run_all` returns the compiled tallies to the funnel instead of dropping them |
 | 3.3 | one way to expire a card | new `platform/card_lifecycle.py` `expire_cards(conn, card_ids, *, cause)` | updates the card **and** writes `card.expired` with its cause. The nine silent sites call it. An AST guard fails on any `update cards set state='expired'` outside it |
-| 3.4 | receipts that go red | `platform/receipts.py` | (a) an item with no end state after two sweeps; (b) an admitted situation type that produced no card for 7 days, shown with its outcome histogram; (c) a card expired without a `card_event` |
+| 3.4 | receipts that go red | `platform/receipts.py` | (a) an item with no end state after two sweeps; (b) an admitted situation type that produced no card for 7 days, shown with its outcome histogram (→ built as a health-check line with no window, `06` D25); (c) a card expired without a `card_event` |
 | 3.5 | the drain stops starving | `capture/parked/drain.py:104-118` | rotate by `refetch_next_attempt_at`, not oldest-first |
 
 ## 4 · What will happen
@@ -45,12 +45,14 @@ gets one line per card saying why each one left.
 - items with no end state after two sweeps: **0**;
 - admitted situations with no outcome row: **0**;
 - expired cards with no `card_event`: **0**;
-- the 7-day *"this type produces nothing"* receipt exists and names its reason.
+- ~~the 7-day *"this type produces nothing"* receipt exists and names its reason~~ — ⛔ corrected 2026-10-10:
+  built as a health-check line, not a red receipt (`06` D25) — every live situation type with no open
+  card, with the histogram of its ends; it has no 7-day window.
 
 ## 6 · Verify
 
 ```
-GENIOS_TEST_DATABASE_URL=… .venv/bin/python -m pytest tests/platform/test_card_lifecycle.py tests/reason/test_situation_outcomes.py -q
+GENIOS_TEST_DATABASE_URL=… .venv/bin/python -m pytest tests/platform/test_card_lifecycle.py tests/reason/test_every_admitted_situation_has_an_end.py tests/reason/test_situation_outcome_store.py -q
 #   each of the nine former sites, called, leaves a card.expired event — by mutation
 #   the AST guard rejects a tenth site
 # production, read-only:
@@ -135,7 +137,7 @@ Rohit's permission — so production's numbers are §8.6's read-only SQL, for Ha
 | C1 · a card's end | 11 | `platform/card_lifecycle.expire_cards` — one statement and one `card.expired` event per card, with its cause; the nine silent sites, the two that already explain themselves and STEP-04's repair script call it; History shows every ending kind; an AST guard refuses a thirteenth site |
 | C2 · a situation's end | 6 | migration `0194`, its store and the tenant reset; the compiled lane records each admitted candidate's end; `reason/situation_end.py`; `scripts/situation_ends.py` |
 | C3 · an item's end | 1 | `capture/journey` names one end per event, with its attention tier and memory run |
-| C4 · the checks | 4 | three receipts — every expired card says why, every admitted situation has a recorded end, every event has an end — and the health check, with the 7-day silent types |
+| C4 · the checks | 4 | three receipts — every expired card says why, every admitted situation has a recorded end, every event has an end — and the health check, with the silent types (a line, no window — D25) |
 | C5 · the drains | 2 | the parked drain and the re-read ladder stop starving |
 | C6 · the golden set | 1 | the acceptance on every case, with a planted miss of each kind |
 

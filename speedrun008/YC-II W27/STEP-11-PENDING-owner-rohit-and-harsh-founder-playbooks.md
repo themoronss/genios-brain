@@ -1,4 +1,4 @@
-# STEP-11 · PENDING — owner Rohit (push; review the two playbooks, D45; the in-motion lines' kinds) and Harsh (deploy, migration `0196`; the Founder Office for Rohit's org only) · founder playbooks — what a professional knows about your work — M30 built (§9); M31 after the review
+# STEP-11 · PENDING — owner Rohit (review the two playbooks, D45; the in-motion lines' kinds; push ✅ 9 Oct) and Harsh (deploy, migration `0196`; the Founder Office for Rohit's org only) · founder playbooks — what a professional knows about your work — M30 built (§9); M31 after the review
 
 **Owner:** Claude drafts · **Rohit reviews and accepts** (or names a reviewer). **Depends on:**
 nothing to start — drafting runs in parallel from `STEP-03` on; *routing* the playbooks needs

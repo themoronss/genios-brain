@@ -1,4 +1,4 @@
-# STEP-10 · PENDING — owner Rohit (push; D42–D44) and Harsh (deploy, no migration; the health check after one sweep) · history, patterns, analytics — the expert's numbers
+# STEP-10 · PENDING — owner Rohit (D42–D44; push ✅ 9 Oct) and Harsh (deploy, no migration; the health check after one sweep) · history, patterns, analytics — the expert's numbers
 
 **Owner:** Claude. **Depends on:** `STEP-09`. **Moves:** every number the expert reasons with comes
 from a calculator, with its evidence and its provenance (*measured here* vs *profession's prior*),
@@ -73,9 +73,11 @@ Intro · Pankaj (saka.vc) via Boardy
 ## 6 · Verify
 
 ```
-.venv/bin/python -m pytest tests/context/test_workstream_timeline.py tests/context/test_latency_and_cadence.py -q
+.venv/bin/python -m pytest tests/context/test_a_file_has_a_timeline.py tests/context/test_a_file_has_its_numbers.py \
+    tests/context/test_your_reply_time.py tests/context/test_a_reply_is_counted_once.py \
+    tests/contracts/test_a_measured_number_says_its_n.py -q
 #   numbers recomputed from fixtures exactly; sparse samples flagged; a prior is never labelled measured
-.venv/bin/python -m pytest tests/replays -q          # the founder cases' numbers match exactly
+.venv/bin/python -m pytest tests/replays/test_every_number_says_its_n.py -q   # the founder cases' numbers match exactly
 ```
 
 ## 7 · Risks

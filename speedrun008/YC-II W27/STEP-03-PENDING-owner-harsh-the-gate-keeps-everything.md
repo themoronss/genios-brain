@@ -1,4 +1,4 @@
-# STEP-03 · PENDING · the gate sets attention, it never deletes
+# STEP-03 · PENDING — owner: Harsh (deploy, migration 0192) — Rohit's push ✅ 9 Oct · the gate sets attention, it never deletes
 
 **Owner:** Claude (built) · **Rohit** (the push, batched) · **Harsh** (the deploy — migration `0192`,
 with STEP-02's `0191`). **Depends on:** `STEP-00`. **Decision:** `06` D4 — 180 days, on Rohit's go.
@@ -10,7 +10,7 @@ tier and the reason for it.
 ✅ **Built 2026-10-06 — tree block `yc2_w27_s03`, 17 units green, QA green (§9.4).** On the golden set,
 0 of 86 mail objects are dropped: the 33 the gate used to delete are archived, each with its rule as
 the reason and its encrypted payload kept; every one of the 40 cases is marked exactly as before.
-**Pending:** Rohit's push; Harsh's deploy; then the production number (§9.5).
+**Pending:** Harsh's deploy (Rohit's push ✅ 9 Oct); then the production number (§9.5).
 
 ⛔ **One correction to the plan below, made by measurement (§9.3):** an archive keeps its encrypted
 payload and **no prepared text**. §3.3 and §6 said "payload and prepared text"; the golden

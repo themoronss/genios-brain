@@ -1,4 +1,4 @@
-# STEP-09 · PENDING — owner Rohit (push; the brief's connectors and watchlist; D35) and Harsh (deploy, no migration; re-file history if the health check names it) · workstreams — a file for every piece of work in motion
+# STEP-09 · PENDING — owner Rohit (the brief's connectors and watchlist; D35; push ✅ 9 Oct) and Harsh (deploy, no migration; re-file history if the health check names it) · workstreams — a file for every piece of work in motion
 
 **Owner:** Claude. **Depends on:** `STEP-05` (memory), `STEP-07` (the brief seeds the list); the
 stage vocabularies come from `STEP-11` and start as *proposed* until you accept them. **Decision:**
@@ -67,11 +67,15 @@ with a stage, an open ask, whose move it is, and a date.
 ## 6 · Verify
 
 ```
-GENIOS_TEST_DATABASE_URL=… .venv/bin/python -m pytest tests/context/test_workstreams.py -q
+GENIOS_TEST_DATABASE_URL=… .venv/bin/python -m pytest tests/context/test_introductions.py \
+    tests/context/test_an_intro_is_a_file_per_contact.py tests/context/test_a_watched_domain_is_a_file.py \
+    tests/context/test_the_connector_is_never_owed_a_reply.py tests/context/test_a_nudge_joins_the_introduced_persons_file.py \
+    tests/context/test_the_files_are_listed.py -q
 #   three Boardy intros → three files, one connector edge, zero shared asks;
 #   a reply from one contact closes only that contact's loop;
 #   a proposal whose span is missing never moves a stage — each by mutation
-.venv/bin/python -m pytest tests/replays -q          # replays 02, 03, 04, 06 move from xfail to pass
+.venv/bin/python -m pytest tests/replays/test_every_piece_of_work_has_a_file.py -q   # the acceptance
+#   replay 02's "≥ 8 of 10" is STEP-14's now (`06` D54); 03, 04 and 06 pass since STEP-05
 ```
 
 ## 7 · Risks

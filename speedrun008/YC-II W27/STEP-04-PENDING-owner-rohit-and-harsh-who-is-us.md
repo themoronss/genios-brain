@@ -1,6 +1,6 @@
-# STEP-04 · PENDING — owner Rohit (push) and Harsh (deploy) · who is us — one answer, used everywhere
+# STEP-04 · PENDING — owner Rohit (D14 — read the repair's list; push ✅ 9 Oct) and Harsh (deploy) · who is us — one answer, used everywhere
 
-**✅ Built 2026-10-06** — tree block `yc2_w27_s04`, 44 units, crosscheck *ship*, QA §9.4. **Pending:** Rohit's push; Harsh's deploy (migration `0193`), the declaration, the repair after Rohit reads it (D14), and the production number (§9.5).
+**✅ Built 2026-10-06** — tree block `yc2_w27_s04`, 44 units, crosscheck *ship*, QA §9.4. **Pending:** Harsh's deploy (migration `0193`; Rohit's push ✅ 9 Oct), the declaration, the repair after Rohit reads it (D14), and the production number (§9.5).
 
 **Owner:** Claude. **Depends on:** `STEP-00`. **Decision:** `06` D6 — ✅ answered 2026-10-05:
 `mrrohitswerashi@gmail.com`, the source of Gmail and Calendar. **Must land before `STEP-05`**, because putting every mail
@@ -42,7 +42,7 @@ is, whether a reply exists. Get it wrong once and every later step inherits the 
 | 3.2 | your declared list | migration (next free number) `org_self_identities` | `(org_id, kind = address\|domain, value, declared_by, declared_at)`; seeded from D6 |
 | 3.3 | one caller | the four modules in §1 | each calls `identity_for`. An AST guard (`tests/platform/test_one_answer_to_who_is_us.py`) fails if any module outside `platform/self_identity.py` builds an internal-address set itself — *check the AST, not the text* |
 | 3.4 | threads name the other side | `context/backfill.py:601` | the thread's party is the oldest **non-self** correspondent |
-| 3.5 | the repair | `scripts/repair_self_identity.py` (written by Claude, run by Harsh) | re-types the service and company nodes, renames threads anchored on you, retires the signals and cards whose subject is you — **each retirement writes a `card_event`** |
+| 3.5 | the repair | `scripts/repair_self_identity.py` (written by Claude, run by Harsh) | ~~re-types the service and company nodes,~~ renames threads anchored on you, retires the signals and cards whose subject is you — **each retirement writes a `card_event`**. ⛔ Corrected 2026-10-10 (`06` D55): it re-types no node — every reader asks `platform/self_identity.identity_for`, so a node of ours is us wherever it is read |
 | 3.6 | the card guard | `deliver/card_builder.py` (and `STEP-14`'s contract check) | a card whose subject or recipient is us is refused, with a reason |
 
 ⛔ **Keep `7075014c`'s exception.** On `harsh/mvp`, a `dependency_stated` card may be grounded on
