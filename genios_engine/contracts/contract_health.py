@@ -1,11 +1,14 @@
 r"""What `contracts/` deliberately does not call — the shared vocabulary's declared silence.
 
-⛔ SIX OF THE EIGHT ARE BOTH-DIRECTIONS GUARDS AND PROJECTIONS — the shapes a vocabulary package
+⛔ SIX OF THE FIRST EIGHT ARE BOTH-DIRECTIONS GUARDS AND PROJECTIONS — the shapes a vocabulary package
 produces. `contracts/` may depend on `platform` and stdlib only, so this module importing
 `platform/reachability.py` is the one import it is allowed to make.
 
 ⛔ AND ONE IS A GUARANTEE KEPT BY DISCIPLINE RATHER THAN BY CONSTRUCTION — `build_address`, which
 exists *"so no producer can forget"* a token and is bypassed by all three producers.
+
+The ninth (2026-10-10), `expert_review.validate`, is a contract built before its caller on purpose —
+STEP-12 builds bottom-up — and its entry is deleted in the commit that wires it.
 
 The machinery is `platform/reachability.py`, shared rather than copied. ⛔ Three wiring mechanisms
 are subtracted before anything reaches this table: a **call**, a **decorator** (a route handler has
@@ -100,7 +103,7 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "Three tests are evidence of intent and not a substitute for it"),
 
     "learned_state.may_consume": (
-        "⛔ NO DOCSTRING, NO TEST, NO CALLER — the only one of `contracts/`'s eight with nothing "
+        "⛔ NO DOCSTRING, NO TEST, NO CALLER — the only one of `contracts/`'s first eight with nothing "
         "anywhere, and it sits beside `snapshot`, which has four tests. ⛔ **Why it is unreached is "
         "recorded nowhere**, so declaring it deliberate would invent a reason and declaring it a "
         "defect would invent a severity. Its NAME suggests the permission check `snapshot`'s "
@@ -108,6 +111,16 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "consumer appears — but that is a reading of a name, not a measurement.",
         "⛔ MOVES WHEN somebody who knows whether `snapshot` is supposed to consult it writes one "
         "line above it. Flagged in `HANDOFF-CODING-AGENT.md` rather than guessed at here"),
+
+    "expert_review.validate": (
+        "The expert's review checked against the dossier it was shown — an uncited fact, a citation "
+        "the dossier never held, an inference or a pattern resting on nothing, a stage the playbook "
+        "lacks, a moving mode with no next move, a number the dossier does not hold. ⛔ BUILT FIRST "
+        "ON PURPOSE: STEP-12 builds bottom-up (tree `yc2_w27_s12`), so the contract "
+        "(M32.C1.L-contract.V0.U01) lands before the review run that calls it, and nothing asks a "
+        "model for a review yet.",
+        "MOVES WHEN `reason/expert/review.py` (M32.C3.L-logic.V1.U02) validates each parsed answer "
+        "against its dossier's catalogue — this entry is deleted in that unit's commit"),
 
 }
 
