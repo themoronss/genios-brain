@@ -88,7 +88,10 @@ class _Watch:
     def __init__(self) -> None:
         self._lock = threading.Lock()
         self._streak = 0
-        self._last_alert_at = 0.0
+        # None until the first alert. `time.monotonic()` counts from boot, so a 0.0 here read as "an
+        # alert sent at boot" and swallowed the first real one on a machine up for less than an hour
+        # (`YC-II W27/03` F145 — a fresh CI runner, a host just restarted).
+        self._last_alert_at: float | None = None
         self._last_error = ""
 
     def observe(self, *, success: bool, error: str | None, model: str, purpose: str) -> bool:
@@ -110,7 +113,7 @@ class _Watch:
             if self._streak < STREAK_TO_ALERT:
                 return False
             now = time.monotonic()
-            if now - self._last_alert_at < COOLDOWN_S:
+            if self._last_alert_at is not None and now - self._last_alert_at < COOLDOWN_S:
                 return False
             self._last_alert_at = now
             return True
@@ -123,7 +126,7 @@ class _Watch:
     def reset(self) -> None:
         with self._lock:
             self._streak = 0
-            self._last_alert_at = 0.0
+            self._last_alert_at = None
 
 
 _WATCH = _Watch()

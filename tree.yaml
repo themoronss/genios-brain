@@ -6914,7 +6914,7 @@ yc2_w27_s12:
                       depends_on: [M33.C2.L-integration.V1.U02]
 
 yc2_w27_align:
-  status: proposed_awaiting_confirmation
+  status: approved_in_progress
   source: >
     speedrun008/YC-II W27/10-BEFORE-STEP-12.md: three read-only audits of STEP-00..STEP-11 at db6328cd
     against each step's promises and Rohit's five documents (09), their key claims re-checked by hand.
