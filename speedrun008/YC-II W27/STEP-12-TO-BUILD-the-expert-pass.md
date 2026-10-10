@@ -186,7 +186,7 @@ C5 the golden set — the ideal reader's expert answers, authored per case, re-r
 situations of a covered file standing down, replay with zero model calls (F139 for covered files), the
 board measured, and the live pass (D50).
 
-28 units (22 in M32, 6 in M33), critical path 14. Each unit, its artifact and its verify command are in `tree.yaml`.
+28 units (22 in M32, 6 in M33), critical path 14 — ⛔ widened to **37** (30 in M32, 7 in M33) by §8.8. Each unit, its artifact and its verify command are in `tree.yaml`.
 
 ### 8.6 · Decisions
 
@@ -213,3 +213,39 @@ drops T3; a busy day reviews the nearest deadlines first and carries the rest, s
   does not explain; a situation the review does not mention keeps its own decision.
 - **Cost** — a busy tenant's first sweep reviews every file once; the pass is bounded per sweep, by
   nearest deadline first, and capped per day.
+
+### 8.8 · Before the build — the steps before it, completed and aligned (`yc2_w27_align`, M34)
+
+Your go of 10 Oct came with a condition: every step before this one complete and aligned first
+(`10-BEFORE-STEP-12.md`). The block that met it, and what it changes here:
+
+**What this step now stands on.** The exam is **58 cases** (F48–F58 added: the benchmark's five
+shapes, three brief-only, a renewal, a verified close, our domain as the platform's), every case
+forbids something and a forbidden phrase is matched as a claim — the before-score this step is
+measured against is in `03` §F.1. A file's quiet window follows its kind (`06` D33 in code); the
+brief has a seventh kind, `vendor` (D18); a programme's or a portal's file is refused
+`misfiled_kind`, never decided as an investor; a file's history places each ending on its own file
+and generation (F113); dates read late are framed by the mail's own day (F148) and a window's promise
+is due when it closes (F149); the first-connect door reaches the sweep's verdict on all 58 cases; two
+health checks say how far back memory reaches and whether every piece of work in motion has one file.
+
+**What this step takes in, and where** — nine units the block adds to `yc2_w27_s12` (37 in all):
+
+| Input | From | Unit |
+|---|---|---|
+| an in-motion counterparty is a named sender, so its archived mail is promoted | `03` F125 (measured by M34.C2 U08: F21, F22) | M32.C1.L-contract.V0.U05 |
+| the brief's draft prints each proposal's kind | F127 | M32.C1.L-interface.V0.U06 |
+| a touch's words in the timeline — a portal's notices, the reply a promise answered — and each event's outcome asked first | F99, F147, F57 | M32.C2.L-data.V0.U06 |
+| each situation's lifecycle, with the quiet window of its kind | STEP-11, D33 | M32.C2.L-data.V0.U07 |
+| the time-passes what-if | `06` D39 | M32.C2.L-logic.V1.U08 |
+| the file's own past in *what was judged before* | F113 (placed by M34.C2 U07) | M32.C2.L-data.V0.U02, widened |
+| what triggered a review, and no review without one | `05` §5 | M32.C3.L-logic.V1.U09 |
+| the stage's dwell against its prior | D39 | M32.C3.L-logic.V2.U07 |
+| the expert proposing a kind, labelled — the founder accepts | F132, F151 | M32.C3.L-logic.V2.U08 |
+| the compiled lane's corpus thresholds read the file's numbers | F104 | M33.C1.L-logic.V0.U04 |
+
+**And as decided, not built here:** your reply time is not split by who wrote first (D52); a screen
+touch is not in a file's timeline (D53); a *"soon"* promise is no deadline — the expert judges it
+(D56); the shadow decider's spend ends with M33, which replaces it on covered files (F11, D51).
+Owned elsewhere: F146 and F150 are `STEP-14`'s, F152 is `STEP-13`'s, `STEP-14`'s and `STEP-16`'s.
+
