@@ -69,6 +69,7 @@ from datetime import datetime
 
 from sqlalchemy import text
 
+from genios_engine.context import correlation
 from genios_engine.context.introductions import connector_roles
 from genios_engine.contracts.company_brief import CompanyBrief, CompanyBriefLine
 from genios_engine.contracts.measured import Measured, count_of, rate_of
@@ -304,6 +305,100 @@ def _work_kind(work: list[CompanyBriefLine], addresses: set[str], domain: str | 
     return None
 
 
+#: STEP-12 · how many of a file's situations its lifecycle carries — the most recently seen first;
+#: the rest is counted.
+LIFECYCLE_LIMIT = 10
+#: Where a situation's quiet window came from: the file's kind of work (`06` D33), the situation's
+#: domain's declared clock, or the engine's default — the order `correlation.find_or_open` reads them.
+WINDOW_FROM_KIND, WINDOW_FROM_DOMAIN, WINDOW_FROM_ENGINE = "kind", "domain", "engine"
+#: A situation still in play; any other status has ended, and an ended situation is past no window.
+OPEN_STATUSES = frozenset({"active", "partial"})
+
+_SITUATIONS = text(
+    "select situation_id, situation_type, domain, status, first_seen_at, last_seen_at, "
+    "       count(*) over () as total "
+    "  from context_situations where org_id = :o and anchor_node_id = :f "
+    " order by last_seen_at desc nulls last, situation_id limit :n")
+
+
+@dataclass(frozen=True, slots=True)
+class SituationLife:
+    """One situation anchored on a file: where it is, against the window it is held to."""
+    situation_id: str
+    situation_type: str
+    domain: str
+    status: str | None
+    first_seen_at: datetime | None
+    last_seen_at: datetime | None
+    days_seen: float | None            # first seen → last seen
+    days_since_seen: float | None      # last seen → now
+    quiet_window_days: int
+    window_from: str                   # "kind" · "domain" · "engine"
+    past_window: bool | None           # open and quiet longer than its window; None once it ended
+
+    def as_dict(self) -> dict:
+        def iso(at):
+            return at.isoformat() if at else None
+        return {"situation_id": self.situation_id, "situation_type": self.situation_type,
+                "domain": self.domain, "status": self.status,
+                "first_seen_at": iso(self.first_seen_at), "last_seen_at": iso(self.last_seen_at),
+                "days_seen": self.days_seen, "days_since_seen": self.days_since_seen,
+                "quiet_window_days": self.quiet_window_days, "window_from": self.window_from,
+                "past_window": self.past_window}
+
+
+@dataclass(frozen=True, slots=True)
+class Lifecycle:
+    file_id: str
+    situations: tuple[SituationLife, ...]
+    cut: int = 0                       # the file's situations left out, the oldest seen
+
+    def as_dict(self) -> dict:
+        return {"file_id": self.file_id, "situations": [s.as_dict() for s in self.situations],
+                "cut": self.cut}
+
+
+def _domain_window(domain: str) -> tuple[int, str]:
+    """A domain's declared clock, or the engine's — and which it was."""
+    try:
+        declared = correlation.spec_for(correlation.canonical_domain(domain)).correlation_window_days
+    except Exception:      # noqa: BLE001 — an unknown domain keeps the engine's clock
+        declared = None
+    if declared:
+        return int(declared), WINDOW_FROM_DOMAIN
+    return correlation.CORRELATION_WINDOW_DAYS, WINDOW_FROM_ENGINE
+
+
+def _span(later: datetime | None, earlier: datetime | None) -> float | None:
+    if later is None or earlier is None:
+        return None
+    return round((later - earlier).total_seconds() / 86400.0, 1)
+
+
+def lifecycle_for(conn, org_id: str, file_id: str, *, now: datetime,
+                  limit: int = LIFECYCLE_LIMIT) -> Lifecycle:
+    """Each situation anchored on ONE file — status, first and last seen, how long seen and quiet —
+    against its quiet window: the file's kind of work's (`06` D33,
+    `correlation.file_quiet_days`), else its domain's, else the engine's (STEP-12, the dossier's
+    *expected vs actual*). The most recently seen first, at most `limit`, the rest counted."""
+    rows = conn.execute(_SITUATIONS, {"o": org_id, "f": file_id, "n": limit}).fetchall()
+    kind_days = correlation.file_quiet_days(conn, org_id, file_id) if rows else None
+    out: list[SituationLife] = []
+    for r in rows:
+        window, source = ((kind_days, WINDOW_FROM_KIND) if kind_days
+                          else _domain_window(r.domain))
+        quiet = _span(now, r.last_seen_at)
+        out.append(SituationLife(
+            situation_id=r.situation_id, situation_type=r.situation_type, domain=r.domain,
+            status=r.status, first_seen_at=r.first_seen_at, last_seen_at=r.last_seen_at,
+            days_seen=_span(r.last_seen_at, r.first_seen_at), days_since_seen=quiet,
+            quiet_window_days=window, window_from=source,
+            past_window=(quiet > window if quiet is not None else None)
+            if r.status in OPEN_STATUSES else None))
+    cut = max(0, int(rows[0].total) - limit) if rows else 0
+    return Lifecycle(file_id=str(file_id), situations=tuple(out), cut=cut)
+
+
 def _accepted_brief(conn, org_id: str) -> CompanyBrief:
     from genios_engine.platform.company_brief import brief_for
     return brief_for(conn, org_id)
@@ -503,5 +598,7 @@ def as_dict(ws: Workstreams, *, now: datetime) -> dict:
     }
 
 
-__all__ = ["Ask", "KINDS", "NEVER_A_FILE", "Named", "WorkFile", "Workstreams", "as_dict",
-           "file_as_dict", "file_for", "files_for"]
+__all__ = ["Ask", "KINDS", "LIFECYCLE_LIMIT", "Lifecycle", "NEVER_A_FILE", "Named", "OPEN_STATUSES",
+           "SituationLife", "WINDOW_FROM_DOMAIN", "WINDOW_FROM_ENGINE", "WINDOW_FROM_KIND",
+           "WorkFile", "Workstreams", "as_dict", "file_as_dict", "file_for", "files_for",
+           "lifecycle_for"]

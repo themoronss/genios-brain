@@ -126,6 +126,10 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "What was judged before, for ONE file — the expert's own reviews of it, the cards on its people with their events and verdicts, how its situations ended, its `derived.history.*@<domain>` past — bounded, the cut counted. ⛔ BUILT FIRST ON PURPOSE: STEP-12 builds bottom-up (tree `yc2_w27_s12`), so this read (M32.C2.L-data.V0.U02) lands before the dossier that calls it, and nothing builds a dossier yet",
         "MOVES WHEN `reason/expert/dossier.py` (M32.C2.L-logic.V1.U04) reads it for each file it builds — this entry is deleted in that unit's commit"),
 
+    "workstreams.lifecycle_for": (
+        "Each situation anchored on ONE file — its status, first and last seen, how long seen and how long quiet — against the quiet window its file's kind of work gives it (`06` D33), else its domain's clock, else the engine's 45 days, each named. What the dossier's *expected vs actual* reads. ⛔ BUILT FIRST ON PURPOSE: STEP-12 builds bottom-up, so this read (M32.C2.L-data.V0.U07) lands before the dossier and the time-passes what-if that call it",
+        "MOVES WHEN `reason/expert/dossier.py` (M32.C2.L-logic.V1.U04) or the time-passes what-if (M32.C2.L-logic.V1.U08) reads it — this entry is deleted in the first of those commits"),
+
 }
 
 

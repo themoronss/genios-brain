@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_045, (
+    assert r["statements"] == 3_046, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -397,6 +397,8 @@ def test_the_statement_count_did_NOT_move():
     # four SELECTs in `context/file_judgments.py` — one file's reviews, the cards on its people (each
     # with its events and verdicts), its situations with their ends, and its history facts. Four
     # literals, one per part; the loop hop expanded nothing.
+    # ⛔ MOVED 3,045 → 3,046 by yc2_w27_s12/M32.C2.L-data.V0.U07 (a file's situations' lifecycle): one
+    # SELECT, `context/workstreams._SITUATIONS` — the situations anchored on one file. A literal.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():
