@@ -15,7 +15,7 @@ each lands as `duplicate`, because dedup ignores the outcome. `--apply` frees th
 company brief is accepted (D26):
   1. this, as a dry run — send it to Rohit, who names the window (D5 / D16);
   2. `PATCH /connections/{gmail}/backfill-window` with that many days;
-  3. `--apply --days <N>`;
+  3. `--apply --days <N>` — it refuses, freeing nothing, while the connection lists fewer days;
   4. `POST /connections/{gmail}/backfill` — the legacy door, every message fetched in full (never
      `/integrations/gmail/sync`, which keeps rule-junk as a list snippet); wait for `backfill drain
      done` in the log, and run it again while it says `TRUNCATED`;
@@ -49,6 +49,8 @@ from scripts._gate import read_only_connection, sql                   # noqa: E4
 
 #: How many sender domains the dry run names.
 TOP_DOMAINS = 15
+#: The window `06` D16 recommends (`09` G3): what the dry run reports when no window is named.
+YEAR = 365
 
 #: Every deleted message the re-sync can free, whatever its age — `resync.free_deleted`'s population
 #: before its window (`tests/scripts/test_resync_deleted_mail.py` holds the two equal).
@@ -151,6 +153,13 @@ def census(conn, org: str, *, now: datetime, days: int | None) -> list[str]:
             left = [r for r in rows if _aware(r.occurred_at) < since]
             lines.append(f"  --days {days} reaches {len(rows) - len(left)} and leaves out {len(left)}"
                          + (f", the oldest {_day(_aware(left[0].occurred_at))}" if left else ""))
+        else:
+            # D16 recommends a year (`09` G3): with no window named, say what that one reaches.
+            since = now - timedelta(days=YEAR)
+            left = [r for r in rows if _aware(r.occurred_at) < since]
+            lines.append(f"  a {YEAR}-day window (D16) would reach {len(rows) - len(left)} and leave "
+                         f"out {len(left)}"
+                         + (f", the oldest {_day(_aware(left[0].occurred_at))}" if left else ""))
     lines.append(f"  the Gmail connection's window today: {window} days"
                  + (f" — PATCH /connections/{{gmail}}/backfill-window to {days} before the drain"
                     if days is not None and days > window else ""))
@@ -181,15 +190,21 @@ def main(argv: list[str] | None = None) -> int:
     engine = get_engine(url)
     now = datetime.now(timezone.utc)
     if args.apply:
-        freed = resync.free_deleted(engine, args.org, days=args.days, now=now)
+        # REFUSED, NOT WARNED (`yc2_w27_align` M34.C2.L-interface.V0.U03). The warning was printed
+        # after the keys were freed: the drain then listed the connection's window and every freed
+        # mail older than it stayed a key with no message. Nothing is freed until the connection
+        # lists as far back as the window Rohit named.
         with engine.connect() as c:
             window = resync.window_days(c, args.org)
+        if window < args.days:
+            print(f"REFUSED: the Gmail connection's window is {window} days, so the drain would not "
+                  f"list the mail older than {window} days that --days {args.days} would free. PATCH "
+                  f"/connections/{{gmail}}/backfill-window to {args.days} first, then run this again "
+                  "— nothing was freed", file=sys.stderr)
+            return 2
+        freed = resync.free_deleted(engine, args.org, days=args.days, now=now)
         print(f"FREED {freed} deleted Gmail message(s) from the last {args.days} days — each row "
               "stays `dropped` until its message lands again")
-        if window < args.days:
-            print(f"  ⚠ the Gmail connection's window is {window} days: PATCH "
-                  f"/connections/{{gmail}}/backfill-window to {args.days} first, or the drain will "
-                  f"not list the mail older than {window} days")
         print("Next: POST /connections/{gmail}/backfill — then --finish")
         return 0
     if args.finish:

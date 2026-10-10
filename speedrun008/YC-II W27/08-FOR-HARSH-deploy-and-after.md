@@ -414,7 +414,8 @@ python scripts/resync_deleted_mail.py --org $ORG --database-url "$URL"
 python scripts/resync_deleted_mail.py --org $ORG --database-url "$URL" --days 365   # what 365 reaches and leaves out
 # 2 · the connection lists that far back
 #     PATCH /connections/<gmail connection id>/backfill-window   {"days": <N>}
-# 3 · free the keys — the rows stay `dropped`; one trace row each
+# 3 · free the keys — the rows stay `dropped`; one trace row each. It REFUSES, freeing nothing,
+#     while the connection's window is shorter than --days (step 2 first)
 python scripts/resync_deleted_mail.py --org $ORG --database-url "$URL" --apply --days <N>
 # 4 · the legacy door — every message fetched in full. NEVER /integrations/gmail/sync (it keeps
 #     rule-junk as a list snippet). Wait for "backfill drain done"; while it says TRUNCATED, run it again

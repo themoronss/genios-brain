@@ -200,16 +200,43 @@ def test_apply_frees_exactly_what_the_dry_run_said_the_window_reaches(mailbox, c
     assert "freed, waiting for the drain 4" in out
 
 
-def test_apply_warns_when_the_connection_will_not_list_that_far_back(mailbox, capsys):
+def _window(engine, org, days: int) -> None:
+    """Step 2 of the runbook: the connection lists this far back (`PATCH …/backfill-window`)."""
+    from sqlalchemy import text
+    with engine.begin() as c:
+        c.execute(text("update connections set capture_scope = jsonb_set(coalesce(capture_scope, "
+                       "'{}'::jsonb), '{backfill_days}', to_jsonb(cast(:d as int))) where org_id = :o"),
+                  {"d": days, "o": org})
+
+
+def test_apply_refuses_when_the_connection_will_not_list_that_far_back(mailbox, capsys):
+    """`yc2_w27_align` M34.C2.L-interface.V0.U03: a warning printed after the keys were freed was the
+    whole check — the drain then listed 60 days and the rest never came back. Now nothing is freed
+    until the connection lists as far back as `--days`."""
     engine, org, url, ids = mailbox
+    before = _keys(engine, org)
+    assert _module().main(["--database-url", url, "--org", org, "--apply", "--days", "365"]) == 2
+    out = capsys.readouterr()
+    assert "REFUSED" in out.err and "PATCH /connections/{gmail}/backfill-window to 365 first" in out.err
+    assert _keys(engine, org) == before, "a refusal frees nothing"
+    _window(engine, org, 365)
     out = _run(capsys, url, "--org", org, "--apply", "--days", "365")
-    assert "FREED 6" in out and "PATCH /connections/{gmail}/backfill-window to 365 first" in out
+    assert "FREED 6" in out and "REFUSED" not in out
+
+
+def test_the_dry_run_says_what_a_year_would_reach(mailbox, capsys):
+    """D16 recommends 365 days: the dry run with no window named says what that one reaches."""
+    engine, org, url, ids = mailbox
+    out = _run(capsys, url, "--org", org)
+    assert "a 365-day window (D16) would reach 6 and leave out 0" in out
 
 
 def test_finish_supersedes_what_came_back_and_reports_the_rest(mailbox, capsys):
     from genios_engine.contracts.source_event import compute_dedup_key
     engine, org, url, ids = mailbox
+    _window(engine, org, 365)
     _run(capsys, url, "--org", org, "--apply", "--days", "365")
+    _window(engine, org, 60)     # the window narrowed after the keys were freed: finish still says so
     # the drain lands two of them again, under their own keys
     _row(engine, org, "b1", outcome="archived", body=True,
          key=compute_dedup_key("gmail", "email_message", "b1"))
