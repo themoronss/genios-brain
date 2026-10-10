@@ -105,6 +105,58 @@ from l4_activation
 where org_id = 'org_e97e86f858ad48b2bbf64b8a'
 order by feature;
 
+-- @cards_expired_while_deferred
+-- STEP-02's second target: 0. A card expired in the last 14 days whose subject's latest decision, as
+-- the change gate holds it, is a DEFER (or an unavailable decider) - a DEFER must keep the card.
+select count(*) as expired_cards,
+       count(*) filter (where f.outcome in ('deferred', 'indeterminate')) as expired_while_deferred,
+       max(c.resolved_at) filter (where f.outcome in ('deferred', 'indeterminate')) as last_one
+from cards c
+join signals s on s.org_id = c.org_id and s.signal_id = c.signal_id
+left join reasoning_fingerprints f on f.org_id = c.org_id
+     and f.subject_key in (s.situation_id, s.rule_id || ':' || s.subject_node_id)
+where c.org_id = 'org_e97e86f858ad48b2bbf64b8a' and c.state = 'expired'
+  and c.resolved_at > now() - interval '14 days';
+
+-- @gate_redecided_unchanged
+-- STEP-02's first target, as far as the store can say it: the gate keeps ONE row per subject, so a
+-- flip (decision <-> DEFER on one fingerprint) shows as a subject decided again inside a day with no
+-- skip between. Per lane and outcome; the health check reads the same table.
+select lane, outcome, count(*) as subjects, sum(skips) as skips,
+       count(*) filter (where skips = 0 and decided_at > now() - interval '1 day') as decided_today_never_skipped,
+       max(decided_at) as last_decided
+from reasoning_fingerprints
+where org_id = 'org_e97e86f858ad48b2bbf64b8a'
+group by lane, outcome
+order by subjects desc;
+
+-- @dates_framed_late
+-- 03 F148: a stored date resolved against a read more than a day after its mail (the first connect,
+-- a sync after downtime, a re-sync) - scripts/reframe_stored_dates.py re-frames them. By month of mail.
+select to_char(date_trunc('month', se.occurred_at), 'YYYY-MM') as month, count(*) as dates,
+       count(*) filter (where (d ->> 'resolved_against')::timestamptz - se.occurred_at
+                              > interval '1 day') as framed_late
+from l1_extraction_results x
+join source_events se on se.org_id = x.org_id and se.event_id = x.event_id
+cross join lateral jsonb_array_elements(coalesce(x.output -> 'dates_mentioned', '[]'::jsonb)) as d
+where x.org_id = 'org_e97e86f858ad48b2bbf64b8a' and x.profile_id is not null
+  and d ? 'resolved_against'
+group by 1
+order by 1;
+
+-- @promises_framed_late
+-- 03 F148, the promises: a commitment's due date framed more than a day after its mail.
+select to_char(date_trunc('month', se.occurred_at), 'YYYY-MM') as month, count(*) as promises_dated,
+       count(*) filter (where (c -> 'due' ->> 'resolved_against')::timestamptz - se.occurred_at
+                              > interval '1 day') as framed_late
+from l1_extraction_results x
+join source_events se on se.org_id = x.org_id and se.event_id = x.event_id
+cross join lateral jsonb_array_elements(coalesce(x.output -> 'commitments', '[]'::jsonb)) as c
+where x.org_id = 'org_e97e86f858ad48b2bbf64b8a' and x.profile_id is not null
+  and jsonb_typeof(c -> 'due') = 'object'
+group by 1
+order by 1;
+
 -- @latest_migration
 select filename, applied_at
 from schema_migrations

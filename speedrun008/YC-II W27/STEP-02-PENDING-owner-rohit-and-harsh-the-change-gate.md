@@ -48,7 +48,7 @@ the current model-based decider keeps deciding — it just stops re-deciding wha
 | 3.4 | the gate, legacy lane | `reason/runner.py` | move the `no_new_evidence` test ahead of `reason_legacy_rule` (`:1057`); make `_newest_evidence_at` (`:263-279`) ignore clock-rewritten facts; keep the `fired.add` |
 | 3.5 | no model for shadow | `reason/orchestrator.py:252-263`, `reason/decision_maker.py:1119-1126` | call R-1 and the decider only when `request.mode == LIVE` and the capability has `live_delivery_enabled` |
 | 3.6 | a DEFER keeps the card | `reason/runner.py:1116-1125` | `llm_decision_unavailable:*` and a model DEFER join the indeterminate set; the lifecycle pass no longer expires on them |
-| 3.7 | the counter and the check | `platform/funnel.py`; `scripts/pipeline_health.py` | `reasoning_skipped_unchanged` per sweep; a health check that fails when a subject is re-decided without a fingerprint change |
+| 3.7 | the counter and the check | `platform/funnel.py`; `scripts/pipeline_health.py` | `reasoning_skipped_unchanged` per sweep; a health check, NARROWED as built: it fails when the gate records nothing over the sweeps of 6 hours, or skips nothing over four or more — the store keeps one row per subject, so a re-decision on an unchanged fingerprint cannot be counted there. ⛔ The two targets below are measured in production by `baseline/production_state.sql` `@gate_redecided_unchanged` and `@cards_expired_while_deferred` (`yc2_w27_align` M34.C2.L-data.V0.U09), read-only |
 
 ## 4 · What will happen
 

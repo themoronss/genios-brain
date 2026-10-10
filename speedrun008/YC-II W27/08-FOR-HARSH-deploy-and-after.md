@@ -531,6 +531,9 @@ PGOPTIONS='-c default_transaction_read_only=on' psql "$URL" -f "speedrun008/YC-I
 | B19 | `@attachment_refetch_errors` | 88 of 88 the `file_name` refusal | no new refusal; re-queued rows fetched or failing with a named shape |
 | B2 | `@l2_processing_runs` | 30 runs, 0 edge errors (latent) | still 0 |
 | — | `@latest_migration` | `0190` | `0190` — ⛔ **corrected 2026-10-07:** after the NEXT push's deploy, `0193_org_self_identities` |
+| STEP-02 | `@cards_expired_while_deferred` | measured in STEP-01 only | **0** — a DEFER keeps its card |
+| STEP-02 | `@gate_redecided_unchanged` | — (the gate is new) | `decided_today_never_skipped` small and falling; `skips` growing |
+| `03` F148 | `@dates_framed_late`, `@promises_framed_late` | — | the count `scripts/reframe_stored_dates.py` re-frames (§3.8); 0 after it |
 
 Two that are not in the file:
 
