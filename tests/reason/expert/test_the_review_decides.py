@@ -147,6 +147,19 @@ def test_code_readings_alone_earn_no_assertion_the_move_is_held():
     assert f"{BELOW_FLOOR_REASON}:{D.NO_EVENT_BP}<4500" in decision.uncertainty
 
 
+@pytest.mark.parametrize("cited, events", [
+    (["evt_1"], 1), (["m33_fund_mail"], 1), (["num:reply_days", "pb:first_call", "hist:times_seen@admin",
+                                              "whatif:7", "sit:sit_1", "loop:l1", "promise:p1",
+                                              "wave:w1"], 0),
+])
+def test_a_source_event_is_any_id_the_dossier_prints_without_a_kind(cited, events):
+    """Capture names its events `evt_…`; a tenant's events may carry other ids. The dossier prints
+    every reading of code's with its kind (`num:`, `pb:`, `sit:` …), so an event is an id with none."""
+    facts = [{"claim": "the record says so", "evidence": [c]} for c in cited]
+    confidence = _decide(_row(facts=facts))[1].decision.confidence_bp
+    assert confidence == (D.NO_EVENT_BP if events == 0 else D.ONE_EVENT_BP)
+
+
 def test_an_event_cited_twice_is_one_event_and_the_words_move_nothing():
     twice = [{"claim": "Neel wrote", "evidence": ["evt_neel_0927"]},
              {"claim": "Neel wrote again, the same mail", "evidence": ["evt_neel_0927"]}]

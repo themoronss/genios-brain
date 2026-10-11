@@ -140,8 +140,15 @@ LEVEL_BP: Mapping[str, int] = {"low": 2_500, "medium": 5_000, "high": 8_000}
 ONE_EVENT_BP = DEFAULT_DECISION_FLOOR_BP
 #: A judgment whose facts cite no event at all — under `DEFAULT_CONFIDENCE_FLOOR_BP` (4,500).
 NO_EVENT_BP = 4_000
-#: What a source event's id looks like in the dossier (`[evt_…]`); every other id is code's reading.
-EVENT_PREFIX = "evt_"
+#: How the dossier names every kind of evidence that is code's reading, not a source event —
+#: `num:`, `pb:`, `hist:`, `whatif:`, `sit:`, `loop:`, `promise:`, `wave:` …: a kind and a colon. A
+#: source event is printed by its own id, which carries none (`[evt_…]` from capture's `new_id`).
+KIND_SEPARATOR = ":"
+
+
+def is_event(evidence_id: str) -> bool:
+    """Is this cited id a source event — a mail or a meeting of the file — rather than a reading?"""
+    return KIND_SEPARATOR not in str(evidence_id)
 
 #: The decision's record of the mode, on every outcome.
 MODE_MARKER = "expert_mode"
@@ -257,7 +264,7 @@ def context_for(row: store.StoredReview, *, org_id: str, root_entity_type: str, 
     evidence = tuple(build_evidence_ref(
         org_id=org_id, entity_ref=row.file_id, field=F_CITED, value=item, source_ref=item,
         # Each source event is its own origin; code's readings assert none, and so can never raise.
-        independence_group=f"event:{item}" if item.startswith(EVENT_PREFIX) else None)
+        independence_group=f"event:{item}" if is_event(item) else None)
         for item in cited)
     return ContextSnapshot(
         org_id=org_id, graph_version=int(graph_version), root_entity_id=row.file_id,
@@ -308,7 +315,7 @@ class ReviewReader:
     def _confidence(request: ReasoningRequest) -> tuple[int, tuple[str, ...]]:
         """The confidence the cited source events earn, and those events' refs. See the module docstring."""
         events = tuple(sorted(ref.evidence_id for ref in request.context.evidence
-                              if str(ref.value).startswith(EVENT_PREFIX)))
+                              if is_event(ref.value)))
         if not events:
             return NO_EVENT_BP, events
         confidence = ONE_EVENT_BP
@@ -406,8 +413,9 @@ def decide(request: ReasoningRequest) -> ReasoningExecution:
     return _ORCHESTRATOR.execute(request)
 
 
-__all__ = ["ADAPTER", "CAPABILITY_ID", "DECIDE_VERSION", "EVENT_PREFIX", "EXPIRY_HOURS",
+__all__ = ["ADAPTER", "CAPABILITY_ID", "DECIDE_VERSION", "EXPIRY_HOURS", "KIND_SEPARATOR",
            "ExpertDecisionMaker", "LEVEL_BP", "MODE_MARKER", "MOVE_PLAY", "NO_EVENT_BP",
            "ONE_EVENT_BP", "OUTCOME_OF", "READER_ID", "ReviewReader", "TRIGGER_KIND", "WATCH_PLAY",
-           "capability_for", "cited_ids", "context_for", "decide", "is_expert", "orchestrator",
+           "capability_for", "cited_ids", "context_for", "decide", "is_event", "is_expert",
+           "orchestrator",
            "request_for"]
