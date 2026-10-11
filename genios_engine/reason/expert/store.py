@@ -19,12 +19,13 @@ wrote, if anything, as data (`raw`); it is never parsed into a review anybody ac
 WHAT THE FILE WAS (0198, M32.C3.L-data.V1.U10). Every row keeps its fingerprint's inputs
 (`reason/expert/fingerprint.fingerprint_inputs`), and a retry replaces them with the rest. A file's
 latest STANDING row is what the last judgment saw: the triggers (`reason/expert/triggers`) diff the
-file against it to say what moved.
+file against it to say what moved. And every row keeps what triggered it (0199, M32.C3.L-data.V1.U11):
+each trigger's kind and what moved — the shape is checked here, the vocabulary is the triggers' own.
 """
 from __future__ import annotations
 
 import json
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
@@ -44,27 +45,28 @@ RETRYABLE: tuple[str, ...] = (OVER_BUDGET, FAILED)
 
 _WRITE = text(
     "insert into expert_reviews (org_id, file_id, fingerprint, model, prompt_version, dossier_digest, "
-    "       status, reason, review, input_tokens, output_tokens, cost_micro_usd, reviewed_at, inputs) "
+    "       status, reason, review, input_tokens, output_tokens, cost_micro_usd, reviewed_at, inputs, "
+    "       triggers) "
     "values (:o, :f, :fp, :model, :pv, :digest, :status, :reason, cast(:review as jsonb), :tin, :tout, "
-    "        :cost, :at, cast(:inputs as jsonb)) "
+    "        :cost, :at, cast(:inputs as jsonb), cast(:triggers as jsonb)) "
     "on conflict (org_id, file_id, fingerprint) do update set "
     "       model = excluded.model, prompt_version = excluded.prompt_version, "
     "       dossier_digest = excluded.dossier_digest, status = excluded.status, "
     "       reason = excluded.reason, review = excluded.review, "
     "       input_tokens = excluded.input_tokens, output_tokens = excluded.output_tokens, "
     "       cost_micro_usd = excluded.cost_micro_usd, reviewed_at = excluded.reviewed_at, "
-    "       inputs = excluded.inputs "
+    "       inputs = excluded.inputs, triggers = excluded.triggers "
     " where expert_reviews.status in ('over_budget', 'failed')")
 
 _READ = text(
     "select file_id, fingerprint, model, prompt_version, dossier_digest, status, reason, review, "
-    "       input_tokens, output_tokens, cost_micro_usd, reviewed_at, inputs "
+    "       input_tokens, output_tokens, cost_micro_usd, reviewed_at, inputs, triggers "
     "  from expert_reviews "
     " where org_id = :o and file_id = :f and fingerprint = :fp")
 
 _LATEST_VALID = text(
     "select file_id, fingerprint, model, prompt_version, dossier_digest, status, reason, review, "
-    "       input_tokens, output_tokens, cost_micro_usd, reviewed_at, inputs "
+    "       input_tokens, output_tokens, cost_micro_usd, reviewed_at, inputs, triggers "
     "  from expert_reviews "
     " where org_id = :o and file_id = :f and status = 'valid' "
     " order by reviewed_at desc, fingerprint desc "
@@ -73,7 +75,7 @@ _LATEST_VALID = text(
 #: What the last judgment saw: the newest row that STANDS — `STANDING`'s three statuses, named again.
 _LATEST_STANDING = text(
     "select file_id, fingerprint, model, prompt_version, dossier_digest, status, reason, review, "
-    "       input_tokens, output_tokens, cost_micro_usd, reviewed_at, inputs "
+    "       input_tokens, output_tokens, cost_micro_usd, reviewed_at, inputs, triggers "
     "  from expert_reviews "
     " where org_id = :o and file_id = :f and status in ('valid', 'refused', 'truncated') "
     " order by reviewed_at desc, fingerprint desc "
@@ -97,6 +99,8 @@ class StoredReview:
     cost_micro_usd: int
     reviewed_at: datetime
     inputs: dict[str, Any] | None = None         # what the file was; None only on a row before 0198
+    #: What triggered it — (kind, what moved) each; None only on a row written before 0199.
+    triggers: tuple[tuple[str, str], ...] | None = None
 
 
 def _payload(status: str, review: ExpertReview | Mapping[str, Any] | None) -> dict[str, Any] | None:
@@ -109,39 +113,55 @@ def _payload(status: str, review: ExpertReview | Mapping[str, Any] | None) -> di
     return review.as_mapping() if isinstance(review, ExpertReview) else dict(review)
 
 
+def _said(triggers: Iterable[Any]) -> list[dict[str, str]]:
+    """Each trigger as `{kind, says}` — from a `Trigger`, anything with its kind and what moved, or a
+    mapping — or ValueError: a review says what triggered it, every time, in words."""
+    out = []
+    for t in triggers:
+        kind, says = (t.get("kind"), t.get("says")) if isinstance(t, Mapping) else (
+            getattr(t, "kind", None), getattr(t, "says", None))
+        if not (isinstance(kind, str) and kind.strip() and isinstance(says, str) and says.strip()):
+            raise ValueError(f"a trigger names its kind and what moved, not {t!r}")
+        out.append({"kind": kind, "says": says})
+    return out
+
+
 def write_review(conn, *, org_id: str, file_id: str, fingerprint: str, model: str, prompt_version: str,
                  dossier_digest: str, status: str, reason: str | None,
                  review: ExpertReview | Mapping[str, Any] | None, input_tokens: int, output_tokens: int,
-                 cost_micro_usd: int, at: datetime, inputs: Mapping[str, Any]) -> bool:
-    """Store the expert's answer for this fingerprint, with what the file was (`inputs`). True when it
-    was written; False when a standing row already answers it (nothing changes). ValueError for a
-    status nobody named, a non-valid row without its reason, a valid row without its review, or
-    inputs that are not a mapping."""
+                 cost_micro_usd: int, at: datetime, inputs: Mapping[str, Any],
+                 triggers: Iterable[Any]) -> bool:
+    """Store the expert's answer for this fingerprint, with what the file was (`inputs`) and what
+    triggered the review. True when it was written; False when a standing row already answers it
+    (nothing changes). ValueError for a status nobody named, a non-valid row without its reason, a
+    valid row without its review, inputs that are not a mapping, or a trigger without its words."""
     if status not in STATUSES:
         raise ValueError(f"unknown status {status!r}: one of {', '.join(STATUSES)}")
     if status != VALID and not (reason or "").strip():
         raise ValueError(f"a {status} row says its reason")
     if not isinstance(inputs, Mapping):
         raise ValueError("a review keeps what the file was: its fingerprint's inputs, a mapping")
+    said = _said(triggers)
     payload = _payload(status, review)
     written = conn.execute(_WRITE, {
         "o": org_id, "f": file_id, "fp": fingerprint, "model": model, "pv": prompt_version,
         "digest": dossier_digest, "status": status, "reason": reason,
         "review": None if payload is None else json.dumps(payload, sort_keys=True),
         "tin": input_tokens, "tout": output_tokens, "cost": cost_micro_usd, "at": at,
-        "inputs": json.dumps(dict(inputs), sort_keys=True)})
+        "inputs": json.dumps(dict(inputs), sort_keys=True), "triggers": json.dumps(said)})
     return written.rowcount == 1
 
 
 def _stored(row) -> StoredReview:
     m = row._mapping
-    raw = m["review"]
+    raw, triggers = m["review"], m["triggers"]
     return StoredReview(
         file_id=m["file_id"], fingerprint=m["fingerprint"], model=m["model"],
         prompt_version=m["prompt_version"], dossier_digest=m["dossier_digest"], status=m["status"],
         reason=m["reason"], review=ExpertReview.from_mapping(raw) if m["status"] == VALID else None,
         raw=raw, input_tokens=m["input_tokens"], output_tokens=m["output_tokens"],
-        cost_micro_usd=m["cost_micro_usd"], reviewed_at=m["reviewed_at"], inputs=m["inputs"])
+        cost_micro_usd=m["cost_micro_usd"], reviewed_at=m["reviewed_at"], inputs=m["inputs"],
+        triggers=None if triggers is None else tuple((t["kind"], t["says"]) for t in triggers))
 
 
 def read_review(conn, org_id: str, file_id: str, fingerprint: str) -> StoredReview | None:

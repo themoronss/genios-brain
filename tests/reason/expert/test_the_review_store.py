@@ -13,12 +13,16 @@ valid review of a file is one read; nothing here asks a model.
 M32.C3.L-data.V1.U10: every row keeps what the file WAS when it was judged — its fingerprint's inputs
 (0198) — and a retry replaces them with the rest; a file's latest STANDING review (valid, refused or
 truncated) is what the last judgment saw, the row the triggers diff against.
+
+M32.C3.L-data.V1.U11: and what triggered it (0199) — each trigger's kind and what moved, any object
+with those two, or a mapping; a retry replaces them with the rest.
 """
 from __future__ import annotations
 
 import os
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
 
 import pytest
 from sqlalchemy import create_engine, text
@@ -44,6 +48,7 @@ REVIEW = ExpertReview.from_mapping({
                                  "for_whom": "Rahul", "by_when": "2026-10-12"},
     "wait_or_stop": "if no reply in a week, ask once", "done_when": "the room is shared"})
 INPUTS = {"file_id": FILE, "events": ["evt_1"], "booked": [], "whose_move": "ours", "quiet": ">=1"}
+TRIGGERS = (("new_evidence", "new since the last review: evt_1"),)
 
 
 @pytest.fixture
@@ -64,11 +69,12 @@ def engine():
 
 
 def _write(c, fp: str, *, status=R.VALID, reason=None, review=REVIEW, at=AT, org=ORG, cost=26_100,
-           inputs=INPUTS):
+           inputs=INPUTS, triggers=None):
+    said = [{"kind": k, "says": s} for k, s in TRIGGERS] if triggers is None else list(triggers)
     return R.write_review(c, org_id=org, file_id=FILE, fingerprint=fp, model="claude-sonnet-5",
                           prompt_version="expert-review.v1", dossier_digest="sha256:d", status=status,
                           reason=reason, review=review, input_tokens=9000, output_tokens=900,
-                          cost_micro_usd=cost, at=at, inputs=inputs)
+                          cost_micro_usd=cost, at=at, inputs=inputs, triggers=said)
 
 
 def test_a_valid_review_reads_back_as_the_review_that_was_written(engine):
@@ -80,7 +86,8 @@ def test_a_valid_review_reads_back_as_the_review_that_was_written(engine):
     assert stored == R.StoredReview(
         file_id=FILE, fingerprint="ffp-1", model="claude-sonnet-5", prompt_version="expert-review.v1",
         dossier_digest="sha256:d", status=R.VALID, reason=None, review=REVIEW, raw=REVIEW.as_mapping(),
-        input_tokens=9000, output_tokens=900, cost_micro_usd=26_100, reviewed_at=AT, inputs=INPUTS)
+        input_tokens=9000, output_tokens=900, cost_micro_usd=26_100, reviewed_at=AT, inputs=INPUTS,
+        triggers=TRIGGERS)
     assert latest == stored
 
 
@@ -112,7 +119,8 @@ def test_a_failed_or_carried_review_is_retried_and_replaced(engine, first):
         assert R.write_review(c, org_id=ORG, file_id=FILE, fingerprint="ffp-1", model="m-before",
                               prompt_version="pv-before", dossier_digest="sha256:before", status=first,
                               reason=f"why {first}", review=None, input_tokens=1, output_tokens=2,
-                              cost_micro_usd=3, at=AT, inputs={"events": ["evt_before"]}) is True
+                              cost_micro_usd=3, at=AT, inputs={"events": ["evt_before"]},
+                              triggers=[{"kind": "first_look", "says": "never judged"}]) is True
     with engine.connect() as c:
         assert R.reviewed(c, ORG, FILE, "ffp-1") is False             # the pass asks again
     with engine.begin() as c:
@@ -124,6 +132,7 @@ def test_a_failed_or_carried_review_is_retried_and_replaced(engine, first):
         assert R.reviewed(c, ORG, FILE, "ffp-1") is True
     assert replace(stored, fingerprint="ffp-2") == fresh            # every column is the retry's
     assert stored.inputs == INPUTS                                  # what the file was, the retry's too
+    assert stored.triggers == TRIGGERS                              # and what triggered it
     assert stored.status == R.VALID and stored.review == REVIEW
 
 
@@ -181,7 +190,40 @@ def test_a_write_says_what_it_is_or_is_refused(engine):
             _write(c, "ffp-1", inputs=None)                          # what the file was, always
         with pytest.raises(ValueError, match="inputs"):
             _write(c, "ffp-1", inputs=["evt_1"])
+        with pytest.raises(ValueError, match="trigger"):
+            _write(c, "ffp-1", triggers=[{"kind": "new_evidence"}])     # what moved, always
+        with pytest.raises(ValueError, match="trigger"):
+            _write(c, "ffp-1", triggers=[{"kind": " ", "says": "x"}])
+        with pytest.raises(ValueError, match="trigger"):
+            _write(c, "ffp-1", triggers=["new_evidence"])
     assert R.STANDING + R.RETRYABLE == R.STATUSES
+
+
+def test_a_review_keeps_what_triggered_it_from_any_trigger_shaped_thing(engine):
+    """A `reason/expert/triggers.Trigger`, or anything with its kind and what moved, or a mapping."""
+    with engine.begin() as c:
+        _write(c, "ffp-1", triggers=[SimpleNamespace(kind="date_closing_in", says="the next meeting: "
+                                                                                  "<=168 → <=72"),
+                                     {"kind": "founder_asked", "says": "the founder asked about it"}])
+        _write(c, "ffp-2", triggers=())
+    with engine.connect() as c:
+        assert R.read_review(c, ORG, FILE, "ffp-1").triggers == (
+            ("date_closing_in", "the next meeting: <=168 → <=72"),
+            ("founder_asked", "the founder asked about it"))
+        assert R.read_review(c, ORG, FILE, "ffp-2").triggers == ()
+        assert R.latest_standing(c, ORG, FILE).triggers is not None
+
+
+def test_a_row_from_before_0198_and_0199_reads_as_not_kept_never_as_empty(engine):
+    """`triggers.triggers_for` reads a review whose inputs were not kept as a first look: None is
+    "not kept", and an empty list would say "nothing" — two different answers."""
+    with engine.begin() as c:
+        _write(c, "ffp-1")
+        c.execute(text("update expert_reviews set inputs = null, triggers = null "
+                       "where org_id = :o and fingerprint = 'ffp-1'"), {"o": ORG})
+    with engine.connect() as c:
+        old = R.read_review(c, ORG, FILE, "ffp-1")
+    assert old.inputs is None and old.triggers is None
 
 
 def test_the_latest_standing_review_is_what_the_last_judgment_saw(engine):
