@@ -6572,7 +6572,9 @@ yc2_w27_s12:
     and decides the lane; an unchanged file costs nothing, and a decision replays without the model.
   order_note: >
     M32 first and whole, in shadow: it changes no card. Widened 2026-10-10 by `yc2_w27_align` M34.C4
-    (STEP-12 §8.8) with nine units its check dropped or other steps deferred to it — 37 in all. M33 only after D1 (the appraisal decides what
+    (STEP-12 §8.8) with nine units its check dropped or other steps deferred to it — 37 in all. ⛔ 40 since
+    2026-10-11: three minted at the build of the triggers (M32.C3.L-logic.V1.U09) — a review keeps its
+    inputs (C1.U07, C3.U10) and the fingerprint reads a deadline (C2.U09). M33 only after D1 (the appraisal decides what
     matters) and D7 (the model and its cap); its live pass only after D50. The golden answers are
     authored per case (D49) — the board then measures the plumbing, the live pass the model.
   milestones:
@@ -6648,6 +6650,17 @@ yc2_w27_s12:
                       # (the confirm routes, the script) and the health check passing on F21 and F22
                       # (the golden file test) — the contract test alone proved none of them.
                       depends_on: []
+                    - id: M32.C1.L-contract.V0.U07
+                      what: >
+                        `expert_reviews.inputs`: a review keeps what the file WAS when it was judged — its
+                        fingerprint's inputs (`reason/expert/fingerprint.fingerprint_inputs`) — so what moved
+                        since is a diff, never a guess. ⛔ MINTED 2026-10-11 at the build of
+                        M32.C3.L-logic.V1.U09: "new evidence in the file" (`05` §5) needs the events the last
+                        review saw, and nothing kept them — a time cut misses mail that arrives late (a resync,
+                        STEP-08) or joins the file after it was read.
+                      artifact: "migrations/0198_expert_review_inputs.sql"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_expert_reviews_table.py tests/platform/test_the_code_can_always_be_rolled_back.py"
+                      depends_on: [M32.C1.L-contract.V0.U02]
             - layer: interface
               levels:
                 - level: 0
@@ -6749,6 +6762,17 @@ yc2_w27_s12:
                       artifact: "genios_engine/reason/expert/fingerprint.py"
                       verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_the_file_fingerprint.py"
                       depends_on: [M32.C2.L-logic.V1.U04]
+                    - id: M32.C2.L-logic.V2.U09
+                      what: >
+                        A deadline closing in moves the file: the fingerprint reads the nearest open promise's
+                        due date — ours or theirs; a "soon" never, it is no deadline (`06` D56) — as a rung of
+                        `HOURS_UNTIL`, as it reads the next meeting. ⛔ MINTED 2026-10-11 at the build of
+                        M32.C3.L-logic.V1.U09: `05` §5's "a date comes close — a deadline, a meeting, a promised
+                        reply" had only the meeting in the fingerprint, so a promise falling due could never
+                        make the expert think again.
+                      artifact: "genios_engine/reason/expert/fingerprint.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_the_file_fingerprint.py"
+                      depends_on: [M32.C2.L-logic.V2.U05]
         - id: M32.C3
           name: One review per changed file
           layers:
@@ -6767,6 +6791,14 @@ yc2_w27_s12:
                       # refused or truncated row STANDS until the file moves; a failed or over-budget
                       # row is not the expert's verdict, and its retry replaces it.
                       depends_on: [M32.C1.L-contract.V0.U02, M32.C1.L-contract.V0.U01]
+                    - id: M32.C3.L-data.V1.U10
+                      what: >
+                        The store keeps a review's inputs: `write_review` takes the fingerprint's inputs, every
+                        read returns them, and a retry that replaces a failed or carried row replaces them too.
+                        ⛔ MINTED 2026-10-11 with M32.C1.L-contract.V0.U07.
+                      artifact: "genios_engine/reason/expert/store.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_the_review_store.py"
+                      depends_on: [M32.C3.L-data.V1.U03, M32.C1.L-contract.V0.U07]
             - layer: logic
               levels:
                 - level: 0
@@ -6791,7 +6823,10 @@ yc2_w27_s12:
                         founder asking — and a file none of them touched is not reviewed. Added by M34.C4.
                       artifact: "genios_engine/reason/expert/triggers.py"
                       verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_a_review_says_what_triggered_it.py"
-                      depends_on: [M32.C2.L-logic.V2.U05]
+                      # ⛔ CORRECTED 2026-10-11 at its build: what moved since the last review is a diff of
+                      # the inputs that review kept (M32.C1.L-contract.V0.U07, M32.C3.L-data.V1.U10), and a
+                      # deadline can close in only if the fingerprint reads it (M32.C2.L-logic.V2.U09).
+                      depends_on: [M32.C2.L-logic.V2.U05, M32.C2.L-logic.V2.U09, M32.C3.L-data.V1.U10]
                     - id: M32.C3.L-logic.V1.U02
                       what: >
                         One review: through `run_site` and the gate (budget, cache on the fingerprint),
