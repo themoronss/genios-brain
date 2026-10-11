@@ -1051,10 +1051,17 @@ def refresh_situations(store, org_id: str, *, eval_time: datetime | None = None)
     now = eval_time or datetime.now(timezone.utc)
 
     with store.engine.connect() as conn:
+        # ⛔ IN THE ORDER THEY WERE OPENED (`03` F172, STEP-12 M32.C5.L-data.V1.U06). Each new
+        # situation below takes the next id, so the order this read returns is the order ids are
+        # given. With no ORDER BY it was the heap's: the order rows were written on a fresh database,
+        # and any other once deleted tenants left holes or a row was rewritten — so a golden replay
+        # gave the same case's files other situation ids in a long run than in its recording, and
+        # every review citing them was refused.
         correlations = _bulk(conn,
             "select correlation_id, anchor_node_id, anchor_type, domain, generation, "
             "       first_event_at, last_event_at, event_count "
-            "from context_correlations where org_id = :o", {"o": org_id})
+            "from context_correlations where org_id = :o order by created_at, correlation_id",
+            {"o": org_id})
         if not correlations:
             return 0
 

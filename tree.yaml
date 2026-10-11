@@ -6576,7 +6576,8 @@ yc2_w27_s12:
     2026-10-11: three minted at the build of the triggers (M32.C3.L-logic.V1.U09) — a review keeps its
     inputs (C1.U07, C3.U10) and the fingerprint reads a deadline (C2.U09). ⛔ 41 with M32.C4.L-logic.V0.U03,
     minted at the build of the review: a misshapen answer is syntax; ⛔ 43 with C1.U08 and C3.U11 — a review
-    keeps what triggered it; ⛔ 44 with C1.U09 — a review may propose a kind. M33 only after D1 (the appraisal decides what
+    keeps what triggered it; ⛔ 44 with C1.U09 — a review may propose a kind; ⛔ 45 with C3.U12 — a proposal's
+    line id; ⛔ 46 with C5.U06 — situations minted in the order they opened (F172). M33 only after D1 (the appraisal decides what
     matters) and D7 (the model and its cap); its live pass only after D50. The golden answers are
     authored per case (D49) — the board then measures the plumbing, the live pass the model.
   milestones:
@@ -7014,6 +7015,18 @@ yc2_w27_s12:
                       artifact: "tests/replays/specs/founder"
                       verify: ".venv/bin/python -m pytest -q tests/replays/test_every_changed_file_has_an_expert_answer.py"
                       depends_on: [M32.C5.L-data.V1.U02]
+                    - id: M32.C5.L-data.V1.U06
+                      what: >
+                        Situations are minted in the order their correlations were opened, never in the
+                        order the heap returns them (`03` F172): `context/situations.refresh_situations`
+                        read the tenant's correlations with no ORDER BY and gave each new situation the next
+                        id — stable on a fresh database, shuffled once deleted tenants left holes, so a long
+                        golden run gave F54's three files other situation ids than its recording and its
+                        authored answers were refused. Minted 11 Oct at the build of V3.U05, whose
+                        acceptance it broke intermittently.
+                      artifact: "genios_engine/context/situations.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/context/test_situations_are_minted_in_the_order_they_opened.py"
+                      depends_on: []
             - layer: integration
               levels:
                 - level: 2
@@ -7039,7 +7052,7 @@ yc2_w27_s12:
                         a stored review is read back with 0 model calls; the board unchanged (shadow).
                       artifact: "tests/replays/test_every_changed_file_is_reviewed_once.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays/test_every_changed_file_is_reviewed_once.py"
-                      depends_on: [M32.C5.L-integration.V2.U04, M32.C3.L-interface.V3.U05]
+                      depends_on: [M32.C5.L-integration.V2.U04, M32.C3.L-interface.V3.U05, M32.C5.L-data.V1.U06]
     - id: M33
       name: The review decides each covered file (STEP-12, after D1)
       ships: >
