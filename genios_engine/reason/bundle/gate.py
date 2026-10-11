@@ -37,7 +37,13 @@ policy.
 
 **ONE retry, then the template.** Doc 05 §4 and doc 11 guard 4. The retry carries the gauntlet's
 specific complaint, because the single regeneration is the only chance to turn a near miss into a
-narrative and "invalid output" wastes it.
+narrative and "invalid output" wastes it. A caller may narrow it to SYNTAX (`repair=REPAIR_SYNTAX`,
+STEP-12 §8.4 item 4): an answer that was not JSON is asked for once more, an answer the validator
+refused on substance is not — the expert's review is never argued into passing.
+
+**A CUT ANSWER IS NOT AN ANSWER** (`03` F140). `LLMClient.call` says when the API stopped at the
+token ceiling (`truncated`); the consult then ends as `truncated` — not validated, not retried at the
+same ceiling, its cost charged and recorded — whether or not the cut JSON parsed.
 
 **Nothing here raises.** A consult is an enhancement on top of a decision that is already made and
 already stored; an exception escaping this module would turn a model outage into a failed sweep.
@@ -66,6 +72,7 @@ from .sites import (
     OUTCOME_NO_CLIENT,
     OUTCOME_NO_PRECONDITION,
     OUTCOME_RAN,
+    OUTCOME_TRUNCATED,
     max_output_tokens,
     require_site,
     tier_for,
@@ -83,6 +90,12 @@ FORCE_FAIL_ENV = "GENIOS_L4_FORCE_FAIL_R_SITES"
 #: 4 is "no retry storms", and a retry count read from configuration is a retry storm with an
 #: audit trail.
 MAX_ATTEMPTS = 2
+
+#: What the one retry may repair. `any`: a failed generation or a refused one, carrying the complaint
+#: (the narrative's rule). `syntax`: only an answer that was not JSON — a refusal on substance stands.
+REPAIR_ANY = "any"
+REPAIR_SYNTAX = "syntax"
+REPAIRS = (REPAIR_ANY, REPAIR_SYNTAX)
 
 
 def force_fail_r_sites() -> bool:
@@ -191,8 +204,10 @@ class RSiteGate:
                 feature: str = FEATURE_BUNDLE, precondition: bool = True,
                 precondition_reason: str = "precondition_absent",
                 cached: Callable[[], Any] | None = None,
-                purpose: str | None = None, subject_ref: str | None = None) -> ConsultResult:
-        """Run one R-site under the policy. Never raises.
+                purpose: str | None = None, subject_ref: str | None = None,
+                repair: str = REPAIR_ANY) -> ConsultResult:
+        """Run one R-site under the policy. Never raises — except for a `site` or a `repair` nobody
+        named, which is a programming error and refused before anything is built or spent.
 
         `validate` returns `(value_or_None, reason_codes, trace_record)`. The trace record is what
         the gate stores beside the outcome — for R-2 it is the gauntlet's row per check, which is
@@ -200,6 +215,8 @@ class RSiteGate:
         rather than from a re-run.
         """
         require_site(site)
+        if repair not in REPAIRS:
+            raise ValueError(f"unknown repair {repair!r}; expected one of {REPAIRS}")
         tier = tier_for(site)
         base = {"site": site, "tier": tier, "cache_key": cache_key}
 
@@ -299,6 +316,13 @@ class RSiteGate:
                                        ok=bool(getattr(result, "ok", True)),
                                        error=getattr(result, "error", None),
                                        subject_ref=subject_ref)
+            if getattr(result, "truncated", False):
+                # `03` F140: cut at the ceiling. Not validated, not retried at the same ceiling.
+                trace.append({"attempt": attempt, "truncated": True})
+                return self._record(ConsultResult(
+                    outcome=OUTCOME_TRUNCATED, reason_codes=("truncated_at_the_token_ceiling",),
+                    model=model, input_tokens=tokens_in, output_tokens=tokens_out,
+                    cost_micro_usd=spent, attempts=attempt, trace=tuple(trace), **base))
             if not getattr(result, "ok", False):
                 trace.append({"attempt": attempt, "error": str(getattr(result, "error", ""))[:200]})
                 last_codes, last_outcome = ("unparseable_generation",), OUTCOME_FAILED_GENERATION
@@ -318,6 +342,8 @@ class RSiteGate:
                     trace=tuple(trace), **base))
             last_codes, last_outcome = codes, OUTCOME_FAILED_VALIDATION
             feedback = str(record.get("feedback") or "") or None
+            if repair == REPAIR_SYNTAX:
+                break                  # a refusal on substance stands: no argument, no second try
 
         # ── 7 · every failure ends in the caller's deterministic fallback, recorded. ─────────
         return self._record(ConsultResult(
@@ -368,5 +394,5 @@ class RSiteGate:
             _log.warning("could not record l4 narrative spend for org=%s: %s", self.org_id, exc)
 
 
-__all__ = ["ConsultResult", "FORCE_FAIL_ENV", "MAX_ATTEMPTS", "RSiteGate", "force_fail_r_sites",
-           "force_failed"]
+__all__ = ["ConsultResult", "FORCE_FAIL_ENV", "MAX_ATTEMPTS", "REPAIRS", "REPAIR_ANY",
+           "REPAIR_SYNTAX", "RSiteGate", "force_fail_r_sites", "force_failed"]

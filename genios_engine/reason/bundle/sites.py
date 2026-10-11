@@ -122,10 +122,14 @@ OUTCOME_FAILED_VALIDATION = "failed_validation"
 #: move. Its own outcome rather than a reused skip, because a force-failed run appearing in the
 #: ledger as an ordinary budget skip would make the doctrine test invisible after the fact.
 OUTCOME_FORCE_FAILED = "force_failed"
+#: ⛔ `03` F140 · the answer was cut at the token ceiling (`LLMResult.truncated`). Never validated,
+#: never parsed into anything — a leniently closed JSON is a shorter answer than the model meant —
+#: and never retried at the same ceiling, which would only cut it again. Recorded with its cost.
+OUTCOME_TRUNCATED = "truncated"
 
 OUTCOMES = (OUTCOME_RAN, OUTCOME_CACHED, OUTCOME_NOT_ACTIVATED, OUTCOME_NO_PRECONDITION,
             OUTCOME_NO_BUDGET, OUTCOME_NO_CLIENT, OUTCOME_FAILED_GENERATION,
-            OUTCOME_FAILED_VALIDATION, OUTCOME_FORCE_FAILED)
+            OUTCOME_FAILED_VALIDATION, OUTCOME_FORCE_FAILED, OUTCOME_TRUNCATED)
 
 #: The outcomes on which the caller must use its deterministic fallback. Everything that is not a
 #: model answer this run — a cache hit is an answer, so it is not here.
@@ -157,6 +161,7 @@ def max_output_tokens(site: str) -> int:
 __all__ = ["FALLBACK_OUTCOMES", "OUTCOMES", "OUTCOME_CACHED", "OUTCOME_FAILED_GENERATION",
            "OUTCOME_FAILED_VALIDATION", "OUTCOME_FORCE_FAILED", "OUTCOME_NOT_ACTIVATED",
            "OUTCOME_NO_BUDGET", "OUTCOME_NO_CLIENT", "OUTCOME_NO_PRECONDITION", "OUTCOME_RAN",
+           "OUTCOME_TRUNCATED",
            "R_SITES", "SITE_ALTERNATIVES", "SITE_CONSULT", "SITE_EFFECT", "SITE_EXPERT",
            "SITE_INTERPRET", "SITE_SITUATION",
            "SITE_MAX_OUTPUT_TOKENS", "SITE_NARRATE", "SITE_TIERS", "TIER_T1", "TIER_T2",

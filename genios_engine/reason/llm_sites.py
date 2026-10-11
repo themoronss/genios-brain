@@ -318,7 +318,7 @@ def run_site(*, site: str, org_id: str, seed: Mapping[str, Any], precondition: b
              fallback: Callable[[], Mapping[str, Any]],
              gate: RSiteGate | None = None, cache: Any = None,
              subject_ref: str | None = None,
-             feature: str = FEATURE_BUNDLE) -> SiteResult:
+             feature: str = FEATURE_BUNDLE, repair: str = "any") -> SiteResult:
     """One site through `RSiteGate.consult`, with this module's cache and refusal shape.
 
     `build_prompt(feedback)` is called lazily — so a site that will not run never pays to compose a
@@ -329,7 +329,9 @@ def run_site(*, site: str, org_id: str, seed: Mapping[str, Any], precondition: b
     customer reads when the model is unavailable, over budget, switched off, or wrong.
 
     `gate=None` means "no gate was wired here", and it is answered the way "no client" is answered:
-    the deterministic template, receipted. A missing gate must never read as permission.
+    the deterministic template, receipted. A missing gate must never read as permission. `repair` is
+    the gate's (`reason/bundle/gate.REPAIRS`): `syntax` asks once more only for an answer that was not
+    JSON (STEP-12 §8.4 item 4).
     """
     require_site(site)
     key = cache_key(site=site, org_id=org_id, seed=seed)
@@ -360,7 +362,7 @@ def run_site(*, site: str, org_id: str, seed: Mapping[str, Any], precondition: b
     result = gate.consult(site=site, cache_key=key, build_prompt=build_prompt,
                           validate=_validate, feature=feature, precondition=precondition,
                           precondition_reason="precondition_absent", cached=_cached,
-                          subject_ref=subject_ref)
+                          subject_ref=subject_ref, repair=repair)
 
     if result.outcome == OUTCOME_CACHED and isinstance(result.value, Mapping):
         payload = {name: value for name, value in result.value.items() if name != "generation"}
