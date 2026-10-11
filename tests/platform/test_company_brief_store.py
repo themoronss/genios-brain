@@ -116,6 +116,24 @@ def test_removing_a_line_keeps_it_and_the_past_brief_can_be_rebuilt(engine):
     assert row["status"] == "removed" and row["removed_at"] is not None
 
 
+def test_a_declined_proposal_mints_no_id_and_a_named_one_is_used_as_given(engine, monkeypatch):
+    """`03` F170 (STEP-12 M32.C3.L-data.V1.U12): an id is minted only for a line that is written —
+    in a golden run ids come from a per-case sequence, and a wasted one shifts every id after it."""
+    from genios_engine.platform import ids
+    minted = []
+    real = ids.new_id
+    monkeypatch.setattr(store, "new_id", lambda prefix: minted.append(prefix) or real(prefix))
+    with engine.begin() as c:
+        first = store.propose(c, org_id=ORG, section="goals", words="raise the pre-seed round",
+                              proposed_by="drafter", at=AT)
+        again = store.propose(c, org_id=ORG, section="goals", words="Raise the pre-seed round",
+                              proposed_by="drafter", at=AT)
+        named = store.propose(c, org_id=ORG, section="goals", words="hire a founding engineer",
+                              proposed_by="expert_review", at=AT, line_id="cbl_given")
+    assert first and again is None and named == "cbl_given"
+    assert minted == ["cbl"], "the declined proposal and the named one minted nothing"
+
+
 def test_add_does_not_double_a_line(engine):
     with engine.begin() as c:
         one = store.add(c, org_id=ORG, section="watchlist", words="StartupSetu",

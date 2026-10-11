@@ -72,6 +72,30 @@ def test_a_fund_filed_as_a_sales_opportunity_is_proposed_as_an_investor(engine):
     assert line["evidence"] == [{"review": "ffp-1", "file": UNKINDED.file_id, "cites": ["evt_005"]}]
 
 
+def test_the_experts_proposal_names_its_own_line_and_mints_nothing(engine, monkeypatch):
+    """`03` F170: the line id comes from what is proposed — the file's counterparty and the kind — so a
+    review that proposes never moves an id the rest of a run mints."""
+    from genios_engine.platform import company_brief_store as store
+    minted = []
+    monkeypatch.setattr(store, "new_id", lambda prefix: minted.append(prefix) or "cbl_minted")
+    proposal = _propose(engine)
+    assert minted == [] and proposal.line_id.startswith("cbl_") and proposal.line_id != "cbl_minted"
+    assert proposal.line_id == K.line_id_for(ORG, UNKINDED, "investor", "ffp-1")
+
+
+def test_proposing_again_after_the_quiet_window_writes_a_new_line(engine):
+    """The rejection's quiet window over, a later review's proposal is its own line — never a clash
+    with the line the founder rejected."""
+    from genios_engine.platform import company_brief_store as store
+    first = _propose(engine)
+    with engine.begin() as c:
+        store.reject(c, org_id=ORG, line_id=first.line_id, decided_by="founder", at=AT)
+    later = AT + timedelta(days=store.REJECTED_QUIET_DAYS + 1)
+    with engine.begin() as c:
+        again = K.propose_kind(c, org_id=ORG, review=REVIEW, file=UNKINDED, fingerprint="ffp-2", at=later)
+    assert again.line_id and again.line_id != first.line_id
+
+
 def test_a_proposal_changes_no_kind_until_the_founder_accepts_it(engine):
     _propose(engine)
     with engine.connect() as c:

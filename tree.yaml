@@ -6835,6 +6835,18 @@ yc2_w27_s12:
                       artifact: "genios_engine/reason/expert/store.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_the_review_store.py"
                       depends_on: [M32.C3.L-data.V1.U10, M32.C1.L-contract.V0.U08]
+                    - id: M32.C3.L-data.V1.U12
+                      what: >
+                        A proposal's line id is minted only when the line is written (`03` F170) — and the
+                        expert's proposal names its own, from what it proposes (the file's counterparty and
+                        the kind), so a review that proposes never moves another id. ⛔ MINTED 2026-10-11 at
+                        the build of M32.C5.L-integration.V2.U04: in a golden run ids are minted from a
+                        per-case sequence, and the brief's `propose` minted one even for a line it declined —
+                        every proposal shifted every id after it, so a door that reviewed differently
+                        recorded different prompts at sites the expert never touches.
+                      artifact: "genios_engine/platform/company_brief_store.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_a_review_may_propose_a_kind.py tests/platform/test_company_brief_store.py"
+                      depends_on: [M32.C3.L-logic.V2.U08]
             - layer: logic
               levels:
                 - level: 0

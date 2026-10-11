@@ -168,10 +168,15 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
             receipt["carried"] += len(due) - i - 1
             break
         if result.status == reviews.VALID and result.review.proposed_kind is not None:
-            with engine.begin() as conn:
-                if propose_kind(conn, org_id=org_id, review=result.review, file=parts.file,
-                                fingerprint=fp, at=now).line_id:
-                    receipt["proposed_kinds"] += 1
+            try:
+                with engine.begin() as conn:
+                    if propose_kind(conn, org_id=org_id, review=result.review, file=parts.file,
+                                    fingerprint=fp, at=now).line_id:
+                        receipt["proposed_kinds"] += 1
+            except Exception:      # noqa: BLE001 — a proposal that failed is no failed pass
+                _log.exception("the expert's kind proposal failed file=%s org=%s",
+                               parts.file_id, org_id)
+                receipt["unreadable"] += 1
     receipt["waiting"] = dict(receipt["waiting"])
     receipt["reviewed"] = dict(receipt["reviewed"])
     if receipt["reviewed"] or receipt["carried"]:

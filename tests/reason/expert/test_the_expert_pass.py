@@ -297,6 +297,25 @@ def test_a_failed_review_waits_before_it_is_tried_again(world):
     assert later["reviewed"] == {R.VALID: 2}
 
 
+def test_a_kind_proposal_that_fails_is_no_failed_pass(world, monkeypatch):
+    """The review is kept and the pass goes on; the proposal's failure is counted (`unreadable`)."""
+    store, now = world
+
+    class _Proposing(_Expert):
+        def call(self, prompt, *, max_tokens=400):
+            answer = super().call(prompt, max_tokens=max_tokens)
+            evidence = answer.parsed["facts"][0]["evidence"]
+            answer.parsed["proposed_kind"] = {"kind": "investor", "why": "a fund", "evidence": evidence}
+            return answer
+
+    def _broken(*_a, **_kw):
+        raise RuntimeError("the brief store is down")
+    monkeypatch.setattr(P, "propose_kind", _broken)
+    receipt, expert = _pass(store, now, llm=_Proposing())
+    assert receipt["reviewed"] == {R.VALID: 2} and receipt["unreadable"] == 2
+    assert receipt["proposed_kinds"] == 0 and len(_rows(store)) == 2
+
+
 def test_the_sweep_runs_the_pass_last_and_wrapped():
     """`runner.run_all` calls it once, inside a try — a failed pass is never a failed sweep."""
     fn = ast.parse(inspect.getsource(runner.run_all)).body[0]

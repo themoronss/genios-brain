@@ -50,6 +50,15 @@ def words_for(kind: str, counterparty: str, why: str) -> str:
     return head + why
 
 
+def line_id_for(org_id: str, file: Any, kind: str, fingerprint: str) -> str:
+    """The proposal's own line id, from what proposes it — the tenant, the file's counterparty, the
+    kind and the review's fingerprint — so a review that proposes mints no id (`03` F170), and a later
+    review proposing again after a rejection's quiet window writes a line of its own."""
+    from genios_engine.platform.canonical import stable_id
+    return stable_id("cbl", {"org": org_id, "counterparty": str(file.counterparty_key or ""),
+                             "kind": kind, "review": fingerprint})
+
+
 def propose_kind(conn, *, org_id: str, review: ExpertReview, file: Any, fingerprint: str,
                  at: datetime) -> KindProposal:
     """Write the review's proposed kind for `file` (`context/workstreams.WorkFile`) as a pending line of
@@ -67,7 +76,8 @@ def propose_kind(conn, *, org_id: str, review: ExpertReview, file: Any, fingerpr
         line_id = store.propose(
             conn, org_id=org_id, section="in_motion", words=words_for(pk.kind, file.counterparty, pk.why),
             proposed_by=PROPOSED_BY, at=at, address=address, domain=domain, kind=pk.kind,
-            evidence=[{"review": fingerprint, "file": file.file_id, "cites": list(pk.evidence)}])
+            evidence=[{"review": fingerprint, "file": file.file_id, "cites": list(pk.evidence)}],
+            line_id=line_id_for(org_id, file, pk.kind, fingerprint))
     except ValueError as exc:
         return KindProposal(file.file_id, pk.kind, None, f"not proposed: {exc}")
     if line_id is None:
@@ -77,4 +87,4 @@ def propose_kind(conn, *, org_id: str, review: ExpertReview, file: Any, fingerpr
     return KindProposal(file.file_id, pk.kind, line_id, f"proposed {pk.kind} for the founder to accept")
 
 
-__all__ = ["KindProposal", "PROPOSED_BY", "propose_kind", "words_for"]
+__all__ = ["KindProposal", "PROPOSED_BY", "line_id_for", "propose_kind", "words_for"]

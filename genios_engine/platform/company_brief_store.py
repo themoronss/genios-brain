@@ -107,15 +107,19 @@ def _same_line(conn, org_id: str, line: CompanyBriefLine, *, at: datetime) -> bo
 
 def propose(conn, *, org_id: str, section: str, words: str, proposed_by: str, at: datetime,
             address: str | None = None, domain: str | None = None, kind: str | None = None,
-            evidence: Iterable[Mapping[str, Any] | str] = ()) -> str | None:
+            evidence: Iterable[Mapping[str, Any] | str] = (), line_id: str | None = None) -> str | None:
     """Write one proposal — an in-motion line with the kind of work it names, if any. Returns its
     line id — or None when the brief already says it, or the founder rejected it within
-    `REJECTED_QUIET_DAYS`. Raises `ValueError` on a malformed line."""
-    line_id = new_id("cbl")
-    line = _checked(CompanyBriefLine(line_id=line_id, section=section, text=words,
+    `REJECTED_QUIET_DAYS`. Raises `ValueError` on a malformed line.
+
+    ⛔ An id is minted only for a line that is WRITTEN (`03` F170), and a proposer that names its own
+    (`line_id` — the expert's, from what it proposes) mints none: a minted id that is thrown away still
+    moves every id after it in a sequence (the golden runner's)."""
+    line = _checked(CompanyBriefLine(line_id=line_id or "cbl_unwritten", section=section, text=words,
                                      address=address, domain=domain, kind=kind))
     if _same_line(conn, org_id, line, at=at):
         return None
+    line_id = line_id or new_id("cbl")
     conn.execute(text(
         "insert into company_brief_lines (org_id, line_id, section, text, address, domain, kind, "
         " status, proposed_by, evidence, proposed_at) values (:o, :l, :s, :t, :a, :d, :k, "
