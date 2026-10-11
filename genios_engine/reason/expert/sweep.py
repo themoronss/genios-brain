@@ -31,7 +31,9 @@ when nothing has touched the file since (untouched), or the one written this pas
 ours, one whose review was refused or cut, one waiting on a failed review or carried for want of budget —
 the file moved and nothing has judged it yet — and never a file the pass could not read: each of those
 is decided as before, situation by situation. A tenant without the feature or without a model covers
-nothing.
+nothing. Beside it, `people` (M33.C1.L-data.V1.U11): each covered file's people — the anchor when it is a
+person, everyone who works at it when it is a company (`context/workstreams.WorkFile.people`) — so either
+lane can tell what belongs to a file (`reason/expert/cover`) without reading the files again.
 
 The sweep runs this pass FIRST and hands `covered` to the compiled lane (M33.C1.L-integration.V2.U07),
 which decides each covered file from its review; the pass itself writes reviews and proposals, never a
@@ -95,6 +97,12 @@ def _waiting(row, now: datetime) -> str | None:
     return None
 
 
+def _cover(receipt: dict[str, Any], file_id: str, fingerprint: str, people) -> None:
+    """A file a VALID review answers now: that review's fingerprint, and who is in the file."""
+    receipt["covered"][file_id] = fingerprint
+    receipt["people"][file_id] = sorted(str(p) for p in people or ())
+
+
 def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
                 budget: NarrativeBudget | None = None, max_per_pass: int = MAX_PER_PASS) -> dict[str, Any]:
     """Review every changed file of the tenant once. Returns the pass's receipt; never raises past a file."""
@@ -115,7 +123,7 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
     from genios_engine.context.workstreams import files_for
     receipt: dict[str, Any] = {"files": 0, "ours": 0, "unchanged": 0, "untouched": 0, "unreadable": 0,
                                "waiting": Counter(), "reviewed": Counter(), "carried": 0,
-                               "proposed_kinds": 0, "cost_micro_usd": 0, "covered": {}}
+                               "proposed_kinds": 0, "cost_micro_usd": 0, "covered": {}, "people": {}}
     due = []
     from sqlalchemy import text
 
@@ -143,7 +151,7 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
                 if row is not None and row.status in reviews.STANDING:
                     receipt["unchanged"] += 1
                     if row.status == reviews.VALID:
-                        receipt["covered"][work.file_id] = fp
+                        _cover(receipt, work.file_id, fp, work.people)
                     continue
                 waiting = _waiting(row, now)
                 if waiting:
@@ -154,7 +162,7 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
             if not found:
                 receipt["untouched"] += 1
                 if last is not None and last.status == reviews.VALID:
-                    receipt["covered"][work.file_id] = last.fingerprint
+                    _cover(receipt, work.file_id, last.fingerprint, work.people)
                 continue
             due.append((_hours_to_nearest(parts), order, parts, inputs, fp, found))
         except Exception:      # noqa: BLE001 — one unreadable file is not a failed pass
@@ -178,7 +186,7 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
                              inputs=inputs, triggers=found, gate=gate, at=now)
         receipt["reviewed"][result.status or "skipped"] += 1
         if result.status == reviews.VALID:
-            receipt["covered"][parts.file_id] = fp
+            _cover(receipt, parts.file_id, fp, parts.file.people)
         if result.receipt is not None:
             receipt["cost_micro_usd"] += result.receipt.cost_micro_usd
         if result.status == reviews.OVER_BUDGET:
