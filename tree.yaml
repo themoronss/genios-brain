@@ -6574,7 +6574,8 @@ yc2_w27_s12:
     M32 first and whole, in shadow: it changes no card. Widened 2026-10-10 by `yc2_w27_align` M34.C4
     (STEP-12 §8.8) with nine units its check dropped or other steps deferred to it — 37 in all. ⛔ 40 since
     2026-10-11: three minted at the build of the triggers (M32.C3.L-logic.V1.U09) — a review keeps its
-    inputs (C1.U07, C3.U10) and the fingerprint reads a deadline (C2.U09). M33 only after D1 (the appraisal decides what
+    inputs (C1.U07, C3.U10) and the fingerprint reads a deadline (C2.U09). ⛔ 41 with M32.C4.L-logic.V0.U03,
+    minted at the build of the review: a misshapen answer is syntax. M33 only after D1 (the appraisal decides what
     matters) and D7 (the model and its cap); its live pass only after D50. The golden answers are
     authored per case (D49) — the board then measures the plumbing, the live pass the model.
   milestones:
@@ -6836,12 +6837,16 @@ yc2_w27_s12:
                         substantive refusal, a truncated answer or an over-budget call is recorded with
                         its reason and never retried until the file moves.
                       artifact: "genios_engine/reason/expert/review.py"
-                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_one_review.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_one_review.py"
                       # ⛔ CORRECTED 2026-10-11 at the build of V1.U03: an over-budget call is CARRIED to
                       # the next day (`06` D7, answered 10 Oct: "carries the rest, said"), not held until
                       # the file moves — a file quiet between two rungs would otherwise wait a week. A
                       # failed call may be retried too; the pass (V2.U04) bounds how often.
-                      depends_on: [M32.C3.L-logic.V0.U01, M32.C1.L-contract.V0.U03, M32.C1.L-contract.V0.U04, M32.C4.L-logic.V0.U01]
+                      # ⛔ CORRECTED 2026-10-11 at its build: "recorded with its reason" is a row of the
+                      # store, so its tests need the database — without it they would SKIP inside a PASS;
+                      # and its syntax repair needs M32.C4.L-logic.V0.U03 (a misshapen answer is syntax),
+                      # the store's inputs (V1.U10) and the triggers it records (V1.U09).
+                      depends_on: [M32.C3.L-logic.V0.U01, M32.C1.L-contract.V0.U03, M32.C1.L-contract.V0.U04, M32.C4.L-logic.V0.U01, M32.C4.L-logic.V0.U03, M32.C3.L-data.V1.U10]
                 - level: 2
                   units:
                     - id: M32.C3.L-logic.V2.U07
@@ -6916,6 +6921,18 @@ yc2_w27_s12:
                       # ⛔ CORRECTED 2026-10-11 at the build: its sweep test runs the admin pilot on
                       # Postgres; without the database it would SKIP inside a PASS.
                       depends_on: []
+                    - id: M32.C4.L-logic.V0.U03
+                      what: >
+                        A misshapen answer is syntax: under `repair="syntax"` the gate repairs, once, an
+                        answer that is JSON but not the shape the prompt asked for (a refusal coded
+                        `malformed`), telling the model what was wrong — and still never a refusal on
+                        substance. ⛔ MINTED 2026-10-11 at the build of M32.C3.L-logic.V1.U02: STEP-12
+                        §3.4 says "schema-checked; one repair on syntax only", and the contract's
+                        `from_mapping` names a malformed answer "the one thing a caller may repair, once"
+                        — but the syntax repair of V0.U01 answered only an answer that was not JSON.
+                      artifact: "genios_engine/reason/bundle/gate.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/test_a_truncated_answer_is_refused.py"
+                      depends_on: [M32.C4.L-logic.V0.U01]
         - id: M32.C5
           name: The golden set
           layers:
