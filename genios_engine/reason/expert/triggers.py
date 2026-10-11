@@ -132,8 +132,12 @@ def _crossings(parts: DossierParts, now: Mapping[str, Any], then: Mapping[str, A
     usual = their_usual(parts)
     if (usual is not None and now.get("whose_move") == "theirs" and quiet > usual
             and not (then.get("whose_move") == "theirs" and quiet_then > usual)):
-        out.append(Trigger(REPLY_OVERDUE, f"their move, quiet {_n(quiet)} days — past the "
-                           f"{_n(usual)} days they usually take"))
+        # The words name the basis (`03` F163): the file's usual gap may be OUR answer's.
+        measured = _measured(p.their_reply_time for p in
+                             (parts.numbers.people if parts.numbers is not None else ()))
+        basis = (f"the {_n(usual)} days they usually take" if measured is not None
+                 else f"the file's usual gap of {_n(usual)} days")
+        out.append(Trigger(REPLY_OVERDUE, f"their move, quiet {_n(quiet)} days — past {basis}"))
     longest = parts.timeline.longest_gap_days
     if longest is not None and quiet > longest and not quiet_then > longest:
         out.append(Trigger(PAST_NORMAL, f"quiet {_n(quiet)} days — past the longest gap it ever had, "

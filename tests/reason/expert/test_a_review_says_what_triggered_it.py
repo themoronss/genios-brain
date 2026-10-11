@@ -215,10 +215,17 @@ def test_their_usual_is_the_longest_any_of_its_people_take_measured_here():
                                       _person(1, theirs=_days(2.0), yours=_days(None, 0)))) == 2.0
 
 
-def test_with_no_reply_measured_their_usual_is_the_files_usual_gap():
+def test_with_no_reply_measured_their_usual_is_the_files_usual_gap_and_says_so():
+    """⛔ The words name the basis (`03` F163): a file's usual gap may be OUR answer's, so it is never
+    called the time THEY usually take."""
     nobody = _with_people(_person(0, theirs=_days(None, 0), yours=_days(None, 0)))
     gap = nobody.timeline.usual_gap
     assert gap.n > 0 and T.their_usual(nobody) == gap.value
+    before = dataclasses.replace(_at(nobody, quiet=0.05, move="theirs"))
+    now = dataclasses.replace(_at(nobody, quiet=gap.value + 1, move="theirs"))
+    found = T.triggers_for(now, _inputs(now), last=_last(before, hours_ago=24 * (gap.value + 0.95)))
+    overdue = next(t for t in found if t.kind == T.REPLY_OVERDUE)
+    assert "the file's usual gap" in overdue.says and "they usually take" not in overdue.says
 
 
 def test_our_usual_is_the_longest_we_take_here_else_our_normal_overall():
