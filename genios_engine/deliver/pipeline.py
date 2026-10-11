@@ -22,7 +22,8 @@ from genios_engine.contracts.abstention import downgrade_to_observation, is_acti
 from genios_engine.contracts.outcomes import interrupts, project
 from genios_engine.deliver.render import state_not_command
 from .card_builder import BUILDER_VERSION, SubjectIsUs, build_draft, load_evidence_quotes
-from .render import render_copy
+from .render import render_copy, review_copy
+from genios_engine.reason.expert.decide import is_expert
 from .router import budget_full
 
 from .store import CardStore
@@ -494,9 +495,15 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
 
                 logging.getLogger(__name__).warning("card refused for org=%s: %s", org_id, refused)
                 continue
+            # STEP-12 M33 · A COVERED FILE'S CARD IS ITS REVIEW'S (M33.C1.L-interface.V1.U08). The
+            # expert already wrote the words — the move, its reading of the file, the draft — and
+            # they were validated against its dossier (`contracts/expert_review.validate`); a
+            # narrator would write them again, paid for, from less. So no narrator is asked: the
+            # copy is the review's own (`reason/expert/decide._render`).
+            from_review = is_expert(sig.get("capability_id"))
             copy = render_copy(                                                    # E1
                 reason_code=draft["_reason_code"], template=draft["_template"],
-                facts=draft["_facts"], slots=draft["_slots"], llm=llm,
+                facts=draft["_facts"], slots=draft["_slots"], llm=None if from_review else llm,
                 cost_sink=graph.record_cost, org_id=org_id,
                 # The tenant's own names and addresses. A draft signed by the account holder is
                 # not inventing them, but the grounding corpus was built from the SUBJECT's facts
@@ -515,6 +522,8 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
             # fundraising opportunities to sanchiconnect.tech NOW". The push gate below already
             # honours the level; the sentence did not, and the sentence is what the reader sees
             # first. This is the one point where both facts are in hand.
+            if from_review:
+                copy = review_copy(copy, draft["_template"])
             copy = {**copy, "headline": state_not_command(copy.get("headline"), draft["level"])}
             # artifact_ready must reflect the REAL render — a raw-slot fallback has an empty body,
             # so Run Play must not advertise a ready draft.

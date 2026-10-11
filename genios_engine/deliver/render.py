@@ -788,6 +788,17 @@ def _prompt(reason_code: str, template: dict, facts: dict, slots: dict,
     )
 
 
+def review_copy(copy: dict, template: dict) -> dict:
+    """A covered file's card copy, the expert's review's own: the fallback the decision carried (the
+    move as the headline, the expert's reading as the situation — `reason/expert/decide._render`),
+    and the review's draft as the artifact. STEP-12 M33.C1.L-interface.V1.U08: no narrator is asked;
+    the words were validated with the review (`contracts/expert_review.validate`)."""
+    body = str(template.get("draft") or "").strip()
+    artifact = {**(copy.get("artifact") or {}), "body": body,
+                "mode": "review" if body else (copy.get("artifact") or {}).get("mode", "raw_slot")}
+    return {**copy, "artifact": artifact, "render_mode": "review"}
+
+
 def render_copy(*, reason_code: str, template: dict, facts: dict, slots: dict,
                 llm=None, cost_sink=None, org_id: str = "",
                 identities: tuple[str, ...] = (),
