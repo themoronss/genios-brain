@@ -103,12 +103,17 @@ BRIEF_SITES: dict[str, tuple[Carries | Wraps | Field, ...]] = {
     # block — the gate itself only carries what each site's builder hands it. ⛔ R-6 RETIRED
     # 2026-10-11 (`06` D51, STEP-12 M32.C4.L-logic.V0.U02): the sweep calls `reason_over_situation`
     # no more, so it has no caller to hold — the function still takes the block, as its own tests show.
+    # ⛔ R-7, the expert (STEP-12 M32.C3.L-logic.V1.U02), JUDGES a whole file: its prompt is the
+    # checklist over the file's dossier, whose first section is the brief — so the dossier's parts
+    # carry it (`DossierParts.brief`), filled by keyword where they are read (`read_parts`).
     "reason/bundle/gate.py": (
         Carries("reason/interpretation.py", "_prompt", callers=("reason/interpretation.py",)),
         Carries("reason/interpretation.py", "interpret", callers=("reason/interpretation.py",)),
         Carries("reason/situation_reasoner.py", "build_prompt",
                 callers=("reason/situation_reasoner.py",)),
         Carries("reason/situation_reasoner.py", "reason_over_situation", callers=()),
+        Field("reason/expert/dossier.py", "DossierParts", callers=("reason/expert/dossier.py",),
+              param="brief"),
     ),
     "reason/llm_decision_maker.py": (
         Carries("reason/llm_decision_maker.py", "build_prompt",

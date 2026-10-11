@@ -7,8 +7,9 @@ produces. `contracts/` may depend on `platform` and stdlib only, so this module 
 ⛔ AND ONE IS A GUARANTEE KEPT BY DISCIPLINE RATHER THAN BY CONSTRUCTION — `build_address`, which
 exists *"so no producer can forget"* a token and is bypassed by all three producers.
 
-The ninth (2026-10-10), `expert_review.validate`, is a contract built before its caller on purpose —
-STEP-12 builds bottom-up — and its entry is deleted in the commit that wires it.
+The ninth (2026-10-10), `expert_review.validate`, was a contract built before its caller on purpose —
+STEP-12 builds bottom-up — and its entry was deleted in the commit that wired it (2026-10-11,
+`reason/expert/review.py`, M32.C3.L-logic.V1.U02).
 
 The machinery is `platform/reachability.py`, shared rather than copied. ⛔ Three wiring mechanisms
 are subtracted before anything reaches this table: a **call**, a **decorator** (a route handler has
@@ -111,16 +112,6 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "consumer appears — but that is a reading of a name, not a measurement.",
         "⛔ MOVES WHEN somebody who knows whether `snapshot` is supposed to consult it writes one "
         "line above it. Flagged in `HANDOFF-CODING-AGENT.md` rather than guessed at here"),
-
-    "expert_review.validate": (
-        "The expert's review checked against the dossier it was shown — an uncited fact, a citation "
-        "the dossier never held, an inference or a pattern resting on nothing, a stage the playbook "
-        "lacks, a moving mode with no next move, a number the dossier does not hold. ⛔ BUILT FIRST "
-        "ON PURPOSE: STEP-12 builds bottom-up (tree `yc2_w27_s12`), so the contract "
-        "(M32.C1.L-contract.V0.U01) lands before the review run that calls it, and nothing asks a "
-        "model for a review yet.",
-        "MOVES WHEN `reason/expert/review.py` (M32.C3.L-logic.V1.U02) validates each parsed answer "
-        "against its dossier's catalogue — this entry is deleted in that unit's commit"),
 
 }
 
