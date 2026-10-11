@@ -1,0 +1,146 @@
+"""The expert's reviews, kept — written once per file per fingerprint, read back without the model (STEP-12).
+
+Tree `yc2_w27_s12` M32.C3.L-data.V1.U03, over `migrations/0197_expert_reviews.sql`. The expert reviews a
+FILE once each time its fingerprint (`reason/expert/fingerprint`) moves, so its review is stored on that
+key and every later read — the pass asking "was this fingerprint reviewed?", the read model showing a
+file's latest review, a replay rebuilding a decision — is a read of the row, never a call of the model.
+
+ONCE PER FINGERPRINT. A second write for a (file, fingerprint) that has a STANDING row is refused,
+whatever it says: a valid review is the record, and a refusal — refused on substance, or cut at the
+token ceiling — stands until the file moves (STEP-12 §8.4 item 4; a cut answer retried at the same
+ceiling is cut again, `03` F140). Two rows do not stand, because neither is the expert's verdict:
+`failed` (the call or its parse broke — a network blip is not a judgment) and `over_budget` (no call
+was made; D7's busy day "carries the rest" to the next). Their retry may replace them.
+
+WHAT IS READ BACK. A valid row's review is parsed back into an `ExpertReview` (`contracts/expert_review`)
+— the same review that was written, field for field. A row of any other status keeps what the model
+wrote, if anything, as data (`raw`); it is never parsed into a review anybody acts on.
+"""
+from __future__ import annotations
+
+import json
+from collections.abc import Mapping
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Any
+
+from sqlalchemy import text
+
+from genios_engine.contracts.expert_review import ExpertReview
+
+VALID, REFUSED, TRUNCATED, OVER_BUDGET, FAILED = "valid", "refused", "truncated", "over_budget", "failed"
+STATUSES: tuple[str, ...] = (VALID, REFUSED, TRUNCATED, OVER_BUDGET, FAILED)
+
+#: A row with one of these statuses is the fingerprint's answer until the file moves.
+STANDING: tuple[str, ...] = (VALID, REFUSED, TRUNCATED)
+
+#: A row with one of these may be replaced by its retry — `_WRITE`'s `where` names the same two.
+RETRYABLE: tuple[str, ...] = (OVER_BUDGET, FAILED)
+
+_WRITE = text(
+    "insert into expert_reviews (org_id, file_id, fingerprint, model, prompt_version, dossier_digest, "
+    "       status, reason, review, input_tokens, output_tokens, cost_micro_usd, reviewed_at) "
+    "values (:o, :f, :fp, :model, :pv, :digest, :status, :reason, cast(:review as jsonb), :tin, :tout, "
+    "        :cost, :at) "
+    "on conflict (org_id, file_id, fingerprint) do update set "
+    "       model = excluded.model, prompt_version = excluded.prompt_version, "
+    "       dossier_digest = excluded.dossier_digest, status = excluded.status, "
+    "       reason = excluded.reason, review = excluded.review, "
+    "       input_tokens = excluded.input_tokens, output_tokens = excluded.output_tokens, "
+    "       cost_micro_usd = excluded.cost_micro_usd, reviewed_at = excluded.reviewed_at "
+    " where expert_reviews.status in ('over_budget', 'failed')")
+
+_READ = text(
+    "select file_id, fingerprint, model, prompt_version, dossier_digest, status, reason, review, "
+    "       input_tokens, output_tokens, cost_micro_usd, reviewed_at "
+    "  from expert_reviews "
+    " where org_id = :o and file_id = :f and fingerprint = :fp")
+
+_LATEST_VALID = text(
+    "select file_id, fingerprint, model, prompt_version, dossier_digest, status, reason, review, "
+    "       input_tokens, output_tokens, cost_micro_usd, reviewed_at "
+    "  from expert_reviews "
+    " where org_id = :o and file_id = :f and status = 'valid' "
+    " order by reviewed_at desc, fingerprint desc "
+    " limit 1")
+
+
+@dataclass(frozen=True)
+class StoredReview:
+    """One row of `expert_reviews`. `review` is set only for a valid row; `raw` is what was stored."""
+    file_id: str
+    fingerprint: str
+    model: str
+    prompt_version: str
+    dossier_digest: str
+    status: str
+    reason: str | None
+    review: ExpertReview | None
+    raw: dict[str, Any] | None
+    input_tokens: int
+    output_tokens: int
+    cost_micro_usd: int
+    reviewed_at: datetime
+
+
+def _payload(status: str, review: ExpertReview | Mapping[str, Any] | None) -> dict[str, Any] | None:
+    if status == VALID:
+        if not isinstance(review, ExpertReview):
+            raise ValueError("a valid row carries its review, as an ExpertReview")
+        return review.as_mapping()
+    if review is None:
+        return None
+    return review.as_mapping() if isinstance(review, ExpertReview) else dict(review)
+
+
+def write_review(conn, *, org_id: str, file_id: str, fingerprint: str, model: str, prompt_version: str,
+                 dossier_digest: str, status: str, reason: str | None,
+                 review: ExpertReview | Mapping[str, Any] | None, input_tokens: int, output_tokens: int,
+                 cost_micro_usd: int, at: datetime) -> bool:
+    """Store the expert's answer for this fingerprint. True when it was written; False when a standing
+    row already answers it (nothing changes). ValueError for a status nobody named, a non-valid row
+    without its reason, or a valid row without its review."""
+    if status not in STATUSES:
+        raise ValueError(f"unknown status {status!r}: one of {', '.join(STATUSES)}")
+    if status != VALID and not (reason or "").strip():
+        raise ValueError(f"a {status} row says its reason")
+    payload = _payload(status, review)
+    written = conn.execute(_WRITE, {
+        "o": org_id, "f": file_id, "fp": fingerprint, "model": model, "pv": prompt_version,
+        "digest": dossier_digest, "status": status, "reason": reason,
+        "review": None if payload is None else json.dumps(payload, sort_keys=True),
+        "tin": input_tokens, "tout": output_tokens, "cost": cost_micro_usd, "at": at})
+    return written.rowcount == 1
+
+
+def _stored(row) -> StoredReview:
+    m = row._mapping
+    raw = m["review"]
+    return StoredReview(
+        file_id=m["file_id"], fingerprint=m["fingerprint"], model=m["model"],
+        prompt_version=m["prompt_version"], dossier_digest=m["dossier_digest"], status=m["status"],
+        reason=m["reason"], review=ExpertReview.from_mapping(raw) if m["status"] == VALID else None,
+        raw=raw, input_tokens=m["input_tokens"], output_tokens=m["output_tokens"],
+        cost_micro_usd=m["cost_micro_usd"], reviewed_at=m["reviewed_at"])
+
+
+def read_review(conn, org_id: str, file_id: str, fingerprint: str) -> StoredReview | None:
+    """The row for this fingerprint, whatever its status — or None."""
+    row = conn.execute(_READ, {"o": org_id, "f": file_id, "fp": fingerprint}).first()
+    return None if row is None else _stored(row)
+
+
+def reviewed(conn, org_id: str, file_id: str, fingerprint: str) -> bool:
+    """Whether this fingerprint is answered: a standing row exists. A failed or carried one is not."""
+    stored = read_review(conn, org_id, file_id, fingerprint)
+    return stored is not None and stored.status in STANDING
+
+
+def latest_valid(conn, org_id: str, file_id: str) -> StoredReview | None:
+    """The file's newest valid review — the newest fingerprint on a tie — or None."""
+    row = conn.execute(_LATEST_VALID, {"o": org_id, "f": file_id}).first()
+    return None if row is None else _stored(row)
+
+
+__all__ = ["FAILED", "OVER_BUDGET", "REFUSED", "RETRYABLE", "STANDING", "STATUSES", "TRUNCATED", "VALID",
+           "StoredReview", "latest_valid", "read_review", "reviewed", "write_review"]

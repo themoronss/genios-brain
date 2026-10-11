@@ -6762,6 +6762,10 @@ yc2_w27_s12:
                         one; read a stored review for replay — never the model.
                       artifact: "genios_engine/reason/expert/store.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_the_review_store.py"
+                      # ⛔ CORRECTED 2026-10-11 at the build: "once per (file, fingerprint)" read with
+                      # `06` D7's answer (a busy day "carries the rest, said") and §8.4 item 4 — a valid,
+                      # refused or truncated row STANDS until the file moves; a failed or over-budget
+                      # row is not the expert's verdict, and its retry replaces it.
                       depends_on: [M32.C1.L-contract.V0.U02, M32.C1.L-contract.V0.U01]
             - layer: logic
               levels:
@@ -6796,6 +6800,10 @@ yc2_w27_s12:
                         its reason and never retried until the file moves.
                       artifact: "genios_engine/reason/expert/review.py"
                       verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_one_review.py"
+                      # ⛔ CORRECTED 2026-10-11 at the build of V1.U03: an over-budget call is CARRIED to
+                      # the next day (`06` D7, answered 10 Oct: "carries the rest, said"), not held until
+                      # the file moves — a file quiet between two rungs would otherwise wait a week. A
+                      # failed call may be retried too; the pass (V2.U04) bounds how often.
                       depends_on: [M32.C3.L-logic.V0.U01, M32.C1.L-contract.V0.U03, M32.C1.L-contract.V0.U04, M32.C4.L-logic.V0.U01]
                 - level: 2
                   units:
