@@ -5,7 +5,9 @@ narration, for a tenant with the L4 feature `expert_review` on — read ONCE, so
 cannot leave two files of one pass judged under different rules:
 
   1. every file of the tenant (`context/workstreams.files_for`), each read once into its dossier's parts
-     (`dossier.read_parts`), and its fingerprint (`fingerprint.fingerprint_inputs`);
+     (`dossier.read_parts`), and its fingerprint (`fingerprint.fingerprint_inputs`) — except a file whose
+     counterparty is US (`platform/self_identity.is_us_node`): we are never the subject (STEP-04), and a
+     mail that names the founder's own company must not buy a review of it (`03` F158);
   2. a fingerprint a standing review answers is UNCHANGED — no call;
   3. a file nothing touched since its last standing review is UNTOUCHED — no call (`05` §5,
      `triggers.triggers_for`);
@@ -98,14 +100,19 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
     model = getattr(client, "model", None) or llm_sites.tier_model(tier_for(SITE_EXPERT))
 
     from genios_engine.context.workstreams import files_for
-    receipt: dict[str, Any] = {"files": 0, "unchanged": 0, "untouched": 0, "unreadable": 0,
+    receipt: dict[str, Any] = {"files": 0, "ours": 0, "unchanged": 0, "untouched": 0, "unreadable": 0,
                                "waiting": Counter(), "reviewed": Counter(), "carried": 0,
                                "proposed_kinds": 0, "cost_micro_usd": 0}
     due = []
+    from genios_engine.platform.self_identity import identity_for
     with engine.connect() as conn:
         files = files_for(conn, org_id, now=now).files
+        us = identity_for(conn, org_id)
     receipt["files"] = len(files)
     for order, work in enumerate(files):
+        if us.is_us_node(work.counterparty_type, work.counterparty_key):
+            receipt["ours"] += 1
+            continue
         try:
             with engine.connect() as conn:
                 parts = read_parts(conn, org_id, work.file_id, now=now)

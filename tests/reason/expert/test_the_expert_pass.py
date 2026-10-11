@@ -218,6 +218,24 @@ def test_the_days_spend_carries_from_one_pass_to_the_next(world):
     assert [tuple(r) for r in sites] == [(SITE_EXPERT, 2)]
 
 
+def test_a_file_that_is_us_is_never_reviewed(world):
+    """We are never the subject (STEP-04). ⛔ Found by the golden probe: case F02's portal mail names the
+    founder's own company, and Layer 3 anchors a file on it (`nimbuslabs.test`, the domain declared ours)."""
+    from tests.context.workstream_world import FOUNDER
+    store, now = world
+    files = _files_of(store)
+    with store.engine.begin() as c:                  # Asha's file, as if anchored on our own company
+        ours = store.find_or_create_node(c, org_id=ORG, node_type="company",
+                                         canonical_key=FOUNDER.split("@")[1],
+                                         display_name="Nimbus Labs Private Limited", event_id="evt_a_in")
+        c.execute(text("update context_correlations set anchor_node_id = :n "
+                       " where org_id = :o and anchor_node_id = :a"),
+                  {"n": ours, "o": ORG, "a": files["evt_a_in"]})
+    receipt, expert = _pass(store, now)
+    assert receipt["ours"] == 1 and receipt["reviewed"] == {R.VALID: 1} and len(expert.prompts) == 1
+    assert [r.file_id for r in _rows(store)] == [files["evt_k_in"]]
+
+
 def test_a_tenant_without_the_feature_or_a_model_reads_no_file(world, monkeypatch):
     store, now = world
     with store.engine.begin() as c:
