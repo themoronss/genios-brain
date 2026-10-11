@@ -65,7 +65,10 @@ def _run(case_id: str, monkeypatch, *, before_last=None):
 
     monkeypatch.setattr(dm, "decide_with_llm", decide)
     monkeypatch.setattr(routes, "_run_l2_chain", chain)
-    run = run_case(case, CassetteRecorder(IdealReader(case)))
+    # ⛔ THE EXPERT OFF, deliberately (STEP-12 M33.C1.L-integration.V2.U07): a file a valid review
+    # covers is decided from its review and its situations stand down, so with the expert on these
+    # cases' situations never reach the gate this file measures. The gate is the subject here.
+    run = run_case(case, CassetteRecorder(IdealReader(case)), expert=False)
     compiled = lambda ids: [c for c in ids if c.startswith("expertise.")]      # noqa: E731
     return run, compiled(calls[last - 1]), compiled(calls[last])
 

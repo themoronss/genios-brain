@@ -398,7 +398,7 @@ def switch_on_the_expert(engine: Any, org: str) -> None:
     those answers — every golden case whose sweeps review a file does, and
     `test_every_changed_file_has_an_expert_answer` holds that — and a case built inside a test to
     exercise the harness runs as before. The org row's cascade removes the switch with the tenant.
-    Shadow: nothing reads a review for a decision until M33."""
+    From M33 a valid review decides its file (`06` D1): the case's cards then speak the expert's words."""
     from genios_engine.platform.l4_activation import FEATURE_EXPERT_REVIEW, activate
     activate(engine, org, feature=FEATURE_EXPERT_REVIEW, by="golden_runner",
              notes="the golden founder's files reviewed by the expert, in shadow (STEP-12)")

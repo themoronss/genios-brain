@@ -1,8 +1,8 @@
-"""The expert pass — each file that changed, reviewed once, in the sweep, in shadow (STEP-12).
+"""The expert pass — each file that changed, reviewed once, in the sweep (STEP-12).
 
-Tree `yc2_w27_s12` M32.C3.L-integration.V2.U04. It runs at the end of `reason/runner.run_all`, beside the
-narration, for a tenant with the L4 feature `expert_review` on — read ONCE, so a switch flipped halfway
-cannot leave two files of one pass judged under different rules:
+Tree `yc2_w27_s12` M32.C3.L-integration.V2.U04. It runs FIRST in `reason/runner.run_all`, ahead of the
+compiled lane (M33.C1.L-integration.V2.U07), for a tenant with the L4 feature `expert_review` on — read
+ONCE, so a switch flipped halfway cannot leave two files of one pass judged under different rules:
 
   1. every file of the tenant (`context/workstreams.files_for`), each read once into its dossier's parts
      (`dossier.read_parts`), and its fingerprint (`fingerprint.fingerprint_inputs`) — except a file whose
@@ -33,10 +33,10 @@ the file moved and nothing has judged it yet — and never a file the pass could
 is decided as before, situation by situation. A tenant without the feature or without a model covers
 nothing.
 
-SHADOW until the sweep hands `covered` to the compiled lane (M33.C1.L-integration.V2.U07); like the
-narration, the pass itself never changes what the sweep decided. A tenant without the feature, or with
-no model configured, costs no file read. Never raises past a file: one file that cannot be read is
-counted and the pass goes on.
+The sweep runs this pass FIRST and hands `covered` to the compiled lane (M33.C1.L-integration.V2.U07),
+which decides each covered file from its review; the pass itself writes reviews and proposals, never a
+decision. A tenant without the feature, or with no model configured, costs no file read. Never raises
+past a file: one file that cannot be read is counted and the pass goes on.
 """
 from __future__ import annotations
 

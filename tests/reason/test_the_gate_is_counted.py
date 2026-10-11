@@ -65,7 +65,8 @@ def test_the_compiled_lanes_skips_reach_the_sweep(monkeypatch):
         return result
 
     monkeypatch.setattr(runner, "run_all", spy)
-    run_case(case, CassetteRecorder(IdealReader(case)))
+    # The expert off: a covered file's situations stand down (STEP-12 M33) — the gate is the subject.
+    run_case(case, CassetteRecorder(IdealReader(case)), expert=False)
     last = seen[-1]
     assert last["skipped_unchanged_compiled"] >= 1, last
     assert last["skipped_unchanged"] >= last["skipped_unchanged_compiled"], last

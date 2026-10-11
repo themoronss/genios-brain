@@ -1745,6 +1745,21 @@ def run_all(*, org_id: str, store: GraphStore, eval_time: datetime | None = None
     # the failure mode is a tenant that compiles exactly as it does today.
     from genios_engine.platform.l3_activation import activated_domains
     l3_domains = activated_domains(engine, org_id)
+    # ── STEP-12 · THE EXPERT PASS, FIRST (`reason/expert/sweep`, tree `yc2_w27_s12`
+    # M32.C3.L-integration.V2.U04; moved ahead of the compiled lane by M33.C1.L-integration.V2.U07). A
+    # tenant with `expert_review` on has each file whose fingerprint moved, and that something touched
+    # (`05` §5), reviewed once — nearest deadline first, bounded per pass and by its own day's budget
+    # (`06` D7). FIRST, because under `06` D1 a valid review decides its file: the files it now covers
+    # are handed to the compiled lane below, which decides each once from its review and stands its
+    # situations down — in the sweep the file changed, not the one after. Wrapped: a pass that failed
+    # covers nothing, and the compiled lane decides every situation as it did before.
+    try:
+        from genios_engine.reason.expert.sweep import expert_pass
+        expert = expert_pass(store=store, org_id=org_id, now=eval_time)
+    except Exception:
+        logger.exception("the expert pass failed org=%s", org_id)
+        expert = {"error": True}
+    covered = (expert.get("covered") or {}) if isinstance(expert, dict) else {}
     compiled: dict = {}
     if live_compile or l3_domains or l1_seam_enabled(engine, org_id):
         try:
@@ -1752,7 +1767,8 @@ def run_all(*, org_id: str, store: GraphStore, eval_time: datetime | None = None
             # ⛔ THE PASS'S RESULT WAS THROWN AWAY HERE: nothing the compiled lane counted reached
             # the sweep. Kept now for the change gate's counts below (STEP-02).
             compiled = shadow_compile(store=store, org_id=org_id, eval_time=eval_time,
-                                      live=live_compile, live_domains=l3_domains) or {}
+                                      live=live_compile, live_domains=l3_domains,
+                                      covered=covered) or {}
         except Exception:
             logger.exception("domain-compiler pass failed org=%s live=%s domains=%s",
                              org_id, live_compile, sorted(l3_domains))
@@ -1815,18 +1831,6 @@ def run_all(*, org_id: str, store: GraphStore, eval_time: datetime | None = None
     except Exception:
         logger.exception("Layer 4.5 narration pass failed org=%s", org_id)
         narration = {"error": True}
-
-    # ── STEP-12 · THE EXPERT PASS, IN SHADOW (`reason/expert/sweep`, tree `yc2_w27_s12`
-    # M32.C3.L-integration.V2.U04). A tenant with `expert_review` on has each file whose fingerprint
-    # moved, and that something touched (`05` §5), reviewed once — nearest deadline first, bounded per
-    # pass and by its own day's budget (`06` D7). Nothing reads a review for a decision yet (M33), so,
-    # like the narration, it cannot change what the sweep decided; wrapped for the same reason.
-    try:
-        from genios_engine.reason.expert.sweep import expert_pass
-        expert = expert_pass(store=store, org_id=org_id, now=eval_time)
-    except Exception:
-        logger.exception("the expert pass failed org=%s", org_id)
-        expert = {"error": True}
 
     return {"nodes": nodes, "outcomes": dict(combined), "eval_time": eval_time.isoformat(),
             "packs": pack_ids, "narration": narration, "expert": expert}

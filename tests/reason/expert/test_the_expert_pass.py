@@ -7,7 +7,8 @@
 standing review answers costs nothing (unchanged), and so does a file nothing touched (`05` §5); the rest
 are reviewed once, nearest meeting or deadline first, at most `MAX_PER_PASS` a pass — the first refusal
 for want of budget stops the pass and the rest are carried, counted (`06` D7). A tenant without the
-feature, or without a model, costs no file read. Nothing reads a review for a decision yet.
+feature, or without a model, costs no file read. The sweep runs it FIRST and hands the compiled lane
+what its valid reviews cover (M33.C1.L-data.V0.U06, M33.C1.L-integration.V2.U07).
 """
 from __future__ import annotations
 
@@ -317,15 +318,27 @@ def test_a_kind_proposal_that_fails_is_no_failed_pass(world, monkeypatch):
     assert receipt["proposed_kinds"] == 0 and len(_rows(store)) == 2
 
 
-def test_the_sweep_runs_the_pass_last_and_wrapped():
-    """`runner.run_all` calls it once, inside a try — a failed pass is never a failed sweep."""
+def test_the_sweep_runs_the_pass_first_wrapped_and_hands_on_what_it_covers():
+    """`runner.run_all` calls it once, inside a try — a failed pass is never a failed sweep — and
+    BEFORE the compiled lane, which it hands the files its valid reviews cover (M33, `06` D1).
+    ⛔ Moved deliberately by M33.C1.L-integration.V2.U07: it was pinned LAST while nothing read a
+    review for a decision (M32, shadow)."""
     fn = ast.parse(inspect.getsource(runner.run_all)).body[0]
-    calls = [n for n in ast.walk(fn) if isinstance(n, ast.Call)
-             and getattr(n.func, "id", getattr(n.func, "attr", "")) == "expert_pass"]
-    assert len(calls) == 1
+
+    def _calls(name):
+        return [n for n in ast.walk(fn) if isinstance(n, ast.Call)
+                and getattr(n.func, "id", getattr(n.func, "attr", "")) == name]
+    calls, compiled = _calls("expert_pass"), _calls("shadow_compile")
+    assert len(calls) == 1 and len(compiled) == 1
     wrapped = [t for t in ast.walk(fn) if isinstance(t, ast.Try)
                and any(n is calls[0] for b in t.body for n in ast.walk(b))]
     assert wrapped, "the expert pass is not wrapped"
+    assert calls[0].lineno < compiled[0].lineno, "the compiled lane runs before the review decides"
+    handed = {k.arg: ast.unparse(k.value) for k in compiled[0].keywords}
+    assert handed.get("covered") == "covered", handed
+    assigned = [n for n in ast.walk(fn) if isinstance(n, ast.Assign)
+                and any(getattr(t, "id", "") == "covered" for t in n.targets)]
+    assert len(assigned) == 1 and "expert.get('covered')" in ast.unparse(assigned[0].value)
     returned = [n for n in ast.walk(fn) if isinstance(n, ast.Return)][-1]
     assert "expert" in [k.value for k in returned.value.keys]
 

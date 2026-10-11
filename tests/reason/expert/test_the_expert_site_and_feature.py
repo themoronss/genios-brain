@@ -52,7 +52,8 @@ def test_the_switch_is_a_named_feature_with_its_wave_and_effect():
     assert ACT.PRECONDITIONS[ACT.FEATURE_EXPERT_REVIEW] == ()
     assert ACT.FEATURE_EXPERT_REVIEW not in ACT.CROSS_LAYER_PRECONDITIONS
     effect = ACT.EFFECTS[ACT.FEATURE_EXPERT_REVIEW]
-    for says in ("once per fingerprint", "expert_reviews", "no card changes", "Off,"):
+    # ⛔ "no card changes" was M32's (shadow); from M33 a valid review DECIDES its file.
+    for says in ("once per fingerprint", "expert_reviews", "DECIDES its file", "Off,"):
         assert says in effect, says
 
 
