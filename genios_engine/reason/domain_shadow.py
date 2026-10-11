@@ -436,6 +436,38 @@ def _persist_live(*, store: GraphStore, reasoning_store: ReasoningStore, org_id:
 #: The end a covered situation is given: it was decided — by its file's review.
 COVERED_BY_REVIEW = "covered_by_review"
 
+#: STEP-12 M33.C1.L-integration.V1.U09, `03` F104 — every anchor's measured baselines, each with its n:
+#: the file's numbers a corpus `{baseline: …}` threshold reads. A cold start is a default, never a
+#: measurement, and is not read.
+_ANCHOR_BASELINES = (
+    "select key, value, sample_size from baselines "
+    " where org_id = :o and not cold_start "
+    "   and (key like 'write_interval:%' or key like 'contact_rate_per_account:%')")
+
+#: Each baseline the corpus names, the level it is measured at and its unit.
+_BASELINE_BASIS = {"write_interval": ("person", "days"), "contact_rate_per_account": ("company", "per week")}
+
+
+def _measured_baselines(conn, org_id: str) -> dict[str, dict[str, Any]]:
+    """{node: {baseline: Measured}} — read once a pass, handed to each situation's manifest by its
+    anchor (`expertise_capability_manifest(baselines=…)`, which passes on only a normal). Fails open
+    to none: a threshold that cannot be answered answers UNKNOWN, as it did before F104."""
+    from genios_engine.contracts.measured import Measured
+
+    out: dict[str, dict[str, Any]] = {}
+    try:
+        rows = conn.execute(text(_ANCHOR_BASELINES), {"o": org_id}).fetchall()
+    except Exception:      # noqa: BLE001 — no numbers is the pass before F104, never a failed pass
+        logger.exception("domain-compiler: the anchors' baselines could not be read org=%s", org_id)
+        conn.rollback()
+        return out
+    for row in rows:
+        metric, _, node = str(row.key).partition(":")
+        basis, unit = _BASELINE_BASIS[metric]
+        out.setdefault(node, {})[metric] = Measured(value=float(row.value), n=int(row.sample_size or 0),
+                                                    basis=basis, unit=unit)
+    return out
+
 #: What `_emit_capability_signal` reads off a package: its review state. A covered file's decision
 #: is the expert's VALIDATED review (`contracts/expert_review.validate`, D1) — prescriptive, as an
 #: accepted corpus package's is.
@@ -1100,6 +1132,8 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
         ends = _SituationEnds()
         # STEP-12 M33 · the reviews that decide their files, each read once for the pass.
         expert_reviews = _covered_reviews(conn, org_id, covered)
+        # `03` F104 · each anchor's measured normals, read once for the pass.
+        file_numbers = _measured_baselines(conn, org_id)
         counts["covered_files"] = len(expert_reviews)
         stood_down: dict[str, list[str]] = {}
         counts["gate_ready"] = int(gate.ready)
@@ -1526,7 +1560,9 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                         # authored corpus priority stops replacing the formula.
                         ranking_v2=ranking_v2,
                         # WAVE Z5 · the same object the snapshot below is built from.
-                        projection=projection)
+                        projection=projection,
+                        # `03` F104 · the file's measured normals, for a corpus `{baseline: …}`.
+                        baselines=file_numbers.get(str(anchor)))
                     pack = None
                     if live_row:
                         # The config snapshot must EXIST before reasoning and be passed in, not
