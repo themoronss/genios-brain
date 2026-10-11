@@ -10,6 +10,10 @@ off the dossier's parts (`reason/expert/dossier.DossierParts`):
     crossing from 6 to 7 days re-thinks, fifteen minutes never does);
   * how soon its NEXT MEETING is, as a rung of `HOURS_UNTIL` — the urgency ladder's, with a 72-hour
     rung added, so a meeting moving from four days away to three re-thinks it;
+  * how soon its nearest DEADLINE is — the due date of a promise still open in its own mail, ours or
+    theirs — on the same ladder (M32.C2.L-logic.V2.U09): `05` §5's "a date comes close — a deadline, a
+    meeting, a promised reply". A *"soon"* is no deadline (`06` D56) and a promise kept is owed no more;
+    past due is a rung of its own. Read off the promises the dossier shows (`PROMISES_LIMIT`);
   * the BRIEF's version (STEP-07) and the PLAYBOOK's (`KindPlaybook.version`), or why it has none;
   * the founder's VERDICTS on the cards about its people — what they did with what was said;
   * WHO DECIDES: the model, the prompt version (`06` D48) and the dossier's version.
@@ -20,6 +24,7 @@ to them are outputs, not inputs: a review must never be the reason for the next 
 """
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 
 from genios_engine.platform.canonical import semantic_hash
@@ -30,6 +35,9 @@ from .dossier import DOSSIER_VERSION, DossierParts
 #: Hours until the next meeting: the urgency ladder's rungs (`timeline_unit.URGENCY_LADDER`) with 72
 #: added — four days away and three days away are different files.
 HOURS_UNTIL: tuple[int, ...] = (0, 48, 72, 168, 336, 720, 2160)
+
+#: A promise is still owed while its `commitment.status` says so — and one with no status is open.
+OWED: tuple[str, ...] = ("", "open")
 
 
 def _at_least(value: float | None, ladder: tuple[int, ...] = DAY_LADDER) -> str | None:
@@ -50,11 +58,21 @@ def _within(hours: float | None) -> str | None:
     return f">{HOURS_UNTIL[-1]}"
 
 
+def nearest_due(parts: DossierParts) -> datetime | None:
+    """The nearest due date of a promise still owed in the file's own mail — ours or theirs — or None.
+    A *"soon"* is never a deadline (`06` D56), even where a date was read beside it."""
+    dues = [p.due_at for p in parts.promises
+            if p.due_at is not None and p.relative is None
+            and (p.status or "").strip().lower() in OWED]
+    return min(dues) if dues else None
+
+
 def fingerprint_inputs(parts: DossierParts, *, model: str, prompt_version: str) -> dict[str, Any]:
     """What the fingerprint is made of, readable — every clock a rung, nothing the expert wrote."""
     tl, work = parts.timeline, parts.file
     upcoming = sorted(tl.upcoming, key=lambda t: (t.at, t.event_id))
     next_meeting = ((upcoming[0].at - parts.as_of).total_seconds() / 3600) if upcoming else None
+    due = nearest_due(parts)
     answer = parts.playbook
     pb = getattr(answer, "playbook", None)
     return {
@@ -65,6 +83,7 @@ def fingerprint_inputs(parts: DossierParts, *, model: str, prompt_version: str) 
         "whose_move": work.whose_move,
         "quiet": _at_least(tl.days_quiet),
         "next_meeting": _within(next_meeting),
+        "due": _within((due - parts.as_of).total_seconds() / 3600 if due is not None else None),
         "brief": getattr(parts.brief, "version", None) or None,
         "playbook": pb.version if pb is not None else f"none:{getattr(answer, 'reason', None)}",
         "verdicts": sorted([c.card_id, v.cause, v.reason or ""]
@@ -80,4 +99,4 @@ def file_fingerprint(parts: DossierParts, *, model: str, prompt_version: str) ->
     return "ffp-" + semantic_hash(inputs)[:24]
 
 
-__all__ = ["HOURS_UNTIL", "file_fingerprint", "fingerprint_inputs"]
+__all__ = ["HOURS_UNTIL", "OWED", "file_fingerprint", "fingerprint_inputs", "nearest_due"]

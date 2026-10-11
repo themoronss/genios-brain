@@ -10,6 +10,10 @@ so a meeting moving from four days away to three re-thinks it — the brief's ve
 version, the founder's verdicts on its people's cards, the dossier's version, and who decides: the model
 and the prompt version (`06` D48). The expert's own past reviews are NOT in it: a review must never be
 the reason for the next one.
+
+M32.C2.L-logic.V2.U09: a deadline closing in moves the file too — the nearest due date of a promise still
+open in its mail, ours or theirs, as a rung of the same ladder as the next meeting; a *"soon"* is no
+deadline (`06` D56) and a promise kept is owed no more.
 """
 from __future__ import annotations
 
@@ -22,6 +26,7 @@ from genios_engine.context.file_judgments import Verdict
 from genios_engine.context.workstream_timeline import Touch
 from genios_engine.context.workstreams import Ask
 from genios_engine.reason.expert import fingerprint as F
+from genios_engine.reason.expert.dossier import Promise
 from tests.reason.expert.test_the_dossier import NOW, _judgments, _parts, _playbook, _touch
 
 pytestmark = pytest.mark.unit
@@ -50,6 +55,18 @@ def _meeting_in(parts, days: float):
                     who=None, who_name=None, event_id="evt_call", thread=None)
     return dataclasses.replace(parts, timeline=dataclasses.replace(parts.timeline,
                                                                     upcoming=(meeting,)))
+
+
+def _promise(hours: float | None, *, words: str = "I will send the deck", status: str | None = "open",
+             ours: bool = True, pid: str = "node_c1") -> Promise:
+    return Promise(promise_id=pid, words=words, quote=None,
+                   due_at=None if hours is None else NOW + timedelta(hours=hours), status=status,
+                   owner="arjun@nimbuslabs.test" if ours else "kunal@meridianvc.test", ours=ours,
+                   event_id="evt_005")
+
+
+def _promised(*promises):
+    return _parts(promises=promises)
 
 
 def test_the_same_file_is_the_same_fingerprint_and_it_reads_as_one():
@@ -121,10 +138,53 @@ def test_the_experts_own_past_review_is_never_the_reason_for_the_next():
     assert _fp(reviewed) == _fp(base)
 
 
+@pytest.mark.parametrize("before, after, moves", [
+    (100.0, 70.0, True),       # a promised date four days away, then three
+    (100.0, 99.0, False),      # within its rung
+    (30.0, -2.0, True),        # due, then past due: past due is a rung of its own
+    (-30.0, -50.0, False),     # past due is past due
+])
+def test_a_deadline_closing_in_counts_by_its_rung(before, after, moves):
+    assert (_fp(_promised(_promise(before))) != _fp(_promised(_promise(after)))) is moves
+
+
+def test_the_nearest_open_promise_is_the_deadline_ours_or_theirs():
+    near, far = _promise(70.0, pid="node_c1"), _promise(500.0, pid="node_c2", ours=False)
+    inputs = F.fingerprint_inputs(_promised(far, near), model=MODEL, prompt_version=PROMPT)
+    assert inputs["due"] == "<=72"
+    theirs = F.fingerprint_inputs(_promised(_promise(70.0, ours=False)), model=MODEL,
+                                  prompt_version=PROMPT)
+    assert theirs["due"] == "<=72"
+    assert F.nearest_due(_promised(far, near)) == NOW + timedelta(hours=70)
+
+
+@pytest.mark.parametrize("status", [None, "", "open", "Open ", "OPEN"])
+def test_a_promise_with_no_status_or_open_in_any_case_is_still_owed(status):
+    """`commitment.status` defaults to open where nothing wrote it (`context/outreach_situations`)."""
+    inputs = F.fingerprint_inputs(_promised(_promise(70.0, status=status)), model=MODEL,
+                                  prompt_version=PROMPT)
+    assert inputs["due"] == "<=72"
+
+
+@pytest.mark.parametrize("promise", [
+    _promise(None),                                                       # no date at all
+    _promise(70.0, words="I will send the deck soon"),                    # "soon" is no deadline (D56)
+    _promise(70.0, status="done"),                                        # kept: owed no more
+    _promise(70.0, status="cancelled"),
+])
+def test_a_promise_that_is_no_deadline_moves_nothing(promise):
+    assert F.fingerprint_inputs(_promised(promise), model=MODEL, prompt_version=PROMPT)["due"] is None
+    assert _fp(_promised(promise)) == _fp(_parts())
+
+
+def test_a_quarter_of_an_hour_later_a_deadline_is_the_same_deadline():
+    assert _fp(_later(_promised(_promise(100.0)), 15)) == _fp(_promised(_promise(100.0)))
+
+
 def test_the_inputs_are_readable_and_carry_no_instant():
     inputs = F.fingerprint_inputs(_meeting_in(_quiet(_parts(), 6.0), 4.0), model=MODEL,
                                   prompt_version=PROMPT)
-    assert inputs["quiet"] == ">=5" and inputs["next_meeting"] == "<=168"
+    assert inputs["quiet"] == ">=5" and inputs["next_meeting"] == "<=168" and inputs["due"] is None
     assert inputs["who_decides"] == {"model": MODEL, "prompt_version": PROMPT,
                                      "dossier_version": "dossier.v1"}
     assert "as_of" not in inputs and "reviews" not in inputs
