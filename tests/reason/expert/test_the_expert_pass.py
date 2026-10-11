@@ -235,6 +235,7 @@ def test_a_file_that_is_us_is_never_reviewed(world):
     receipt, expert = _pass(store, now)
     assert receipt["ours"] == 1 and receipt["reviewed"] == {R.VALID: 1} and len(expert.prompts) == 1
     assert [r.file_id for r in _rows(store)] == [files["evt_k_in"]]
+    assert set(receipt["covered"]) == {files["evt_k_in"]}, "a file that is us is never covered"
 
 
 def test_a_file_named_for_our_own_company_is_never_reviewed(world):
@@ -327,3 +328,76 @@ def test_the_sweep_runs_the_pass_last_and_wrapped():
     assert wrapped, "the expert pass is not wrapped"
     returned = [n for n in ast.walk(fn) if isinstance(n, ast.Return)][-1]
     assert "expert" in [k.value for k in returned.value.keys]
+
+
+# ── M33.C1.L-data.V0.U06 · which files a valid review now answers ──────────────────────────────────
+def _valid(store, files):
+    with store.engine.connect() as c:
+        return {f: R.latest_valid(c, ORG, f).fingerprint for f in files}
+
+
+def test_the_pass_says_which_files_its_valid_reviews_cover(world):
+    """`covered`: file → the fingerprint of the VALID review that answers it now — the one written this
+    pass, the fingerprint's own when unchanged, the last one when nothing has touched the file since."""
+    store, now = world
+    files = _files_of(store)
+    first, _ = _pass(store, now)
+    reviewed = _valid(store, (files["evt_k_in"], files["evt_a_in"]))
+    assert first["covered"] == reviewed
+    unchanged, _ = _pass(store, now + timedelta(minutes=15))
+    assert unchanged["unchanged"] == 2 and unchanged["covered"] == reviewed
+    untouched, _ = _pass(store, now + timedelta(days=11))
+    assert untouched["untouched"] == 2 and untouched["covered"] == reviewed, \
+        "nothing touched either file: the last valid review still answers it"
+
+
+def test_a_file_whose_new_mail_is_reviewed_is_covered_by_the_new_review(world):
+    from tests.context.workstream_world import process
+    store, now = world
+    files = _files_of(store)
+    _pass(store, now)
+    before = _valid(store, (files["evt_k_in"],))[files["evt_k_in"]]
+    process(store, ORG, event_id="evt_k_again", sender=KUNAL, thread="t_k", at=now - timedelta(hours=2))
+    receipt, _ = _pass(store, now + timedelta(minutes=15))
+    after = _valid(store, (files["evt_k_in"],))[files["evt_k_in"]]
+    assert after != before and receipt["covered"][files["evt_k_in"]] == after
+
+
+def test_no_valid_review_covers_nothing_failed_refused_or_carried(world):
+    """A failed review, one waiting to be retried, one refused on substance, a file carried for want of
+    budget — each is decided as before, situation by situation: none of them is covered."""
+    from genios_engine.reason.bundle.budget import NarrativeBudget
+    from genios_engine.reason.bundle.sites import SITE_EXPERT
+    store, now = world
+
+    class _Down(_Expert):
+        def call(self, prompt, *, max_tokens=400):
+            self.prompts.append(prompt)
+            raise RuntimeError("connection reset")
+    failed, _ = _pass(store, now, llm=_Down())
+    assert failed["reviewed"] == {R.FAILED: 2} and failed["covered"] == {}
+    waiting, _ = _pass(store, now + timedelta(minutes=15))
+    assert waiting["waiting"] == {"failed_lately": 2} and waiting["covered"] == {}
+
+    class _Uncited(_Expert):
+        def call(self, prompt, *, max_tokens=400):
+            answer = super().call(prompt, max_tokens=max_tokens)
+            answer.parsed["facts"] = [{"claim": "they wrote", "evidence": ["evt_never_shown"]}]
+            return answer
+    refused, _ = _pass(store, now + P.RETRY_FAILED_AFTER, llm=_Uncited())
+    assert refused["reviewed"] == {R.REFUSED: 2} and refused["covered"] == {}
+    standing, _ = _pass(store, now + P.RETRY_FAILED_AFTER + timedelta(minutes=15))
+    assert standing["unchanged"] == 2 and standing["covered"] == {}, "a standing refusal answers nothing"
+    quiet, _ = _pass(store, now + P.RETRY_FAILED_AFTER + timedelta(days=11))
+    assert quiet["untouched"] == 2 and quiet["covered"] == {}, \
+        "nothing touched since the refusal, and a refusal still answers nothing"
+
+
+def test_a_file_carried_for_want_of_budget_is_not_covered(world):
+    from genios_engine.reason.bundle.budget import NarrativeBudget
+    from genios_engine.reason.bundle.sites import SITE_EXPERT
+    store, now = world
+    budget = NarrativeBudget.for_site(SITE_EXPERT, org_id=ORG)
+    budget.charge(2_000_000)
+    receipt, _ = _pass(store, now, budget=budget)
+    assert receipt["carried"] == 1 and receipt["covered"] == {}

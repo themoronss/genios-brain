@@ -23,9 +23,20 @@ cannot leave two files of one pass judged under different rules:
   6. a valid review that proposes a kind of work writes the founder a proposal
      (`kind_proposal.propose_kind`).
 
-SHADOW. Nothing reads a review for a decision yet (M33); like the narration, this pass cannot change
-what the sweep decided. A tenant without the feature, or with no model configured, costs no file read.
-Never raises past a file: one file that cannot be read is counted and the pass goes on.
+WHAT IT COVERS (M33.C1.L-data.V0.U06). The receipt says which files a VALID review now answers —
+`covered`, file → the fingerprint of that review — for the compiled lane to decide each once, from it,
+its situations standing down (`reason/domain_shadow`, M33.C1.L-integration.V1.U02, under `06` D1). A file
+is covered when the review that stands for it is valid: its fingerprint's own (unchanged), the last one
+when nothing has touched the file since (untouched), or the one written this pass. Never a file that is
+ours, one whose review was refused or cut, one waiting on a failed review or carried for want of budget —
+the file moved and nothing has judged it yet — and never a file the pass could not read: each of those
+is decided as before, situation by situation. A tenant without the feature or without a model covers
+nothing.
+
+SHADOW until the sweep hands `covered` to the compiled lane (M33.C1.L-integration.V2.U07); like the
+narration, the pass itself never changes what the sweep decided. A tenant without the feature, or with
+no model configured, costs no file read. Never raises past a file: one file that cannot be read is
+counted and the pass goes on.
 """
 from __future__ import annotations
 
@@ -104,7 +115,7 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
     from genios_engine.context.workstreams import files_for
     receipt: dict[str, Any] = {"files": 0, "ours": 0, "unchanged": 0, "untouched": 0, "unreadable": 0,
                                "waiting": Counter(), "reviewed": Counter(), "carried": 0,
-                               "proposed_kinds": 0, "cost_micro_usd": 0}
+                               "proposed_kinds": 0, "cost_micro_usd": 0, "covered": {}}
     due = []
     from sqlalchemy import text
 
@@ -131,6 +142,8 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
                 row = reviews.read_review(conn, org_id, work.file_id, fp)
                 if row is not None and row.status in reviews.STANDING:
                     receipt["unchanged"] += 1
+                    if row.status == reviews.VALID:
+                        receipt["covered"][work.file_id] = fp
                     continue
                 waiting = _waiting(row, now)
                 if waiting:
@@ -140,6 +153,8 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
             found = triggers_for(parts, inputs, last=last)
             if not found:
                 receipt["untouched"] += 1
+                if last is not None and last.status == reviews.VALID:
+                    receipt["covered"][work.file_id] = last.fingerprint
                 continue
             due.append((_hours_to_nearest(parts), order, parts, inputs, fp, found))
         except Exception:      # noqa: BLE001 — one unreadable file is not a failed pass
@@ -162,6 +177,8 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
         result = review_file(engine, org_id=org_id, dossier=build_dossier(parts), fingerprint=fp,
                              inputs=inputs, triggers=found, gate=gate, at=now)
         receipt["reviewed"][result.status or "skipped"] += 1
+        if result.status == reviews.VALID:
+            receipt["covered"][parts.file_id] = fp
         if result.receipt is not None:
             receipt["cost_micro_usd"] += result.receipt.cost_micro_usd
         if result.status == reviews.OVER_BUDGET:
