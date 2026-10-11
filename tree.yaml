@@ -6576,7 +6576,7 @@ yc2_w27_s12:
     2026-10-11: three minted at the build of the triggers (M32.C3.L-logic.V1.U09) — a review keeps its
     inputs (C1.U07, C3.U10) and the fingerprint reads a deadline (C2.U09). ⛔ 41 with M32.C4.L-logic.V0.U03,
     minted at the build of the review: a misshapen answer is syntax; ⛔ 43 with C1.U08 and C3.U11 — a review
-    keeps what triggered it. M33 only after D1 (the appraisal decides what
+    keeps what triggered it; ⛔ 44 with C1.U09 — a review may propose a kind. M33 only after D1 (the appraisal decides what
     matters) and D7 (the model and its cap); its live pass only after D50. The golden answers are
     authored per case (D49) — the board then measures the plumbing, the live pass the model.
   milestones:
@@ -6673,6 +6673,19 @@ yc2_w27_s12:
                       artifact: "migrations/0199_expert_review_triggers.sql"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_expert_reviews_table.py tests/platform/test_the_code_can_always_be_rolled_back.py"
                       depends_on: [M32.C1.L-contract.V0.U07]
+                    - id: M32.C1.L-contract.V0.U09
+                      what: >
+                        A review may propose the file's kind of work: `ExpertReview.proposed_kind` — a kind of
+                        `contracts/company_brief.WORK_KINDS`, why, and the dossier ids that show it — validated
+                        like a fact; and the checklist's frame step asks for it, null when the file's kind is
+                        right (`reason/expert/prompt.py` moves in the same commit: the prompt test holds the
+                        schema equal to the contract, so `PROMPT_VERSION` becomes `expert-review.v2` — no review
+                        was ever written under v1). ⛔ MINTED 2026-10-11 at the build of
+                        M32.C3.L-logic.V2.U08: "a review may propose the file's kind" (`03` F132, F151), and
+                        the review had no field to say it in.
+                      artifact: "genios_engine/contracts/expert_review.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_the_review_contract.py tests/reason/expert/test_the_checklist_prompt.py"
+                      depends_on: [M32.C1.L-contract.V0.U01, M32.C3.L-logic.V0.U01]
             - layer: interface
               levels:
                 - level: 0
@@ -6833,7 +6846,7 @@ yc2_w27_s12:
                         provenance; unknowns; scenarios; appraisal; mode; next move, alternative,
                         wait-or-stop, done-when; the draft — over the dossier, with the output schema.
                         `PROMPT_VERSION = "expert-review.v1"`. No number appears that the dossier does
-                        not hold.
+                        not hold. (⛔ v2 since M32.C1.L-contract.V0.U09 — the proposed kind.)
                       artifact: "genios_engine/reason/expert/prompt.py"
                       verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_the_checklist_prompt.py"
                       depends_on: [M32.C1.L-contract.V0.U01, M32.C2.L-logic.V1.U04]
@@ -6884,7 +6897,9 @@ yc2_w27_s12:
                         founder accepts or rejects, never a kind the engine applies. Added by M34.C4.
                       artifact: "genios_engine/reason/expert/kind_proposal.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_a_review_may_propose_a_kind.py"
-                      depends_on: [M32.C3.L-logic.V1.U02]
+                      # ⛔ CORRECTED 2026-10-11 at its build: the review must be able to say a kind first —
+                      # M32.C1.L-contract.V0.U09.
+                      depends_on: [M32.C3.L-logic.V1.U02, M32.C1.L-contract.V0.U09]
             - layer: interface
               levels:
                 - level: 3
