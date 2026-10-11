@@ -1,4 +1,13 @@
-"""Replay deterministic Layer 4 decisions from immutable input snapshots."""
+"""Replay deterministic Layer 4 decisions from immutable input snapshots.
+
+⛔ `03` F139 FOR COVERED FILES (STEP-12, tree `yc2_w27_s12` M33.C1.L-logic.V1.U03). With the test-mode
+decider on, a replay re-executes the run and `decide` calls the model again — its cache lives in the
+process, so a fresh process pays and may answer differently. A covered file's decision is the expert's
+review (`reason/expert/decide`), and that review is stored once (`expert_reviews`): `replay_persisted`
+rebuilds such a run's request FROM the stored review, says whether it is the request the run stored
+(`review_matches`), and executes it on the expert's own orchestrator — no decider, no R-1, no model, in
+any process.
+"""
 
 from __future__ import annotations
 
@@ -33,10 +42,14 @@ class ReplayComparison:
     expected_decision_hash: str
     actual_decision_hash: str
     differences: tuple[str, ...] = ()
+    #: An expert decision only: the request rebuilt from its stored review is the request the run
+    #: stored (`_from_the_stored_review`). True for every other run — it rests on no review.
+    review_matches: bool = True
 
     @property
     def matches(self) -> bool:
-        return self.decision_matches and self.reasoners_match and self.candidates_match
+        return (self.decision_matches and self.reasoners_match and self.candidates_match
+                and self.review_matches)
 
 
 def decanonicalize(value: Any) -> Any:
@@ -162,12 +175,49 @@ def request_from_replay_bundle(bundle: Mapping[str, Any]) -> ReasoningRequest:
     )
 
 
+def _from_the_stored_review(store: ReasoningStore,
+                            request: ReasoningRequest) -> tuple[ReasoningRequest, str | None]:
+    """An expert run's request rebuilt from the review it names (`expert_reviews`, by file and
+    fingerprint), and why it is not the stored request — None when it is. A review gone, or not valid,
+    rebuilds nothing: the stored request is replayed, and the comparison says so."""
+    from .expert import decide as expert
+    from .expert import store as reviews
+
+    record = request.context.facts.get(expert.F_REVIEW)
+    pointer = record.get("value") if isinstance(record, Mapping) else None
+    pointer = pointer if isinstance(pointer, Mapping) else {}
+    with store.engine.connect() as conn:
+        row = reviews.read_review(conn, request.org_id, str(pointer.get("file_id") or ""),
+                                  str(pointer.get("fingerprint") or ""))
+    if row is None or row.status != reviews.VALID:
+        return request, "expert_review_missing"
+    rebuilt = expert.request_for(
+        row, org_id=request.org_id, root_entity_type=request.context.root_entity_type,
+        domain=request.capability.domain, eval_time=request.evaluation_time,
+        graph_version=request.context.graph_version, mode=ExecutionMode.REPLAY,
+        live_delivery_enabled=request.capability.live_delivery_enabled,
+        config_snapshot_id=request.config_snapshot_id)
+    same = (rebuilt.context.context_snapshot_id == request.context.context_snapshot_id
+            and rebuilt.capability.capability_snapshot_id
+            == request.capability.capability_snapshot_id)
+    return (rebuilt, None) if same else (request, "expert_review")
+
+
 def replay_persisted(*, store: ReasoningStore, org_id: str, run_id: str,
                      orchestrator: ReasoningOrchestrator) -> tuple[ReasoningExecution,
                                                                    ReplayComparison]:
-    """Replay without querying the live graph and compare every semantic decision artifact."""
+    """Replay without querying the live graph and compare every semantic decision artifact.
+
+    An expert decision (STEP-12 M33) is replayed from its stored review on the expert's own
+    orchestrator, whatever orchestrator the caller holds — see the module docstring."""
     bundle = store.load_replay_bundle(org_id=org_id, run_id=run_id)
-    replayed = orchestrator.execute(request_from_replay_bundle(bundle))
+    request = request_from_replay_bundle(bundle)
+    review_differs = None
+    from .expert import decide as expert
+    if expert.is_expert(request.capability.capability_id):
+        request, review_differs = _from_the_stored_review(store, request)
+        orchestrator = expert.orchestrator()
+    replayed = orchestrator.execute(request)
     core = (bundle.get("output") or {}).get("decision_core") or {}
     expected_decision = str(core.get("contract_decision_hash") or "")
     expected_reasoners = tuple(tuple(item) for item in core.get("reasoner_result_hashes") or ())
@@ -190,7 +240,7 @@ def replay_persisted(*, store: ReasoningStore, org_id: str, run_id: str,
         ("decision_hash", decision_matches),
         ("reasoner_results", reasoners_match),
         ("candidates", candidates_match),
-    ) if not matched)
+    ) if not matched) + ((review_differs,) if review_differs else ())
     return replayed, ReplayComparison(
         decision_matches=decision_matches,
         reasoners_match=reasoners_match,
@@ -198,6 +248,7 @@ def replay_persisted(*, store: ReasoningStore, org_id: str, run_id: str,
         expected_decision_hash=expected_decision,
         actual_decision_hash=replayed.decision.semantic_hash,
         differences=differences,
+        review_matches=review_differs is None,
     )
 
 
