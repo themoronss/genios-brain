@@ -33,8 +33,10 @@ from tests.replays.harness import RecordedLLM, identify_site
 CASES = load_cases()
 
 #: The sites a golden run reaches that judge or read — and the two that write.
+#: ⛔ `expert` (STEP-12, R-7) JUDGES a whole file: its dossier opens with the brief
+#: (`reason/expert/dossier`, the section `brief`) — M32.C5.L-data.V0.U01.
 JUDGE_OR_READ = frozenset({"junk_gate", "junk_gate_batch", "relevance", "extraction", "resolution",
-                           "r1", "decider", "org_rule_extract"})
+                           "r1", "decider", "org_rule_extract", "expert"})
 WRITE = frozenset({"narrator", "bundle_narrator"})
 
 

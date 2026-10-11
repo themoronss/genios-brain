@@ -24,6 +24,12 @@ fixed decision's own material (`narrate_decision`); resolution as "no completion
 case authors the completion it knows of (`resolve_message`); the card narrator always authored per
 case, in its guidance's own terms.
 
+**The expert's review (STEP-12, R-7)** is a judgment of one FILE, so it is always authored per case and
+per file (`06` D49: by Claude, from the case's own text, each marked `claude`) — `model.expert`, its
+`when` terms naming the file as its dossier does (`<counterparty key>`), never through the company
+brief the dossier opens with. A case that authors none for a file is refused, and so is the one repair
+the gate asks for a misshapen answer: a recording never holds a refused answer.
+
 **It refuses to guess.** A prompt about no object of the case, a site the case gives no answer
 for, a quote the content does not contain, an extraction the schema rejects — each raises
 `IdealReaderError`, a `BaseException` for the reason `CassetteMiss` is one: every model site in
@@ -145,6 +151,9 @@ class IdealReader:
                 raise IdealReaderError(f"{self.case.case_id}: the bundle narration was refused by "
                                        f"the gauntlet — {_excerpt(prompt[-1500:])}")
             return authored if authored is not None else narrate_decision(prompt)
+        if site == "expert" and _EXPERT_REPAIR in prompt:
+            raise IdealReaderError(f"{self.case.case_id}: the expert's authored answer was refused as "
+                                   f"misshapen — {prompt[prompt.find(_EXPERT_REPAIR):][:400]!r}")
         if _REFUSED in prompt:
             # The site rejected an answer this reader gave and is asking again. A recording must
             # never hold a refused answer, so the authoring error surfaces here.
@@ -343,6 +352,8 @@ _TEMPLATE_SCORES = re.compile(r'"scores": \{(.*?)\}, "confidence_bp"', re.S)
 _TEMPLATE_KEY = re.compile(r'"([^"]+)": "<int 0-10000>"')
 #: How every situation-level site asks again after refusing an answer.
 _REFUSED = "CORRECTION — your previous answer was refused"
+#: The heading the expert's prompt carries on its one repair (`reason/expert/prompt.REPAIR_HEADING`).
+_EXPERT_REPAIR = "## YOUR LAST ANSWER"
 
 
 def decide_from_formula(prompt: str, authored: dict[str, Any], case_id: str) -> dict[str, Any]:

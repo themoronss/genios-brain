@@ -30,7 +30,8 @@ DOORS: dict[str, str] = {
     "wiring.make_relevance_classifier": "the junk filter, built the way every sync door builds it",
     "llm_decision_maker.client": "the decider and R-1 — on in production for every org "
                                  "(GENIOS_L4_LLM_DECISION_MAKER=true, speedrun008/YCW27/STATUS.md)",
-    "llm_sites.make_site_client": "the R-site gate — the situation reasoner and the bundle narrator",
+    "llm_sites.make_site_client": "the R-site gate — the bundle narrator and the expert (R-7, STEP-12; "
+                                  "the situation reasoner retired, `06` D51)",
 }
 
 _SCREEN = ("the screen door: the runner drives mail and calendar, and a case that needs the screen "
@@ -62,7 +63,8 @@ CHAIN_SITES: dict[str, tuple[str, str, tuple[str, ...]]] = {
                "the sweep", ()),
     # ── L4 reasoning ────────────────────────────────────────────────────────────────────────
     "reason/intelligence.py": ("off", "the Ask API, not the sweep", ()),
-    "reason/bundle/gate.py": ("recorded", "llm_sites.make_site_client", ("bundle_narrator",)),
+    "reason/bundle/gate.py": ("recorded", "llm_sites.make_site_client",
+                              ("bundle_narrator", "expert")),
     "reason/llm_decision_maker.py": ("recorded", "llm_decision_maker.client", ("decider",)),
     "reason/llm_interpretation.py": ("recorded", "llm_decision_maker.client", ("r1",)),
     "reason/brief_drafter.py": (

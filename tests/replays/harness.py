@@ -104,6 +104,9 @@ SITE_MARKERS: tuple[tuple[str, str, str], ...] = (
     ("narrator", "deliver/render.py", "You are GeniOS, writing ONE decision card"),
     ("bundle_narrator", "reason/bundle/prompt.py",
      "You are the reasoning narrator for GeniOS."),
+    # STEP-12 · R-7, the expert's review of one file (`reason/expert/prompt.ROLE`'s own opening).
+    ("expert", "reason/expert/prompt.py",
+     "You are the founder's chief of staff, thirty years in the work."),
     ("angle", "context/angles/asker.py", "You classify one subject for an automated system."),
     ("cohort", "context/analytic/cohort.py",
      "A founder described a group of records they want to compare against."),

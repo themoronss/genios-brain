@@ -293,3 +293,57 @@ def test_a_term_the_company_brief_names_never_matches_through_the_brief():
         _reader(case).call(with_brief)
     named = DECIDER.replace("SITUATION:", block + "\nSITUATION:", 1)
     assert _reader(case).call(named).parsed["outcome"] == "decision"
+
+
+# ── STEP-12 · the expert's review is answered from the case's authored block for that file ──────
+
+def _expert_prompt(*, feedback=None, brief=True) -> str:
+    from genios_engine.reason.expert.dossier import build_dossier
+    from genios_engine.reason.expert.prompt import build_prompt
+    from tests.reason.expert.test_the_dossier import _parts
+    return build_prompt(build_dossier(_parts(brief=brief)), feedback)
+
+
+def _expert_case(when) -> dict:
+    from tests.reason.expert.test_the_dossier import _review
+    case = copy.deepcopy(CASE)
+    case["model"] = {"expert": [{"when": when, "by": "claude",
+                                 "answer": _review("evt_005", "Hi Kunal, booking it now.").as_mapping()}]}
+    return case
+
+
+def test_the_experts_prompt_is_its_own_site():
+    """M32.C5.L-data.V0.U01: identified by the checklist prompt's own opening — never the decider's."""
+    from genios_engine.reason.expert.prompt import ROLE
+    from tests.replays.harness import SITE_MARKERS, identify_site
+    from tests.replays.model_sites import CHAIN_SITES
+    marker = dict((site, m) for site, _module, m in SITE_MARKERS)["expert"]
+    assert ROLE.startswith(marker) and identify_site(_expert_prompt()) == "expert"
+    kind, door, sites = CHAIN_SITES["reason/bundle/gate.py"]          # it rides the R-sites' door
+    assert (kind, door) == ("recorded", "llm_sites.make_site_client") and "expert" in sites
+
+
+def test_the_expert_is_answered_from_the_block_the_case_authors_for_that_file():
+    answer = _reader(_expert_case(["<meridianvc.test>"])).call(_expert_prompt())
+    assert answer.parsed["facts"][0]["evidence"] == ["evt_005"]
+
+
+def test_a_file_the_case_authors_no_review_for_is_refused_never_guessed():
+    with pytest.raises(IdealReaderError, match="expert"):
+        _reader(_expert_case(["<someone-else.test>"])).call(_expert_prompt())
+
+
+def test_a_term_the_brief_names_never_picks_the_experts_file():
+    """The dossier opens with the company brief, which names Meridian Ventures on its in-motion line;
+    a `when` term must find the FILE, through the dossier, never through the brief."""
+    with pytest.raises(IdealReaderError, match="expert"):
+        _reader(_expert_case(["Investor · Meridian Ventures — first call"])).call(_expert_prompt())
+
+
+def test_an_expert_answer_refused_as_misshapen_is_an_authoring_error_never_a_second_recording():
+    from genios_engine.reason.expert.prompt import REPAIR_HEADING
+    from tests.replays import ideal_reader
+    assert ideal_reader._EXPERT_REPAIR == REPAIR_HEADING
+    with pytest.raises(IdealReaderError, match="misshapen"):
+        _reader(_expert_case(["<meridianvc.test>"])).call(
+            _expert_prompt(feedback="Your previous answer was JSON but not in the shape asked for"))
