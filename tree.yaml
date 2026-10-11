@@ -6794,8 +6794,10 @@ yc2_w27_s12:
                     - id: M32.C3.L-data.V1.U10
                       what: >
                         The store keeps a review's inputs: `write_review` takes the fingerprint's inputs, every
-                        read returns them, and a retry that replaces a failed or carried row replaces them too.
-                        ⛔ MINTED 2026-10-11 with M32.C1.L-contract.V0.U07.
+                        read returns them, and a retry that replaces a failed or carried row replaces them too;
+                        and it reads a file's latest STANDING review (valid, refused or truncated) — what the
+                        last judgment saw, which the triggers diff against. ⛔ MINTED 2026-10-11 with
+                        M32.C1.L-contract.V0.U07.
                       artifact: "genios_engine/reason/expert/store.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_the_review_store.py"
                       depends_on: [M32.C3.L-data.V1.U03, M32.C1.L-contract.V0.U07]

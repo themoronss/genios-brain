@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_049, (
+    assert r["statements"] == 3_050, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -407,6 +407,8 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 3,046 → 3,049 by yc2_w27_s12/M32.C3.L-data.V1.U03 (the review store): three statements in
     # `reason/expert/store.py` — the once-per-fingerprint INSERT … ON CONFLICT, the read of one
     # fingerprint's row, and the latest valid review of a file. Three literals, each its own `text()`.
+    # ⛔ MOVED 3,049 → 3,050 by yc2_w27_s12/M32.C3.L-data.V1.U10 (a review keeps its inputs): one SELECT,
+    # `reason/expert/store._LATEST_STANDING` — what the last judgment of a file saw. A literal.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

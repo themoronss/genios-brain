@@ -9,6 +9,10 @@ the token ceiling) stands until the file moves, STEP-12 §8.4 item 4. A row that
 carried because the day's budget was spent (D7: "carries the rest"), is not the expert's verdict: its
 retry may replace it. A valid row reads back as the same `ExpertReview` that was written; the latest
 valid review of a file is one read; nothing here asks a model.
+
+M32.C3.L-data.V1.U10: every row keeps what the file WAS when it was judged — its fingerprint's inputs
+(0198) — and a retry replaces them with the rest; a file's latest STANDING review (valid, refused or
+truncated) is what the last judgment saw, the row the triggers diff against.
 """
 from __future__ import annotations
 
@@ -39,6 +43,7 @@ REVIEW = ExpertReview.from_mapping({
     "mode": "act", "next_move": {"who": "the founder", "what": "share the data room",
                                  "for_whom": "Rahul", "by_when": "2026-10-12"},
     "wait_or_stop": "if no reply in a week, ask once", "done_when": "the room is shared"})
+INPUTS = {"file_id": FILE, "events": ["evt_1"], "booked": [], "whose_move": "ours", "quiet": ">=1"}
 
 
 @pytest.fixture
@@ -58,11 +63,12 @@ def engine():
             c.execute(text("delete from orgs where id = :o"), {"o": org})
 
 
-def _write(c, fp: str, *, status=R.VALID, reason=None, review=REVIEW, at=AT, org=ORG, cost=26_100):
+def _write(c, fp: str, *, status=R.VALID, reason=None, review=REVIEW, at=AT, org=ORG, cost=26_100,
+           inputs=INPUTS):
     return R.write_review(c, org_id=org, file_id=FILE, fingerprint=fp, model="claude-sonnet-5",
                           prompt_version="expert-review.v1", dossier_digest="sha256:d", status=status,
                           reason=reason, review=review, input_tokens=9000, output_tokens=900,
-                          cost_micro_usd=cost, at=at)
+                          cost_micro_usd=cost, at=at, inputs=inputs)
 
 
 def test_a_valid_review_reads_back_as_the_review_that_was_written(engine):
@@ -74,7 +80,7 @@ def test_a_valid_review_reads_back_as_the_review_that_was_written(engine):
     assert stored == R.StoredReview(
         file_id=FILE, fingerprint="ffp-1", model="claude-sonnet-5", prompt_version="expert-review.v1",
         dossier_digest="sha256:d", status=R.VALID, reason=None, review=REVIEW, raw=REVIEW.as_mapping(),
-        input_tokens=9000, output_tokens=900, cost_micro_usd=26_100, reviewed_at=AT)
+        input_tokens=9000, output_tokens=900, cost_micro_usd=26_100, reviewed_at=AT, inputs=INPUTS)
     assert latest == stored
 
 
@@ -106,7 +112,7 @@ def test_a_failed_or_carried_review_is_retried_and_replaced(engine, first):
         assert R.write_review(c, org_id=ORG, file_id=FILE, fingerprint="ffp-1", model="m-before",
                               prompt_version="pv-before", dossier_digest="sha256:before", status=first,
                               reason=f"why {first}", review=None, input_tokens=1, output_tokens=2,
-                              cost_micro_usd=3, at=AT) is True
+                              cost_micro_usd=3, at=AT, inputs={"events": ["evt_before"]}) is True
     with engine.connect() as c:
         assert R.reviewed(c, ORG, FILE, "ffp-1") is False             # the pass asks again
     with engine.begin() as c:
@@ -117,6 +123,7 @@ def test_a_failed_or_carried_review_is_retried_and_replaced(engine, first):
         fresh = R.read_review(c, ORG, FILE, "ffp-2")
         assert R.reviewed(c, ORG, FILE, "ffp-1") is True
     assert replace(stored, fingerprint="ffp-2") == fresh            # every column is the retry's
+    assert stored.inputs == INPUTS                                  # what the file was, the retry's too
     assert stored.status == R.VALID and stored.review == REVIEW
 
 
@@ -170,4 +177,36 @@ def test_a_write_says_what_it_is_or_is_refused(engine):
             _write(c, "ffp-1", review=REVIEW.as_mapping())         # a valid row is a parsed review
         with pytest.raises(ValueError, match="reason"):
             _write(c, "ffp-1", status=R.FAILED, reason="  ", review=None)
+        with pytest.raises(ValueError, match="inputs"):
+            _write(c, "ffp-1", inputs=None)                          # what the file was, always
+        with pytest.raises(ValueError, match="inputs"):
+            _write(c, "ffp-1", inputs=["evt_1"])
     assert R.STANDING + R.RETRYABLE == R.STATUSES
+
+
+def test_the_latest_standing_review_is_what_the_last_judgment_saw(engine):
+    """Valid, refused or truncated — whichever was last; a failed or carried row judged nothing."""
+    with engine.begin() as c:
+        _write(c, "ffp-1", at=AT, inputs={"events": ["evt_1"]})
+        _write(c, "ffp-2", status=R.REFUSED, reason="unknown_evidence", review=None,
+               at=AT + timedelta(days=1), inputs={"events": ["evt_1", "evt_2"]})
+        _write(c, "ffp-3", status=R.FAILED, reason="model_call_raised", review=None,
+               at=AT + timedelta(days=2), inputs={"events": ["evt_1", "evt_2", "evt_3"]})
+        _write(c, "ffp-4", status=R.OVER_BUDGET, reason="the day's $2 was spent", review=None,
+               at=AT + timedelta(days=3), inputs={"events": ["evt_4"]})
+        _write(c, "ffp-5", org=OTHER, at=AT + timedelta(days=4))
+    with engine.connect() as c:
+        last = R.latest_standing(c, ORG, FILE)
+        assert R.latest_standing(c, ORG, "node_nobody") is None
+        assert R.latest_valid(c, ORG, FILE).fingerprint == "ffp-1"
+    assert (last.fingerprint, last.status, last.inputs) == ("ffp-2", R.REFUSED,
+                                                           {"events": ["evt_1", "evt_2"]})
+    with engine.begin() as c:
+        _write(c, "ffp-6", status=R.TRUNCATED, reason="truncated_at_the_token_ceiling", review=None,
+               at=AT + timedelta(days=5))
+    with engine.connect() as c:
+        assert R.latest_standing(c, ORG, FILE).status == R.TRUNCATED     # a cut answer stands too
+    with engine.begin() as c:
+        _write(c, "ffp-7", at=AT + timedelta(days=5))
+    with engine.connect() as c:
+        assert R.latest_standing(c, ORG, FILE).fingerprint == "ffp-7"   # a tie: the newest fingerprint

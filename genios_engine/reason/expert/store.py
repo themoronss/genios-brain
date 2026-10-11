@@ -15,6 +15,11 @@ was made; D7's busy day "carries the rest" to the next). Their retry may replace
 WHAT IS READ BACK. A valid row's review is parsed back into an `ExpertReview` (`contracts/expert_review`)
 — the same review that was written, field for field. A row of any other status keeps what the model
 wrote, if anything, as data (`raw`); it is never parsed into a review anybody acts on.
+
+WHAT THE FILE WAS (0198, M32.C3.L-data.V1.U10). Every row keeps its fingerprint's inputs
+(`reason/expert/fingerprint.fingerprint_inputs`), and a retry replaces them with the rest. A file's
+latest STANDING row is what the last judgment saw: the triggers (`reason/expert/triggers`) diff the
+file against it to say what moved.
 """
 from __future__ import annotations
 
@@ -39,28 +44,38 @@ RETRYABLE: tuple[str, ...] = (OVER_BUDGET, FAILED)
 
 _WRITE = text(
     "insert into expert_reviews (org_id, file_id, fingerprint, model, prompt_version, dossier_digest, "
-    "       status, reason, review, input_tokens, output_tokens, cost_micro_usd, reviewed_at) "
+    "       status, reason, review, input_tokens, output_tokens, cost_micro_usd, reviewed_at, inputs) "
     "values (:o, :f, :fp, :model, :pv, :digest, :status, :reason, cast(:review as jsonb), :tin, :tout, "
-    "        :cost, :at) "
+    "        :cost, :at, cast(:inputs as jsonb)) "
     "on conflict (org_id, file_id, fingerprint) do update set "
     "       model = excluded.model, prompt_version = excluded.prompt_version, "
     "       dossier_digest = excluded.dossier_digest, status = excluded.status, "
     "       reason = excluded.reason, review = excluded.review, "
     "       input_tokens = excluded.input_tokens, output_tokens = excluded.output_tokens, "
-    "       cost_micro_usd = excluded.cost_micro_usd, reviewed_at = excluded.reviewed_at "
+    "       cost_micro_usd = excluded.cost_micro_usd, reviewed_at = excluded.reviewed_at, "
+    "       inputs = excluded.inputs "
     " where expert_reviews.status in ('over_budget', 'failed')")
 
 _READ = text(
     "select file_id, fingerprint, model, prompt_version, dossier_digest, status, reason, review, "
-    "       input_tokens, output_tokens, cost_micro_usd, reviewed_at "
+    "       input_tokens, output_tokens, cost_micro_usd, reviewed_at, inputs "
     "  from expert_reviews "
     " where org_id = :o and file_id = :f and fingerprint = :fp")
 
 _LATEST_VALID = text(
     "select file_id, fingerprint, model, prompt_version, dossier_digest, status, reason, review, "
-    "       input_tokens, output_tokens, cost_micro_usd, reviewed_at "
+    "       input_tokens, output_tokens, cost_micro_usd, reviewed_at, inputs "
     "  from expert_reviews "
     " where org_id = :o and file_id = :f and status = 'valid' "
+    " order by reviewed_at desc, fingerprint desc "
+    " limit 1")
+
+#: What the last judgment saw: the newest row that STANDS — `STANDING`'s three statuses, named again.
+_LATEST_STANDING = text(
+    "select file_id, fingerprint, model, prompt_version, dossier_digest, status, reason, review, "
+    "       input_tokens, output_tokens, cost_micro_usd, reviewed_at, inputs "
+    "  from expert_reviews "
+    " where org_id = :o and file_id = :f and status in ('valid', 'refused', 'truncated') "
     " order by reviewed_at desc, fingerprint desc "
     " limit 1")
 
@@ -81,6 +96,7 @@ class StoredReview:
     output_tokens: int
     cost_micro_usd: int
     reviewed_at: datetime
+    inputs: dict[str, Any] | None = None         # what the file was; None only on a row before 0198
 
 
 def _payload(status: str, review: ExpertReview | Mapping[str, Any] | None) -> dict[str, Any] | None:
@@ -96,20 +112,24 @@ def _payload(status: str, review: ExpertReview | Mapping[str, Any] | None) -> di
 def write_review(conn, *, org_id: str, file_id: str, fingerprint: str, model: str, prompt_version: str,
                  dossier_digest: str, status: str, reason: str | None,
                  review: ExpertReview | Mapping[str, Any] | None, input_tokens: int, output_tokens: int,
-                 cost_micro_usd: int, at: datetime) -> bool:
-    """Store the expert's answer for this fingerprint. True when it was written; False when a standing
-    row already answers it (nothing changes). ValueError for a status nobody named, a non-valid row
-    without its reason, or a valid row without its review."""
+                 cost_micro_usd: int, at: datetime, inputs: Mapping[str, Any]) -> bool:
+    """Store the expert's answer for this fingerprint, with what the file was (`inputs`). True when it
+    was written; False when a standing row already answers it (nothing changes). ValueError for a
+    status nobody named, a non-valid row without its reason, a valid row without its review, or
+    inputs that are not a mapping."""
     if status not in STATUSES:
         raise ValueError(f"unknown status {status!r}: one of {', '.join(STATUSES)}")
     if status != VALID and not (reason or "").strip():
         raise ValueError(f"a {status} row says its reason")
+    if not isinstance(inputs, Mapping):
+        raise ValueError("a review keeps what the file was: its fingerprint's inputs, a mapping")
     payload = _payload(status, review)
     written = conn.execute(_WRITE, {
         "o": org_id, "f": file_id, "fp": fingerprint, "model": model, "pv": prompt_version,
         "digest": dossier_digest, "status": status, "reason": reason,
         "review": None if payload is None else json.dumps(payload, sort_keys=True),
-        "tin": input_tokens, "tout": output_tokens, "cost": cost_micro_usd, "at": at})
+        "tin": input_tokens, "tout": output_tokens, "cost": cost_micro_usd, "at": at,
+        "inputs": json.dumps(dict(inputs), sort_keys=True)})
     return written.rowcount == 1
 
 
@@ -121,7 +141,7 @@ def _stored(row) -> StoredReview:
         prompt_version=m["prompt_version"], dossier_digest=m["dossier_digest"], status=m["status"],
         reason=m["reason"], review=ExpertReview.from_mapping(raw) if m["status"] == VALID else None,
         raw=raw, input_tokens=m["input_tokens"], output_tokens=m["output_tokens"],
-        cost_micro_usd=m["cost_micro_usd"], reviewed_at=m["reviewed_at"])
+        cost_micro_usd=m["cost_micro_usd"], reviewed_at=m["reviewed_at"], inputs=m["inputs"])
 
 
 def read_review(conn, org_id: str, file_id: str, fingerprint: str) -> StoredReview | None:
@@ -142,5 +162,12 @@ def latest_valid(conn, org_id: str, file_id: str) -> StoredReview | None:
     return None if row is None else _stored(row)
 
 
+def latest_standing(conn, org_id: str, file_id: str) -> StoredReview | None:
+    """What the last judgment of the file saw: its newest standing row — valid, refused or truncated,
+    the newest fingerprint on a tie — or None. A failed or carried row judged nothing."""
+    row = conn.execute(_LATEST_STANDING, {"o": org_id, "f": file_id}).first()
+    return None if row is None else _stored(row)
+
+
 __all__ = ["FAILED", "OVER_BUDGET", "REFUSED", "RETRYABLE", "STANDING", "STATUSES", "TRUNCATED", "VALID",
-           "StoredReview", "latest_valid", "read_review", "reviewed", "write_review"]
+           "StoredReview", "latest_standing", "latest_valid", "read_review", "reviewed", "write_review"]
