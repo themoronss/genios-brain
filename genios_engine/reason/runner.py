@@ -1887,6 +1887,8 @@ def run_all(*, org_id: str, store: GraphStore, eval_time: datetime | None = None
         logger.exception("the expert pass failed org=%s", org_id)
         expert = {"error": True}
     covered = (expert.get("covered") or {}) if isinstance(expert, dict) else {}
+    # …and who is in each covered file, so a situation on one of its people is its file's (U15).
+    people = (expert.get("people") or {}) if isinstance(expert, dict) else {}
     compiled: dict = {}
     if live_compile or l3_domains or l1_seam_enabled(engine, org_id):
         try:
@@ -1895,7 +1897,7 @@ def run_all(*, org_id: str, store: GraphStore, eval_time: datetime | None = None
             # the sweep. Kept now for the change gate's counts below (STEP-02).
             compiled = shadow_compile(store=store, org_id=org_id, eval_time=eval_time,
                                       live=live_compile, live_domains=l3_domains,
-                                      covered=covered) or {}
+                                      covered=covered, people=people) or {}
         except Exception:
             logger.exception("domain-compiler pass failed org=%s live=%s domains=%s",
                              org_id, live_compile, sorted(l3_domains))
@@ -1905,10 +1907,25 @@ def run_all(*, org_id: str, store: GraphStore, eval_time: datetime | None = None
             "select pack_id from tenant_packs where org_id=:o "
             "and state in ('active','shadow') order by pack_id"),
             {"o": org_id})]
+    # ── STEP-12 M33 · WHAT THE DECIDED FILES EXPLAIN, FOR EVERY PACK'S RULES (M33.C1.L-integration.V3.U15,
+    # `03` F173). Only the files the compiled lane decided on the LIVE lane — a file decided in shadow,
+    # or not decided at all, stands no pack rule down: its cards still come from today's path. Read
+    # once, wrapped: a read that failed explains nothing, and every rule is reasoned as before.
+    decided = (compiled.get("decided") or {}) if isinstance(compiled, dict) else {}
+    explained = None
+    if decided:
+        try:
+            from genios_engine.reason.expert.cover import covers_for
+            with store.engine.connect() as c:
+                explained = covers_for(c, org_id, decided, people) or None
+        except Exception:
+            logger.exception("the decided files could not be read org=%s", org_id)
+            explained = None
     combined: Counter = Counter()
     nodes = 0
     for pid in pack_ids:
-        res = run(org_id=org_id, store=store, eval_time=eval_time, registry=registry, pack_id=pid)
+        res = run(org_id=org_id, store=store, eval_time=eval_time, registry=registry, pack_id=pid,
+                  explained=explained)
         nodes = max(nodes, res["nodes"])
         for k, v in res["outcomes"].items():
             if k == CAPABILITY_RESOLVED:
