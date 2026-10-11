@@ -133,7 +133,122 @@
   ]
  },
  "not_expressible": {},
- "model": {},
+ "model": {
+  "expert": [
+   {
+    "when": [
+     "<cobaltpeak.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Meher sent Leena the August update on the first of September, as promised, with how many support teams are live and the share of tickets the routing engine handles without an agent.",
+       "evidence": [
+        "evt_89a7e7c8098890b11b1c1353"
+       ]
+      },
+      {
+       "claim": "The update asks Leena for nothing.",
+       "evidence": [
+        "evt_89a7e7c8098890b11b1c1353"
+       ]
+      },
+      {
+       "claim": "The file's quiet is counted from that update, and nothing from Leena is on file since.",
+       "evidence": [
+        "num:days_quiet"
+       ]
+      },
+      {
+       "claim": "Leena's reply time is not measured, so her quiet has no pattern to be judged by.",
+       "evidence": [
+        "num:their_reply_time:leena@cobaltpeak.test"
+       ]
+      },
+      {
+       "claim": "The engine files it as an admin account, seen once.",
+       "evidence": [
+        "sit:sit_27ebb7c2b2fc1fc9707211ec",
+        "hist:derived.history.times_seen@admin"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "The promise the update speaks of is kept: the update itself was what was owed.",
+       "based_on": [
+        "fact:1"
+       ]
+      },
+      {
+       "claim": "With no ask in it, Leena owes no reply, and her quiet means nothing yet.",
+       "based_on": [
+        "fact:2",
+        "fact:4"
+       ]
+      }
+     ],
+     "patterns": [],
+     "hypotheses": [
+      {
+       "proposition": "Leena is an investor, or a prospective one, who receives Relaygrid's updates.",
+       "needs": "The brief or Meher naming her role."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Who Leena is to Relaygrid: an investor, an adviser or a customer.",
+       "relevance": "It decides what the next update should carry and whether her quiet would ever matter."
+      },
+      {
+       "question": "When the next update is due.",
+       "relevance": "That is the next touch in this file, and nothing before it is needed."
+      }
+     ],
+     "frames": {
+      "primary": "A promise kept: the August update went to Leena as promised, and nothing is owed either way.",
+      "rivals": [
+       "An investor relationship where the update is the rhythm and quiet between updates is normal.",
+       "A prospective investor being kept warm, who may come back with questions later."
+      ]
+     },
+     "proposed_kind": null,
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "No playbook applies and the brief names no kind of work for this file; after an update that asks nothing, no reply is expected.",
+      "actual": "The update went out as promised and nothing has come back, as expected."
+     },
+     "scenarios": {
+      "do_nothing": "Nothing is lost; the next update keeps the relationship going.",
+      "act": "Writing again now would add nothing to an update that asked for nothing.",
+      "best": "Leena reads the update and comes back with interest or an introduction.",
+      "worst": "Leena stops reading the updates, which this file could not show.",
+      "signals_to_watch": [
+       "A reply or question from Leena",
+       "The next update going out on time"
+      ]
+     },
+     "appraisal": {
+      "stakes": "low",
+      "urgency": "low",
+      "reversibility": "reversible",
+      "reasons": [
+       "The update asked nothing and kept a promise.",
+       "Nothing in the file is owed by Meher.",
+       "Leena's quiet has no measured pattern to break."
+      ]
+     },
+     "mode": "nothing",
+     "next_move": null,
+     "alternative": "None is needed; the next update is the next touch.",
+     "wait_or_stop": "Nothing to hold for; look again only if Leena writes or the next update is due.",
+     "done_when": "The update is delivered and the promise behind it kept; the file needs nothing more.",
+     "draft": null
+    }
+   }
+  ]
+ },
  "notes": "STEP-04 C5, production's shape: the founder writes from Gmail, the company address only ever receives the founder's own mail, and the company domain is also the product's own sending domain (settings.platform_domains) - as the design partner's is. An address on a platform domain reads as a service; an address of ours is us. F41's shape, with the platform's domain.",
  "blocked_on": null
 }

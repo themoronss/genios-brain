@@ -306,5 +306,2269 @@
   "workstream": "STEP-11 — the file exists since STEP-09 (`GET /v1/workstreams`, its acceptance `tests/replays/test_every_piece_of_work_has_a_file.py`), but this line names its stage or state, and no stage is derived to compare against"
  },
  "notes": "Production typed most of the real wave as contract_renewal, the nearest of its 16 boxes, and never raised a follow-up.",
- "blocked_on": "the founder's outreach wave reaches memory (STEP-05), but its five awaiting-response readings are held at admission and the five fund situations sit dormant in the fundraising domain, which is not active; no follow-up decision is ever formed — STEP-10 (the wave as one object), D2"
+ "blocked_on": "the founder's outreach wave reaches memory (STEP-05), but its five awaiting-response readings are held at admission and the five fund situations sit dormant in the fundraising domain, which is not active; no follow-up decision is ever formed — STEP-10 (the wave as one object), D2",
+ "model": {
+  "expert": [
+   {
+    "when": [
+     "<cobaltpeak.test>",
+     "as of 2026-10-06"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Arjun's mail to the Cobalt Peak team asked for a short meeting about the seed round within the next two weeks, with the deck attached.",
+       "evidence": [
+        "evt_c948c90270ed285f6f2b49fc"
+       ]
+      },
+      {
+       "claim": "That ask is still open, and we wait on them.",
+       "evidence": [
+        "loop:loop_5fe5306f8a8bff0451e3a72a"
+       ]
+      },
+      {
+       "claim": "No recipient of the wave has replied, bounced or been followed up.",
+       "evidence": [
+        "wave:wave_6354a4c281d25389daff08c7"
+       ]
+      },
+      {
+       "claim": "The file has been quiet since the mail went out on the eleventh of August.",
+       "evidence": [
+        "num:days_quiet"
+       ]
+      },
+      {
+       "claim": "The investor relationship situation on the file has gone dormant, past the engine's default window.",
+       "evidence": [
+        "sit:sit_084d5275aa3d91bb3ed7d6bb"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "The two weeks ran out long ago and Cobalt Peak was never nudged.",
+       "based_on": [
+        "fact:1",
+        "fact:3",
+        "fact:4"
+       ]
+      },
+      {
+       "claim": "At this distance the silence most likely means a pass, but a cold mail never followed up is not yet a no.",
+       "based_on": [
+        "fact:3",
+        "fact:4"
+       ]
+      },
+      {
+       "claim": "The file needs a decision more than a chase: one last note, then close it.",
+       "based_on": [
+        "fact:5"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "base_rate",
+       "claim": "In the founder's own numbers, this pitch has drawn no reply from any fund it went to.",
+       "based_on": [
+        "wave:wave_6354a4c281d25389daff08c7"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "Cobalt Peak passed quietly.",
+       "needs": "Whether a last note draws any answer."
+      },
+      {
+       "proposition": "The seed round has moved on since August, and this fund no longer matters to it.",
+       "needs": "The founder's word on where the round stands."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Whether a reply arrived after the mailbox's last completed read, which the dossier dates to the day the wave went out.",
+       "relevance": "A reply there would mean we owe an answer, not a follow-up."
+      },
+      {
+       "question": "What is new at Nimbus Labs since August that a last note could carry.",
+       "relevance": "A last note with news lands better than a bare nudge."
+      }
+     ],
+     "frames": {
+      "primary": "A cold ask to Cobalt Peak, unanswered and never followed up since the eleventh of August, now dormant — one last note, then a decision to close.",
+      "rivals": [
+       "A fund that has passed and should simply be closed.",
+       "A wave whose silence says more about the pitch than about Cobalt Peak."
+      ]
+     },
+     "proposed_kind": {
+      "kind": "investor",
+      "why": "A fund the founder wrote to in the seed round wave, asking for a first meeting; the brief names no kind of work for it.",
+      "evidence": [
+       "evt_c948c90270ed285f6f2b49fc",
+       "wave:wave_6354a4c281d25389daff08c7"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "A reply within the two weeks, or a follow-up when they ran out and a decision soon after.",
+      "actual": "No reply, no follow-up, and the file has gone dormant."
+     },
+     "scenarios": {
+      "do_nothing": "The file stays open and dormant: a fund nobody decided about, cluttering the raise.",
+      "act": "One last short note either revives Cobalt Peak or lets the file close cleanly.",
+      "best": "Cobalt Peak answers the last note and takes a meeting.",
+      "worst": "No answer, and the file closes as a quiet pass.",
+      "signals_to_watch": [
+       "A reply to the last note, even a no.",
+       "Replies from the other funds in the wave.",
+       "An auto-reply or a bounce."
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "medium",
+      "reversibility": "reversible",
+      "reasons": [
+       "The ask has gone unanswered since August and was never followed up.",
+       "The situation has gone dormant past its window.",
+       "Raising the seed round is the brief's first goal, so an open fund needs a decision."
+      ]
+     },
+     "mode": "act",
+     "next_move": {
+      "who": "Arjun",
+      "what": "Send Cobalt Peak one last short note on the seed round, saying a quick no is welcome, and close the file if it stays silent.",
+      "for_whom": "Cobalt Peak",
+      "by_when": null
+     },
+     "alternative": "Close the file now as a quiet pass, if the round has moved on, and spend the time on funds that answered.",
+     "wait_or_stop": "Give the last note about a week; then close the file with its reason. Stop at one note.",
+     "done_when": "Cobalt Peak has answered, or the file is closed as a quiet pass with that reason.",
+     "draft": "Hi Cobalt Peak team, a last note on Nimbus Labs' seed round, which I wrote to you about in August. We are building an AI chief of staff for founders. If it fits what you back, I would welcome a short call; if not, a quick no helps us too. Arjun Rao, Founder, Nimbus Labs"
+    }
+   },
+   {
+    "when": [
+     "<cobaltpeak.test>",
+     "as of 2026-08-25"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Arjun's mail to the Cobalt Peak team asked for a short meeting about the seed round within the next two weeks, with the deck attached.",
+       "evidence": [
+        "evt_c948c90270ed285f6f2b49fc"
+       ]
+      },
+      {
+       "claim": "That ask is still open, and we wait on them.",
+       "evidence": [
+        "loop:loop_5fe5306f8a8bff0451e3a72a"
+       ]
+      },
+      {
+       "claim": "No recipient of the wave the mail belongs to has replied, bounced or been followed up.",
+       "evidence": [
+        "wave:wave_6354a4c281d25389daff08c7"
+       ]
+      },
+      {
+       "claim": "The file has been quiet since the mail went out on the eleventh of August.",
+       "evidence": [
+        "num:days_quiet"
+       ]
+      },
+      {
+       "claim": "This is the first time the founder's history holds Cobalt Peak.",
+       "evidence": [
+        "hist:derived.history.times_seen@fundraising",
+        "hist:derived.history.prior_outcome@fundraising"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "The two weeks the founder asked for have run out with no answer from Cobalt Peak.",
+       "based_on": [
+        "fact:1",
+        "fact:4"
+       ]
+      },
+      {
+       "claim": "No follow-up has gone to any fund in the wave, so this would be the first nudge, not a chase.",
+       "based_on": [
+        "fact:3"
+       ]
+      },
+      {
+       "claim": "The silence is the wave's, not this fund's alone: when no fund answers, the pitch or the list may be the common cause.",
+       "based_on": [
+        "fact:3"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "base_rate",
+       "claim": "In the founder's own numbers, this pitch has drawn no reply from any fund it went to.",
+       "based_on": [
+        "wave:wave_6354a4c281d25389daff08c7"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "Cobalt Peak saw the mail and passed without saying so.",
+       "needs": "A follow-up that also goes unanswered."
+      },
+      {
+       "proposition": "The mail never reached a partner at Cobalt Peak — a shared inbox or a filter.",
+       "needs": "A reply to the follow-up, or a named contact."
+      },
+      {
+       "proposition": "The pitch itself is not landing with any fund in the wave.",
+       "needs": "What the follow-ups draw, across the wave."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Whether a reply arrived after the mailbox's last completed read, which the dossier dates to the day the wave went out.",
+       "relevance": "A reply there would turn the follow-up into an answer owed by us."
+      },
+      {
+       "question": "Who at Cobalt Peak reads partners@cobaltpeak.test.",
+       "relevance": "A named partner changes who the follow-up goes to."
+      },
+      {
+       "question": "Whether a warm introduction to Cobalt Peak exists.",
+       "relevance": "An introduction would do more than a second cold mail."
+      }
+     ],
+     "frames": {
+      "primary": "A cold ask to Cobalt Peak whose two weeks have run out unanswered, in a wave where no fund has replied and none has been followed up.",
+      "rivals": [
+       "A quiet pass by Cobalt Peak, which a follow-up will only confirm.",
+       "A pitch that is not landing with any fund in the wave, where the fix is the pitch, not the nudge."
+      ]
+     },
+     "proposed_kind": {
+      "kind": "investor",
+      "why": "A fund the founder wrote to in the seed round wave, asking for a first meeting; the brief names no kind of work for it.",
+      "evidence": [
+       "evt_c948c90270ed285f6f2b49fc",
+       "wave:wave_6354a4c281d25389daff08c7"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "A reply within the two weeks asked for, or one follow-up once they ran out.",
+      "actual": "The two weeks have run out with no reply from Cobalt Peak and no follow-up sent."
+     },
+     "scenarios": {
+      "do_nothing": "The file drifts with no follow-up and no decision, and Cobalt Peak stays open in the raise long after it has gone cold.",
+      "act": "One short follow-up now gives Cobalt Peak a second look and turns its answer, or its silence, into a decision.",
+      "best": "Cobalt Peak replies to the nudge and a first meeting is set.",
+      "worst": "The follow-up goes unanswered too, and the whole wave proves cold.",
+      "signals_to_watch": [
+       "A reply to the follow-up.",
+       "Replies from the other funds in the wave.",
+       "An auto-reply or a bounce."
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "medium",
+      "reversibility": "reversible",
+      "reasons": [
+       "The two weeks the founder asked for have passed with no reply.",
+       "No fund in the wave has replied or been followed up.",
+       "Raising the seed round is the brief's first goal."
+      ]
+     },
+     "mode": "act",
+     "next_move": {
+      "who": "Arjun",
+      "what": "Send Cobalt Peak one short follow-up to the seed round mail, offering the deck again and a short call.",
+      "for_whom": "Cobalt Peak",
+      "by_when": null
+     },
+     "alternative": "Ask someone who knows Cobalt Peak for an introduction, and send that in place of a second cold mail.",
+     "wait_or_stop": "After the follow-up, give Cobalt Peak about a week; if it stays silent, close the file as a quiet pass and spend the effort on funds that answer.",
+     "done_when": "Cobalt Peak has answered — a meeting or a no — or the file is closed as a quiet pass after one follow-up.",
+     "draft": "Hi Cobalt Peak team, following up on my note about Nimbus Labs' seed round. We are building an AI chief of staff for founders, and I would value a short call if it fits what you back. Happy to resend the deck. Arjun Rao, Founder, Nimbus Labs"
+    }
+   },
+   {
+    "when": [
+     "<cobaltpeak.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Arjun wrote to the Cobalt Peak team that Nimbus Labs is raising a seed round to build an AI chief of staff for founders, attached the deck, and asked for a short meeting within the next two weeks.",
+       "evidence": [
+        "evt_c948c90270ed285f6f2b49fc"
+       ]
+      },
+      {
+       "claim": "That ask is open, and the move is theirs: we wait on them.",
+       "evidence": [
+        "loop:loop_5fe5306f8a8bff0451e3a72a"
+       ]
+      },
+      {
+       "claim": "The mail is one of a wave sent under the same subject; so far no recipient of the wave has replied, bounced or been followed up.",
+       "evidence": [
+        "wave:wave_6354a4c281d25389daff08c7"
+       ]
+      },
+      {
+       "claim": "The file has been quiet for less than a day.",
+       "evidence": [
+        "num:days_quiet"
+       ]
+      },
+      {
+       "claim": "The file has no playbook and no stop rule, so nothing says when its quiet would make the work dormant.",
+       "evidence": [
+        "whatif:14"
+       ]
+      },
+      {
+       "claim": "This is the first time the founder's history holds Cobalt Peak.",
+       "evidence": [
+        "hist:derived.history.times_seen@fundraising",
+        "hist:derived.history.prior_outcome@fundraising"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "Less than a day after sending, the silence carries no information: the window the founder named is still open.",
+       "based_on": [
+        "fact:1",
+        "fact:4"
+       ]
+      },
+      {
+       "claim": "Cobalt Peak is investor work — a fund asked for a first meeting in the seed round — though the brief does not list it among the funds it tracks.",
+       "based_on": [
+        "fact:1",
+        "fact:3"
+       ]
+      },
+      {
+       "claim": "Because no playbook or stop rule covers the file, nothing will bring it back when the two weeks run out; the follow-up date has to be set on purpose.",
+       "based_on": [
+        "fact:5"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "base_rate",
+       "claim": "In the founder's own numbers for this wave no fund has replied yet — too early to read anything into.",
+       "based_on": [
+        "wave:wave_6354a4c281d25389daff08c7"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "The mail went to a shared inbox, partners@cobaltpeak.test, that no one partner at Cobalt Peak owns.",
+       "needs": "A reply naming a partner, or a bounce."
+      },
+      {
+       "proposition": "Cobalt Peak reads unsolicited decks in batches and answers late, if at all.",
+       "needs": "Whether a reply comes before the two weeks run out."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Who at Cobalt Peak reads partners@cobaltpeak.test.",
+       "relevance": "A named partner would change who the follow-up goes to and how it is written."
+      },
+      {
+       "question": "Whether anyone the founder knows can introduce Nimbus Labs to Cobalt Peak.",
+       "relevance": "A warm introduction would beat a second cold mail."
+      },
+      {
+       "question": "Whether Cobalt Peak backs seed rounds in companies like Nimbus Labs.",
+       "relevance": "If it does not, the right move after the two weeks is to close, not to follow up."
+      }
+     ],
+     "frames": {
+      "primary": "A cold first ask to Cobalt Peak for a meeting about the seed round, one fund in a wave, less than a day old — the window the founder set is still open.",
+      "rivals": [
+       "A wave the funds will read as unsolicited and leave unanswered.",
+       "Investor work the brief does not track, which will drift with no one deciding to follow up or to close it."
+      ]
+     },
+     "proposed_kind": {
+      "kind": "investor",
+      "why": "A fund the founder wrote to in the seed round wave, asking for a first meeting; the brief names no kind of work for it.",
+      "evidence": [
+       "evt_c948c90270ed285f6f2b49fc",
+       "wave:wave_6354a4c281d25389daff08c7"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "From the brief's first goal, raising the seed round, and the mail itself: a reply within the two weeks the founder asked for, or one follow-up once they pass.",
+      "actual": "The mail went out less than a day ago; no reply yet, which at this point means nothing."
+     },
+     "scenarios": {
+      "do_nothing": "The two weeks pass and the file goes quiet with no follow-up: the brief does not track this fund and no stop rule will raise it.",
+      "act": "With a follow-up date set for when the two weeks run out, a silent fund gets one short nudge and then a decision to close.",
+      "best": "Cobalt Peak replies within the two weeks and a first meeting is booked.",
+      "worst": "No reply and no follow-up, and the fund stays open in the file long after it has quietly passed.",
+      "signals_to_watch": [
+       "A reply or an auto-reply from partners@cobaltpeak.test.",
+       "A bounce.",
+       "Any fund in the wave replying, which would show the deck reaching readers.",
+       "The two weeks the founder named running out with no reply."
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "low",
+      "reversibility": "reversible",
+      "reasons": [
+       "The mail is less than a day old and asked for a meeting within two weeks.",
+       "Raising the seed round is the brief's first goal, and this fund is one of the wave.",
+       "Nothing tracks the file: the brief names no kind for it and no stop rule applies."
+      ]
+     },
+     "mode": "wait",
+     "next_move": {
+      "who": "Arjun",
+      "what": "If the two weeks he asked for pass with no reply, send Cobalt Peak one short follow-up.",
+      "for_whom": "Cobalt Peak",
+      "by_when": "2026-08-25"
+     },
+     "alternative": "Find a warm introduction to a partner at Cobalt Peak and use it in place of a cold follow-up.",
+     "wait_or_stop": "Wait until the two weeks the founder asked for run out, or a reply comes. After one follow-up, give it about a week more; if it is still silent, close the file as a quiet pass.",
+     "done_when": "Cobalt Peak has replied and a meeting is set, or the file is closed with its reason after one follow-up.",
+     "draft": null
+    }
+   },
+   {
+    "when": [
+     "<juniperridge.test>",
+     "as of 2026-10-06"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Arjun's mail to the Juniper Ridge team asked for a short meeting about the seed round within the next two weeks, with the deck attached.",
+       "evidence": [
+        "evt_40ab364c4382f76fd81bb665"
+       ]
+      },
+      {
+       "claim": "That ask is still open, and we wait on them.",
+       "evidence": [
+        "loop:loop_f54779fc0fcb1260b84b7eff"
+       ]
+      },
+      {
+       "claim": "No recipient of the wave has replied, bounced or been followed up.",
+       "evidence": [
+        "wave:wave_6354a4c281d25389daff08c7"
+       ]
+      },
+      {
+       "claim": "The file has been quiet since the mail went out on the eleventh of August.",
+       "evidence": [
+        "num:days_quiet"
+       ]
+      },
+      {
+       "claim": "The investor relationship situation on the file has gone dormant, past the engine's default window.",
+       "evidence": [
+        "sit:sit_2d4d09fec30ef9f8f7be9eef"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "The two weeks ran out long ago and Juniper Ridge was never nudged.",
+       "based_on": [
+        "fact:1",
+        "fact:3",
+        "fact:4"
+       ]
+      },
+      {
+       "claim": "At this distance the silence most likely means a pass, but a cold mail never followed up is not yet a no.",
+       "based_on": [
+        "fact:3",
+        "fact:4"
+       ]
+      },
+      {
+       "claim": "The file needs a decision more than a chase: one last note, then close it.",
+       "based_on": [
+        "fact:5"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "base_rate",
+       "claim": "In the founder's own numbers, this pitch has drawn no reply from any fund it went to.",
+       "based_on": [
+        "wave:wave_6354a4c281d25389daff08c7"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "Juniper Ridge passed quietly.",
+       "needs": "Whether a last note draws any answer."
+      },
+      {
+       "proposition": "The seed round has moved on since August, and this fund no longer matters to it.",
+       "needs": "The founder's word on where the round stands."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Whether a reply arrived after the mailbox's last completed read, which the dossier dates to the day the wave went out.",
+       "relevance": "A reply there would mean we owe an answer, not a follow-up."
+      },
+      {
+       "question": "What is new at Nimbus Labs since August that a last note could carry.",
+       "relevance": "A last note with news lands better than a bare nudge."
+      }
+     ],
+     "frames": {
+      "primary": "A cold ask to Juniper Ridge, unanswered and never followed up since the eleventh of August, now dormant — one last note, then a decision to close.",
+      "rivals": [
+       "A fund that has passed and should simply be closed.",
+       "A wave whose silence says more about the pitch than about Juniper Ridge."
+      ]
+     },
+     "proposed_kind": {
+      "kind": "investor",
+      "why": "A fund the founder wrote to in the seed round wave, asking for a first meeting; the brief names no kind of work for it.",
+      "evidence": [
+       "evt_40ab364c4382f76fd81bb665",
+       "wave:wave_6354a4c281d25389daff08c7"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "A reply within the two weeks, or a follow-up when they ran out and a decision soon after.",
+      "actual": "No reply, no follow-up, and the file has gone dormant."
+     },
+     "scenarios": {
+      "do_nothing": "The file stays open and dormant: a fund nobody decided about, cluttering the raise.",
+      "act": "One last short note either revives Juniper Ridge or lets the file close cleanly.",
+      "best": "Juniper Ridge answers the last note and takes a meeting.",
+      "worst": "No answer, and the file closes as a quiet pass.",
+      "signals_to_watch": [
+       "A reply to the last note, even a no.",
+       "Replies from the other funds in the wave.",
+       "An auto-reply or a bounce."
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "medium",
+      "reversibility": "reversible",
+      "reasons": [
+       "The ask has gone unanswered since August and was never followed up.",
+       "The situation has gone dormant past its window.",
+       "Raising the seed round is the brief's first goal, so an open fund needs a decision."
+      ]
+     },
+     "mode": "act",
+     "next_move": {
+      "who": "Arjun",
+      "what": "Send Juniper Ridge one last short note on the seed round, saying a quick no is welcome, and close the file if it stays silent.",
+      "for_whom": "Juniper Ridge",
+      "by_when": null
+     },
+     "alternative": "Close the file now as a quiet pass, if the round has moved on, and spend the time on funds that answered.",
+     "wait_or_stop": "Give the last note about a week; then close the file with its reason. Stop at one note.",
+     "done_when": "Juniper Ridge has answered, or the file is closed as a quiet pass with that reason.",
+     "draft": "Hi Juniper Ridge team, a last note on Nimbus Labs' seed round, which I wrote to you about in August. We are building an AI chief of staff for founders. If it fits what you back, I would welcome a short call; if not, a quick no helps us too. Arjun Rao, Founder, Nimbus Labs"
+    }
+   },
+   {
+    "when": [
+     "<juniperridge.test>",
+     "as of 2026-08-25"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Arjun's mail to the Juniper Ridge team asked for a short meeting about the seed round within the next two weeks, with the deck attached.",
+       "evidence": [
+        "evt_40ab364c4382f76fd81bb665"
+       ]
+      },
+      {
+       "claim": "That ask is still open, and we wait on them.",
+       "evidence": [
+        "loop:loop_f54779fc0fcb1260b84b7eff"
+       ]
+      },
+      {
+       "claim": "No recipient of the wave the mail belongs to has replied, bounced or been followed up.",
+       "evidence": [
+        "wave:wave_6354a4c281d25389daff08c7"
+       ]
+      },
+      {
+       "claim": "The file has been quiet since the mail went out on the eleventh of August.",
+       "evidence": [
+        "num:days_quiet"
+       ]
+      },
+      {
+       "claim": "This is the first time the founder's history holds Juniper Ridge.",
+       "evidence": [
+        "hist:derived.history.times_seen@fundraising",
+        "hist:derived.history.prior_outcome@fundraising"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "The two weeks the founder asked for have run out with no answer from Juniper Ridge.",
+       "based_on": [
+        "fact:1",
+        "fact:4"
+       ]
+      },
+      {
+       "claim": "No follow-up has gone to any fund in the wave, so this would be the first nudge, not a chase.",
+       "based_on": [
+        "fact:3"
+       ]
+      },
+      {
+       "claim": "The silence is the wave's, not this fund's alone: when no fund answers, the pitch or the list may be the common cause.",
+       "based_on": [
+        "fact:3"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "base_rate",
+       "claim": "In the founder's own numbers, this pitch has drawn no reply from any fund it went to.",
+       "based_on": [
+        "wave:wave_6354a4c281d25389daff08c7"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "Juniper Ridge saw the mail and passed without saying so.",
+       "needs": "A follow-up that also goes unanswered."
+      },
+      {
+       "proposition": "The mail never reached a partner at Juniper Ridge — a shared inbox or a filter.",
+       "needs": "A reply to the follow-up, or a named contact."
+      },
+      {
+       "proposition": "The pitch itself is not landing with any fund in the wave.",
+       "needs": "What the follow-ups draw, across the wave."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Whether a reply arrived after the mailbox's last completed read, which the dossier dates to the day the wave went out.",
+       "relevance": "A reply there would turn the follow-up into an answer owed by us."
+      },
+      {
+       "question": "Who at Juniper Ridge reads hello@juniperridge.test.",
+       "relevance": "A named partner changes who the follow-up goes to."
+      },
+      {
+       "question": "Whether a warm introduction to Juniper Ridge exists.",
+       "relevance": "An introduction would do more than a second cold mail."
+      }
+     ],
+     "frames": {
+      "primary": "A cold ask to Juniper Ridge whose two weeks have run out unanswered, in a wave where no fund has replied and none has been followed up.",
+      "rivals": [
+       "A quiet pass by Juniper Ridge, which a follow-up will only confirm.",
+       "A pitch that is not landing with any fund in the wave, where the fix is the pitch, not the nudge."
+      ]
+     },
+     "proposed_kind": {
+      "kind": "investor",
+      "why": "A fund the founder wrote to in the seed round wave, asking for a first meeting; the brief names no kind of work for it.",
+      "evidence": [
+       "evt_40ab364c4382f76fd81bb665",
+       "wave:wave_6354a4c281d25389daff08c7"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "A reply within the two weeks asked for, or one follow-up once they ran out.",
+      "actual": "The two weeks have run out with no reply from Juniper Ridge and no follow-up sent."
+     },
+     "scenarios": {
+      "do_nothing": "The file drifts with no follow-up and no decision, and Juniper Ridge stays open in the raise long after it has gone cold.",
+      "act": "One short follow-up now gives Juniper Ridge a second look and turns its answer, or its silence, into a decision.",
+      "best": "Juniper Ridge replies to the nudge and a first meeting is set.",
+      "worst": "The follow-up goes unanswered too, and the whole wave proves cold.",
+      "signals_to_watch": [
+       "A reply to the follow-up.",
+       "Replies from the other funds in the wave.",
+       "An auto-reply or a bounce."
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "medium",
+      "reversibility": "reversible",
+      "reasons": [
+       "The two weeks the founder asked for have passed with no reply.",
+       "No fund in the wave has replied or been followed up.",
+       "Raising the seed round is the brief's first goal."
+      ]
+     },
+     "mode": "act",
+     "next_move": {
+      "who": "Arjun",
+      "what": "Send Juniper Ridge one short follow-up to the seed round mail, offering the deck again and a short call.",
+      "for_whom": "Juniper Ridge",
+      "by_when": null
+     },
+     "alternative": "Ask someone who knows Juniper Ridge for an introduction, and send that in place of a second cold mail.",
+     "wait_or_stop": "After the follow-up, give Juniper Ridge about a week; if it stays silent, close the file as a quiet pass and spend the effort on funds that answer.",
+     "done_when": "Juniper Ridge has answered — a meeting or a no — or the file is closed as a quiet pass after one follow-up.",
+     "draft": "Hi Juniper Ridge team, following up on my note about Nimbus Labs' seed round. We are building an AI chief of staff for founders, and I would value a short call if it fits what you back. Happy to resend the deck. Arjun Rao, Founder, Nimbus Labs"
+    }
+   },
+   {
+    "when": [
+     "<juniperridge.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Arjun wrote to the Juniper Ridge team that Nimbus Labs is raising a seed round to build an AI chief of staff for founders, attached the deck, and asked for a short meeting within the next two weeks.",
+       "evidence": [
+        "evt_40ab364c4382f76fd81bb665"
+       ]
+      },
+      {
+       "claim": "That ask is open, and the move is theirs: we wait on them.",
+       "evidence": [
+        "loop:loop_f54779fc0fcb1260b84b7eff"
+       ]
+      },
+      {
+       "claim": "The mail is one of a wave sent under the same subject; so far no recipient of the wave has replied, bounced or been followed up.",
+       "evidence": [
+        "wave:wave_6354a4c281d25389daff08c7"
+       ]
+      },
+      {
+       "claim": "The file has been quiet for less than a day.",
+       "evidence": [
+        "num:days_quiet"
+       ]
+      },
+      {
+       "claim": "The file has no playbook and no stop rule, so nothing says when its quiet would make the work dormant.",
+       "evidence": [
+        "whatif:14"
+       ]
+      },
+      {
+       "claim": "This is the first time the founder's history holds Juniper Ridge.",
+       "evidence": [
+        "hist:derived.history.times_seen@fundraising",
+        "hist:derived.history.prior_outcome@fundraising"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "Less than a day after sending, the silence carries no information: the window the founder named is still open.",
+       "based_on": [
+        "fact:1",
+        "fact:4"
+       ]
+      },
+      {
+       "claim": "Juniper Ridge is investor work — a fund asked for a first meeting in the seed round — though the brief does not list it among the funds it tracks.",
+       "based_on": [
+        "fact:1",
+        "fact:3"
+       ]
+      },
+      {
+       "claim": "Because no playbook or stop rule covers the file, nothing will bring it back when the two weeks run out; the follow-up date has to be set on purpose.",
+       "based_on": [
+        "fact:5"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "base_rate",
+       "claim": "In the founder's own numbers for this wave no fund has replied yet — too early to read anything into.",
+       "based_on": [
+        "wave:wave_6354a4c281d25389daff08c7"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "The mail went to a shared inbox, hello@juniperridge.test, that no one partner at Juniper Ridge owns.",
+       "needs": "A reply naming a partner, or a bounce."
+      },
+      {
+       "proposition": "Juniper Ridge reads unsolicited decks in batches and answers late, if at all.",
+       "needs": "Whether a reply comes before the two weeks run out."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Who at Juniper Ridge reads hello@juniperridge.test.",
+       "relevance": "A named partner would change who the follow-up goes to and how it is written."
+      },
+      {
+       "question": "Whether anyone the founder knows can introduce Nimbus Labs to Juniper Ridge.",
+       "relevance": "A warm introduction would beat a second cold mail."
+      },
+      {
+       "question": "Whether Juniper Ridge backs seed rounds in companies like Nimbus Labs.",
+       "relevance": "If it does not, the right move after the two weeks is to close, not to follow up."
+      }
+     ],
+     "frames": {
+      "primary": "A cold first ask to Juniper Ridge for a meeting about the seed round, one fund in a wave, less than a day old — the window the founder set is still open.",
+      "rivals": [
+       "A wave the funds will read as unsolicited and leave unanswered.",
+       "Investor work the brief does not track, which will drift with no one deciding to follow up or to close it."
+      ]
+     },
+     "proposed_kind": {
+      "kind": "investor",
+      "why": "A fund the founder wrote to in the seed round wave, asking for a first meeting; the brief names no kind of work for it.",
+      "evidence": [
+       "evt_40ab364c4382f76fd81bb665",
+       "wave:wave_6354a4c281d25389daff08c7"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "From the brief's first goal, raising the seed round, and the mail itself: a reply within the two weeks the founder asked for, or one follow-up once they pass.",
+      "actual": "The mail went out less than a day ago; no reply yet, which at this point means nothing."
+     },
+     "scenarios": {
+      "do_nothing": "The two weeks pass and the file goes quiet with no follow-up: the brief does not track this fund and no stop rule will raise it.",
+      "act": "With a follow-up date set for when the two weeks run out, a silent fund gets one short nudge and then a decision to close.",
+      "best": "Juniper Ridge replies within the two weeks and a first meeting is booked.",
+      "worst": "No reply and no follow-up, and the fund stays open in the file long after it has quietly passed.",
+      "signals_to_watch": [
+       "A reply or an auto-reply from hello@juniperridge.test.",
+       "A bounce.",
+       "Any fund in the wave replying, which would show the deck reaching readers.",
+       "The two weeks the founder named running out with no reply."
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "low",
+      "reversibility": "reversible",
+      "reasons": [
+       "The mail is less than a day old and asked for a meeting within two weeks.",
+       "Raising the seed round is the brief's first goal, and this fund is one of the wave.",
+       "Nothing tracks the file: the brief names no kind for it and no stop rule applies."
+      ]
+     },
+     "mode": "wait",
+     "next_move": {
+      "who": "Arjun",
+      "what": "If the two weeks he asked for pass with no reply, send Juniper Ridge one short follow-up.",
+      "for_whom": "Juniper Ridge",
+      "by_when": "2026-08-25"
+     },
+     "alternative": "Find a warm introduction to a partner at Juniper Ridge and use it in place of a cold follow-up.",
+     "wait_or_stop": "Wait until the two weeks the founder asked for run out, or a reply comes. After one follow-up, give it about a week more; if it is still silent, close the file as a quiet pass.",
+     "done_when": "Juniper Ridge has replied and a meeting is set, or the file is closed with its reason after one follow-up.",
+     "draft": null
+    }
+   },
+   {
+    "when": [
+     "<latticecap.test>",
+     "as of 2026-10-06"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Arjun's mail to the Lattice Capital team asked for a short meeting about the seed round within the next two weeks, with the deck attached.",
+       "evidence": [
+        "evt_e93045e17f9f8b1f887bebf8"
+       ]
+      },
+      {
+       "claim": "That ask is still open, and we wait on them.",
+       "evidence": [
+        "loop:loop_f378a07d41ff6feda0fac698"
+       ]
+      },
+      {
+       "claim": "No recipient of the wave has replied, bounced or been followed up.",
+       "evidence": [
+        "wave:wave_6354a4c281d25389daff08c7"
+       ]
+      },
+      {
+       "claim": "The file has been quiet since the mail went out on the eleventh of August.",
+       "evidence": [
+        "num:days_quiet"
+       ]
+      },
+      {
+       "claim": "The investor relationship situation on the file has gone dormant, past the engine's default window.",
+       "evidence": [
+        "sit:sit_254d3146a7310342f911e00e"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "The two weeks ran out long ago and Lattice Capital was never nudged.",
+       "based_on": [
+        "fact:1",
+        "fact:3",
+        "fact:4"
+       ]
+      },
+      {
+       "claim": "At this distance the silence most likely means a pass, but a cold mail never followed up is not yet a no.",
+       "based_on": [
+        "fact:3",
+        "fact:4"
+       ]
+      },
+      {
+       "claim": "The file needs a decision more than a chase: one last note, then close it.",
+       "based_on": [
+        "fact:5"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "base_rate",
+       "claim": "In the founder's own numbers, this pitch has drawn no reply from any fund it went to.",
+       "based_on": [
+        "wave:wave_6354a4c281d25389daff08c7"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "Lattice Capital passed quietly.",
+       "needs": "Whether a last note draws any answer."
+      },
+      {
+       "proposition": "The seed round has moved on since August, and this fund no longer matters to it.",
+       "needs": "The founder's word on where the round stands."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Whether a reply arrived after the mailbox's last completed read, which the dossier dates to the day the wave went out.",
+       "relevance": "A reply there would mean we owe an answer, not a follow-up."
+      },
+      {
+       "question": "What is new at Nimbus Labs since August that a last note could carry.",
+       "relevance": "A last note with news lands better than a bare nudge."
+      }
+     ],
+     "frames": {
+      "primary": "A cold ask to Lattice Capital, unanswered and never followed up since the eleventh of August, now dormant — one last note, then a decision to close.",
+      "rivals": [
+       "A fund that has passed and should simply be closed.",
+       "A wave whose silence says more about the pitch than about Lattice Capital."
+      ]
+     },
+     "proposed_kind": {
+      "kind": "investor",
+      "why": "A fund the founder wrote to in the seed round wave, asking for a first meeting; the brief names no kind of work for it.",
+      "evidence": [
+       "evt_e93045e17f9f8b1f887bebf8",
+       "wave:wave_6354a4c281d25389daff08c7"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "A reply within the two weeks, or a follow-up when they ran out and a decision soon after.",
+      "actual": "No reply, no follow-up, and the file has gone dormant."
+     },
+     "scenarios": {
+      "do_nothing": "The file stays open and dormant: a fund nobody decided about, cluttering the raise.",
+      "act": "One last short note either revives Lattice Capital or lets the file close cleanly.",
+      "best": "Lattice Capital answers the last note and takes a meeting.",
+      "worst": "No answer, and the file closes as a quiet pass.",
+      "signals_to_watch": [
+       "A reply to the last note, even a no.",
+       "Replies from the other funds in the wave.",
+       "An auto-reply or a bounce."
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "medium",
+      "reversibility": "reversible",
+      "reasons": [
+       "The ask has gone unanswered since August and was never followed up.",
+       "The situation has gone dormant past its window.",
+       "Raising the seed round is the brief's first goal, so an open fund needs a decision."
+      ]
+     },
+     "mode": "act",
+     "next_move": {
+      "who": "Arjun",
+      "what": "Send Lattice Capital one last short note on the seed round, saying a quick no is welcome, and close the file if it stays silent.",
+      "for_whom": "Lattice Capital",
+      "by_when": null
+     },
+     "alternative": "Close the file now as a quiet pass, if the round has moved on, and spend the time on funds that answered.",
+     "wait_or_stop": "Give the last note about a week; then close the file with its reason. Stop at one note.",
+     "done_when": "Lattice Capital has answered, or the file is closed as a quiet pass with that reason.",
+     "draft": "Hi Lattice Capital team, a last note on Nimbus Labs' seed round, which I wrote to you about in August. We are building an AI chief of staff for founders. If it fits what you back, I would welcome a short call; if not, a quick no helps us too. Arjun Rao, Founder, Nimbus Labs"
+    }
+   },
+   {
+    "when": [
+     "<latticecap.test>",
+     "as of 2026-08-25"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Arjun's mail to the Lattice Capital team asked for a short meeting about the seed round within the next two weeks, with the deck attached.",
+       "evidence": [
+        "evt_e93045e17f9f8b1f887bebf8"
+       ]
+      },
+      {
+       "claim": "That ask is still open, and we wait on them.",
+       "evidence": [
+        "loop:loop_f378a07d41ff6feda0fac698"
+       ]
+      },
+      {
+       "claim": "No recipient of the wave the mail belongs to has replied, bounced or been followed up.",
+       "evidence": [
+        "wave:wave_6354a4c281d25389daff08c7"
+       ]
+      },
+      {
+       "claim": "The file has been quiet since the mail went out on the eleventh of August.",
+       "evidence": [
+        "num:days_quiet"
+       ]
+      },
+      {
+       "claim": "This is the first time the founder's history holds Lattice Capital.",
+       "evidence": [
+        "hist:derived.history.times_seen@fundraising",
+        "hist:derived.history.prior_outcome@fundraising"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "The two weeks the founder asked for have run out with no answer from Lattice Capital.",
+       "based_on": [
+        "fact:1",
+        "fact:4"
+       ]
+      },
+      {
+       "claim": "No follow-up has gone to any fund in the wave, so this would be the first nudge, not a chase.",
+       "based_on": [
+        "fact:3"
+       ]
+      },
+      {
+       "claim": "The silence is the wave's, not this fund's alone: when no fund answers, the pitch or the list may be the common cause.",
+       "based_on": [
+        "fact:3"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "base_rate",
+       "claim": "In the founder's own numbers, this pitch has drawn no reply from any fund it went to.",
+       "based_on": [
+        "wave:wave_6354a4c281d25389daff08c7"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "Lattice Capital saw the mail and passed without saying so.",
+       "needs": "A follow-up that also goes unanswered."
+      },
+      {
+       "proposition": "The mail never reached a partner at Lattice Capital — a shared inbox or a filter.",
+       "needs": "A reply to the follow-up, or a named contact."
+      },
+      {
+       "proposition": "The pitch itself is not landing with any fund in the wave.",
+       "needs": "What the follow-ups draw, across the wave."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Whether a reply arrived after the mailbox's last completed read, which the dossier dates to the day the wave went out.",
+       "relevance": "A reply there would turn the follow-up into an answer owed by us."
+      },
+      {
+       "question": "Who at Lattice Capital reads deals@latticecap.test.",
+       "relevance": "A named partner changes who the follow-up goes to."
+      },
+      {
+       "question": "Whether a warm introduction to Lattice Capital exists.",
+       "relevance": "An introduction would do more than a second cold mail."
+      }
+     ],
+     "frames": {
+      "primary": "A cold ask to Lattice Capital whose two weeks have run out unanswered, in a wave where no fund has replied and none has been followed up.",
+      "rivals": [
+       "A quiet pass by Lattice Capital, which a follow-up will only confirm.",
+       "A pitch that is not landing with any fund in the wave, where the fix is the pitch, not the nudge."
+      ]
+     },
+     "proposed_kind": {
+      "kind": "investor",
+      "why": "A fund the founder wrote to in the seed round wave, asking for a first meeting; the brief names no kind of work for it.",
+      "evidence": [
+       "evt_e93045e17f9f8b1f887bebf8",
+       "wave:wave_6354a4c281d25389daff08c7"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "A reply within the two weeks asked for, or one follow-up once they ran out.",
+      "actual": "The two weeks have run out with no reply from Lattice Capital and no follow-up sent."
+     },
+     "scenarios": {
+      "do_nothing": "The file drifts with no follow-up and no decision, and Lattice Capital stays open in the raise long after it has gone cold.",
+      "act": "One short follow-up now gives Lattice Capital a second look and turns its answer, or its silence, into a decision.",
+      "best": "Lattice Capital replies to the nudge and a first meeting is set.",
+      "worst": "The follow-up goes unanswered too, and the whole wave proves cold.",
+      "signals_to_watch": [
+       "A reply to the follow-up.",
+       "Replies from the other funds in the wave.",
+       "An auto-reply or a bounce."
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "medium",
+      "reversibility": "reversible",
+      "reasons": [
+       "The two weeks the founder asked for have passed with no reply.",
+       "No fund in the wave has replied or been followed up.",
+       "Raising the seed round is the brief's first goal."
+      ]
+     },
+     "mode": "act",
+     "next_move": {
+      "who": "Arjun",
+      "what": "Send Lattice Capital one short follow-up to the seed round mail, offering the deck again and a short call.",
+      "for_whom": "Lattice Capital",
+      "by_when": null
+     },
+     "alternative": "Ask someone who knows Lattice Capital for an introduction, and send that in place of a second cold mail.",
+     "wait_or_stop": "After the follow-up, give Lattice Capital about a week; if it stays silent, close the file as a quiet pass and spend the effort on funds that answer.",
+     "done_when": "Lattice Capital has answered — a meeting or a no — or the file is closed as a quiet pass after one follow-up.",
+     "draft": "Hi Lattice Capital team, following up on my note about Nimbus Labs' seed round. We are building an AI chief of staff for founders, and I would value a short call if it fits what you back. Happy to resend the deck. Arjun Rao, Founder, Nimbus Labs"
+    }
+   },
+   {
+    "when": [
+     "<latticecap.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Arjun wrote to the Lattice Capital team that Nimbus Labs is raising a seed round to build an AI chief of staff for founders, attached the deck, and asked for a short meeting within the next two weeks.",
+       "evidence": [
+        "evt_e93045e17f9f8b1f887bebf8"
+       ]
+      },
+      {
+       "claim": "That ask is open, and the move is theirs: we wait on them.",
+       "evidence": [
+        "loop:loop_f378a07d41ff6feda0fac698"
+       ]
+      },
+      {
+       "claim": "The mail is one of a wave sent under the same subject; so far no recipient of the wave has replied, bounced or been followed up.",
+       "evidence": [
+        "wave:wave_6354a4c281d25389daff08c7"
+       ]
+      },
+      {
+       "claim": "The file has been quiet for less than a day.",
+       "evidence": [
+        "num:days_quiet"
+       ]
+      },
+      {
+       "claim": "The file has no playbook and no stop rule, so nothing says when its quiet would make the work dormant.",
+       "evidence": [
+        "whatif:14"
+       ]
+      },
+      {
+       "claim": "This is the first time the founder's history holds Lattice Capital.",
+       "evidence": [
+        "hist:derived.history.times_seen@fundraising",
+        "hist:derived.history.prior_outcome@fundraising"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "Less than a day after sending, the silence carries no information: the window the founder named is still open.",
+       "based_on": [
+        "fact:1",
+        "fact:4"
+       ]
+      },
+      {
+       "claim": "Lattice Capital is investor work — a fund asked for a first meeting in the seed round — though the brief does not list it among the funds it tracks.",
+       "based_on": [
+        "fact:1",
+        "fact:3"
+       ]
+      },
+      {
+       "claim": "Because no playbook or stop rule covers the file, nothing will bring it back when the two weeks run out; the follow-up date has to be set on purpose.",
+       "based_on": [
+        "fact:5"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "base_rate",
+       "claim": "In the founder's own numbers for this wave no fund has replied yet — too early to read anything into.",
+       "based_on": [
+        "wave:wave_6354a4c281d25389daff08c7"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "The mail went to a shared inbox, deals@latticecap.test, that no one partner at Lattice Capital owns.",
+       "needs": "A reply naming a partner, or a bounce."
+      },
+      {
+       "proposition": "Lattice Capital reads unsolicited decks in batches and answers late, if at all.",
+       "needs": "Whether a reply comes before the two weeks run out."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Who at Lattice Capital reads deals@latticecap.test.",
+       "relevance": "A named partner would change who the follow-up goes to and how it is written."
+      },
+      {
+       "question": "Whether anyone the founder knows can introduce Nimbus Labs to Lattice Capital.",
+       "relevance": "A warm introduction would beat a second cold mail."
+      },
+      {
+       "question": "Whether Lattice Capital backs seed rounds in companies like Nimbus Labs.",
+       "relevance": "If it does not, the right move after the two weeks is to close, not to follow up."
+      }
+     ],
+     "frames": {
+      "primary": "A cold first ask to Lattice Capital for a meeting about the seed round, one fund in a wave, less than a day old — the window the founder set is still open.",
+      "rivals": [
+       "A wave the funds will read as unsolicited and leave unanswered.",
+       "Investor work the brief does not track, which will drift with no one deciding to follow up or to close it."
+      ]
+     },
+     "proposed_kind": {
+      "kind": "investor",
+      "why": "A fund the founder wrote to in the seed round wave, asking for a first meeting; the brief names no kind of work for it.",
+      "evidence": [
+       "evt_e93045e17f9f8b1f887bebf8",
+       "wave:wave_6354a4c281d25389daff08c7"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "From the brief's first goal, raising the seed round, and the mail itself: a reply within the two weeks the founder asked for, or one follow-up once they pass.",
+      "actual": "The mail went out less than a day ago; no reply yet, which at this point means nothing."
+     },
+     "scenarios": {
+      "do_nothing": "The two weeks pass and the file goes quiet with no follow-up: the brief does not track this fund and no stop rule will raise it.",
+      "act": "With a follow-up date set for when the two weeks run out, a silent fund gets one short nudge and then a decision to close.",
+      "best": "Lattice Capital replies within the two weeks and a first meeting is booked.",
+      "worst": "No reply and no follow-up, and the fund stays open in the file long after it has quietly passed.",
+      "signals_to_watch": [
+       "A reply or an auto-reply from deals@latticecap.test.",
+       "A bounce.",
+       "Any fund in the wave replying, which would show the deck reaching readers.",
+       "The two weeks the founder named running out with no reply."
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "low",
+      "reversibility": "reversible",
+      "reasons": [
+       "The mail is less than a day old and asked for a meeting within two weeks.",
+       "Raising the seed round is the brief's first goal, and this fund is one of the wave.",
+       "Nothing tracks the file: the brief names no kind for it and no stop rule applies."
+      ]
+     },
+     "mode": "wait",
+     "next_move": {
+      "who": "Arjun",
+      "what": "If the two weeks he asked for pass with no reply, send Lattice Capital one short follow-up.",
+      "for_whom": "Lattice Capital",
+      "by_when": "2026-08-25"
+     },
+     "alternative": "Find a warm introduction to a partner at Lattice Capital and use it in place of a cold follow-up.",
+     "wait_or_stop": "Wait until the two weeks the founder asked for run out, or a reply comes. After one follow-up, give it about a week more; if it is still silent, close the file as a quiet pass.",
+     "done_when": "Lattice Capital has replied and a meeting is set, or the file is closed with its reason after one follow-up.",
+     "draft": null
+    }
+   },
+   {
+    "when": [
+     "<meridianseed.test>",
+     "as of 2026-10-06"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Arjun's mail to the Meridian Seed team asked for a short meeting about the seed round within the next two weeks, with the deck attached.",
+       "evidence": [
+        "evt_f7a3274b9b39e353eae26b82"
+       ]
+      },
+      {
+       "claim": "That ask is still open, and we wait on them.",
+       "evidence": [
+        "loop:loop_bee259e2b13e73554f46a400"
+       ]
+      },
+      {
+       "claim": "No recipient of the wave has replied, bounced or been followed up.",
+       "evidence": [
+        "wave:wave_6354a4c281d25389daff08c7"
+       ]
+      },
+      {
+       "claim": "The file has been quiet since the mail went out on the eleventh of August.",
+       "evidence": [
+        "num:days_quiet"
+       ]
+      },
+      {
+       "claim": "The investor relationship situation on the file has gone dormant, past the engine's default window.",
+       "evidence": [
+        "sit:sit_6490fc67713cd888f30600ee"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "The two weeks ran out long ago and Meridian Seed was never nudged.",
+       "based_on": [
+        "fact:1",
+        "fact:3",
+        "fact:4"
+       ]
+      },
+      {
+       "claim": "At this distance the silence most likely means a pass, but a cold mail never followed up is not yet a no.",
+       "based_on": [
+        "fact:3",
+        "fact:4"
+       ]
+      },
+      {
+       "claim": "The file needs a decision more than a chase: one last note, then close it.",
+       "based_on": [
+        "fact:5"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "base_rate",
+       "claim": "In the founder's own numbers, this pitch has drawn no reply from any fund it went to.",
+       "based_on": [
+        "wave:wave_6354a4c281d25389daff08c7"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "Meridian Seed passed quietly.",
+       "needs": "Whether a last note draws any answer."
+      },
+      {
+       "proposition": "The seed round has moved on since August, and this fund no longer matters to it.",
+       "needs": "The founder's word on where the round stands."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Whether a reply arrived after the mailbox's last completed read, which the dossier dates to the day the wave went out.",
+       "relevance": "A reply there would mean we owe an answer, not a follow-up."
+      },
+      {
+       "question": "What is new at Nimbus Labs since August that a last note could carry.",
+       "relevance": "A last note with news lands better than a bare nudge."
+      }
+     ],
+     "frames": {
+      "primary": "A cold ask to Meridian Seed, unanswered and never followed up since the eleventh of August, now dormant — one last note, then a decision to close.",
+      "rivals": [
+       "A fund that has passed and should simply be closed.",
+       "A wave whose silence says more about the pitch than about Meridian Seed."
+      ]
+     },
+     "proposed_kind": {
+      "kind": "investor",
+      "why": "A fund the founder wrote to in the seed round wave, asking for a first meeting; the brief names no kind of work for it.",
+      "evidence": [
+       "evt_f7a3274b9b39e353eae26b82",
+       "wave:wave_6354a4c281d25389daff08c7"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "A reply within the two weeks, or a follow-up when they ran out and a decision soon after.",
+      "actual": "No reply, no follow-up, and the file has gone dormant."
+     },
+     "scenarios": {
+      "do_nothing": "The file stays open and dormant: a fund nobody decided about, cluttering the raise.",
+      "act": "One last short note either revives Meridian Seed or lets the file close cleanly.",
+      "best": "Meridian Seed answers the last note and takes a meeting.",
+      "worst": "No answer, and the file closes as a quiet pass.",
+      "signals_to_watch": [
+       "A reply to the last note, even a no.",
+       "Replies from the other funds in the wave.",
+       "An auto-reply or a bounce."
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "medium",
+      "reversibility": "reversible",
+      "reasons": [
+       "The ask has gone unanswered since August and was never followed up.",
+       "The situation has gone dormant past its window.",
+       "Raising the seed round is the brief's first goal, so an open fund needs a decision."
+      ]
+     },
+     "mode": "act",
+     "next_move": {
+      "who": "Arjun",
+      "what": "Send Meridian Seed one last short note on the seed round, saying a quick no is welcome, and close the file if it stays silent.",
+      "for_whom": "Meridian Seed",
+      "by_when": null
+     },
+     "alternative": "Close the file now as a quiet pass, if the round has moved on, and spend the time on funds that answered.",
+     "wait_or_stop": "Give the last note about a week; then close the file with its reason. Stop at one note.",
+     "done_when": "Meridian Seed has answered, or the file is closed as a quiet pass with that reason.",
+     "draft": "Hi Meridian Seed team, a last note on Nimbus Labs' seed round, which I wrote to you about in August. We are building an AI chief of staff for founders. If it fits what you back, I would welcome a short call; if not, a quick no helps us too. Arjun Rao, Founder, Nimbus Labs"
+    }
+   },
+   {
+    "when": [
+     "<meridianseed.test>",
+     "as of 2026-08-25"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Arjun's mail to the Meridian Seed team asked for a short meeting about the seed round within the next two weeks, with the deck attached.",
+       "evidence": [
+        "evt_f7a3274b9b39e353eae26b82"
+       ]
+      },
+      {
+       "claim": "That ask is still open, and we wait on them.",
+       "evidence": [
+        "loop:loop_bee259e2b13e73554f46a400"
+       ]
+      },
+      {
+       "claim": "No recipient of the wave the mail belongs to has replied, bounced or been followed up.",
+       "evidence": [
+        "wave:wave_6354a4c281d25389daff08c7"
+       ]
+      },
+      {
+       "claim": "The file has been quiet since the mail went out on the eleventh of August.",
+       "evidence": [
+        "num:days_quiet"
+       ]
+      },
+      {
+       "claim": "This is the first time the founder's history holds Meridian Seed.",
+       "evidence": [
+        "hist:derived.history.times_seen@fundraising",
+        "hist:derived.history.prior_outcome@fundraising"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "The two weeks the founder asked for have run out with no answer from Meridian Seed.",
+       "based_on": [
+        "fact:1",
+        "fact:4"
+       ]
+      },
+      {
+       "claim": "No follow-up has gone to any fund in the wave, so this would be the first nudge, not a chase.",
+       "based_on": [
+        "fact:3"
+       ]
+      },
+      {
+       "claim": "The silence is the wave's, not this fund's alone: when no fund answers, the pitch or the list may be the common cause.",
+       "based_on": [
+        "fact:3"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "base_rate",
+       "claim": "In the founder's own numbers, this pitch has drawn no reply from any fund it went to.",
+       "based_on": [
+        "wave:wave_6354a4c281d25389daff08c7"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "Meridian Seed saw the mail and passed without saying so.",
+       "needs": "A follow-up that also goes unanswered."
+      },
+      {
+       "proposition": "The mail never reached a partner at Meridian Seed — a shared inbox or a filter.",
+       "needs": "A reply to the follow-up, or a named contact."
+      },
+      {
+       "proposition": "The pitch itself is not landing with any fund in the wave.",
+       "needs": "What the follow-ups draw, across the wave."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Whether a reply arrived after the mailbox's last completed read, which the dossier dates to the day the wave went out.",
+       "relevance": "A reply there would turn the follow-up into an answer owed by us."
+      },
+      {
+       "question": "Who at Meridian Seed reads team@meridianseed.test.",
+       "relevance": "A named partner changes who the follow-up goes to."
+      },
+      {
+       "question": "Whether a warm introduction to Meridian Seed exists.",
+       "relevance": "An introduction would do more than a second cold mail."
+      }
+     ],
+     "frames": {
+      "primary": "A cold ask to Meridian Seed whose two weeks have run out unanswered, in a wave where no fund has replied and none has been followed up.",
+      "rivals": [
+       "A quiet pass by Meridian Seed, which a follow-up will only confirm.",
+       "A pitch that is not landing with any fund in the wave, where the fix is the pitch, not the nudge."
+      ]
+     },
+     "proposed_kind": {
+      "kind": "investor",
+      "why": "A fund the founder wrote to in the seed round wave, asking for a first meeting; the brief names no kind of work for it.",
+      "evidence": [
+       "evt_f7a3274b9b39e353eae26b82",
+       "wave:wave_6354a4c281d25389daff08c7"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "A reply within the two weeks asked for, or one follow-up once they ran out.",
+      "actual": "The two weeks have run out with no reply from Meridian Seed and no follow-up sent."
+     },
+     "scenarios": {
+      "do_nothing": "The file drifts with no follow-up and no decision, and Meridian Seed stays open in the raise long after it has gone cold.",
+      "act": "One short follow-up now gives Meridian Seed a second look and turns its answer, or its silence, into a decision.",
+      "best": "Meridian Seed replies to the nudge and a first meeting is set.",
+      "worst": "The follow-up goes unanswered too, and the whole wave proves cold.",
+      "signals_to_watch": [
+       "A reply to the follow-up.",
+       "Replies from the other funds in the wave.",
+       "An auto-reply or a bounce."
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "medium",
+      "reversibility": "reversible",
+      "reasons": [
+       "The two weeks the founder asked for have passed with no reply.",
+       "No fund in the wave has replied or been followed up.",
+       "Raising the seed round is the brief's first goal."
+      ]
+     },
+     "mode": "act",
+     "next_move": {
+      "who": "Arjun",
+      "what": "Send Meridian Seed one short follow-up to the seed round mail, offering the deck again and a short call.",
+      "for_whom": "Meridian Seed",
+      "by_when": null
+     },
+     "alternative": "Ask someone who knows Meridian Seed for an introduction, and send that in place of a second cold mail.",
+     "wait_or_stop": "After the follow-up, give Meridian Seed about a week; if it stays silent, close the file as a quiet pass and spend the effort on funds that answer.",
+     "done_when": "Meridian Seed has answered — a meeting or a no — or the file is closed as a quiet pass after one follow-up.",
+     "draft": "Hi Meridian Seed team, following up on my note about Nimbus Labs' seed round. We are building an AI chief of staff for founders, and I would value a short call if it fits what you back. Happy to resend the deck. Arjun Rao, Founder, Nimbus Labs"
+    }
+   },
+   {
+    "when": [
+     "<meridianseed.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Arjun wrote to the Meridian Seed team that Nimbus Labs is raising a seed round to build an AI chief of staff for founders, attached the deck, and asked for a short meeting within the next two weeks.",
+       "evidence": [
+        "evt_f7a3274b9b39e353eae26b82"
+       ]
+      },
+      {
+       "claim": "That ask is open, and the move is theirs: we wait on them.",
+       "evidence": [
+        "loop:loop_bee259e2b13e73554f46a400"
+       ]
+      },
+      {
+       "claim": "The mail is one of a wave sent under the same subject; so far no recipient of the wave has replied, bounced or been followed up.",
+       "evidence": [
+        "wave:wave_6354a4c281d25389daff08c7"
+       ]
+      },
+      {
+       "claim": "The file has been quiet for less than a day.",
+       "evidence": [
+        "num:days_quiet"
+       ]
+      },
+      {
+       "claim": "The file has no playbook and no stop rule, so nothing says when its quiet would make the work dormant.",
+       "evidence": [
+        "whatif:14"
+       ]
+      },
+      {
+       "claim": "This is the first time the founder's history holds Meridian Seed.",
+       "evidence": [
+        "hist:derived.history.times_seen@fundraising",
+        "hist:derived.history.prior_outcome@fundraising"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "Less than a day after sending, the silence carries no information: the window the founder named is still open.",
+       "based_on": [
+        "fact:1",
+        "fact:4"
+       ]
+      },
+      {
+       "claim": "Meridian Seed is investor work — a fund asked for a first meeting in the seed round — though the brief does not list it among the funds it tracks.",
+       "based_on": [
+        "fact:1",
+        "fact:3"
+       ]
+      },
+      {
+       "claim": "Because no playbook or stop rule covers the file, nothing will bring it back when the two weeks run out; the follow-up date has to be set on purpose.",
+       "based_on": [
+        "fact:5"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "base_rate",
+       "claim": "In the founder's own numbers for this wave no fund has replied yet — too early to read anything into.",
+       "based_on": [
+        "wave:wave_6354a4c281d25389daff08c7"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "The mail went to a shared inbox, team@meridianseed.test, that no one partner at Meridian Seed owns.",
+       "needs": "A reply naming a partner, or a bounce."
+      },
+      {
+       "proposition": "Meridian Seed reads unsolicited decks in batches and answers late, if at all.",
+       "needs": "Whether a reply comes before the two weeks run out."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Who at Meridian Seed reads team@meridianseed.test.",
+       "relevance": "A named partner would change who the follow-up goes to and how it is written."
+      },
+      {
+       "question": "Whether anyone the founder knows can introduce Nimbus Labs to Meridian Seed.",
+       "relevance": "A warm introduction would beat a second cold mail."
+      },
+      {
+       "question": "Whether Meridian Seed backs seed rounds in companies like Nimbus Labs.",
+       "relevance": "If it does not, the right move after the two weeks is to close, not to follow up."
+      }
+     ],
+     "frames": {
+      "primary": "A cold first ask to Meridian Seed for a meeting about the seed round, one fund in a wave, less than a day old — the window the founder set is still open.",
+      "rivals": [
+       "A wave the funds will read as unsolicited and leave unanswered.",
+       "Investor work the brief does not track, which will drift with no one deciding to follow up or to close it."
+      ]
+     },
+     "proposed_kind": {
+      "kind": "investor",
+      "why": "A fund the founder wrote to in the seed round wave, asking for a first meeting; the brief names no kind of work for it.",
+      "evidence": [
+       "evt_f7a3274b9b39e353eae26b82",
+       "wave:wave_6354a4c281d25389daff08c7"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "From the brief's first goal, raising the seed round, and the mail itself: a reply within the two weeks the founder asked for, or one follow-up once they pass.",
+      "actual": "The mail went out less than a day ago; no reply yet, which at this point means nothing."
+     },
+     "scenarios": {
+      "do_nothing": "The two weeks pass and the file goes quiet with no follow-up: the brief does not track this fund and no stop rule will raise it.",
+      "act": "With a follow-up date set for when the two weeks run out, a silent fund gets one short nudge and then a decision to close.",
+      "best": "Meridian Seed replies within the two weeks and a first meeting is booked.",
+      "worst": "No reply and no follow-up, and the fund stays open in the file long after it has quietly passed.",
+      "signals_to_watch": [
+       "A reply or an auto-reply from team@meridianseed.test.",
+       "A bounce.",
+       "Any fund in the wave replying, which would show the deck reaching readers.",
+       "The two weeks the founder named running out with no reply."
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "low",
+      "reversibility": "reversible",
+      "reasons": [
+       "The mail is less than a day old and asked for a meeting within two weeks.",
+       "Raising the seed round is the brief's first goal, and this fund is one of the wave.",
+       "Nothing tracks the file: the brief names no kind for it and no stop rule applies."
+      ]
+     },
+     "mode": "wait",
+     "next_move": {
+      "who": "Arjun",
+      "what": "If the two weeks he asked for pass with no reply, send Meridian Seed one short follow-up.",
+      "for_whom": "Meridian Seed",
+      "by_when": "2026-08-25"
+     },
+     "alternative": "Find a warm introduction to a partner at Meridian Seed and use it in place of a cold follow-up.",
+     "wait_or_stop": "Wait until the two weeks the founder asked for run out, or a reply comes. After one follow-up, give it about a week more; if it is still silent, close the file as a quiet pass.",
+     "done_when": "Meridian Seed has replied and a meeting is set, or the file is closed with its reason after one follow-up.",
+     "draft": null
+    }
+   },
+   {
+    "when": [
+     "<northstarangels.test>",
+     "as of 2026-10-06"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Arjun's mail to the Northstar Angels team asked for a short meeting about the seed round within the next two weeks, with the deck attached.",
+       "evidence": [
+        "evt_f4ce35e222e19ba3448acd67"
+       ]
+      },
+      {
+       "claim": "That ask is still open, and we wait on them.",
+       "evidence": [
+        "loop:loop_5a95165690e736bc6a430e00"
+       ]
+      },
+      {
+       "claim": "No recipient of the wave has replied, bounced or been followed up.",
+       "evidence": [
+        "wave:wave_6354a4c281d25389daff08c7"
+       ]
+      },
+      {
+       "claim": "The file has been quiet since the mail went out on the eleventh of August.",
+       "evidence": [
+        "num:days_quiet"
+       ]
+      },
+      {
+       "claim": "The investor relationship situation on the file has gone dormant, past the engine's default window.",
+       "evidence": [
+        "sit:sit_5291a40a038315af17bb8a4a"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "The two weeks ran out long ago and Northstar Angels was never nudged.",
+       "based_on": [
+        "fact:1",
+        "fact:3",
+        "fact:4"
+       ]
+      },
+      {
+       "claim": "At this distance the silence most likely means a pass, but a cold mail never followed up is not yet a no.",
+       "based_on": [
+        "fact:3",
+        "fact:4"
+       ]
+      },
+      {
+       "claim": "The file needs a decision more than a chase: one last note, then close it.",
+       "based_on": [
+        "fact:5"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "base_rate",
+       "claim": "In the founder's own numbers, this pitch has drawn no reply from any fund it went to.",
+       "based_on": [
+        "wave:wave_6354a4c281d25389daff08c7"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "Northstar Angels passed quietly.",
+       "needs": "Whether a last note draws any answer."
+      },
+      {
+       "proposition": "The seed round has moved on since August, and this fund no longer matters to it.",
+       "needs": "The founder's word on where the round stands."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Whether a reply arrived after the mailbox's last completed read, which the dossier dates to the day the wave went out.",
+       "relevance": "A reply there would mean we owe an answer, not a follow-up."
+      },
+      {
+       "question": "What is new at Nimbus Labs since August that a last note could carry.",
+       "relevance": "A last note with news lands better than a bare nudge."
+      }
+     ],
+     "frames": {
+      "primary": "A cold ask to Northstar Angels, unanswered and never followed up since the eleventh of August, now dormant — one last note, then a decision to close.",
+      "rivals": [
+       "A fund that has passed and should simply be closed.",
+       "A wave whose silence says more about the pitch than about Northstar Angels."
+      ]
+     },
+     "proposed_kind": {
+      "kind": "investor",
+      "why": "A fund the founder wrote to in the seed round wave, asking for a first meeting; the brief names no kind of work for it.",
+      "evidence": [
+       "evt_f4ce35e222e19ba3448acd67",
+       "wave:wave_6354a4c281d25389daff08c7"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "A reply within the two weeks, or a follow-up when they ran out and a decision soon after.",
+      "actual": "No reply, no follow-up, and the file has gone dormant."
+     },
+     "scenarios": {
+      "do_nothing": "The file stays open and dormant: a fund nobody decided about, cluttering the raise.",
+      "act": "One last short note either revives Northstar Angels or lets the file close cleanly.",
+      "best": "Northstar Angels answers the last note and takes a meeting.",
+      "worst": "No answer, and the file closes as a quiet pass.",
+      "signals_to_watch": [
+       "A reply to the last note, even a no.",
+       "Replies from the other funds in the wave.",
+       "An auto-reply or a bounce."
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "medium",
+      "reversibility": "reversible",
+      "reasons": [
+       "The ask has gone unanswered since August and was never followed up.",
+       "The situation has gone dormant past its window.",
+       "Raising the seed round is the brief's first goal, so an open fund needs a decision."
+      ]
+     },
+     "mode": "act",
+     "next_move": {
+      "who": "Arjun",
+      "what": "Send Northstar Angels one last short note on the seed round, saying a quick no is welcome, and close the file if it stays silent.",
+      "for_whom": "Northstar Angels",
+      "by_when": null
+     },
+     "alternative": "Close the file now as a quiet pass, if the round has moved on, and spend the time on funds that answered.",
+     "wait_or_stop": "Give the last note about a week; then close the file with its reason. Stop at one note.",
+     "done_when": "Northstar Angels has answered, or the file is closed as a quiet pass with that reason.",
+     "draft": "Hi Northstar Angels team, a last note on Nimbus Labs' seed round, which I wrote to you about in August. We are building an AI chief of staff for founders. If it fits what you back, I would welcome a short call; if not, a quick no helps us too. Arjun Rao, Founder, Nimbus Labs"
+    }
+   },
+   {
+    "when": [
+     "<northstarangels.test>",
+     "as of 2026-08-25"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Arjun's mail to the Northstar Angels team asked for a short meeting about the seed round within the next two weeks, with the deck attached.",
+       "evidence": [
+        "evt_f4ce35e222e19ba3448acd67"
+       ]
+      },
+      {
+       "claim": "That ask is still open, and we wait on them.",
+       "evidence": [
+        "loop:loop_5a95165690e736bc6a430e00"
+       ]
+      },
+      {
+       "claim": "No recipient of the wave the mail belongs to has replied, bounced or been followed up.",
+       "evidence": [
+        "wave:wave_6354a4c281d25389daff08c7"
+       ]
+      },
+      {
+       "claim": "The file has been quiet since the mail went out on the eleventh of August.",
+       "evidence": [
+        "num:days_quiet"
+       ]
+      },
+      {
+       "claim": "This is the first time the founder's history holds Northstar Angels.",
+       "evidence": [
+        "hist:derived.history.times_seen@fundraising",
+        "hist:derived.history.prior_outcome@fundraising"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "The two weeks the founder asked for have run out with no answer from Northstar Angels.",
+       "based_on": [
+        "fact:1",
+        "fact:4"
+       ]
+      },
+      {
+       "claim": "No follow-up has gone to any fund in the wave, so this would be the first nudge, not a chase.",
+       "based_on": [
+        "fact:3"
+       ]
+      },
+      {
+       "claim": "The silence is the wave's, not this fund's alone: when no fund answers, the pitch or the list may be the common cause.",
+       "based_on": [
+        "fact:3"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "base_rate",
+       "claim": "In the founder's own numbers, this pitch has drawn no reply from any fund it went to.",
+       "based_on": [
+        "wave:wave_6354a4c281d25389daff08c7"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "Northstar Angels saw the mail and passed without saying so.",
+       "needs": "A follow-up that also goes unanswered."
+      },
+      {
+       "proposition": "The mail never reached a partner at Northstar Angels — a shared inbox or a filter.",
+       "needs": "A reply to the follow-up, or a named contact."
+      },
+      {
+       "proposition": "The pitch itself is not landing with any fund in the wave.",
+       "needs": "What the follow-ups draw, across the wave."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Whether a reply arrived after the mailbox's last completed read, which the dossier dates to the day the wave went out.",
+       "relevance": "A reply there would turn the follow-up into an answer owed by us."
+      },
+      {
+       "question": "Who at Northstar Angels reads invest@northstarangels.test.",
+       "relevance": "A named partner changes who the follow-up goes to."
+      },
+      {
+       "question": "Whether a warm introduction to Northstar Angels exists.",
+       "relevance": "An introduction would do more than a second cold mail."
+      }
+     ],
+     "frames": {
+      "primary": "A cold ask to Northstar Angels whose two weeks have run out unanswered, in a wave where no fund has replied and none has been followed up.",
+      "rivals": [
+       "A quiet pass by Northstar Angels, which a follow-up will only confirm.",
+       "A pitch that is not landing with any fund in the wave, where the fix is the pitch, not the nudge."
+      ]
+     },
+     "proposed_kind": {
+      "kind": "investor",
+      "why": "A fund the founder wrote to in the seed round wave, asking for a first meeting; the brief names no kind of work for it.",
+      "evidence": [
+       "evt_f4ce35e222e19ba3448acd67",
+       "wave:wave_6354a4c281d25389daff08c7"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "A reply within the two weeks asked for, or one follow-up once they ran out.",
+      "actual": "The two weeks have run out with no reply from Northstar Angels and no follow-up sent."
+     },
+     "scenarios": {
+      "do_nothing": "The file drifts with no follow-up and no decision, and Northstar Angels stays open in the raise long after it has gone cold.",
+      "act": "One short follow-up now gives Northstar Angels a second look and turns its answer, or its silence, into a decision.",
+      "best": "Northstar Angels replies to the nudge and a first meeting is set.",
+      "worst": "The follow-up goes unanswered too, and the whole wave proves cold.",
+      "signals_to_watch": [
+       "A reply to the follow-up.",
+       "Replies from the other funds in the wave.",
+       "An auto-reply or a bounce."
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "medium",
+      "reversibility": "reversible",
+      "reasons": [
+       "The two weeks the founder asked for have passed with no reply.",
+       "No fund in the wave has replied or been followed up.",
+       "Raising the seed round is the brief's first goal."
+      ]
+     },
+     "mode": "act",
+     "next_move": {
+      "who": "Arjun",
+      "what": "Send Northstar Angels one short follow-up to the seed round mail, offering the deck again and a short call.",
+      "for_whom": "Northstar Angels",
+      "by_when": null
+     },
+     "alternative": "Ask someone who knows Northstar Angels for an introduction, and send that in place of a second cold mail.",
+     "wait_or_stop": "After the follow-up, give Northstar Angels about a week; if it stays silent, close the file as a quiet pass and spend the effort on funds that answer.",
+     "done_when": "Northstar Angels has answered — a meeting or a no — or the file is closed as a quiet pass after one follow-up.",
+     "draft": "Hi Northstar Angels team, following up on my note about Nimbus Labs' seed round. We are building an AI chief of staff for founders, and I would value a short call if it fits what you back. Happy to resend the deck. Arjun Rao, Founder, Nimbus Labs"
+    }
+   },
+   {
+    "when": [
+     "<northstarangels.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "Arjun wrote to the Northstar Angels team that Nimbus Labs is raising a seed round to build an AI chief of staff for founders, attached the deck, and asked for a short meeting within the next two weeks.",
+       "evidence": [
+        "evt_f4ce35e222e19ba3448acd67"
+       ]
+      },
+      {
+       "claim": "That ask is open, and the move is theirs: we wait on them.",
+       "evidence": [
+        "loop:loop_5a95165690e736bc6a430e00"
+       ]
+      },
+      {
+       "claim": "The mail is one of a wave sent under the same subject; so far no recipient of the wave has replied, bounced or been followed up.",
+       "evidence": [
+        "wave:wave_6354a4c281d25389daff08c7"
+       ]
+      },
+      {
+       "claim": "The file has been quiet for less than a day.",
+       "evidence": [
+        "num:days_quiet"
+       ]
+      },
+      {
+       "claim": "The file has no playbook and no stop rule, so nothing says when its quiet would make the work dormant.",
+       "evidence": [
+        "whatif:14"
+       ]
+      },
+      {
+       "claim": "This is the first time the founder's history holds Northstar Angels.",
+       "evidence": [
+        "hist:derived.history.times_seen@fundraising",
+        "hist:derived.history.prior_outcome@fundraising"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "Less than a day after sending, the silence carries no information: the window the founder named is still open.",
+       "based_on": [
+        "fact:1",
+        "fact:4"
+       ]
+      },
+      {
+       "claim": "Northstar Angels is investor work — a fund asked for a first meeting in the seed round — though the brief does not list it among the funds it tracks.",
+       "based_on": [
+        "fact:1",
+        "fact:3"
+       ]
+      },
+      {
+       "claim": "Because no playbook or stop rule covers the file, nothing will bring it back when the two weeks run out; the follow-up date has to be set on purpose.",
+       "based_on": [
+        "fact:5"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "base_rate",
+       "claim": "In the founder's own numbers for this wave no fund has replied yet — too early to read anything into.",
+       "based_on": [
+        "wave:wave_6354a4c281d25389daff08c7"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "The mail went to a shared inbox, invest@northstarangels.test, that no one partner at Northstar Angels owns.",
+       "needs": "A reply naming a partner, or a bounce."
+      },
+      {
+       "proposition": "Northstar Angels reads unsolicited decks in batches and answers late, if at all.",
+       "needs": "Whether a reply comes before the two weeks run out."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Who at Northstar Angels reads invest@northstarangels.test.",
+       "relevance": "A named partner would change who the follow-up goes to and how it is written."
+      },
+      {
+       "question": "Whether anyone the founder knows can introduce Nimbus Labs to Northstar Angels.",
+       "relevance": "A warm introduction would beat a second cold mail."
+      },
+      {
+       "question": "Whether Northstar Angels backs seed rounds in companies like Nimbus Labs.",
+       "relevance": "If it does not, the right move after the two weeks is to close, not to follow up."
+      }
+     ],
+     "frames": {
+      "primary": "A cold first ask to Northstar Angels for a meeting about the seed round, one fund in a wave, less than a day old — the window the founder set is still open.",
+      "rivals": [
+       "A wave the funds will read as unsolicited and leave unanswered.",
+       "Investor work the brief does not track, which will drift with no one deciding to follow up or to close it."
+      ]
+     },
+     "proposed_kind": {
+      "kind": "investor",
+      "why": "A fund the founder wrote to in the seed round wave, asking for a first meeting; the brief names no kind of work for it.",
+      "evidence": [
+       "evt_f4ce35e222e19ba3448acd67",
+       "wave:wave_6354a4c281d25389daff08c7"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "From the brief's first goal, raising the seed round, and the mail itself: a reply within the two weeks the founder asked for, or one follow-up once they pass.",
+      "actual": "The mail went out less than a day ago; no reply yet, which at this point means nothing."
+     },
+     "scenarios": {
+      "do_nothing": "The two weeks pass and the file goes quiet with no follow-up: the brief does not track this fund and no stop rule will raise it.",
+      "act": "With a follow-up date set for when the two weeks run out, a silent fund gets one short nudge and then a decision to close.",
+      "best": "Northstar Angels replies within the two weeks and a first meeting is booked.",
+      "worst": "No reply and no follow-up, and the fund stays open in the file long after it has quietly passed.",
+      "signals_to_watch": [
+       "A reply or an auto-reply from invest@northstarangels.test.",
+       "A bounce.",
+       "Any fund in the wave replying, which would show the deck reaching readers.",
+       "The two weeks the founder named running out with no reply."
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "low",
+      "reversibility": "reversible",
+      "reasons": [
+       "The mail is less than a day old and asked for a meeting within two weeks.",
+       "Raising the seed round is the brief's first goal, and this fund is one of the wave.",
+       "Nothing tracks the file: the brief names no kind for it and no stop rule applies."
+      ]
+     },
+     "mode": "wait",
+     "next_move": {
+      "who": "Arjun",
+      "what": "If the two weeks he asked for pass with no reply, send Northstar Angels one short follow-up.",
+      "for_whom": "Northstar Angels",
+      "by_when": "2026-08-25"
+     },
+     "alternative": "Find a warm introduction to a partner at Northstar Angels and use it in place of a cold follow-up.",
+     "wait_or_stop": "Wait until the two weeks the founder asked for run out, or a reply comes. After one follow-up, give it about a week more; if it is still silent, close the file as a quiet pass.",
+     "done_when": "Northstar Angels has replied and a meeting is set, or the file is closed with its reason after one follow-up.",
+     "draft": null
+    }
+   }
+  ]
+ }
 }

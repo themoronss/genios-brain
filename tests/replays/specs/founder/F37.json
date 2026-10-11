@@ -333,6 +333,143 @@
      "artifact": "Hi Farah, here is our deck. Thanks, Arjun"
     }
    }
+  ],
+  "expert": [
+   {
+    "when": [
+     "<kitepath.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "proposed_kind": {
+      "kind": "investor",
+      "why": "The introduction names Farah as the one who leads investments at Kitepath, and she asked for the deck — investor work for the seed round the brief names.",
+      "evidence": [
+       "evt_dcfe67d4a16fbbc55bf6a2b1",
+       "evt_475e72f774b0be782663b6dc"
+      ]
+     },
+     "draft": "Hi Farah, good to meet you. Here is our deck — happy to walk you through it whenever suits you. Arjun",
+     "next_move": {
+      "who": "Arjun",
+      "what": "Reply to Farah directly with the deck, before the twelfth.",
+      "for_whom": "Farah Qureshi at Kitepath",
+      "by_when": "2026-09-12"
+     },
+     "facts": [
+      {
+       "claim": "Introly introduced Arjun to Farah Qureshi, who leads investments at Kitepath, and left the two of them to take it from there.",
+       "evidence": [
+        "evt_dcfe67d4a16fbbc55bf6a2b1"
+       ]
+      },
+      {
+       "claim": "Farah wrote to Arjun directly and asked him to send the deck by Friday the twelfth of September.",
+       "evidence": [
+        "evt_475e72f774b0be782663b6dc"
+       ]
+      },
+      {
+       "claim": "Her ask is open and waits on us.",
+       "evidence": [
+        "loop:loop_3d6f3e81f9289943ea0bc6b7"
+       ]
+      },
+      {
+       "claim": "The engine reads the file as an investor relationship in the fundraising domain.",
+       "evidence": [
+        "sit:sit_520a68e0278cc3aeb132ec4a"
+       ]
+      },
+      {
+       "claim": "No answer of ours to Farah is measured in the file.",
+       "evidence": [
+        "num:your_reply_time:farah@kitepath.test"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "The connector's part is done: it handed the conversation over, so the person to answer is Farah, not the connector.",
+       "based_on": [
+        "fact:1",
+        "fact:2"
+       ]
+      },
+      {
+       "claim": "An investor who asks for the deck within hours of an introduction is interested, and raising the seed round is the brief's first goal.",
+       "based_on": [
+        "fact:1",
+        "fact:2",
+        "num:usual_gap"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "base_rate",
+       "claim": "The file is new — seen once, with no earlier card or outcome — so there is no record of Kitepath's pace beyond this first exchange.",
+       "based_on": [
+        "hist:derived.history.times_seen@fundraising",
+        "hist:derived.history.prior_outcome@fundraising"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "Farah may want a call once she has read the deck.",
+       "needs": "Her reply once the deck is with her."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Is the deck current and ready to send?",
+       "relevance": "If it needs work, the twelfth sets the time for it."
+      },
+      {
+       "question": "What does Kitepath invest in, at what stage and size, and does it fit the seed round?",
+       "relevance": "It decides how much of the founder's time this lead deserves."
+      }
+     ],
+     "frames": {
+      "primary": "A fresh investor lead from a connector: Farah, who leads investments at Kitepath, asked for the deck by the twelfth, and the answer is Arjun's to send — to her, not to the connector.",
+      "rivals": [
+       "A connector's thread, where a thank-you to the connector might look like the next move — though it said it would let the two of them take it from there.",
+       "A light first screen, where the deck joins a pile and the date matters less than it seems."
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "With no playbook, from the brief's goal of raising the seed round: an investor's ask for the deck answered by its date.",
+      "actual": "Farah's ask is open, and nothing from us is in the file."
+     },
+     "scenarios": {
+      "do_nothing": "The twelfth passes without the deck, and an investor who asked within hours of the introduction moves on.",
+      "act": "Sending the deck to Farah before the twelfth keeps a warm lead warm and opens the conversation with Kitepath.",
+      "best": "Farah reads the deck and asks for a call; Kitepath joins the seed round's conversations.",
+      "worst": "No deck by the twelfth and the lead goes cold — or the answer goes to the connector and Farah never sees it.",
+      "signals_to_watch": [
+       "The deck sent to Farah before the twelfth",
+       "Farah asking for a call",
+       "The twelfth passing with her ask still open"
+      ]
+     },
+     "appraisal": {
+      "stakes": "high",
+      "urgency": "high",
+      "reversibility": "reversible",
+      "reasons": [
+       "Raising the seed round is the first goal the brief names, and Farah leads investments at Kitepath.",
+       "She set the twelfth for the deck, only days away.",
+       "A late deck can still be sent with an apology, so a slip is recoverable, if costly to the first impression."
+      ]
+     },
+     "mode": "act",
+     "alternative": "If the deck needs work, tell Farah now when it will come, still before the twelfth.",
+     "wait_or_stop": "No waiting — the ask is ours; once the deck is with Farah, wait for her reply.",
+     "done_when": "Farah has the deck by the twelfth, and her ask is closed."
+    }
+   }
   ]
  }
 }

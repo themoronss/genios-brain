@@ -221,6 +221,137 @@
      "artifact": "Hi Varun, on your question about your webhook events: [our answer]. Talk soon."
     }
    }
+  ],
+  "expert": [
+   {
+    "when": [
+     "<cleanwave.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "proposed_kind": null,
+     "draft": "Hi Varun, good to meet at the meetup, and thanks for the docs. On your question — whether our agent can read your webhook events: [our answer]. Looking forward to the call on the ninth. Arjun",
+     "next_move": {
+      "who": "Arjun, with whoever can check the agent against Cleanwave's API docs",
+      "what": "Check whether our agent can read Cleanwave's webhook events, and reply to Varun with the answer before the call.",
+      "for_whom": "Varun Iyer at Cleanwave",
+      "by_when": "2026-10-09"
+     },
+     "facts": [
+      {
+       "claim": "Varun Iyer, founder of Cleanwave, wrote after meeting Arjun at a meetup, shared Cleanwave's API docs, and asked Arjun to confirm whether our agent can read Cleanwave's webhook events before they meet.",
+       "evidence": [
+        "evt_a13904cafbf7099ad45b4a46"
+       ]
+      },
+      {
+       "claim": "Varun has booked a call for the ninth of October at four in the afternoon IST.",
+       "evidence": [
+        "evt_a13904cafbf7099ad45b4a46",
+        "evt_5cf10818ee5e3a851a602996"
+       ]
+      },
+      {
+       "claim": "His question is open and waits on us.",
+       "evidence": [
+        "loop:loop_1e3c002f29917e093dfec82d"
+       ]
+      },
+      {
+       "claim": "No answer of ours to Varun is measured in the file.",
+       "evidence": [
+        "num:your_reply_time:varun@cleanwave.test"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "Varun wants the webhook answer before the call so the call can be spent on the integration, not on finding out whether it is possible.",
+       "based_on": [
+        "fact:1",
+        "fact:2"
+       ]
+      },
+      {
+       "claim": "The answer needs a technical check of Cleanwave's API docs against what our agent reads — Arjun's or the team's to give, not a scheduling note.",
+       "based_on": [
+        "fact:1"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "base_rate",
+       "claim": "The file is new — seen once, with no earlier card or outcome — so there is no record of how Cleanwave takes a late answer.",
+       "based_on": [
+        "hist:derived.history.times_seen@admin",
+        "hist:derived.history.prior_outcome@admin"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "Our agent may read webhook events of this kind today.",
+       "needs": "A look at Cleanwave's API docs against what the agent can read."
+      },
+      {
+       "proposition": "Varun may read a missing answer as a sign the integration is not ready.",
+       "needs": "His tone at the call, or a chase before it."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Can our agent read Cleanwave's webhook events today?",
+       "relevance": "It decides whether the reply is a yes, a not-yet with a plan, or a no — and what the call is for."
+      },
+      {
+       "question": "Did Arjun give Varun an answer in person or on another channel?",
+       "relevance": "If so, the question is closed and only the call remains."
+      },
+      {
+       "question": "Who from our side should join the call?",
+       "relevance": "A technical question may need an engineer on it."
+      }
+     ],
+     "frames": {
+      "primary": "A warm integration partner with a technical question waiting on us, due before the call he booked: can our agent read Cleanwave's webhook events?",
+      "rivals": [
+       "A routine scheduling thread, where the call itself will settle the question.",
+       "An early sign of a poor fit: if the agent cannot read their events, the call becomes about whether to build it."
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "From the brief's goal of landing design partners and Varun's own words: the webhook question answered before the call, and the call spent on the integration.",
+      "actual": "The question is unanswered in the file, and the call is booked for the ninth of October."
+     },
+     "scenarios": {
+      "do_nothing": "Varun comes to the call without his answer, its first part goes on the question he asked days before, and the partner reads the silence as a gap.",
+      "act": "A short answer before the call — yes, not yet, or no with what it would take — lets the call go straight to the integration.",
+      "best": "The agent reads their webhook events, Varun hears so before the call, and it ends with a design-partner next step.",
+      "worst": "No answer comes, the call opens on the question, and the agent turns out not to read their events — the partnership starts on the back foot.",
+      "signals_to_watch": [
+       "A reply to Varun before the call",
+       "Varun writing again before the ninth",
+       "The call staying on the calendar or being moved"
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "high",
+      "reversibility": "reversible",
+      "reasons": [
+       "Landing design partners is a goal the brief names, and Cleanwave is one of the brief's design partner talks.",
+       "Varun asked for the answer before a call he booked on a fixed date.",
+       "A late or partial answer can be mended at the call, so a wrong move is cheap to reverse."
+      ]
+     },
+     "mode": "act",
+     "alternative": "If the check cannot be finished in time, write to Varun before the call with what is known so far, and say the full answer comes at the call.",
+     "wait_or_stop": "Nothing to wait for — the move is ours; once the answer is sent, the file waits for the call on the ninth.",
+     "done_when": "Varun has our answer on the webhook events before the call, and the call goes ahead as booked."
+    }
+   }
   ]
  },
  "blocked_on": "one ask makes two cards — the company's account-admin card and the person's unanswered-email card — STEP-14 (one file, one card: STEP-09's file is a read model, and cards are still made per situation)"

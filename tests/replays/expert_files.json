@@ -1,0 +1,1720 @@
+{
+ "F01": {
+  "startupsetu.gov.test": {
+   "evidence": [
+    "evt_1cc07fcda32dffd470f8bdd2",
+    "hist:derived.history.prior_card_verdict@fundraising",
+    "hist:derived.history.prior_outcome@fundraising",
+    "hist:derived.history.times_seen@fundraising",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:updates@startupsetu.gov.test",
+    "num:usual_gap",
+    "num:your_reply_time:updates@startupsetu.gov.test",
+    "sit:sit_461663895a8f9f35ee9b84a5",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": []
+  }
+ },
+ "F02": {
+  "digivault.gov.test": {
+   "evidence": [
+    "evt_5da28a4041d61c29619fc6e0",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.times_seen@admin",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:no-reply@digivault.gov.test",
+    "num:usual_gap",
+    "num:your_reply_time:no-reply@digivault.gov.test",
+    "sit:sit_2ffd9981fedb283756546398",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": []
+  },
+  "startupsetu.gov.test": {
+   "evidence": [
+    "evt_8e35d40489af90b4aab3ac5a",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.times_seen@admin",
+    "loop:loop_ce191d561f3fa9b81d0efc83",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:updates@startupsetu.gov.test",
+    "num:usual_gap",
+    "num:your_reply_time:updates@startupsetu.gov.test",
+    "sit:sit_3790e1fb03ef0358179ac6a5",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 2,
+   "stages": []
+  }
+ },
+ "F03": {
+  "kestrelcap.test": {
+   "evidence": [
+    "evt_c9e60c2e9863426c3d31dbad",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.times_seen@admin",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:rahul@kestrelcap.test",
+    "num:usual_gap",
+    "num:your_reply_time:rahul@kestrelcap.test",
+    "sit:sit_90385c0468bf323c8c6b007e",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 3,
+   "stages": []
+  }
+ },
+ "F04": {
+  "brandtlabs.test": {
+   "evidence": [
+    "evt_6c884f8bd871b47ff2405481",
+    "evt_e3ca97e0562fb14b8fbaf283",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.times_seen@admin",
+    "loop:loop_12ad46461f3201eb0c430403",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:sofia@brandtlabs.test",
+    "num:usual_gap",
+    "num:your_reply_time:sofia@brandtlabs.test",
+    "sit:sit_93f8e3114a4bc6e1be54e861",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": []
+  }
+ },
+ "F05": {
+  "altavia.test": {
+   "evidence": [
+    "evt_de534177fe392262e4e90ec7",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.times_seen@admin",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:marco@altavia.test",
+    "num:usual_gap",
+    "num:your_reply_time:marco@altavia.test",
+    "sit:sit_dafc6228faa35af6a7410c28",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 2,
+   "stages": []
+  }
+ },
+ "F06": {
+  "quillstack.test": {
+   "evidence": [
+    "evt_b5a1dca2622a328e0e7f88fe",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.times_seen@admin",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:nikhil@quillstack.test",
+    "num:usual_gap",
+    "num:your_reply_time:nikhil@quillstack.test",
+    "sit:sit_9b5aa30b70e97a2e87078ddb",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 2,
+   "stages": []
+  }
+ },
+ "F07": {
+  "ferngrove.test": {
+   "evidence": [
+    "evt_64ef93e8cfdaf91361d9ff65",
+    "evt_8bb7bb3d94cabb26707b7abb",
+    "evt_efcd026d0fe8466b9fb45caa",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.times_seen@admin",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:leela@ferngrove.test",
+    "num:usual_gap",
+    "num:your_reply_time:leela@ferngrove.test",
+    "sit:sit_253196e2b247c7a14b9c30e3",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 3,
+   "stages": []
+  }
+ },
+ "F08": {
+  "lumenpath.test": {
+   "evidence": [
+    "evt_3590c3eab4945590a593ff98",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.times_seen@admin",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:simon@lumenpath.test",
+    "num:usual_gap",
+    "num:your_reply_time:simon@lumenpath.test",
+    "sit:sit_927b1dade363f079f95068d7",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": []
+  },
+  "tidewell.test": {
+   "evidence": [
+    "evt_ee683c2b249aed493e683021",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.times_seen@admin",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:omar@tidewell.test",
+    "num:usual_gap",
+    "num:your_reply_time:omar@tidewell.test",
+    "sit:sit_a4fd6003cfdad65a557f005b",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": []
+  }
+ },
+ "F09": {
+  "introly.test": {
+   "evidence": [
+    "evt_08854ba95ec981eb04a33094",
+    "evt_521f2d9ef46d120b8144488e",
+    "hist:derived.history.prior_card_verdict@fundraising",
+    "hist:derived.history.prior_outcome@fundraising",
+    "hist:derived.history.times_seen@fundraising",
+    "loop:loop_ecf0fdaf98d15926d517352e",
+    "num:calls",
+    "num:days_quiet",
+    "num:introductions",
+    "num:longest_gap",
+    "num:replied",
+    "num:their_reply_time:hello@introly.test",
+    "num:usual_gap",
+    "num:your_reply_time:hello@introly.test",
+    "sit:sit_85055544a66edc289d1eca06",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": []
+  }
+ },
+ "F10": {
+  "banyanseed.test": {
+   "evidence": [
+    "evt_0521fdea4d700f0092a756d9",
+    "hist:derived.history.prior_card_verdict@fundraising",
+    "hist:derived.history.prior_outcome@fundraising",
+    "hist:derived.history.times_seen@fundraising",
+    "loop:loop_8e7ab520ea5e87492baede73",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:kiran@banyanseed.test",
+    "num:usual_gap",
+    "num:your_reply_time:kiran@banyanseed.test",
+    "pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict",
+    "pb:founder_office.heu.investor_relations.investors_do_not_chase",
+    "pb:founder_office.heu.investor_relations.momentum_is_a_parallel_process",
+    "pb:founder_office.heu.investor_relations.only_an_offer_counts",
+    "pb:founder_office.heu.investor_relations.silence_reads_by_stage",
+    "pb:founder_office.pb.investor_relations.a_warm_intro_to_an_investor",
+    "pb:founder_office.pb.investor_relations.before_an_investor_call",
+    "pb:founder_office.pb.investor_relations.reopen_after_a_pass",
+    "pb:founder_office.pb.investor_relations.run_an_investor_conversation",
+    "pb:founder_office.pb.investor_relations.the_conditional_deferral",
+    "pb:founder_office.pb.investor_relations.the_wave_gone_silent",
+    "sit:sit_1d7585fa55cc690bdb0f7a69",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": [
+    "first_contact",
+    "first_call",
+    "partner_meeting",
+    "diligence",
+    "term_sheet",
+    "closed",
+    "passed"
+   ]
+  }
+ },
+ "F11": {
+  "northfieldvc.test": {
+   "evidence": [
+    "evt_7eabedc7eedd5ae4297eeb1d",
+    "hist:derived.history.prior_card_verdict@fundraising",
+    "hist:derived.history.prior_outcome@fundraising",
+    "hist:derived.history.times_seen@fundraising",
+    "loop:loop_1531307971fd8eba4224d4e7",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:tom@northfieldvc.test",
+    "num:usual_gap",
+    "num:your_reply_time:tom@northfieldvc.test",
+    "pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict",
+    "pb:founder_office.heu.investor_relations.investors_do_not_chase",
+    "pb:founder_office.heu.investor_relations.momentum_is_a_parallel_process",
+    "pb:founder_office.heu.investor_relations.only_an_offer_counts",
+    "pb:founder_office.heu.investor_relations.silence_reads_by_stage",
+    "pb:founder_office.pb.investor_relations.a_warm_intro_to_an_investor",
+    "pb:founder_office.pb.investor_relations.before_an_investor_call",
+    "pb:founder_office.pb.investor_relations.reopen_after_a_pass",
+    "pb:founder_office.pb.investor_relations.run_an_investor_conversation",
+    "pb:founder_office.pb.investor_relations.the_conditional_deferral",
+    "pb:founder_office.pb.investor_relations.the_wave_gone_silent",
+    "sit:sit_732f8716d7b89ab869b12891",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": [
+    "first_contact",
+    "first_call",
+    "partner_meeting",
+    "diligence",
+    "term_sheet",
+    "closed",
+    "passed"
+   ]
+  }
+ },
+ "F12": {
+  "harborpoint.test": {
+   "evidence": [
+    "evt_6871fbe6d55307337c516bc6",
+    "evt_6c481b4979f8f62bd38e86aa",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.times_seen@admin",
+    "loop:loop_2395aea9b1b84fd6d852d4d0",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:neeraj@harborpoint.test",
+    "num:usual_gap",
+    "num:your_reply_time:neeraj@harborpoint.test",
+    "pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict",
+    "pb:founder_office.heu.investor_relations.investors_do_not_chase",
+    "pb:founder_office.heu.investor_relations.momentum_is_a_parallel_process",
+    "pb:founder_office.heu.investor_relations.only_an_offer_counts",
+    "pb:founder_office.heu.investor_relations.silence_reads_by_stage",
+    "pb:founder_office.pb.investor_relations.a_warm_intro_to_an_investor",
+    "pb:founder_office.pb.investor_relations.before_an_investor_call",
+    "pb:founder_office.pb.investor_relations.reopen_after_a_pass",
+    "pb:founder_office.pb.investor_relations.run_an_investor_conversation",
+    "pb:founder_office.pb.investor_relations.the_conditional_deferral",
+    "pb:founder_office.pb.investor_relations.the_wave_gone_silent",
+    "sit:sit_e9653a6082d1c505b719f702",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 2,
+   "stages": [
+    "first_contact",
+    "first_call",
+    "partner_meeting",
+    "diligence",
+    "term_sheet",
+    "closed",
+    "passed"
+   ]
+  }
+ },
+ "F13": {
+  "tuskercap.test": {
+   "evidence": [
+    "evt_e11237c955138c90261649f8",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.times_seen@admin",
+    "loop:loop_29f2bf391a481189068fff05",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:mohit@tuskercap.test",
+    "num:usual_gap",
+    "num:your_reply_time:mohit@tuskercap.test",
+    "pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict",
+    "pb:founder_office.heu.investor_relations.investors_do_not_chase",
+    "pb:founder_office.heu.investor_relations.momentum_is_a_parallel_process",
+    "pb:founder_office.heu.investor_relations.only_an_offer_counts",
+    "pb:founder_office.heu.investor_relations.silence_reads_by_stage",
+    "pb:founder_office.pb.investor_relations.a_warm_intro_to_an_investor",
+    "pb:founder_office.pb.investor_relations.before_an_investor_call",
+    "pb:founder_office.pb.investor_relations.reopen_after_a_pass",
+    "pb:founder_office.pb.investor_relations.run_an_investor_conversation",
+    "pb:founder_office.pb.investor_relations.the_conditional_deferral",
+    "pb:founder_office.pb.investor_relations.the_wave_gone_silent",
+    "sit:sit_aa5ecf1cee7c356fcca5a85a",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": [
+    "first_contact",
+    "first_call",
+    "partner_meeting",
+    "diligence",
+    "term_sheet",
+    "closed",
+    "passed"
+   ]
+  }
+ },
+ "F14": {
+  "fjordvp.test": {
+   "evidence": [
+    "evt_2e227c5f998d4be2dc0f081c",
+    "hist:derived.history.prior_card_verdict@fundraising",
+    "hist:derived.history.prior_outcome@fundraising",
+    "hist:derived.history.times_seen@fundraising",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:tara@fjordvp.test",
+    "num:usual_gap",
+    "num:your_reply_time:tara@fjordvp.test",
+    "pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict",
+    "pb:founder_office.heu.investor_relations.investors_do_not_chase",
+    "pb:founder_office.heu.investor_relations.momentum_is_a_parallel_process",
+    "pb:founder_office.heu.investor_relations.only_an_offer_counts",
+    "pb:founder_office.heu.investor_relations.silence_reads_by_stage",
+    "pb:founder_office.pb.investor_relations.a_warm_intro_to_an_investor",
+    "pb:founder_office.pb.investor_relations.before_an_investor_call",
+    "pb:founder_office.pb.investor_relations.reopen_after_a_pass",
+    "pb:founder_office.pb.investor_relations.run_an_investor_conversation",
+    "pb:founder_office.pb.investor_relations.the_conditional_deferral",
+    "pb:founder_office.pb.investor_relations.the_wave_gone_silent",
+    "sit:sit_b69cb8e0ca6c39fec5eeabf5",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 3,
+   "stages": [
+    "first_contact",
+    "first_call",
+    "partner_meeting",
+    "diligence",
+    "term_sheet",
+    "closed",
+    "passed"
+   ]
+  }
+ },
+ "F15": {
+  "cobaltpeak.test": {
+   "evidence": [
+    "evt_c948c90270ed285f6f2b49fc",
+    "hist:derived.history.prior_card_verdict@fundraising",
+    "hist:derived.history.prior_outcome@fundraising",
+    "hist:derived.history.times_seen@fundraising",
+    "loop:loop_5fe5306f8a8bff0451e3a72a",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:partners@cobaltpeak.test",
+    "num:usual_gap",
+    "num:your_reply_time:partners@cobaltpeak.test",
+    "sit:sit_084d5275aa3d91bb3ed7d6bb",
+    "wave:wave_6354a4c281d25389daff08c7",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": []
+  },
+  "juniperridge.test": {
+   "evidence": [
+    "evt_40ab364c4382f76fd81bb665",
+    "hist:derived.history.prior_card_verdict@fundraising",
+    "hist:derived.history.prior_outcome@fundraising",
+    "hist:derived.history.times_seen@fundraising",
+    "loop:loop_f54779fc0fcb1260b84b7eff",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:hello@juniperridge.test",
+    "num:usual_gap",
+    "num:your_reply_time:hello@juniperridge.test",
+    "sit:sit_2d4d09fec30ef9f8f7be9eef",
+    "wave:wave_6354a4c281d25389daff08c7",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": []
+  },
+  "latticecap.test": {
+   "evidence": [
+    "evt_e93045e17f9f8b1f887bebf8",
+    "hist:derived.history.prior_card_verdict@fundraising",
+    "hist:derived.history.prior_outcome@fundraising",
+    "hist:derived.history.times_seen@fundraising",
+    "loop:loop_f378a07d41ff6feda0fac698",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:deals@latticecap.test",
+    "num:usual_gap",
+    "num:your_reply_time:deals@latticecap.test",
+    "sit:sit_254d3146a7310342f911e00e",
+    "wave:wave_6354a4c281d25389daff08c7",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": []
+  },
+  "meridianseed.test": {
+   "evidence": [
+    "evt_f7a3274b9b39e353eae26b82",
+    "hist:derived.history.prior_card_verdict@fundraising",
+    "hist:derived.history.prior_outcome@fundraising",
+    "hist:derived.history.times_seen@fundraising",
+    "loop:loop_bee259e2b13e73554f46a400",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:team@meridianseed.test",
+    "num:usual_gap",
+    "num:your_reply_time:team@meridianseed.test",
+    "sit:sit_6490fc67713cd888f30600ee",
+    "wave:wave_6354a4c281d25389daff08c7",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": []
+  },
+  "northstarangels.test": {
+   "evidence": [
+    "evt_f4ce35e222e19ba3448acd67",
+    "hist:derived.history.prior_card_verdict@fundraising",
+    "hist:derived.history.prior_outcome@fundraising",
+    "hist:derived.history.times_seen@fundraising",
+    "loop:loop_5a95165690e736bc6a430e00",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:invest@northstarangels.test",
+    "num:usual_gap",
+    "num:your_reply_time:invest@northstarangels.test",
+    "sit:sit_5291a40a038315af17bb8a4a",
+    "wave:wave_6354a4c281d25389daff08c7",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": []
+  }
+ },
+ "F16": {
+  "lattice-capital.test": {
+   "evidence": [
+    "evt_087eceb326bd232754cc4664",
+    "hist:derived.history.prior_card_verdict@fundraising",
+    "hist:derived.history.prior_outcome@fundraising",
+    "hist:derived.history.times_seen@fundraising",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:partners@lattice-capital.test",
+    "num:usual_gap",
+    "num:your_reply_time:partners@lattice-capital.test",
+    "sit:sit_3d1dfb513afbf9e4b3794aaf",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": []
+  }
+ },
+ "F17": {
+  "gulflaunchpad.test": {
+   "evidence": [
+    "evt_b28cdc0da85d9a12960d5eba",
+    "hist:derived.history.prior_card_verdict@fundraising",
+    "hist:derived.history.prior_outcome@fundraising",
+    "hist:derived.history.times_seen@fundraising",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:amira@gulflaunchpad.test",
+    "num:usual_gap",
+    "num:your_reply_time:amira@gulflaunchpad.test",
+    "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides",
+    "pb:founder_office.heu.program_applications.a_programme_is_not_an_investor",
+    "pb:founder_office.heu.program_applications.a_rejection_carries_a_reapplication_date",
+    "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point",
+    "pb:founder_office.heu.program_applications.the_portal_is_the_record",
+    "pb:founder_office.pb.program_applications.documents_after_acceptance",
+    "pb:founder_office.pb.program_applications.follow_an_application",
+    "pb:founder_office.pb.program_applications.prepare_for_the_interview",
+    "pb:founder_office.pb.program_applications.read_the_decision_mail",
+    "pb:founder_office.pb.program_applications.work_back_from_the_deadline",
+    "sit:sit_606ef6e360b4eb90cbc6bdb1",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 2,
+   "stages": [
+    "applied",
+    "under_review",
+    "interview",
+    "decision",
+    "onboarding",
+    "in_programme",
+    "declined"
+   ]
+  }
+ },
+ "F18": {},
+ "F19": {
+  "ditincubator.test": {
+   "evidence": [
+    "evt_737819ca62a1671f48e7a887",
+    "evt_8050a1c8ddab56f63af89aab",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.times_seen@admin",
+    "loop:loop_2ffa15592637f386c7c83fae",
+    "loop:loop_44bcb3a253c003e041f4926a",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:naveen@ditincubator.test",
+    "num:their_reply_time:ritika@ditincubator.test",
+    "num:usual_gap",
+    "num:your_reply_time:naveen@ditincubator.test",
+    "num:your_reply_time:ritika@ditincubator.test",
+    "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides",
+    "pb:founder_office.heu.program_applications.a_programme_is_not_an_investor",
+    "pb:founder_office.heu.program_applications.a_rejection_carries_a_reapplication_date",
+    "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point",
+    "pb:founder_office.heu.program_applications.the_portal_is_the_record",
+    "pb:founder_office.pb.program_applications.documents_after_acceptance",
+    "pb:founder_office.pb.program_applications.follow_an_application",
+    "pb:founder_office.pb.program_applications.prepare_for_the_interview",
+    "pb:founder_office.pb.program_applications.read_the_decision_mail",
+    "pb:founder_office.pb.program_applications.work_back_from_the_deadline",
+    "sit:sit_93aa5db19fe0443d3414d9c3",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 2,
+   "stages": [
+    "applied",
+    "under_review",
+    "interview",
+    "decision",
+    "onboarding",
+    "in_programme",
+    "declined"
+   ]
+  }
+ },
+ "F20": {
+  "techbridge.test": {
+   "evidence": [
+    "evt_597f2a0e12ec13c67c77487f",
+    "hist:derived.history.prior_card_verdict@fundraising",
+    "hist:derived.history.prior_outcome@fundraising",
+    "hist:derived.history.times_seen@fundraising",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:sameer@techbridge.test",
+    "num:usual_gap",
+    "num:your_reply_time:sameer@techbridge.test",
+    "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides",
+    "pb:founder_office.heu.program_applications.a_programme_is_not_an_investor",
+    "pb:founder_office.heu.program_applications.a_rejection_carries_a_reapplication_date",
+    "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point",
+    "pb:founder_office.heu.program_applications.the_portal_is_the_record",
+    "pb:founder_office.pb.program_applications.documents_after_acceptance",
+    "pb:founder_office.pb.program_applications.follow_an_application",
+    "pb:founder_office.pb.program_applications.prepare_for_the_interview",
+    "pb:founder_office.pb.program_applications.read_the_decision_mail",
+    "pb:founder_office.pb.program_applications.work_back_from_the_deadline",
+    "sit:sit_ae17a79bb2702ac636d98c3d",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": [
+    "applied",
+    "under_review",
+    "interview",
+    "decision",
+    "onboarding",
+    "in_programme",
+    "declined"
+   ]
+  }
+ },
+ "F21": {
+  "awadhec.test": {
+   "evidence": [
+    "evt_0616ab6c71c798e70dd44f98",
+    "hist:derived.history.prior_card_verdict@fundraising",
+    "hist:derived.history.prior_outcome@fundraising",
+    "hist:derived.history.times_seen@fundraising",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:eic@awadhec.test",
+    "num:usual_gap",
+    "num:your_reply_time:eic@awadhec.test",
+    "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides",
+    "pb:founder_office.heu.program_applications.a_programme_is_not_an_investor",
+    "pb:founder_office.heu.program_applications.a_rejection_carries_a_reapplication_date",
+    "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point",
+    "pb:founder_office.heu.program_applications.the_portal_is_the_record",
+    "pb:founder_office.pb.program_applications.documents_after_acceptance",
+    "pb:founder_office.pb.program_applications.follow_an_application",
+    "pb:founder_office.pb.program_applications.prepare_for_the_interview",
+    "pb:founder_office.pb.program_applications.read_the_decision_mail",
+    "pb:founder_office.pb.program_applications.work_back_from_the_deadline",
+    "sit:sit_dd21bb3971e08da23957a057",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 2,
+   "stages": [
+    "applied",
+    "under_review",
+    "interview",
+    "decision",
+    "onboarding",
+    "in_programme",
+    "declined"
+   ]
+  }
+ },
+ "F22": {
+  "unistartupcell.test": {
+   "evidence": [
+    "evt_17c8070e9244db207db3ee56",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.times_seen@admin",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:grants@unistartupcell.test",
+    "num:usual_gap",
+    "num:your_reply_time:grants@unistartupcell.test",
+    "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides",
+    "pb:founder_office.heu.program_applications.a_programme_is_not_an_investor",
+    "pb:founder_office.heu.program_applications.a_rejection_carries_a_reapplication_date",
+    "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point",
+    "pb:founder_office.heu.program_applications.the_portal_is_the_record",
+    "pb:founder_office.pb.program_applications.documents_after_acceptance",
+    "pb:founder_office.pb.program_applications.follow_an_application",
+    "pb:founder_office.pb.program_applications.prepare_for_the_interview",
+    "pb:founder_office.pb.program_applications.read_the_decision_mail",
+    "pb:founder_office.pb.program_applications.work_back_from_the_deadline",
+    "sit:sit_09175db4339370437ff6c3b7",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": [
+    "applied",
+    "under_review",
+    "interview",
+    "decision",
+    "onboarding",
+    "in_programme",
+    "declined"
+   ]
+  }
+ },
+ "F23": {
+  "statestartup.gov.test": {
+   "evidence": [
+    "evt_68047246bb4f2c5c07da44df",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.times_seen@admin",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:no-reply@statestartup.gov.test",
+    "num:usual_gap",
+    "num:your_reply_time:no-reply@statestartup.gov.test",
+    "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides",
+    "pb:founder_office.heu.program_applications.a_programme_is_not_an_investor",
+    "pb:founder_office.heu.program_applications.a_rejection_carries_a_reapplication_date",
+    "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point",
+    "pb:founder_office.heu.program_applications.the_portal_is_the_record",
+    "pb:founder_office.pb.program_applications.documents_after_acceptance",
+    "pb:founder_office.pb.program_applications.follow_an_application",
+    "pb:founder_office.pb.program_applications.prepare_for_the_interview",
+    "pb:founder_office.pb.program_applications.read_the_decision_mail",
+    "pb:founder_office.pb.program_applications.work_back_from_the_deadline",
+    "sit:sit_54806634429f5907f374cd02",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 3,
+   "stages": [
+    "applied",
+    "under_review",
+    "interview",
+    "decision",
+    "onboarding",
+    "in_programme",
+    "declined"
+   ]
+  }
+ },
+ "F24": {
+  "lakshya.test": {
+   "evidence": [
+    "evt_4af96cdebc72bdc9f4d52c58",
+    "hist:derived.history.prior_card_verdict@fundraising",
+    "hist:derived.history.prior_outcome@fundraising",
+    "hist:derived.history.times_seen@fundraising",
+    "loop:loop_616f487fd540d48d09b06d31",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:divya@lakshya.test",
+    "num:usual_gap",
+    "num:your_reply_time:divya@lakshya.test",
+    "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides",
+    "pb:founder_office.heu.program_applications.a_programme_is_not_an_investor",
+    "pb:founder_office.heu.program_applications.a_rejection_carries_a_reapplication_date",
+    "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point",
+    "pb:founder_office.heu.program_applications.the_portal_is_the_record",
+    "pb:founder_office.pb.program_applications.documents_after_acceptance",
+    "pb:founder_office.pb.program_applications.follow_an_application",
+    "pb:founder_office.pb.program_applications.prepare_for_the_interview",
+    "pb:founder_office.pb.program_applications.read_the_decision_mail",
+    "pb:founder_office.pb.program_applications.work_back_from_the_deadline",
+    "sit:sit_e9aeb6551928e46a8c5f8ba1",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 3,
+   "stages": [
+    "applied",
+    "under_review",
+    "interview",
+    "decision",
+    "onboarding",
+    "in_programme",
+    "declined"
+   ]
+  }
+ },
+ "F25": {
+  "inboxmail.test": {
+   "evidence": [
+    "evt_5d126b6651a2fd44c3737382",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.times_seen@admin",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:kavitha.nair@inboxmail.test",
+    "num:usual_gap",
+    "num:your_reply_time:kavitha.nair@inboxmail.test",
+    "sit:sit_0bbecd488cc1f1d1735b4ff1",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 3,
+   "stages": []
+  }
+ },
+ "F26": {
+  "orbitly.test": {
+   "evidence": [
+    "evt_14e41c15781b059f7f694f3e",
+    "evt_4ae977e63e76106ac3c70483",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.times_seen@admin",
+    "loop:loop_8683ec3e321d474f05bb9df0",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:neha@orbitly.test",
+    "num:usual_gap",
+    "num:your_reply_time:neha@orbitly.test",
+    "sit:sit_4a33dfb2071edd406941be76",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": []
+  }
+ },
+ "F27": {
+  "cleanwave.test": {
+   "evidence": [
+    "evt_5cf10818ee5e3a851a602996",
+    "evt_a13904cafbf7099ad45b4a46",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.times_seen@admin",
+    "loop:loop_1e3c002f29917e093dfec82d",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:varun@cleanwave.test",
+    "num:usual_gap",
+    "num:your_reply_time:varun@cleanwave.test",
+    "sit:sit_0843ea1eb414379f124744d8",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 2,
+   "stages": []
+  }
+ },
+ "F28": {
+  "novacore.test": {
+   "evidence": [
+    "evt_0e547359e31864611d4d4363",
+    "evt_5185bef9bcda76b11f2c93a0",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.times_seen@admin",
+    "loop:loop_5700b577391b57bf0b3634f7",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:ishita@novacore.test",
+    "num:usual_gap",
+    "num:your_reply_time:ishita@novacore.test",
+    "sit:sit_4ba448bc9513185298a72f42",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 2,
+   "stages": []
+  }
+ },
+ "F29": {
+  "memloop.test": {
+   "evidence": [
+    "evt_7c7f6a51a4aeef4951b61d51",
+    "evt_b715c09c1dad67711567b551",
+    "evt_f4f199251d9e3c63af1f3b55",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_card_verdict@sales",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.prior_outcome@sales",
+    "hist:derived.history.times_seen@admin",
+    "hist:derived.history.times_seen@sales",
+    "loop:loop_4b80cac1219873494671ff75",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:aman@memloop.test",
+    "num:usual_gap",
+    "num:your_reply_time:aman@memloop.test",
+    "sit:sit_6d0383b0424d3a0338bc4c4b",
+    "sit:sit_c72ad4f886c59c5851e98373",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 3,
+   "stages": []
+  }
+ },
+ "F30": {
+  "stackfield.test": {
+   "evidence": [
+    "evt_52c42307a01eb918fc307834",
+    "hist:derived.history.prior_card_verdict@sales",
+    "hist:derived.history.prior_outcome@sales",
+    "hist:derived.history.times_seen@sales",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:gaurav@stackfield.test",
+    "num:usual_gap",
+    "num:your_reply_time:gaurav@stackfield.test",
+    "promise:node_61c031c739c1ed41b4297d5a",
+    "sit:sit_621f0b236ecb1503d47c6ab5",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": []
+  }
+ },
+ "F31": {
+  "lakshya.test": {
+   "evidence": [
+    "evt_76937e6d81ba18909fb2fed5",
+    "hist:derived.history.prior_card_verdict@fundraising",
+    "hist:derived.history.prior_outcome@fundraising",
+    "hist:derived.history.times_seen@fundraising",
+    "loop:loop_a0a5a60c5f2a32c0b4eb999a",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:divya@lakshya.test",
+    "num:usual_gap",
+    "num:your_reply_time:divya@lakshya.test",
+    "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides",
+    "pb:founder_office.heu.program_applications.a_programme_is_not_an_investor",
+    "pb:founder_office.heu.program_applications.a_rejection_carries_a_reapplication_date",
+    "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point",
+    "pb:founder_office.heu.program_applications.the_portal_is_the_record",
+    "pb:founder_office.pb.program_applications.documents_after_acceptance",
+    "pb:founder_office.pb.program_applications.follow_an_application",
+    "pb:founder_office.pb.program_applications.prepare_for_the_interview",
+    "pb:founder_office.pb.program_applications.read_the_decision_mail",
+    "pb:founder_office.pb.program_applications.work_back_from_the_deadline",
+    "sit:sit_c3fd649aa730962e644c4b74",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": [
+    "applied",
+    "under_review",
+    "interview",
+    "decision",
+    "onboarding",
+    "in_programme",
+    "declined"
+   ]
+  }
+ },
+ "F32": {},
+ "F33": {},
+ "F34": {},
+ "F35": {
+  "lakshya.test": {
+   "evidence": [
+    "evt_f7a1ee778938081185bc4339",
+    "hist:derived.history.prior_card_verdict@fundraising",
+    "hist:derived.history.prior_outcome@fundraising",
+    "hist:derived.history.times_seen@fundraising",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:divya@lakshya.test",
+    "num:usual_gap",
+    "num:your_reply_time:divya@lakshya.test",
+    "pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides",
+    "pb:founder_office.heu.program_applications.a_programme_is_not_an_investor",
+    "pb:founder_office.heu.program_applications.a_rejection_carries_a_reapplication_date",
+    "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point",
+    "pb:founder_office.heu.program_applications.the_portal_is_the_record",
+    "pb:founder_office.pb.program_applications.documents_after_acceptance",
+    "pb:founder_office.pb.program_applications.follow_an_application",
+    "pb:founder_office.pb.program_applications.prepare_for_the_interview",
+    "pb:founder_office.pb.program_applications.read_the_decision_mail",
+    "pb:founder_office.pb.program_applications.work_back_from_the_deadline",
+    "sit:sit_b98bfe47e3632c6d9611d387",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": [
+    "applied",
+    "under_review",
+    "interview",
+    "decision",
+    "onboarding",
+    "in_programme",
+    "declined"
+   ]
+  }
+ },
+ "F36": {
+  "partnerco.test": {
+   "evidence": [
+    "evt_495d99411b9af06c91aeb74d",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.times_seen@admin",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:ravi@partnerco.test",
+    "num:usual_gap",
+    "num:your_reply_time:ravi@partnerco.test",
+    "sit:sit_568e46c3102cdd54f490ff81",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": []
+  }
+ },
+ "F37": {
+  "kitepath.test": {
+   "evidence": [
+    "evt_475e72f774b0be782663b6dc",
+    "evt_dcfe67d4a16fbbc55bf6a2b1",
+    "hist:derived.history.prior_card_verdict@fundraising",
+    "hist:derived.history.prior_outcome@fundraising",
+    "hist:derived.history.times_seen@fundraising",
+    "loop:loop_3d6f3e81f9289943ea0bc6b7",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:farah@kitepath.test",
+    "num:usual_gap",
+    "num:your_reply_time:farah@kitepath.test",
+    "sit:sit_520a68e0278cc3aeb132ec4a",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": []
+  }
+ },
+ "F38": {
+  "greenleaf.test": {
+   "evidence": [
+    "evt_5537745fd2e663215e0a7eb8",
+    "evt_dd6559023d6bb7336109d592",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.times_seen@admin",
+    "loop:loop_bfac64072b885fdc4f973e56",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:pooja@greenleaf.test",
+    "num:usual_gap",
+    "num:your_reply_time:pooja@greenleaf.test",
+    "sit:sit_65deb1eef1847353ab817298",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": []
+  }
+ },
+ "F39": {
+  "castlerock.test": {
+   "evidence": [
+    "evt_89f17bd43ceb4eb323ad5b52",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.times_seen@admin",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:rohan@castlerock.test",
+    "num:usual_gap",
+    "num:your_reply_time:rohan@castlerock.test",
+    "sit:sit_89b564a32207761c7b4e66e8",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": []
+  }
+ },
+ "F40": {
+  "meera@tallgrass.test": {
+   "evidence": [
+    "evt_547adcf31568fedadb1f9552",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.times_seen@admin",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:meera@tallgrass.test",
+    "num:usual_gap",
+    "num:your_reply_time:meera@tallgrass.test",
+    "sit:sit_435d409034319684f09efa26",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 2,
+   "stages": []
+  }
+ },
+ "F41": {
+  "harbourvc.test": {
+   "evidence": [
+    "evt_6538e31a303d631d83ef2f8d",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.times_seen@admin",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:dev@harbourvc.test",
+    "num:usual_gap",
+    "num:your_reply_time:dev@harbourvc.test",
+    "sit:sit_2aa12d5eb2167672469a1cee",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": []
+  }
+ },
+ "F42": {
+  "lumenvc.test": {
+   "evidence": [
+    "evt_02276c72e9d3936cce9a8b3b",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.times_seen@admin",
+    "loop:loop_dd4c4b5f6ea6a242e4ddd70f",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:manav@lumenvc.test",
+    "num:usual_gap",
+    "num:your_reply_time:manav@lumenvc.test",
+    "pb:founder_office.heu.investor_relations.a_pass_is_a_date_not_a_verdict",
+    "pb:founder_office.heu.investor_relations.investors_do_not_chase",
+    "pb:founder_office.heu.investor_relations.momentum_is_a_parallel_process",
+    "pb:founder_office.heu.investor_relations.only_an_offer_counts",
+    "pb:founder_office.heu.investor_relations.silence_reads_by_stage",
+    "pb:founder_office.pb.investor_relations.a_warm_intro_to_an_investor",
+    "pb:founder_office.pb.investor_relations.before_an_investor_call",
+    "pb:founder_office.pb.investor_relations.reopen_after_a_pass",
+    "pb:founder_office.pb.investor_relations.run_an_investor_conversation",
+    "pb:founder_office.pb.investor_relations.the_conditional_deferral",
+    "pb:founder_office.pb.investor_relations.the_wave_gone_silent",
+    "sit:sit_d560e962f04640ab0f53f330",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": [
+    "first_contact",
+    "first_call",
+    "partner_meeting",
+    "diligence",
+    "term_sheet",
+    "closed",
+    "passed"
+   ]
+  }
+ },
+ "F43": {
+  "northwind.test": {
+   "evidence": [
+    "evt_96abadacc3d4e17fbe1dc918",
+    "hist:derived.history.prior_card_verdict@fundraising",
+    "hist:derived.history.prior_outcome@fundraising",
+    "hist:derived.history.times_seen@fundraising",
+    "loop:loop_bc5fa5174e9778979c57dfdb",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:ira@northwind.test",
+    "num:usual_gap",
+    "num:your_reply_time:ira@northwind.test",
+    "sit:sit_97618f5e82c6db76a5c71ad9",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": []
+  }
+ },
+ "F44": {
+  "kavita.rao.vc@gmail.com": {
+   "evidence": [
+    "evt_358ab154b3010d9babc1c0cd",
+    "hist:derived.history.prior_card_verdict@fundraising",
+    "hist:derived.history.prior_outcome@fundraising",
+    "hist:derived.history.times_seen@fundraising",
+    "loop:loop_01e9fe76f30592f7851bc153",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:kavita.rao.vc@gmail.com",
+    "num:usual_gap",
+    "num:your_reply_time:kavita.rao.vc@gmail.com",
+    "sit:sit_dac35ed2118bed303eaae45e",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": []
+  }
+ },
+ "F45": {
+  "bluepeak.test": {
+   "evidence": [
+    "evt_30ff636b71bfaec385a045b6",
+    "evt_6b9c074d4fcae3a9032d6e98",
+    "evt_7385ef78a5a3fffefe542220",
+    "evt_89f3773f41f73080a1604a6b",
+    "evt_aec38afad58115d6073f0a02",
+    "evt_aedc2e199c2cf41438d361b1",
+    "evt_e56b3fb33cd4677d904fcdf4",
+    "evt_e5e50c7bb6f13f5da52a07ae",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_card_verdict@sales",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.prior_outcome@sales",
+    "hist:derived.history.times_seen@admin",
+    "hist:derived.history.times_seen@sales",
+    "loop:loop_bfcb9b4eee023c29d4eabeb0",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:meera@bluepeak.test",
+    "num:usual_gap",
+    "num:your_reply_time:meera@bluepeak.test",
+    "sit:sit_0f6cadb0ee06428bf7ce3e20",
+    "sit:sit_52a9541abe4815995b32f479",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 2,
+   "stages": []
+  }
+ },
+ "F46": {
+  "seedfund.test": {
+   "evidence": [
+    "evt_97d933041e0609ecbbce82a8",
+    "evt_fde8a73a37c03df1fe5597c5",
+    "hist:derived.history.prior_card_verdict@fundraising",
+    "hist:derived.history.prior_outcome@fundraising",
+    "hist:derived.history.times_seen@fundraising",
+    "loop:loop_c02f2f668d1ff1d265d1f708",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:ravi@seedfund.test",
+    "num:usual_gap",
+    "num:your_reply_time:ravi@seedfund.test",
+    "sit:sit_b5ff25e5e81c73649d6cab95",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": []
+  }
+ },
+ "F47": {
+  "ardentridge.test": {
+   "evidence": [
+    "evt_eb77193bd00df0b82dd6ca2f",
+    "hist:derived.history.prior_card_verdict@fundraising",
+    "hist:derived.history.prior_outcome@fundraising",
+    "hist:derived.history.times_seen@fundraising",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:partners@ardentridge.test",
+    "num:usual_gap",
+    "num:your_reply_time:partners@ardentridge.test",
+    "sit:sit_0bf0b98962a5e13772934ca2",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": []
+  }
+ },
+ "F48": {
+  "linkbridge.test": {
+   "evidence": [
+    "evt_148549ace15c34b27f025789",
+    "evt_3ecb6c855d565ad8238c2604",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.times_seen@admin",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:mira@linkbridge.test",
+    "num:usual_gap",
+    "num:your_reply_time:mira@linkbridge.test",
+    "sit:sit_568303a19afe323660560d2b",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": []
+  },
+  "quillstack.test": {
+   "evidence": [
+    "evt_148549ace15c34b27f025789",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.times_seen@admin",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:tarun@quillstack.test",
+    "num:usual_gap",
+    "num:your_reply_time:tarun@quillstack.test",
+    "sit:sit_0d007805d5e20a20ea5eb2d7",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": []
+  }
+ },
+ "F49": {
+  "sparkreach.test": {
+   "evidence": [
+    "evt_8e60f7c3ffffdabee3acc83b",
+    "evt_c8a90c03e0b5987545789efa",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.times_seen@admin",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:kunal@sparkreach.test",
+    "num:usual_gap",
+    "num:your_reply_time:kunal@sparkreach.test",
+    "sit:sit_d195bf66cb22cd6d9959d05b",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": []
+  }
+ },
+ "F50": {
+  "saltmarshvc.test": {
+   "evidence": [
+    "evt_1197eb4b54077d67d26d79af",
+    "evt_f0b653e0e8fb137bfac6fb27",
+    "hist:derived.history.prior_card_verdict@fundraising",
+    "hist:derived.history.prior_outcome@fundraising",
+    "hist:derived.history.times_seen@fundraising",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:owen@saltmarshvc.test",
+    "num:usual_gap",
+    "num:your_reply_time:owen@saltmarshvc.test",
+    "sit:sit_99c65ffee362690f54f21cb4",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": []
+  }
+ },
+ "F51": {
+  "brightloop.test": {
+   "evidence": [
+    "evt_f35092e97f8fb6735ee225f2",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.times_seen@admin",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:sana@brightloop.test",
+    "num:usual_gap",
+    "num:your_reply_time:sana@brightloop.test",
+    "sit:sit_7493c6ce7cef1726166211ae",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": []
+  }
+ },
+ "F52": {
+  "ridgelinecap.test": {
+   "evidence": [
+    "evt_c4712b6b8ec4802296eb9578",
+    "hist:derived.history.prior_card_verdict@fundraising",
+    "hist:derived.history.prior_outcome@fundraising",
+    "hist:derived.history.times_seen@fundraising",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:gautam@ridgelinecap.test",
+    "num:usual_gap",
+    "num:your_reply_time:gautam@ridgelinecap.test",
+    "sit:sit_099f4cdf7e3ddf8cd2965611",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": []
+  },
+  "vertexangels.test": {
+   "evidence": [
+    "evt_0795e17116e8b65b5bc1cb10",
+    "hist:derived.history.prior_card_verdict@support",
+    "hist:derived.history.prior_outcome@support",
+    "hist:derived.history.times_seen@support",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:nandini@vertexangels.test",
+    "num:usual_gap",
+    "num:your_reply_time:nandini@vertexangels.test",
+    "sit:sit_dbded779fb9c7a750db01994",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": []
+  }
+ },
+ "F53": {
+  "larkspurvc.test": {
+   "evidence": [
+    "evt_0629e3d6c4bc8fe263774d01",
+    "evt_0f723e30ca018dc8761a2dfd",
+    "evt_a309eca25989b116aaf6fa80",
+    "evt_c0d691bb8d4aa9af058c9301",
+    "hist:derived.history.prior_card_verdict@sales",
+    "hist:derived.history.prior_outcome@sales",
+    "hist:derived.history.times_seen@sales",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:ira@larkspurvc.test",
+    "num:usual_gap",
+    "num:your_reply_time:ira@larkspurvc.test",
+    "sit:sit_68f58a53d34e98a5b46517cc",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 2,
+   "stages": []
+  }
+ },
+ "F54": {
+  "events@bluebayhub.test": {
+   "evidence": [
+    "evt_ead5136fdca87480ed161644",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.times_seen@admin",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:events@bluebayhub.test",
+    "num:usual_gap",
+    "num:your_reply_time:events@bluebayhub.test",
+    "sit:sit_b62a12df3061c07672db45ea",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 2,
+   "stages": []
+  },
+  "kavya@ferrypay.test": {
+   "evidence": [
+    "evt_ead5136fdca87480ed161644",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.times_seen@admin",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:kavya@ferrypay.test",
+    "num:usual_gap",
+    "num:your_reply_time:kavya@ferrypay.test",
+    "sit:sit_231ad59dccbb0216960f245a",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 2,
+   "stages": []
+  },
+  "rhea@tallowfin.test": {
+   "evidence": [
+    "evt_ead5136fdca87480ed161644",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.times_seen@admin",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:rhea@tallowfin.test",
+    "num:usual_gap",
+    "num:your_reply_time:rhea@tallowfin.test",
+    "sit:sit_822c2e27953be7d8ea4deda1",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 2,
+   "stages": []
+  }
+ },
+ "F55": {
+  "meadowvc.test": {
+   "evidence": [
+    "evt_4979a01a5c5baa80999f1125",
+    "hist:derived.history.prior_card_verdict@fundraising",
+    "hist:derived.history.prior_outcome@fundraising",
+    "hist:derived.history.times_seen@fundraising",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:ishaan@meadowvc.test",
+    "num:usual_gap",
+    "num:your_reply_time:ishaan@meadowvc.test",
+    "sit:sit_90c06ea07cc150a3e833ca9b",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": []
+  },
+  "orchardhq.test": {
+   "evidence": [
+    "evt_fc8900329eb4ad7be5cd1e8f",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.times_seen@admin",
+    "loop:loop_f06f6011811c658935b08009",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:kabir@orchardhq.test",
+    "num:usual_gap",
+    "num:your_reply_time:kabir@orchardhq.test",
+    "sit:sit_a394a4d31a06d3b76bc70845",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": []
+  },
+  "pinegrove.test": {
+   "evidence": [
+    "evt_22d224284fc214bbf70ac0c8",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.times_seen@admin",
+    "loop:loop_09e26d117b16268f4d64c703",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:rhea@pinegrove.test",
+    "num:usual_gap",
+    "num:your_reply_time:rhea@pinegrove.test",
+    "sit:sit_2abc0c3e8df51f7b50831eb6",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": []
+  },
+  "tanglewood.test": {
+   "evidence": [
+    "evt_f7943679d333f11914ee7efa",
+    "hist:derived.history.prior_card_verdict@sales",
+    "hist:derived.history.prior_outcome@sales",
+    "hist:derived.history.times_seen@sales",
+    "loop:loop_8f37654f5e0a1648cd060c90",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:dev@tanglewood.test",
+    "num:usual_gap",
+    "num:your_reply_time:dev@tanglewood.test",
+    "sit:sit_488606820f90f113611a6c5a",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": []
+  }
+ },
+ "F56": {},
+ "F57": {
+  "pinecrest.test": {
+   "evidence": [
+    "evt_cb865447ff1df267aeb7634c",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.times_seen@admin",
+    "loop:loop_12328b0430c548e3efb3eaa8",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:zoya@pinecrest.test",
+    "num:usual_gap",
+    "num:your_reply_time:zoya@pinecrest.test",
+    "sit:sit_66365f9b06bf1d479a7ce8b3",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 3,
+   "stages": []
+  }
+ },
+ "F58": {
+  "cobaltpeak.test": {
+   "evidence": [
+    "evt_89a7e7c8098890b11b1c1353",
+    "hist:derived.history.prior_card_verdict@admin",
+    "hist:derived.history.prior_outcome@admin",
+    "hist:derived.history.times_seen@admin",
+    "num:days_quiet",
+    "num:longest_gap",
+    "num:their_reply_time:leena@cobaltpeak.test",
+    "num:usual_gap",
+    "num:your_reply_time:leena@cobaltpeak.test",
+    "sit:sit_27ebb7c2b2fc1fc9707211ec",
+    "whatif:14",
+    "whatif:3",
+    "whatif:7"
+   ],
+   "prompts": 1,
+   "stages": []
+  }
+ }
+}

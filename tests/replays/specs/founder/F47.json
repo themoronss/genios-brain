@@ -145,7 +145,134 @@
  "not_expressible": {
   "workstream": "STEP-11 - the file exists since STEP-09 (`GET /v1/workstreams`), and carries the bounce since STEP-10, but this line names its state, and no stage is derived to compare against"
  },
- "model": {},
+ "model": {
+  "expert": [
+   {
+    "when": [
+     "<ardentridge.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "facts": [
+      {
+       "claim": "On the fourteenth of August Arjun wrote to the Ardent Ridge team at partners@ardentridge.test that Nimbus Labs is raising a seed round, and asked for twenty minutes.",
+       "evidence": [
+        "evt_eb77193bd00df0b82dd6ca2f",
+        "num:their_reply_time:partners@ardentridge.test"
+       ]
+      },
+      {
+       "claim": "That mail to partners@ardentridge.test bounced as soon as it was sent.",
+       "evidence": [
+        "evt_eb77193bd00df0b82dd6ca2f",
+        "num:your_reply_time:partners@ardentridge.test"
+       ]
+      },
+      {
+       "claim": "The partners' address is the only address the file holds for Ardent Ridge, and no person there is named.",
+       "evidence": [
+        "num:their_reply_time:partners@ardentridge.test"
+       ]
+      },
+      {
+       "claim": "The file still names the move as theirs; the engine filed it as an investor relationship under fundraising.",
+       "evidence": [
+        "sit:sit_0bf0b98962a5e13772934ca2"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "Ardent Ridge never received the pitch, so nothing is in its hands: the move the file gives it is not the fund's to make.",
+       "based_on": [
+        "fact:2",
+        "fact:4"
+       ]
+      },
+      {
+       "claim": "Any silence from Ardent Ridge says nothing about its interest — it has nothing to answer.",
+       "based_on": [
+        "fact:2"
+       ]
+      }
+     ],
+     "patterns": [],
+     "hypotheses": [
+      {
+       "proposition": "The address or the fund's domain was mistyped.",
+       "needs": "The bounce report's own reason, and the address on the fund's site."
+      },
+      {
+       "proposition": "Ardent Ridge takes pitches only through a named partner or an introduction.",
+       "needs": "The fund's site, or someone who knows its partners."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Why the mail bounced — the file records only that it did.",
+       "relevance": "A typo is fixed by resending; a dead address needs another way in, such as an introduction."
+      },
+      {
+       "question": "Who the partners at Ardent Ridge are, and whether the fund invests at seed in this space.",
+       "relevance": "A named partner's address beats a shared box; a poor fit makes the resend not worth the time."
+      }
+     ],
+     "frames": {
+      "primary": "A pitch that never arrived: the mail to Ardent Ridge bounced, so the fund has nothing to answer and the next move is the founder's.",
+      "rivals": [
+       "A typo in the address, fixed by resending to the right one.",
+       "A fund with no working shared address, where only an introduction to a partner gets in."
+      ]
+     },
+     "proposed_kind": {
+      "kind": "investor",
+      "why": "Arjun pitched Nimbus Labs' seed round to the Ardent Ridge team, and the engine already treats the file as an investor relationship.",
+      "evidence": [
+       "evt_eb77193bd00df0b82dd6ca2f",
+       "sit:sit_0bf0b98962a5e13772934ca2"
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "Without a playbook, a pitch that arrives waits on the fund's answer.",
+      "actual": "The pitch never arrived: it bounced, so there is nothing for Ardent Ridge to answer."
+     },
+     "scenarios": {
+      "do_nothing": "Ardent Ridge never hears of Nimbus Labs, and the file sits as if the fund were deciding.",
+      "act": "A working address, ideally a named partner's, puts the pitch in front of the fund while the seed round is still open.",
+      "best": "The resent pitch lands with a partner who asks for a call.",
+      "worst": "No working address turns up, and the fund stays out of reach without an introduction.",
+      "signals_to_watch": [
+       "A second bounce from the new address.",
+       "An answer from Ardent Ridge once the pitch arrives.",
+       "Someone in the founder's network who knows an Ardent Ridge partner."
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "medium",
+      "reversibility": "reversible",
+      "reasons": [
+       "Raising the seed round is the brief's first goal, and this fund never saw the pitch.",
+       "Finding the right address costs little and can be done at once.",
+       "A resend can go out at any time; a wrong guess costs only another bounce."
+      ]
+     },
+     "mode": "act",
+     "next_move": {
+      "who": "Arjun",
+      "what": "Find a working address for Ardent Ridge — read the bounce report for its reason, check the fund's site for a named partner — and resend the pitch there.",
+      "for_whom": "Ardent Ridge's partners",
+      "by_when": null
+     },
+     "alternative": "If no working address turns up, ask someone who knows an Ardent Ridge partner for an introduction.",
+     "wait_or_stop": "Nothing to wait for: the fund never got the mail. If a second address bounces too, stop writing cold and look for an introduction.",
+     "done_when": "The pitch reaches someone at Ardent Ridge without bouncing.",
+     "draft": "Hello, my note to the Ardent Ridge partners' address bounced, so I am resending it here. Nimbus Labs is raising a seed round. Could we find twenty minutes to talk? Arjun"
+    }
+   }
+  ]
+ },
  "notes": "STEP-10 (06 D38, D40): F16's bounce in production's shape - Gmail marks its report Auto-Submitted: auto-replied and attaches the status and the original pitch. Before STEP-10 N-01 archived it; then S2's junk filter did (production's filter called all five real reports junk); and the attached original was a document of its own. Now the report is kept and read, the bounce is on the fund's file and ends its wait, and the original is not a document. No card yet shows a bounce (STEP-14).",
  "blocked_on": "the report is kept and read, its attached original is not a document, and the bounce is on the fund's file, ending its wait (STEP-10, D38) — but no card shows a bounce yet: STEP-14"
 }

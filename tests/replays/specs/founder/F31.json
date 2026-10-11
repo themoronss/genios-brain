@@ -358,6 +358,136 @@
      "artifact": "Hi Divya, attaching Assignment 4, the teardown of our pricing page. Thanks"
     }
    }
+  ],
+  "expert": [
+   {
+    "when": [
+     "<lakshya.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "proposed_kind": null,
+     "draft": null,
+     "next_move": {
+      "who": "Arjun",
+      "what": "Block time this week to write the pricing page teardown, and submit it to the programme before the seventeenth.",
+      "for_whom": "Divya Raman and the Lakshya programme",
+      "by_when": "2026-09-17"
+     },
+     "facts": [
+      {
+       "claim": "Divya Raman, Programme Lead at Lakshya Accelerator, wrote that the fourth assignment — a teardown of our pricing page — is due on the seventeenth of September, just before midnight IST.",
+       "evidence": [
+        "evt_76937e6d81ba18909fb2fed5"
+       ]
+      },
+      {
+       "claim": "The ask is open and waits on us.",
+       "evidence": [
+        "loop:loop_a0a5a60c5f2a32c0b4eb999a"
+       ]
+      },
+      {
+       "claim": "The engine files this programme under the fundraising domain, as an investor relationship.",
+       "evidence": [
+        "sit:sit_c3fd649aa730962e644c4b74"
+       ]
+      },
+      {
+       "claim": "The programme playbook, not yet reviewed, says that once in a programme the file holds the programme's own deadlines — assignments, reviews, demo day — fixed for the whole cohort.",
+       "evidence": [
+        "pb:founder_office.pb.program_applications.follow_an_application"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "The assignment's date is set for the cohort and will not move for Nimbus Labs, so it is the one fixed point to plan back from.",
+       "based_on": [
+        "fact:1",
+        "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point"
+       ]
+      },
+      {
+       "claim": "What Divya waits on is the submission itself, not a reply.",
+       "based_on": [
+        "fact:1",
+        "fact:2"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "pattern",
+       "claim": "A programme publishes its deadlines once, for every member of the cohort, and keeps them — a prior from the playbook, not yet reviewed.",
+       "based_on": [
+        "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point"
+       ]
+      },
+      {
+       "kind": "counter_pattern",
+       "claim": "A programme is not an investor: read as an investor relationship, as the engine files it, this file would get an investor's moves, which are wrong for a cohort assignment.",
+       "based_on": [
+        "pb:founder_office.heu.program_applications.a_programme_is_not_an_investor",
+        "sit:sit_c3fd649aa730962e644c4b74"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "The teardown may be under way.",
+       "needs": "Arjun's word on where it stands."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "How does the programme want the teardown submitted — by mail, or through a portal?",
+       "relevance": "A portal upload and a mail reply are different moves, and the wrong channel can miss the deadline."
+      },
+      {
+       "question": "How much of the teardown is done?",
+       "relevance": "It decides how much time to block before the seventeenth."
+      }
+     ],
+     "frames": {
+      "primary": "A programme deadline that will not move: the fourth assignment, a teardown of our pricing page, is due on the seventeenth, and it is ours to write and submit.",
+      "rivals": [
+       "An investor relationship, as the engine files it — which would call for moves the programme does not want.",
+       "A routine cohort chore that can be done the night before."
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": "in_programme",
+      "expected": "In the programme, the file follows the programme's own calendar — its assignments, reviews and demo day — each done by the cohort's date.",
+      "actual": "The assignment and its date are on file; nothing from us is in the file yet, and the date is still ahead."
+     },
+     "scenarios": {
+      "do_nothing": "The seventeenth passes without a submission, and Nimbus Labs misses a cohort deadline in the programme it is in.",
+      "act": "Blocking time this week for the teardown and submitting it before the seventeenth keeps Nimbus Labs in good standing with the programme.",
+      "best": "The teardown goes in early and doubles as a real review of our own pricing page.",
+      "worst": "It is left to the last night and goes in rushed, or late, in front of the programme's lead.",
+      "signals_to_watch": [
+       "Time blocked for the teardown",
+       "The submission going in before the seventeenth",
+       "Divya writing with a reminder or a change of date"
+      ]
+     },
+     "appraisal": {
+      "stakes": "medium",
+      "urgency": "medium",
+      "reversibility": "costly_to_reverse",
+      "reasons": [
+       "Lakshya is the programme the founder is in, and getting into programmes is a goal the brief names.",
+       "The date is the cohort's and will not move, and it is about a week away.",
+       "A missed cohort deadline cannot be taken back, though one late assignment is rarely final."
+      ]
+     },
+     "mode": "act",
+     "alternative": "If the week cannot hold it, ask Divya before the deadline what the programme's rule is for a late submission, rather than missing it in silence.",
+     "wait_or_stop": "Nothing to wait for before the work; once it is submitted, the file waits for the programme's next date.",
+     "done_when": "The teardown is submitted before the seventeenth, with the programme's receipt on file."
+    }
+   }
   ]
  },
  "blocked_on": null
