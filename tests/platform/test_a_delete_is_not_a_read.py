@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_055, (
+    assert r["statements"] == 3_058, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -416,6 +416,10 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 3,054 → 3,055 by yc2_w27_s12/M32.C3.L-integration.V2.U04 (fix, `03` F158): one SELECT in
     # `reason/expert/sweep.expert_pass` — the company and the founder as the tenant records them, so a
     # file NAMED for us is never reviewed. A literal.
+    # ⛔ MOVED 3,055 → 3,058 by yc2_w27_s12/M33.C1.L-integration.V1.U02 (STEP-12): a covered file decides
+    # once (`reason/domain_shadow`) — the run behind a standing signal (`_RUN_TRIGGER`), each covered
+    # file's home situation (`_FILES_HOME`), and the expiry of what its stood-down situations left
+    # open (`_STOOD_DOWN_SIGNALS`). Three statements, each a literal at its own call.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

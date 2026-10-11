@@ -21,9 +21,10 @@ from __future__ import annotations
 import json
 import logging
 from collections import Counter
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
+from types import SimpleNamespace
 from typing import Any
 
 from sqlalchemy import text
@@ -210,7 +211,8 @@ def _rejected_candidates(decision, selected) -> list[dict]:
 
 
 def _emit_capability_signal(conn, *, org_id: str, node_id: str, package, execution, bundle,
-                            eval_time, pack: dict, situation_id: str | None = None) -> str:
+                            eval_time, pack: dict, situation_id: str | None = None,
+                            replace_unless_from: str | None = None) -> str:
     """Write the compiled brain's decision as signal.v1, tagged with the capability that made it.
 
     The delivery side has always been able to render this — card_builder reads
@@ -235,6 +237,12 @@ def _emit_capability_signal(conn, *, org_id: str, node_id: str, package, executi
     Returns what happened — emitted / standing / nothing_to_emit / rule_id_collision /
     race_lost — so the pass's tally distinguishes "no advice" from "advice already standing" from
     "a concurrent pass won". The caller counts; this never raises.
+
+    ``replace_unless_from`` — STEP-12 M33: a covered file's decision (`reason/expert/decide`) is
+    the review's, and a NEW review is new advice however recently the old one was emitted. So the
+    standing signal stands only while its run was triggered by that same review (the run's
+    ``trigger_ref``, the review's fingerprint); one from an earlier review is replaced, its cards
+    with it. Every other caller passes None: the authority window rules, as before.
     """
     run = bundle.get("run") or {}
     output = bundle.get("output") or {}
@@ -288,7 +296,9 @@ def _emit_capability_signal(conn, *, org_id: str, node_id: str, package, executi
         "and authority_expires_at > :now limit 1"),
         {"o": org_id, "p": pack["pack_id"], "pv": pack["version"], "r": rule_id,
          "n": node_id, "now": eval_time}).first()
-    if standing is not None:
+    if standing is not None and (replace_unless_from is None or conn.execute(
+            text(_RUN_TRIGGER), {"o": org_id, "s": standing.signal_id}).scalar() ==
+            replace_unless_from):
         return "standing"
     # One OPEN compiled signal per (pack, rule, node), same discipline as the legacy `_emit`: once
     # the window has passed, the refreshed advice replaces the stale row rather than colliding.
@@ -388,7 +398,7 @@ def _emit_capability_signal(conn, *, org_id: str, node_id: str, package, executi
 
 def _persist_live(*, store: GraphStore, reasoning_store: ReasoningStore, org_id: str,
                   node_id: str, package, execution, eval_time, pack: dict,
-                  situation_id: str | None = None) -> str:
+                  situation_id: str | None = None, replace_unless_from: str | None = None) -> str:
     """Commit the audit bundle, then the signal built from it. Two transactions, in that order.
 
     The audit bundle FIRST and through ``persist_execution``, never by hand: ``signals`` carries six
@@ -400,7 +410,174 @@ def _persist_live(*, store: GraphStore, reasoning_store: ReasoningStore, org_id:
     with store.engine.begin() as conn:
         return _emit_capability_signal(
             conn, org_id=org_id, node_id=node_id, package=package, execution=execution,
-            bundle=bundle, eval_time=eval_time, pack=pack, situation_id=situation_id)
+            bundle=bundle, eval_time=eval_time, pack=pack, situation_id=situation_id,
+            replace_unless_from=replace_unless_from)
+
+
+# =================================================================================================
+# STEP-12 M33 · A COVERED FILE DECIDES ONCE (tree `yc2_w27_s12` M33.C1.L-integration.V1.U02, `06` D1)
+#
+# The expert pass (`reason/expert/sweep`) says which files a VALID review now answers — `covered`,
+# file → the review's fingerprint. Each such file is decided ONCE, from that review
+# (`reason/expert/decide`): its mode the outcome, its next move the play, code's confidence, the
+# appraisal's urgency and importance — an ordinary audited Layer 4 run, persisted and emitted
+# exactly as a situation's is, its anchor the subject. No decider and no R-1 are asked for it, and
+# none for any situation of the file the review EXPLAINS: those stand down, their end recorded
+# (`decided`, `covered_by_review`), and a signal one of them left open is replaced by the file's.
+#
+# EXPLAINS, MEASURED, NOT ASSUMED (STEP-12 §8.7: "one review per file must not erase a situation the
+# file does not explain"). A situation stands down when every event behind it was in the file the
+# review judged — the events the stored review's fingerprint inputs name (`expert_reviews.inputs`,
+# 0198). A situation resting on an event the review never saw — a private one, one the file does not
+# hold, one from after a review that still stands because nothing material moved — keeps its own
+# decision on today's path.
+# =================================================================================================
+
+#: The end a covered situation is given: it was decided — by its file's review.
+COVERED_BY_REVIEW = "covered_by_review"
+
+#: What `_emit_capability_signal` reads off a package: its review state. A covered file's decision
+#: is the expert's VALIDATED review (`contracts/expert_review.validate`, D1) — prescriptive, as an
+#: accepted corpus package's is.
+_REVIEWED = SimpleNamespace(metadata={"review_state": "accepted"})
+
+#: The run behind a signal — what triggered it. An expert run's trigger is its review's fingerprint.
+_RUN_TRIGGER = (
+    "select r.trigger_ref from signals s join reasoning_runs r on r.org_id = s.org_id "
+    "   and r.run_id = s.reasoning_run_id where s.org_id = :o and s.signal_id = :s")
+
+#: Each covered file's home: its anchor's type, and the situation its decision is filed under — an
+#: active one first, then the latest. Its domain is the corpus, and so the tenant pack, it binds to.
+_FILES_HOME = (
+    "select distinct on (s.anchor_node_id) s.anchor_node_id, s.situation_id, s.domain, n.node_type "
+    "  from context_situations s join graph_nodes n on n.org_id = s.org_id "
+    "       and n.node_id = s.anchor_node_id and n.valid_to is null "
+    " where s.org_id = :o and s.anchor_node_id = any(:files) "
+    " order by s.anchor_node_id, (s.status in ('active', 'partial')) desc, "
+    "          s.last_seen_at desc nulls last, s.situation_id")
+
+#: The open signals a covered file's stood-down situations left — replaced by the file's decision.
+_STOOD_DOWN_SIGNALS = (
+    "update signals set status = 'expired' where org_id = :o and subject_node_id = :n "
+    "   and status = 'open' and rule_id <> :r and situation_id = any(:sids) returning signal_id")
+
+
+def _covered_reviews(conn, org_id: str, covered: Mapping[str, str] | None) -> dict[str, Any]:
+    """Each covered file's VALID review, read once. A row gone, or not valid, covers nothing."""
+    from genios_engine.reason.expert import store as reviews
+
+    out: dict[str, Any] = {}
+    for file_id, fingerprint in sorted((covered or {}).items()):
+        row = reviews.read_review(conn, org_id, str(file_id), str(fingerprint))
+        if row is not None and row.status == reviews.VALID and row.review is not None:
+            out[str(file_id)] = row
+    return out
+
+
+def _explains(review, events: Iterable[str]) -> bool:
+    """Every event behind the situation was in the file the review judged (its stored inputs)."""
+    inputs = review.inputs or {}
+    seen = {str(e) for e in (*(inputs.get("events") or ()), *(inputs.get("booked") or ()))}
+    behind = {str(e) for e in events}
+    return bool(behind) and behind <= seen
+
+
+def _retire_stood_down(store, org_id: str, file_id: str, situation_ids, rule_id: str) -> int:
+    """Expire what the file's stood-down situations left open — their cards REPLACED (STEP-06)."""
+    if not situation_ids:
+        return 0
+    with store.engine.begin() as conn:
+        retired = conn.execute(text(_STOOD_DOWN_SIGNALS), {
+            "o": org_id, "n": file_id, "r": rule_id, "sids": list(situation_ids)}).fetchall()
+        if retired:
+            card_lifecycle.expire_cards(conn, org_id=org_id, cause=card_lifecycle.REPLACED,
+                                        signal_ids=[item.signal_id for item in retired])
+    return len(retired)
+
+
+def _decide_covered_files(*, store, conn, org_id: str, reviews: Mapping[str, Any],
+                          stood_down: Mapping[str, list[str]], gate, counts, eval_time,
+                          graph_version: int, live: bool, live_domains, registry, reasoning_store,
+                          packs: dict, remaining: list) -> None:
+    """Each covered file, decided once from its review; its decision persisted and emitted on the live
+    lane, measured on the shadow one. Never raises past a file."""
+    from genios_engine.platform.canonical import semantic_hash
+    from genios_engine.reason.change_gate import should_skip
+    from genios_engine.reason.expert import decide as expert
+
+    if not reviews:
+        return
+    homes = {str(r.anchor_node_id): r for r in conn.execute(
+        text(_FILES_HOME), {"o": org_id, "files": list(reviews)})}
+    rule_id = expert.CAPABILITY_ID.rsplit(".", 1)[-1]
+    for file_id, review in sorted(reviews.items()):
+        home = homes.get(file_id)
+        if home is None:
+            # No situation was ever formed on it, so no corpus — and no pack — to bind a decision to.
+            counts["covered_without_situation"] += 1
+            continue
+        try:
+            domain = l3_domain_for(home.domain)
+            live_file = live_lane(forced=live, domain=domain, activated=live_domains)
+            pack = None
+            if live_file:
+                if domain not in packs:
+                    packs[domain] = _tenant_pack(registry, store, org_id, domain)
+                pack = packs[domain]
+                if pack is None:
+                    counts["expert_no_tenant_pack"] += 1
+                    continue
+            # THE CHANGE GATE, ON THE FILE: the review, the decision's own version, where it binds.
+            # The same review in the same lane is the same decision — skipped while it stands.
+            key = f"{file_id}|{expert.CAPABILITY_ID}"
+            fingerprint = semantic_hash({
+                "review": review.fingerprint, "decide": expert.DECIDE_VERSION, "domain": domain,
+                "live": live_file, "config": pack["snapshot_id"] if pack else None})
+            if gate.ready:
+                standing = (gate.expiries.get((pack["pack_id"], pack["version"], rule_id, file_id))
+                            if pack else None)
+                verdict = should_skip(gate.stored.get(key), fingerprint, live=live_file,
+                                      standing_expires_at=standing, eval_time=eval_time)
+                if verdict.skip:
+                    counts["expert_unchanged"] += 1
+                    gate.skipped.add(key)
+                    continue
+            request = expert.request_for(
+                review, org_id=org_id, root_entity_type=str(home.node_type),
+                domain=domain or str(home.domain), eval_time=eval_time,
+                graph_version=graph_version,
+                mode=ExecutionMode.LIVE if live_file else ExecutionMode.SHADOW,
+                live_delivery_enabled=live_file,
+                config_snapshot_id=pack["snapshot_id"] if pack else None)
+            execution = expert.decide(request)
+            counts["expert_decided"] += 1
+            run_id = execution.trace.run_id
+            if not live_file:
+                counts["expert_shadow"] += 1
+                gate.record(key, fingerprint, "shadow", run_id)
+                continue
+            # THE SAME DAILY CAP, the same pool (see the situation loop above).
+            if remaining[0] is None:
+                remaining[0] = _daily_allowance(store, org_id, eval_time, pack)
+                counts["budget_allowance"] = remaining[0]
+            if remaining[0] <= 0:
+                counts["budget_exhausted"] += 1
+                gate.record(key, fingerprint, "indeterminate", run_id)
+                continue
+            outcome = _persist_live(
+                store=store, reasoning_store=reasoning_store, org_id=org_id, node_id=file_id,
+                package=_REVIEWED, execution=execution, eval_time=eval_time, pack=pack,
+                situation_id=str(home.situation_id), replace_unless_from=review.fingerprint)
+            counts[f"expert_{outcome}"] += 1
+            gate.record(key, fingerprint, _gate_outcome(execution, outcome), run_id)
+            if outcome == "emitted":
+                remaining[0] -= 1
+            counts["covered_signals_replaced"] += _retire_stood_down(
+                store, org_id, file_id, stood_down.get(file_id), rule_id)
+        except Exception:      # noqa: BLE001 — one file's decision is never the pass
+            counts["expert_error"] += 1
+            logger.exception("domain-compiler: the covered file %s could not be decided org=%s",
+                             file_id, org_id)
 
 
 # =================================================================================================
@@ -758,7 +935,8 @@ class _SituationEnds:
 
 def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None = None,
                    limit: int = 200, live: bool = False, registry=None,
-                   live_domains: frozenset[str] | Iterable[str] = ()) -> dict:
+                   live_domains: frozenset[str] | Iterable[str] = (),
+                   covered: Mapping[str, str] | None = None) -> dict:
     """Compile every active L2 situation into an ExpertisePackage; return route/coverage tallies.
 
     ``live=False`` (the default, and every existing caller) is unchanged: nothing is persisted and
@@ -797,6 +975,12 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
 
     The two are OR-ed PER SITUATION, never globally: a tenant with `admin` activated runs its Admin
     situations live and its Sales situations in shadow, in the same sweep, from the same read.
+
+    ``covered`` — STEP-12 M33, `06` D1: the files a VALID expert review now answers (the expert
+    pass's receipt, file → the review's fingerprint). Each is decided ONCE, from its review — no
+    decider, no R-1 — and emitted as the file's own signal, its anchor the subject; every situation
+    of the file the review explains stands down. See `_decide_covered_files`. None, or empty — every
+    caller before M33, and every tenant whose expert pass did not run — is exactly the pass before.
     """
     eval_time = eval_time or datetime.now(timezone.utc)
     live_domains = frozenset(str(d) for d in (live_domains or ()))
@@ -914,6 +1098,10 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
         gate = _CompiledGate.load(conn, org_id)
         # STEP-06 · beside the gate, and for the same reason: noted per row, written once.
         ends = _SituationEnds()
+        # STEP-12 M33 · the reviews that decide their files, each read once for the pass.
+        expert_reviews = _covered_reviews(conn, org_id, covered)
+        counts["covered_files"] = len(expert_reviews)
+        stood_down: dict[str, list[str]] = {}
         counts["gate_ready"] = int(gate.ready)
         # WHO IS US, once for the sweep (STEP-04): `gather_members` leaves us out of a situation's
         # members, and read per situation that was one more statement for every situation.
@@ -1270,6 +1458,15 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                         ends.note(admitted, str(row["situation_id"]), "error",
                                   "admitted_without_a_situation")
                     continue
+                # STEP-12 M33 · ITS FILE'S REVIEW DECIDES IT. A situation whose every event the
+                # review saw stands down here — before the compile, the decider and R-1 — and its
+                # file is decided once, after the loop (`_decide_covered_files`).
+                file_review = expert_reviews.get(str(anchor))
+                if file_review is not None and _explains(file_review, signal_ids):
+                    counts["covered_situations"] += 1
+                    stood_down.setdefault(str(anchor), []).append(str(row["situation_id"]))
+                    ends.note(admitted, str(row["situation_id"]), "decided", COVERED_BY_REVIEW)
+                    continue
                 bso = publication.situation
                 # STEP-11 · a programme's or a portal's file is never decided as an investor: refused
                 # here, its end recorded, before an investor package can be compiled for it.
@@ -1501,6 +1698,12 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                 # rollback() on a healthy connection is a no-op, so this is unconditional rather
                 # than guarded on a flag we would have to keep correct.
                 conn.rollback()
+        # STEP-12 M33 · each covered file, decided once from its review.
+        _decide_covered_files(
+            store=store, conn=conn, org_id=org_id, reviews=expert_reviews, stood_down=stood_down,
+            gate=gate, counts=counts, eval_time=eval_time, graph_version=graph_version,
+            live=live, live_domains=live_domains, registry=registry,
+            reasoning_store=reasoning_store, packs=packs, remaining=_remaining)
 
     # STEP-02 · the gate's memory, written once for the whole pass (see `_CompiledGate`).
     gate.flush(store=store, org_id=org_id, eval_time=eval_time, counts=counts)

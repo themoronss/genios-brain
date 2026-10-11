@@ -39,6 +39,10 @@ SITES: dict[tuple[str, str], list[tuple[str, str | None, str | None]]] = {
         ("expire_cards", "REPLACED", None)],
     ("genios_engine/reason/domain_shadow.py", "_emit_capability_signal"): [
         ("expire_cards", "REPLACED", None)],
+    # STEP-12 M33.C1.L-integration.V1.U02: a covered file's decision replaces what its stood-down
+    # situations left open — their cards REPLACED, by the one writer (added deliberately).
+    ("genios_engine/reason/domain_shadow.py", "_retire_stood_down"): [
+        ("expire_cards", "REPLACED", None)],
     ("genios_engine/feedback/calibrate.py", "run_calibration"): [
         ("expire_cards", "RULE_MUTED", None)],
     ("genios_engine/deliver/store.py", "sweep_lifecycle"): [("expire_lapsed", None, None)],
