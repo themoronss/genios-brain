@@ -6916,7 +6916,10 @@ yc2_w27_s12:
                         A health check: reviews per day, refusals by reason, spend against the cap — and
                         it fails while a refusal has no reason.
                       artifact: "scripts/pipeline_health.py"
-                      verify: ".venv/bin/python -m pytest -q tests/scripts/test_pipeline_health_expert.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/scripts/test_pipeline_health_expert.py"
+                      # ⛔ CORRECTED 2026-10-11 at the build: the check reads real rows; without the
+                      # database its tests would SKIP inside a PASS. Its spend is read from the R-site
+                      # ledger the budget opens from (`l4_r_site_calls`, site R-7), not the review rows.
                       depends_on: [M32.C3.L-data.V1.U03]
             - layer: integration
               levels:

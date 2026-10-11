@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_050, (
+    assert r["statements"] == 3_054, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -409,6 +409,10 @@ def test_the_statement_count_did_NOT_move():
     # fingerprint's row, and the latest valid review of a file. Three literals, each its own `text()`.
     # ⛔ MOVED 3,049 → 3,050 by yc2_w27_s12/M32.C3.L-data.V1.U10 (a review keeps its inputs): one SELECT,
     # `reason/expert/store._LATEST_STANDING` — what the last judgment of a file saw. A literal.
+    # ⛔ MOVED 3,050 → 3,054 by yc2_w27_s12/M32.C3.L-interface.V3.U06 (the expert's health): four
+    # SELECTs in `scripts/pipeline_health.check_the_expert_says_why_and_stays_in_budget` — the day's
+    # reviews by status, the refusals with no reason, today's R-7 spend on the ledger, the refusals by
+    # what they said. Four literals, each at its own `sql()` call.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

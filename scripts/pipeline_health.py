@@ -32,6 +32,8 @@ from dataclasses import dataclass, field
 sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parents[1]))
 
 from genios_engine.platform.self_identity import identity_for, names_us  # noqa: E402
+from genios_engine.reason.bundle.budget import OWN_BUDGETS, usd_to_micro  # noqa: E402
+from genios_engine.reason.bundle.sites import SITE_EXPERT                # noqa: E402
 from scripts._db import add_database_argument, resolve_database_url   # noqa: E402
 from scripts._gate import read_only_connection, sql                   # noqa: E402
 
@@ -796,6 +798,64 @@ def check_every_normal_says_its_n(conn, org: str) -> Check:
         detail=wrong)
 
 
+#: `06` D7, answered 10 Oct: the expert's own day — $2 a day per org — read from the budget itself
+#: (`reason/bundle/budget.OWN_BUDGETS`), so the check and the gate never disagree about the cap. The
+#: ledger rows are R-7's (`SITE_EXPERT`), named as a literal in the SQL below.
+EXPERT_DAILY_CAP_MICRO_USD = usd_to_micro(OWN_BUDGETS[SITE_EXPERT][0])
+
+
+def check_the_expert_says_why_and_stays_in_budget(conn, org: str) -> Check:
+    """⛔ STEP-12 (`yc2_w27_s12/M32.C3.L-interface.V3.U06`). The expert reviews a file once per
+    fingerprint and keeps every consult that reached the model, or was refused one for want of budget,
+    as a row of `expert_reviews` — a refusal with its reason (STEP-12 §8.4 item 4). On the last day:
+
+      * the reviews, by status;
+      * the refusals, by what they said — the detail rows;
+      * today's spend against the expert's own cap (`06` D7: $2), read from the ledger its budget is
+        read from — every R-7 consult in `l4_r_site_calls`, a retry included.
+
+    It FAILS while a row that is not valid has no reason — the schema refuses one, so that is the
+    schema changed under it — or while today's spend is over the cap, which is a gate that let a call
+    through. No review in the window is nothing to judge, and passes saying so.
+    """
+    name = "the expert says why, and stays in its budget"
+    rows = conn.execute(sql(
+        "select status, count(*) as n from expert_reviews "
+        " where org_id = :o and reviewed_at > now() - interval '24 hours' "
+        " group by status order by status"), {"o": org}).fetchall()
+    if not rows:
+        return Check(name=name, ok=True, measured="no expert review in the last 24 hours",
+                     expected="skipped — nothing to judge", fix="")
+    total = sum(int(r.n) for r in rows)
+    silent = _scalar(conn, "select count(*) from expert_reviews where org_id = :o "
+                           "and reviewed_at > now() - interval '24 hours' and status <> 'valid' "
+                           "and coalesce(btrim(reason), '') = ''", o=org)
+    spent = _scalar(conn, "select coalesce(sum(cost_micro_usd), 0) from l4_r_site_calls "
+                          "where org_id = :o and site = 'R-7' "
+                          "and created_at >= date_trunc('day', now())", o=org)
+    reasons = conn.execute(sql(
+        "select status, reason, count(*) as n from expert_reviews "
+        " where org_id = :o and reviewed_at > now() - interval '24 hours' and status <> 'valid' "
+        " group by status, reason order by count(*) desc, status, reason limit 10"),
+        {"o": org}).fetchall()
+    measured = (f"{total} reviews in 24 h — "
+                + ", ".join(f"{r.status} {int(r.n)}" for r in rows)
+                + f"; spent today ${spent / 1_000_000:.2f} of ${EXPERT_DAILY_CAP_MICRO_USD / 1_000_000:.2f}"
+                + (f"; {silent} not valid with no reason" if silent else ""))
+    over = spent > EXPERT_DAILY_CAP_MICRO_USD
+    return Check(
+        name=name, ok=not silent and not over, measured=measured,
+        expected="every refused, truncated, carried or failed review says why, and the day's spend "
+                 "stays within the expert's own $2",
+        fix=("a row that is not valid has no reason: the expert_reviews_reason_check constraint "
+             "(migration 0197) was dropped or bypassed — restore it, and find the writer that is not "
+             "reason/expert/store.write_review" if silent else
+             "the day's R-7 spend is over its budget: a consult ran that RSiteGate's budget should have "
+             "refused — check reason/expert/sweep builds its gate with NarrativeBudget.for_site and "
+             "the BundleStore ledger"),
+        detail=[f"{r.status} × {int(r.n)}: {r.reason}" for r in reasons])
+
+
 CHECKS = (
     check_every_emitted_event_is_routed,
     check_parked_errors_are_readable,
@@ -813,6 +873,7 @@ CHECKS = (
     check_every_named_counterparty_has_a_file,
     check_every_piece_of_work_has_one_file,
     check_every_normal_says_its_n,
+    check_the_expert_says_why_and_stays_in_budget,
 )
 
 
