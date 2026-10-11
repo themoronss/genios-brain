@@ -43,6 +43,10 @@ SITES: dict[tuple[str, str], list[tuple[str, str | None, str | None]]] = {
     # situations left open — their cards REPLACED, by the one writer (added deliberately).
     ("genios_engine/reason/domain_shadow.py", "_retire_stood_down"): [
         ("expire_cards", "REPLACED", None)],
+    # STEP-12 M33.C1.L-integration.V2.U12: a file's new review that names no move now clears what an
+    # earlier review decided — its cards RULE_CLEARED, by the one writer (added deliberately).
+    ("genios_engine/reason/domain_shadow.py", "_clear_file_decision"): [
+        ("expire_cards", "RULE_CLEARED", None)],
     ("genios_engine/feedback/calibrate.py", "run_calibration"): [
         ("expire_cards", "RULE_MUTED", None)],
     ("genios_engine/deliver/store.py", "sweep_lifecycle"): [("expire_lapsed", None, None)],

@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_059, (
+    assert r["statements"] == 3_061, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -422,6 +422,10 @@ def test_the_statement_count_did_NOT_move():
     # open (`_STOOD_DOWN_SIGNALS`). Three statements, each a literal at its own call.
     # ⛔ MOVED 3,058 → 3,059 by yc2_w27_s12/M33.C1.L-integration.V1.U09 (`03` F104): the compiled lane
     # reads every anchor's measured baselines once a pass (`domain_shadow._ANCHOR_BASELINES`). A literal.
+    # ⛔ MOVED 3,059 → 3,061 by yc2_w27_s12/M33.C1.L-integration.V2.U12 (`03` F174, F175): a file keeps
+    # ONE decision (`reason/domain_shadow`) — `_RUN_TRIGGER` retired (−1) for its open decisions read in
+    # every pack (`_FILE_DECISIONS`), replaced in every pack (`_RETIRE_FILE_DECISIONS`) and cleared when
+    # a review names no move (`_CLEAR_FILE_DECISIONS`) (+3). Each a literal at its own call.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():
