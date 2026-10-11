@@ -13,6 +13,7 @@ counted; the same parts give the same dossier and digest.
 """
 from __future__ import annotations
 
+import dataclasses
 import hashlib
 import re
 from datetime import datetime, timedelta, timezone
@@ -270,6 +271,88 @@ def test_your_reply_time_is_said_unsplit_and_a_screen_is_no_touch():
     assert "on every answer you sent them, not split by who wrote first, as decided" in d.text
     assert "Screen activity is not part of a file's timeline, as decided." in d.text
     assert "“no reply since then” may be said" in d.text
+
+
+# ── each line says what was read, and only that (`03` F159–F161, found by the golden authoring) ──
+
+def _section(d, name):
+    return next(s.text for s in d.sections if s.name == name)
+
+
+def test_no_reply_is_said_only_up_to_what_a_mailbox_read():
+    coverage = _section(D.build_dossier(_parts()), "coverage")
+    assert "“no reply since then” may be said up to 2026-10-10 11:00 UTC" in coverage
+
+
+def test_no_reply_is_bounded_by_the_mailbox_that_read_least_and_finished():
+    from genios_engine.context.coverage_receipt import MailboxReceipt
+    boxes = (MailboxReceipt(connection_id="con_a", address="a@nimbuslabs.test", window_days=365,
+                            window_start=NOW - timedelta(days=365),
+                            last_finished_at=NOW - timedelta(hours=1), last_completed=True),
+             MailboxReceipt(connection_id="con_b", address="b@nimbuslabs.test", window_days=365,
+                            window_start=NOW - timedelta(days=365),
+                            last_finished_at=NOW - timedelta(days=2), last_completed=True),
+             MailboxReceipt(connection_id="con_c", address="c@nimbuslabs.test", window_days=365,
+                            window_start=NOW - timedelta(days=365),
+                            last_finished_at=NOW - timedelta(minutes=5), last_completed=False))
+    numbers = dataclasses.replace(_numbers(), mailboxes=boxes)
+    coverage = _section(D.build_dossier(_parts(numbers=numbers)), "coverage")
+    assert "may be said up to 2026-10-08 12:00 UTC" in coverage          # b's read, never c's unfinished one
+    unread = dataclasses.replace(_numbers(), mailboxes=boxes[2:])        # can-be-said with nothing finished
+    assert "may NOT be said" in _section(D.build_dossier(_parts(numbers=unread)), "coverage")
+
+
+def test_a_meeting_after_our_last_mail_is_not_their_reply():
+    numbers = dataclasses.replace(_numbers(), no_reply_since=NOW - timedelta(days=60) + timedelta(hours=4))
+    meeting = Touch(at=NOW - timedelta(days=60) + timedelta(hours=4, minutes=30), kind="meeting",
+                    direction="meeting", who=None, who_name=None, event_id="evt_meet", thread=None)
+    tl = _timeline((_touch(0, direction="out"), _touch(3), meeting))
+    parts = dataclasses.replace(_parts(numbers=numbers), timeline=tl)
+    coverage = _section(D.build_dossier(parts), "coverage")
+    assert "they wrote after it" not in coverage and "may be said" in coverage
+
+
+def test_a_reply_after_our_last_mail_is_said_and_no_reply_never_is():
+    numbers = dataclasses.replace(_numbers(), no_reply_since=NOW - timedelta(days=60) + timedelta(hours=1))
+    coverage = _section(D.build_dossier(_parts(numbers=numbers)), "coverage")
+    assert "they wrote after it [evt_003]" in coverage and "may be said" not in coverage
+
+
+def test_no_mailbox_and_no_mail_of_ours_is_no_absence():
+    numbers = dataclasses.replace(_numbers(mailboxes=0), no_reply_since=None)
+    coverage = _section(D.build_dossier(_parts(numbers=numbers)), "coverage")
+    assert "Whether we wrote in this file cannot be said" in coverage
+    assert "We have not written" not in coverage
+    read = dataclasses.replace(_numbers(), no_reply_since=None)
+    assert "We have not written in this file." in _section(D.build_dossier(_parts(numbers=read)),
+                                                           "coverage")
+
+
+def test_a_decision_on_a_situation_still_open_is_no_ending():
+    parts = _parts()
+    j = parts.judgments
+    still = dataclasses.replace(j.situations[0], status="active", outcome="decided",
+                                reason="emitted")
+    judged = dataclasses.replace(parts, judgments=dataclasses.replace(j, situations=(still,)))
+    text = _section(D.build_dossier(judged), "judged_before")
+    assert "investor_relationship active; last decided: decided — emitted" in text
+    assert "ended" not in text
+    assert "investor_relationship ended: decided" in _section(D.build_dossier(parts), "judged_before")
+    from genios_engine.context.workstreams import OPEN_STATUSES
+    assert set(D._OPEN) == OPEN_STATUSES
+
+
+def test_a_meeting_booked_ahead_is_no_touch_and_no_negative_quiet():
+    parts = _parts()
+    meeting = NOW + timedelta(days=2)
+    booked = dataclasses.replace(parts, file=dataclasses.replace(parts.file, last_touch=meeting))
+    life = parts.lifecycle
+    ahead = dataclasses.replace(life, situations=(dataclasses.replace(
+        life.situations[0], last_seen_at=meeting, days_since_seen=-2.0),))
+    d = D.build_dossier(dataclasses.replace(booked, lifecycle=ahead))
+    assert f"last touch {D._when(parts.timeline.touches[-1].at)}" in _section(d, "file")
+    situations = _section(d, "situations")
+    assert "quiet -2" not in situations and "last seen at a booking 2 days ahead" in situations
 
 
 def test_an_unreviewed_playbook_says_so_and_no_playbook_says_why():

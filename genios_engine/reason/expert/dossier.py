@@ -73,6 +73,8 @@ RELATIVE_WORDS: tuple[str, ...] = ("soon", "shortly", "in a while", "in a bit", 
                                    "in due course")
 
 _DIRECTION = {"in": "they wrote", "out": "we wrote", "meeting": "a meeting"}
+#: A situation still open (`context/workstreams.OPEN_STATUSES`): an outcome on it was a decision.
+_OPEN = ("active", "partial")
 _WINDOW_FROM = {"kind": "the file's kind of work", "domain": "its domain's clock",
                 "engine": "the engine's default"}
 _NO_PLAYBOOK = {"no_kind": "the brief names no kind of work for it",
@@ -194,7 +196,10 @@ def _file(p: DossierParts, cite: _Ids) -> Section:
     if f.introduced_by:
         lines.append(f"Introduced by: {f.introduced_by}")
     lines.append(f"Domains: {', '.join(f.domains) or 'none'}")
-    lines.append(f"First touch {_when(f.first_touch)}; last touch {_when(f.last_touch)}")
+    # From the timeline — touches up to the dossier's as-of — never a meeting booked ahead (`03` F159).
+    touched = p.timeline.touches
+    lines.append(f"First touch {_when(touched[0].at if touched else None)}; "
+                 f"last touch {_when(touched[-1].at if touched else None)}")
     lines.append(f"Whose move: {f.whose_move or 'not written'}")
     if f.introductions is not None:
         lines.append(f"People it introduced: {_says(f.introductions)} {cite('num:introductions')}; "
@@ -308,14 +313,28 @@ def _coverage(p: DossierParts, cite: _Ids) -> Section:
              + (f"completed {_when(m.last_finished_at)}" if m.last_completed else
                 f"not completed (last finished {_when(m.last_finished_at)})")
              for m in nb.mailboxes] or ["No mailbox is shown to have read this file's mail."]
+    # Each line says what was read, and only that (`03` F160): no absence without a mailbox that read
+    # it, no "no reply" when they wrote after our last mail, and never past what a mailbox finished.
     if nb.no_reply_since is None:
-        lines.append("We have not written in this file.")
-    elif nb.no_reply_can_be_said:
-        lines.append(f"Our last mail in the file: {_when(nb.no_reply_since)} — “no reply since then” "
-                     "may be said: a mailbox has read that far and finished since.")
+        lines.append("We have not written in this file." if nb.mailboxes else
+                     "Whether we wrote in this file cannot be said: no mailbox is shown to have read its "
+                     "mail.")
+        return Section("coverage", "\n".join(lines))
+    since = nb.no_reply_since
+    answered = [t for t in p.timeline.touches if t.direction == "in" and t.at > since]
+    # How far EVERY mailbox that finished has read — a reply could sit in the one that read least.
+    read_to = min((m.last_finished_at for m in nb.mailboxes
+                   if m.last_completed and m.last_finished_at), default=None)
+    if answered:
+        lines.append(f"Our last mail in the file: {_when(since)} — they wrote after it "
+                     f"{cite(answered[0].event_id)}, so “no reply” is not to be said.")
+    elif nb.no_reply_can_be_said and read_to is not None:
+        lines.append(f"Our last mail in the file: {_when(since)} — “no reply since then” may be said up to "
+                     f"{_when(read_to)}: a mailbox has read that far and finished; after it, nothing was "
+                     "read.")
     else:
-        lines.append(f"Our last mail in the file: {_when(nb.no_reply_since)} — “no reply” may NOT be "
-                     "said: no mailbox is shown to have read that far and finished since.")
+        lines.append(f"Our last mail in the file: {_when(since)} — “no reply” may NOT be said: no mailbox "
+                     "is shown to have read that far and finished since.")
     return Section("coverage", "\n".join(lines))
 
 
@@ -362,11 +381,18 @@ def _playbook(p: DossierParts, cite: _Ids) -> tuple[Section, tuple[str, ...]]:
     return Section("playbook", "\n".join(lines), cut), tuple(s.name for s in pb.stages)
 
 
+def _quiet(s) -> str:
+    """A situation's quiet — or, when it was last seen at a meeting booked ahead, that (`03` F159)."""
+    if s.days_since_seen is not None and s.days_since_seen < 0:
+        return f"last seen at a booking {_n(-s.days_since_seen)} days ahead, so no quiet yet"
+    return f"quiet {_n(s.days_since_seen)} days"
+
+
 def _situations(p: DossierParts, cite: _Ids) -> Section:
     life = p.lifecycle
     lines = [f"- {cite('sit:' + s.situation_id)} {s.situation_type} ({s.domain}) · {s.status} · seen "
-             f"{_when(s.first_seen_at)} → {_when(s.last_seen_at)} ({_n(s.days_seen)} days) · quiet "
-             f"{_n(s.days_since_seen)} days of a {s.quiet_window_days}-day window "
+             f"{_when(s.first_seen_at)} → {_when(s.last_seen_at)} ({_n(s.days_seen)} days) · "
+             + _quiet(s) + f" of a {s.quiet_window_days}-day window "
              f"({_WINDOW_FROM.get(s.window_from, s.window_from)})"
              + (" · PAST its window" if s.past_window else "")
              for s in life.situations] or ["No situation is anchored on this file."]
@@ -389,9 +415,15 @@ def _judged_before(p: DossierParts, cite: _Ids) -> Section:
                      + (f"; what happened to it: {events}" if events else "")
                      + (f"; the founder's verdict: {verdicts}" if verdicts else ""))
     for s in j.situations:
-        lines.append(f"- {cite('sit:' + s.situation_id)} {s.situation_type} "
-                     + (f"ended: {s.outcome}" + (f" — {s.reason}" if s.reason else "")
-                        if s.outcome else f"{s.status or 'open'}, no end recorded"))
+        # An outcome on a situation still open is a DECISION, not an ending (`03` F161).
+        why = f" — {s.reason}" if s.reason else ""
+        if s.outcome and s.status in _OPEN:
+            said = f"{s.status}; last decided: {s.outcome}{why}"
+        elif s.outcome:
+            said = f"ended: {s.outcome}{why}"
+        else:
+            said = f"{s.status or 'open'}, no end recorded"
+        lines.append(f"- {cite('sit:' + s.situation_id)} {s.situation_type} {said}")
     for h in j.history:
         lines.append(f"- {cite('hist:' + h.field)} {h.field} = {h.value}")
     cut = sum(j.cut.values())
