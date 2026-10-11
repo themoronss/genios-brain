@@ -78,6 +78,7 @@ from genios_engine.reason.adapters.native import native_context_snapshot, reason
 from genios_engine.reason.interpretation import make_interpreter
 from genios_engine.reason.adapters.situation_projection import project_situation
 from genios_engine.reason.audit import persist_execution
+from genios_engine.reason.expert.cover import Covers, cover_of
 from genios_engine.reason.store import ReasoningStore
 
 logger = logging.getLogger(__name__)
@@ -447,7 +448,12 @@ def _persist_live(*, store: GraphStore, reasoning_store: ReasoningStore, org_id:
 # review judged — the events the stored review's fingerprint inputs name (`expert_reviews.inputs`,
 # 0198). A situation resting on an event the review never saw — a private one, one the file does not
 # hold, one from after a review that still stands because nothing material moved — keeps its own
-# decision on today's path.
+# decision on today's path. WHICH FILE'S review (M33.C1.L-integration.V2.U13, `03` F173) is
+# `reason/expert/cover`'s rule, the one the pack rules read too: a situation anchored on the file or on
+# one of its people is its own file's; one anchored on a node no one owns — the thread, the meeting's
+# reading, the dependency the mail stated — any covered file's whose review saw it all. Anchored on the
+# file alone, the review had left all of those to be decided beside it — a second card each, the
+# decider asked for each.
 # =================================================================================================
 
 #: The end a covered situation is given: it was decided — by its file's review.
@@ -518,6 +524,8 @@ _NO_MOVE = frozenset({DecisionOutcome.DEFER, DecisionOutcome.INSUFFICIENT_CONTEX
 
 #: Each covered file's home: its anchor's type, and the situation its decision is filed under — an
 #: active one first, then the latest. Its domain is the corpus, and so the tenant pack, it binds to.
+#: A file with no situation anchored on it is filed under one of those it stood down
+#: (`_STOOD_DOWN_HOME`, M33.C1.L-integration.V2.U13).
 _FILES_HOME = (
     "select distinct on (s.anchor_node_id) s.anchor_node_id, s.situation_id, s.domain, n.node_type "
     "  from context_situations s join graph_nodes n on n.org_id = s.org_id "
@@ -526,10 +534,21 @@ _FILES_HOME = (
     " order by s.anchor_node_id, (s.status in ('active', 'partial')) desc, "
     "          s.last_seen_at desc nulls last, s.situation_id")
 
-#: The open signals a covered file's stood-down situations left — replaced by the file's decision.
+#: …or, anchored on none, one of the situations it stood down — on its people or a node no one owns.
+_STOOD_DOWN_HOME = (
+    "select n.node_id as anchor_node_id, s.situation_id, s.domain, n.node_type "
+    "  from context_situations s join graph_nodes n on n.org_id = s.org_id and n.node_id = :f "
+    "       and n.valid_to is null "
+    " where s.org_id = :o and s.situation_id = any(:sids) "
+    " order by (s.status in ('active', 'partial')) desc, s.last_seen_at desc nulls last, "
+    "          s.situation_id limit 1")
+
+#: The open signals a covered file's stood-down situations left — replaced by the file's decision,
+#: whatever their subject: a stood-down situation may be anchored on one of the file's people or on a
+#: node no one owns, and its signal on that node (U13).
 _STOOD_DOWN_SIGNALS = (
-    "update signals set status = 'expired' where org_id = :o and subject_node_id = :n "
-    "   and status = 'open' and rule_id <> :r and situation_id = any(:sids) returning signal_id")
+    "update signals set status = 'expired' where org_id = :o and status = 'open' "
+    "   and rule_id <> :r and situation_id = any(:sids) returning signal_id")
 
 
 def _covered_reviews(conn, org_id: str, covered: Mapping[str, str] | None) -> dict[str, Any]:
@@ -542,14 +561,6 @@ def _covered_reviews(conn, org_id: str, covered: Mapping[str, str] | None) -> di
         if row is not None and row.status == reviews.VALID and row.review is not None:
             out[str(file_id)] = row
     return out
-
-
-def _explains(review, events: Iterable[str]) -> bool:
-    """Every event behind the situation was in the file the review judged (its stored inputs)."""
-    inputs = review.inputs or {}
-    seen = {str(e) for e in (*(inputs.get("events") or ()), *(inputs.get("booked") or ()))}
-    behind = {str(e) for e in events}
-    return bool(behind) and behind <= seen
 
 
 def _advice(review) -> tuple:
@@ -583,13 +594,13 @@ def _clear_file_decision(store, org_id: str, file_id: str, fingerprint: str, rul
     return len(cleared)
 
 
-def _retire_stood_down(store, org_id: str, file_id: str, situation_ids, rule_id: str) -> int:
+def _retire_stood_down(store, org_id: str, situation_ids, rule_id: str) -> int:
     """Expire what the file's stood-down situations left open — their cards REPLACED (STEP-06)."""
     if not situation_ids:
         return 0
     with store.engine.begin() as conn:
         retired = conn.execute(text(_STOOD_DOWN_SIGNALS), {
-            "o": org_id, "n": file_id, "r": rule_id, "sids": list(situation_ids)}).fetchall()
+            "o": org_id, "r": rule_id, "sids": list(situation_ids)}).fetchall()
         if retired:
             card_lifecycle.expire_cards(conn, org_id=org_id, cause=card_lifecycle.REPLACED,
                                         signal_ids=[item.signal_id for item in retired])
@@ -613,6 +624,12 @@ def _decide_covered_files(*, store, conn, org_id: str, reviews: Mapping[str, Any
         return
     homes = {str(r.anchor_node_id): r for r in conn.execute(
         text(_FILES_HOME), {"o": org_id, "files": list(reviews)})}
+    for file_id in sorted(set(reviews) - set(homes)):
+        if stood_down.get(file_id):
+            home = conn.execute(text(_STOOD_DOWN_HOME), {
+                "o": org_id, "f": file_id, "sids": list(stood_down[file_id])}).first()
+            if home is not None:
+                homes[file_id] = home
     rule_id = expert.CAPABILITY_ID.rsplit(".", 1)[-1]
     for file_id, review in sorted(reviews.items()):
         home = homes.get(file_id)
@@ -687,7 +704,7 @@ def _decide_covered_files(*, store, conn, org_id: str, reviews: Mapping[str, Any
             if outcome == "emitted":
                 remaining[0] -= 1
             counts["covered_signals_replaced"] += _retire_stood_down(
-                store, org_id, file_id, stood_down.get(file_id), rule_id)
+                store, org_id, stood_down.get(file_id), rule_id)
         except Exception:      # noqa: BLE001 — one file's decision is never the pass
             counts["expert_error"] += 1
             logger.exception("domain-compiler: the covered file %s could not be decided org=%s",
@@ -1050,7 +1067,8 @@ class _SituationEnds:
 def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None = None,
                    limit: int = 200, live: bool = False, registry=None,
                    live_domains: frozenset[str] | Iterable[str] = (),
-                   covered: Mapping[str, str] | None = None) -> dict:
+                   covered: Mapping[str, str] | None = None,
+                   people: Mapping[str, Iterable[str]] | None = None) -> dict:
     """Compile every active L2 situation into an ExpertisePackage; return route/coverage tallies.
 
     ``live=False`` (the default, and every existing caller) is unchanged: nothing is persisted and
@@ -1095,6 +1113,8 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
     decider, no R-1 — and emitted as the file's own signal, its anchor the subject; every situation
     of the file the review explains stands down. See `_decide_covered_files`. None, or empty — every
     caller before M33, and every tenant whose expert pass did not run — is exactly the pass before.
+    ``people`` — the same receipt's file → the file's people (M33.C1.L-integration.V2.U13): a situation
+    anchored on one of them is its file's to explain (`reason/expert/cover`).
     """
     eval_time = eval_time or datetime.now(timezone.utc)
     live_domains = frozenset(str(d) for d in (live_domains or ()))
@@ -1212,8 +1232,11 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
         gate = _CompiledGate.load(conn, org_id)
         # STEP-06 · beside the gate, and for the same reason: noted per row, written once.
         ends = _SituationEnds()
-        # STEP-12 M33 · the reviews that decide their files, each read once for the pass.
+        # STEP-12 M33 · the reviews that decide their files, each read once for the pass — and what
+        # each explains, over the file's people the expert pass named (`people`, U13).
         expert_reviews = _covered_reviews(conn, org_id, covered)
+        covers = Covers(cover_of(row, people=(people or {}).get(file_id, ()))
+                        for file_id, row in expert_reviews.items())
         # `03` F104 · each anchor's measured normals, read once for the pass.
         file_numbers = _measured_baselines(conn, org_id)
         counts["covered_files"] = len(expert_reviews)
@@ -1578,10 +1601,10 @@ def shadow_compile(*, store: GraphStore, org_id: str, eval_time: datetime | None
                 # STEP-12 M33 · ITS FILE'S REVIEW DECIDES IT. A situation whose every event the
                 # review saw stands down here — before the compile, the decider and R-1 — and its
                 # file is decided once, after the loop (`_decide_covered_files`).
-                file_review = expert_reviews.get(str(anchor))
-                if file_review is not None and _explains(file_review, signal_ids):
+                explained = covers.explaining(str(anchor), row["anchor_type"], signal_ids)
+                if explained is not None:
                     counts["covered_situations"] += 1
-                    stood_down.setdefault(str(anchor), []).append(str(row["situation_id"]))
+                    stood_down.setdefault(explained.file_id, []).append(str(row["situation_id"]))
                     ends.note(admitted, str(row["situation_id"]), "decided", COVERED_BY_REVIEW)
                     continue
                 bso = publication.situation
