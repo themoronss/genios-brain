@@ -3,7 +3,7 @@
     GENIOS_TEST_DATABASE_URL=postgresql+psycopg://… pytest tests/reason/expert/test_a_pack_rule_stands_down_for_a_decided_file.py -q
 
 Tree `yc2_w27_s12` M33.C1.L-integration.V0.U14 (`reason/runner.run`), `03` F173. The golden set's first
-decided re-record measured the general pack's `unanswered_email` beside the file's card on 14 cases — the
+decided re-record measured the general pack's `unanswered_email` beside the file's card on 15 cases — the
 same mail, the same matter, the decider asked again. `run` is handed what the files decided on the live
 lane explain (`explained`, `reason/expert/cover.Covers`): a rule on one of a decided file's nodes whose
 every stored fact came from events the review saw is not reasoned; the open signal it left is replaced,

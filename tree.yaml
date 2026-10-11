@@ -7100,7 +7100,7 @@ yc2_w27_s12:
                         covered file's whose review saw it — and only when the review saw EVERY event
                         behind it. A person, a company or the tenant is never matched by events. Minted 12
                         Oct at the first decided re-record (`03` F173): the review explained only the
-                        file's own anchor, and a second card stood beside the file's on 15 cases.
+                        file's own anchor, and a second card stood beside the file's on 18 of the 21 cases it failed.
                       artifact: "genios_engine/reason/expert/cover.py"
                       verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_what_a_review_explains.py"
                       depends_on: [M32.C3.L-data.V1.U03]
@@ -7174,7 +7174,7 @@ yc2_w27_s12:
                         of its people (or a node no one owns), the source events of its evidence facts all
                         seen by the review — it is not reasoned (no decider, no R-1), its open signal is
                         replaced, the stand-down counted. Minted 12 Oct with V0.U10 (`03` F173): the general
-                        pack's `unanswered_email` stood beside the file's card on 14 cases, the decider asked.
+                        pack's `unanswered_email` stood beside the file's card on 15 cases, the decider asked.
                       artifact: "genios_engine/reason/runner.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_a_pack_rule_stands_down_for_a_decided_file.py"
                       depends_on: [M33.C1.L-logic.V0.U10]

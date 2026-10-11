@@ -876,14 +876,15 @@ def _muted_rules(store, org_id: str, pack_id: str, pack_version: str) -> set[str
 # A file a valid review covers is decided ONCE, from that review, by the compiled lane
 # (`reason/domain_shadow`). Measured on the golden set's first decided re-record (12 Oct): beside the
 # file's card the general pack's `unanswered_email` stood on the person who wrote — the same matter,
-# the decider asked for it — on 14 of the 58 cases. So `run` is handed what the files DECIDED ON THE
-# LIVE LANE explain (`explained`, a `reason/expert/cover.Covers`): a rule on one of such a file's nodes
-# — its anchor, one of its people, or a node no one owns — whose every fact it reads came from events
-# the review saw is not reasoned (no decider, no R-1); an open signal it left is replaced by the file's
-# decision, its cards REPLACED (STEP-06), and the stand-down is a suppression row, counted
-# (`covered_by_review`). A rule resting on a fact with no source event, or on an event the review
-# never saw, is reasoned as before. The shadow native lane (`sales.deal_cooling`) names no fields: a
-# subject every stored fact of which came from events the review saw is not reasoned there either.
+# the decider asked for it — on 15 of the 21 cases it failed. So `run` is handed what the files
+# DECIDED ON THE LIVE LANE explain (`explained`, a `reason/expert/cover.Covers`): a rule on one of
+# such a file's nodes — its anchor, one of its people, or a node no one owns — whose every fact it
+# reads came from events the review saw is not reasoned (no decider, no R-1); an open signal it left
+# is replaced by the file's decision, its cards REPLACED (STEP-06), and the stand-down is a
+# suppression row, counted (`covered_by_review`). A rule resting on a fact with no source event, or
+# on an event the review never saw, is reasoned as before. The shadow native lane
+# (`sales.deal_cooling`) names no fields: a subject every stored fact of which came from events the
+# review saw is not reasoned there either.
 # =================================================================================================
 
 #: The suppression reason, and the count, of a pack rule its file's review decided.
