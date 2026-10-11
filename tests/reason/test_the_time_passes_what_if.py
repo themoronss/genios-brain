@@ -47,12 +47,18 @@ def _ask(days: int, **over) -> TimePasses:
 
 
 def test_n_days_of_nothing_against_the_stop_rule():
+    """⛔ MOVED 2026-10-11, deliberately: the days left before dormant are counted AFTER the N days of
+    nothing — the scenario's own state. Counted from today they were the same number at 3, 7 and 14
+    days (80 each here), which is what this test pinned until the golden authoring read it."""
     w = _ask(7)
-    assert (w.quiet_days_then, w.dormant_then, w.days_to_dormant) == (17.0, False, 80.0)
+    assert (w.quiet_days_then, w.dormant_then, w.days_to_dormant) == (17.0, False, 73.0)
     late = _ask(7, quiet_days=85.0)
-    assert (late.quiet_days_then, late.dormant_then, late.days_to_dormant) == (92.0, True, 5.0)
+    assert (late.quiet_days_then, late.dormant_then, late.days_to_dormant) == (92.0, True, 0.0)
     gone = _ask(3, quiet_days=120.0)
     assert (gone.dormant_then, gone.days_to_dormant) == (True, 0.0)
+    steps = [_ask(n).days_to_dormant for n in (3, 7, 14)]
+    assert steps == [77.0, 73.0, 66.0], "each step says what is left after it"
+    assert "73 more days of nothing before it is" in w.says
 
 
 def test_without_a_stop_rule_or_a_touch_nothing_is_claimed():

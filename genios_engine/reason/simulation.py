@@ -216,7 +216,8 @@ def time_passes(*, days: int, now: datetime, quiet_days: float | None,
     dormant = to_dormant = None
     if then is not None and stop_after_days:
         dormant = then > stop_after_days
-        to_dormant = max(0.0, round(stop_after_days - float(quiet_days), 1))
+        # What is left AFTER the N days — the scenario's own state, not today's (`03` F162).
+        to_dormant = max(0.0, round(stop_after_days - then, 1))
     passes = None if next_date is None else next_date <= now + timedelta(days=days)
     past = tuple(sorted(
         s.situation_id for s in getattr(lifecycle, "situations", ()) or ()
