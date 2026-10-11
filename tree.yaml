@@ -6733,7 +6733,9 @@ yc2_w27_s12:
                         "soon" promise marked no deadline (`06` D56); your reply time unsplit (D52) and
                         no screen touch (D53), as built.
                       artifact: "genios_engine/reason/expert/dossier.py"
-                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_the_dossier.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_the_dossier.py"
+                      # ⛔ CORRECTED 2026-10-11 at the build: two of its tests read a file and its
+                      # promises from memory; without the database they would SKIP inside a PASS.
                       depends_on: [M32.C2.L-data.V0.U01, M32.C2.L-data.V0.U02, M32.C2.L-data.V0.U03, M32.C1.L-contract.V0.U01, M32.C2.L-data.V0.U06, M32.C2.L-data.V0.U07, M32.C2.L-logic.V1.U08]
                 - level: 2
                   units:
