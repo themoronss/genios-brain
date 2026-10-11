@@ -6577,9 +6577,11 @@ yc2_w27_s12:
     inputs (C1.U07, C3.U10) and the fingerprint reads a deadline (C2.U09). ⛔ 41 with M32.C4.L-logic.V0.U03,
     minted at the build of the review: a misshapen answer is syntax; ⛔ 43 with C1.U08 and C3.U11 — a review
     keeps what triggered it; ⛔ 44 with C1.U09 — a review may propose a kind; ⛔ 45 with C3.U12 — a proposal's
-    line id; ⛔ 46 with C5.U06 — situations minted in the order they opened (F172); ⛔ 50 since the build of M33.C1.L-logic.V0.U01 (11 Oct): the orchestrator's test-mode R-1 skips
-    a decision maker that asks no model (C1.U05), the pass says what its reviews cover (C1.U06), the run
-    order hands that to the compiled lane (C1.U07), and an expert card speaks its review (C1.U08). M33 only after D1 (the appraisal decides what
+    line id; ⛔ 46 with C5.U06 — situations minted in the order they opened (F172); ⛔ 50 since the build of
+    M33.C1.L-logic.V0.U01 (11 Oct): the orchestrator's test-mode R-1 skips a decision maker that asks no
+    model (C1.U05), the pass says what its reviews cover (C1.U06), the run order hands that to the compiled
+    lane (C1.U07), and an expert card speaks its review (C1.U08); ⛔ 51 with C1.U09 — the compiled lane
+    calls F104's seam. M33 only after D1 (the appraisal decides what
     matters) and D7 (the model and its cap); its live pass only after D50. The golden answers are
     authored per case (D49) — the board then measures the plumbing, the live pass the model.
   milestones:
@@ -7148,6 +7150,16 @@ yc2_w27_s12:
                       artifact: "genios_engine/reason/domain_shadow.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_a_covered_file_decides_once.py"
                       depends_on: [M33.C1.L-logic.V0.U01, M33.C1.L-logic.V1.U05, M33.C1.L-data.V0.U06]
+                    - id: M33.C1.L-integration.V1.U09
+                      what: >
+                        The compiled lane hands each situation its file's measured normals: the anchor's
+                        own baselines (`write_interval`, `contact_rate_per_account`, each with its n, read
+                        once a pass from `baselines`) reach `expertise_capability_manifest(baselines=…)`,
+                        so the seam V0.U04 built is called. Minted 11 Oct at the build of V0.U04: a seam
+                        nothing calls is a measurement of nothing.
+                      artifact: "genios_engine/reason/domain_shadow.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/test_the_compiled_lane_hands_on_the_files_numbers.py"
+                      depends_on: [M33.C1.L-logic.V0.U04]
                 - level: 2
                   units:
                     - id: M33.C1.L-integration.V2.U07
@@ -7172,7 +7184,7 @@ yc2_w27_s12:
                         §F.1.
                       artifact: "tests/replays/specs/founder/cassettes"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays && GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py --assert-recorded \"speedrun008/YC-II W27/03-FINDINGS.md\""
-                      depends_on: [M33.C1.L-integration.V2.U07, M33.C1.L-logic.V1.U03, M33.C1.L-interface.V1.U08]
+                      depends_on: [M33.C1.L-integration.V2.U07, M33.C1.L-logic.V1.U03, M33.C1.L-interface.V1.U08, M33.C1.L-integration.V1.U09]
                 - level: 1
                   units:
                     - id: M33.C2.L-integration.V1.U02

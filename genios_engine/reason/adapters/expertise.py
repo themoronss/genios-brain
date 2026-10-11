@@ -32,6 +32,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
+from decimal import Decimal
 from typing import Any
 
 from genios_engine.contracts.domain_expertise import (
@@ -1448,6 +1449,25 @@ def _situation_importance(situation: BusinessSituationObject | None) -> dict[str
     }}
 
 
+def with_file_baselines(context: SituationContextSlice | None,
+                        baselines: Mapping[str, Any] | None) -> SituationContextSlice | None:
+    """The slice `ContextAdapter` binds with, carrying the file's measured normals (`03` F104).
+
+    The corpus writes its silences against a person's own rhythm — `{baseline: write_interval, mult:
+    2}` — and `ContextAdapter` reads that baseline from `metadata["baselines"]`, which only the legacy
+    lane wrote: on the compiled lane every such threshold answered UNKNOWN. `baselines` are the file's
+    numbers (`contracts.measured.Measured`, each with its n), and only a NORMAL is handed on — measured
+    here, on `NORMAL_AT` observations or more (`06` D37): a sparse number is never a habit and a prior
+    is no measurement of this file, so either still answers UNKNOWN. A slice that carries baselines of
+    its own keeps them, and nothing to hand returns the same slice — a slice is content-addressed."""
+    # A Decimal, as every number in a semantic artifact is: floats are refused (`platform/canonical`).
+    normals = {str(name): Decimal(str(measured.value)) for name, measured in (baselines or {}).items()
+               if getattr(measured, "normal", False)}
+    if context is None or not normals or (context.metadata or {}).get("baselines"):
+        return context
+    return replace(context, metadata={**dict(context.metadata or {}), "baselines": normals})
+
+
 def expertise_capability_manifest(
     package: ExpertisePackage, *, root_entity_type: str,
     live_delivery_enabled: bool = False,
@@ -1456,6 +1476,7 @@ def expertise_capability_manifest(
     roster_v2: bool = False,
     ranking_v2: bool = False,
     projection: SituationProjection | None = None,
+    baselines: Mapping[str, Any] | None = None,
 ) -> CapabilityManifest:
     """One ExpertisePackage -> one CapabilityManifest driving Layer 4's reasoning.
 
@@ -1503,6 +1524,11 @@ def expertise_capability_manifest(
     so declaring it there would change an unactivated tenant's snapshot — and therefore its
     decision hashes — for facts nothing reads. That is refused loudly instead of ignored quietly.
 
+    ``baselines`` — STEP-12 M33.C1.L-logic.V0.U04, `03` F104: the file's measured normals, handed to
+    the adapter the weld binds with (`with_file_baselines`), so a corpus `{baseline: …}` threshold
+    answers on the compiled lane instead of UNKNOWN. Only the adapter's slice carries them; the package
+    and the slice the compiler addressed are untouched.
+
     ``live_delivery_enabled`` defaults to False — the measurement pass must stay advisory. It is
     True only on the cutover path, because the delivery authority predicate reads it directly
     (``rcap.manifest->'live_delivery_enabled' = 'true'``): a signal whose capability snapshot says
@@ -1511,7 +1537,8 @@ def expertise_capability_manifest(
     situation_type = str(package.metadata.get("situation_type") or "situation")
     consequence = str(package.metadata.get("do_nothing_consequence") or "").strip()
     plays, play_receipt, play_definitions = _plays(package)
-    adapter = ContextAdapter(situation, context) if situation is not None else None
+    adapter = (ContextAdapter(situation, with_file_baselines(context, baselines))
+               if situation is not None else None)
     weld = weld_package(package, declared_play_ids=frozenset(play.play_id for play in plays),
                         play_receipt=play_receipt, adapter=adapter)
     # TWO SOURCES, ONE BLOCK LIST. The organisation brain's permission entries and the corpus's
