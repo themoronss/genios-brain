@@ -6577,7 +6577,9 @@ yc2_w27_s12:
     inputs (C1.U07, C3.U10) and the fingerprint reads a deadline (C2.U09). ⛔ 41 with M32.C4.L-logic.V0.U03,
     minted at the build of the review: a misshapen answer is syntax; ⛔ 43 with C1.U08 and C3.U11 — a review
     keeps what triggered it; ⛔ 44 with C1.U09 — a review may propose a kind; ⛔ 45 with C3.U12 — a proposal's
-    line id; ⛔ 46 with C5.U06 — situations minted in the order they opened (F172). M33 only after D1 (the appraisal decides what
+    line id; ⛔ 46 with C5.U06 — situations minted in the order they opened (F172); ⛔ 50 since the build of M33.C1.L-logic.V0.U01 (11 Oct): the orchestrator's test-mode R-1 skips
+    a decision maker that asks no model (C1.U05), the pass says what its reviews cover (C1.U06), the run
+    order hands that to the compiled lane (C1.U07), and an expert card speaks its review (C1.U08). M33 only after D1 (the appraisal decides what
     matters) and D7 (the model and its cap); its live pass only after D50. The golden answers are
     authored per case (D49) — the board then measures the plumbing, the live pass the model.
   milestones:
@@ -7087,12 +7089,52 @@ yc2_w27_s12:
                       depends_on: [M32.C5.L-integration.V3.U05]
                 - level: 1
                   units:
+                    - id: M33.C1.L-logic.V1.U05
+                      what: >
+                        A run whose decision maker asks no model is read by no model either: the
+                        orchestrator's test-mode R-1 runs only before a decision maker that may consult one
+                        (`asks_no_model`), so a covered file's run asks R-1 nothing — the negative control
+                        proves the switch fires on the same request otherwise. Minted 11 Oct at the build of
+                        V0.U01: with the test-mode decider on, R-1 would read the expert's run, paid for,
+                        moving the snapshot its decision replays from.
+                      artifact: "genios_engine/reason/orchestrator.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/test_a_decision_that_asks_no_model_reads_none.py"
+                      depends_on: [M33.C1.L-logic.V0.U01]
                     - id: M33.C1.L-logic.V1.U03
                       what: >
                         `03` F139 for covered files: an expert-backed decision is replayed from its
                         stored review — zero model calls in a fresh process.
                       artifact: "genios_engine/reason/replay.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_replay_asks_no_model.py"
+                      depends_on: [M33.C1.L-logic.V0.U01, M33.C1.L-logic.V1.U05]
+            - layer: data
+              levels:
+                - level: 0
+                  units:
+                    - id: M33.C1.L-data.V0.U06
+                      what: >
+                        The expert pass says which files its reviews cover — `covered`, file → the
+                        fingerprint of the VALID review that answers it now: written this pass, its
+                        fingerprint's own (unchanged), or the last one when nothing touched the file since
+                        (untouched). Never a file that is ours, refused, cut, failed, waiting or carried.
+                        Minted 11 Oct at the build of V0.U01: the pass alone knows each file's current
+                        fingerprint, and the compiled lane needs it to know what to stand down.
+                      artifact: "genios_engine/reason/expert/sweep.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_the_expert_pass.py"
+                      depends_on: [M32.C5.L-integration.V3.U05]
+            - layer: interface
+              levels:
+                - level: 1
+                  units:
+                    - id: M33.C1.L-interface.V1.U08
+                      what: >
+                        A covered file's card speaks its review: no narrator call — the move as the
+                        headline, the expert's reading as the situation, the review's draft as the artifact
+                        (`deliver/render.review_copy`), the words already validated with the review. Minted
+                        11 Oct at the build of V0.U01: the narrator would write the expert's words again,
+                        paid for, from less — and on the golden set ask a question no case authors.
+                      artifact: "genios_engine/deliver/pipeline.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/deliver/test_an_expert_card_speaks_its_review.py"
                       depends_on: [M33.C1.L-logic.V0.U01]
             - layer: integration
               levels:
@@ -7105,7 +7147,18 @@ yc2_w27_s12:
                         situation the review does not explain keeps its own decision.
                       artifact: "genios_engine/reason/domain_shadow.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_a_covered_file_decides_once.py"
-                      depends_on: [M33.C1.L-logic.V0.U01]
+                      depends_on: [M33.C1.L-logic.V0.U01, M33.C1.L-logic.V1.U05, M33.C1.L-data.V0.U06]
+                - level: 2
+                  units:
+                    - id: M33.C1.L-integration.V2.U07
+                      what: >
+                        The sweep runs the expert pass FIRST and hands what its reviews cover to the
+                        compiled lane, so a file reviewed in a sweep is decided in that sweep — not the one
+                        after, with the decider asked in between. A failed pass covers nothing. Minted 11
+                        Oct at the build of V0.U01: the pass ran last, in shadow (M32).
+                      artifact: "genios_engine/reason/runner.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_the_expert_pass.py"
+                      depends_on: [M33.C1.L-integration.V1.U02, M33.C1.L-data.V0.U06]
         - id: M33.C2
           name: The golden set, deciding
           layers:
@@ -7119,7 +7172,7 @@ yc2_w27_s12:
                         §F.1.
                       artifact: "tests/replays/specs/founder/cassettes"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays && GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py --assert-recorded \"speedrun008/YC-II W27/03-FINDINGS.md\""
-                      depends_on: [M33.C1.L-integration.V1.U02, M33.C1.L-logic.V1.U03]
+                      depends_on: [M33.C1.L-integration.V2.U07, M33.C1.L-logic.V1.U03, M33.C1.L-interface.V1.U08]
                 - level: 1
                   units:
                     - id: M33.C2.L-integration.V1.U02
