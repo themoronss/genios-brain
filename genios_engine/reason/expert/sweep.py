@@ -6,8 +6,10 @@ cannot leave two files of one pass judged under different rules:
 
   1. every file of the tenant (`context/workstreams.files_for`), each read once into its dossier's parts
      (`dossier.read_parts`), and its fingerprint (`fingerprint.fingerprint_inputs`) — except a file whose
-     counterparty is US (`platform/self_identity.is_us_node`): we are never the subject (STEP-04), and a
-     mail that names the founder's own company must not buy a review of it (`03` F158);
+     counterparty is US: a node of ours (`platform/self_identity.is_us_node` — a domain only when
+     declared, as STEP-04 rules) or one NAMED for the company or the founder as the tenant records them
+     (`names_us`, whole words). We are never the subject, and a mail that names the founder's own company
+     must not buy a review of it (`03` F158);
   2. a fingerprint a standing review answers is UNCHANGED — no call;
   3. a file nothing touched since its last standing review is UNTOUCHED — no call (`05` §5,
      `triggers.triggers_for`);
@@ -104,13 +106,18 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
                                "waiting": Counter(), "reviewed": Counter(), "carried": 0,
                                "proposed_kinds": 0, "cost_micro_usd": 0}
     due = []
-    from genios_engine.platform.self_identity import identity_for
+    from sqlalchemy import text
+
+    from genios_engine.platform.self_identity import identity_for, names_us
     with engine.connect() as conn:
         files = files_for(conn, org_id, now=now).files
         us = identity_for(conn, org_id)
+        org = conn.execute(text("select name, company from orgs where id = :o"), {"o": org_id}).first()
+    our_names = tuple(n for n in (getattr(org, "company", None), getattr(org, "name", None)) if n)
     receipt["files"] = len(files)
     for order, work in enumerate(files):
-        if us.is_us_node(work.counterparty_type, work.counterparty_key):
+        if us.is_us_node(work.counterparty_type, work.counterparty_key) \
+                or names_us(work.counterparty, us, names=our_names):
             receipt["ours"] += 1
             continue
         try:

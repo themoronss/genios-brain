@@ -221,18 +221,37 @@ def test_the_days_spend_carries_from_one_pass_to_the_next(world):
 def test_a_file_that_is_us_is_never_reviewed(world):
     """We are never the subject (STEP-04). ⛔ Found by the golden probe: case F02's portal mail names the
     founder's own company, and Layer 3 anchors a file on it (`nimbuslabs.test`, the domain declared ours)."""
-    from tests.context.workstream_world import FOUNDER
     store, now = world
     files = _files_of(store)
-    with store.engine.begin() as c:                  # Asha's file, as if anchored on our own company
+    with store.engine.begin() as c:                  # Asha's file, as if anchored on a domain we declared
+        c.execute(text("insert into org_self_identities (org_id, kind, value, declared_by) "
+                       "values (:o, 'domain', 'nimbus-studio.test', 'test')"), {"o": ORG})
         ours = store.find_or_create_node(c, org_id=ORG, node_type="company",
-                                         canonical_key=FOUNDER.split("@")[1],
-                                         display_name="Nimbus Labs Private Limited", event_id="evt_a_in")
+                                         canonical_key="nimbus-studio.test",
+                                         display_name="Hollow Shell Studio", event_id="evt_a_in")
         c.execute(text("update context_correlations set anchor_node_id = :n "
                        " where org_id = :o and anchor_node_id = :a"),
                   {"n": ours, "o": ORG, "a": files["evt_a_in"]})
     receipt, expert = _pass(store, now)
     assert receipt["ours"] == 1 and receipt["reviewed"] == {R.VALID: 1} and len(expert.prompts) == 1
+    assert [r.file_id for r in _rows(store)] == [files["evt_k_in"]]
+
+
+def test_a_file_named_for_our_own_company_is_never_reviewed(world):
+    """A domain is ours only when declared (STEP-04) — so a company node under another key, NAMED for the
+    founder's company as the tenant records it, is us too: the served golden probe's F02."""
+    store, now = world
+    files = _files_of(store)
+    with store.engine.begin() as c:
+        c.execute(text("update orgs set company = 'Nimbus Labs', name = 'Arjun Rao' where id = :o"),
+                  {"o": ORG})
+        ours = store.find_or_create_node(c, org_id=ORG, node_type="company", canonical_key="nimbus.in",
+                                         display_name="Nimbus Labs Private Limited", event_id="evt_a_in")
+        c.execute(text("update context_correlations set anchor_node_id = :n "
+                       " where org_id = :o and anchor_node_id = :a"),
+                  {"n": ours, "o": ORG, "a": files["evt_a_in"]})
+    receipt, expert = _pass(store, now)
+    assert receipt["ours"] == 1 and len(expert.prompts) == 1
     assert [r.file_id for r in _rows(store)] == [files["evt_k_in"]]
 
 
