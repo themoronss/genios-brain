@@ -227,9 +227,22 @@ def test_a_tenant_without_the_feature_or_a_model_reads_no_file(world, monkeypatc
     with store.engine.begin() as c:
         c.execute(text("insert into l4_activation (org_id, feature, enabled_by) "
                        "values (:o, 'expert_review', 'test')"), {"o": ORG})
-    monkeypatch.setattr(P, "make_site_client", lambda tier: None)
+    from genios_engine.reason import llm_sites
+    monkeypatch.setattr(llm_sites, "make_site_client", lambda tier: None)    # production's own door
     assert P.expert_pass(store=store, org_id=ORG, now=now) == {"skipped": "no_model_configured"}
     assert _rows(store) == []
+
+
+def test_the_model_comes_through_the_r_sites_own_door(world, monkeypatch):
+    """`llm_sites.make_site_client`, read when the pass runs — the door the golden runner opens
+    (`tests/replays/engine_runner.py`). ⛔ Found at the build of M32.C5.L-data.V0.U01: a name bound
+    at import never saw the door, and a golden run would have skipped the pass."""
+    from genios_engine.reason import llm_sites
+    store, now = world
+    expert = _Expert()
+    monkeypatch.setattr(llm_sites, "make_site_client", lambda tier: expert)
+    receipt = P.expert_pass(store=store, org_id=ORG, now=now)
+    assert receipt["reviewed"] == {R.VALID: 2} and len(expert.prompts) == 2
 
 
 def test_a_failed_review_waits_before_it_is_tried_again(world):

@@ -36,7 +36,7 @@ from genios_engine.reason.bundle.budget import NarrativeBudget
 from genios_engine.reason.bundle.gate import RSiteGate
 from genios_engine.reason.bundle.sites import SITE_EXPERT, tier_for
 from genios_engine.reason.bundle.store import BundleStore
-from genios_engine.reason.llm_sites import make_site_client, tier_model
+from genios_engine.reason import llm_sites
 
 from . import store as reviews
 from .dossier import build_dossier, read_parts
@@ -90,10 +90,12 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
     activated = activated_features(engine, org_id)
     if FEATURE_EXPERT_REVIEW not in activated:
         return {"skipped": "expert_review_not_activated"}
-    client = llm if llm is not None else make_site_client(tier_for(SITE_EXPERT))
+    # The R-sites' own door, read when the pass runs — what production's wiring sets and the golden
+    # runner opens (`tests/replays/engine_runner.py`); a name bound at import would never see it.
+    client = llm if llm is not None else llm_sites.make_site_client(tier_for(SITE_EXPERT))
     if client is None:
         return {"skipped": "no_model_configured"}
-    model = getattr(client, "model", None) or tier_model(tier_for(SITE_EXPERT))
+    model = getattr(client, "model", None) or llm_sites.tier_model(tier_for(SITE_EXPERT))
 
     from genios_engine.context.workstreams import files_for
     receipt: dict[str, Any] = {"files": 0, "unchanged": 0, "untouched": 0, "unreadable": 0,
