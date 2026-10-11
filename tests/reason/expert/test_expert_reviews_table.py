@@ -13,6 +13,9 @@ erases it; the tenant's deletion cascades.
 was judged — its fingerprint's inputs, an object — so a later review says what moved by a diff. Null
 only on a row from before 0198; the check holds its shape, never its presence (the previous image
 writes none).
+
+`0199_expert_review_triggers.sql` (M32.C1.L-contract.V0.U08): a review keeps what triggered it — a list
+of each trigger's kind and what moved (`05` §5), null only on a row from before 0199.
 """
 from __future__ import annotations
 
@@ -50,13 +53,15 @@ def _insert(c, **over):
     row = {"o": ORG, "file": "node_fund_neel", "fp": "fp_1", "model": "claude-sonnet-5",
            "pv": "expert-review.v1", "digest": "sha256:d1", "status": "valid", "reason": None,
            "review": json.dumps({"mode": "act"}), "tin": 4200, "tout": 900, "cost": 26_100, "at": AT,
-           "inputs": json.dumps({"events": ["evt_1"], "whose_move": "ours"})}
+           "inputs": json.dumps({"events": ["evt_1"], "whose_move": "ours"}),
+           "triggers": json.dumps([{"kind": "new_evidence", "says": "new since: evt_1"}])}
     row.update(over)
     c.execute(text(
         "insert into expert_reviews (org_id, file_id, fingerprint, model, prompt_version, "
         "dossier_digest, status, reason, review, input_tokens, output_tokens, cost_micro_usd, "
-        "reviewed_at, inputs) values (:o, :file, :fp, :model, :pv, :digest, :status, :reason, "
-        "cast(:review as jsonb), :tin, :tout, :cost, :at, cast(:inputs as jsonb))"), row)
+        "reviewed_at, inputs, triggers) values (:o, :file, :fp, :model, :pv, :digest, :status, "
+        ":reason, cast(:review as jsonb), :tin, :tout, :cost, :at, cast(:inputs as jsonb), "
+        "cast(:triggers as jsonb))"), row)
 
 
 @pytest.mark.pg
@@ -74,7 +79,29 @@ def test_the_table_has_the_columns_the_readers_need(engine):
         "reviewed_at": ("timestamp with time zone", "NO"),
         # ⛔ MOVED by M32.C1.L-contract.V0.U07 (0198), deliberately: what the file was when judged.
         "inputs": ("jsonb", "YES"),
+        # ⛔ MOVED by M32.C1.L-contract.V0.U08 (0199), deliberately: what triggered the review.
+        "triggers": ("jsonb", "YES"),
     }
+
+
+@pytest.mark.pg
+def test_a_review_keeps_what_triggered_it(engine):
+    with engine.begin() as c:
+        _insert(c)
+        _insert(c, fp="fp_before_0199", triggers=None)
+        _insert(c, fp="fp_first", triggers=json.dumps([]))           # an empty list is a list
+        kept = dict(c.execute(text("select fingerprint, triggers from expert_reviews "
+                                   "where org_id = :o"), {"o": ORG}).fetchall())
+    assert kept == {"fp_1": [{"kind": "new_evidence", "says": "new since: evt_1"}],
+                    "fp_before_0199": None, "fp_first": []}
+
+
+@pytest.mark.pg
+@pytest.mark.parametrize("triggers", ['{"kind": "new_evidence"}', '"new_evidence"', "1", "null"])
+def test_triggers_that_are_not_a_list_are_refused(engine, triggers):
+    with pytest.raises(IntegrityError, match="expert_reviews_triggers_check"):
+        with engine.begin() as c:
+            _insert(c, triggers=triggers)
 
 
 @pytest.mark.pg
