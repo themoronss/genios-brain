@@ -8,6 +8,11 @@ judgment without the model, the review is kept with what it was shown (the dossi
 it (model, prompt version), what it cost, and what came of it. The status vocabulary is closed in the
 schema; a row that is not `valid` carries its reason, and a `valid` row carries its review. `/reset`
 erases it; the tenant's deletion cascades.
+
+`0198_expert_review_inputs.sql` (M32.C1.L-contract.V0.U07): a review keeps what the file WAS when it
+was judged — its fingerprint's inputs, an object — so a later review says what moved by a diff. Null
+only on a row from before 0198; the check holds its shape, never its presence (the previous image
+writes none).
 """
 from __future__ import annotations
 
@@ -44,13 +49,14 @@ def engine():
 def _insert(c, **over):
     row = {"o": ORG, "file": "node_fund_neel", "fp": "fp_1", "model": "claude-sonnet-5",
            "pv": "expert-review.v1", "digest": "sha256:d1", "status": "valid", "reason": None,
-           "review": json.dumps({"mode": "act"}), "tin": 4200, "tout": 900, "cost": 26_100, "at": AT}
+           "review": json.dumps({"mode": "act"}), "tin": 4200, "tout": 900, "cost": 26_100, "at": AT,
+           "inputs": json.dumps({"events": ["evt_1"], "whose_move": "ours"})}
     row.update(over)
     c.execute(text(
         "insert into expert_reviews (org_id, file_id, fingerprint, model, prompt_version, "
         "dossier_digest, status, reason, review, input_tokens, output_tokens, cost_micro_usd, "
-        "reviewed_at) values (:o, :file, :fp, :model, :pv, :digest, :status, :reason, "
-        "cast(:review as jsonb), :tin, :tout, :cost, :at)"), row)
+        "reviewed_at, inputs) values (:o, :file, :fp, :model, :pv, :digest, :status, :reason, "
+        "cast(:review as jsonb), :tin, :tout, :cost, :at, cast(:inputs as jsonb))"), row)
 
 
 @pytest.mark.pg
@@ -66,7 +72,28 @@ def test_the_table_has_the_columns_the_readers_need(engine):
         "input_tokens": ("integer", "NO"), "output_tokens": ("integer", "NO"),
         "cost_micro_usd": ("bigint", "NO"),
         "reviewed_at": ("timestamp with time zone", "NO"),
+        # ⛔ MOVED by M32.C1.L-contract.V0.U07 (0198), deliberately: what the file was when judged.
+        "inputs": ("jsonb", "YES"),
     }
+
+
+@pytest.mark.pg
+def test_a_review_keeps_what_the_file_was(engine):
+    with engine.begin() as c:
+        _insert(c)
+        _insert(c, fp="fp_before_0198", inputs=None)            # a row from before 0198 reads as null
+        kept = dict(c.execute(text("select fingerprint, inputs from expert_reviews where org_id = :o"),
+                              {"o": ORG}).fetchall())
+    assert kept == {"fp_1": {"events": ["evt_1"], "whose_move": "ours"}, "fp_before_0198": None}
+
+
+@pytest.mark.pg
+@pytest.mark.parametrize("inputs", ['["evt_1"]', '"evt_1"', "7", "null"])
+def test_inputs_that_are_not_an_object_are_refused(engine, inputs):
+    """A JSON null is not SQL null: what the file was is an object, or nothing at all."""
+    with pytest.raises(IntegrityError, match="expert_reviews_inputs_check"):
+        with engine.begin() as c:
+            _insert(c, inputs=inputs)
 
 
 @pytest.mark.pg

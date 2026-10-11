@@ -56,7 +56,8 @@ or the command it came from.
    ⛔ **And STEP-12 (being built, 10 Oct) adds a seventh, `0197_expert_reviews`** — the expert's one
    review of a file per fingerprint. Nothing writes it until the expert pass is built and its feature
    (`expert_review`) is switched on, which it is for no tenant; `/reset` wipes it, so the boot log must
-   name it.
+   name it. ⛔ **And an eighth (11 Oct), `0198_expert_review_inputs`** — one nullable column on it: what
+   the file was when it was judged, so a later review can say what moved.
 2. After the deploy, **re-queue the attachments** the `file_name` refusal dead-lettered (§3.1).
 3. **Read the first `refetch_last_error`** that comes back (§3.2).
 4. **Pin the Composio toolkits** — the one unit of this block that is yours (§3.3).
@@ -284,11 +285,13 @@ the reset now wipes `reasoning_fingerprints` — ⛔ and, from STEP-06, until `0
 `situation_outcomes`). ⛔ **STEP-11 adds `0196_company_brief_line_kind.sql`** — one nullable column on
 `company_brief_lines`; the brief's store and routes write it, so the boot log must name it too.
 ⛔ **STEP-12 adds `0197_expert_reviews.sql`** — one new table; `/reset` fails until it is applied (the
-reset wipes `expert_reviews`).
-⛔ **All of them, in one line** (10 Oct — the latest is `0197`): `migrations applied at boot:
+reset wipes `expert_reviews`) — ⛔ **and `0198_expert_review_inputs.sql`** (11 Oct): one nullable column
+on it, which the review store writes, so the boot log must name it too.
+⛔ **All of them, in one line** (11 Oct — the latest is `0198`): `migrations applied at boot:
 ['0191_reasoning_fingerprints.sql', '0192_attention_and_archive.sql', '0193_org_self_identities.sql',
 '0194_situation_outcomes.sql', '0195_company_brief.sql', '0196_company_brief_line_kind.sql',
-'0197_expert_reviews.sql']` — seven files; the deploy is not done until the boot log names each.
+'0197_expert_reviews.sql', '0198_expert_review_inputs.sql']` — eight files; the deploy is not done until
+the boot log names each.
 No new environment variable. One value we need from the
 deploy's environment:
 **`GENIOS_L4_LLM_DECISION_MAKER`** — on or off? The golden set runs the LLM decider on, as
@@ -561,7 +564,7 @@ PGOPTIONS='-c default_transaction_read_only=on' psql "$URL" -f "speedrun008/YC-I
 | B18 | `@park_queue` | 2 mails `extraction_parse_failed`, pending since 3 Oct 11:17 UTC, 0 attempts, no next attempt | attempted, with a next attempt or an end state |
 | B19 | `@attachment_refetch_errors` | 88 of 88 the `file_name` refusal | no new refusal; re-queued rows fetched or failing with a named shape |
 | B2 | `@l2_processing_runs` | 30 runs, 0 edge errors (latent) | still 0 |
-| — | `@latest_migration` | `0190` | ⛔ **corrected 2026-10-10:** `0197_expert_reviews` after the deploy (it said `0193` on 7 Oct, `0196` until STEP-12's migration) |
+| — | `@latest_migration` | `0190` | ⛔ **corrected 2026-10-11:** `0198_expert_review_inputs` after the deploy (it said `0193` on 7 Oct, `0196` until STEP-12's migration, `0197` until 11 Oct) |
 | STEP-02 | `@cards_expired_while_deferred` | measured in STEP-01 only | **0** — a DEFER keeps its card |
 | STEP-02 | `@gate_redecided_unchanged` | — (the gate is new) | `decided_today_never_skipped` small and falling; `skips` growing |
 | `03` F148 | `@dates_framed_late`, `@promises_framed_late` | — | the count `scripts/reframe_stored_dates.py` re-frames (§3.8); 0 after it |
