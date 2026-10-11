@@ -27,6 +27,7 @@ import json
 from dataclasses import dataclass
 from typing import Any
 
+from genios_engine.contracts.company_brief import WORK_KINDS
 from genios_engine.contracts.expert_review import (LEVELS, MODES, MOVING, NO_NEXT_MOVE,
                                                    NUMBER_NOT_IN_DOSSIER, PATTERN_KINDS,
                                                    REVERSIBILITY, UNCITED_FACT,
@@ -35,7 +36,9 @@ from genios_engine.contracts.expert_review import (LEVELS, MODES, MOVING, NO_NEX
 
 from .dossier import Dossier
 
-PROMPT_VERSION = "expert-review.v1"
+#: ⛔ v2 since M32.C1.L-contract.V0.U09 (2026-10-11): the frame step asks for a proposed kind of work.
+#: No review was ever written under v1 — the pass was not yet wired.
+PROMPT_VERSION = "expert-review.v2"
 
 
 def _or(words) -> str:
@@ -53,8 +56,8 @@ ROLE = (
 
 RULES_HEADING = "## THE RULES"
 _ONLY = "Use only the dossier. What you know of the world is not evidence about this file."
-_CITE = ("Every fact cites at least one id the dossier prints in square brackets — the id alone, "
-         "without the brackets.")
+_CITE = ("Every fact, and a proposed kind of work, cites at least one id the dossier prints in square "
+         "brackets — the id alone, without the brackets.")
 _GROUND = ("An inference or a pattern rests on ids the dossier prints, or on your own facts as fact:N, "
            "N being the fact's place in your list, counting from one.")
 _NUMBERS = ("In every sentence you write, the draft included, use no number the dossier does not hold: "
@@ -111,8 +114,11 @@ CHECKLIST: tuple[Step, ...] = (
          ("facts", "inferences")),
     Step("frame", "THE FRAME, AND THE RIVAL FRAMES",
          "Say what situation this is — the frame you would brief the founder with — and at least one "
-         "rival: what else it could be, that the same facts would also fit.",
-         ("frames",)),
+         "rival: what else it could be, that the same facts would also fit. And if the file's kind of "
+         "work — what THE FILE says the brief names it, or that it names none — is missing or wrong, "
+         f"the kind you would give it: {_or(WORK_KINDS)}, why, and the ids that show it — proposed to "
+         "the founder, never applied. Otherwise null.",
+         ("frames", "proposed_kind")),
     Step("expected", "EXPECTED AGAINST ACTUAL",
          "Name the stage the file is in, from its playbook's stages; say what the playbook expects at "
          "that stage, and what has actually happened. Without a playbook the stage is null, and what "
@@ -163,6 +169,8 @@ SCHEMA: dict[str, Any] = {
     "hypotheses": [{"proposition": "what might be true", "needs": "what would settle it"}],
     "unknowns": [{"question": "what is not known", "relevance": "why the answer would change the judgment"}],
     "frames": {"primary": "the situation this is", "rivals": ["what else it could be"]},
+    "proposed_kind": {"kind": " | ".join(WORK_KINDS), "why": "why this kind, from the dossier",
+                      "evidence": [_CITED]},
     "expected_vs_actual": {"stage": "a stage name from the playbook, or null",
                            "expected": "what is expected at this stage", "actual": "what has happened"},
     "scenarios": {"do_nothing": "if nothing is done", "act": "if the founder acts now",

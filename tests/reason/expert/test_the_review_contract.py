@@ -10,6 +10,9 @@ alternative, when to wait or stop, done-when and a draft. `validate` refuses an 
 the dossier never showed, an inference or a pattern resting on nothing it holds, a stage the playbook
 lacks, a moving mode with no next move — and any number, anywhere in the review, that the dossier does
 not hold. A malformed answer is a ValueError that names the field: the one thing a caller may repair.
+
+M32.C1.L-contract.V0.U09: a review may PROPOSE the file's kind of work (`03` F132, F151) — one of the
+brief's kinds, why, and the dossier ids that show it, validated like a fact; null when the kind is right.
 """
 from __future__ import annotations
 
@@ -191,6 +194,41 @@ def test_every_text_the_review_writes_is_read_for_numbers():
                      "send it after the call", "Hi Neel, ahead of our call on 8 Oct, a one-page note"
                      " on where we are."):
         assert expected in texts, expected
+
+
+PROPOSED = {"kind": "investor", "why": "the programme writes cheques like the fund behind it",
+            "evidence": ["evt_neel_0927"]}
+
+
+def test_a_review_may_propose_the_files_kind_of_work():
+    review = ExpertReview.from_mapping(_raw(proposed_kind=PROPOSED))
+    assert (review.proposed_kind.kind, review.proposed_kind.evidence) == ("investor", ("evt_neel_0927",))
+    assert ExpertReview.from_mapping(review.as_mapping()) == review
+    assert review.proposed_kind.why in review.texts()                 # its words are read for numbers
+    assert validate(review, CATALOGUE).ok
+    assert ExpertReview.from_mapping(_raw()).proposed_kind is None
+    assert ExpertReview.from_mapping(_raw()).as_mapping()["proposed_kind"] is None
+    assert ExpertReview.from_mapping(_raw(proposed_kind={"kind": "Investor", "why": "w",
+                                                         "evidence": ["evt_neel_0927"]})
+                                     ).proposed_kind.kind == "investor"
+
+
+@pytest.mark.parametrize("over, says", [
+    ({"kind": "customer"}, "kind of work"),                          # not one of the brief's kinds
+    ({"why": ""}, "why"),
+    ({"evidence": []}, "proposed kind's evidence"),
+])
+def test_a_proposed_kind_says_which_why_and_from_what(over, says):
+    with pytest.raises(ValueError, match=says):
+        ExpertReview.from_mapping(_raw(proposed_kind={**PROPOSED, **over}))
+
+
+def test_a_proposed_kind_cites_only_what_the_dossier_showed():
+    review = ExpertReview.from_mapping(_raw(proposed_kind={**PROPOSED, "evidence": ["evt_unseen"]}))
+    assert UNKNOWN_EVIDENCE in validate(review, CATALOGUE).reasons
+    counted = ExpertReview.from_mapping(_raw(proposed_kind={**PROPOSED,
+                                                            "why": "it wrote 17 cheques"}))
+    assert NUMBER_NOT_IN_DOSSIER in validate(counted, CATALOGUE).reasons
 
 
 def test_numbers_compare_by_value_not_spelling():

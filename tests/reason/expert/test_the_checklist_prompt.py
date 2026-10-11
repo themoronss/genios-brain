@@ -8,7 +8,8 @@ expected against actual; patterns and counter-patterns; what is not known; the s
 the mode; the next move; the draft — and together they ask for exactly the fields the review contract
 reads, each once, in the contract's own shape and vocabularies. The dossier rides whole, first. No number
 appears that the dossier does not hold: the instructions carry no digit at all. A repair carries the
-gate's complaint. `PROMPT_VERSION` is "expert-review.v1".
+gate's complaint. `PROMPT_VERSION` is "expert-review.v2": ⛔ moved from v1 by M32.C1.L-contract.V0.U09, when the frame step
+began to ask for a proposed kind of work (no review was ever written under v1).
 """
 from __future__ import annotations
 
@@ -16,6 +17,7 @@ import json
 
 import pytest
 
+from genios_engine.contracts.company_brief import WORK_KINDS
 from genios_engine.contracts.expert_review import (LEVELS, MODES, PATTERN_KINDS, REFUSALS,
                                                    REVERSIBILITY, ExpertReview, number_tokens)
 from genios_engine.reason.bundle.budget import OWN_BUDGETS, estimate_micro_usd, usd_to_micro
@@ -47,7 +49,9 @@ FULL = {
     "mode": "act", "next_move": {"who": "the founder", "what": "book the call", "for_whom": "Kunal",
                                  "by_when": "2026-10-11"},
     "alternative": "ask Kunal for a slot", "wait_or_stop": "stop if the fund passes",
-    "done_when": "the call is on the calendar", "draft": "Hi Kunal, booking it now."}
+    "done_when": "the call is on the calendar", "draft": "Hi Kunal, booking it now.",
+    "proposed_kind": {"kind": "investor", "why": "the fund asks for a first call",
+                      "evidence": ["evt_003"]}}
 
 
 def _dossier(**kw) -> D.Dossier:
@@ -64,7 +68,7 @@ def _shape(value):
 
 
 def test_the_prompt_has_a_version():
-    assert P.PROMPT_VERSION == "expert-review.v1"
+    assert P.PROMPT_VERSION == "expert-review.v2"
 
 
 def test_the_checklist_is_the_prompts_sections_in_their_one_order():
@@ -98,6 +102,9 @@ def test_the_contracts_vocabularies_are_the_prompts():
     assert P.SCHEMA["appraisal"]["stakes"] == P.SCHEMA["appraisal"]["urgency"] == " | ".join(LEVELS)
     assert P.SCHEMA["appraisal"]["reversibility"] == " | ".join(REVERSIBILITY)
     assert P.SCHEMA["patterns"][0]["kind"] == " | ".join(PATTERN_KINDS)
+    assert P.SCHEMA["proposed_kind"]["kind"] == " | ".join(WORK_KINDS)
+    frame = next(step for step in P.CHECKLIST if step.name == "frame")
+    assert "proposed_kind" in frame.fields and "never applied" in frame.asks
     prompt = P.build_prompt(_dossier())
     mode_step = next(step for step in P.CHECKLIST if step.name == "mode")
     for mode, meaning in P.MODE_MEANINGS.items():

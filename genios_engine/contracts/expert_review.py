@@ -13,7 +13,10 @@ frozen, with its own validation against the dossier the model was shown:
   * what COULD happen — doing nothing, acting, the best and the worst case, the signals to watch;
   * what it is WORTH — stakes, urgency and reversibility as levels, the appraisal with its reasons;
   * what to DO — a mode (act · find out · wait · nothing · blocked), the next move, an alternative,
-    when to wait or stop, what done looks like, and a draft.
+    when to wait or stop, what done looks like, and a draft;
+  * and, where the file's kind of work is missing or wrong, the kind it PROPOSES — a kind of the brief
+    (`contracts/company_brief.WORK_KINDS`), why, and what shows it (`03` F132, F151; M32.C1.L-contract.
+    V0.U09). Proposed to the founder, never applied: a proposed line of the brief, accepted or not.
 
 PATTERNS ARE THE CHECKLIST'S. §3.4's field list leaves them out, while §3.2's checklist asks for
 "patterns and counter-patterns, with their provenance" in its fourth section; a section the prompt asks
@@ -39,6 +42,8 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import date
 from typing import Any
+
+from .company_brief import WORK_KINDS
 
 #: How the expert intervenes — STEP-12 §8.4 item 2. Code maps each to a decision outcome.
 MODES: tuple[str, ...] = ("act", "find_out", "wait", "nothing", "blocked")
@@ -213,6 +218,13 @@ class NextMove:
 
 
 @dataclass(frozen=True, slots=True)
+class ProposedKind:
+    kind: str                                    # one of contracts/company_brief.WORK_KINDS
+    why: str
+    evidence: tuple[str, ...]                    # dossier evidence ids — at least one, as a fact's
+
+
+@dataclass(frozen=True, slots=True)
 class ExpertReview:
     facts: tuple[Fact, ...]
     inferences: tuple[Inference, ...]
@@ -229,6 +241,7 @@ class ExpertReview:
     wait_or_stop: str
     done_when: str
     draft: str | None = None
+    proposed_kind: ProposedKind | None = None
 
     @classmethod
     def from_mapping(cls, raw: Mapping[str, Any]) -> "ExpertReview":
@@ -249,6 +262,14 @@ class ExpertReview:
                                  what=_text(nm.get("what"), "what the next move is"),
                                  for_whom=_text(nm.get("for_whom"), "for whom the next move is"),
                                  by_when=_day(nm.get("by_when")))
+        pk = raw.get("proposed_kind")
+        proposed_kind = None
+        if pk:
+            pk = _mapping(pk, "the proposed kind")
+            proposed_kind = ProposedKind(
+                kind=_one_of(pk.get("kind"), WORK_KINDS, "a proposed kind of work"),
+                why=_text(pk.get("why"), "why a kind is proposed"),
+                evidence=_texts(pk.get("evidence"), "a proposed kind's evidence", at_least=1))
         frames = _mapping(raw.get("frames"), "frames")
         eva = _mapping(raw.get("expected_vs_actual"), "expected_vs_actual")
         sc = _mapping(raw.get("scenarios"), "scenarios")
@@ -290,11 +311,12 @@ class ExpertReview:
             alternative=_text(raw.get("alternative"), "an alternative", required=False),
             wait_or_stop=_text(raw.get("wait_or_stop"), "when to wait or stop"),
             done_when=_text(raw.get("done_when"), "what done looks like"),
-            draft=_text(raw.get("draft"), "a draft", required=False) or None)
+            draft=_text(raw.get("draft"), "a draft", required=False) or None,
+            proposed_kind=proposed_kind)
 
     def as_mapping(self) -> dict[str, Any]:
         """The review as `from_mapping` reads it — what is stored, and what a replay reads back."""
-        nm = self.next_move
+        nm, pk = self.next_move, self.proposed_kind
         return {
             "facts": [{"claim": f.claim, "evidence": list(f.evidence)} for f in self.facts],
             "inferences": [{"claim": i.claim, "based_on": list(i.based_on)} for i in self.inferences],
@@ -320,6 +342,8 @@ class ExpertReview:
             "wait_or_stop": self.wait_or_stop,
             "done_when": self.done_when,
             "draft": self.draft,
+            "proposed_kind": None if pk is None else {"kind": pk.kind, "why": pk.why,
+                                                      "evidence": list(pk.evidence)},
         }
 
     def texts(self) -> tuple[str, ...]:
@@ -337,6 +361,8 @@ class ExpertReview:
         if self.next_move is not None:
             out += [self.next_move.who, self.next_move.what, self.next_move.for_whom]
         out += [self.alternative, self.wait_or_stop, self.done_when, self.draft or ""]
+        if self.proposed_kind is not None:
+            out.append(self.proposed_kind.why)
         return tuple(t for t in out if t)
 
 
@@ -388,6 +414,10 @@ def validate(review: ExpertReview, catalogue: DossierCatalogue) -> Validation:
         for ref in fact.evidence:
             if ref not in catalogue.evidence_ids:
                 problems.append((UNKNOWN_EVIDENCE, f"fact {n} cites {ref}"))
+    if review.proposed_kind is not None:
+        for ref in review.proposed_kind.evidence:
+            if ref not in catalogue.evidence_ids:
+                problems.append((UNKNOWN_EVIDENCE, f"the proposed kind cites {ref}"))
     for n, inference in enumerate(review.inferences, start=1):
         problems += _grounds(inference.based_on, len(review.facts), catalogue, f"inference {n}",
                              UNGROUNDED_INFERENCE)
@@ -407,6 +437,7 @@ def validate(review: ExpertReview, catalogue: DossierCatalogue) -> Validation:
 
 __all__ = ["Appraisal", "DossierCatalogue", "ExpectedVsActual", "ExpertReview", "Fact", "Frames",
            "Hypothesis", "Inference", "LEVELS", "MODES", "MOVING", "NO_NEXT_MOVE",
-           "NUMBER_NOT_IN_DOSSIER", "NextMove", "PATTERN_KINDS", "Pattern", "REFUSALS", "REVERSIBILITY",
+           "NUMBER_NOT_IN_DOSSIER", "NextMove", "PATTERN_KINDS", "Pattern", "ProposedKind", "REFUSALS",
+           "REVERSIBILITY",
            "Scenarios", "UNCITED_FACT", "UNGROUNDED_INFERENCE", "UNGROUNDED_PATTERN", "UNKNOWN_EVIDENCE",
            "UNKNOWN_STAGE", "Unknown", "Validation", "number_tokens", "validate"]
