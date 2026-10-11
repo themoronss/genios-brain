@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_062, (
+    assert r["statements"] == 3_064, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -428,6 +428,10 @@ def test_the_statement_count_did_NOT_move():
     # a review names no move (`_CLEAR_FILE_DECISIONS`) (+3). Each a literal at its own call.
     # ⛔ MOVED 3,061 → 3,062 by yc2_w27_s12/M33.C1.L-integration.V2.U13 (`03` F173): a file with no
     # situation of its own is filed under one it stood down (`domain_shadow._STOOD_DOWN_HOME`). A literal.
+    # ⛔ MOVED 3,062 → 3,064 by yc2_w27_s12/M33.C1.L-integration.V0.U14 (`03` F173): a pack rule stands
+    # down for a decided file (`reason/runner`) — the source events of the facts its subjects hold
+    # (`_FACT_EVENTS`, read once a pass) and the open signal a stood-down rule left (`_STOOD_DOWN_RULE`).
+    # Two literals, each at its own call.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

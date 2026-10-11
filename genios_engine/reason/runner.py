@@ -869,8 +869,107 @@ def _muted_rules(store, org_id: str, pack_id: str, pack_version: str) -> set[str
             {"o": org_id, "p": pack_id, "pv": pack_version})}
 
 
+# =================================================================================================
+# STEP-12 M33 · A PACK RULE STANDS DOWN FOR A FILE ITS REVIEW DECIDED
+# (tree `yc2_w27_s12` M33.C1.L-integration.V0.U14, `03` F173, under `06` D1)
+#
+# A file a valid review covers is decided ONCE, from that review, by the compiled lane
+# (`reason/domain_shadow`). Measured on the golden set's first decided re-record (12 Oct): beside the
+# file's card the general pack's `unanswered_email` stood on the person who wrote — the same matter,
+# the decider asked for it — on 14 of the 58 cases. So `run` is handed what the files DECIDED ON THE
+# LIVE LANE explain (`explained`, a `reason/expert/cover.Covers`): a rule on one of such a file's nodes
+# — its anchor, one of its people, or a node no one owns — whose every fact it reads came from events
+# the review saw is not reasoned (no decider, no R-1); an open signal it left is replaced by the file's
+# decision, its cards REPLACED (STEP-06), and the stand-down is a suppression row, counted
+# (`covered_by_review`). A rule resting on a fact with no source event, or on an event the review
+# never saw, is reasoned as before. The shadow native lane (`sales.deal_cooling`) names no fields: a
+# subject every stored fact of which came from events the review saw is not reasoned there either.
+# =================================================================================================
+
+#: The suppression reason, and the count, of a pack rule its file's review decided.
+COVERED_BY_REVIEW = "covered_by_review"
+
+#: Every fact's source events, for the facts of the nodes a decided file may explain — one read a pass.
+_FACT_EVENTS = (
+    "select fact_version_id, event_id from graph_source_refs "
+    " where org_id = :o and fact_version_id = any(:fvs) order by fact_version_id, event_id")
+
+#: The open signal a stood-down rule left on its subject — replaced by the file's decision.
+_STOOD_DOWN_RULE = (
+    "update signals set status = 'expired' where org_id = :o and pack_id = :p and pack_version = :pv "
+    "   and rule_id = :r and subject_node_id = :n and status = 'open' returning signal_id")
+
+
+def _rule_paths(rule) -> set[str]:
+    """Every fact path a rule reads: its conditions', its urgency's, and its evidence fields."""
+    paths = {str(c["path"]) for c in rule.when or () if isinstance(c, dict) and c.get("path")}
+    if isinstance(rule.urgency, dict) and rule.urgency.get("path"):
+        paths.add(str(rule.urgency["path"]))
+    return paths | {str(f) for f in rule.evidence_fields or ()}
+
+
+def _events_behind(ctx, rule, events_by_fact: dict[str, set[str]]) -> set[str]:
+    """The source events of every stored fact the rule reads on this subject. A derived fact has no
+    version, so no source event: a rule that reads one is never explained by events alone."""
+    behind: set[str] = set()
+    for path in _rule_paths(rule):
+        fact = ctx.facts.get(path)
+        if not isinstance(fact, dict):
+            continue
+        version = fact.get("fact_version_id")
+        if not version or not events_by_fact.get(str(version)):
+            return set()
+        behind |= events_by_fact[str(version)]
+    return behind
+
+
+def _node_events(ctx, events_by_fact: dict[str, set[str]]) -> set[str]:
+    """The source events of every stored fact the subject holds — what a native capability, which
+    names no fields of its own, rests on. A stored fact with no source event explains nothing."""
+    behind: set[str] = set()
+    for fact in ctx.facts.values():
+        version = fact.get("fact_version_id") if isinstance(fact, dict) else None
+        if not version:
+            continue
+        if not events_by_fact.get(str(version)):
+            return set()
+        behind |= events_by_fact[str(version)]
+    return behind
+
+
+def _fact_events(store, org_id: str, facts_by_node: dict, node_ids) -> dict[str, set[str]]:
+    """fact version → its source events, for every stored fact on `node_ids`, in one read."""
+    versions = sorted({str(f["fact_version_id"]) for n in node_ids
+                       for f in (facts_by_node.get(n) or {}).values()
+                       if isinstance(f, dict) and f.get("fact_version_id")})
+    out: dict[str, set[str]] = {}
+    if not versions:
+        return out
+    with store.engine.connect() as c:
+        for r in c.execute(text(_FACT_EVENTS), {"o": org_id, "fvs": versions}):
+            out.setdefault(str(r.fact_version_id), set()).add(str(r.event_id))
+    return out
+
+
+def _stand_down_rule(store, org_id: str, pack_id: str, pack_version: str, rule_id: str,
+                     node_id: str, cover, eval_time) -> int:
+    """A rule its file's review decided: its open signal replaced by the file's decision — its cards
+    REPLACED — and the stand-down recorded beside every other reason a rule did not emit."""
+    with store.engine.begin() as c:
+        retired = c.execute(text(_STOOD_DOWN_RULE), {"o": org_id, "p": pack_id, "pv": pack_version,
+                                                     "r": rule_id, "n": node_id}).fetchall()
+        if retired:
+            card_lifecycle.expire_cards(c, org_id=org_id, cause=card_lifecycle.REPLACED,
+                                        signal_ids=[item.signal_id for item in retired])
+    _suppress(store, org_id, rule_id, node_id, COVERED_BY_REVIEW, eval_time,
+              {"file_id": cover.file_id, "fingerprint": cover.fingerprint,
+               "replaced": [item.signal_id for item in retired]})
+    return len(retired)
+
+
 def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
-        registry: PackRegistry | None = None, pack_id: str = DEFAULT_PACK_ID) -> dict:
+        registry: PackRegistry | None = None, pack_id: str = DEFAULT_PACK_ID,
+        explained=None) -> dict:
     eval_time = eval_time or datetime.now(timezone.utc)
 
     # L4 — resolve the tenant's effective config (rules + scoring + gate + budget + snapshot id).
@@ -1010,6 +1109,14 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
     # pooler). Same data, same shape → identical NodeContext per node, so signals are unchanged.
     facts_by_node = _bulk_load_facts(store, org_id)
     obs_by_node = _bulk_load_obs(store, org_id)
+    # STEP-12 M33 · what the files decided on the live lane explain (see the block above `run`): the
+    # source events of the facts their nodes hold, read once — only when a file was decided.
+    events_by_fact: dict[str, set[str]] = {}
+    if explained:
+        from genios_engine.reason.expert.cover import MEMBERS_ONLY
+        members = {m for cover in explained for m in cover.members}
+        events_by_fact = _fact_events(store, org_id, facts_by_node, [
+            nd.node_id for nd in nodes if nd.node_id in members or nd.node_type not in MEMBERS_ONLY])
     metrics_by_node = _bulk_load_metrics(store, org_id)
     situations_by_node = _bulk_load_situations(store, org_id)
     # Who is away — every person.availability window in ONE org-wide read, so the reasoners'
@@ -1120,6 +1227,16 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
             break
         for capability in node_capabilities:
             native_rule = native_rule_id(capability.capability_id)
+            if explained:
+                # STEP-12 M33 · its file's review judged every fact this subject holds: the shadow
+                # native lane asks the decider nothing about it either.
+                cover = explained.explaining(nd.node_id, nd.node_type, _node_events(ctx, events_by_fact))
+                if cover is not None:
+                    _suppress(store, org_id, native_rule, nd.node_id, COVERED_BY_REVIEW, eval_time,
+                              {"file_id": cover.file_id, "fingerprint": cover.fingerprint,
+                               "native": True})
+                    out[COVERED_BY_REVIEW] += 1
+                    continue
             native_key = f"native|{effective['pack_id']}|{capability.capability_id}|{nd.node_id}"
             native_fp, native_verdict = gate.check(
                 key=native_key, rule_id=native_rule, node_id=nd.node_id,
@@ -1216,6 +1333,16 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
             if rule.id in muted:                          # L6 auto-mute — rule is harmful, silence it
                 out["muted"] += 1
                 continue
+            if explained:
+                # STEP-12 M33 · its file's review decided this — before the gate, the decider and R-1.
+                cover = explained.explaining(nd.node_id, nd.node_type,
+                                             _events_behind(ctx, rule, events_by_fact))
+                if cover is not None:
+                    out["covered_signals_replaced"] += _stand_down_rule(
+                        store, org_id, effective["pack_id"], effective["version"], rule.id,
+                        nd.node_id, cover, eval_time)
+                    out[COVERED_BY_REVIEW] += 1
+                    continue
             legacy_key = f"legacy|{effective['pack_id']}|{rule.id}|{nd.node_id}"
             legacy_capability = legacy_capabilities[rule.id]
             legacy_fp, legacy_verdict = gate.check(

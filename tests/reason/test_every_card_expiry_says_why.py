@@ -32,6 +32,9 @@ ROOT = Path(__file__).resolve().parents[2]
 SITES: dict[tuple[str, str], list[tuple[str, str | None, str | None]]] = {
     ("genios_engine/reason/runner.py", "_emit"): [("expire_cards", "REPLACED", None)],
     ("genios_engine/reason/runner.py", "run"): [("expire_cards", "RULE_CLEARED", None)],
+    # STEP-12 M33.C1.L-integration.V0.U14: a pack rule its file's review decided stands down — the
+    # open signal it left replaced by the file's decision, its cards REPLACED (added deliberately).
+    ("genios_engine/reason/runner.py", "_stand_down_rule"): [("expire_cards", "REPLACED", None)],
     ("genios_engine/reason/composer.py", "compose_deal_health"): [
         ("expire_cards", "BUDGET_HELD", None), ("expire_cards", "NOT_AUTHORIZED", None),
         ("expire_cards", "REPLACED", None), ("expire_cards", "PLAN_GONE", None)],
