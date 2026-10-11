@@ -203,6 +203,21 @@ def test_no_budget_left_stops_the_pass_and_carries_the_rest_said(world):
     assert receipt["carried"] == 1 and [r.status for r in _rows(store)] == [R.OVER_BUDGET]
 
 
+def test_the_days_spend_carries_from_one_pass_to_the_next(world):
+    """Every consult is on the R-site ledger, so the next pass's budget opens with today's spend — the
+    $2 is a day's, not a pass's (`06` D7). ⛔ Found at the build of V3.U06: the gate had no ledger."""
+    from genios_engine.reason.bundle.budget import NarrativeBudget
+    from genios_engine.reason.bundle.sites import SITE_EXPERT
+    store, now = world
+    receipt, _expert = _pass(store, now)
+    opened = NarrativeBudget.for_site(SITE_EXPERT, org_id=ORG, engine=store.engine, now=now)
+    assert receipt["cost_micro_usd"] > 0 and opened.spent_micro_usd == receipt["cost_micro_usd"]
+    with store.engine.connect() as c:
+        sites = c.execute(text("select site, count(*) from l4_r_site_calls where org_id = :o "
+                               "group by site"), {"o": ORG}).fetchall()
+    assert [tuple(r) for r in sites] == [(SITE_EXPERT, 2)]
+
+
 def test_a_tenant_without_the_feature_or_a_model_reads_no_file(world, monkeypatch):
     store, now = world
     with store.engine.begin() as c:

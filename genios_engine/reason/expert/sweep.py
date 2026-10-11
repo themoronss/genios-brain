@@ -35,6 +35,7 @@ from genios_engine.platform.logging import get_logger
 from genios_engine.reason.bundle.budget import NarrativeBudget
 from genios_engine.reason.bundle.gate import RSiteGate
 from genios_engine.reason.bundle.sites import SITE_EXPERT, tier_for
+from genios_engine.reason.bundle.store import BundleStore
 from genios_engine.reason.llm_sites import make_site_client, tier_model
 
 from . import store as reviews
@@ -130,7 +131,11 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
             receipt["unreadable"] += 1
 
     due.sort(key=lambda d: (d[0], d[1]))
-    gate = RSiteGate(org_id=org_id, engine=engine, client=client, store=None, activated=activated,
+    # ⛔ THE LEDGER. Every consult is a row of `l4_r_site_calls` (the gate's receipt), and the expert's
+    # own budget opens each pass from today's R-7 rows there — without it, `06` D7's $2 a day would
+    # bind within one pass and never across a day's passes.
+    gate = RSiteGate(org_id=org_id, engine=engine, client=client, store=BundleStore(engine),
+                     activated=activated,
                      budget=budget or NarrativeBudget.for_site(SITE_EXPERT, org_id=org_id,
                                                                engine=engine, now=now),
                      cost_recorder=getattr(store, "record_cost", None), eval_time=now)
