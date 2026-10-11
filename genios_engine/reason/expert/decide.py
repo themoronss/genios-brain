@@ -52,6 +52,16 @@ D1 — THE APPRAISAL SETS IMPORTANCE AND URGENCY, as numbers code owns (`LEVEL_B
 candidates' `urgency_bp`, stakes → the file's importance, carried as the decision maker reads it
 (`SITUATION_IMPORTANCE_KEY`, measured: `fallback` False). Reversibility is kept as a fact, for the card.
 
+TWO MODES END THE RUN, AS LAYER 4'S OWN TERMINALS DO. `find_out` and `nothing` decide no move, so
+nothing may stand behind one: the reader (a gating unit) answers `nothing` with `matched` False and
+`find_out` with the answer it lacks (INSUFFICIENT_CONTEXT, `expert.answer`), and the orchestrator ends
+the run there — `core.constraint` never runs, and the audit store finds no check without a candidate
+(it refuses one: a check is an index over the candidates the run kept).
+
+ONE MANIFEST PER VERSION. The audit store keeps exactly one manifest per (capability, version), and the
+expert's manifest is the review's — its move, its words, its numbers. So the version is content-
+addressed: `DECIDE_VERSION` and the manifest's own hash (`capability_for`).
+
 ⛔ NO MODEL, BY CONSTRUCTION. `ExpertDecisionMaker` never reaches `llm_decision_maker` (the test-mode
 decider sits at the top of `DecisionMaker.decide`, which this class replaces), and it says so
 (`asks_no_model`) so the orchestrator skips the test-mode R-1 for it (M33.C1.L-logic.V0.U05). Pure: no
@@ -60,6 +70,7 @@ I/O, no clock, no model — a replay of the stored request recomputes the decisi
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from dataclasses import replace
 from datetime import date, datetime, timedelta
 from typing import Any
 
@@ -82,6 +93,7 @@ from genios_engine.contracts.reasoning import (
     ReasoningRequest,
     ResultStatus,
 )
+from genios_engine.platform.canonical import semantic_hash
 from genios_engine.reason.decision_maker import (
     BELOW_FLOOR_REASON,
     CONFIDENCE_AUTHORITY_KEY,
@@ -152,10 +164,17 @@ def is_event(evidence_id: str) -> bool:
 
 #: The decision's record of the mode, on every outcome.
 MODE_MARKER = "expert_mode"
+#: What a `find_out` review lacks: the answer to its question — the field the run is insufficient on.
+F_ANSWER = "expert.answer"
 
 F_MODE, F_STAKES, F_URGENCY, F_REVERSIBILITY = ("expert.mode", "expert.stakes", "expert.urgency",
                                                 "expert.reversibility")
 F_REVIEW, F_CITED, F_NEXT_MOVE = "expert.review", "expert.cited", "expert.next_move"
+
+#: The reader, a GATING unit: `nothing` answers `matched` False and the run ends NO_ACTION before the
+#: constraint gate runs, as a gate that does not apply ends any run (see the module docstring).
+READER_SPEC = ReasonerSpec(READER_ID, DECIDE_VERSION, required_fields=(F_MODE,),
+                           failure_policy=FailurePolicy.REQUIRED, gating=True)
 
 
 def is_expert(capability_id: Any) -> bool:
@@ -213,18 +232,17 @@ def _render(review: ExpertReview) -> dict[str, Any]:
 
 def capability_for(review: ExpertReview, *, root_entity_type: str, domain: str, eval_time: datetime,
                    live_delivery_enabled: bool = False) -> CapabilityManifest:
-    """The expert's capability for one review — one reader, the constraint gate, one play."""
-    reader = ReasonerSpec(READER_ID, DECIDE_VERSION, required_fields=(F_MODE,),
-                          failure_policy=FailurePolicy.REQUIRED)
+    """The expert's capability for one review — one reader, the constraint gate, one play — its version
+    the manifest's own content address (see the module docstring)."""
     constraint = ReasonerSpec("core.constraint", "1.0.0", dependencies=(READER_ID,),
                               input_kind="candidate_plays", output_kind="candidate_checks",
                               failure_policy=FailurePolicy.REQUIRED)
-    return CapabilityManifest(
+    manifest = CapabilityManifest(
         capability_id=CAPABILITY_ID, version=DECIDE_VERSION, domain=domain,
         root_entity_type=root_entity_type,
         goal=Goal(CAPABILITY_ID, "What this file needs next, as its review judged it",
                   success_criteria=(review.done_when,)),
-        reasoners=(reader, constraint),
+        reasoners=(READER_SPEC, constraint),
         plays=(_play(review, eval_time),),
         ranking_weights=RANKING_WEIGHTS_V2,
         policies=("read_only",),
@@ -240,6 +258,8 @@ def capability_for(review: ExpertReview, *, root_entity_type: str, domain: str, 
             "situation_type": "file_review",
             "render": _render(review),
         })
+    content = {key: value for key, value in manifest.to_semantic_dict().items() if key != "version"}
+    return replace(manifest, version=f"{DECIDE_VERSION}.{semantic_hash(content)[:16]}")
 
 
 def context_for(row: store.StoredReview, *, org_id: str, root_entity_type: str, eval_time: datetime,
@@ -304,8 +324,7 @@ class ReviewReader:
     mode becomes the outcome in `ExpertDecisionMaker`, one table, one place.
     """
 
-    _spec = ReasonerSpec(READER_ID, DECIDE_VERSION, required_fields=(F_MODE,),
-                         failure_policy=FailurePolicy.REQUIRED)
+    _spec = READER_SPEC
 
     @property
     def spec(self) -> ReasonerSpec:
@@ -327,11 +346,22 @@ class ReviewReader:
 
     def evaluate(self, request: ReasoningRequest,
                  prior_results: Mapping[str, ReasonerResult]) -> ReasonerResult:
+        mode = str(_value(request, F_MODE))
+        outcome = OUTCOME_OF[mode]           # one table: the reader ends the run where it says
+        if outcome == DecisionOutcome.INSUFFICIENT_CONTEXT:
+            # A question must be answered before anyone moves: the run is insufficient on the answer,
+            # and it ends here — nothing may stand behind a move nobody can make yet.
+            return ReasonerResult(
+                reasoner_id=READER_ID, reasoner_version=DECIDE_VERSION,
+                status=ResultStatus.INSUFFICIENT_CONTEXT, missing_fields=(F_ANSWER,),
+                reason_codes=(f"{MODE_MARKER}:{mode}",))
         confidence, events = self._confidence(request)
         urgency = LEVEL_BP[str(_value(request, F_URGENCY))]
         cited = tuple(ref.evidence_id for ref in request.context.evidence)
         return ReasonerResult(
             reasoner_id=READER_ID, reasoner_version=DECIDE_VERSION, status=ResultStatus.COMPLETED,
+            # The gate: a file that needs nothing from the founder ends the run here (NO_ACTION).
+            matched=outcome != DecisionOutcome.NO_ACTION,
             metrics={"confidence_bp": confidence, "urgency_bp": urgency,
                      "source_events": len(events)},
             findings=(Finding(f"{READER_ID}.record", "expert.record",
@@ -357,8 +387,9 @@ class ExpertDecisionMaker(DecisionMaker):
         confidence_bp = composition.confidence_bp
         candidates: tuple = ()
         if terminal is not None:
-            # Execution ended the run — a required fact missing, a unit failed. A fact about the
-            # run, recorded as it is; the review is not read past it.
+            # Execution ended the run: `find_out` and `nothing` end it at the reader, as
+            # `OUTCOME_OF` says (INSUFFICIENT_CONTEXT, NO_ACTION); a required fact missing or a unit
+            # failed ends it too. A fact about the run, recorded as it is.
             outcome = terminal
         else:
             outcome = OUTCOME_OF[str(mode)]
@@ -413,9 +444,10 @@ def decide(request: ReasoningRequest) -> ReasoningExecution:
     return _ORCHESTRATOR.execute(request)
 
 
-__all__ = ["ADAPTER", "CAPABILITY_ID", "DECIDE_VERSION", "EXPIRY_HOURS", "KIND_SEPARATOR",
+__all__ = ["ADAPTER", "CAPABILITY_ID", "DECIDE_VERSION", "EXPIRY_HOURS", "F_ANSWER", "KIND_SEPARATOR",
            "ExpertDecisionMaker", "LEVEL_BP", "MODE_MARKER", "MOVE_PLAY", "NO_EVENT_BP",
-           "ONE_EVENT_BP", "OUTCOME_OF", "READER_ID", "ReviewReader", "TRIGGER_KIND", "WATCH_PLAY",
+           "ONE_EVENT_BP", "OUTCOME_OF", "READER_ID", "READER_SPEC", "ReviewReader", "TRIGGER_KIND",
+           "WATCH_PLAY",
            "capability_for", "cited_ids", "context_for", "decide", "is_event", "is_expert",
            "orchestrator",
            "request_for"]

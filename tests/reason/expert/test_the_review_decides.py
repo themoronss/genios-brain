@@ -261,3 +261,25 @@ def test_the_card_speaks_the_reviews_own_words():
     braces = _decide(_row(frames={"primary": "a {stage} call", "rivals": ["x"]}))[0]
     assert braces.capability.metadata["render"]["fallback"]["situation"] == "a {{stage}} call", \
         "the review's words are read literally by the renderer"
+
+
+@pytest.mark.parametrize("mode, missing", [("find_out", (D.F_ANSWER,)), ("nothing", ())])
+def test_a_mode_that_moves_nothing_ends_the_run_before_the_gate(mode, missing):
+    """`find_out` and `nothing` decide no move, so nothing may stand behind one: the run ends at the
+    reader and the constraint gate never runs — the audit store refuses a check with no candidate."""
+    moving = mode == "find_out"
+    _, execution = _decide(_row(mode=mode, **({} if moving else {"next_move": None})))
+    by_unit = {r.reasoner_id: r for r in execution.ordered_results}
+    assert by_unit["core.constraint"].status.value == "skipped"
+    assert not any(r.checks for r in execution.ordered_results)
+    assert set(missing) <= set(execution.decision.uncertainty)
+
+
+def test_the_capability_version_is_its_manifests_own_address():
+    """The audit store keeps one manifest per (capability, version), and the manifest is the review's:
+    the same review is the same version, another review another."""
+    first, _ = _decide()
+    again, _ = _decide()
+    other, _ = _decide(_row(next_move=dict(_raw()["next_move"], what="Call Neel instead")))
+    assert first.capability.version == again.capability.version != other.capability.version
+    assert first.capability.version.startswith(D.DECIDE_VERSION + ".")
