@@ -9,6 +9,10 @@ retried at the same ceiling, to be cut again. Now a truncated answer ends the co
 retry, never validated, never parsed into anything, recorded with its cost. And a caller may say
 `repair="syntax"`: the one retry is for an answer that was not JSON, never for one the validator
 refused on substance — STEP-12 §8.4 item 4, "one repair for syntax only, never on substance".
+
+M32.C4.L-logic.V0.U03: an answer that is JSON but not the shape asked for — a refusal coded `malformed`
+— is syntax too (STEP-12 §3.4, "schema-checked; one repair on syntax only"): repaired once, the retry
+told what was misshapen; a malformed answer the validator ALSO refused on substance is not repaired.
 """
 from __future__ import annotations
 
@@ -127,6 +131,68 @@ def test_by_default_a_refusal_is_still_retried_once_as_before():
     client = _Client(_good(), _good())
     result, _seen = _consult(_gate(client), validate=_refuse)
     assert result.outcome == S.OUTCOME_FAILED_VALIDATION and client.calls == 2
+
+
+def _misshapen(detail="an expert review says its frame"):
+    return None, (G.MALFORMED,), {"refused": G.MALFORMED, "detail": detail,
+                                  "feedback": "Your previous answer did not meet the stated rules."}
+
+
+def _consult_seeing(gate, validate, *, repair=G.REPAIR_SYNTAX):
+    """`_consult`, also keeping the feedback each prompt was built with."""
+    told = []
+
+    def _prompt(feedback):
+        told.append(feedback)
+        return "the dossier"
+    result = gate.consult(site=S.SITE_EXPERT, cache_key="k", build_prompt=_prompt, validate=validate,
+                          feature="expert_review", repair=repair)
+    return result, told
+
+
+def test_syntax_only_repairs_a_misshapen_answer_once_and_says_what_was_wrong():
+    client = _Client(_good(), _good())
+    answers = [_misshapen(), ({"mode": "wait"}, (), {"accepted": True})]
+    result, told = _consult_seeing(_gate(client), lambda payload: answers.pop(0))
+    assert result.outcome == S.OUTCOME_RAN and client.calls == 2 and result.attempts == 2
+    assert told[0] is None and "an expert review says its frame" in told[1]
+    assert "shape" in told[1]
+    assert G.MALFORMED == "malformed"                  # the ledger's word: reason codes are counted by it
+
+
+def test_a_misshapen_answer_twice_ends_refused_after_its_one_repair():
+    client = _Client(_good(), _good(), _good())
+    result, told = _consult_seeing(_gate(client), lambda payload: _misshapen())
+    assert result.outcome == S.OUTCOME_FAILED_VALIDATION and client.calls == 2
+    assert result.reason_codes == (G.MALFORMED,) and len(told) == 2
+
+
+def test_a_misshapen_answer_also_refused_on_substance_is_not_repaired():
+    client = _Client(_good(), _good())
+    both = (None, (G.MALFORMED, "number_not_in_dossier"), {"refused": G.MALFORMED, "detail": "x"})
+    result, told = _consult_seeing(_gate(client), lambda payload: both)
+    assert result.outcome == S.OUTCOME_FAILED_VALIDATION and client.calls == 1 and len(told) == 1
+
+
+def test_run_site_carries_a_misshapen_answers_detail_to_its_one_repair():
+    client = _Client(_good(), _good())
+    told: list = []
+    calls = []
+
+    def _parse(payload):
+        calls.append(payload)
+        if len(calls) == 1:
+            raise L.SiteRejection(G.MALFORMED, "an expert review states at least one fact")
+        return {"review": "ok"}
+
+    def _prompt(feedback):
+        told.append(feedback)
+        return "the dossier"
+    result = L.run_site(site=S.SITE_EXPERT, org_id=ORG, seed={"file": "f"}, precondition=True,
+                        build_prompt=_prompt, parse=_parse, fallback=lambda: {"review": None},
+                        gate=_gate(client), feature="expert_review", repair=G.REPAIR_SYNTAX)
+    assert result.receipt.outcome == S.OUTCOME_RAN and client.calls == 2
+    assert "an expert review states at least one fact" in told[1]
 
 
 def test_a_repair_nobody_named_is_refused():

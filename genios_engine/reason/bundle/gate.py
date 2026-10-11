@@ -38,8 +38,10 @@ policy.
 **ONE retry, then the template.** Doc 05 §4 and doc 11 guard 4. The retry carries the gauntlet's
 specific complaint, because the single regeneration is the only chance to turn a near miss into a
 narrative and "invalid output" wastes it. A caller may narrow it to SYNTAX (`repair=REPAIR_SYNTAX`,
-STEP-12 §8.4 item 4): an answer that was not JSON is asked for once more, an answer the validator
-refused on substance is not — the expert's review is never argued into passing.
+STEP-12 §8.4 item 4): an answer that was not JSON is asked for once more, and so is one that is JSON
+but not the shape asked for — a refusal coded `MALFORMED`, its retry told what was misshapen (§3.4,
+"schema-checked; one repair on syntax only"); an answer the validator refused on substance is not —
+the expert's review is never argued into passing.
 
 **A CUT ANSWER IS NOT AN ANSWER** (`03` F140). `LLMClient.call` says when the API stopped at the
 token ceiling (`truncated`); the consult then ends as `truncated` — not validated, not retried at the
@@ -96,6 +98,12 @@ MAX_ATTEMPTS = 2
 REPAIR_ANY = "any"
 REPAIR_SYNTAX = "syntax"
 REPAIRS = (REPAIR_ANY, REPAIR_SYNTAX)
+
+#: The refusal code for an answer that is JSON but not the shape the prompt asked for. Under
+#: `REPAIR_SYNTAX` it is syntax, as an answer that is not JSON at all is: repaired once, and the retry
+#: is told what was misshapen (the refusal's `detail`). Never when the validator ALSO refused it on
+#: substance — then the substance stands.
+MALFORMED = "malformed"
 
 
 def force_fail_r_sites() -> bool:
@@ -343,7 +351,11 @@ class RSiteGate:
             last_codes, last_outcome = codes, OUTCOME_FAILED_VALIDATION
             feedback = str(record.get("feedback") or "") or None
             if repair == REPAIR_SYNTAX:
-                break                  # a refusal on substance stands: no argument, no second try
+                if set(codes) != {MALFORMED}:
+                    break              # a refusal on substance stands: no argument, no second try
+                feedback = ("Your previous answer was JSON but not in the shape asked for: "
+                            f"{record.get('detail') or 'see the shape asked for'}. Answer with one "
+                            "JSON object in exactly that shape.")
 
         # ── 7 · every failure ends in the caller's deterministic fallback, recorded. ─────────
         return self._record(ConsultResult(
@@ -394,5 +406,5 @@ class RSiteGate:
             _log.warning("could not record l4 narrative spend for org=%s: %s", self.org_id, exc)
 
 
-__all__ = ["ConsultResult", "FORCE_FAIL_ENV", "MAX_ATTEMPTS", "REPAIRS", "REPAIR_ANY",
+__all__ = ["ConsultResult", "FORCE_FAIL_ENV", "MALFORMED", "MAX_ATTEMPTS", "REPAIRS", "REPAIR_ANY",
            "REPAIR_SYNTAX", "RSiteGate", "force_fail_r_sites", "force_failed"]
