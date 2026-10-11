@@ -1816,5 +1816,17 @@ def run_all(*, org_id: str, store: GraphStore, eval_time: datetime | None = None
         logger.exception("Layer 4.5 narration pass failed org=%s", org_id)
         narration = {"error": True}
 
+    # ── STEP-12 · THE EXPERT PASS, IN SHADOW (`reason/expert/sweep`, tree `yc2_w27_s12`
+    # M32.C3.L-integration.V2.U04). A tenant with `expert_review` on has each file whose fingerprint
+    # moved, and that something touched (`05` §5), reviewed once — nearest deadline first, bounded per
+    # pass and by its own day's budget (`06` D7). Nothing reads a review for a decision yet (M33), so,
+    # like the narration, it cannot change what the sweep decided; wrapped for the same reason.
+    try:
+        from genios_engine.reason.expert.sweep import expert_pass
+        expert = expert_pass(store=store, org_id=org_id, now=eval_time)
+    except Exception:
+        logger.exception("the expert pass failed org=%s", org_id)
+        expert = {"error": True}
+
     return {"nodes": nodes, "outcomes": dict(combined), "eval_time": eval_time.isoformat(),
-            "packs": pack_ids, "narration": narration}
+            "packs": pack_ids, "narration": narration, "expert": expert}
