@@ -1,7 +1,7 @@
 {
  "case_id": "F29",
  "source": "ideal_reader",
- "recorded_at": "7179cd68",
+ "recorded_at": "1b5e5f58",
  "answers": {
   "02094e6de57cf070c4b41bf2f65a316f37f341449139cb50ccb6243842da7fbf": {
    "site": "r1",
@@ -47,6 +47,138 @@
    "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"DECISION_MADE\", \"confidence_bp\": 6000}]}",
    "input_tokens": 1034,
    "output_tokens": 50,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "0ff2e0bf3714ff4d1a26177e8be6f615a128918027a551275e7c643d2fdb878b": {
+   "site": "expert",
+   "parsed": {
+    "proposed_kind": null,
+    "draft": "Hi Aman, looking forward to both calls on the fifth. Attached is our API pricing sheet, ahead of the pricing call. Arjun",
+    "next_move": {
+     "who": "Arjun",
+     "what": "Send Aman our API pricing sheet before the pricing call on the fifth of October.",
+     "for_whom": "Aman Verma at Memloop",
+     "by_when": "2026-10-05"
+    },
+    "facts": [
+     {
+      "claim": "Aman Verma, founder of Memloop, set two calls for the fifth of October — product in the morning, pricing in the afternoon IST — and asked for our API pricing sheet before the second.",
+      "evidence": [
+       "evt_7c7f6a51a4aeef4951b61d51"
+      ]
+     },
+     {
+      "claim": "Both calls are booked for the fifth of October.",
+      "evidence": [
+       "evt_f4f199251d9e3c63af1f3b55",
+       "evt_b715c09c1dad67711567b551"
+      ]
+     },
+     {
+      "claim": "His ask is open and waits on us.",
+      "evidence": [
+       "loop:loop_4b80cac1219873494671ff75"
+      ]
+     },
+     {
+      "claim": "The engine reads the file both as account administration and as a sales opportunity.",
+      "evidence": [
+       "sit:sit_6d0383b0424d3a0338bc4c4b",
+       "sit:sit_c72ad4f886c59c5851e98373"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "The pricing call is built around the sheet: without it in hand beforehand, the call cannot do what Aman set it up to do.",
+      "based_on": [
+       "fact:1",
+       "fact:2"
+      ]
+     },
+     {
+      "claim": "Memloop asking for our API pricing suggests they are weighing paid use of our API, not only a design partnership.",
+      "based_on": [
+       "fact:1",
+       "fact:4"
+      ]
+     }
+    ],
+    "patterns": [
+     {
+      "kind": "base_rate",
+      "claim": "The file is new — seen once in each domain, with no earlier card or outcome — so there is no record of Memloop's pace.",
+      "based_on": [
+       "hist:derived.history.times_seen@admin",
+       "hist:derived.history.times_seen@sales"
+      ]
+     }
+    ],
+    "hypotheses": [
+     {
+      "proposition": "The pricing sheet may not yet exist in a form we would send.",
+      "needs": "Arjun's word on whether a current API pricing sheet is ready."
+     },
+     {
+      "proposition": "Aman may expect pricing shaped for a design partner.",
+      "needs": "The product call, or a question to him."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "Is our API pricing settled enough to put in writing?",
+      "relevance": "If not, it must be settled before the second call, and the sheet may carry ranges rather than prices."
+     },
+     {
+      "question": "Who from our side should join each call?",
+      "relevance": "The product call may need an engineer; the pricing call needs whoever owns pricing."
+     },
+     {
+      "question": "Did the sheet reach Aman by another channel?",
+      "relevance": "If so, the ask is closed and only the calls remain."
+     }
+    ],
+    "frames": {
+     "primary": "A design partner moving fast: two calls on one day, and the pricing sheet he asked for is ours to send before the second.",
+     "rivals": [
+      "A buyer pricing our API, where the sheet opens a negotiation rather than answering a courtesy.",
+      "A busy partner who will be content to see pricing on screen during the call."
+     ]
+    },
+    "expected_vs_actual": {
+     "stage": null,
+     "expected": "From Aman's own words and the brief's goal of landing design partners: the API pricing sheet with Aman before the pricing call on the fifth.",
+     "actual": "Nothing from us is in the file; the ask is open and both calls are booked."
+    },
+    "scenarios": {
+     "do_nothing": "The pricing call opens without the sheet Aman asked for, and its time goes on what he wanted to have read beforehand.",
+     "act": "Sending the sheet before the fifth lets Aman bring questions to the pricing call and move toward terms.",
+     "best": "The sheet goes out early, both calls go well, and Memloop moves to a design-partner agreement with pricing settled.",
+     "worst": "No sheet, a wasted pricing call, and a partner who reads the gap as unreadiness.",
+     "signals_to_watch": [
+      "The pricing sheet sent to Aman before the second call",
+      "Aman writing again before the fifth",
+      "Either call being moved"
+     ]
+    },
+    "appraisal": {
+     "stakes": "medium",
+     "urgency": "high",
+     "reversibility": "reversible",
+     "reasons": [
+      "Landing design partners is a goal the brief names, and Memloop is one of the brief's design partner talks.",
+      "Aman asked for the sheet before a call booked on a fixed date.",
+      "A late sheet can still be sent, so a slip costs a weaker call, not the partner."
+     ]
+    },
+    "mode": "act",
+    "alternative": "If the pricing is not ready to put in writing, tell Aman before the fifth what the sheet will cover, and walk him through it in the pricing call.",
+    "wait_or_stop": "No waiting — the ask is ours; once the sheet is sent, the file waits for the calls on the fifth.",
+    "done_when": "Aman has our API pricing sheet before the pricing call."
+   },
+   "raw": "{\"proposed_kind\": null, \"draft\": \"Hi Aman, looking forward to both calls on the fifth. Attached is our API pricing sheet, ahead of the pricing call. Arjun\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Send Aman our API pricing sheet before the pricing call on the fifth of October.\", \"for_whom\": \"Aman Verma at Memloop\", \"by_when\": \"2026-10-05\"}, \"facts\": [{\"claim\": \"Aman Verma, founder of Memloop, set two calls for the fifth of October — product in the morning, pricing in the afternoon IST — and asked for our API pricing sheet before the second.\", \"evidence\": [\"evt_7c7f6a51a4aeef4951b61d51\"]}, {\"claim\": \"Both calls are booked for the fifth of October.\", \"evidence\": [\"evt_f4f199251d9e3c63af1f3b55\", \"evt_b715c09c1dad67711567b551\"]}, {\"claim\": \"His ask is open and waits on us.\", \"evidence\": [\"loop:loop_4b80cac1219873494671ff75\"]}, {\"claim\": \"The engine reads the file both as account administration and as a sales opportunity.\", \"evidence\": [\"sit:sit_6d0383b0424d3a0338bc4c4b\", \"sit:sit_c72ad4f886c59c5851e98373\"]}], \"inferences\": [{\"claim\": \"The pricing call is built around the sheet: without it in hand beforehand, the call cannot do what Aman set it up to do.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"Memloop asking for our API pricing suggests they are weighing paid use of our API, not only a design partnership.\", \"based_on\": [\"fact:1\", \"fact:4\"]}], \"patterns\": [{\"kind\": \"base_rate\", \"claim\": \"The file is new — seen once in each domain, with no earlier card or outcome — so there is no record of Memloop's pace.\", \"based_on\": [\"hist:derived.history.times_seen@admin\", \"hist:derived.history.times_seen@sales\"]}], \"hypotheses\": [{\"proposition\": \"The pricing sheet may not yet exist in a form we would send.\", \"needs\": \"Arjun's word on whether a current API pricing sheet is ready.\"}, {\"proposition\": \"Aman may expect pricing shaped for a design partner.\", \"needs\": \"The product call, or a question to him.\"}], \"unknowns\": [{\"question\": \"Is our API pricing settled enough to put in writing?\", \"relevance\": \"If not, it must be settled before the second call, and the sheet may carry ranges rather than prices.\"}, {\"question\": \"Who from our side should join each call?\", \"relevance\": \"The product call may need an engineer; the pricing call needs whoever owns pricing.\"}, {\"question\": \"Did the sheet reach Aman by another channel?\", \"relevance\": \"If so, the ask is closed and only the calls remain.\"}], \"frames\": {\"primary\": \"A design partner moving fast: two calls on one day, and the pricing sheet he asked for is ours to send before the second.\", \"rivals\": [\"A buyer pricing our API, where the sheet opens a negotiation rather than answering a courtesy.\", \"A busy partner who will be content to see pricing on screen during the call.\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"From Aman's own words and the brief's goal of landing design partners: the API pricing sheet with Aman before the pricing call on the fifth.\", \"actual\": \"Nothing from us is in the file; the ask is open and both calls are booked.\"}, \"scenarios\": {\"do_nothing\": \"The pricing call opens without the sheet Aman asked for, and its time goes on what he wanted to have read beforehand.\", \"act\": \"Sending the sheet before the fifth lets Aman bring questions to the pricing call and move toward terms.\", \"best\": \"The sheet goes out early, both calls go well, and Memloop moves to a design-partner agreement with pricing settled.\", \"worst\": \"No sheet, a wasted pricing call, and a partner who reads the gap as unreadiness.\", \"signals_to_watch\": [\"The pricing sheet sent to Aman before the second call\", \"Aman writing again before the fifth\", \"Either call being moved\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"reversible\", \"reasons\": [\"Landing design partners is a goal the brief names, and Memloop is one of the brief's design partner talks.\", \"Aman asked for the sheet before a call booked on a fixed date.\", \"A late sheet can still be sent, so a slip costs a weaker call, not the partner.\"]}, \"mode\": \"act\", \"alternative\": \"If the pricing is not ready to put in writing, tell Aman before the fifth what the sheet will cover, and walk him through it in the pricing call.\", \"wait_or_stop\": \"No waiting — the ask is ours; once the sheet is sent, the file waits for the calls on the fifth.\", \"done_when\": \"Aman has our API pricing sheet before the pricing call.\"}",
+   "input_tokens": 3269,
+   "output_tokens": 1097,
    "model": "claude-haiku-4-5-20251001"
   },
   "13cbcbbbd759d8314436521541137ba5893e792868edfa1920cc83f27b974b12": {
@@ -111,6 +243,138 @@
    "raw": "{\"outcome\": \"decision\", \"scores\": {\"admin.pb.action_item_tracking.one_register_across_meetings\": 4854, \"admin.pb.commitment_tracking.the_executive_s_promise_ledger\": 4843, \"admin.pb.follow_up_coordination.the_follow_through_relay\": 6400, \"admin.pb.minutes_and_documentation.decisions_and_actions_same_day\": 4735}, \"confidence_bp\": 5000, \"rationale\": \"Nothing since the meeting says what was agreed; ask what was promised.\", \"missing\": []}",
    "input_tokens": 4417,
    "output_tokens": 109,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "257c59e6aa8faecd7f8073e0f6ae6f6f38c663027023325532922814d61d85f0": {
+   "site": "expert",
+   "parsed": {
+    "proposed_kind": null,
+    "draft": "Hi Aman, looking forward to both calls on the fifth. Attached is our API pricing sheet, ahead of the pricing call. Arjun",
+    "next_move": {
+     "who": "Arjun",
+     "what": "Send Aman our API pricing sheet before the pricing call on the fifth of October.",
+     "for_whom": "Aman Verma at Memloop",
+     "by_when": "2026-10-05"
+    },
+    "facts": [
+     {
+      "claim": "Aman Verma, founder of Memloop, set two calls for the fifth of October — product in the morning, pricing in the afternoon IST — and asked for our API pricing sheet before the second.",
+      "evidence": [
+       "evt_7c7f6a51a4aeef4951b61d51"
+      ]
+     },
+     {
+      "claim": "Both calls are booked for the fifth of October.",
+      "evidence": [
+       "evt_f4f199251d9e3c63af1f3b55",
+       "evt_b715c09c1dad67711567b551"
+      ]
+     },
+     {
+      "claim": "His ask is open and waits on us.",
+      "evidence": [
+       "loop:loop_4b80cac1219873494671ff75"
+      ]
+     },
+     {
+      "claim": "The engine reads the file both as account administration and as a sales opportunity.",
+      "evidence": [
+       "sit:sit_6d0383b0424d3a0338bc4c4b",
+       "sit:sit_c72ad4f886c59c5851e98373"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "The pricing call is built around the sheet: without it in hand beforehand, the call cannot do what Aman set it up to do.",
+      "based_on": [
+       "fact:1",
+       "fact:2"
+      ]
+     },
+     {
+      "claim": "Memloop asking for our API pricing suggests they are weighing paid use of our API, not only a design partnership.",
+      "based_on": [
+       "fact:1",
+       "fact:4"
+      ]
+     }
+    ],
+    "patterns": [
+     {
+      "kind": "base_rate",
+      "claim": "The file is new — seen once in each domain, with no earlier card or outcome — so there is no record of Memloop's pace.",
+      "based_on": [
+       "hist:derived.history.times_seen@admin",
+       "hist:derived.history.times_seen@sales"
+      ]
+     }
+    ],
+    "hypotheses": [
+     {
+      "proposition": "The pricing sheet may not yet exist in a form we would send.",
+      "needs": "Arjun's word on whether a current API pricing sheet is ready."
+     },
+     {
+      "proposition": "Aman may expect pricing shaped for a design partner.",
+      "needs": "The product call, or a question to him."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "Is our API pricing settled enough to put in writing?",
+      "relevance": "If not, it must be settled before the second call, and the sheet may carry ranges rather than prices."
+     },
+     {
+      "question": "Who from our side should join each call?",
+      "relevance": "The product call may need an engineer; the pricing call needs whoever owns pricing."
+     },
+     {
+      "question": "Did the sheet reach Aman by another channel?",
+      "relevance": "If so, the ask is closed and only the calls remain."
+     }
+    ],
+    "frames": {
+     "primary": "A design partner moving fast: two calls on one day, and the pricing sheet he asked for is ours to send before the second.",
+     "rivals": [
+      "A buyer pricing our API, where the sheet opens a negotiation rather than answering a courtesy.",
+      "A busy partner who will be content to see pricing on screen during the call."
+     ]
+    },
+    "expected_vs_actual": {
+     "stage": null,
+     "expected": "From Aman's own words and the brief's goal of landing design partners: the API pricing sheet with Aman before the pricing call on the fifth.",
+     "actual": "Nothing from us is in the file; the ask is open and both calls are booked."
+    },
+    "scenarios": {
+     "do_nothing": "The pricing call opens without the sheet Aman asked for, and its time goes on what he wanted to have read beforehand.",
+     "act": "Sending the sheet before the fifth lets Aman bring questions to the pricing call and move toward terms.",
+     "best": "The sheet goes out early, both calls go well, and Memloop moves to a design-partner agreement with pricing settled.",
+     "worst": "No sheet, a wasted pricing call, and a partner who reads the gap as unreadiness.",
+     "signals_to_watch": [
+      "The pricing sheet sent to Aman before the second call",
+      "Aman writing again before the fifth",
+      "Either call being moved"
+     ]
+    },
+    "appraisal": {
+     "stakes": "medium",
+     "urgency": "high",
+     "reversibility": "reversible",
+     "reasons": [
+      "Landing design partners is a goal the brief names, and Memloop is one of the brief's design partner talks.",
+      "Aman asked for the sheet before a call booked on a fixed date.",
+      "A late sheet can still be sent, so a slip costs a weaker call, not the partner."
+     ]
+    },
+    "mode": "act",
+    "alternative": "If the pricing is not ready to put in writing, tell Aman before the fifth what the sheet will cover, and walk him through it in the pricing call.",
+    "wait_or_stop": "No waiting — the ask is ours; once the sheet is sent, the file waits for the calls on the fifth.",
+    "done_when": "Aman has our API pricing sheet before the pricing call."
+   },
+   "raw": "{\"proposed_kind\": null, \"draft\": \"Hi Aman, looking forward to both calls on the fifth. Attached is our API pricing sheet, ahead of the pricing call. Arjun\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Send Aman our API pricing sheet before the pricing call on the fifth of October.\", \"for_whom\": \"Aman Verma at Memloop\", \"by_when\": \"2026-10-05\"}, \"facts\": [{\"claim\": \"Aman Verma, founder of Memloop, set two calls for the fifth of October — product in the morning, pricing in the afternoon IST — and asked for our API pricing sheet before the second.\", \"evidence\": [\"evt_7c7f6a51a4aeef4951b61d51\"]}, {\"claim\": \"Both calls are booked for the fifth of October.\", \"evidence\": [\"evt_f4f199251d9e3c63af1f3b55\", \"evt_b715c09c1dad67711567b551\"]}, {\"claim\": \"His ask is open and waits on us.\", \"evidence\": [\"loop:loop_4b80cac1219873494671ff75\"]}, {\"claim\": \"The engine reads the file both as account administration and as a sales opportunity.\", \"evidence\": [\"sit:sit_6d0383b0424d3a0338bc4c4b\", \"sit:sit_c72ad4f886c59c5851e98373\"]}], \"inferences\": [{\"claim\": \"The pricing call is built around the sheet: without it in hand beforehand, the call cannot do what Aman set it up to do.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"Memloop asking for our API pricing suggests they are weighing paid use of our API, not only a design partnership.\", \"based_on\": [\"fact:1\", \"fact:4\"]}], \"patterns\": [{\"kind\": \"base_rate\", \"claim\": \"The file is new — seen once in each domain, with no earlier card or outcome — so there is no record of Memloop's pace.\", \"based_on\": [\"hist:derived.history.times_seen@admin\", \"hist:derived.history.times_seen@sales\"]}], \"hypotheses\": [{\"proposition\": \"The pricing sheet may not yet exist in a form we would send.\", \"needs\": \"Arjun's word on whether a current API pricing sheet is ready.\"}, {\"proposition\": \"Aman may expect pricing shaped for a design partner.\", \"needs\": \"The product call, or a question to him.\"}], \"unknowns\": [{\"question\": \"Is our API pricing settled enough to put in writing?\", \"relevance\": \"If not, it must be settled before the second call, and the sheet may carry ranges rather than prices.\"}, {\"question\": \"Who from our side should join each call?\", \"relevance\": \"The product call may need an engineer; the pricing call needs whoever owns pricing.\"}, {\"question\": \"Did the sheet reach Aman by another channel?\", \"relevance\": \"If so, the ask is closed and only the calls remain.\"}], \"frames\": {\"primary\": \"A design partner moving fast: two calls on one day, and the pricing sheet he asked for is ours to send before the second.\", \"rivals\": [\"A buyer pricing our API, where the sheet opens a negotiation rather than answering a courtesy.\", \"A busy partner who will be content to see pricing on screen during the call.\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"From Aman's own words and the brief's goal of landing design partners: the API pricing sheet with Aman before the pricing call on the fifth.\", \"actual\": \"Nothing from us is in the file; the ask is open and both calls are booked.\"}, \"scenarios\": {\"do_nothing\": \"The pricing call opens without the sheet Aman asked for, and its time goes on what he wanted to have read beforehand.\", \"act\": \"Sending the sheet before the fifth lets Aman bring questions to the pricing call and move toward terms.\", \"best\": \"The sheet goes out early, both calls go well, and Memloop moves to a design-partner agreement with pricing settled.\", \"worst\": \"No sheet, a wasted pricing call, and a partner who reads the gap as unreadiness.\", \"signals_to_watch\": [\"The pricing sheet sent to Aman before the second call\", \"Aman writing again before the fifth\", \"Either call being moved\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"reversible\", \"reasons\": [\"Landing design partners is a goal the brief names, and Memloop is one of the brief's design partner talks.\", \"Aman asked for the sheet before a call booked on a fixed date.\", \"A late sheet can still be sent, so a slip costs a weaker call, not the partner.\"]}, \"mode\": \"act\", \"alternative\": \"If the pricing is not ready to put in writing, tell Aman before the fifth what the sheet will cover, and walk him through it in the pricing call.\", \"wait_or_stop\": \"No waiting — the ask is ours; once the sheet is sent, the file waits for the calls on the fifth.\", \"done_when\": \"Aman has our API pricing sheet before the pricing call.\"}",
+   "input_tokens": 3248,
+   "output_tokens": 1097,
    "model": "claude-haiku-4-5-20251001"
   },
   "32cd949e83be211e615ba1235c87655a5d1b3ef3838d8867b3dc318a7eecfd91": {
@@ -250,33 +514,6 @@
    "output_tokens": 50,
    "model": "claude-haiku-4-5-20251001"
   },
-  "a2e19cecac58e073bcc15e4462a6882078daf21c90c27e77c4e1eb8be8f9155c": {
-   "site": "relevance",
-   "parsed": {
-    "verdicts": [
-     {
-      "item": 1,
-      "business": false,
-      "description": "no readable text",
-      "category": "unknown",
-      "human_authored": null,
-      "asks_for_reply": null
-     },
-     {
-      "item": 2,
-      "business": false,
-      "description": "no readable text",
-      "category": "unknown",
-      "human_authored": null,
-      "asks_for_reply": null
-     }
-    ]
-   },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": false, \"description\": \"no readable text\", \"category\": \"unknown\", \"human_authored\": null, \"asks_for_reply\": null}, {\"item\": 2, \"business\": false, \"description\": \"no readable text\", \"category\": \"unknown\", \"human_authored\": null, \"asks_for_reply\": null}]}",
-   "input_tokens": 1160,
-   "output_tokens": 72,
-   "model": "claude-haiku-4-5-20251001"
-  },
   "a3320cdf30c1aace21f9624e5fc5d77141c603099e94499b9e4f3881f1205593": {
    "site": "decider",
    "parsed": {
@@ -413,25 +650,6 @@
    "output_tokens": 204,
    "model": "claude-haiku-4-5-20251001"
   },
-  "b5effea5369e26940d5529bca401f0e44a0f152d2b69adfb92f40164f0c446d0": {
-   "site": "relevance",
-   "parsed": {
-    "verdicts": [
-     {
-      "item": 1,
-      "business": true,
-      "description": "Two calls on 5 Oct",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     }
-    ]
-   },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Two calls on 5 Oct\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "input_tokens": 1179,
-   "output_tokens": 38,
-   "model": "claude-haiku-4-5-20251001"
-  },
   "baa456ee50081578510367dabee3c3ab1361f61315473e959d20ab19d68896cc": {
    "site": "r1",
    "parsed": {
@@ -494,19 +712,151 @@
    "output_tokens": 42,
    "model": "claude-haiku-4-5-20251001"
   },
-  "d81644d42558ef69e4a5afe16185675af2cd6184c3cdfafd3a3945a9f8d079c5": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 1048,
-   "output_tokens": 24,
+  "dceacd05b3036813db7569467a3be2bb06f976367d8ee272d07c77c0589f3e62": {
+   "site": "expert",
+   "parsed": {
+    "proposed_kind": null,
+    "draft": "Hi Aman, as you asked, here is our API pricing sheet. Glad to take any questions on it — what would you like as the next step? Arjun",
+    "next_move": {
+     "who": "Arjun",
+     "what": "Send Aman the API pricing sheet now unless it reached him in the calls, and name one next step in the same note.",
+     "for_whom": "Aman Verma at Memloop",
+     "by_when": null
+    },
+    "facts": [
+     {
+      "claim": "Aman Verma, founder of Memloop, asked for our API pricing sheet before the second of the two calls he set for the fifth of October.",
+      "evidence": [
+       "evt_7c7f6a51a4aeef4951b61d51"
+      ]
+     },
+     {
+      "claim": "Both calls were on the calendar for the fifth of October — product in the morning, pricing in the afternoon IST — and memory holds no words for either.",
+      "evidence": [
+       "evt_7c7f6a51a4aeef4951b61d51",
+       "evt_f4f199251d9e3c63af1f3b55",
+       "evt_b715c09c1dad67711567b551"
+      ]
+     },
+     {
+      "claim": "His ask for the pricing sheet is still listed open, waiting on us.",
+      "evidence": [
+       "loop:loop_4b80cac1219873494671ff75"
+      ]
+     },
+     {
+      "claim": "A card asking the founder to send Aman the API pricing sheet was surfaced to him.",
+      "evidence": [
+       "card:card_ebf61e2204021ae9394abb01"
+      ]
+     },
+     {
+      "claim": "The file has been quiet for about a day since the second call's time.",
+      "evidence": [
+       "num:days_quiet"
+      ]
+     },
+     {
+      "claim": "The engine reads the file both as account administration and as a sales opportunity.",
+      "evidence": [
+       "sit:sit_6d0383b0424d3a0338bc4c4b",
+       "sit:sit_c72ad4f886c59c5851e98373"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "Whether the calls were held, and what they settled, is not on record: only the calendar shows them.",
+      "based_on": [
+       "fact:2"
+      ]
+     },
+     {
+      "claim": "The pricing sheet is still owed on the record: the founder was told, the ask is open, and nothing from us is in the file.",
+      "based_on": [
+       "fact:1",
+       "fact:3",
+       "fact:4"
+      ]
+     },
+     {
+      "claim": "The follow-up is still fresh: a day of quiet after the calls' time is not yet a lapse.",
+      "based_on": [
+       "fact:5"
+      ]
+     }
+    ],
+    "patterns": [
+     {
+      "kind": "base_rate",
+      "claim": "The file is new — seen once in each domain, with no earlier card or outcome — so there is no record of Memloop's pace.",
+      "based_on": [
+       "hist:derived.history.times_seen@admin",
+       "hist:derived.history.times_seen@sales"
+      ]
+     }
+    ],
+    "hypotheses": [
+     {
+      "proposition": "The sheet may have been shown on screen, or sent by another channel, during the calls.",
+      "needs": "Arjun's word, or Aman's next mail."
+     },
+     {
+      "proposition": "The calls may have moved to other times.",
+      "needs": "The calendar's latest state, or a note from Aman."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "Were the calls held, and what was agreed in them?",
+      "relevance": "It decides whether the follow-up carries a next step or a new time."
+     },
+     {
+      "question": "Did the pricing sheet reach Aman in any form?",
+      "relevance": "If not, it is the first thing to send; if so, the ask can be closed."
+     }
+    ],
+    "frames": {
+     "primary": "A follow-up owed: the calls' time has passed, the pricing sheet Aman asked for is still open on record, and nothing from us is in the file.",
+     "rivals": [
+      "The calls were held and settled everything, the sheet was shown on screen, and only the record lags behind.",
+      "The calls slipped and need rebooking."
+     ]
+    },
+    "expected_vs_actual": {
+     "stage": null,
+     "expected": "Once the calls' time has passed: the sheet in Aman's hands and a next step in writing.",
+     "actual": "Memory holds no words for either call; the ask for the sheet is still open, and nothing from us is in the file."
+    },
+    "scenarios": {
+     "do_nothing": "The ask stays open, the thread goes cold, and Memloop is left without the pricing it asked for.",
+     "act": "Sending the sheet now, with one line on the next step, closes the ask and keeps the partnership moving.",
+     "best": "Aman has the sheet, confirms a next step, and Memloop moves toward a design-partner agreement.",
+     "worst": "The sheet never arrives, the follow-up drifts, and the partner cools.",
+     "signals_to_watch": [
+      "Aman writing with questions on pricing, or with a next step",
+      "The ask closing once the sheet is sent",
+      "A new meeting with Memloop on the calendar"
+     ]
+    },
+    "appraisal": {
+     "stakes": "medium",
+     "urgency": "medium",
+     "reversibility": "reversible",
+     "reasons": [
+      "Landing design partners is a goal the brief names, and Memloop is one of the brief's design partner talks.",
+      "The sheet was asked for before the second call; that time has passed with the ask still open on record.",
+      "A follow-up can still be sent and mended, so a wrong move is cheap to reverse."
+     ]
+    },
+    "mode": "act",
+    "alternative": "If the sheet did reach him, close the ask with a short note confirming the next step.",
+    "wait_or_stop": "No waiting on our side while the ask is open; once the sheet and a next step are with Aman, wait for his reply.",
+    "done_when": "Aman has the pricing sheet in writing, and a next step is agreed."
+   },
+   "raw": "{\"proposed_kind\": null, \"draft\": \"Hi Aman, as you asked, here is our API pricing sheet. Glad to take any questions on it — what would you like as the next step? Arjun\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Send Aman the API pricing sheet now unless it reached him in the calls, and name one next step in the same note.\", \"for_whom\": \"Aman Verma at Memloop\", \"by_when\": null}, \"facts\": [{\"claim\": \"Aman Verma, founder of Memloop, asked for our API pricing sheet before the second of the two calls he set for the fifth of October.\", \"evidence\": [\"evt_7c7f6a51a4aeef4951b61d51\"]}, {\"claim\": \"Both calls were on the calendar for the fifth of October — product in the morning, pricing in the afternoon IST — and memory holds no words for either.\", \"evidence\": [\"evt_7c7f6a51a4aeef4951b61d51\", \"evt_f4f199251d9e3c63af1f3b55\", \"evt_b715c09c1dad67711567b551\"]}, {\"claim\": \"His ask for the pricing sheet is still listed open, waiting on us.\", \"evidence\": [\"loop:loop_4b80cac1219873494671ff75\"]}, {\"claim\": \"A card asking the founder to send Aman the API pricing sheet was surfaced to him.\", \"evidence\": [\"card:card_ebf61e2204021ae9394abb01\"]}, {\"claim\": \"The file has been quiet for about a day since the second call's time.\", \"evidence\": [\"num:days_quiet\"]}, {\"claim\": \"The engine reads the file both as account administration and as a sales opportunity.\", \"evidence\": [\"sit:sit_6d0383b0424d3a0338bc4c4b\", \"sit:sit_c72ad4f886c59c5851e98373\"]}], \"inferences\": [{\"claim\": \"Whether the calls were held, and what they settled, is not on record: only the calendar shows them.\", \"based_on\": [\"fact:2\"]}, {\"claim\": \"The pricing sheet is still owed on the record: the founder was told, the ask is open, and nothing from us is in the file.\", \"based_on\": [\"fact:1\", \"fact:3\", \"fact:4\"]}, {\"claim\": \"The follow-up is still fresh: a day of quiet after the calls' time is not yet a lapse.\", \"based_on\": [\"fact:5\"]}], \"patterns\": [{\"kind\": \"base_rate\", \"claim\": \"The file is new — seen once in each domain, with no earlier card or outcome — so there is no record of Memloop's pace.\", \"based_on\": [\"hist:derived.history.times_seen@admin\", \"hist:derived.history.times_seen@sales\"]}], \"hypotheses\": [{\"proposition\": \"The sheet may have been shown on screen, or sent by another channel, during the calls.\", \"needs\": \"Arjun's word, or Aman's next mail.\"}, {\"proposition\": \"The calls may have moved to other times.\", \"needs\": \"The calendar's latest state, or a note from Aman.\"}], \"unknowns\": [{\"question\": \"Were the calls held, and what was agreed in them?\", \"relevance\": \"It decides whether the follow-up carries a next step or a new time.\"}, {\"question\": \"Did the pricing sheet reach Aman in any form?\", \"relevance\": \"If not, it is the first thing to send; if so, the ask can be closed.\"}], \"frames\": {\"primary\": \"A follow-up owed: the calls' time has passed, the pricing sheet Aman asked for is still open on record, and nothing from us is in the file.\", \"rivals\": [\"The calls were held and settled everything, the sheet was shown on screen, and only the record lags behind.\", \"The calls slipped and need rebooking.\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Once the calls' time has passed: the sheet in Aman's hands and a next step in writing.\", \"actual\": \"Memory holds no words for either call; the ask for the sheet is still open, and nothing from us is in the file.\"}, \"scenarios\": {\"do_nothing\": \"The ask stays open, the thread goes cold, and Memloop is left without the pricing it asked for.\", \"act\": \"Sending the sheet now, with one line on the next step, closes the ask and keeps the partnership moving.\", \"best\": \"Aman has the sheet, confirms a next step, and Memloop moves toward a design-partner agreement.\", \"worst\": \"The sheet never arrives, the follow-up drifts, and the partner cools.\", \"signals_to_watch\": [\"Aman writing with questions on pricing, or with a next step\", \"The ask closing once the sheet is sent\", \"A new meeting with Memloop on the calendar\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"medium\", \"reversibility\": \"reversible\", \"reasons\": [\"Landing design partners is a goal the brief names, and Memloop is one of the brief's design partner talks.\", \"The sheet was asked for before the second call; that time has passed with the ask still open on record.\", \"A follow-up can still be sent and mended, so a wrong move is cheap to reverse.\"]}, \"mode\": \"act\", \"alternative\": \"If the sheet did reach him, close the ask with a short note confirming the next step.\", \"wait_or_stop\": \"No waiting on our side while the ask is open; once the sheet and a next step are with Aman, wait for his reply.\", \"done_when\": \"Aman has the pricing sheet in writing, and a next step is agreed.\"}",
+   "input_tokens": 3352,
+   "output_tokens": 1174,
    "model": "claude-haiku-4-5-20251001"
   },
   "e017ccbccc7f4f486c0e72c266be4dbc6d853c1f5012f8a1f0f514237b5497af": {

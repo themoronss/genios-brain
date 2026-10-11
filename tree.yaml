@@ -7022,6 +7022,11 @@ yc2_w27_s12:
                       what: >
                         Every cassette whose prompts move re-recorded from the ideal reader, each read
                         by what it answered; the board restated (`03` §F.1).
+                        11 Oct, building: the expert is switched on for every case that authors its answers
+                        (`engine_runner.expert_on`); the first-connect door's own answers moved to
+                        `cassettes/door/` with their recorder (`test_the_first_connect_door --record`) —
+                        merged into the case cassette, a sweep-door re-record had dropped them, and with
+                        the expert on the door asks it eight questions the sweep door never asks (`03` F171).
                       artifact: "tests/replays/specs/founder/cassettes"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays && GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py --assert-recorded \"speedrun008/YC-II W27/03-FINDINGS.md\""
                       depends_on: [M32.C3.L-integration.V2.U04, M32.C5.L-data.V1.U03]

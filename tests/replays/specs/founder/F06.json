@@ -242,14 +242,14 @@
       {
        "claim": "Nikhil replied about three days later, thanking the founder for the introduction and asking whether he is around on Thursday for a thirty-minute call, or what times work for him next week.",
        "evidence": [
-        "evt_ae700942db4b99f441db723c",
+        "evt_580edc73595682ca6e29ee20",
         "num:usual_gap"
        ]
       },
       {
        "claim": "Nikhil signs as CTO of Quillstack.",
        "evidence": [
-        "evt_ae700942db4b99f441db723c"
+        "evt_580edc73595682ca6e29ee20"
        ]
       },
       {
@@ -328,7 +328,7 @@
       "why": "Quillstack came to the founder through the connector's introduction of its CTO, and the work in this file is taking that introduction forward: Nikhil has asked for a call.",
       "evidence": [
        "evt_b5a1dca2622a328e0e7f88fe",
-       "evt_ae700942db4b99f441db723c"
+       "evt_580edc73595682ca6e29ee20"
       ]
      },
      "expected_vs_actual": {

@@ -1,0 +1,147 @@
+{
+ "case_id": "F02",
+ "source": "ideal_reader",
+ "recorded_at": "46f37bea",
+ "answers": {
+  "5b0c16b1991bb96df8fea1bab7024ea0c954c582b780e7832b3a6e9d9f7e9d81": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "The examiner had asked for a board resolution authorising the applicant, to be uploaded on the StartupSetu portal within the window given, or the application would be closed.",
+      "evidence": [
+       "evt_8e35d40489af90b4aab3ac5a"
+      ]
+     },
+     {
+      "claim": "StartupSetu Support then wrote that it had received the board resolution the founder uploaded, and that the examiner would review it and update the application.",
+      "evidence": [
+       "evt_0cd50331d44cd91129833ec8"
+      ]
+     },
+     {
+      "claim": "StartupSetu then wrote that Nimbus Labs Private Limited is recognised under the StartupSetu programme, with its certificate available on the portal.",
+      "evidence": [
+       "evt_c778e797f2e6c8cc107b3a07"
+      ]
+     },
+     {
+      "claim": "The three notices came within about a day of one another.",
+      "evidence": [
+       "num:usual_gap",
+       "num:longest_gap"
+      ]
+     },
+     {
+      "claim": "The file still lists the examiner's question as an open ask that waits on us.",
+      "evidence": [
+       "loop:loop_ce191d561f3fa9b81d0efc83"
+      ]
+     },
+     {
+      "claim": "The account admin situation formed on the examiner's ask was decided and deferred, and the recognition notice formed a second situation, read as an investor relationship in fundraising.",
+      "evidence": [
+       "sit:sit_3790e1fb03ef0358179ac6a5",
+       "sit:sit_33edff2537c512c84ef733a7"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "The examiner's ask was answered inside its window: the upload was received the day after the ask, and recognition followed.",
+      "based_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3",
+       "fact:4"
+      ]
+     },
+     {
+      "claim": "The open ask is stale: it waits on an upload the portal has already received.",
+      "based_on": [
+       "fact:2",
+       "fact:5"
+      ]
+     },
+     {
+      "claim": "Reading the recognition notice as an investor relationship is a misfiling: it is the outcome of the compliance work the brief names.",
+      "based_on": [
+       "fact:3",
+       "fact:6"
+      ]
+     }
+    ],
+    "patterns": [],
+    "hypotheses": [
+     {
+      "proposition": "Nothing further is needed from the founder for this application.",
+      "needs": "No further StartupSetu notice on it, and the certificate saved."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "Whether the certificate has already been downloaded and kept with the company's documents.",
+      "relevance": "If it has, nothing is left for the founder in this file."
+     },
+     {
+      "question": "Whether anything else the founder applies for needs proof of this recognition soon.",
+      "relevance": "It decides whether saving the certificate is today's task or simply housekeeping."
+     },
+     {
+      "question": "Why the recognition notice is also filed as an investor relationship.",
+      "relevance": "Read as fundraising, the outcome could raise an investor card about a government portal."
+     }
+    ],
+    "frames": {
+     "primary": "The recognition application is done, in the company's favour: the examiner's ask was answered, the portal received the board resolution, and Nimbus Labs Private Limited is now recognised with its certificate on the portal. What remains is to keep the certificate and close the work.",
+     "rivals": [
+      "A file that still shows an open ask waiting on us, which is stale and would raise a reminder for an upload already received.",
+      "The end of the compliance work, with nothing at all left for the founder."
+     ]
+    },
+    "proposed_kind": null,
+    "expected_vs_actual": {
+     "stage": null,
+     "expected": "With no playbook, from the brief: StartupSetu recognition is a goal now; once the examiner's ask is answered, the portal decides, and a recognised company keeps its certificate.",
+     "actual": "The board resolution was uploaded and received the day after the examiner's ask, and the portal then wrote that Nimbus Labs Private Limited is recognised, with its certificate on the portal; the file still lists the examiner's question as open."
+    },
+    "scenarios": {
+     "do_nothing": "Nothing is lost at once, since the certificate stays on the portal; but the file keeps an ask that waits on us, and the brief keeps listing recognition as a goal still to reach.",
+     "act": "Saving the certificate with the company's documents and marking the goal met ends this work cleanly, with the proof of recognition at hand.",
+     "best": "The certificate is saved today and the recognition is on record wherever the company is asked for it.",
+     "worst": "The stale ask raises a reminder to upload a resolution the portal already received, and the founder spends time on work that is done.",
+     "signals_to_watch": [
+      "Any further StartupSetu notice on this application",
+      "An application or programme that asks for proof of recognition",
+      "A reminder raised from the stale open ask"
+     ]
+    },
+    "appraisal": {
+     "stakes": "medium",
+     "urgency": "low",
+     "reversibility": "reversible",
+     "reasons": [
+      "The portal's latest notices close the examiner's ask and recognise the company, so the goal is met.",
+      "What remains, saving the certificate, can be done any day.",
+      "The open ask the file still lists is stale and should not drive a reminder."
+     ]
+    },
+    "mode": "act",
+    "next_move": {
+     "who": "Arjun Rao",
+     "what": "Download the recognition certificate from the StartupSetu portal, keep it with the company's documents, and mark the brief's StartupSetu recognition goal as met",
+     "for_whom": "the StartupSetu recognition file",
+     "by_when": null
+    },
+    "alternative": "If the certificate is not yet downloadable, note where it sits on the portal and come back to it within the week.",
+    "wait_or_stop": "Nothing to wait for once the certificate is saved; stop here, and reopen the file only if StartupSetu writes again.",
+    "done_when": "The certificate is saved with the company's documents, the recognition goal is marked met, and the file's open ask is closed.",
+    "draft": null
+   },
+   "raw": "{\"facts\": [{\"claim\": \"The examiner had asked for a board resolution authorising the applicant, to be uploaded on the StartupSetu portal within the window given, or the application would be closed.\", \"evidence\": [\"evt_8e35d40489af90b4aab3ac5a\"]}, {\"claim\": \"StartupSetu Support then wrote that it had received the board resolution the founder uploaded, and that the examiner would review it and update the application.\", \"evidence\": [\"evt_0cd50331d44cd91129833ec8\"]}, {\"claim\": \"StartupSetu then wrote that Nimbus Labs Private Limited is recognised under the StartupSetu programme, with its certificate available on the portal.\", \"evidence\": [\"evt_c778e797f2e6c8cc107b3a07\"]}, {\"claim\": \"The three notices came within about a day of one another.\", \"evidence\": [\"num:usual_gap\", \"num:longest_gap\"]}, {\"claim\": \"The file still lists the examiner's question as an open ask that waits on us.\", \"evidence\": [\"loop:loop_ce191d561f3fa9b81d0efc83\"]}, {\"claim\": \"The account admin situation formed on the examiner's ask was decided and deferred, and the recognition notice formed a second situation, read as an investor relationship in fundraising.\", \"evidence\": [\"sit:sit_3790e1fb03ef0358179ac6a5\", \"sit:sit_33edff2537c512c84ef733a7\"]}], \"inferences\": [{\"claim\": \"The examiner's ask was answered inside its window: the upload was received the day after the ask, and recognition followed.\", \"based_on\": [\"fact:1\", \"fact:2\", \"fact:3\", \"fact:4\"]}, {\"claim\": \"The open ask is stale: it waits on an upload the portal has already received.\", \"based_on\": [\"fact:2\", \"fact:5\"]}, {\"claim\": \"Reading the recognition notice as an investor relationship is a misfiling: it is the outcome of the compliance work the brief names.\", \"based_on\": [\"fact:3\", \"fact:6\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"Nothing further is needed from the founder for this application.\", \"needs\": \"No further StartupSetu notice on it, and the certificate saved.\"}], \"unknowns\": [{\"question\": \"Whether the certificate has already been downloaded and kept with the company's documents.\", \"relevance\": \"If it has, nothing is left for the founder in this file.\"}, {\"question\": \"Whether anything else the founder applies for needs proof of this recognition soon.\", \"relevance\": \"It decides whether saving the certificate is today's task or simply housekeeping.\"}, {\"question\": \"Why the recognition notice is also filed as an investor relationship.\", \"relevance\": \"Read as fundraising, the outcome could raise an investor card about a government portal.\"}], \"frames\": {\"primary\": \"The recognition application is done, in the company's favour: the examiner's ask was answered, the portal received the board resolution, and Nimbus Labs Private Limited is now recognised with its certificate on the portal. What remains is to keep the certificate and close the work.\", \"rivals\": [\"A file that still shows an open ask waiting on us, which is stale and would raise a reminder for an upload already received.\", \"The end of the compliance work, with nothing at all left for the founder.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"With no playbook, from the brief: StartupSetu recognition is a goal now; once the examiner's ask is answered, the portal decides, and a recognised company keeps its certificate.\", \"actual\": \"The board resolution was uploaded and received the day after the examiner's ask, and the portal then wrote that Nimbus Labs Private Limited is recognised, with its certificate on the portal; the file still lists the examiner's question as open.\"}, \"scenarios\": {\"do_nothing\": \"Nothing is lost at once, since the certificate stays on the portal; but the file keeps an ask that waits on us, and the brief keeps listing recognition as a goal still to reach.\", \"act\": \"Saving the certificate with the company's documents and marking the goal met ends this work cleanly, with the proof of recognition at hand.\", \"best\": \"The certificate is saved today and the recognition is on record wherever the company is asked for it.\", \"worst\": \"The stale ask raises a reminder to upload a resolution the portal already received, and the founder spends time on work that is done.\", \"signals_to_watch\": [\"Any further StartupSetu notice on this application\", \"An application or programme that asks for proof of recognition\", \"A reminder raised from the stale open ask\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The portal's latest notices close the examiner's ask and recognise the company, so the goal is met.\", \"What remains, saving the certificate, can be done any day.\", \"The open ask the file still lists is stale and should not drive a reminder.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun Rao\", \"what\": \"Download the recognition certificate from the StartupSetu portal, keep it with the company's documents, and mark the brief's StartupSetu recognition goal as met\", \"for_whom\": \"the StartupSetu recognition file\", \"by_when\": null}, \"alternative\": \"If the certificate is not yet downloadable, note where it sits on the portal and come back to it within the week.\", \"wait_or_stop\": \"Nothing to wait for once the certificate is saved; stop here, and reopen the file only if StartupSetu writes again.\", \"done_when\": \"The certificate is saved with the company's documents, the recognition goal is marked met, and the file's open ask is closed.\", \"draft\": null}",
+   "input_tokens": 3640,
+   "output_tokens": 1354,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

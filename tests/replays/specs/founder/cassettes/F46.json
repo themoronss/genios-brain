@@ -1,8 +1,140 @@
 {
  "case_id": "F46",
  "source": "ideal_reader",
- "recorded_at": "7179cd68",
+ "recorded_at": "1b5e5f58",
  "answers": {
+  "1bd205809c5499a4f617a5753c2aa1d54d1cadb4cc8619f28b74d5f2a49180da": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "On the first of September Arjun wrote to Ravi that Nimbus Labs is raising a seed round to bring calendar-aware planning to small teams, and asked for twenty minutes the following week.",
+      "evidence": [
+       "evt_97d933041e0609ecbbce82a8"
+      ]
+     },
+     {
+      "claim": "On the third Ravi Iyer of Seedfund Partners answered, thanking him and asking for the deck before they speak.",
+      "evidence": [
+       "evt_fde8a73a37c03df1fe5597c5"
+      ]
+     },
+     {
+      "claim": "Ravi's ask is open and waits on us, and the file names the move as ours.",
+      "evidence": [
+       "loop:loop_c02f2f668d1ff1d265d1f708"
+      ]
+     },
+     {
+      "claim": "Since Ravi's mail the file has been quiet for over a week, longer than any gap it closed before.",
+      "evidence": [
+       "num:days_quiet",
+       "num:longest_gap"
+      ]
+     },
+     {
+      "claim": "The brief names no kind of work for Seedfund; the engine filed it as an investor relationship under fundraising.",
+      "evidence": [
+       "sit:sit_b5ff25e5e81c73649d6cab95"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "Ravi agreed to talk on one condition, the deck first: the meeting Arjun asked for now waits only on Arjun.",
+      "based_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3"
+      ]
+     },
+     {
+      "claim": "The longer the deck waits, the more the investor's interest cools.",
+      "based_on": [
+       "fact:4"
+      ]
+     }
+    ],
+    "patterns": [],
+    "hypotheses": [
+     {
+      "proposition": "Ravi's answer reached a different mailbox from the one the pitch went out of, and the founder has not seen it.",
+      "needs": "The founder's word on whether he saw Ravi's mail of the third."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "Whether the founder has seen Ravi's mail of the third.",
+      "relevance": "If he missed it, the delay is an oversight to fix at once; if he saw it, something is holding the deck back."
+     },
+     {
+      "question": "Whether the deck is ready to share.",
+      "relevance": "Ravi asked for it before the call; without it the meeting waits."
+     },
+     {
+      "question": "Who Ravi is at Seedfund Partners and the size of its seed cheques.",
+      "relevance": "It decides how much of the round this conversation can carry."
+     }
+    ],
+    "frames": {
+     "primary": "An investor agreed to talk and asked for the deck first; the deck has not gone, and the move has been ours for over a week.",
+     "rivals": [
+      "The founder missed Ravi's answer because it reached a different mailbox from the pitch.",
+      "The deck went by another channel the file cannot see."
+     ]
+    },
+    "proposed_kind": {
+     "kind": "investor",
+     "why": "Arjun pitched Nimbus Labs' seed round to Ravi, and Ravi answers for Seedfund Partners asking for the deck before a call — an investor conversation, which the engine already files under fundraising.",
+     "evidence": [
+      "evt_97d933041e0609ecbbce82a8",
+      "evt_fde8a73a37c03df1fe5597c5",
+      "sit:sit_b5ff25e5e81c73649d6cab95"
+     ]
+    },
+    "expected_vs_actual": {
+     "stage": null,
+     "expected": "Without a playbook, the thread sets it: Ravi asked for the deck before speaking, so the deck was due promptly, with a time for the call.",
+     "actual": "No deck has gone as far as the file shows, and it has been quiet for over a week since his mail."
+    },
+    "scenarios": {
+     "do_nothing": "Ravi's interest cools, the meeting Arjun asked for is never booked, and Seedfund drops out of the round without saying so.",
+     "act": "The deck reaches Ravi with an apology for the wait and a request for a time, and the call goes in the calendar.",
+     "best": "Ravi reads the deck, the call is booked, and Seedfund moves toward a partner discussion.",
+     "worst": "The delay reads as a founder not raising in earnest, and Ravi does not take the call.",
+     "signals_to_watch": [
+      "Ravi proposing a time once the deck goes.",
+      "Questions from Ravi about the deck.",
+      "Silence after the deck goes."
+     ]
+    },
+    "appraisal": {
+     "stakes": "high",
+     "urgency": "high",
+     "reversibility": "costly_to_reverse",
+     "reasons": [
+      "Raising the seed round is the brief's first goal, and this investor asked to see the deck before a call.",
+      "The move has been ours for over a week, longer than any gap the file closed before.",
+      "Momentum lost with an investor is hard to win back."
+     ]
+    },
+    "mode": "act",
+    "next_move": {
+     "who": "Arjun",
+     "what": "Reply to Ravi Iyer with the Nimbus Labs deck, apologise for the wait, and ask which time suits him for the call.",
+     "for_whom": "Ravi Iyer, Seedfund Partners",
+     "by_when": null
+    },
+    "alternative": "If the deck is not ready, reply today saying when it will come, and ask for a time for the call.",
+    "wait_or_stop": "Do not wait — the move is ours. After the deck goes, give Ravi a week to propose a time; if nothing comes, send one short note with something new, then stop.",
+    "done_when": "Ravi has the deck and a call with him is on the calendar.",
+    "draft": "Hi Ravi, thank you for coming back to me, and sorry for the wait. Here is the Nimbus Labs deck. Which time suits you for a call? Arjun"
+   },
+   "raw": "{\"facts\": [{\"claim\": \"On the first of September Arjun wrote to Ravi that Nimbus Labs is raising a seed round to bring calendar-aware planning to small teams, and asked for twenty minutes the following week.\", \"evidence\": [\"evt_97d933041e0609ecbbce82a8\"]}, {\"claim\": \"On the third Ravi Iyer of Seedfund Partners answered, thanking him and asking for the deck before they speak.\", \"evidence\": [\"evt_fde8a73a37c03df1fe5597c5\"]}, {\"claim\": \"Ravi's ask is open and waits on us, and the file names the move as ours.\", \"evidence\": [\"loop:loop_c02f2f668d1ff1d265d1f708\"]}, {\"claim\": \"Since Ravi's mail the file has been quiet for over a week, longer than any gap it closed before.\", \"evidence\": [\"num:days_quiet\", \"num:longest_gap\"]}, {\"claim\": \"The brief names no kind of work for Seedfund; the engine filed it as an investor relationship under fundraising.\", \"evidence\": [\"sit:sit_b5ff25e5e81c73649d6cab95\"]}], \"inferences\": [{\"claim\": \"Ravi agreed to talk on one condition, the deck first: the meeting Arjun asked for now waits only on Arjun.\", \"based_on\": [\"fact:1\", \"fact:2\", \"fact:3\"]}, {\"claim\": \"The longer the deck waits, the more the investor's interest cools.\", \"based_on\": [\"fact:4\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"Ravi's answer reached a different mailbox from the one the pitch went out of, and the founder has not seen it.\", \"needs\": \"The founder's word on whether he saw Ravi's mail of the third.\"}], \"unknowns\": [{\"question\": \"Whether the founder has seen Ravi's mail of the third.\", \"relevance\": \"If he missed it, the delay is an oversight to fix at once; if he saw it, something is holding the deck back.\"}, {\"question\": \"Whether the deck is ready to share.\", \"relevance\": \"Ravi asked for it before the call; without it the meeting waits.\"}, {\"question\": \"Who Ravi is at Seedfund Partners and the size of its seed cheques.\", \"relevance\": \"It decides how much of the round this conversation can carry.\"}], \"frames\": {\"primary\": \"An investor agreed to talk and asked for the deck first; the deck has not gone, and the move has been ours for over a week.\", \"rivals\": [\"The founder missed Ravi's answer because it reached a different mailbox from the pitch.\", \"The deck went by another channel the file cannot see.\"]}, \"proposed_kind\": {\"kind\": \"investor\", \"why\": \"Arjun pitched Nimbus Labs' seed round to Ravi, and Ravi answers for Seedfund Partners asking for the deck before a call — an investor conversation, which the engine already files under fundraising.\", \"evidence\": [\"evt_97d933041e0609ecbbce82a8\", \"evt_fde8a73a37c03df1fe5597c5\", \"sit:sit_b5ff25e5e81c73649d6cab95\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook, the thread sets it: Ravi asked for the deck before speaking, so the deck was due promptly, with a time for the call.\", \"actual\": \"No deck has gone as far as the file shows, and it has been quiet for over a week since his mail.\"}, \"scenarios\": {\"do_nothing\": \"Ravi's interest cools, the meeting Arjun asked for is never booked, and Seedfund drops out of the round without saying so.\", \"act\": \"The deck reaches Ravi with an apology for the wait and a request for a time, and the call goes in the calendar.\", \"best\": \"Ravi reads the deck, the call is booked, and Seedfund moves toward a partner discussion.\", \"worst\": \"The delay reads as a founder not raising in earnest, and Ravi does not take the call.\", \"signals_to_watch\": [\"Ravi proposing a time once the deck goes.\", \"Questions from Ravi about the deck.\", \"Silence after the deck goes.\"]}, \"appraisal\": {\"stakes\": \"high\", \"urgency\": \"high\", \"reversibility\": \"costly_to_reverse\", \"reasons\": [\"Raising the seed round is the brief's first goal, and this investor asked to see the deck before a call.\", \"The move has been ours for over a week, longer than any gap the file closed before.\", \"Momentum lost with an investor is hard to win back.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Reply to Ravi Iyer with the Nimbus Labs deck, apologise for the wait, and ask which time suits him for the call.\", \"for_whom\": \"Ravi Iyer, Seedfund Partners\", \"by_when\": null}, \"alternative\": \"If the deck is not ready, reply today saying when it will come, and ask for a time for the call.\", \"wait_or_stop\": \"Do not wait — the move is ours. After the deck goes, give Ravi a week to propose a time; if nothing comes, send one short note with something new, then stop.\", \"done_when\": \"Ravi has the deck and a call with him is on the calendar.\", \"draft\": \"Hi Ravi, thank you for coming back to me, and sorry for the wait. Here is the Nimbus Labs deck. Which time suits you for a call? Arjun\"}",
+   "input_tokens": 3183,
+   "output_tokens": 1154,
+   "model": "claude-haiku-4-5-20251001"
+  },
   "2900a43c3604f781299f28c134495dc488115f789d853e764bcbdf26eeda8a10": {
    "site": "narrator",
    "parsed": {
@@ -182,22 +314,6 @@
    "output_tokens": 48,
    "model": "claude-haiku-4-5-20251001"
   },
-  "9e67e995c6809030fec932bebd8df96c9229afe284826e151190f99c738b3527": {
-   "site": "bundle_narrator",
-   "parsed": {
-    "headline": "Reply",
-    "situation_summary": "The reply is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
-    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
-    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
-   },
-   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
-   "input_tokens": 2398,
-   "output_tokens": 166,
-   "model": "claude-haiku-4-5-20251001"
-  },
   "a3daeea0c90115ac3c90a0d75a9c6f68b431620c040970d598918eaf6f23dd23": {
    "site": "r1",
    "parsed": {
@@ -250,22 +366,6 @@
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Nimbus Labs - raising our seed round\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
    "input_tokens": 1176,
    "output_tokens": 43,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "dc6da491bf9e51da7198d1a2bc845457d29550ae0c81008f94ff8850935d50f3": {
-   "site": "bundle_narrator",
-   "parsed": {
-    "headline": "Reply",
-    "situation_summary": "The reply is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
-    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
-    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
-   },
-   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
-   "input_tokens": 2358,
-   "output_tokens": 166,
    "model": "claude-haiku-4-5-20251001"
   },
   "fc4b76bb0050aefbb864d7e8687654eb0cfec67ff63271b41b6617bd1d24de32": {

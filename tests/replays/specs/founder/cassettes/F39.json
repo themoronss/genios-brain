@@ -1,7 +1,7 @@
 {
  "case_id": "F39",
  "source": "ideal_reader",
- "recorded_at": "7179cd68",
+ "recorded_at": "1b5e5f58",
  "answers": {
   "2feda1cf88a4d9091e3137b6c04a6d7ae347d10a506294b01758d4ae476ec82f": {
    "site": "relevance",
@@ -80,6 +80,118 @@
    "raw": "{\"intent\": \"schedule\", \"stance\": \"positive\", \"topics\": [\"call\"], \"entity_mentions\": [{\"surface_form\": \"Rohan\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Rohan\", \"start_offset\": 19, \"end_offset\": 24}], \"confidence_bp\": 9000}], \"scheduling_proposals\": [{\"proposer\": \"Arjun Rao\", \"text\": \"Thursday 3 pm or Friday 11 am IST\", \"evidence_text\": \"I'm free Thursday 3 pm or Friday 11 am IST\"}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\"}}",
    "input_tokens": 5495,
    "output_tokens": 147,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "9dbbebf598f8844a59f0ab95633132e20693d3595a5a1dcd0be2eac3f8e67718": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "On the tenth of September Arjun answered Rohan's quick-call thread with two times he is free, a Thursday afternoon or a Friday morning India time, whichever suits Rohan.",
+      "evidence": [
+       "evt_89f17bd43ceb4eb323ad5b52"
+      ]
+     },
+     {
+      "claim": "That mail is the only touch in the file, and no answer from Rohan is in it since.",
+      "evidence": [
+       "evt_89f17bd43ceb4eb323ad5b52",
+       "num:days_quiet"
+      ]
+     },
+     {
+      "claim": "Neither side's reply time is measured: there is no exchange yet to measure.",
+      "evidence": [
+       "num:their_reply_time:rohan@castlerock.test",
+       "num:your_reply_time:rohan@castlerock.test"
+      ]
+     },
+     {
+      "claim": "The brief names no kind of work for Castlerock; the engine opened an admin situation on the file.",
+      "evidence": [
+       "sit:sit_89b564a32207761c7b4e66e8"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "The two times are the founder's availability, offered for Rohan to choose from — nothing in them is owed by the founder.",
+      "based_on": [
+       "fact:1"
+      ]
+     },
+     {
+      "claim": "The next step is Rohan's: picking one of the times or proposing another.",
+      "based_on": [
+       "fact:1",
+       "fact:2"
+      ]
+     }
+    ],
+    "patterns": [],
+    "hypotheses": [
+     {
+      "proposition": "The offered times fall in the same week as the mail, so they may run out before Rohan answers.",
+      "needs": "Rohan's answer, or the founder's word on which Thursday and Friday he meant."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "Which Thursday and Friday the offered times fall on.",
+      "relevance": "If they meant the week of the mail, the times may pass unused and fresh ones would be needed; if a later week, there is nothing to do yet."
+     },
+     {
+      "question": "Who Rohan and Castlerock are to Nimbus Labs, and what the call is for.",
+      "relevance": "The brief names nothing for Castlerock, so how much the call matters cannot be judged from the file."
+     },
+     {
+      "question": "Whether Rohan has answered on another channel or with a calendar invite.",
+      "relevance": "An acceptance the file cannot see would make any further mail redundant."
+     }
+    ],
+    "frames": {
+     "primary": "A call being scheduled: the founder offered two times and the choice is Rohan's. Nothing is owed by the founder.",
+     "rivals": [
+      "The offered times lapse unused, and the founder will need to offer fresh ones.",
+      "Rohan has already accepted somewhere the file cannot see, such as a calendar invite."
+     ]
+    },
+    "proposed_kind": null,
+    "expected_vs_actual": {
+     "stage": null,
+     "expected": "Without a playbook, the thread itself sets it: once the founder offers times, the other side picks one.",
+     "actual": "The founder offered two times; as far as the file shows, Rohan has not yet picked one."
+    },
+    "scenarios": {
+     "do_nothing": "Rohan picks a time or proposes another, and the call is booked without anything more from the founder.",
+     "act": "A chaser now would press Rohan before he has had a fair chance to answer, and add nothing to the offer.",
+     "best": "Rohan accepts one of the two times and the call goes in the calendar.",
+     "worst": "Both times pass without an answer, and the call drifts until someone offers new times.",
+     "signals_to_watch": [
+      "An answer or a calendar invite from Rohan.",
+      "Both offered times passing with no word from Rohan."
+     ]
+    },
+    "appraisal": {
+     "stakes": "low",
+     "urgency": "low",
+     "reversibility": "reversible",
+     "reasons": [
+      "The move is Rohan's, and the founder owes nothing in this file.",
+      "The brief names nothing for Castlerock, so nothing marks this call as high stakes.",
+      "Offering times again later costs one short mail."
+     ]
+    },
+    "mode": "wait",
+    "next_move": null,
+    "alternative": "If both offered times pass with no word from Rohan, the founder offers fresh times once.",
+    "wait_or_stop": "Wait for Rohan to choose. Once both offered times have passed without a word, offer new times once; if that draws nothing, stop.",
+    "done_when": "A call with Rohan is on the calendar, at one of the offered times or a new one.",
+    "draft": null
+   },
+   "raw": "{\"facts\": [{\"claim\": \"On the tenth of September Arjun answered Rohan's quick-call thread with two times he is free, a Thursday afternoon or a Friday morning India time, whichever suits Rohan.\", \"evidence\": [\"evt_89f17bd43ceb4eb323ad5b52\"]}, {\"claim\": \"That mail is the only touch in the file, and no answer from Rohan is in it since.\", \"evidence\": [\"evt_89f17bd43ceb4eb323ad5b52\", \"num:days_quiet\"]}, {\"claim\": \"Neither side's reply time is measured: there is no exchange yet to measure.\", \"evidence\": [\"num:their_reply_time:rohan@castlerock.test\", \"num:your_reply_time:rohan@castlerock.test\"]}, {\"claim\": \"The brief names no kind of work for Castlerock; the engine opened an admin situation on the file.\", \"evidence\": [\"sit:sit_89b564a32207761c7b4e66e8\"]}], \"inferences\": [{\"claim\": \"The two times are the founder's availability, offered for Rohan to choose from — nothing in them is owed by the founder.\", \"based_on\": [\"fact:1\"]}, {\"claim\": \"The next step is Rohan's: picking one of the times or proposing another.\", \"based_on\": [\"fact:1\", \"fact:2\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"The offered times fall in the same week as the mail, so they may run out before Rohan answers.\", \"needs\": \"Rohan's answer, or the founder's word on which Thursday and Friday he meant.\"}], \"unknowns\": [{\"question\": \"Which Thursday and Friday the offered times fall on.\", \"relevance\": \"If they meant the week of the mail, the times may pass unused and fresh ones would be needed; if a later week, there is nothing to do yet.\"}, {\"question\": \"Who Rohan and Castlerock are to Nimbus Labs, and what the call is for.\", \"relevance\": \"The brief names nothing for Castlerock, so how much the call matters cannot be judged from the file.\"}, {\"question\": \"Whether Rohan has answered on another channel or with a calendar invite.\", \"relevance\": \"An acceptance the file cannot see would make any further mail redundant.\"}], \"frames\": {\"primary\": \"A call being scheduled: the founder offered two times and the choice is Rohan's. Nothing is owed by the founder.\", \"rivals\": [\"The offered times lapse unused, and the founder will need to offer fresh ones.\", \"Rohan has already accepted somewhere the file cannot see, such as a calendar invite.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook, the thread itself sets it: once the founder offers times, the other side picks one.\", \"actual\": \"The founder offered two times; as far as the file shows, Rohan has not yet picked one.\"}, \"scenarios\": {\"do_nothing\": \"Rohan picks a time or proposes another, and the call is booked without anything more from the founder.\", \"act\": \"A chaser now would press Rohan before he has had a fair chance to answer, and add nothing to the offer.\", \"best\": \"Rohan accepts one of the two times and the call goes in the calendar.\", \"worst\": \"Both times pass without an answer, and the call drifts until someone offers new times.\", \"signals_to_watch\": [\"An answer or a calendar invite from Rohan.\", \"Both offered times passing with no word from Rohan.\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The move is Rohan's, and the founder owes nothing in this file.\", \"The brief names nothing for Castlerock, so nothing marks this call as high stakes.\", \"Offering times again later costs one short mail.\"]}, \"mode\": \"wait\", \"next_move\": null, \"alternative\": \"If both offered times pass with no word from Rohan, the founder offers fresh times once.\", \"wait_or_stop\": \"Wait for Rohan to choose. Once both offered times have passed without a word, offer new times once; if that draws nothing, stop.\", \"done_when\": \"A call with Rohan is on the calendar, at one of the offered times or a new one.\", \"draft\": null}",
+   "input_tokens": 3042,
+   "output_tokens": 941,
    "model": "claude-haiku-4-5-20251001"
   },
   "e1c20dbd2b9695e2270228579878d17f48b455179bca29b14d5368684086834c": {

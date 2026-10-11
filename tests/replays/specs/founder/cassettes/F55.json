@@ -1,7 +1,7 @@
 {
  "case_id": "F55",
  "source": "ideal_reader",
- "recorded_at": "a9efb151",
+ "recorded_at": "1b5e5f58",
  "answers": {
   "01d54cd0e5deb5f07ca3e470720ac6266e52c3546cc84b3a29b916cb781bcd71": {
    "site": "r1",
@@ -61,22 +61,6 @@
    "output_tokens": 74,
    "model": "claude-haiku-4-5-20251001"
   },
-  "076e8ab8e905d113591ae861135d8448ed75aa5f4af0b6df2e6acc8356c7095a": {
-   "site": "bundle_narrator",
-   "parsed": {
-    "headline": "Reply",
-    "situation_summary": "The reply is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
-    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
-    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
-   },
-   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
-   "input_tokens": 2365,
-   "output_tokens": 166,
-   "model": "claude-haiku-4-5-20251001"
-  },
   "0be83a77c056a5a80be7e58b92ef0cf7c982381afae1ed114c43ce559d6cf2af": {
    "site": "resolution",
    "parsed": {
@@ -108,22 +92,6 @@
    "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 4300}, \"confidence_bp\": 5500, \"rationale\": \"Dev asked for the pricing sheet and has waited 26 days for it.\", \"missing\": []}",
    "input_tokens": 2103,
    "output_tokens": 49,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "176918e94fda6cf879614b1406e4da42a2538308701a8a3e20396feaebbf5086": {
-   "site": "bundle_narrator",
-   "parsed": {
-    "headline": "Reply",
-    "situation_summary": "The reply is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
-    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
-    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
-   },
-   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
-   "input_tokens": 2409,
-   "output_tokens": 166,
    "model": "claude-haiku-4-5-20251001"
   },
   "20cf5ccbe0cc36a5bab7909152cce3346472030341aa6c0d4747e99c5d64e03d": {
@@ -191,38 +159,6 @@
    "output_tokens": 176,
    "model": "claude-haiku-4-5-20251001"
   },
-  "43b68d4d5a71a5fcc57239b3cf4cb9c2bb08133656edc2473fd8947d372f4353": {
-   "site": "bundle_narrator",
-   "parsed": {
-    "headline": "Reply",
-    "situation_summary": "The reply is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
-    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
-    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
-   },
-   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
-   "input_tokens": 2369,
-   "output_tokens": 166,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "4fca264e1822824cd4f938ad7a092e52110efd8a8967a6e2f57d965d8fe619e1": {
-   "site": "bundle_narrator",
-   "parsed": {
-    "headline": "Reply",
-    "situation_summary": "The reply is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
-    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
-    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
-   },
-   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
-   "input_tokens": 2369,
-   "output_tokens": 166,
-   "model": "claude-haiku-4-5-20251001"
-  },
   "5ca09f577afd3c21f6f6f85f520f8ac98f1aa8d3f14485c2d59e64436ad6e70b": {
    "site": "extraction",
    "parsed": {
@@ -261,6 +197,135 @@
    "output_tokens": 117,
    "model": "claude-haiku-4-5-20251001"
   },
+  "5cecd1b5410021149853b7e5ac0643d2456a0dee507b7514357413b6e208bafe": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "Kabir Sethi wrote on the twenty-fifth of August asking whether Arjun is still keen on the pilot.",
+      "evidence": [
+       "evt_fc8900329eb4ad7be5cd1e8f"
+      ]
+     },
+     {
+      "claim": "His question is an open ask on Arjun's side, waiting since that day.",
+      "evidence": [
+       "loop:loop_f06f6011811c658935b08009"
+      ]
+     },
+     {
+      "claim": "The file has been quiet for over two weeks.",
+      "evidence": [
+       "num:days_quiet"
+      ]
+     },
+     {
+      "claim": "No answer from Arjun to Kabir is measured: the file holds no mail from Arjun.",
+      "evidence": [
+       "num:your_reply_time:kabir@orchardhq.test"
+      ]
+     },
+     {
+      "claim": "The engine files it as an admin account, seen once.",
+      "evidence": [
+       "sit:sit_a394a4d31a06d3b76bc70845",
+       "hist:derived.history.times_seen@admin"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "Kabir has waited over two weeks for a yes or a no on the pilot, and the silence is starting to read as the answer.",
+      "based_on": [
+       "fact:1",
+       "fact:3",
+       "fact:4"
+      ]
+     },
+     {
+      "claim": "A pilot may be the kind of work the brief's goal of landing design partners runs on, so the file may matter more than its admin filing suggests.",
+      "based_on": [
+       "fact:1",
+       "fact:5"
+      ]
+     }
+    ],
+    "patterns": [],
+    "hypotheses": [
+     {
+      "proposition": "Orchard is a prospective design partner, and the pilot is Nimbus Labs running on its work.",
+      "needs": "Arjun's word on what the pilot is."
+     },
+     {
+      "proposition": "Orchard is offering Nimbus Labs a pilot of its own product.",
+      "needs": "The earlier conversation the pilot came from, which the file does not hold."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "What the pilot is and who would run it.",
+      "relevance": "A design-partner pilot serves a goal of the brief; a supplier's pilot is optional."
+     },
+     {
+      "question": "Whether Arjun is still keen.",
+      "relevance": "It decides whether the reply says yes with a date, or closes the pilot politely."
+     },
+     {
+      "question": "Whether Arjun gave Kabir an answer some other way, by phone or in person.",
+      "relevance": "If so, only a short written confirmation is owed."
+     }
+    ],
+    "frames": {
+     "primary": "A direct question about a pilot left unanswered for over two weeks, now at risk of reading as a no.",
+     "rivals": [
+      "A pilot Arjun has quietly decided against, where a short, clear no is still owed.",
+      "A conversation that moved to another channel, leaving this mail behind."
+     ]
+    },
+    "proposed_kind": null,
+    "expected_vs_actual": {
+     "stage": null,
+     "expected": "No playbook applies and the brief names no kind of work for this file; a direct question from someone waiting on a pilot is expected to get an answer within days.",
+     "actual": "Over two weeks have passed with no answer from Arjun in the file."
+    },
+    "scenarios": {
+     "do_nothing": "Kabir reads the silence as a no, and the pilot, with whatever it might have led to, lapses.",
+     "act": "A reply this week, even a short one, keeps the pilot alive or closes it cleanly, and repairs the delay.",
+     "best": "Arjun confirms interest, they agree a start, and the pilot turns into a design partner.",
+     "worst": "Kabir moves on and remembers Nimbus Labs as the team that went quiet.",
+     "signals_to_watch": [
+      "A reply from Arjun in the file",
+      "A further note from Kabir, or none",
+      "A meeting booked with Orchard"
+     ]
+    },
+    "appraisal": {
+     "stakes": "medium",
+     "urgency": "high",
+     "reversibility": "costly_to_reverse",
+     "reasons": [
+      "Kabir asked a direct question and has waited over two weeks.",
+      "A pilot can lead to a design partner, one of the brief's goals.",
+      "Each further week makes the silence harder to explain."
+     ]
+    },
+    "mode": "act",
+    "next_move": {
+     "who": "Arjun",
+     "what": "Reply to Kabir with a clear answer on the pilot, or a time this week to settle it.",
+     "for_whom": "Kabir Sethi at Orchard",
+     "by_when": null
+    },
+    "alternative": "If Arjun is no longer keen, a short, courteous no that leaves the door open.",
+    "wait_or_stop": "Do not wait: the ask is Arjun's to answer. Stop once Kabir has a clear answer.",
+    "done_when": "Kabir has Arjun's answer on the pilot in writing, and the open ask is closed.",
+    "draft": "Hi Kabir, sorry for the slow reply. On the pilot, could we speak this week so I can give you a clear answer? Arjun"
+   },
+   "raw": "{\"facts\": [{\"claim\": \"Kabir Sethi wrote on the twenty-fifth of August asking whether Arjun is still keen on the pilot.\", \"evidence\": [\"evt_fc8900329eb4ad7be5cd1e8f\"]}, {\"claim\": \"His question is an open ask on Arjun's side, waiting since that day.\", \"evidence\": [\"loop:loop_f06f6011811c658935b08009\"]}, {\"claim\": \"The file has been quiet for over two weeks.\", \"evidence\": [\"num:days_quiet\"]}, {\"claim\": \"No answer from Arjun to Kabir is measured: the file holds no mail from Arjun.\", \"evidence\": [\"num:your_reply_time:kabir@orchardhq.test\"]}, {\"claim\": \"The engine files it as an admin account, seen once.\", \"evidence\": [\"sit:sit_a394a4d31a06d3b76bc70845\", \"hist:derived.history.times_seen@admin\"]}], \"inferences\": [{\"claim\": \"Kabir has waited over two weeks for a yes or a no on the pilot, and the silence is starting to read as the answer.\", \"based_on\": [\"fact:1\", \"fact:3\", \"fact:4\"]}, {\"claim\": \"A pilot may be the kind of work the brief's goal of landing design partners runs on, so the file may matter more than its admin filing suggests.\", \"based_on\": [\"fact:1\", \"fact:5\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"Orchard is a prospective design partner, and the pilot is Nimbus Labs running on its work.\", \"needs\": \"Arjun's word on what the pilot is.\"}, {\"proposition\": \"Orchard is offering Nimbus Labs a pilot of its own product.\", \"needs\": \"The earlier conversation the pilot came from, which the file does not hold.\"}], \"unknowns\": [{\"question\": \"What the pilot is and who would run it.\", \"relevance\": \"A design-partner pilot serves a goal of the brief; a supplier's pilot is optional.\"}, {\"question\": \"Whether Arjun is still keen.\", \"relevance\": \"It decides whether the reply says yes with a date, or closes the pilot politely.\"}, {\"question\": \"Whether Arjun gave Kabir an answer some other way, by phone or in person.\", \"relevance\": \"If so, only a short written confirmation is owed.\"}], \"frames\": {\"primary\": \"A direct question about a pilot left unanswered for over two weeks, now at risk of reading as a no.\", \"rivals\": [\"A pilot Arjun has quietly decided against, where a short, clear no is still owed.\", \"A conversation that moved to another channel, leaving this mail behind.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"No playbook applies and the brief names no kind of work for this file; a direct question from someone waiting on a pilot is expected to get an answer within days.\", \"actual\": \"Over two weeks have passed with no answer from Arjun in the file.\"}, \"scenarios\": {\"do_nothing\": \"Kabir reads the silence as a no, and the pilot, with whatever it might have led to, lapses.\", \"act\": \"A reply this week, even a short one, keeps the pilot alive or closes it cleanly, and repairs the delay.\", \"best\": \"Arjun confirms interest, they agree a start, and the pilot turns into a design partner.\", \"worst\": \"Kabir moves on and remembers Nimbus Labs as the team that went quiet.\", \"signals_to_watch\": [\"A reply from Arjun in the file\", \"A further note from Kabir, or none\", \"A meeting booked with Orchard\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"costly_to_reverse\", \"reasons\": [\"Kabir asked a direct question and has waited over two weeks.\", \"A pilot can lead to a design partner, one of the brief's goals.\", \"Each further week makes the silence harder to explain.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Reply to Kabir with a clear answer on the pilot, or a time this week to settle it.\", \"for_whom\": \"Kabir Sethi at Orchard\", \"by_when\": null}, \"alternative\": \"If Arjun is no longer keen, a short, courteous no that leaves the door open.\", \"wait_or_stop\": \"Do not wait: the ask is Arjun's to answer. Stop once Kabir has a clear answer.\", \"done_when\": \"Kabir has Arjun's answer on the pilot in writing, and the open ask is closed.\", \"draft\": \"Hi Kabir, sorry for the slow reply. On the pilot, could we speak this week so I can give you a clear answer? Arjun\"}",
+   "input_tokens": 3025,
+   "output_tokens": 994,
+   "model": "claude-haiku-4-5-20251001"
+  },
   "7c603357f16af16efa7663b869178980cc49de5e89b975e4b4396072d69e5e65": {
    "site": "resolution",
    "parsed": {
@@ -275,6 +340,124 @@
    "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Are you still keen on the pilot?\", \"start_offset\": 33, \"end_offset\": 65, \"speaker_role_said\": \"unknown\"}",
    "input_tokens": 1504,
    "output_tokens": 45,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "82fb8923273f4e58f24d59919c26b9889f10b91a5244b3f0e690fec80e213d0c": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "Dev Malhotra wrote on the sixteenth of August asking Arjun to send the pricing sheet.",
+      "evidence": [
+       "evt_f7943679d333f11914ee7efa"
+      ]
+     },
+     {
+      "claim": "His request is an open ask on Arjun's side, waiting since that day.",
+      "evidence": [
+       "loop:loop_8f37654f5e0a1648cd060c90"
+      ]
+     },
+     {
+      "claim": "The file has been quiet for nearly four weeks.",
+      "evidence": [
+       "num:days_quiet"
+      ]
+     },
+     {
+      "claim": "No answer from Arjun to Dev is measured: the file holds no mail from Arjun.",
+      "evidence": [
+       "num:your_reply_time:dev@tanglewood.test"
+      ]
+     },
+     {
+      "claim": "The engine files it as a sales opportunity, seen once.",
+      "evidence": [
+       "sit:sit_488606820f90f113611a6c5a",
+       "hist:derived.history.times_seen@sales"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "Dev asking for pricing suggests he is weighing Nimbus Labs as a buyer, and nearly four weeks of silence puts that at risk.",
+      "based_on": [
+       "fact:1",
+       "fact:3",
+       "fact:5"
+      ]
+     }
+    ],
+    "patterns": [],
+    "hypotheses": [
+     {
+      "proposition": "Dev is a prospective customer or design partner.",
+      "needs": "What Tanglewood is and why Dev wants the sheet."
+     },
+     {
+      "proposition": "No pricing sheet exists yet, which is why it was not sent.",
+      "needs": "Arjun's word."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "Whether a pricing sheet exists and is ready to send.",
+      "relevance": "If not, the reply must say when it will come, or offer a call instead."
+     },
+     {
+      "question": "Who Dev is and what Tanglewood would use Nimbus Labs for.",
+      "relevance": "It decides whether this is a sale, a design partner, or a passing enquiry."
+     }
+    ],
+    "frames": {
+     "primary": "A prospect's simple request left unanswered for nearly four weeks: a sale going cold.",
+     "rivals": [
+      "A request Arjun dealt with on a call or another channel this file cannot see.",
+      "A low-intent enquiry Arjun chose to let lapse."
+     ]
+    },
+    "proposed_kind": null,
+    "expected_vs_actual": {
+     "stage": null,
+     "expected": "No playbook applies and the brief names no kind of work for this file; a request for pricing is expected to be met within days, while interest is warm.",
+     "actual": "Nearly four weeks on, no sheet and no reply are in the file."
+    },
+    "scenarios": {
+     "do_nothing": "Dev assumes Nimbus Labs is not interested or not ready, and the opportunity closes without a word.",
+     "act": "Sending the sheet now, with a short apology, may still revive the conversation.",
+     "best": "Dev comes back with questions and a call follows.",
+     "worst": "Dev has chosen something else in the meantime, and the late sheet gets no response.",
+     "signals_to_watch": [
+      "The sheet going out from Arjun",
+      "A reply from Dev",
+      "A call booked with Tanglewood"
+     ]
+    },
+    "appraisal": {
+     "stakes": "medium",
+     "urgency": "high",
+     "reversibility": "costly_to_reverse",
+     "reasons": [
+      "Dev made a direct request nearly four weeks ago and has had nothing.",
+      "A request for pricing is a buying signal that fades quickly.",
+      "The engine files it as a sales opportunity."
+     ]
+    },
+    "mode": "act",
+    "next_move": {
+     "who": "Arjun",
+     "what": "Send Dev the pricing sheet with a short apology for the delay.",
+     "for_whom": "Dev Malhotra at Tanglewood",
+     "by_when": null
+    },
+    "alternative": "If no sheet is ready, write to Dev today with when it will come, or offer a short call on pricing.",
+    "wait_or_stop": "Do not wait; stop once the sheet is with Dev or he says he no longer needs it.",
+    "done_when": "Dev has the pricing sheet, and the open ask is closed.",
+    "draft": "Hi Dev, sorry for the slow reply. Here is the pricing sheet you asked for; happy to walk you through it on a short call. Arjun"
+   },
+   "raw": "{\"facts\": [{\"claim\": \"Dev Malhotra wrote on the sixteenth of August asking Arjun to send the pricing sheet.\", \"evidence\": [\"evt_f7943679d333f11914ee7efa\"]}, {\"claim\": \"His request is an open ask on Arjun's side, waiting since that day.\", \"evidence\": [\"loop:loop_8f37654f5e0a1648cd060c90\"]}, {\"claim\": \"The file has been quiet for nearly four weeks.\", \"evidence\": [\"num:days_quiet\"]}, {\"claim\": \"No answer from Arjun to Dev is measured: the file holds no mail from Arjun.\", \"evidence\": [\"num:your_reply_time:dev@tanglewood.test\"]}, {\"claim\": \"The engine files it as a sales opportunity, seen once.\", \"evidence\": [\"sit:sit_488606820f90f113611a6c5a\", \"hist:derived.history.times_seen@sales\"]}], \"inferences\": [{\"claim\": \"Dev asking for pricing suggests he is weighing Nimbus Labs as a buyer, and nearly four weeks of silence puts that at risk.\", \"based_on\": [\"fact:1\", \"fact:3\", \"fact:5\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"Dev is a prospective customer or design partner.\", \"needs\": \"What Tanglewood is and why Dev wants the sheet.\"}, {\"proposition\": \"No pricing sheet exists yet, which is why it was not sent.\", \"needs\": \"Arjun's word.\"}], \"unknowns\": [{\"question\": \"Whether a pricing sheet exists and is ready to send.\", \"relevance\": \"If not, the reply must say when it will come, or offer a call instead.\"}, {\"question\": \"Who Dev is and what Tanglewood would use Nimbus Labs for.\", \"relevance\": \"It decides whether this is a sale, a design partner, or a passing enquiry.\"}], \"frames\": {\"primary\": \"A prospect's simple request left unanswered for nearly four weeks: a sale going cold.\", \"rivals\": [\"A request Arjun dealt with on a call or another channel this file cannot see.\", \"A low-intent enquiry Arjun chose to let lapse.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"No playbook applies and the brief names no kind of work for this file; a request for pricing is expected to be met within days, while interest is warm.\", \"actual\": \"Nearly four weeks on, no sheet and no reply are in the file.\"}, \"scenarios\": {\"do_nothing\": \"Dev assumes Nimbus Labs is not interested or not ready, and the opportunity closes without a word.\", \"act\": \"Sending the sheet now, with a short apology, may still revive the conversation.\", \"best\": \"Dev comes back with questions and a call follows.\", \"worst\": \"Dev has chosen something else in the meantime, and the late sheet gets no response.\", \"signals_to_watch\": [\"The sheet going out from Arjun\", \"A reply from Dev\", \"A call booked with Tanglewood\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"costly_to_reverse\", \"reasons\": [\"Dev made a direct request nearly four weeks ago and has had nothing.\", \"A request for pricing is a buying signal that fades quickly.\", \"The engine files it as a sales opportunity.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Send Dev the pricing sheet with a short apology for the delay.\", \"for_whom\": \"Dev Malhotra at Tanglewood\", \"by_when\": null}, \"alternative\": \"If no sheet is ready, write to Dev today with when it will come, or offer a short call on pricing.\", \"wait_or_stop\": \"Do not wait; stop once the sheet is with Dev or he says he no longer needs it.\", \"done_when\": \"Dev has the pricing sheet, and the open ask is closed.\", \"draft\": \"Hi Dev, sorry for the slow reply. Here is the pricing sheet you asked for; happy to walk you through it on a short call. Arjun\"}",
+   "input_tokens": 3024,
+   "output_tokens": 857,
    "model": "claude-haiku-4-5-20251001"
   },
   "9c6b825049db3594a690c18562b9b9039b2114282680a52236403f67dcb0689e": {
@@ -304,6 +487,131 @@
    "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 3, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
    "input_tokens": 1140,
    "output_tokens": 74,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "a0ab212ed2b38cd1399cab2490ea2779040ccbcc04e0f87abb599ed54b6d7b48": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "Rhea Thomas wrote on the twentieth of August asking to move their call to the following week.",
+      "evidence": [
+       "evt_22d224284fc214bbf70ac0c8"
+      ]
+     },
+     {
+      "claim": "Her question is an open ask on Arjun's side, waiting since that day.",
+      "evidence": [
+       "loop:loop_09e26d117b16268f4d64c703"
+      ]
+     },
+     {
+      "claim": "The file has been quiet for over three weeks.",
+      "evidence": [
+       "num:days_quiet"
+      ]
+     },
+     {
+      "claim": "No answer from Arjun to Rhea is measured: the file holds no mail from Arjun.",
+      "evidence": [
+       "num:your_reply_time:rhea@pinegrove.test"
+      ]
+     },
+     {
+      "claim": "The engine files it as an admin account, seen once.",
+      "evidence": [
+       "sit:sit_2abc0c3e8df51f7b50831eb6",
+       "hist:derived.history.times_seen@admin"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "The week Rhea proposed has long gone by, so as far as this file shows the call was never moved.",
+      "based_on": [
+       "fact:1",
+       "fact:3",
+       "fact:4"
+      ]
+     },
+     {
+      "claim": "A reply now has to apologise for the delay and offer new times, not just agree to hers.",
+      "based_on": [
+       "fact:1",
+       "fact:3"
+      ]
+     }
+    ],
+    "patterns": [],
+    "hypotheses": [
+     {
+      "proposition": "The call was rearranged another way, by phone or an invitation this file does not hold.",
+      "needs": "Arjun's word, or a meeting on the calendar."
+     },
+     {
+      "proposition": "The call never took place and Rhea is still unsure when it will.",
+      "needs": "Arjun's word, or a note from Rhea."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "What the call was about and who Rhea is to Nimbus Labs.",
+      "relevance": "It decides how much the lost weeks cost."
+     },
+     {
+      "question": "Whether the call took place in the end.",
+      "relevance": "If it did, only a short note is owed; if not, a new time is."
+     }
+    ],
+    "frames": {
+     "primary": "A simple scheduling request left unanswered so long that the week it asked for has passed.",
+     "rivals": [
+      "A call rearranged by other means, leaving only a loose end in the mail.",
+      "A relationship Arjun has let lapse on purpose, where a short note would still close it politely."
+     ]
+    },
+    "proposed_kind": null,
+    "expected_vs_actual": {
+     "stage": null,
+     "expected": "No playbook applies and the brief names no kind of work for this file; a request to move a call is expected to get a yes and a time within a day or two.",
+     "actual": "Over three weeks on, there is no answer in the file and the proposed week is gone."
+    },
+    "scenarios": {
+     "do_nothing": "Rhea concludes the call is off, and whatever it was for stalls.",
+     "act": "A short apology with new times restarts the call within days.",
+     "best": "Rhea takes one of the new times and the call goes ahead.",
+     "worst": "Rhea reads the silence as a lack of interest and does not write again.",
+     "signals_to_watch": [
+      "A reply from Arjun with new times",
+      "Rhea's answer",
+      "A call booked on the calendar"
+     ]
+    },
+    "appraisal": {
+     "stakes": "medium",
+     "urgency": "high",
+     "reversibility": "reversible",
+     "reasons": [
+      "Rhea asked a direct question over three weeks ago and has had no answer.",
+      "The week she proposed has passed, so the call is in limbo.",
+      "What the call is for is not on file, so the cost of the delay is not known."
+     ]
+    },
+    "mode": "act",
+    "next_move": {
+     "who": "Arjun",
+     "what": "Reply to Rhea with an apology for the delay and new times for the call.",
+     "for_whom": "Rhea Thomas at Pinegrove",
+     "by_when": null
+    },
+    "alternative": "If the call is no longer needed, tell her so in a line, so she is not left in doubt.",
+    "wait_or_stop": "Do not wait; stop once a new time is agreed or the call is called off.",
+    "done_when": "Rhea has an answer, and the call has a new date or is closed.",
+    "draft": "Hi Rhea, sorry for the slow reply on moving our call. The week you suggested has gone by; could you send me a couple of times that suit you in the coming days? Arjun"
+   },
+   "raw": "{\"facts\": [{\"claim\": \"Rhea Thomas wrote on the twentieth of August asking to move their call to the following week.\", \"evidence\": [\"evt_22d224284fc214bbf70ac0c8\"]}, {\"claim\": \"Her question is an open ask on Arjun's side, waiting since that day.\", \"evidence\": [\"loop:loop_09e26d117b16268f4d64c703\"]}, {\"claim\": \"The file has been quiet for over three weeks.\", \"evidence\": [\"num:days_quiet\"]}, {\"claim\": \"No answer from Arjun to Rhea is measured: the file holds no mail from Arjun.\", \"evidence\": [\"num:your_reply_time:rhea@pinegrove.test\"]}, {\"claim\": \"The engine files it as an admin account, seen once.\", \"evidence\": [\"sit:sit_2abc0c3e8df51f7b50831eb6\", \"hist:derived.history.times_seen@admin\"]}], \"inferences\": [{\"claim\": \"The week Rhea proposed has long gone by, so as far as this file shows the call was never moved.\", \"based_on\": [\"fact:1\", \"fact:3\", \"fact:4\"]}, {\"claim\": \"A reply now has to apologise for the delay and offer new times, not just agree to hers.\", \"based_on\": [\"fact:1\", \"fact:3\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"The call was rearranged another way, by phone or an invitation this file does not hold.\", \"needs\": \"Arjun's word, or a meeting on the calendar.\"}, {\"proposition\": \"The call never took place and Rhea is still unsure when it will.\", \"needs\": \"Arjun's word, or a note from Rhea.\"}], \"unknowns\": [{\"question\": \"What the call was about and who Rhea is to Nimbus Labs.\", \"relevance\": \"It decides how much the lost weeks cost.\"}, {\"question\": \"Whether the call took place in the end.\", \"relevance\": \"If it did, only a short note is owed; if not, a new time is.\"}], \"frames\": {\"primary\": \"A simple scheduling request left unanswered so long that the week it asked for has passed.\", \"rivals\": [\"A call rearranged by other means, leaving only a loose end in the mail.\", \"A relationship Arjun has let lapse on purpose, where a short note would still close it politely.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"No playbook applies and the brief names no kind of work for this file; a request to move a call is expected to get a yes and a time within a day or two.\", \"actual\": \"Over three weeks on, there is no answer in the file and the proposed week is gone.\"}, \"scenarios\": {\"do_nothing\": \"Rhea concludes the call is off, and whatever it was for stalls.\", \"act\": \"A short apology with new times restarts the call within days.\", \"best\": \"Rhea takes one of the new times and the call goes ahead.\", \"worst\": \"Rhea reads the silence as a lack of interest and does not write again.\", \"signals_to_watch\": [\"A reply from Arjun with new times\", \"Rhea's answer\", \"A call booked on the calendar\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"reversible\", \"reasons\": [\"Rhea asked a direct question over three weeks ago and has had no answer.\", \"The week she proposed has passed, so the call is in limbo.\", \"What the call is for is not on file, so the cost of the delay is not known.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Reply to Rhea with an apology for the delay and new times for the call.\", \"for_whom\": \"Rhea Thomas at Pinegrove\", \"by_when\": null}, \"alternative\": \"If the call is no longer needed, tell her so in a line, so she is not left in doubt.\", \"wait_or_stop\": \"Do not wait; stop once a new time is agreed or the call is called off.\", \"done_when\": \"Rhea has an answer, and the call has a new date or is closed.\", \"draft\": \"Hi Rhea, sorry for the slow reply on moving our call. The week you suggested has gone by; could you send me a couple of times that suit you in the coming days? Arjun\"}",
+   "input_tokens": 3025,
+   "output_tokens": 904,
    "model": "claude-haiku-4-5-20251001"
   },
   "a192109fda08ce1b1b138c38423369daea7fc591f22086cad83c232a56558c13": {
@@ -349,22 +657,6 @@
    "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 2, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 3, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
    "input_tokens": 1097,
    "output_tokens": 96,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "ab8d32396f3c64c7a1e998e207cad18a8d3e2fcc98b2d1d2155737618ee587d2": {
-   "site": "bundle_narrator",
-   "parsed": {
-    "headline": "Reply",
-    "situation_summary": "The reply is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
-    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
-    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
-   },
-   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
-   "input_tokens": 2409,
-   "output_tokens": 166,
    "model": "claude-haiku-4-5-20251001"
   },
   "b76f8074fb935df6a394d8c5603c3eab0692fd9b34630fc1e47372cf3d098e9c": {
@@ -469,22 +761,6 @@
    "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Quick one from Kabir\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 2, \"business\": true, \"description\": \"Quick one from Rhea\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 3, \"business\": true, \"description\": \"Quick one from Dev\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 4, \"business\": true, \"description\": \"Nimbus Labs - July update\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
    "input_tokens": 1275,
    "output_tokens": 145,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "dbc013813397cc6ae759af0bcf852e122c767ae2a1baf10d4072c52f5838681f": {
-   "site": "bundle_narrator",
-   "parsed": {
-    "headline": "Reply",
-    "situation_summary": "The reply is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone leaves the reply undone, and its cost is not priced.",
-    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.",
-    "alternatives_narrative": "The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation."
-   },
-   "raw": "{\"headline\": \"Reply\", \"situation_summary\": \"The reply is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone leaves the reply undone, and its cost is not priced.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The reply ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the reply shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\", \"alternatives_narrative\": \"The strongest alternative scored {runner_up_score_pct} percent and lost to the recommendation.\"}",
-   "input_tokens": 2406,
-   "output_tokens": 166,
    "model": "claude-haiku-4-5-20251001"
   },
   "e0eac6c3fa7e00e56717eb4f4ee768077867d25940c6a1ed42d503e70c0c02cb": {
@@ -608,6 +884,131 @@
    "raw": "{\"outcome\": \"decision\", \"scores\": {\"reply\": 6500, \"wait_unanswered_email\": 4400}, \"confidence_bp\": 5500, \"rationale\": \"Rhea asked to move the call to next week and has waited 22 days for our answer.\", \"missing\": []}",
    "input_tokens": 2103,
    "output_tokens": 53,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "fefd7f230ba1c389c5b8bc5a6e0dd757c1a541c60e58acc4f1083641af5ae5cf": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "Arjun sent Ishaan the July update on the fourteenth of August: three design partners live, and the seed round opening in September.",
+      "evidence": [
+       "evt_4979a01a5c5baa80999f1125"
+      ]
+     },
+     {
+      "claim": "The update asks Ishaan for nothing.",
+      "evidence": [
+       "evt_4979a01a5c5baa80999f1125"
+      ]
+     },
+     {
+      "claim": "The file has been quiet for about four weeks since that update.",
+      "evidence": [
+       "num:days_quiet"
+      ]
+     },
+     {
+      "claim": "Ishaan's reply time is not measured, so there is no pattern of his to judge the quiet against.",
+      "evidence": [
+       "num:their_reply_time:ishaan@meadowvc.test"
+      ]
+     },
+     {
+      "claim": "The engine files it as an investor relationship in the fundraising domain, seen once.",
+      "evidence": [
+       "sit:sit_90c06ea07cc150a3e833ca9b",
+       "hist:derived.history.times_seen@fundraising"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "Ishaan's silence after an update that asked nothing is no sign of lost interest.",
+      "based_on": [
+       "fact:2",
+       "fact:4"
+      ]
+     },
+     {
+      "claim": "The update told Ishaan the round opens in September; September has come, so his next word from Nimbus Labs should say whether it has.",
+      "based_on": [
+       "fact:1"
+      ]
+     }
+    ],
+    "patterns": [],
+    "hypotheses": [
+     {
+      "proposition": "Meadow VC is an existing investor that receives the company's updates.",
+      "needs": "The brief or Arjun naming its role; the file holds only this one update."
+     },
+     {
+      "proposition": "Meadow VC is a prospective investor being kept warm for the seed round.",
+      "needs": "The same."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "Whether the seed round has opened, and whether Meadow VC is meant to be in it.",
+      "relevance": "If the round is open and Ishaan is a target, he should hear it from Arjun before he hears it elsewhere."
+     },
+     {
+      "question": "When the next update is due.",
+      "relevance": "The next update is the natural moment to tell Ishaan about the round."
+     }
+    ],
+    "frames": {
+     "primary": "An investor kept informed by update, with nothing owed either way until the next update or news of the round.",
+     "rivals": [
+      "A seed prospect who was told the round opens in September and has not yet heard that it has.",
+      "An existing investor whose silence between updates is normal."
+     ]
+    },
+    "proposed_kind": {
+     "kind": "investor",
+     "why": "Arjun sends Ishaan at Meadow VC the company's update and tells him when the seed round opens, and the engine already files the file as an investor relationship.",
+     "evidence": [
+      "evt_4979a01a5c5baa80999f1125",
+      "sit:sit_90c06ea07cc150a3e833ca9b"
+     ]
+    },
+    "expected_vs_actual": {
+     "stage": null,
+     "expected": "No playbook applies; after an update that asks nothing, no reply is expected, and the next touch is Arjun's next update.",
+     "actual": "No reply in about four weeks, as expected; and September, the month the update named for the round, has come."
+    },
+    "scenarios": {
+     "do_nothing": "Nothing breaks now; but if the round opens and Ishaan is not told, he hears of it second-hand.",
+     "act": "Writing now, outside the update rhythm, adds little unless the round has opened.",
+     "best": "The next update tells Ishaan the round is open, and he asks to see the deck.",
+     "worst": "The round opens, Ishaan is left off, and an investor who was kept warm feels passed over.",
+     "signals_to_watch": [
+      "The round opening, or a date for it",
+      "A reply or question from Ishaan",
+      "The next update going out"
+     ]
+    },
+    "appraisal": {
+     "stakes": "medium",
+     "urgency": "low",
+     "reversibility": "reversible",
+     "reasons": [
+      "The update asked nothing, so nothing is owed today.",
+      "The update named September for the round, and September has come.",
+      "The brief's first goal is raising the seed round."
+     ]
+    },
+    "mode": "wait",
+    "next_move": null,
+    "alternative": "If the round is open now, a short note to Ishaan rather than waiting for the next update.",
+    "wait_or_stop": "Wait for the next update or the round's opening, whichever comes first, and tell Ishaan then; stop if Arjun decides Meadow VC is not part of this round.",
+    "done_when": "Ishaan has heard from Arjun whether the round is open.",
+    "draft": null
+   },
+   "raw": "{\"facts\": [{\"claim\": \"Arjun sent Ishaan the July update on the fourteenth of August: three design partners live, and the seed round opening in September.\", \"evidence\": [\"evt_4979a01a5c5baa80999f1125\"]}, {\"claim\": \"The update asks Ishaan for nothing.\", \"evidence\": [\"evt_4979a01a5c5baa80999f1125\"]}, {\"claim\": \"The file has been quiet for about four weeks since that update.\", \"evidence\": [\"num:days_quiet\"]}, {\"claim\": \"Ishaan's reply time is not measured, so there is no pattern of his to judge the quiet against.\", \"evidence\": [\"num:their_reply_time:ishaan@meadowvc.test\"]}, {\"claim\": \"The engine files it as an investor relationship in the fundraising domain, seen once.\", \"evidence\": [\"sit:sit_90c06ea07cc150a3e833ca9b\", \"hist:derived.history.times_seen@fundraising\"]}], \"inferences\": [{\"claim\": \"Ishaan's silence after an update that asked nothing is no sign of lost interest.\", \"based_on\": [\"fact:2\", \"fact:4\"]}, {\"claim\": \"The update told Ishaan the round opens in September; September has come, so his next word from Nimbus Labs should say whether it has.\", \"based_on\": [\"fact:1\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"Meadow VC is an existing investor that receives the company's updates.\", \"needs\": \"The brief or Arjun naming its role; the file holds only this one update.\"}, {\"proposition\": \"Meadow VC is a prospective investor being kept warm for the seed round.\", \"needs\": \"The same.\"}], \"unknowns\": [{\"question\": \"Whether the seed round has opened, and whether Meadow VC is meant to be in it.\", \"relevance\": \"If the round is open and Ishaan is a target, he should hear it from Arjun before he hears it elsewhere.\"}, {\"question\": \"When the next update is due.\", \"relevance\": \"The next update is the natural moment to tell Ishaan about the round.\"}], \"frames\": {\"primary\": \"An investor kept informed by update, with nothing owed either way until the next update or news of the round.\", \"rivals\": [\"A seed prospect who was told the round opens in September and has not yet heard that it has.\", \"An existing investor whose silence between updates is normal.\"]}, \"proposed_kind\": {\"kind\": \"investor\", \"why\": \"Arjun sends Ishaan at Meadow VC the company's update and tells him when the seed round opens, and the engine already files the file as an investor relationship.\", \"evidence\": [\"evt_4979a01a5c5baa80999f1125\", \"sit:sit_90c06ea07cc150a3e833ca9b\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"No playbook applies; after an update that asks nothing, no reply is expected, and the next touch is Arjun's next update.\", \"actual\": \"No reply in about four weeks, as expected; and September, the month the update named for the round, has come.\"}, \"scenarios\": {\"do_nothing\": \"Nothing breaks now; but if the round opens and Ishaan is not told, he hears of it second-hand.\", \"act\": \"Writing now, outside the update rhythm, adds little unless the round has opened.\", \"best\": \"The next update tells Ishaan the round is open, and he asks to see the deck.\", \"worst\": \"The round opens, Ishaan is left off, and an investor who was kept warm feels passed over.\", \"signals_to_watch\": [\"The round opening, or a date for it\", \"A reply or question from Ishaan\", \"The next update going out\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The update asked nothing, so nothing is owed today.\", \"The update named September for the round, and September has come.\", \"The brief's first goal is raising the seed round.\"]}, \"mode\": \"wait\", \"next_move\": null, \"alternative\": \"If the round is open now, a short note to Ishaan rather than waiting for the next update.\", \"wait_or_stop\": \"Wait for the next update or the round's opening, whichever comes first, and tell Ishaan then; stop if Arjun decides Meadow VC is not part of this round.\", \"done_when\": \"Ishaan has heard from Arjun whether the round is open.\", \"draft\": null}",
+   "input_tokens": 3071,
+   "output_tokens": 970,
    "model": "claude-haiku-4-5-20251001"
   }
  }

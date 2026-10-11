@@ -1,0 +1,71 @@
+{
+ "case_id": "F45",
+ "source": "ideal_reader",
+ "recorded_at": "46f37bea",
+ "answers": {
+  "0c65c2bd5c70d6d6c0169ce20c2855fde094fee62520e8cd8c4c36a5b0e3d1a3": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Who is the first engineer you plan to hire after the round?",
+    "start_offset": 39,
+    "end_offset": 98,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Who is the first engineer you plan to hire after the round?\", \"start_offset\": 39, \"end_offset\": 98, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1512,
+   "output_tokens": 52,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "aa81377940a99cc3b3146c25a8b8c2fbc48f79181e62b532bf3e4db6ed7b33ad": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Re: Bluepeak x Nimbus - retention",
+    "start_offset": 0,
+    "end_offset": 33,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Re: Bluepeak x Nimbus - retention\", \"start_offset\": 0, \"end_offset\": 33, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1514,
+   "output_tokens": 45,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "b2941f14da5f95017a67c3a8177be3e1b29af5495cf319123508925a884fce7b": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Could you share how the first three pilot teams retained over eight weeks?",
+    "start_offset": 42,
+    "end_offset": 116,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Could you share how the first three pilot teams retained over eight weeks?\", \"start_offset\": 42, \"end_offset\": 116, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1517,
+   "output_tokens": 56,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "cc0bf6a01ec7c48a54335c0769e2f516bc4f916a29f414880650503329f1c430": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Which tool do your pilot teams use today instead of Nimbus Labs?",
+    "start_offset": 44,
+    "end_offset": 108,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Which tool do your pilot teams use today instead of Nimbus Labs?\", \"start_offset\": 44, \"end_offset\": 108, \"speaker_role_said\": \"unknown\"}",
+   "input_tokens": 1515,
+   "output_tokens": 54,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

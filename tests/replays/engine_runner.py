@@ -298,7 +298,7 @@ def _connectors():
 # the run
 # =================================================================================================
 def run_case(case: FounderCase, llm: Any, *, org_id: str | None = None,
-             keep: bool = False) -> CaseRun:
+             keep: bool = False, expert: bool | None = None) -> CaseRun:
     """Run every sweep of `case` through the real chain with `llm` as the model; report it.
 
     The tenant is REMOVED once the report is read, unless `keep`: the scratch database is shared
@@ -333,6 +333,8 @@ def run_case(case: FounderCase, llm: Any, *, org_id: str | None = None,
             provision_intelligence(engine, org)
             routes._ensure_tenant_live(org)
             switch_on_founder_office(engine, org)
+            if expert_on(case, expert):
+                switch_on_the_expert(engine, org)
             for sweep, at in enumerate(case.sweeps):
                 objects = case.objects_in(sweep)
                 mail = [o for o in objects if o.source == "gmail"]
@@ -380,6 +382,26 @@ def switch_on_founder_office(engine: Any, org: str) -> None:
     from genios_engine.platform import l3_activation
     l3_activation.activate(engine, org, domain=FOUNDER_DOMAIN, by="golden_runner",
                            notes="the golden founder's own work, as the pilot org (06 D2)")
+
+
+def expert_on(case: FounderCase, expert: bool | None = None) -> bool:
+    """Whether a run of `case` switches the expert on: as the caller says, else when the case authors
+    the expert's answers (`model.expert`)."""
+    return expert if expert is not None else bool((case.model or {}).get("expert"))
+
+
+def switch_on_the_expert(engine: Any, org: str) -> None:
+    """STEP-12 · the expert pass (R-7) for a golden tenant (tree `yc2_w27_s12` M32.C5.L-integration.V2.U04):
+    its L4 feature switched on as an operator switches it, so the case's sweeps review their files —
+    the ideal reader answers each review from the case's own `model.expert` (`06` D49), and a review the
+    case authors nothing for fails the recording. `run_case` switches it on for a case that authors
+    those answers — every golden case whose sweeps review a file does, and
+    `test_every_changed_file_has_an_expert_answer` holds that — and a case built inside a test to
+    exercise the harness runs as before. The org row's cascade removes the switch with the tenant.
+    Shadow: nothing reads a review for a decision until M33."""
+    from genios_engine.platform.l4_activation import FEATURE_EXPERT_REVIEW, activate
+    activate(engine, org, feature=FEATURE_EXPERT_REVIEW, by="golden_runner",
+             notes="the golden founder's files reviewed by the expert, in shadow (STEP-12)")
 
 
 def remove_tenant(engine: Any, org: str) -> None:

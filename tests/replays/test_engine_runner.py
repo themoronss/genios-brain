@@ -296,6 +296,25 @@ def test_the_world_is_pinned_for_a_run_and_released_after():
     assert new_id("evt") not in first, "outside a run, ids are random again"
 
 
+def test_the_expert_is_switched_on_for_a_case_that_authors_its_answers():
+    """STEP-12 (M32.C5.L-integration.V2.U04): every golden case whose sweeps review a file authors the
+    expert's answers (`test_every_changed_file_has_an_expert_answer`) and runs with the expert on; a
+    case built here to exercise the harness authors none and runs as before — or as the caller says."""
+    import ast
+    import inspect
+    plain = _parse(CASE)
+    authored = _parse(dict(CASE, model={"expert": [{"when": ["<f97.test>"], "by": "claude",
+                                                    "answer": {}}]}))
+    assert (er.expert_on(plain), er.expert_on(authored)) == (False, True)
+    assert (er.expert_on(plain, True), er.expert_on(authored, False)) == (True, False)
+    body = ast.parse(inspect.getsource(er.run_case))
+    guarded = [n for n in ast.walk(body) if isinstance(n, ast.If)
+               and "expert_on" in ast.unparse(n.test)
+               and any(isinstance(c, ast.Call) and getattr(c.func, "id", "") == "switch_on_the_expert"
+                       for b in n.body for c in ast.walk(b))]
+    assert len(guarded) == 1, "run_case switches the expert on under expert_on, once"
+
+
 @pytest.mark.pg
 @needs_db
 def test_a_run_leaves_the_shared_database_as_it_found_it():

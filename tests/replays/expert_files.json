@@ -192,7 +192,7 @@
   },
   "tidewell.test": {
    "evidence": [
-    "evt_ee683c2b249aed493e683021",
+    "evt_53d1d71846925c16d7662f46",
     "hist:derived.history.prior_card_verdict@admin",
     "hist:derived.history.prior_outcome@admin",
     "hist:derived.history.times_seen@admin",
@@ -201,7 +201,7 @@
     "num:their_reply_time:omar@tidewell.test",
     "num:usual_gap",
     "num:your_reply_time:omar@tidewell.test",
-    "sit:sit_a4fd6003cfdad65a557f005b",
+    "sit:sit_ed2f8bee5c5d4c4db7fa16cc",
     "whatif:14",
     "whatif:3",
     "whatif:7"
@@ -1491,7 +1491,7 @@
   },
   "vertexangels.test": {
    "evidence": [
-    "evt_0795e17116e8b65b5bc1cb10",
+    "evt_f0b6c2947781c73fda60740c",
     "hist:derived.history.prior_card_verdict@support",
     "hist:derived.history.prior_outcome@support",
     "hist:derived.history.times_seen@support",
@@ -1500,7 +1500,7 @@
     "num:their_reply_time:nandini@vertexangels.test",
     "num:usual_gap",
     "num:your_reply_time:nandini@vertexangels.test",
-    "sit:sit_dbded779fb9c7a750db01994",
+    "sit:sit_910c6ae2dcbc47b35ce417ff",
     "whatif:14",
     "whatif:3",
     "whatif:7"

@@ -1,7 +1,7 @@
 {
  "case_id": "F21",
  "source": "ideal_reader",
- "recorded_at": "e3a6f584",
+ "recorded_at": "1b5e5f58",
  "answers": {
   "0ea24ba719612cc8ecfd36e747f539d588bf01cec3874b121d987be044fb2144": {
    "site": "resolution",
@@ -33,6 +33,156 @@
    "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Reminder: pre-incubation programme\", \"start_offset\": 0, \"end_offset\": 34, \"speaker_role_said\": \"unknown\"}",
    "input_tokens": 1518,
    "output_tokens": 45,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "9e16c7b64eeacb9ea52b822c1772623f32869db71e31394059ed06f968abe901": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "The Awadh Enterprise Centre wrote that applications for its pre-incubation programme are open, and that the programme runs for twelve weeks from November.",
+      "evidence": [
+       "evt_0616ab6c71c798e70dd44f98"
+      ]
+     },
+     {
+      "claim": "The notices are addressed to every founder — Dear Founder — and ask nothing of Nimbus Labs in particular.",
+      "evidence": [
+       "evt_0616ab6c71c798e70dd44f98",
+       "evt_a63c89b44c27111f6b8f66f5"
+      ]
+     },
+     {
+      "claim": "The engine holds the file as an investor relationship in the fundraising domain.",
+      "evidence": [
+       "sit:sit_dd21bb3971e08da23957a057"
+      ]
+     },
+     {
+      "claim": "The centre wrote again with a reminder that applications for the programme close soon, naming no date.",
+      "evidence": [
+       "evt_a63c89b44c27111f6b8f66f5"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "Soon is no date: the window may close any day, so the decision cannot wait for the centre to name one.",
+      "based_on": [
+       "fact:4"
+      ]
+     },
+     {
+      "claim": "This is a call for applications to founders at large, not a step in an application of ours.",
+      "based_on": [
+       "fact:1",
+       "fact:2"
+      ]
+     },
+     {
+      "claim": "Nothing in the file shows an application from Nimbus Labs to this programme, or its receipt, though the brief's line for the centre says applied.",
+      "based_on": [
+       "fact:1",
+       "pb:founder_office.pb.program_applications.work_back_from_the_deadline"
+      ]
+     },
+     {
+      "claim": "Read as an investor relationship, the file would get an investor's moves; it is a programme.",
+      "based_on": [
+       "fact:3",
+       "pb:founder_office.heu.program_applications.a_programme_is_not_an_investor"
+      ]
+     }
+    ],
+    "patterns": [
+     {
+      "kind": "pattern",
+      "claim": "An application goes in before the last day and its receipt is filed — without the receipt it may not have gone in.",
+      "based_on": [
+       "pb:founder_office.pb.program_applications.work_back_from_the_deadline"
+      ]
+     },
+     {
+      "kind": "pattern",
+      "claim": "The programme's closing date is the one fixed point of an application, and the centre has not given one.",
+      "based_on": [
+       "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point"
+      ]
+     }
+    ],
+    "hypotheses": [
+     {
+      "proposition": "Nimbus Labs has applied to this programme, as the brief's line says, and the mail is the centre's general notice.",
+      "needs": "A receipt in the mail or a status on the centre's own site."
+     },
+     {
+      "proposition": "A pre-incubation programme is meant for companies earlier than a seed-stage one already in an accelerator's cohort.",
+      "needs": "The programme's own terms on who it is for."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "Whether an application to this programme went in, with a receipt.",
+      "relevance": "If it did, there is nothing to do; if not, the founder has a decision to make."
+     },
+     {
+      "question": "When applications close — the centre names no date.",
+      "relevance": "It sets how long the founder has to decide."
+     },
+     {
+      "question": "Who the programme is for and what it asks of a company across its twelve weeks.",
+      "relevance": "It decides whether it fits a seed-stage company already in Lakshya's cohort."
+     }
+    ],
+    "frames": {
+     "primary": "A templated call for applications to the centre's pre-incubation programme, starting in November, now with a reminder that applications close soon but no date — a programme Nimbus Labs could apply to, or has, as the brief's line says.",
+     "rivals": [
+      "A mailing-list notice for an earlier-stage programme that does not fit a seed-stage company already in an accelerator's cohort.",
+      "General notices about an application the founder has already made, needing nothing."
+     ]
+    },
+    "proposed_kind": null,
+    "expected_vs_actual": {
+     "stage": "applied",
+     "expected": "Nothing is owed while the window is open; the one thing to check at this stage is the receipt.",
+     "actual": "The centre's notice and a reminder that applications close soon are the whole file; no receipt or status for an application from Nimbus Labs is in it."
+    },
+    "scenarios": {
+     "do_nothing": "If an application went in, nothing is lost; if none did, the window closes on a date nobody wrote down and the programme starts in November without Nimbus Labs.",
+     "act": "A quick check settles whether an application is in; if not, the founder decides on the programme's fit while applications are open.",
+     "best": "The receipt is found and the file waits for the centre's decision — or the fit is clear and an application goes in early.",
+     "worst": "The brief's line is taken on trust, no application exists, and the window closes.",
+     "signals_to_watch": [
+      "A closing date from the centre.",
+      "A receipt or a status for an application from Nimbus Labs.",
+      "The programme's terms on who may apply."
+     ]
+    },
+    "appraisal": {
+     "stakes": "low",
+     "urgency": "medium",
+     "reversibility": "reversible",
+     "reasons": [
+      "The centre says applications close soon but gives no date.",
+      "No application or receipt from Nimbus Labs is in the file.",
+      "A pre-incubation programme may not fit a seed-stage company already in an accelerator."
+     ]
+    },
+    "mode": "find_out",
+    "next_move": {
+     "who": "Arjun",
+     "what": "This week, check whether Nimbus Labs applied to the centre's pre-incubation programme — a receipt in the mail or a status with the centre — and, if not, decide before applications close whether it is worth applying.",
+     "for_whom": "Nimbus Labs, on its Awadh Enterprise Centre file",
+     "by_when": null
+    },
+    "alternative": "Write to the centre for its closing date and who the programme is for, then decide.",
+    "wait_or_stop": "Do not wait on the centre — its mail is templated. Stop once a receipt is found, or once the founder decides not to apply, and close the file with that reason.",
+    "done_when": "The file shows the application's receipt, or the founder's decision not to apply with its reason.",
+    "draft": null
+   },
+   "raw": "{\"facts\": [{\"claim\": \"The Awadh Enterprise Centre wrote that applications for its pre-incubation programme are open, and that the programme runs for twelve weeks from November.\", \"evidence\": [\"evt_0616ab6c71c798e70dd44f98\"]}, {\"claim\": \"The notices are addressed to every founder — Dear Founder — and ask nothing of Nimbus Labs in particular.\", \"evidence\": [\"evt_0616ab6c71c798e70dd44f98\", \"evt_a63c89b44c27111f6b8f66f5\"]}, {\"claim\": \"The engine holds the file as an investor relationship in the fundraising domain.\", \"evidence\": [\"sit:sit_dd21bb3971e08da23957a057\"]}, {\"claim\": \"The centre wrote again with a reminder that applications for the programme close soon, naming no date.\", \"evidence\": [\"evt_a63c89b44c27111f6b8f66f5\"]}], \"inferences\": [{\"claim\": \"Soon is no date: the window may close any day, so the decision cannot wait for the centre to name one.\", \"based_on\": [\"fact:4\"]}, {\"claim\": \"This is a call for applications to founders at large, not a step in an application of ours.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"Nothing in the file shows an application from Nimbus Labs to this programme, or its receipt, though the brief's line for the centre says applied.\", \"based_on\": [\"fact:1\", \"pb:founder_office.pb.program_applications.work_back_from_the_deadline\"]}, {\"claim\": \"Read as an investor relationship, the file would get an investor's moves; it is a programme.\", \"based_on\": [\"fact:3\", \"pb:founder_office.heu.program_applications.a_programme_is_not_an_investor\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"An application goes in before the last day and its receipt is filed — without the receipt it may not have gone in.\", \"based_on\": [\"pb:founder_office.pb.program_applications.work_back_from_the_deadline\"]}, {\"kind\": \"pattern\", \"claim\": \"The programme's closing date is the one fixed point of an application, and the centre has not given one.\", \"based_on\": [\"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\"]}], \"hypotheses\": [{\"proposition\": \"Nimbus Labs has applied to this programme, as the brief's line says, and the mail is the centre's general notice.\", \"needs\": \"A receipt in the mail or a status on the centre's own site.\"}, {\"proposition\": \"A pre-incubation programme is meant for companies earlier than a seed-stage one already in an accelerator's cohort.\", \"needs\": \"The programme's own terms on who it is for.\"}], \"unknowns\": [{\"question\": \"Whether an application to this programme went in, with a receipt.\", \"relevance\": \"If it did, there is nothing to do; if not, the founder has a decision to make.\"}, {\"question\": \"When applications close — the centre names no date.\", \"relevance\": \"It sets how long the founder has to decide.\"}, {\"question\": \"Who the programme is for and what it asks of a company across its twelve weeks.\", \"relevance\": \"It decides whether it fits a seed-stage company already in Lakshya's cohort.\"}], \"frames\": {\"primary\": \"A templated call for applications to the centre's pre-incubation programme, starting in November, now with a reminder that applications close soon but no date — a programme Nimbus Labs could apply to, or has, as the brief's line says.\", \"rivals\": [\"A mailing-list notice for an earlier-stage programme that does not fit a seed-stage company already in an accelerator's cohort.\", \"General notices about an application the founder has already made, needing nothing.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": \"applied\", \"expected\": \"Nothing is owed while the window is open; the one thing to check at this stage is the receipt.\", \"actual\": \"The centre's notice and a reminder that applications close soon are the whole file; no receipt or status for an application from Nimbus Labs is in it.\"}, \"scenarios\": {\"do_nothing\": \"If an application went in, nothing is lost; if none did, the window closes on a date nobody wrote down and the programme starts in November without Nimbus Labs.\", \"act\": \"A quick check settles whether an application is in; if not, the founder decides on the programme's fit while applications are open.\", \"best\": \"The receipt is found and the file waits for the centre's decision — or the fit is clear and an application goes in early.\", \"worst\": \"The brief's line is taken on trust, no application exists, and the window closes.\", \"signals_to_watch\": [\"A closing date from the centre.\", \"A receipt or a status for an application from Nimbus Labs.\", \"The programme's terms on who may apply.\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"medium\", \"reversibility\": \"reversible\", \"reasons\": [\"The centre says applications close soon but gives no date.\", \"No application or receipt from Nimbus Labs is in the file.\", \"A pre-incubation programme may not fit a seed-stage company already in an accelerator.\"]}, \"mode\": \"find_out\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"This week, check whether Nimbus Labs applied to the centre's pre-incubation programme — a receipt in the mail or a status with the centre — and, if not, decide before applications close whether it is worth applying.\", \"for_whom\": \"Nimbus Labs, on its Awadh Enterprise Centre file\", \"by_when\": null}, \"alternative\": \"Write to the centre for its closing date and who the programme is for, then decide.\", \"wait_or_stop\": \"Do not wait on the centre — its mail is templated. Stop once a receipt is found, or once the founder decides not to apply, and close the file with that reason.\", \"done_when\": \"The file shows the application's receipt, or the founder's decision not to apply with its reason.\", \"draft\": null}",
+   "input_tokens": 9056,
+   "output_tokens": 1384,
    "model": "claude-haiku-4-5-20251001"
   },
   "a7f165029e7e5f623c6fbd4c77dcb5741d523324b01cdaaa56aaabb4b5d6e1a3": {
@@ -71,6 +221,149 @@
    "raw": "{\"intent\": \"inform\", \"stance\": \"neutral\", \"topics\": [\"pre-incubation programme\", \"programme applications\"], \"entity_mentions\": [{\"surface_form\": \"Awadh Enterprise Centre\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Awadh Enterprise Centre\", \"start_offset\": 126, \"end_offset\": 149}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"automated\", \"tone\": \"neutral\", \"formality\": \"templated\", \"addressed_personally\": false, \"human_authored\": false, \"asks_for_reply\": false, \"engagement\": \"low\"}}",
    "input_tokens": 5512,
    "output_tokens": 128,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "e5d9f937e11625e5160e968edae8494901ceb71ba7b1db0fd90b12a222c6cd9b": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "The Awadh Enterprise Centre wrote that applications for its pre-incubation programme are open, and that the programme runs for twelve weeks from November.",
+      "evidence": [
+       "evt_0616ab6c71c798e70dd44f98"
+      ]
+     },
+     {
+      "claim": "The notice is addressed to every founder — Dear Founder — and asks nothing of Nimbus Labs in particular.",
+      "evidence": [
+       "evt_0616ab6c71c798e70dd44f98"
+      ]
+     },
+     {
+      "claim": "The engine holds the file as an investor relationship in the fundraising domain.",
+      "evidence": [
+       "sit:sit_dd21bb3971e08da23957a057"
+      ]
+     },
+     {
+      "claim": "This is the first time the founder's history holds the centre.",
+      "evidence": [
+       "hist:derived.history.times_seen@fundraising"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "This is a call for applications to founders at large, not a step in an application of ours.",
+      "based_on": [
+       "fact:1",
+       "fact:2"
+      ]
+     },
+     {
+      "claim": "Nothing in the file shows an application from Nimbus Labs to this programme, or its receipt, though the brief's line for the centre says applied.",
+      "based_on": [
+       "fact:1",
+       "pb:founder_office.pb.program_applications.work_back_from_the_deadline"
+      ]
+     },
+     {
+      "claim": "Read as an investor relationship, the file would get an investor's moves; it is a programme.",
+      "based_on": [
+       "fact:3",
+       "pb:founder_office.heu.program_applications.a_programme_is_not_an_investor"
+      ]
+     }
+    ],
+    "patterns": [
+     {
+      "kind": "pattern",
+      "claim": "An application goes in before the last day and its receipt is filed — without the receipt it may not have gone in.",
+      "based_on": [
+       "pb:founder_office.pb.program_applications.work_back_from_the_deadline"
+      ]
+     },
+     {
+      "kind": "pattern",
+      "claim": "The programme's closing date is the one fixed point of an application, and the centre has not given one.",
+      "based_on": [
+       "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point"
+      ]
+     }
+    ],
+    "hypotheses": [
+     {
+      "proposition": "Nimbus Labs has applied to this programme, as the brief's line says, and the mail is the centre's general notice.",
+      "needs": "A receipt in the mail or a status on the centre's own site."
+     },
+     {
+      "proposition": "A pre-incubation programme is meant for companies earlier than a seed-stage one already in an accelerator's cohort.",
+      "needs": "The programme's own terms on who it is for."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "Whether an application to this programme went in, with a receipt.",
+      "relevance": "If it did, there is nothing to do; if not, the founder has a decision to make."
+     },
+     {
+      "question": "When applications close — the centre names no date.",
+      "relevance": "It sets how long the founder has to decide."
+     },
+     {
+      "question": "Who the programme is for and what it asks of a company across its twelve weeks.",
+      "relevance": "It decides whether it fits a seed-stage company already in Lakshya's cohort."
+     }
+    ],
+    "frames": {
+     "primary": "A templated call for applications to the centre's pre-incubation programme, starting in November — a programme Nimbus Labs could apply to, or has, as the brief's line says.",
+     "rivals": [
+      "A mailing-list notice for an earlier-stage programme that does not fit a seed-stage company already in an accelerator's cohort.",
+      "General notices about an application the founder has already made, needing nothing."
+     ]
+    },
+    "proposed_kind": null,
+    "expected_vs_actual": {
+     "stage": "applied",
+     "expected": "Nothing is owed while the window is open; the one thing to check at this stage is the receipt.",
+     "actual": "The centre's only mail is a call for applications; no receipt or status for an application from Nimbus Labs is in the file."
+    },
+    "scenarios": {
+     "do_nothing": "If an application went in, nothing is lost; if none did, the window closes on a date nobody wrote down and the programme starts in November without Nimbus Labs.",
+     "act": "A quick check settles whether an application is in; if not, the founder decides on the programme's fit while applications are open.",
+     "best": "The receipt is found and the file waits for the centre's decision — or the fit is clear and an application goes in early.",
+     "worst": "The brief's line is taken on trust, no application exists, and the window closes.",
+     "signals_to_watch": [
+      "A closing date from the centre.",
+      "A receipt or a status for an application from Nimbus Labs.",
+      "The programme's terms on who may apply."
+     ]
+    },
+    "appraisal": {
+     "stakes": "low",
+     "urgency": "low",
+     "reversibility": "reversible",
+     "reasons": [
+      "The mail is a templated notice and asks nothing of Nimbus Labs.",
+      "No application or receipt from Nimbus Labs is in the file.",
+      "The programme starts in November and no closing date is given yet."
+     ]
+    },
+    "mode": "find_out",
+    "next_move": {
+     "who": "Arjun",
+     "what": "Check whether Nimbus Labs applied to the centre's pre-incubation programme — a receipt in the mail or a status with the centre — and, if not, decide whether this earlier-stage programme is worth applying to.",
+     "for_whom": "Nimbus Labs, on its Awadh Enterprise Centre file",
+     "by_when": null
+    },
+    "alternative": "Write to the centre for its closing date and who the programme is for, then decide.",
+    "wait_or_stop": "Do not wait on the centre — its mail is templated. Stop once a receipt is found, or once the founder decides not to apply, and close the file with that reason.",
+    "done_when": "The file shows the application's receipt, or the founder's decision not to apply with its reason.",
+    "draft": null
+   },
+   "raw": "{\"facts\": [{\"claim\": \"The Awadh Enterprise Centre wrote that applications for its pre-incubation programme are open, and that the programme runs for twelve weeks from November.\", \"evidence\": [\"evt_0616ab6c71c798e70dd44f98\"]}, {\"claim\": \"The notice is addressed to every founder — Dear Founder — and asks nothing of Nimbus Labs in particular.\", \"evidence\": [\"evt_0616ab6c71c798e70dd44f98\"]}, {\"claim\": \"The engine holds the file as an investor relationship in the fundraising domain.\", \"evidence\": [\"sit:sit_dd21bb3971e08da23957a057\"]}, {\"claim\": \"This is the first time the founder's history holds the centre.\", \"evidence\": [\"hist:derived.history.times_seen@fundraising\"]}], \"inferences\": [{\"claim\": \"This is a call for applications to founders at large, not a step in an application of ours.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"Nothing in the file shows an application from Nimbus Labs to this programme, or its receipt, though the brief's line for the centre says applied.\", \"based_on\": [\"fact:1\", \"pb:founder_office.pb.program_applications.work_back_from_the_deadline\"]}, {\"claim\": \"Read as an investor relationship, the file would get an investor's moves; it is a programme.\", \"based_on\": [\"fact:3\", \"pb:founder_office.heu.program_applications.a_programme_is_not_an_investor\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"An application goes in before the last day and its receipt is filed — without the receipt it may not have gone in.\", \"based_on\": [\"pb:founder_office.pb.program_applications.work_back_from_the_deadline\"]}, {\"kind\": \"pattern\", \"claim\": \"The programme's closing date is the one fixed point of an application, and the centre has not given one.\", \"based_on\": [\"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\"]}], \"hypotheses\": [{\"proposition\": \"Nimbus Labs has applied to this programme, as the brief's line says, and the mail is the centre's general notice.\", \"needs\": \"A receipt in the mail or a status on the centre's own site.\"}, {\"proposition\": \"A pre-incubation programme is meant for companies earlier than a seed-stage one already in an accelerator's cohort.\", \"needs\": \"The programme's own terms on who it is for.\"}], \"unknowns\": [{\"question\": \"Whether an application to this programme went in, with a receipt.\", \"relevance\": \"If it did, there is nothing to do; if not, the founder has a decision to make.\"}, {\"question\": \"When applications close — the centre names no date.\", \"relevance\": \"It sets how long the founder has to decide.\"}, {\"question\": \"Who the programme is for and what it asks of a company across its twelve weeks.\", \"relevance\": \"It decides whether it fits a seed-stage company already in Lakshya's cohort.\"}], \"frames\": {\"primary\": \"A templated call for applications to the centre's pre-incubation programme, starting in November — a programme Nimbus Labs could apply to, or has, as the brief's line says.\", \"rivals\": [\"A mailing-list notice for an earlier-stage programme that does not fit a seed-stage company already in an accelerator's cohort.\", \"General notices about an application the founder has already made, needing nothing.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": \"applied\", \"expected\": \"Nothing is owed while the window is open; the one thing to check at this stage is the receipt.\", \"actual\": \"The centre's only mail is a call for applications; no receipt or status for an application from Nimbus Labs is in the file.\"}, \"scenarios\": {\"do_nothing\": \"If an application went in, nothing is lost; if none did, the window closes on a date nobody wrote down and the programme starts in November without Nimbus Labs.\", \"act\": \"A quick check settles whether an application is in; if not, the founder decides on the programme's fit while applications are open.\", \"best\": \"The receipt is found and the file waits for the centre's decision — or the fit is clear and an application goes in early.\", \"worst\": \"The brief's line is taken on trust, no application exists, and the window closes.\", \"signals_to_watch\": [\"A closing date from the centre.\", \"A receipt or a status for an application from Nimbus Labs.\", \"The programme's terms on who may apply.\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The mail is a templated notice and asks nothing of Nimbus Labs.\", \"No application or receipt from Nimbus Labs is in the file.\", \"The programme starts in November and no closing date is given yet.\"]}, \"mode\": \"find_out\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Check whether Nimbus Labs applied to the centre's pre-incubation programme — a receipt in the mail or a status with the centre — and, if not, decide whether this earlier-stage programme is worth applying to.\", \"for_whom\": \"Nimbus Labs, on its Awadh Enterprise Centre file\", \"by_when\": null}, \"alternative\": \"Write to the centre for its closing date and who the programme is for, then decide.\", \"wait_or_stop\": \"Do not wait on the centre — its mail is templated. Stop once a receipt is found, or once the founder decides not to apply, and close the file with that reason.\", \"done_when\": \"The file shows the application's receipt, or the founder's decision not to apply with its reason.\", \"draft\": null}",
+   "input_tokens": 8961,
+   "output_tokens": 1306,
    "model": "claude-haiku-4-5-20251001"
   },
   "f45171e5fe96ca071f04c2e314cc4ae7306000dd4fda64b930843f23e63917aa": {

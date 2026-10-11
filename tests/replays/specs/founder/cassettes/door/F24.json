@@ -1,0 +1,147 @@
+{
+ "case_id": "F24",
+ "source": "ideal_reader",
+ "recorded_at": "46f37bea",
+ "answers": {
+  "a6fe2a6b9f1edba5afbd9f53629fb197be8021b9d1214385caeab3d1de8ee7f9": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "The third assignment, the unit economics sheet, was due on the fifteenth of September, to the cohort folder.",
+      "evidence": [
+       "evt_4af96cdebc72bdc9f4d52c58"
+      ]
+     },
+     {
+      "claim": "Its ask still shows open in the file.",
+      "evidence": [
+       "loop:loop_616f487fd540d48d09b06d31"
+      ]
+     },
+     {
+      "claim": "Divya then wrote that the Phase-One review presentations are on the thirtieth of September, and asked for the review deck to be uploaded by the twenty-eighth.",
+      "evidence": [
+       "evt_a816b96bda6877a6fd2f4dd8"
+      ]
+     },
+     {
+      "claim": "The review deck's ask is open and waits on us.",
+      "evidence": [
+       "loop:loop_e14e35ea2505c94aed05b5dc"
+      ]
+     },
+     {
+      "claim": "The file has been quiet longer than any gap it closed before.",
+      "evidence": [
+       "num:days_quiet"
+      ]
+     },
+     {
+      "claim": "The engine filed the file's situation as an investor relationship and recorded it as unsupported, a misfiled kind, though it still shows as active.",
+      "evidence": [
+       "sit:sit_e9aeb6551928e46a8c5f8ba1"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "Whether the sheet went into the cohort folder is not in the file: uploads do not show in the mail, so the open ask says nothing either way.",
+      "based_on": [
+       "fact:1",
+       "fact:2"
+      ]
+     },
+     {
+      "claim": "The programme's quiet since its last mail is no sign of trouble: what the file holds now is the programme's own dates, which do not move.",
+      "based_on": [
+       "fact:5",
+       "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point"
+      ]
+     },
+     {
+      "claim": "The deck's date is days away, and the presentations follow soon after it.",
+      "based_on": [
+       "fact:3",
+       "fact:4"
+      ]
+     }
+    ],
+    "patterns": [
+     {
+      "kind": "pattern",
+      "claim": "The programme's dates do not move; every other date is set back from them.",
+      "based_on": [
+       "pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point"
+      ]
+     }
+    ],
+    "hypotheses": [
+     {
+      "proposition": "The sheet is in the cohort folder.",
+      "needs": "A look at the folder."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "Whether the unit economics sheet is in the cohort folder.",
+      "relevance": "If it is not, it needs uploading with a word to Divya."
+     },
+     {
+      "question": "Whether Divya wrote after the mailbox's last completed read, which the dossier dates to the thirteenth.",
+      "relevance": "A later mail could change what the review asks for."
+     }
+    ],
+    "frames": {
+     "primary": "The Phase-One review deck is due on the twenty-eighth, days away, for the review presentations on the thirtieth; the sheet's date has passed, and whether it went in is not in the file.",
+     "rivals": [
+      "Both deliverables in hand, with only the upload of the deck left.",
+      "A review where the sheet's numbers will be asked about, so both need to be in."
+     ]
+    },
+    "proposed_kind": null,
+    "expected_vs_actual": {
+     "stage": "in_programme",
+     "expected": "The programme's own deadlines are the file's calendar, fixed for the whole cohort.",
+     "actual": "The deck's date, the twenty-eighth, is days away; the sheet's date has passed with nothing in the file to say whether it was uploaded."
+    },
+    "scenarios": {
+     "do_nothing": "The twenty-eighth arrives without the deck, and the review on the thirtieth goes ahead without it.",
+     "act": "The deck goes into the folder by the twenty-eighth and the sheet is confirmed in, ready for the review.",
+     "best": "Deck and sheet in the folder, and a review on the thirtieth that goes well.",
+     "worst": "The deck is late and the sheet is found not to be in, both on the eve of the review.",
+     "signals_to_watch": [
+      "The cohort folder showing the deck.",
+      "The cohort folder showing the sheet.",
+      "A reminder from Divya before the twenty-eighth."
+     ]
+    },
+    "appraisal": {
+     "stakes": "medium",
+     "urgency": "high",
+     "reversibility": "reversible",
+     "reasons": [
+      "The deck's date is days away, and the review follows soon after.",
+      "The sheet's status cannot be read from the mail.",
+      "The programme's dates are the same for the whole cohort."
+     ]
+    },
+    "mode": "act",
+    "next_move": {
+     "who": "Arjun",
+     "what": "Upload the Phase-One review deck to the cohort folder by the twenty-eighth, and check the folder holds the unit economics sheet — if it does not, upload it and tell Divya.",
+     "for_whom": "Divya Raman and the Lakshya cohort",
+     "by_when": "2026-09-28"
+    },
+    "alternative": "If the deck cannot be ready by the twenty-eighth, tell Divya before the date and ask what the programme allows.",
+    "wait_or_stop": "Nothing to wait for; the moves are ours. Done when both are in the folder before the review.",
+    "done_when": "The review deck is in the cohort folder by the twenty-eighth, and the sheet is confirmed there.",
+    "draft": null
+   },
+   "raw": "{\"facts\": [{\"claim\": \"The third assignment, the unit economics sheet, was due on the fifteenth of September, to the cohort folder.\", \"evidence\": [\"evt_4af96cdebc72bdc9f4d52c58\"]}, {\"claim\": \"Its ask still shows open in the file.\", \"evidence\": [\"loop:loop_616f487fd540d48d09b06d31\"]}, {\"claim\": \"Divya then wrote that the Phase-One review presentations are on the thirtieth of September, and asked for the review deck to be uploaded by the twenty-eighth.\", \"evidence\": [\"evt_a816b96bda6877a6fd2f4dd8\"]}, {\"claim\": \"The review deck's ask is open and waits on us.\", \"evidence\": [\"loop:loop_e14e35ea2505c94aed05b5dc\"]}, {\"claim\": \"The file has been quiet longer than any gap it closed before.\", \"evidence\": [\"num:days_quiet\"]}, {\"claim\": \"The engine filed the file's situation as an investor relationship and recorded it as unsupported, a misfiled kind, though it still shows as active.\", \"evidence\": [\"sit:sit_e9aeb6551928e46a8c5f8ba1\"]}], \"inferences\": [{\"claim\": \"Whether the sheet went into the cohort folder is not in the file: uploads do not show in the mail, so the open ask says nothing either way.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"The programme's quiet since its last mail is no sign of trouble: what the file holds now is the programme's own dates, which do not move.\", \"based_on\": [\"fact:5\", \"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\"]}, {\"claim\": \"The deck's date is days away, and the presentations follow soon after it.\", \"based_on\": [\"fact:3\", \"fact:4\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"The programme's dates do not move; every other date is set back from them.\", \"based_on\": [\"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\"]}], \"hypotheses\": [{\"proposition\": \"The sheet is in the cohort folder.\", \"needs\": \"A look at the folder.\"}], \"unknowns\": [{\"question\": \"Whether the unit economics sheet is in the cohort folder.\", \"relevance\": \"If it is not, it needs uploading with a word to Divya.\"}, {\"question\": \"Whether Divya wrote after the mailbox's last completed read, which the dossier dates to the thirteenth.\", \"relevance\": \"A later mail could change what the review asks for.\"}], \"frames\": {\"primary\": \"The Phase-One review deck is due on the twenty-eighth, days away, for the review presentations on the thirtieth; the sheet's date has passed, and whether it went in is not in the file.\", \"rivals\": [\"Both deliverables in hand, with only the upload of the deck left.\", \"A review where the sheet's numbers will be asked about, so both need to be in.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": \"in_programme\", \"expected\": \"The programme's own deadlines are the file's calendar, fixed for the whole cohort.\", \"actual\": \"The deck's date, the twenty-eighth, is days away; the sheet's date has passed with nothing in the file to say whether it was uploaded.\"}, \"scenarios\": {\"do_nothing\": \"The twenty-eighth arrives without the deck, and the review on the thirtieth goes ahead without it.\", \"act\": \"The deck goes into the folder by the twenty-eighth and the sheet is confirmed in, ready for the review.\", \"best\": \"Deck and sheet in the folder, and a review on the thirtieth that goes well.\", \"worst\": \"The deck is late and the sheet is found not to be in, both on the eve of the review.\", \"signals_to_watch\": [\"The cohort folder showing the deck.\", \"The cohort folder showing the sheet.\", \"A reminder from Divya before the twenty-eighth.\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"reversible\", \"reasons\": [\"The deck's date is days away, and the review follows soon after.\", \"The sheet's status cannot be read from the mail.\", \"The programme's dates are the same for the whole cohort.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Upload the Phase-One review deck to the cohort folder by the twenty-eighth, and check the folder holds the unit economics sheet — if it does not, upload it and tell Divya.\", \"for_whom\": \"Divya Raman and the Lakshya cohort\", \"by_when\": \"2026-09-28\"}, \"alternative\": \"If the deck cannot be ready by the twenty-eighth, tell Divya before the date and ask what the programme allows.\", \"wait_or_stop\": \"Nothing to wait for; the moves are ours. Done when both are in the folder before the review.\", \"done_when\": \"The review deck is in the cohort folder by the twenty-eighth, and the sheet is confirmed there.\", \"draft\": null}",
+   "input_tokens": 9174,
+   "output_tokens": 1104,
+   "model": "claude-haiku-4-5-20251001"
+  }
+ }
+}

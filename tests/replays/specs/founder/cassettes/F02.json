@@ -1,7 +1,7 @@
 {
  "case_id": "F02",
  "source": "ideal_reader",
- "recorded_at": "7179cd68",
+ "recorded_at": "1b5e5f58",
  "answers": {
   "154cbc9fb8b7a8e7fa8ec2bf5b5118b63d4f0ce7309e4f813e380c708a18c8b3": {
    "site": "extraction",
@@ -236,6 +236,394 @@
    "raw": "{\"intent\": \"acknowledge\", \"stance\": \"neutral\", \"topics\": [\"startup recognition\", \"application status\"], \"entity_mentions\": [{\"surface_form\": \"StartupSetu\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"StartupSetu\", \"start_offset\": 182, \"end_offset\": 193}], \"confidence_bp\": 9000}], \"decision_states\": [{\"subject\": \"the board resolution for the recognition application\", \"state\": \"pending\", \"owner\": \"StartupSetu\", \"evidence\": [{\"quote\": \"The examiner will review it and update the application\", \"start_offset\": 116, \"end_offset\": 170}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"transactional\", \"tone\": \"neutral\", \"formality\": \"templated\", \"addressed_personally\": false, \"human_authored\": false, \"asks_for_reply\": false, \"engagement\": \"medium\"}}",
    "input_tokens": 5531,
    "output_tokens": 192,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "83279eaecb78f3a92b3f3b646b104197575bbb2af29106400ad9e85f11e90189": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "The examiner had asked for a board resolution authorising the applicant, to be uploaded on the StartupSetu portal within the window given, or the application would be closed.",
+      "evidence": [
+       "evt_8e35d40489af90b4aab3ac5a"
+      ]
+     },
+     {
+      "claim": "StartupSetu Support then wrote that it had received the board resolution the founder uploaded, and that the examiner would review it and update the application.",
+      "evidence": [
+       "evt_0cd50331d44cd91129833ec8"
+      ]
+     },
+     {
+      "claim": "StartupSetu then wrote that Nimbus Labs Private Limited is recognised under the StartupSetu programme, with its certificate available on the portal.",
+      "evidence": [
+       "evt_c778e797f2e6c8cc107b3a07"
+      ]
+     },
+     {
+      "claim": "The three notices came within about a day of one another.",
+      "evidence": [
+       "num:usual_gap",
+       "num:longest_gap"
+      ]
+     },
+     {
+      "claim": "The file still lists the examiner's question as an open ask that waits on us.",
+      "evidence": [
+       "loop:loop_ce191d561f3fa9b81d0efc83"
+      ]
+     },
+     {
+      "claim": "The account admin situation formed on the examiner's ask was decided and deferred, and the recognition notice formed a second situation, read as an investor relationship in fundraising.",
+      "evidence": [
+       "sit:sit_3790e1fb03ef0358179ac6a5",
+       "sit:sit_33edff2537c512c84ef733a7"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "The examiner's ask was answered inside its window: the upload was received the day after the ask, and recognition followed.",
+      "based_on": [
+       "fact:1",
+       "fact:2",
+       "fact:3",
+       "fact:4"
+      ]
+     },
+     {
+      "claim": "The open ask is stale: it waits on an upload the portal has already received.",
+      "based_on": [
+       "fact:2",
+       "fact:5"
+      ]
+     },
+     {
+      "claim": "Reading the recognition notice as an investor relationship is a misfiling: it is the outcome of the compliance work the brief names.",
+      "based_on": [
+       "fact:3",
+       "fact:6"
+      ]
+     }
+    ],
+    "patterns": [],
+    "hypotheses": [
+     {
+      "proposition": "Nothing further is needed from the founder for this application.",
+      "needs": "No further StartupSetu notice on it, and the certificate saved."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "Whether the certificate has already been downloaded and kept with the company's documents.",
+      "relevance": "If it has, nothing is left for the founder in this file."
+     },
+     {
+      "question": "Whether anything else the founder applies for needs proof of this recognition soon.",
+      "relevance": "It decides whether saving the certificate is today's task or simply housekeeping."
+     },
+     {
+      "question": "Why the recognition notice is also filed as an investor relationship.",
+      "relevance": "Read as fundraising, the outcome could raise an investor card about a government portal."
+     }
+    ],
+    "frames": {
+     "primary": "The recognition application is done, in the company's favour: the examiner's ask was answered, the portal received the board resolution, and Nimbus Labs Private Limited is now recognised with its certificate on the portal. What remains is to keep the certificate and close the work.",
+     "rivals": [
+      "A file that still shows an open ask waiting on us, which is stale and would raise a reminder for an upload already received.",
+      "The end of the compliance work, with nothing at all left for the founder."
+     ]
+    },
+    "proposed_kind": null,
+    "expected_vs_actual": {
+     "stage": null,
+     "expected": "With no playbook, from the brief: StartupSetu recognition is a goal now; once the examiner's ask is answered, the portal decides, and a recognised company keeps its certificate.",
+     "actual": "The board resolution was uploaded and received the day after the examiner's ask, and the portal then wrote that Nimbus Labs Private Limited is recognised, with its certificate on the portal; the file still lists the examiner's question as open."
+    },
+    "scenarios": {
+     "do_nothing": "Nothing is lost at once, since the certificate stays on the portal; but the file keeps an ask that waits on us, and the brief keeps listing recognition as a goal still to reach.",
+     "act": "Saving the certificate with the company's documents and marking the goal met ends this work cleanly, with the proof of recognition at hand.",
+     "best": "The certificate is saved today and the recognition is on record wherever the company is asked for it.",
+     "worst": "The stale ask raises a reminder to upload a resolution the portal already received, and the founder spends time on work that is done.",
+     "signals_to_watch": [
+      "Any further StartupSetu notice on this application",
+      "An application or programme that asks for proof of recognition",
+      "A reminder raised from the stale open ask"
+     ]
+    },
+    "appraisal": {
+     "stakes": "medium",
+     "urgency": "low",
+     "reversibility": "reversible",
+     "reasons": [
+      "The portal's latest notices close the examiner's ask and recognise the company, so the goal is met.",
+      "What remains, saving the certificate, can be done any day.",
+      "The open ask the file still lists is stale and should not drive a reminder."
+     ]
+    },
+    "mode": "act",
+    "next_move": {
+     "who": "Arjun Rao",
+     "what": "Download the recognition certificate from the StartupSetu portal, keep it with the company's documents, and mark the brief's StartupSetu recognition goal as met",
+     "for_whom": "the StartupSetu recognition file",
+     "by_when": null
+    },
+    "alternative": "If the certificate is not yet downloadable, note where it sits on the portal and come back to it within the week.",
+    "wait_or_stop": "Nothing to wait for once the certificate is saved; stop here, and reopen the file only if StartupSetu writes again.",
+    "done_when": "The certificate is saved with the company's documents, the recognition goal is marked met, and the file's open ask is closed.",
+    "draft": null
+   },
+   "raw": "{\"facts\": [{\"claim\": \"The examiner had asked for a board resolution authorising the applicant, to be uploaded on the StartupSetu portal within the window given, or the application would be closed.\", \"evidence\": [\"evt_8e35d40489af90b4aab3ac5a\"]}, {\"claim\": \"StartupSetu Support then wrote that it had received the board resolution the founder uploaded, and that the examiner would review it and update the application.\", \"evidence\": [\"evt_0cd50331d44cd91129833ec8\"]}, {\"claim\": \"StartupSetu then wrote that Nimbus Labs Private Limited is recognised under the StartupSetu programme, with its certificate available on the portal.\", \"evidence\": [\"evt_c778e797f2e6c8cc107b3a07\"]}, {\"claim\": \"The three notices came within about a day of one another.\", \"evidence\": [\"num:usual_gap\", \"num:longest_gap\"]}, {\"claim\": \"The file still lists the examiner's question as an open ask that waits on us.\", \"evidence\": [\"loop:loop_ce191d561f3fa9b81d0efc83\"]}, {\"claim\": \"The account admin situation formed on the examiner's ask was decided and deferred, and the recognition notice formed a second situation, read as an investor relationship in fundraising.\", \"evidence\": [\"sit:sit_3790e1fb03ef0358179ac6a5\", \"sit:sit_33edff2537c512c84ef733a7\"]}], \"inferences\": [{\"claim\": \"The examiner's ask was answered inside its window: the upload was received the day after the ask, and recognition followed.\", \"based_on\": [\"fact:1\", \"fact:2\", \"fact:3\", \"fact:4\"]}, {\"claim\": \"The open ask is stale: it waits on an upload the portal has already received.\", \"based_on\": [\"fact:2\", \"fact:5\"]}, {\"claim\": \"Reading the recognition notice as an investor relationship is a misfiling: it is the outcome of the compliance work the brief names.\", \"based_on\": [\"fact:3\", \"fact:6\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"Nothing further is needed from the founder for this application.\", \"needs\": \"No further StartupSetu notice on it, and the certificate saved.\"}], \"unknowns\": [{\"question\": \"Whether the certificate has already been downloaded and kept with the company's documents.\", \"relevance\": \"If it has, nothing is left for the founder in this file.\"}, {\"question\": \"Whether anything else the founder applies for needs proof of this recognition soon.\", \"relevance\": \"It decides whether saving the certificate is today's task or simply housekeeping.\"}, {\"question\": \"Why the recognition notice is also filed as an investor relationship.\", \"relevance\": \"Read as fundraising, the outcome could raise an investor card about a government portal.\"}], \"frames\": {\"primary\": \"The recognition application is done, in the company's favour: the examiner's ask was answered, the portal received the board resolution, and Nimbus Labs Private Limited is now recognised with its certificate on the portal. What remains is to keep the certificate and close the work.\", \"rivals\": [\"A file that still shows an open ask waiting on us, which is stale and would raise a reminder for an upload already received.\", \"The end of the compliance work, with nothing at all left for the founder.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"With no playbook, from the brief: StartupSetu recognition is a goal now; once the examiner's ask is answered, the portal decides, and a recognised company keeps its certificate.\", \"actual\": \"The board resolution was uploaded and received the day after the examiner's ask, and the portal then wrote that Nimbus Labs Private Limited is recognised, with its certificate on the portal; the file still lists the examiner's question as open.\"}, \"scenarios\": {\"do_nothing\": \"Nothing is lost at once, since the certificate stays on the portal; but the file keeps an ask that waits on us, and the brief keeps listing recognition as a goal still to reach.\", \"act\": \"Saving the certificate with the company's documents and marking the goal met ends this work cleanly, with the proof of recognition at hand.\", \"best\": \"The certificate is saved today and the recognition is on record wherever the company is asked for it.\", \"worst\": \"The stale ask raises a reminder to upload a resolution the portal already received, and the founder spends time on work that is done.\", \"signals_to_watch\": [\"Any further StartupSetu notice on this application\", \"An application or programme that asks for proof of recognition\", \"A reminder raised from the stale open ask\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The portal's latest notices close the examiner's ask and recognise the company, so the goal is met.\", \"What remains, saving the certificate, can be done any day.\", \"The open ask the file still lists is stale and should not drive a reminder.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun Rao\", \"what\": \"Download the recognition certificate from the StartupSetu portal, keep it with the company's documents, and mark the brief's StartupSetu recognition goal as met\", \"for_whom\": \"the StartupSetu recognition file\", \"by_when\": null}, \"alternative\": \"If the certificate is not yet downloadable, note where it sits on the portal and come back to it within the week.\", \"wait_or_stop\": \"Nothing to wait for once the certificate is saved; stop here, and reopen the file only if StartupSetu writes again.\", \"done_when\": \"The certificate is saved with the company's documents, the recognition goal is marked met, and the file's open ask is closed.\", \"draft\": null}",
+   "input_tokens": 3575,
+   "output_tokens": 1354,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "a4e3f01237a58743cb152f7ab3c3ea5e96ca2f81b76ed51ca6620ff863f9547f": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "DigiVault wrote that a Certificate of Incorporation for Nimbus Labs Private Limited has been issued to the founder's DigiVault account, to be viewed by signing in.",
+      "evidence": [
+       "evt_5da28a4041d61c29619fc6e0"
+      ]
+     },
+     {
+      "claim": "The mail came from a no-reply address, asks for nothing, and is the only touch in this file.",
+      "evidence": [
+       "evt_5da28a4041d61c29619fc6e0",
+       "num:their_reply_time:no-reply@digivault.gov.test"
+      ]
+     },
+     {
+      "claim": "The file sits under an account admin situation, seen for the first time, with no earlier card or outcome.",
+      "evidence": [
+       "sit:sit_2ffd9981fedb283756546398",
+       "hist:derived.history.times_seen@admin",
+       "hist:derived.history.prior_outcome@admin"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "The certificate is a record the company now holds, not a request: nobody waits on the founder here.",
+      "based_on": [
+       "fact:1",
+       "fact:2"
+      ]
+     },
+     {
+      "claim": "The certificate may be one of the documents the StartupSetu recognition application rests on, which is why the brief watches this locker.",
+      "based_on": [
+       "fact:1"
+      ]
+     }
+    ],
+    "patterns": [],
+    "hypotheses": [
+     {
+      "proposition": "The certificate was issued to the locker in connection with the recognition application.",
+      "needs": "A StartupSetu request that names it, or the founder saying why it was issued."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "Whether the recognition application, or any other application, needs this certificate submitted.",
+      "relevance": "If one does, the locker is where to fetch it; if none does, this file needs nothing."
+     },
+     {
+      "question": "Whether the certificate's details are correct.",
+      "relevance": "A wrong detail on an incorporation record is cheaper to correct before an application relies on it."
+     }
+    ],
+    "frames": {
+     "primary": "A government document locker notice: the company's Certificate of Incorporation is now held in its DigiVault account, a record to know about rather than work to do.",
+     "rivals": [
+      "A document the StartupSetu recognition application will need, so worth knowing where it is.",
+      "A routine automated notice with no bearing on any open work."
+     ]
+    },
+    "proposed_kind": null,
+    "expected_vs_actual": {
+     "stage": null,
+     "expected": "With no playbook, from the brief: this locker holds the recognition application's documents, and a notice of a document issued asks nothing unless an application needs it.",
+     "actual": "One automated notice that a certificate was issued; no request, no reply owed, and we have not written in this file."
+    },
+    "scenarios": {
+     "do_nothing": "Nothing is lost: the certificate stays in the locker until it is needed.",
+     "act": "Signing in to view the certificate takes a minute and confirms its details, but changes nothing in any open work.",
+     "best": "The certificate is on hand the day an application asks for it.",
+     "worst": "A wrong detail on the certificate goes unnoticed until an application relies on it.",
+     "signals_to_watch": [
+      "A StartupSetu request for the Certificate of Incorporation",
+      "A further DigiVault notice about this or another company document"
+     ]
+    },
+    "appraisal": {
+     "stakes": "low",
+     "urgency": "low",
+     "reversibility": "reversible",
+     "reasons": [
+      "The mail informs and asks nothing.",
+      "It comes from a no-reply address, so there is no one to answer.",
+      "The certificate stays in the locker whatever the founder does now."
+     ]
+    },
+    "mode": "nothing",
+    "next_move": null,
+    "alternative": "If the founder wants certainty, sign in to DigiVault once and check the certificate's details.",
+    "wait_or_stop": "Nothing to wait for; reopen this file only when an application asks for the certificate.",
+    "done_when": "The founder knows the certificate is in the DigiVault account; nothing else is owed.",
+    "draft": null
+   },
+   "raw": "{\"facts\": [{\"claim\": \"DigiVault wrote that a Certificate of Incorporation for Nimbus Labs Private Limited has been issued to the founder's DigiVault account, to be viewed by signing in.\", \"evidence\": [\"evt_5da28a4041d61c29619fc6e0\"]}, {\"claim\": \"The mail came from a no-reply address, asks for nothing, and is the only touch in this file.\", \"evidence\": [\"evt_5da28a4041d61c29619fc6e0\", \"num:their_reply_time:no-reply@digivault.gov.test\"]}, {\"claim\": \"The file sits under an account admin situation, seen for the first time, with no earlier card or outcome.\", \"evidence\": [\"sit:sit_2ffd9981fedb283756546398\", \"hist:derived.history.times_seen@admin\", \"hist:derived.history.prior_outcome@admin\"]}], \"inferences\": [{\"claim\": \"The certificate is a record the company now holds, not a request: nobody waits on the founder here.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"The certificate may be one of the documents the StartupSetu recognition application rests on, which is why the brief watches this locker.\", \"based_on\": [\"fact:1\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"The certificate was issued to the locker in connection with the recognition application.\", \"needs\": \"A StartupSetu request that names it, or the founder saying why it was issued.\"}], \"unknowns\": [{\"question\": \"Whether the recognition application, or any other application, needs this certificate submitted.\", \"relevance\": \"If one does, the locker is where to fetch it; if none does, this file needs nothing.\"}, {\"question\": \"Whether the certificate's details are correct.\", \"relevance\": \"A wrong detail on an incorporation record is cheaper to correct before an application relies on it.\"}], \"frames\": {\"primary\": \"A government document locker notice: the company's Certificate of Incorporation is now held in its DigiVault account, a record to know about rather than work to do.\", \"rivals\": [\"A document the StartupSetu recognition application will need, so worth knowing where it is.\", \"A routine automated notice with no bearing on any open work.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"With no playbook, from the brief: this locker holds the recognition application's documents, and a notice of a document issued asks nothing unless an application needs it.\", \"actual\": \"One automated notice that a certificate was issued; no request, no reply owed, and we have not written in this file.\"}, \"scenarios\": {\"do_nothing\": \"Nothing is lost: the certificate stays in the locker until it is needed.\", \"act\": \"Signing in to view the certificate takes a minute and confirms its details, but changes nothing in any open work.\", \"best\": \"The certificate is on hand the day an application asks for it.\", \"worst\": \"A wrong detail on the certificate goes unnoticed until an application relies on it.\", \"signals_to_watch\": [\"A StartupSetu request for the Certificate of Incorporation\", \"A further DigiVault notice about this or another company document\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The mail informs and asks nothing.\", \"It comes from a no-reply address, so there is no one to answer.\", \"The certificate stays in the locker whatever the founder does now.\"]}, \"mode\": \"nothing\", \"next_move\": null, \"alternative\": \"If the founder wants certainty, sign in to DigiVault once and check the certificate's details.\", \"wait_or_stop\": \"Nothing to wait for; reopen this file only when an application asks for the certificate.\", \"done_when\": \"The founder knows the certificate is in the DigiVault account; nothing else is owed.\", \"draft\": null}",
+   "input_tokens": 3038,
+   "output_tokens": 903,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "b6cd95363f3a14044b5f574dcf2bfd0bc0a1301849be0e6c97f467315f61e4a5": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "StartupSetu wrote that the examiner requires a board resolution authorising the applicant.",
+      "evidence": [
+       "evt_8e35d40489af90b4aab3ac5a"
+      ]
+     },
+     {
+      "claim": "The mail says to upload it on the StartupSetu portal within the window it gives, or the application will be closed.",
+      "evidence": [
+       "evt_8e35d40489af90b4aab3ac5a"
+      ]
+     },
+     {
+      "claim": "The file holds the examiner's ask as an open question that waits on us.",
+      "evidence": [
+       "loop:loop_ce191d561f3fa9b81d0efc83"
+      ]
+     },
+     {
+      "claim": "The account admin situation formed on this mail was decided and deferred.",
+      "evidence": [
+       "sit:sit_3790e1fb03ef0358179ac6a5"
+      ]
+     },
+     {
+      "claim": "No reply of ours to the portal has been measured, and this work is seen for the first time.",
+      "evidence": [
+       "num:your_reply_time:updates@startupsetu.gov.test",
+       "hist:derived.history.times_seen@admin"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "Unless the board resolution is uploaded within the window, the examiner closes the application and the recognition goal goes back to the start.",
+      "based_on": [
+       "fact:1",
+       "fact:2"
+      ]
+     },
+     {
+      "claim": "A resolution may need the board to pass and sign it, so the work should start now rather than near the end of the window.",
+      "based_on": [
+       "fact:1",
+       "fact:2"
+      ]
+     },
+     {
+      "claim": "The earlier deferral does not fit a dated demand that closes the application; it should not stand as the answer.",
+      "based_on": [
+       "fact:2",
+       "fact:4"
+      ]
+     }
+    ],
+    "patterns": [
+     {
+      "kind": "base_rate",
+      "claim": "There is no history to go on: this work is seen for the first time, with no earlier card or outcome.",
+      "based_on": [
+       "hist:derived.history.times_seen@admin",
+       "hist:derived.history.prior_outcome@admin"
+      ]
+     }
+    ],
+    "hypotheses": [
+     {
+      "proposition": "A board resolution authorising the applicant may already exist among the company's records.",
+      "needs": "The founder confirming whether one has been passed and signed."
+     },
+     {
+      "proposition": "The examiner may ask for more once the resolution is in.",
+      "needs": "The portal's next notice after the upload."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "Whether a signed board resolution authorising the applicant already exists.",
+      "relevance": "If it does, the move is a quick upload; if not, the board must pass one inside the window."
+     },
+     {
+      "question": "Who is named as the applicant, and exactly what the resolution must authorise.",
+      "relevance": "A resolution that names the wrong person or scope could draw a second query and use up the window."
+     },
+     {
+      "question": "Whether the portal asks for a set format for the upload.",
+      "relevance": "A file the portal refuses would cost days the window does not have."
+     }
+    ],
+    "frames": {
+     "primary": "A live compliance application with a hard deadline: the examiner wants a board resolution authorising the applicant, and the application closes unless it is uploaded within the window.",
+     "rivals": [
+      "A routine document request the founder can clear quickly if the resolution already exists.",
+      "The first of several queries before the examiner decides."
+     ]
+    },
+    "proposed_kind": null,
+    "expected_vs_actual": {
+     "stage": null,
+     "expected": "With no playbook, from the brief: StartupSetu recognition is a goal now and this is its application; at examination, the applicant answers the examiner's queries within the window given.",
+     "actual": "The examiner has asked for a board resolution authorising the applicant, on pain of closing the application; nothing in the file shows it uploaded, and an earlier judgment deferred the file."
+    },
+    "scenarios": {
+     "do_nothing": "The window passes, the examiner closes the application, and the recognition goal goes back to the start.",
+     "act": "The founder has the board pass or find the resolution and uploads it on the portal well inside the window, and the examination continues.",
+     "best": "The resolution already exists, goes up today, the portal acknowledges it, and the examiner moves on to a decision.",
+     "worst": "The resolution goes up late, or in a form the examiner will not accept, and the application is closed.",
+     "signals_to_watch": [
+      "A portal acknowledgement that the resolution was received",
+      "A further query from the examiner",
+      "The window's end drawing near with nothing uploaded"
+     ]
+    },
+    "appraisal": {
+     "stakes": "high",
+     "urgency": "high",
+     "reversibility": "costly_to_reverse",
+     "reasons": [
+      "The brief names StartupSetu recognition as a goal now.",
+      "The mail sets a window and says the application will be closed when it passes.",
+      "A closed application would have to be filed again, costing far more than the upload.",
+      "The question waits on us, and nobody else can supply a resolution of the company's board."
+     ]
+    },
+    "mode": "act",
+    "next_move": {
+     "who": "Arjun Rao",
+     "what": "Get a board resolution authorising the applicant signed, or find the one already passed, and upload it on the StartupSetu portal against the recognition application",
+     "for_whom": "StartupSetu's examiner",
+     "by_when": "2026-10-06"
+    },
+    "alternative": "If the board cannot sign in time, write to StartupSetu through the portal before the window ends to ask for more time.",
+    "wait_or_stop": "Do not wait: act now. Once the portal confirms the upload, wait for the examiner; stop when the application shows a decision.",
+    "done_when": "The portal confirms it received the board resolution and the application continues in examination.",
+    "draft": null
+   },
+   "raw": "{\"facts\": [{\"claim\": \"StartupSetu wrote that the examiner requires a board resolution authorising the applicant.\", \"evidence\": [\"evt_8e35d40489af90b4aab3ac5a\"]}, {\"claim\": \"The mail says to upload it on the StartupSetu portal within the window it gives, or the application will be closed.\", \"evidence\": [\"evt_8e35d40489af90b4aab3ac5a\"]}, {\"claim\": \"The file holds the examiner's ask as an open question that waits on us.\", \"evidence\": [\"loop:loop_ce191d561f3fa9b81d0efc83\"]}, {\"claim\": \"The account admin situation formed on this mail was decided and deferred.\", \"evidence\": [\"sit:sit_3790e1fb03ef0358179ac6a5\"]}, {\"claim\": \"No reply of ours to the portal has been measured, and this work is seen for the first time.\", \"evidence\": [\"num:your_reply_time:updates@startupsetu.gov.test\", \"hist:derived.history.times_seen@admin\"]}], \"inferences\": [{\"claim\": \"Unless the board resolution is uploaded within the window, the examiner closes the application and the recognition goal goes back to the start.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"A resolution may need the board to pass and sign it, so the work should start now rather than near the end of the window.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"The earlier deferral does not fit a dated demand that closes the application; it should not stand as the answer.\", \"based_on\": [\"fact:2\", \"fact:4\"]}], \"patterns\": [{\"kind\": \"base_rate\", \"claim\": \"There is no history to go on: this work is seen for the first time, with no earlier card or outcome.\", \"based_on\": [\"hist:derived.history.times_seen@admin\", \"hist:derived.history.prior_outcome@admin\"]}], \"hypotheses\": [{\"proposition\": \"A board resolution authorising the applicant may already exist among the company's records.\", \"needs\": \"The founder confirming whether one has been passed and signed.\"}, {\"proposition\": \"The examiner may ask for more once the resolution is in.\", \"needs\": \"The portal's next notice after the upload.\"}], \"unknowns\": [{\"question\": \"Whether a signed board resolution authorising the applicant already exists.\", \"relevance\": \"If it does, the move is a quick upload; if not, the board must pass one inside the window.\"}, {\"question\": \"Who is named as the applicant, and exactly what the resolution must authorise.\", \"relevance\": \"A resolution that names the wrong person or scope could draw a second query and use up the window.\"}, {\"question\": \"Whether the portal asks for a set format for the upload.\", \"relevance\": \"A file the portal refuses would cost days the window does not have.\"}], \"frames\": {\"primary\": \"A live compliance application with a hard deadline: the examiner wants a board resolution authorising the applicant, and the application closes unless it is uploaded within the window.\", \"rivals\": [\"A routine document request the founder can clear quickly if the resolution already exists.\", \"The first of several queries before the examiner decides.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"With no playbook, from the brief: StartupSetu recognition is a goal now and this is its application; at examination, the applicant answers the examiner's queries within the window given.\", \"actual\": \"The examiner has asked for a board resolution authorising the applicant, on pain of closing the application; nothing in the file shows it uploaded, and an earlier judgment deferred the file.\"}, \"scenarios\": {\"do_nothing\": \"The window passes, the examiner closes the application, and the recognition goal goes back to the start.\", \"act\": \"The founder has the board pass or find the resolution and uploads it on the portal well inside the window, and the examination continues.\", \"best\": \"The resolution already exists, goes up today, the portal acknowledges it, and the examiner moves on to a decision.\", \"worst\": \"The resolution goes up late, or in a form the examiner will not accept, and the application is closed.\", \"signals_to_watch\": [\"A portal acknowledgement that the resolution was received\", \"A further query from the examiner\", \"The window's end drawing near with nothing uploaded\"]}, \"appraisal\": {\"stakes\": \"high\", \"urgency\": \"high\", \"reversibility\": \"costly_to_reverse\", \"reasons\": [\"The brief names StartupSetu recognition as a goal now.\", \"The mail sets a window and says the application will be closed when it passes.\", \"A closed application would have to be filed again, costing far more than the upload.\", \"The question waits on us, and nobody else can supply a resolution of the company's board.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun Rao\", \"what\": \"Get a board resolution authorising the applicant signed, or find the one already passed, and upload it on the StartupSetu portal against the recognition application\", \"for_whom\": \"StartupSetu's examiner\", \"by_when\": \"2026-10-06\"}, \"alternative\": \"If the board cannot sign in time, write to StartupSetu through the portal before the window ends to ask for more time.\", \"wait_or_stop\": \"Do not wait: act now. Once the portal confirms the upload, wait for the examiner; stop when the application shows a decision.\", \"done_when\": \"The portal confirms it received the board resolution and the application continues in examination.\", \"draft\": null}",
+   "input_tokens": 3091,
+   "output_tokens": 1301,
    "model": "claude-haiku-4-5-20251001"
   },
   "ee64c8490d0e3f897d00a93674ff030c18ae06cb2c29e595d0577cc35a1cbf4e": {

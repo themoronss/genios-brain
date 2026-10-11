@@ -229,7 +229,7 @@
       {
        "claim": "Marco replied about five days later, apologising for the slow reply, saying he would like to understand how Nimbus handles investor pipelines, and asking for a short deck before they set up a call.",
        "evidence": [
-        "evt_fcd6cecb5bba5113d4385241",
+        "evt_47e6f6967a7e71c511a21331",
         "num:usual_gap"
        ]
       },
@@ -303,7 +303,7 @@
       "why": "Marco Ruiz backs business-to-business software at Altavia Partners and asks for a deck before a call, which reads as a fund screening a raise; while the founder raises the seed round, the work this file holds is raising from it, introduced by the connector.",
       "evidence": [
        "evt_de534177fe392262e4e90ec7",
-       "evt_fcd6cecb5bba5113d4385241"
+       "evt_47e6f6967a7e71c511a21331"
       ]
      },
      "expected_vs_actual": {

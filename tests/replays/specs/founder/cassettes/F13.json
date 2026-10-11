@@ -1,7 +1,7 @@
 {
  "case_id": "F13",
  "source": "ideal_reader",
- "recorded_at": "7179cd68",
+ "recorded_at": "1b5e5f58",
  "answers": {
   "1103207e935542578fd9b983d512ba8cf5dd48bc9d572b48c19cf02566b83659": {
    "site": "r1",
@@ -24,6 +24,175 @@
    "raw": "{\"readings\": [{\"item\": 1, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}, {\"item\": 2, \"ambiguous\": false, \"classification\": \"NOT_INTERPRETABLE\", \"confidence_bp\": 5000}]}",
    "input_tokens": 1035,
    "output_tokens": 51,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "234fc050eab2c88937617b39cec8ad88686c81a7c46f13bd0388764fb34c8b59": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "Mohit Sethi, a partner at Tusker Capital, wrote that it was good to connect last week and asked for current traction metrics before the firm's Monday partners' meeting.",
+      "evidence": [
+       "evt_e11237c955138c90261649f8"
+      ]
+     },
+     {
+      "claim": "He named the metrics — monthly active teams, revenue run-rate and the pilot pipeline — and said a one-pager is fine.",
+      "evidence": [
+       "evt_e11237c955138c90261649f8"
+      ]
+     },
+     {
+      "claim": "The file holds one open ask, Mohit's request, waiting on us.",
+      "evidence": [
+       "loop:loop_29f2bf391a481189068fff05"
+      ]
+     },
+     {
+      "claim": "Our reply time to Mohit is not measured: the file holds no mail from Arjun to him.",
+      "evidence": [
+       "num:your_reply_time:mohit@tuskercap.test"
+      ]
+     },
+     {
+      "claim": "The investor playbook, not yet reviewed, says a partnership decides in its weekly cycle and that silence more than a week after a partners' meeting usually means no.",
+      "evidence": [
+       "pb:founder_office.pb.investor_relations.run_an_investor_conversation",
+       "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
+      ]
+     },
+     {
+      "claim": "The engine files this investor's conversation under an admin account situation, not a fundraising one.",
+      "evidence": [
+       "sit:sit_aa5ecf1cee7c356fcca5a85a"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "Mohit is taking Nimbus Labs to his partners on Monday, and the one-pager is what he will make the case from.",
+      "based_on": [
+       "fact:1",
+       "fact:2"
+      ]
+     },
+     {
+      "claim": "The metrics are of use only if they reach him before Monday; after the meeting they answer a question nobody is asking.",
+      "based_on": [
+       "fact:1",
+       "fact:3"
+      ]
+     },
+     {
+      "claim": "A partner asking for a one-pager wants it short: the three metrics he named, current, and nothing he has to dig for.",
+      "based_on": [
+       "fact:2"
+      ]
+     }
+    ],
+    "patterns": [
+     {
+      "kind": "base_rate",
+      "claim": "About half the companies reviewed at a partners' meeting go on to diligence.",
+      "based_on": [
+       "pb:founder_office.pb.investor_relations.run_an_investor_conversation"
+      ]
+     },
+     {
+      "kind": "pattern",
+      "claim": "A partnership's no rarely arrives as a no; it arrives as silence after the meeting.",
+      "based_on": [
+       "pb:founder_office.heu.investor_relations.silence_reads_by_stage"
+      ]
+     },
+     {
+      "kind": "pattern",
+      "claim": "When the turn is ours the clock runs against us, and nobody says so.",
+      "based_on": [
+       "pb:founder_office.heu.investor_relations.investors_do_not_chase"
+      ]
+     },
+     {
+      "kind": "counter_pattern",
+      "claim": "A partner championing the company is not an offer; only a definite offer in writing counts.",
+      "based_on": [
+       "pb:founder_office.heu.investor_relations.only_an_offer_counts"
+      ]
+     }
+    ],
+    "hypotheses": [
+     {
+      "proposition": "Nimbus Labs is on Monday's agenda, with Mohit bringing it in.",
+      "needs": "Mohit confirming it, or the outcome he reports after the meeting."
+     },
+     {
+      "proposition": "Tusker will ask for diligence material after Monday if the metrics hold up.",
+      "needs": "A data-room, reference or customer-call request after the meeting."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "The current values of the three metrics Mohit named.",
+      "relevance": "They are the content of the reply; the dossier holds none, and none may be guessed."
+     },
+     {
+      "question": "What was said when Arjun and Mohit connected last week.",
+      "relevance": "The page should answer what that conversation left open; the file holds no record of it."
+     },
+     {
+      "question": "At what hour, and in which time zone, the partners meet on Monday.",
+      "relevance": "It sets how early the page must arrive to be read."
+     }
+    ],
+    "frames": {
+     "primary": "A fund's partner is taking Nimbus Labs to his Monday partners' meeting and needs a one-page traction summary before it.",
+     "rivals": [
+      "A partner screening several companies before choosing which to bring to the meeting, where the page decides whether Nimbus Labs is discussed at all.",
+      "A routine request for information with no meeting decision riding on it."
+     ]
+    },
+    "proposed_kind": null,
+    "expected_vs_actual": {
+     "stage": "partner_meeting",
+     "expected": "At the partner meeting stage the partnership decides in its weekly cycle and the partner who brought the company in carries its case, so what he asked for reaches him before the meeting.",
+     "actual": "Mohit asked for the traction one-pager before Monday's partners' meeting; the file holds no answer from Arjun."
+    },
+    "scenarios": {
+     "do_nothing": "Mohit goes into the meeting without the figures he asked for; the partnership decides without them or puts the company off, and silence after a partners' meeting usually becomes a no.",
+     "act": "A one-pager with the three metrics, sent before Monday, gives Mohit what he needs to make the case.",
+     "best": "The partnership opens diligence after Monday with a data-room, reference or customer-call request.",
+     "worst": "The page arrives after the meeting, or carries figures that raise questions nobody is there to answer, and the fund passes quietly.",
+     "signals_to_watch": [
+      "Mohit acknowledging the page before Monday",
+      "A diligence request after the meeting",
+      "Silence for more than a week after the meeting"
+     ]
+    },
+    "appraisal": {
+     "stakes": "high",
+     "urgency": "high",
+     "reversibility": "costly_to_reverse",
+     "reasons": [
+      "A partner is taking the company to his partnership, a step most investor conversations never reach.",
+      "The page is useful only before Monday's meeting, and the reply is ours.",
+      "A partnership's decision made without the page is hard to reopen."
+     ]
+    },
+    "mode": "act",
+    "next_move": {
+     "who": "Arjun",
+     "what": "Email Mohit a one-page summary of current traction — monthly active teams, revenue run-rate and the pilot pipeline — before Monday's partners' meeting",
+     "for_whom": "Mohit Sethi at Tusker Capital",
+     "by_when": "2026-08-09"
+    },
+    "alternative": "If a one-pager cannot be ready in time, put the three figures in the body of a short mail before Monday and follow with the page.",
+    "wait_or_stop": "Do not wait: Monday is the deadline. After the meeting, a few quiet days are the partnership's cycle; silence for more than a week after it is a soft no, to be recorded rather than chased.",
+    "done_when": "Mohit has the one-pager before Monday, and the fund says what its partnership decided.",
+    "draft": "Hi Mohit, good to connect last week. Ahead of your partners' meeting on Monday, here is our one-pager on current traction — monthly active teams, revenue run-rate and the pilot pipeline: [one-pager]. Happy to answer anything before the meeting. Arjun"
+   },
+   "raw": "{\"facts\": [{\"claim\": \"Mohit Sethi, a partner at Tusker Capital, wrote that it was good to connect last week and asked for current traction metrics before the firm's Monday partners' meeting.\", \"evidence\": [\"evt_e11237c955138c90261649f8\"]}, {\"claim\": \"He named the metrics — monthly active teams, revenue run-rate and the pilot pipeline — and said a one-pager is fine.\", \"evidence\": [\"evt_e11237c955138c90261649f8\"]}, {\"claim\": \"The file holds one open ask, Mohit's request, waiting on us.\", \"evidence\": [\"loop:loop_29f2bf391a481189068fff05\"]}, {\"claim\": \"Our reply time to Mohit is not measured: the file holds no mail from Arjun to him.\", \"evidence\": [\"num:your_reply_time:mohit@tuskercap.test\"]}, {\"claim\": \"The investor playbook, not yet reviewed, says a partnership decides in its weekly cycle and that silence more than a week after a partners' meeting usually means no.\", \"evidence\": [\"pb:founder_office.pb.investor_relations.run_an_investor_conversation\", \"pb:founder_office.heu.investor_relations.silence_reads_by_stage\"]}, {\"claim\": \"The engine files this investor's conversation under an admin account situation, not a fundraising one.\", \"evidence\": [\"sit:sit_aa5ecf1cee7c356fcca5a85a\"]}], \"inferences\": [{\"claim\": \"Mohit is taking Nimbus Labs to his partners on Monday, and the one-pager is what he will make the case from.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"The metrics are of use only if they reach him before Monday; after the meeting they answer a question nobody is asking.\", \"based_on\": [\"fact:1\", \"fact:3\"]}, {\"claim\": \"A partner asking for a one-pager wants it short: the three metrics he named, current, and nothing he has to dig for.\", \"based_on\": [\"fact:2\"]}], \"patterns\": [{\"kind\": \"base_rate\", \"claim\": \"About half the companies reviewed at a partners' meeting go on to diligence.\", \"based_on\": [\"pb:founder_office.pb.investor_relations.run_an_investor_conversation\"]}, {\"kind\": \"pattern\", \"claim\": \"A partnership's no rarely arrives as a no; it arrives as silence after the meeting.\", \"based_on\": [\"pb:founder_office.heu.investor_relations.silence_reads_by_stage\"]}, {\"kind\": \"pattern\", \"claim\": \"When the turn is ours the clock runs against us, and nobody says so.\", \"based_on\": [\"pb:founder_office.heu.investor_relations.investors_do_not_chase\"]}, {\"kind\": \"counter_pattern\", \"claim\": \"A partner championing the company is not an offer; only a definite offer in writing counts.\", \"based_on\": [\"pb:founder_office.heu.investor_relations.only_an_offer_counts\"]}], \"hypotheses\": [{\"proposition\": \"Nimbus Labs is on Monday's agenda, with Mohit bringing it in.\", \"needs\": \"Mohit confirming it, or the outcome he reports after the meeting.\"}, {\"proposition\": \"Tusker will ask for diligence material after Monday if the metrics hold up.\", \"needs\": \"A data-room, reference or customer-call request after the meeting.\"}], \"unknowns\": [{\"question\": \"The current values of the three metrics Mohit named.\", \"relevance\": \"They are the content of the reply; the dossier holds none, and none may be guessed.\"}, {\"question\": \"What was said when Arjun and Mohit connected last week.\", \"relevance\": \"The page should answer what that conversation left open; the file holds no record of it.\"}, {\"question\": \"At what hour, and in which time zone, the partners meet on Monday.\", \"relevance\": \"It sets how early the page must arrive to be read.\"}], \"frames\": {\"primary\": \"A fund's partner is taking Nimbus Labs to his Monday partners' meeting and needs a one-page traction summary before it.\", \"rivals\": [\"A partner screening several companies before choosing which to bring to the meeting, where the page decides whether Nimbus Labs is discussed at all.\", \"A routine request for information with no meeting decision riding on it.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": \"partner_meeting\", \"expected\": \"At the partner meeting stage the partnership decides in its weekly cycle and the partner who brought the company in carries its case, so what he asked for reaches him before the meeting.\", \"actual\": \"Mohit asked for the traction one-pager before Monday's partners' meeting; the file holds no answer from Arjun.\"}, \"scenarios\": {\"do_nothing\": \"Mohit goes into the meeting without the figures he asked for; the partnership decides without them or puts the company off, and silence after a partners' meeting usually becomes a no.\", \"act\": \"A one-pager with the three metrics, sent before Monday, gives Mohit what he needs to make the case.\", \"best\": \"The partnership opens diligence after Monday with a data-room, reference or customer-call request.\", \"worst\": \"The page arrives after the meeting, or carries figures that raise questions nobody is there to answer, and the fund passes quietly.\", \"signals_to_watch\": [\"Mohit acknowledging the page before Monday\", \"A diligence request after the meeting\", \"Silence for more than a week after the meeting\"]}, \"appraisal\": {\"stakes\": \"high\", \"urgency\": \"high\", \"reversibility\": \"costly_to_reverse\", \"reasons\": [\"A partner is taking the company to his partnership, a step most investor conversations never reach.\", \"The page is useful only before Monday's meeting, and the reply is ours.\", \"A partnership's decision made without the page is hard to reopen.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Email Mohit a one-page summary of current traction — monthly active teams, revenue run-rate and the pilot pipeline — before Monday's partners' meeting\", \"for_whom\": \"Mohit Sethi at Tusker Capital\", \"by_when\": \"2026-08-09\"}, \"alternative\": \"If a one-pager cannot be ready in time, put the three figures in the body of a short mail before Monday and follow with the page.\", \"wait_or_stop\": \"Do not wait: Monday is the deadline. After the meeting, a few quiet days are the partnership's cycle; silence for more than a week after it is a soft no, to be recorded rather than chased.\", \"done_when\": \"Mohit has the one-pager before Monday, and the fund says what its partnership decided.\", \"draft\": \"Hi Mohit, good to connect last week. Ahead of your partners' meeting on Monday, here is our one-pager on current traction — monthly active teams, revenue run-rate and the pilot pipeline: [one-pager]. Happy to answer anything before the meeting. Arjun\"}",
+   "input_tokens": 7968,
+   "output_tokens": 1560,
    "model": "claude-haiku-4-5-20251001"
   },
   "784d203b1f1e0ebf14c8923cb443f76be2a9d1c10b8f20732472979608d74757": {
@@ -52,25 +221,6 @@
    "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Nimbus Labs - traction metrics?\", \"start_offset\": 0, \"end_offset\": 31, \"speaker_role_said\": \"unknown\"}",
    "input_tokens": 1551,
    "output_tokens": 45,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "8b7fa3bdf6ee100435301a53346fbb3cd8c33ae0c0e619fbde9b0499415f4552": {
-   "site": "relevance",
-   "parsed": {
-    "verdicts": [
-     {
-      "item": 1,
-      "business": true,
-      "description": "Nimbus Labs - traction metrics?",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     }
-    ]
-   },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Nimbus Labs - traction metrics?\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "input_tokens": 1204,
-   "output_tokens": 41,
    "model": "claude-haiku-4-5-20251001"
   },
   "9fd8545b292ccbf18db2e2d4553cf7acaba1c1051aecf2c07f5e6a55f8f86775": {
@@ -216,21 +366,6 @@
    "raw": "{\"intent\": \"request\", \"stance\": \"positive\", \"topics\": [\"traction metrics\", \"seed round\"], \"entity_mentions\": [{\"surface_form\": \"Mohit Sethi\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Mohit Sethi\", \"start_offset\": 249, \"end_offset\": 260}], \"confidence_bp\": 9000}, {\"surface_form\": \"Tusker Capital\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Tusker Capital\", \"start_offset\": 270, \"end_offset\": 284}], \"confidence_bp\": 9000}, {\"surface_form\": \"Nimbus Labs\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"Nimbus Labs\", \"start_offset\": 0, \"end_offset\": 11}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Share the current traction metrics: monthly active teams, revenue run-rate and the pilot pipeline\", \"asked_by\": \"Mohit Sethi\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"could you share your current traction metrics\", \"start_offset\": 108, \"end_offset\": 153}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"Monday\", \"earliest\": \"2026-08-10T00:00:00+05:30\", \"latest\": \"2026-08-10T23:59:59+05:30\", \"certainty\": \"relative\", \"resolved_against\": \"2026-08-08T06:30:00Z\", \"evidence\": [{\"quote\": \"Monday\", \"start_offset\": 82, \"end_offset\": 88}]}], \"business_facts\": [{\"field\": \"person.title\", \"subject\": \"Mohit Sethi\", \"value\": \"Partner\", \"standing\": \"observed\", \"evidence\": [{\"quote\": \"Partner, Tusker Capital\", \"start_offset\": 261, \"end_offset\": 284}], \"confidence_bp\": 9000}, {\"field\": \"thread.objective\", \"subject\": \"thread\", \"value\": \"traction metrics before the partners' meeting\", \"standing\": \"judgement\", \"evidence\": [{\"quote\": \"could you share your current traction metrics\", \"start_offset\": 108, \"end_offset\": 153}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"traction metrics before the partners' meeting\"}, \"implied_actions\": [\"share the current traction metrics before Monday\"]}",
    "input_tokens": 5546,
    "output_tokens": 504,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "d2afb2a2a167ff66fa6e07e43515253c870d0a044115333ed26aeac321ae4b20": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "input_tokens": 1061,
-   "output_tokens": 24,
    "model": "claude-haiku-4-5-20251001"
   }
  }
