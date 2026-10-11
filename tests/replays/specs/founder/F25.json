@@ -330,6 +330,258 @@
      "artifact": "Who moves the board approval of the ESOP pool, and by when?"
     }
    }
+  ],
+  "expert": [
+   {
+    "when": [
+     "<inboxmail.test>",
+     "once i've read the documents"
+    ],
+    "by": "claude",
+    "answer": {
+     "proposed_kind": null,
+     "draft": "Hi all, Kavitha Nair is excited about our Founding AI Engineer offer and will confirm by the twelfth once she has read the engagement documents. Those can only go once the board approves the ESOP pool — could we approve it in the next day or two? Arjun",
+     "next_move": {
+      "who": "Arjun",
+      "what": "Get the board's approval of the ESOP pool now, and send Kavitha the engagement documents the day it is given — in time for her to read them before the twelfth.",
+      "for_whom": "Kavitha Nair",
+      "by_when": "2026-08-12"
+     },
+     "facts": [
+      {
+       "claim": "Arjun offered Kavitha Nair the Founding AI Engineer role at Nimbus Labs — the salary they discussed and ESOPs vesting over four years — subject to the board approving the ESOP pool.",
+       "evidence": [
+        "evt_5d126b6651a2fd44c3737382"
+       ]
+      },
+      {
+       "claim": "The offer asked Kavitha to confirm her acceptance by the twelfth of August, and said the engagement documents will follow once the board approves.",
+       "evidence": [
+        "evt_5d126b6651a2fd44c3737382"
+       ]
+      },
+      {
+       "claim": "Kavitha replied, in under two days, that she is excited and will confirm by the twelfth once she has read the documents.",
+       "evidence": [
+        "evt_f81b74d10a59df3b036b80c0",
+        "num:their_reply_time:kavitha.nair@inboxmail.test"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "Her confirmation now hangs on documents that cannot go out before the board approves the ESOP pool, so the board's approval decides whether the twelfth holds.",
+       "based_on": [
+        "fact:2",
+        "fact:3"
+       ]
+      },
+      {
+       "claim": "Nothing more is owed by Kavitha until the documents reach her: the next step on this file is the company's.",
+       "based_on": [
+        "fact:2",
+        "fact:3"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "counter_pattern",
+       "claim": "No hiring playbook is written for this file and none names a stop rule, so no usual course can be read off it; the only clock is the date in the offer.",
+       "based_on": [
+        "whatif:14",
+        "evt_5d126b6651a2fd44c3737382"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "The board's approval of the ESOP pool may already be in motion outside the mailbox.",
+       "needs": "Arjun's word on whether the resolution is with the board, and when it will be passed."
+      },
+      {
+       "proposition": "Kavitha may want a word on the terms, beyond the documents, before she confirms.",
+       "needs": "Her questions once the documents reach her."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Has the board approved, or even been asked to approve, the ESOP pool?",
+       "relevance": "If the approval cannot land before the twelfth, the date has to move with Kavitha's agreement rather than lapse."
+      },
+      {
+       "question": "Are the engagement documents drafted and ready to send the day the board approves?",
+       "relevance": "If not, drafting them is a second step between the board and Kavitha."
+      },
+      {
+       "question": "Has Kavitha heard anything outside this mailbox — a call, a draft agreement?",
+       "relevance": "It changes what she still needs before she can confirm."
+      }
+     ],
+     "frames": {
+      "primary": "A founding hire who has said yes in spirit: Kavitha will confirm once she has read the engagement documents, and those wait on the board approving the ESOP pool — the next step is the company's, not hers.",
+      "rivals": [
+       "A plain wait on the candidate: her answer is due by the twelfth and nothing is needed from the founder until then.",
+       "An offer drifting into risk: if the pool is not approved in time, the documents and her acceptance both slip, and a warm hire cools."
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "From the brief's goal of hiring a Founding AI Engineer and the offer itself: the board approves the ESOP pool, the engagement documents reach Kavitha, and she confirms by the twelfth of August.",
+      "actual": "Kavitha replied warmly that she will confirm by the twelfth once she has read the documents; nothing in the file shows the board's approval or the documents going to her."
+     },
+     "scenarios": {
+      "do_nothing": "The twelfth comes with no documents in Kavitha's hands, she cannot confirm as she said she would, and the offer's date passes on the company's delay, not hers.",
+      "act": "Getting the board's approval now lets the documents reach Kavitha with time to read them, so her confirmation can land by the twelfth.",
+      "best": "The board approves at once, the documents go out, and Kavitha confirms in writing by the twelfth.",
+      "worst": "The approval stalls, the date passes in silence, and a founding hire who was excited cools or accepts another offer.",
+      "signals_to_watch": [
+       "The board's approval of the ESOP pool on record",
+       "The engagement documents sent to Kavitha",
+       "Kavitha writing again before the twelfth — with questions, or to ask for time"
+      ]
+     },
+     "appraisal": {
+      "stakes": "high",
+      "urgency": "high",
+      "reversibility": "costly_to_reverse",
+      "reasons": [
+       "Hiring a Founding AI Engineer is one of the goals the brief names.",
+       "Her confirmation waits on the documents, and the documents wait on the board, against the twelfth of August.",
+       "A founding hire lost to delay, or an acceptance given on a pool the board has not approved, is costly to undo."
+      ]
+     },
+     "mode": "act",
+     "alternative": "If the board cannot approve in time, write to Kavitha before the twelfth, tell her the documents follow the board's approval, and agree a new date for her confirmation.",
+     "wait_or_stop": "Once the documents are with her, wait for her confirmation until the twelfth; if the board has not approved by then, stop waiting on it and move the date with Kavitha in writing.",
+     "done_when": "The ESOP pool is approved, Kavitha has the engagement documents, and her acceptance is in writing."
+    }
+   },
+   {
+    "when": [
+     "<inboxmail.test>"
+    ],
+    "by": "claude",
+    "answer": {
+     "proposed_kind": null,
+     "draft": "Hi all, I have offered Kavitha Nair the Founding AI Engineer role, subject to the board approving the ESOP pool, and asked her to confirm by the twelfth of August. Her engagement documents can only go once the pool is approved — could we approve it this week? Arjun",
+     "next_move": {
+      "who": "Arjun",
+      "what": "Ask the board to approve the ESOP pool now, and have the engagement documents ready to send Kavitha the day it does.",
+      "for_whom": "Kavitha Nair, so she can accept by the twelfth of August",
+      "by_when": "2026-08-12"
+     },
+     "facts": [
+      {
+       "claim": "Arjun offered Kavitha Nair the Founding AI Engineer role at Nimbus Labs — the salary they discussed and ESOPs vesting over four years — subject to the board approving the ESOP pool.",
+       "evidence": [
+        "evt_5d126b6651a2fd44c3737382"
+       ]
+      },
+      {
+       "claim": "The offer asked Kavitha to confirm her acceptance by the twelfth of August, and said the engagement documents will follow once the board approves.",
+       "evidence": [
+        "evt_5d126b6651a2fd44c3737382"
+       ]
+      },
+      {
+       "claim": "The file's history holds no earlier card or outcome: the engine sees it for the first time.",
+       "evidence": [
+        "hist:derived.history.times_seen@admin",
+        "hist:derived.history.prior_outcome@admin",
+        "hist:derived.history.prior_card_verdict@admin"
+       ]
+      }
+     ],
+     "inferences": [
+      {
+       "claim": "If the board has not approved the pool by the twelfth, Kavitha would be accepting an offer whose equity is still conditional and whose documents she has not seen.",
+       "based_on": [
+        "fact:1",
+        "fact:2"
+       ]
+      },
+      {
+       "claim": "The board's approval is the company's to drive, so the next move on this file is ours even while the answer is hers.",
+       "based_on": [
+        "fact:1",
+        "fact:2"
+       ]
+      }
+     ],
+     "patterns": [
+      {
+       "kind": "counter_pattern",
+       "claim": "No hiring playbook is written for this file and none names a stop rule, so no usual course can be read off it; the only clock is the date in the offer.",
+       "based_on": [
+        "whatif:14",
+        "evt_5d126b6651a2fd44c3737382"
+       ]
+      }
+     ],
+     "hypotheses": [
+      {
+       "proposition": "The board's approval of the ESOP pool may already be in motion outside the mailbox.",
+       "needs": "Arjun's word on whether the resolution is with the board, and when it will be passed."
+      },
+      {
+       "proposition": "Kavitha may want the engagement documents in hand before she accepts.",
+       "needs": "Her reply, or a direct question to her."
+      }
+     ],
+     "unknowns": [
+      {
+       "question": "Has the board been asked to approve the ESOP pool, and how soon can it?",
+       "relevance": "If it cannot approve before the twelfth, the documents cannot reach Kavitha in time and the date has to move."
+      },
+      {
+       "question": "Are the engagement documents drafted and ready to send the day the board approves?",
+       "relevance": "If not, drafting them is a second step between the board and Kavitha."
+      },
+      {
+       "question": "Does Kavitha hold another offer, or a notice period to serve?",
+       "relevance": "A competing offer makes a slipped date costlier."
+      }
+     ],
+     "frames": {
+      "primary": "A founding hire, offered and pending, where the company's own step — the board's approval of the ESOP pool, and the engagement documents after it — stands between the offer and a signed acceptance by the twelfth of August.",
+      "rivals": [
+       "A plain wait on the candidate: the offer is out, the answer is hers, and nothing is needed from the founder before the twelfth.",
+       "An offer at risk: if the pool is not approved in time, the equity in the offer is not yet the company's to give."
+      ]
+     },
+     "expected_vs_actual": {
+      "stage": null,
+      "expected": "From the brief's goal of hiring a Founding AI Engineer and the offer itself: the board approves the ESOP pool, the engagement documents reach Kavitha, and she confirms by the twelfth of August.",
+      "actual": "The offer is out; nothing in the file shows the board's approval or the documents going to Kavitha."
+     },
+     "scenarios": {
+      "do_nothing": "The twelfth arrives with the pool unapproved and no documents in Kavitha's hands; her acceptance slips, or is given on terms the company cannot yet honour.",
+      "act": "Asking the board to approve the pool now lets the documents follow in time for Kavitha to read them and accept by the twelfth.",
+      "best": "The board approves within days, the documents go out, and Kavitha accepts in writing before the twelfth.",
+      "worst": "The approval stalls, the date passes without documents, and a founding hire cools or takes another offer.",
+      "signals_to_watch": [
+       "The board's approval of the ESOP pool on record before the twelfth",
+       "The engagement documents sent to Kavitha",
+       "Any word from Kavitha on the date or the terms"
+      ]
+     },
+     "appraisal": {
+      "stakes": "high",
+      "urgency": "high",
+      "reversibility": "costly_to_reverse",
+      "reasons": [
+       "Hiring a Founding AI Engineer is one of the goals the brief names.",
+       "The offer's date is the twelfth of August, and the board's approval has to come before the documents can.",
+       "A founding hire lost to delay, or an acceptance given on a pool the board has not approved, is costly to undo."
+      ]
+     },
+     "mode": "act",
+     "alternative": "If the board cannot approve in time, tell Kavitha before the twelfth that the documents follow the board's approval, and agree a new date for her answer.",
+     "wait_or_stop": "Once the documents are with her, wait for her answer until the twelfth; if the board has not approved by then, stop waiting on it and move the date with Kavitha in writing.",
+     "done_when": "The ESOP pool is approved, Kavitha has the engagement documents, and her acceptance is in writing."
+    }
+   }
   ]
  },
  "notes": "Production made six separate cards from the real thread — ESOP allocation, board approval, fundraising completion, the acceptance, the documents, the formal offer."

@@ -87,3 +87,8 @@ def test_every_case_is_measured():
 @pytest.mark.parametrize("case_id", BOARD_CASES)
 def test_board_cases(case_id):
     _check(case_id)
+
+
+@pytest.mark.parametrize("case_id", OTHER_CASES)
+def test_other_cases(case_id):
+    _check(case_id)
