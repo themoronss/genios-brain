@@ -99,15 +99,16 @@ BRIEF_SITES: dict[str, tuple[Carries | Wraps | Field, ...]] = {
                 callers=("context/lifecycle/resolution.py",)),
     ),
     # ── L4 reasoning ─────────────────────────────────────────────────────────────────────────
-    # The R-site gate runs R-1 and R-6, which read; its R-2 bundle narrator WRITES (STEP-14) and
-    # takes no block — the gate itself only carries what each site's builder hands it.
+    # The R-site gate runs R-1, which reads; its R-2 bundle narrator WRITES (STEP-14) and takes no
+    # block — the gate itself only carries what each site's builder hands it. ⛔ R-6 RETIRED
+    # 2026-10-11 (`06` D51, STEP-12 M32.C4.L-logic.V0.U02): the sweep calls `reason_over_situation`
+    # no more, so it has no caller to hold — the function still takes the block, as its own tests show.
     "reason/bundle/gate.py": (
         Carries("reason/interpretation.py", "_prompt", callers=("reason/interpretation.py",)),
         Carries("reason/interpretation.py", "interpret", callers=("reason/interpretation.py",)),
         Carries("reason/situation_reasoner.py", "build_prompt",
                 callers=("reason/situation_reasoner.py",)),
-        Carries("reason/situation_reasoner.py", "reason_over_situation",
-                callers=("reason/domain_shadow.py",)),
+        Carries("reason/situation_reasoner.py", "reason_over_situation", callers=()),
     ),
     "reason/llm_decision_maker.py": (
         Carries("reason/llm_decision_maker.py", "build_prompt",

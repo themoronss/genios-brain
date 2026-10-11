@@ -38,8 +38,12 @@ def test_every_switch_names_the_step_that_left_it():
         assert switch.alone, f"{name} does not say what it breaks if flipped alone"
 
 
-def test_the_seven_switches_are_the_ones_the_layer_actually_left():
-    """⛔ Three from `shadow_compile`'s own contract, four from L2-0…L2-7."""
+def test_the_six_switches_are_the_ones_the_layer_actually_left():
+    """⛔ Three from `shadow_compile`'s own contract, three from L2-0…L2-7.
+
+    ⛔ MOVED 2026-10-11, SEVEN → SIX: `situation_reasoner` (L2-5, R-6) is RETIRED, not armed (`06`
+    D51, STEP-12 `yc2_w27_s12` M32.C4.L-logic.V0.U02) — the sweep no longer consults it, so there is
+    no cutover left for it (`tests/reason/test_r6_is_retired.py`)."""
     from genios_engine.reason.cutover import SWITCHES
 
     assert set(SWITCHES) == {
@@ -47,7 +51,6 @@ def test_the_seven_switches_are_the_ones_the_layer_actually_left():
         "fundraising_route",                                    # L2-4
         "observing_laws",                                       # L2-2
         "cards_from_situations",                                # L2-7
-        "situation_reasoner",                                   # L2-5
     }
 
 

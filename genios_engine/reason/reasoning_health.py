@@ -79,6 +79,10 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "*'Run scenarios in stable order; never query or mutate the graph and never authorize del'*ivery. Three test callers. ⛔ Every one of those refusals is load-bearing — a simulation that could authorize a delivery would be a product action — and the stable order is what makes two runs comparable",
         "MOVES WHEN scenarios are run on a schedule or from a surface. ⛔ Its refusals make it safe to wire, which is the opposite of most entries here"),
 
+    "situation_reasoner.reason_over_situation": (
+        "⛔ RETIRED, 2026-10-11 (`06` D51, STEP-12 `yc2_w27_s12` M32.C4.L-logic.V0.U02): the Context Reasoner (R-6) is no longer consulted by the sweep. It ran for every compiled situation, shadow ones included, AHEAD of STEP-02's change gate and wrote a row per situation per pass (`03` F141); it never ran in production, its feature is now refused (`platform/l4_activation.RETIRED_FEATURES`), and the expert pass reviews the FILE instead. The module and its own tests stay until a clean-up deletes them together",
+        "MOVES WHEN it is deleted with its tests — ⛔ never by re-wiring it into the sweep"),
+
     "replay.replay_execution": (
         "⛔ NO DOCSTRING, one test caller — and replay is one of this layer's load-bearing properties: `reason/replay.py` exists so a decision can be reproduced from its persisted snapshot. ⛔ The function that replays ONE execution has no production caller, and nothing records whether that is because replay is an operator action or because it was never finished",
         "⛔ MOVES WHEN an operator can replay an execution without a Python shell, or when one line above it says replay is deliberately manual. **Either answer is fine; the silence is not**"),

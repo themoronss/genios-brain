@@ -31,7 +31,9 @@ SITE_ALTERNATIVES = "R-3"
 SITE_EFFECT = "R-4"
 #: R-5 · the low-confidence consult, after DEFER is chosen. Recorded non-authoritative.
 SITE_CONSULT = "R-5"
-#: ⛔ R-6 · L2-5's Context Reasoner. **One call per SITUATION, never per event** — the pilot
+#: ⛔ R-6 · L2-5's Context Reasoner — ⛔ RETIRED 2026-10-11 (`06` D51, STEP-12): the sweep no longer
+#: consults it (it ran ahead of the change gate, `03` F141) and its feature is refused; the id stays so
+#: the rows it wrote still name a site. **One call per SITUATION, never per event** — the pilot
 #: carries 159 active situations against 465 events. T1 because the deterministic validator
 #: (`context/proposal_gate`) is what makes a cheap model safe: without it you need Sonnet
 #: everywhere, because nothing would catch the error. Sonnet is the ESCALATION, on two numbers,

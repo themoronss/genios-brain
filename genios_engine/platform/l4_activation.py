@@ -128,6 +128,17 @@ FEATURE_WAVES = {
     FEATURE_EXPERT_REVIEW: "STEP-12",
 }
 
+#: ⛔ FEATURES THAT ARE RETIRED — named, kept in `L4_FEATURES` so a row written before reads as what
+#: it was, and NEVER live: `activate` refuses them and the reads leave them out. `situation_reasoner`
+#: (R-6) retired 2026-10-11 by `06` D51 (STEP-12 `yc2_w27_s12` M32.C4.L-logic.V0.U02): it ran ahead of
+#: the change gate writing a row per situation per pass (`03` F141), it never ran in production, and
+#: the expert pass reviews the file instead. Switching it on would be a switch with no meaning.
+RETIRED_FEATURES: dict[str, str] = {
+    FEATURE_SITUATION_REASONER:
+        "retired by 06 D51 (STEP-12): the sweep no longer consults R-6 — the expert pass reviews the "
+        "file instead — so switching it on would turn nothing on",
+}
+
 #: The features that should already be live on a tenant before this one is switched on. NOT
 #: enforced — this module refuses unknown names and nothing else, because an operator debugging a
 #: pilot at 2am needs to be able to turn one thing on in isolation. It is REPORTED, on every write
@@ -214,14 +225,10 @@ CROSS_LAYER_EFFECTS = {
 #: will assume it turned on everything.
 EFFECTS = {
     FEATURE_SITUATION_REASONER: (
-        "Layer 2 asks a model to INTERPRET each admitted situation — one call per situation, "
-        "never per event — and the reading is validated by `context/proposal_gate` before it is "
-        "recorded. It can propose only the fourteen fields `claim_state.model_writable_fields()` "
-        "names, it may LOWER a confidence and never raise one, and a situation whose own numbers "
-        "are low on both confidence and importance is answered `unknown` WITHOUT a call. "
-        "Nothing it proposes is committed to the graph: the reading lands in "
-        "`situation_interpretations` with the slice it was made from, so it can be replayed. "
-        "Off, the sweep runs exactly as it does today"),
+        "RETIRED (06 D51, STEP-12): it would have asked a model to interpret each admitted "
+        "situation, writing a `situation_interpretations` row per situation per pass ahead of the "
+        "change gate (03 F141). The sweep no longer consults it, the switch is refused, and a row "
+        "written before reads as off: the expert pass reviews each changed FILE instead"),
     FEATURE_ROSTER_V2: (
         "the reasoning orchestrator plans the STAGED UNIT ROSTER through the Unit Selector for this "
         "tenant instead of the six units the compiled lane hardcodes; it changes which units run "
@@ -338,7 +345,7 @@ def is_l4_activated(engine, org_id: str, feature: str) -> bool:
     watched.
     """
     require_feature(feature)
-    if engine is None:
+    if engine is None or feature in RETIRED_FEATURES:       # a retired feature is never live
         return False
     from sqlalchemy import text
     try:
@@ -391,8 +398,10 @@ def activated_features(engine, org_id: str) -> frozenset[str]:
                 {"o": org_id})
             # A row whose feature is not in `L4_FEATURES` is filtered rather than returned: the
             # column is free text by design (see the migration), and an engine handed a feature it
-            # has no code for would fail at the call site instead of here.
-            return frozenset(row[0] for row in rows if row[0] in L4_FEATURES)
+            # has no code for would fail at the call site instead of here. A RETIRED feature's row
+            # is filtered too: it is never live (`RETIRED_FEATURES`).
+            return frozenset(row[0] for row in rows
+                             if row[0] in L4_FEATURES and row[0] not in RETIRED_FEATURES)
     except Exception as exc:      # noqa: BLE001
         _log.warning("could not read %s for org=%s, treating every feature as not activated: %s",
                      L4_ACTIVATION_TABLE, org_id, exc)
@@ -501,8 +510,12 @@ def activate(engine, org_id: str, *, feature: str, by: str, notes: str | None = 
     Writes nothing else, and starts nothing. In particular it triggers no reasoning run and no
     backfill: the next ordinary run reads the switch. An activation that kicked off a sweep would
     make "activate twice" mean "reason over the tenant twice".
+
+    A RETIRED feature (`RETIRED_FEATURES`) is refused: its switch would turn nothing on.
     """
     require_feature(feature)
+    if feature in RETIRED_FEATURES:
+        raise ValueError(f"{feature} is retired — {RETIRED_FEATURES[feature]}")
     from sqlalchemy import text
     at = at or datetime.now(timezone.utc)
     table = L4_ACTIVATION_TABLE
@@ -555,6 +568,7 @@ def deactivate(engine, org_id: str, *, feature: str, by: str = "unrecorded",
 __all__ = ["CROSS_LAYER_EFFECTS", "CROSS_LAYER_PRECONDITIONS", "EFFECTS", "FEATURE_BRIEF",
            "FEATURE_BUNDLE", "FEATURE_CRITIQUE", "FEATURE_RANKING_V2", "FEATURE_ROSTER_V2",
            "FEATURE_WAVES", "L4Activation", "L4_ACTIVATION_TABLE", "L4_FEATURES", "PRECONDITIONS",
+           "RETIRED_FEATURES",
            "activate", "activated_features", "deactivate", "get_l4_activation", "is_l4_activated",
            "l4_activated_orgs", "list_l4_activations", "missing_cross_layer_preconditions",
            "missing_preconditions", "require_feature"]

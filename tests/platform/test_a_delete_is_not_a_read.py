@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_047, (
+    assert r["statements"] == 3_046, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -401,6 +401,9 @@ def test_the_statement_count_did_NOT_move():
     # SELECT, `context/workstreams._SITUATIONS` — the situations anchored on one file. A literal.
     # ⛔ MOVED 3,046 → 3,047 by yc2_w27_s12/M32.C2.L-logic.V1.U04 (the dossier): one SELECT,
     # `reason/expert/dossier._PROMISES` — the promises one file's own events wrote. A literal.
+    # ⛔ MOVED 3,047 → 3,046 by yc2_w27_s12/M32.C4.L-logic.V0.U02 (R-6 retired, `06` D51): R-6's
+    # evidence-ref resolver, `reason/domain_shadow._resolve_evidence_refs`, left with its consult. One
+    # literal fewer.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

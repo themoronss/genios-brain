@@ -184,46 +184,18 @@ def test_silence_is_the_fallback_and_not_a_neutral_reading():
 
 
 # =================================================================================================
-# ⛔ THE WIRE. A site nothing calls is the ninth "built and never switched on" — and L2-4 declined
-# to register an R-site for exactly that reason.
+# ⛔ THE WIRE IS CUT. These four tests held that `shadow_compile` called R-6 where the slice exists,
+# counted both arms of the quadrant, could not be killed by it, and never committed its payload. R-6
+# is RETIRED, 2026-10-11 (`06` D51, STEP-12 `yc2_w27_s12` M32.C4.L-logic.V0.U02, `03` F141): the
+# sweep calls it no more, and the expert pass reviews the file instead. The site above stays
+# registered so the rows it wrote still name a site; `tests/reason/test_r6_is_retired.py` holds the
+# retirement by the AST and on Postgres.
 # =================================================================================================
 
-def test_the_sweep_calls_the_reasoner_where_the_slice_exists():
-    """`shadow_compile` is the only place a situation and its slice are both in hand."""
+def test_the_sweep_no_longer_calls_the_reasoner():
     from genios_engine.reason import domain_shadow
 
     src = inspect.getsource(domain_shadow.shadow_compile)
-    assert "reason_over_situation(" in src, "nothing on a real request path calls the reasoner"
-    assert "context_slice" in src
-
-
-def test_the_quadrant_runs_before_the_call_and_is_counted_either_way():
-    """⛔ Both arms counted. *"A skip nobody can see is indistinguishable from one that had
-    nothing to say"* — `domain_shadow`'s own sentence about the budget."""
-    from genios_engine.reason import domain_shadow
-
-    src = inspect.getsource(domain_shadow.shadow_compile)
-    for key in ("reasoner_unknown", "reasoner_consulted"):
-        assert key in src, f"{key} is never counted"
-
-
-def test_the_reasoner_can_never_kill_the_sweep():
-    """⛔ The rule L2-7's full-suite failure taught: a model consult that raises must cost a
-    reading, never the compile. `shadow_compile` already catches per situation for exactly this."""
-    from genios_engine.reason import domain_shadow
-
-    src = inspect.getsource(domain_shadow.shadow_compile)
-    head, sep, _tail = src.partition("reason_over_situation(")
-    assert sep
-    assert "try:" in head[-600:], "the consult is unguarded"
-
-
-def test_it_proposes_and_does_not_commit():
-    """§5: *"It does not write to the graph."* The sweep must not apply the payload to a
-    situation — L2-6 validates, and the durable home is `situation_interpretations`."""
-    from genios_engine.reason import domain_shadow
-
-    src = inspect.getsource(domain_shadow.shadow_compile)
-    window = src[src.index("reason_over_situation("):][:900]
-    for forbidden in ("write_fact", "upsert_situation", "update context_situations"):
-        assert forbidden not in window, f"the reasoner's payload reaches {forbidden}"
+    for gone in ("reason_over_situation(", "reasoner_unknown", "reasoner_consulted",
+                 "reasoner_failed"):
+        assert gone not in src, f"the sweep still reaches R-6 ({gone}) — it is retired (06 D51)"

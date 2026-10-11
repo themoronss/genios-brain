@@ -145,15 +145,14 @@ def test_recording_never_raises_because_a_receipt_may_not_kill_its_subject():
                           reasoning_trace="t", valid_until=None)
 
 
-def test_the_sweep_records_every_reading_including_the_ones_it_did_not_pay_for():
-    """⛔ **THE WIRE.** A store nothing calls is the defect this plan keeps finding. And `unknown`
-    is recorded too: *a sweep that asked nothing must not look like a sweep that was never run.*"""
+def test_the_sweep_records_no_reading_since_r6_retired():
+    """⛔ MOVED 2026-10-11. This held the wire: the sweep recorded every R-6 reading, the unpaid ones
+    included. R-6 is RETIRED (`06` D51, STEP-12 `yc2_w27_s12` M32.C4.L-logic.V0.U02, `03` F141) — it
+    wrote a row per situation per pass ahead of the change gate — so the sweep records none. The store
+    above stays, for the rows already written and for its own tests."""
     import inspect
 
     from genios_engine.reason import domain_shadow
 
     src = inspect.getsource(domain_shadow.shadow_compile)
-    assert "record_interpretation(" in src, "the reading is never made durable"
-    window = src[src.index("reason_over_situation("):][:3000]
-    assert "record_interpretation(" in window, (
-        "the reading is recorded somewhere other than beside the consult that produced it")
+    assert "record_interpretation(" not in src, "the sweep records an R-6 reading again"

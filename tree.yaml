@@ -6867,7 +6867,9 @@ yc2_w27_s12:
                         `situation_interpretations` row per situation per pass; its feature kept off and
                         named retired.
                       artifact: "genios_engine/reason/domain_shadow.py"
-                      verify: ".venv/bin/python -m pytest -q tests/reason/test_r6_is_retired.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/test_r6_is_retired.py"
+                      # ⛔ CORRECTED 2026-10-11 at the build: its sweep test runs the admin pilot on
+                      # Postgres; without the database it would SKIP inside a PASS.
                       depends_on: []
         - id: M32.C5
           name: The golden set

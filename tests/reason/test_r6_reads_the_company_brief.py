@@ -6,7 +6,12 @@ brief once, beside the R-site gate, and hands it in like the gate (`speedrun008/
 §8.3). The block is its own paragraph after the opening line and before the CONTEXT; the R-site
 generation cache keys on the SEED, not the prompt, so the brief's version joins the seed (§8.2) —
 only when there is a brief, so a reading made without one keeps the key it always had. Hermetic but
-for the last case, which runs the sweep on real Postgres and captures the prompt R-6 is sent.
+for the last case, which ran the sweep on real Postgres and captured the prompt R-6 was sent.
+
+⛔ THAT LAST CASE LEFT 2026-10-11: R-6 is RETIRED (`06` D51, STEP-12 `yc2_w27_s12` M32.C4.L-logic.V0.U02) —
+the sweep sends it nothing, so there is no prompt to capture; `tests/reason/test_r6_is_retired.py` holds
+that, on the same tenant, with R-6's feature row present. The cases above test the module itself, and
+(c) the brief the sweep still reads once.
 """
 from __future__ import annotations
 
@@ -185,25 +190,32 @@ def test_a_changed_brief_is_never_answered_from_the_cache():
     assert len(client.prompts) > asked and "COMPANY BRIEF" not in client.prompts[-1]
 
 
-# ── (c): the sweep reads the tenant's brief once and hands it to R-6 ─────────────────────────────
+# ── (c): the sweep reads the tenant's brief once — and, since R-6 retired, hands it to `file_kinds` ──
 
 def _shadow_compile_ast() -> ast.FunctionDef:
     from genios_engine.reason import domain_shadow
     return ast.parse(textwrap.dedent(inspect.getsource(domain_shadow.shadow_compile))).body[0]
 
 
-def test_the_sweep_reads_the_brief_once_outside_the_loop_and_hands_it_to_r6():
-    """By the AST, not the text: the one `reason_over_situation` call passes `company_brief=` a name
-    the sweep assigned exactly once, from `platform/company_brief.current` on the sweep's own store
-    and tenant, outside every loop — one read per sweep, like the gate, never one per situation."""
+def test_the_sweep_reads_the_brief_once_outside_the_loop():
+    """By the AST, not the text: the brief the sweep hands on is a name it assigned exactly once, from
+    `platform/company_brief.current` on the sweep's own store and tenant, outside every loop — one
+    read per sweep, never one per situation.
+
+    ⛔ MOVED 2026-10-11: this read the brief handed to R-6's `reason_over_situation`. R-6 is RETIRED
+    (`06` D51, STEP-12 `yc2_w27_s12` M32.C4.L-logic.V0.U02) and the sweep calls it no more; the brief
+    it still reads is handed to `file_kinds` (a programme's file is never decided as an investor,
+    `yc2_w27_align` M34.C2 U10), and that is the call held here."""
     fn = _shadow_compile_ast()
     parents = {child: node for node in ast.walk(fn) for child in ast.iter_child_nodes(node)}
 
+    assert not [node for node in ast.walk(fn) if isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Name) and node.func.id == "reason_over_situation"]
     calls = [node for node in ast.walk(fn) if isinstance(node, ast.Call)
-             and isinstance(node.func, ast.Name) and node.func.id == "reason_over_situation"]
+             and isinstance(node.func, ast.Name) and node.func.id == "file_kinds"]
     assert len(calls) == 1
-    handed = {kw.arg: kw.value for kw in calls[0].keywords}.get("company_brief")
-    assert isinstance(handed, ast.Name), "R-6 is not handed the company brief"
+    handed = calls[0].args[2]
+    assert isinstance(handed, ast.Name), "file_kinds is not handed the company brief"
 
     assigned = [node for node in ast.walk(fn) if isinstance(node, ast.Assign)
                 and any(isinstance(t, ast.Name) and t.id == handed.id for t in node.targets)]
@@ -223,84 +235,3 @@ def test_the_sweep_reads_the_brief_once_outside_the_loop_and_hands_it_to_r6():
         node = parents[node]
         assert not isinstance(node, (ast.For, ast.AsyncFor, ast.While)), \
             "the brief is read inside a loop — once per situation instead of once per sweep"
-
-
-def _r6_prompts(client: Client) -> list[str]:
-    return [prompt for prompt in client.prompts
-            if prompt.startswith("You are reading ONE business situation")]
-
-
-@pytest.mark.pg
-def test_the_live_sweep_hands_r6_the_tenants_brief_on_real_postgres(pg_store, monkeypatch):
-    """The live caller, end to end: the admin pilot tenant (`adapters/l3_pilot_seed`) with R-6
-    switched on and a fake client behind the real gate, cache and activation. Three passes:
-
-      1. no brief — R-6 is asked, and its readings go into the durable cache;
-      2. no brief again — R-6 is asked NOTHING: the unchanged slices are served from that cache,
-         which is what makes the third pass mean anything;
-      3. the founder has accepted a line — R-6 is asked again, with the brief in every prompt. Had
-         the version not joined the seed, pass 3 would have been answered from pass 1's cache.
-
-    ⛔ The pilot's two situations sit in R-6's low-confidence, low-importance quadrant (measured:
-    `reasoner_unknown` 2), so the live sweep would rightly ask nothing. The quadrant is not what this
-    test is about, so it is told to ask; everything after it is the shipped path."""
-    from sqlalchemy import text
-
-    from genios_engine.packs.wiring import make_registry
-    from genios_engine.platform import company_brief as company_brief_module
-    from genios_engine.platform import company_brief_store, l3_activation
-    from genios_engine.platform.l4_activation import activate
-    from genios_engine.reason import llm_sites
-    from genios_engine.reason.domain_shadow import shadow_compile
-
-    from ..test_admin_support_packs import _seed_org
-    from .adapters.l3_pilot_seed import EVAL_TIME, seed_admin_pilot
-
-    org = "org_s07_r6_brief"
-    client = Client()
-    monkeypatch.setattr(llm_sites, "make_site_client", lambda tier: client)
-    monkeypatch.setattr(SR, "next_step", lambda **_kw: SR.Step.ACCEPT)
-    _seed_org(pg_store, org)
-    with pg_store.engine.begin() as conn:
-        # Re-runnable on one database: no reading cached by an earlier run, and no line in force.
-        conn.execute(text("delete from l4_r_site_generations where org_id = :o"), {"o": org})
-        for line in company_brief_store.accepted(conn, org):
-            company_brief_store.remove(conn, org_id=org, line_id=line.line_id,
-                                       decided_by="founder", at=EVAL_TIME)
-    company_brief_module.invalidate(org)
-    activate(pg_store.engine, org, feature=FEATURE_SITUATION_REASONER, by="test_r6_brief")
-
-    url = pg_store.engine.url.render_as_string(hide_password=False)
-
-    def sweep() -> list[str]:
-        client.prompts.clear()
-        shadow_compile(store=pg_store, org_id=org, eval_time=EVAL_TIME, live=True,
-                       registry=make_registry(url),
-                       live_domains=l3_activation.activated_domains(pg_store.engine, org))
-        return _r6_prompts(client)
-
-    seeded = seed_admin_pilot(pg_store, org, build_cards=False)                       # pass 1
-    plain = _r6_prompts(client)
-    assert plain, ("the pilot sweep never asked R-6 — this test would measure nothing: "
-                   f"{seeded['compile']} · {len(client.prompts)} prompts")
-    assert not any("COMPANY BRIEF" in prompt for prompt in plain)
-    with pg_store.engine.connect() as conn:
-        cached = conn.execute(text("select count(*) from l4_r_site_generations "
-                                   "where org_id = :o and site = :s"),
-                              {"o": org, "s": SITE_SITUATION}).scalar()
-    assert cached, "pass 1's readings were not cached — pass 3 would prove nothing"
-
-    # pass 2
-    assert sweep() == [], "an unchanged slice was asked again — the cache is not doing its job"
-
-    with pg_store.engine.begin() as conn:
-        company_brief_store.add(conn, org_id=org, section="goals",
-                                words="raise the pre-seed round", decided_by="founder",
-                                at=EVAL_TIME)
-    brief = company_brief_module.current(pg_store.engine, org)
-    assert brief.version, "the accepted line did not make a brief"
-
-    briefed = sweep()                                                                 # pass 3
-    assert briefed, "R-6 was answered from a reading cached before the brief existed"
-    assert all(brief.prompt_block() in prompt for prompt in briefed)
-    assert {prompt.replace(f"{brief.prompt_block()}\n", "", 1) for prompt in briefed} <= set(plain)

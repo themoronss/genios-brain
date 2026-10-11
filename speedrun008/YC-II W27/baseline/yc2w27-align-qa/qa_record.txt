@@ -73,3 +73,15 @@ tests/platform; the folders a unit touched) passed on databases created for them
 tests were run against its own mutations: U10 9/9, U07 13/13, U06 2/2 (the drain's settled-run rule, the
 ladder's never-read rule), U08 12/12, U11 4/4, earlier units as their commits say. C2 was promoted on the
 whole golden lane (1187 passed, 96 xfailed, 0 skipped, awake) and the board (golden_score exit 0).
+
+THE CI RUNS, READ 2026-10-11 (GitHub's API: each run's jobs, and the `test` job's annotations — 03 F138).
+  run 38012178483 · db6328cd (Rohit's push of 10 Oct, before this block):  golden-pg ✅ · test ❌ —
+      four failures, all tests/platform/test_the_provider_refusing_calls_is_noticed.py: 03 F145, the
+      monotonic clock on a fresh runner — fixed inside this block (test_the_first_streak_after_a_boot_alerts).
+  run 38115746507 · 68ab62f3 (this block and STEP-12's first eleven units, pushed by Claude on Rohit's
+      word of 11 Oct):  golden-pg ✅ · test ❌ — one failure: the currency rule's 40KB timing guard took
+      299ms on the runner (bound 250ms); 1.1ms here, linear — a stalled runner read as backtracking,
+      03 F156 (owner STEP-17).
+  run 38116198660 · 4781ba3e:  golden-pg ✅ · test ✅
+  run 38117346745 · 6dcee340:  golden-pg ✅ · test ✅
+So the block is green on GitHub on both jobs from 4781ba3e on; the one red after it is F156's flake.

@@ -164,9 +164,9 @@ def provision_intelligence(engine, org_id: str, *, by: str = PROVISIONED_BY) -> 
 #: unless somebody writes down here why it should not be.
 NOT_DEFAULT_ON = {
     FEATURE_SITUATION_REASONER:
-        "it spends a MODEL CALL per admitted situation. A default-on switch that costs money per "
-        "row is a bill a tenant never agreed to; this is armed deliberately, per tenant, once "
-        "somebody has looked at the volume.",
+        "it is RETIRED (06 D51, STEP-12): the sweep no longer consults R-6, and the switch is "
+        "refused — the expert pass reviews each changed file instead. (It was never default-on: "
+        "a model call per admitted situation is a bill a tenant never agreed to.)",
     FEATURE_CARDS_FROM_SITUATIONS:
         "it is a CUTOVER, not a feature. `deliver/card_source.COMPARISON_KEYS` exists so the old "
         "per-signal path and the new per-situation path are counted on the SAME sweep before "
