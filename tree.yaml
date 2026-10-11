@@ -6584,7 +6584,9 @@ yc2_w27_s12:
     calls F104's seam; ⛔ 57 since the first decided re-record (12 Oct, `03` F173–F175): what a review explains
     is one rule for both lanes (C1.U10) over the file's people (C1.U11), the file keeps ONE decision (C1.U12),
     a situation on its people or readings stands down (C1.U13), a pack rule too (C1.U14), and the sweep hands
-    the lanes what they need (C1.U15). M33 only after D1 (the appraisal decides what
+    the lanes what they need (C1.U15); ⛔ 60 with the golden lane after them (12 Oct, `03` F177, F178): the
+    play says what done looks like (C1.U16), the ideal reader cites what its dossier shows (C2.U03), and the
+    authored answers speak to the founder (C2.U04). M33 only after D1 (the appraisal decides what
     matters) and D7 (the model and its cap); its live pass only after D50. The golden answers are
     authored per case (D49) — the board then measures the plumbing, the live pass the model.
   milestones:
@@ -7124,6 +7126,16 @@ yc2_w27_s12:
                       artifact: "genios_engine/reason/replay.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_replay_asks_no_model.py"
                       depends_on: [M33.C1.L-logic.V0.U01, M33.C1.L-logic.V1.U05]
+                    - id: M33.C1.L-logic.V1.U16
+                      what: >
+                        The expert's play says what done looks like: its success events are the review's
+                        own `done_when`, so the card a covered file's decision raises names its success
+                        (`deliver/card_builder._play_success`) — never NULL. Minted 12 Oct at the golden
+                        lane after C1.U15: STEP-11's founder-card clause, exercised for the first time by the
+                        expert's founder cards, found every one with a NULL success signal.
+                      artifact: "genios_engine/reason/expert/decide.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_the_review_decides.py"
+                      depends_on: [M33.C1.L-logic.V0.U01]
             - layer: data
               levels:
                 - level: 0
@@ -7245,6 +7257,31 @@ yc2_w27_s12:
         - id: M33.C2
           name: The golden set, deciding
           layers:
+            - layer: data
+              levels:
+                - level: 0
+                  units:
+                    - id: M33.C2.L-data.V0.U03
+                      what: >
+                        The ideal reader cites what the dossier in front of it shows: each authored citation is
+                        kept with the dossier line it named (`tests/replays/expert_citations.json`, written from
+                        the sweep door's own dossiers), and an answer served to a dossier that shows the same
+                        line under another id cites that id; a line held other than exactly once is never
+                        guessed. Minted 12 Oct (`03` F177): the first-connect door mints ids in another order,
+                        and on 12 cases its reviews were refused for ids its dossier never showed.
+                      artifact: "tests/replays/expert_citations.py"
+                      verify: ".venv/bin/python -m pytest -q tests/replays/test_the_ideal_reader_cites_what_it_is_shown.py"
+                      depends_on: [M32.C5.L-data.V0.U01]
+                    - id: M33.C2.L-data.V0.U04
+                      what: >
+                        The authored answers speak to the founder: no card word names the founder's company or
+                        the founder as a party (STEP-04's guard, met for the first time by the expert's cards), and
+                        a next move names what its mail names — a date, a time, an assignment's number — every
+                        number one its first dossier holds (the contract's rule, where the authoring had written
+                        none at all). Minted 12 Oct (`03` F178).
+                      artifact: "tests/replays/specs/founder"
+                      verify: ".venv/bin/python -m pytest -q tests/replays/test_every_changed_file_has_an_expert_answer.py"
+                      depends_on: [M32.C5.L-data.V1.U03]
             - layer: integration
               levels:
                 - level: 0
@@ -7255,7 +7292,7 @@ yc2_w27_s12:
                         §F.1.
                       artifact: "tests/replays/specs/founder/cassettes"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays && GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py --assert-recorded \"speedrun008/YC-II W27/03-FINDINGS.md\""
-                      depends_on: [M33.C1.L-integration.V3.U15, M33.C1.L-logic.V1.U03, M33.C1.L-interface.V1.U08, M33.C1.L-integration.V1.U09]
+                      depends_on: [M33.C1.L-integration.V3.U15, M33.C1.L-logic.V1.U03, M33.C1.L-interface.V1.U08, M33.C1.L-integration.V1.U09, M33.C1.L-logic.V1.U16, M33.C2.L-data.V0.U03, M33.C2.L-data.V0.U04]
                 - level: 1
                   units:
                     - id: M33.C2.L-integration.V1.U02

@@ -283,3 +283,22 @@ def test_the_capability_version_is_its_manifests_own_address():
     other, _ = _decide(_row(next_move=dict(_raw()["next_move"], what="Call Neel instead")))
     assert first.capability.version == again.capability.version != other.capability.version
     assert first.capability.version.startswith(D.DECIDE_VERSION + ".")
+
+
+# ── M33.C1.L-logic.V1.U16 · the play says what done looks like ────────────────────────────────
+def test_the_reviews_done_when_is_the_plays_success():
+    """The card's success signal is read off the audited play (`deliver/card_builder._play_success`):
+    the move's — and the watch's — is the review's own `done_when`, never NULL."""
+    request, _execution = _decide()
+    [play] = request.capability.plays
+    assert play.success_events == (_raw()["done_when"],)
+    watch, _ = _decide(_row(mode="wait", next_move=None))
+    assert watch.capability.plays[0].success_events == (_raw()["done_when"],)
+
+
+def test_the_cards_success_signal_is_the_reviews_done_when():
+    from genios_engine.deliver.card_builder import _play_success
+    request, _execution = _decide()
+    [play] = request.capability.plays
+    assert _play_success({}, {"play_success_events": list(play.success_events),
+                              "play": play.play_id}) == _raw()["done_when"]

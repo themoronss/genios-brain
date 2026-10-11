@@ -204,12 +204,16 @@ def _play(review: ExpertReview, eval_time: datetime) -> PlayDefinition:
     if move is None:
         return PlayDefinition(
             WATCH_PLAY, DECIDE_VERSION, "Watch the file", (review.wait_or_stop,), read_only=True,
-            window_days=DEFAULT_WINDOW_DAYS,
+            window_days=DEFAULT_WINDOW_DAYS, success_events=(review.done_when,),
             metadata={"wait_or_stop": review.wait_or_stop, "done_when": review.done_when,
                       "external_recipient_required": False})
     return PlayDefinition(
         MOVE_PLAY, DECIDE_VERSION, move.what, (move.what,), read_only=True,
         window_days=_window_days(move.by_when, eval_time),
+        # WHAT DONE LOOKS LIKE is the review's own `done_when` (M33.C1.L-logic.V1.U16): the card's
+        # success signal (`deliver/card_builder._play_success` reads the audited play's events), never
+        # NULL on a card the expert's decision raised (STEP-11's founder-card clause).
+        success_events=(review.done_when,),
         metadata={"who": move.who, "what": move.what, "for_whom": move.for_whom,
                   "by_when": move.by_when.isoformat() if move.by_when else None,
                   "alternative": review.alternative, "wait_or_stop": review.wait_or_stop,
