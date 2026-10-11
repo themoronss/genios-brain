@@ -21,6 +21,12 @@ nothing costs, when the work is dormant and whether it was reviewed ("playbook n
 D3), or the named reason there is none. What STEP-12's expert will read, readable first. The list does
 not carry it: the corpus is read for the file a reader opened.
 
+AND WHAT THE EXPERT CONCLUDED (STEP-12, `yc2_w27_s12 · M32.C3.L-interface.V3.U05`). `review` carries the
+file's latest STANDING review — valid, refused or truncated, with its reason, what triggered it, the
+model, the prompt version and its cost — and its latest VALID review, the one a decision may read
+(`reason/expert/store`). A failed or carried attempt judged nothing and is not the file's review; the
+health check counts those. A file never reviewed says so: both null.
+
 WHO READS. Anyone the dashboard already lets read the tenant (`get_current_org`), as the company
 brief's own read is (`api/company_brief_routes`). A scoped key is refused there, as everywhere.
 """
@@ -38,6 +44,7 @@ from genios_engine.context.workstreams import as_dict, file_as_dict, file_for, f
 from genios_engine.packs.compiler.playbook_reader import playbook_for
 from genios_engine.platform.auth import get_current_org
 from genios_engine.platform.wiring import make_graph_store
+from genios_engine.reason.expert import store as reviews
 
 router = APIRouter()
 _graph = make_graph_store()
@@ -52,6 +59,18 @@ def _engine():
 def _now() -> datetime:
     """The clock is read here, at the request boundary; the read model takes it as a parameter."""
     return datetime.now(timezone.utc)
+
+
+def _review_as_dict(row: reviews.StoredReview | None) -> dict | None:
+    """One stored review as the read model shows it: the review itself only when it is valid."""
+    if row is None:
+        return None
+    return {"fingerprint": row.fingerprint, "status": row.status, "reason": row.reason,
+            "review": row.review.as_mapping() if row.review is not None else None,
+            "triggers": [{"kind": kind, "says": says} for kind, says in (row.triggers or ())],
+            "model": row.model, "prompt_version": row.prompt_version,
+            "dossier_digest": row.dossier_digest, "cost_micro_usd": row.cost_micro_usd,
+            "reviewed_at": row.reviewed_at.isoformat()}
 
 
 @router.get("/v1/workstreams")
@@ -74,4 +93,6 @@ def read_workstream(file_id: str, org_id: str = Depends(get_current_org)) -> dic
         return {"as_of": now.isoformat(), "file": file_as_dict(file),
                 "timeline": timeline_as_dict(timeline),
                 "numbers": numbers_as_dict(numbers_for(conn, org_id, file, timeline, now=now)),
-                "playbook": playbook_for(file.work_kind).as_dict()}
+                "playbook": playbook_for(file.work_kind).as_dict(),
+                "review": {"latest": _review_as_dict(reviews.latest_standing(conn, org_id, file_id)),
+                           "valid": _review_as_dict(reviews.latest_valid(conn, org_id, file_id))}}
