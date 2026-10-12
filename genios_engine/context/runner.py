@@ -131,8 +131,10 @@ def _process_one(row, *, org_id, store, llm, crypto_key, internal_emails=frozens
     """Route + process ONE event by the road it takes into memory (STEP-05,
     `context/memory_lanes`). Returns (outcome, affected_node_id | None). No road calls a model."""
     mapping = get_mapping(row.source, row.object_type)
-    # A caller with its own row shape (`scripts/rebuild_graph`) selects none of the road columns:
-    # its rows are emitted events with a signal, which every pulled row was before STEP-05.
+    # Every production caller hands the drain's own columns: `_pull`, and `_rows_for_rebuild`, which
+    # `scripts/rebuild_graph` replays since STEP-18 B12 (S18-X14 — this said the script "selects
+    # none of the road columns"). The defaults read a row built without them — a test's — as an
+    # emitted event with a signal, which every pulled row was before STEP-05.
     lane = lane_for(outcome=getattr(row, "outcome", "emitted"), source=row.source,
                     structured=mapping is not None, has_signal=getattr(row, "has_signal", True),
                     has_extraction=getattr(row, "own_output", None) is not None)

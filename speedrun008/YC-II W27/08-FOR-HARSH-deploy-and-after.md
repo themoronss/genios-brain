@@ -509,7 +509,7 @@ correlation rebuild re-derives every file from it, and the graph rebuild alone k
 ```
 ORG=org_e97e86f858ad48b2bbf64b8a
 # 1 · read every event again with the brief in force (dry by default; --apply backs up every graph
-#     table first; it refuses if an uncached event would call the model). ⛔ It has no
+#     table first; no road calls a model — S18-X06 took its refusal away). ⛔ It has no
 #     --database-url: it reads the application's own DATABASE_URL, so run it where the app runs
 python -m scripts.rebuild_graph --org $ORG
 python -m scripts.rebuild_graph --org $ORG --apply

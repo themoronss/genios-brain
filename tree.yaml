@@ -8732,6 +8732,23 @@ yc2_w27_s18:
                       artifact: "scripts/rebuild_graph.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/genios_test .venv/bin/python -m pytest -q tests/test_rebuild_graph_rebuilds_the_mail.py"
                       depends_on: [M48.C2.L-data.V0.U04]
+                - level: 2
+                  units:
+                    - id: M48.C2.L-integration.V2.U16
+                      what: >
+                        S18-X06 (the STEP-17/18 crosscheck) — `scripts/rebuild_graph.py` estimated
+                        "unstructured events NOT cache-linked (may cost LLM)" from its rows and
+                        refused `--apply` without `--allow-llm`; since B12 its rows include every
+                        archived mail, which takes the metadata road with no extraction, so a tenant
+                        with archived mail was refused a run that spends nothing. No road calls a
+                        model (`context/runner._process_one`): the estimate, its cache count, the
+                        refusal, `--allow-llm` and the model client are gone; the stale comments (the
+                        script's and the drain's "selects none of the road columns", S18-X14) fixed.
+                        A dry-run test drives `main()` with an archived mail, a held mail and a
+                        calendar event.
+                      artifact: "scripts/rebuild_graph.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s18_verify .venv/bin/python -m pytest -q tests/test_rebuild_graph_rebuilds_the_mail.py tests/scripts/test_rebuild_graph_hands_down_who_we_are.py tests/platform/test_a_delete_is_not_a_read.py"
+                      depends_on: [M48.C2.L-integration.V1.U05]
         - id: M48.C3
           name: A wipe takes its claims with it — L1 Signals (`capture/`) and its scripts
           layers:

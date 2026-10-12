@@ -11,6 +11,13 @@ arrived with `qes_output` missing and was held `held_missing_qes_extraction` —
 the calendar and none of the mail — and the archived and below-floor roads were never replayed.
 
 It now replays `context/runner._rows_for_rebuild`, the drain's columns over the drain's roads.
+
+`yc2_w27_s18` M48.C2.L-integration.V2.U16 (S18-X06): with the archived road in its rows, the
+script's estimate — every unstructured row not cache-linked "may cost LLM" — counted every archived
+mail, which takes the metadata road with no extraction and no model, and `--apply` refused unless
+`--allow-llm`: an operator was pushed to permit spending on a run that spends nothing. No road calls
+a model (`context/runner._process_one`), so the estimate, the refusal and the flag are gone. The dry
+run is driven through `main()` here.
 """
 from __future__ import annotations
 
@@ -126,3 +133,60 @@ def test_a_rebuild_replays_a_mail_memory_held_and_files_it_again(store):
                           workers=1)
     assert "held_missing_qes_extraction" not in outcomes, outcomes
     assert PRIYA in _people(store), "the sender of a rebuilt mail is in memory again"
+
+
+
+def _seed_an_archived_mail(store) -> None:
+    """A mail the gate archived: kept, read by no model, no extraction — the metadata road."""
+    with store.engine.begin() as c:
+        c.execute(text(
+            "insert into source_events (event_id, org_id, connection_id, source, object_type, "
+            "source_object_id, dedup_key, actor, recipients, occurred_at, outcome) values "
+            "('e_archived', :o, 'conn_rb', 'gmail', 'email_message', 'm_2', 'm_2', cast(:a as jsonb), "
+            ":r, :at, 'archived')"),
+            {"o": ORG, "a": json.dumps({"type": "external_contact", "email": PRIYA,
+                                        "name": "Priya Shah"}),
+             "r": ["founder.rebuild@gmail.com"], "at": NOW - timedelta(days=2)})
+        # and a calendar event — the structured road, no model either
+        c.execute(text(
+            "insert into source_events (event_id, org_id, connection_id, source, object_type, "
+            "source_object_id, dedup_key, actor, occurred_at, outcome) values ('e_meeting', :o, "
+            "'conn_cal', 'gcal', 'calendar_event', 'ev_1', 'ev_1', cast('{}' as jsonb), :at, "
+            "'emitted')"), {"o": ORG, "at": NOW - timedelta(days=3)})
+
+
+def _graph_rows(store) -> int:
+    with store.engine.connect() as c:
+        return c.execute(text("select (select count(*) from graph_nodes where org_id = :o) + "
+                              "(select count(*) from graph_edges where org_id = :o)"),
+                         {"o": ORG}).scalar()
+
+
+def test_a_dry_run_of_main_names_the_archived_road_and_estimates_no_model(store, monkeypatch,
+                                                                            capsys):
+    """S18-X06: `main()` itself, dry, on a tenant with an archived mail, a mail memory holds and a
+    calendar event."""
+    from scripts import rebuild_graph as RB
+
+    _seed_a_mail_memory_holds(store)
+    _seed_an_archived_mail(store)
+    monkeypatch.setattr(RB, "make_graph_store", lambda: store)
+    monkeypatch.setattr(RB, "_bounded_engine", lambda url, pool: store.engine)
+    before = _graph_rows(store)
+    RB.main(["--org", ORG])
+    out = capsys.readouterr().out
+    assert "kept events with a road: 3 (structured=1, unstructured=2)" in out, out
+    assert "LLM" not in out and "may cost" not in out, out
+    assert "no road calls a model" in out and "DRY RUN" in out, out
+    assert _graph_rows(store) == before, "a dry run writes nothing"
+
+
+def test_the_script_has_no_model_flag_and_no_refusal():
+    """No road calls a model: the script builds no model client, offers no `--allow-llm`, and has
+    no refusal to wipe that a flag would lift."""
+    from scripts import rebuild_graph as RB
+
+    with pytest.raises(SystemExit):
+        RB.main(["--org", ORG, "--allow-llm"])
+    source = SCRIPT.read_text(encoding="utf-8")
+    assert "make_llm_client" not in source and "REFUSING" not in source
