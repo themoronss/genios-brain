@@ -1,6 +1,7 @@
 """Every invariant that was green in the test suite and false in production, asserted on real data.
 
-    GENIOS_TARGET_DATABASE_URL=... python scripts/pipeline_health.py --org org_...
+    GENIOS_TARGET_DATABASE_URL=... python scripts/pipeline_health.py --org org_... \
+        [--json health.json] [--require-data]
 
 ⛔ WHY THIS SCRIPT EXISTS. On 2026-10-04 the hermetic suite reported **14,624 passed, 0 failed**
 while production was carrying, simultaneously:
@@ -22,6 +23,11 @@ expected, and what to do — a check whose failure does not tell you the next mo
 somebody learns to ignore.
 
 EXIT CODE 1 if any check fails, so it can be a deploy gate rather than a thing someone remembers.
+
+THREE VERDICTS — PASS, FAIL, NO DATA (STEP-17 §3.4). A check whose population was empty judged
+nothing, and says so instead of passing; NO DATA is counted apart and is not a failure, unless the run
+asks for data (`--require-data`, exit 2 — the run a day after a deploy, when every lane should have
+run). `--json PATH` keeps every verdict as a file, the record a deploy keeps.
 """
 from __future__ import annotations
 
