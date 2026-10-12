@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_133, (
+    assert r["statements"] == 3_134, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -503,6 +503,8 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 3,129 → 3,133 by yc2_w27_s16/M46.C3.L-data.V1.U02 (your corrections, kept): four statements,
     # `context/founder_corrections` — `by_id`, `correct`'s insert, `withdraw`'s update and `standing_for`'s
     # read. Each a literal at its own call.
+    # ⛔ MOVED 3,133 → 3,134 by yc2_w27_s16/M46.C3.L-interface.V2.U03 (your door on a file): one SELECT,
+    # `api/workstream_routes._CARD_OF_THE_FILE` — the card a seat corrects a file through. A literal.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():
