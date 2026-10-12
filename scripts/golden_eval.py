@@ -154,6 +154,10 @@ class LiveModel:
         from genios_engine.context.llm.client import LLMClient
         self._client = LLMClient(api_key=api_key, model=model)
         self._call = LLMClient.call            # captured BEFORE the runner refuses the transport
+        # …and the raw client BUILT before it too: `production_switches` replaces `anthropic.Anthropic` with a
+        # class that raises, and a client built lazily on the first call was built inside the run — the live
+        # pass refused itself on its first expert prompt (`06` D50 never ran).
+        self._client._c()
         self.model = model
 
     @staticmethod
