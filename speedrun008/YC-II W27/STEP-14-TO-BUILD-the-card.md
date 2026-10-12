@@ -140,6 +140,7 @@ session's guard on report files written by a worker; the table is here.)
 | s14-F15 | **`06` D34's premise has moved**: every replayed card is the expert's; a pack rule on a covered file stands down (STEP-12) | `reason/runner.py:900-993` | D34 answered for covered files |
 | s14-F16 | **D8 is STEP-15's**: screen items are one seat's and never reach a file's card | `reason/moments/guards.py:86-87`; `reason/moments/followups.py` | STEP-15 (s14-D6) |
 | s14-F17 | **The narrator still writes for a salesperson with real names** — now only on cards no review wrote | `deliver/render.py:496-521` | M43.C5 |
+| s14-F18 | **The compiled lane's replacement expiry has no behavioural test**: when a compiled decision past its window is replaced, `_emit_capability_signal` expires the old signal's cards REPLACED — and a mutant that skips it survives tests/reason/expert, tests/reason/adapters, `tests/test_admin_support_packs.py` and the situation-card test (found by M42.C2.L-integration.V2.U02's mutation run, 12 Oct; the branch was only moved, not changed) | `reason/domain_shadow.py` (`replace_unless_from is None` branch) | the lead (a guard unit) |
 
 ### 8.4 · What changes in the design
 

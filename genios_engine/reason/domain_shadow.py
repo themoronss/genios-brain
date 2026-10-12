@@ -247,8 +247,15 @@ def _emit_capability_signal(conn, *, org_id: str, node_id: str, package, executi
     and it came from this same review (the run's ``trigger_ref``, the review's fingerprint) or from an
     earlier review that gave the same advice (``same_advice``, handed the standing run's fingerprint):
     the card's words did not change, so no card is torn down and rebuilt for them. Other advice
-    replaces every open decision of the file, in every pack, its cards with it. Every other caller
-    passes None: the authority window rules, as before.
+    replaces every open decision of the file, in every pack. Every other caller passes None: the
+    authority window rules, as before.
+
+    ⛔ STEP-14 (`yc2_w27_s14` M42.C2.L-integration.V2.U02, `03` F176, F52, F53): the file branch HANDS THE FILE
+    ON. Its old decision's signal is retired and its card is left to be VERSIONED onto the new signal by
+    delivery (`deliver/store.CardStore.version_card`) — never expired REPLACED, which made every new decision a
+    second card. And a standing decision stands only while more than its renewal margin is left
+    (`reason/change_gate.FILE_RENEW_MARGIN`): inside it the same advice is re-emitted, so its card is quietly
+    renewed before its window lapses. The compiled lane (no ``replace_unless_from``) still replaces its cards.
     """
     run = bundle.get("run") or {}
     output = bundle.get("output") or {}
@@ -313,21 +320,24 @@ def _emit_capability_signal(conn, *, org_id: str, node_id: str, package, executi
             "and rule_id=:r and subject_node_id=:n and status='open' returning signal_id"),
             {"o": org_id, "p": pack["pack_id"], "pv": pack["version"],
              "r": rule_id, "n": node_id}).fetchall()
+        if retired:
+            # STEP-06: the refreshed advice replaces the stale signal — its cards say so.
+            card_lifecycle.expire_cards(conn, org_id=org_id, cause=card_lifecycle.REPLACED,
+                                        signal_ids=[item.signal_id for item in retired])
     else:
         # STEP-12 M33 · THE FILE'S ONE DECISION, in whichever pack it stands (see the docstring).
+        from genios_engine.reason.change_gate import FILE_RENEW_MARGIN
+
         held = conn.execute(text(_FILE_DECISIONS),
                             {"o": org_id, "r": rule_id, "n": node_id}).fetchall()
-        if any(row.authority_expires_at is not None and row.authority_expires_at > eval_time
+        if any(row.authority_expires_at is not None
+               and row.authority_expires_at > eval_time + FILE_RENEW_MARGIN
                and (row.trigger_ref == replace_unless_from
                     or (same_advice is not None and same_advice(row.trigger_ref)))
                for row in held):
             return "standing"
-        retired = conn.execute(text(_RETIRE_FILE_DECISIONS),
-                               {"o": org_id, "r": rule_id, "n": node_id}).fetchall()
-    if retired:
-        # STEP-06: the refreshed advice replaces the stale signal — its cards say so.
-        card_lifecycle.expire_cards(conn, org_id=org_id, cause=card_lifecycle.REPLACED,
-                                    signal_ids=[item.signal_id for item in retired])
+        # STEP-14: the old decision retires; its card is left to be versioned onto the new one (see above).
+        conn.execute(text(_RETIRE_FILE_DECISIONS), {"o": org_id, "r": rule_id, "n": node_id})
     row = conn.execute(text(
         "insert into signals (signal_id, org_id, pack_id, pack_version, rule_id, rule_version, "
         "level, subject_node_id, score, score_inputs, reason_code, evidence, play, eval_time, "
@@ -604,14 +614,15 @@ def _same_advice(conn, org_id: str, file_id: str, ref: str | None, row) -> bool:
     return prior is not None and prior.review is not None and _advice(prior) == _advice(row)
 
 
-def _clear_file_decision(store, org_id: str, file_id: str, rule_id: str) -> int:
+def _clear_file_decision(store, org_id: str, file_id: str, rule_id: str, *, cards: bool = True) -> int:
     """The file's new review names no move now: every open decision of the file — an earlier review's, or this
     same review's through an older check (STEP-13 X12) — is cleared, its cards RULE_CLEARED (STEP-06), the rule
-    that fired no longer holding on its subject."""
+    that fired no longer holding on its subject. ⛔ `cards` False when the file ASKS instead (STEP-14
+    M42.C2.L-integration.V2.U02): the question is the card's next version, so the card is left to it."""
     with store.engine.begin() as conn:
         cleared = conn.execute(text(_CLEAR_FILE_DECISIONS), {
             "o": org_id, "r": rule_id, "n": file_id}).fetchall()
-        if cleared:
+        if cleared and cards:
             card_lifecycle.expire_cards(conn, org_id=org_id, cause=card_lifecycle.RULE_CLEARED,
                                         signal_ids=[item.signal_id for item in cleared])
     return len(cleared)
@@ -665,7 +676,7 @@ def _decide_covered_files(*, store, conn, org_id: str, reviews: Mapping[str, Any
     from genios_engine.context.founder_questions import LEFT_COVERAGE
     from genios_engine.platform.canonical import semantic_hash
     from genios_engine.reason import fingerprint_store as fs
-    from genios_engine.reason.change_gate import QUESTION_RENEW_MARGIN, RENEW_MARGIN, should_skip
+    from genios_engine.reason.change_gate import FILE_RENEW_MARGIN, QUESTION_RENEW_MARGIN, should_skip
     from genios_engine.reason.expert import asks
     from genios_engine.reason.expert import decide as expert
 
@@ -698,7 +709,8 @@ def _decide_covered_files(*, store, conn, org_id: str, reviews: Mapping[str, Any
                     counts["expert_no_tenant_pack"] += 1
                     continue
             # THE CHANGE GATE, ON THE FILE: the review, the decision's own version, where it binds.
-            # The same review in the same lane is the same decision — skipped while it stands.
+            # The same review in the same lane is the same decision — skipped while it stands, and decided again
+            # in its last twelve hours, when the file branch renews it (STEP-14, `FILE_RENEW_MARGIN`).
             key = f"{file_id}|{expert.CAPABILITY_ID}"
             fingerprint = semantic_hash({
                 "review": review.fingerprint, "decide": expert.DECIDE_VERSION, "domain": domain,
@@ -708,14 +720,14 @@ def _decide_covered_files(*, store, conn, org_id: str, reviews: Mapping[str, Any
             if gate.ready:
                 standing = (gate.expiries.get((pack["pack_id"], pack["version"], rule_id, file_id))
                             if pack else None)
-                margin = RENEW_MARGIN
+                margin = FILE_RENEW_MARGIN
                 if standing is None and pack:
                     # STEP-13 (M36.C2.L-integration.V2.U11, `03` X04): a file that asks stands on its
                     # question's window, and is decided again in the day before it closes — the re-run
                     # re-binds the question and moves its window (`reason/change_gate`).
                     standing = gate.expiries.get((pack["pack_id"], pack["version"], asks.QUESTION_RULE,
                                                   file_id))
-                    margin = QUESTION_RENEW_MARGIN if standing is not None else RENEW_MARGIN
+                    margin = QUESTION_RENEW_MARGIN if standing is not None else FILE_RENEW_MARGIN
                 verdict = should_skip(gate.stored.get(key), fingerprint, live=live_file,
                                       standing_expires_at=standing, eval_time=eval_time,
                                       renew_margin=margin)
@@ -773,7 +785,8 @@ def _decide_covered_files(*, store, conn, org_id: str, reviews: Mapping[str, Any
             if outcome != "rule_id_collision":
                 decided[file_id] = review.fingerprint
             if outcome == "nothing_to_emit" and execution.decision.outcome in _NO_MOVE:
-                cleared = _clear_file_decision(store, org_id, file_id, rule_id)
+                cleared = _clear_file_decision(store, org_id, file_id, rule_id,
+                                               cards=asked not in asks.ASKING)
                 if cleared:
                     counts["expert_cleared"] += cleared
             # An asking run leaves its question standing (U11, `03` X04): remembered as STANDING on the
