@@ -7900,6 +7900,25 @@ yc2_w27_s13:
                       artifact: "genios_engine/reason/expert/verify.py"
                       verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_verify_corrections.py tests/reason/expert/test_verify_numbers.py"
                       depends_on: [M35.C2.L-logic.V1.U10]
+                    - id: M35.C2.L-logic.V1.U12
+                      what: >
+                        A name is on its own lines, as a whole word (crosscheck X09, X16, X35, X50): a
+                        fact's names are grounded on its own lines (cited items, matched quote) and our
+                        names — never the file head (a first-touch month grounds nothing) nor every person
+                        on the file; beside them the counterparty (the file is about them), a person of the
+                        file the cited items name (their whole name as the file knows it), and — measured,
+                        holding readings to their own lines moves 15 of the 95 captured checks, 11 to held —
+                        for a fact citing no mail (an ask, a calculator, a situation, a booking, whose line
+                        names nobody) the one person the file has beside its counterparty. Every name, in a
+                        fact or a card text, matches as a whole word or as how a domain on its lines begins
+                        ("Larkspur" for `larkspurvc.test`, at most `LABEL_TAIL` letters after it; never "Avi"
+                        in `altavia`) — inside verify, `platform/grounding`'s shared rule unchanged; an
+                        earned word is ordinary only where it opens a sentence ("copy Block on it" names a
+                        company); `speaks_of_you` also notes the founder's first name. The golden set's 95
+                        captured checks: none moves.
+                      artifact: "genios_engine/reason/expert/verify.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_verify_names.py tests/reason/expert/test_verify_claims.py tests/reason/expert/test_verify_people.py"
+                      depends_on: [M35.C2.L-logic.V1.U09]
         - id: M35.C3
           name: Where the check runs
           layers:

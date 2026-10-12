@@ -23,7 +23,12 @@ ONE PASS, IN ONE ORDER.
       words are not shown — or a meeting with none, to report what was said there — needs a quote it
       cannot have (`unquoted`, M35.C2.L-logic.V1.U16); a claim about the meeting itself stands on its
       line. Every name it writes is on its lines, by the card
-      validator's own rule (`platform/grounding.invention_ok`, else `unsupported`). Every number it writes
+      validator's own rule (`platform/grounding.invention_ok`, else `unsupported`) — as a WHOLE word, or
+      as how a domain on them begins ("Larkspur", `larkspurvc.test`; never "Avi" in `altavia`) — its own
+      lines being its items, its matched quote and our names; beside them only the file's counterparty, a
+      person of the file its items name, and — a fact citing no mail — the one other person the file has
+      (`_Run.named`, M35.C2.L-logic.V1.U12). Never the file's head: its first-touch date grounds no month.
+      An earned word is ordinary only where it opens a sentence. Every number it writes
       is on its lines — a decisive fact's on its quote, its mail's head and the readings it cites, never
       another sentence of the mail — read as what it is (`figures_in`, M35.C2.L-logic.V1.U10): a printed
       date or time is held to the dates and times its lines print and is never a count; a value carries
@@ -43,8 +48,8 @@ ONE PASS, IN ONE ORDER.
       someone not on the file, the draft is withheld; to us, the move is held; to the connector that
       introduced the file's counterparty — on a file that is not the connector's own — the review's own
       alternative becomes the move if it checks (the draft withheld), else the move is held. A move that
-      answers an ask must answer one that waits on US. A card text that calls the founder "the founder" or
-      names us as a party is NOTED (`speaks_of_you`, F178), for the live pass to count; rewording a card is
+      answers an ask must answer one that waits on US. A card text that calls the founder "the founder",
+      names us as a party, or names the founder by first name (X35) is NOTED (`speaks_of_you`, F178), for the live pass to count; rewording a card is
       `STEP-14`'s.
   5 · THE FATE. No fact stands: REFUSED. A moving review (act, find out) whose move lost a fact it rests on,
       whose headline failed, or whose recipient is us or a connector with no alternative: HELD — the file
@@ -71,7 +76,7 @@ from genios_engine.contracts import claim_check as C
 from genios_engine.contracts.expert_review import (
     ASK_PREFIX, MOVING, NO_NEXT_MOVE, NUMBER_PATTERN, UNGROUNDED_MOVE, UNKNOWN_STAGE, ExpertReview, fact_ref,
     number_tokens)
-from genios_engine.platform.grounding import corpus_of, digit_runs, invention_ok
+from genios_engine.platform.grounding import corpus_of, digit_runs, fold, haystack, invention_ok, proper_nouns
 from genios_engine.platform.self_identity import names_us
 from genios_engine.reason.expert.decide import is_event
 from genios_engine.reason.expert.dossier import DossierLine, FilePeople, Person, lines_by_id
@@ -99,6 +104,10 @@ FUNCTION_WORDS: frozenset[str] = frozenset(
 EARNED: frozenset[str] = frozenset({"accept", "ahead", "attaching", "beside", "block", "download", "file",
                                     "finish", "memory", "nothing", "say", "sign"})
 _EARNED = re.compile(r"\b(?:" + "|".join(sorted(EARNED)) + r")\b", re.I)
+#: What comes before a word that OPENS a sentence: nothing, or a stop, a question, an exclamation, a colon, a
+#: semicolon, a dash or a line break — and any opening quote. An earned word anywhere else is read as written:
+#: "copy Block on it" names a company (crosscheck X50).
+_OPENS = re.compile(r"(?:\A|[.!?;:\n—–])\s*[\"'“‘(\[]*\Z")
 _MONTH = re.compile(r"\b(?:January|February|March|April|May|June|July|August|September|October|November|"
                     r"December)\b")
 #: An ask a meeting answers (`contracts/open_loop.ASK_KINDS`): a meeting asked for, or a demo.
@@ -503,16 +512,68 @@ def matches(to: str | None, person: Person | None) -> bool:
 
 def _invented(text: str, corpus: str, people: FilePeople) -> str | None:
     """The first NAME `text` writes that `corpus` and our own names do not hold — the card validator's own
-    rule (`platform/grounding.invention_ok`), its numbers left to `number_tokens` — or None."""
+    rule (`platform/grounding.invention_ok`), its numbers left to `figures_in` — or None. Each name as a
+    WHOLE word of them (M35.C2.L-logic.V1.U12, X16: "Avi" is no word of "Altavia"), held here, inside the
+    check: the card validator's shared rule matches a substring, and is left as its callers have it."""
     held, _nums = corpus_of([corpus, *people.our_names])
-    plain = _EARNED.sub(lambda m: m.group(0).lower(), text)
+    plain = _EARNED.sub(lambda m: m.group(0).lower() if _OPENS.search(text[:m.start()]) else m.group(0),
+                        text)
     # A month written out is the month its lines write short — "4 Aug" grounds "August" (F51, 12 Oct): a
     # calendar word, never an invented name. A month its lines never write stays a name, and is refused.
     shorts = {w for w in re.findall(r"[a-z]+", held) if len(w) >= 3}
     plain = _MONTH.sub(lambda m: m.group(0).lower() if any(m.group(0).lower().startswith(w) for w in shorts)
                        else m.group(0), plain)
     ok, why = invention_ok(plain, held, digit_runs(plain))
-    return None if ok else (why or "name")
+    if not ok:
+        return why or "name"
+    words = haystack(fold(held))
+    labels = [part for token in _ADDRESSES.findall(words) for part in re.split(r"[@.+_-]", token) if part]
+    runs = [[pn.lower() for pn in proper_nouns(m.group(0))] for m in _CAPITALISED.finditer(plain)]
+    for pn in proper_nouns(plain):
+        low = pn.lower()
+        if re.search(rf"(?<![a-z0-9]){re.escape(low)}(?![a-z0-9])", words) is None \
+                and not _leads_a_label(low, runs, labels):
+            return f"name:{pn}"
+    return None
+
+
+#: How much of a domain's label may follow the name it begins with — "vc", "hub", "cap", "labs", "seed":
+#: the kind of firm, never the rest of another word ("Al" begins `altavia`, and is no name of it).
+LABEL_TAIL = 4
+#: An address or a domain as a corpus writes it — `marco@altavia.test`, `larkspurvc.test`.
+_ADDRESSES = re.compile(r"[\w.+-]+@[\w.-]+|[\w-]+(?:\.[\w-]+)+")
+#: Capitalised words written side by side — one name, perhaps of several words ("Vertex Angels").
+_CAPITALISED = re.compile(r"[A-Z][^\s,;:()]*(?:\s+[A-Z][^\s,;:()]*)*")
+
+
+def _leads_a_label(name: str, runs: list[list[str]], labels: list[str]) -> bool:
+    """Is `name` — alone, or with the capitalised words written beside it — how an address or a domain
+    of the corpus BEGINS? A file known by its domain is named by it: "Larkspur" for `larkspurvc.test`,
+    "Vertex Angels" for `vertexangels.test` (the golden set's authored answers, 12 Oct). A name inside a
+    label is none of it: "Avi" is no beginning of `altavia` (crosscheck X16)."""
+    for run in runs:
+        for k, word in enumerate(run):
+            if word != name:
+                continue
+            for i in range(k + 1):
+                for j in range(k, len(run)):
+                    joined = "".join(run[i:j + 1])
+                    if any(label.startswith(joined) and len(label) - len(joined) <= LABEL_TAIL
+                           for label in labels):
+                        return True
+    return False
+
+
+def _person(person: Person) -> str:
+    """A person of the file as the words a text may name them by: their name, and their address (whose
+    words are their name when the file knows no other — `priya.nair@…` is Priya Nair)."""
+    return " ".join([person.name or "", person.key or ""])
+
+
+def _first_names(people: FilePeople) -> list[str]:
+    """Our names' first words — the founder's first name among them (crosscheck X35: a card that says
+    "Arjun" speaks of you, as one that says "the founder" does)."""
+    return [n.split()[0] for n in people.our_names if len(n.split()) >= 2]
 
 
 def _is_us(to: str, people: FilePeople) -> bool:
@@ -538,6 +599,26 @@ class _Run:
         """The file's people as words — whom a fact may name wherever it cites (the asker of an ask, the
         writer of a mail): the file shows them; a name it does not show is still refused."""
         return "\n".join(f"{p.name or ''} {p.key or ''}" for p in self.people.people)
+
+    def named(self, fact, own: str) -> str:
+        """The names a FACT may write beside its own lines and our names (M35.C2.L-logic.V1.U12, X09) — never
+        the file's head, nor every person of the file:
+          * the counterparty — the file is about them, and every item of it is theirs;
+          * a person of the file its cited items name — their whole name, as the file knows it ("Priya"
+            on the mail grounds "Priya Nair");
+          * for a fact citing no mail (a reading: an ask, a calculator, a situation, a booking, whose line
+            names nobody), the one person the file has beside its counterparty — the only one it can be."""
+        cp = self.people.counterparty
+        others = [p for p in self.people.people
+                  if p != cp and not (p.key and "@" in p.key and self.people.us.is_us(p.key))]
+        said = set(_words(own))
+        out = [own, _person(cp)]
+        out += [_person(p) for p in others if any(w in said for w in _name_of(p))]
+        mails = [e for e in fact.evidence if is_event(e)
+                 and not any(_A_MEETING.search(dl.line) for dl in self.lines.get(e, ()))]
+        if not mails and len(others) == 1:
+            out.append(_person(others[0]))
+        return "\n".join(out)
 
     def items(self, ids: Iterable[str]) -> str:
         """The dossier items of `ids`, once each, in the order asked: each id's OWN entry — the item whose
@@ -599,8 +680,11 @@ class _Run:
             self.say(line, C.KEPT)
         if speaks:
             found = _THE_FOUNDER.search(text)
-            if found or names_us(text, self.people.us, self.people.our_names):
-                self.say(line, C.NOTED, C.SPEAKS_OF_YOU, found.group(0) if found else "us")
+            first = next((f for f in _first_names(self.people)
+                          if re.search(rf"(?<!\w){re.escape(f)}(?!\w)", text)), None)
+            us = names_us(text, self.people.us, self.people.our_names)
+            if found or us or first:
+                self.say(line, C.NOTED, C.SPEAKS_OF_YOU, found.group(0) if found else "us" if us else first)
         return checked
 
 
@@ -673,7 +757,7 @@ def _fact(run: _Run, n: int, decisive: bool) -> bool:
     if quoted:
         run.quotes[n] = str(fact.quote)
     own = "\n".join([run.items(fact.evidence), run.quotes.get(n, "")])
-    why = _invented(fact.claim, "\n".join([own, run.people.head, run.names]), run.people)
+    why = _invented(fact.claim, run.named(fact, own), run.people)
     if why is not None:
         run.say(line, C.DROPPED, C.UNSUPPORTED, why)
         return False

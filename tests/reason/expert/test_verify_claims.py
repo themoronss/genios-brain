@@ -82,8 +82,11 @@ def test_a_name_on_another_line_does_not_ground_a_fact():
 
 
 def test_the_files_own_people_ground_a_fact_on_any_of_its_lines():
-    """An ask's line prints whose turn it is, not who asked; the file's head and its people name him —
-    and a name the file does not show at all is still refused."""
+    """An ask's line prints whose turn it is, not who asked; the file is Marco's, so his name stands on any
+    item of it — and a name the file does not show at all is still refused. ⛔ RESTATED by
+    M35.C2.L-logic.V1.U12 (crosscheck X09): it is the COUNTERPARTY who stands on any line, no longer the
+    file's head and every person of it — another person of the file stands only where the cited item names
+    them (`test_verify_names.py`)."""
     checked = _check(fact2={"claim": "Marco Ruiz's ask for the deck waits on us"})
     assert _verdict(checked, "fact:2").verdict == C.KEPT
     assert _verdict(_check(fact2={"claim": "Neel's ask for the deck waits on us"}), "fact:2").reason \
