@@ -9,7 +9,9 @@ the mode; the next move; the draft — and together they ask for exactly the fie
 reads, each once, in the contract's own shape and vocabularies. The dossier rides whole, first. No number
 appears that the dossier does not hold: the instructions carry no digit at all. A repair carries the
 gate's complaint. `PROMPT_VERSION` is "expert-review.v2": ⛔ moved from v1 by M32.C1.L-contract.V0.U09, when the frame step
-began to ask for a proposed kind of work (no review was ever written under v1).
+began to ask for a proposed kind of work (no review was ever written under v1). ⛔ "expert-review.v3" since
+STEP-13 (`yc2_w27_s13` M35.C3.L-interface.V0.U04): the checklist asks for what the check reads — a quote for
+each fact a move rests on, `rests_on`, `to`, `answers` — and the rules speak to the founder as you (F178).
 """
 from __future__ import annotations
 
@@ -33,7 +35,8 @@ ORDER = ("true", "frame", "expected", "patterns", "unknowns", "scenarios", "appr
 
 #: A review with every list holding an object, so its shape is the contract's whole shape.
 FULL = {
-    "facts": [{"claim": "Kunal sent the link again", "evidence": ["evt_003"]}],
+    "facts": [{"claim": "Kunal sent the link again", "evidence": ["evt_003"],
+               "quote": "Here it is again"}],
     "inferences": [{"claim": "the next move is ours", "based_on": ["fact:1"]}],
     "patterns": [{"kind": "pattern", "claim": "a first call that books itself rarely ghosts",
                   "based_on": ["founder_office.heu.investor.claim_0"]}],
@@ -46,8 +49,9 @@ FULL = {
                   "best": "a partner meeting", "worst": "a pass", "signals_to_watch": ["an invite"]},
     "appraisal": {"stakes": "high", "urgency": "high", "reversibility": "reversible",
                   "reasons": ["our move"]},
-    "mode": "act", "next_move": {"who": "the founder", "what": "book the call", "for_whom": "Kunal",
-                                 "by_when": "2026-10-11"},
+    "mode": "act", "next_move": {"who": "you", "what": "book the call", "for_whom": "Kunal",
+                                 "by_when": "2026-10-11", "rests_on": ["fact:1"], "to": "Kunal",
+                                 "answers": "loop:lp_1"},
     "alternative": "ask Kunal for a slot", "wait_or_stop": "stop if the fund passes",
     "done_when": "the call is on the calendar", "draft": "Hi Kunal, booking it now.",
     "proposed_kind": {"kind": "investor", "why": "the fund asks for a first call",
@@ -68,7 +72,25 @@ def _shape(value):
 
 
 def test_the_prompt_has_a_version():
-    assert P.PROMPT_VERSION == "expert-review.v2"
+    assert P.PROMPT_VERSION == "expert-review.v3"
+
+
+def test_the_checklist_asks_for_what_the_check_reads_and_speaks_to_you():
+    """STEP-13: a quote for a fact a move rests on, the facts it rests on, whom its draft goes to, the ask
+    it answers — each asked by a rule and in the schema — and the founder addressed as you (F178)."""
+    prompt = P.build_prompt(_dossier())
+    for words in ("carries those words in its quote", "in rests_on, as fact:N", "says in to whom it goes",
+                  "never the connector who introduced", "gives that ask's loop id in answers",
+                  "Speak to the founder as you"):
+        assert words in prompt, words
+    assert set(P.SCHEMA["facts"][0]) == {"claim", "evidence", "quote"}
+    assert {"rests_on", "to", "answers"} <= set(P.SCHEMA["next_move"])
+    assert "the mail's own words" in next(s.asks for s in P.CHECKLIST if s.name == "true")
+    move_step = next(s.asks for s in P.CHECKLIST if s.name == "next_move")
+    assert "the facts it rests on" in move_step and "whom its draft goes to" in move_step
+    from genios_engine.contracts.expert_review import UNGROUNDED_MOVE
+    assert "rests_on" in P.RULE_FOR_REFUSAL[UNGROUNDED_MOVE], \
+        "the rule a move resting on nothing breaks is the move's own"
 
 
 def test_the_checklist_is_the_prompts_sections_in_their_one_order():

@@ -18,6 +18,12 @@ NO NUMBER OF ITS OWN. `validate` refuses a review that states a number its dossi
 number in the prompt is a number the model may repeat — so the instructions write none: no step is
 numbered and no example carries a digit. Every number the model reads is the dossier's.
 
+WHAT THE CHECK READS (STEP-13, `yc2_w27_s13` M35.C3.L-interface.V0.U04). Since STEP-13 every claim is
+checked before anything reaches the founder (`reason/expert/verify`), and the checklist asks for what the
+check reads: a fact the move rests on QUOTES the mail it cites; the move names the facts it rests on, whom
+its draft goes to, and the ask it answers. And the card speaks to the founder as "you" — STEP-12's answers
+named the company and "the founder" as parties (`03` F178): the rule says so now.
+
 `PROMPT_VERSION` is one of a file's fingerprint inputs (`reason/expert/fingerprint`, `06` D48): change
 the wording, change the version. Pure — the same dossier is the same prompt, byte for byte.
 """
@@ -37,8 +43,10 @@ from genios_engine.contracts.expert_review import (LEVELS, MODES, MOVING, NO_NEX
 from .dossier import Dossier
 
 #: ⛔ v2 since M32.C1.L-contract.V0.U09 (2026-10-11): the frame step asks for a proposed kind of work.
-#: No review was ever written under v1 — the pass was not yet wired.
-PROMPT_VERSION = "expert-review.v2"
+#: No review was ever written under v1 — the pass was not yet wired. ⛔ v3 since STEP-13 (2026-10-12): the
+#: quote, `rests_on`, `to`, `answers`, and "you". Every file is reviewed once more under it (the
+#: fingerprint names the prompt) — in production, the first pass after the deploy.
+PROMPT_VERSION = "expert-review.v3"
 
 
 def _or(words) -> str:
@@ -58,6 +66,8 @@ RULES_HEADING = "## THE RULES"
 _ONLY = "Use only the dossier. What you know of the world is not evidence about this file."
 _CITE = ("Every fact, and a proposed kind of work, cites at least one id the dossier prints in square "
          "brackets — the id alone, without the brackets.")
+_QUOTE = ("A fact your next move rests on, that cites a mail whose words the dossier shows, carries those "
+          "words in its quote — a whole phrase, copied exactly as the dossier prints it, never reworded.")
 _GROUND = ("An inference or a pattern rests on ids the dossier prints, or on your own facts as fact:N, "
            "N being the fact's place in your list, counting from one.")
 _NUMBERS = ("In every sentence you write, the draft included, use no number the dossier does not hold: "
@@ -70,13 +80,19 @@ _LEVELS = (f"Stakes and urgency are {_or(LEVELS)}; reversibility is {_or(REVERSI
            "never a score.")
 _MODE = (f"The mode is {_or(MODES)}; {_or(sorted(MOVING))} always name a next move. Otherwise the next "
          "move may be null.")
+_MOVE = ("The next move lists the facts it rests on in rests_on, as fact:N. A move that sends something "
+         "says in to whom it goes: someone the file's mail shows — never the founder or the company, and "
+         "never the connector who introduced the person this file is about. A move that answers an ask "
+         "the founder owes gives that ask's loop id in answers.")
 _PRIOR = ("The playbook is a prior about this kind of work, not a fact about this file; where it is not "
           "yet reviewed, weigh it as such.")
 _SOON = "A promise to answer soon is no deadline: judge from the dates whether soon has passed."
 _NO_REPLY = "Say that nobody replied only where WHAT WAS CHECKED says it may be said."
 _UNKNOWN = "What would change your answer and is not in the dossier is an unknown — named, never guessed."
-RULES: tuple[str, ...] = (_ONLY, _CITE, _GROUND, _NUMBERS, _STAGE, _LEVELS, _MODE, _PRIOR, _SOON,
-                          _NO_REPLY, _UNKNOWN)
+_YOU = ("Speak to the founder as you, and of the company as yours: never write the founder, and never their "
+        "name or the company's as a party.")
+RULES: tuple[str, ...] = (_ONLY, _CITE, _QUOTE, _GROUND, _NUMBERS, _STAGE, _LEVELS, _MODE, _MOVE, _PRIOR,
+                          _SOON, _NO_REPLY, _UNKNOWN, _YOU)
 
 #: For every refusal `validate` can make, the rule that tells the model how not to earn it — a
 #: refusal the prompt never warned of would be the model's fault on paper and the prompt's in fact.
@@ -84,7 +100,7 @@ RULE_FOR_REFUSAL: dict[str, str] = {
     UNCITED_FACT: _CITE, UNKNOWN_EVIDENCE: _CITE, UNGROUNDED_INFERENCE: _GROUND,
     UNGROUNDED_PATTERN: _GROUND, UNKNOWN_STAGE: _STAGE, NO_NEXT_MOVE: _MODE,
     NUMBER_NOT_IN_DOSSIER: _NUMBERS,
-    UNGROUNDED_MOVE: _GROUND,             # STEP-13: a move rests on fact:N, as an inference does
+    UNGROUNDED_MOVE: _MOVE,
 }
 
 #: What each mode means — the contract's modes, in its order. Code maps a mode to the decision.
@@ -110,8 +126,9 @@ CHECKLIST_HEADING = "## THE CHECKLIST — think in this order"
 CHECKLIST: tuple[Step, ...] = (
     Step("true", "WHAT IS TRUE",
          "Establish what is true in this file before judging it: each fact in one sentence, with the "
-         "ids of the dossier items that show it. Then what follows from those facts that the dossier "
-         "does not say outright — each inference with what it rests on.",
+         "ids of the dossier items that show it — and where your next move will rest on it and it cites a "
+         "mail, the mail's own words. Then what follows from those facts that the dossier does not say "
+         "outright — each inference with what it rests on.",
          ("facts", "inferences")),
     Step("frame", "THE FRAME, AND THE RIVAL FRAMES",
          "Say what situation this is — the frame you would brief the founder with — and at least one "
@@ -149,8 +166,9 @@ CHECKLIST: tuple[Step, ...] = (
                                           for mode, meaning in MODE_MEANINGS.items()) + ".",
          ("mode",)),
     Step("next_move", "THE NEXT MOVE",
-         "The best next move — who makes it, what it is, for whom, and by when; an alternative, if the "
-         "best one is refused; when to wait, and when to stop; and what done looks like.",
+         "The best next move — who makes it, what it is, for whom, and by when; the facts it rests on; "
+         "whom its draft goes to; the ask it answers, if it answers one; an alternative, if the best one "
+         "is refused; when to wait, and when to stop; and what done looks like.",
          ("next_move", "alternative", "wait_or_stop", "done_when")),
     Step("draft", "THE DRAFT",
          "When the move is a message, the draft: the words the founder could send as they are — short, "
@@ -162,7 +180,8 @@ SCHEMA_HEADING = "## THE ANSWER — one JSON object, in this shape"
 _CITED = "an id the dossier prints in square brackets, without them"
 _RESTS_ON = "fact:N, or an id the dossier prints"
 SCHEMA: dict[str, Any] = {
-    "facts": [{"claim": "what is true, in one sentence", "evidence": [_CITED]}],
+    "facts": [{"claim": "what is true, in one sentence", "evidence": [_CITED],
+               "quote": "the cited mail's own words this fact rests on, copied — or null"}],
     "inferences": [{"claim": "what follows, that the dossier does not say outright",
                     "based_on": [_RESTS_ON]}],
     "patterns": [{"kind": " | ".join(PATTERN_KINDS), "claim": "what usually happens, or when it does not",
@@ -181,7 +200,9 @@ SCHEMA: dict[str, Any] = {
                   "reversibility": " | ".join(REVERSIBILITY), "reasons": ["a reason, from the dossier"]},
     "mode": " | ".join(MODES),
     "next_move": {"who": "who makes it", "what": "what it is", "for_whom": "for whom",
-                  "by_when": "a date as YYYY-MM-DD, or null"},
+                  "by_when": "a date as YYYY-MM-DD, or null", "rests_on": ["fact:N"],
+                  "to": "whom its draft goes to, as the dossier names them — or null",
+                  "answers": "the loop id of the ask it answers, as the dossier prints it — or null"},
     "alternative": "the next best move",
     "wait_or_stop": "when to wait, and when to stop",
     "done_when": "what done looks like",
