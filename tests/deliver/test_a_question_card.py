@@ -96,6 +96,22 @@ def test_a_held_file_asks_its_question_on_its_own_card(world, cards):
     assert _queued(cards, org, NOW) == [card.card_id], "it reaches the queue"
 
 
+def test_a_question_card_says_what_answering_does_and_what_waiting_costs(world, cards):
+    """STEP-11's founder-card clause (`tests/replays/test_every_founder_file_reads_its_playbook`): every founder
+    card says what success looks like and what doing nothing costs — a question card carried NULL for both. It
+    says them in our closed words (M36.C2.L-logic.V2.U10), never model prose; a question has no play window."""
+    store, org, _registry, _anchor, _events = _asked(world)
+    _build(store, cards, org)
+    with store.engine.connect() as c:
+        row = c.execute(text("select success_signal, do_nothing_consequence, outcome_window_days from cards "
+                             "where org_id = :o"), {"o": org}).one()
+    assert (row.success_signal, row.do_nothing_consequence, row.outcome_window_days) == (
+        "you answered: your words are kept on the file and its next review reads them",
+        "nothing on this file moves until you answer", None)
+    assert (row.success_signal, row.do_nothing_consequence) == (pipeline.QUESTION_SUCCESS_SIGNAL,
+                                                                pipeline.QUESTION_DO_NOTHING)
+
+
 def test_a_held_review_asks_the_checks_question_over_the_files_checked_reading(world, cards):
     store, org, registry, _ = world
     anchor, _situations, events = _fund(store, org)

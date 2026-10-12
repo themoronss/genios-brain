@@ -8076,7 +8076,10 @@ yc2_w27_s13:
                         `frames.primary`, never an instruction. Its `why` is one closed, founder-facing phrase
                         (`asks.WHYS`, read off the check's verdicts), never the check's internal reason; the
                         question card's situation is the checked reading or that closed phrase, and a question
-                        filed with any other `why` is carded with the closed one.
+                        filed with any other `why` is carded with the closed one. (Added 12 Oct, found by the
+                        golden lane: STEP-11's founder-card clause.) The question card says what answering does
+                        and what waiting costs — `success_signal` and `do_nothing_consequence`, closed phrases
+                        of ours, never model prose — and has no play window (`outcome_window_days` None).
                       artifact: "genios_engine/reason/expert/asks.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/<fresh> .venv/bin/python -m pytest -q tests/reason/expert/test_a_held_file_asks.py tests/deliver/test_a_question_card.py"
                       depends_on: [M36.C2.L-integration.V2.U03, M36.C2.L-interface.V3.U05, M36.C2.L-data.V2.U12]

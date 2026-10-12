@@ -219,6 +219,11 @@ _QUESTIONS_WITHOUT_CARDS = (
 #: What a question card offers: your answer, or later. A question is not an instruction, so there is
 #: nothing to run and nothing to do yourself; `wrong` waits for STEP-16, which learns from it.
 QUESTION_ACTIONS = ("answer", "snooze")
+#: What answering does, and what waiting on the question costs (STEP-11's founder-card clause: every founder
+#: card says both). OURS, CLOSED (STEP-13 M36.C2.L-logic.V2.U10): a question carries no playbook outcome and
+#: no model prose may stand in for one — and no play window either, so its `outcome_window_days` stays None.
+QUESTION_SUCCESS_SIGNAL = "you answered: your words are kept on the file and its next review reads them"
+QUESTION_DO_NOTHING = "nothing on this file moves until you answer"
 
 
 def _open_questions_without_cards(graph, org_id: str, evaluation_time: datetime | None = None) -> list[dict]:
@@ -280,6 +285,8 @@ def question_card(graph, org_id: str, row: dict, eval_time: datetime) -> tuple[d
         "capability_key": row.get("capability_id"), "capability_version": row.get("capability_version"),
         "capability_review_state": str(row.get("capability_review_state") or "unreviewed"),
         "output_lane": lane.lane, "lane_reason": lane.reason,
+        "success_signal": QUESTION_SUCCESS_SIGNAL, "do_nothing_consequence": QUESTION_DO_NOTHING,
+        "outcome_window_days": None,
         "actions": [{"type": "answer", "label": "Answer", "question_id": row["question_id"]},
                     {"type": "snooze", "options": ["4h", "tomorrow_09", "3d", "custom"]}],
         "why": why,
