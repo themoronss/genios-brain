@@ -27,6 +27,7 @@ from genios_engine.contracts.expert_review import ExpertReview
 from genios_engine.reason.audit import persist_execution
 from genios_engine.reason.expert import decide as D
 from genios_engine.reason.expert import store as R
+from tests.reason.expert.checks import as_written
 from genios_engine.reason.store import ReasoningStore
 
 pytestmark = pytest.mark.pg
@@ -83,12 +84,14 @@ def persisted(pg_store):
     _erase_tenant(pg_store, ORG)
     with pg_store.engine.begin() as c:
         c.execute(text("delete from expert_reviews where org_id = :o"), {"o": ORG})
+        # STEP-13: decided through its check — the check of a review that stands whole (`checks.as_written`).
         assert R.write_review(c, org_id=ORG, file_id=FILE, fingerprint=FINGERPRINT,
                               model="claude-sonnet-5", prompt_version="expert-review.v2",
                               dossier_digest="d" * 64, status=R.VALID, reason=None,
                               review=ExpertReview.from_mapping(RAW), input_tokens=10, output_tokens=10,
                               cost_micro_usd=1, at=NOW, inputs={"events": ["evt_neel_0927"]},
-                              triggers=[{"kind": "first_look", "says": "never judged"}])
+                              triggers=[{"kind": "first_look", "says": "never judged"}],
+                              checked=as_written(ExpertReview.from_mapping(RAW)))
         row = R.read_review(c, ORG, FILE, FINGERPRINT)
     request = D.request_for(row, org_id=ORG, root_entity_type="company", domain="founder_office",
                             eval_time=NOW, graph_version=3)
