@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_120, (
+    assert r["statements"] == 3_130, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -472,6 +472,11 @@ def test_the_statement_count_did_NOT_move():
     # a column list that began with `select` and had no FROM): the constant is now the columns alone and
     # each reader writes `"select " + ROAD_COLUMNS + …`, so this counter renders the drain's and the
     # rebuild's two statements again (STEP-18 B12 had left them Name-led, rendered by nothing): +7.
+    # ⛔ MOVED 3,120 → 3,130 by yc2_w27_s14/M42.C1.L-data.V1.U03 (STEP-14, the one writer of a card's signal):
+    # `platform/card_lifecycle` reads which card a file's next version goes to (`_FILE_CARD`) and versions it
+    # (`_VERSION`) — two statements, each assembled from the shared `_HELD` and `_UNDECIDED` predicates, so the
+    # template walk records each prefix of each `+` chain: 3 → 13 in that module, measured per file against
+    # 6650b1c4 (nothing else moved). STEP-15 and STEP-16 move this on their own branches; the merge re-measures.
     # ⛔ MOVED 3,079 → 3,080 by yc2_w27_s18/M48.C1.L-data.V0.U02 (STEP-18 B4, a review object waits for
     # review): one UPDATE, `feedback/publisher._rest_for_review` — the weekly road's review object rests at
     # `human_review`. A literal at its own call.

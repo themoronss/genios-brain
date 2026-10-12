@@ -30,11 +30,8 @@
 alter table cards add column if not exists file_id text;
 alter table cards add column if not exists version integer not null default 1;
 
-do $$ begin
-  if not exists (select 1 from pg_constraint where conname = 'cards_version_from_one') then
-    alter table cards add constraint cards_version_from_one check (version >= 1);
-  end if;
-end $$;
+alter table cards drop constraint if exists cards_version_from_one;
+alter table cards add constraint cards_version_from_one check (version >= 1);
 
 create unique index if not exists cards_one_open_card_per_file on cards (org_id, file_id)
   where file_id is not null
