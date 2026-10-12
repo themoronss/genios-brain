@@ -95,8 +95,11 @@ REFUSALS: tuple[str, ...] = (UNCITED_FACT, UNKNOWN_EVIDENCE, UNGROUNDED_INFERENC
 ASK_PREFIX = "loop:"
 
 _FACT_REF = re.compile(r"^fact:(\d+)$")
-# A comma groups thousands only before exactly three digits: "1,400" is one number, "7,8" is two.
-_NUMBER = re.compile(r"\d+(?:,\d{3})*(?:\.\d+)*")
+# A comma groups thousands only before exactly three digits: "1,400" is one number, "7,8" is two — or, in
+# Indian grouping, pairs before the last three: "12,50,000" (twelve lakh fifty thousand) is one number, not
+# "12" and "50000" (STEP-13 crosscheck X45, M35.C2.L-logic.V1.U10).
+NUMBER_PATTERN = r"\d{1,2}(?:,\d{2})+,\d{3}(?:\.\d+)?(?!\d)|\d+(?:,\d{3})*(?:\.\d+)*"
+_NUMBER = re.compile(NUMBER_PATTERN)
 
 
 def number_tokens(text: str | None) -> frozenset[str]:
@@ -504,7 +507,7 @@ def validate(review: ExpertReview, catalogue: DossierCatalogue) -> Validation:
 __all__ = ["ASK_PREFIX", "Appraisal", "DossierCatalogue", "ExpectedVsActual", "ExpertReview", "Fact", "Frames",
            "fact_ref",
            "Hypothesis", "Inference", "LEVELS", "MODES", "MOVING", "NO_NEXT_MOVE",
-           "NUMBER_NOT_IN_DOSSIER", "NextMove", "PATTERN_KINDS", "Pattern", "ProposedKind", "REFUSALS",
+           "NUMBER_NOT_IN_DOSSIER", "NUMBER_PATTERN", "NextMove", "PATTERN_KINDS", "Pattern", "ProposedKind", "REFUSALS",
            "REVERSIBILITY",
            "Scenarios", "UNCITED_FACT", "UNGROUNDED_INFERENCE", "UNGROUNDED_MOVE", "UNGROUNDED_PATTERN",
            "UNKNOWN_EVIDENCE",

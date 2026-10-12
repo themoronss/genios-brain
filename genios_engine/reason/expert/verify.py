@@ -25,8 +25,11 @@ ONE PASS, IN ONE ORDER.
       line. Every name it writes is on its lines, by the card
       validator's own rule (`platform/grounding.invention_ok`, else `unsupported`). Every number it writes
       is on its lines — a decisive fact's on its quote, its mail's head and the readings it cites, never
-      another sentence of the mail — else it is CORRECTED to the one value its one cited calculator line
-      holds, or it drops (`wrong_number`, RULE 08).
+      another sentence of the mail — read as what it is (`figures_in`, M35.C2.L-logic.V1.U10): a printed
+      date or time is held to the dates and times its lines print and is never a count; a value carries
+      its unit, magnitude and currency (6 days ≠ 6 weeks, lakh ≠ crore, M ≠ K, ₹ ≠ $); a calculator grounds
+      only its own clause's value, never a sibling's printed on the same line. Else it is CORRECTED to the
+      one value its one cited calculator line holds, in its unit, or it drops (`wrong_number`, RULE 08).
   2 · AN INFERENCE OR A PATTERN stands while one of its grounds stands (else `ungrounded`).
   3 · THE CARD'S WORDS. The headline (the move, or the reading when there is no move) stands on the lines
       of the facts the move rests on and the file's own head; the situation, what done looks like and a
@@ -63,7 +66,8 @@ from dataclasses import dataclass, field
 
 from genios_engine.contracts import claim_check as C
 from genios_engine.contracts.expert_review import (
-    ASK_PREFIX, MOVING, NO_NEXT_MOVE, UNGROUNDED_MOVE, UNKNOWN_STAGE, ExpertReview, fact_ref, number_tokens)
+    ASK_PREFIX, MOVING, NO_NEXT_MOVE, NUMBER_PATTERN, UNGROUNDED_MOVE, UNKNOWN_STAGE, ExpertReview, fact_ref,
+    number_tokens)
 from genios_engine.platform.grounding import corpus_of, digit_runs, invention_ok
 from genios_engine.platform.self_identity import names_us
 from genios_engine.reason.expert.decide import is_event
@@ -161,17 +165,176 @@ def quoted_in(quote: str | None, words: Iterable[str]) -> bool:
 def value_of(line: str, ref: str) -> str | None:
     """The one value a calculator prints for `ref` on `line` — its own clause's number, the sample size
     aside — or None when the clause holds none, or more than one (a rate, "2 of 5")."""
+    figure = _value_figure(line, ref)
+    return figure[0] if figure is not None else None
+
+
+def _clause(line: str, ref: str) -> str | None:
+    """The clause of `line` that prints `ref` — from the last id or `;` before its marker, up to it."""
     marker = f"[{ref}]"
     if marker not in line:
         return None
-    clause = re.split(r"\]|;", line.split(marker, 1)[0])[-1]
-    values = numbers_in(_SAMPLE.sub(" ", clause))
+    return re.split(r"\]|;", line.split(marker, 1)[0])[-1]
+
+
+def _value_figure(line: str, ref: str) -> tuple[str, str, str] | None:
+    """`value_of`, with its unit and currency — what a correction must keep (M35.C2.L-logic.V1.U10)."""
+    clause = _clause(line, ref)
+    if clause is None:
+        return None
+    figs = figures_in(_SAMPLE.sub(" ", clause))
+    values = figs.values if not (figs.dates or figs.times or figs.days) else frozenset()
     return next(iter(values)) if len(values) == 1 else None
 
 
 def numbers_in(text: str | None) -> frozenset[str]:
     """Every number a text writes — the ids it prints aside: an id's digits are no number."""
     return number_tokens(_PRINTED_ID.sub(" ", str(text or "")))
+
+
+# ── figures: a number as what it is (M35.C2.L-logic.V1.U10) ─────────────────────────────────────────
+_MONTHS: tuple[str, ...] = ("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec")
+_MON = (r"(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|"
+        r"sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)")
+#: A date as the dossier prints it — `2026-08-11 09:20 UTC`, its time with it — and as people write one.
+_ISO = re.compile(r"\b(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::\d{2})?)?(?:\s*UTC\b)?")
+_DAY_MONTH = re.compile(rf"\b(\d{{1,2}})(?:st|nd|rd|th)?\s+(?:of\s+)?({_MON})\.?\b(?:,?\s+(\d{{4}}))?", re.I)
+_MONTH_DAY = re.compile(rf"\b({_MON})\.?\s+(\d{{1,2}})(?:st|nd|rd|th)?\b(?:,?\s+(\d{{4}}))?", re.I)
+_CLOCK = re.compile(r"\b(\d{1,2})(?::(\d{2})\s*(am|pm|a\.m\.|p\.m\.)?|\.(\d{2})\s*(am|pm|a\.m\.|p\.m\.))"
+                    r"(?!\d)", re.I)
+_HOUR = re.compile(r"\b(\d{1,2})\s*(am|pm|a\.m\.|p\.m\.)(?!\w)", re.I)
+_ORDINAL = re.compile(r"\b(\d{1,2})(?:st|nd|rd|th)\b", re.I)
+#: A value — its currency before it, its unit or magnitude after it, the words a text writes them in.
+_VALUE = re.compile(
+    r"(?P<cur>₹|\brs\.?\s?|\binr\s?|\$|\busd\s?|€|\beur\s?|£|\bgbp\s?)?"
+    rf"(?<![\d.,])(?P<n>{NUMBER_PATTERN})"
+    r"(?P<unit>\s?-?\s?(?:%|percent\b|per\s?cent\b|k\b|thousand\b|m\b|mn\b|million\b|b\b|bn\b|billion\b|"
+    r"lakhs?\b|lacs?\b|crores?\b|cr\b|seconds?\b|secs?\b|minutes?\b|mins?\b|hours?\b|hrs?\b|days?\b|"
+    r"weeks?\b|wks?\b|months?\b|years?\b|yrs?\b))?", re.I)
+#: Each unit or magnitude word, as one name: a value's unit must be its line's (lakh ≠ crore, days ≠ weeks).
+UNITS: dict[str, str] = {
+    "%": "%", "percent": "%", "per cent": "%", "percent.": "%", "k": "k", "thousand": "k", "m": "m",
+    "mn": "m", "million": "m", "b": "b", "bn": "b", "billion": "b", "lakh": "lakh", "lakhs": "lakh",
+    "lac": "lakh", "lacs": "lakh", "crore": "crore", "crores": "crore", "cr": "crore", "second": "s",
+    "seconds": "s", "sec": "s", "secs": "s", "minute": "min", "minutes": "min", "min": "min", "mins": "min",
+    "hour": "h", "hours": "h", "hr": "h", "hrs": "h", "day": "d", "days": "d", "week": "w", "weeks": "w",
+    "wk": "w", "wks": "w", "month": "mo", "months": "mo", "year": "y", "years": "y", "yr": "y", "yrs": "y"}
+CURRENCIES: dict[str, str] = {"₹": "inr", "rs": "inr", "inr": "inr", "$": "usd", "usd": "usd", "€": "eur",
+                              "eur": "eur", "£": "gbp", "gbp": "gbp"}
+
+
+@dataclass(frozen=True, slots=True)
+class Figures:
+    """What a text writes in digits, each as what it is: dates (month, day, year or None), times (hour,
+    minute), days of a month written alone ("the 11th"), and values (the number, its unit, its currency)."""
+    dates: frozenset[tuple[int, int, int | None]] = frozenset()
+    times: frozenset[tuple[int, int]] = frozenset()
+    days: frozenset[int] = frozenset()
+    values: frozenset[tuple[str, str, str]] = frozenset()
+
+
+def _norm(token: str) -> str:
+    whole, _, frac = token.replace(",", "").partition(".")
+    frac = frac.rstrip("0")
+    return f"{int(whole)}.{frac}" if frac else str(int(whole))
+
+
+def _hour(h: str, ampm: str | None) -> int:
+    return int(h) % 12 + (12 if ampm.lower().startswith("p") else 0) if ampm else int(h)
+
+
+def figures_in(text: str | None) -> Figures:
+    """Every figure `text` writes (see `Figures`) — its printed ids aside, and every date and time taken
+    out BEFORE a value is read: a timestamp's digits are no count (crosscheck X02)."""
+    rest = _PRINTED_ID.sub(" ", str(text or ""))
+    dates: set[tuple[int, int, int | None]] = set()
+    times: set[tuple[int, int]] = set()
+    days: set[int] = set()
+    values: set[tuple[str, str, str]] = set()
+
+    def cut(m: re.Match[str]) -> str:
+        return " " * len(m.group(0))
+
+    def iso(m: re.Match[str]) -> str:
+        dates.add((int(m.group(2)), int(m.group(3)), int(m.group(1))))
+        if m.group(4):
+            times.add((int(m.group(4)), int(m.group(5))))
+        return cut(m)
+
+    def day_month(m: re.Match[str]) -> str:
+        dates.add((_MONTHS.index(m.group(2)[:3].lower()) + 1, int(m.group(1)),
+                   int(m.group(3)) if m.group(3) else None))
+        return cut(m)
+
+    def month_day(m: re.Match[str]) -> str:
+        dates.add((_MONTHS.index(m.group(1)[:3].lower()) + 1, int(m.group(2)),
+                   int(m.group(3)) if m.group(3) else None))
+        return cut(m)
+
+    def clock(m: re.Match[str]) -> str:
+        minute, ampm = (m.group(2), m.group(3)) if m.group(2) else (m.group(4), m.group(5))
+        if int(minute) >= 60 or int(m.group(1)) > 23:
+            return m.group(0)
+        times.add((_hour(m.group(1), ampm), int(minute)))
+        return cut(m)
+
+    def hour(m: re.Match[str]) -> str:
+        times.add((_hour(m.group(1), m.group(2)), 0))
+        return cut(m)
+
+    def ordinal(m: re.Match[str]) -> str:
+        days.add(int(m.group(1)))
+        return cut(m)
+
+    rest = _ISO.sub(iso, rest)
+    rest = _DAY_MONTH.sub(day_month, rest)
+    rest = _MONTH_DAY.sub(month_day, rest)
+    rest = _CLOCK.sub(clock, rest)
+    rest = _HOUR.sub(hour, rest)
+    rest = _ORDINAL.sub(ordinal, rest)
+    for m in _VALUE.finditer(rest):
+        raw = m.group("n")
+        unit = " ".join((m.group("unit") or "").strip(" -").lower().split())
+        cur = (m.group("cur") or "").strip().rstrip(".").lower()
+        if raw.count(".") > 1:                         # a version: each part on its own, as number_tokens
+            values.update((_norm(part), "", "") for part in raw.replace(",", "").split("."))
+            continue
+        values.add((_norm(raw), UNITS.get(unit, unit), CURRENCIES.get(cur, cur)))
+    return Figures(frozenset(dates), frozenset(times), frozenset(days), frozenset(values))
+
+
+@dataclass(frozen=True, slots=True)
+class Stray:
+    """A figure a text writes that its lines do not hold — as the detail names it, and, for a value, the
+    value itself (what a calculator may correct)."""
+    detail: str
+    value: tuple[str, str, str] | None = None
+
+
+def unheld(text: Figures, lines: Figures) -> list[Stray]:
+    """Each figure of `text` that `lines` does not hold — a date its dates do not (the year too, when the
+    text writes one), a time its times do not, a day of the month no date of its has, a value with no
+    equal on its lines in its unit and currency (a bare count needs neither; a year stands on a date of
+    that year). Sorted by what is written, so the same texts name the same first stray."""
+    out: list[Stray] = []
+    for month, day, year in text.dates:
+        if not any(month == m and day == d and (year is None or year == y) for m, d, y in lines.dates):
+            out.append(Stray(f"number:{day} {_MONTHS[month - 1].title()}" + (f" {year}" if year else "")))
+    for h, mi in text.times:
+        if (h, mi) not in lines.times:
+            out.append(Stray(f"number:{h}:{mi:02d}"))
+    for day in text.days:
+        if day not in {d for _, d, _ in lines.dates} | set(lines.days) | {int(n) for n, _, _ in lines.values
+                                                                            if n.isdigit()}:
+            out.append(Stray(f"number:{day}"))
+    years = {y for _, _, y in lines.dates if y is not None}
+    for n, unit, cur in text.values:
+        if any(n == ln and unit in ("", lu) and cur in ("", lc) for ln, lu, lc in lines.values):
+            continue
+        if not unit and not cur and n.isdigit() and int(n) in years:
+            continue
+        out.append(Stray(f"number:{n}", (n, unit, cur)))
+    return sorted(out, key=lambda s: s.detail)
 
 
 def _swap(text: str, corrections: dict[str, str]) -> str:
@@ -281,6 +444,18 @@ class _Run:
             out += [dl.item for dl in (own or places)]
         return "\n".join(dict.fromkeys(out))
 
+    def figures(self, ids: Iterable[str]) -> str:
+        """The lines `ids` hold NUMBERS on: each id's items (`items`) — but a calculator only its own
+        clause, never a sibling's on the same line (crosscheck X02: the timeline prints the usual gap, the
+        longest and the quiet on one line, and "quiet 5.89 days" is the longest gap's value)."""
+        out: list[str] = []
+        for i in ids:
+            if i.startswith("num:"):
+                out += [f"{c}[{i}]" for dl in self.lines.get(i, ()) if (c := _clause(dl.line, i)) is not None]
+            else:
+                out.append(self.items([i]))
+        return "\n".join(dict.fromkeys(out))
+
     def say(self, line: str, verdict: str, reason: str | None = None, detail: str = "") -> None:
         self.verdicts.append(C.LineVerdict(line, verdict, reason, detail))
 
@@ -288,24 +463,27 @@ class _Run:
         return next((f"{v.reason}: {v.detail}" if v.detail else str(v.reason)
                      for v in self.verdicts if v.line == line and v.verdict == C.DROPPED), "dropped")
 
-    def stands(self, text: str, corpus: str, *, head: bool = True) -> tuple[str | None, str]:
-        """`text` with its corrected numbers swapped in, when every number of it is on `corpus` and every
+    def stands(self, text: str, corpus: str, *, head: bool = True,
+               figures: str | None = None) -> tuple[str | None, str]:
+        """`text` with its corrected numbers swapped in, when every figure of it is on `figures` (`corpus`
+        when none is given: a date as a date, a time as a time, a value in its unit — `unheld`) and every
         name on `corpus` (with the file's own head, and our own names) — else None, and the first thing
         that is not. The head grounds a NAME — the counterparty, its introducer — never a number: its
         dates and times would ground any number at all."""
         swapped = _swap(text, self.corrections)
-        stray = sorted(numbers_in(swapped) - numbers_in(corpus) - set(self.corrections.values()))
+        stray = [s for s in unheld(figures_in(swapped), figures_in(corpus if figures is None else figures))
+                 if s.value is None or s.value[0] not in self.corrections.values()]
         if stray:
-            return None, f"number:{stray[0]}"
+            return None, stray[0].detail
         names = "\n".join([corpus, self.people.head, self.names]) if head else corpus
         return (swapped, "") if (why := _invented(swapped, names, self.people)) is None else (None, why)
 
     def text(self, line: str, text: str | None, corpus: str, *, speaks: bool = True,
-             head: bool = True) -> str | None:
+             head: bool = True, figures: str | None = None) -> str | None:
         """Check one of the card's texts; record its verdict (and, when it speaks of you, the note)."""
         if not text:
             return None
-        checked, why = self.stands(text, corpus, head=head)
+        checked, why = self.stands(text, corpus, head=head, figures=figures)
         if checked is None:
             self.say(line, C.DROPPED, C.WRONG_NUMBER if why.startswith("number:") else C.UNSUPPORTED, why)
         elif checked != text:
@@ -394,21 +572,23 @@ def _fact(run: _Run, n: int, decisive: bool) -> bool:
         return False
     # A decisive fact's NUMBERS are its quote's: the quote, the head of the mail it is in (its date), and
     # the readings it cites beside it — never another sentence of that mail, which the quote does not hold.
-    ground = own if not (decisive and quoted) else "\n".join(
-        [run.items(e for e in fact.evidence if e not in worded), *(dl.line for dl in quoted),
-         run.quotes[n]])
-    missing = sorted(numbers_in(fact.claim) - numbers_in(ground))         # its own lines, never the head
+    ground = "\n".join([run.figures(fact.evidence), run.quotes.get(n, "")]) \
+        if not (decisive and quoted) else "\n".join(
+            [run.figures(e for e in fact.evidence if e not in worded), *(dl.line for dl in quoted),
+             run.quotes[n]])
+    missing = unheld(figures_in(fact.claim), figures_in(ground))          # its own lines, never the head
     if not missing:
         run.say(line, C.KEPT)
         return True
     calculators = [e for e in fact.evidence if e.startswith("num:")]
-    values = {v for e in calculators for dl in run.lines[e] if (v := value_of(dl.line, e)) is not None}
-    if len(missing) == 1 and len(calculators) == 1 and len(values) == 1:
-        value = next(iter(values))
-        run.corrections[missing[0]] = value
-        run.say(line, C.CORRECTED, C.BY_CALCULATOR, f"number:{missing[0]} -> {value} ({calculators[0]})")
-        return True
-    run.say(line, C.DROPPED, C.WRONG_NUMBER, f"number:{missing[0]}")
+    values = {v for e in calculators for dl in run.lines[e] if (v := _value_figure(dl.line, e)) is not None}
+    if len(missing) == 1 and len(calculators) == 1 and len(values) == 1 and missing[0].value is not None:
+        (said, unit, cur), (value, its_unit, its_cur) = missing[0].value, next(iter(values))
+        if unit in ("", its_unit) and cur in ("", its_cur):          # within its unit: 9 weeks is no 8.99 days
+            run.corrections[said] = value
+            run.say(line, C.CORRECTED, C.BY_CALCULATOR, f"number:{said} -> {value} ({calculators[0]})")
+            return True
+    run.say(line, C.DROPPED, C.WRONG_NUMBER, missing[0].detail)
     return False
 
 
@@ -453,24 +633,26 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
     if unheld:
         run.say("prose", C.NOTED, C.UNHELD_NUMBER, ", ".join(f"number:{n}" for n in unheld))
 
-    def corpus(numbers: Iterable[int]) -> str:
+    def corpus(numbers: Iterable[int], *, figures: bool = False) -> str:
         facts = [review.facts[n - 1] for n in sorted(numbers)]
-        return "\n".join([run.items(e for f in facts for e in f.evidence),
-                          *(run.quotes.get(n, "") for n in sorted(numbers))])
+        lines = (run.figures if figures else run.items)(e for f in facts for e in f.evidence)
+        return "\n".join([lines, *(run.quotes.get(n, "") for n in sorted(numbers))])
 
     standing_corpus, move_corpus = corpus(standing), corpus(rested & standing)
+    standing_figures, move_figures = corpus(standing, figures=True), corpus(rested & standing, figures=True)
     move = review.next_move
     said = move.what if move is not None else review.frames.primary
-    headline = run.text("move", said, move_corpus if move is not None else standing_corpus)
-    situation = run.text("situation", review.frames.primary, standing_corpus)
-    done_when = run.text("done_when", review.done_when, standing_corpus)
+    headline = run.text("move", said, move_corpus if move is not None else standing_corpus,
+                        figures=move_figures if move is not None else standing_figures)
+    situation = run.text("situation", review.frames.primary, standing_corpus, figures=standing_figures)
+    done_when = run.text("done_when", review.done_when, standing_corpus, figures=standing_figures)
     if review.proposed_kind is not None:
         pk = review.proposed_kind
         unseen = [e for e in pk.evidence if e not in run.lines]
         if unseen:
             run.say("kind", C.DROPPED, C.UNKNOWN_EVIDENCE, unseen[0])
         else:
-            run.text("kind", pk.why, run.items(pk.evidence), speaks=False)
+            run.text("kind", pk.why, run.items(pk.evidence), speaks=False, figures=run.figures(pk.evidence))
 
     held: str | None = None
     question: str | None = None
@@ -487,7 +669,8 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
         elif people.connector is not None and matches(to, people.connector) \
                 and not matches(to, people.counterparty):
             run.say("to", C.DROPPED, C.RECIPIENT_IS_CONNECTOR, to)
-            other, _ = run.stands(review.alternative, move_corpus) if review.alternative else (None, "")
+            other, _ = run.stands(review.alternative, move_corpus, figures=move_figures) \
+                if review.alternative else (None, "")
             them = people.counterparty.name or people.counterparty.key
             if other is not None and not matches(other, people.connector):
                 run.verdicts = [v for v in run.verdicts if v.line != "move" or v.verdict == C.NOTED]
@@ -548,6 +731,6 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
         because=held if fate in (C.HELD, C.SUPPRESSED) else None)
 
 
-__all__ = ["EARNED", "FUNCTION_WORDS", "MEETING_ASKS", "QUOTE_MIN_WORDS", "STRUCTURAL", "answered_by",
-           "check_review", "matches",
+__all__ = ["CURRENCIES", "EARNED", "FUNCTION_WORDS", "Figures", "MEETING_ASKS", "QUOTE_MIN_WORDS", "STRUCTURAL",
+           "Stray", "UNITS", "answered_by", "check_review", "figures_in", "matches", "unheld",
            "quoted_in", "value_of"]

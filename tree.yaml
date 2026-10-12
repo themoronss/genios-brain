@@ -7872,6 +7872,21 @@ yc2_w27_s13:
                       artifact: "genios_engine/reason/expert/verify.py"
                       verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_verify_unquoted.py tests/reason/expert/test_verify_quotes.py"
                       depends_on: [M35.C2.L-logic.V1.U09]
+                    - id: M35.C2.L-logic.V1.U10
+                      what: >
+                        A number is its value with its unit (crosscheck X02, X45): a text's figures are read
+                        as what they are (`verify.figures_in`) — printed dates and times (the item head
+                        `2026-08-11 09:20 UTC`, "10 Aug", "14:30", "the 11th") are taken out first and held
+                        to the dates and times its lines print, never read as counts; a `num:` id grounds
+                        only its own clause's value (`value_of`), never a sibling calculator printed on the
+                        same line; a value carries its unit or magnitude and currency (days ≠ weeks, lakh ≠
+                        crore, M ≠ K, %, ₹ ≠ $) and needs the same on its lines — a bare count needs none;
+                        a calculator corrects only within its unit, and never a date. Indian digit grouping
+                        `12,50,000` is one number (`contracts/expert_review.number_tokens`, every STEP-12
+                        reading kept). Measured on the golden set's 95 captured checks: none moves.
+                      artifact: "genios_engine/reason/expert/verify.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_verify_figures.py tests/reason/expert/test_verify_numbers.py tests/reason/expert/test_the_review_contract.py"
+                      depends_on: [M35.C2.L-logic.V1.U09]
         - id: M35.C3
           name: Where the check runs
           layers:
