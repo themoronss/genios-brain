@@ -514,7 +514,7 @@ WRITE_ONCE_TABLES: dict[str, tuple[frozenset[str], str, str]] = {
         "approving or rejecting a `human_review` object, under `for update`, 409 if the state is "
         "anything else), `feedback/org_rule_ingest` (the discovery path's own lifecycle) and "
         "`feedback/publisher._rest_for_review` (a weekly object sent to a human rests at "
-        "`human_review` — STEP-18 B4, 2026-10-12)",
+        "`human_review` — `yc2_w27_s18` M48.C1.L-data.V0.U02, 2026-10-12)",
         "MOVES WHEN a proposal legitimately needs a mutable field — ⛔ and then the field is named "
         "here with its reason, never added by widening this set to make a build pass"),
 }
