@@ -75,7 +75,7 @@ def fingerprint_inputs(parts: DossierParts, *, model: str, prompt_version: str) 
     due = nearest_due(parts)
     answer = parts.playbook
     pb = getattr(answer, "playbook", None)
-    return {
+    out = {
         "file_id": parts.file_id,
         "events": sorted(t.event_id for t in tl.touches),
         "booked": sorted(t.event_id for t in upcoming),
@@ -91,6 +91,11 @@ def fingerprint_inputs(parts: DossierParts, *, model: str, prompt_version: str) 
         "who_decides": {"model": model, "prompt_version": prompt_version,
                         "dossier_version": DOSSIER_VERSION},
     }
+    if parts.answers:
+        # STEP-13 (M36.C2.L-data.V2.U07): the founder's answers to its questions, by the id the dossier
+        # prints — named only when there is one, so a file with none is fingerprinted as before.
+        out["answers"] = sorted(f"answer:{a.question_id}" for a in parts.answers)
+    return out
 
 
 def file_fingerprint(parts: DossierParts, *, model: str, prompt_version: str) -> str:

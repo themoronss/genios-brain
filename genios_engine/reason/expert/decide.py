@@ -62,6 +62,16 @@ ONE MANIFEST PER VERSION. The audit store keeps exactly one manifest per (capabi
 expert's manifest is the review's — its move, its words, its numbers. So the version is content-
 addressed: `DECIDE_VERSION` and the manifest's own hash (`capability_for`).
 
+THROUGH ITS CHECK (STEP-13, `yc2_w27_s13` M35.C3.L-integration.V2.U02). Since STEP-13 a review is decided
+through what its check let stand (`contracts/claim_check.CheckedReview`, kept on the row by 0200), never as
+the model wrote it: the MODE is the check's — a move that lost its ground is held (`find_out`: the
+Investigation lane, the check's one question), a move whose ask is already answered is suppressed
+(`nothing`: the file's decision clears) — the play, the card's words and its success are the CHECKED words
+(a number corrected, a draft withheld, a connector's move turned into the review's alternative), and the
+confidence counts the source events only the STANDING facts cite. The check rides in the context snapshot
+(`expert.check`), so a replay decides the same without running it again. A review with no current check
+decides nothing (`request_for` refuses it); the pass checks every review before it covers.
+
 ⛔ NO MODEL, BY CONSTRUCTION. `ExpertDecisionMaker` never reaches `llm_decision_maker` (the test-mode
 decider sits at the top of `DecisionMaker.decide`, which this class replaces), and it says so
 (`asks_no_model`) so the orchestrator skips the test-mode R-1 for it (M33.C1.L-logic.V0.U05). Pure: no
@@ -74,6 +84,7 @@ from dataclasses import replace
 from datetime import date, datetime, timedelta
 from typing import Any
 
+from genios_engine.contracts.claim_check import HELD, REFUSED, SHOWN, SUPPRESSED, CheckedReview
 from genios_engine.contracts.expert_review import MODES, ExpertReview
 from genios_engine.contracts.reasoning import (
     RANKING_WEIGHTS_V2,
@@ -120,7 +131,7 @@ from . import store
 #: may be named `file_review`.
 CAPABILITY_ID = "expert.file_review"
 READER_ID = "expert.review"
-DECIDE_VERSION = "1.0.0"
+DECIDE_VERSION = "1.1.0"           # 1.1.0: decided through the review's check (STEP-13)
 TRIGGER_KIND = "expert.review"
 SELECTOR_VERSION = "expert.decide@1"
 #: The lane name the confidence floor is resolved for (`decision_maker.LANE_KEY`) — undeclared in
@@ -170,6 +181,16 @@ F_ANSWER = "expert.answer"
 F_MODE, F_STAKES, F_URGENCY, F_REVERSIBILITY = ("expert.mode", "expert.stakes", "expert.urgency",
                                                 "expert.reversibility")
 F_REVIEW, F_CITED, F_NEXT_MOVE = "expert.review", "expert.cited", "expert.next_move"
+#: What the check found: the fate, why, the one question — what a replay reads instead of re-checking.
+F_CHECK = "expert.check"
+
+#: The mode the check leaves: a held move must find out first, an answered ask needs nothing.
+_MODE_OF_FATE: Mapping[str, str] = {HELD: "find_out", SUPPRESSED: "nothing"}
+
+
+def mode_of(review: ExpertReview, checked: CheckedReview) -> str:
+    """The mode a review decides with, once checked."""
+    return _MODE_OF_FATE.get(checked.fate, review.mode)
 
 #: The reader, a GATING unit: `nothing` answers `matched` False and the run ends NO_ACTION before the
 #: constraint gate runs, as a gate that does not apply ends any run (see the module docstring).
@@ -198,44 +219,74 @@ def _window_days(by_when: date | None, eval_time: datetime) -> int:
     return max(1, min(365, (by_when - eval_time.date()).days))
 
 
-def _play(review: ExpertReview, eval_time: datetime) -> PlayDefinition:
-    """The next move the review names — or, when it names none, the watch it keeps."""
-    move = review.next_move
-    if move is None:
+def _done(review: ExpertReview, checked: CheckedReview) -> str:
+    """What done looks like, as the check let it stand — or, withheld, the move itself made."""
+    words = checked.words
+    if words.done_when:
+        return words.done_when
+    return f"{words.headline} — done" if words.headline else review.wait_or_stop
+
+
+def _play(review: ExpertReview, checked: CheckedReview, eval_time: datetime) -> PlayDefinition:
+    """The next move the check let stand — or, when there is none to show, the watch the review keeps."""
+    move, words, done = review.next_move, checked.words, _done(review, checked)
+    if move is None or checked.fate != SHOWN or not words.headline:
         return PlayDefinition(
             WATCH_PLAY, DECIDE_VERSION, "Watch the file", (review.wait_or_stop,), read_only=True,
-            window_days=DEFAULT_WINDOW_DAYS, success_events=(review.done_when,),
-            metadata={"wait_or_stop": review.wait_or_stop, "done_when": review.done_when,
+            window_days=DEFAULT_WINDOW_DAYS, success_events=(done,),
+            metadata={"wait_or_stop": review.wait_or_stop, "done_when": done,
                       "external_recipient_required": False})
     return PlayDefinition(
-        MOVE_PLAY, DECIDE_VERSION, move.what, (move.what,), read_only=True,
+        MOVE_PLAY, DECIDE_VERSION, words.headline, (words.headline,), read_only=True,
         window_days=_window_days(move.by_when, eval_time),
-        # WHAT DONE LOOKS LIKE is the review's own `done_when` (M33.C1.L-logic.V1.U16): the card's
-        # success signal (`deliver/card_builder._play_success` reads the audited play's events), never
-        # NULL on a card the expert's decision raised (STEP-11's founder-card clause).
-        success_events=(review.done_when,),
-        metadata={"who": move.who, "what": move.what, "for_whom": move.for_whom,
+        # WHAT DONE LOOKS LIKE is the review's own `done_when` (M33.C1.L-logic.V1.U16), as checked: the
+        # card's success signal (`deliver/card_builder._play_success` reads the audited play's events),
+        # never NULL on a card the expert's decision raised (STEP-11's founder-card clause).
+        success_events=(done,),
+        metadata={"who": move.who, "what": words.headline, "for_whom": move.for_whom, "to": words.to,
                   "by_when": move.by_when.isoformat() if move.by_when else None,
                   "alternative": review.alternative, "wait_or_stop": review.wait_or_stop,
-                  "done_when": review.done_when,
+                  "done_when": done,
                   # ⛔ READ-ONLY, AND NO RECIPIENT IS REACHED: the move is the founder's to make.
                   # Nothing in this play sends anything — permissions are never the model's (D1).
                   "external_recipient_required": False})
 
 
-def _render(review: ExpertReview) -> dict[str, Any]:
-    """The card's words, the review's own (`deliver/pipeline` renders an expert decision from these
-    without a narrator call — M33.C1.L-interface.V1.U08): the move as the headline, the expert's
-    reading of the file as the situation, the draft as the artifact."""
-    move = review.next_move
-    return {"artifact_kind": "draft_message" if review.draft else "none",
-            "fallback": {"headline": _braces(move.what if move is not None else review.frames.primary),
-                         "situation": _braces(review.frames.primary)},
-            "draft": review.draft}
+def _render(review: ExpertReview, checked: CheckedReview) -> dict[str, Any]:
+    """The card's words — the review's own as the check let them stand (`deliver/pipeline` renders an
+    expert decision from these without a narrator call — M33.C1.L-interface.V1.U08): the move as the
+    headline (a held file's question in its place), the expert's reading of the file as the situation,
+    the draft as the artifact. A withheld line is empty, never the unchecked words."""
+    words = checked.words
+    headline = words.headline or (checked.question if checked.fate == HELD else None) \
+        or review.frames.primary
+    return {"artifact_kind": "draft_message" if words.draft else "none",
+            "fallback": {"headline": _braces(headline), "situation": _braces(words.situation or "")},
+            "draft": words.draft, "sources": sources_of(checked)}
 
 
-def capability_for(review: ExpertReview, *, root_entity_type: str, domain: str, eval_time: datetime,
-                   live_delivery_enabled: bool = False) -> CapabilityManifest:
+#: What a card says its situation is: the expert's reading of the file — an inference, said so.
+SITUATION_IS = "the expert's reading of the file — an inference, not a quote"
+
+
+def sources_of(checked: CheckedReview) -> dict[str, Any]:
+    """Where each of the card's sentences came from (STEP-13 §5, M35.C3.L-interface.V3.U03): the headline
+    the ids its move rests on and their quotes — or, a held file, the question and why it is asked; the
+    situation labelled the expert's reading; the draft whom it goes to. Read by `deliver/card_builder`."""
+    words, out = checked.words, {}
+    if checked.fate == HELD:
+        out["headline"] = {"question": checked.question, "because": checked.because}
+    elif words.headline:
+        out["headline"] = {"evidence": list(words.evidence), "quotes": list(words.quotes)}
+    if words.situation:
+        out["situation"] = {"inference": SITUATION_IS}
+    if words.draft:
+        out["draft"] = {"to": words.to}
+    return out
+
+
+def capability_for(review: ExpertReview, checked: CheckedReview, *, root_entity_type: str, domain: str,
+                   eval_time: datetime, live_delivery_enabled: bool = False) -> CapabilityManifest:
     """The expert's capability for one review — one reader, the constraint gate, one play — its version
     the manifest's own content address (see the module docstring)."""
     constraint = ReasonerSpec("core.constraint", "1.0.0", dependencies=(READER_ID,),
@@ -245,9 +296,9 @@ def capability_for(review: ExpertReview, *, root_entity_type: str, domain: str, 
         capability_id=CAPABILITY_ID, version=DECIDE_VERSION, domain=domain,
         root_entity_type=root_entity_type,
         goal=Goal(CAPABILITY_ID, "What this file needs next, as its review judged it",
-                  success_criteria=(review.done_when,)),
+                  success_criteria=(_done(review, checked),)),
         reasoners=(READER_SPEC, constraint),
-        plays=(_play(review, eval_time),),
+        plays=(_play(review, checked, eval_time),),
         ranking_weights=RANKING_WEIGHTS_V2,
         policies=("read_only",),
         live_delivery_enabled=live_delivery_enabled,
@@ -260,7 +311,7 @@ def capability_for(review: ExpertReview, *, root_entity_type: str, domain: str, 
             SITUATION_IMPORTANCE_KEY: {"importance_bp": LEVEL_BP[review.appraisal.stakes],
                                        "fallback": False, "source": "expert_appraisal"},
             "situation_type": "file_review",
-            "render": _render(review),
+            "render": _render(review, checked),
         })
     content = {key: value for key, value in manifest.to_semantic_dict().items() if key != "version"}
     return replace(manifest, version=f"{DECIDE_VERSION}.{semantic_hash(content)[:16]}")
@@ -268,12 +319,13 @@ def capability_for(review: ExpertReview, *, root_entity_type: str, domain: str, 
 
 def context_for(row: store.StoredReview, *, org_id: str, root_entity_type: str, eval_time: datetime,
                 graph_version: int) -> ContextSnapshot:
-    """The file, as what decides: the review's mode, levels and move, which review, what it cites."""
-    review = row.review
+    """The file, as what decides: the mode the check leaves, the review's levels and the move the check
+    let stand, which review, what its standing facts cite, and what the check found."""
+    review, checked = row.review, row.checked
     move = review.next_move
-    cited = cited_ids(review)
+    cited = checked.cited
     facts: dict[str, Any] = {
-        F_MODE: {"value": review.mode},
+        F_MODE: {"value": mode_of(review, checked)},
         F_STAKES: {"value": review.appraisal.stakes},
         F_URGENCY: {"value": review.appraisal.urgency},
         F_REVERSIBILITY: {"value": review.appraisal.reversibility},
@@ -281,9 +333,12 @@ def context_for(row: store.StoredReview, *, org_id: str, root_entity_type: str, 
                              "prompt_version": row.prompt_version,
                              "dossier_digest": row.dossier_digest}},
         F_CITED: {"value": list(cited)},
+        F_CHECK: {"value": {"fate": checked.fate, "because": checked.because,
+                            "question": checked.question, "version": checked.version}},
     }
-    if move is not None:
-        facts[F_NEXT_MOVE] = {"value": {"who": move.who, "what": move.what, "for_whom": move.for_whom,
+    if move is not None and checked.fate == SHOWN and checked.words.headline:
+        facts[F_NEXT_MOVE] = {"value": {"who": move.who, "what": checked.words.headline,
+                                        "for_whom": move.for_whom, "to": checked.words.to,
                                         "by_when": move.by_when.isoformat() if move.by_when else None}}
     evidence = tuple(build_evidence_ref(
         org_id=org_id, entity_ref=row.file_id, field=F_CITED, value=item, source_ref=item,
@@ -300,15 +355,20 @@ def request_for(row: store.StoredReview, *, org_id: str, root_entity_type: str, 
                 eval_time: datetime, graph_version: int, mode: ExecutionMode = ExecutionMode.LIVE,
                 live_delivery_enabled: bool = False,
                 config_snapshot_id: str | None = None) -> ReasoningRequest:
-    """One audited Layer 4 request for one file, from its VALID review. Raises ValueError for any
-    other row: only a valid review may be read for a decision (`migrations/0197`)."""
+    """One audited Layer 4 request for one file, from its VALID review, through its check. Raises
+    ValueError for any other row: only a valid review may be read for a decision (`migrations/0197`), and
+    only through a check that let something stand (0200, STEP-13)."""
     if row.status != store.VALID or row.review is None:
         raise ValueError(f"only a valid review decides — file {row.file_id} fingerprint "
                          f"{row.fingerprint} is {row.status}")
+    if row.checked is None or row.checked.fate == REFUSED:
+        raise ValueError(f"only a checked review decides — file {row.file_id} fingerprint "
+                         f"{row.fingerprint} has {'no check' if row.checked is None else 'nothing standing'}")
     return ReasoningRequest(
         org_id=org_id,
-        capability=capability_for(row.review, root_entity_type=root_entity_type, domain=domain,
-                                  eval_time=eval_time, live_delivery_enabled=live_delivery_enabled),
+        capability=capability_for(row.review, row.checked, root_entity_type=root_entity_type,
+                                  domain=domain, eval_time=eval_time,
+                                  live_delivery_enabled=live_delivery_enabled),
         context=context_for(row, org_id=org_id, root_entity_type=root_entity_type,
                             eval_time=eval_time, graph_version=graph_version),
         evaluation_time=eval_time, trigger_kind=TRIGGER_KIND, trigger_ref=row.fingerprint,
@@ -448,10 +508,11 @@ def decide(request: ReasoningRequest) -> ReasoningExecution:
     return _ORCHESTRATOR.execute(request)
 
 
-__all__ = ["ADAPTER", "CAPABILITY_ID", "DECIDE_VERSION", "EXPIRY_HOURS", "F_ANSWER", "KIND_SEPARATOR",
+__all__ = ["ADAPTER", "CAPABILITY_ID", "DECIDE_VERSION", "EXPIRY_HOURS", "F_ANSWER", "F_CHECK",
+           "KIND_SEPARATOR",
            "ExpertDecisionMaker", "LEVEL_BP", "MODE_MARKER", "MOVE_PLAY", "NO_EVENT_BP",
            "ONE_EVENT_BP", "OUTCOME_OF", "READER_ID", "READER_SPEC", "ReviewReader", "TRIGGER_KIND",
            "WATCH_PLAY",
            "capability_for", "cited_ids", "context_for", "decide", "is_event", "is_expert",
-           "orchestrator",
+           "mode_of", "orchestrator", "sources_of",
            "request_for"]

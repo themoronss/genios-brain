@@ -463,5 +463,9 @@ def test_the_resolver_change_moved_no_coverage_verdict():
     # `{"delete": {"genios_engine/api/account_routes.py"}}`. An engine change, not a resolver change;
     # its writer and readers (`reason/expert/store.py`, M32.C3.L-data.V1.U03) are later units, and the
     # nine write-only members above did not move.
-    assert len(TC.table_usage()) == 193
-    assert len(TC._known_tables()) == 195
+    # ⛔ RE-PINNED 193 → 194 and 195 → 196 on 2026-10-12 by migration `0201_founder_questions`
+    # (YC-II W27 STEP-13, `yc2_w27_s13/M36.C2.L-contract.V0.U01`): one new table, whose first reference is
+    # the tenant reset's `delete` list. An engine change, not a resolver change; its store and readers
+    # (`context/founder_questions.py`, M36.C2.L-data.V1.U02) are later units.
+    assert len(TC.table_usage()) == 194
+    assert len(TC._known_tables()) == 196

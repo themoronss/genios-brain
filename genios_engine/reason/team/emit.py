@@ -38,6 +38,8 @@ from genios_engine.platform import realtime
 from genios_engine.platform.ids import new_id
 from genios_engine.reason.moments import guards as G
 from genios_engine.reason.moments.common import iso
+from genios_engine.contracts.reasoning import DecisionOutcome, OutputLane
+from genios_engine.reason.output_lane import LaneChoice, route
 
 KINDS = ("team", "verify")
 PRIORITIES = ("low", "normal", "high", "critical")
@@ -49,6 +51,13 @@ MOMENT_HEADLINE_MAX, MOMENT_BODY_MAX = 300, 2000
 _BAND = {"low": "standard", "normal": "standard", "high": "high", "critical": "critical"}
 _SCORE = {"low": 40, "normal": 55, "high": 75, "critical": 90}
 _REFRESHABLE = ("built", "queued", "surfaced")
+#: The lane of what a post-pass observed (`signals.output_lane`, 0189; STEP-13 `yc2_w27_s13`
+#: M36.C1.L-data.V0.U05, `03` F186) — no decision was made, so none is routed from one. A `verify`
+#: situation is a discrepancy between two sources the owner settles (accept, keep): the router's own
+#: conflict, a ruling and not more evidence. A `team` situation is something to watch.
+_LANE = {"verify": route(outcome=DecisionOutcome.NO_ACTION, confidence_bp=0, conflict_open=True),
+         "team": LaneChoice(OutputLane.MONITOR, "a situation of the team a post-pass observed; no "
+                                                "decision was made, so it is shown to watch")}
 
 
 def _h(*parts) -> str:
@@ -209,12 +218,13 @@ def _write_card(c, *, org_id, kind, key, seat_id, subjects, headline, body, acti
     c.execute(text(
         "insert into signals (signal_id, org_id, rule_id, rule_version, level, subject_node_id, "
         "score, score_inputs, reason_code, evidence, status, eval_time, capability_id, "
-        "capability_version) values (:sig, :o, :rule, 1, 'observation', :subj, :score, "
-        "'{}'::jsonb, :reason, cast(:ev as jsonb), 'open', :now, :rule, '1') "
+        "capability_version, output_lane, lane_reason) values (:sig, :o, :rule, 1, 'observation', "
+        ":subj, :score, '{}'::jsonb, :reason, cast(:ev as jsonb), 'open', :now, :rule, '1', "
+        ":lane, :lane_reason) "
         "on conflict (signal_id) do nothing"),
         {"sig": signal_id, "o": org_id, "rule": capability,
          "subj": subjects[0] if subjects else key, "score": score, "reason": kind, "ev": why,
-         "now": now})
+         "now": now, "lane": _LANE[kind].lane.value, "lane_reason": _LANE[kind].reason})
     card_id = new_id("card")
     row = c.execute(text(
         "insert into cards (card_id, signal_id, org_id, assignee, domain, level, urgency_band, "

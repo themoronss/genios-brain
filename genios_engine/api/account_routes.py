@@ -658,6 +658,9 @@ _ORG_SCOPED_TABLES = [
     # migration 0197: the expert's review of each file per fingerprint (STEP-12). Judgment ABOUT the
     # tenant's own counterparties, quoting their material; and a reset tenant is reviewed afresh.
     "expert_reviews",
+    # migration 0201: the one question each file asks the founder, and the founder's answer (STEP-13).
+    # Questions ABOUT the tenant's counterparties, and answers in the founder's own words.
+    "founder_questions",
     # Layer 4 deletion order is load-bearing: signals reference runs; runs reference context +
     # config; context references capability. Payloads are explicit as defense in depth even though
     # the context FK also cascades them.

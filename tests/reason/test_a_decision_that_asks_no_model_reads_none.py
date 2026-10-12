@@ -20,6 +20,7 @@ from genios_engine.contracts.expert_review import ExpertReview
 from genios_engine.contracts.reasoning import DecisionOutcome
 from genios_engine.reason import llm_decision_maker, llm_interpretation
 from genios_engine.reason.expert import decide as D
+from tests.reason.expert.checks import as_written
 from genios_engine.reason.expert import store
 from genios_engine.reason.orchestrator import ReasoningOrchestrator
 from genios_engine.reason.reasoners import ConstraintReasoner
@@ -45,7 +46,7 @@ def _request():
         file_id="node_neel", fingerprint="ffp-0123456789abcdef01234567", model="claude-sonnet-5",
         prompt_version="expert-review.v2", dossier_digest="d" * 64, status=store.VALID, reason=None,
         review=ExpertReview.from_mapping(RAW), raw=RAW, input_tokens=1, output_tokens=1,
-        cost_micro_usd=1, reviewed_at=NOW)
+        cost_micro_usd=1, reviewed_at=NOW, checked=as_written(ExpertReview.from_mapping(RAW)))
     return D.request_for(row, org_id="org_no_model", root_entity_type="company",
                          domain="founder_office", eval_time=NOW, graph_version=3)
 

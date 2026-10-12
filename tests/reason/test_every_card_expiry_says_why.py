@@ -199,7 +199,8 @@ def test_publication_replacing_a_claim_leaves_its_card_a_reason(engine):
         rule_id="r_pub", rule_version=1, level="prescriptive", subject_node_id="n2", score=60,
         score_inputs={}, reason_code="rc", evidence=(), play="play", reasoning_run_id="run_2",
         reasoning_candidate_id="cand_2", reasoning_decision_hash="hash_2",
-        authority_expires_at=AT + timedelta(days=2))
+        authority_expires_at=AT + timedelta(days=2), output_lane="decision",
+        lane_reason="a decision at 7000 bp, at or above the 6000 bp floor")
     new_id = publish_native_signal(SimpleNamespace(engine=_without_references()), org_id=ORG,
                                    publication=publication, eval_time=AT, config_snapshot_id="cs_2",
                                    pack_id="pk", pack_version="1", authority_pack_revision=1)

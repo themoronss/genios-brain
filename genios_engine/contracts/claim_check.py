@@ -30,7 +30,12 @@ from typing import Any
 CHECK_VERSION = "check.v1"
 
 # ── what happened to a line ────────────────────────────────────────────────────────────────────
-KEPT, CORRECTED, DROPPED, NOTED = "kept", "corrected", "dropped", "noted"
+# One name to a line: `tests/test_no_missing_module_deps` reads what a module defines by its assignments,
+# and a tuple of names is no name it can see — every caller that imports one would read as broken.
+KEPT = "kept"
+CORRECTED = "corrected"
+DROPPED = "dropped"
+NOTED = "noted"
 VERDICTS: tuple[str, ...] = (KEPT, CORRECTED, DROPPED, NOTED)
 
 # ── why — closed ───────────────────────────────────────────────────────────────────────────────
@@ -61,7 +66,10 @@ UNHELD_NUMBER = "unheld_number"              # a number in prose no founder is s
 NOTES: tuple[str, ...] = (SPEAKS_OF_YOU, UNHELD_NUMBER)
 
 # ── what happens to the move ───────────────────────────────────────────────────────────────────
-SHOWN, HELD, SUPPRESSED, REFUSED = "shown", "held", "suppressed", "refused"
+SHOWN = "shown"
+HELD = "held"
+SUPPRESSED = "suppressed"
+REFUSED = "refused"
 FATES: tuple[str, ...] = (SHOWN, HELD, SUPPRESSED, REFUSED)
 
 #: The lines a verdict may name: a review's own, by kind and number; what reaches the founder — the

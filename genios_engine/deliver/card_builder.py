@@ -829,6 +829,26 @@ REVIEWED_BY_THE_FOUNDER: frozenset[str] = frozenset({"founder_office"})
 PLAYBOOK_NOT_YET_REVIEWED = "playbook not yet reviewed"
 
 
+#: The order a card's sentences are read in — the order their sources lead its `why`.
+CARD_SENTENCES: tuple[str, ...] = ("headline", "situation", "draft")
+
+
+def _sentence_sources(signal: dict) -> list[dict]:
+    """STEP-13 §5 (`yc2_w27_s13` M35.C3.L-interface.V3.U03): an expert card's `why` leads with one entry
+    per sentence — where it came from, as the review's check let it stand (`reason/expert/decide.
+    sources_of`, carried on the audited capability's render block): the headline with the mails and asks
+    its move rests on and their quotes (or, a held file, the question and why), the situation labelled an
+    inference, the draft with whom it goes to. The names in them were held to the expert's dossier by the
+    card validator's own rule (`reason/expert/verify`); a card never holds that dossier, so it does not
+    judge them again against less. Any other card carries none, and its `why` is what it always was."""
+    render = signal.get("capability_render")
+    sources = render.get("sources") if isinstance(render, dict) else None
+    if not isinstance(sources, dict):
+        return []
+    return [{"sentence": part, **dict(sources[part]), "source": "expert_check"}
+            for part in CARD_SENTENCES if isinstance(sources.get(part), dict)]
+
+
 def _review_label(signal: dict) -> list[dict]:
     """The first `why` entry of a card whose play rests on a founder playbook nobody has reviewed.
 
@@ -1226,8 +1246,8 @@ def build_draft(store, org_id: str, signal: dict, effective: dict, eval_time,
         # call for different user actions and a single number cannot tell them apart.
         "confidence_vector": {k: score_inputs.get(k) for k in ("C", "U", "I", "R")},
         "actions": actions,
-        "why": _review_label(signal) + _why(signal.get("evidence"), facts,
-                                            signal.get("citations")),
+        "why": _review_label(signal) + _sentence_sources(signal)
+        + _why(signal.get("evidence"), facts, signal.get("citations")),
         "surfaces": _surfaces(facts, signal, actions,
                               has_finding=has_finding and has_quote),
         "context_tags": _context_tags(node_type, attrs, facts, sources),

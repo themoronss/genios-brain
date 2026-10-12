@@ -24,6 +24,7 @@ from sqlalchemy import text
 
 from genios_engine.contracts.expert_review import ExpertReview
 from genios_engine.reason.expert import store as R
+from tests.reason.expert.checks import as_written
 from tests.reason.test_a_programme_is_not_decided_as_an_investor import (  # noqa: F401 — a fixture
     FUND, NOW, PROGRAMME, _by_counterparty, _tenant, admitted)
 
@@ -66,14 +67,17 @@ def _fund(store, org: str) -> tuple[str, set[str], set[str]]:
 
 
 def _write(store, org: str, file_id: str, fingerprint: str, events, **over) -> None:
-    raw = _review(sorted(events)[0], **over)
+    # STEP-13: a review decides only through its check — here the check of one that stands whole
+    # (`tests/reason/expert/checks.as_written`); this file's subject is the decision, not the check.
+    review = ExpertReview.from_mapping(_review(sorted(events)[0], **over))
     with store.engine.begin() as c:
         assert R.write_review(c, org_id=org, file_id=file_id, fingerprint=fingerprint,
                               model="claude-sonnet-5", prompt_version="expert-review.v2",
                               dossier_digest="d" * 64, status=R.VALID, reason=None,
-                              review=ExpertReview.from_mapping(raw), input_tokens=10, output_tokens=10,
+                              review=review, input_tokens=10, output_tokens=10,
                               cost_micro_usd=1, at=NOW, inputs={"events": sorted(events), "booked": []},
-                              triggers=[{"kind": "first_look", "says": "never judged"}])
+                              triggers=[{"kind": "first_look", "says": "never judged"}],
+                              checked=as_written(review))
 
 
 @pytest.fixture
@@ -285,3 +289,41 @@ def test_without_coverage_the_pass_is_as_it_was(world):
     counts = _compile(store, org, registry, covered=None)
     assert anchor in reasoned and counts["covered_files"] == 0 and "expert_decided" not in counts
     assert all(s.rule_id != "file_review" for s in _open_signals(store, org, anchor))
+
+
+# ── STEP-13 · M35.C3.L-integration.V2.U02 — the file is decided through its review's check ──────────
+def test_the_same_review_checked_again_under_a_new_check_is_decided_again(world):
+    """The change gate keys the check's version: a review checked again under a new check is a new
+    judgment of the same review, and the file is decided again — never skipped on the old one."""
+    store, org, registry, _ = world
+    anchor, _situations, events = _fund(store, org)
+    _write(store, org, anchor, "ffp-fund-first-review-00000", events)
+    covered = {anchor: "ffp-fund-first-review-00000"}
+    _compile(store, org, registry, covered=covered)
+    with store.engine.begin() as c:
+        c.execute(text("update expert_reviews set checked = jsonb_set(checked, '{version}', '\"check.v2\"') "
+                       "where org_id = :o"), {"o": org})
+    again = _compile(store, org, registry, covered=covered, at=NOW + timedelta(minutes=15))
+    assert again.get("expert_unchanged", 0) == 0 and again.get("expert_decided") == 1, again
+
+
+def test_the_advice_a_card_gave_is_what_the_check_let_stand():
+    """Two reviews give the same advice when their CHECKED mode and move agree (`_same_advice`): a
+    move the check corrected is the corrected move; a held move shows none; no check, no advice."""
+    from types import SimpleNamespace
+
+    import genios_engine.contracts.claim_check as C
+    from genios_engine.reason.domain_shadow import _advice
+    review = ExpertReview.from_mapping(_review("evt_1"))
+    shown = as_written(review)
+    move = review.next_move
+    assert _advice(SimpleNamespace(review=review, checked=shown)) == (
+        review.mode, (move.who, move.what, move.for_whom, move.by_when))
+    corrected = C.CheckedReview(verdicts=shown.verdicts, fate=C.SHOWN, cited=shown.cited,
+                                words=C.CardWords(headline="Send the deck by 4 Aug", situation="s",
+                                                  done_when="d", draft=None, to=None))
+    assert _advice(SimpleNamespace(review=review, checked=corrected))[1][1] == "Send the deck by 4 Aug"
+    held = C.CheckedReview(verdicts=(), fate=C.HELD, cited=shown.cited, question="Is it so?",
+                           because="fact:1 unquoted (fact 1)", words=C.CardWords(None, "s", "d", None, None))
+    assert _advice(SimpleNamespace(review=review, checked=held)) == ("find_out", None)
+    assert _advice(SimpleNamespace(review=review, checked=None)) == (None, None)

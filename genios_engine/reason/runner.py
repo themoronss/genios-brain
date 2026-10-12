@@ -784,6 +784,29 @@ def _flush_suppress_batch(store) -> None:
             "reason_code, detail, eval_time) values (:o,:r,:n,:rc,cast(:d as jsonb),:e)"), rows)
 
 
+def _decision_payload(decision, selected) -> dict:
+    """The decision's own content a signal carries, from the decision itself."""
+    return {
+        "do_nothing_consequence": decision.do_nothing_consequence or None,
+        "uncertainty": list(decision.uncertainty or ()),
+        "outcome_window_days": decision.outcome_window_days,
+        # The candidates that LOST, with disposition and utility — the receipt that a
+        # choice happened. Before the wait-play landed this was structurally empty
+        # (one candidate per run, nothing ever eliminated); now it is the trace of the
+        # comparison every card claims to be the outcome of.
+        "rejected_candidates": [
+            {"play_id": cand.play_id, "disposition": cand.disposition.value,
+             "utility_bp": cand.utility_bp}
+            for cand in decision.candidates
+            if cand.play_id != selected.play_id],
+        "candidate_steps": list((selected.parameters or {}).get("steps") or ()),
+        # The lane the decider routed — a thing to do, or to watch — and why (`reason/output_lane`;
+        # STEP-13 `yc2_w27_s13` M36.C1.L-data.V0.U02, `03` F186): the signal carries it to its card.
+        "output_lane": decision.output_lane.value if decision.output_lane is not None else None,
+        "lane_reason": decision.lane_reason,
+    }
+
+
 def _emit(store, org_id, rule, node_id, S, inputs, evidence, eval_time, snapshot_id,
           reasoning_run_id, reasoning_candidate_id, reasoning_decision_hash,
           authority_expires_at, selected_play_id, authority_pack_revision,
@@ -811,11 +834,12 @@ def _emit(store, org_id, rule, node_id, S, inputs, evidence, eval_time, snapshot
             "reasoning_decision_hash, authority_expires_at, authority_pack_revision, "
             "authority_binding_version, "
             "do_nothing_consequence, uncertainty, outcome_window_days, "
-            "rejected_candidates, candidate_steps) "
+            "rejected_candidates, candidate_steps, output_lane, lane_reason) "
             "values (:id,:o,:pack,:packv,:r,:v,:lv,:n,:s,cast(:si as jsonb),:rc,"
             "cast(:ev as jsonb),:play,:et,"
             ":cs,:rr,:candidate,:decision_hash,:expires,:pack_revision,1,"
-            ":dnc,cast(:unc as jsonb),:owd,cast(:rej as jsonb),cast(:steps as jsonb)) "
+            ":dnc,cast(:unc as jsonb),:owd,cast(:rej as jsonb),cast(:steps as jsonb),"
+            ":lane,:lane_reason) "
             "on conflict (org_id,pack_id,pack_version,rule_id,subject_node_id) "
             "where status='open' do nothing "
             "returning signal_id"),
@@ -832,6 +856,8 @@ def _emit(store, org_id, rule, node_id, S, inputs, evidence, eval_time, snapshot
              "owd": (decision_payload or {}).get("outcome_window_days"),
              "rej": json.dumps((decision_payload or {}).get("rejected_candidates") or []),
              "steps": json.dumps((decision_payload or {}).get("candidate_steps") or []),
+             "lane": (decision_payload or {}).get("output_lane"),
+             "lane_reason": (decision_payload or {}).get("lane_reason"),
              }).first()
     return row.signal_id if row else None
 
@@ -1597,22 +1623,7 @@ def run(*, org_id: str, store: GraphStore, eval_time: datetime | None = None,
             # memory. `signals` used to carry only score/reason_code/evidence/play, so the card
             # layer rebuilt its recommendation from the reason_code STRING through an API
             # if/elif chain: a parallel generator sharing nothing with this decision but a label.
-            _decision = reasoned.execution.decision
-            decision_payload = {
-                "do_nothing_consequence": _decision.do_nothing_consequence or None,
-                "uncertainty": list(_decision.uncertainty or ()),
-                "outcome_window_days": _decision.outcome_window_days,
-                # The candidates that LOST, with disposition and utility — the receipt that a
-                # choice happened. Before the wait-play landed this was structurally empty
-                # (one candidate per run, nothing ever eliminated); now it is the trace of the
-                # comparison every card claims to be the outcome of.
-                "rejected_candidates": [
-                    {"play_id": cand.play_id, "disposition": cand.disposition.value,
-                     "utility_bp": cand.utility_bp}
-                    for cand in _decision.candidates
-                    if cand.play_id != selected.play_id],
-                "candidate_steps": list((selected.parameters or {}).get("steps") or ()),
-            }
+            decision_payload = _decision_payload(reasoned.execution.decision, selected)
             candidates.append((
                 S, inputs, rule, nd.node_id, evidence, reasoning_run_id,
                 audit_bundle["output"]["selected_candidate_id"],

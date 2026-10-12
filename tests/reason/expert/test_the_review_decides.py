@@ -22,6 +22,7 @@ from genios_engine.contracts.reasoning import (CandidateDisposition, DecisionOut
 from genios_engine.reason import llm_decision_maker
 from genios_engine.reason.decision_maker import BELOW_FLOOR_REASON, IMPORTANCE_ABSENT_REASON
 from genios_engine.reason.expert import decide as D
+from tests.reason.expert.checks import as_written
 from genios_engine.reason.expert import store
 from genios_engine.reason.replay import replay_execution
 
@@ -59,14 +60,16 @@ def _raw(**over) -> dict:
     return raw
 
 
-def _row(status: str = store.VALID, **over) -> store.StoredReview:
+def _row(status: str = store.VALID, checked=None, **over) -> store.StoredReview:
     raw = _raw(**over)
+    review = ExpertReview.from_mapping(raw) if status == store.VALID else None
     return store.StoredReview(
         file_id=FILE, fingerprint="ffp-0123456789abcdef01234567", model="claude-sonnet-5",
         prompt_version="expert-review.v2", dossier_digest="d" * 64, status=status,
-        reason=None if status == store.VALID else "uncited_fact",
-        review=ExpertReview.from_mapping(raw) if status == store.VALID else None, raw=raw,
-        input_tokens=10, output_tokens=10, cost_micro_usd=1, reviewed_at=NOW)
+        reason=None if status == store.VALID else "uncited_fact", review=review, raw=raw,
+        input_tokens=10, output_tokens=10, cost_micro_usd=1, reviewed_at=NOW,
+        # STEP-13: a review decides through its check — here, one that keeps every line.
+        checked=checked if checked is not None else (as_written(review) if review else None))
 
 
 def _decide(row=None, **kw):
@@ -302,3 +305,91 @@ def test_the_cards_success_signal_is_the_reviews_done_when():
     [play] = request.capability.plays
     assert _play_success({}, {"play_success_events": list(play.success_events),
                               "play": play.play_id}) == _raw()["done_when"]
+
+
+# ── STEP-13 · M35.C3.L-integration.V2.U02 — decided through the review's check ─────────────────
+def _checked(fate: str, **over):
+    from genios_engine.contracts import claim_check as C
+    review = ExpertReview.from_mapping(_raw())
+    base = dict(verdicts=(), fate=fate, cited=D.cited_ids(review),
+                words=C.CardWords(headline=None if fate != C.SHOWN else review.next_move.what,
+                                  situation=review.frames.primary, done_when=review.done_when,
+                                  draft=None, to=None))
+    if fate == C.HELD:
+        base.update(question="Is it so: \u201cNeel wrote asking for a first call\u201d? It is not in what it cites.",
+                    because="misquoted: send the deck (fact 1)")
+    if fate == C.SUPPRESSED:
+        base.update(because="answered:evt_meeting")
+    base.update(over)
+    return C.CheckedReview(**base)
+
+
+def test_a_held_move_is_a_question_to_find_out_first():
+    from genios_engine.contracts import claim_check as C
+    request, execution = _decide(_row(checked=_checked(C.HELD)))
+    decision = execution.decision
+    assert (decision.outcome, decision.output_lane) == (DecisionOutcome.INSUFFICIENT_CONTEXT,
+                                                        OutputLane.INVESTIGATION)
+    facts = request.context.facts
+    assert facts[D.F_MODE]["value"] == "find_out" and D.F_NEXT_MOVE not in facts
+    assert facts[D.F_CHECK]["value"]["fate"] == C.HELD
+    assert facts[D.F_CHECK]["value"]["question"].startswith("Is it so:")
+    render = request.capability.metadata["render"]
+    assert render["fallback"]["headline"].startswith("Is it so:"), "a held file's card asks its question"
+    assert render["draft"] is None and render["artifact_kind"] == "none"
+
+
+def test_an_ask_already_answered_needs_nothing():
+    from genios_engine.contracts import claim_check as C
+    request, execution = _decide(_row(checked=_checked(C.SUPPRESSED)))
+    assert (execution.decision.outcome, execution.decision.output_lane) == (DecisionOutcome.NO_ACTION,
+                                                                            OutputLane.SUPPRESS)
+    assert request.context.facts[D.F_CHECK]["value"]["because"] == "answered:evt_meeting"
+
+
+def test_the_card_and_the_play_speak_only_the_checked_words():
+    from genios_engine.contracts import claim_check as C
+    review = ExpertReview.from_mapping(_raw())
+    corrected = _checked(C.SHOWN, words=C.CardWords(
+        headline="Send Neel the one-page pre-read before the call", situation=None,
+        done_when=None, draft=None, to=None))
+    request, execution = _decide(_row(checked=corrected))
+    selected = execution.selected_candidate
+    assert selected.parameters["label"] == "Send Neel the one-page pre-read before the call"
+    render = request.capability.metadata["render"]
+    assert render["fallback"] == {"headline": "Send Neel the one-page pre-read before the call",
+                                  "situation": ""}, "a withheld line is empty, never the unchecked words"
+    assert render["draft"] is None, "the draft the check withheld is not on the card"
+    [play] = request.capability.plays
+    assert play.success_events == ("Send Neel the one-page pre-read before the call — done",), \
+        "a withheld done-when is the move itself, made"
+    assert review.draft and review.done_when not in play.success_events
+
+
+def test_confidence_counts_only_what_the_standing_facts_cite():
+    from genios_engine.contracts import claim_check as C
+    whole = _decide()[1].decision.confidence_bp
+    one = _decide(_row(checked=_checked(C.SHOWN, cited=("evt_neel_0927", "num:reply_days"))))[1]
+    assert one.decision.confidence_bp == D.ONE_EVENT_BP < whole, \
+        "a dropped fact's mail is not counted: one standing event, the base"
+
+
+def test_a_review_without_a_check_or_with_nothing_standing_decides_nothing():
+    from genios_engine.contracts import claim_check as C
+    bare = replace(_row(), checked=None)
+    with pytest.raises(ValueError, match="only a checked review decides"):
+        D.request_for(bare, org_id=ORG, root_entity_type="company", domain="founder_office",
+                      eval_time=NOW, graph_version=7)
+    refused = _checked(C.REFUSED, cited=(), because="nothing_stands", words=C.CardWords(None, None, None,
+                                                                                         None, None))
+    with pytest.raises(ValueError, match="nothing standing"):
+        D.request_for(_row(checked=refused), org_id=ORG, root_entity_type="company",
+                      domain="founder_office", eval_time=NOW, graph_version=7)
+
+
+def test_a_held_decision_replays_from_its_snapshot_as_it_was():
+    from genios_engine.contracts import claim_check as C
+    _request, first = _decide(_row(checked=_checked(C.HELD)))
+    _replayed, comparison = replay_execution(first, D.orchestrator())
+    assert comparison.matches, comparison.differences
+

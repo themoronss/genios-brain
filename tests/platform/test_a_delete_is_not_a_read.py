@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_064, (
+    assert r["statements"] == 3_073, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -432,6 +432,15 @@ def test_the_statement_count_did_NOT_move():
     # down for a decided file (`reason/runner`) — the source events of the facts its subjects hold
     # (`_FACT_EVENTS`, read once a pass) and the open signal a stood-down rule left (`_STOOD_DOWN_RULE`).
     # Two literals, each at its own call.
+    # ⛔ MOVED 3,064 → 3,065 by yc2_w27_s13/M35.C1.L-contract.V1.U03 (0200, a review keeps its check): one
+    # UPDATE, `reason/expert/store._CHECK` — the check written onto a standing row. A literal.
+    # ⛔ MOVED 3,065 → 3,067 by yc2_w27_s13/M36.C1.L-integration.V1.U06 (no signal without a lane): two
+    # SELECTs in `scripts/pipeline_health.check_every_new_signal_has_a_lane` — the day's signals, and those
+    # with no lane by the rule that wrote them. Two literals, each at its own call.
+    # ⛔ MOVED 3,067 → 3,073 by yc2_w27_s13/M36.C2.L-data.V1.U02 (the questions a file asks you):
+    # `context/founder_questions` — a question by id, a file's open one, the answers it holds (three
+    # SELECTs), the retirement and the answer (two UPDATEs), the asking (one INSERT). Six literals, each
+    # at its own call.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

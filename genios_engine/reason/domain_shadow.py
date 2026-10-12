@@ -563,12 +563,19 @@ def _covered_reviews(conn, org_id: str, covered: Mapping[str, str] | None) -> di
     return out
 
 
-def _advice(review) -> tuple:
-    """What a review advises, in its own words: its mode and its next move — who, what, for whom, by
-    when. The card says exactly these; two reviews that say them alike gave the same advice."""
+def _advice(row) -> tuple:
+    """What a stored review advises, as its check let it stand (STEP-13): the mode the check leaves and
+    the move it shows — who, what, for whom, by when. The card says exactly these; two reviews that say
+    them alike gave the same advice. A review with no check advises nothing anybody was shown."""
+    from genios_engine.reason.expert import decide as expert
+
+    checked, review = row.checked, row.review
+    if checked is None:
+        return (None, None)
     move = review.next_move
-    return (review.mode,
-            None if move is None else (move.who, move.what, move.for_whom, move.by_when))
+    shown = move is not None and checked.fate == "shown" and checked.words.headline
+    return (expert.mode_of(review, checked),
+            (move.who, checked.words.headline, move.for_whom, move.by_when) if shown else None)
 
 
 def _same_advice(conn, org_id: str, file_id: str, fingerprint: str | None, row) -> bool:
@@ -579,7 +586,7 @@ def _same_advice(conn, org_id: str, file_id: str, fingerprint: str | None, row) 
     if not fingerprint:
         return False
     prior = reviews.read_review(conn, org_id, file_id, str(fingerprint))
-    return prior is not None and prior.review is not None and _advice(prior.review) == _advice(row.review)
+    return prior is not None and prior.review is not None and _advice(prior) == _advice(row)
 
 
 def _clear_file_decision(store, org_id: str, file_id: str, fingerprint: str, rule_id: str) -> int:
@@ -653,7 +660,9 @@ def _decide_covered_files(*, store, conn, org_id: str, reviews: Mapping[str, Any
             key = f"{file_id}|{expert.CAPABILITY_ID}"
             fingerprint = semantic_hash({
                 "review": review.fingerprint, "decide": expert.DECIDE_VERSION, "domain": domain,
-                "live": live_file, "config": pack["snapshot_id"] if pack else None})
+                "live": live_file, "config": pack["snapshot_id"] if pack else None,
+                # STEP-13: the same review checked again under a new check version is decided again.
+                "check": review.checked.version if review.checked is not None else None})
             if gate.ready:
                 standing = (gate.expiries.get((pack["pack_id"], pack["version"], rule_id, file_id))
                             if pack else None)
