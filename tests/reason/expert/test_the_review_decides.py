@@ -21,6 +21,7 @@ from genios_engine.contracts.reasoning import (CandidateDisposition, DecisionOut
                                                OutputLane)
 from genios_engine.reason import llm_decision_maker
 from genios_engine.reason.decision_maker import BELOW_FLOOR_REASON, IMPORTANCE_ABSENT_REASON
+from genios_engine.contracts.claim_check import CHECK_VERSION
 from genios_engine.reason.expert import decide as D
 from tests.reason.expert.checks import as_written
 from genios_engine.reason.expert import store
@@ -233,7 +234,10 @@ def test_the_request_names_its_review_and_what_it_cites():
     assert {ref.value for ref in request.context.evidence} == set(facts[D.F_CITED]["value"])
     assert set(execution.selected_candidate.evidence_ids) == {ref.evidence_id
                                                              for ref in request.context.evidence}
-    assert (request.trigger_kind, request.trigger_ref) == (D.TRIGGER_KIND, "ffp-0123456789abcdef01234567")
+    # ⛔ RESTATED by yc2_w27_s13/M35.C3.L-integration.V1.U06 (X12, `06` D48): the run is keyed on the review AND its
+    # check, so a review checked again under a newer check is a new decision of the file.
+    assert (request.trigger_kind, request.trigger_ref) == (
+        D.TRIGGER_KIND, f"ffp-0123456789abcdef01234567@{CHECK_VERSION}")
     assert request.context.root_entity_id == FILE
 
 

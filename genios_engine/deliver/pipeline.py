@@ -247,7 +247,7 @@ def question_card(graph, org_id: str, row: dict, eval_time: datetime) -> tuple[d
 
     from genios_engine.reason.expert import store as reviews
     from genios_engine.reason.expert.asks import WHY_FIND_OUT, WHYS
-    from genios_engine.reason.expert.decide import SITUATION_IS
+    from genios_engine.reason.expert.decide import SITUATION_IS, fingerprint_of
 
     from .bands import band
     from .card_builder import EXPIRY_DAYS, _group_memberships, load_node
@@ -263,7 +263,10 @@ def question_card(graph, org_id: str, row: dict, eval_time: datetime) -> tuple[d
     # review re-bind the question to the run asking now, whose trigger is that review (`reason/expert/decide`);
     # the question's own fingerprint is the review that asked it FIRST.
     with graph.engine.connect() as c:
-        review = reviews.read_review(c, org_id, node, str(row.get("asking_review") or row["fingerprint"]))
+        # The asking run's key names the review and its check (`decide.decision_ref`, STEP-13 X12); the review is
+        # read by its fingerprint.
+        asking = fingerprint_of(row.get("asking_review"))
+        review = reviews.read_review(c, org_id, node, str(asking or row["fingerprint"]))
     checked = review.checked if review is not None else None
     reading = checked.words.situation if checked is not None and checked.words.situation else None
     because = row["why"] if row["why"] in WHYS else WHY_FIND_OUT

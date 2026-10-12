@@ -83,7 +83,22 @@ def test_the_table_has_the_columns_the_readers_need(engine):
         "triggers": ("jsonb", "YES"),
         # ⛔ MOVED by STEP-13 M35.C1.L-contract.V1.U03 (0200), deliberately: what the check found.
         "checked": ("jsonb", "YES"),
+        # ⛔ MOVED by STEP-13 M35.C3.L-integration.V1.U06 (0202, `06` D48), deliberately: when the check ran (X36)
+        # and the dossier the review was written against, which a re-check reads (X13).
+        "checked_at": ("timestamp with time zone", "YES"), "dossier": ("jsonb", "YES"),
     }
+
+
+@pytest.mark.pg
+@pytest.mark.parametrize("dossier", ['"a dossier"', '{"text": "a dossier"}', '{"evidence_ids": []}',
+                                     '{"text": 1, "evidence_ids": []}', '{"text": "d", "evidence_ids": "evt_1"}'])
+def test_a_kept_dossier_is_its_text_and_the_ids_it_printed(engine, dossier):
+    from sqlalchemy.exc import IntegrityError
+    with pytest.raises(IntegrityError):
+        with engine.begin() as c:
+            _insert(c)
+            c.execute(text("update expert_reviews set dossier = cast(:d as jsonb) where org_id = :o"),
+                      {"d": dossier, "o": ORG})
 
 
 @pytest.mark.pg

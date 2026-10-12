@@ -512,12 +512,15 @@ _RETIRE_FILE_DECISIONS = (
     "update signals set status = 'expired' where org_id = :o and rule_id = :r "
     "   and subject_node_id = :n and status = 'open' returning signal_id")
 
-#: …and cleared when its new review names no move now — every open decision an EARLIER review made.
+#: …and cleared when its new review names no move now — every open decision of the file. ⛔ ALL OF THEM (STEP-13
+#: `yc2_w27_s13` M35.C3.L-integration.V1.U06, crosscheck X12): this read kept the decisions whose run named the
+#: review deciding now, as if the same review could not have decided otherwise before. It can — checked again
+#: under a newer check (X12), or decided again under a newer `DECIDE_VERSION` — and a review that names no move
+#: now leaves no decision of the file standing, whichever review made it.
 _CLEAR_FILE_DECISIONS = (
-    "update signals s set status = 'expired' from reasoning_runs r "
+    "update signals s set status = 'expired' "
     " where s.org_id = :o and s.rule_id = :r and s.subject_node_id = :n and s.status = 'open' "
-    "   and r.org_id = s.org_id and r.run_id = s.reasoning_run_id "
-    "   and r.trigger_ref is distinct from :fp returning s.signal_id")
+    "returning s.signal_id")
 
 #: The outcomes a review CHOOSES when it names no move now: wait or blocked (DEFER — a move held under
 #: the confidence floor too), find out (INSUFFICIENT_CONTEXT), nothing (NO_ACTION). Never FAILED or
@@ -584,23 +587,30 @@ def _advice(row) -> tuple:
             (move.who, checked.words.headline, move.for_whom, move.by_when) if shown else None)
 
 
-def _same_advice(conn, org_id: str, file_id: str, fingerprint: str | None, row) -> bool:
-    """Did the review behind a standing decision (`fingerprint`, its run's trigger) advise what the
-    stored review `row` advises? A review gone, or never valid, gave no advice to keep."""
+def _same_advice(conn, org_id: str, file_id: str, ref: str | None, row) -> bool:
+    """Did the review behind a standing decision (`ref`, its run's trigger: the review's fingerprint and the
+    version of its check — `reason/expert/decide.decision_ref`) advise what the stored review `row` advises? A
+    review gone, or never valid, gave no advice to keep; and one decided through ANOTHER check version gave the
+    advice that check let stand, which is no longer on the row (STEP-13 X12, `06` D48): the file is decided again."""
+    from genios_engine.reason.expert import decide as expert
     from genios_engine.reason.expert import store as reviews
 
+    fingerprint = expert.fingerprint_of(ref)
     if not fingerprint:
         return False
-    prior = reviews.read_review(conn, org_id, file_id, str(fingerprint))
+    if row.checked is None or expert.check_version_of(ref) != row.checked.version:
+        return False
+    prior = reviews.read_review(conn, org_id, file_id, fingerprint)
     return prior is not None and prior.review is not None and _advice(prior) == _advice(row)
 
 
-def _clear_file_decision(store, org_id: str, file_id: str, fingerprint: str, rule_id: str) -> int:
-    """The file's new review names no move now: what an earlier review decided is cleared — its cards
-    RULE_CLEARED (STEP-06), the rule that fired no longer holding on its subject."""
+def _clear_file_decision(store, org_id: str, file_id: str, rule_id: str) -> int:
+    """The file's new review names no move now: every open decision of the file — an earlier review's, or this
+    same review's through an older check (STEP-13 X12) — is cleared, its cards RULE_CLEARED (STEP-06), the rule
+    that fired no longer holding on its subject."""
     with store.engine.begin() as conn:
         cleared = conn.execute(text(_CLEAR_FILE_DECISIONS), {
-            "o": org_id, "r": rule_id, "n": file_id, "fp": fingerprint}).fetchall()
+            "o": org_id, "r": rule_id, "n": file_id}).fetchall()
         if cleared:
             card_lifecycle.expire_cards(conn, org_id=org_id, cause=card_lifecycle.RULE_CLEARED,
                                         signal_ids=[item.signal_id for item in cleared])
@@ -745,7 +755,8 @@ def _decide_covered_files(*, store, conn, org_id: str, reviews: Mapping[str, Any
             outcome = _persist_live(
                 store=store, reasoning_store=reasoning_store, org_id=org_id, node_id=file_id,
                 package=_REVIEWED, execution=execution, eval_time=eval_time, pack=pack,
-                situation_id=str(home.situation_id), replace_unless_from=review.fingerprint,
+                situation_id=str(home.situation_id),
+                replace_unless_from=expert.decision_ref(review.fingerprint, review.checked.version),
                 same_advice=lambda prior, _file=file_id, _row=review: _same_advice(
                     conn, org_id, _file, prior, _row), bundle_out=bundle)
             counts[f"expert_{outcome}"] += 1
@@ -762,7 +773,7 @@ def _decide_covered_files(*, store, conn, org_id: str, reviews: Mapping[str, Any
             if outcome != "rule_id_collision":
                 decided[file_id] = review.fingerprint
             if outcome == "nothing_to_emit" and execution.decision.outcome in _NO_MOVE:
-                cleared = _clear_file_decision(store, org_id, file_id, review.fingerprint, rule_id)
+                cleared = _clear_file_decision(store, org_id, file_id, rule_id)
                 if cleared:
                     counts["expert_cleared"] += cleared
             # An asking run leaves its question standing (U11, `03` X04): remembered as STANDING on the

@@ -446,14 +446,20 @@ def test_a_standing_review_with_no_check_is_checked_before_it_covers(world):
     assert again["covered"] == first["covered"] and again["checked"] == {"shown": 2}
 
 
-def test_an_untouched_files_review_with_no_current_check_covers_nothing(world):
-    """Its dossier is not this one, so the pass cannot check it again faithfully: counted, never trusted."""
+def test_an_untouched_files_review_with_no_current_check_is_reviewed_again_when_the_file_moved(world):
+    """⛔ RESTATED by yc2_w27_s13/M35.C3.L-integration.V1.U06 (`06` D48, crosscheck X11). It was "covers nothing":
+    counted `unchecked`, the file decided per situation again and its file card never cleared. Since D48 a review
+    with no current check is checked again on the dossier it was reviewed on when the file is the one it saw, and
+    the file is reviewed again — inside the day's budget — when it moved: eleven quiet days moved it. A review with
+    no check at all covers nothing meanwhile (`unchecked`), so here the new reviews are what cover."""
     store, now = world
-    _pass(store, now)
+    first, _ = _pass(store, now)
     with store.engine.begin() as c:
         c.execute(text("update expert_reviews set checked = null where org_id = :o"), {"o": ORG})
-    quiet, _ = _pass(store, now + timedelta(days=11))
-    assert quiet["untouched"] == 2 and quiet["unchecked"] == 2 and quiet["covered"] == {}
+    quiet, expert = _pass(store, now + timedelta(days=11))
+    assert quiet["untouched"] == 2 and quiet["unchecked"] == 2 and quiet["version_moved"] == 2
+    assert len(expert.prompts) == 2 and quiet["reviewed"] == {R.VALID: 2}
+    assert len(quiet["covered"]) == 2 and set(quiet["covered"].values()).isdisjoint(first["covered"].values())
 
 
 def test_a_review_whose_one_fact_falls_is_refused_and_names_it(world):

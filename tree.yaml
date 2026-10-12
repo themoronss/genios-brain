@@ -8025,6 +8025,25 @@ yc2_w27_s13:
                       artifact: "genios_engine/reason/expert/review.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_one_review.py tests/reason/expert/test_the_review_store.py"
                       depends_on: [M35.C2.L-logic.V1.U02, M35.C1.L-contract.V1.U03, M35.C4.L-integration.V0.U02]   # the last: the build order (order_note) — the golden lane stays green
+                    - id: M35.C3.L-integration.V1.U06
+                      what: >
+                        `06` D48 (answered 12 Oct; the crosscheck's X11, X12, X13, X36): a prompt or check
+                        version change re-checks each standing review against the dossier it was reviewed on,
+                        and reviews the file again only when the file moved. 0202 keeps beside the check when
+                        it ran (`checked_at`) and the dossier the review was written against (`dossier`: its
+                        text and the ids it printed), so a re-check reads THAT dossier, never today's — whose
+                        digest moves with the clock ("as of" the minute), so no digest comparison can say "the
+                        same dossier". MOVED is the fingerprint's measure: its inputs beside what the review saw,
+                        who decides aside. A quiet file whose review an older version wrote or checked is
+                        re-checked when unmoved, reviewed again (`version_moved`, inside the day's budget) when
+                        moved, and covered by the review that stood meanwhile — a bump never uncovers a file.
+                        The file's decision is keyed on (fingerprint, check version) (`decide.decision_ref`), so
+                        a re-check that holds a move an older check showed clears that decision and its card.
+                        `CHECK_VERSION` check.v2 (the check changed in M35.C2.U09-U16); `prompt.py`'s claim that
+                        a version bump reviews every file corrected, and 0200's (immutable) corrected in 0202.
+                      artifact: "genios_engine/reason/expert/sweep.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_a_version_change_rechecks_or_reviews_again.py tests/reason/expert/test_the_expert_pass.py tests/reason/expert/test_the_review_store.py tests/reason/expert/test_expert_reviews_table.py tests/reason/expert/test_a_covered_file_decides_once.py"
+                      depends_on: [M35.C3.L-integration.V1.U01, M35.C3.L-integration.V2.U02]
                 - level: 2
                   units:
                     - id: M35.C3.L-integration.V2.U02

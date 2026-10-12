@@ -198,6 +198,31 @@ READER_SPEC = ReasonerSpec(READER_ID, DECIDE_VERSION, required_fields=(F_MODE,),
                            failure_policy=FailurePolicy.REQUIRED, gating=True)
 
 
+#: THE DECISION'S KEY (STEP-13 `yc2_w27_s13` M35.C3.L-integration.V1.U06, crosscheck X12; `06` D48): the run's
+#: `trigger_ref` names the review AND the check it was decided through — `<fingerprint>@<check version>` — so a
+#: review checked again under a newer check is a new decision of the file (`reason/domain_shadow`'s file branch
+#: replaces or clears the older check's), never "this same review" standing beside it.
+DECISION_REF_SEPARATOR = "@"
+
+
+def decision_ref(fingerprint: str, check_version: str) -> str:
+    """The key a file's decision is made on: the review's fingerprint and the version of its check."""
+    return f"{fingerprint}{DECISION_REF_SEPARATOR}{check_version}"
+
+
+def fingerprint_of(ref: Any) -> str | None:
+    """The review a decision's key names — a run from before the key named the fingerprint alone."""
+    if not ref:
+        return None
+    return str(ref).split(DECISION_REF_SEPARATOR, 1)[0]
+
+
+def check_version_of(ref: Any) -> str | None:
+    """The check version a decision's key names — None on a run from before the key."""
+    _fp, sep, version = str(ref or "").partition(DECISION_REF_SEPARATOR)
+    return version if sep else None
+
+
 def is_expert(capability_id: Any) -> bool:
     """Was this decision the expert's — a covered file's, decided from its review?"""
     return str(capability_id or "") == CAPABILITY_ID
@@ -385,7 +410,8 @@ def request_for(row: store.StoredReview, *, org_id: str, root_entity_type: str, 
                                   live_delivery_enabled=live_delivery_enabled),
         context=context_for(row, org_id=org_id, root_entity_type=root_entity_type,
                             eval_time=eval_time, graph_version=graph_version),
-        evaluation_time=eval_time, trigger_kind=TRIGGER_KIND, trigger_ref=row.fingerprint,
+        evaluation_time=eval_time, trigger_kind=TRIGGER_KIND,
+        trigger_ref=decision_ref(row.fingerprint, row.checked.version),
         mode=mode, config_snapshot_id=config_snapshot_id)
 
 
@@ -528,6 +554,7 @@ __all__ = ["ADAPTER", "CAPABILITY_ID", "DECIDE_VERSION", "DONE_WHEN_IS", "DO_NOT
            "ExpertDecisionMaker", "LEVEL_BP", "MODE_MARKER", "MOVE_PLAY", "NO_EVENT_BP",
            "ONE_EVENT_BP", "OUTCOME_OF", "READER_ID", "READER_SPEC", "ReviewReader", "TRIGGER_KIND",
            "WATCH_PLAY",
-           "capability_for", "cited_ids", "context_for", "decide", "is_event", "is_expert",
+           "DECISION_REF_SEPARATOR", "capability_for", "check_version_of", "cited_ids", "context_for",
+           "decide", "decision_ref", "fingerprint_of", "is_event", "is_expert",
            "mode_of", "orchestrator", "sources_of",
            "request_for"]

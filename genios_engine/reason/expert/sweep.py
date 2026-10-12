@@ -26,8 +26,20 @@ ONCE, so a switch flipped halfway cannot leave two files of one pass judged unde
 WHAT IS CHECKED (STEP-13, `yc2_w27_s13` M35.C3.L-integration.V1.U01). Every review is checked before it
 covers anything (`reason/expert/verify`, against the file's people — `dossier.people_of`): a review written
 now is checked by the run that writes it; a standing valid review checked under an older check version is
-checked again, against the same dossier, before it covers; a last review the file has moved past, with no
-current check, covers nothing — it is counted `unchecked`, and the file is decided as before.
+checked again before it covers.
+
+⛔ WHEN A VERSION MOVES (`06` D48, answered 12 Oct; M35.C3.L-integration.V1.U06 — the crosscheck's X11, X13). A
+prompt or check version change re-checks each standing review against the dossier it was reviewed on — the row
+keeps it (0202, `review.recheck`) — and the file is reviewed again only when the file moved. MOVED is the
+fingerprint's own measure: its inputs (the events, the asks, whose move, the clocks as rungs, the brief, the
+playbook, the verdicts, the answers) beside what the review saw (`expert_reviews.inputs`), who decides aside —
+never a digest of today's dossier, which moves with the clock. A file whose fingerprint a standing review
+answers did not move: its review is checked again. A quiet file nothing triggered, whose last review was
+written or checked under another version: checked again when it is the file that review saw, reviewed again
+(`VERSION_MOVED`, inside the day's budget, nearest first) when it moved — and covered by the review that stood
+until that review is written, so a version change never uncovers a file. Before D48 a check bump counted such a
+file `unchecked` and decided it per situation again, its file card never cleared; a prompt bump re-reviewed
+nothing.
 
 WHAT IT COVERS (M33.C1.L-data.V0.U06). The receipt says which files a VALID review now answers —
 `covered`, file → the fingerprint of that review — for the compiled lane to decide each once, from it,
@@ -50,6 +62,7 @@ from __future__ import annotations
 
 import math
 from collections import Counter
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -68,7 +81,7 @@ from .dossier import build_dossier, people_of, read_parts
 from .fingerprint import file_fingerprint, fingerprint_inputs, nearest_due
 from .kind_proposal import propose_kind
 from .prompt import PROMPT_VERSION
-from .review import check, review_file
+from .review import recheck, review_file
 from .triggers import triggers_for
 
 _log = get_logger("genios.reason.expert.sweep")
@@ -81,6 +94,37 @@ MAX_PER_PASS = 10
 #: How long a fingerprint whose review failed waits before it is tried again — a network blip is
 #: retried within the day, an answer that stays misshapen does not spend every sweep's budget.
 RETRY_FAILED_AFTER = timedelta(hours=6)
+
+#: What a review written because a version moved says triggered it (`06` D48) — beside the file's own
+#: triggers (`reason/expert/triggers.KINDS`), and never one of them: a version is no change in the file.
+VERSION_MOVED = "version_moved"
+#: The fingerprint input that names who decides — the model, the prompt, the dossier's version. Whether the file
+#: MOVED is read with it set aside (D48).
+_WHO_DECIDES = "who_decides"
+
+
+def _current(row) -> bool:
+    """Was this standing review written and checked under the versions in force?"""
+    return (row.checked is not None and row.checked.version == CHECK_VERSION
+            and row.prompt_version == PROMPT_VERSION)
+
+
+def _same_file(then, now) -> bool:
+    """Is the file the one its review saw (D48)? The fingerprint's inputs alike, who decides aside. A row that
+    kept no inputs (before 0198) saw a file nobody can compare: it moved."""
+    return isinstance(then, dict) and ({k: v for k, v in then.items() if k != _WHO_DECIDES}
+                                       == {k: v for k, v in now.items() if k != _WHO_DECIDES})
+
+
+def _version_trigger(row) -> dict[str, str]:
+    """Why a file is reviewed again though nothing in it triggered: the versions that moved, from what to what."""
+    moved = []
+    then = row.checked.version if row.checked is not None else "none"
+    if then != CHECK_VERSION:
+        moved.append(f"the check moved: {then} → {CHECK_VERSION}")
+    if row.prompt_version != PROMPT_VERSION:
+        moved.append(f"the prompt moved: {row.prompt_version} → {PROMPT_VERSION}")
+    return {"kind": VERSION_MOVED, "says": "; ".join(moved)}
 
 
 def _hours_to_nearest(parts) -> float:
@@ -132,7 +176,7 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
     receipt: dict[str, Any] = {"files": 0, "ours": 0, "unchanged": 0, "untouched": 0, "unreadable": 0,
                                "waiting": Counter(), "reviewed": Counter(), "carried": 0,
                                "proposed_kinds": 0, "cost_micro_usd": 0, "covered": {}, "people": {},
-                               "unchecked": 0, "checked": Counter()}
+                               "unchecked": 0, "checked": Counter(), "rechecked": 0, "version_moved": 0}
     due = []
     from sqlalchemy import text
 
@@ -163,11 +207,13 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
                 if row.status == reviews.VALID:
                     checked = row.checked
                     if checked is None or checked.version != CHECK_VERSION:
-                        # The same fingerprint is the same dossier: check it again, keep the check.
-                        checked = check(row.review, build_dossier(parts), people)
+                        # The same fingerprint is the same file (D48): checked again, on the dossier it was
+                        # reviewed on — the check kept, and when it ran.
+                        checked = recheck(row, people, today=build_dossier(parts))
                         with engine.begin() as conn:
                             reviews.write_check(conn, org_id=org_id, file_id=work.file_id,
-                                                fingerprint=fp, checked=checked)
+                                                fingerprint=fp, checked=checked, at=now)
+                        receipt["rechecked"] += 1
                     receipt["checked"][checked.fate] += 1
                     if checked.fate != CHECK_REFUSED:
                         _cover(receipt, work.file_id, fp, work.people)
@@ -181,14 +227,30 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
             found = triggers_for(parts, inputs, last=last)
             if not found:
                 receipt["untouched"] += 1
-                if last is not None and last.status == reviews.VALID:
-                    # Its dossier is not this one, so it is never checked again here: only its own
-                    # current check lets it cover.
-                    if last.checked is not None and last.checked.version == CHECK_VERSION \
-                            and last.checked.fate != CHECK_REFUSED:
-                        _cover(receipt, work.file_id, last.fingerprint, work.people)
+                if last is None or last.status != reviews.VALID:
+                    continue
+                if not _current(last):
+                    if _same_file(last.inputs, inputs):
+                        # A version moved and the file did not (D48): its review checked again, on its own
+                        # dossier — when it is the check that moved.
+                        if last.checked is None or last.checked.version != CHECK_VERSION:
+                            checked = recheck(last, people, today=build_dossier(parts))
+                            with engine.begin() as conn:
+                                reviews.write_check(conn, org_id=org_id, file_id=work.file_id,
+                                                    fingerprint=last.fingerprint, checked=checked, at=now)
+                            receipt["rechecked"] += 1
+                            receipt["checked"][checked.fate] += 1
+                            last = replace(last, checked=checked)
                     else:
-                        receipt["unchecked"] += 1
+                        # A version moved AND the file moved since its review (D48): reviewed again, inside the
+                        # day's budget — covered meanwhile by the review that stood, never uncovered by a bump.
+                        receipt["version_moved"] += 1
+                        due.append((_hours_to_nearest(parts), order, parts, inputs, fp,
+                                    [_version_trigger(last)], people))
+                if last.checked is not None and last.checked.fate != CHECK_REFUSED:
+                    _cover(receipt, work.file_id, last.fingerprint, work.people)
+                else:
+                    receipt["unchecked"] += 1
                 continue
             due.append((_hours_to_nearest(parts), order, parts, inputs, fp, found, people))
         except Exception:      # noqa: BLE001 — one unreadable file is not a failed pass
@@ -238,4 +300,4 @@ def expert_pass(*, store, org_id: str, now: datetime | None = None, llm=None,
     return receipt
 
 
-__all__ = ["MAX_PER_PASS", "RETRY_FAILED_AFTER", "expert_pass"]
+__all__ = ["MAX_PER_PASS", "RETRY_FAILED_AFTER", "VERSION_MOVED", "expert_pass"]

@@ -32,6 +32,10 @@ never around it.
                 A consult that never reached the question — the feature off, the force-fail switch, no
                 model configured — writes no row: nothing was judged and nothing refused, and the
                 receipt says why.
+  ON ITS DOSSIER (`06` D48, STEP-13 `yc2_w27_s13` M35.C3.L-integration.V1.U06, X13): every row keeps the
+                dossier it was written against (0202), and a review checked again under a newer check
+                version is checked on THAT dossier (`recheck`) — never today's, which may no longer print
+                a line its facts cite. A row from before 0202 is checked on the dossier it is handed.
 """
 from __future__ import annotations
 
@@ -95,6 +99,21 @@ def check(review: ExpertReview, dossier: Dossier, people: FilePeople | None) -> 
                         evidence_ids=dossier.catalogue.evidence_ids)
 
 
+def kept(dossier: Dossier) -> dict[str, Any]:
+    """What a row keeps of the dossier its review was written against (0202): the text the check reads, and
+    the ids it printed — the only ids a fact may cite."""
+    return {"text": dossier.text, "evidence_ids": sorted(dossier.catalogue.evidence_ids)}
+
+
+def recheck(row: store.StoredReview, people: FilePeople | None, *, today: Dossier) -> CheckedReview:
+    """A standing valid review checked again — on the dossier it was written against (`06` D48, X13), or, on a
+    row from before 0202 that kept none, on `today`'s."""
+    if row.dossier is None:
+        return check(row.review, today, people)
+    return check_review(row.review, row.dossier["text"], people or NOBODY,
+                        evidence_ids=frozenset(row.dossier["evidence_ids"]))
+
+
 def review_file(engine, *, org_id: str, dossier: Dossier, fingerprint: str, inputs: Mapping[str, Any],
                 triggers: Iterable[Any], gate: RSiteGate, at: datetime,
                 people: FilePeople | None = None) -> ReviewResult:
@@ -107,10 +126,10 @@ def review_file(engine, *, org_id: str, dossier: Dossier, fingerprint: str, inpu
     if standing is not None and standing.status in store.STANDING:
         checked = standing.checked
         if standing.status == store.VALID and (checked is None or checked.version != CHECK_VERSION):
-            checked = check(standing.review, dossier, people)
+            checked = recheck(standing, people, today=dossier)
             with engine.begin() as conn:
                 store.write_check(conn, org_id=org_id, file_id=file_id, fingerprint=fingerprint,
-                                  checked=checked)
+                                  checked=checked, at=at)
         return ReviewResult(file_id=file_id, fingerprint=fingerprint, status=standing.status,
                             reason=standing.reason, review=standing.review, receipt=None,
                             written=False, checked=checked)
@@ -163,10 +182,10 @@ def review_file(engine, *, org_id: str, dossier: Dossier, fingerprint: str, inpu
             review=review if status == store.VALID else last.get("raw"),
             input_tokens=receipt.input_tokens, output_tokens=receipt.output_tokens,
             cost_micro_usd=receipt.cost_micro_usd, at=at, inputs=inputs, triggers=triggers,
-            checked=last.get("checked") if status == store.VALID else None)
+            checked=last.get("checked") if status == store.VALID else None, dossier=kept(dossier))
     return ReviewResult(file_id=file_id, fingerprint=fingerprint, status=status, reason=reason,
                         review=review, receipt=receipt, written=written,
                         checked=last.get("checked") if status == store.VALID else None)
 
 
-__all__ = ["NOBODY", "ReviewResult", "STATUS_OF", "check", "review_file"]
+__all__ = ["NOBODY", "ReviewResult", "STATUS_OF", "check", "kept", "recheck", "review_file"]

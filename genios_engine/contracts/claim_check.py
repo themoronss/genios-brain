@@ -26,8 +26,11 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
-#: The check's own version — a review checked under an older one is checked again on read.
-CHECK_VERSION = "check.v1"
+#: The check's own version — a review checked under an older one is checked again on read (on the dossier it was
+#: reviewed on, `06` D48). ⛔ check.v2 since 12 Oct (`yc2_w27_s13` M35.C3.L-integration.V1.U06): the check's behaviour
+#: changed in M35.C2.U09-U16 (quotes, numbers, names, recipients, answered asks), so a review v1 checked is checked
+#: again — and a file decided through v1 is decided again (`reason/expert/decide.decision_ref`).
+CHECK_VERSION = "check.v2"
 
 # ── what happened to a line ────────────────────────────────────────────────────────────────────
 # One name to a line: `tests/test_no_missing_module_deps` reads what a module defines by its assignments,

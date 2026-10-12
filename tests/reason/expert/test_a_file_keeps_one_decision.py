@@ -37,8 +37,11 @@ def _status(store, org, signal_id) -> str:
 
 
 def _runs(store, org) -> list[str]:
+    """The reviews the file's decisions were made from. ⛔ RESTATED by yc2_w27_s13/M35.C3.L-integration.V1.U06
+    (X12): a run's key names the review AND its check (`decide.decision_ref`); its review is read off it."""
+    from genios_engine.reason.expert.decide import fingerprint_of
     with store.engine.connect() as c:
-        return [r.trigger_ref for r in c.execute(text(
+        return [fingerprint_of(r.trigger_ref) for r in c.execute(text(
             "select trigger_ref from reasoning_runs where org_id = :o "
             "   and capability_id = 'expert.file_review' order by evaluation_time, run_id"), {"o": org})]
 
