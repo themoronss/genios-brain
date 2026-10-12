@@ -317,3 +317,11 @@ and stays yours.
   `api/intelligence_routes.py` to `deliver/verdicts.py`, the declaration kept naming the route and stayed
   green; it was corrected in the same commit by hand. A stale writer reads as a measurement. Not built
   here (a new guard, not this unit's): each declared writer ∈ `writers_of(table)`.
+- **s16-F15 · The caller of `ask` does not yet know a question you called wrong.** Since
+  M46.C3.L-data.V0.U05, `context/founder_questions.ask` returns the retired `CALLED_WRONG` question when a
+  review asks words you called wrong. `reason/expert/asks.ask_the_founder` handles only `ANSWERED` that way;
+  given the retired question it would expire the open question signal and file a new one bound to a retired
+  question — a signal no card can pass (`QUESTION_SIGNAL_PREDICATE` needs the question open). Dormant: no
+  question is retired `CALLED_WRONG` until M46.C3.L-integration.V4.U06 (the question card's *wrong*, in
+  `deliver/actions`). `asks.py` is STEP-14's until it merges; the caller's half — treat it as
+  `ANSWERED_ALREADY`, file no signal, count the file *held — its question called wrong* — rides with U06.
