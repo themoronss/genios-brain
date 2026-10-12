@@ -33,6 +33,12 @@ BUDGETS`) — and a test holds a maximal one under it. What a limit leaves out i
 never silent. A screen capture is no touch of a file (D53), as built.
 
 `build_dossier` is pure over its parts; `read_parts` reads them for one file; `dossier_for` is both.
+
+WHAT THE CHECK READS BACK (STEP-13, tree `yc2_w27_s13` M35.C2.L-logic.V0.U01). `reason/expert/verify` holds
+each claim to the lines it cites, so the dossier is read back by id: `lines_by_id` maps every id the text
+prints to each place it is printed — the line, the item it belongs to (a head line and the lines indented
+under it: a touch's words, a person's numbers) and, for a touch, its words. `people_of` says who the file's
+mail shows, who is us, and which connector introduced its counterparty — whom a draft may go to.
 """
 from __future__ import annotations
 
@@ -46,6 +52,7 @@ from typing import Any
 from sqlalchemy import text
 
 from genios_engine.contracts.expert_review import DossierCatalogue, number_tokens
+from genios_engine.platform.self_identity import PUBLIC_MAIL_DOMAINS, SelfIdentity
 
 DOSSIER_VERSION = "dossier.v1"
 
@@ -555,13 +562,97 @@ def read_parts(conn, org_id: str, file_id: str, *, now: datetime) -> DossierPart
         promises=promises, promises_cut=promises_cut)
 
 
+# ── reading it back (STEP-13) ──────────────────────────────────────────────────────────────────
+
+#: An id as the dossier prints it: in brackets, no spaces (`_Ids`).
+_PRINTED = re.compile(r"\[([^\[\]\s]+)\]")
+#: A touch's words, as `_timeline` prints them under its head line.
+_WORDS = re.compile(r"^\s+“(.*)”(?: … \(\d+ characters cut\))?\s*$")
+
+
+@dataclass(frozen=True, slots=True)
+class DossierLine:
+    """One place the dossier prints an id: the line, the item it belongs to (the head line and the lines
+    indented under it), and — on a touch's head line — the touch's words."""
+    line: str
+    item: str
+    words: str | None = None
+
+
+def lines_by_id(text: str, ids: Iterable[str] | None = None) -> dict[str, tuple[DossierLine, ...]]:
+    """Every id `text` prints — or only those of `ids`, the dossier's own catalogue — to each place it is
+    printed, in the order printed. Pure."""
+    keep = None if ids is None else set(ids)
+    items: list[list[str]] = []
+    for line in text.splitlines():
+        if line.startswith("  ") and items:
+            items[-1].append(line)
+        else:
+            items.append([line])
+    out: dict[str, list[DossierLine]] = {}
+    for group in items:
+        item = "\n".join(group)
+        words = next((m.group(1) for line in group[1:] if (m := _WORDS.match(line))), None)
+        for n, line in enumerate(group):
+            for found in _PRINTED.findall(line):
+                if keep is None or found in keep:
+                    out.setdefault(found, []).append(
+                        DossierLine(line=line.strip(), item=item, words=words if n == 0 else None))
+    return {k: tuple(v) for k, v in out.items()}
+
+
+@dataclass(frozen=True, slots=True)
+class Person:
+    name: str | None
+    key: str | None                    # an address, or a company's domain
+
+
+@dataclass(frozen=True, slots=True)
+class FilePeople:
+    """Whom a draft of this file may go to: who its mail shows, who is us, and the connector that
+    introduced its counterparty (None on the connector's own file, and on a file nobody introduced)."""
+    counterparty: Person
+    people: tuple[Person, ...]         # the counterparty, the file's people, whoever wrote to us in it
+    us: SelfIdentity
+    our_names: tuple[str, ...] = ()    # the company's name and the founder's (`platform/self_identity.names_us`)
+    connector: Person | None = None
+    head: str = ""                     # the file's own section, as the dossier printed it
+
+
+def label_of(key: str | None) -> str | None:
+    """A key's own name: an address's or a domain's first label — never a public mail host's."""
+    host = str(key or "").casefold().rsplit("@", 1)[-1]
+    if not host or "." not in host or host in PUBLIC_MAIL_DOMAINS:
+        return None
+    return host.split(".", 1)[0]
+
+
+def people_of(parts: DossierParts, *, us: SelfIdentity, our_names: Iterable[str] = ()) -> FilePeople:
+    """The file's people as its dossier shows them (see `FilePeople`). Pure over the parts."""
+    f = parts.file
+    counterparty = Person(name=f.counterparty, key=f.counterparty_key)
+    seen = [counterparty]
+    for person in (getattr(parts.numbers, "people", None) or ()):
+        seen.append(Person(name=person.name, key=person.key))
+    for t in parts.timeline.touches:
+        if t.direction == "in" and (t.who or t.who_name):
+            seen.append(Person(name=t.who_name, key=t.who))
+    people = tuple(dict.fromkeys(seen))
+    connector = (Person(name=label_of(f.introduced_by), key=f.introduced_by)
+                 if f.introduced_by and f.kind != "connector" else None)
+    return FilePeople(counterparty=counterparty, people=people, us=us,
+                      our_names=tuple(n for n in our_names if n), connector=connector,
+                      head=_file(parts, _Ids()).text)
+
+
 def dossier_for(conn, org_id: str, file_id: str, *, now: datetime) -> Dossier | None:
     """The dossier the expert is shown for one file, or None for a file the tenant does not hold."""
     parts = read_parts(conn, org_id, file_id, now=now)
     return build_dossier(parts) if parts is not None else None
 
 
-__all__ = ["CLAIMS_LIMIT", "DOSSIER_CHARS", "DOSSIER_VERSION", "Dossier", "DossierParts",
-           "MOVES_LIMIT", "PEOPLE_LIMIT", "PROMISES_LIMIT", "Promise", "RELATIVE_WORDS", "SECTIONS",
-           "Section", "TITLES", "TOUCHES_LISTED", "TOUCHES_WHOLE", "WAVES_LIMIT", "build_dossier",
-           "dossier_for", "read_parts", "read_promises"]
+__all__ = ["CLAIMS_LIMIT", "DOSSIER_CHARS", "DOSSIER_VERSION", "Dossier", "DossierLine", "DossierParts",
+           "FilePeople", "MOVES_LIMIT", "PEOPLE_LIMIT", "PROMISES_LIMIT", "Person", "Promise",
+           "RELATIVE_WORDS", "SECTIONS", "Section", "TITLES", "TOUCHES_LISTED", "TOUCHES_WHOLE",
+           "WAVES_LIMIT", "build_dossier", "dossier_for", "label_of", "lines_by_id", "people_of",
+           "read_parts", "read_promises"]
