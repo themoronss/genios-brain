@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_073, (
+    assert r["statements"] == 3_079, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -441,6 +441,10 @@ def test_the_statement_count_did_NOT_move():
     # `context/founder_questions` — a question by id, a file's open one, the answers it holds (three
     # SELECTs), the retirement and the answer (two UPDATEs), the asking (one INSERT). Six literals, each
     # at its own call.
+    # ⛔ MOVED 3,073 → 3,079 by yc2_w27_s13/M36.C2.L-integration.V2.U03 (a held file asks): in
+    # `reason/domain_shadow`, the file's open question signal (a SELECT), its re-binding to the run asking
+    # now, its replacement and its retirement (three UPDATEs), the question signal itself (an INSERT); in
+    # `context/founder_questions.ask`, the same question re-bound to that run (an UPDATE). Six literals.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

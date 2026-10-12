@@ -95,11 +95,18 @@ def retire(conn, *, org_id: str, file_id: str, why: str, at: datetime) -> bool:
 
 def ask(conn, *, org_id: str, file_id: str, fingerprint: str, run_id: str | None, question: str, why: str,
         at: datetime) -> Question:
-    """File the file's question. The same words already open are that question; any other open one is
-    retired first — the file has one open question (0201's own index). A question this review asked and
-    the founder already answered is not asked again: the answered question is returned."""
+    """File the file's question. The same words already open are that question — re-bound to the run
+    asking it now; any other open one is retired first — the file has one open question (0201's own
+    index). A question this review asked and the founder already answered is not asked again: the
+    answered question is returned."""
     standing = open_question(conn, org_id, file_id)
     if standing is not None and standing.question == question:
+        if run_id is not None and run_id != standing.run_id:
+            # The same question, asked by the run asking it now: its authority is that run's.
+            conn.execute(text("update founder_questions set run_id = :run where org_id = :o "
+                              "and question_id = :q and state = 'open'"),
+                         {"o": org_id, "q": standing.question_id, "run": run_id})
+            return by_id(conn, org_id, standing.question_id)
         return standing
     if standing is not None:
         retire(conn, org_id=org_id, file_id=file_id, why=REPLACED, at=at)

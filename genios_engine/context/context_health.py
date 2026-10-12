@@ -34,21 +34,13 @@ _ENGINE = _PKG.parent
 #:
 #: CLOSED, and checked in BOTH directions by `tests/context/test_the_context_layer_says_what_it_does_not_call.py`.
 UNREACHED: dict[str, tuple[str, str]] = {
-    "evidence_need_store.read_open_needs": (
-        "⛔⛔ THE BEST ENTRY IN THIS WHOLE LEVEL, AND THE CODEBASE ALREADY WROTE IT DOWN. *'The executor's queue: this tenant's open needs, oldest first.'* The executor EXISTS — `capture/acquire/need_executor.py` — and its own header says: *'`context/evidence_need_store.py` files needs. `evidence_need.execute()` works ONE need. Nothing ran'*, with a second note at `:125` naming this function and adding **'which this layer may not import.'** `capture/` is PRODUCT layer 1 and `context/` is 2, so the executor cannot read its own queue. ⛔ **The gap is STRUCTURAL and declared, not an oversight** — and it is the same shape as the problem that moved `reachability.py` into `platform/` three steps ago",
-        "⛔ MOVES WHEN SOMEBODY TAKES THE SEAM DECISION, and there are exactly two shapes: lift the queue read into `platform/` (where layer 1 may reach it, which is what the reachability machinery did), or invert it so `context/` pushes needs down. **Nobody has taken it**, and the Atlas listed EvidenceNeed as VERIFIED MISSING at the start of this programme — it was built since and never connected"),
-
     "hold_resolution.resolve_hold": (
         "⛔ TWENTY-TWO TEST CALLERS AND NO PRODUCTION CALLER — the most heavily tested unreached function in the engine. *'What to do with a held situation, given the state of the needs it raised.'* So the decision logic for a hold is specified to the hilt and nothing asks it: a situation that goes on hold stays held. ⛔ It is the far end of the same chain as `read_open_needs` — holds raise needs, needs get executed, resolution reads the outcome — and that chain is broken at the layer boundary above",
-        "MOVES WITH the EvidenceNeed seam — see `evidence_need_store.read_open_needs`. ⛔ Wiring resolution before the needs can be executed would ask it to read outcomes nothing produces"),
+        "MOVES WITH the EvidenceNeed seam's OUTCOMES: the queue's reader landed in STEP-13 (`reason/domain_shadow.work_the_needs`, `yc2_w27_s13` M36.C2.L-integration.V2.U03) and refuses while no connector is wired (`capture/acquire/need_executor.build_fetchers` is empty — Harsh's). ⛔ Wiring resolution before a need can be MET would ask it to read outcomes nothing produces"),
 
     "hold_needs.needs_from_holds": (
         "*'A sweep's worth of holds → the needs worth asking, de-duplicated by id.'* Three test callers. The middle link of the same chain: holds in, needs out. Correct, and asked by nothing",
         "MOVES WITH the EvidenceNeed seam — the three links move together or none do"),
-
-    "evidence_need_store.close_need": (
-        "*'Record an outcome. Returns False when the need was already closed by someone else.'* Four test callers, and the concurrency answer is already in it — a second closer gets False rather than an exception. The WRITE half of a queue nothing reads",
-        "MOVES WITH `read_open_needs`. ⛔ A closer with no executor has nothing to close"),
 
     "situation_bso.gather_l1_signals": (
         "⛔ ITS OWN DOCSTRING SHOUTS WHAT IT IS FOR: *'THE READ THIS MODULE EXISTED WITHOUT. Layer 1's published verdicts for this situation'*. Fifteen test callers, zero production callers. So the module still exists without it. ⛔ **A function whose docstring names the absence it was written to end, and is not called, means the absence is unchanged** — and the capitals make it read as fixed",
@@ -121,10 +113,6 @@ UNREACHED: dict[str, tuple[str, str]] = {
     "interpretation_store.record_interpretation": (
         "⛔ RETIRED WITH R-6, 2026-10-11 (`06` D51, STEP-12 `yc2_w27_s12` M32.C4.L-logic.V0.U02). Its one caller was the sweep's R-6 consult, which wrote a `situation_interpretations` row per compiled situation per pass ahead of the change gate (`03` F141) — an empty proposal on every tenant, because R-6's feature was off everywhere. The sweep no longer consults R-6; the table and its rows stay, for history and for `/reset`",
         "MOVES WHEN the module is deleted with R-6's own tests in a clean-up — ⛔ never by re-wiring it: the expert pass (STEP-12) reviews the file instead"),
-
-    "founder_questions.ask": (
-        "STEP-13 (`yc2_w27_s13` M36.C2.L-data.V1.U02): the store of the one question a file asks the founder — built bottom-up, ahead of its caller. Its writer is the sweep that asks (`reason/domain_shadow`, M36.C2.L-integration.V2.U03): a covered file decided insufficient on its answer files its question there",
-        "MOVES WHEN M36.C2.L-integration.V2.U03 lands — this entry goes in that unit's own commit"),
 
     "founder_questions.answer": (
         "STEP-13 (`yc2_w27_s13` M36.C2.L-data.V1.U02): the founder's answer, kept once — built bottom-up, ahead of its caller, the card's Answer action (`deliver/actions`, M36.C2.L-interface.V4.U06)",

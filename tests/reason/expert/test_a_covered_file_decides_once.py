@@ -235,15 +235,19 @@ def test_a_review_that_needs_nothing_emits_nothing_and_still_decides_the_file(wo
     assert _open_signals(store, org, anchor) == [] and anchor not in reasoned
 
 
-def test_a_review_that_must_find_out_first_is_audited_and_emits_nothing(world):
+def test_a_review_that_must_find_out_first_is_audited_and_emits_no_decision(world):
     """A question must be answered before anyone moves: the decision is audited (INSUFFICIENT_CONTEXT,
-    the Investigation lane) and no card is emitted — the question is `STEP-13`'s to ask."""
+    the Investigation lane) and no DECISION is emitted. ⛔ RESTATED by STEP-13 (`yc2_w27_s13`
+    M36.C2.L-integration.V2.U03), whose question this always was: the file now asks it — its one open
+    signal is the question's, authorised as a question and never as a decision
+    (`tests/reason/expert/test_a_held_file_asks.py`)."""
     store, org, registry, reasoned = world
     anchor, situations, events = _fund(store, org)
     _write(store, org, anchor, "ffp-fund-findout-review-000", events, mode="find_out")
     counts = _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-000"})
     assert counts.get("expert_nothing_to_emit") == 1 and counts["covered_situations"] == len(situations)
-    assert _open_signals(store, org, anchor) == [] and anchor not in reasoned
+    assert [s.rule_id for s in _open_signals(store, org, anchor)] == ["founder_question"]
+    assert _authoritative(store, org, NOW) == set() and anchor not in reasoned
     with store.engine.connect() as c:
         outcome = c.execute(text(
             "select o.outcome_kind from reasoning_runs r join reasoning_run_outputs o "
