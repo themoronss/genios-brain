@@ -155,3 +155,25 @@ def test_on_the_shadow_lane_nothing_is_asked(world):
     _find_out(store, org, anchor, "ffp-fund-findout-review-000", events)
     _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-000"}, live=False)
     assert _questions(store, org, anchor) == [] and _open_signals(store, org, anchor) == []
+
+
+def test_a_question_you_answered_is_not_asked_again_by_a_later_review(world):
+    """⛔ `03` X25 (M36.C2.L-data.V2.U12): your answer moves the file's fingerprint, so the review that asks the
+    same words next is a new review. It asks nothing: no signal is filed for words you answered, and the
+    file's open question signal expires — `answered_already`, counted."""
+    store, org, registry, _ = world
+    anchor, _situations, events = _fund(store, org)
+    _find_out(store, org, anchor, "ffp-fund-findout-review-000", events)
+    _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-000"})
+    [asked] = _questions(store, org, anchor)
+    with store.engine.begin() as c:
+        Q.answer(c, org_id=org, question_id=asked.question_id, words="This quarter's.", by="u",
+                 at=NOW + timedelta(hours=1))
+    _find_out(store, org, anchor, "ffp-fund-findout-review-001", events)
+    later = NOW + timedelta(hours=2)
+    counts = _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-001"}, at=later)
+    assert counts.get("expert_question_answered_already") == 1, counts
+    assert counts.get("expert_question_asked", 0) == 0 and counts.get("expert_question_standing", 0) == 0
+    assert [(q.question_id, q.state) for q in _questions(store, org, anchor)] == [(asked.question_id, Q.ANSWERED)]
+    assert _open_signals(store, org, anchor) == [], "no signal for words you answered"
+    assert _asking(store, org, at=later) == []

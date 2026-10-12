@@ -159,3 +159,36 @@ def test_a_card_whose_question_is_no_longer_open_takes_no_press(world, cards, ac
         Q.answer(c, org_id=org, question_id=asked.question_id, words="answered in the app", by="u", at=AT)
     out = _press(store, cards, org, card.card_id, action, words=WORDS, snooze_option="4h")
     assert out == {"ok": False, "error": "stale_or_unauthorized_card", "code": "V-09"}
+
+
+def test_a_question_you_answered_is_never_carded_again(world, cards):
+    """⛔ `03` X25 (M36.C2.L-data.V2.U12). Your answer moves the file; a later review asks another question, on its
+    own card; a later one still asks the words you answered. Nothing is asked: the open question it no longer
+    asks retires, its card REPLACED, and no card asks you again what you told us."""
+    from genios_engine.platform import card_lifecycle
+    from tests.reason.expert.test_a_covered_file_decides_once import _fund
+    from tests.reason.expert.test_a_held_file_asks import _find_out
+    store, org, registry, anchor, card = _card(world, cards)
+    _anchor, _situations, events = _fund(store, org)
+    _press(store, cards, org, card.card_id, "answer", words=WORDS)
+    later = AT + timedelta(hours=1)
+    _find_out(store, org, anchor, "ffp-fund-findout-review-001", events, question="Who at the fund decides?")
+    _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-001"}, at=later)
+    assert _build(store, cards, org, at=later)["question_cards"] == 1
+    last = later + timedelta(hours=1)
+    _find_out(store, org, anchor, "ffp-fund-findout-review-002", events)
+    counts = _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-002"}, at=last)
+    assert counts.get("expert_question_answered_already") == 1, counts
+    assert _build(store, cards, org, at=last)["question_cards"] == 0
+    answered, other = _cards(store, org)
+    assert (answered.card_id, answered.state) == (card.card_id, "resolved")
+    assert other.state == "expired"
+    with store.engine.connect() as c:
+        cause = c.execute(text("select cause from card_events where org_id = :o and card_id = :k "
+                               "and kind = :kind"), {"o": org, "k": other.card_id,
+                                                     "kind": card_lifecycle.EXPIRED}).scalar()
+    assert cause == card_lifecycle.REPLACED
+    states = sorted((q.question, q.state, q.retired_why) for q in _questions(store, org, anchor))
+    assert states == sorted([("Did Arjun ask for last quarter's metrics or this quarter's?", Q.ANSWERED, None),
+                             ("Who at the fund decides?", Q.RETIRED, Q.NO_LONGER_ASKED)])
+    assert _queued(cards, org, last) == []

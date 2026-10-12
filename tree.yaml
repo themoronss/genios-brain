@@ -8034,6 +8034,22 @@ yc2_w27_s13:
                       artifact: "genios_engine/reason/expert/dossier.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_your_answer_feeds_the_file.py tests/reason/expert/test_the_dossier.py tests/reason/expert/test_the_file_fingerprint.py"
                       depends_on: [M36.C2.L-data.V1.U02]
+                    - id: M36.C2.L-data.V2.U12
+                      what: >
+                        Your answer is your words, and an answered question is not asked again (fix-first,
+                        crosscheck `03` X05, X25): the dossier's answer line prints only your words and the
+                        question's id — never the question's text, which for a held review IS the claim its
+                        check dropped, and never its date (a line of its own, which no fact can cite) — so a
+                        fact citing `answer:` is grounded on your words alone ("No. He asked for the roadmap"
+                        never grounds "Send Neel the deck", pinned on `verify.check_review`, verify unedited);
+                        `founder_questions.ask` returns the ANSWERED question when the file already answered
+                        the same words under any fingerprint, retiring an open other one (`NO_LONGER_ASKED`) —
+                        a question retired unanswered may still be asked again; and `asks.ask_the_founder`
+                        files no signal for it (`answered_already`), the file's open question signal expired
+                        and its card REPLACED.
+                      artifact: "genios_engine/reason/expert/dossier.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/<fresh> .venv/bin/python -m pytest -q tests/reason/expert/test_your_answer_feeds_the_file.py tests/context/test_a_file_asks_one_question.py tests/reason/expert/test_a_held_file_asks.py tests/deliver/test_answering_a_question.py"
+                      depends_on: [M36.C2.L-data.V2.U07, M36.C2.L-integration.V2.U03, M36.C2.L-interface.V4.U06]
             - layer: logic
               levels:
                 - level: 1

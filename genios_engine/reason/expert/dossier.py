@@ -266,11 +266,21 @@ def _timeline(p: DossierParts, cite: _Ids) -> Section:
 
 
 def _answers(p: DossierParts, cite: _Ids) -> Section:
-    """What the founder told us, answering a question this file asked: the answer's id (the expert may
-    cite it), what was asked, the words, when. Their words are no mail's — printed on the head line, so
-    no claim is asked to quote them."""
-    lines = [f"- {cite(f'answer:{a.question_id}')} you answered on {_when(a.answered_at)} the question "
-             f"“{a.question}”: “{' '.join(str(a.answer).split())}”" for a in p.answers]
+    """What the founder told us, answering a question this file asked: when, on a line of its own, then the
+    answer's id (the expert may cite it) and the words. Their words are no mail's — printed on the head
+    line, so no claim is asked to quote them.
+
+    ⛔ YOUR ANSWER IS YOUR WORDS (STEP-13 M36.C2.L-data.V2.U12, `03` X05). The answer's line — the item a
+    fact citing `answer:<id>` is held to (`reason/expert/verify`) — carries the id and the words and NOTHING
+    else. Never the question's text: a held review's question IS the claim its check dropped ("Is it so:
+    “…”?"), so a line carrying it let "No. He asked for the roadmap" ground "Send Neel the deck" again.
+    Never its date either: a date's digits would ground any small number, and the invention rule reads a
+    date's own month and day (`platform/grounding.corpus_of`) — so the date heads the answer on a line of
+    its own, which no id prints on and no fact can cite."""
+    lines: list[str] = []
+    for a in p.answers:
+        lines.append(f"You answered on {_when(a.answered_at)}:")
+        lines.append(f"- {cite(f'answer:{a.question_id}')} “{' '.join(str(a.answer).split())}”")
     return Section("answers", "\n".join(lines))
 
 
