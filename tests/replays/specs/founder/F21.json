@@ -159,7 +159,7 @@
        "claim": "The notices are addressed to every founder — Dear Founder — and ask nothing of Nimbus Labs in particular.",
        "evidence": [
         "evt_0616ab6c71c798e70dd44f98",
-        "evt_a63c89b44c27111f6b8f66f5"
+        "evt_9d2e0ef8c31399753d1082db"
        ],
        "quote": "Dear Founder"
       },
@@ -172,7 +172,7 @@
       {
        "claim": "The centre wrote again with a reminder that applications for the programme close soon, naming no date.",
        "evidence": [
-        "evt_a63c89b44c27111f6b8f66f5"
+        "evt_9d2e0ef8c31399753d1082db"
        ],
        "quote": "reminder that applications for the pre-incubation programme close soon. Awadh Enterprise Centre"
       }

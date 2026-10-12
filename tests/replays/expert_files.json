@@ -3952,7 +3952,7 @@
   },
   "vertexangels.test": {
    "evidence": [
-    "evt_f0b6c2947781c73fda60740c",
+    "evt_3c1234356532126c2b8f6d25",
     "hist:derived.history.prior_card_verdict@support",
     "hist:derived.history.prior_outcome@support",
     "hist:derived.history.times_seen@support",
@@ -3961,7 +3961,7 @@
     "num:their_reply_time:nandini@vertexangels.test",
     "num:usual_gap",
     "num:your_reply_time:nandini@vertexangels.test",
-    "sit:sit_910c6ae2dcbc47b35ce417ff",
+    "sit:sit_7b5a121aaab94d2ddce72956",
     "whatif:14",
     "whatif:3",
     "whatif:7"
@@ -3985,20 +3985,19 @@
     "22",
     "22.2",
     "23",
-    "35",
     "45",
-    "47",
     "60",
-    "73",
-    "83",
-    "417",
-    "451",
-    "910",
     "2026",
-    "9252",
-    "60740",
     "94316",
-    "2947781"
+    "121",
+    "1234356532126",
+    "25",
+    "3307",
+    "5",
+    "72956",
+    "80909424",
+    "884",
+    "94"
    ],
    "prompts": 1,
    "stages": []

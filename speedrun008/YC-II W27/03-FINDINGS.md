@@ -321,7 +321,7 @@ ideal reader's recorded answers (cassettes recorded at `b47239c9`, `06-DECISIONS
 spend). `scripts/golden_score.py --assert-recorded` holds the two lines below to every later run.
 
 ```
-founder golden set   must-detect  21/45 (12 not expressible)   must-abstain  13/13 (0 not exercised)   forbidden outputs  0
+founder golden set   must-detect  22/45 (12 not expressible)   must-abstain  13/13 (0 not exercised)   forbidden outputs  0
 atlas replays 01–07  passing  6/80   blocked  1/80   not expressible  73
 ```
 
@@ -502,14 +502,31 @@ advice rebuilt on every review (F174), F57's card outliving its answer (F175).
 | forbidden outputs | 8 → **0**: *"happened"* (F07, F29 twice, F40), *"could you resend"* (F49), `events@bluebayhub.test` (F54, three) — none is said |
 | atlas replays | passing 4 → **6**, blocked 3 → **1**: 02 m04 on F09 (the connector's own ask, answered) and 03 m05 on F40 (no recap of an unconfirmed meeting) pass; 01 m01 on F14 stays blocked (no card about Tara) |
 
+**Re-recorded 2026-10-12 by `STEP-13`** (`yc2_w27_s13 · M36.C2.L-integration.V6.U08`, `06` D60), a held file
+asking its one question on its own card. A question card is a card, and the next review of the file sees it
+(*a card “…”, queued*), so every later prompt of a case whose file asked moved: all 58 cassettes, the
+first-connect door's and the re-sync's were re-recorded from the ideal reader (no spend). The question cards
+mint ids from the case's one pinned sequence, so every later id moved with them; two authored citations
+moved with the ids the run now mints, named: F21's reminder mail (`evt_a63c…` → `evt_9d2e…`, the same line
+*2026-09-21 05:00 UTC · they wrote · Awadh Enterprise Centre*) and F52's second file — the founder's own mail
+of 12 Sep and its situation (`evt_f0b6…` → `evt_3c12…`, `sit_910c…` → `sit_7b5a…`; `card_f0b6…` is now
+F52's question card) — with `expert_files.json`'s entry for that file re-measured (its evidence and
+numbers). The citation table is whole again (441 over 53 cases).
+
+| moved by STEP-13 | from → to |
+|---|---|
+| F01, F52 | lost in reasoning → **pass**: the file's review must find out first, and the question is its card — F01 *"Sign in to the StartupSetu portal, confirm the application reads Under Examination…"*, F52 *"Check the current count of paying customers against Gautam's bar of ten…"* (F184 closed). F52's question asks what the founder's own mail of 12 Sep already says, on another file: what the company says of itself reaches no file's dossier — Rohit's call (crosscheck X33) |
+| F07 | **pass → lost in reasoning**: two cards about the file — before the call the review's move (accept the invite, read the brief), after it the question it asks (did the call take place, and what was promised?). Each is right in its sweep; the founder should see ONE card change, which is `STEP-14`'s living card (F176) |
+| find-out files | F21, F22, F54 ask once each and their marks do not move (`tests/replays/test_a_held_file_asks_once.py`) |
+
 The table below is the board's state now.
 
 | | |
 |---|---|
-| must-detect that pass · 21 | F03, F04, F10, F13, F26, F28, F42, F44, F46 (as before STEP-12), F07, F09, F11, F16, F17, F27, F29, F47, F48, F49, F51, F57 (STEP-12 — the table above) |
+| must-detect that pass · 22 | F03, F04, F10, F13, F26, F28, F42, F44, F46 (as before STEP-12), F09, F11, F16, F17, F27, F29, F47, F48, F49, F51, F57 (STEP-12), F01, F52 (STEP-13 — the question card) |
 | must-detect lost at the gate · 1 | F56 (a vendor's renewal notice — the junk filter's prompt drops plan notices; no vendor kind) |
 | must-detect lost before memory · 0 | — (ten before STEP-05) |
-| must-detect lost in reasoning · 9 | F01 and F52 (the review asks a question first — *find out* — and an Investigation card is `STEP-13`'s), F02, F05, F06, F24 (the advice changed as the file moved: two cards — F176), F12 and F50 (the same advice re-decided after its week lapsed — F176), F19 (three people's asks in one cell's file; the case expects a card per person — `06` D58) |
+| must-detect lost in reasoning · 8 | F02, F05, F06, F24 (the advice changed as the file moved: two cards — F176), F07 (the move's card, then the question's after the call — F176, STEP-13), F12 and F50 (the same advice re-decided after its week lapsed — F176), F19 (three people's asks in one cell's file; the case expects a card per person — `06` D58) |
 | must-detect with no stage to read · 2 | F15 (the outreach wave: each fund reviewed once, *wait*, never again — F169, `06` D57), F25 (two cards — F176) |
 | not expressible · 12 | F08, F14, F18, F20–F23, F45, F53, F54, F55 (`brief only` — `STEP-15`), F30 (the screen door) |
 | must-abstain that pass · 13 | F31 (the assignment), F32 (archived, and Lakshya's social read and not carded — STEP-07), F33, F34 (archived), F35, F36, F37 (the connector is never the person to reply to — since STEP-09 no reply situation about it arises at all), F38 (an answer elsewhere closes the ask), F39, F40 (a meeting nobody confirmed, not recapped — STEP-12), F41, F43 (the founder's own mail, in memory, not carded), F58 (the company domain that is also the platform's — still the founder) |

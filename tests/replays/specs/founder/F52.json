@@ -360,13 +360,13 @@
       {
        "claim": "Arjun sent Nandini a September update: Nimbus Labs crossed twelve paying customers this month, and onboarding is down to two days.",
        "evidence": [
-        "evt_f0b6c2947781c73fda60740c"
+        "evt_3c1234356532126c2b8f6d25"
        ]
       },
       {
        "claim": "The update asks nothing of Nandini.",
        "evidence": [
-        "evt_f0b6c2947781c73fda60740c"
+        "evt_3c1234356532126c2b8f6d25"
        ]
       },
       {
@@ -378,7 +378,7 @@
       {
        "claim": "The engine files the update as a support case, and the brief names no kind of work for the file.",
        "evidence": [
-        "sit:sit_910c6ae2dcbc47b35ce417ff"
+        "sit:sit_7b5a121aaab94d2ddce72956"
        ]
       }
      ],
@@ -437,7 +437,7 @@
       "kind": "investor",
       "why": "Arjun's September update, paying customers and onboarding time, sent to Nandini at an address whose name reads Vertex Angels, is how a founder keeps an investor informed; the engine files it as a support case and the brief names no kind for it.",
       "evidence": [
-       "evt_f0b6c2947781c73fda60740c"
+       "evt_3c1234356532126c2b8f6d25"
       ]
      },
      "expected_vs_actual": {
@@ -476,6 +476,5 @@
    }
   ]
  },
- "notes": "09 G1, the benchmark's 2 Apr deferral: the card quotes the condition verbatim, with its date, and the fact that meets it - in the founder's own mail of 12 Sep, to someone else. A traction number that is not in the evidence is forbidden: one model invented one in the benchmark.",
- "blocked_on": "the fund's file is decided from its review since STEP-12 — a question first (find out: is Gautam's bar of ten paying customers met?), held in the Investigation lane, and no card asks it yet: STEP-13"
+ "notes": "09 G1, the benchmark's 2 Apr deferral: the card quotes the condition verbatim, with its date, and the fact that meets it - in the founder's own mail of 12 Sep, to someone else. A traction number that is not in the evidence is forbidden: one model invented one in the benchmark."
 }

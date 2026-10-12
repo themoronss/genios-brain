@@ -81,7 +81,7 @@ def _read(case_id: str) -> dict[str, Any]:
             files = {f.counterparty_key: f for f in files_for(c, org, now=case.sweeps[-1]).files}
             founder_cards = c.execute(text(
                 "select k.card_id, k.do_nothing_consequence, k.outcome_window_days, k.success_signal, "
-                "       rr.capability_id "
+                "       k.builder_version, rr.capability_id "
                 "  from cards k join signals s on s.org_id = k.org_id and s.signal_id = k.signal_id "
                 "  join reasoning_runs rr on rr.org_id = s.org_id and rr.run_id = s.reasoning_run_id "
                 "  join reasoning_capability_snapshots rcap on rcap.org_id = rr.org_id "
@@ -186,6 +186,21 @@ def test_the_decider_quotes_each_claim_whole(decider_reads):
     assert quoted, "no decider prompt on these cases carried a corpus claim — F121 is not exercised"
 
 
+from genios_engine.deliver.store import QUESTION_CARD_BUILDER  # noqa: E402 — beside the clause it serves
+
+
+@pytest.mark.xfail(strict=True, reason="STEP-13 crosscheck: a question card says what answering it does — its "
+                   "success (your answer, kept on the file) and what waiting costs — in the question card's own "
+                   "words, M36.C2.L-logic.V2.U10 (the fix worker's unit); this marker goes when it lands")
+def test_a_question_card_says_what_answering_it_does(reads):
+    asked = [card for read in reads.values() for card in read["founder_cards"]
+             if card["builder_version"] == QUESTION_CARD_BUILDER]
+    assert asked, "no question card on these cases — F01's is one"
+    for card in asked:
+        assert card["success_signal"] and card["do_nothing_consequence"], card
+        assert "is left unaddressed while its evidence compounds" not in card["do_nothing_consequence"], card
+
+
 def test_no_founder_card_carries_a_fallback(reads):
     cards = [card for read in reads.values() for card in read["founder_cards"]]
     if not cards:
@@ -196,6 +211,10 @@ def test_no_founder_card_carries_a_fallback(reads):
     from genios_engine.reason.expert.decide import CAPABILITY_ID as EXPERT
     undated = []
     for card in cards:
+        if card["builder_version"] == QUESTION_CARD_BUILDER:
+            # STEP-13: a question card carries no play — its success is your answer, its window the
+            # question's own life; held apart by `test_a_question_card_says_what_answering_it_does`.
+            continue
         assert "is left unaddressed while its evidence compounds" not in (
             card["do_nothing_consequence"] or ""), card
         assert card["success_signal"], card

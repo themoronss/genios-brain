@@ -147,7 +147,6 @@ MOVED_AFTER: dict[str, tuple[str, tuple[str, str, str | None, int]]] = {
     "F04": ("STEP-05", ("must_detect", "pass", None, 1)),
     "F05": ("STEP-12", ("must_detect", "fail", "reasoning", 2)),
     "F06": ("STEP-12", ("must_detect", "fail", "reasoning", 2)),
-    "F07": ("STEP-12", ("must_detect", "pass", None, 1)),
     "F10": ("STEP-05", ("must_detect", "pass", None, 1)),
     "F11": ("STEP-12", ("must_detect", "pass", None, 1)),
     "F19": ("STEP-05", ("must_detect", "fail", "reasoning", 2)),
@@ -157,9 +156,8 @@ MOVED_AFTER: dict[str, tuple[str, tuple[str, str, str | None, int]]] = {
     "F36": ("STEP-05", ("must_abstain", "pass", None, 0)),
     "F38": ("STEP-05", ("must_abstain", "pass", None, 0)),
     "F39": ("STEP-05", ("must_abstain", "pass", None, 0)),
-    # STEP-07: the brief keeps the portal's, the locker's and the intro agent's mail, and it is
-    # read — but no situation it forms reaches a card yet.
-    "F01": ("STEP-07", ("must_detect", "fail", "reasoning", 0)),
+    # STEP-07: the brief keeps the locker's and the intro agent's mail (and the portal's — F01, moved
+    # again by STEP-13 below), and it is read — but no situation it forms reaches a card yet.
     "F02": ("STEP-12", ("must_detect", "fail", "reasoning", 2)),
     "F09": ("STEP-12", ("must_detect", "pass", None, 1)),
     # STEP-09 (`yc2_w27_s09 · M27.C5`): the introduction and its two nudges are Rahul's file, never
@@ -179,6 +177,15 @@ MOVED_AFTER: dict[str, tuple[str, tuple[str, str, str | None, int]]] = {
     "F27": ("STEP-12", ("must_detect", "pass", None, 1)),
     "F29": ("STEP-12", ("must_detect", "pass", None, 2)),
     "F40": ("STEP-12", ("must_abstain", "pass", None, 0)),
+    # STEP-13 (`yc2_w27_s13 · M36.C2`, D60): a held file asks its one question on its own card — F01's
+    # portal application (is it still under review?) is that card; F07's review asks what was promised on
+    # the call after its move's card: a second card about the file (F176, STEP-14's living card).
+    "F01": ("STEP-13", ("must_detect", "pass", None, 1)),
+    "F07": ("STEP-13", ("must_detect", "fail", "reasoning", 2)),
+    # F21's file asks twice (its second review asks a new question, the first card REPLACED), F22's once —
+    # both still `brief only` (not expressible, STEP-15), their question cards counted.
+    "F21": ("STEP-13", ("must_detect", "not_expressible", None, 2)),
+    "F22": ("STEP-13", ("must_detect", "not_expressible", None, 1)),
 }
 
 #: The same measurement: (kind, verdict, lost_at, cards over every sweep) per case.
