@@ -7966,6 +7966,17 @@ yc2_w27_s13:
                       artifact: "genios_engine/reason/llm_decision_maker.py"
                       verify: ".venv/bin/python -m pytest -q tests/reason/test_the_llm_decider_routes_its_lane.py"
                       depends_on: []
+                - level: 1
+                  units:
+                    - id: M36.C1.L-logic.V1.U08
+                      what: >
+                        D61 held in a test (added 12 Oct by the STEP-13 crosscheck, X31): the expert routes its
+                        lane with no conflict — no conflict mode, declared — while the deciders that pass one keep
+                        the CONFLICT lane reachable; the day the expert routes a conflict the test fails, the
+                        signal to revisit D61.
+                      artifact: "tests/reason/expert/test_d61_the_expert_has_no_conflict_mode.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_d61_the_expert_has_no_conflict_mode.py"
+                      depends_on: [M36.C1.L-logic.V0.U01]
             - layer: data
               levels:
                 - level: 0
