@@ -306,6 +306,7 @@ writes, so the boot log must name them too.
 '0194_situation_outcomes.sql', '0195_company_brief.sql', '0196_company_brief_line_kind.sql',
 '0197_expert_reviews.sql', '0198_expert_review_inputs.sql', '0199_expert_review_triggers.sql']` — nine
 files; the deploy is not done until the boot log names each.
+⛔ **STEP-18 (12 Oct) adds `0210_every_wrong_reason_is_kept.sql` and `0211_a_followup_names_its_observation.sql`** (both additive), and BEFORE the deploy needs `GENIOS_ENV` and a real `GENIOS_JWT_SECRET` in the deployment's environment, or the new image refuses to boot — §3.14.
 No new environment variable. One value we need from the
 deploy's environment:
 **`GENIOS_L4_LLM_DECISION_MAKER`** — on or off? The golden set runs the LLM decider on, as
@@ -618,6 +619,51 @@ not a pass. Exit 1: as above. Exit 0: every check judged something, and none fai
 Where a section above says a check *must pass*, NO DATA on the deploy day is not a breach of it; on
 the next day's `--require-data` run it is.
 
+### 3.14 · STEP-18 — before and after the deploy
+
+STEP-18 (`yc2_w27_s18`, its 20 units and the crosscheck's follow-ups) ships two migrations and one
+boot rule. §0c's row is the summary; these are the steps.
+
+**⛔ Before the deploy — the boot refuses a public secret, and an unset `GENIOS_ENV` is not dev**
+(STEP-18 B7, s18-F11; `06` D62, Rohit 12 Oct; the crosscheck's S18-X02, X03, X04). From this image
+on, a boot refuses to start — before it migrates or starts a worker — when `GENIOS_ENV` is **unset**
+or names anything but `dev`, `development`, `test` or `local`, **and** `GENIOS_JWT_SECRET` is empty,
+the default the repository ships, or `.env.example`'s `change-me-in-prod`
+(`platform/config.insecure_boot`; `main.py` raises, uvicorn exits 3, the reason is the last line of
+the deploy log). Until D62 an unset `GENIOS_ENV` read `dev` and booted on the public key; it no longer
+does.
+
+1. Read what production says it is. `env` is the deployed `GENIOS_ENV` — and `dev` when it is
+   **unset** (the setting's default), so `"dev"` here means *read the deployment's environment*:
+   ```
+   curl -s "$API/config"        # {"env": "...", "composio": "real", "database": "postgres", ...}
+   ```
+2. In the deployment's environment (DigitalOcean), read — do not print — whether `GENIOS_ENV`,
+   `GENIOS_JWT_SECRET` and `GENIOS_COMPOSIO_WEBHOOK_SECRET` are set.
+3. **If production does not set `GENIOS_ENV`, or sets it outside dev, the new image will not boot
+   until `GENIOS_ENV` and a real `GENIOS_JWT_SECRET` are set.** Set them together, in one change,
+   before the deploy, knowing what each does:
+   * **A new `GENIOS_JWT_SECRET` signs every user and every paired desktop app out.** Every session
+     and device token is signed and checked with it (`platform/sessions.py`, `platform/auth.py`,
+     `platform/devices.py`), and the dashboard, the desktop app and the extension do not call
+     `/auth/refresh` yet (`platform/config.py`): each signs in again, each desktop app pairs again.
+     If production already carries a secret of its own, keep it — nobody signs out. If it carries
+     the default (or none), schedule the rotation and tell Rohit and the design partner first.
+   * **A `GENIOS_ENV` other than exactly `dev` turns every unsigned Composio webhook into a 403**
+     unless `GENIOS_COMPOSIO_WEBHOOK_SECRET` is set (`api/routes.py`, the Composio webhook route:
+     *"webhook secret not configured"*) — push ingestion stops; the scheduled sync still runs. Set
+     the webhook secret (Composio's signing secret) in the same change. The environment's name also
+     tags every analytics event and decides the device-verification fallback (`platform/analytics.py`,
+     `api/device_routes.py`).
+4. Send Rohit what `/config` said, which of the three were already set, and what you set.
+
+**The boot log** names `0210_every_wrong_reason_is_kept.sql` (every wrong-because reason a card's
+*wrong* offers is kept: one NAMED check per table on `card_feedback_verdicts` and
+`card_feedback_revisions`) and `0211_a_followup_names_its_observation.sql` (one nullable column,
+`screen_followups.observation_id`) — §2. Both are additive; the previous image runs on them.
+
+**After the deploy** — the two probes and the one-off backfill, in that order: §4.11.
+
 ## 4 · The probes — send the outputs
 
 Read-only, from `speedrun008/YC-II W27/baseline/production_state.sql`:
@@ -794,6 +840,20 @@ open fundraising situation — `--status` says which. Keep the outputs in `basel
 ### 4.11 · STEP-18 — after the deploy
 
 Every command on production needs `GENIOS_ALLOW_PROD_WRITE=1` (`scripts/_db.py`), the dry run too.
+The two probes are read-only (`PGOPTIONS='-c default_transaction_read_only=on' psql "$URL"`); send
+both outputs to Rohit.
+
+**0 · s18-F9 — the behaviour brain's published entries of THEIR reply latency** (read-only). B11
+(`packs/brains/behavior_distill`, M49.C2.L-logic.V0.U03) stops publishing the counterparty's latency
+as our behaviour; an entry published before stays active, and nothing retracts it:
+
+```
+select count(*) from learned_brain_entries
+ where brain = 'behavior' and active
+   and subject like 'behavior:relationship.response_latency_hours:%';
+```
+
+0 closes it. Anything else is STEP-16's retraction path — send the count; change nothing.
 
 **1 · s18-F3 — each learning object's row against its own ledger** (read-only). Since B4
 (`feedback/publisher._rest_for_review`) a NEW object the weekly sweep sends for review rests at

@@ -8930,3 +8930,20 @@ yc2_w27_s18:
                       artifact: "genios_engine/main.py"
                       verify: ".venv/bin/python -m pytest -q tests/platform/test_the_dev_secret_never_boots_outside_dev.py tests/test_migrate_read_only.py"
                       depends_on: [M49.C3.L-contract.V0.U07]
+                - level: 2
+                  units:
+                    - id: M49.C3.L-interface.V2.U09
+                      what: >
+                        S18-X02, X04 (the STEP-17/18 crosscheck), with `06` D62 — 08 had nothing for
+                        STEP-18 though three places send Harsh there. 08 §3.14: before the deploy read
+                        `GET /config` (its `env`, `dev` when unset), read whether `GENIOS_ENV`,
+                        `GENIOS_JWT_SECRET` and `GENIOS_COMPOSIO_WEBHOOK_SECRET` are set, and set the
+                        env and the secret together — an unset or non-dev env with a public secret
+                        refuses to boot (exit 3); a rotated secret signs every user and paired desktop
+                        out; a non-dev env turns unsigned Composio webhooks into 403 unless the webhook
+                        secret is set. The boot log names 0210 and 0211 (§2, one line). After the
+                        deploy (§4.11): the s18-F9 and s18-F3 probes (read-only, run on a scratch
+                        database) and the backfill of M48.C1.L-data.V1.U14. Docs only.
+                      artifact: "speedrun008/YC-II W27/08-FOR-HARSH-deploy-and-after.md"
+                      verify: ".venv/bin/python -m pytest -q tests/test_the_plan_folder_is_consistent.py && grep -c 'GENIOS_JWT_SECRET\\|0210_every_wrong_reason_is_kept\\|s18-F9\\|rest_stuck_reviews' 'speedrun008/YC-II W27/08-FOR-HARSH-deploy-and-after.md'"
+                      depends_on: [M49.C3.L-integration.V1.U08, M49.C3.L-contract.V1.U10, M48.C1.L-data.V1.U14]
