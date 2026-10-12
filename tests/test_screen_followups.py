@@ -232,9 +232,15 @@ def _in_3h() -> str:
 
 #: The quote names no weekday on purpose: `fix_weekday` moves a due onto the day its quote names,
 #: which would push this one out of the window the gate checks.
-ASK_V4 = {**SILENT, "adds": "urgent_risk",
-          "items": [{**ASK_ITEM, "due": _in_3h(), "quote": "send the revised pricing"}],
-          "note": "Priya asked for this pricing on Monday too"}
+def _ask_v4() -> dict:
+    """Built when the test runs (S17X-F3): its due is three hours from NOW, not from the import —
+    a run that spans three hours would otherwise hand the gate an overdue ask (`03` F142)."""
+    return {**SILENT, "adds": "urgent_risk",
+            "items": [{**ASK_ITEM, "due": _in_3h(), "quote": "send the revised pricing"}],
+            "note": ASK_V4_NOTE}
+
+
+ASK_V4_NOTE = "Priya asked for this pricing on Monday too"
 NOTHING = {"work": True, "remember": True, "items": [], "adds": "none", "note": None}
 
 
@@ -511,7 +517,7 @@ def test_not_useful_mutes_the_thread_and_teaches_the_prompt(client, monkeypatch)
             return dict(answer)
         monkeypatch.setattr(SI, "llm_insight", fake)
 
-    model(ASK_V4)
+    model(_ask_v4())
     m = _look(client, dev, [ASK]).json()
     assert calls == [[]]                                 # nothing marked not useful yet
     (v,) = _q("select work, memory, muted_until from screen_thread_verdicts where org_id=:o",
@@ -534,7 +540,7 @@ def test_not_useful_mutes_the_thread_and_teaches_the_prompt(client, monkeypatch)
          "quote": "send the MSA today"}], "adds": "urgent_risk",
         "note": "Ravi needs the MSA today, his deal closes tonight"})
     r = _look(client, dev, ["Ravi: please send the MSA today"], thread="slack:ravi", app="slack")
-    assert r.status_code == 200 and calls[-1] == [ASK_V4["note"]]
+    assert r.status_code == 200 and calls[-1] == [ASK_V4_NOTE]
 
     # "Mute chat" (device) → recorded server-side, for good; a later "not useful" never shortens it
     mid = r.json()["moment_id"]
@@ -551,7 +557,7 @@ def test_not_useful_mutes_the_thread_and_teaches_the_prompt(client, monkeypatch)
     with _engine().connect() as c:
         assert F.not_useful_notes(c, org_id=org, seat_id=seat,
                                   capability_id=SI.CAPABILITY_ID) == [
-            "Ravi needs the MSA today, his deal closes tonight", ASK_V4["note"]]
+            "Ravi needs the MSA today, his deal closes tonight", ASK_V4_NOTE]
 
     # a mute on a thread with no verdict yet is NOT a memory verdict
     now = datetime.now(timezone.utc)
