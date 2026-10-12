@@ -1,112 +1,9 @@
 {
  "case_id": "F58",
  "source": "ideal_reader",
- "recorded_at": "be27bffe",
+ "recorded_at": "e6b8522e",
  "answers": {
-  "86e8a120e48c01868332993b09153d4fb468cdce04e88b8750e2067156cdc148": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "inform",
-    "stance": "positive",
-    "topics": [
-     "investor update"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "Leena",
-      "entity_type": "person",
-      "evidence": [
-       {
-        "quote": "Leena",
-        "start_offset": 30,
-        "end_offset": 35
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "exchange_intent": {
-     "category": "relational",
-     "tone": "warm",
-     "formality": "professional",
-     "addressed_personally": true,
-     "human_authored": true,
-     "asks_for_reply": false,
-     "engagement": "high",
-     "motive": "the promised August update"
-    }
-   },
-   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"investor update\"], \"entity_mentions\": [{\"surface_form\": \"Leena\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Leena\", \"start_offset\": 30, \"end_offset\": 35}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\", \"motive\": \"the promised August update\"}}",
-   "framed": true,
-   "input_tokens": 5531,
-   "output_tokens": 118,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "8b1215a095a28b444e4a55f6ef3468c891bb94888a964f9e1a7060a25d4dc1ab": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "AMBIGUOUS",
-    "scope": [],
-    "quote": "Relaygrid - August update",
-    "start_offset": 0,
-    "end_offset": 25,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Relaygrid - August update\", \"start_offset\": 0, \"end_offset\": 25, \"speaker_role_said\": \"unknown\"}",
-   "framed": true,
-   "input_tokens": 1533,
-   "output_tokens": 43,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "9a47704731fb86ea78c291e1d3a47ce6e4e7059aa105fce5bf6f19881e95d0aa": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "inform",
-    "stance": "neutral",
-    "topics": [
-     "board pack"
-    ],
-    "exchange_intent": {
-     "category": "working",
-     "tone": "neutral",
-     "formality": "professional",
-     "addressed_personally": true,
-     "human_authored": true,
-     "asks_for_reply": false,
-     "engagement": "low",
-     "motive": "notes for the board pack"
-    }
-   },
-   "raw": "{\"intent\": \"inform\", \"stance\": \"neutral\", \"topics\": [\"board pack\"], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"low\", \"motive\": \"notes for the board pack\"}}",
-   "framed": true,
-   "input_tokens": 5513,
-   "output_tokens": 74,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "aea06cefebc61878d5029d92024e4b69b0e4ddeea12f38888dae9129f4257ea5": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    },
-    {
-     "i": 1,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "framed": true,
-   "input_tokens": 1087,
-   "output_tokens": 48,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "e58cea7d51158810bee90ff19973e54be7907121bd27d8bddd74880a6d6601a5": {
+  "41413ea39baccf2e45f57889dc0b248d284e859e4364cac987347a9526f414b0": {
    "site": "expert",
    "parsed": {
     "facts": [
@@ -216,8 +113,111 @@
    },
    "raw": "{\"facts\": [{\"claim\": \"Meher sent Leena the August update on the first of September, as promised, with how many support teams are live and the share of tickets the routing engine handles without an agent.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"The update asks Leena for nothing.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"The file's quiet is counted from that update, and nothing from Leena is on file since.\", \"evidence\": [\"num:days_quiet\"]}, {\"claim\": \"Leena's reply time is not measured, so her quiet has no pattern to be judged by.\", \"evidence\": [\"num:their_reply_time:leena@cobaltpeak.test\"]}, {\"claim\": \"The engine files it as an admin account, seen once.\", \"evidence\": [\"sit:sit_#1\", \"hist:derived.history.times_seen@admin\"]}], \"inferences\": [{\"claim\": \"The promise the update speaks of is kept: the update itself was what was owed.\", \"based_on\": [\"fact:1\"]}, {\"claim\": \"With no ask in it, Leena owes no reply, and her quiet means nothing yet.\", \"based_on\": [\"fact:2\", \"fact:4\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"Leena is an investor, or a prospective one, who receives Relaygrid's updates.\", \"needs\": \"The brief or Meher naming her role.\"}], \"unknowns\": [{\"question\": \"Who Leena is to Relaygrid: an investor, an adviser or a customer.\", \"relevance\": \"It decides what the next update should carry and whether her quiet would ever matter.\"}, {\"question\": \"When the next update is due.\", \"relevance\": \"That is the next touch in this file, and nothing before it is needed.\"}], \"frames\": {\"primary\": \"A promise kept: the August update went to Leena as promised, and nothing is owed either way.\", \"rivals\": [\"An investor relationship where the update is the rhythm and quiet between updates is normal.\", \"A prospective investor being kept warm, who may come back with questions later.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"No playbook applies and the brief names no kind of work for this file; after an update that asks nothing, no reply is expected.\", \"actual\": \"The update went out as promised and nothing has come back, as expected.\"}, \"scenarios\": {\"do_nothing\": \"Nothing is lost; the next update keeps the relationship going.\", \"act\": \"Writing again now would add nothing to an update that asked for nothing.\", \"best\": \"Leena reads the update and comes back with interest or an introduction.\", \"worst\": \"Leena stops reading the updates, which this file could not show.\", \"signals_to_watch\": [\"A reply or question from Leena\", \"The next update going out on time\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The update asked nothing and kept a promise.\", \"Nothing in the file is owed by Meher.\", \"Leena's quiet has no measured pattern to break.\"]}, \"mode\": \"nothing\", \"next_move\": null, \"alternative\": \"None is needed; the next update is the next touch.\", \"wait_or_stop\": \"Nothing to hold for; look again only if Leena writes or the next update is due.\", \"done_when\": \"The update is delivered and the promise behind it kept; the file needs nothing more.\", \"draft\": null}",
    "framed": true,
-   "input_tokens": 3350,
+   "input_tokens": 3345,
    "output_tokens": 785,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "86e8a120e48c01868332993b09153d4fb468cdce04e88b8750e2067156cdc148": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "positive",
+    "topics": [
+     "investor update"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Leena",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Leena",
+        "start_offset": 30,
+        "end_offset": 35
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "high",
+     "motive": "the promised August update"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"investor update\"], \"entity_mentions\": [{\"surface_form\": \"Leena\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Leena\", \"start_offset\": 30, \"end_offset\": 35}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\", \"motive\": \"the promised August update\"}}",
+   "framed": true,
+   "input_tokens": 5531,
+   "output_tokens": 118,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "8b1215a095a28b444e4a55f6ef3468c891bb94888a964f9e1a7060a25d4dc1ab": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "Relaygrid - August update",
+    "start_offset": 0,
+    "end_offset": 25,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"Relaygrid - August update\", \"start_offset\": 0, \"end_offset\": 25, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
+   "input_tokens": 1533,
+   "output_tokens": 43,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "9a47704731fb86ea78c291e1d3a47ce6e4e7059aa105fce5bf6f19881e95d0aa": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "neutral",
+    "topics": [
+     "board pack"
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "low",
+     "motive": "notes for the board pack"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"neutral\", \"topics\": [\"board pack\"], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"low\", \"motive\": \"notes for the board pack\"}}",
+   "framed": true,
+   "input_tokens": 5513,
+   "output_tokens": 74,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "aea06cefebc61878d5029d92024e4b69b0e4ddeea12f38888dae9129f4257ea5": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 1,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "framed": true,
+   "input_tokens": 1087,
+   "output_tokens": 48,
    "model": "claude-haiku-4-5-20251001"
   },
   "f3604ebe74640025e2c09cc3b4a33e385eb7975e4692a0917c495b54877e4700": {

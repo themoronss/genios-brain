@@ -17,15 +17,25 @@ here: a second `-m` after the first (pytest keeps the last, so `-m "not pg"` wou
 database test and the scan would find no skip), a `PYTEST_ADDOPTS` in an env block, a
 `continue-on-error`, anything after the scan that turns its exit 1 into a 0, an `if:` that skips the
 job, a golden test outside the paths `golden-pg` runs.
+
+`M40.C4.L-integration.V1.U04` (S17X-F1) closes the routes the guard did not read: an
+`echo "PYTEST_ADDOPTS=--co" >> "$GITHUB_ENV"` in any step (the guard read env only from `env:`
+blocks), a `defaults:` that moves the working directory, a step inserted before the suite or after
+the scan (the job's step list is pinned, step by step), a `--co`, `-k` or `--deselect` in pyproject's
+`addopts`, and a root `pytest.toml`, `pytest.ini`, `.pytest.ini`, `tox.ini` or `setup.cfg
+[tool:pytest]`. Each check is a function, run on the real file and on a spoilt copy of it (a
+negative control): a check that cannot fail is not a check.
 """
 from __future__ import annotations
 
 import ast
+import configparser
 import re
 import shlex
 import tomllib
 from pathlib import Path
 
+import pytest
 import yaml
 from sqlalchemy.engine import make_url
 
@@ -56,6 +66,82 @@ def _suite_step(job: str) -> dict:
     steps = [s for s in _steps(job) if _run(s).lstrip().startswith("pytest")]
     assert len(steps) == 1, (job, [s.get("name") or s.get("uses") for s in _steps(job)])
     return steps[0]
+
+
+#: pyproject's `addopts`, as it is (read 12 Oct): `--strict-markers` and nothing else. A `--co`,
+#: `-k`, `--deselect` or path here narrows every pytest run — the database job's too — and the job's
+#: own command line would still read as the whole suite.
+ADDOPTS = "--strict-markers"
+#: pyproject's pytest settings, by name. Each one can narrow a run (`python_files`, `norecursedirs`,
+#: `testpaths`…), so a new one is added here on purpose.
+INI_OPTIONS = {"testpaths", "addopts", "markers"}
+#: The files pytest 9 reads its configuration from (`_pytest/config/findpaths.locate_config`), in its
+#: order: the first that holds pytest config wins. The four before `pyproject.toml` take over from it
+#: at once — an empty `pytest.ini` or `pytest.toml` included; the two after it the day its table goes.
+OTHER_PYTEST_CONFIGS = ("pytest.toml", ".pytest.toml", "pytest.ini", ".pytest.ini", "tox.ini")
+
+
+def _database_steps() -> list[dict]:
+    """The database job, step by step, as it must be. A step inserted before the suite can write a
+    config, an addopts or an env file; one after the scan can turn its exit around; a changed
+    Install can do either. Change the job, then this list — on purpose."""
+    return [
+        {"uses": "actions/checkout@v4"},
+        {"uses": "actions/setup-python@v5",
+         "with": {"python-version": _production_python(), "cache": "pip"}},
+        {"name": "Install", "run": 'pip install -r requirements.txt && pip install -e ".[dev]"'},
+        {"name": "Database suite", "shell": "bash",
+         "run": (SUITE + "\n"
+                 "cat pytest.log\n"
+                 "grep -E '^(FAILED|ERROR) ' pytest.log | head -40 | sed 's/^/::error title=pytest::/' "
+                 "|| true\n"
+                 "exit $status\n")},
+        {"name": "No test skipped but for an allowed reason", "if": "success() || failure()",
+         "run": SCAN},
+    ]
+
+
+def _env_file_writes(workflow: dict) -> list[str]:
+    """Every step, in any job, whose command names `$GITHUB_ENV` or `$GITHUB_PATH` — the files a step
+    writes to set the environment, or the PATH, of every step after it. `PYTEST_ADDOPTS=--co` written
+    there reaches the suite and no `env:` block shows it."""
+    return [f"{job}/{step.get('name') or step.get('uses')}"
+            for job, body in workflow["jobs"].items() for step in body.get("steps") or ()
+            if re.search(r"GITHUB_(?:ENV|PATH)\b", _run(step))]
+
+
+def _defaults(workflow: dict) -> list[str]:
+    """Where a `defaults:` is set — the workflow, or a job. It can move every `run:` to another
+    working directory (`tests/capture`: one folder becomes "the whole suite") or another shell."""
+    return (["<workflow>"] if "defaults" in workflow else []) + [
+        job for job, body in workflow["jobs"].items() if "defaults" in body]
+
+
+def _pytest_settings_drift(pyproject: str) -> list[str]:
+    """What in pyproject's pytest table is not as it is today."""
+    table = tomllib.loads(pyproject).get("tool", {}).get("pytest", {})
+    ini = table.get("ini_options", {})
+    drift = []
+    if set(table) != {"ini_options"}:
+        drift.append(f"[tool.pytest] holds {sorted(table)}, not only ini_options")
+    if set(ini) != INI_OPTIONS:
+        drift.append(f"ini_options names {sorted(ini)}, not {sorted(INI_OPTIONS)}")
+    if ini.get("addopts") != ADDOPTS:
+        drift.append(f"addopts is {ini.get('addopts')!r}, not {ADDOPTS!r}")
+    if ini.get("testpaths") != ["tests"]:
+        drift.append(f"testpaths is {ini.get('testpaths')!r}, not ['tests']")
+    return drift
+
+
+def _other_pytest_configs(root: Path) -> list[str]:
+    """Every pytest configuration at the root but pyproject's."""
+    found = [name for name in OTHER_PYTEST_CONFIGS if (root / name).is_file()]
+    if (root / "setup.cfg").is_file():
+        cfg = configparser.ConfigParser()
+        cfg.read(root / "setup.cfg", encoding="utf-8")
+        if cfg.has_section("tool:pytest"):
+            found.append("setup.cfg [tool:pytest]")
+    return found
 
 
 def _production_python() -> str:
@@ -174,3 +260,97 @@ def test_every_golden_test_it_leaves_out_runs_in_golden_pg():
     assert golden, "no file carries the golden marker — the deselection reads nothing; re-point this"
     stray = sorted(f for f in golden if not any(f == p or f.startswith(p + "/") for p in paths))
     assert not stray, (stray, paths)
+
+
+# ── M40.C4.L-integration.V1.U04 (S17X-F1): the routes the guard did not read ─────────────────────
+#: A spoilt copy of the workflow: the crosscheck's own route into the Install step, a step inserted
+#: before the suite, and a job-level `defaults:` that runs it in one folder.
+INSTALL = """      - name: Install
+        run: pip install -r requirements.txt && pip install -e ".[dev]"
+      # The whole suite but the golden set"""
+
+
+def _spoilt_workflow(old: str, new: str) -> dict:
+    text = CI.read_text(encoding="utf-8")
+    assert text.count(old) == 1, old
+    return yaml.safe_load(text.replace(old, new))
+
+
+def test_no_step_writes_the_environment_of_the_steps_after_it():
+    assert _env_file_writes(_workflow()) == []
+
+
+@pytest.mark.parametrize("write", ['echo "PYTEST_ADDOPTS=--co" >> "$GITHUB_ENV"',
+                                   "echo PYTEST_ADDOPTS=-k_nothing >> $GITHUB_ENV",
+                                   'echo "$HOME/narrow/bin" >> "${GITHUB_PATH}"'])
+def test_a_write_to_the_env_or_path_file_is_found(write):
+    spoilt = _spoilt_workflow(INSTALL, INSTALL.replace('".[dev]"', '".[dev]" && ' + write, 1))
+    assert _env_file_writes(spoilt) == ["database/Install"]
+
+
+def test_no_defaults_move_the_suite():
+    assert _defaults(_workflow()) == []
+
+
+def test_a_defaults_block_is_found_on_the_workflow_and_on_a_job():
+    on_job = _spoilt_workflow("  database:\n    runs-on: ubuntu-latest\n",
+                              "  database:\n    runs-on: ubuntu-latest\n    defaults:\n      run:\n"
+                              "        working-directory: tests/capture\n")
+    assert _defaults(on_job) == ["database"]
+    on_workflow = _spoilt_workflow("name: ci\n", "name: ci\ndefaults:\n  run:\n    shell: sh\n")
+    assert _defaults(on_workflow) == ["<workflow>"]
+
+
+def test_the_database_job_is_exactly_its_five_steps():
+    assert _steps("database") == _database_steps()
+
+
+@pytest.mark.parametrize("old,new", [
+    (INSTALL, INSTALL.replace("      # The whole", "      - run: echo \"[pytest]\" > pytest.ini\n      # The whole")),
+    (INSTALL, INSTALL.replace('".[dev]"', '".[dev]" pytest-randomly')),
+    ("        run: python scripts/qa/database_skips.py pytest.log\n",
+     "        run: python scripts/qa/database_skips.py pytest.log\n      - run: exit 0\n"),
+])
+def test_a_changed_step_list_is_found(old, new):
+    assert _spoilt_workflow(old, new)["jobs"]["database"]["steps"] != _database_steps()
+
+
+def test_pyprojects_pytest_settings_are_what_they_are():
+    assert _pytest_settings_drift((ROOT / "pyproject.toml").read_text(encoding="utf-8")) == []
+
+
+@pytest.mark.parametrize("old,new,named", [
+    ('addopts = "--strict-markers"', 'addopts = "--strict-markers --co"', "addopts"),
+    ('addopts = "--strict-markers"', 'addopts = "--strict-markers -k not_pg"', "addopts"),
+    ('addopts = "--strict-markers"', 'addopts = "--strict-markers --deselect tests/platform"', "addopts"),
+    ('addopts = "--strict-markers"', 'addopts = "--strict-markers"\npython_files = ["test_ci_*.py"]',
+     "ini_options"),
+    ('testpaths = ["tests"]', 'testpaths = ["tests/scripts"]', "testpaths"),
+    # pytest 9's native table, beside the ini one
+    ("[tool.pytest.ini_options]", '[tool.pytest]\naddopts = ["--co"]\n\n[tool.pytest.ini_options]',
+     "[tool.pytest]"),
+])
+def test_a_drifted_pytest_setting_is_found(old, new, named):
+    text = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    assert text.count(old) == 1, old
+    drift = _pytest_settings_drift(text.replace(old, new))
+    assert drift and any(d.startswith(named) for d in drift), drift
+
+
+def test_no_other_pytest_configuration_sits_at_the_root(pytestconfig):
+    assert _other_pytest_configs(ROOT) == []
+    if pytestconfig.rootpath == ROOT:
+        assert pytestconfig.inipath == ROOT / "pyproject.toml", pytestconfig.inipath
+
+
+@pytest.mark.parametrize("name,body,found", [
+    ("pytest.ini", "", ["pytest.ini"]),                       # empty, and still the config
+    ("pytest.toml", "[pytest]\naddopts = ['--co']\n", ["pytest.toml"]),
+    (".pytest.ini", "[pytest]\n", [".pytest.ini"]),
+    ("tox.ini", "[pytest]\naddopts = --co\n", ["tox.ini"]),
+    ("setup.cfg", "[tool:pytest]\naddopts = --co\n", ["setup.cfg [tool:pytest]"]),
+    ("setup.cfg", "[flake8]\nmax-line-length = 110\n", []),    # not pytest's
+])
+def test_another_pytest_configuration_is_found(tmp_path, name, body, found):
+    (tmp_path / name).write_text(body, encoding="utf-8")
+    assert _other_pytest_configs(tmp_path) == found

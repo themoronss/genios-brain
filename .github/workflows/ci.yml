@@ -15,7 +15,9 @@
 # Postgres 17 service (STEP-17 §3.1, tree yc2_w27_s17 M40.C4): measured at `c97155cd`, the hermetic
 # job skipped 2,088 tests in 330 files for want of a database and 324 of those files ran in no job
 # at all. Here they run, and `scripts/qa/database_skips.py` fails the job on any test that still
-# skipped for want of one.
+# skipped — every skip but the few a real database run has for a reason that is not a database
+# (its `ALLOWED`, by file and reason; S17X-F2) — and on a log that is not a finished run of the suite
+# (a collection, or no more passes than its floor; S17X-F1).
 name: ci
 
 on:
@@ -117,8 +119,9 @@ jobs:
           cat pytest.log
           grep -E '^(FAILED|ERROR) ' pytest.log | head -40 | sed 's/^/::error title=pytest::/' || true
           exit $status
-      # A test that skipped for want of a database, in the job that has one, is a failure. Run even
-      # when the suite went red, so a red job still says what it skipped.
-      - name: No test skipped for want of a database
+      # A test that skipped, in the job that has a database, is a failure — unless the scan's
+      # ALLOWED names its file and reason. Run even when the suite went red, so a red job still says
+      # what it skipped.
+      - name: No test skipped but for an allowed reason
         if: success() || failure()
         run: python scripts/qa/database_skips.py pytest.log

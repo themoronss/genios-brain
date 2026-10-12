@@ -40,6 +40,37 @@ def _decimals(value: Any) -> Any:
     return value
 
 
+def _storable(value: Any) -> Any:
+    """The parsed answer as JSON that Postgres stores: a non-finite number as its name, a Decimal as
+    its text, everything else as it is."""
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, float):
+        return value if math.isfinite(value) else repr(float(value))
+    if isinstance(value, Decimal):
+        return str(value)
+    if isinstance(value, Mapping):
+        return {key: _storable(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_storable(item) for item in value]
+    return value
+
+
+def _stored(parsed: Mapping[str, Any]) -> str:
+    """The audit row's `parsed_output` text.
+
+    ⛔ STEP-18 S18-X05 (`yc2_w27_s18` M48.C2.L-logic.V1.U15). B21 mended the hash and not the row:
+    the parser lets `NaN`, `Infinity` and `-Infinity` in (`context/llm/parse.py` is `json.loads`),
+    `json.dumps` wrote them back as bare tokens, and `cast(:parsed as jsonb)` refuses them — so the
+    INSERT failed, the `llm_costs` row of the same transaction with it, and the resolution pass of
+    the org ended there. A non-finite number is stored as its name (`"nan"`, `"inf"`, `"-inf"` — the
+    text the hash already reads for it) and a Decimal as its text; a finite answer is stored byte for
+    byte as before. `allow_nan=False` turns anything the mapping missed into a ValueError here,
+    before the transaction opens, never a statement Postgres refuses inside it.
+    """
+    return json.dumps(_storable(dict(parsed)), sort_keys=True, allow_nan=False)
+
+
 def _response_hash(parsed: Mapping[str, Any], raw: str) -> str:
     """The audit row's `response_hash`: the parsed answer and the raw text, canonically hashed."""
     return semantic_hash({"parsed": _decimals(dict(parsed)), "raw": raw})
@@ -76,6 +107,7 @@ def record_model_run(
     parsed = dict(parsed) if isinstance(parsed, Mapping) else {}
     raw = str(getattr(result, "raw", "") or "")
     response_hash = _response_hash(parsed, raw)
+    stored = _stored(parsed)
     model_snapshot = str(getattr(result, "model", "") or "unknown")
     run_id = model_run_id(
         org_id=org_id, site=site, subject_ref=subject_ref,
@@ -97,7 +129,7 @@ def record_model_run(
                 "ot": int(getattr(result, "output_tokens", 0) or 0),
                 "ok": bool(getattr(result, "ok", False)),
                 "error": str(getattr(result, "error", "") or "")[:400] or None,
-                "parsed": json.dumps(parsed, sort_keys=True), "raw": raw,
+                "parsed": stored, "raw": raw,
                 "rh": response_hash, "latency": latency_ms, "at": called_at,
             }).rowcount or 0
         if inserted:

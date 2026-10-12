@@ -46,6 +46,35 @@ def test_the_live_model_keeps_the_transport_the_runner_refuses_to_everyone_else(
     assert live._call is LLMClient.call and live.model == "claude-haiku-4-5-20251001"
 
 
+def test_the_live_model_builds_its_client_before_the_runner_refuses_one(monkeypatch):
+    """The live pass never ran (`06` D50): `production_switches` replaces `anthropic.Anthropic` with a class that
+    raises, and the live client was built lazily, on its first call — inside the run, so the first expert prompt
+    raised `UnrecordedModelCall: a raw Anthropic client was built during a golden run`. It is built at
+    construction now, and its calls use it."""
+    import types
+
+    import anthropic
+
+    built: list[str] = []
+
+    class _Recording:
+        def __init__(self, *, api_key, **_kw):
+            built.append(api_key)
+            self.messages = types.SimpleNamespace(create=lambda **kw: types.SimpleNamespace(
+                content=[types.SimpleNamespace(type="text", text='{"ok": true}')], stop_reason="end_turn",
+                usage=types.SimpleNamespace(input_tokens=3, output_tokens=2)))
+
+    class _Refused:
+        def __init__(self, *_a, **_kw):
+            raise AssertionError("a raw client was built after construction")
+    monkeypatch.setattr(anthropic, "Anthropic", _Recording)
+    live = _module().LiveModel("sk-not-a-real-key", "claude-haiku-4-5-20251001")
+    assert built == ["sk-not-a-real-key"], "built at construction"
+    monkeypatch.setattr(anthropic, "Anthropic", _Refused)        # what the runner does for the run
+    result = live.call("a prompt")
+    assert result.ok and result.parsed == {"ok": True} and built == ["sk-not-a-real-key"]
+
+
 # ── STEP-12 M33.C3.L-integration.V0.U01 · one site's live pass, its dry run first (`06` D50) ──────
 
 def test_the_experts_dry_run_counts_only_its_calls_at_its_own_models_price(monkeypatch, capsys):
@@ -145,6 +174,11 @@ def test_a_sites_live_pass_keeps_its_answers_and_board_beside_the_authored(monke
     assert card["site"] == "expert" and card["moved"] == []
     [row] = card["cases"]
     assert row["verdict"] == row["authored_verdict"] == "pass"
+    # STEP-13 M35.C4.L-integration.V2.U04: what the check made of the model's reviews, per case and in all — the
+    # faithful answers are valid, shown whole, nothing dropped.
+    assert set(row["reviews"]) == {"valid"} and row["reviews"]["valid"] >= 1
+    assert row["fates"] == {"shown": row["reviews"]["valid"]} and row["dropped"] == {}
+    assert card["reviews"] == row["reviews"] and card["fates"] == row["fates"] and card["dropped"] == {}
     [beside] = list(tmp_path.glob("*-claude-sonnet-5-expert/F13.json"))
     assert json.loads(beside.read_text()) and cassettes.load(case) == before, \
         "the authored cassette is never replaced"

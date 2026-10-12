@@ -1,93 +1,9 @@
 {
  "case_id": "F20",
  "source": "ideal_reader",
- "recorded_at": "be27bffe",
+ "recorded_at": "e6b8522e",
  "answers": {
-  "5284b847241f0a0252afbab39204589710dbb071bddb221c1c468d2217c3dc37": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "AMBIGUOUS",
-    "scope": [],
-    "quote": "TechBridge founders meetup, 27 Sep",
-    "start_offset": 0,
-    "end_offset": 34,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"TechBridge founders meetup, 27 Sep\", \"start_offset\": 0, \"end_offset\": 34, \"speaker_role_said\": \"unknown\"}",
-   "framed": true,
-   "input_tokens": 1533,
-   "output_tokens": 45,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "bcb9c700d38acc770fcfebe308a7d41b2ec59615555012d08c756f6c1fc88ea4": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "inform",
-    "stance": "positive",
-    "topics": [
-     "newsletter",
-     "meetup"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "Sameer Rana",
-      "entity_type": "person",
-      "evidence": [
-       {
-        "quote": "Sameer Rana",
-        "start_offset": 177,
-        "end_offset": 188
-       }
-      ],
-      "confidence_bp": 9000
-     },
-     {
-      "surface_form": "TechBridge Foundation",
-      "entity_type": "organization",
-      "evidence": [
-       {
-        "quote": "TechBridge Foundation",
-        "start_offset": 189,
-        "end_offset": 210
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "dates_mentioned": [
-     {
-      "as_written": "27 Sep",
-      "earliest": "2026-09-27T00:00:00+05:30",
-      "latest": "2026-09-27T23:59:59+05:30",
-      "certainty": "range",
-      "resolved_against": "2026-09-13T06:00:00Z",
-      "evidence": [
-       {
-        "quote": "27 Sep",
-        "start_offset": 28,
-        "end_offset": 34
-       }
-      ]
-     }
-    ],
-    "exchange_intent": {
-     "category": "relational",
-     "tone": "neutral",
-     "formality": "professional",
-     "addressed_personally": true,
-     "human_authored": true,
-     "asks_for_reply": false,
-     "engagement": "low"
-    }
-   },
-   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"newsletter\", \"meetup\"], \"entity_mentions\": [{\"surface_form\": \"Sameer Rana\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Sameer Rana\", \"start_offset\": 177, \"end_offset\": 188}], \"confidence_bp\": 9000}, {\"surface_form\": \"TechBridge Foundation\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"TechBridge Foundation\", \"start_offset\": 189, \"end_offset\": 210}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"27 Sep\", \"earliest\": \"2026-09-27T00:00:00+05:30\", \"latest\": \"2026-09-27T23:59:59+05:30\", \"certainty\": \"range\", \"resolved_against\": \"2026-09-13T06:00:00Z\", \"evidence\": [{\"quote\": \"27 Sep\", \"start_offset\": 28, \"end_offset\": 34}]}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"low\"}}",
-   "framed": true,
-   "input_tokens": 5529,
-   "output_tokens": 227,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "cf219dfff7a3e3524e8a7bb060f7e1bccc3099d598bc1c0f3f37facd489aa3b8": {
+  "29058172212aff2cbf53e14a0a29375e5e4b90597c95dc2fbeac1403837d7e38": {
    "site": "expert",
    "parsed": {
     "facts": [
@@ -225,8 +141,92 @@
    },
    "raw": "{\"facts\": [{\"claim\": \"Sameer Rana of TechBridge Foundation sent the accelerator's newsletter and an invitation to the TechBridge founders meetup on the twenty-seventh of September.\", \"evidence\": [\"evt_#1\"], \"quote\": \"accelerator's newsletter and an invite to the TechBridge founders meetup\"}, {\"claim\": \"The invitation asks for nothing — do drop in if you are around.\", \"evidence\": [\"evt_#1\"], \"quote\": \"drop in if you are around.\"}, {\"claim\": \"The engine filed the file's situation as an investor relationship and recorded it as unsupported, a misfiled kind, though it still shows as active.\", \"evidence\": [\"sit:sit_#1\"]}, {\"claim\": \"This is the first time the founder's history holds TechBridge.\", \"evidence\": [\"hist:derived.history.times_seen@fundraising\"]}], \"inferences\": [{\"claim\": \"The mail needs no reply; the only decision is whether to go on the twenty-seventh.\", \"based_on\": [\"fact:2\"]}, {\"claim\": \"The meetup is an open invitation, not a step in an application: nothing in the mail ties it to one.\", \"based_on\": [\"fact:1\", \"fact:2\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"A programme decides by its calendar and its rules, not by how warm the last mail was — so a meetup is a chance to meet its people, not a shortcut.\", \"based_on\": [\"pb:founder_office.heu.program_applications.a_programme_is_not_an_investor\"]}, {\"kind\": \"counter_pattern\", \"claim\": \"A programme's quiet about an application carries no news before its own date, and a newsletter is not that news either.\", \"based_on\": [\"pb:founder_office.heu.program_applications.a_batch_is_silent_until_it_decides\"]}], \"hypotheses\": [{\"proposition\": \"The newsletter and invitation went to every founder on TechBridge's list.\", \"needs\": \"Whether the meetup is listed as open to all founders.\"}, {\"proposition\": \"People who read TechBridge's applications will be at the meetup.\", \"needs\": \"TechBridge saying who attends.\"}], \"unknowns\": [{\"question\": \"Where and at what time the meetup is.\", \"relevance\": \"It decides whether it fits the founder's day.\"}, {\"question\": \"Whether Nimbus Labs' application to TechBridge, which the brief lists, is still open.\", \"relevance\": \"Meeting the team matters more while an application is being read.\"}, {\"question\": \"What else is on the founder's calendar that day.\", \"relevance\": \"An evening at a meetup competes with the seed round.\"}], \"frames\": {\"primary\": \"A programme the brief says you applied to has sent its newsletter with an open invitation to a founders meetup on the twenty-seventh — an optional chance to be in the room.\", \"rivals\": [\"A mass mailing to the foundation's whole list, worth no more than a glance at the calendar.\", \"A personal nudge from Sameer to get to know Nimbus Labs, since the mail greets Arjun by name.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": \"applied\", \"expected\": \"Nothing is owed while an application waits for its window to close; the one thing to check is the receipt.\", \"actual\": \"The foundation wrote with its newsletter and a meetup invitation; nothing in the file speaks of the application or its receipt.\"}, \"scenarios\": {\"do_nothing\": \"The meetup passes; nothing about the application changes, and only a chance to meet the team is lost.\", \"act\": \"The founder decides now and, if going, holds the time — a face the programme's people have met.\", \"best\": \"The founder meets the people behind the programme and learns its calendar.\", \"worst\": \"An evening spent at a mass event with no one from the programme's selection, in the middle of a seed round.\", \"signals_to_watch\": [\"A follow-up from Sameer with the place and time.\", \"Any news on the application's status or decision date.\", \"Whether the meetup is open to all founders.\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The mail asks nothing and needs no reply.\", \"The meetup is on the twenty-seventh, with time to decide.\", \"The brief lists TechBridge as a programme the founder applied to, so meeting its people has some value.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Decide whether to drop in at the TechBridge founders meetup on the twenty-seventh and, if so, hold the time on the calendar.\", \"for_whom\": \"Sameer Rana and TechBridge Foundation\", \"by_when\": \"2026-09-27\", \"rests_on\": [\"fact:1\", \"fact:2\"]}, \"alternative\": \"Let it pass and keep an eye on the application's own dates instead.\", \"wait_or_stop\": \"Nothing to wait for; the decision is the founder's. Once the twenty-seventh has passed, the invitation is done.\", \"done_when\": \"You have decided, and the meetup is on the calendar or set aside.\", \"draft\": null}",
    "framed": true,
-   "input_tokens": 9257,
+   "input_tokens": 9252,
    "output_tokens": 1170,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "5284b847241f0a0252afbab39204589710dbb071bddb221c1c468d2217c3dc37": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "AMBIGUOUS",
+    "scope": [],
+    "quote": "TechBridge founders meetup, 27 Sep",
+    "start_offset": 0,
+    "end_offset": 34,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"AMBIGUOUS\", \"scope\": [], \"quote\": \"TechBridge founders meetup, 27 Sep\", \"start_offset\": 0, \"end_offset\": 34, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
+   "input_tokens": 1533,
+   "output_tokens": 45,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "bcb9c700d38acc770fcfebe308a7d41b2ec59615555012d08c756f6c1fc88ea4": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "inform",
+    "stance": "positive",
+    "topics": [
+     "newsletter",
+     "meetup"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Sameer Rana",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Sameer Rana",
+        "start_offset": 177,
+        "end_offset": 188
+       }
+      ],
+      "confidence_bp": 9000
+     },
+     {
+      "surface_form": "TechBridge Foundation",
+      "entity_type": "organization",
+      "evidence": [
+       {
+        "quote": "TechBridge Foundation",
+        "start_offset": 189,
+        "end_offset": 210
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "dates_mentioned": [
+     {
+      "as_written": "27 Sep",
+      "earliest": "2026-09-27T00:00:00+05:30",
+      "latest": "2026-09-27T23:59:59+05:30",
+      "certainty": "range",
+      "resolved_against": "2026-09-13T06:00:00Z",
+      "evidence": [
+       {
+        "quote": "27 Sep",
+        "start_offset": 28,
+        "end_offset": 34
+       }
+      ]
+     }
+    ],
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "low"
+    }
+   },
+   "raw": "{\"intent\": \"inform\", \"stance\": \"positive\", \"topics\": [\"newsletter\", \"meetup\"], \"entity_mentions\": [{\"surface_form\": \"Sameer Rana\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Sameer Rana\", \"start_offset\": 177, \"end_offset\": 188}], \"confidence_bp\": 9000}, {\"surface_form\": \"TechBridge Foundation\", \"entity_type\": \"organization\", \"evidence\": [{\"quote\": \"TechBridge Foundation\", \"start_offset\": 189, \"end_offset\": 210}], \"confidence_bp\": 9000}], \"dates_mentioned\": [{\"as_written\": \"27 Sep\", \"earliest\": \"2026-09-27T00:00:00+05:30\", \"latest\": \"2026-09-27T23:59:59+05:30\", \"certainty\": \"range\", \"resolved_against\": \"2026-09-13T06:00:00Z\", \"evidence\": [{\"quote\": \"27 Sep\", \"start_offset\": 28, \"end_offset\": 34}]}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"low\"}}",
+   "framed": true,
+   "input_tokens": 5529,
+   "output_tokens": 227,
    "model": "claude-haiku-4-5-20251001"
   },
   "fb1389a8f25b73f4a8dda7c0d5077b1b27108ffd4ecdda8674dac73804c902e0": {

@@ -1,7 +1,7 @@
 {
  "case_id": "F19",
  "source": "ideal_reader",
- "recorded_at": "be27bffe",
+ "recorded_at": "e6b8522e",
  "answers": {
   "0d57d1166c03942cd614bcddf0999073bd95e163e6d71e92445871bfff74f5ac": {
    "site": "resolution",
@@ -36,164 +36,7 @@
    "output_tokens": 143,
    "model": "claude-haiku-4-5-20251001"
   },
-  "760e97be0a2f4785df1e8912063832c1b9bd6b7fed9d70f5424051f80751205a": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "Could you confirm the billing name?",
-    "start_offset": 99,
-    "end_offset": 134,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Could you confirm the billing name?\", \"start_offset\": 99, \"end_offset\": 134, \"speaker_role_said\": \"unknown\"}",
-   "framed": true,
-   "input_tokens": 1521,
-   "output_tokens": 46,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "7d0504e9de8753fa65ca5df6e8a8237fc61d8d476bc4f99465bd339d6fb3669f": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "request",
-    "stance": "neutral",
-    "topics": [
-     "incubation"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "Naveen Gupta",
-      "entity_type": "person",
-      "evidence": [
-       {
-        "quote": "Naveen Gupta",
-        "start_offset": 109,
-        "end_offset": 121
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "questions": [
-     {
-      "text": "Share the signed incubation agreement",
-      "asked_by": "Naveen Gupta",
-      "asked_of": "Arjun Rao",
-      "evidence": [
-       {
-        "quote": "Please share the signed incubation agreement",
-        "start_offset": 33,
-        "end_offset": 77
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "exchange_intent": {
-     "category": "working",
-     "tone": "neutral",
-     "formality": "professional",
-     "addressed_personally": true,
-     "human_authored": true,
-     "asks_for_reply": true,
-     "engagement": "high",
-     "motive": "Share the signed incubation agreement"
-    }
-   },
-   "raw": "{\"intent\": \"request\", \"stance\": \"neutral\", \"topics\": [\"incubation\"], \"entity_mentions\": [{\"surface_form\": \"Naveen Gupta\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Naveen Gupta\", \"start_offset\": 109, \"end_offset\": 121}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Share the signed incubation agreement\", \"asked_by\": \"Naveen Gupta\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Please share the signed incubation agreement\", \"start_offset\": 33, \"end_offset\": 77}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"Share the signed incubation agreement\"}}",
-   "framed": true,
-   "input_tokens": 5507,
-   "output_tokens": 187,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "82d31705e8e7e2bcee54d2563d71d1a1b6cef97de888ea8434c83d870d6b359a": {
-   "site": "bundle_narrator",
-   "parsed": {
-    "headline": "Next move",
-    "situation_summary": "The next move is the action this decision committed to.",
-    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
-    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
-    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
-    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
-   },
-   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
-   "framed": true,
-   "input_tokens": 1621,
-   "output_tokens": 143,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "8367f098b5d952d65ad40211a24c5a83d52a48d72aa716f65a6bb3f98792f5f8": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "request",
-    "stance": "neutral",
-    "topics": [
-     "incubation"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "Ritika Sharma",
-      "entity_type": "person",
-      "evidence": [
-       {
-        "quote": "Ritika Sharma",
-        "start_offset": 118,
-        "end_offset": 131
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "questions": [
-     {
-      "text": "Submit the monthly progress report by 15 Sep",
-      "asked_by": "Ritika Sharma",
-      "asked_of": "Arjun Rao",
-      "evidence": [
-       {
-        "quote": "Your monthly progress report is due on 15 Sep.",
-        "start_offset": 38,
-        "end_offset": 84
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "exchange_intent": {
-     "category": "working",
-     "tone": "neutral",
-     "formality": "professional",
-     "addressed_personally": true,
-     "human_authored": true,
-     "asks_for_reply": true,
-     "engagement": "high",
-     "motive": "Submit the monthly progress report by 15 Sep"
-    },
-    "dates_mentioned": [
-     {
-      "as_written": "15 Sep",
-      "earliest": "2026-09-15T00:00:00+05:30",
-      "latest": "2026-09-15T23:59:59+05:30",
-      "certainty": "range",
-      "resolved_against": "2026-09-07T06:00:00Z",
-      "evidence": [
-       {
-        "quote": "15 Sep",
-        "start_offset": 19,
-        "end_offset": 25
-       }
-      ]
-     }
-    ]
-   },
-   "raw": "{\"intent\": \"request\", \"stance\": \"neutral\", \"topics\": [\"incubation\"], \"entity_mentions\": [{\"surface_form\": \"Ritika Sharma\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Ritika Sharma\", \"start_offset\": 118, \"end_offset\": 131}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Submit the monthly progress report by 15 Sep\", \"asked_by\": \"Ritika Sharma\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Your monthly progress report is due on 15 Sep.\", \"start_offset\": 38, \"end_offset\": 84}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"Submit the monthly progress report by 15 Sep\"}, \"dates_mentioned\": [{\"as_written\": \"15 Sep\", \"earliest\": \"2026-09-15T00:00:00+05:30\", \"latest\": \"2026-09-15T23:59:59+05:30\", \"certainty\": \"range\", \"resolved_against\": \"2026-09-07T06:00:00Z\", \"evidence\": [{\"quote\": \"15 Sep\", \"start_offset\": 19, \"end_offset\": 25}]}]}",
-   "framed": true,
-   "input_tokens": 5511,
-   "output_tokens": 258,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "94643404681fdd4562ee5a9d6b047835b54ebbd8def53f3a63e55594a90e5645": {
+  "54d7c2ee6f3518e1ad97330998451a70c4f9ef6d6a33dbb9677b0c9d64ff34b7": {
    "site": "expert",
    "parsed": {
     "facts": [
@@ -358,11 +201,28 @@
    },
    "raw": "{\"facts\": [{\"claim\": \"Naveen Gupta of the Incubation Cell asked Arjun to share the signed incubation agreement so the cell can activate the seat.\", \"evidence\": [\"evt_#3\"], \"quote\": \"share the signed incubation agreement so we can activate your seat. Naveen Gupta\"}, {\"claim\": \"Ritika Sharma wrote that the monthly progress report was due on the fifteenth of September, on the portal.\", \"evidence\": [\"evt_#2\"], \"quote\": \"monthly progress report is due on 15 Sep. Please submit it on the portal.\"}, {\"claim\": \"Ekta Bhalla of the Incubation Cell wrote that the invoice for the two co-working seats is due on the thirtieth of September, and asked Arjun to confirm the billing name.\", \"evidence\": [\"evt_#1\"], \"quote\": \"due on 30 Sep. Could you confirm the billing name? Ekta Bhalla Incubation Cell\"}, {\"claim\": \"All three asks are open and wait on us.\", \"evidence\": [\"loop:loop_#1\", \"loop:loop_#2\", \"loop:loop_#3\"]}, {\"claim\": \"The file's account admin situation is now seen through the twenty-fourth of September, its record still saying decided and deferred.\", \"evidence\": [\"sit:sit_#1\"]}], \"inferences\": [{\"claim\": \"The fifteenth has passed; whether the report went onto the portal is not in the file, and the portal, not the mail, would show it.\", \"based_on\": [\"fact:2\", \"pb:founder_office.heu.program_applications.the_portal_is_the_record\"]}, {\"claim\": \"The seat still waits on the signed agreement, weeks after Naveen asked.\", \"based_on\": [\"fact:1\", \"fact:4\"]}, {\"claim\": \"The invoice falls due within the week, so Ekta's is the one ask whose date is still ahead.\", \"based_on\": [\"fact:3\"]}, {\"claim\": \"The cell treats Nimbus Labs as admitted — a seat to activate, a monthly report, an invoice for co-working seats — so the brief's line that the founder applied is behind the mail.\", \"based_on\": [\"fact:1\", \"fact:2\", \"fact:3\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"After acceptance the programme's quiet is rarely the risk — the founders' is: the papers are ours to produce.\", \"based_on\": [\"pb:founder_office.pb.program_applications.documents_after_acceptance\"]}, {\"kind\": \"pattern\", \"claim\": \"A programme's own date does not move; work is set back from it.\", \"based_on\": [\"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\"]}], \"hypotheses\": [{\"proposition\": \"The monthly report is on the portal and simply was not mentioned in mail.\", \"needs\": \"The portal's record for the report.\"}, {\"proposition\": \"The agreement is held up by its terms rather than forgotten.\", \"needs\": \"The founder's word on the agreement.\"}], \"unknowns\": [{\"question\": \"Whether the monthly report is on the portal.\", \"relevance\": \"If it is not, it needs filing today with a word to Ritika; if it is, nothing more.\"}, {\"question\": \"Which name the co-working invoice should carry — the company's or another.\", \"relevance\": \"Ekta needs it before the invoice falls due on the thirtieth.\"}, {\"question\": \"Whether the agreement is signed.\", \"relevance\": \"It decides whether the move is to sign or only to send.\"}], \"frames\": {\"primary\": \"An incubation cell onboarding you, now with three people waiting on three asks: Naveen's signed agreement for the seat, Ritika's monthly report whose date has passed, and Ekta Bhalla's request to confirm the billing name for the co-working seats invoice due on the thirtieth.\", \"rivals\": [\"Three separate admin chores from one cell that can be answered one by one as they fall due.\", \"An incubatee relationship starting to fray because nothing has gone back from us in weeks.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": \"onboarding\", \"expected\": \"The papers come in from our side before the programme's first day — the programme's quiet is rarely the risk, ours is.\", \"actual\": \"Three asks are open — the agreement, the report and now Ekta Bhalla's billing name — and nothing has gone back from us by mail.\"}, \"scenarios\": {\"do_nothing\": \"The seat stays inactive, the report's status stays unknown, and the invoice falls due on the thirtieth without a billing name — lost on dates rather than on merit.\", \"act\": \"One sitting today clears all three: the agreement sent, the report checked and filed, the billing name confirmed.\", \"best\": \"The seat is active, the report is on the portal, and the invoice goes out under the right name before the thirtieth.\", \"worst\": \"The cell starts chasing and reads Nimbus Labs as an incubatee who does not answer.\", \"signals_to_watch\": [\"A reminder from Naveen, Ritika or Ekta.\", \"The portal's record for the monthly report.\", \"The invoice arriving under a name.\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"costly_to_reverse\", \"reasons\": [\"Three asks from the cell wait on us, two of them for weeks.\", \"The report's date has passed and the invoice falls due on the thirtieth.\", \"The seat cannot be activated until the agreement is back.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Answer the cell's three asks today: send Naveen the signed incubation agreement, confirm the billing name to Ekta before the thirtieth, and check the portal for the monthly report — if it is not there, file it and tell Ritika.\", \"for_whom\": \"Naveen Gupta, Ekta Bhalla and Ritika Sharma at the Incubation Cell\", \"by_when\": null, \"rests_on\": [\"fact:1\", \"fact:2\", \"fact:3\", \"fact:4\"], \"to\": \"Naveen\"}, \"alternative\": \"If the agreement cannot go today, tell Naveen when it will, and still answer Ekta and settle the report.\", \"wait_or_stop\": \"Nothing to wait for — all three moves are ours. Each ask is done when the cell confirms it or the portal shows it.\", \"done_when\": \"Naveen confirms the seat, the portal shows the monthly report, and Ekta has the billing name before the thirtieth.\", \"draft\": \"Hi Naveen and Ekta, sorry for the slow reply. Naveen, the signed incubation agreement is attached — please go ahead with the seat. Ekta, please bill the co-working seats to Nimbus Labs Private Limited. Thanks, Arjun\"}",
    "framed": true,
-   "input_tokens": 9648,
+   "input_tokens": 9643,
    "output_tokens": 1522,
    "model": "claude-haiku-4-5-20251001"
   },
-  "e15f1cde85d100be3d655be7661ba57559eb85fa8bcc9543d14c2749d2e25dcc": {
+  "760e97be0a2f4785df1e8912063832c1b9bd6b7fed9d70f5424051f80751205a": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Could you confirm the billing name?",
+    "start_offset": 99,
+    "end_offset": 134,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Could you confirm the billing name?\", \"start_offset\": 99, \"end_offset\": 134, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
+   "input_tokens": 1521,
+   "output_tokens": 46,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "7d0504e9de8753fa65ca5df6e8a8237fc61d8d476bc4f99465bd339d6fb3669f": {
    "site": "extraction",
    "parsed": {
     "intent": "request",
@@ -372,13 +232,13 @@
     ],
     "entity_mentions": [
      {
-      "surface_form": "Ekta Bhalla",
+      "surface_form": "Naveen Gupta",
       "entity_type": "person",
       "evidence": [
        {
-        "quote": "Ekta Bhalla",
-        "start_offset": 136,
-        "end_offset": 147
+        "quote": "Naveen Gupta",
+        "start_offset": 109,
+        "end_offset": 121
        }
       ],
       "confidence_bp": 9000
@@ -386,14 +246,14 @@
     ],
     "questions": [
      {
-      "text": "Confirm the billing name for the co-working invoice",
-      "asked_by": "Ekta Bhalla",
+      "text": "Share the signed incubation agreement",
+      "asked_by": "Naveen Gupta",
       "asked_of": "Arjun Rao",
       "evidence": [
        {
-        "quote": "Could you confirm the billing name?",
-        "start_offset": 99,
-        "end_offset": 134
+        "quote": "Please share the signed incubation agreement",
+        "start_offset": 33,
+        "end_offset": 77
        }
       ],
       "confidence_bp": 9000
@@ -407,49 +267,102 @@
      "human_authored": true,
      "asks_for_reply": true,
      "engagement": "high",
-     "motive": "Confirm the billing name for the co-working invoice"
+     "motive": "Share the signed incubation agreement"
+    }
+   },
+   "raw": "{\"intent\": \"request\", \"stance\": \"neutral\", \"topics\": [\"incubation\"], \"entity_mentions\": [{\"surface_form\": \"Naveen Gupta\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Naveen Gupta\", \"start_offset\": 109, \"end_offset\": 121}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Share the signed incubation agreement\", \"asked_by\": \"Naveen Gupta\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Please share the signed incubation agreement\", \"start_offset\": 33, \"end_offset\": 77}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"Share the signed incubation agreement\"}}",
+   "framed": true,
+   "input_tokens": 5507,
+   "output_tokens": 187,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "82d31705e8e7e2bcee54d2563d71d1a1b6cef97de888ea8434c83d870d6b359a": {
+   "site": "bundle_narrator",
+   "parsed": {
+    "headline": "Next move",
+    "situation_summary": "The next move is the action this decision committed to.",
+    "why_it_matters": "Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.",
+    "root_cause": "The engine holds this reading at {confidence_pct} percent confidence.",
+    "recommendation_rationale": "The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.",
+    "expected_effect": "Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is."
+   },
+   "raw": "{\"headline\": \"Next move\", \"situation_summary\": \"The next move is the action this decision committed to.\", \"why_it_matters\": \"Leaving it alone carries a priced inaction cost of {do_nothing_cost_bp} basis points.\", \"root_cause\": \"The engine holds this reading at {confidence_pct} percent confidence.\", \"recommendation_rationale\": \"The next move ranked first at {recommended_score_pct} percent, ahead of every alternative that lost.\", \"expected_effect\": \"Acting on the next move shows its effect within {outcome_window_days} days, and without it the situation stands as it is.\"}",
+   "framed": true,
+   "input_tokens": 1621,
+   "output_tokens": 143,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "8367f098b5d952d65ad40211a24c5a83d52a48d72aa716f65a6bb3f98792f5f8": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "request",
+    "stance": "neutral",
+    "topics": [
+     "incubation"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Ritika Sharma",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Ritika Sharma",
+        "start_offset": 118,
+        "end_offset": 131
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "Submit the monthly progress report by 15 Sep",
+      "asked_by": "Ritika Sharma",
+      "asked_of": "Arjun Rao",
+      "evidence": [
+       {
+        "quote": "Your monthly progress report is due on 15 Sep.",
+        "start_offset": 38,
+        "end_offset": 84
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "Submit the monthly progress report by 15 Sep"
     },
     "dates_mentioned": [
      {
-      "as_written": "30 Sep",
-      "earliest": "2026-09-30T00:00:00+05:30",
-      "latest": "2026-09-30T23:59:59+05:30",
+      "as_written": "15 Sep",
+      "earliest": "2026-09-15T00:00:00+05:30",
+      "latest": "2026-09-15T23:59:59+05:30",
       "certainty": "range",
-      "resolved_against": "2026-09-24T09:00:00Z",
+      "resolved_against": "2026-09-07T06:00:00Z",
       "evidence": [
        {
-        "quote": "30 Sep",
-        "start_offset": 91,
-        "end_offset": 97
+        "quote": "15 Sep",
+        "start_offset": 19,
+        "end_offset": 25
        }
       ]
      }
     ]
    },
-   "raw": "{\"intent\": \"request\", \"stance\": \"neutral\", \"topics\": [\"incubation\"], \"entity_mentions\": [{\"surface_form\": \"Ekta Bhalla\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Ekta Bhalla\", \"start_offset\": 136, \"end_offset\": 147}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Confirm the billing name for the co-working invoice\", \"asked_by\": \"Ekta Bhalla\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Could you confirm the billing name?\", \"start_offset\": 99, \"end_offset\": 134}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"Confirm the billing name for the co-working invoice\"}, \"dates_mentioned\": [{\"as_written\": \"30 Sep\", \"earliest\": \"2026-09-30T00:00:00+05:30\", \"latest\": \"2026-09-30T23:59:59+05:30\", \"certainty\": \"range\", \"resolved_against\": \"2026-09-24T09:00:00Z\", \"evidence\": [{\"quote\": \"30 Sep\", \"start_offset\": 91, \"end_offset\": 97}]}]}",
+   "raw": "{\"intent\": \"request\", \"stance\": \"neutral\", \"topics\": [\"incubation\"], \"entity_mentions\": [{\"surface_form\": \"Ritika Sharma\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Ritika Sharma\", \"start_offset\": 118, \"end_offset\": 131}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Submit the monthly progress report by 15 Sep\", \"asked_by\": \"Ritika Sharma\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Your monthly progress report is due on 15 Sep.\", \"start_offset\": 38, \"end_offset\": 84}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"Submit the monthly progress report by 15 Sep\"}, \"dates_mentioned\": [{\"as_written\": \"15 Sep\", \"earliest\": \"2026-09-15T00:00:00+05:30\", \"latest\": \"2026-09-15T23:59:59+05:30\", \"certainty\": \"range\", \"resolved_against\": \"2026-09-07T06:00:00Z\", \"evidence\": [{\"quote\": \"15 Sep\", \"start_offset\": 19, \"end_offset\": 25}]}]}",
    "framed": true,
-   "input_tokens": 5515,
-   "output_tokens": 257,
+   "input_tokens": 5511,
+   "output_tokens": 258,
    "model": "claude-haiku-4-5-20251001"
   },
-  "e3635f85ce86e23ce76f8c4ac04eb722dd8530e7dcb1f2c4234b9fe224b80825": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "Please share the signed incubation agreement so we can activate your seat.",
-    "start_offset": 33,
-    "end_offset": 107,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Please share the signed incubation agreement so we can activate your seat.\", \"start_offset\": 33, \"end_offset\": 107, \"speaker_role_said\": \"unknown\"}",
-   "framed": true,
-   "input_tokens": 1515,
-   "output_tokens": 56,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "ff3e57309d171a40ac1db9bfc20c942b87255c3bd0a332acb06936cf84b9743f": {
+  "ce4378c774324780b8e0275e7723f58be45eec720a7703ff830a4a2af680ef75": {
    "site": "expert",
    "parsed": {
     "facts": [
@@ -610,8 +523,95 @@
    },
    "raw": "{\"facts\": [{\"claim\": \"Naveen Gupta of the Incubation Cell asked Arjun to share the signed incubation agreement so the cell can activate the seat.\", \"evidence\": [\"evt_#2\"], \"quote\": \"share the signed incubation agreement so we can activate your seat. Naveen Gupta\"}, {\"claim\": \"Ritika Sharma of the Incubation Cell wrote that the monthly progress report is due on the fifteenth of September and is to be submitted on the portal.\", \"evidence\": [\"evt_#1\"], \"quote\": \"due on 15 Sep. Please submit it on the portal. Ritika Sharma Incubation Cell\"}, {\"claim\": \"Both asks are open and wait on us.\", \"evidence\": [\"loop:loop_#1\", \"loop:loop_#2\"]}, {\"claim\": \"The engine holds the file as an account admin situation; its record says it was decided and deferred, though it still shows as active.\", \"evidence\": [\"sit:sit_#1\"]}, {\"claim\": \"This is the first time the founder's history holds the cell.\", \"evidence\": [\"hist:derived.history.times_seen@admin\"]}], \"inferences\": [{\"claim\": \"The cell treats Nimbus Labs as admitted: an agreement that activates a seat and a monthly progress report are asks made after acceptance, so the brief's line that the founder applied is behind the mail.\", \"based_on\": [\"fact:1\", \"fact:2\"]}, {\"claim\": \"The seat waits on us: until the signed agreement is back, the cell cannot activate it.\", \"based_on\": [\"fact:1\"]}, {\"claim\": \"The report has a fixed date about a week out, set on the cell's own clock.\", \"based_on\": [\"fact:2\", \"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"After acceptance the papers are the founders' to produce: the programme's agreement signed and every item on its list in before the first day.\", \"based_on\": [\"pb:founder_office.pb.program_applications.documents_after_acceptance\"]}, {\"kind\": \"pattern\", \"claim\": \"A programme's own date is the one that will not move; every other date in the plan is set back from it.\", \"based_on\": [\"pb:founder_office.heu.program_applications.the_deadline_is_the_only_fixed_point\"]}, {\"kind\": \"counter_pattern\", \"claim\": \"Where a programme names its portal, the portal holds the record: the report counts when the portal shows it, not when a mail says so.\", \"based_on\": [\"pb:founder_office.heu.program_applications.the_portal_is_the_record\"]}], \"hypotheses\": [{\"proposition\": \"The agreement is signed and simply not sent.\", \"needs\": \"The founder's word on where the agreement stands.\"}, {\"proposition\": \"The agreement still needs reading before it is signed — its terms are not in the file.\", \"needs\": \"The agreement itself.\"}], \"unknowns\": [{\"question\": \"Whether the agreement has been signed.\", \"relevance\": \"It decides whether the move is to sign or only to send.\"}, {\"question\": \"What the agreement commits Nimbus Labs to.\", \"relevance\": \"A signed agreement is costly to take back; its terms should be read first.\"}, {\"question\": \"Whether the monthly report is started.\", \"relevance\": \"A week is enough to write an update, not to start from nothing during a seed round.\"}], \"frames\": {\"primary\": \"An incubation cell onboarding you: two people, two asks — the signed agreement that activates the seat, and the monthly progress report on a fixed date.\", \"rivals\": [\"Routine admin the cell sends every incubatee, where only the dated report matters.\", \"An application still in progress, as the brief's line says, with the agreement an offer the founder has not yet accepted.\"]}, \"proposed_kind\": null, \"expected_vs_actual\": {\"stage\": \"onboarding\", \"expected\": \"The papers come in from our side — the agreement signed and every item on the programme's list in before the first day; here the programme's quiet is rarely the risk, ours is.\", \"actual\": \"The cell has asked for the signed agreement and set a date for the monthly report; nothing has gone back from us yet.\"}, \"scenarios\": {\"do_nothing\": \"The seat stays inactive while the agreement sits with us, and the fifteenth passes with nothing on the portal — lost on a date rather than on merit.\", \"act\": \"The agreement goes back this week, the seat is activated, and the report is on the portal before the fifteenth.\", \"best\": \"The seat is active, the report is in on time, and the cell's next asks meet a file that answers.\", \"worst\": \"The report's date passes and the agreement waits, and the cell reads Nimbus Labs as an incubatee who does not answer.\", \"signals_to_watch\": [\"Naveen confirming the seat is active.\", \"The portal showing the report received.\", \"A reminder from Naveen or Ritika — the cell chasing us.\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"medium\", \"reversibility\": \"costly_to_reverse\", \"reasons\": [\"Two asks from the cell wait on us, both open since the seventh of September.\", \"The report has a fixed date, the fifteenth, set by the cell.\", \"The seat cannot be activated until the agreement is back, and a signed agreement is hard to take back.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun\", \"what\": \"Sign and send Naveen the incubation agreement, and put the monthly progress report on the portal before the fifteenth.\", \"for_whom\": \"Naveen Gupta and Ritika Sharma at the Incubation Cell\", \"by_when\": \"2026-09-15\", \"rests_on\": [\"fact:1\", \"fact:2\", \"fact:3\"], \"to\": \"Naveen\"}, \"alternative\": \"If the agreement needs changes before signing, tell Naveen today what needs changing and when it will come back, and still file the report on time.\", \"wait_or_stop\": \"Nothing to wait for — both moves are ours. The report is done when the portal shows it; the agreement when Naveen confirms the seat.\", \"done_when\": \"Naveen confirms the seat is active, and the portal shows the monthly report received before the fifteenth.\", \"draft\": \"Hi Naveen, here is the signed incubation agreement — please go ahead and activate our seat. Thanks, Arjun\"}",
    "framed": true,
-   "input_tokens": 9413,
+   "input_tokens": 9408,
    "output_tokens": 1473,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "e15f1cde85d100be3d655be7661ba57559eb85fa8bcc9543d14c2749d2e25dcc": {
+   "site": "extraction",
+   "parsed": {
+    "intent": "request",
+    "stance": "neutral",
+    "topics": [
+     "incubation"
+    ],
+    "entity_mentions": [
+     {
+      "surface_form": "Ekta Bhalla",
+      "entity_type": "person",
+      "evidence": [
+       {
+        "quote": "Ekta Bhalla",
+        "start_offset": 136,
+        "end_offset": 147
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "questions": [
+     {
+      "text": "Confirm the billing name for the co-working invoice",
+      "asked_by": "Ekta Bhalla",
+      "asked_of": "Arjun Rao",
+      "evidence": [
+       {
+        "quote": "Could you confirm the billing name?",
+        "start_offset": 99,
+        "end_offset": 134
+       }
+      ],
+      "confidence_bp": 9000
+     }
+    ],
+    "exchange_intent": {
+     "category": "working",
+     "tone": "neutral",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": true,
+     "engagement": "high",
+     "motive": "Confirm the billing name for the co-working invoice"
+    },
+    "dates_mentioned": [
+     {
+      "as_written": "30 Sep",
+      "earliest": "2026-09-30T00:00:00+05:30",
+      "latest": "2026-09-30T23:59:59+05:30",
+      "certainty": "range",
+      "resolved_against": "2026-09-24T09:00:00Z",
+      "evidence": [
+       {
+        "quote": "30 Sep",
+        "start_offset": 91,
+        "end_offset": 97
+       }
+      ]
+     }
+    ]
+   },
+   "raw": "{\"intent\": \"request\", \"stance\": \"neutral\", \"topics\": [\"incubation\"], \"entity_mentions\": [{\"surface_form\": \"Ekta Bhalla\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Ekta Bhalla\", \"start_offset\": 136, \"end_offset\": 147}], \"confidence_bp\": 9000}], \"questions\": [{\"text\": \"Confirm the billing name for the co-working invoice\", \"asked_by\": \"Ekta Bhalla\", \"asked_of\": \"Arjun Rao\", \"evidence\": [{\"quote\": \"Could you confirm the billing name?\", \"start_offset\": 99, \"end_offset\": 134}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"working\", \"tone\": \"neutral\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": true, \"engagement\": \"high\", \"motive\": \"Confirm the billing name for the co-working invoice\"}, \"dates_mentioned\": [{\"as_written\": \"30 Sep\", \"earliest\": \"2026-09-30T00:00:00+05:30\", \"latest\": \"2026-09-30T23:59:59+05:30\", \"certainty\": \"range\", \"resolved_against\": \"2026-09-24T09:00:00Z\", \"evidence\": [{\"quote\": \"30 Sep\", \"start_offset\": 91, \"end_offset\": 97}]}]}",
+   "framed": true,
+   "input_tokens": 5515,
+   "output_tokens": 257,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "e3635f85ce86e23ce76f8c4ac04eb722dd8530e7dcb1f2c4234b9fe224b80825": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "Please share the signed incubation agreement so we can activate your seat.",
+    "start_offset": 33,
+    "end_offset": 107,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"Please share the signed incubation agreement so we can activate your seat.\", \"start_offset\": 33, \"end_offset\": 107, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
+   "input_tokens": 1515,
+   "output_tokens": 56,
    "model": "claude-haiku-4-5-20251001"
   }
  }

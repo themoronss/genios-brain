@@ -99,17 +99,23 @@ def _as_question(text: str) -> str | None:
     return None
 
 
-def _find_out_question(review, checked) -> str:
-    """A find-out file's question: its first unknown, or its checked move (see above)."""
+def _find_out_question(review, checked, ours=None) -> str:
+    """A find-out file's question: its first unknown, or its checked move (see above) — never one that names us
+    (`ours`, the sweep's `platform/self_identity.names_us` over the tenant's names: STEP-04's rule — we are
+    never a card's party; the golden lane, 12 Oct, F22 and F52), else the closed question."""
     corpus = _checked_corpus(review, checked) if checked is not None else ""
     first = " ".join(review.unknowns[0].question.split()) if review.unknowns else ""
     asked = _as_question(first)
+    candidates = []
     if asked is not None and _stands_on(first, corpus):
-        return asked
+        candidates.append(asked)
     move = checked.words.headline if checked is not None else None
     if move:
         said = " ".join(move.split()).rstrip(" .;:")
-        return said if said.endswith("?") else f"Can you tell us: {said}?"
+        candidates.append(said if said.endswith("?") else f"Can you tell us: {said}?")
+    for candidate in candidates:
+        if ours is None or not ours(candidate):
+            return candidate
     return NOTHING_TO_ASK
 
 
@@ -133,13 +139,26 @@ def _why_held(review, checked) -> str:
     return WHY_FIND_OUT
 
 
-def question_words(review) -> tuple[str, str]:
+def _names_us_for(conn, org_id: str):
+    """Whether a text names one of us — the tenant's identity and names, as `reason/expert/sweep` reads them for
+    its own "ours" rule (`03` F158)."""
+    from genios_engine.platform.self_identity import identity_for, names_us
+
+    us = identity_for(conn, org_id)
+    org = conn.execute(text("select name, company, first_name, last_name from orgs where id = :o"),
+                       {"o": org_id}).first()
+    names = tuple(n for n in ((org.company, org.name, " ".join(p for p in (org.first_name, org.last_name) if p))
+                              if org is not None else ()) if n)
+    return lambda words: names_us(words, us, names=names)
+
+
+def question_words(review, *, ours=None) -> tuple[str, str]:
     """What the file asks, and why — in checked words (see above): a held file the check's own question,
-    a find-out file a real question to you; why, one of `WHYS`."""
+    a find-out file a real question to you that names none of us (`ours`); why, one of `WHYS`."""
     checked = review.checked
     if checked is not None and checked.fate == "held" and checked.question:
         return " ".join(checked.question.split()), _why_held(review.review, checked)
-    return _find_out_question(review.review, checked), WHY_FIND_OUT
+    return _find_out_question(review.review, checked, ours), WHY_FIND_OUT
 
 
 def ask_the_founder(store, *, org_id: str, file_id: str, review, decision, bundle: dict, pack: dict,
@@ -151,8 +170,8 @@ def ask_the_founder(store, *, org_id: str, file_id: str, review, decision, bundl
     from genios_engine.context import founder_questions as questions
 
     run, output = bundle.get("run") or {}, bundle.get("output") or {}
-    question, why = question_words(review)
     with store.engine.begin() as conn:
+        question, why = question_words(review, ours=_names_us_for(conn, org_id))
         before = questions.open_question(conn, org_id, file_id)
         asked = questions.ask(conn, org_id=org_id, file_id=file_id, fingerprint=review.fingerprint,
                               run_id=run.get("run_id"), question=question, why=why, at=eval_time)
