@@ -8628,6 +8628,21 @@ yc2_w27_s18:
                       artifact: "genios_engine/context/model_audit.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/genios_test .venv/bin/python -m pytest -q tests/context/lifecycle/test_a_decimal_answer_is_audited.py"
                       depends_on: []
+                - level: 1
+                  units:
+                    - id: M48.C2.L-logic.V1.U15
+                      what: >
+                        S18-X05 (the STEP-17/18 crosscheck) — the ROW, as U03 mended the hash. The
+                        parser lets `NaN`, `Infinity`, `-Infinity` in (`context/llm/parse` is
+                        `json.loads`), `json.dumps` wrote them back as bare tokens, and
+                        `cast(:parsed as jsonb)` refused them: the audit row, the `llm_costs` row of
+                        the same transaction and the rest of the org's resolution pass were lost.
+                        `_stored`: a non-finite number as its name, a Decimal as its text, a finite
+                        answer byte for byte as before, `allow_nan=False`, computed before the
+                        transaction opens. A Postgres test inserts `{"x": NaN}` and its kin.
+                      artifact: "genios_engine/context/model_audit.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s18_verify .venv/bin/python -m pytest -q tests/context/lifecycle/test_a_decimal_answer_is_audited.py"
+                      depends_on: [M48.C2.L-logic.V0.U03]
             - layer: data
               levels:
                 - level: 0
