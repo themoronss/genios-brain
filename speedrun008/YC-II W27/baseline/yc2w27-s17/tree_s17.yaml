@@ -1,0 +1,277 @@
+# STEP-17 · real tests — the tree block, proposed 2026-10-12. NOT in tree.yaml: the lead owns that
+# file while STEP-13 is built; this block is merged into it by the lead.
+yc2_w27_s17:
+  status: proposed   # built 2026-10-12 in the worktree s17-build (branch yc2w27-s17); merged by the lead
+  source: >
+    speedrun008/YC-II W27/STEP-17 §1-§5, re-checked claim by claim against speedrun008 @ c97155cd
+    (STEP-17 §8): a fresh scratch database migrated 0001-0199, every SQL string the engine holds
+    prepared and explained against it (2,298 whole expressions: 2,040 plan, 41 are not SQL, 217 are
+    assembled at run time, 1 is broken — scripts/slice_weight.py), every Python file parsed on 3.11,
+    and the lead's QA at the same commit (the database suite 20,569 passed, 0 failed). CI's hermetic
+    job skips 301 database-gated files that no job runs; six health checks print PASS on nothing.
+  vision: >
+    The suite goes red on the things that broke production while it was green: a statement naming a
+    column that does not exist, a value the schema refuses, a feature that cannot be switched on, a
+    lane that made no call read as a lane that is healthy, a test that passes only on the day it was
+    written. CI runs every test on a real Postgres, on production's Python; the health gate says
+    pass, fail or no data, and its output can be kept.
+  order_note: >
+    M40 first. C1 bottom-up: the census (U01) and the planner (U02) before the fix they find (U03),
+    the test over the whole tree last (U04), so it lands green. C2, C3 and C5 are independent of C1.
+    C4 last: the database job's verify is the whole suite on 3.11, which includes every unit above.
+    M41 after M40. Repo guards per group of two or three units (Rohit, 12 Oct): the root suite,
+    tests/platform and each folder the group touched, each on a fresh database on the second scratch
+    server (55433), never before the lead's STEP-12 QA has finished. Verify commands name the database
+    s17_verify; create it fresh first (docker exec genios-yc2w27-pg2 psql -U postgres -c "create
+    database s17_verify").
+  milestones:
+    - id: M40
+      name: The suite fails when production would (STEP-17 §3.1-§3.5)
+      ships: >
+        Every SQL statement the engine and its scripts hold that can be rendered from the source is
+        prepared and planned by Postgres on every push, with the run-time-assembled ones counted under
+        a ceiling; every feedback reason the API offers is stored or named as STEP-16's; every default
+        feature is switched on against a real database; the health gate has a no-data verdict and a
+        kept output; CI runs the whole suite on Postgres on production's Python and fails on a skip
+        for want of a database.
+      categories:
+        - id: M40.C1
+          name: Every statement is planned by Postgres (§3.2)
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M40.C1.L-contract.V0.U01
+                      what: >
+                        The statement census — `statements()`: every OUTERMOST string expression of
+                        genios_engine/ and scripts/ shaped like SQL (table_coverage's own reader:
+                        `_sources`, `_template`, `_SQL_SHAPE`), never a piece of a larger expression,
+                        never a docstring, never a single word; each `{NAME}` resolved through the
+                        module's own value (an engine module imported, a script read from its AST and
+                        never run); what stays a hole is named. The `card_level` statement of
+                        feedback/calibrate resolves whole.
+                      artifact: "genios_engine/platform/statement_plans.py"
+                      verify: ".venv/bin/python -m pytest -q tests/platform/test_the_statement_census.py"
+                      depends_on: []
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M40.C1.L-logic.V0.U02
+                      what: >
+                        A statement as Postgres sees it, and whether it plans — `positional()`:
+                        SQLAlchemy's own bind parsing for psycopg (`:x::int` is not a bind, as in
+                        production), an expanding `in :ids` as a list, `$n` for each bind; `plan()`:
+                        PREPARE then EXPLAIN EXECUTE in a transaction that is rolled back, the
+                        prepared statement deallocated; a bind Postgres cannot type is typed by a
+                        search that accepts only a typing that plans, and only on a type error — a
+                        missing column or table is never retried.
+                      artifact: "genios_engine/platform/statement_plans.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s17_verify .venv/bin/python -m pytest -q tests/platform/test_a_statement_is_planned_as_postgres_sees_it.py"
+                      depends_on: [M40.C1.L-contract.V0.U01]
+                - level: 1
+                  units:
+                    - id: M40.C1.L-logic.V1.U03
+                      what: >
+                        S17-F1 — scripts/slice_weight.py reads the anchor's type from graph_nodes, as
+                        the sweep it copies does (`reason/domain_shadow._ACTIVE_SITUATIONS`); its
+                        first statement selected `anchor_type` from context_situations, a column
+                        that table does not have, so the script has raised on every run since
+                        aa6ab06e.
+                      artifact: "scripts/slice_weight.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s17_verify .venv/bin/python -m pytest -q tests/scripts/test_slice_weight_reads_what_the_sweep_reads.py"
+                      depends_on: [M40.C1.L-logic.V0.U02]
+            - layer: integration
+              levels:
+                - level: 2
+                  units:
+                    - id: M40.C1.L-integration.V2.U04
+                      what: >
+                        tests/platform/test_every_statement_plans.py — every statement the census
+                        renders whole plans on the migrated scratch database, each failure named by
+                        file and line; the strings that look like SQL and are not are declared one by
+                        one and checked both ways; the statements assembled at run time are held
+                        under a ceiling; the number planned is held over a floor. A mutation that
+                        drops `card_level` from `canonical_judgments` (STEP-18 B1) fails it.
+                      artifact: "tests/platform/test_every_statement_plans.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s17_verify .venv/bin/python -m pytest -q tests/platform/test_every_statement_plans.py"
+                      depends_on: [M40.C1.L-contract.V0.U01, M40.C1.L-logic.V0.U02, M40.C1.L-logic.V1.U03]
+        - id: M40.C2
+          name: Write paths that cannot write (§3.3)
+          layers:
+            - layer: integration
+              levels:
+                - level: 0
+                  units:
+                    - id: M40.C2.L-integration.V0.U01
+                      what: >
+                        Every feedback reason the route accepts (`WRONG_REASONS`, eleven) is stored
+                        on Postgres — a verdict and its revision, with the route's own columns. The
+                        three of migration 0034's CHECK pass; the eight it refuses (STEP-18 B3,
+                        S17-F7) are strict expected failures naming STEP-16 §3.1, so the day the
+                        schema admits them the marker must come off.
+                      artifact: "tests/feedback/test_every_feedback_reason_is_stored_pg.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s17_verify .venv/bin/python -m pytest -q tests/feedback/test_every_feedback_reason_is_stored_pg.py"
+                      depends_on: []
+                    - id: M40.C2.L-integration.V0.U02
+                      what: >
+                        On a real database a new tenant made live (`make_tenant_live`) has every
+                        default Layer 4 feature switched on — a row each, no error collected — and
+                        none of NOT_DEFAULT_ON. The in-memory test proves the order; this proves the
+                        write.
+                      artifact: "tests/platform/test_the_onboarding_switches_on_every_default_pg.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s17_verify .venv/bin/python -m pytest -q tests/platform/test_the_onboarding_switches_on_every_default_pg.py"
+                      depends_on: []
+        - id: M40.C3
+          name: The health gate says no data (§3.4)
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M40.C3.L-contract.V0.U01
+                      what: >
+                        A third verdict: `Check.ok` None is NO DATA — printed as such, counted apart,
+                        never a pass and never a failure; exit 1 only on a FAIL. The six checks that
+                        already say "not exercised" or "skipped" report it (known senders, the change
+                        gate, named counterparties' files, the work's files, the normals, the expert),
+                        and so does "live cards reach a surface" with no live card.
+                      artifact: "scripts/pipeline_health.py"
+                      verify: ".venv/bin/python -m pytest -q tests/scripts/test_pipeline_health_says_no_data.py tests/scripts/test_the_gate_that_runs_on_real_data.py"
+                      depends_on: []
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M40.C3.L-logic.V0.U02
+                      what: >
+                        F24's shape — an LLM lane that called in the last 7 days and not in the
+                        window is NO DATA for that lane in both LLM checks, named, never a pass.
+                      artifact: "scripts/pipeline_health.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s17_verify .venv/bin/python -m pytest -q tests/scripts/test_pipeline_health_a_silent_lane_is_no_data_pg.py"
+                      depends_on: [M40.C3.L-contract.V0.U01]
+            - layer: interface
+              levels:
+                - level: 0
+                  units:
+                    - id: M40.C3.L-interface.V0.U03
+                      what: >
+                        The output is kept: `--json PATH` writes every verdict (name, verdict,
+                        measured, expected, fix, detail) as pure JSON — a file, so the `[db]` lines
+                        on stdout cannot spoil it (03 F36) — and `--require-data` makes a run with a
+                        NO DATA exit 2 when nothing failed.
+                      artifact: "scripts/pipeline_health.py"
+                      verify: ".venv/bin/python -m pytest -q tests/scripts/test_pipeline_health_keeps_its_output.py"
+                      depends_on: [M40.C3.L-contract.V0.U01]
+        - id: M40.C4
+          name: CI runs the database suite on production's Python (§3.1)
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M40.C4.L-contract.V0.U01
+                      what: >
+                        scripts/qa/database_skips.py — reads a pytest log (`-rs` summary lines) and
+                        exits 1 naming every test skipped for want of a database, 0 when there is
+                        none; a log with no summary at all is an error, never a pass.
+                      artifact: "scripts/qa/database_skips.py"
+                      verify: ".venv/bin/python -m pytest -q tests/scripts/test_no_test_skips_for_want_of_a_database.py"
+                      depends_on: []
+            - layer: integration
+              levels:
+                - level: 1
+                  units:
+                    - id: M40.C4.L-integration.V1.U02
+                      what: >
+                        .github/workflows/ci.yml — a `database` job: a Postgres 17 service, production's
+                        dependency set, the whole suite but the golden set (`-m "not golden"`) with
+                        GENIOS_TEST_DATABASE_URL, its failures as annotations, then the skip scan; and
+                        every job on the Dockerfile's Python (3.11), read from the Dockerfile by the
+                        guard. Verified by the guard and by the job's own command run on
+                        python:3.11-slim-bookworm against a fresh scratch database.
+                      artifact: ".github/workflows/ci.yml"
+                      verify: ".venv/bin/python -m pytest -q tests/test_ci_runs_the_database_suite.py tests/test_ci_runs_the_golden_set_on_postgres.py"
+                      depends_on: [M40.C4.L-contract.V0.U01, M40.C1.L-integration.V2.U04, M40.C2.L-integration.V0.U01, M40.C2.L-integration.V0.U02, M40.C3.L-logic.V0.U02]
+        - id: M40.C5
+          name: The plan's own checks (§3.5)
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M40.C5.L-logic.V0.U01
+                      what: >
+                        S17-F5 — a built step's Verify is read whatever its section number (STEP-01
+                        §7 and STEP-08 §5 were never read), and a built step with no Verify section
+                        fails rather than passing on nothing.
+                      artifact: "tests/test_the_plan_folder_is_consistent.py"
+                      verify: ".venv/bin/python -m pytest -q tests/test_the_plan_folder_is_consistent.py"
+                      depends_on: []
+    - id: M41
+      name: Tests that tell the truth (the findings 03 gave STEP-17)
+      ships: >
+        No test reads the wall clock when it is imported; a timing guard is not failed by one stalled
+        sample; the warm lane's test claims its own rows whatever ran before it.
+      categories:
+        - id: M41.C1
+          name: A test reads its own clock
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M41.C1.L-logic.V0.U01
+                      what: >
+                        03 F142 — tests/test_device_api.py reads the clock when each test runs, not
+                        when the module is imported, so a run that spans more than an hour (a
+                        sleeping laptop, a slow runner) no longer finds the seat's pause over.
+                      artifact: "tests/test_device_api.py"
+                      verify: ".venv/bin/python -m pytest -q tests/test_device_api.py"
+                      depends_on: []
+            - layer: integration
+              levels:
+                - level: 1
+                  units:
+                    - id: M41.C1.L-integration.V1.U02
+                      what: >
+                        S17-F6 — the guard: no test module reads the wall clock at import (a
+                        module-level `datetime.now()`, `utcnow()`, `date.today()`, `time.time()`);
+                        the 22 found are made to read it per test, or pin a fixed instant where the
+                        product is handed `now` explicitly. Read from the AST.
+                      artifact: "tests/test_no_test_reads_the_clock_at_import.py"
+                      verify: ".venv/bin/python -m pytest -q tests/test_no_test_reads_the_clock_at_import.py"
+                      depends_on: [M41.C1.L-logic.V0.U01]
+        - id: M41.C2
+          name: A timing guard takes the best of three
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M41.C2.L-logic.V0.U01
+                      what: >
+                        03 F156 — the linear-time guard over every shipped token rule measures each
+                        input three times and judges the fastest, as the lane's own budget test does,
+                        so one stalled CI sample is never read as backtracking and a backtracking
+                        pattern still fails every time.
+                      artifact: "tests/capture/structural/test_tokens.py"
+                      verify: ".venv/bin/python -m pytest -q tests/capture/structural/test_tokens.py"
+                      depends_on: []
+        - id: M41.C3
+          name: A test claims its own rows
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M41.C3.L-logic.V0.U01
+                      what: >
+                        03 F67 and F136 — the warm lane's coalescing test claims the batch of its
+                        own org, whatever another test left in l2_work_queue, and reads one clock;
+                        run after tests/test_screen_promoter_pg.py on one database it passes, as it
+                        does alone.
+                      artifact: "tests/platform/test_warm_lane_pg.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s17_verify .venv/bin/python -m pytest -q tests/test_screen_promoter_pg.py tests/platform/test_warm_lane_pg.py"
+                      depends_on: []
