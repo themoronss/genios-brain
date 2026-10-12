@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_130, (
+    assert r["statements"] == 3_147, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -477,6 +477,14 @@ def test_the_statement_count_did_NOT_move():
     # (`_VERSION`) — two statements, each assembled from the shared `_HELD` and `_UNDECIDED` predicates, so the
     # template walk records each prefix of each `+` chain: 3 → 13 in that module, measured per file against
     # 6650b1c4 (nothing else moved). STEP-15 and STEP-16 move this on their own branches; the merge re-measures.
+    # ⛔ MOVED 3,130 → 3,131 by yc2_w27_s14/M42.C2.L-interface.V3.U04 (`03` F164): a meeting's title, read from its
+    # meeting node (`reason/expert/dossier._MEETING_TITLES`) — one literal. Committed without this move; found
+    # measuring the next unit, and moved here.
+    # ⛔ MOVED 3,131 → 3,147 by yc2_w27_s14/M42.C3.L-data.V1.U02 (`CardStore.version_card`): its lease, the card
+    # row it versions, its last words (`_LAST_WORDS`), the words written in place (`_VERSION_WORDS`) and the
+    # authority re-proven as an insert proves it (`_proves_authority`, the question's and the decision's, each
+    # assembled from the authority joins) — 69 → 85 in `deliver/store.py`, measured per file against the
+    # branch's head (nothing else moved).
     # ⛔ MOVED 3,079 → 3,080 by yc2_w27_s18/M48.C1.L-data.V0.U02 (STEP-18 B4, a review object waits for
     # review): one UPDATE, `feedback/publisher._rest_for_review` — the weekly road's review object rests at
     # `human_review`. A literal at its own call.

@@ -244,17 +244,6 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "*'Seat every org that has none. Orgs with seats are left completely alone.'* One test caller. ⛔ The idempotence is the load-bearing part — it cannot disturb a configured org — which is what makes it safe to run and uninteresting to schedule",
         "⛔ MOVES WHEN it is run, which needs an operator. Flagged for Harsh with the other backfills"),
 
-    "card_lifecycle.version_card": (
-        "STEP-14 · the one writer of a card's signal, built before its caller on purpose (bottom-up, `yc2_w27_s14` "
-        "M42.C1.L-data.V1.U03): a file's next decision or question re-points its card and writes one "
-        "`card.versioned` event. Its tests are its only callers until the card store versions a card",
-        "MOVES WITH `yc2_w27_s14/M42.C3.L-data.V1.U02` — `deliver/store.CardStore.version_card`"),
-
-    "card_lifecycle.file_card": (
-        "STEP-14 · which card a file's next version goes to — the newest nobody decided — by `version_card`'s own "
-        "rule (M42.C1.L-data.V1.U03). Its tests are its only callers until the pipeline versions a file's card",
-        "MOVES WITH `yc2_w27_s14/M42.C3.L-integration.V2.U03` — `deliver/pipeline` finds each file's card"),
-
 }
 
 

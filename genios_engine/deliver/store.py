@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import bindparam, text
 
+from genios_engine.contracts.card_version import VersionWords, version_of
 from genios_engine.platform.db import get_engine
 from genios_engine.platform import card_lifecycle
 from genios_engine.platform.ids import new_id
@@ -37,6 +38,65 @@ SITUATION_CARD_SQL = (
 # decision through it, never a question through the decision's.
 QUESTION_CARD_BUILDER = "founder_question.v1"
 QUESTION_CARD_SQL = "k.builder_version = :question_builder and " + QUESTION_SIGNAL_PREDICATE
+
+# ── STEP-14 · A FILE'S CARD IS VERSIONED (`yc2_w27_s14` M42.C3.L-data.V1.U02; `migrations/0220`) ─────────────────────
+#
+# A file's next decision or question is a VERSION of its one card, never a second card: `CardStore.version_card`
+# re-proves the new signal's authority under its build lease — exactly as an insert does — moves the card onto it
+# through the one writer of a card's signal (`platform/card_lifecycle.version_card`) and writes the new words in
+# place. Its state, snooze, history and verdicts are the founder's and are kept. What changed is named against the
+# card's own last version: the words its `card.created` or last `card.versioned` event recorded.
+
+#: The words a version writes in place — the card's presentation, as a refresh writes it (`insert_card`'s upsert),
+#: and the builder its door reads (`QUESTION_CARD_SQL`, the decision's authority): a version may turn a question into
+#: a decision, or back.
+_VERSION_WORDS = (
+    "update cards set assignee=:asg, domain=:dom, level=:lvl, urgency_band=:band, headline=:head, situation=:sit, "
+    "score=:score, score_block=cast(:sb as jsonb), actions=cast(:act as jsonb), why=cast(:why as jsonb), "
+    "context_tags=:tags, artifact=cast(:art as jsonb), render_mode=:rm, config_snapshot_id=:cs, template_version=:tv, "
+    "reject_code=:rjc, reject_detail=:rjd, abstained_because=:abst, business_subject=:bsub, "
+    "relationship_role=:brole, unresolved_item=:bitem, why_now=:bwhy, capability_key=:ckey, "
+    "capability_version=:cver, capability_review_state=:crev, outcome_window_days=:owin, success_signal=:osig, "
+    "do_nothing_consequence=:odnc, confidence_vector=cast(:cvec as jsonb), surfaces=:surf, builder_version=:bver, "
+    "output_lane=:lane, lane_reason=:lreason "
+    " where org_id=:o and card_id=:id")
+
+#: The card's own last words: its newest `card.created`, `card.rebuilt` or `card.versioned` event that kept them.
+_LAST_WORDS = (
+    "select detail -> 'words' as words from card_events where org_id=:o and card_id=:id "
+    "   and kind in ('card.created', 'card.rebuilt', 'card.versioned') and detail ? 'words' "
+    " order by occurred_at desc, id desc limit 1")
+
+
+def _words_of(card: dict, copy: dict) -> VersionWords:
+    """What a card shows, as a version names it: the words its builder handed (`_words`, with the move's ask,
+    recipient, date and mode), or — a builder that names none — its copy and lane alone."""
+    given = card.get("_words")
+    if given:
+        return VersionWords.from_mapping({**given, "headline": copy.get("headline"),
+                                          "situation": copy.get("situation")})
+    return VersionWords(headline=str(copy.get("headline") or ""), situation=str(copy.get("situation") or ""),
+                        draft=(copy.get("artifact") or {}).get("body") or None, lane=card.get("output_lane"))
+
+
+def _words_params(card: dict, copy: dict) -> dict:
+    """`insert_card`'s presentation parameters — one spelling for a refresh and a version."""
+    return {"asg": card["assignee"], "dom": card["domain"], "lvl": card["level"], "band": card["urgency_band"],
+            "head": copy["headline"], "sit": copy["situation"], "score": card["score"],
+            "sb": json.dumps(card["score_block"], default=str), "act": json.dumps(card["actions"], default=str),
+            "why": json.dumps(card["why"], default=str), "tags": card["context_tags"],
+            "art": json.dumps(copy["artifact"], default=str), "rm": copy["render_mode"],
+            "cs": card.get("config_snapshot_id"), "tv": card.get("template_version"),
+            "rjc": copy.get("reject_code"), "rjd": copy.get("reject_detail"),
+            "abst": card.get("abstained_because"), "bsub": card.get("business_subject"),
+            "brole": card.get("relationship_role"), "bitem": card.get("unresolved_item"),
+            "bwhy": card.get("why_now"), "ckey": card.get("capability_key"), "cver": card.get("capability_version"),
+            "crev": card.get("capability_review_state"), "owin": card.get("outcome_window_days"),
+            "osig": card.get("success_signal"), "odnc": card.get("do_nothing_consequence"),
+            "cvec": json.dumps(card.get("confidence_vector") or {}, default=str),
+            "surf": card.get("surfaces") or ["app", "agent", "ask", "api"], "bver": card.get("builder_version"),
+            "lane": card.get("output_lane") or "unrouted", "lreason": card.get("lane_reason")}
+
 
 # CardStore — persistence + the queue state machine (§5.12). Every transition writes a timestamped
 # card_event with an enumerated cause; nothing moves without one. One card per signal (enforced by
@@ -137,6 +197,95 @@ class CardStore:
                 "and claim_token=:token"),
                 {"o": org_id, "signal": signal_id, "token": claim_token})
         return bool(result.rowcount)
+
+    def file_card(self, org_id: str, file_id: str | None):
+        """The card a file's next version goes to (`platform/card_lifecycle.file_card`), or None."""
+        if not file_id:
+            return None
+        with self._engine.connect() as c:
+            return card_lifecycle.file_card(c, org_id=org_id, file_id=str(file_id))
+
+    def version_card(self, card: dict, copy: dict, *, build_claim_token: str,
+                     file_card) -> tuple[str, int, bool, str] | None:
+        """Version the file's card (`file_card`) onto `card["signal_id"]` with these words (STEP-14, see above):
+        under the new signal's build lease, its authority re-proven as `insert_card` proves it, the card moved by
+        the one writer of its signal and its words written in place. Returns `(card_id, version, material,
+        change)`, or None — the lease lost, a blank card, an authority that no longer holds, or a card the
+        writer refuses (decided, held by an agent, at another version)."""
+        if file_card is None or file_card.held:
+            return None
+        with self._engine.begin() as c:
+            as_of = authority_time(card.get("_authority_time"))
+            lease = c.execute(text(
+                "select 1 from card_build_claims where org_id=:o and signal_id=:signal "
+                "and claim_token=:token and expires_at>:authority_time for update"),
+                {"o": card["org_id"], "signal": card["signal_id"],
+                 "token": build_claim_token, "authority_time": as_of}).first()
+            if lease is None:
+                return None
+            if (not str(copy.get("headline") or "").strip()
+                    or not str(copy.get("situation") or "").strip()):
+                return None
+            if not self._proves_authority(c, card, as_of):
+                return None
+            row = c.execute(text("select state, version, headline, situation, output_lane from cards "
+                                 "where org_id=:o and card_id=:id for update"),
+                            {"o": card["org_id"], "id": file_card.card_id}).first()
+            if row is None:
+                return None
+            said = c.execute(text(_LAST_WORDS), {"o": card["org_id"], "id": file_card.card_id}).scalar()
+            before = (VersionWords.from_mapping(said) if said else
+                      VersionWords(headline=row.headline, situation=row.situation, lane=row.output_lane))
+            version = version_of(before, _words_of(card, copy), version=int(row.version) + 1,
+                                 signal_id=card["signal_id"], reopened=row.state == "expired")
+            if not card_lifecycle.version_card(c, org_id=card["org_id"], card_id=file_card.card_id,
+                                               version=version, expires_at=card["expires_at"]):
+                return None
+            c.execute(text(_VERSION_WORDS), {**_words_params(card, copy), "o": card["org_id"],
+                                             "id": file_card.card_id})
+            self._stamp_recipients(c, card["org_id"], file_card.card_id, card.get("co_recipients") or (),
+                                   owner=card.get("assignee"))
+        return file_card.card_id, version.version, version.material, version.change
+
+    @staticmethod
+    def _proves_authority(c, card: dict, as_of) -> bool:
+        """The new signal's authority, re-proven for a version exactly as `insert_card` proves it for a card: a
+        question by its question's authority (and only under its builder), a decision by the decision's."""
+        question = card.get("_question_authority") or {}
+        if card.get("builder_version") == QUESTION_CARD_BUILDER or question:
+            if not question or card.get("builder_version") != QUESTION_CARD_BUILDER:
+                return False
+            c.execute(text("select graph_version from graph_versions where org_id=:o for share"),
+                      {"o": card["org_id"]})
+            return c.execute(text(
+                "select 1 from signals s " + QUESTION_SIGNAL_JOINS +
+                " where s.org_id=:o and s.signal_id=:signal and s.status='open' "
+                "and s.reasoning_run_id=:run and s.reasoning_decision_hash=:decision "
+                "and s.config_snapshot_id=:cfg and question_asked.question_id=:question "
+                "and " + QUESTION_SIGNAL_PREDICATE +
+                " for share of s, question_rr, question_ro, question_asked"),
+                {"o": card["org_id"], "signal": card["signal_id"],
+                 "run": question.get("reasoning_run_id"),
+                 "decision": question.get("reasoning_decision_hash"),
+                 "cfg": question.get("config_snapshot_id"), "question": question.get("question_id"),
+                 "authority_time": as_of}).first() is not None
+        authority = card.get("_authority") or {}
+        if not authority:
+            return False
+        c.execute(text("select graph_version from graph_versions where org_id=:o for share"),
+                  {"o": card["org_id"]})
+        return c.execute(text(
+            "select 1 from signals s " + AUTHORITATIVE_SIGNAL_JOINS +
+            " where s.org_id=:o and s.signal_id=:signal and s.status='open' "
+            "and s.reasoning_run_id=:run and s.reasoning_candidate_id=:candidate "
+            "and s.reasoning_decision_hash=:decision and s.config_snapshot_id=:cfg "
+            "and " + AUTHORITATIVE_SIGNAL_PREDICATE +
+            " for share of s, rr, ro, selected_rc, rcap, authority_ctx, "
+            "authority_cfg, authority_pack"),
+            {"o": card["org_id"], "signal": card["signal_id"],
+             "run": authority.get("reasoning_run_id"), "candidate": authority.get("reasoning_candidate_id"),
+             "decision": authority.get("reasoning_decision_hash"), "cfg": authority.get("config_snapshot_id"),
+             "authority_time": as_of}).first() is not None
 
     def log_event(self, card_id, org_id, kind, *, cause=None, actor="system", detail=None, conn=None):
         row = {"id": new_id("cev"), "cid": card_id, "o": org_id, "k": kind, "cause": cause,
@@ -247,11 +396,13 @@ class CardStore:
                 # ⛔ WHICH KIND OF OUTPUT THIS IS (0190). The surface reads THIS row, so a
                 # lane that stops at `signals` reached nobody.
                 "output_lane, lane_reason, "
+                # STEP-14 (0220): the file whose decisions and questions this card carries, or NULL.
+                "file_id, "
                 "state, expires_at) values (:id,:sig,:o,:asg,:dom,:lvl,:band,:head,:sit,:score,"
                 "cast(:sb as jsonb),cast(:act as jsonb),cast(:why as jsonb),:tags,"
                 "cast(:art as jsonb),:rm,:cs,:tv,:rjc,:rjd,:abst,"
                 ":bsub,:brole,:bitem,:bwhy,:ckey,:cver,:crev,:owin,:osig,:odnc,"
-                "cast(:cvec as jsonb),:surf,:bver,:lane,:lreason,'queued',:exp) "
+                "cast(:cvec as jsonb),:surf,:bver,:lane,:lreason,:file,'queued',:exp) "
                 # PRESENTATION ONLY. `state`, `created_at`, `snooze_until`, `resolved_at` and
                 # `expires_at` are the user's side of the row and are never touched here: a
                 # refresh improves what the card SAYS, never where it sits or what was decided
@@ -336,6 +487,7 @@ class CardStore:
                  "lreason": card.get("lane_reason"),
                  "refreshable": list(self.REFRESHABLE_STATES),
                  "question_builder": QUESTION_CARD_BUILDER,
+                 "file": card.get("file_id"),
                  "exp": card["expires_at"]}).first()
             if inserted is None:
                 # The DO UPDATE's WHERE refused: a card exists and is NOT stale — either the
@@ -360,8 +512,10 @@ class CardStore:
                                detail={**detail, "builder_version": card.get("builder_version")},
                                conn=c)
                 return inserted.card_id, False, True
+            # STEP-14: the words the card showed first — what its first version (`card.versioned`) keeps as before.
             self.log_event(card_id, card["org_id"], "card.created",
-                           cause=card.get("resolved_rule"), detail=detail, conn=c)
+                           cause=card.get("resolved_rule"),
+                           detail={**detail, "version": 1, "words": _words_of(card, copy).as_mapping()}, conn=c)
         return card_id, True, False
 
     def transition(self, card_id, org_id, to_state, kind, *, cause=None, actor="system",
