@@ -175,7 +175,7 @@ def test_the_statement_count_did_NOT_move():
     meaning for a resolver improvement.
     """
     r = TC.resolution()
-    assert r["statements"] == 3_078, (
+    assert r["statements"] == 3_079, (
         f"`statements` is {r['statements']}. If the engine genuinely gained SQL, say so in a diff "
         "that moves this number deliberately -- but if the loop hop started expanding the "
         "statement LIST, that is the design this unit measured and rejected")
@@ -460,6 +460,9 @@ def test_the_statement_count_did_NOT_move():
     # ⛔ MOVED 3,077 → 3,078 by yc2_w27_s18/M48.C2.L-data.V0.U06 (STEP-18 B13): one UPDATE,
     # `reason/moments/screen_memory._retire` — a changed follow-up's previous observation superseded.
     # A literal; the follow-up's own UPDATE gained a column, not a statement.
+    # ⛔ MOVED 3,078 → 3,079 by yc2_w27_s18/M48.C3.L-data.V0.U11 (STEP-18 B20's second half): one
+    # DELETE, `scripts/gmail_l1.py` — the gmail events' `message_fingerprints`, before the events. A
+    # literal in its statement list.
 
 
 def test_the_loop_hop_closed_nine_table_holes_and_moved_them_to_the_fragment_bucket():

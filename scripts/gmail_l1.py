@@ -20,6 +20,11 @@ for sql in [
     "delete from l1_extraction_results where org_id=:o and event_id in (select event_id from source_events where org_id=:o and source='gmail')",
     "delete from raw_payloads where event_id in (select event_id from source_events where org_id=:o and source='gmail')",
     "delete from event_trace where event_id in (select event_id from source_events where org_id=:o and source='gmail')",
+    # ⛔ STEP-18 B20 (`yc2_w27_s18` M48.C3.L-data.V0.U11): a message's fingerprint claim names its
+    # event, and a claim by an event with no row is still honoured — leaving these behind made the
+    # re-fetch below skip every message as `seen_on_screen`. Selected through `source_events`, so
+    # before them.
+    "delete from message_fingerprints where org_id=:o and event_id in (select event_id from source_events where org_id=:o and source='gmail')",
     "delete from source_events where org_id=:o and source='gmail'",
     "delete from sync_cursors where org_id=:o and source='gmail'",
 ]:
