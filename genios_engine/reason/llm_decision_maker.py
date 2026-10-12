@@ -920,8 +920,20 @@ def decide_with_llm(request: Any, results: Sequence[ReasonerResult], *,
     selected = next((item for item in candidates
                      if item.disposition == CandidateDisposition.ELIGIBLE), None)
     play_by_id = {play.play_id: play for play in request.capability.plays}
+    # ⛔ THE LANE, routed where the outcome and the confidence first exist together — as the formula
+    # decider routes it (`decision_maker.DecisionMaker.decide`), by the pure router, the conflict read
+    # off the SAME uncertainty markers, and never from the model's answer: a lane is a route, and no
+    # model produces a route (STEP-13 §3.5, `yc2_w27_s13` M36.C1.L-logic.V0.U01; `03` F10, F186).
+    from genios_engine.reason.output_lane import route as _route_lane
+    lane = _route_lane(
+        outcome=outcome, confidence_bp=confidence_bp,
+        conflict_open=any(str(marker).startswith(("conflict_open", "cross_domain_contradiction"))
+                          for marker in uncertainty),
+        reader_actionable_block=False)
     decision = ReasoningDecision(
         outcome=outcome,
+        output_lane=lane.lane,
+        lane_reason=lane.reason,
         capability_id=request.capability.capability_id,
         capability_version=request.capability.version,
         context_snapshot_id=request.context.context_snapshot_id,
