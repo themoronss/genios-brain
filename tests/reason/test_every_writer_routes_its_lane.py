@@ -140,3 +140,21 @@ def test_deal_health_the_composite_writes_its_decisions_lane(engine, monkeypatch
         sid = c.execute(text("select signal_id from signals where org_id = :o and rule_id = :r"),
                         {"o": ORG, "r": K.COMPOSITE_RULE_ID}).scalar()
     assert _lane(engine, sid) == ("monitor", "a decision at 5000 bp is under the 6000 bp floor")
+
+
+# ── U05 · the team emitter ──────────────────────────────────────────────────────────────────────
+@pytest.mark.pg
+@pytest.mark.parametrize("kind, lane", [("team", "monitor"), ("verify", "conflict")])
+def test_team_what_a_post_pass_observed_is_routed(engine, kind, lane):
+    from genios_engine.reason.team import emit as E
+    eng = _without_references()
+    with eng.begin() as c:
+        card_id = E._write_card(
+            c, org_id=ORG, kind=kind, key=f"{kind}:k1", seat_id="seat_1", subjects=["node_1"],
+            headline="Asha holds three overdue loops", body="Asha holds three overdue loops",
+            actions=[], evidence=[], priority="high", capability=f"{kind}.situation", digest="d1",
+            now=AT, expires_at=AT + timedelta(days=7), held_card_id=None)
+    with engine.connect() as c:
+        sid = c.execute(text("select signal_id from cards where card_id = :c"), {"c": card_id}).scalar()
+    got, why = _lane(engine, sid)
+    assert got == lane and why and why.strip()
