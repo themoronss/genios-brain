@@ -19,7 +19,10 @@ ONE PASS, IN ONE ORDER.
       that carry anything (else `unquoted`, `misquoted`). A quote grounds nothing until it is MATCHED
       (M35.C2.L-logic.V1.U09): one the cited words do not hold — or given on an item whose words are not
       shown, an ask, a calculator, a situation, an older touch — drops on its own line (`quote:<n>`,
-      `misquoted`) and reaches no line and no card. Every name it writes is on its lines, by the card
+      `misquoted`) and reaches no line and no card. A fact the move rests on that cites only mails whose
+      words are not shown — or a meeting with none, to report what was said there — needs a quote it
+      cannot have (`unquoted`, M35.C2.L-logic.V1.U16); a claim about the meeting itself stands on its
+      line. Every name it writes is on its lines, by the card
       validator's own rule (`platform/grounding.invention_ok`, else `unsupported`). Every number it writes
       is on its lines — a decisive fact's on its quote, its mail's head and the readings it cites, never
       another sentence of the mail — else it is CORRECTED to the one value its one cited calculator line
@@ -104,6 +107,15 @@ _FACT_REF = re.compile(r"^fact:(\d+)$")
 #: An id as the dossier prints it — never a number, whatever digits it holds (`evt_marco_0811`).
 _PRINTED_ID = re.compile(r"\[[^\[\]\s]+\]")
 _THE_FOUNDER = re.compile(r"\bthe founder\b", re.I)
+#: How the dossier prints a meeting — held (`· a meeting ·`) or booked ahead (`a meeting at`).
+_A_MEETING = re.compile(r"(?:· a meeting\b|\ba meeting at\b)")
+#: A claim that reports what was SAID or agreed — a verb of saying, with no negation before it ("nothing on
+#: file says what was agreed" says that nothing was shown, not what was said).
+_SAYING = re.compile(r"\b(?:said|says|say|told|tells|asked|asks|agreed|agrees|promised|promises|committed|"
+                     r"commits|offered|offers|confirmed|confirms|mentioned|mentions|suggested|suggests|"
+                     r"proposed|proposes|replied|replies|explained|explains|stated|states|wrote|writes|"
+                     r"declined|declines|refused|refuses|accepted|accepts)\b", re.I)
+_NEGATION = re.compile(r"\b(?:no|not|nothing|never|none|nobody|neither|nor)\b", re.I)
 
 
 # ── words ─────────────────────────────────────────────────────────────────────────────────────────
@@ -307,6 +319,26 @@ class _Run:
         return checked
 
 
+def _reports_speech(claim: str) -> bool:
+    """Does the claim say what someone SAID — a verb of saying, no negation before it?"""
+    found = _SAYING.search(claim)
+    return found is not None and _NEGATION.search(claim[:found.start()]) is None
+
+
+def _unshown(run: "_Run", fact) -> str | None:
+    """The event a fact rests on as WORDS nobody was shown (M35.C2.L-logic.V1.U16, X22) — a mail whose
+    words the dossier does not print (an older touch, one memory holds no words for), or a meeting with
+    none when the claim reports what was said there — or None. What such an event shows is its own line,
+    when and with whom: a claim about the meeting itself stands on it."""
+    for e in fact.evidence:
+        if not is_event(e):
+            continue
+        meeting = any(_A_MEETING.search(dl.line) for dl in run.lines[e])
+        if not meeting or _reports_speech(fact.claim):
+            return e
+    return None
+
+
 def _rested_on(review: ExpertReview) -> set[int]:
     """The facts, by number, the move rests on — every fact when it names none; none without a move,
     for there is nothing to hold. A ref that names no fact of the review is no ground (`_strays`)."""
@@ -350,6 +382,9 @@ def _fact(run: _Run, n: int, decisive: bool) -> bool:
             return False
     elif fact.quote and not quoted:
         run.say(f"quote:{n}", C.DROPPED, C.MISQUOTED, fact.quote)    # the fact needs none: it alone drops
+    if decisive and not worded and (unshown := _unshown(run, fact)) is not None:
+        run.say(line, C.DROPPED, C.UNQUOTED, unshown)              # it needs a quote it cannot have
+        return False
     if quoted:
         run.quotes[n] = str(fact.quote)
     own = "\n".join([run.items(fact.evidence), run.quotes.get(n, "")])

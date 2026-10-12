@@ -7857,6 +7857,21 @@ yc2_w27_s13:
                       artifact: "genios_engine/reason/expert/verify.py"
                       verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_verify_quotes.py tests/reason/expert/test_verify_claims.py"
                       depends_on: [M35.C2.L-logic.V1.U02]
+                    - id: M35.C2.L-logic.V1.U16
+                      what: >
+                        A decisive claim on words nobody was shown is unquoted (crosscheck X22): a fact the
+                        move rests on that cites no mail whose words are shown, but a mail whose words the
+                        dossier does not print (an older touch, one memory holds no words for), needs a
+                        quote it cannot have — dropped `unquoted`, naming the event; a meeting with no words
+                        likewise when the claim reports what was said there (a verb of saying, no negation
+                        before it). What such an event shows is its own line: a claim about the meeting
+                        itself ("a call is booked for the 25th", "memory holds no words for it") stands on
+                        it — as the golden set's authored answers rest on it (F07, F28, F29, F54: holding
+                        every decisive fact on a wordless event would drop six of them, F28 a passing
+                        must-detect).
+                      artifact: "genios_engine/reason/expert/verify.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_verify_unquoted.py tests/reason/expert/test_verify_quotes.py"
+                      depends_on: [M35.C2.L-logic.V1.U09]
         - id: M35.C3
           name: Where the check runs
           layers:
