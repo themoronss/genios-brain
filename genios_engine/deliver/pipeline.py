@@ -86,6 +86,9 @@ def _open_signals_without_cards(graph, org_id: str,
             # so no compiled card could ever name one (M30.C3.L-data.V1.U03); the review state is
             # what D3's "playbook not yet reviewed" is decided on.
             "authority_play.declared_play->'success_events' as play_success_events, "
+            # STEP-14 · THE MOVE WHOLE, off the same audited play (`reason/expert/decide._play`): who, what, for
+            # whom, by when, to whom — what a file card's version names as its ask, recipient and date (s14-D1).
+            "authority_play.declared_play->'metadata' as play_metadata, "
             "authority_play.declared_play->'metadata'->>'review_state' as play_review_state, "
             "rcap.manifest->>'domain' as capability_domain, "
             # The DecisionObject's own content (0070). Reading it here is what retires the API
@@ -135,12 +138,12 @@ def _open_signals_without_cards(graph, org_id: str,
     for r in rows:
         d = dict(r)
         for jf in ("score_inputs", "evidence", "composite_members", "capability_render",
-                   "play_success_events"):
+                   "play_success_events", "play_metadata"):
             if isinstance(d.get(jf), str):
                 try:
                     d[jf] = json.loads(d[jf])
                 except (ValueError, TypeError):
-                    d[jf] = {} if jf in ("score_inputs", "capability_render") else []
+                    d[jf] = {} if jf in ("score_inputs", "capability_render", "play_metadata") else []
         out.append(d)
     return out
 
@@ -247,6 +250,7 @@ def question_card(graph, org_id: str, row: dict, eval_time: datetime) -> tuple[d
 
     from genios_engine.reason.expert import store as reviews
     from genios_engine.reason.expert.asks import WHY_FIND_OUT, WHYS
+    from genios_engine.contracts.card_version import QUESTION_MODE
     from genios_engine.reason.expert.decide import SITUATION_IS, fingerprint_of
 
     from .bands import band
@@ -299,6 +303,10 @@ def question_card(graph, org_id: str, row: dict, eval_time: datetime) -> tuple[d
         # The app and the API; never an agent's to answer for you.
         "surfaces": ["app", "api"], "context_tags": [],
         "config_snapshot_id": row.get("config_snapshot_id"), "builder_version": QUESTION_CARD_BUILDER,
+        # STEP-14: the file's card, asking — a version of the file's one card, its ask the question (s14-D1).
+        "file_id": node,
+        "_words": {"headline": row["question"], "situation": reading or because, "lane": lane.lane,
+                   "mode": QUESTION_MODE, "ask": row["question_id"]},
         "expires_at": expires, "_authority_time": eval_time,
         "_question_authority": {"reasoning_run_id": row["reasoning_run_id"],
                                 "reasoning_decision_hash": row["reasoning_decision_hash"],
@@ -329,6 +337,12 @@ def _build_question_cards(graph, card_store: CardStore, org_id: str, eval_time: 
             continue
         try:
             card, copy = question_card(graph, org_id, row, eval_time)
+            # STEP-14: the file's card, asking — a VERSION of the file's one card when it has one.
+            versioned = _version_file_card(card_store, card, copy, token, out)
+            if versioned is not None:
+                if versioned:
+                    tally_lane(out, lane=card["output_lane"])
+                continue
             card_id, created, refreshed = card_store.insert_card(card, copy, build_claim_token=token)
             if created:
                 out["built"] += 1
@@ -341,6 +355,98 @@ def _build_question_cards(graph, card_store: CardStore, org_id: str, eval_time: 
                 out["already_built"] += 1
         finally:
             card_store.release_build(org_id, row["signal_id"], token)
+
+
+# ── STEP-14 · ONE FILE, ONE CARD (`yc2_w27_s14` M42.C3.L-integration.V2.U03; STEP-14 §8.4 items 1-3, s14-D1) ──────────
+#
+# Both builders — the decision loop and the question cards — VERSION the file's card onto the file's new signal
+# (`CardStore.version_card`) where they used to insert a second card. A version that is MATERIAL (another ask,
+# recipient, date, lane or mode) goes through the decision's push gate; a reworded or renewed one is never pushed. A
+# card an agent holds makes the file's next version wait. At the end of the pass a file card whose signal closed and
+# that no version reached is expired REPLACED, counted — a card from before 0220 among them, once — and
+# `files_with_two_open_cards` is measured.
+
+#: The decision's mode, as its run recorded it on the signal (`reason/expert/decide.MODE_MARKER`).
+_MODE_MARK = "expert_mode:"
+
+
+def _decision_words(sig: dict, draft: dict) -> dict:
+    """What an expert decision's card shows, as a version names it: its move whole (the audited play's metadata),
+    the ask it answers — the open ask it names (`answers`), else the move itself, so a move to another end is
+    another ask — whom its draft goes to, by when, its lane, and the mode its run decided. The same move in other
+    words is told from another ask only where the review names the ask it answers."""
+    move = sig.get("play_metadata") if isinstance(sig.get("play_metadata"), dict) else {}
+    mode = next((str(u)[len(_MODE_MARK):] for u in (sig.get("uncertainty") or ())
+                 if str(u).startswith(_MODE_MARK)), None)
+    what = " ".join(str(move.get("what") or "").lower().split())
+    ask = move.get("answers") or (f"move:{what}" if what else None)
+    return {"headline": ".", "situation": ".", "move": move.get("what"), "lane": draft.get("output_lane"),
+            "mode": mode, "ask": ask, "recipient": move.get("to"), "by_when": move.get("by_when")}
+
+
+def _version_file_card(card_store, card: dict, copy: dict, token: str, out: dict):
+    """Version the file's card onto this card's signal. None: the card names no file, or its file has no card to
+    version (insert it); False: the file's card waits on an agent, or refused this version; True: versioned."""
+    file_id = card.get("file_id")
+    if not file_id:
+        return None
+    current = card_store.file_card(card["org_id"], file_id)
+    if current is None or current.signal_id == card["signal_id"]:
+        return None                                   # no card yet — or this signal's own: a refresh
+    if current.held:
+        out["version_waits"] += 1
+        return False
+    done = card_store.version_card(card, copy, build_claim_token=token, file_card=current)
+    if done is None:
+        out["version_refused"] += 1
+        return False
+    _card_id, _version, material, change = done
+    out["versioned"] += 1
+    if not material:
+        out["renewed" if change == "renewed" else "reworded"] += 1
+    card["_versioned"] = {"card_id": _card_id, "material": material, "change": change}
+    return True
+
+
+#: The file cards whose signal closed and that no version reached: open, not held by an agent — a file's card, or
+#: an expert or question card from before 0220 that names no file.
+_ORPHANED_FILE_CARDS = (
+    "select k.card_id from cards k join signals s on s.org_id = k.org_id and s.signal_id = k.signal_id "
+    " where k.org_id = :o and k.state = any(:open) and k.state <> 'claimed' and s.status <> 'open' "
+    "   and (k.file_id is not null or k.capability_key = :expert or k.builder_version = :question_builder) "
+    "   and not exists (select 1 from agent_claims ac where ac.org_id = k.org_id and ac.card_id = k.card_id "
+    "                   and ac.released_at is null and ac.result is null)")
+
+#: Files with more than one open card: by the file a card names — or, an expert or question card from before 0220,
+#: by its signal's subject.
+_FILES_WITH_TWO_OPEN_CARDS = (
+    "select count(*) from (select coalesce(k.file_id, s.subject_node_id) as file from cards k "
+    "  join signals s on s.org_id = k.org_id and s.signal_id = k.signal_id "
+    " where k.org_id = :o and k.state = any(:open) "
+    "   and (k.file_id is not null or k.capability_key = :expert or k.builder_version = :question_builder) "
+    " group by 1 having count(*) > 1) twice")
+
+
+def _close_the_files_pass(graph, org_id: str, out: dict) -> None:
+    """End of pass: the orphaned file cards expired REPLACED, counted, and the files with two open cards measured.
+    ⛔ A measurement may never kill what it measures: unreadable, it says so (`file_cards_unmeasured`)."""
+    from genios_engine.platform import card_lifecycle
+    from genios_engine.reason.expert.decide import CAPABILITY_ID
+
+    params = {"o": org_id, "open": list(card_lifecycle.OPEN_STATES), "expert": CAPABILITY_ID,
+              "question_builder": QUESTION_CARD_BUILDER}
+    try:
+        with graph.engine.begin() as c:
+            orphans = [r.card_id for r in c.execute(text(_ORPHANED_FILE_CARDS), params)]
+            if orphans:
+                out["file_cards_replaced"] += len(card_lifecycle.expire_cards(
+                    c, org_id=org_id, cause=card_lifecycle.REPLACED, card_ids=orphans))
+            out["files_with_two_open_cards"] = int(c.execute(text(_FILES_WITH_TWO_OPEN_CARDS), params).scalar() or 0)
+    except Exception as exc:      # noqa: BLE001 — see the docstring
+        import logging
+
+        logging.getLogger(__name__).warning("could not close the files' pass for org=%s: %s", org_id, exc)
+        out["file_cards_unmeasured"] = 1
 
 
 def _apply_abstention(signal: dict, effective: dict) -> dict:
@@ -513,6 +619,10 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
            # STEP-13 · the cards a held file asks its question on (`_build_question_cards`), zeroed so a
            # pass that asked nothing says so.
            "question_cards": 0,
+           # STEP-14 · one file, one card: the versions written (and of them the quiet ones, never pushed), a file's
+           # next version waiting on an agent or refused, the file cards no version reached, and the measurement.
+           "versioned": 0, "renewed": 0, "reworded": 0, "quiet_version_not_pushed": 0, "version_waits": 0,
+           "version_refused": 0, "file_cards_replaced": 0, "files_with_two_open_cards": 0,
            # ⛔ THE LANE MIX. Zeroed for the same reason as the three above — "a key that appears
            # only when it fires is a key nobody knows exists" — and ALL SIX are zeroed, including
            # `unrouted`, because today every production signal is unrouted and a mix that hid that
@@ -696,9 +806,23 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
             over_budget = budget_full(card_store, org_id, draft["assignee"], eval_time, budget)
             if over_budget:
                 out["over_budget_no_push"] += 1
-            card_id, created, refreshed = card_store.insert_card(
-                draft, copy, build_claim_token=claim_token)
-            if card_id is None or not created:
+            # STEP-14: an expert card is its FILE's — the file's next decision VERSIONS it, never a second card.
+            if draft.get("file_id"):
+                draft["_words"] = _decision_words(sig, draft)
+            versioned = _version_file_card(card_store, draft, copy, claim_token, out)
+            if versioned is not None:
+                if not versioned:
+                    continue
+                tally_lane(out, lane=draft.get("output_lane"))
+                card_id = draft["_versioned"]["card_id"]
+                if not draft["_versioned"]["material"]:
+                    # A rewording or a renewal is a quiet version — kept in its history, pushed to nobody (s14-D1).
+                    out["quiet_version_not_pushed"] += 1
+                    continue
+            else:
+                card_id, created, refreshed = card_store.insert_card(
+                    draft, copy, build_claim_token=claim_token)
+            if versioned is None and (card_id is None or not created):
                 if refreshed:
                     # The words on an existing card improved. Counted apart from `already_built`
                     # because they mean opposite things — one is work done, the other is work
@@ -710,7 +834,8 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
                 elif card_id is not None:
                     out["already_built"] += 1
                 continue
-            out["built"] += 1
+            if versioned is None:
+                out["built"] += 1
             # ⛔ WHICH KIND OF OUTPUT, COUNTED — INCLUDING `suppress` AND INCLUDING `unrouted`.
             #
             # AT THE TWO SITES WHERE A CARD IS WRITTEN, not where a draft is composed. A draft can
@@ -724,7 +849,8 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
             # The lane the DRAFT resolved, never the raw column: `build_draft` already read the
             # pair through `lane_display.describe`, and resolving it twice is how a count and a
             # label come to give two answers to one question.
-            tally_lane(out, lane=draft.get("output_lane"))
+            if versioned is None:
+                tally_lane(out, lane=draft.get("output_lane"))
             out["llm" if copy["render_mode"] == "llm" else "raw_slot"] += 1
             try:
                 # ENQUEUED, not POSTed. The inline send from inside this build loop was the
@@ -787,7 +913,8 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
                     and draft["assignee"] and not over_budget
                     and card_store.transition(
                         card_id, org_id, "surfaced", "card.surfaced", cause="push",
-                        allowed_from=("queued",))):
+                        # A material VERSION may interrupt again, from where it sits (STEP-14, s14-D1).
+                        allowed_from=("queued", "surfaced") if versioned else ("queued",))):
                 out["pushed"] += 1
                 # Counted under its canonical name as well as the mechanical one, so an operator
                 # asking "how many decision requests did we surface" has an answer that is not
@@ -801,6 +928,8 @@ def build_cards_for_org(*, graph, card_store: CardStore, org_id: str, llm=None,
     # STEP-13 · the questions held files ask, each on its own card (M36.C2.L-interface.V3.U05) — after the
     # decisions, inside the recall guard below: a question card is a card, its lane tallied.
     _build_question_cards(graph, card_store, org_id, eval_time, out)
+    # STEP-14 · the file cards no version reached, and the files with two open cards (see `_close_the_files_pass`).
+    _close_the_files_pass(graph, org_id, out)
 
     # ⛔ THE RECALL GUARD, RUN — and until 2026-10-01 it was written, tested and never invoked.
     #

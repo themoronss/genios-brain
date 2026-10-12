@@ -270,6 +270,9 @@ def _play(review: ExpertReview, checked: CheckedReview, eval_time: datetime) -> 
         success_events=(done,),
         metadata={"who": move.who, "what": words.headline, "for_whom": move.for_whom, "to": words.to,
                   "by_when": move.by_when.isoformat() if move.by_when else None,
+                  # STEP-14 (s14-D1): the open ask the move answers — what a version of the file's card names as
+                  # its ask, so another ask is told from the same ask in other words.
+                  "answers": move.answers if checked.stands("answers") else None,
                   "alternative": review.alternative, "wait_or_stop": review.wait_or_stop,
                   "done_when": done,
                   # ⛔ READ-ONLY, AND NO RECIPIENT IS REACHED: the move is the founder's to make.

@@ -153,12 +153,7 @@ def test_the_same_question_asked_again_keeps_its_card(world, cards):
 
 # ⛔ RESTATED by yc2_w27_s14/M42.C2.L-integration.V2.U05 (`03` F176, s14-F13, s14-D3): a new question and a decision
 # after a question are VERSIONS of the file's one card — the old card is no longer expired REPLACED and a second one
-# built. Red until delivery versions it (M42.C3.L-integration.V2.U03), which removes the markers.
-_UNTIL_VERSIONED = pytest.mark.xfail(strict=True, raises=AssertionError,
-                                     reason="the file's card is versioned by M42.C3.L-integration.V2.U03")
-
-
-@_UNTIL_VERSIONED
+# built. Green since delivery versions it (M42.C3.L-integration.V2.U03 removed the markers).
 def test_a_new_question_is_the_cards_next_version(world, cards):
     store, org, registry, anchor, events = _asked(world)
     _build(store, cards, org)
@@ -174,7 +169,6 @@ def test_a_new_question_is_the_cards_next_version(world, cards):
     assert _queued(cards, org, later) == [card.card_id]
 
 
-@_UNTIL_VERSIONED
 def test_a_decision_after_the_question_is_the_cards_next_version(world, cards):
     from tests.reason.expert.test_a_covered_file_decides_once import _write as _write_act
     store, org, registry, anchor, events = _asked(world)
