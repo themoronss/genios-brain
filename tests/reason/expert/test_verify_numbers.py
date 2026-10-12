@@ -46,7 +46,9 @@ def test_the_correction_reaches_every_card_text_that_repeats_it():
 def test_a_wrong_number_with_no_one_calculator_drops_its_fact():
     """Fact 4 cites a mail, not a calculator: nothing can say what the number should be."""
     checked = _check(fact4={"claim": "Introly introduced Marco on 7 Aug"})
-    assert _verdict(checked, "fact:4") == C.LineVerdict("fact:4", C.DROPPED, C.WRONG_NUMBER, "number:7")
+    # ⛔ RESTATED by M35.C2.L-logic.V1.U10: "7 Aug" is read as the DATE it is (held to the dates its lines
+    # print), so the detail names the date, not a bare 7.
+    assert _verdict(checked, "fact:4") == C.LineVerdict("fact:4", C.DROPPED, C.WRONG_NUMBER, "number:7 Aug")
     two = _check(fact3={"claim": "Marco answered in 1 day and 9 hours"})
     assert _verdict(two, "fact:3").reason == C.WRONG_NUMBER, "two numbers off: no guess"
 

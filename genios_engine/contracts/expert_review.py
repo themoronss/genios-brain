@@ -50,9 +50,12 @@ read were nowhere in the answer:
 
 Each is optional in the answer, so a first-version answer reads exactly as before and validates exactly
 as before. `validate` adds only what can be checked against the dossier: a `rests_on` naming no fact of
-the review (`ungrounded_move`), and an `answers` that is no ask the dossier showed. Neither a quote nor a
-recipient is a text the review WRITES: the check holds each against the mail itself, so neither is read
-for numbers here.
+the review (`ungrounded_move`, refused whole: a move with no ground is no move), and — named, never
+refused whole (M35.C1.L-contract.V0.U04, `06` D59) — a stray ref beside the facts a `rests_on` does name,
+and an `answers` that is no ask the dossier showed (`unknown_evidence`): a slip of one optional field
+drops that line in the check, and the move stands on what it names. Neither a quote nor a recipient is a
+text the review WRITES: the check holds each against the mail itself, so neither is read for numbers
+here.
 
 Pure and frozen: no I/O, no clock, no model.
 """
@@ -84,7 +87,7 @@ UNGROUNDED_PATTERN = "ungrounded_pattern"
 UNKNOWN_STAGE = "unknown_stage"
 NO_NEXT_MOVE = "no_next_move"
 NUMBER_NOT_IN_DOSSIER = "number_not_in_dossier"
-#: STEP-13: a move resting on no fact of the review, or answering something that is no ask.
+#: STEP-13: a move resting on no fact of the review at all.
 UNGROUNDED_MOVE = "ungrounded_move"
 REFUSALS: tuple[str, ...] = (UNCITED_FACT, UNKNOWN_EVIDENCE, UNGROUNDED_INFERENCE, UNGROUNDED_PATTERN,
                              UNKNOWN_STAGE, NO_NEXT_MOVE, NUMBER_NOT_IN_DOSSIER, UNGROUNDED_MOVE)
@@ -92,8 +95,11 @@ REFUSALS: tuple[str, ...] = (UNCITED_FACT, UNKNOWN_EVIDENCE, UNGROUNDED_INFERENC
 ASK_PREFIX = "loop:"
 
 _FACT_REF = re.compile(r"^fact:(\d+)$")
-# A comma groups thousands only before exactly three digits: "1,400" is one number, "7,8" is two.
-_NUMBER = re.compile(r"\d+(?:,\d{3})*(?:\.\d+)*")
+# A comma groups thousands only before exactly three digits: "1,400" is one number, "7,8" is two — or, in
+# Indian grouping, pairs before the last three: "12,50,000" (twelve lakh fifty thousand) is one number, not
+# "12" and "50000" (STEP-13 crosscheck X45, M35.C2.L-logic.V1.U10).
+NUMBER_PATTERN = r"\d{1,2}(?:,\d{2})+,\d{3}(?:\.\d+)?(?!\d)|\d+(?:,\d{3})*(?:\.\d+)*"
+_NUMBER = re.compile(NUMBER_PATTERN)
 
 
 def number_tokens(text: str | None) -> frozenset[str]:
@@ -430,6 +436,12 @@ class Validation:
         return tuple(sorted({kind for kind, _ in self.problems}))
 
 
+def fact_ref(ref: str, facts: int) -> int | None:
+    """The fact `ref` names — `fact:<n>`, n one of the review's `facts` — or None."""
+    m = _FACT_REF.match(str(ref))
+    return int(m.group(1)) if m is not None and 1 <= int(m.group(1)) <= facts else None
+
+
 def _grounds(refs: tuple[str, ...], facts: int, catalogue: DossierCatalogue, what: str,
              ungrounded: str) -> list[tuple[str, str]]:
     """Each way a line's `based_on` rests on nothing the review or its dossier holds."""
@@ -472,13 +484,18 @@ def validate(review: ExpertReview, catalogue: DossierCatalogue) -> Validation:
         problems.append((NO_NEXT_MOVE, review.mode))
     move = review.next_move
     if move is not None:
-        for ref in move.rests_on:
-            m = _FACT_REF.match(ref)
-            if m is None or not 1 <= int(m.group(1)) <= len(review.facts):
-                problems.append((UNGROUNDED_MOVE, f"the next move rests on {ref}"))
+        # A move resting on NO fact of the review is no move (`ungrounded_move`, refused whole). A stray
+        # ref beside the facts it does name is a slip of one optional field: named, never refused whole —
+        # the check drops that line and the move stands on its facts (M35.C1.L-contract.V0.U04).
+        strays = [ref for ref in move.rests_on if fact_ref(ref, len(review.facts)) is None]
+        grounded = len(strays) < len(move.rests_on)
+        for ref in strays:
+            problems.append((UNKNOWN_EVIDENCE, f"the next move rests on {ref}, no fact of the review")
+                            if grounded else (UNGROUNDED_MOVE, f"the next move rests on {ref}"))
         if move.answers is not None:
+            # An `answers` that is no ask the dossier showed loses its line, as an unprinted ask does.
             if not move.answers.startswith(ASK_PREFIX):
-                problems.append((UNGROUNDED_MOVE, f"the next move answers {move.answers}, no ask"))
+                problems.append((UNKNOWN_EVIDENCE, f"the next move answers {move.answers}, no ask"))
             elif move.answers not in catalogue.evidence_ids:
                 problems.append((UNKNOWN_EVIDENCE, f"the next move answers {move.answers}"))
     stated = frozenset().union(*(number_tokens(t) for t in review.texts()))
@@ -488,8 +505,9 @@ def validate(review: ExpertReview, catalogue: DossierCatalogue) -> Validation:
 
 
 __all__ = ["ASK_PREFIX", "Appraisal", "DossierCatalogue", "ExpectedVsActual", "ExpertReview", "Fact", "Frames",
+           "fact_ref",
            "Hypothesis", "Inference", "LEVELS", "MODES", "MOVING", "NO_NEXT_MOVE",
-           "NUMBER_NOT_IN_DOSSIER", "NextMove", "PATTERN_KINDS", "Pattern", "ProposedKind", "REFUSALS",
+           "NUMBER_NOT_IN_DOSSIER", "NUMBER_PATTERN", "NextMove", "PATTERN_KINDS", "Pattern", "ProposedKind", "REFUSALS",
            "REVERSIBILITY",
            "Scenarios", "UNCITED_FACT", "UNGROUNDED_INFERENCE", "UNGROUNDED_MOVE", "UNGROUNDED_PATTERN",
            "UNKNOWN_EVIDENCE",

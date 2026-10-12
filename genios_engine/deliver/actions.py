@@ -126,16 +126,25 @@ def ingest_action(*, card_store, graph, org_id: str, card_id: str, actor: str, a
             # the run that asked it, the signal bound to that run, the question still open — and nothing
             # else. Its question row is locked with the card: an answer is kept once.
             from genios_engine.deliver.store import QUESTION_CARD_BUILDER, QUESTION_CARD_SQL
-            card = c.execute(text(
+            question_door = text(
                 "select k.card_id, k.signal_id, k.org_id, k.assignee, k.state, k.expires_at, "
                 "question_asked.question_id "
                 "from cards k join signals s on s.signal_id=k.signal_id and s.org_id=k.org_id "
                 + QUESTION_SIGNAL_JOINS +
                 " where k.card_id=:card and k.org_id=:o and s.status='open' "
                 "and k.expires_at > :authority_time and " + QUESTION_CARD_SQL +
-                " for update of k, s, question_asked for share of question_rr, question_ro"),
-                {"card": card_id, "o": org_id, "authority_time": eval_time,
-                 "question_builder": QUESTION_CARD_BUILDER}).mappings().first()
+                " for update of k, s, question_asked for share of question_rr, question_ro")
+            asked = {"card": card_id, "o": org_id, "authority_time": eval_time,
+                     "question_builder": QUESTION_CARD_BUILDER}
+            card = c.execute(question_door, asked).mappings().first()
+            if card is None:
+                # ⛔ ONCE MORE (STEP-13, `03` X43): a sweep that RE-BOUND this question — the same words, asked
+                # by the run asking now (`reason/expert/asks`) — committed while this press waited on its
+                # locks. PostgreSQL re-checks the locked rows at their new version against the run read
+                # before (READ COMMITTED), finds the signal bound to another run, and returns nothing: the
+                # answer refused V-09 with its question still open. A second read takes a fresh snapshot and
+                # sees the re-bind. Once: a card that is no question, or truly stale, is refused as before.
+                card = c.execute(question_door, asked).mappings().first()
             if card is not None:
                 question_id = card["question_id"]
         if card is None:

@@ -752,7 +752,7 @@
       "actual": "Leela booked a call for tomorrow afternoon within hours of the introduction; the founder has not written in this file."
      },
      "scenarios": {
-      "do_nothing": "The founder joins the call cold, and the chance to shape it is lost.",
+      "do_nothing": "You join the call cold, and the chance to shape it is lost.",
       "act": "Confirming the invite and reading a one-page brief on Ferngrove and Leela make the call count.",
       "best": "The call lands well, and Ferngrove becomes a design partner.",
       "worst": "The invite is missed and Leela waits on an empty call.",

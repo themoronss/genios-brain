@@ -468,7 +468,7 @@
       "actual": "The assignment and its date are on file; nothing from us is in the file yet, and the date is still ahead."
      },
      "scenarios": {
-      "do_nothing": "The seventeenth passes without a submission, and Nimbus Labs misses a cohort deadline in the programme it is in.",
+      "do_nothing": "The seventeenth passes without a submission, and you miss a cohort deadline in the programme you are in.",
       "act": "Blocking time this week for the teardown and submitting it before the seventeenth keeps Nimbus Labs in good standing with the programme.",
       "best": "The teardown goes in early and doubles as a real review of our own pricing page.",
       "worst": "It is left to the last night and goes in rushed, or late, in front of the programme's lead.",

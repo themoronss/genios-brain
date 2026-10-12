@@ -25,13 +25,18 @@ def _check(world_kw=None, **over) -> C.CheckedReview:
     return check_review(W.review(**over), dossier.text, people)
 
 
+def _verdict_of(checked: C.CheckedReview, line: str) -> C.LineVerdict:
+    return next(v for v in checked.verdicts if v.line == line and v.verdict != C.NOTED)
+
+
 def test_the_faithful_review_is_shown_in_its_own_words():
     checked = _check()
     assert checked.fate == C.SHOWN and checked.question is None and checked.because is None
     assert checked.words == C.CardWords(
         headline=W.ANSWER["next_move"]["what"], situation=W.ANSWER["frames"]["primary"],
         done_when=W.ANSWER["done_when"], draft=W.ANSWER["draft"], to="Marco",
-        evidence=(W.ASK, W.ASK_DECK), quotes=(W.ANSWER["facts"][0]["quote"],)), \
+        evidence=(W.ASK, W.ASK_DECK), quotes=(W.ANSWER["facts"][0]["quote"],),
+        do_nothing=W.ANSWER["scenarios"]["do_nothing"]), \
         "the headline carries the mails and asks its move rests on, and their quotes"
     assert checked.cited == tuple(sorted({W.ASK, W.ASK_DECK, W.REPLY_TIME, W.INTRO}))
     assert all(v.verdict == C.KEPT for v in checked.verdicts), checked.verdicts
@@ -40,7 +45,10 @@ def test_the_faithful_review_is_shown_in_its_own_words():
 def test_a_move_whose_ground_fell_is_held_and_asks_about_it():
     checked = _check(fact1={"quote": "could you send your financials before we set up a call"})
     assert checked.fate == C.HELD
-    assert checked.because == "misquoted: could you send your financials before we set up a call (fact 1)"
+    # ⛔ RESTATED by M35.C3.L-integration.V2.U05 (crosscheck X10): the held `because` is a closed phrase the
+    # founder reads on the question card — the model's quote stays in the verdict, never on the card.
+    assert checked.because == C.HELD_BECAUSE[C.MISQUOTED]
+    assert _verdict_of(checked, "fact:1").detail == "could you send your financials before we set up a call"
     assert checked.question == ("Is it so: “Marco asked for a short deck before setting up a call”? "
                                 "It is not in what it cites.")
     assert checked.words.headline is None and checked.words.draft is None and checked.words.to is None

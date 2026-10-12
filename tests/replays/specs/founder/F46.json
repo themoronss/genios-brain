@@ -373,7 +373,7 @@
       "actual": "No deck has gone as far as the file shows, and it has been quiet for over a week since his mail."
      },
      "scenarios": {
-      "do_nothing": "Ravi's interest cools, the meeting Arjun asked for is never booked, and Seedfund drops out of the round without saying so.",
+      "do_nothing": "Ravi's interest cools, the meeting you asked for is never booked, and Seedfund drops out of the round without saying so.",
       "act": "The deck reaches Ravi with an apology for the wait and a request for a time, and the call goes in the calendar.",
       "best": "Ravi reads the deck, the call is booked, and Seedfund moves toward a partner discussion.",
       "worst": "The delay reads as a founder not raising in earnest, and Ravi does not take the call.",

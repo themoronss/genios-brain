@@ -240,7 +240,7 @@
       "actual": "The pitch never arrived: it bounced, so there is nothing for Ardent Ridge to answer."
      },
      "scenarios": {
-      "do_nothing": "Ardent Ridge never hears of Nimbus Labs, and the file sits as if the fund were deciding.",
+      "do_nothing": "Ardent Ridge never hears of you, and the file sits as if the fund were deciding.",
       "act": "A working address, ideally a named partner's, puts the pitch in front of the fund while the seed round is still open.",
       "best": "The resent pitch lands with a partner who asks for a call.",
       "worst": "No working address turns up, and the fund stays out of reach without an introduction.",

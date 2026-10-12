@@ -281,7 +281,7 @@
       "actual": "Arjun told Introly what kind of investor he wants; Introly asked at once for the stage and amount, and the file holds no answer from Arjun yet."
      },
      "scenarios": {
-      "do_nothing": "Introly's question stays open and the next introductions wait on it; the raise loses introductions Arjun asked for.",
+      "do_nothing": "Introly's question stays open and the next introductions wait on it; the raise loses introductions you asked for.",
       "act": "A one-line answer — the seed round and its size — lets Introly line up introductions to investors in AI tooling.",
       "best": "Introly matches Arjun with investors in AI tooling who back seed rounds, and the introductions arrive soon after.",
       "worst": "The question sits unanswered and the introductions stop, or Arjun states an amount he later wishes he had not.",

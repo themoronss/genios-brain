@@ -182,7 +182,7 @@
       "actual": "The founder offered two times; as far as the file shows, Rohan has not yet picked one."
      },
      "scenarios": {
-      "do_nothing": "Rohan picks a time or proposes another, and the call is booked without anything more from the founder.",
+      "do_nothing": "Rohan picks a time or proposes another, and the call is booked without anything more from you.",
       "act": "A chaser now would press Rohan before he has had a fair chance to answer, and add nothing to the offer.",
       "best": "Rohan accepts one of the two times and the call goes in the calendar.",
       "worst": "Both times pass without an answer, and the call drifts until someone offers new times.",

@@ -159,3 +159,98 @@ def test_a_card_whose_question_is_no_longer_open_takes_no_press(world, cards, ac
         Q.answer(c, org_id=org, question_id=asked.question_id, words="answered in the app", by="u", at=AT)
     out = _press(store, cards, org, card.card_id, action, words=WORDS, snooze_option="4h")
     assert out == {"ok": False, "error": "stale_or_unauthorized_card", "code": "V-09"}
+
+
+def test_a_question_you_answered_is_never_carded_again(world, cards):
+    """⛔ `03` X25 (M36.C2.L-data.V2.U12). Your answer moves the file; a later review asks another question, on its
+    own card; a later one still asks the words you answered. Nothing is asked: the open question it no longer
+    asks retires, its card REPLACED, and no card asks you again what you told us."""
+    from genios_engine.platform import card_lifecycle
+    from tests.reason.expert.test_a_covered_file_decides_once import _fund
+    from tests.reason.expert.test_a_held_file_asks import _find_out
+    store, org, registry, anchor, card = _card(world, cards)
+    _anchor, _situations, events = _fund(store, org)
+    _press(store, cards, org, card.card_id, "answer", words=WORDS)
+    later = AT + timedelta(hours=1)
+    _find_out(store, org, anchor, "ffp-fund-findout-review-001", events, question="Who at the fund decides?")
+    _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-001"}, at=later)
+    assert _build(store, cards, org, at=later)["question_cards"] == 1
+    last = later + timedelta(hours=1)
+    _find_out(store, org, anchor, "ffp-fund-findout-review-002", events)
+    counts = _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-002"}, at=last)
+    assert counts.get("expert_question_answered_already") == 1, counts
+    assert _build(store, cards, org, at=last)["question_cards"] == 0
+    answered, other = _cards(store, org)
+    assert (answered.card_id, answered.state) == (card.card_id, "resolved")
+    assert other.state == "expired"
+    with store.engine.connect() as c:
+        cause = c.execute(text("select cause from card_events where org_id = :o and card_id = :k "
+                               "and kind = :kind"), {"o": org, "k": other.card_id,
+                                                     "kind": card_lifecycle.EXPIRED}).scalar()
+    assert cause == card_lifecycle.REPLACED
+    states = sorted((q.question, q.state, q.retired_why) for q in _questions(store, org, anchor))
+    assert states == sorted([("Did Arjun ask for last quarter's metrics or this quarter's?", Q.ANSWERED, None),
+                             ("Who at the fund decides?", Q.RETIRED, Q.NO_LONGER_ASKED)])
+    assert _queued(cards, org, last) == []
+
+
+def test_the_answer_button_says_what_it_does():
+    """⛔ `03` X42: the card's Answer action was annotated `none` (`api/routes._ACTION_EFFECT`) — a surface labelling
+    transitions honestly read "answer" as a button that does nothing. It keeps your words; it sends nothing."""
+    from genios_engine.api.routes import _annotate_effects
+    [answer, snooze] = _annotate_effects([{"type": "answer", "label": "Answer", "question_id": "fq_x"},
+                                         {"type": "snooze"}])
+    assert (answer["effect"], snooze["effect"]) == ("answer_kept", "defer_surface")
+
+
+def test_an_answer_pressed_while_the_question_is_rebound_is_kept(world, cards):
+    """⛔ `03` X43 (two connections, run): a sweep re-binds the question — the same words, asked by the run asking
+    now — while you press Answer. The press waited for the row locks and PostgreSQL re-checked the locked rows
+    against the run they WERE bound to: refused V-09, the question still open, your words lost. The door is read
+    once more, and sees the re-bind: your answer is kept."""
+    import threading
+    import time
+
+    from tests.reason.expert.test_a_covered_file_decides_once import _open_signals
+    store, org, registry, anchor, card = _card(world, cards)
+    [first] = _open_signals(store, org, anchor)
+    with store.engine.connect() as c:
+        one = c.execute(text("select reasoning_run_id, reasoning_decision_hash from signals where org_id = :o "
+                             "and signal_id = :s"), {"o": org, "s": first.signal_id}).one()
+    with store.engine.begin() as c:            # the gate has no memory of it: decided again, re-bound
+        c.execute(text("delete from reasoning_fingerprints where org_id = :o"), {"o": org})
+    _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-000"}, at=NOW + timedelta(minutes=1))
+    with store.engine.connect() as c:
+        two = c.execute(text("select reasoning_run_id, reasoning_decision_hash from signals where org_id = :o "
+                             "and signal_id = :s"), {"o": org, "s": first.signal_id}).one()
+    assert two.reasoning_run_id != one.reasoning_run_id
+
+    def _bind(c, run):
+        c.execute(text("update founder_questions set run_id = :r where org_id = :o and file_id = :f "
+                       "and state = 'open'"), {"r": run.reasoning_run_id, "o": org, "f": anchor})
+        c.execute(text("update signals set reasoning_run_id = :r, reasoning_decision_hash = :h where org_id = :o "
+                       "and signal_id = :s"), {"r": run.reasoning_run_id, "h": run.reasoning_decision_hash,
+                                                "o": org, "s": first.signal_id})
+    with store.engine.begin() as c:            # back on the first run: what the press will read
+        _bind(c, one)
+    rebind = store.engine.connect()
+    rebind_tx = rebind.begin()
+    _bind(rebind, two)                         # the sweep's re-bind, its locks held, not yet committed
+    out: dict = {}
+    press = threading.Thread(target=lambda: out.update(_press(store, cards, org, card.card_id, "answer",
+                                                              words=WORDS)))
+    press.start()
+    with store.engine.connect() as c:          # the press is waiting on the re-bind's locks
+        for _ in range(100):
+            waiting = c.execute(text("select count(*) from pg_stat_activity where datname = current_database() "
+                                     "and wait_event_type = 'Lock'")).scalar()
+            if waiting:
+                break
+            time.sleep(0.05)
+    assert waiting, "the press never waited on the re-bind"
+    rebind_tx.commit()
+    rebind.close()
+    press.join(timeout=30)
+    assert out.get("ok") is True, out
+    [kept] = _questions(store, org, anchor)
+    assert (kept.state, kept.run_id) == (Q.ANSWERED, two.reasoning_run_id)

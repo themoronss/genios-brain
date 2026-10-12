@@ -213,7 +213,7 @@
       "actual": "The promise is open; nothing in the file shows the proposal written or sent."
      },
      "scenarios": {
-      "do_nothing": "Friday passes with the proposal unsent, and a promise Arjun made twice is broken in front of a prospective pilot.",
+      "do_nothing": "Friday passes with the proposal unsent, and a promise you made twice is broken in front of a prospective pilot.",
       "act": "Finishing the proposal this week and sending it by Friday keeps Arjun's word and moves the pilot forward.",
       "best": "The proposal goes out on time and Stackfield agrees to the pilot.",
       "worst": "The date slips without a word, Gaurav reads it as how Nimbus Labs keeps promises, and the pilot cools.",
