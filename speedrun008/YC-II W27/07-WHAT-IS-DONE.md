@@ -1,7 +1,7 @@
 # 07 · What is done — each finished step, its proof, and what is still owed
 
-**Written for:** Rohit, Harsh, and whoever picks this folder up next. **As of:** 2026-10-10,
-after Rohit's third push (`db6328cd`, §2c). A step is listed here once everything that is Claude's in it is done. It
+**Written for:** Rohit, Harsh, and whoever picks this folder up next. **As of:** 2026-10-12,
+after Claude's pushes of 11–12 Oct (§2d) — STEP-12 built (§6l). A step is listed here once everything that is Claude's in it is done. It
 becomes **DONE** only when its number moves on production (`00-START-HERE.md`, "How we work
 through it" §3), and this page says, step by step, what is still owed before that.
 
@@ -47,6 +47,16 @@ is one branch, `speedrun008`, and the units are block `yc2_w27` of `tree.yaml`.
 | against production's branch | `harsh/mvp` is an ancestor of `speedrun008` again: the deploy is a fast-forward |
 | after it, local | the alignment block `yc2_w27_align` (M34, `10-BEFORE-STEP-12.md`) — committed unit by unit, waiting for the next push |
 
+## 2d · The pushes of 11–12 Oct — by Claude, on Rohit's word
+
+| | |
+|---|---|
+| pushed by | Claude — *"tum khud se bhi apni saari cheezein apne tareeke se push kar do … GitHub pe sync karte rehna"* (Rohit, 11 Oct); fast-forward only, after `git fetch`, `speedrun008` only |
+| `origin/speedrun008` | `c97155cd` |
+| in these pushes | the alignment block `yc2_w27_align` (M34, 27 commits) and STEP-12 — M32 (39 units) and M33 (21 units) — each unit committed alone, each after its own tests, mutation run and the repo's guards |
+| against production's branch | `origin/harsh/mvp` holds **two commits of 10 Oct** that `speedrun008` does not (`e6c03ad4` a reminder's own budget, `84f00a40` a headline that names who is on the hook) — the deploy is **not** a fast-forward until they are merged into `speedrun008`, as `c50f0f7e` did on 9 Oct |
+| migrations | `0197`–`0199` (the expert's reviews) — the latest is `0199` |
+
 ## 3 · The nineteen steps
 
 | Phase | Steps | Status |
@@ -55,20 +65,22 @@ is one branch, `speedrun008`, and the units are block `yc2_w27` of `tree.yaml`.
 | 1 · Remember everything | `STEP-02` change gate · `03` the gate keeps everything · `04` who is us · `05` every item enters memory · `06` nothing lost silently | `02`, `03`, `06` **PENDING — Harsh (deploy)** · `04` and `05` **PENDING — Rohit (D14, D23 — read the two lists), Harsh (deploy)**: built, QA green (§6b–§6f), pushed 9 Oct |
 | 2 · The expert's desk | `STEP-07` company brief · `08` the re-sync · `09` workstreams · `10` history, patterns, analytics | `07` **PENDING — Rohit (accept the brief), Harsh (deploy, migration `0195`; draft it)**: built, QA green (§6g) · `08` **PENDING — Rohit (the window, D5/D16), Harsh (the run, after the brief — `06` D26, and after STEP-09's deploy)**: built, QA green (§6h) · `09` **PENDING — Rohit (accept the brief's connectors and watchlist; D35), Harsh (deploy before STEP-08's run; re-file history if the health check names it)**: built, QA green (§6i) · `10` **PENDING — Rohit (`06` D42–D44), Harsh (deploy, no migration; the health check after one sweep)**: built, QA green (§6j) |
 | 3 · Expertise | `STEP-11` founder playbooks | **M30 PENDING — Rohit (review the two playbooks, `06` D45; give your in-motion lines their kind), Harsh (deploy, migration `0196`; the Founder Office for your org only)**: built, QA green (§6k) · M31 — introductions, compliance, hiring, meetings — after your review |
-| 4 · The expert thinks | `STEP-12` the expert pass · `13` check every claim | TO BUILD |
+| 4 · The expert thinks | `STEP-12` the expert pass · `13` check every claim | `12` **PENDING — Rohit (the live pass, `06` D50; D48, D57, D58), Harsh (deploy, migrations `0197`–`0199`; `expert_review` for your org only)**: built, QA green (§6l), pushed · `13` TO BUILD |
 | 5 · What you see | `STEP-14` the card · `15` the morning brief | TO BUILD |
 | 6 · Learning from you | `STEP-16` | TO BUILD |
 | Across all phases | `STEP-17` real tests · `18` known bugs | TO BUILD — six of `STEP-18`'s bugs are fixed in code and pushed (§5) |
 
-**19 steps: 11 finished by Claude and pushed (`00`, `01` on 6 Oct; `02`–`10` on 9 Oct — `08`'s run is
-Harsh's), `STEP-11` half (M30 built and pushed 9 Oct, waiting for your review), 7 to build.** `STEP-11` was
+**19 steps: 12 finished by Claude and pushed (`00`, `01` on 6 Oct; `02`–`10` on 9 Oct — `08`'s run is
+Harsh's; `12` on 12 Oct, §6l), `STEP-11` half (M30 built and pushed 9 Oct, waiting for your review), 6 to
+build.** `STEP-11` was
 checked on 9 Oct (`STEP-11` §8), planned as tree `yc2_w27_s11` and built on your go of the same day
 (*Go — recommended*: `06` D2, D3, D31, D45–D47 as recommended): M30 — the Founder Office, the playbook
 contract, the decider reading the corpus whole, each file's kind of work, the playbook a file reads, the
 fundraising and programmes playbooks, your review sheets — 31 units (§6k). Its M31 — introductions,
 compliance, hiring, meetings — waits for your review of the first two, by the plan's depth-first rule
-(`STEP-11` §8.7), and is authored while `STEP-12` (the expert pass) is built; `STEP-12` is checked
-against the code before it is planned.
+(`STEP-11` §8.7). `STEP-12`, the expert pass, was checked (10 Oct), widened by the alignment block and
+built on your go: 60 units, QA green on every tier (§6l). `STEP-13`, check every claim, is checked against
+the code and planned (12 Oct, `STEP-13` §8: tree `yc2_w27_s13`, 29 units) and built next.
 
 ## 4 · STEP-00 · one branch, one baseline
 
@@ -358,6 +370,35 @@ Atlas 4/80), by design: no founder card can exist before your review.
 **Still owed:** the push; the deploy — migration `0196`, the Founder Office switched on for your org only,
 and the refusal count a day later (`08` §1.12, §3.10, §4.9); your in-motion lines' kinds; your review of
 the two sheets (`06` D45); then M31, with its cases and your review; decision D48 (`03` F134).
+
+## 6l · STEP-12 · the expert pass — built (M32, M33)
+
+**What was built** (`STEP-12-PENDING-owner-rohit-and-harsh-the-expert-pass.md` §9; tree `yc2_w27_s12`, 60 units):
+every file that changed gets ONE judgment from a strong model, on the whole file, and — under your `06` D1 —
+that judgment decides the file. M32 (39 units, in shadow): the review contract and store (migrations
+`0197`–`0199`), the expert's site R-7 on Sonnet-class with its own $2 a day (D7), the dossier — one file read
+alone, what was judged before, its numbers with their n, its kind's playbook, the time-passes what-if — and
+the file's fingerprint; the checklist prompt; the review run (one repair for syntax only, a cut answer
+refused); the pass in the sweep (each changed file once, nearest deadline first, ten a pass; an unchanged
+sweep asks nothing); a kind of work the expert proposes, for you to accept; R-6 retired (D51). M33 (21
+units): one audited decision per covered file from its review — the mode is the outcome, confidence is
+code's, no model is asked (no decider, no R-1, and a replay asks none); everything the review explains
+stands down — the compiled lane's situations, the packs' rules, the shadow native lane; the file keeps ONE
+decision; its card speaks the review's words and names its success.
+
+**Measured** (`03` §F.1): the golden board must-detect **13 → 21** of 45, must-abstain **12 → 13** of 13,
+forbidden outputs **8 → 0**, Atlas **4 → 6** of 80; the decider asked nothing a covered file's review explains,
+on all 58 cases; every expert decision replays with every model door poisoned; the first-connect door tells
+a founder who presses Sync what the sweep does, on all 58. Four regressions, named: F05, F06, F12, F25 now
+show two cards about one file where the review's advice changed as the file moved, or was decided again
+after its week (`03` F176) — `STEP-14`'s living card is the fix, not M33.
+
+**QA:** green on every tier, the first run, at `c97155cd` (12 Oct, `baseline/yc2w27-s12-qa/qa_record.txt`): the tree and all 60 units' own verifies 64 pass / 0 fail / 0 skip; the whole suite on the database 20,569 passed, 4 skipped (the known four), 86 xfailed; the golden lane 1,401 passed, 84 xfailed, 0 skipped, 0 tenants left; the board matches §F.1; the hermetic job 17,781 passed (2,088 skips name a missing database, the other four the known four).
+
+**Still owed:** the live pass on the D7 model — `scripts/golden_eval.py --dry-run --site expert` counts 97
+expert calls, ≈ $2.08 on `claude-sonnet-5`; it runs on your yes with a key in `GENIOS_GOLDEN_LIVE_KEY` (`06`
+D50); the push; the deploy — migrations `0197`–`0199`, `expert_review` switched on for your org only, the
+expert's health check a day later (`08`); decisions D48, D57, D58.
 
 ## 7 · CI on the push
 
