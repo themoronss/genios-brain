@@ -87,3 +87,31 @@ def test_legacy_emit_writes_the_lane(engine):
                 "run_1", "cand_1", "hash_1", AT + timedelta(days=2), "play", 1, "pk", "1",
                 decision_payload={"output_lane": "monitor", "lane_reason": "under the floor"})
     assert _lane(engine, sid) == ("monitor", "under the floor")
+
+
+# ── U03 · the native publication ────────────────────────────────────────────────────────────────
+def test_native_the_publication_carries_its_decisions_lane():
+    from genios_engine.reason.orchestrator import ReasoningOrchestrator
+    from genios_engine.reason.publication import build_native_publication
+    from genios_engine.reason.reasoners import default_registry
+    from tests.test_native_publication import BUNDLE, DELIVERABLE_V2, _request
+    execution = ReasoningOrchestrator(default_registry()).execute(_request(DELIVERABLE_V2))
+    publication = build_native_publication(execution=execution, audit_bundle=BUNDLE)
+    assert execution.decision.output_lane is not None
+    assert (publication.output_lane, publication.lane_reason) == (
+        execution.decision.output_lane.value, execution.decision.lane_reason)
+
+
+@pytest.mark.pg
+def test_native_publish_writes_the_lane(engine):
+    from genios_engine.reason.publication import publish_native_signal
+    publication = SimpleNamespace(
+        rule_id="r_native", rule_version=1, level="prescriptive", subject_node_id="n2", score=60,
+        score_inputs={}, reason_code="rc", evidence=(), play="play", reasoning_run_id="run_2",
+        reasoning_candidate_id="cand_2", reasoning_decision_hash="hash_2",
+        authority_expires_at=AT + timedelta(days=2), output_lane="decision",
+        lane_reason="a decision at 7000 bp, at or above the 6000 bp floor")
+    sid = publish_native_signal(SimpleNamespace(engine=_without_references()), org_id=ORG,
+                                publication=publication, eval_time=AT, config_snapshot_id="cs_2",
+                                pack_id="pk", pack_version="1", authority_pack_revision=1)
+    assert _lane(engine, sid) == ("decision", "a decision at 7000 bp, at or above the 6000 bp floor")
