@@ -4,8 +4,10 @@
 
 Tree `yc2_w27_s13` M36.C2.L-interface.V4.U06 (`deliver/actions.ingest_action`, `answer`; `POST /cards/{id}/action`
 with `words`; `06` D60). `answer` with your words answers the question the card asks — kept once on the file
-(`context/founder_questions`), the card resolved, its signal acted, the press recorded without your words —
-and the file's next dossier shows it. An answer that says nothing is refused; a question card offers only
+(`context/founder_questions`), the press recorded without your words — and the file's next dossier shows it.
+⛔ RESTATED by `yc2_w27_s14` M42.C3.L-interface.V4.U05 (s14-D3): the card is no longer resolved nor its signal
+acted — it is VERSIONED, "your answer is in; the file is read again" (`tests/deliver/test_an_answer_keeps_the_files_
+card.py`), and the file's next review versions it again. An answer that says nothing is refused; a question card offers only
 `answer` and the deferrals; no other card is a question; an answered question cannot be answered again.
 """
 from __future__ import annotations
@@ -49,11 +51,12 @@ def _card(world, cards):
     return store, org, registry, anchor, card
 
 
-def test_your_answer_answers_the_files_question_and_resolves_its_card(world, cards):
+def test_your_answer_answers_the_files_question_and_keeps_its_card(world, cards):
     store, org, _registry, anchor, card = _card(world, cards)
     [asked] = _questions(store, org, anchor)
     out = _press(store, cards, org, card.card_id, "answer", words=f"  {WORDS}  ", surface="web")
-    assert out == {"ok": True, "state": "resolved", "action": "answer", "question_id": asked.question_id}
+    assert out == {"ok": True, "state": "queued", "action": "answer", "question_id": asked.question_id,
+                   "version": 2}
     [kept] = _questions(store, org, anchor)
     assert kept.state == Q.ANSWERED
     with store.engine.connect() as c:
@@ -67,10 +70,10 @@ def test_your_answer_answers_the_files_question_and_resolves_its_card(world, car
                                 "card_id = :k and kind = 'human.card_action'"),
                            {"o": org, "k": card.card_id}).one()
     assert (answered.answer, answered.answered_by, answered.answered_at) == (WORDS, "founder@meridian.test", AT)
-    assert (row.state, row.resolved_at, row.status) == ("resolved", AT, "acted")
+    assert (row.state, row.resolved_at, row.status) == ("queued", None, "open"), "s14-D3: kept, versioned"
     assert pressed.detail == {"question_id": asked.question_id, "surface": "web"}
     assert logged.cause == "answer" and WORDS not in str(logged.detail) and WORDS not in str(pressed.detail)
-    assert _queued(cards, org, AT) == [], "answered, it leaves the queue"
+    assert _queued(cards, org, AT) == [], "answered, no door shows it until the file's next version"
 
 
 def test_the_files_next_dossier_shows_your_answer(world, cards):
@@ -162,9 +165,10 @@ def test_a_card_whose_question_is_no_longer_open_takes_no_press(world, cards, ac
 
 
 def test_a_question_you_answered_is_never_carded_again(world, cards):
-    """⛔ `03` X25 (M36.C2.L-data.V2.U12). Your answer moves the file; a later review asks another question, on its
-    own card; a later one still asks the words you answered. Nothing is asked: the open question it no longer
-    asks retires, its card REPLACED, and no card asks you again what you told us."""
+    """⛔ `03` X25 (M36.C2.L-data.V2.U12). Your answer moves the file; a later review asks another question; a later
+    one still asks the words you answered. Nothing is asked: the open question it no longer asks retires, its card
+    REPLACED, and no card asks you again what you told us. ⛔ RESTATED by `yc2_w27_s14` M42.C3.L-interface.V4.U05
+    (s14-D3, `03` F176): the other question is the SAME card's next version, so the one card is what closes."""
     from genios_engine.platform import card_lifecycle
     from tests.reason.expert.test_a_covered_file_decides_once import _fund
     from tests.reason.expert.test_a_held_file_asks import _find_out
@@ -174,15 +178,15 @@ def test_a_question_you_answered_is_never_carded_again(world, cards):
     later = AT + timedelta(hours=1)
     _find_out(store, org, anchor, "ffp-fund-findout-review-001", events, question="Who at the fund decides?")
     _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-001"}, at=later)
-    assert _build(store, cards, org, at=later)["question_cards"] == 1
+    asked_again = _build(store, cards, org, at=later)
+    assert (asked_again["question_cards"], asked_again["versioned"]) == (0, 1), asked_again
     last = later + timedelta(hours=1)
     _find_out(store, org, anchor, "ffp-fund-findout-review-002", events)
     counts = _compile(store, org, registry, covered={anchor: "ffp-fund-findout-review-002"}, at=last)
     assert counts.get("expert_question_answered_already") == 1, counts
     assert _build(store, cards, org, at=last)["question_cards"] == 0
-    answered, other = _cards(store, org)
-    assert (answered.card_id, answered.state) == (card.card_id, "resolved")
-    assert other.state == "expired"
+    [other] = _cards(store, org)
+    assert (other.card_id, other.state) == (card.card_id, "expired"), "one card, question to question"
     with store.engine.connect() as c:
         cause = c.execute(text("select cause from card_events where org_id = :o and card_id = :k "
                                "and kind = :kind"), {"o": org, "k": other.card_id,
