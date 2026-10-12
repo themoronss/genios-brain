@@ -370,7 +370,9 @@ def test_the_card_reader_reads_what_the_founder_sees(pg_store):
             "values ('card_r1', 'sig_r1', :o, 'prescriptive', 'high', 'Reply to Kavya', "
             "'Kavya asked for the deck', 80, cast(:why as jsonb), cast(:act as jsonb), "
             "cast(:art as jsonb), 'queued', :exp, 'Lotus Ventures')"),
-            {"o": org, "why": '["partners meet Monday"]', "act": '[{"label": "Send the deck"}]',
+            {"o": org, "why": '["partners meet Monday", {"sentence": "headline", "source": "expert_check", '
+                              '"evidence": ["evt_k"], "quotes": ["Introly connected us. Can you send the deck?"]}]',
+             "act": '[{"label": "Send the deck"}]',
              "art": '{"kind": "draft_reply", "body": "Hi Kavya, the deck is attached."}',
              "exp": at + timedelta(days=3)})
     try:
@@ -381,6 +383,11 @@ def test_the_card_reader_reads_what_the_founder_sees(pg_store):
             assert said in card.text, said
         # STEP-04: who the card is about, apart from what it says — the marking judges it.
         assert card.subject == "Lotus Ventures"
+        # STEP-13: an expert card's sentence sources are its evidence, read apart — a quote naming the
+        # connector does not make the card about the connector (F37).
+        assert "Introly" not in card.text
+        assert [s["sentence"] for s in card.sources] == ["headline"]
+        assert card.sources[0]["quotes"] == ["Introly connected us. Can you send the deck?"]
     finally:
         with pg_store.engine.begin() as c:
             c.execute(text("delete from cards where org_id = :o"), {"o": org})

@@ -603,14 +603,19 @@ def _cards(engine: Any, org: str, open_after: list[set[str]]) -> tuple[CardView,
         # One line per thing the founder reads — each WHY item and each action on its own, so a
         # reader can compare two cards line by line.
         artifact = r.artifact if isinstance(r.artifact, dict) else {}
-        parts = [r.headline, r.situation, *(_flat(w) for w in (r.why or ())),
+        # STEP-13: an expert card's sentence sources are its EVIDENCE — quotes of what others wrote —
+        # read apart (`CardView.sources`), never as what the card says or is about.
+        why = list(r.why or ())
+        sources = tuple(w for w in why if isinstance(w, dict) and w.get("source") == "expert_check")
+        parts = [r.headline, r.situation, *(_flat(w) for w in why if w not in sources),
                  *(_flat(a) for a in (r.actions or ())), artifact.get("body"), r.business_subject,
                  r.unresolved_item, r.why_now]
         out.append(CardView(card_id=r.card_id, state=r.state, level=r.level,
                             text="\n".join(str(p) for p in parts if p),
                             subject=r.business_subject,
                             output_lane=r.output_lane,
-                            sweeps=tuple(i for i, ids in enumerate(open_after) if r.card_id in ids)))
+                            sweeps=tuple(i for i, ids in enumerate(open_after) if r.card_id in ids),
+                            sources=sources))
     return tuple(out)
 
 

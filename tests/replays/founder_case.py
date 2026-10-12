@@ -344,6 +344,11 @@ class CardView:
     #: STEP-04. Who the card is about — `cards.business_subject`, the counterparty by contract. Kept
     #: apart from `text` because our own words may be on a card and we may never be its subject.
     subject: str | None = None
+    #: STEP-13 (`yc2_w27_s13` M35.C3.L-interface.V3.U03). Where each of an expert card's sentences came
+    #: from — the `why` entries `deliver/card_builder._sentence_sources` leads with (`source:
+    #: expert_check`): the mails a move rests on and their QUOTES. Evidence, not what the card says — so
+    #: kept apart from `text`: a card that quotes "Introly connected us" is not a card about Introly (F37).
+    sources: tuple = ()
 
 
 @dataclass(frozen=True)
