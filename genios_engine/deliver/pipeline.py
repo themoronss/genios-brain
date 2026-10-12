@@ -232,10 +232,16 @@ def _open_questions_without_cards(graph, org_id: str, evaluation_time: datetime 
 def question_card(graph, org_id: str, row: dict, eval_time: datetime) -> tuple[dict, dict]:
     """The card a held file asks its question on, and its copy — every word the question's or the file's
     checked review's own; nothing written for it. Its situation is the expert's reading of the file as the
-    check let it stand, labelled an inference; with none, why the file asks."""
+    check let it stand, labelled an inference; with none, why the file asks.
+
+    ⛔ IN CHECKED WORDS, OR OURS (STEP-13 M36.C2.L-logic.V2.U10, `03` X06, X10). Why the file asks is one of
+    `reason/expert/asks.WHYS` — closed, founder-facing — and so is the situation when the check withheld the
+    reading: never the raw reading, never the check's internal reason. A question filed before its words
+    were checked carries some other `why`; it is carded with the closed phrase, never with that prose."""
     from datetime import timedelta
 
     from genios_engine.reason.expert import store as reviews
+    from genios_engine.reason.expert.asks import WHY_FIND_OUT, WHYS
     from genios_engine.reason.expert.decide import SITUATION_IS
 
     from .bands import band
@@ -252,7 +258,8 @@ def question_card(graph, org_id: str, row: dict, eval_time: datetime) -> tuple[d
         review = reviews.read_review(c, org_id, node, str(row["fingerprint"]))
     checked = review.checked if review is not None else None
     reading = checked.words.situation if checked is not None and checked.words.situation else None
-    why = [{"sentence": "headline", "question": row["question"], "because": row["why"],
+    because = row["why"] if row["why"] in WHYS else WHY_FIND_OUT
+    why = [{"sentence": "headline", "question": row["question"], "because": because,
             "source": "expert_check"}]
     if reading:
         why.append({"sentence": "situation", "inference": SITUATION_IS, "source": "expert_check"})
@@ -266,7 +273,7 @@ def question_card(graph, org_id: str, row: dict, eval_time: datetime) -> tuple[d
         "domain": row.get("pack_id") or "founder_office",
         # A QUESTION IS A REQUEST FOR ONE PRECISE ANSWER — `review`, the level that asks and never instructs
         # (`contracts/outcomes`: ASK_DECISION), and says why it does not instruct.
-        "level": "review", "abstained_because": row["why"],
+        "level": "review", "abstained_because": because,
         "urgency_band": band(score, None), "assignee": assignee, "resolved_rule": rule, "co_recipients": [],
         "score": score, "score_block": {"S": score},
         "business_subject": name, "unresolved_item": row["question"],
@@ -284,7 +291,7 @@ def question_card(graph, org_id: str, row: dict, eval_time: datetime) -> tuple[d
                                 "reasoning_decision_hash": row["reasoning_decision_hash"],
                                 "config_snapshot_id": row.get("config_snapshot_id"),
                                 "question_id": row["question_id"]}}
-    copy = {"headline": row["question"], "situation": reading or row["why"], "artifact": {},
+    copy = {"headline": row["question"], "situation": reading or because, "artifact": {},
             "render_mode": "question"}
     return card, copy
 

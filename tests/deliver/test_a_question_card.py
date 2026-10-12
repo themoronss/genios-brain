@@ -21,6 +21,7 @@ from sqlalchemy import text
 from genios_engine.contracts.expert_review import ExpertReview
 from genios_engine.deliver import pipeline
 from genios_engine.deliver.store import QUESTION_CARD_BUILDER, CardStore
+from genios_engine.reason.expert import asks
 from genios_engine.reason.expert.decide import SITUATION_IS
 from tests.reason.expert.test_a_covered_file_decides_once import (  # noqa: F401 — fixtures
     NOW, _compile, _fund, _open_signals, _review, world)
@@ -105,7 +106,9 @@ def test_a_held_review_asks_the_checks_question_over_the_files_checked_reading(w
     _build(store, cards, org)
     [card] = _cards(store, org)
     assert (card.headline, card.situation) == (HELD_Q, held.words.situation)
-    assert card.why[0]["because"] == "misquoted (fact 1)"
+    # ⛔ RESTATED by M36.C2.L-logic.V2.U10 (`03` X10): `because` was the check's internal reason ("misquoted
+    # (fact 1)", and with a real check "misquoted: <the model's quote> (fact 1)"). One closed phrase, for you.
+    assert card.why[0]["because"] == asks.WHY_NOT_CONFIRMED == card.abstained_because
     assert card.why[1] == {"sentence": "situation", "inference": SITUATION_IS, "source": "expert_check"}
 
 
@@ -195,3 +198,50 @@ def test_a_pass_that_cannot_read_its_questions_says_so_and_keeps_going(monkeypat
     out = pipeline.build_cards_for_org(graph=graph, card_store=SimpleNamespace(), org_id="org_q",
                                        registry=object(), eval_time=NOW)
     assert out["questions_unread"] == 1 and out["question_cards"] == 0
+
+
+WITHHELD = "Arjun is deciding whether Tiger Global co-leads the round"
+
+
+def _withheld(world):
+    """A find-out file whose reading the check withheld — a party the file never names (`03` X06's run)."""
+    from genios_engine.contracts import claim_check as C
+    store, org, registry, _ = world
+    anchor, _situations, events = _fund(store, org)
+    checked = C.CheckedReview(
+        verdicts=(C.LineVerdict("situation", C.DROPPED, C.UNSUPPORTED, "name:Tiger"),), fate=C.SHOWN,
+        cited=(sorted(events)[0],), question=FIND_OUT,
+        words=C.CardWords(headline=FIND_OUT, situation=None, done_when=None, draft=None, to=None,
+                          evidence=(sorted(events)[0],)))
+    _write(store, org, anchor, "ffp-fund-withheld-review-0", events, checked=checked, mode="find_out", draft=None,
+           frames={"primary": WITHHELD, "rivals": ["a polite check-in"]},
+           next_move={"who": "you", "what": FIND_OUT, "for_whom": "Arjun", "by_when": None})
+    _compile(store, org, registry, covered={anchor: "ffp-fund-withheld-review-0"})
+    return store, org, anchor
+
+
+def test_a_find_out_card_never_shows_the_reading_the_check_withheld(world, cards):
+    """⛔ `03` X06 (M36.C2.L-logic.V2.U10): the check dropped the reading (a party the file never names), yet the
+    card's situation was the question's raw `why` — "the expert cannot read this file on without your answer:
+    <that reading>" — unlabelled. With no checked reading, the card says why it asks, in our closed words."""
+    store, org, _anchor = _withheld(world)
+    _build(store, cards, org)
+    [card] = _cards(store, org)
+    said = " ".join(str(x) for x in (card.headline, card.situation, card.abstained_because, card.why))
+    assert "Tiger" not in said and WITHHELD not in said
+    assert (card.headline, card.situation) == (FIND_OUT, asks.WHY_FIND_OUT)
+    assert [w["sentence"] for w in card.why] == ["headline"], "no reading, so no inference label for one"
+
+
+def test_a_question_filed_with_raw_words_is_carded_in_closed_ones(world, cards):
+    """A question filed before its words were checked (its `why` the check's reason, or the raw reading) is
+    carded with the closed phrase: no card text is raw prose."""
+    store, org, anchor = _withheld(world)
+    raw = "the expert cannot read this file on without your answer: " + WITHHELD
+    with store.engine.begin() as c:
+        c.execute(text("update founder_questions set why = :w where org_id = :o and file_id = :f"),
+                  {"w": raw, "o": org, "f": anchor})
+    _build(store, cards, org)
+    [card] = _cards(store, org)
+    assert card.abstained_because == card.why[0]["because"] == card.situation == asks.WHY_FIND_OUT
+    assert "Tiger" not in " ".join(str(x) for x in (card.situation, card.abstained_because, card.why))

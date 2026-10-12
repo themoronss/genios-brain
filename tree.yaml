@@ -8062,6 +8062,24 @@ yc2_w27_s13:
                       artifact: "genios_engine/reason/authority.py"
                       verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/test_a_question_is_authorised.py"
                       depends_on: [M36.C2.L-contract.V0.U01]
+                - level: 2
+                  units:
+                    - id: M36.C2.L-logic.V2.U10
+                      what: >
+                        The question is asked in checked words (fix-first, crosscheck `03` X06, X10's asks
+                        part, X34): `asks.question_words` reads only what the check let stand — a held file
+                        asks the check's own question; a find-out file asks YOU a real question: its review's
+                        first unknown when it is a question or reads as one ("Whether…" → "Can you tell us
+                        whether…?") and every name and number in it is in the checked words (the card's words,
+                        the quotes the check matched, the facts it kept — never a dropped fact or a withheld
+                        reading), else its checked move framed "Can you tell us: …?" — never the raw
+                        `frames.primary`, never an instruction. Its `why` is one closed, founder-facing phrase
+                        (`asks.WHYS`, read off the check's verdicts), never the check's internal reason; the
+                        question card's situation is the checked reading or that closed phrase, and a question
+                        filed with any other `why` is carded with the closed one.
+                      artifact: "genios_engine/reason/expert/asks.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/<fresh> .venv/bin/python -m pytest -q tests/reason/expert/test_a_held_file_asks.py tests/deliver/test_a_question_card.py"
+                      depends_on: [M36.C2.L-integration.V2.U03, M36.C2.L-interface.V3.U05, M36.C2.L-data.V2.U12]
             - layer: interface
               levels:
                 - level: 2
