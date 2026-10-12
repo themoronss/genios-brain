@@ -9,11 +9,17 @@ SAFETY (built in):
   * Dry by default. Without --apply it ONLY backs up nothing and prints coverage + a BEFORE probe.
   * --apply first copies every graph_* row for the org into  <table>_bak_<ts>  (reversible), THEN
     wipes + replays. Backups are left in place; restore = insert back from the _bak_<ts> tables.
-  * Refuses to wipe if uncached unstructured events would force live LLM calls, unless --allow-llm.
+  * Spends nothing: no road calls a model (`context/runner._process_one`). A mail replays the
+    extraction its row carries; one that carries none is held `held_missing_qes_extraction`, never
+    extracted again. (STEP-18 S18-X06, `yc2_w27_s18` M48.C2.L-integration.V2.U16: the script used to
+    estimate "events NOT cache-linked (may cost LLM)" from its unstructured rows and refuse --apply
+    without --allow-llm — and since B12 its rows include every archived mail, which takes the
+    metadata road with no extraction at all, so a tenant with archived mail was refused a run that
+    spent nothing. The estimate, the refusal and the flag are gone.)
   * KEEPS l1_extraction_results (the cache), source_events and raw_payloads — only the projection
     tables are rebuilt.
 
-Usage:  python -m scripts.rebuild_graph --org org_xxx [--apply] [--allow-llm]
+Usage:  python -m scripts.rebuild_graph --org org_xxx [--apply]
 Recommend proving on a small/test org first, then the real one, with the BEFORE/AFTER in hand.
 """
 from __future__ import annotations
@@ -32,7 +38,7 @@ from genios_engine.context.runner import _safe_process_one
 from genios_engine.platform.company_brief import current as company_brief_now
 from genios_engine.platform.self_identity import identity_for
 from genios_engine.platform.config import get_settings
-from genios_engine.platform.wiring import make_graph_store, make_llm_client
+from genios_engine.platform.wiring import make_graph_store
 
 
 def _bounded_engine(database_url: str, pool: int):
@@ -96,9 +102,10 @@ def _replay(rows, *, org: str, store, llm, crypto_key: str, workers: int,
             internal=frozenset(), us=None, brief=None) -> dict[str, int]:
     """Replay `rows` through the drain's own `_safe_process_one`; the count of each outcome.
 
-    Parallel, mirroring the L2 drain (ThreadPoolExecutor + `_safe_process_one`): store and llm are
-    thread-safe (SQLAlchemy pool + Anthropic client), workers kept under Supabase's 15-client cap,
-    and `_safe_process_one` quarantines a single event's failure."""
+    Parallel, mirroring the L2 drain (ThreadPoolExecutor + `_safe_process_one`): the store is
+    thread-safe (a SQLAlchemy pool), workers kept under Supabase's 15-client cap, and
+    `_safe_process_one` quarantines a single event's failure. `llm` is the drain's parameter, and no
+    road reads it."""
     out: dict[str, int] = {}
     done = 0
 
@@ -117,23 +124,22 @@ def _replay(rows, *, org: str, store, llm, crypto_key: str, workers: int,
     return out
 
 
-def _coverage(rows) -> tuple[int, int, int]:
-    """(structured, unstructured, unstructured_uncached-upper-bound) — the third would need LLM."""
+def _coverage(rows) -> tuple[int, int]:
+    """(structured, unstructured) — what the replay will see; neither calls a model."""
     structured = sum(1 for r in rows if get_mapping(r.source, r.object_type) is not None)
-    return structured, len(rows) - structured, 0  # cache coverage checked live via cache hit at replay
+    return structured, len(rows) - structured
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--org", required=True)
     ap.add_argument("--apply", action="store_true", help="actually back up + wipe + rebuild")
-    ap.add_argument("--allow-llm", action="store_true", help="permit live LLM calls on cache misses")
     ap.add_argument("--workers", type=int,
                     default=int(os.environ.get("GENIOS_REBUILD_WORKERS", "3")),
                     help="parallel replay workers (keep low — shares the live app's 15-session cap)")
     ap.add_argument("--pool", type=int, default=4,
                     help="hard cap on this job's DB connections (leaves headroom for the live app)")
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
     org = args.org
 
     store = make_graph_store()
@@ -145,28 +151,17 @@ def main() -> None:
     rows = _rows(store, org)
     with eng.connect() as c:
         before = _probe(c, org)
-        structured, unstructured, _ = _coverage(rows)
-        cached_ev = c.execute(text("select count(distinct event_id) from l1_extraction_results "
-                                   "where org_id=:o"), {"o": org}).scalar() or 0
+    structured, unstructured = _coverage(rows)
     print(f"== ORG {org} ==")
     _print_probe("BEFORE", before)
     print(f"  kept events with a road: {len(rows)} (structured={structured}, "
-          f"unstructured={unstructured}) · "
-          f"cache rows(event-linked)={cached_ev}")
-    uncached_est = max(0, unstructured - cached_ev)
-    print(f"  est. unstructured events NOT cache-linked (may cost LLM): ~{uncached_est}")
+          f"unstructured={unstructured}) — no road calls a model")
 
     if not args.apply:
         print("\nDRY RUN — nothing written. Re-run with --apply to backup+wipe+rebuild.")
         return
-    if uncached_est > 0 and not args.allow_llm:
-        print(f"\nREFUSING: ~{uncached_est} events may force live LLM calls. "
-              f"Re-run with --allow-llm to proceed (spends tokens), or ensure the org is fully cached.")
-        return
 
-    # LLM client: needed only on a genuine cache miss; a fully-cached org never calls it.
     s = get_settings()
-    llm = make_llm_client()
 
     with eng.begin() as c:
         # WHO IS US, as the drain reads it (STEP-04): the addresses AND the declared domains. With
@@ -185,13 +180,13 @@ def main() -> None:
             c.execute(text(f"delete from {tbl} where org_id=:o"), {"o": org})
         c.execute(text("delete from l2_processing_runs where org_id=:o"), {"o": org})
 
-    # Parallel replay: mirrors the L2 drain (ThreadPoolExecutor + _safe_process_one). store/llm are
-    # thread-safe (SQLAlchemy pool + Anthropic client). On a b3-2 cache MISS each unstructured event
-    # makes ONE real Haiku call, so parallelism turns a ~6h single-threaded run into ~1.5h. Workers
-    # kept ≤ Supabase's 15-client cap. _safe_process_one quarantines a single event's failure.
+    # Parallel replay: mirrors the L2 drain (ThreadPoolExecutor + _safe_process_one). The store is
+    # thread-safe (a SQLAlchemy pool); no road calls a model, so the workers wait on the database
+    # alone. Workers kept ≤ Supabase's 15-client cap. _safe_process_one quarantines a single event's
+    # failure.
     workers = args.workers
     print(f"3) REPLAY {len(rows)} events across {workers} workers (pool cap {args.pool})…", flush=True)
-    out = _replay(rows, org=org, store=store, llm=llm, crypto_key=s.crypto_key, workers=workers,
+    out = _replay(rows, org=org, store=store, llm=None, crypto_key=s.crypto_key, workers=workers,
                   internal=internal, us=us, brief=brief)
     print("   outcomes:", out, flush=True)
 

@@ -14,9 +14,17 @@ angle store and the cohort reader audit through the same function.
 
 The hash now reads a float as its decimal text; an answer with no float hashes exactly as before, so
 no stored `response_hash` changes meaning.
+
+`yc2_w27_s18` M48.C2.L-logic.V1.U15 (S18-X05). The hash was mended and the ROW was not: the parser
+lets `NaN`, `Infinity` and `-Infinity` in (`context/llm/parse.py` is `json.loads`), `json.dumps` wrote
+them back as bare tokens, and `cast(:parsed as jsonb)` refuses them — the audit row, the `llm_costs`
+row of the same transaction and the rest of the org's resolution pass were lost again. A non-finite
+number is stored as its name and a Decimal as its text; a finite answer is stored byte for byte as
+before.
 """
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
 from decimal import Decimal
 
@@ -58,6 +66,52 @@ def test_a_float_anywhere_in_the_answer_is_read_as_its_decimal_text():
 
 def test_a_non_finite_float_is_hashed_too_never_refused():
     assert MA._response_hash({"x": float("nan")}, "") != MA._response_hash({"x": float("inf")}, "")
+
+
+# ── the row: what the hash reads, Postgres must store ─────────────────────────────────────────
+
+def test_a_finite_answer_is_stored_exactly_as_before():
+    parsed = {"verdict": "RESOLVED", "confidence": 0.85, "scope": ["c1"], "n": [1, 2.5e-07],
+              "flag": True, "none": None}
+    assert MA._stored(parsed) == json.dumps(parsed, sort_keys=True)
+
+
+def test_a_non_finite_number_is_stored_as_its_name_and_a_decimal_as_its_text():
+    stored = json.loads(MA._stored({"x": float("nan"), "y": [float("inf"), {"z": float("-inf")}],
+                                    "d": Decimal("1.10"), "k": True}))
+    assert stored == {"x": "nan", "y": ["inf", {"z": "-inf"}], "d": "1.10", "k": True}
+
+
+def test_a_value_json_cannot_hold_is_refused_before_the_transaction(monkeypatch):
+    """`allow_nan=False`: whatever slips past the mapping is a ValueError in Python, never a
+    statement Postgres refuses inside the transaction that holds the cost row."""
+    class Weird(float):
+        pass
+    assert MA._stored({"x": Weird("nan")}) == '{"x": "nan"}', "a float subclass is still mapped"
+    monkeypatch.setattr(MA, "_storable", lambda value: value)       # a mapping that missed one
+    with pytest.raises(ValueError):
+        MA._stored({"x": float("nan")})
+
+
+def test_an_answer_with_nan_is_stored_and_costed(world):
+    """S18-X05's breaking input, on Postgres: `{"x": NaN}` and its kin."""
+    result = type("R", (), {"parsed": {"x": float("nan"), "y": float("inf"), "z": float("-inf"),
+                                       "ok": 0.5, "d": Decimal("2.50")},
+                            "raw": '{"x": NaN}', "ok": True, "input_tokens": 3,
+                            "output_tokens": 2, "model": "m"})()
+    at = datetime(2026, 3, 2, 9, 0, tzinfo=timezone.utc)
+    MA.record_model_run(world.engine, org_id=ORG, site="resolution", subject_ref="s_nan",
+                        prompt_version="v", prompt="p", result=result, called_at=at, max_tokens=10)
+    with world.engine.connect() as c:
+        row = c.execute(text(
+            "select parsed_output->>'x' as x, parsed_output->>'y' as y, parsed_output->>'z' as z, "
+            "jsonb_typeof(parsed_output->'ok') as ok_type, parsed_output->>'d' as d, raw_output "
+            "from l2_model_runs where org_id = :o and subject_ref = 's_nan'"), {"o": ORG}).one()
+        costs = c.execute(text("select count(*) from llm_costs where org_id = :o "
+                               "and subject_ref = 's_nan'"), {"o": ORG}).scalar()
+    assert (row.x, row.y, row.z, row.ok_type, row.d) == ("nan", "inf", "-inf", "number", "2.50")
+    assert row.raw_output == '{"x": NaN}', "the raw text is kept as the model wrote it"
+    assert costs == 1, "the paid call reaches the ledger the daily caps read"
 
 
 # ── the pass: a paid call is recorded, and the org's resolution pass goes on ──────────────────
@@ -119,3 +173,19 @@ def test_the_audit_row_is_written_once_per_call(world):
     with world.engine.connect() as c:
         assert c.execute(text("select count(*) from l2_model_runs where org_id = :o"),
                          {"o": ORG}).scalar() == 1
+
+
+def test_a_resolution_answer_with_nan_is_audited_and_the_pass_goes_on(world):
+    """S18-X05 through the pass: a `NaN` in the answer no longer ends the org's resolution pass."""
+    answer = answer_for(RESOLUTION_TEXT, verdict="RESOLVED", certainty="EXPLICIT_COMPLETION",
+                        scope=[_ids(ORG)["commitment"]], quote="we signed yesterday")
+    answer["confidence"] = float("nan")
+    model = ScriptedModel(answers={_ids(ORG)["reply"]: answer})
+    out = detect_resolutions(world, ORG, llm=model, eval_time=AT)
+    assert model.calls == 2
+    assert out.claims_written == 1, "the answer was judged after it was audited"
+    with world.engine.connect() as c:
+        runs = c.execute(text(
+            "select success, parsed_output->>'confidence' as confidence from l2_model_runs "
+            "where org_id = :o and site = 'resolution' order by success"), {"o": ORG}).all()
+    assert [(r.success, r.confidence) for r in runs] == [(False, None), (True, "nan")]

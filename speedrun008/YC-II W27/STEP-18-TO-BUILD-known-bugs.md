@@ -134,7 +134,7 @@ worker's harness, so they live here.)
 | s18-F8 | **B16 was retired by measurement** (STEP-09 §8.2, §8.3.6) | `contracts/open_loop.py:21-28`; `context/observations/kinds.yaml:15-18` | STEP-09's declaration |
 | s18-F9 | **B11's published entries have no retraction path**: once the metric leaves the eligible set, an entry published before stays active; the build names it `metric_not_ours` | `packs/brains/behavior_distill.py:232-264, 745-763` | Harsh — the probe: `select count(*) from learned_brain_entries where brain = 'behavior' and active and subject like 'behavior:relationship.response_latency_hours:%'`; a retraction path, if it is not 0, `STEP-16` |
 | s18-F10 | **B15's fix reaches a recorded prompt.** The narrator is handed the same grounded `their_cadence` slot (`deliver/render.py:470-518`), so the fix changes the narrator's prompt wherever the basis is not the person's own; golden F55 holds the one recorded narrator answer | `deliver/slots.py:212, 255` | the lead — a unit in `deliver/slots.py`, with F55 re-recorded |
-| s18-F11 | **B7 needs a deploy precondition.** The refusal fires where `GENIOS_ENV` names an environment outside dev and the secret is the shipped default; an unset `GENIOS_ENV` reads `dev`, as it always has | `platform/config.py:18, 37`; `docs/plans/TENANT_DATA_PRIVACY.md:49` | Harsh — confirm `GENIOS_JWT_SECRET` (and set `GENIOS_ENV`) in production before the deploy (`08`) |
+| s18-F11 | **B7 needs a deploy precondition.** The refusal fires where `GENIOS_ENV` names an environment outside dev and the secret is the shipped default; an unset `GENIOS_ENV` reads `dev`, as it always has | `platform/config.py:18, 37`; `docs/plans/TENANT_DATA_PRIVACY.md:49` | Harsh — confirm `GENIOS_JWT_SECRET` (and set `GENIOS_ENV`) in production before the deploy (`08`). ⛔ **Superseded 12 Oct by `06` D62** (`yc2_w27_s18` M49.C3.L-contract.V1.U10): an unset `GENIOS_ENV` is NOT dev — the image refuses to boot on a public secret until `GENIOS_ENV` and a real `GENIOS_JWT_SECRET` are set (`08` §3.14) |
 | s18-F12 | **`scripts/activate_tenant.py` printed five blank effects, not one** — `founder_office` (F135) and four Layer 4 features (`situation_reasoner`, `cards_from_situations`, `calibration_apply` — the switch that arms muting — and `expert_review`); and the script can still neither plan nor flip those four (`PLAN` holds five features) | measured at `fbd0aeaa`; `scripts/activate_tenant.py:40-75, 155-180` | the effects: built (M49.C2.L-interface.V0.U06). Planning the four: Harsh (the operator's script) |
 | s18-F13 | **Two root/reason guards are red at `fbd0aeaa`, before this branch**: `tests/test_the_situation_reaches_the_signal.py::test_what_each_writer_declares_matches_the_column_list_it_actually_has` (`reason/domain_shadow` now holds 2 signal inserts) and `tests/reason/test_every_card_expiry_says_why.py::test_no_other_function_in_these_files_calls_the_writer` (`domain_shadow._ask_the_founder`, `_retire_question`) — both from STEP-13 M36.C2.L-integration.V2.U03 (`1b6080fb`), in a file this branch may not touch | the first in the root part of every group guard G1–G7 of this branch, the second in G4 (the one run of `tests/reason`); `git diff fbd0aeaa HEAD -- genios_engine/reason/domain_shadow.py` is empty | the lead — STEP-13's M36.C2 |
 | s18-F14 | **A timing guard reads the machine's load**: `tests/platform/test_the_coverage_report_does_not_mis_signal.py::test_the_report_is_fast_enough_to_re_run` (20 s bound) failed twice in seven platform runs at load average ~7 (20.5 s, 23.8 s) and took 16.3 s alone — `03` F156's shape | group guards G4 and G6 of this branch | `STEP-17` (real tests) |
@@ -212,3 +212,38 @@ SQL removed) → 3,077 (U05) → 3,078 (U06) → 3,079 (U11): net 0, each move n
 ⛔ before the deploy, production's `GENIOS_JWT_SECRET` must be set (s18-F11 — Harsh); after it, the
 read-only probe of s18-F9 (published behaviour entries of the counterparty's latency) and s18-F3's
 `learning_objects` state count. Nothing here arms calibration or changes a model prompt.
+
+## 9 · Verify
+
+Added 12 Oct with the crosscheck's follow-ups (`yc2_w27_s17` M40.C5.L-logic.V0.U02, S17X-G2): STEP-18
+is `status: built` in `tree.yaml`, so the plan-folder guard holds it as built, and a built step says
+how to verify it. Each line is a unit's own verify (`yc2_w27_s18`), run on a database created fresh
+on the second scratch server; the database suite is the whole proof.
+
+```
+# a fresh database first:  docker exec genios-yc2w27-pg2 psql -U postgres -c "create database s18_verify"
+export GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55433/s18_verify
+
+# M48.C1 — your verdicts are kept (B3 0210, B4)
+.venv/bin/python -m pytest -q tests/feedback/test_every_wrong_reason_is_kept.py tests/feedback/test_every_feedback_reason_is_stored_pg.py tests/platform/test_the_code_can_always_be_rolled_back.py
+.venv/bin/python -m pytest -q tests/feedback/test_a_review_object_waits_for_review.py tests/api/test_a_proposal_is_written_once.py tests/feedback/test_no_transition_takes_an_edge_the_contract_forbids.py
+
+# M48.C2 — memory: B21, B12, B13 (0211), F120, F65, s18-F1
+.venv/bin/python -m pytest -q tests/context/lifecycle/test_a_decimal_answer_is_audited.py
+.venv/bin/python -m pytest -q tests/context/test_a_rebuild_reads_every_road.py tests/context/test_memory_lanes.py tests/test_rebuild_graph_rebuilds_the_mail.py
+.venv/bin/python -m pytest -q tests/test_migration_0211_a_followup_names_its_observation.py tests/test_a_followup_has_one_observation_pg.py tests/test_screen_memory_batch_pg.py
+.venv/bin/python -m pytest -q tests/capture/coverage/test_a_failed_coverage_read_loses_itself_alone.py tests/test_every_read_closes_its_connection.py
+
+# M48.C3 — a wipe takes its claims (B20)
+.venv/bin/python -m pytest -q tests/test_every_mail_wipe_takes_its_fingerprints.py tests/test_a_disconnect_takes_its_fingerprints.py
+
+# M49 — B25, F117, B11, F97, F128, F135, B7
+.venv/bin/python -m pytest -q tests/capture/test_a_calendar_event_buys_no_relevance_call.py tests/capture/test_a_company_brief_sender_is_kept_and_read.py tests/capture/connectors/test_a_bounce_is_read_whole_on_the_fast_path.py
+.venv/bin/python -m pytest -q tests/packs/brains/test_behavior_distill.py tests/platform/test_a_brief_read_in_a_transaction_sees_it.py tests/context/test_one_list_of_public_mail_hosts.py tests/test_activate_tenant_names_every_effect.py
+.venv/bin/python -m pytest -q tests/platform/test_the_dev_secret_never_boots_outside_dev.py tests/test_migrate_read_only.py
+
+# and the whole database suite, as CI's database job runs it
+.venv/bin/python -m pytest -q -m "not golden" -rfEs > pytest.log 2>&1; python scripts/qa/database_skips.py pytest.log
+```
+
+On production, each bug closes on its own probe after the deploy (`08`).

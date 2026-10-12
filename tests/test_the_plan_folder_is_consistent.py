@@ -15,16 +15,23 @@ plan nobody can trust, so the folder is now held to five things:
     that will (a milestone `M<n>`, a block `yc2_w27…`);
   * every path a BUILT step's §6 Verify names exists (a step still TO BUILD names what it will write).
 
+A step is BUILT when its file's name says so, or when `tree.yaml` says so of its block
+(`yc2_w27_s<NN>: status: built`) — `yc2_w27_s17` M40.C5.L-logic.V0.U02 (S17X-G2): STEP-17 and
+STEP-18 are built in the tree and named TO BUILD on disk, so the guard read the name and held neither.
+
 Written first, red until `M34.C3` U02 and U03 correct the folder: each red it found on 10 Oct is
 declared below as a STRICT expected failure naming the unit that corrects it, so the suite stays green
 while the folder is wrong and the marker must come off the day it is right.
 """
 from __future__ import annotations
 
+import functools
 import pathlib
 import re
+import sys
 
 import pytest
+import yaml
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
 FOLDER = REPO_ROOT / "speedrun008" / "YC-II W27"
@@ -160,8 +167,50 @@ def _verify_paths(path: pathlib.Path) -> list[str]:
                                  section)))
 
 
+@functools.lru_cache(maxsize=1)
+def _tree() -> dict:
+    return yaml.safe_load((REPO_ROOT / "tree.yaml").read_text(encoding="utf-8")) or {}
+
+
+def _tree_status(path: pathlib.Path) -> str | None:
+    """The status `tree.yaml` gives the step's block — `yc2_w27_s<NN>` for `STEP-<NN>` — or None
+    for a step with no block of its own."""
+    block = _tree().get(f"yc2_w27_s{path.name[5:7]}")
+    return str(block.get("status")) if isinstance(block, dict) and "status" in block else None
+
+
+def _is_built(name_status: str | None, tree_status: str | None) -> bool:
+    """Built by its file's name (anything but TO BUILD), or by its block in `tree.yaml`."""
+    return name_status != "TO BUILD" or tree_status == "built"
+
+
 def _built() -> list[pathlib.Path]:
-    return [p for p in _steps() if _name_status(p) != "TO BUILD"]
+    return [p for p in _steps() if _is_built(_name_status(p), _tree_status(p))]
+
+
+def test_built_is_read_from_the_tree_as_well_as_the_name():
+    """S17X-G2. A step named TO BUILD whose block the tree calls built is built; one the tree calls
+    anything else is not; a name that says built is built whatever the tree says."""
+    assert _is_built("TO BUILD", "built")
+    assert not _is_built("TO BUILD", "approved_in_progress")
+    assert not _is_built("TO BUILD", None)
+    assert _is_built("PENDING", None) and _is_built("DONE", "approved_in_progress")
+    built = {p.name[:7] for p in _built()}
+    assert {"STEP-17", "STEP-18"} <= built, sorted(built)
+    statuses = {p.name[:7]: _tree_status(p) for p in _steps()}
+    assert statuses["STEP-17"] == statuses["STEP-18"] == "built", statuses
+
+
+def test_the_tree_status_is_the_blocks_own_word(monkeypatch):
+    """Read off the step's own block, whatever it says — and a step with no block has none."""
+    monkeypatch.setattr(sys.modules[__name__], "_tree", lambda: {
+        "yc2_w27_s13": {"status": "approved_in_progress"}, "yc2_w27_s14": {"source": "no status"},
+        "yc2_w27_s17": {"status": "built"}})
+    status = {p.name[:7]: _tree_status(p) for p in _steps()}
+    assert (status["STEP-13"], status["STEP-14"], status["STEP-17"], status["STEP-00"]) == (
+        "approved_in_progress", None, "built", None), status
+    built = {p.name[:7] for p in _built()}
+    assert "STEP-17" in built and not {"STEP-13", "STEP-14", "STEP-18"} & built, sorted(built)
 
 
 @pytest.mark.parametrize("path", _built(), ids=lambda p: p.name[:7])

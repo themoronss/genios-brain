@@ -26,7 +26,7 @@ morning better — and nothing should be learned from a single click or a silenc
 
 | # | Unit | Where | What |
 |---|---|---|---|
-| 3.1 | every reason can be saved | migration (next free number) | the `0034` CHECK widened to all 11 reasons |
+| 3.1 | every reason can be saved — ✅ **built by STEP-18, `0210`** (`61d679ed`; `yc2_w27_s18` M48.C1.L-contract.V0.U01) | `migrations/0210_every_wrong_reason_is_kept.sql` | the `0034` CHECK widened to all 11 reasons: two NAMED checks (`card_feedback_verdicts_reason_vocabulary`, `card_feedback_revisions_reason_vocabulary`). ⛔ This step writes no `0240` — a second migration on these constraints would be a second writer of one rule (the STEP-17/18 crosscheck S18-X10); `M46.C2.L-contract.V0.U01` is marked built, and M46.C2 keeps its one-writer unit (U02) and the dashboard's door (U03) |
 | 3.2 | feedback becomes a proposal, never a rule | `feedback/`; `user_model_proposals` | *"not useful — I never want Boardy's newsletters"* → a brief proposal; *"wrong — this is not an investor"* → a workstream correction. You accept; then it applies. One click is never enough to learn a pattern |
 | 3.3 | outcomes close loops | `executive/collect.py`; `STEP-09` | a reply arrives, a meeting is booked, an application advances → the file's stage moves, the exact ask closes, the card resolves **with the outcome recorded** |
 | 3.4 | patterns update | `STEP-10` | your reply time, Boardy's conversion, a program's typical stage time — recomputed from outcomes, in the behaviour brain, **observe-only** (Atlas V.3) |
@@ -255,7 +255,8 @@ store → the dossier → the fingerprint → the trigger → the re-record → 
 writer → the dashboard's door → the card's *wrong* with your words → a question's *wrong* → the question
 card offers it → M46's acceptance; and `0241` → the store → the dossier → the fingerprint → the delta → the
 scorecard → its route. Migrations
-`0240`–`0242`. Outside the block:
+`0240`–`0242` — ⛔ `0240` is not written: STEP-18's `0210` (`61d679ed`) already keeps every reason, and
+`M46.C2.L-contract.V0.U01` is built by it (§3.1). Outside the block:
 STEP-13's last units first (its *Answer* action edits `deliver/actions.py`), STEP-14's card and STEP-15's
 brief (this step's own dependencies — M46.C6.U01 waits for `executive/morning.py`), STEP-17's feedback
 test (M46.C2.U01 takes its eight markers off).
