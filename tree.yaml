@@ -7919,6 +7919,22 @@ yc2_w27_s13:
                       artifact: "genios_engine/reason/expert/verify.py"
                       verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_verify_names.py tests/reason/expert/test_verify_claims.py tests/reason/expert/test_verify_people.py"
                       depends_on: [M35.C2.L-logic.V1.U09]
+                    - id: M35.C2.L-logic.V1.U14
+                      what: >
+                        The recipient is checked with or without a draft, and the draft stands on the move's
+                        ground (crosscheck X20, X23): a move goes to its `to` — or, none given, the first
+                        person its headline names (one of our names or an address, the connector, a person
+                        of the file; a capitalised whole word) — and a move to us is held, a move to the
+                        connector on a file that is not the connector's own becomes the review's alternative
+                        or is held, draft or none. The draft is grounded on the move's corpus (its facts'
+                        items and quotes, the file's head and people) and on what the brief says of US
+                        (`verify.about_us`: the company, its address, its goals — the founder's own words
+                        about their company), never on the rest of the dossier (another line of work in
+                        motion, the what-if numbers). The golden set's 95 captured checks: none moves (the
+                        brief's own lines are what two authored drafts rest on, "AI", "Private Limited").
+                      artifact: "genios_engine/reason/expert/verify.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_verify_recipient.py tests/reason/expert/test_verify_people.py"
+                      depends_on: [M35.C2.L-logic.V1.U12]
         - id: M35.C3
           name: Where the check runs
           layers:

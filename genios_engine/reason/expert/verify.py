@@ -38,19 +38,23 @@ ONE PASS, IN ONE ORDER.
   2 · AN INFERENCE OR A PATTERN stands while one of its grounds stands (else `ungrounded`).
   3 · THE CARD'S WORDS. The headline (the move, or the reading when there is no move) stands on the lines
       of the facts the move rests on and the file's own head; the situation, what done looks like and a
-      proposed kind on every standing fact's lines; the draft on the whole dossier. A number corrected in a
+      proposed kind on every standing fact's lines; the draft on the move's own lines and head and what the
+      brief says of us (`about_us`, M35.C2.L-logic.V1.U14) — never the rest of the dossier. A number
+      corrected in a
       fact is corrected where the card restates it (M35.C2.L-logic.V1.U11): the same figure, as a value in
       its unit — never a date, a time or a code ("9:20", "9 Aug", "Q2") — in a sentence that repeats two of
       the fact's words; anywhere else it is held to its lines as written. A headline that fails HOLDS a
-      moving review; a
-      situation, a done-when, a draft or a proposed kind that fails is WITHHELD — the card shows the rest.
-  4 · THE RIGHT PEOPLE (§3.3). A draft goes to someone the file's mail shows (`to`): with no `to`, or to
-      someone not on the file, the draft is withheld; to us, the move is held; to the connector that
+      moving review; a situation, a done-when, a draft or a proposed kind that fails is WITHHELD — the
+      card shows the rest.
+  4 · THE RIGHT PEOPLE (§3.3). The move goes to its `to` — or, none given, the first person its headline
+      names — and is checked with or without a draft (M35.C2.L-logic.V1.U14, X20). A draft goes to someone
+      the file's mail shows: with no `to`, or to someone not on the file, the draft is withheld; to us, the
+      move is held; to the connector that
       introduced the file's counterparty — on a file that is not the connector's own — the review's own
       alternative becomes the move if it checks (the draft withheld), else the move is held. A move that
       answers an ask must answer one that waits on US. A card text that calls the founder "the founder",
-      names us as a party, or names the founder by first name (X35) is NOTED (`speaks_of_you`, F178), for the live pass to count; rewording a card is
-      `STEP-14`'s.
+      names us as a party, or names the founder by first name (X35) is NOTED (`speaks_of_you`, F178), for
+      the live pass to count; rewording a card is `STEP-14`'s.
   5 · THE FATE. No fact stands: REFUSED. A moving review (act, find out) whose move lost a fact it rests on,
       whose headline failed, or whose recipient is us or a connector with no alternative: HELD — the file
       goes to Investigation and asks ONE question. Otherwise SHOWN — a find-out review asking its own move.
@@ -576,6 +580,48 @@ def _first_names(people: FilePeople) -> list[str]:
     return [n.split()[0] for n in people.our_names if len(n.split()) >= 2]
 
 
+#: An address, as a text writes one.
+_AN_ADDRESS = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
+
+
+def _target(text: str | None, people: FilePeople) -> str | None:
+    """The first person `text` names, as written — one of our names or an address, the connector, a person
+    of the file — or None: whom a move with no `to` goes to (M35.C2.L-logic.V1.U14, X20). A name is a
+    capitalised whole word: "Send Introly the deck to pass on to Marco" goes to Introly."""
+    text = str(text or "")
+    found: list[tuple[int, str]] = []
+    for name in people.our_names:
+        if (m := re.search(rf"(?<!\w){re.escape(name)}(?!\w)", text, re.I)) is not None:
+            found.append((m.start(), m.group(0)))
+    found += [(m.start(), m.group(0)) for m in _AN_ADDRESS.finditer(text)]
+    for person in (people.connector, *people.people):
+        for word in (_name_of(person)[:1] if person is not None else ()):
+            for m in re.finditer(rf"(?<!\w){re.escape(word)}(?!\w)", text, re.I):
+                if m.group(0)[0].isupper():
+                    found.append((m.start(), m.group(0)))
+                    break
+    return min(found)[1] if found else None
+
+
+#: Where the dossier prints the brief, and the brief's sections that are about OTHERS — every section
+#: before them (the company, us, its goals) is what the founder confirmed of their own company.
+_BRIEF = "## THE COMPANY BRIEF"
+_NOT_US = ("Work in motion", "Key people", "Connectors", "Watchlist", "Preferences", "END OF COMPANY BRIEF")
+
+
+def about_us(dossier_text: str) -> str:
+    """What the dossier's brief says of US — the company, how it is reached, its goals — and nothing of
+    the work in motion with others: what a draft, the founder's own words, may say of their company."""
+    if _BRIEF not in dossier_text:
+        return ""
+    out: list[str] = []
+    for line in dossier_text.split(_BRIEF, 1)[1].split("\n## ", 1)[0].splitlines():
+        if line.startswith(_NOT_US):
+            break
+        out.append(line)
+    return "\n".join(out)
+
+
 def _is_us(to: str, people: FilePeople) -> bool:
     return any("@" in w and people.us.is_us(w) for w in _words(to)) \
         or names_us(to, people.us, people.our_names)
@@ -847,18 +893,26 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
 
     held: str | None = None
     question: str | None = None
-    draft = to = None
+    draft = None
+    # WHOM THE MOVE GOES TO, with or without a draft (M35.C2.L-logic.V1.U14, X20): its `to`, or — none
+    # given — the first person its headline names. THE DRAFT stands on the move's own ground — its facts'
+    # items and quotes, the file's head and people — and on what the brief says of us: never the rest of
+    # the dossier (X23: another line of work, the what-if's numbers).
+    to = move.to if move is not None else None
+    target = to or (_target(said, people) if move is not None else None)
     if review.draft:
-        to = move.to if move is not None else None
-        draft = run.text("draft", review.draft, dossier_text, speaks=False, head=False)
-        if not to:
-            run.say("to", C.DROPPED, C.NO_RECIPIENT)
-        elif _is_us(to, people):
+        ours = about_us(dossier_text)
+        draft = run.text("draft", review.draft, "\n".join([move_corpus, ours]), speaks=False,
+                         figures="\n".join([move_figures, ours]))
+    if move is not None and (review.draft or target):
+        if target and _is_us(target, people):
+            to = target
             run.say("to", C.DROPPED, C.RECIPIENT_IS_US, to)
             held = f"{C.RECIPIENT_IS_US}: {to}"
             question = f"Whom should “{said}” go to? It is addressed to you."
-        elif people.connector is not None and matches(to, people.connector) \
-                and not matches(to, people.counterparty):
+        elif target and people.connector is not None and matches(target, people.connector) \
+                and not matches(target, people.counterparty):
+            to = target
             run.say("to", C.DROPPED, C.RECIPIENT_IS_CONNECTOR, to)
             other, _ = run.stands(review.alternative, move_corpus, figures=move_figures) \
                 if review.alternative else (None, "")
@@ -870,6 +924,9 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
             else:
                 held = f"{C.RECIPIENT_IS_CONNECTOR}: {to}"
                 question = f"“{said}” goes to {to}, who introduced {them}. Whom should it go to?"
+        elif not to:
+            if review.draft:
+                run.say("to", C.DROPPED, C.NO_RECIPIENT)
         elif not any(matches(to, p) for p in people.people):
             run.say("to", C.DROPPED, C.RECIPIENT_NOT_ON_FILE, to)
         else:
@@ -923,6 +980,7 @@ def check_review(review: ExpertReview, dossier_text: str, people: FilePeople, *,
 
 
 __all__ = ["CURRENCIES", "EARNED", "FUNCTION_WORDS", "Figures", "MEETING_ASKS", "QUOTE_MIN_WORDS", "STRUCTURAL",
-           "Correction", "RESTATES_WORDS", "Stray", "UNITS", "answered_by", "check_review", "correction_of",
+           "Correction", "RESTATES_WORDS", "Stray", "UNITS", "about_us", "answered_by", "check_review",
+           "correction_of",
            "figures_in", "matches", "unheld",
            "quoted_in", "value_of"]
