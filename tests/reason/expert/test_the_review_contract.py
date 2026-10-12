@@ -304,8 +304,12 @@ def test_a_first_version_answer_reads_validates_and_is_stored_as_before():
     ({"rests_on": ["evt_neel_0927"]}, UNGROUNDED_MOVE),          # a mail is no fact of the review
     ({"rests_on": ["inference:1"]}, UNGROUNDED_MOVE),
     ({"answers": "loop:never_shown"}, UNKNOWN_EVIDENCE),
-    ({"answers": "evt_neel_0927"}, UNGROUNDED_MOVE),             # a mail is no ask
-    ({"answers": "promise:p1"}, UNGROUNDED_MOVE),
+    # ⛔ RESTATED by M35.C1.L-contract.V0.U04 (crosscheck X15): an `answers` that is no ask — a mail, a
+    # promise — was `ungrounded_move`, which the review run refuses WHOLE (`verify.STRUCTURAL`) over one
+    # optional field. It is named as an unshown ask is, and the check drops only that line.
+    ({"answers": "evt_neel_0927"}, UNKNOWN_EVIDENCE),            # a mail is no ask
+    ({"answers": "promise:p1"}, UNKNOWN_EVIDENCE),
+    ({"rests_on": ["fact:1", "evt_neel_0927"]}, UNKNOWN_EVIDENCE),   # a stray beside a fact it names
 ])
 def test_a_move_resting_on_nothing_or_answering_no_ask_is_named(move, refusal):
     result = validate(ExpertReview.from_mapping(_second(**move)), ASKED)

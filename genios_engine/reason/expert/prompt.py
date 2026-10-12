@@ -154,7 +154,7 @@ CHECKLIST: tuple[Step, ...] = (
          "them in.",
          ("unknowns", "hypotheses")),
     Step("scenarios", "THE SCENARIOS",
-         "What happens if nothing is done; what happens if the founder acts now; the best case and the "
+         "What happens if nothing is done; what happens if you act now; the best case and the "
          "worst case; and the signals to watch — what would tell you which way it is going.",
          ("scenarios",)),
     Step("appraisal", "THE APPRAISAL",
@@ -193,7 +193,7 @@ SCHEMA: dict[str, Any] = {
                       "evidence": [_CITED]},
     "expected_vs_actual": {"stage": "a stage name from the playbook, or null",
                            "expected": "what is expected at this stage", "actual": "what has happened"},
-    "scenarios": {"do_nothing": "if nothing is done", "act": "if the founder acts now",
+    "scenarios": {"do_nothing": "if nothing is done", "act": "if you act now",
                   "best": "the best case", "worst": "the worst case",
                   "signals_to_watch": ["what would tell you which way it is going"]},
     "appraisal": {"stakes": " | ".join(LEVELS), "urgency": " | ".join(LEVELS),

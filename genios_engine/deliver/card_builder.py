@@ -830,15 +830,17 @@ PLAYBOOK_NOT_YET_REVIEWED = "playbook not yet reviewed"
 
 
 #: The order a card's sentences are read in — the order their sources lead its `why`.
-CARD_SENTENCES: tuple[str, ...] = ("headline", "situation", "draft")
+CARD_SENTENCES: tuple[str, ...] = ("headline", "situation", "draft", "done_when", "do_nothing")
 
 
 def _sentence_sources(signal: dict) -> list[dict]:
     """STEP-13 §5 (`yc2_w27_s13` M35.C3.L-interface.V3.U03): an expert card's `why` leads with one entry
     per sentence — where it came from, as the review's check let it stand (`reason/expert/decide.
     sources_of`, carried on the audited capability's render block): the headline with the mails and asks
-    its move rests on and their quotes (or, a held file, the question and why), the situation labelled an
-    inference, the draft with whom it goes to. The names in them were held to the expert's dossier by the
+    its move rests on and their quotes (or, a held file, the question and why), the situation, what done
+    looks like and what doing nothing costs labelled inferences, the draft with whom it goes to and what it
+    stands on (M35.C3.L-integration.V2.U05, crosscheck X24: every sentence the card shows — its success
+    signal and its cost of ignoring too). The names in them were held to the expert's dossier by the
     card validator's own rule (`reason/expert/verify`); a card never holds that dossier, so it does not
     judge them again against less. Any other card carries none, and its `why` is what it always was."""
     render = signal.get("capability_render")

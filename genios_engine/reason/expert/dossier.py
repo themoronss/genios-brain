@@ -630,15 +630,43 @@ class Person:
 
 
 @dataclass(frozen=True, slots=True)
+class AskSeen:
+    """An open ask of the file as the check reads it: its id as printed, its kind, whether it waits on US,
+    when it was opened, its thread, and who asked (None when the file cannot name them)."""
+    ref: str
+    kind: str
+    ours: bool
+    opened_at: datetime | None
+    thread: str | None
+    asker: "Person | None"
+
+
+@dataclass(frozen=True, slots=True)
+class Seen:
+    """A mail or a meeting of the file as the check reads it: its event, when, its thread (a mail), when
+    it was first booked and who set it up (a meeting)."""
+    event_id: str
+    at: datetime
+    thread: str | None = None
+    booked_at: datetime | None = None
+    by: "Person | None" = None
+
+
+@dataclass(frozen=True, slots=True)
 class FilePeople:
     """Whom a draft of this file may go to: who its mail shows, who is us, and the connector that
-    introduced its counterparty (None on the connector's own file, and on a file nobody introduced)."""
+    introduced its counterparty (None on the connector's own file, and on a file nobody introduced) —
+    and what "is this ask already answered?" reads (STEP-13 M35.C2.L-logic.V1.U15): the file's open asks,
+    the mails WE wrote in it, and its meetings, held or booked."""
     counterparty: Person
     people: tuple[Person, ...]         # the counterparty, the file's people, whoever wrote to us in it
     us: SelfIdentity
     our_names: tuple[str, ...] = ()    # the company's name and the founder's (`platform/self_identity.names_us`)
     connector: Person | None = None
     head: str = ""                     # the file's own section, as the dossier printed it
+    asks: tuple[AskSeen, ...] = ()
+    replies: tuple[Seen, ...] = ()     # the mails WE wrote in the file
+    meetings: tuple[Seen, ...] = ()    # held and booked ahead
 
 
 def label_of(key: str | None) -> str | None:
@@ -662,9 +690,20 @@ def people_of(parts: DossierParts, *, us: SelfIdentity, our_names: Iterable[str]
     people = tuple(dict.fromkeys(seen))
     connector = (Person(name=label_of(f.introduced_by), key=f.introduced_by)
                  if f.introduced_by and f.kind != "connector" else None)
+    by_node = {p.node_id: Person(name=p.name, key=p.key)
+               for p in (getattr(parts.numbers, "people", None) or ()) if getattr(p, "node_id", None)}
+    asks = tuple(AskSeen(ref=f"loop:{a.loop_id}", kind=a.kind, ours=a.owed_by == "us",
+                         opened_at=a.opened_at, thread=a.thread_id,
+                         asker=counterparty if a.asked_by == f.file_id else by_node.get(a.asked_by))
+                 for a in (f.open_asks or ()))
+    replies = tuple(Seen(event_id=t.event_id, at=t.at, thread=t.thread)
+                    for t in parts.timeline.touches if t.direction == "out")
+    meetings = tuple(Seen(event_id=t.event_id, at=t.at, booked_at=getattr(t, "booked_at", None),
+                          by=Person(name=t.who_name, key=t.who) if (t.who or t.who_name) else None)
+                     for t in (*parts.timeline.touches, *parts.timeline.upcoming) if t.kind == "meeting")
     return FilePeople(counterparty=counterparty, people=people, us=us,
                       our_names=tuple(n for n in our_names if n), connector=connector,
-                      head=_file(parts, _Ids()).text)
+                      head=_file(parts, _Ids()).text, asks=asks, replies=replies, meetings=meetings)
 
 
 def dossier_for(conn, org_id: str, file_id: str, *, now: datetime) -> Dossier | None:
@@ -673,7 +712,8 @@ def dossier_for(conn, org_id: str, file_id: str, *, now: datetime) -> Dossier | 
     return build_dossier(parts) if parts is not None else None
 
 
-__all__ = ["CLAIMS_LIMIT", "DOSSIER_CHARS", "DOSSIER_VERSION", "Dossier", "DossierLine", "DossierParts",
+__all__ = ["AskSeen", "CLAIMS_LIMIT", "DOSSIER_CHARS", "DOSSIER_VERSION", "Dossier", "DossierLine",
+           "DossierParts", "Seen",
            "FilePeople", "MOVES_LIMIT", "PEOPLE_LIMIT", "PROMISES_LIMIT", "Person", "Promise",
            "OPTIONAL", "RELATIVE_WORDS", "SECTIONS", "Section", "TITLES", "TOUCHES_LISTED", "TOUCHES_WHOLE",
            "WAVES_LIMIT", "build_dossier", "dossier_for", "label_of", "lines_by_id", "people_of",

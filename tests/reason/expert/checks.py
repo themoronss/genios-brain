@@ -23,7 +23,9 @@ def as_written(review: ExpertReview) -> C.CheckedReview:
         words=C.CardWords(headline=headline, situation=review.frames.primary, done_when=review.done_when,
                           draft=review.draft, to=move.to if move is not None else None,
                           evidence=cited_ids(review),
-                          quotes=tuple(f.quote for f in review.facts if f.quote)))
+                          quotes=tuple(f.quote for f in review.facts if f.quote),
+                          do_nothing=review.scenarios.do_nothing,
+                          kind=review.proposed_kind.why if review.proposed_kind is not None else None))
 
 
 __all__ = ["as_written"]

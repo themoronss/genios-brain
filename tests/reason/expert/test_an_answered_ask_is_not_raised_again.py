@@ -30,8 +30,8 @@ def _at(day: int, hour: int = 10) -> datetime:
     return datetime(2026, 8, day, hour, 0, tzinfo=timezone.utc)
 
 
-def _check(meeting_at=None, **over) -> C.CheckedReview:
-    dossier, people = W.world(asks_a_call=True, meeting_at=meeting_at)
+def _check(meeting_at=None, *, deck: bool = True, **over) -> C.CheckedReview:
+    dossier, people = W.world(asks_a_call=True, meeting_at=meeting_at, asks_the_deck=deck)
     return check_review(W.review(**over), dossier.text, people)
 
 
@@ -43,7 +43,9 @@ def test_a_meeting_ask_with_no_meeting_since_is_still_owed():
 
 @pytest.mark.parametrize("meeting_at", [_at(25, 15), _at(14)], ids=["booked ahead", "held since"])
 def test_a_meeting_on_the_file_after_the_ask_answers_it(meeting_at):
-    checked = _check(meeting_at, move=BOOK)
+    # ⛔ RESTATED by M35.C2.L-logic.V1.U15 (crosscheck X14): the call is the file's only ask owed — with the
+    # deck still owed too, the move drops but the file keeps its card (`test_verify_answered.py`).
+    checked = _check(meeting_at, deck=False, move=BOOK)
     assert checked.fate == C.SUPPRESSED and checked.because == f"answered:{W.MEETING}"
     assert next(v for v in checked.verdicts if v.line == "answers") == C.LineVerdict(
         "answers", C.DROPPED, C.ANSWERED, f"{W.ASK_MEET} by {W.MEETING}")
@@ -62,7 +64,8 @@ def test_a_meeting_does_not_answer_a_question():
 
 
 def test_an_answered_ask_wins_over_a_move_that_lost_its_ground():
-    checked = _check(_at(25, 15), move=BOOK, fact1={"quote": None})
+    # ⛔ RESTATED by M35.C2.L-logic.V1.U15 (X14): with no other ask owed (the deck's would keep a card).
+    checked = _check(_at(25, 15), deck=False, move=BOOK, fact1={"quote": None})
     assert checked.fate == C.SUPPRESSED, "the move is moot either way: its ask is answered"
 
 

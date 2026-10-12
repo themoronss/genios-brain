@@ -258,7 +258,7 @@
       "actual": "Her mail of the eighteenth waits on us; nothing has gone back yet."
      },
      "scenarios": {
-      "do_nothing": "The week she named passes, her interest cools, and an investor who came to the founder unasked is lost quietly.",
+      "do_nothing": "The week she named passes, her interest cools, and an investor who came to you unasked is lost quietly.",
       "act": "The deck and a time reach her while the demo is fresh, and a first call goes in the calendar.",
       "best": "A first call leads to a cheque in the seed round.",
       "worst": "A late answer reads as a company not raising in earnest, and she moves on.",

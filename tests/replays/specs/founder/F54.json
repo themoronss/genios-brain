@@ -557,7 +557,7 @@
       "actual": "The meeting is booked for the twentieth, and the file holds no mail or other touch."
      },
      "scenarios": {
-      "do_nothing": "The meeting comes and goes; the file stays empty unless Arjun notes what was said or writes afterwards.",
+      "do_nothing": "The meeting comes and goes; the file stays empty unless you note what was said or write afterwards.",
       "act": "Preparing now spends time on a meeting whose purpose the file does not show.",
       "best": "Arjun meets Kavya, something useful comes of it, and a short note afterwards opens a thread.",
       "worst": "Something is said or promised at the meeting and, with nothing written down, it is forgotten.",
@@ -821,7 +821,7 @@
       "actual": "The meeting is booked for the twentieth, and the file holds no mail or other touch."
      },
      "scenarios": {
-      "do_nothing": "The meeting comes and goes; the file stays empty unless Arjun notes what was said or writes afterwards.",
+      "do_nothing": "The meeting comes and goes; the file stays empty unless you note what was said or write afterwards.",
       "act": "Preparing now spends time on a meeting whose purpose the file does not show.",
       "best": "Arjun meets Rhea, something useful comes of it, and a short note afterwards opens a thread.",
       "worst": "Something is said or promised at the meeting and, with nothing written down, it is forgotten.",

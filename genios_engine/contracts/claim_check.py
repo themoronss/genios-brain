@@ -42,7 +42,7 @@ VERDICTS: tuple[str, ...] = (KEPT, CORRECTED, DROPPED, NOTED)
 UNCITED = "uncited"                          # a fact citing nothing
 UNKNOWN_EVIDENCE = "unknown_evidence"        # citing an id the dossier never showed
 UNQUOTED = "unquoted"                        # a fact a move rests on, citing a mail, with no quote
-MISQUOTED = "misquoted"                      # a quote the cited mail's words do not hold
+MISQUOTED = "misquoted"                      # a quote the cited mail's words do not hold — or no word shown
 UNSUPPORTED = "unsupported"                  # a name its lines do not hold
 WRONG_NUMBER = "wrong_number"                # a number its lines do not hold, and no calculator to fix it
 UNGROUNDED = "ungrounded"                    # an inference or pattern whose grounds all fell
@@ -72,10 +72,32 @@ SUPPRESSED = "suppressed"
 REFUSED = "refused"
 FATES: tuple[str, ...] = (SHOWN, HELD, SUPPRESSED, REFUSED)
 
-#: The lines a verdict may name: a review's own, by kind and number; what reaches the founder — the
-#: card's words, whom its draft goes to, the ask the move answers, the kind it proposes; and its prose.
-LINE_KINDS: tuple[str, ...] = ("fact", "inference", "pattern")
-CARD_LINES: tuple[str, ...] = ("move", "situation", "done_when", "draft", "to", "answers", "kind", "prose")
+#: The lines a verdict may name: a review's own, by kind and number — a fact's QUOTE among them, by its
+#: fact's number (`quote:<n>`: a quote the cited words do not hold drops there, the fact needing none,
+#: M35.C2.L-logic.V1.U09); what reaches the founder — the card's words, whom its draft goes to, the ask
+#: the move answers, the kind it proposes; its prose; and the facts the move names as its ground
+#: (`rests_on`: a ref that names no fact of the review drops there, M35.C1.L-contract.V0.U04).
+LINE_KINDS: tuple[str, ...] = ("fact", "inference", "pattern", "quote")
+CARD_LINES: tuple[str, ...] = ("move", "situation", "done_when", "draft", "to", "answers", "kind", "prose",
+                               "rests_on", "do_nothing")
+
+#: Why a move is HELD, as the founder reads it on the question card — closed, one phrase per cause
+#: (M35.C3.L-integration.V2.U05, crosscheck X10): the check's own detail ("misquoted: <the model's
+#: quote> (fact 1)") stays in its verdicts, never on a card. Keyed by the reason a fact the move rests on
+#: was dropped for, or by what else held it: its own words (`move`), its recipient, its answered ask.
+HELD_MOVE = "move"
+HELD_BECAUSE: dict[str, str] = {
+    UNCITED: "a fact your move rests on cites nothing on the file",
+    UNKNOWN_EVIDENCE: "a fact your move rests on cites something the file does not show",
+    UNQUOTED: "a fact your move rests on quotes nothing from the mail it cites",
+    MISQUOTED: "a fact your move rests on is not in the words it cites",
+    UNSUPPORTED: "a fact your move rests on names someone its lines do not",
+    WRONG_NUMBER: "a fact your move rests on has a number its lines do not hold",
+    HELD_MOVE: "the move says something the facts it rests on do not hold",
+    RECIPIENT_IS_US: "the move is addressed to you",
+    RECIPIENT_IS_CONNECTOR: "the move goes to whoever made the introduction",
+    ANSWERED: "the ask the move answers is already answered",
+}
 
 
 def _closed(value: Any, allowed: tuple[str, ...], name: str) -> str:
@@ -122,7 +144,9 @@ class LineVerdict:
 class CardWords:
     """The card's words once checked — only these may reach the founder. None: withheld. `evidence` and
     `quotes` are where the headline came from: the ids the facts it rests on cite, and those facts'
-    quotes — what the card shows beside it (STEP-13 §5: every sentence carries its source)."""
+    quotes — what the card shows beside it (STEP-13 §5: every sentence carries its source). `do_nothing`
+    is what doing nothing costs, as checked — the card's "cost of ignoring" — and `kind` the proposed kind's
+    reason, as checked: what the brief's pending line is written from (M35.C3.L-integration.V2.U05)."""
     headline: str | None
     situation: str | None
     done_when: str | None
@@ -130,6 +154,8 @@ class CardWords:
     to: str | None
     evidence: tuple[str, ...] = ()
     quotes: tuple[str, ...] = ()
+    do_nothing: str | None = None
+    kind: str | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "evidence", tuple(dict.fromkeys(str(e) for e in self.evidence)))
@@ -138,12 +164,12 @@ class CardWords:
     def as_mapping(self) -> dict[str, Any]:
         return {"headline": self.headline, "situation": self.situation, "done_when": self.done_when,
                 "draft": self.draft, "to": self.to, "evidence": list(self.evidence),
-                "quotes": list(self.quotes)}
+                "quotes": list(self.quotes), "do_nothing": self.do_nothing, "kind": self.kind}
 
     @classmethod
     def from_mapping(cls, raw: Mapping[str, Any]) -> "CardWords":
         return cls(**{k: (str(raw[k]) if raw.get(k) else None)
-                      for k in ("headline", "situation", "done_when", "draft", "to")},
+                      for k in ("headline", "situation", "done_when", "draft", "to", "do_nothing", "kind")},
                    evidence=tuple(raw.get("evidence") or ()), quotes=tuple(raw.get("quotes") or ()))
 
 
@@ -213,6 +239,7 @@ class CheckedReview:
 
 
 __all__ = ["ANSWERED", "BY_ALTERNATIVE", "BY_CALCULATOR", "CARD_LINES", "CHECK_VERSION", "CORRECTED",
+           "HELD_BECAUSE", "HELD_MOVE",
            "CORRECTIONS", "CardWords", "CheckedReview", "DROPPED", "FATES", "HELD", "KEPT", "LINE_KINDS",
            "LineVerdict", "MISQUOTED", "NOTED", "NOTES", "NOTHING_STANDS", "NOT_OURS_TO_ANSWER",
            "NO_RECIPIENT", "REASONS", "RECIPIENT_IS_CONNECTOR", "RECIPIENT_IS_US",

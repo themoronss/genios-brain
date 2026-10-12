@@ -82,8 +82,11 @@ def test_a_name_on_another_line_does_not_ground_a_fact():
 
 
 def test_the_files_own_people_ground_a_fact_on_any_of_its_lines():
-    """An ask's line prints whose turn it is, not who asked; the file's head and its people name him —
-    and a name the file does not show at all is still refused."""
+    """An ask's line prints whose turn it is, not who asked; the file is Marco's, so his name stands on any
+    item of it — and a name the file does not show at all is still refused. ⛔ RESTATED by
+    M35.C2.L-logic.V1.U12 (crosscheck X09): it is the COUNTERPARTY who stands on any line, no longer the
+    file's head and every person of it — another person of the file stands only where the cited item names
+    them (`test_verify_names.py`)."""
     checked = _check(fact2={"claim": "Marco Ruiz's ask for the deck waits on us"})
     assert _verdict(checked, "fact:2").verdict == C.KEPT
     assert _verdict(_check(fact2={"claim": "Neel's ask for the deck waits on us"}), "fact:2").reason \
@@ -111,7 +114,12 @@ def test_a_month_written_out_is_grounded_by_its_short_form(claim, kept):
     """A month written out is the month its lines write short (F51: the mail's "4 Aug", the claim's
     "August") — here a month no date on the line expands to (the mail is of 11 Aug); a month no line
     writes is still a name nobody wrote."""
-    checked = _check(fact1={"claim": claim}, ask_words="Thanks Arjun — could you send a short deck before "
+    # ⛔ RESTATED by M35.C2.L-logic.V1.U09: a decisive fact's numbers come from its QUOTE (the mail's head and
+    # its calculators aside), so the quote carries the "3 Sep" the claim restates — before, the claim's 3
+    # was grounded by another sentence of the mail its quote did not hold.
+    checked = _check(fact1={"claim": claim, "quote": "could you send a short deck before we set up a call? "
+                                                     "By 3 Sep"},
+                     ask_words="Thanks Arjun — could you send a short deck before "
                      "we set up a call? By 3 Sep, ideally. I read everything within a week.")
     assert (_verdict(checked, "fact:1").verdict == C.KEPT) is kept, _verdict(checked, "fact:1")
 
