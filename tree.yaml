@@ -33,6 +33,7 @@
 #   yc2_w27_align                     M34         ← before STEP-12, all aligned (built 10 Oct)
 #   yc2_w27_s13                       M35, M36    ← STEP-13, check every claim (planned 12 Oct)
 #   yc2_w27_s17 · yc2_w27_s18         M40, M41 · M48, M49 ← STEP-17, STEP-18 (built, merged 12 Oct)
+#   yc2_w27_s16                       M46, M47    ← STEP-16, learning from you (building 12 Oct)
 #
 # So `M11` is AMBIGUOUS on its own: it names "The remaining Layer 3 losses" in one block and
 # "L2 Reasoning" in another, and `M11.C1.L-logic.V0.U01` exists twice with different meanings.
@@ -8983,3 +8984,618 @@ yc2_w27_s18:
                       artifact: "genios_engine/main.py"
                       verify: ".venv/bin/python -m pytest -q tests/platform/test_the_dev_secret_never_boots_outside_dev.py tests/test_migrate_read_only.py"
                       depends_on: [M49.C3.L-contract.V0.U07]
+
+yc2_w27_s16:
+  status: approved_in_progress   # 2026-10-12: Rohit's "complete it all"; S16-D1..D10 at their recommended answers until he says otherwise (06)
+  source: >
+    speedrun008/YC-II W27/STEP-16 §1-§6, re-checked claim by claim against yc2w27-s13 @ fbd0aeaa (STEP-13
+    nearly built) — STEP-16 §8 — by reading the code and running it on fresh scratch databases (production
+    not read). Since 5 Oct calibration runs in shadow (yc2_w27/M18), STEP-12 made the expert's review each
+    covered file's one decision, and STEP-13 made your answer the first correction to reach the next
+    judgment. What is missing: the dashboard's "wrong because" lands in card_events, which eight of the nine
+    verdict readers never read, while the extension's door refuses eight of the eleven reasons (a 500); a
+    verdict moves a file's fingerprint and triggers no review, and "you ask about it" has no door; there is
+    no surface for a correction in your words, and a question card cannot be called wrong; nothing L6
+    learns reaches the expert; a founder play's success is a sentence no monitor can see; and a file
+    decision that ends records nothing of what closed it.
+  vision: >
+    A correction you make changes the next judgment on its file — and on every file of its kind when you say
+    it is how this work goes — and never silently: the expert follows it, or says, citing it, why the file
+    now outweighs it, and a move made over a correction it does not cite becomes one question to you. Every
+    reason you give is stored, through either door, in one ledger every reader reads. A file decision that
+    ends says how, and what proved it; your own numbers stand beside the playbook's priors; the week's
+    scorecard shows usefulness, what was held back, coverage, verified outcomes and what each correction
+    changed. Nothing learns a pattern from one click, nothing mutes a rule, nothing writes a learned brain.
+  order_note: >
+    M46.C1 (the guard) first, so every later unit runs it. Then M46.C2 (the ledger) and M46.C3 (your
+    correction) in either order — C3's card and question units after C2.U03 and after STEP-13's Answer
+    action and question card, which edit the same files; M46.C4's contract and prompt any time, the dossier
+    after M46.C3.U02, then the fingerprint, the trigger, the delta, and never silently after the dossier;
+    M46.C5 (the brief) any time; M46.C6.U01 once STEP-15's morning brief exists; M46's acceptance last.
+    M47.C1 any time after M46.C2.U01; M47.C2 after M47.C1 and M46.C4.U03; M47.C3 after M47.C1 and the
+    delta; M47.C4's contract and cases any time, the runner after M46.C3.U04, ONE re-record after every unit
+    that changes what the expert is shown or asked (M46.C4, M47.C2) — so the golden lane is re-recorded
+    once for the whole step — and the acceptance last. Outside the block: STEP-14 and STEP-15 (this step's
+    dependencies), STEP-17's feedback test (M46.C2.U01 takes its eight markers off). Every unit: its own
+    tests, a mutation run, the repo's guards (tests/*.py root and tests/platform); the step: a crosscheck
+    and the whole QA tier, awake.
+  milestones:
+    - id: M46
+      name: Your correction changes the next judgment, and never silently (STEP-16 §3.1, §3.2, §4)
+      ships: >
+        On Postgres: every one of the eleven reasons is stored through either door in one ledger that every
+        reader reads (0 × 500); a correction you write — on a card, on a question card or on a file — is in
+        that file's dossier with its id, moves its fingerprint and brings it back to the expert, whose next
+        review follows it or says why not, citing it, and a move made over a correction it does not cite is
+        held as ONE question to you; a correction for a kind of work prints beside that kind's playbook
+        prior on every file of the kind; a question you call wrong is never asked again in its words; a bare
+        click changes only its own file; both decisions replay with every model door poisoned, and the delta
+        names what the correction changed. Calibration, the learned brains and the distinct_days gate are
+        untouched.
+      categories:
+        - id: M46.C1
+          name: What learning from you may not do
+          layers:
+            - layer: integration
+              levels:
+                - level: 0
+                  units:
+                    - id: M46.C1.L-integration.V0.U01
+                      what: >
+                        Written first, so every later unit runs it: no module this block adds or edits
+                        writes `rule_mutes`, `calibration_nudges`, `tenant_packs.authority_revision`,
+                        `learned_brain_entries` or `temporary_memories` (their statements read from the AST,
+                        constants resolved); `calibration_apply` stays in `NOT_DEFAULT_ON` (`06` D13);
+                        `feedback/units.unit_recommendation_learning` still passes `distinct_days=1`,
+                        `validate_learning` still runs before `govern`, and no stored policy floor is lowered
+                        (the tripwire is in this verify — do not fix `distinct_days` before ADR-10); the
+                        expert's rule `file_review` and the question's `founder_question` are rules of no
+                        pack manifest, so calibration never scores an expert card.
+                      artifact: "tests/feedback/test_learning_from_you_arms_nothing.py"
+                      verify: ".venv/bin/python -m pytest -q tests/feedback/test_learning_from_you_arms_nothing.py tests/feedback/test_the_declared_violation_is_blocked_by_arithmetic.py tests/feedback/test_calibration_is_shadow_until_armed.py"
+                      depends_on: []
+        - id: M46.C2
+          name: One ledger for your verdict (STEP-16 §3.1, STEP-18 B3, S17-F7)
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M46.C2.L-contract.V0.U01
+                      status: built   # 2026-10-12 — by yc2_w27_s18/M48.C1.L-contract.V0.U01 (61d679ed, STEP-18 B3) as 0210, not 0240; no second writer of the constraint
+                      what: >
+                        `0240_feedback_reasons`: the CHECK on `card_feedback_verdicts` and on
+                        `card_feedback_revisions` admits the eleven reasons of
+                        `contracts/learning_attribution.ALL_REASONS` (three today — measured 12 Oct on a
+                        fresh scratch database: 3 stored, 8 refused). Additive: the image before it writes
+                        three and still runs; rolled back cleanly. STEP-17's eight strict expected failures
+                        (`tests/feedback/test_every_feedback_reason_is_stored_pg.py`, `yc2_w27_s17`
+                        M40.C2.L-integration.V0.U01) lose their markers here, and
+                        `context/correlation_history`'s comment that already says eleven becomes true.
+                      artifact: "migrations/0210_every_wrong_reason_is_kept.sql"   # planned as 0240_feedback_reasons
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/feedback/test_every_feedback_reason_is_stored_pg.py tests/platform/test_the_code_can_always_be_rolled_back.py"
+                      depends_on: []
+            - layer: data
+              levels:
+                - level: 1
+                  units:
+                    - id: M46.C2.L-data.V1.U02
+                      what: >
+                        The one writer of a verdict (`deliver/verdicts.record`): the extension route's two
+                        statements (`api/intelligence_routes.py:1071-1125`) move here byte for byte — the
+                        verdict and its revision, idempotent per card, `occurred_at` the request's one instant
+                        — bound to the card's audited authority, a decision's or a question's
+                        (`reason/authority.QUESTION_SIGNAL_PREDICATE`); `run_play`, `do_it_myself` and `wrong`
+                        with one of the eleven are verdicts, `snooze` and `requeue` never. The route calls it
+                        and still evaluates the adaptive lease in its transaction; STEP-17's test reads the
+                        statements from here, restated in this unit.
+                      artifact: "genios_engine/deliver/verdicts.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/deliver/test_one_writer_of_a_verdict.py tests/test_intelligence_authority_routes.py tests/feedback/test_every_feedback_reason_is_stored_pg.py tests/test_layer_topology.py"
+                      depends_on: [M46.C2.L-contract.V0.U01]
+            - layer: integration
+              levels:
+                - level: 2
+                  units:
+                    - id: M46.C2.L-integration.V2.U03
+                      what: >
+                        The dashboard's door writes the verdict: `deliver/actions.ingest_action` records
+                        `run_play`, `do_it_myself` and `wrong` with its reason through `verdicts.record`, in
+                        the card action's transaction — so the reason you give on a card reaches the eight
+                        readers that read only the extension's ledger today (`s16-F1`): the expert's dossier
+                        and its fingerprint, the change gate's inputs, the learning batch, the adaptive lease
+                        (weekly), a file's history facts, the counterfactual ledger and the receipt "a human
+                        verdict has reached the loop".
+                      artifact: "genios_engine/deliver/actions.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/deliver/test_a_card_verdict_reaches_every_reader.py tests/test_card_history_routes.py"
+                      depends_on: [M46.C2.L-data.V1.U02]
+        - id: M46.C3
+          name: Your correction is your word on a file (STEP-16 §3.2)
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M46.C3.L-contract.V0.U01
+                      what: >
+                        `0241_founder_corrections`: your correction of a file — the file (its anchor; no
+                        foreign key, as `founder_questions`), the card and the verdict it rides on (optional),
+                        the reason (one of the eleven, optional), your words (one line, required), the scope
+                        (`file`; `kind` — every file of this kind of work, the kind recorded; `company` — a
+                        preferences line of the brief, its line id kept), who and when; standing, or withdrawn
+                        (by whom, when); never deleted. Wiped by `/reset` (account_routes); rolled back
+                        cleanly.
+                      artifact: "migrations/0241_founder_corrections.sql"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/context/test_the_founder_corrections_table.py tests/platform/test_the_code_can_always_be_rolled_back.py"
+                      depends_on: []
+            - layer: data
+              levels:
+                - level: 0
+                  units:
+                    - id: M46.C3.L-data.V0.U05
+                      what: >
+                        A question you call wrong is retired and not asked again (`context/founder_questions`):
+                        `retire` takes a third closed why, `CALLED_WRONG`; `ask` does not file again, on the
+                        same file, a question in the words of one you called wrong — it returns that retired
+                        question, and the caller counts the file held with no card (S16-D10).
+                      artifact: "genios_engine/context/founder_questions.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/context/test_a_file_asks_one_question.py tests/context/test_a_question_called_wrong_is_not_asked_again.py"
+                      depends_on: []
+                - level: 1
+                  units:
+                    - id: M46.C3.L-data.V1.U02
+                      what: >
+                        The corrections, kept (`context/founder_corrections`): `correct` — its id the
+                        content's (tenant, file, words, scope), so the same words again are the same
+                        correction and no id is minted twice (`03` F170's rule); `withdraw`;
+                        `standing_for(file, people, kind)` — the file's own (on its anchor or one of its
+                        people) and its kind's, newest first, bounded, the cut counted. A `company` correction
+                        is your own preferences line of the brief, written through
+                        `company_brief_store.add` (accepted as written — your words), the correction keeping
+                        its line id.
+                      artifact: "genios_engine/context/founder_corrections.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/context/test_a_correction_is_kept.py"
+                      depends_on: [M46.C3.L-contract.V0.U01]
+            - layer: interface
+              levels:
+                - level: 2
+                  units:
+                    - id: M46.C3.L-interface.V2.U03
+                      what: >
+                        Your door on a file: `POST /v1/workstreams/{file_id}/corrections` (words, scope, an
+                        optional card) and `…/corrections/{id}/withdraw`; `GET /v1/workstreams/{file_id}`
+                        lists the file's standing corrections. Scope `file`: the owner or the card's assignee;
+                        `kind` and `company`: the owner only (`06` D27's rule); a `kind` on a file the brief
+                        names no kind for is refused, saying so.
+                      artifact: "genios_engine/api/workstream_routes.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/api/test_correcting_a_file.py tests/api/test_a_file_is_readable.py"
+                      depends_on: [M46.C3.L-data.V1.U02]
+                - level: 5
+                  units:
+                    - id: M46.C3.L-interface.V5.U07
+                      what: >
+                        The question card offers `wrong` (`deliver/pipeline.QUESTION_ACTIONS`, left for this
+                        step by STEP-13): beside answer and snooze, *don't ask me this* — the four reason
+                        groups and your words (S16-D4, S16-D10).
+                      artifact: "genios_engine/deliver/pipeline.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/deliver/test_a_question_card.py"
+                      depends_on: [M46.C3.L-integration.V4.U06]
+            - layer: integration
+              levels:
+                - level: 3
+                  units:
+                    - id: M46.C3.L-integration.V3.U04
+                      what: >
+                        The card's `wrong` carries your words and their scope (`POST /cards/{id}/action`:
+                        `words`, `scope`): with words, the correction is kept on the card's file in the
+                        verdict's transaction — an expert card's file is its subject, any other card's the
+                        file its subject belongs to; without words it stays a verdict — one click generalises
+                        nothing (§3.2). After STEP-13's Answer action and STEP-14's card, which edit the same
+                        file.
+                      artifact: "genios_engine/deliver/actions.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/deliver/test_a_wrong_with_words_is_a_correction.py tests/deliver/test_a_card_verdict_reaches_every_reader.py"
+                      depends_on: [M46.C3.L-data.V1.U02, M46.C2.L-integration.V2.U03]
+                - level: 4
+                  units:
+                    - id: M46.C3.L-integration.V4.U06
+                      what: >
+                        `wrong` on a question card (`deliver/actions.ingest_action`): the verdict, through the
+                        one writer, bound to the question's own authority; the file's question retired
+                        `CALLED_WRONG` and its signal acted; your words, if any, a correction of the file — in
+                        one transaction. Calibration never reads it (its rule is no pack rule).
+                      artifact: "genios_engine/deliver/actions.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/deliver/test_calling_a_question_wrong.py tests/deliver/test_answering_a_question.py"
+                      depends_on: [M46.C3.L-integration.V3.U04, M46.C3.L-data.V0.U05]
+        - id: M46.C4
+          name: The expert reasons from it — as data, as a corrected playbook prior, never silently
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M46.C4.L-contract.V0.U01
+                      what: >
+                        The check's closed words grow by two (`contracts/claim_check`): `correction_unheeded`
+                        — a correction the dossier showed that no fact, inference or pattern of the review
+                        cites — and `called_wrong` — a move in the words of a card you called wrong, citing
+                        neither that card nor your verdict; a held move's question names the correction.
+                        Frozen, pure; a check stored before reads as stored.
+                      artifact: "genios_engine/contracts/claim_check.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_the_claim_check_contract.py"
+                      depends_on: []
+            - layer: logic
+              levels:
+                - level: 2
+                  units:
+                    - id: M46.C4.L-logic.V2.U03
+                      what: >
+                        The dossier shows your corrections: WHAT YOU CORRECTED after WHAT YOU TOLD US — each
+                        `[corr:<id>]`, your words verbatim, the card it was about, the scope, when — printed
+                        only when there is one, so a file with none reads byte for byte as before; a `kind`
+                        correction also prints in WHAT A PROFESSIONAL KNOWS, beside the prior, as yours (the
+                        corrected playbook prior); a verdict's reason prints whichever door it came by. The
+                        catalogue holds the `corr:` ids, so a review may cite them.
+                      artifact: "genios_engine/reason/expert/dossier.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_your_correction_is_in_the_dossier.py tests/reason/expert/test_the_dossier.py tests/reason/expert/test_the_dossier_lines.py"
+                      depends_on: [M46.C3.L-data.V1.U02]
+                - level: 3
+                  units:
+                    - id: M46.C4.L-logic.V3.U04
+                      what: >
+                        The fingerprint names the corrections the dossier shows — the file's and its kind's —
+                        so a correction moves the file; with none, its inputs are byte for byte as before.
+                      artifact: "genios_engine/reason/expert/fingerprint.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_the_file_fingerprint.py"
+                      depends_on: [M46.C4.L-logic.V2.U03]
+                    - id: M46.C4.L-logic.V3.U06
+                      what: >
+                        Never silently (`reason/expert/verify`): a move made over a correction the review does
+                        not cite is HELD — the file asks ONE question, "you said … on <date>; does it still
+                        hold?" — and so is a move repeating, in its words, a card you called wrong without
+                        citing your verdict; a review with no move notes it. A `company` correction is the
+                        brief's and needs no citation. Pure.
+                      artifact: "genios_engine/reason/expert/verify.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_a_correction_is_never_ignored.py tests/reason/expert/test_verify.py"
+                      depends_on: [M46.C4.L-contract.V0.U01, M46.C4.L-logic.V2.U03]
+                - level: 4
+                  units:
+                    - id: M46.C4.L-logic.V4.U05
+                      what: >
+                        A correction is a trigger, `founder_corrected` (`05` §5's "you ask about it", given
+                        its door): a correction the last review did not see brings the file back; its kind's
+                        corrections every file of the kind (S16-D3), nearest deadline first under the day's
+                        cap and `MAX_PER_PASS`; a verdict on a card of the file too (S16-D2). The brief's and
+                        the playbook's versions still ride along.
+                      artifact: "genios_engine/reason/expert/triggers.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_a_review_says_what_triggered_it.py tests/reason/expert/test_a_correction_brings_the_file_back.py"
+                      depends_on: [M46.C4.L-logic.V3.U04]
+                    - id: M46.C4.L-logic.V4.U07
+                      what: >
+                        What a correction changed, read back (`reason/expert/correction_delta`): for each
+                        correction, the last review that did not see it and the first that did — their mode,
+                        their move, whether it cited the correction, the two decisions — replayed from the
+                        store with every model door poisoned. Its readers: the weekly scorecard (M47) and the
+                        acceptance.
+                      artifact: "genios_engine/reason/expert/correction_delta.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_what_a_correction_changed.py tests/reason/expert/test_replay_asks_no_model.py"
+                      depends_on: [M46.C4.L-logic.V3.U04]
+            - layer: interface
+              levels:
+                - level: 0
+                  units:
+                    - id: M46.C4.L-interface.V0.U02
+                      what: >
+                        The checklist says what a correction is: your word on this file — follow it, or say in
+                        an inference citing it why the file now outweighs it; a correction for the kind of
+                        work overrides the playbook's prior for your company; a card you called wrong is not
+                        advised again in its words without citing your verdict. `PROMPT_VERSION` →
+                        `expert-review.v4`: every file reviewed once more (D48 as built).
+                      artifact: "genios_engine/reason/expert/prompt.py"
+                      verify: ".venv/bin/python -m pytest -q tests/reason/expert/test_the_checklist_prompt.py"
+                      depends_on: []
+        - id: M46.C5
+          name: The brief learns from your corrections of it (03 F126, F157)
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M46.C5.L-contract.V0.U01
+                      what: >
+                        `0242_company_brief_corrections`: `company_brief_lines.proposed_kind` — the drafter's
+                        kind when you accepted another (F126) — and `replaces` — the accepted line a proposal
+                        would replace (F157); nullable, additive; rolled back cleanly.
+                      artifact: "migrations/0242_company_brief_corrections.sql"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/platform/test_company_brief_store.py tests/platform/test_the_code_can_always_be_rolled_back.py"
+                      depends_on: []
+            - layer: data
+              levels:
+                - level: 1
+                  units:
+                    - id: M46.C5.L-data.V1.U02
+                      what: >
+                        The brief keeps what you corrected: `accept` with another kind keeps the proposal's in
+                        `proposed_kind`; `propose(replaces=…)` proposes a correction of an accepted line, and
+                        accepting it removes the line it replaces in the same act; `pending` shows a replacing
+                        proposal beside the line it would replace (the route returns it as is).
+                      artifact: "genios_engine/platform/company_brief_store.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/platform/test_a_correction_of_the_brief_is_kept.py tests/platform/test_company_brief_store.py tests/api/test_company_brief_routes.py"
+                      depends_on: [M46.C5.L-contract.V0.U01]
+            - layer: logic
+              levels:
+                - level: 2
+                  units:
+                    - id: M46.C5.L-logic.V2.U03
+                      what: >
+                        The expert may propose correcting an accepted kind: a review whose proposed kind
+                        differs from the accepted line's writes a proposal that replaces it, labelled, for you
+                        to accept — never applied (F157; F132's programme behaving like the fund behind it);
+                        and "this is not an investor", written as a correction, reaches the kind that way.
+                      artifact: "genios_engine/reason/expert/kind_proposal.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_a_review_may_propose_a_kind.py"
+                      depends_on: [M46.C5.L-data.V1.U02]
+        - id: M46.C6
+          name: Where you see it, and M46's acceptance
+          layers:
+            - layer: interface
+              levels:
+                - level: 2
+                  units:
+                    - id: M46.C6.L-interface.V2.U01
+                      what: >
+                        The morning brief carries the same door (STEP-15 §3.5): each line's "not useful because
+                        ___" is a correction of the line's file, and a Watching line whose review cites a
+                        correction says so — "waiting for a real milestone (you said so on 12 Oct)". After
+                        STEP-15 builds `executive/morning.py`; if it builds elsewhere, this unit follows it.
+                      artifact: "genios_engine/executive/morning.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/executive/test_morning_brief.py -k correction"
+                      depends_on: [M46.C3.L-data.V1.U02]
+            - layer: integration
+              levels:
+                - level: 6
+                  units:
+                    - id: M46.C6.L-integration.V6.U02
+                      what: >
+                        M46's acceptance on Postgres (§6's own file): a file reviewed; your correction on its
+                        card; the next sweep reviews it again (`founder_corrected`), its review cites the
+                        correction, and its decision changes — mode and move; both decisions replay with every
+                        model door poisoned and the delta names the change; a kind correction changes a second
+                        file of the kind; a bare `wrong` changes only its file; a question called wrong is
+                        retired and not asked again. Negative controls, each caught: the trigger off — nothing
+                        changes until the file moves; the check's rule off — an ignoring review's move reaches
+                        a card; the dashboard door unwired — the dossier never sees the reason.
+                      artifact: "tests/feedback/test_a_correction_changes_the_next_decision.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/feedback/test_a_correction_changes_the_next_decision.py"
+                      depends_on: [M46.C1.L-integration.V0.U01, M46.C3.L-interface.V5.U07, M46.C4.L-interface.V0.U02, M46.C4.L-logic.V3.U06, M46.C4.L-logic.V4.U05, M46.C4.L-logic.V4.U07]
+    - id: M47
+      name: A file that ends says how; the week and the board measure it (STEP-16 §3.3, §3.4, 09 G6)
+      ships: >
+        A covered file whose ask was answered ends its card RESOLVED, naming the event that closed it, and
+        every other end says what it was — taken by you, called wrong (and why), only replied to, lapsed,
+        replaced; the dossier shows how each earlier decision of the file ended and, beside a playbook's
+        prior, your own measured number with its n (observe-only, normal only at n ≥ 5); the week's scorecard
+        shows usefulness per lane, what was held back and why, coverage, verified outcomes and what each
+        correction changed; a receipt holds that every verified card names what closed it; on the golden set
+        F57's verified close passes, the correction cases F59–F61 pass, and every other case holds.
+      categories:
+        - id: M47.C1
+          name: How each decision of a file ended
+          layers:
+            - layer: data
+              levels:
+                - level: 0
+                  units:
+                    - id: M47.C1.L-data.V0.U01
+                      what: >
+                        One way to resolve a card (`platform/card_lifecycle.resolve_cards`): `resolved`,
+                        `resolved_at`, one `card.resolved` event per card naming its cause — `verified`, its
+                        evidence the event that closed the ask, the loop and the basis — in the caller's
+                        transaction; the closed vocabulary grows by its causes; a card already ended is
+                        neither moved nor given an event. The expiry guard gains its twin.
+                      artifact: "genios_engine/platform/card_lifecycle.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/platform/test_one_way_to_resolve_a_card.py tests/platform/test_one_way_to_expire_a_card.py"
+                      depends_on: []
+                - level: 2
+                  units:
+                    - id: M47.C1.L-data.V2.U03
+                      what: >
+                        How each decision of a file ended, read (`context/file_outcomes`): per card on the
+                        file — verified (by which event), only replied, taken by you (`run_play`,
+                        `do_it_myself`), called wrong (and why), lapsed, replaced, cleared — from the card's
+                        end (`card_events`, STEP-06's causes and the resolution's), the verdict ledger and the
+                        asks' closures; and `rates` per kind and per lane over a window. No table: every end
+                        is already written once.
+                      artifact: "genios_engine/context/file_outcomes.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/context/test_how_a_file_decision_ended.py"
+                      depends_on: [M47.C1.L-integration.V1.U02, M46.C2.L-contract.V0.U01]
+            - layer: integration
+              levels:
+                - level: 1
+                  units:
+                    - id: M47.C1.L-integration.V1.U02
+                      what: >
+                        A file decision that ends on an answered ask says so: when a covered file's new review
+                        names no move (`reason/domain_shadow._clear_file_decision`), a card whose move named
+                        the ask it answers and whose ask closed `answered` (`open_loops.closed_basis`,
+                        `closed_by_event` — written since 0167, read by nothing until now) is RESOLVED
+                        `verified` with that event; one closed only `replied`, or with no ask named, is
+                        cleared as today (`RULE_CLEARED`), the closing event in its detail. The declaration of
+                        `closed_basis` in `tests/test_nothing_is_written_and_never_read.py` comes off.
+                      artifact: "genios_engine/reason/domain_shadow.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_an_answered_ask_resolves_the_card.py tests/reason/expert/test_a_file_keeps_one_decision.py tests/test_nothing_is_written_and_never_read.py"
+                      depends_on: [M47.C1.L-data.V0.U01]
+        - id: M47.C2
+          name: What came of it, in front of the expert (STEP-16 §3.4, observe-only)
+          layers:
+            - layer: logic
+              levels:
+                - level: 3
+                  units:
+                    - id: M47.C2.L-logic.V3.U01
+                      what: >
+                        Your own numbers for a kind of work (`context/kind_numbers`): across the tenant's files
+                        of one kind — how many reached each stage their reviews named, the days between stages
+                        (a median, with its n), how many decisions ended verified — each a `Measured` with its
+                        n, normal only at n ≥ 5 (`06` D37); org-level, nothing private.
+                      artifact: "genios_engine/context/kind_numbers.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/context/test_your_numbers_for_a_kind_of_work.py tests/replays/test_every_number_says_its_n.py"
+                      depends_on: [M47.C1.L-data.V2.U03]
+                - level: 4
+                  units:
+                    - id: M47.C2.L-logic.V4.U02
+                      what: >
+                        The dossier shows what came of it: WHAT WAS JUDGED BEFORE says how each earlier
+                        decision of the file ended (`file_outcomes`, its evidence id citable) and each ask
+                        closed since (answered or only replied, by which event); WHAT A PROFESSIONAL KNOWS
+                        prints, beside a stage's prior, your own number with its n — "a prior" and "yours"
+                        told apart, never merged (Atlas V.3). Absent, byte for byte as before; the fingerprint
+                        is unchanged — these are outputs, and the closing event already moved the file.
+                      artifact: "genios_engine/reason/expert/dossier.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/reason/expert/test_what_came_of_it_is_in_the_dossier.py tests/reason/expert/test_the_dossier.py"
+                      depends_on: [M47.C2.L-logic.V3.U01, M46.C4.L-logic.V2.U03]
+        - id: M47.C3
+          name: The week, measured (09 G6, 06 D18's scorecard, 03 F76)
+          layers:
+            - layer: logic
+              levels:
+                - level: 0
+                  units:
+                    - id: M47.C3.L-logic.V0.U04
+                      what: >
+                        The public acted rate counts what you did (`03` F76, `s16-F8`): taken is a card
+                        `acted` on `run_play` or `do_it_myself`, or `resolved` — never `delivered`; a card
+                        replaced or cleared is not ignored (STEP-06's causes); a card called wrong is its own
+                        count, and `dismissed` is no card state.
+                      artifact: "genios_engine/api/benchmarks_routes.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/test_benchmarks.py"
+                      depends_on: []
+                - level: 5
+                  units:
+                    - id: M47.C3.L-logic.V5.U01
+                      what: >
+                        The weekly scorecard (`feedback/scorecard`), per tenant per ISO week: usefulness per
+                        lane — taken, called wrong by reason and the layer each reason debits
+                        (`feedback/attribution.route`, read by nothing until now), lapsed, replaced; what was
+                        held back and why — the check's fates and verdicts, the questions asked, answered and
+                        called wrong; coverage — STEP-10's receipts; outcomes — verified, only replied, by
+                        kind, and the verified-outcome rate; your corrections and what each changed
+                        (`correction_delta`). Pure composition over reads; no model; a week with nothing says
+                        so.
+                      artifact: "genios_engine/feedback/scorecard.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/feedback/test_the_weekly_scorecard.py"
+                      depends_on: [M47.C1.L-data.V2.U03, M46.C4.L-logic.V4.U07]
+            - layer: interface
+              levels:
+                - level: 6
+                  units:
+                    - id: M47.C3.L-interface.V6.U02
+                      what: "`GET /v1/learning/scorecard?week=` — the owner's view of a week."
+                      artifact: "genios_engine/api/learning_routes.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/api/test_the_scorecard_route.py"
+                      depends_on: [M47.C3.L-logic.V5.U01]
+            - layer: integration
+              levels:
+                - level: 2
+                  units:
+                    - id: M47.C3.L-integration.V2.U03
+                      what: >
+                        Receipts: "every verified card names what closed it" (a card resolved `verified` with
+                        no evidence event: 0 to pass, witnessed by the resolved cards in scope —
+                        `NOT_EXERCISED` on none), and the verified-outcome rate printed by the health check;
+                        "a human verdict has reached the loop" now reads the one ledger both doors write.
+                      artifact: "genios_engine/platform/receipts.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/platform/test_a_verified_card_names_what_closed_it.py tests/platform/test_one_broken_receipt_does_not_take_the_rest.py"
+                      depends_on: [M47.C1.L-integration.V1.U02]
+        - id: M47.C4
+          name: The golden set
+          layers:
+            - layer: contract
+              levels:
+                - level: 0
+                  units:
+                    - id: M47.C4.L-contract.V0.U01
+                      what: >
+                        A case may carry your acts and say how a card ends (`tests/replays/founder_case.py`):
+                        `acts` — after a sweep, on the card about X, `wrong` with a reason and, optionally,
+                        words and a scope, or a correction of a file — validated at load (a sweep that exists,
+                        a card the case expects, one of the eleven reasons, one of three scopes, no real
+                        name); a card expectation may say how it ends (`ended`: `verified`, `by`: an object of
+                        the case); `outcome` leaves `NOT_EXPRESSIBLE_TODAY`.
+                      artifact: "tests/replays/founder_case.py"
+                      verify: ".venv/bin/python -m pytest -q tests/replays/test_founder_case_contract.py"
+                      depends_on: []
+            - layer: data
+              levels:
+                - level: 1
+                  units:
+                    - id: M47.C4.L-data.V1.U03
+                      what: >
+                        F57's verified close is an expectation: its card ends `verified` by the signed NDA's
+                        mail from the second sweep, and its `not_expressible.outcome` comes off (`09` G6).
+                      artifact: "tests/replays/specs/founder/F57.json"
+                      verify: ".venv/bin/python -m pytest -q tests/replays/test_founder_case_contract.py tests/replays/test_every_case_forbids_something.py"
+                      depends_on: [M47.C4.L-contract.V0.U01]
+                    - id: M47.C4.L-data.V1.U04
+                      what: >
+                        F59 — an investor who asked, on a call, for news only on real milestones (no mail says
+                        so): the expert's first review advises an update; you call its card wrong — "not
+                        relevant: she asked for updates only with real news; don't push me", scope file; the
+                        next sweep's review waits, cites your correction, and no card is raised; forbidden:
+                        "checking in", the first card's headline. Its expert answers authored per sweep
+                        (`06` D49).
+                      artifact: "tests/replays/specs/founder/F59.json"
+                      verify: ".venv/bin/python -m pytest -q tests/replays/test_founder_case_contract.py tests/replays/test_every_changed_file_has_an_expert_answer.py"
+                      depends_on: [M47.C4.L-contract.V0.U01]
+                    - id: M47.C4.L-data.V1.U05
+                      what: >
+                        F60 — a correction for a whole kind of work: two investor files, both advised a
+                        follow-up; on the first you write "investors who asked for news only on milestones get
+                        nothing before one lands", scope kind; the next sweep reviews both, each cites the
+                        correction, and both wait.
+                      artifact: "tests/replays/specs/founder/F60.json"
+                      verify: ".venv/bin/python -m pytest -q tests/replays/test_founder_case_contract.py tests/replays/test_every_changed_file_has_an_expert_answer.py"
+                      depends_on: [M47.C4.L-contract.V0.U01]
+                    - id: M47.C4.L-data.V1.U06
+                      what: >
+                        F61 — one click is never a pattern (must-abstain on generalising): a bare "wrong: not
+                        relevant" on one programme's card changes that file's next review only; a second
+                        programme's file keeps its card; forbidden: the second file's card gone, any
+                        correction written.
+                      artifact: "tests/replays/specs/founder/F61.json"
+                      verify: ".venv/bin/python -m pytest -q tests/replays/test_founder_case_contract.py tests/replays/test_every_changed_file_has_an_expert_answer.py"
+                      depends_on: [M47.C4.L-contract.V0.U01]
+            - layer: integration
+              levels:
+                - level: 4
+                  units:
+                    - id: M47.C4.L-integration.V4.U02
+                      what: >
+                        The runner plays your acts and reads each card's end (`tests/replays/engine_runner.py`):
+                        after the named sweep, through the real doors — `deliver/actions.ingest_action` and the
+                        correction store — at that sweep's instant; each card's end (state, cause, evidence
+                        event) mapped back to the case's objects.
+                      artifact: "tests/replays/engine_runner.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python -m pytest -q tests/replays/test_engine_runner.py"
+                      depends_on: [M47.C4.L-contract.V0.U01, M46.C3.L-integration.V3.U04, M47.C1.L-data.V0.U01]
+                - level: 5
+                  units:
+                    - id: M47.C4.L-integration.V5.U07
+                      what: >
+                        Re-recorded ONCE for the whole step, under `expert-review.v4`, the dossier's new
+                        sections and the cases F59–F61 — the sweep, the citations, the first-connect door, the
+                        resync — `expert_files.json` re-measured, and the board restated in its five places
+                        (blocked_on, MOVED_AFTER, the Atlas specs, the controls, `03` §F.1).
+                      artifact: "tests/replays/specs/founder/cassettes"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays && GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test .venv/bin/python scripts/golden_score.py --assert-recorded \"speedrun008/YC-II W27/03-FINDINGS.md\""
+                      depends_on: [M47.C4.L-integration.V4.U02, M47.C4.L-data.V1.U03, M47.C4.L-data.V1.U04, M47.C4.L-data.V1.U05, M47.C4.L-data.V1.U06, M47.C2.L-logic.V4.U02, M46.C4.L-interface.V0.U02, M46.C4.L-logic.V3.U06, M46.C4.L-logic.V4.U05]
+                - level: 6
+                  units:
+                    - id: M47.C4.L-integration.V6.U08
+                      what: >
+                        STEP-16's acceptance on the golden set: F57 ends `verified` by its mail; F59 and F60
+                        change their next judgment and cite the correction; F61 changes only its file; every
+                        must-abstain case holds; must-detect does not move backwards. Negative controls, each
+                        caught: the trigger off — F59's card stays; the dashboard door unwired — F59's review
+                        never sees the reason; resolution off — F57 ends `rule_cleared`.
+                      artifact: "tests/replays/test_learning_from_you.py"
+                      verify: "GENIOS_TEST_DATABASE_URL=postgresql+psycopg://postgres:scratch@127.0.0.1:55432/genios_test GENIOS_GOLDEN_REQUIRED=1 .venv/bin/python -m pytest -q tests/replays/test_learning_from_you.py"
+                      depends_on: [M47.C4.L-integration.V5.U07, M47.C3.L-integration.V2.U03]

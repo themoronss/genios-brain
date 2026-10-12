@@ -309,3 +309,15 @@ Each was a promise a step made that its build narrowed or left to a decision wit
 (`10-BEFORE-STEP-12` §2); recorded 10 Oct (`yc2_w27_align` M34.C3) with a recommendation and the
 default that holds today. D52 and D53 are STEP-10's (your reply time, the timeline's sources), D54
 STEP-09's (replay 02's target), D55 STEP-04's (the repair's re-typing), D56 F149's (*"soon"*).
+
+## S16-D1–D10 · STEP-16 — learning from you: the recommended answers, taken to build
+
+Rohit, 12 Oct: *"complete it all"*. Each answer here is `STEP-16` §8.6's recommended one —
+**recommended answer taken 12 Oct to build — Rohit may override**. Each row is written in the first
+commit that relies on it; `STEP-16` §8.6 holds the question, the evidence and the default.
+
+| # | Question | Taken (recommended answer taken 12 Oct to build — Rohit may override) | First relied on by |
+|---|---|---|---|
+| **S16-D7** | The open lane's weekly review (§3.5)? | **Not now** — its report counts kinds across organisations, and with one tenant it counts one mailbox; on demand, as today; revisit with the second mailbox (`09` G8) | `yc2_w27_s16`'s tree block — no unit builds a weekly review |
+| **S16-D8** | Repeated verdicts on one kind of card — propose a kind-wide correction to you? | **Not now** — the scorecard shows your verdicts by kind; proposing from clicks needs L6's floors on them, the evidence route beside the `distinct_days` gate | `yc2_w27_s16`'s tree block — no unit proposes from clicks |
+| **S16-D9** | `03` F82 — re-judge verdicts stored per item when the brief changes? | **None automatically** — a resolution claim names its brief (F83), the expert reads each touch's words whole, and a screen verdict lapses in a day | `yc2_w27_s16`'s tree block — no unit re-judges a stored verdict |
