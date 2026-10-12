@@ -125,6 +125,28 @@ def test_the_draft_may_name_us():
     ("Introlytics", D.Person("introly", "hello@introly.test"), False),
     ("Marco", None, False),
     (None, D.Person("Marco Ruiz", None), False),
+    # Known only by an address — no name, or the address printed as their name (F30, F48): its words.
+    ("Gaurav", D.Person(None, "gaurav@stackfield.test"), True),
+    ("Gaurav", D.Person("gaurav@stackfield.test", "gaurav@stackfield.test"), True),
+    ("Gaurav Mehta", D.Person(None, "gaurav.mehta@stackfield.test"), True),
+    ("Gaurav", D.Person(None, "gaurav.mehta@stackfield.test"), True),
+    ("Mehta", D.Person(None, "gaurav.mehta@stackfield.test"), False),
+    ("Gaurav", D.Person(None, "stackfield.test"), False),                # a domain has no one's name,
+    ("Stackfield", D.Person(None, "stackfield.test"), False),            # and is no one a draft goes to
+    ("Gaurav", D.Person("Kunal Shah", "gaurav@stackfield.test"), False),  # a name of their own is theirs
 ])
 def test_whom_a_to_names(to, person, named):
     assert matches(to, person) is named
+
+
+def test_a_draft_to_someone_the_file_knows_only_by_address_goes():
+    """Marco's mail carried no display name: "Marco" is still the man at marco@altavia.test."""
+    import dataclasses
+    dossier, people = W.world()
+    bare = tuple(D.Person(None, p.key) if p.key and p.key.startswith("marco@") else p for p in people.people)
+    assert all(p.name is None for p in bare if p.key and p.key.startswith("marco@"))
+    people = dataclasses.replace(people, people=bare)
+    checked = check_review(W.review(), dossier.text, people)
+    assert _verdict(checked, "to").verdict == C.KEPT and checked.words.draft
+    other = check_review(W.review(move={"to": "Priya"}), dossier.text, people)
+    assert _verdict(other, "to").reason == C.RECIPIENT_NOT_ON_FILE

@@ -74,6 +74,8 @@ QUOTE_MIN_WORDS = 2
 EARNED: frozenset[str] = frozenset({"accept", "ahead", "attaching", "beside", "block", "download", "file",
                                     "finish", "memory", "nothing", "say", "sign"})
 _EARNED = re.compile(r"\b(?:" + "|".join(sorted(EARNED)) + r")\b", re.I)
+_MONTH = re.compile(r"\b(?:January|February|March|April|May|June|July|August|September|October|November|"
+                    r"December)\b")
 #: An ask a meeting answers (`contracts/open_loop.ASK_KINDS`): a meeting asked for, or a demo.
 MEETING_ASKS: frozenset[str] = frozenset({"meeting_request", "demo_requested"})
 #: How the dossier prints an open ask, and a meeting — held, or booked ahead (`reason/expert/dossier`).
@@ -156,15 +158,27 @@ def _words(text: str | None) -> list[str]:
     return re.findall(r"[\w.+@-]+", str(text or "").casefold())
 
 
+def _name_of(person: Person) -> list[str]:
+    """A person's name, word by word — or, for one the file knows only by an address (no name, or the
+    address printed as their name), the words of the address before its `@`: *gaurav@stackfield.test* is
+    Gaurav, as any reader of the mail takes it (the golden set's authored drafts, 12 Oct: F30, F48)."""
+    key = str(person.key or "")
+    if person.name and person.name.casefold() != key.casefold():
+        return _words(person.name)
+    if "@" not in key:
+        return []
+    return [w for w in re.split(r"[._+-]+", key.split("@", 1)[0].casefold()) if w]
+
+
 def matches(to: str | None, person: Person | None) -> bool:
     """Does `to` name this person — by their address, by every word of their name, or, when `to` is one
-    word, by their first name?"""
+    word, by their first name? (A person known only by an address is named by its words, `_name_of`.)"""
     if not to or person is None:
         return False
     said = _words(to)
     if person.key and person.key.casefold() in said:
         return True
-    name = _words(person.name)
+    name = _name_of(person)
     if not name:
         return False
     return all(w in said for w in name) or (len(said) == 1 and said[0] == name[0])
@@ -175,6 +189,11 @@ def _invented(text: str, corpus: str, people: FilePeople) -> str | None:
     rule (`platform/grounding.invention_ok`), its numbers left to `number_tokens` — or None."""
     held, _nums = corpus_of([corpus, *people.our_names])
     plain = _EARNED.sub(lambda m: m.group(0).lower(), text)
+    # A month written out is the month its lines write short — "4 Aug" grounds "August" (F51, 12 Oct): a
+    # calendar word, never an invented name. A month its lines never write stays a name, and is refused.
+    shorts = {w for w in re.findall(r"[a-z]+", held) if len(w) >= 3}
+    plain = _MONTH.sub(lambda m: m.group(0).lower() if any(m.group(0).lower().startswith(w) for w in shorts)
+                       else m.group(0), plain)
     ok, why = invention_ok(plain, held, digit_runs(plain))
     return None if ok else (why or "name")
 

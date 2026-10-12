@@ -19,8 +19,8 @@ from tests.reason.expert import check_world as W
 pytestmark = pytest.mark.unit
 
 
-def _check(**over) -> C.CheckedReview:
-    dossier, people = W.world()
+def _check(ask_words: str | None = None, **over) -> C.CheckedReview:
+    dossier, people = W.world(**({"ask_words": ask_words} if ask_words else {}))
     return check_review(W.review(**over), dossier.text, people)
 
 
@@ -100,6 +100,20 @@ def test_a_dated_claim_is_grounded_by_the_date_its_line_prints():
     assert _verdict(_check(), "fact:4").verdict == C.KEPT
     assert _verdict(_check(fact4={"claim": "Introly introduced Marco on 4 March"}), "fact:4").reason \
         == C.UNSUPPORTED
+
+
+@pytest.mark.parametrize("claim, kept", [
+    ("Marco asked for a short deck by 3 September, before setting up a call", True),  # the mail: "3 Sep"
+    ("Marco asked for a short deck by 3 Sep, before setting up a call", True),
+    ("Marco asked for a short deck by 3 October, before setting up a call", False),   # no line says Oct
+])
+def test_a_month_written_out_is_grounded_by_its_short_form(claim, kept):
+    """A month written out is the month its lines write short (F51: the mail's "4 Aug", the claim's
+    "August") — here a month no date on the line expands to (the mail is of 11 Aug); a month no line
+    writes is still a name nobody wrote."""
+    checked = _check(fact1={"claim": claim}, ask_words="Thanks Arjun — could you send a short deck before "
+                     "we set up a call? By 3 Sep, ideally. I read everything within a week.")
+    assert (_verdict(checked, "fact:1").verdict == C.KEPT) is kept, _verdict(checked, "fact:1")
 
 
 def test_an_inference_or_pattern_whose_grounds_all_fell_drops():
