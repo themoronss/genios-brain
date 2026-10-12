@@ -31,8 +31,14 @@ from genios_engine.platform import table_coverage as TC
 
 _ENGINE = Path(__file__).resolve().parents[2] / "genios_engine"
 _TABLE = "learning_objects"
-#: The two statements that exist, measured. A third is a finding, not a formatting change.
-_UPDATERS = {"genios_engine/api/learning_routes.py", "genios_engine/feedback/org_rule_ingest.py"}
+#: The statements that exist, measured. A new one is a finding, not a formatting change.
+#: ⛔ MOVED 2 → 3 by yc2_w27_s18/M48.C1.L-data.V0.U02 (STEP-18 B4), read and deliberate:
+#: `feedback/publisher._rest_for_review` rests a weekly-sweep object that governance sends to a human
+#: at `human_review` — the state the ledger already logged for it, and the one state the review route
+#: takes. State only, and only on that road: `persist` still writes nothing to an existing row (the
+#: `_Conn` tests below), and the two tests after this one hold where the new statement may live.
+_UPDATERS = {"genios_engine/api/learning_routes.py", "genios_engine/feedback/org_rule_ingest.py",
+             "genios_engine/feedback/publisher.py"}
 
 
 # ── the invariant, both directions ─────────────────────────────────────────────────────────────
@@ -47,7 +53,7 @@ def test_no_write_once_table_is_updated_outside_its_allowlist():
         "against it")
 
 
-def test_the_updaters_are_exactly_the_two_that_were_measured():
+def test_the_updaters_are_exactly_the_ones_that_were_measured():
     assert set(TC.update_columns(_TABLE)) == _UPDATERS, (
         f"the set of modules updating {_TABLE} changed: {sorted(TC.update_columns(_TABLE))}. ⛔ A "
         "third updater is a new authority over the learning ledger and needs reading, even if it "
@@ -71,10 +77,40 @@ def test_state_is_the_only_column_the_declaration_allows():
 
 # ── the producer never rewrites, which is the other half ───────────────────────────────────────
 
-def test_the_publisher_holds_no_update_of_the_proposal_table():
-    """`persist` returns a verdict instead of updating. If it ever updates, the write-once claim
-    moves from "two updaters" to "three" and the allowlist above stops describing the system."""
-    assert "genios_engine/feedback/publisher.py" not in TC.update_columns(_TABLE)
+def _publisher_functions_updating_the_proposal_table() -> dict[str, int]:
+    """{function name: how many `update learning_objects` statements it holds} in the publisher."""
+    tree = ast.parse((_ENGINE / "feedback" / "publisher.py").read_text(encoding="utf-8"))
+    out: dict[str, int] = {}
+    for fn in (n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)):
+        found = sum(1 for node in ast.walk(fn)
+                    if isinstance(node, ast.Constant) and isinstance(node.value, str)
+                    and " ".join(node.value.lower().split()).startswith("update learning_objects"))
+        if found:
+            out[fn.name] = found
+    return out
+
+
+def test_the_publisher_holds_no_update_of_the_proposal_table_but_the_review_rest():
+    """`persist` returns a verdict instead of updating — the half of this guard that has not moved.
+    ⛔ RESTATED by yc2_w27_s18/M48.C1.L-data.V0.U02 (STEP-18 B4): it asserted that the publisher holds
+    no `update learning_objects` at all. Since B4 it holds exactly one, in `_rest_for_review`, which
+    sets `state` alone (`test_each_updater_sets_only_state`) — and none in `persist`, nor anywhere
+    else in the module."""
+    assert _publisher_functions_updating_the_proposal_table() == {"_rest_for_review": 1}
+
+
+def test_the_review_rest_runs_only_for_an_object_sent_to_a_human():
+    """The one caller of `_rest_for_review` is `publish`, under its `HUMAN_REVIEW` test — a sink that
+    needs no human never moves the row through it."""
+    tree = ast.parse((_ENGINE / "feedback" / "publisher.py").read_text(encoding="utf-8"))
+    publish = next(n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == "publish")
+    callers = [n for n in ast.walk(tree) if isinstance(n, ast.Call)
+               and getattr(n.func, "id", None) == "_rest_for_review"]
+    assert len(callers) == 1, "one caller, `publish`"
+    guards = [n for n in ast.walk(publish) if isinstance(n, ast.If)
+              and any(c is callers[0] for b in n.body for c in ast.walk(b))]
+    assert guards and "HUMAN_REVIEW" in ast.unparse(guards[-1].test), (
+        "the rest must sit under `if target_state is LearningState.HUMAN_REVIEW`")
 
 
 class _Conn:

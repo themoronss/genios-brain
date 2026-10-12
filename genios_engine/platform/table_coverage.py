@@ -510,9 +510,11 @@ WRITE_ONCE_TABLES: dict[str, tuple[frozenset[str], str, str]] = {
         frozenset({"state"}),
         "⛔ `publisher.persist`'s own first line: *'Insert an **immutable** proposal at `state`'*. "
         "The value columns are the proposal; `state` is the lifecycle, and `learning_transitions` "
-        "records every move of it. Two updaters, both state-only: `api/learning_routes` (a human "
+        "records every move of it. Three updaters, all state-only: `api/learning_routes` (a human "
         "approving or rejecting a `human_review` object, under `for update`, 409 if the state is "
-        "anything else) and `feedback/org_rule_ingest` (the discovery path's own lifecycle)",
+        "anything else), `feedback/org_rule_ingest` (the discovery path's own lifecycle) and "
+        "`feedback/publisher._rest_for_review` (a weekly object sent to a human rests at "
+        "`human_review` — STEP-18 B4, 2026-10-12)",
         "MOVES WHEN a proposal legitimately needs a mutable field — ⛔ and then the field is named "
         "here with its reason, never added by widening this set to make a build pass"),
 }

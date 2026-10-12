@@ -70,7 +70,8 @@ UNREACHED: dict[str, tuple[str, str]] = {
         "the emptiness is load-bearing: `learning_objects` holds the whole learning ledger's "
         "immutable proposals, `publisher.persist`'s first line states the contract — *'Insert an "
         "**immutable** proposal at `state`'* — and until 2026-10-03 **nothing asserted it**. The "
-        "engine has exactly two `update learning_objects` statements and both set only `state`",
+        "engine has exactly three `update learning_objects` statements and all set only `state` "
+        "(the third, the weekly review rest, by STEP-18 B4 on 2026-10-12)",
         "⛔ MOVES WHEN a proposal legitimately needs a mutable field, which is a contract decision. "
         "A build-time guard rather than a receipt on purpose: a value rewritten in place leaves no "
         "trace unless `semantic_hash` is recomputed, and recomputing it in SQL would mean "
