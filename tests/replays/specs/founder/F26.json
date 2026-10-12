@@ -323,10 +323,10 @@
     "by": "claude",
     "answer": {
      "proposed_kind": null,
-     "draft": "Hi Neha, thanks for following up — the thirtieth at eleven in the morning IST works for me. Looking forward to talking about the integration. Arjun",
+     "draft": "Hi Neha, thanks for following up — Tuesday 30 Sep at 11 am IST works for me. Looking forward to talking about the integration. Arjun",
      "next_move": {
       "who": "Arjun",
-      "what": "Reply to Neha to confirm the thirtieth of September at eleven in the morning IST, or offer another time if it does not suit.",
+      "what": "Reply to Neha to confirm Tuesday 30 Sep at 11 am IST, or offer another time if it does not suit.",
       "for_whom": "Neha Kapoor at Orbitly",
       "by_when": "2026-09-30"
      },

@@ -279,7 +279,7 @@
      "mode": "act",
      "next_move": {
       "who": "Meera, the founder",
-      "what": "Reply to Kavita with the Kitebird deck and ask her to pick a time to talk.",
+      "what": "Reply to Kavita with your deck and ask her to pick a time to talk.",
       "for_whom": "Kavita Rao, angel investor",
       "by_when": null
      },

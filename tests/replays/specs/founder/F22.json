@@ -194,7 +194,7 @@
       }
      ],
      "frames": {
-      "primary": "A university cell's notice of a seed grant closing on the thirtieth, open to startups incubated on its campus — one Nimbus Labs could apply to only if it is one of them.",
+      "primary": "A university cell's notice of a seed grant closing on the thirtieth, open to startups incubated on its campus — one you could apply to only if you are one of them.",
       "rivals": [
        "A mailing to the cell's whole list that does not apply to Nimbus Labs at all.",
        "A grant tied to the cell the brief lists as applied, worth moving on before the thirtieth."
@@ -230,7 +230,7 @@
      "mode": "find_out",
      "next_move": {
       "who": "Arjun",
-      "what": "Find out whether Nimbus Labs counts as a startup incubated on the university's campus and, if it does, work the seed grant application back from the thirtieth.",
+      "what": "Find out whether you count as a startup incubated on the university's campus and, if it does, work the seed grant application back from the thirtieth.",
       "for_whom": "Nimbus Labs",
       "by_when": "2026-09-30"
      },

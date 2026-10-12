@@ -338,7 +338,7 @@
       }
      ],
      "frames": {
-      "primary": "A seed fund's partner, unprompted and on thesis, asks whether Nimbus Labs is raising and offers a call; the answer is ours to give, and it is yes.",
+      "primary": "A seed fund's partner, unprompted and on thesis, asks whether you are raising and offers a call; the answer is ours to give, and it is yes.",
       "rivals": [
        "A scout's broad outreach to many AI-native companies, where the call is a screen rather than real interest.",
        "A fund gathering market knowledge on AI-native productivity, with little intent to invest at this stage."
@@ -375,7 +375,7 @@
      "mode": "act",
      "next_move": {
       "who": "Arjun",
-      "what": "Reply to Tom that Nimbus Labs is raising its seed round now, and offer two or three times for a short call",
+      "what": "Reply to Tom that you are raising your seed round now, and offer two or three times for a short call",
       "for_whom": "Tom Keller at Northfield Ventures",
       "by_when": null
      },

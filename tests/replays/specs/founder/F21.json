@@ -244,7 +244,7 @@
       }
      ],
      "frames": {
-      "primary": "A templated call for applications to the centre's pre-incubation programme, starting in November, now with a reminder that applications close soon but no date — a programme Nimbus Labs could apply to, or has, as the brief's line says.",
+      "primary": "A templated call for applications to the centre's pre-incubation programme, starting in November, now with a reminder that applications close soon but no date — a programme you could apply to, or have, as the brief's line says.",
       "rivals": [
        "A mailing-list notice for an earlier-stage programme that does not fit a seed-stage company already in an accelerator's cohort.",
        "General notices about an application the founder has already made, needing nothing."
@@ -280,7 +280,7 @@
      "mode": "find_out",
      "next_move": {
       "who": "Arjun",
-      "what": "This week, check whether Nimbus Labs applied to the centre's pre-incubation programme — a receipt in the mail or a status with the centre — and, if not, decide before applications close whether it is worth applying.",
+      "what": "This week, check whether you applied to the centre's pre-incubation programme — a receipt in the mail or a status with the centre — and, if not, decide before applications close whether it is worth applying.",
       "for_whom": "Nimbus Labs, on its Awadh Enterprise Centre file",
       "by_when": null
      },
@@ -386,7 +386,7 @@
       }
      ],
      "frames": {
-      "primary": "A templated call for applications to the centre's pre-incubation programme, starting in November — a programme Nimbus Labs could apply to, or has, as the brief's line says.",
+      "primary": "A templated call for applications to the centre's pre-incubation programme, starting in November — a programme you could apply to, or have, as the brief's line says.",
       "rivals": [
        "A mailing-list notice for an earlier-stage programme that does not fit a seed-stage company already in an accelerator's cohort.",
        "General notices about an application the founder has already made, needing nothing."
@@ -422,7 +422,7 @@
      "mode": "find_out",
      "next_move": {
       "who": "Arjun",
-      "what": "Check whether Nimbus Labs applied to the centre's pre-incubation programme — a receipt in the mail or a status with the centre — and, if not, decide whether this earlier-stage programme is worth applying to.",
+      "what": "Check whether you applied to the centre's pre-incubation programme — a receipt in the mail or a status with the centre — and, if not, decide whether this earlier-stage programme is worth applying to.",
       "for_whom": "Nimbus Labs, on its Awadh Enterprise Centre file",
       "by_when": null
      },

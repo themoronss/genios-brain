@@ -302,14 +302,14 @@
      "mode": "act",
      "next_move": {
       "who": "Arjun Rao",
-      "what": "Take one of Sana's two times, Tuesday the fourth at three in the afternoon or Wednesday the fifth at eleven in the morning, India time, and tell her so she can send the invite",
+      "what": "Take one of Sana's two times — Tuesday 4 Aug at 3pm or Wednesday 5 Aug at 11am IST — and tell her so she can send the invite",
       "for_whom": "Sana Qureshi at Brightloop",
       "by_when": "2026-08-03"
      },
      "alternative": "If neither time suits, answer by Monday with two or three other times this week.",
      "wait_or_stop": "Do not wait: answer before Tuesday afternoon. Once a time is agreed, wait for Sana's invite; if none has come by the evening before the call, ask her once for it.",
      "done_when": "Arjun has picked a time, Sana's invite is in the calendar, and the call is set.",
-     "draft": "Hi Sana, thanks for the two options. Tuesday the fourth at three in the afternoon works for me; please send the invite when you can. Looking forward to talking. Arjun"
+     "draft": "Hi Sana, thanks for the two options. Tuesday 4 Aug at 3pm works for me; please send the invite when you can. Looking forward to talking. Arjun"
     }
    }
   ]

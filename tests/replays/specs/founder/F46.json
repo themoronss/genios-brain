@@ -394,7 +394,7 @@
      "mode": "act",
      "next_move": {
       "who": "Arjun",
-      "what": "Reply to Ravi Iyer with the Nimbus Labs deck, apologise for the wait, and ask which time suits him for the call.",
+      "what": "Reply to Ravi Iyer with your deck, apologise for the wait, and ask which time suits him for the call.",
       "for_whom": "Ravi Iyer, Seedfund Partners",
       "by_when": null
      },

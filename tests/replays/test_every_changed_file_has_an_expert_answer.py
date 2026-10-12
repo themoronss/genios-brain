@@ -9,8 +9,10 @@ sites answered from their cassettes, the expert's own prompts by the ideal reade
 recording will answer them — for each file, the ids its first dossier offered to cite, the stages its playbook
 lists, and how many prompts the run asked. Each case's `model.expert` answers exactly those files, or declares why it does not, and each
 answer is one the review contract parses, marked `claude`, naming its file as its dossier does (`<key>`), citing
-only what that first dossier offered, naming only a listed stage, and writing no digit at all — so it can
-never be refused for a number its dossier does not hold. What the ideal reader then serves, and what the
+only what that first dossier offered, naming only a listed stage, and writing a number only where that
+dossier holds it — the mail's own date, time or number, never one of its own — so it is never refused for a
+number its dossier does not hold. (Until STEP-12's decided re-record it wrote no digit at all; a card that
+must name *"30 Sep"* or *"Assignment 4"* then could not, M33.C2.L-data.V0.U04.) What the ideal reader then serves, and what the
 review run makes of it, the golden lane and M32.C5.L-integration.V3.U05 measure on the real chain.
 """
 from __future__ import annotations
@@ -70,8 +72,11 @@ def _check(case_id: str) -> None:
                                      f"offered: {sorted(cited - offered)}"
         stage = review.expected_vs_actual.stage
         assert stage is None or stage in files[key]["stages"], f"{case_id} <{key}>: stage {stage!r}"
-        digits = sorted(set().union(*(number_tokens(t) for t in review.texts())))
-        assert not digits, f"{case_id} <{key}>: writes numbers {digits} — write none"
+        digits = set().union(*(number_tokens(t) for t in review.texts()))
+        if len(entry["when"]) == 1:
+            held = set(files[key]["numbers"])
+            assert digits <= held, (f"{case_id} <{key}>: writes numbers its first dossier does not hold: "
+                                    f"{sorted(digits - held)}")
     assert sorted(general) == sorted(set(general)) and set(general) == answered, \
         f"{case_id}: every answered file has exactly one general entry: {sorted(general)}"
     missing = set(files) - answered - set(declared)
@@ -92,3 +97,18 @@ def test_board_cases(case_id):
 @pytest.mark.parametrize("case_id", OTHER_CASES)
 def test_other_cases(case_id):
     _check(case_id)
+
+
+def test_a_number_its_first_dossier_does_not_hold_is_refused(monkeypatch):
+    """⛔ The rule's teeth (M33.C2.L-data.V0.U04): F26's authored move names the mail's own *"30 Sep at 11
+    am"* — held, so it passes; the same move naming a 31st it was never shown is refused."""
+    import copy
+    import sys
+    module = sys.modules[__name__]
+    case = copy.deepcopy(CASES["F26"])
+    entry = next(e for e in case.model["expert"] if len(e["when"]) == 1)
+    _check("F26")
+    entry["answer"]["next_move"]["what"] = entry["answer"]["next_move"]["what"].replace("30 Sep", "31 Sep")
+    monkeypatch.setitem(module.CASES, "F26", case)
+    with pytest.raises(AssertionError, match="does not hold"):
+        _check("F26")

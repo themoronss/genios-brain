@@ -370,7 +370,7 @@
      "draft": null,
      "next_move": {
       "who": "Arjun",
-      "what": "Block time this week to write the pricing page teardown, and submit it to the programme before the seventeenth.",
+      "what": "Block time this week to write Assignment 4, the pricing page teardown, and submit it to the programme before 17 Sep, 11:59 pm IST.",
       "for_whom": "Divya Raman and the Lakshya programme",
       "by_when": "2026-09-17"
      },
@@ -485,7 +485,7 @@
      "mode": "act",
      "alternative": "If the week cannot hold it, ask Divya before the deadline what the programme's rule is for a late submission, rather than missing it in silence.",
      "wait_or_stop": "Nothing to wait for before the work; once it is submitted, the file waits for the programme's next date.",
-     "done_when": "The teardown is submitted before the seventeenth, with the programme's receipt on file."
+     "done_when": "Assignment 4 is submitted before 17 Sep, with the programme's receipt on file."
     }
    }
   ]
