@@ -1,9 +1,9 @@
 {
  "case_id": "F07",
  "source": "ideal_reader",
- "recorded_at": "be27bffe",
+ "recorded_at": "e6b8522e",
  "answers": {
-  "490c7729de0adf228a87d3dc1c756e3b802aa300c90e248c0405feb4be87f373": {
+  "259cb4be33454bbaa0749f516015842f033a71bd0c9bc3f3f7ec7a487857047c": {
    "site": "expert",
    "parsed": {
     "facts": [
@@ -176,8 +176,142 @@
    },
    "raw": "{\"facts\": [{\"claim\": \"Introly introduced Leela Krishnan, who leads product at Ferngrove, to the founder.\", \"evidence\": [\"evt_#4\"], \"quote\": \"Krishnan, who leads product at Ferngrove. Leela, meet Arjun Rao, the founder\"}, {\"claim\": \"Leela replied the same day that she had sent an invite for a call the next day at three in the afternoon IST.\", \"evidence\": [\"evt_#3\"], \"quote\": \"sent you an invite for tomorrow at 3 pm IST. Leela\"}, {\"claim\": \"Before the call, Leela wrote that she was looking forward to it and would bring Ferngrove's current onboarding flow so the founder could see where they lose people.\", \"evidence\": [\"evt_#2\"], \"quote\": \"bring our current onboarding flow so you can see where we lose people. Leela\"}, {\"claim\": \"A meeting with Leela was on the calendar for the thirteenth, and memory holds no words for it.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"A card asking the founder to reply to Leela, filed as needing a decision, was already created and pushed to him.\", \"evidence\": [\"card:card_#2\"]}, {\"claim\": \"No reply time has been measured with Leela, either way.\", \"evidence\": [\"num:their_reply_time:leela@ferngrove.test\", \"num:your_reply_time:leela@ferngrove.test\"]}, {\"claim\": \"The account admin situation on this file was decided before.\", \"evidence\": [\"sit:sit_#1\"]}], \"inferences\": [{\"claim\": \"Whether the call took place, and what was said or promised on it, is not on record.\", \"based_on\": [\"fact:4\"]}, {\"claim\": \"The only promise on record is Leela's, to bring the onboarding flow; nothing says what the founder offered in return.\", \"based_on\": [\"fact:3\", \"fact:4\"]}, {\"claim\": \"Leela took the introduction forward herself, booked the call and offered her own material, which suggests real interest in what Nimbus Labs builds.\", \"based_on\": [\"fact:2\", \"fact:3\"]}, {\"claim\": \"The card to reply to Leela answers a question nobody asked: neither of her notes asks the founder anything.\", \"based_on\": [\"fact:2\", \"fact:3\", \"fact:5\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"Until the call, every gap in this file closed within a day.\", \"based_on\": [\"num:usual_gap\", \"num:longest_gap\"]}], \"hypotheses\": [{\"proposition\": \"Ferngrove could become a design partner: Leela meant to show the founder where their onboarding loses people.\", \"needs\": \"The founder's account of the call.\"}], \"unknowns\": [{\"question\": \"Whether the call took place as booked.\", \"relevance\": \"If it did not, the move is to rebook it; if it did, the move is to follow through on what was agreed.\"}, {\"question\": \"What, if anything, either side promised on the call, including anything the founder offered on Ferngrove's onboarding flow, if Leela showed it.\", \"relevance\": \"Any promise of the founder's is now owed, and nothing on record says what it is.\"}, {\"question\": \"Whether the founder has written to Leela since the mailbox was last read.\", \"relevance\": \"A follow-up sent after the last sync would not show here.\"}], \"frames\": {\"primary\": \"After a call booked with an introduced product lead, nothing on record says whether it took place or what was promised, so you must say before anything is sent.\", \"rivals\": [\"The call did not take place or was moved, and it needs rebooking.\", \"A first conversation with a prospective design partner, where a promise of the founder's is now open.\"]}, \"proposed_kind\": {\"kind\": \"intro\", \"why\": \"Ferngrove came to the founder through the connector's introduction of its product lead, and the work in this file is taking that introduction forward.\", \"evidence\": [\"evt_#4\", \"evt_#3\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"With no playbook, from the brief and the file: after a first call with an introduced contact, the founder follows through promptly on whatever was agreed.\", \"actual\": \"The call was booked for the thirteenth, and beforehand Leela wrote that she would bring Ferngrove's current onboarding flow to show where they lose people; memory holds no words for the meeting, the founder has not written since, and nothing says what was agreed.\"}, \"scenarios\": {\"do_nothing\": \"Any promise made on the call goes unkept, and a product lead who offered her own material hears nothing back.\", \"act\": \"Once the founder says what was agreed, a short follow-up carrying whatever was promised keeps Ferngrove moving while the conversation is fresh.\", \"best\": \"The founder confirms the call and what was promised, follows through at once, and Ferngrove becomes a design partner.\", \"worst\": \"The call is assumed and a follow-up goes out on things nobody agreed, or a real promise is forgotten.\", \"signals_to_watch\": [\"The founder's note of what was agreed\", \"Leela writing with a next step or material\", \"Further silence on both sides\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"medium\", \"reversibility\": \"reversible\", \"reasons\": [\"Landing design partners is a goal now, and Leela offered to bring Ferngrove's own onboarding problem to the call.\", \"Nothing on record says whether the call took place or what was promised.\", \"Nothing in Leela's notes asks the founder a question, so the card already shown to reply to her is not the move; the follow-through is.\", \"A follow-up can still go out now; nothing is lost yet.\"]}, \"mode\": \"find_out\", \"next_move\": {\"who\": \"Arjun Rao\", \"what\": \"Say whether the call with Leela Krishnan took place, and what, if anything, either side promised on it, so the follow-through can be sent\", \"for_whom\": \"Leela Krishnan at Ferngrove\", \"by_when\": null, \"rests_on\": [\"fact:1\", \"fact:2\", \"fact:3\", \"fact:4\"]}, \"alternative\": \"If the call did not take place, write to Leela to find a new time.\", \"wait_or_stop\": \"Send nothing to Leela until the founder says what was agreed; stop if he says nothing was promised and no next step is wanted.\", \"done_when\": \"What was agreed on the call is on record, and any promise of yours has gone to Leela or been dropped on purpose.\", \"draft\": null}",
    "framed": true,
-   "input_tokens": 3681,
+   "input_tokens": 3656,
    "output_tokens": 1511,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "3b70cfd319e2577554011af95657a3e983cbdef87b75c439593ded6af3263796": {
+   "site": "expert",
+   "parsed": {
+    "facts": [
+     {
+      "claim": "Introly introduced Leela Krishnan, who leads product at Ferngrove, to the founder and left the two to take it from there.",
+      "evidence": [
+       "evt_#2"
+      ],
+      "quote": "Krishnan, who leads product at Ferngrove. Leela, meet Arjun Rao, the founder"
+     },
+     {
+      "claim": "Leela replied within hours that she had sent an invite for a call the next day at three in the afternoon IST.",
+      "evidence": [
+       "evt_#1"
+      ],
+      "quote": "sent you an invite for tomorrow at 3 pm IST. Leela"
+     },
+     {
+      "claim": "A meeting is booked for the thirteenth, in the slot Leela's invite named.",
+      "evidence": [
+       "evt_#3",
+       "evt_#1"
+      ],
+      "quote": "Re: Arjun <> Leela Krishnan (Ferngrove) Hi Arjun, happy to"
+     },
+     {
+      "claim": "No reply time has been measured with Leela, either way.",
+      "evidence": [
+       "num:their_reply_time:leela@ferngrove.test",
+       "num:your_reply_time:leela@ferngrove.test"
+      ]
+     },
+     {
+      "claim": "The account admin situation on this file was decided before.",
+      "evidence": [
+       "sit:sit_#1"
+      ]
+     }
+    ],
+    "inferences": [
+     {
+      "claim": "The next step is the call itself: nothing in Leela's note asks the founder a question.",
+      "based_on": [
+       "fact:2"
+      ]
+     },
+     {
+      "claim": "Leela took the introduction forward herself, which suggests real interest in what Nimbus Labs builds.",
+      "based_on": [
+       "fact:2"
+      ]
+     }
+    ],
+    "patterns": [],
+    "hypotheses": [
+     {
+      "proposition": "Ferngrove could become a design partner.",
+      "needs": "The call, and what Leela says Ferngrove needs."
+     }
+    ],
+    "unknowns": [
+     {
+      "question": "Whether the founder has accepted the invite.",
+      "relevance": "An invite left unanswered can leave Leela unsure the call is on."
+     },
+     {
+      "question": "What Ferngrove builds and what Leela wants from the call.",
+      "relevance": "It shapes what the founder brings and what he asks."
+     }
+    ],
+    "frames": {
+     "primary": "A call with an introduced product lead is booked for tomorrow afternoon; the move is to be ready for it.",
+     "rivals": [
+      "A prospective design partner, which the brief is looking for.",
+      "A courtesy call with no need behind it."
+     ]
+    },
+    "proposed_kind": {
+     "kind": "intro",
+     "why": "Ferngrove came to the founder through the connector's introduction of its product lead, and the work in this file is taking that introduction forward.",
+     "evidence": [
+      "evt_#2",
+      "evt_#1"
+     ]
+    },
+    "expected_vs_actual": {
+     "stage": null,
+     "expected": "With no playbook, from the brief and the file: an introduced contact who books a call is met prepared, with the invite confirmed.",
+     "actual": "Leela booked a call for tomorrow afternoon within hours of the introduction; the founder has not written in this file."
+    },
+    "scenarios": {
+     "do_nothing": "You join the call cold, and the chance to shape it is lost.",
+     "act": "Confirming the invite and reading a one-page brief on Ferngrove and Leela make the call count.",
+     "best": "The call lands well, and Ferngrove becomes a design partner.",
+     "worst": "The invite is missed and Leela waits on an empty call.",
+     "signals_to_watch": [
+      "The invite accepted on the founder's calendar",
+      "Any note from Leela before the call"
+     ]
+    },
+    "appraisal": {
+     "stakes": "medium",
+     "urgency": "high",
+     "reversibility": "reversible",
+     "reasons": [
+      "The call is booked for tomorrow afternoon.",
+      "Landing design partners is a goal now, and Leela leads product at Ferngrove.",
+      "Preparing costs little, and a missed call can be rebooked."
+     ]
+    },
+    "mode": "act",
+    "next_move": {
+     "who": "Arjun Rao",
+     "what": "Accept Leela's invite if it is not yet accepted, and read a one-page brief on Ferngrove and Leela before the call",
+     "for_whom": "Leela Krishnan at Ferngrove",
+     "by_when": "2026-08-13",
+     "rests_on": [
+      "fact:1",
+      "fact:2",
+      "fact:3"
+     ]
+    },
+    "alternative": "If the time no longer works, write to Leela today to move it.",
+    "wait_or_stop": "After preparing, wait for the call; reopen the file the day after it to ask what was agreed.",
+    "done_when": "The invite is accepted, and you go into the call knowing what Ferngrove does and what to ask.",
+    "draft": null
+   },
+   "raw": "{\"facts\": [{\"claim\": \"Introly introduced Leela Krishnan, who leads product at Ferngrove, to the founder and left the two to take it from there.\", \"evidence\": [\"evt_#2\"], \"quote\": \"Krishnan, who leads product at Ferngrove. Leela, meet Arjun Rao, the founder\"}, {\"claim\": \"Leela replied within hours that she had sent an invite for a call the next day at three in the afternoon IST.\", \"evidence\": [\"evt_#1\"], \"quote\": \"sent you an invite for tomorrow at 3 pm IST. Leela\"}, {\"claim\": \"A meeting is booked for the thirteenth, in the slot Leela's invite named.\", \"evidence\": [\"evt_#3\", \"evt_#1\"], \"quote\": \"Re: Arjun <> Leela Krishnan (Ferngrove) Hi Arjun, happy to\"}, {\"claim\": \"No reply time has been measured with Leela, either way.\", \"evidence\": [\"num:their_reply_time:leela@ferngrove.test\", \"num:your_reply_time:leela@ferngrove.test\"]}, {\"claim\": \"The account admin situation on this file was decided before.\", \"evidence\": [\"sit:sit_#1\"]}], \"inferences\": [{\"claim\": \"The next step is the call itself: nothing in Leela's note asks the founder a question.\", \"based_on\": [\"fact:2\"]}, {\"claim\": \"Leela took the introduction forward herself, which suggests real interest in what Nimbus Labs builds.\", \"based_on\": [\"fact:2\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"Ferngrove could become a design partner.\", \"needs\": \"The call, and what Leela says Ferngrove needs.\"}], \"unknowns\": [{\"question\": \"Whether the founder has accepted the invite.\", \"relevance\": \"An invite left unanswered can leave Leela unsure the call is on.\"}, {\"question\": \"What Ferngrove builds and what Leela wants from the call.\", \"relevance\": \"It shapes what the founder brings and what he asks.\"}], \"frames\": {\"primary\": \"A call with an introduced product lead is booked for tomorrow afternoon; the move is to be ready for it.\", \"rivals\": [\"A prospective design partner, which the brief is looking for.\", \"A courtesy call with no need behind it.\"]}, \"proposed_kind\": {\"kind\": \"intro\", \"why\": \"Ferngrove came to the founder through the connector's introduction of its product lead, and the work in this file is taking that introduction forward.\", \"evidence\": [\"evt_#2\", \"evt_#1\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"With no playbook, from the brief and the file: an introduced contact who books a call is met prepared, with the invite confirmed.\", \"actual\": \"Leela booked a call for tomorrow afternoon within hours of the introduction; the founder has not written in this file.\"}, \"scenarios\": {\"do_nothing\": \"You join the call cold, and the chance to shape it is lost.\", \"act\": \"Confirming the invite and reading a one-page brief on Ferngrove and Leela make the call count.\", \"best\": \"The call lands well, and Ferngrove becomes a design partner.\", \"worst\": \"The invite is missed and Leela waits on an empty call.\", \"signals_to_watch\": [\"The invite accepted on the founder's calendar\", \"Any note from Leela before the call\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"reversible\", \"reasons\": [\"The call is booked for tomorrow afternoon.\", \"Landing design partners is a goal now, and Leela leads product at Ferngrove.\", \"Preparing costs little, and a missed call can be rebooked.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun Rao\", \"what\": \"Accept Leela's invite if it is not yet accepted, and read a one-page brief on Ferngrove and Leela before the call\", \"for_whom\": \"Leela Krishnan at Ferngrove\", \"by_when\": \"2026-08-13\", \"rests_on\": [\"fact:1\", \"fact:2\", \"fact:3\"]}, \"alternative\": \"If the time no longer works, write to Leela today to move it.\", \"wait_or_stop\": \"After preparing, wait for the call; reopen the file the day after it to ask what was agreed.\", \"done_when\": \"The invite is accepted, and you go into the call knowing what Ferngrove does and what to ask.\", \"draft\": null}",
+   "framed": true,
+   "input_tokens": 3449,
+   "output_tokens": 990,
    "model": "claude-haiku-4-5-20251001"
   },
   "54fb90071de227117bed8a5e21ff799cbce0e8205585b7f03aebeb596aa6e987": {
@@ -305,151 +439,7 @@
    "output_tokens": 156,
    "model": "claude-haiku-4-5-20251001"
   },
-  "7c256abb5a7d73ee241a7d6ac95f4ee65aba45c4ed8050c4772d45201bbfdc7a": {
-   "site": "extraction",
-   "parsed": {
-    "intent": "commit",
-    "stance": "positive",
-    "topics": [
-     "onboarding"
-    ],
-    "entity_mentions": [
-     {
-      "surface_form": "Leela",
-      "entity_type": "person",
-      "evidence": [
-       {
-        "quote": "Leela",
-        "start_offset": 13,
-        "end_offset": 18
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "commitments": [
-     {
-      "actor": "Leela Krishnan",
-      "action": "bring the current onboarding flow to the call",
-      "beneficiary": "Arjun Rao",
-      "is_conditional": false,
-      "evidence": [
-       {
-        "quote": "I'll bring our current onboarding flow",
-        "start_offset": 64,
-        "end_offset": 102
-       }
-      ],
-      "confidence_bp": 9000
-     }
-    ],
-    "exchange_intent": {
-     "category": "relational",
-     "tone": "warm",
-     "formality": "professional",
-     "addressed_personally": true,
-     "human_authored": true,
-     "asks_for_reply": false,
-     "engagement": "high"
-    }
-   },
-   "raw": "{\"intent\": \"commit\", \"stance\": \"positive\", \"topics\": [\"onboarding\"], \"entity_mentions\": [{\"surface_form\": \"Leela\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Leela\", \"start_offset\": 13, \"end_offset\": 18}], \"confidence_bp\": 9000}], \"commitments\": [{\"actor\": \"Leela Krishnan\", \"action\": \"bring the current onboarding flow to the call\", \"beneficiary\": \"Arjun Rao\", \"is_conditional\": false, \"evidence\": [{\"quote\": \"I'll bring our current onboarding flow\", \"start_offset\": 64, \"end_offset\": 102}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
-   "framed": true,
-   "input_tokens": 5513,
-   "output_tokens": 179,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "8999cc3c1c10dab5ee7a2e50ceeb7ca60de680cb5a96faac3b6e25cf2e6b60d7": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "I'll bring our current onboarding flow so you can see where we lose people.",
-    "start_offset": 64,
-    "end_offset": 139,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"I'll bring our current onboarding flow so you can see where we lose people.\", \"start_offset\": 64, \"end_offset\": 139, \"speaker_role_said\": \"unknown\"}",
-   "framed": true,
-   "input_tokens": 1517,
-   "output_tokens": 56,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "99d322aaa945500c484e9f3882dc507f5775254877d81957b31a2e037a3d27bb": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "framed": true,
-   "input_tokens": 1034,
-   "output_tokens": 24,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "a839a5c65bc6c80d0830386ecb10b1d52b4d19b7a4c21e4fd24a33d8dfe0f783": {
-   "site": "relevance",
-   "parsed": {
-    "verdicts": [
-     {
-      "item": 1,
-      "business": true,
-      "description": "Re: Arjun <> Leela Krishnan (Ferngrove)",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     }
-    ]
-   },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Arjun <> Leela Krishnan (Ferngrove)\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "framed": true,
-   "input_tokens": 1170,
-   "output_tokens": 43,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "adc53f0fea8c5bef3fd3e8c56f4e9b951a6a4c73d8c2374dfa6cb051e4378c37": {
-   "site": "resolution",
-   "parsed": {
-    "verdict": "NOT_RESOLVED",
-    "certainty": "INTENT_ONLY",
-    "scope": [],
-    "quote": "I'll let you two take it from here.",
-    "start_offset": 199,
-    "end_offset": 234,
-    "speaker_role_said": "unknown"
-   },
-   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"I'll let you two take it from here.\", \"start_offset\": 199, \"end_offset\": 234, \"speaker_role_said\": \"unknown\"}",
-   "framed": true,
-   "input_tokens": 1541,
-   "output_tokens": 47,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "b27e056834f62e5d30af47a3d265a14fbb65a842f398536a47970948c0cf4807": {
-   "site": "relevance",
-   "parsed": {
-    "verdicts": [
-     {
-      "item": 1,
-      "business": true,
-      "description": "Re: Arjun <> Leela Krishnan (Ferngrove)",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     }
-    ]
-   },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Arjun <> Leela Krishnan (Ferngrove)\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "framed": true,
-   "input_tokens": 1165,
-   "output_tokens": 43,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "b494c3c050c9b9dd5185d7cfe92a4592a2b2d6b14d57fb32b1a82b370e915080": {
+  "78a1c25b4fd81dd1ba1dfa8f46f786c29a0904bc24e40d1d8d6c8fd9011f6c15": {
    "site": "expert",
    "parsed": {
     "facts": [
@@ -622,142 +612,152 @@
    },
    "raw": "{\"facts\": [{\"claim\": \"Introly introduced Leela Krishnan, who leads product at Ferngrove, to the founder.\", \"evidence\": [\"evt_#4\"], \"quote\": \"Krishnan, who leads product at Ferngrove. Leela, meet Arjun Rao, the founder\"}, {\"claim\": \"Leela replied the same day that she had sent an invite for a call the next day at three in the afternoon IST.\", \"evidence\": [\"evt_#3\"], \"quote\": \"sent you an invite for tomorrow at 3 pm IST. Leela\"}, {\"claim\": \"Before the call, Leela wrote that she was looking forward to it and would bring Ferngrove's current onboarding flow so the founder could see where they lose people.\", \"evidence\": [\"evt_#2\"], \"quote\": \"bring our current onboarding flow so you can see where we lose people. Leela\"}, {\"claim\": \"A meeting with Leela was on the calendar for the thirteenth, and memory holds no words for it.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"A card asking the founder to reply to Leela, filed as needing a decision, was already created and pushed to him.\", \"evidence\": [\"card:card_#1\"]}, {\"claim\": \"No reply time has been measured with Leela, either way.\", \"evidence\": [\"num:their_reply_time:leela@ferngrove.test\", \"num:your_reply_time:leela@ferngrove.test\"]}, {\"claim\": \"The account admin situation on this file was decided before.\", \"evidence\": [\"sit:sit_#1\"]}], \"inferences\": [{\"claim\": \"Whether the call took place, and what was said or promised on it, is not on record.\", \"based_on\": [\"fact:4\"]}, {\"claim\": \"The only promise on record is Leela's, to bring the onboarding flow; nothing says what the founder offered in return.\", \"based_on\": [\"fact:3\", \"fact:4\"]}, {\"claim\": \"Leela took the introduction forward herself, booked the call and offered her own material, which suggests real interest in what Nimbus Labs builds.\", \"based_on\": [\"fact:2\", \"fact:3\"]}, {\"claim\": \"The card to reply to Leela answers a question nobody asked: neither of her notes asks the founder anything.\", \"based_on\": [\"fact:2\", \"fact:3\", \"fact:5\"]}], \"patterns\": [{\"kind\": \"pattern\", \"claim\": \"Until the call, every gap in this file closed within a day.\", \"based_on\": [\"num:usual_gap\", \"num:longest_gap\"]}], \"hypotheses\": [{\"proposition\": \"Ferngrove could become a design partner: Leela meant to show the founder where their onboarding loses people.\", \"needs\": \"The founder's account of the call.\"}], \"unknowns\": [{\"question\": \"Whether the call took place as booked.\", \"relevance\": \"If it did not, the move is to rebook it; if it did, the move is to follow through on what was agreed.\"}, {\"question\": \"What, if anything, either side promised on the call, including anything the founder offered on Ferngrove's onboarding flow, if Leela showed it.\", \"relevance\": \"Any promise of the founder's is now owed, and nothing on record says what it is.\"}, {\"question\": \"Whether the founder has written to Leela since the mailbox was last read.\", \"relevance\": \"A follow-up sent after the last sync would not show here.\"}], \"frames\": {\"primary\": \"After a call booked with an introduced product lead, nothing on record says whether it took place or what was promised, so you must say before anything is sent.\", \"rivals\": [\"The call did not take place or was moved, and it needs rebooking.\", \"A first conversation with a prospective design partner, where a promise of the founder's is now open.\"]}, \"proposed_kind\": {\"kind\": \"intro\", \"why\": \"Ferngrove came to the founder through the connector's introduction of its product lead, and the work in this file is taking that introduction forward.\", \"evidence\": [\"evt_#4\", \"evt_#3\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"With no playbook, from the brief and the file: after a first call with an introduced contact, the founder follows through promptly on whatever was agreed.\", \"actual\": \"The call was booked for the thirteenth, and beforehand Leela wrote that she would bring Ferngrove's current onboarding flow to show where they lose people; memory holds no words for the meeting, the founder has not written since, and nothing says what was agreed.\"}, \"scenarios\": {\"do_nothing\": \"Any promise made on the call goes unkept, and a product lead who offered her own material hears nothing back.\", \"act\": \"Once the founder says what was agreed, a short follow-up carrying whatever was promised keeps Ferngrove moving while the conversation is fresh.\", \"best\": \"The founder confirms the call and what was promised, follows through at once, and Ferngrove becomes a design partner.\", \"worst\": \"The call is assumed and a follow-up goes out on things nobody agreed, or a real promise is forgotten.\", \"signals_to_watch\": [\"The founder's note of what was agreed\", \"Leela writing with a next step or material\", \"Further silence on both sides\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"medium\", \"reversibility\": \"reversible\", \"reasons\": [\"Landing design partners is a goal now, and Leela offered to bring Ferngrove's own onboarding problem to the call.\", \"Nothing on record says whether the call took place or what was promised.\", \"Nothing in Leela's notes asks the founder a question, so the card already shown to reply to her is not the move; the follow-through is.\", \"A follow-up can still go out now; nothing is lost yet.\"]}, \"mode\": \"find_out\", \"next_move\": {\"who\": \"Arjun Rao\", \"what\": \"Say whether the call with Leela Krishnan took place, and what, if anything, either side promised on it, so the follow-through can be sent\", \"for_whom\": \"Leela Krishnan at Ferngrove\", \"by_when\": null, \"rests_on\": [\"fact:1\", \"fact:2\", \"fact:3\", \"fact:4\"]}, \"alternative\": \"If the call did not take place, write to Leela to find a new time.\", \"wait_or_stop\": \"Send nothing to Leela until the founder says what was agreed; stop if he says nothing was promised and no next step is wanted.\", \"done_when\": \"What was agreed on the call is on record, and any promise of yours has gone to Leela or been dropped on purpose.\", \"draft\": null}",
    "framed": true,
-   "input_tokens": 3585,
+   "input_tokens": 3580,
    "output_tokens": 1511,
    "model": "claude-haiku-4-5-20251001"
   },
-  "c044d4deb02ae7c99d123ad187bfc9aa41867324f9c0c7e17e583272bc1f2bac": {
-   "site": "expert",
+  "7c256abb5a7d73ee241a7d6ac95f4ee65aba45c4ed8050c4772d45201bbfdc7a": {
+   "site": "extraction",
    "parsed": {
-    "facts": [
+    "intent": "commit",
+    "stance": "positive",
+    "topics": [
+     "onboarding"
+    ],
+    "entity_mentions": [
      {
-      "claim": "Introly introduced Leela Krishnan, who leads product at Ferngrove, to the founder and left the two to take it from there.",
+      "surface_form": "Leela",
+      "entity_type": "person",
       "evidence": [
-       "evt_#2"
+       {
+        "quote": "Leela",
+        "start_offset": 13,
+        "end_offset": 18
+       }
       ],
-      "quote": "Krishnan, who leads product at Ferngrove. Leela, meet Arjun Rao, the founder"
-     },
+      "confidence_bp": 9000
+     }
+    ],
+    "commitments": [
      {
-      "claim": "Leela replied within hours that she had sent an invite for a call the next day at three in the afternoon IST.",
+      "actor": "Leela Krishnan",
+      "action": "bring the current onboarding flow to the call",
+      "beneficiary": "Arjun Rao",
+      "is_conditional": false,
       "evidence": [
-       "evt_#1"
+       {
+        "quote": "I'll bring our current onboarding flow",
+        "start_offset": 64,
+        "end_offset": 102
+       }
       ],
-      "quote": "sent you an invite for tomorrow at 3 pm IST. Leela"
-     },
-     {
-      "claim": "A meeting is booked for the thirteenth, in the slot Leela's invite named.",
-      "evidence": [
-       "evt_#3",
-       "evt_#1"
-      ],
-      "quote": "Re: Arjun <> Leela Krishnan (Ferngrove) Hi Arjun, happy to"
-     },
-     {
-      "claim": "No reply time has been measured with Leela, either way.",
-      "evidence": [
-       "num:their_reply_time:leela@ferngrove.test",
-       "num:your_reply_time:leela@ferngrove.test"
-      ]
-     },
-     {
-      "claim": "The account admin situation on this file was decided before.",
-      "evidence": [
-       "sit:sit_#1"
-      ]
+      "confidence_bp": 9000
      }
     ],
-    "inferences": [
-     {
-      "claim": "The next step is the call itself: nothing in Leela's note asks the founder a question.",
-      "based_on": [
-       "fact:2"
-      ]
-     },
-     {
-      "claim": "Leela took the introduction forward herself, which suggests real interest in what Nimbus Labs builds.",
-      "based_on": [
-       "fact:2"
-      ]
-     }
-    ],
-    "patterns": [],
-    "hypotheses": [
-     {
-      "proposition": "Ferngrove could become a design partner.",
-      "needs": "The call, and what Leela says Ferngrove needs."
-     }
-    ],
-    "unknowns": [
-     {
-      "question": "Whether the founder has accepted the invite.",
-      "relevance": "An invite left unanswered can leave Leela unsure the call is on."
-     },
-     {
-      "question": "What Ferngrove builds and what Leela wants from the call.",
-      "relevance": "It shapes what the founder brings and what he asks."
-     }
-    ],
-    "frames": {
-     "primary": "A call with an introduced product lead is booked for tomorrow afternoon; the move is to be ready for it.",
-     "rivals": [
-      "A prospective design partner, which the brief is looking for.",
-      "A courtesy call with no need behind it."
-     ]
-    },
-    "proposed_kind": {
-     "kind": "intro",
-     "why": "Ferngrove came to the founder through the connector's introduction of its product lead, and the work in this file is taking that introduction forward.",
-     "evidence": [
-      "evt_#2",
-      "evt_#1"
-     ]
-    },
-    "expected_vs_actual": {
-     "stage": null,
-     "expected": "With no playbook, from the brief and the file: an introduced contact who books a call is met prepared, with the invite confirmed.",
-     "actual": "Leela booked a call for tomorrow afternoon within hours of the introduction; the founder has not written in this file."
-    },
-    "scenarios": {
-     "do_nothing": "The founder joins the call cold, and the chance to shape it is lost.",
-     "act": "Confirming the invite and reading a one-page brief on Ferngrove and Leela make the call count.",
-     "best": "The call lands well, and Ferngrove becomes a design partner.",
-     "worst": "The invite is missed and Leela waits on an empty call.",
-     "signals_to_watch": [
-      "The invite accepted on the founder's calendar",
-      "Any note from Leela before the call"
-     ]
-    },
-    "appraisal": {
-     "stakes": "medium",
-     "urgency": "high",
-     "reversibility": "reversible",
-     "reasons": [
-      "The call is booked for tomorrow afternoon.",
-      "Landing design partners is a goal now, and Leela leads product at Ferngrove.",
-      "Preparing costs little, and a missed call can be rebooked."
-     ]
-    },
-    "mode": "act",
-    "next_move": {
-     "who": "Arjun Rao",
-     "what": "Accept Leela's invite if it is not yet accepted, and read a one-page brief on Ferngrove and Leela before the call",
-     "for_whom": "Leela Krishnan at Ferngrove",
-     "by_when": "2026-08-13",
-     "rests_on": [
-      "fact:1",
-      "fact:2",
-      "fact:3"
-     ]
-    },
-    "alternative": "If the time no longer works, write to Leela today to move it.",
-    "wait_or_stop": "After preparing, wait for the call; reopen the file the day after it to ask what was agreed.",
-    "done_when": "The invite is accepted, and you go into the call knowing what Ferngrove does and what to ask.",
-    "draft": null
+    "exchange_intent": {
+     "category": "relational",
+     "tone": "warm",
+     "formality": "professional",
+     "addressed_personally": true,
+     "human_authored": true,
+     "asks_for_reply": false,
+     "engagement": "high"
+    }
    },
-   "raw": "{\"facts\": [{\"claim\": \"Introly introduced Leela Krishnan, who leads product at Ferngrove, to the founder and left the two to take it from there.\", \"evidence\": [\"evt_#2\"], \"quote\": \"Krishnan, who leads product at Ferngrove. Leela, meet Arjun Rao, the founder\"}, {\"claim\": \"Leela replied within hours that she had sent an invite for a call the next day at three in the afternoon IST.\", \"evidence\": [\"evt_#1\"], \"quote\": \"sent you an invite for tomorrow at 3 pm IST. Leela\"}, {\"claim\": \"A meeting is booked for the thirteenth, in the slot Leela's invite named.\", \"evidence\": [\"evt_#3\", \"evt_#1\"], \"quote\": \"Re: Arjun <> Leela Krishnan (Ferngrove) Hi Arjun, happy to\"}, {\"claim\": \"No reply time has been measured with Leela, either way.\", \"evidence\": [\"num:their_reply_time:leela@ferngrove.test\", \"num:your_reply_time:leela@ferngrove.test\"]}, {\"claim\": \"The account admin situation on this file was decided before.\", \"evidence\": [\"sit:sit_#1\"]}], \"inferences\": [{\"claim\": \"The next step is the call itself: nothing in Leela's note asks the founder a question.\", \"based_on\": [\"fact:2\"]}, {\"claim\": \"Leela took the introduction forward herself, which suggests real interest in what Nimbus Labs builds.\", \"based_on\": [\"fact:2\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"Ferngrove could become a design partner.\", \"needs\": \"The call, and what Leela says Ferngrove needs.\"}], \"unknowns\": [{\"question\": \"Whether the founder has accepted the invite.\", \"relevance\": \"An invite left unanswered can leave Leela unsure the call is on.\"}, {\"question\": \"What Ferngrove builds and what Leela wants from the call.\", \"relevance\": \"It shapes what the founder brings and what he asks.\"}], \"frames\": {\"primary\": \"A call with an introduced product lead is booked for tomorrow afternoon; the move is to be ready for it.\", \"rivals\": [\"A prospective design partner, which the brief is looking for.\", \"A courtesy call with no need behind it.\"]}, \"proposed_kind\": {\"kind\": \"intro\", \"why\": \"Ferngrove came to the founder through the connector's introduction of its product lead, and the work in this file is taking that introduction forward.\", \"evidence\": [\"evt_#2\", \"evt_#1\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"With no playbook, from the brief and the file: an introduced contact who books a call is met prepared, with the invite confirmed.\", \"actual\": \"Leela booked a call for tomorrow afternoon within hours of the introduction; the founder has not written in this file.\"}, \"scenarios\": {\"do_nothing\": \"The founder joins the call cold, and the chance to shape it is lost.\", \"act\": \"Confirming the invite and reading a one-page brief on Ferngrove and Leela make the call count.\", \"best\": \"The call lands well, and Ferngrove becomes a design partner.\", \"worst\": \"The invite is missed and Leela waits on an empty call.\", \"signals_to_watch\": [\"The invite accepted on the founder's calendar\", \"Any note from Leela before the call\"]}, \"appraisal\": {\"stakes\": \"medium\", \"urgency\": \"high\", \"reversibility\": \"reversible\", \"reasons\": [\"The call is booked for tomorrow afternoon.\", \"Landing design partners is a goal now, and Leela leads product at Ferngrove.\", \"Preparing costs little, and a missed call can be rebooked.\"]}, \"mode\": \"act\", \"next_move\": {\"who\": \"Arjun Rao\", \"what\": \"Accept Leela's invite if it is not yet accepted, and read a one-page brief on Ferngrove and Leela before the call\", \"for_whom\": \"Leela Krishnan at Ferngrove\", \"by_when\": \"2026-08-13\", \"rests_on\": [\"fact:1\", \"fact:2\", \"fact:3\"]}, \"alternative\": \"If the time no longer works, write to Leela today to move it.\", \"wait_or_stop\": \"After preparing, wait for the call; reopen the file the day after it to ask what was agreed.\", \"done_when\": \"The invite is accepted, and you go into the call knowing what Ferngrove does and what to ask.\", \"draft\": null}",
+   "raw": "{\"intent\": \"commit\", \"stance\": \"positive\", \"topics\": [\"onboarding\"], \"entity_mentions\": [{\"surface_form\": \"Leela\", \"entity_type\": \"person\", \"evidence\": [{\"quote\": \"Leela\", \"start_offset\": 13, \"end_offset\": 18}], \"confidence_bp\": 9000}], \"commitments\": [{\"actor\": \"Leela Krishnan\", \"action\": \"bring the current onboarding flow to the call\", \"beneficiary\": \"Arjun Rao\", \"is_conditional\": false, \"evidence\": [{\"quote\": \"I'll bring our current onboarding flow\", \"start_offset\": 64, \"end_offset\": 102}], \"confidence_bp\": 9000}], \"exchange_intent\": {\"category\": \"relational\", \"tone\": \"warm\", \"formality\": \"professional\", \"addressed_personally\": true, \"human_authored\": true, \"asks_for_reply\": false, \"engagement\": \"high\"}}",
    "framed": true,
-   "input_tokens": 3453,
-   "output_tokens": 992,
+   "input_tokens": 5513,
+   "output_tokens": 179,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "8999cc3c1c10dab5ee7a2e50ceeb7ca60de680cb5a96faac3b6e25cf2e6b60d7": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "I'll bring our current onboarding flow so you can see where we lose people.",
+    "start_offset": 64,
+    "end_offset": 139,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"I'll bring our current onboarding flow so you can see where we lose people.\", \"start_offset\": 64, \"end_offset\": 139, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
+   "input_tokens": 1517,
+   "output_tokens": 56,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "99d322aaa945500c484e9f3882dc507f5775254877d81957b31a2e037a3d27bb": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "framed": true,
+   "input_tokens": 1034,
+   "output_tokens": 24,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "a839a5c65bc6c80d0830386ecb10b1d52b4d19b7a4c21e4fd24a33d8dfe0f783": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Re: Arjun <> Leela Krishnan (Ferngrove)",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Arjun <> Leela Krishnan (Ferngrove)\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "framed": true,
+   "input_tokens": 1170,
+   "output_tokens": 43,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "adc53f0fea8c5bef3fd3e8c56f4e9b951a6a4c73d8c2374dfa6cb051e4378c37": {
+   "site": "resolution",
+   "parsed": {
+    "verdict": "NOT_RESOLVED",
+    "certainty": "INTENT_ONLY",
+    "scope": [],
+    "quote": "I'll let you two take it from here.",
+    "start_offset": 199,
+    "end_offset": 234,
+    "speaker_role_said": "unknown"
+   },
+   "raw": "{\"verdict\": \"NOT_RESOLVED\", \"certainty\": \"INTENT_ONLY\", \"scope\": [], \"quote\": \"I'll let you two take it from here.\", \"start_offset\": 199, \"end_offset\": 234, \"speaker_role_said\": \"unknown\"}",
+   "framed": true,
+   "input_tokens": 1541,
+   "output_tokens": 47,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "b27e056834f62e5d30af47a3d265a14fbb65a842f398536a47970948c0cf4807": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Re: Arjun <> Leela Krishnan (Ferngrove)",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Re: Arjun <> Leela Krishnan (Ferngrove)\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "framed": true,
+   "input_tokens": 1165,
+   "output_tokens": 43,
    "model": "claude-haiku-4-5-20251001"
   },
   "c613ac8ea163a258afc4ca9359f783e9665787568188d64bc3ce38d0ad6041d1": {

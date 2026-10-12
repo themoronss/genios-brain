@@ -1,7 +1,7 @@
 {
  "case_id": "F41",
  "source": "ideal_reader",
- "recorded_at": "be27bffe",
+ "recorded_at": "e6b8522e",
  "answers": {
   "276a672ceb3298eb21887ed26a60f1355a3b33f6c417160a203a86b0262bbfb0": {
    "site": "extraction",
@@ -84,57 +84,7 @@
    "output_tokens": 43,
    "model": "claude-haiku-4-5-20251001"
   },
-  "8d896bc6c1c3d4d46608fce793dbadf8403474ba9d10f213ba737e1f0a005f9d": {
-   "site": "junk_gate_batch",
-   "parsed": [
-    {
-     "i": 0,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    },
-    {
-     "i": 1,
-     "disposition": "keep",
-     "relevance": 0.9,
-     "reason": "a person writing to the founder"
-    }
-   ],
-   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
-   "framed": true,
-   "input_tokens": 1093,
-   "output_tokens": 48,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "97423666c38becaadca7c69c77a97c4eba6494577c6843e75a1e6be172c85545": {
-   "site": "relevance",
-   "parsed": {
-    "verdicts": [
-     {
-      "item": 1,
-      "business": true,
-      "description": "Notes for the board pack",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     },
-     {
-      "item": 2,
-      "business": true,
-      "description": "Kitebird - August update",
-      "category": "working",
-      "human_authored": true,
-      "asks_for_reply": null
-     }
-    ]
-   },
-   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Notes for the board pack\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 2, \"business\": true, \"description\": \"Kitebird - August update\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
-   "framed": true,
-   "input_tokens": 1240,
-   "output_tokens": 76,
-   "model": "claude-haiku-4-5-20251001"
-  },
-  "cf3f90f5b231a1762dacda9cd842a0170a11fbf5fd7441e8303301ad05a5244b": {
+  "72cf0c62368b65a959716770682f85ea5ab77b9b32eb899772012b63546f0e41": {
    "site": "expert",
    "parsed": {
     "facts": [
@@ -248,8 +198,58 @@
    },
    "raw": "{\"facts\": [{\"claim\": \"On the first of September Meera sent Dev at harbourvc.test the August update she had promised: clinics live, revenue growth month on month, and the share of appointments the scheduling assistant books without staff.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"The update asks Dev for nothing, and it is the only touch in the file.\", \"evidence\": [\"evt_#1\"]}, {\"claim\": \"Nothing has come back from Dev since the update.\", \"evidence\": [\"num:days_quiet\", \"num:their_reply_time:dev@harbourvc.test\"]}, {\"claim\": \"The brief names no kind of work for harbourvc.test; the engine filed it under admin.\", \"evidence\": [\"sit:sit_#1\"]}], \"inferences\": [{\"claim\": \"Dev is an investor or close to the round: a promised monthly update with traction numbers is what an investor receives.\", \"based_on\": [\"fact:1\"]}, {\"claim\": \"Nothing is owed by either side: an update that asks nothing needs no answer, and quiet after it is the resting state.\", \"based_on\": [\"fact:2\", \"fact:3\"]}], \"patterns\": [], \"hypotheses\": [{\"proposition\": \"Dev is an existing investor in Kitebird who asked for monthly updates.\", \"needs\": \"The founder's word, or the earlier mail in which the update was promised.\"}, {\"proposition\": \"Dev is a prospective investor following the company before deciding.\", \"needs\": \"The founder's word on where the conversation with Dev stands.\"}], \"unknowns\": [{\"question\": \"Who Dev is to Kitebird — an investor already in, or one still deciding.\", \"relevance\": \"An existing investor needs only the monthly update; a prospect may need a reason to talk, such as a milestone.\"}, {\"question\": \"Where the update was promised, and whether a cadence was agreed.\", \"relevance\": \"The promise is not in the file, so when the next update is due cannot be read from it.\"}], \"frames\": {\"primary\": \"A promised investor update, sent: your August numbers went to Dev, nothing was asked, and nothing is owed.\", \"rivals\": [\"A prospective investor being kept warm, where the update is a step in the raise rather than a report to a shareholder.\", \"An update Dev was expected to answer — but the mail asks him for nothing.\"]}, \"proposed_kind\": {\"kind\": \"investor\", \"why\": \"The founder's mail is the August update she promised Dev, with traction numbers, sent to a venture firm's address — the update an investor receives.\", \"evidence\": [\"evt_#1\"]}, \"expected_vs_actual\": {\"stage\": null, \"expected\": \"Without a playbook, the mail itself sets it: an update was promised, so it was due to go out.\", \"actual\": \"It went out on the first of September as promised; it asked nothing, and nothing has come back.\"}, \"scenarios\": {\"do_nothing\": \"Nothing is lost: an update needs no answer, and the next one goes out in its turn.\", \"act\": \"Chasing Dev about an update that asked nothing would spend his attention for no reason.\", \"best\": \"Dev reads it and comes back with a question or an introduction.\", \"worst\": \"The update goes unread — and the remedy is the next update with fresh numbers, not a chaser.\", \"signals_to_watch\": [\"A question or a request to meet from Dev.\", \"The date the next monthly update is due.\"]}, \"appraisal\": {\"stakes\": \"low\", \"urgency\": \"low\", \"reversibility\": \"reversible\", \"reasons\": [\"The update went out as promised and asks nothing.\", \"No open ask and no promise are outstanding in the file.\", \"The next update is the natural next touch.\"]}, \"mode\": \"nothing\", \"next_move\": null, \"alternative\": \"If Dev writes back with a question, answer it the same day; otherwise send the next update when it is due.\", \"wait_or_stop\": \"Nothing to wait for. Write again with the next monthly update, or sooner only with a real milestone.\", \"done_when\": \"The promised update is sent — it is — and the next one goes out in its turn.\", \"draft\": null}",
    "framed": true,
-   "input_tokens": 3353,
+   "input_tokens": 3348,
    "output_tokens": 956,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "8d896bc6c1c3d4d46608fce793dbadf8403474ba9d10f213ba737e1f0a005f9d": {
+   "site": "junk_gate_batch",
+   "parsed": [
+    {
+     "i": 0,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    },
+    {
+     "i": 1,
+     "disposition": "keep",
+     "relevance": 0.9,
+     "reason": "a person writing to the founder"
+    }
+   ],
+   "raw": "[{\"i\": 0, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}, {\"i\": 1, \"disposition\": \"keep\", \"relevance\": 0.9, \"reason\": \"a person writing to the founder\"}]",
+   "framed": true,
+   "input_tokens": 1093,
+   "output_tokens": 48,
+   "model": "claude-haiku-4-5-20251001"
+  },
+  "97423666c38becaadca7c69c77a97c4eba6494577c6843e75a1e6be172c85545": {
+   "site": "relevance",
+   "parsed": {
+    "verdicts": [
+     {
+      "item": 1,
+      "business": true,
+      "description": "Notes for the board pack",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     },
+     {
+      "item": 2,
+      "business": true,
+      "description": "Kitebird - August update",
+      "category": "working",
+      "human_authored": true,
+      "asks_for_reply": null
+     }
+    ]
+   },
+   "raw": "{\"verdicts\": [{\"item\": 1, \"business\": true, \"description\": \"Notes for the board pack\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}, {\"item\": 2, \"business\": true, \"description\": \"Kitebird - August update\", \"category\": \"working\", \"human_authored\": true, \"asks_for_reply\": null}]}",
+   "framed": true,
+   "input_tokens": 1240,
+   "output_tokens": 76,
    "model": "claude-haiku-4-5-20251001"
   }
  }

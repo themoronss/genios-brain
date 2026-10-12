@@ -182,9 +182,10 @@ MOVED_AFTER: dict[str, tuple[str, tuple[str, str, str | None, int]]] = {
     # the call after its move's card: a second card about the file (F176, STEP-14's living card).
     "F01": ("STEP-13", ("must_detect", "pass", None, 1)),
     "F07": ("STEP-13", ("must_detect", "fail", "reasoning", 2)),
-    # F21's file asks twice (its second review asks a new question, the first card REPLACED), F22's once —
-    # both still `brief only` (not expressible, STEP-15), their question cards counted.
-    "F21": ("STEP-13", ("must_detect", "not_expressible", None, 2)),
+    # F21's file asks once — since the question is the review's first unknown (M36.C2.L-logic.V2.U10), its two
+    # reviews ask the same question and the second re-binds the first card — F22's once; both still
+    # `brief only` (not expressible, STEP-15), their question cards counted.
+    "F21": ("STEP-13", ("must_detect", "not_expressible", None, 1)),
     "F22": ("STEP-13", ("must_detect", "not_expressible", None, 1)),
 }
 
